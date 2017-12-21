@@ -332,7 +332,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -352,7 +352,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries);</IgnoreSpecificDefaultLibraries>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
@@ -374,7 +374,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
       <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
@@ -398,7 +398,7 @@
     <Link>
       <ImportLibrary>$(OutDir)\..\..\..\lib\$(TargetName)_evaluation.lib</ImportLibrary>
       <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>svml_disp.lib;libirc.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
@@ -408,7 +408,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;AS_VP9E_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions); </PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -419,16 +419,16 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Genx_MCTF_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -438,16 +438,16 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Genx_MCTF_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -458,8 +458,8 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;Genx_MCTF_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
@@ -469,7 +469,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Intel_Evaluation|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;_DEBUG;VM_DEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -480,8 +480,8 @@
     </ClCompile>
     <Link>
       <ImportLibrary>$(OutDir)\..\..\..\lib\$(TargetName)_evaluation.lib</ImportLibrary>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;Genx_MCTF_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
     <PostBuildEvent>
@@ -490,7 +490,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;AS_VP9E_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions); </PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -501,15 +501,15 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;$(MfxBuildDir)win_$(Platform)\lib\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions); </PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -519,15 +519,15 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries);</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -539,9 +539,9 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -550,7 +550,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -563,9 +563,9 @@
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>$(OutDir)\..\..\..\lib\$(TargetName)_evaluation.lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
@@ -574,7 +574,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;AS_VP9E_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions); </PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -585,8 +585,8 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
       <SubSystem>Console</SubSystem>
@@ -594,7 +594,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;..\..\..\_studio\vp9e_hw\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;AS_VP8D_PLUGIN;UNIFIED_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -604,15 +604,15 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;..\..\..\..\mdp_msdk-contrib\libvpx\windows\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vpxmt.lib;ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -624,8 +624,8 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
@@ -635,7 +635,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Intel_Evaluation|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\encode\h265\include;..\genx\copy_kernels\include\;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\..\camera_pipe\genx\include;..\cmrt_cross_platform\include;..\..\camera_pipe\genx\src;..\..\camera_pipe\include;.\include;$(MfxIppIncludeDir);$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;..\..\..\samples\sample_user_modules\plugin_api;..\..\..\opensource\mfx_dispatch\include;..\..\..\_studio\mfx_lib\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;..\..\..\_studio\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_HEVCE_PLUGIN;AS_HEVCE_PLUGIN;AS_CAMERA_PLUGIN;AS_VP9D_PLUGIN;MFX_D3D11_ENABLED;WIN64;NDEBUG;_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -647,8 +647,8 @@
     <Link>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxIppLibraryDir);$(OutDir)..\lib\;$(ICPP_COMPILER17)compiler\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;Genx_MCTF.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <ImportLibrary>$(OutDir)\..\..\..\lib\$(TargetName)_evaluation.lib</ImportLibrary>
     </Link>

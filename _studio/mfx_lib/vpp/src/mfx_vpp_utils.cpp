@@ -28,6 +28,9 @@
 const mfxU32 g_TABLE_DO_NOT_USE [] =
 {
     MFX_EXTBUFF_VPP_DENOISE,
+#ifdef MFX_ENABLE_MCTF
+    MFX_EXTBUFF_VPP_MCTF,
+#endif
     MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,
@@ -47,6 +50,9 @@ const mfxU32 g_TABLE_DO_NOT_USE [] =
 const mfxU32 g_TABLE_DO_USE [] =
 {
     MFX_EXTBUFF_VPP_DENOISE,
+#ifdef MFX_ENABLE_MCTF
+    MFX_EXTBUFF_VPP_MCTF,
+#endif
     MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,
@@ -72,6 +78,9 @@ const mfxU32 g_TABLE_DO_USE [] =
 const mfxU32 g_TABLE_CONFIG [] =
 {
     MFX_EXTBUFF_VPP_DENOISE,
+#ifdef MFX_ENABLE_MCTF
+    MFX_EXTBUFF_VPP_MCTF,
+#endif
     MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,
@@ -103,6 +112,9 @@ const mfxU32 g_TABLE_EXT_PARAM [] =
 
     // should be the same as g_TABLE_CONFIG
     MFX_EXTBUFF_VPP_DENOISE,
+#ifdef MFX_ENABLE_MCTF
+    MFX_EXTBUFF_VPP_MCTF,
+#endif
     MFX_EXTBUFF_VPP_SCENE_ANALYSIS,
     MFX_EXTBUFF_VPP_PROCAMP,
     MFX_EXTBUFF_VPP_DETAIL,
@@ -680,7 +692,14 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 OutputDebugStringA(cStr);
                 break;
             }
-
+#ifdef MFX_ENABLE_MCTF
+            case (mfxU32)MFX_EXTBUFF_VPP_MCTF:
+            {
+                sprintf_s(cStr, sizeof(cStr), "%s \n", "MFX_EXTBUFF_VPP_MCTF");
+                OutputDebugStringA(cStr);
+                break;
+            }
+#endif
             default:
             {
             }
@@ -874,9 +893,16 @@ void ShowPipeline( std::vector<mfxU32> pipelineList )
                 fprintf(stderr, "VPP_FIELD_SPLITTING\n");
                 break;
             }
+#ifdef MFX_ENABLE_MCTF
+            case (mfxU32)MFX_EXTBUFF_VPP_MCTF:
+            {
+                fprintf(stderr, "VPP_MCTF\n");
+                break;
+            }
+#endif
             default:
             {
-                fprintf(stderr, "UNKNOUW Filter ID!!! \n");
+                fprintf(stderr, "UNKNOWN Filter ID!!! \n");
                 break;
             }
 
@@ -1081,6 +1107,14 @@ void ReorderPipelineListForQuality( std::vector<mfxU32> & pipelineList )
         newList[index] = MFX_EXTBUFF_VPP_MIRRORING;
         index++;
     }
+#ifdef MFX_ENABLE_MCTF
+    // add to the end
+    if (IsFilterFound(&pipelineList[0], (mfxU32)pipelineList.size(), MFX_EXTBUFF_VPP_MCTF))
+    {
+        newList[index] = MFX_EXTBUFF_VPP_MCTF;
+        index++;
+    }
+#endif
     // [1] update
     pipelineList.resize(index);
     for( index = 0; index < (mfxU32)pipelineList.size(); index++ )
@@ -1278,6 +1312,7 @@ mfxStatus GetPipelineList(
     }
 
     /* [Deinterlace] FILTER */
+#if 0
     mfxU32 extParamCount        = IPP_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
     std::vector<mfxU32> extParamList(extParamCount);
 
@@ -1285,17 +1320,17 @@ mfxStatus GetPipelineList(
 
     mfxU32*   pExtBufList = NULL;
     mfxU32    extBufCount = 0;
-
+#endif
     if( 0 != videoParam->NumExtParam && NULL == videoParam->ExtParam )
     {
         return MFX_ERR_NULL_PTR;
     }
-
+#if 0
     GetDoUseFilterList( videoParam, &pExtBufList, &extBufCount );
 
     extParamList.insert(extParamList.end(), &pExtBufList[0], &pExtBufList[extBufCount]);
     extParamCount = (mfxU32) extParamList.size();
-
+#endif
     PicStructMode picStructMode = GetPicStructMode(par->In.PicStruct, par->Out.PicStruct);
 
     mfxI32 deinterlacingMode = 0;
@@ -1383,6 +1418,16 @@ mfxStatus GetPipelineList(
     {
         pipelineList.push_back(MFX_EXTBUFF_VPP_FIELD_SPLITTING);
     }
+#ifdef MFX_ENABLE_MCTF
+    for (mfxU32 i = 0; i < videoParam->NumExtParam; i++)
+    {
+        if (videoParam->ExtParam[i] && videoParam->ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_MCTF)
+        {
+            pipelineList.push_back(MFX_EXTBUFF_VPP_MCTF);
+            break;
+        }
+    }
+#endif
 
     /* ********************************************************************** */
     /* 2. optional filters, enabled by default, disabled by DO_NOT_USE        */
@@ -2461,6 +2506,13 @@ mfxStatus CheckLimitationsSW(
             SetSignalInfo(param, MFX_TRANSFERMATRIX_UNKNOWN, MFX_NOMINALRANGE_UNKNOWN);
         }
     }
+#ifdef MFX_ENABLE_MCTF
+    if (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_MCTF))
+    {
+        // MCTF is not supported for SW VPP at the moment
+        sts = MFX_ERR_UNSUPPORTED;
+    }
+#endif
 
     if (param.vpp.In.FourCC == MFX_FOURCC_AYUV
 #if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
@@ -2597,7 +2649,12 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     {
         list.push_back(MFX_EXTBUFF_VPP_PROCAMP);
     }
-
+#ifdef MFX_ENABLE_MCTF
+    if (caps.uMCTF)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_MCTF);
+    }
+#endif
     if(caps.uDenoiseFilter)
     {
         list.push_back(MFX_EXTBUFF_VPP_DENOISE);

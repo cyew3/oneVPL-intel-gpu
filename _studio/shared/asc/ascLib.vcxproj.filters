@@ -30,7 +30,7 @@
     <ClInclude Include="include\asc_cpu_dispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\asc_defs.h">
+    <ClInclude Include="include\asc_C_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\asc_sse4_impl.h">

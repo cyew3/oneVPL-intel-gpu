@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -541,6 +541,10 @@ mfxStatus VideoVPPBase::GetVideoParam(mfxVideoParam *par)
 #if (MFX_VERSION >= 1025)
                     case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
 #endif
+
+#ifdef MFX_ENABLE_MCTF
+                    case MFX_EXTBUFF_VPP_MCTF:
+#endif
                     {
                         if(numUsedFilters + 1 > pVPPHint->NumAlg)
                             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -605,6 +609,7 @@ mfxStatus VideoVPPBase::QueryCaps(VideoCORE * core, MfxHwVideoProcessing::mfxVpp
         caps.uFrameRateConversion= 1; // "1" means general FRC is supported. "Interpolation" modes descibed by caps.frcCaps
         caps.uDeinterlacing      = 1; // "1" means general deinterlacing is supported
         caps.uVideoSignalInfo    = 1; // "1" means general VSI is supported
+
         if (sts >= MFX_ERR_NONE)
            return sts;
     }
@@ -989,6 +994,13 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
                                 }
                             }
                         }
+                    }
+#endif
+#ifdef MFX_ENABLE_MCTF
+                    else if (MFX_EXTBUFF_VPP_MCTF == in->ExtParam[i]->BufferId)
+                    {
+                        // no specific checks for MCTF control buffer
+                        continue;
                     }
 #endif
                     else

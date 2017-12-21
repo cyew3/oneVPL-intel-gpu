@@ -1490,7 +1490,7 @@ mfxStatus ASC::RunFrame(mfxHDL frameHDL, mfxU32 parity) {
 
     CmSurface2D* p_surfaceFrom = 0;
 
-    SurfaceIndex *idxFrom;
+    SurfaceIndex *idxFrom = nullptr;
     CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
 
     mfxStatus sts = RunFrame(idxFrom, parity);

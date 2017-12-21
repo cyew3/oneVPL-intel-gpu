@@ -11,6 +11,11 @@ foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
 endforeach( )
 
+#==============MCTF========================================================
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../mctf_package/mctf/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
+
 set( sources "" )
 set( sources.plus "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
@@ -26,6 +31,13 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/scd )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/copy_kernels/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmut )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/include )
+#==============MCTF========================================================
+ set( LIBS "" )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/include )
+   list( APPEND LIBS
+        mctf
+       )
+
 make_library( vpp hw static )
 set( defs "" )
 

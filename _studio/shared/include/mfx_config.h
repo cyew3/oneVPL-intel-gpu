@@ -396,5 +396,14 @@
 #if MFX_VERSION >= 1026 && ( defined(_WIN32) || defined(_WIN64) )
     //#define MFX_AUTOLTR_FEATURE_DISABLE
 #endif
+// NB: the line below HAS to be changed to MFX_VERSION >= 1026
+// after THE API is switched to 1.26
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#define MFX_ENABLE_MCTF
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#define MFX_ENABLE_MCTF_EXT // extended MCTF interface
+#endif
+#endif
+
 
 #endif // _MFX_CONFIG_H_

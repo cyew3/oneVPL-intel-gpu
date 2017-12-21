@@ -33,8 +33,12 @@
 #include "libmfx_core_vaapi.h"
 #endif
 
-using namespace MfxHwVideoProcessing;
+#ifdef MFX_ENABLE_MCTF
+#include "vm_time.h"
+#include "mctf_common.h"
+#endif
 
+using namespace MfxHwVideoProcessing;
 enum
 {
     CURRENT_TIME_STAMP              = 100000,
@@ -850,7 +854,11 @@ ReleaseResource* ResMngr::CreateSubResourceForMode30i60p(void)
 mfxStatus ResMngr::FillTaskForMode30i60p(
     DdiTask* pTask,
     mfxFrameSurface1 *pInSurface,
-    mfxFrameSurface1 *pOutSurface)
+    mfxFrameSurface1 *pOutSurface
+#ifdef MFX_ENABLE_MCTF
+    , mfxFrameSurface1 * pOutSurfaceForApp
+#endif
+)
 {
     pInSurface;
 
@@ -908,12 +916,24 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
 
     // output
     {
+#ifdef MFX_ENABLE_MCTF
+        pTask->output.pSurf = pOutSurface;
+        pTask->output.timeStamp = pTask->input.timeStamp;
+        pTask->outputForApp.pSurf = pOutSurfaceForApp;
+        pTask->outputForApp.timeStamp = pTask->input.timeStamp;
+        if (m_surf[VPP_OUT].size() > 0) // out in system memory
+        {
+            if (pTask->outputForApp.pSurf)
+                m_surf[VPP_OUT][pTask->outputForApp.resIdx].SetFree(false);
+        }
+#else
         pTask->output.pSurf     = pOutSurface;
         pTask->output.timeStamp = pTask->input.timeStamp;
         if(m_surf[VPP_OUT].size() > 0) // out in system memory
         {
             m_surf[VPP_OUT][pTask->output.resIdx].SetFree(false);
         }
+#endif
 
         actualNumber++;
     }
@@ -936,6 +956,9 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
 
         // correct output pts for target output
         pTask->output.timeStamp = (pTask->input.timeStamp + pTask->input.endTimeStamp) >> 1;
+#ifdef MFX_ENABLE_MCTF
+        pTask->outputForApp.timeStamp = (pTask->input.timeStamp + pTask->input.endTimeStamp) >> 1;
+#endif
     }
 
     // update
@@ -954,7 +977,11 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
 mfxStatus ResMngr::FillTask(
     DdiTask* pTask,
     mfxFrameSurface1 *pInSurface,
-    mfxFrameSurface1 *pOutSurface)
+    mfxFrameSurface1 *pOutSurface
+#ifdef MFX_ENABLE_MCTF
+    , mfxFrameSurface1 * pOutSurfaceForApp
+#endif
+)
 {
     pInSurface;
     mfxU32 refIndx = 0;
@@ -999,12 +1026,27 @@ mfxStatus ResMngr::FillTask(
 
     // output
     {
+#ifdef MFX_ENABLE_MCTF
+        // todo: modify by outputForApp
+        pTask->output.pSurf = pOutSurface;
+        pTask->output.timeStamp = pTask->input.timeStamp + m_indxOutTimeStamp * (FRAME_INTERVAL / m_outputIndexCountPerCycle);
+
+        pTask->outputForApp.pSurf = pOutSurfaceForApp;
+        pTask->outputForApp.timeStamp = pTask->output.timeStamp;
+
+        if (m_surf[VPP_OUT].size() > 0) // out in system memory
+        {
+            if (pTask->outputForApp.pSurf)
+                m_surf[VPP_OUT][pTask->outputForApp.resIdx].SetFree(false);
+        }
+#else
         pTask->output.pSurf     = pOutSurface;
         pTask->output.timeStamp = pTask->input.timeStamp + m_indxOutTimeStamp * (FRAME_INTERVAL / m_outputIndexCountPerCycle);
         if(m_surf[VPP_OUT].size() > 0) // out in system memory
         {
             m_surf[VPP_OUT][pTask->output.resIdx].SetFree(false);
         }
+#endif
 
         actualNumber++;
     }
@@ -1116,6 +1158,9 @@ TaskManager::TaskManager()
     m_mode30i60p.SetEnable(false);
 
     m_extMode = 0;
+#ifdef MFX_ENABLE_MCTF
+    m_MCTFSurfacesInQueue = 0;
+#endif
 
 } // TaskManager::TaskManager()
 
@@ -1145,6 +1190,10 @@ mfxStatus TaskManager::Init(
     m_resMngr.Init(config, this->m_core);
 
     m_tasks.resize(config.m_surfCount[VPP_OUT]);
+
+#ifdef MFX_ENABLE_MCTF
+    m_MCTFSurfacesInQueue = 0;
+#endif
 
     return MFX_ERR_NONE;
 
@@ -1199,6 +1248,9 @@ mfxStatus TaskManager::DoAdvGfx(
 mfxStatus TaskManager::AssignTask(
     mfxFrameSurface1 *input,
     mfxFrameSurface1 *output,
+#ifdef MFX_ENABLE_MCTF
+    mfxFrameSurface1 *outputForApp,
+#endif
     mfxExtVppAuxData *aux,
     DdiTask*& pTask,
     mfxStatus& intSts)
@@ -1212,47 +1264,147 @@ mfxStatus TaskManager::AssignTask(
     {
         return MFX_WRN_DEVICE_BUSY;
     }
+
+    pTask->input.bForcedInternalAlloc = false;
+    pTask->output.bForcedInternalAlloc = false;
+#ifdef MFX_ENABLE_MCTF
+    pTask->outputForApp.bForcedInternalAlloc = false;
+    auto mctf = pMCTF.lock();
+    if (mctf)
+    {
+        mfxExtVppMctf* mctf_ctrl = input ? reinterpret_cast<mfxExtVppMctf *>(GetExtendedBuffer(input->Data.ExtParam, input->Data.NumExtParam, MFX_EXTBUFF_VPP_MCTF)) : nullptr;
+        pTask->bMCTF = true;
+
+        // public or private runtime control
+        if (mctf_ctrl)
+        {
+            pTask->MctfControlActive = true;
+            CMC::FillParamControl(&pTask->MctfData, mctf_ctrl);
+        }
+        else
+        {
+            CMC::QueryDefaultParams(&pTask->MctfData);
+            pTask->MctfControlActive = false;
+        }
+    }
+    else
+    {
+        pTask->bMCTF = false;
+        CMC::QueryDefaultParams(&pTask->MctfData);
+    }
+#endif
     //--------------------------------------------------------
     mfxStatus sts = MFX_ERR_NONE;
 
     bool isAdvGfxMode = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) ||
                                             (VARIANCE_REPORT & m_extMode) || (IS_REFERENCES & m_extMode)? true : false;
-
+#ifdef MFX_ENABLE_MCTF
+    // calls below may change only TimeStamp & FrameOrder, so
+    // no passing of outputForApp as TimeStamp & FrameOrder
+    // will be copied then.
+#endif
     if( isAdvGfxMode )
     {
         sts = DoAdvGfx(input, output, &intSts);
-        MFX_CHECK_STS(sts);
     }
     else if ((FRC_ENABLED & m_extMode) && (!m_mode30i60p.IsEnabled()) )
     {
         sts = DoCpuFRC_AndUpdatePTS(input, output, &intSts);
-        MFX_CHECK_STS(sts);
     }
     else if( m_mode30i60p.IsEnabled() )
     {
         if( (NULL == input) && (FRC_DISTRIBUTED_TIMESTAMP & m_extMode) )
         {
-            return MFX_ERR_MORE_DATA;
+            sts = MFX_ERR_MORE_DATA;
         }
         //-------------------------------------------------
-
-        sts = m_resMngr.DoMode30i60p(input, output, &intSts);
-        MFX_CHECK_STS(sts);
+        if (MFX_ERR_MORE_DATA != sts)
+            sts = m_resMngr.DoMode30i60p(input, output, &intSts);
     }
     else // simple mode
     {
-        if(NULL == input) return MFX_ERR_MORE_DATA;
+        if (NULL == input)
+            sts = MFX_ERR_MORE_DATA;
     }
 
+#ifdef MFX_ENABLE_MCTF
 
-    /*pTask = GetTask();
-    if(NULL == pTask)
+    // DoCpuFRC_AndUpdatePTS updates TimeStamp & FrameOrder in output;
+    // copy these values to outputForApp
+    if (outputForApp != output && outputForApp)
     {
-        return MFX_WRN_DEVICE_BUSY;
-    }*/
+        outputForApp->Data.TimeStamp = output->Data.TimeStamp;
+        outputForApp->Data.FrameOrder = output->Data.FrameOrder;
+    }
 
-    sts = FillTask(pTask, input, output, aux);
+    // this condition means the end of the stream; for MCTF it stands for
+    // pushing everything out of an internal queue (if any)
+    if (!input && MFX_ERR_MORE_DATA == sts && pTask->bMCTF)
+    {
+        // if MCTF is enabled & it is in a mode with > 1 ref,
+        // and we approached the end, fill the task with only
+        // output surface
+        if (TWO_REFERENCES == mctf->MCTF_GetReferenceNumber() || FOUR_REFERENCES == mctf->MCTF_GetReferenceNumber())
+        {
+            sts = FillLastTasks(pTask, output, outputForApp, aux);
+        }
+
+        if (MFX_ERR_NONE == sts)
+            sts = MFX_ERR_MORE_DATA;
+    }
+#endif
     MFX_CHECK_STS(sts);
+
+
+    sts = FillTask(pTask, input, output,
+#ifdef MFX_ENABLE_MCTF
+        outputForApp,
+#endif
+        aux);
+    MFX_CHECK_STS(sts);
+
+#ifdef MFX_ENABLE_MCTF
+    if (pTask->bMCTF)
+    {
+        // if we here, sts == MFX_ERR_NONE;
+        ++m_MCTFSurfacesInQueue;
+        // m_MCTFSurfacesInQueue means number of frames including the current;
+        // in case of 2 refs or 4 refs, its enough to have 2 or 3 to output.
+        // Effectively, it is used to count number of forward refs + current;
+        // Semantic can be changed to track how many frames are in queue (it 
+        // cannot be greater than 3 for 2 refs, or 5 for 4 refs.
+        switch (mctf->MCTF_GetReferenceNumber())
+        {
+        case NO_REFERENCES:
+        case ONE_REFERENCE:
+            m_MCTFSurfacesInQueue = 1;
+            break;
+        case TWO_REFERENCES:
+            if (m_MCTFSurfacesInQueue < 2) 
+            {
+                // MCTF cannot work with FRC if it uses 2-refs
+                if (MFX_ERR_MORE_SURFACE == intSts)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+                intSts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
+            }
+            else
+                m_MCTFSurfacesInQueue = 2;
+            break;
+        case FOUR_REFERENCES:
+            if (m_MCTFSurfacesInQueue < 3)
+            {
+                // MCTF cannot work with FRC if it uses 4-refs
+                if (MFX_ERR_MORE_SURFACE == intSts)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+                intSts = MFX_ERR_MORE_DATA_SUBMIT_TASK;
+            }
+            else
+                m_MCTFSurfacesInQueue = 3;
+            break;
+        }
+    }
+#endif
 
     if (m_mode30i60p.IsEnabled())
     {
@@ -1271,6 +1423,15 @@ mfxStatus TaskManager::AssignTask(
         UpdatePTS_SimpleMode(input, output);
     }
 
+#ifdef MFX_ENABLE_MCTF
+    // update functions may update TimeStamp & FrameOrder
+    if (outputForApp != output && outputForApp)
+    {
+        outputForApp->Data.TimeStamp = output->Data.TimeStamp;
+        outputForApp->Data.FrameOrder = output->Data.FrameOrder;
+    }
+#endif
+
     return MFX_ERR_NONE;
 
 } // mfxStatus TaskManager::AssignTask(...)
@@ -1280,10 +1441,19 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
 {
     UMC::AutomaticUMCMutex guard(m_mutex);
 
+#ifdef MFX_ENABLE_MCTF
+    if (pTask->output.pSurf != pTask->outputForApp.pSurf && pTask->outputForApp.pSurf)
+        MFX_SAFE_CALL(m_core->DecreaseReference(&(pTask->outputForApp.pSurf->Data)));
+#endif
+
     mfxStatus sts = m_core->DecreaseReference( &(pTask->output.pSurf->Data) );
     MFX_CHECK_STS(sts);
 
+#ifdef MFX_ENABLE_MCTF
+    mfxU32 freeIdx = pTask->outputForApp.resIdx;
+#else
     mfxU32 freeIdx = pTask->output.resIdx;
+#endif
     if(NO_INDEX != freeIdx && m_resMngr.m_surf[VPP_OUT].size() > 0)
     {
         m_resMngr.m_surf[VPP_OUT][freeIdx].SetFree(true);
@@ -1303,7 +1473,8 @@ mfxStatus TaskManager::CompleteTask(DdiTask* pTask)
         }
     }
 
-    sts = m_core->DecreaseReference( &(pTask->input.pSurf->Data) );
+    if (pTask->input.pSurf)
+        sts = m_core->DecreaseReference( &(pTask->input.pSurf->Data) );
     MFX_CHECK_STS(sts);
 
     FreeTask(pTask);
@@ -1329,9 +1500,19 @@ DdiTask* TaskManager::GetTask(void)
 void TaskManager::FillTask_Mode30i60p(
     DdiTask* pTask,
     mfxFrameSurface1 *pInSurface,
-    mfxFrameSurface1 *pOutSurface)
+    mfxFrameSurface1 *pOutSurface
+#ifdef MFX_ENABLE_MCTF
+    ,mfxFrameSurface1 *pOutSurfaceForApp
+#endif
+    )
 {
-    m_resMngr.FillTaskForMode30i60p(pTask, pInSurface, pOutSurface);
+    m_resMngr.FillTaskForMode30i60p(pTask, 
+                                    pInSurface,
+                                    pOutSurface
+#ifdef MFX_ENABLE_MCTF
+                                    ,pOutSurfaceForApp
+#endif
+                                   );
 
 } // void TaskManager::FillTask_60i60pMode(DdiTask* pTask)
 
@@ -1339,9 +1520,17 @@ void TaskManager::FillTask_Mode30i60p(
 void TaskManager::FillTask_AdvGfxMode(
     DdiTask* pTask,
     mfxFrameSurface1 *pInSurface,
-    mfxFrameSurface1 *pOutSurface)
+    mfxFrameSurface1 *pOutSurface
+#ifdef MFX_ENABLE_MCTF
+    ,mfxFrameSurface1 *pOutSurfaceForApp
+#endif
+    )
 {
-    m_resMngr.FillTask(pTask, pInSurface, pOutSurface);
+    m_resMngr.FillTask(pTask, pInSurface, pOutSurface
+#ifdef MFX_ENABLE_MCTF
+                      , pOutSurfaceForApp
+#endif
+    );
 
 } // void TaskManager::FillTask_AdvGfxMode(...)
 
@@ -1350,6 +1539,9 @@ mfxStatus TaskManager::FillTask(
     DdiTask* pTask,
     mfxFrameSurface1 *pInSurface,
     mfxFrameSurface1 *pOutSurface,
+#ifdef MFX_ENABLE_MCTF
+    mfxFrameSurface1 *pOutSurfaceForApp,
+#endif
     mfxExtVppAuxData *aux)
 {
     // [0] Set param
@@ -1357,12 +1549,33 @@ mfxStatus TaskManager::FillTask(
     pTask->input.resIdx  = NO_INDEX;
     pTask->output.pSurf  = pOutSurface;
     pTask->output.resIdx = NO_INDEX;
+#ifdef MFX_ENABLE_MCTF
+    pTask->outputForApp.pSurf = pOutSurfaceForApp;
+    pTask->outputForApp.resIdx = NO_INDEX;
+#endif
 
     if(m_resMngr.m_surf[VPP_OUT].size() > 0) // out in system memory
     {
+#ifdef MFX_ENABLE_MCTF
+        // it might be nullptr, meaning MCTF works with delay & its just started
+        // if it is not ready to ouptut, we cannot lock & change output surface
+        // by no means.
+        if (pTask->outputForApp.pSurf)
+        {
+            // resIdx is required to only for outputForApp as only this surface
+            // is the actual surface allocated by an App; output might be an internal
+            // buffer; so, lets update resIdx only in outputForApp.
+            pTask->outputForApp.resIdx = FindFreeSurface(m_resMngr.m_surf[VPP_OUT]);
+            if (NO_INDEX == pTask->outputForApp.resIdx) return MFX_WRN_DEVICE_BUSY;
+            m_resMngr.m_surf[VPP_OUT][pTask->outputForApp.resIdx].SetFree(false);
+            if (pTask->outputForApp.pSurf == pTask->output.pSurf)
+                pTask->output.resIdx = pTask->outputForApp.resIdx;
+        }
+#else
         pTask->output.resIdx     = FindFreeSurface( m_resMngr.m_surf[VPP_OUT] );
         if( NO_INDEX == pTask->output.resIdx) return MFX_WRN_DEVICE_BUSY;
         m_resMngr.m_surf[VPP_OUT][pTask->output.resIdx].SetFree(false);
+#endif
     }
 
     pTask->taskIndex    = m_taskIndex++;
@@ -1372,6 +1585,9 @@ mfxStatus TaskManager::FillTask(
     pTask->input.timeStamp     = CURRENT_TIME_STAMP + m_actualNumber * FRAME_INTERVAL;
     pTask->input.endTimeStamp  = CURRENT_TIME_STAMP + (m_actualNumber + 1) * FRAME_INTERVAL;
     pTask->output.timeStamp    = pTask->input.timeStamp;
+#ifdef MFX_ENABLE_MCTF
+    pTask->outputForApp.timeStamp = pTask->output.timeStamp;
+#endif
 
     pTask->bAdvGfxEnable     = (COMPOSITE & m_extMode) || (FRC_INTERPOLATION & m_extMode) ||
                                                          (VARIANCE_REPORT & m_extMode) || (IS_REFERENCES & m_extMode)? true : false;
@@ -1383,14 +1599,22 @@ mfxStatus TaskManager::FillTask(
         FillTask_Mode30i60p(
             pTask,
             pInSurface,
-            pOutSurface);
+            pOutSurface
+#ifdef MFX_ENABLE_MCTF
+            , pOutSurfaceForApp
+#endif
+        );
     }
     else if(pTask->bAdvGfxEnable)
     {
         FillTask_AdvGfxMode(
             pTask,
             pInSurface,
-            pOutSurface);
+            pOutSurface
+#ifdef MFX_ENABLE_MCTF
+            , pOutSurfaceForApp
+#endif
+        );
         if ((COMPOSITE & m_extMode) && m_resMngr.IsMultiBlt())
             m_taskIndex += pTask->fwdRefCount;
 
@@ -1414,12 +1638,82 @@ mfxStatus TaskManager::FillTask(
     sts = m_core->IncreaseReference( &(pTask->output.pSurf->Data) );
     MFX_CHECK_STS(sts);
 
+#ifdef MFX_ENABLE_MCTF
+    // prevent double-lock if the same surface is passed an output & outputForApp
+    if (pTask->output.pSurf != pTask->outputForApp.pSurf && pTask->outputForApp.pSurf)
+    {
+        sts = m_core->IncreaseReference(&(pTask->outputForApp.pSurf->Data));
+        MFX_CHECK_STS(sts);
+    }
+#endif
+
     pTask->SetFree(false);
 
     return MFX_ERR_NONE;
 
 } // mfxStatus TaskManager::FillTask(...)
 
+#ifdef MFX_ENABLE_MCTF
+mfxStatus TaskManager::FillLastTasks(
+    DdiTask* pTask,
+    mfxFrameSurface1 *pOutSurface,
+    mfxFrameSurface1 *pOutSurfaceForApp,
+    mfxExtVppAuxData *aux
+)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    // [0] Set param
+    pTask->input.pSurf = NULL;
+    pTask->input.resIdx = NO_INDEX;
+    pTask->output.pSurf = pOutSurface;
+    pTask->output.resIdx = NO_INDEX;
+    pTask->outputForApp.pSurf = pOutSurfaceForApp;
+    pTask->outputForApp.resIdx = NO_INDEX;
+
+    if (m_resMngr.m_surf[VPP_OUT].size() > 0) // out in system memory
+    {
+#ifdef MFX_ENABLE_MCTF
+        // resIdx is required to only for outputForApp as only this surface
+        // is the actual surface allocated by an App; output might be an internal
+        // buffer; so, lets update resIdx only in outputForApp.
+        pTask->outputForApp.resIdx = FindFreeSurface(m_resMngr.m_surf[VPP_OUT]);
+        if (NO_INDEX == pTask->outputForApp.resIdx) return MFX_WRN_DEVICE_BUSY;
+        m_resMngr.m_surf[VPP_OUT][pTask->outputForApp.resIdx].SetFree(false);
+        if (pTask->outputForApp.pSurf == pTask->output.pSurf)
+            pTask->output.resIdx = pTask->outputForApp.resIdx;
+#else
+        pTask->output.resIdx = FindFreeSurface(m_resMngr.m_surf[VPP_OUT]);
+        if (NO_INDEX == pTask->output.resIdx) return MFX_WRN_DEVICE_BUSY;
+        m_resMngr.m_surf[VPP_OUT][pTask->output.resIdx].SetFree(false);
+#endif
+    }
+
+    pTask->taskIndex = m_taskIndex++;
+    pTask->output.timeStamp = CURRENT_TIME_STAMP + m_actualNumber * FRAME_INTERVAL;
+    pTask->outputForApp.timeStamp = pTask->output.timeStamp;
+    pTask->output.pSurf->Data.TimeStamp = pTask->output.timeStamp;
+    pTask->pAuxData = aux;
+
+    m_actualNumber += 1; // make sense for simple mode only
+
+    sts = m_core->IncreaseReference(&(pTask->output.pSurf->Data));
+    MFX_CHECK_STS(sts);
+
+    // prevent double-lock if the same surface is passed an output & outputForApp
+    if (pTask->output.pSurf != pTask->outputForApp.pSurf && pTask->outputForApp.pSurf)
+    {
+        pTask->outputForApp.pSurf->Data.TimeStamp = pTask->output.pSurf->Data.TimeStamp;
+        pTask->outputForApp.pSurf->Data.FrameOrder = pTask->output.pSurf->Data.FrameOrder;
+
+        sts = m_core->IncreaseReference(&(pTask->outputForApp.pSurf->Data));
+        MFX_CHECK_STS(sts);
+    }
+
+    pTask->SetFree(false);
+    return sts;
+
+} // mfxStatus TaskManager::FillLastTasks(...)
+#endif
 
 void TaskManager::UpdatePTS_Mode30i60p(
     mfxFrameSurface1 *input,
@@ -1561,6 +1855,13 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 ,m_critical_error(MFX_ERR_NONE)
 ,m_ddi(NULL)
 ,m_bMultiView(false)
+
+#ifdef MFX_ENABLE_MCTF
+,m_MctfIsFlushing(false)
+,m_bMctfAllocatedMemory(false)
+,m_pMctfCmDevice(nullptr)
+#endif
+
 #if defined(MFX_VA)
 // cm devices
 ,m_pCmCopy(NULL)
@@ -1585,6 +1886,10 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 
     MemSetZero4mfxExecuteParams(&m_executeParams);
     memset(&m_params, 0, sizeof(mfxVideoParam));
+#ifdef MFX_ENABLE_MCTF
+    memset(&m_MctfMfxAlocResponse, 0, sizeof(m_MctfMfxAlocResponse));
+    m_bMctfAllocatedMemory = false;
+#endif
 } // VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
 
 
@@ -1623,6 +1928,21 @@ mfxStatus VideoVPPHW::GetVideoParams(mfxVideoParam *par) const
             MFX_CHECK_NULL_PTR1(bufDN);
             bufDN->DenoiseFactor = m_executeParams.denoiseFactorOriginal;
         }
+#ifdef MFX_ENABLE_MCTF
+        else if (MFX_EXTBUFF_VPP_MCTF == bufferId)
+        {
+            mfxExtVppMctf *bufMCTF = reinterpret_cast<mfxExtVppMctf *>(par->ExtParam[i]);
+            MFX_CHECK_NULL_PTR1(bufMCTF);
+            bufMCTF->FilterStrength = m_executeParams.MctfFilterStrength;
+#ifdef MFX_ENABLE_MCTF_EXT
+            bufMCTF->BitsPerPixelx100k = m_executeParams.MctfBitsPerPixelx100k;
+            bufMCTF->Deblocking = m_executeParams.MctfDeblocking;
+            bufMCTF->Overlap = m_executeParams.MctfOverlap;
+            bufMCTF->MVPrecision = m_executeParams.MctfMVPrecision;
+            bufMCTF->TemporalMode = m_executeParams.MctfTemporalMode;
+#endif
+        }
+#endif
         else if (MFX_EXTBUFF_VPP_PROCAMP == bufferId)
         {
             mfxExtVPPProcAmp *bufPA = reinterpret_cast<mfxExtVPPProcAmp *>(par->ExtParam[i]);
@@ -1759,7 +2079,7 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     Config config = {0};
     MfxHwVideoProcessing::mfxExecuteParams executeParams;
 
-    sts = CheckIOMode(par, VideoVPPHW::ALL);
+    sts = CheckIOMode(par, ALL);
     MFX_CHECK_STS(sts);
 
     sts = core->CreateVideoProcessing(&params);
@@ -2011,11 +2331,229 @@ mfxStatus  VideoVPPHW::Init(
     }
 
 #endif
+#ifdef MFX_ENABLE_MCTF
+    {
+        if (m_executeParams.bEnableMctf)
+        {
+            m_pMctfCmDevice = m_pCmDevice;
+            if (!m_pMctfCmDevice)
+            {
+                m_pMctfCmDevice = QueryCoreInterface<CmDevice>(m_pCore, MFXICORECM_GUID);
+                MFX_CHECK(m_pMctfCmDevice, MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
 
+            // create "Default" MCTF settings.
+            IntMctfParams MctfConfig;
+            CMC::QueryDefaultParams(&MctfConfig);
+
+            // create default MCTF control
+            mfxExtVppMctf MctfAPIDefault;
+            CMC::QueryDefaultParams(&MctfAPIDefault);
+
+            // control possibly passed
+            mfxExtVppMctf* MctfAPIControl = NULL;
+            GetFilterParam(par, MFX_EXTBUFF_VPP_MCTF, reinterpret_cast<mfxExtBuffer**>(&MctfAPIControl));
+
+            if (m_pMCTFilter)
+            {
+                m_pMCTFilter->MCTF_CLOSE();
+                m_pMCTFilter.reset();
+            }
+
+            MctfAPIControl = MctfAPIControl ? MctfAPIControl : &MctfAPIDefault;
+            CMC::FillParamControl(&MctfConfig, MctfAPIControl);
+
+            m_pMCTFilter = std::make_shared<CMC>();
+            if (m_pMCTFilter)
+                sts = InitMCTF(par->vpp.Out, MctfConfig);
+            MFX_CHECK_STS(sts);
+        }
+    }
+#endif
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 
 } // mfxStatus VideoVPPHW::Init(mfxVideoParam *par, mfxU32 *tabUsedFiltersID, mfxU32 numOfFilters)
 
+#ifdef MFX_ENABLE_MCTF
+mfxStatus VideoVPPHW::InitMCTF(const mfxFrameInfo& info, const IntMctfParams& MctfConfig)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    if (m_pMCTFilter)
+    {
+        sts = m_pMCTFilter->MCTF_INIT(m_pCore, m_pMctfCmDevice, info, &MctfConfig);
+        MFX_CHECK_STS(sts);
+        mfxU32 MctfQueueDepth = m_pMCTFilter->MCTF_GetQueueDepth();
+        // now allocation of buffers & passing it into MCTF
+
+        mfxFrameAllocRequest request;
+        memset(&request, 0, sizeof(request));
+        request.Info = info;
+        request.Info.FourCC = MFX_FOURCC_NV12;
+
+        request.Type = MFX_MEMTYPE_FROM_VPPOUT | MFX_MEMTYPE_DXVA2_PROCESSOR_TARGET;
+        request.Type |= MFX_MEMTYPE_INTERNAL_FRAME;
+/*
+// MCTF buffers are not shared; so its not needed to set SHARED_RESOURCE status
+        if (m_ioMode == IOMode::D3D_TO_SYS || m_ioMode == IOMode::SYS_TO_SYS)
+        {
+#ifdef MFX_VA_WIN
+            request.Type |= MFX_MEMTYPE_SHARED_RESOURCE;
+#endif
+        }
+*/
+        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+            request.Type |= MFX_MEMTYPE_OPAQUE_FRAME;
+        request.NumFrameMin = request.NumFrameSuggested = (mfxU16)MctfQueueDepth;
+        if (0 == request.NumFrameMin)
+            return MFX_ERR_INVALID_VIDEO_PARAM;
+
+        // create a pool of surfaces & map pointers to a pool of pointers
+        m_pMCTFSurfacePool.resize(MctfQueueDepth);
+        m_MCTFSurfacePool.resize(MctfQueueDepth);
+        for (size_t idx = 0; idx < MctfQueueDepth; ++idx)
+        {
+            m_pMCTFSurfacePool[idx] = &(m_MCTFSurfacePool[idx]);
+            memset(m_pMCTFSurfacePool[idx], 0, sizeof(mfxFrameSurface1));
+        }
+
+        if (m_bMctfAllocatedMemory)
+        {
+            MFX_SAFE_CALL(m_pCore->FreeFrames(&m_MctfMfxAlocResponse));
+            m_bMctfAllocatedMemory = false;
+        }
+
+        memset(&m_MctfMfxAlocResponse, 0, sizeof(m_MctfMfxAlocResponse));
+        // alloc & binds memory for mids
+        m_MctfMids.resize(MctfQueueDepth);
+        m_MctfMfxAlocResponse.mids = &(m_MctfMids[0]);
+
+        if (request.Type & MFX_MEMTYPE_OPAQUE_FRAME)
+            sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, &(m_pMCTFSurfacePool[0]), MctfQueueDepth);
+        else
+        {
+            if (D3D_TO_SYS == m_ioMode || SYS_TO_SYS == m_ioMode) // [OUT == SYSTEM_MEMORY]
+                sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, false);
+            else
+                sts = m_pCore->AllocFrames(&request, &m_MctfMfxAlocResponse, false);
+        }
+
+        if (m_MctfMfxAlocResponse.NumFrameActual != request.NumFrameMin)
+            sts = MFX_ERR_MEMORY_ALLOC;
+
+        MFX_CHECK(MFX_ERR_NONE == sts, MFX_ERR_MEMORY_ALLOC);
+        m_bMctfAllocatedMemory = true;
+
+        // clear & bind video-surfaces to mfxFrameSurface1 structures
+        mfxMemId* pmids = m_MctfMfxAlocResponse.mids;
+        for (auto it = m_pMCTFSurfacePool.begin(); it != m_pMCTFSurfacePool.end(); ++it)
+        {
+            (*it)->Info = request.Info;
+            (*it)->Info.FourCC = MFX_FOURCC_NV12;
+            (*it)->Data.MemType = request.Type;
+            (*it)->Data.MemId = *pmids++;
+            // set to extreamly high value to identify possible incorrectness
+            // with settings
+            (*it)->Data.FrameOrder = 0xFFFFFFFF;
+            (*it)->Data.TimeStamp = 0xFFFFFFFF;
+        }
+        // Set memory, including internal buffers
+        // copy surfaces from m_pMCTFSurfacePool to QfIn in MCTF:
+        m_pMCTFilter->MCTF_SetMemory(m_pMCTFSurfacePool);
+        m_MctfIsFlushing = false;
+        m_taskMngr.SetMctf(m_pMCTFilter);
+
+        m_MCTFtableCmRelations2.clear();
+        m_MCTFtableCmIndex2.clear();
+        return MFX_ERR_NONE;
+    }
+    else
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+}
+
+mfxStatus VideoVPPHW::GetFrameHandle(mfxFrameSurface1* InFrame, mfxHDLPair& handle, bool bInternalAlloc)
+{
+    mfxFrameSurface1 *pSurfI = m_pCore->GetNativeSurface(InFrame);
+    pSurfI = pSurfI ? pSurfI : InFrame;
+    return GetFrameHandle(pSurfI->Data.MemId, handle, bInternalAlloc);
+}
+
+mfxStatus VideoVPPHW::GetFrameHandle(mfxMemId MemId, mfxHDLPair& handle, bool bInternalAlloc)
+{
+    handle.first = handle.second = nullptr;
+    if ((IOMode::D3D_TO_D3D == m_ioMode || IOMode::SYS_TO_D3D == m_ioMode) && !bInternalAlloc)
+    {
+        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+        {
+            MFX_SAFE_CALL(m_pCore->GetFrameHDL(MemId, reinterpret_cast<mfxHDL*>(&handle)));
+        }
+        else
+        {
+            //MFX_SAFE_CALL(m_pCore->GetFrameHDL(MemId, reinterpret_cast<mfxHDL*>(&handle)));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(MemId, reinterpret_cast<mfxHDL*>(&handle), false));
+        }
+    }
+    else
+    {
+        // in case of system memory, for the puproses of minimization of copy ops,
+        // internal d3d surface is passed to; thus we can extract handle directly from MemId
+        // see VideoVPPHW::PostWorkOutSurfaceCopy for further details & examples
+        MFX_SAFE_CALL(m_pCore->GetFrameHDL(MemId, reinterpret_cast<mfxHDL*>(&handle)));
+        //MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(MemId, reinterpret_cast<mfxHDL*>(&handle), false));
+    }
+
+    return MFX_ERR_NONE;
+} // GetFrameHandle(...
+
+mfxStatus VideoVPPHW::ClearCmSurfaces2D()
+{
+    //destroy CmSurfaces2D
+    if (m_pMctfCmDevice) {
+        for (decltype(m_MCTFtableCmRelations2)::iterator item = m_MCTFtableCmRelations2.begin(); item != m_MCTFtableCmRelations2.end(); ++item)
+            m_pMctfCmDevice->DestroySurface(item->second);
+    }
+
+    m_MCTFtableCmRelations2.clear();
+    m_MCTFtableCmIndex2.clear();
+    return MFX_ERR_NONE;
+} // ClearCmSurfaces2D(...
+
+mfxStatus VideoVPPHW::CreateCmSurface2D(void *pSrcHDL, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
+{
+    INT cmSts = 0;
+    std::map<void *, CmSurface2D *>::iterator it;
+    std::map<CmSurface2D *, SurfaceIndex *>::iterator it_idx;
+
+    if (!m_pMctfCmDevice)
+        return MFX_ERR_NOT_INITIALIZED;
+
+    it = m_MCTFtableCmRelations2.find(pSrcHDL);
+    if (m_MCTFtableCmRelations2.end() == it)
+    {
+        //UMC::AutomaticUMCMutex guard(m_guard);
+        {
+            cmSts = m_pMctfCmDevice->CreateSurface2D((AbstractSurfaceHandle *)pSrcHDL, pCmSurface2D);
+            MFX_CHECK((CM_SUCCESS == cmSts), MFX_ERR_DEVICE_FAILED);
+            m_MCTFtableCmRelations2.insert(std::pair<void *, CmSurface2D *>(pSrcHDL, pCmSurface2D));
+        }
+
+        cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
+        MFX_CHECK((CM_SUCCESS == cmSts), MFX_ERR_DEVICE_FAILED);
+        m_MCTFtableCmIndex2.insert(std::pair<CmSurface2D *, SurfaceIndex *>(pCmSurface2D, pCmSrcIndex));
+    }
+    else
+    {
+        pCmSurface2D = it->second;
+        it_idx = m_MCTFtableCmIndex2.find(pCmSurface2D);
+        if (it_idx == m_MCTFtableCmIndex2.end())
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        else
+            pCmSrcIndex = it_idx->second;
+    }
+    return MFX_ERR_NONE;
+} // CreateCmSurface2D(...
+
+
+#endif
 
 
 mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCaps& caps)
@@ -2037,6 +2575,22 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
     }
 
     caps = ddi->GetCaps();
+
+#ifdef MFX_ENABLE_MCTF
+    eMFXHWType  hwType = core->GetHWType();
+    if (hwType != MFX_HW_BDW &&
+        hwType != MFX_HW_SCL &&
+        hwType != MFX_HW_KBL &&
+        hwType != MFX_HW_CNL)
+        caps.uMCTF = 0;
+    else
+    {
+        if (!CpuFeature_SSE41())
+            caps.uMCTF = 0;
+        else
+            caps.uMCTF = 1;
+    }
+#endif
 
     return sts;
 
@@ -2282,6 +2836,43 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
     sts = m_taskMngr.Init(m_pCore, m_config);
     MFX_CHECK_STS(sts);
 
+#ifdef MFX_ENABLE_MCTF
+    {
+        if (m_executeParams.bEnableMctf)
+        {
+            // create "Default" MCTF settings.
+            IntMctfParams MctfConfig;
+            CMC::QueryDefaultParams(&MctfConfig);
+
+            // create default MCTF control
+            mfxExtVppMctf MctfAPIDefault;
+            CMC::QueryDefaultParams(&MctfAPIDefault);
+
+            // control possibly passed
+            mfxExtVppMctf* MctfAPIControl = NULL;
+            GetFilterParam(par, MFX_EXTBUFF_VPP_MCTF, reinterpret_cast<mfxExtBuffer**>(&MctfAPIControl));
+
+            if (m_pMCTFilter)
+            {
+                m_pMCTFilter->MCTF_CLOSE();
+                m_pMCTFilter.reset();
+
+                m_MCTFSurfacePool.clear();
+                m_pMCTFSurfacePool.clear();
+            }
+
+            MctfAPIControl = MctfAPIControl ? MctfAPIControl : &MctfAPIDefault;
+            CMC::FillParamControl(&MctfConfig, MctfAPIControl);
+
+            m_pMCTFilter = std::make_shared<CMC>();
+
+            if (m_pMCTFilter)
+                sts = InitMCTF(par->vpp.Out, MctfConfig);
+            MFX_CHECK_STS(sts);
+        }
+    }
+#endif
+
     return (bIsFilterSkipped) ? MFX_WRN_FILTER_SKIPPED : MFX_ERR_NONE;
 } // mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
 
@@ -2328,6 +2919,28 @@ mfxStatus VideoVPPHW::Close()
         m_pCmQueue = NULL;
         //::DestroyCmDevice(device);
     }
+#endif
+
+#ifdef MFX_ENABLE_MCTF
+    if (m_bMctfAllocatedMemory)
+    {
+        MFX_SAFE_CALL(m_pCore->FreeFrames(&m_MctfMfxAlocResponse));
+        m_bMctfAllocatedMemory = false;
+    };
+
+    if (m_pMCTFilter)
+    {
+        m_pMCTFilter->MCTF_CLOSE();
+        m_pMCTFilter.reset();
+        ClearCmSurfaces2D();
+    }
+    /*
+    if (m_pMctfCmDevice)
+    {
+        ::DestroyCmDevice(m_pMctfCmDevice);
+        m_pMctfCmDevice = nullptr;
+    }
+    */
 #endif
 
     /* Device close semantic is different for multi-view and single view */
@@ -2386,7 +2999,129 @@ mfxStatus VideoVPPHW::VppFrameCheck(
         m_critical_error != MFX_ERR_NONE)
         return m_critical_error;
 
+#ifdef MFX_ENABLE_MCTF
+    sts = MFX_ERR_NONE;
+    mfxFrameSurface1* pWorkOutSurf = output;
+    if (m_pMCTFilter)
+    {
+        // if input != NULL, if MCTF works with > 1 reference, & there are
+        // not enough surfaces accumulated, let use temp surface as an output:
+        if (input && !m_MctfIsFlushing)
+        {
+            MFX_SAFE_CALL(m_pMCTFilter->MCTF_GetEmptySurface(&pWorkOutSurf));
+            if (!pWorkOutSurf) 
+            {
+                guard.Unlock();
+                mfxU32 iters(0);
+                const mfxU32 MAX_ITER = 1000;
+                while (!pWorkOutSurf && ++iters < MAX_ITER)
+                {
+                    vm_time_sleep(1);
+                    MFX_SAFE_CALL(m_pMCTFilter->MCTF_GetEmptySurface(&pWorkOutSurf));
+                }
+                if (MAX_ITER == iters)
+                    return MFX_ERR_NOT_ENOUGH_BUFFER;
+                guard.Lock();
+            }
+
+            // store a pointer to surface inside MCTF
+            m_Surfaces2Unlock.push_back(pWorkOutSurf);
+
+            // "disable" actual output surface for the purposes of filling of ddiTask below
+            // if MCTF works with a delay and its just started (1 or 2 frames depending on a tmeporal MCTF mode
+            if ((TWO_REFERENCES == m_pMCTFilter->MCTF_GetReferenceNumber() && m_taskMngr.GetMCTFSurfacesInQueue() < 1) ||
+                (FOUR_REFERENCES == m_pMCTFilter->MCTF_GetReferenceNumber() && m_taskMngr.GetMCTFSurfacesInQueue() < 2))
+                output = nullptr;
+        };
+
+        if (m_MctfIsFlushing)
+        {
+            // it means that MCTF already finished its work, but application
+            // asks to continue w/o apropriate close.
+            if (input)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            // this is correct path; just return MFX_ERR_MORE_DATA notifying
+            // that MCTF is done and processing is finished.
+            else
+                if (1 == m_taskMngr.GetMCTFSurfacesInQueue())
+                return MFX_ERR_MORE_DATA;
+        }
+        else
+        {
+            // this is the case when its not flushing but input is null; the situation when MCTF is not ready,
+            // but an application already asks it to finalize must be correctly processed.
+            if (!input)
+            {
+                if (!m_taskMngr.GetMCTFSurfacesInQueue())
+                    return MFX_ERR_MORE_DATA;
+                else if ((TWO_REFERENCES == m_pMCTFilter->MCTF_GetReferenceNumber() && m_taskMngr.GetMCTFSurfacesInQueue() <= 1) ||
+                        (FOUR_REFERENCES == m_pMCTFilter->MCTF_GetReferenceNumber() && m_taskMngr.GetMCTFSurfacesInQueue() <= 2))
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+        }
+
+        // AssignTask will also clear bForcedInternalAlloc
+        sts = m_taskMngr.AssignTask(input,pWorkOutSurf, output, aux, pTask, intSts);
+
+        if (MFX_WRN_DEVICE_BUSY != sts) 
+        {
+            if (!pTask)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            else
+                // condittion below means MCTF has substited temp surface instead of output
+                if (pWorkOutSurf != output)
+                    pTask->output.bForcedInternalAlloc = true;
+
+            if (MFX_ERR_MORE_DATA == sts && !input)
+            {
+                    m_MctfIsFlushing = true;
+                // this is a completion phase. so let ask MCTF to return
+                // all surfaces that are in queue (if any) but following the
+                // order supported by the scheduler
+                // in sync/async submission, finalization is async:
+                //switch (auxMctf->TemporalMode)
+                switch (m_pMCTFilter->MCTF_GetReferenceNumber())
+                {
+                case NO_REFERENCES:
+                case ONE_REFERENCE:
+                    ; //nothing as 0-reference or 1-reference does not impose any delay
+                    break;
+                case TWO_REFERENCES:
+                case FOUR_REFERENCES:
+                    if (m_taskMngr.GetMCTFSurfacesInQueue() > 1)
+                    {
+                        m_taskMngr.DecMCTFSurfacesInQueue();
+                        sts = MFX_ERR_NONE;
+                    }
+                    break;
+                default:
+                    sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                }
+            }
+            else
+            {
+                if (m_MctfIsFlushing && sts != MFX_WRN_DEVICE_BUSY)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+                if (MFX_ERR_MORE_DATA == sts)
+                {
+                    // let unlock just locked MCTF surface
+                    if (!m_Surfaces2Unlock.empty())
+                    {
+                        // this is to release a surface inside MCTF pool; correposnds to MCTF_GetEmptySurface in VPPFrameCheck
+                        sts = m_pCore->DecreaseReference(&(m_Surfaces2Unlock.front()->Data));
+                        MFX_CHECK_STS(sts);
+                        m_Surfaces2Unlock.pop_front();
+                    }
+                }
+            }
+        }
+    }
+    else
+        sts = m_taskMngr.AssignTask(input, output, output, aux, pTask, intSts);
+#else
     sts = m_taskMngr.AssignTask(input, output, aux, pTask, intSts);
+#endif
     MFX_CHECK_STS(sts);
 
     if (VPP_SYNC_WORKLOAD == m_workloadMode)
@@ -2451,17 +3186,21 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
     mfxHDLPair out;
     mfxHDLPair hdl;
 
+    if (!output.pSurf)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
     if (D3D_TO_D3D == m_ioMode || SYS_TO_D3D == m_ioMode)
     {
-        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+        if ((m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) || output.bForcedInternalAlloc)
         {
             MFX_SAFE_CALL(m_pCore->GetFrameHDL( output.pSurf->Data.MemId, (mfxHDL *)&hdl) );
             m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;
+
             m_executeParams.targetSurface.bExternal = false;
         }
         else
         {
-            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(output.pSurf->Data.MemId, (mfxHDL *)&hdl,false));
+            MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(output.pSurf->Data.MemId, (mfxHDL *)&hdl, false));
             m_executeParams.targetSurface.memId = output.pSurf->Data.MemId;
 
             m_executeParams.targetSurface.bExternal = true;
@@ -2470,9 +3209,10 @@ mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
     else
     {
         mfxU32 resId = output.resIdx;
+        mfxMemId MemId = output.bForcedInternalAlloc ? output.pSurf->Data.MemId : m_internalVidSurf[VPP_OUT].mids[resId];
 
-        MFX_SAFE_CALL(m_pCore->GetFrameHDL(m_internalVidSurf[VPP_OUT].mids[resId], (mfxHDL *)&hdl));
-        m_executeParams.targetSurface.memId = m_internalVidSurf[VPP_OUT].mids[resId];
+        MFX_SAFE_CALL(m_pCore->GetFrameHDL(MemId, (mfxHDL *)&hdl));
+        m_executeParams.targetSurface.memId = MemId;
 
         m_executeParams.targetSurface.bExternal = false;
     }
@@ -2634,11 +3374,13 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
 
 } // mfxStatus VideoVPPHW::PreWorkInputSurface(...)
 
-
-mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
+mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::PostWorkOutSurface");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::PostWorkOutSurfaceCopy");
     mfxStatus sts = MFX_ERR_NONE;
+
+    if (!output.pSurf)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     // code here to resolve issue in case of sync issue with emcoder in case of system memory
     // [3] Copy sys -> vid
@@ -2646,7 +3388,25 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
     {
         mfxFrameSurface1 d3dSurf;
         d3dSurf.Info = output.pSurf->Info;
-        d3dSurf.Data.MemId = m_internalVidSurf[VPP_OUT].mids[ output.resIdx ];
+        if (output.bForcedInternalAlloc)
+        {
+            // this function is to copy from an internal buffer of system surface to actual memory
+            // if bForcedInternalAlloc is true, it says that memid needs to be taken from memid of a the surface
+            // but it contradicts to the fact that this surface is allocated in system memory;
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+        else
+        {
+            if (NO_INDEX != output.resIdx)
+            {
+                d3dSurf.Data.MemId = m_internalVidSurf[VPP_OUT].mids[output.resIdx];
+            }
+            else
+            {
+                // there is no index. its an error
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+        }
 
 #if defined(MFX_VA)
         if (MFX_MIRRORING_HORIZONTAL == m_executeParams.mirroring && MIRROR_OUTPUT == m_executeParams.mirroringPosition)
@@ -2723,6 +3483,29 @@ mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
         }
 #endif
     }
+    return sts;
+}
+
+mfxStatus VideoVPPHW::PostWorkOutSurface(ExtSurface & output)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::PostWorkOutSurface");
+    mfxStatus sts = MFX_ERR_NONE;
+    if (SYS_TO_SYS == m_ioMode || D3D_TO_SYS == m_ioMode)
+    {
+#ifdef MFX_ENABLE_MCTF
+        if (!m_pMCTFilter)
+#endif
+        {
+             // the reason for this is as follows:
+             // in case of sys output surface, vpp allocates internal surfaces and use them
+             // to submit into driver; then results are copied back to sys surface; in case of MCTF,
+             // we have to pass video surface to MCTF, so to avoid redundant copies back-and-forth,
+             // copy to output surface is moved to QueryFromMctf right after
+             // MCTF is ready to retun surface;
+             sts = PostWorkOutSurfaceCopy(output);
+             MFX_CHECK_STS(sts);
+        }
+    };
 
     // unregister output surface (make sense in case DX9 only)
     sts = (*m_ddi)->Register( &(m_executeParams.targetSurface.hdl), 1, FALSE);
@@ -2991,7 +3774,26 @@ mfxStatus VideoVPPHW::MergeRuntimeParams(const DdiTask *pTask, MfxHwVideoProcess
 mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 {
     mfxStatus sts = MFX_ERR_NONE;
+#ifdef MFX_ENABLE_MCTF
+    if (pTask->outputForApp.pSurf)
+    {
+        if (true == m_config.m_bPassThroughEnable &&
+            false == IsRoiDifferent(pTask->input.pSurf, pTask->outputForApp.pSurf))
+        {
+            sts = CopyPassThrough(pTask->input.pSurf, pTask->outputForApp.pSurf);
+            m_taskMngr.CompleteTask(pTask);
+            MFX_CHECK_STS(sts);
 
+            return MFX_ERR_NONE;
+        }
+    }
+    else
+    {
+        // null output surface is possible IFF MCTF enabled & is used.
+        if (!m_pMCTFilter || !pTask->bMCTF)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+#else
     if (true == m_config.m_bPassThroughEnable &&
         false == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf))
     {
@@ -3001,6 +3803,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
         return MFX_ERR_NONE;
     }
+#endif
 
     mfxU32 i = 0;
     mfxU32 numSamples   = pTask->bkwdRefCount + 1 + pTask->fwdRefCount;
@@ -3167,13 +3970,30 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         }
 
         m_executeParams.pRefSurfaces = &m_executeSurf[0];
-
+#ifdef MFX_ENABLE_MCTF
+        // this is correct that outputForApp is used:
+        // provided that MCTF is not used, and system memory is an output,
+        // PostWorkOutSurfaceCopy will copy from an internal buffer to real
+        // output surface; if MCTF is used, PostWorkOutSurfaceCopy will be 
+        // called but in QueryFromMCTF; for D3D output surface no specific 
+        // processing is need: if MCTF is not used, outputForApp must be
+        // the same as output; if MCTF is used, "copy" to an output surface is done
+        // by MCTF when it makes filtration (no copy, just result of filtering 
+        // is placed in to the output suface)
+        // NB: if MCTF is not used, and system memory is an output surface,
+        // its important ot have bForcedInternalAlloc == false,
+        if (pTask->outputForApp.pSurf)
+            sts = PostWorkOutSurface(pTask->outputForApp);
+#else
         sts = PostWorkOutSurface(pTask->output);
+#endif
         MFX_CHECK_STS(sts);
 
         sts = PostWorkInputSurface(numSamples);
         MFX_CHECK_STS(sts);
 
+        // what should be done if pTask->outputForApp.pSurf == nullptr??
+        //if (pTask->outputForApp.pSurf)
         m_executeParams.targetSurface.memId = pTask->output.pSurf->Data.MemId;
         m_executeParams.statusReportID = pTask->taskIndex;
         return sts;
@@ -3197,8 +4017,23 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         IppiSize roi = {pTask->output.pSurf->Info.Width, pTask->output.pSurf->Info.Height};
         sts = m_pCmCopy->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl.first, m_executeSurf[0].hdl.first, roi, MFX_FOURCC_NV12);
         MFX_CHECK_STS(sts);
-
+#ifdef MFX_ENABLE_MCTF
+        // this is correct that outputForApp is used:
+        // provided that MCTF is not used, and system memory is an output,
+        // PostWorkOutSurfaceCopy will copy from an internal buffer to real
+        // output surface; if MCTF is used, PostWorkOutSurfaceCopy will be 
+        // called but in QueryFromMCTF; for D3D output surface no specific 
+        // processing is need: if MCTF is not used, outputForApp must be
+        // the same as output; if MCTF is used, "copy" to an output surface is done
+        // by MCTF when it makes filtration (no copy, just result of filtering 
+        // is placed in to the output suface)
+        // NB: if MCTF is not used, and system memory is an output surface,
+        // its important ot have bForcedInternalAlloc == false,
+        if (pTask->outputForApp.pSurf)
+            sts = PostWorkOutSurface(pTask->outputForApp);
+#else
         sts = PostWorkOutSurface(pTask->output);
+#endif
         MFX_CHECK_STS(sts);
 
         sts = PostWorkInputSurface(numSamples);
@@ -3481,8 +4316,23 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         //pTask->frameNumber = m_executeParams.frameNumber;
         pTask->bVariance   = true;
     }
-
+#ifdef MFX_ENABLE_MCTF
+    // this is correct that outputForApp is used:
+    // provided that MCTF is not used, and system memory is an output,
+    // PostWorkOutSurfaceCopy will copy from an internal buffer to real
+    // output surface; if MCTF is used, PostWorkOutSurfaceCopy will be 
+    // called but in QueryFromMCTF; for D3D output surface no specific 
+    // processing is need: if MCTF is not used, outputForApp must be
+    // the same as output; if MCTF is used, "copy" to an output surface is done
+    // by MCTF when it makes filtration (no copy, just result of filtering 
+    // is placed in to the output suface)
+    // NB: if MCTF is not used, and system memory is an output surface,
+    // its important ot have bForcedInternalAlloc == false,
+    //if (pTask->outputForApp.pSurf)
+        sts = PostWorkOutSurface(pTask->outputForApp);
+#else
     sts = PostWorkOutSurface(pTask->output);
+#endif
     MFX_CHECK_STS(sts);
 
     sts = PostWorkInputSurface(numSamples);
@@ -3506,6 +4356,14 @@ mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 thr
     threadNumber = threadNumber;
     callNumber = callNumber;
 
+#ifdef MFX_ENABLE_MCTF
+    VideoVPPHW *pHwVpp = (VideoVPPHW *)pState;
+    DdiTask *pTask = (DdiTask*)pParam;
+    bool bMCTFinUse = pTask->bMCTF && pHwVpp->m_pMCTFilter;
+    if (bMCTFinUse)
+        if (!pTask->input.pSurf)
+            return MFX_TASK_DONE;
+#endif
     sts = ((VideoVPPHW *)pState)->SyncTaskSubmission((DdiTask *)pParam);
     MFX_CHECK_STS(sts);
 
@@ -3528,88 +4386,271 @@ mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 thread
 
     mfxU32 currentTaskIdx = pTask->taskIndex;
 
-    if (!pTask->skipQueryStatus && !pHwVpp->m_executeParams.mirroring) {
-        mfxU32 currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
-        while (currSubTaskIdx != NO_INDEX)
-        {
-            sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currSubTaskIdx);
+#ifdef MFX_ENABLE_MCTF
+    bool InputSurfaceIsProcessed = true;
+
+    bool bMCTFinUse = pTask->bMCTF && pHwVpp->m_pMCTFilter;
+    if (bMCTFinUse && !pTask->input.pSurf)
+        InputSurfaceIsProcessed = false;
+
+    if (InputSurfaceIsProcessed)
+    {
+#endif
+        if (!pTask->skipQueryStatus && !pHwVpp->m_executeParams.mirroring) {
+            mfxU32 currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
+            while (currSubTaskIdx != NO_INDEX)
+            {
+                sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currSubTaskIdx);
+                if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
+                {
+                    pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTaskIdx);
+                    currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
+                }
+                else
+                    currSubTaskIdx = NO_INDEX;
+            }
             if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
+                sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
+            if (sts == MFX_ERR_DEVICE_FAILED ||
+                sts == MFX_ERR_GPU_HANG)
             {
-                pHwVpp->m_taskMngr.DeleteSubTask(pTask, currSubTaskIdx);
-                currSubTaskIdx = pHwVpp->m_taskMngr.GetSubTask(pTask);
+                pHwVpp->m_critical_error = sts;
+                pHwVpp->m_taskMngr.CompleteTask(pTask);
             }
-            else
-                currSubTaskIdx = NO_INDEX;
-        }
-        if (sts == MFX_TASK_DONE || sts == MFX_ERR_NONE)
-            sts = (*pHwVpp->m_ddi)->QueryTaskStatus(currentTaskIdx);
-        if (sts == MFX_ERR_DEVICE_FAILED ||
-            sts == MFX_ERR_GPU_HANG)
-        {
-            pHwVpp->m_critical_error = sts;
-            pHwVpp->m_taskMngr.CompleteTask(pTask);
-        }
 
-        MFX_CHECK_STS(sts);
-    }
-
-    //[2] Variance
-    if( pTask->bVariance )
-    {
-        // windows part
-        std::vector<UINT> variance;
-
-        sts = (*pHwVpp->m_ddi)->QueryVariance(
-            pTask->taskIndex,
-            variance);
-        MFX_CHECK_STS(sts);
-
-        if(pTask->pAuxData)
-        {
-            if( MFX_EXTBUFF_VPP_AUXDATA == pTask->pAuxData->Header.BufferId)
-            {
-                pTask->pAuxData->PicStruct = EstimatePicStruct(
-                    &variance[0],
-                    pHwVpp->m_params.vpp.Out.Width,
-                    pHwVpp->m_params.vpp.Out.Height);
-            }
-        }
-    }
-
-#if 0
-    // code moved in Submission() part due to issue with encoder
-    //// [3] Copy sys -> vid
-    if( SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
-    {
-        mfxFrameData d3dSurf = { 0 };
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (output frame)");
-        MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
-        FrameLocker lock(
-            pHwVpp->m_pCore,
-            d3dSurf,
-            pHwVpp->m_internalVidSurf[VPP_OUT].mids[ pTask->output.resIdx ]);
-
-        MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-        MFX_AUTO_TRACE_STOP();
-
-        mfxFrameData sysSurf = pTask->output.pSurf->Data;
-        FrameLocker lock2(pHwVpp->m_pCore, sysSurf, true);
-        MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
-            sts = CopyFrameDataBothFields(pHwVpp->m_pCore, sysSurf, d3dSurf, pTask->output.pSurf->Info);
             MFX_CHECK_STS(sts);
+        }
+
+        //[2] Variance
+        if (pTask->bVariance)
+        {
+            // windows part
+            std::vector<UINT> variance;
+
+            sts = (*pHwVpp->m_ddi)->QueryVariance(
+                pTask->taskIndex,
+                variance);
+            MFX_CHECK_STS(sts);
+
+            if (pTask->pAuxData)
+            {
+                if (MFX_EXTBUFF_VPP_AUXDATA == pTask->pAuxData->Header.BufferId)
+                {
+                    pTask->pAuxData->PicStruct = EstimatePicStruct(
+                        &variance[0],
+                        pHwVpp->m_params.vpp.Out.Width,
+                        pHwVpp->m_params.vpp.Out.Height);
+                }
+            }
+        }
+#ifdef MFX_ENABLE_MCTF
+    }
+
+    if (pTask->bMCTF && pHwVpp->m_pMCTFilter)
+    {
+        guard.Unlock();
+        bool bMctfReadyToReturn(false);
+        sts = SubmitToMctf(pState, pParam, &bMctfReadyToReturn);
+        MFX_CHECK_STS(sts);
+        sts = QueryFromMctf(pState, pParam, bMctfReadyToReturn);
+        MFX_CHECK_STS(sts);
+        guard.Lock();
+
+        // it might be empty if MCTF works with delay and it is finalizing the stream;
+        // in this case no locked internal surfaces
+        if (!pHwVpp->m_Surfaces2Unlock.empty())
+        {
+            // this is to release a surface inside MCTF pool; correposnds to MCTF_GetEmptySurface in VPPFrameCheck
+            sts = pHwVpp->m_pCore->DecreaseReference(&(pHwVpp->m_Surfaces2Unlock.front()->Data));
+            MFX_CHECK_STS(sts);
+            pHwVpp->m_Surfaces2Unlock.pop_front();
         }
     }
 #endif
+#if 0
+        // code moved in Submission() part due to issue with encoder
+        //// [3] Copy sys -> vid
+        if (SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
+        {
+            mfxFrameData d3dSurf = { 0 };
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Surface lock (output frame)");
+            MFX_LTRACE_S(MFX_TRACE_LEVEL_INTERNAL, pTask->frameNumber);
+            FrameLocker lock(
+                pHwVpp->m_pCore,
+                d3dSurf,
+                pHwVpp->m_internalVidSurf[VPP_OUT].mids[pTask->output.resIdx]);
 
-    // [4] Complete task
-    sts = pHwVpp->m_taskMngr.CompleteTask(pTask);
+            MFX_CHECK(d3dSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+            MFX_AUTO_TRACE_STOP();
 
+            mfxFrameData sysSurf = pTask->output.pSurf->Data;
+            FrameLocker lock2(pHwVpp->m_pCore, sysSurf, true);
+            MFX_CHECK(sysSurf.Y != 0, MFX_ERR_LOCK_MEMORY);
+
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "HW_VPP: Copy output (d3d->sys)");
+                sts = CopyFrameDataBothFields(pHwVpp->m_pCore, sysSurf, d3dSurf, pTask->output.pSurf->Info);
+                MFX_CHECK_STS(sts);
+            }
+        }
+#endif
+        // [4] Complete task
+        sts = pHwVpp->m_taskMngr.CompleteTask(pTask);
     return sts;
 
 } // mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
+
+
+#ifdef MFX_ENABLE_MCTF
+mfxStatus VideoVPPHW::SubmitToMctf(void *pState, void *pParam, bool* bMctfReadyToReturn)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::SubmitToMctf");
+    mfxStatus sts = MFX_ERR_NONE;
+
+    VideoVPPHW *pHwVpp = (VideoVPPHW *)pState;
+    DdiTask *pTask = (DdiTask*)pParam;
+
+    if (pTask->bMCTF && pHwVpp->m_pMCTFilter)
+    {
+        *bMctfReadyToReturn = true;
+        if (pTask->input.pSurf)
+        {
+           // actual output surface in case of system memory has internal buffering
+           // which should substitute outputsurface itself for the purposes of
+           // forceing MCTF to filter directly into output
+
+            mfxFrameSurface1 d3dSurf;
+            bool bOutForcedInternalAlloc = pTask->outputForApp.bForcedInternalAlloc;
+            memset(&d3dSurf, 0, sizeof(mfxFrameSurface1));
+            mfxFrameSurface1* pd3dSurf = pTask->outputForApp.pSurf ? &d3dSurf : nullptr;
+            if (pd3dSurf)
+            {
+                d3dSurf.Info = pTask->outputForApp.pSurf->Info;
+                d3dSurf.Data.MemId = pTask->outputForApp.pSurf->Data.MemId;
+
+                // if an output surface in system memory, MCTF will put results into
+                // an internal buffer associated with system memory that then will be
+               // copied to actual surface.
+                if (SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
+                {
+                    if (NO_INDEX != pTask->outputForApp.resIdx)
+                    {
+                        d3dSurf.Data.MemId = pHwVpp->m_internalVidSurf[VPP_OUT].mids[pTask->outputForApp.resIdx];
+                    }
+                    else
+                    {
+                        // if its here, it means there is no internal buffer can be identified for an output surface;
+                        // cannot proceed. exit.
+                        return MFX_ERR_UNDEFINED_BEHAVIOR;
+                    }
+                }
+            }
+            
+            mfxFrameSurface1* pSurf = pTask->output.pSurf;
+            bool bInForcedInternalAlloc = pTask->output.bForcedInternalAlloc;
+            // take control out of input surface:
+            IntMctfParams* MctfData = pTask->MctfControlActive ? &pTask->MctfData : nullptr;
+            // that's Ok to as local variable d3dSurf as it will not be copied; only actual handle will
+            // be taken & CmSurface2D will be created (or found from the pool)
+
+
+  
+            mfxHDLPair handle;
+            CmSurface2D* pSurfCm(nullptr), *pSurfOutCm(nullptr);
+            SurfaceIndex* pSurfIdxCm(nullptr), *pSurfOutIdxCm(nullptr);
+
+            MFX_SAFE_CALL(pHwVpp->GetFrameHandle(pSurf, handle, bInForcedInternalAlloc));
+            MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurfCm, pSurfIdxCm));
+
+            if (pd3dSurf) 
+            {
+                MFX_SAFE_CALL(pHwVpp->GetFrameHandle(pd3dSurf, handle, bOutForcedInternalAlloc));
+                MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurfOutCm, pSurfOutIdxCm));
+            }
+            
+            //sts = pHwVpp->m_pMCTFilter->MCTF_PUT_FRAME(MctfData, pSurf, pd3dSurf, bInForcedInternalAlloc, bOutForcedInternalAlloc);
+
+            sts = pHwVpp->m_pMCTFilter->MCTF_PUT_FRAME(MctfData, pSurfCm, pSurfOutCm);
+
+            // --- access to the internal MCTF queue to increase buffer_count: no need to protect by mutex, as 1 writer & 1 reader
+            MFX_SAFE_CALL(pHwVpp->m_pMCTFilter->MCTF_UpdateBufferCount());
+            
+            // filtering itself
+            MFX_SAFE_CALL(pHwVpp->m_pMCTFilter->MCTF_DO_FILTERING());
+
+            *bMctfReadyToReturn = pHwVpp->m_pMCTFilter->MCTF_ReadyToOutut();
+        }
+    }
+    else
+        if (pTask->bMCTF && !pHwVpp->m_pMCTFilter)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    return sts;
+}
+mfxStatus VideoVPPHW::QueryFromMctf(void *pState, void *pParam, bool bMctfReadyToReturn, bool bEoF)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::SubmitToMctf");
+    mfxStatus sts = MFX_ERR_NONE;
+
+    VideoVPPHW *pHwVpp = (VideoVPPHW *)pState;
+    DdiTask *pTask = (DdiTask*)pParam;
+
+    if (!pTask)
+        return sts;
+
+    if (bMctfReadyToReturn)
+    {
+
+        mfxFrameSurface1 d3dSurf;
+        memset(&d3dSurf, 0, sizeof(mfxFrameSurface1));
+        mfxFrameSurface1* pSurf = pTask->outputForApp.pSurf;
+
+        bool bForcedInternalAlloc = pTask->outputForApp.bForcedInternalAlloc;
+        if (SYS_TO_SYS == pHwVpp->m_ioMode || D3D_TO_SYS == pHwVpp->m_ioMode)
+        {
+            //bForcedInternalAlloc = true; // this is true in case of *_TO_SYS ioMode
+            // borrowed from  postworkoutput
+
+            if (NO_INDEX != pTask->outputForApp.resIdx) 
+            {
+                d3dSurf.Info = pTask->outputForApp.pSurf->Info;
+                d3dSurf.Data.MemId = pHwVpp->m_internalVidSurf[VPP_OUT].mids[pTask->outputForApp.resIdx];
+            }
+            else
+            {
+                // if its here, it means there is no internal buffer allocated for a system surface;
+                // cannot proceed.
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+            pSurf = &d3dSurf;
+        }
+
+        mfxHDLPair handle;
+        CmSurface2D* pSurfCm(nullptr);
+        SurfaceIndex* pSurfIdxCm(nullptr);
+
+        MFX_SAFE_CALL(pHwVpp->GetFrameHandle(pSurf, handle, bForcedInternalAlloc));
+        MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurfCm, pSurfIdxCm));
+
+        pHwVpp->m_pMCTFilter->MCTF_GET_FRAME(pSurfCm);
+        pHwVpp->m_pMCTFilter->MCTF_TrackTimeStamp(pSurf);
+
+        //pHwVpp->m_pMCTFilter->MCTF_GET_FRAME(pSurf, bForcedInternalAlloc);
+        // for an outputForApp surface bForcedInternalAlloc must be false at all times;
+        if (pTask->outputForApp.bForcedInternalAlloc)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        // this function will copy from m_internalVidSurf to system memory only in case of SYS output
+        sts = pHwVpp->PostWorkOutSurfaceCopy(pTask->outputForApp);
+        MFX_CHECK_STS(sts);
+    }
+
+    /*
+    if (MFX_ERR_NONE != sts)
+        wprintf(L"VideoVPPHW::QueryFromMctf: MFX_ERR_NONE != sts\n");
+    */
+    return sts;
+}
+#endif
 
 mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable)
 {
@@ -3902,6 +4943,48 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
             }
         }
     }
+
+#ifdef MFX_ENABLE_MCTF
+    {
+        std::vector<mfxU32> pipelineList;
+        mfxStatus internalSts = GetPipelineList(par, pipelineList, true);
+
+        mfxU32  len = (mfxU32)pipelineList.size();
+        mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
+
+        MFX_CHECK_STS(internalSts);
+        // mctf cannot work with CC others than NV12; also interlace is not supported
+        if (par->vpp.Out.FourCC != MFX_FOURCC_NV12 || par->vpp.Out.PicStruct != MFX_PICSTRUCT_PROGRESSIVE)
+        {
+            if (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_MCTF))
+            {
+                sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
+            }
+        }
+
+        if ((par->vpp.Out.FrameRateExtN * par->vpp.In.FrameRateExtD != par->vpp.Out.FrameRateExtD * par->vpp.In.FrameRateExtN) ||
+            IsFilterFound(pList, len, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION) || IsFilterFound(pList, len, MFX_EXTBUFF_VPP_COMPOSITE))
+        {
+            if (IsFilterFound(pList, len, MFX_EXTBUFF_VPP_MCTF))
+            {
+                bool bHasFrameDelay(true);
+#ifdef MFX_ENABLE_MCTF_EXT
+                // mctf cannot work properly with FRC if 1 or 2 frame-delay mode is enabeled
+                // if no MctfBuffer in ExtParam, it means MCTF is enabled via DoUse list
+                mfxExtVppMctf * pMctfBuf = reinterpret_cast<mfxExtVppMctf *>(GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VPP_MCTF));
+                if (pMctfBuf)
+                {
+                    if (MFX_MCTF_TEMPORAL_MODE_SPATIAL == pMctfBuf->TemporalMode ||
+                        MFX_MCTF_TEMPORAL_MODE_1REF == pMctfBuf->TemporalMode)
+                        bHasFrameDelay = false;
+                }
+#endif
+                if (bHasFrameDelay)
+                    sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
+            }
+        }
+    }
+#endif
 
     return sts;
 } // mfxStatus VideoVPPHW::ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, bool bCorrectionEnable = false)
@@ -4955,6 +6038,71 @@ mfxStatus ConfigureExecuteParams(
                 break;
             }
 
+#ifdef MFX_ENABLE_MCTF
+            case MFX_EXTBUFF_VPP_MCTF:
+            {
+                executeParams.bEnableMctf = true;
+                // need to analyze uMCTF?
+                mfxU16 MCTF_requiredFrames_In(1), MCTF_requiredFrames_Out(1);
+                for (mfxU32 i = 0; i < videoParam.NumExtParam; i++)
+                {
+                    if (videoParam.ExtParam[i]->BufferId == MFX_EXTBUFF_VPP_MCTF)
+                    {
+                        mfxExtVppMctf *extMCTF = (mfxExtVppMctf*)videoParam.ExtParam[i];
+                        //  if number of min requred frames for MCTF is 2, but async-depth == 1, 
+                        // should we increase number of input / output surfaces to prevent hangs?
+                        executeParams.MctfFilterStrength = extMCTF->FilterStrength;
+                        //switch below must work in case MFX_ENABLE_MCTF_EXT is not defined;
+                        // thus constants w/o MFX_ prefix are used
+#ifdef MFX_ENABLE_MCTF_EXT
+                        executeParams.MctfOverlap = extMCTF->Overlap;
+                        executeParams.MctfBitsPerPixelx100k = extMCTF->BitsPerPixelx100k;
+                        executeParams.MctfDeblocking = extMCTF->Deblocking;
+                        executeParams.MctfTemporalMode = extMCTF->TemporalMode;
+                        executeParams.MctfMVPrecision = extMCTF->MVPrecision;
+
+                        mfxU16 TemporalMode = extMCTF->TemporalMode;
+                        if (MCTF_TEMPORAL_MODE_UNKNOWN == TemporalMode)
+                            TemporalMode = CMC::DEFAULT_REFS;
+                        switch (TemporalMode)
+#else
+                        switch (CMC::DEFAULT_REFS)
+#endif
+                        {
+                        case MCTF_TEMPORAL_MODE_SPATIAL:
+                        case MCTF_TEMPORAL_MODE_1REF:
+                        {
+                            MCTF_requiredFrames_In = 1;
+                            MCTF_requiredFrames_Out = 1;
+                            break;
+                        }
+                        case MCTF_TEMPORAL_MODE_2REF:
+                        {
+                            MCTF_requiredFrames_In = 2;
+                            MCTF_requiredFrames_Out = 2;
+                            break;
+                        }
+
+                        case MCTF_TEMPORAL_MODE_4REF:
+                        {
+                            MCTF_requiredFrames_In = 3;
+                            MCTF_requiredFrames_Out = 3;
+                            break;
+                        }
+                        default:
+                            return MFX_ERR_UNDEFINED_BEHAVIOR;
+                            break;
+
+                        }
+                        config.m_surfCount[VPP_IN] = IPP_MAX(MCTF_requiredFrames_In, config.m_surfCount[VPP_IN]);
+                        config.m_surfCount[VPP_OUT] = IPP_MAX(MCTF_requiredFrames_Out, config.m_surfCount[VPP_OUT]);
+                        break;
+                    }
+                }
+                break;
+            }
+#endif
+
             default:
             {
                 // there is no such capabilities
@@ -5054,6 +6202,12 @@ mfxStatus ConfigureExecuteParams(
                     executeParams.VideoSignalInfoOut.enabled        = false;
 
                 }
+#ifdef MFX_ENABLE_MCTF
+                else if (MFX_EXTBUFF_VPP_MCTF == bufferId)
+                {
+                    executeParams.bEnableMctf = false;
+                }
+#endif
                 else
                 {
                     // filter cannot be disabled

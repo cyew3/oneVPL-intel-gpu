@@ -166,21 +166,6 @@
     <ClInclude Include="..\shared\include\mfxvideopro.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h">
-      <Filter>MFX API</Filter>
-    </ClInclude>
     <ClInclude Include="scheduler\include\mfx_scheduler_core.h">
       <Filter>scheduler</Filter>
     </ClInclude>
@@ -192,6 +177,21 @@
     </ClInclude>
     <ClInclude Include="scheduler\include\mfx_scheduler_core_thread.h">
       <Filter>scheduler</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxdefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxplugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxstructures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo++.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSDK_API_ROOT)\include\mfxvideo.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

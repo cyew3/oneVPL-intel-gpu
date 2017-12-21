@@ -75,6 +75,26 @@
     <Import Project="$(ProjectName).props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>genx\src;genx\include;include;$(MSDK_STUDIO_ROOT)\mfx_lib\MCTF-Package\MCTF\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>genx\src;genx\include;include;$(MSDK_STUDIO_ROOT)\mfx_lib\MCTF-Package\MCTF\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\mfx_lib\vpp\include;$(MSDK_STUDIO_ROOT)\mfx_lib\MCTF-Package\MCTF\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>genx\src;genx\include;include;$(MSDK_STUDIO_ROOT)\mfx_lib\MCTF-Package\MCTF\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="genx\include\genx_bdw_camerapipe_isa.h" />
     <ClInclude Include="genx\include\genx_cnl_camerapipe_isa.h" />

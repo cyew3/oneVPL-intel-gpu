@@ -21,6 +21,7 @@
 #include "libmfx_core.h"
 #include "mfx_platform_headers.h"
 
+
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
 #elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
@@ -266,6 +267,9 @@ namespace MfxHwVideoProcessing
         mfxU32 uSimpleDI;
         mfxU32 uInverseTC;
         mfxU32 uDenoiseFilter;
+#ifdef MFX_ENABLE_MCTF
+        mfxU32 uMCTF;
+#endif
         mfxU32 uDetailFilter;
         mfxU32 uProcampFilter;
         mfxU32 uSceneChangeDetection;
@@ -304,6 +308,9 @@ namespace MfxHwVideoProcessing
             , uSimpleDI(0)
             , uInverseTC(0)
             , uDenoiseFilter(0)
+#ifdef MFX_ENABLE_MCTF
+            , uMCTF(0)
+#endif
             , uDetailFilter(0)
             , uProcampFilter(0)
             , uSceneChangeDetection(0)
@@ -432,6 +439,17 @@ namespace MfxHwVideoProcessing
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
                ,gpuHangTrigger(false)
 #endif
+#ifdef MFX_ENABLE_MCTF
+               , bEnableMctf(false)
+               , MctfFilterStrength(0)
+#ifdef MFX_ENABLE_MCTF_EXT
+               , MctfOverlap(MFX_CODINGOPTION_OFF)
+               , MctfBitsPerPixelx100k(12*100000)
+               , MctfDeblocking (MFX_CODINGOPTION_OFF)
+               , MctfTemporalMode(MFX_MCTF_TEMPORAL_MODE_2REF)
+               , MctfMVPrecision(MFX_MVPRECISION_INTEGER)
+#endif
+#endif
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -484,6 +502,9 @@ namespace MfxHwVideoProcessing
                     bDeinterlace30i60p != false
 #if (MFX_VERSION >= 1025)
                     || chromaSiting != MFX_CHROMA_SITING_UNKNOWN
+#endif
+#ifdef MFX_ENABLE_MCTF
+                    || bEnableMctf != false
 #endif
                 )
                     return false;
@@ -592,6 +613,18 @@ namespace MfxHwVideoProcessing
 
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         bool       gpuHangTrigger;
+#endif
+
+#ifdef MFX_ENABLE_MCTF
+        bool         bEnableMctf;
+        mfxU16       MctfFilterStrength;
+#ifdef MFX_ENABLE_MCTF_EXT
+        mfxU16       MctfOverlap;
+        mfxU32       MctfBitsPerPixelx100k;
+        mfxU16       MctfDeblocking;
+        mfxU16       MctfTemporalMode;
+        mfxU16       MctfMVPrecision;
+#endif
 #endif
     };
 

@@ -75,6 +75,26 @@
     <Import Project="$(ProjectName).props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\mfx_lib\genx\copy_kernels\src\genx_icllp_copy_isa.cpp" />
     <ClCompile Include="..\mfx_lib\genx\copy_kernels\src\genx_skl_copy_isa.cpp" />

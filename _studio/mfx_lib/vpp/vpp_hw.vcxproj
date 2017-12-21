@@ -148,7 +148,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'" />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -156,10 +156,14 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Genx_MCTF_d.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;_ATL_NO_WIN_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -167,10 +171,14 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Genx_MCTF_d.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -179,10 +187,14 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Genx_MCTF.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\cmrt_cross_platform\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\ia32\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -191,13 +203,17 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Genx_MCTF.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -205,13 +221,17 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Genx_MCTF_d.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_THM|x64'">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;_DEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -219,13 +239,17 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Genx_MCTF_d.lib</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -234,13 +258,17 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalDependencies>Genx_MCTF.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_THM|x64'">
     <Midl>
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\shared\include;..\genx\scd;..\cmut;$(MEDIASDK_ROOT)/CMRT/runtime/include;$(MEDIASDK_ROOT)/CMRT/compiler/include/cm;..\genx\h264_encode\include;..\..\mfx_lib\genx\field_copy\src;..\..\mfx_lib\genx\copy_kernels\include;..\cmrt_cross_platform\include;include;..\shared\include;$(MSDK_API_ROOT)\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\em64t\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\ipp\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;$(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;$(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;\genx\mctf\include;$(MSDK_STUDIO_ROOT)\shared\asc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN64;NDEBUG;_LIB;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -249,6 +277,10 @@
     <Bscmake>
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
+    <Lib>
+      <AdditionalDependencies>Genx_MCTF.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OutDir)</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\shared\src\mfx_scd.cpp" />

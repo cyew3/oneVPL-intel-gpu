@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 1985-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 1985-2018 Intel Corporation. All Rights Reserved.
 //
 
 
@@ -128,6 +128,14 @@ struct ID3D11Device;
 #include <iostream>
 
 typedef int BOOL;
+
+#ifndef FALSE
+#define FALSE     0
+#endif
+#ifndef TRUE
+#define TRUE      1
+#endif
+
 typedef char byte;
 typedef unsigned char BYTE;
 typedef unsigned int UINT32;
@@ -1880,6 +1888,26 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 #define CM_MAX_THREADSPACE_HEIGHT       511
 #define CM_MAX_THREADSPACE_WIDTH_FOR_MW        511
 #define CM_MAX_THREADSPACE_HEIGHT_FOR_MW       511
+
+
+#ifndef CM2R
+typedef enum _GPU_PLATFORM {
+    PLATFORM_INTEL_UNKNOWN = 0,
+    PLATFORM_INTEL_SNB = 1,   //Sandy Bridge
+    PLATFORM_INTEL_IVB = 2,   //Ivy Bridge
+    PLATFORM_INTEL_HSW = 3,   //Haswell
+    PLATFORM_INTEL_BDW = 4,   //Broadwell
+    PLATFORM_INTEL_VLV = 5,   //ValleyView
+    PLATFORM_INTEL_CHV = 6,   //CherryView
+    PLATFORM_INTEL_SKL = 7,   //SKL
+    PLATFORM_INTEL_APL = 8,   //Apollolake
+    PLATFORM_INTEL_CNL = 9,   //CNL
+    PLATFORM_INTEL_ICL = 10,  //Icelake
+    PLATFORM_INTEL_KBL = 11,  //Kabylake
+    PLATFORM_INTEL_GLV = 12,  //Glenview
+} GPU_PLATFORM;
+#endif
+
 
 #endif
 

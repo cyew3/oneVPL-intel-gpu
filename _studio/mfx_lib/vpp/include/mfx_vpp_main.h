@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
@@ -108,6 +108,8 @@ private:
                 nativeSurface->Data.FrameOrder = surface->Data.FrameOrder;
                 nativeSurface->Data.TimeStamp = surface->Data.TimeStamp;
                 nativeSurface->Info = surface->Info;
+                nativeSurface->Data.ExtParam = surface->Data.ExtParam;
+                nativeSurface->Data.NumExtParam = surface->Data.NumExtParam;
             }
 
             return nativeSurface;

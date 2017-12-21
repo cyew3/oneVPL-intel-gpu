@@ -105,6 +105,9 @@ include_directories( ${MSDK_LIB_ROOT}/vpp/include )
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/color_space_converter/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/scene_analyzer/include/ )
+#=======MCTF
+include_directories( ${MSDK_LIB_ROOT}/mctf_package/mctf/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/asc/include )
 
 list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_vpp.cpp )
 list( APPEND sources ${MSDK_LIB_ROOT}/vpp/src/mfx_vpp_utils.cpp )
@@ -149,6 +152,9 @@ endforeach()
     pthread
     dl
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+#====MCTF
+    asc
+    mctf
   )
 
 set( defs "-DAS_CAMERA_PLUGIN -DAS_VPP_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${CAMERA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${CAMERA_DESCRIPTION}\"\\\" ${camera_version_defs}" )

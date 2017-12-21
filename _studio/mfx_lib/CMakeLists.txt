@@ -9,6 +9,7 @@ list( APPEND mdirs
   decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
   decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
   audio_decode/aac audio_decode/mp3 audio_encode/aac genx/copy_kernels
+  mctf_package/mctf
 )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/fei/h264_common )
@@ -137,6 +138,7 @@ foreach( variant
     pak
     mfx_common_${variant}
     asc
+    mctf
     vpp_${variant}
     h264_common
     h264_preenc
@@ -299,6 +301,7 @@ foreach( variant sw )
     pak
     decode_${variant}
     asc
+    mctf
     vpp_${variant}
     cmrt_cross_platform_hw
     genx_h264_encode_embeded
