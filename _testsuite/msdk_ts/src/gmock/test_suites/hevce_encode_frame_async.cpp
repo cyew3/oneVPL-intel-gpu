@@ -343,7 +343,20 @@ namespace hevce_encode_frame_async
                 m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice + 1;
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             } else if (tc.type == NSLICE_LT_MAX) {
-                m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice - 1;
+                /*
+                In case of test type = NSLICE_LT_MAX, value for NumSlices was calculated like (maxSlices - 1),
+                but it is incorrect for VDEnc (SliceStructure = 2), because for this encoder mode we can specify for NumSlice
+                only those values, which are composed of any number of rows, but all must have the same size, except last one, which can be
+                smaller or equal to previous slices. For example,if maxSlices = 8 (resolution is 720x480), we cannot specify NumSlice = 7 
+                to check test case NSLICE_LT_MAX. The most closed correct value, that is less than max value, will be 8/2 = 4. 
+                For odd values (i.e. maxSlices = 5) correct value for NumSlice will be the result of a similar division, but with rounding(5/2 ~= 3). 
+                Thus, it is most convenient to use CEIL_DIV.
+                */
+                if (caps.SliceStructure == 2 || (m_pPar->mfx.LowPower & MFX_CODINGOPTION_ON)) {
+                    m_pPar->mfx.NumSlice = CEIL_DIV(m_pParOut->mfx.NumSlice, 2);
+                } else {
+                    m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice - 1;
+                }
             } else if (tc.type == NSLICE_EQ_MAX) {
                 m_pPar->mfx.NumSlice = m_pParOut->mfx.NumSlice;
             }
