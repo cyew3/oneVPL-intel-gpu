@@ -26,11 +26,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #endif
 
 #ifndef MSDK_MINOR
-#define MSDK_MINOR 1
+#define MSDK_MINOR 2
 #endif
 
 #ifndef MSDK_RELEASE
-#define MSDK_TARGETAPIMINOR 24
+#define MSDK_TARGETAPIMINOR 25
 #endif
 
 #ifndef MSDK_BUILD
