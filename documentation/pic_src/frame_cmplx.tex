@@ -1,0 +1,17 @@
+\documentclass[12pt,fleqn,landscape]{article}
+\usepackage{amsmath}
+\usepackage[landscape]{geometry}
+\geometry{
+ papersize={430pt,120pt},
+ margin=0pt,
+ left=-24pt,
+ top=-12pt,
+ bottom=-12pt
+}
+\begin{document}
+\begin{gather*}
+R=\frac{16}{WH}\sum_{k=0}^{\frac{W}{4}-1}\sum_{l=0}^{\frac{H}{4}-1} \left[\frac{\sum_{i=0}^3\sum_{j=0}^3|P[k*4+i][l*4+j]-P[k*4+i-1][l*4+j]|}{16}\right]\\
+C=\frac{16}{WH}\sum_{k=0}^{\frac{W}{4}-1}\sum_{l=0}^{\frac{H}{4}-1} \left[\frac{\sum_{i=0}^3\sum_{j=0}^3|P[k*4+i][l*4+j]-P[k*4+i][l*4+j-1]|}{16}\right]\\
+FrameCmplx=\sqrt{R^2 + C^2}\\
+\end{gather*}
+\end{document}

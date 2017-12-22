@@ -421,7 +421,7 @@ MFXVideoENCODE_Close();
 free_pool_of_frame_surfaces();
 ```
 
-### External Bit Rate Control
+### <a id='External_Bit_Rate_Control'>External Bit Rate Control</a>
 
 The application can make encoder use external BRC instead of native one. In order to do that it should attach to [mfxVideoParam](#mfxVideoParam) structure [mfxExtCodingOption2](#mfxExtCodingOption2) with `ExtBRC = MFX_CODINGOPTION_ON` and callback structure [mfxExtBRC](#mfxExtBRC) during encoder [initialization](#MFXVideoENCODE_Init). Callbacks `Init`, `Reset` and `Close` will be invoked inside [MFXVideoENCODE_Init](#MFXVideoENCODE_Init), [MFXVideoENCODE_Reset](#MFXVideoENCODE_Reset) and [MFXVideoENCODE_Close](#MFXVideoENCODE_Close) correspondingly. Figure 4 illustrates usage of `GetFrameCtrl` and `Update`.
 
@@ -3576,7 +3576,9 @@ typedef struct {
 
     mfxU16      EnableNalUnitType;         /* tri-state option */
 
-    mfxU16      reserved[164];
+    mfxU16      ExtBrcAdaptiveLTR;         /* tri-state option */
+
+    mfxU16      reserved[163];
 
 } mfxExtCodingOption3;
 ```
@@ -3630,6 +3632,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `ScanType` | For MPEG2 specifies transform coefficients scan pattern (see [ScanType](#ScanType) enum).
 `EncodedUnitsInfo` | Turn this option ON to make encoded units info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
 `EnableNalUnitType` | If this option is turned ON, then HEVC encoder uses NAL unit type provided by application in [mfxEncodeCtrl](#mfxEncodeCtrl)**::MfxNalUnitType** field. <br><br>This parameter is valid only during initialization.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
+`ExtBrcAdaptiveLTR` | Turn OFF to prevent Adaptive marking of Long Term Reference Frames when using [ExtBRC](#External_Bit_Rate_Control). When ON and using [ExtBRC](#External_Bit_Rate_Control), encoders will mark, modify, or remove LTR frames based on encoding parameters and content properties.
 
 
 **Change History**
@@ -3657,6 +3660,8 @@ The SDK API 1.23 adds `LowDelayBRC`, `EnableMBForceIntra`, `AdaptiveMaxFrameSize
 The SDK API 1.25 adds `EncodedUnitsInfo` field.
 
 The SDK API 1.25 adds `EnableNalUnitType` field.
+
+The SDK API **TBD** adds `ExtBrcAdaptiveLTR` field.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -6697,7 +6702,10 @@ This function is available since SDK API 1.24.
 
 ```C
 typedef struct {
-    mfxU32 reserved[25];
+    mfxU32 reserved[23];
+    mfxU16 SceneChange;
+    mfxU16 LongTerm;
+    mfxU32 FrameCmplx;
     mfxU32 EncodedOrder;
     mfxU32 DisplayOrder;
     mfxU32 CodedFrameSize;
@@ -6717,6 +6725,9 @@ Structure describes frame parameters required for external BRC functions.
 
 | | |
 --- | ---
+`SceneChange`             | Frame belongs to a new scene if non zero.
+`LongTerm`                | Frame is a Long Term Reference frame if non zero.
+`FrameCmplx`              | Frame spatial complexity if non zero. Zero if complexity is not available.<br>![FrameCmplx](./pic/frame_cmplx.svg)
 `EncodedOrder`            | The frame number in a sequence of reordered frames starting from encoder [Init](#MFXVideoENCODE_Init)
 `DisplayOrder`            | The frame number in a sequence of frames in display order starting from last IDR
 `CodedFrameSize`          | Size of the frame in bytes after encoding
@@ -6728,6 +6739,8 @@ Structure describes frame parameters required for external BRC functions.
 **Change History**
 
 This structure is available since SDK API 1.24.
+
+SDK API **TBD** adds `SceneChange`, `LongTerm` and `FrameCmplx`.
 
 ## <a id='mfxBRCFrameCtrl'>mfxBRCFrameCtrl</a>
 
