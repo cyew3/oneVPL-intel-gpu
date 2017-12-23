@@ -1801,6 +1801,8 @@ ASC_API void ASC::Close() {
     if (kernel_b)  device->DestroyKernel(kernel_b);
     if (kernel_cp) device->DestroyKernel(kernel_cp);
     if (program)   device->DestroyProgram(program);
+    if (threadSpace)   device->DestroyThreadSpace(threadSpace);
+    if (threadSpaceCp) device->DestroyThreadSpace(threadSpaceCp);
     if (Query_ASCCmDevice())
         scdCore->FreeFrames(&m_scdmfxAlocResponse);
 }
