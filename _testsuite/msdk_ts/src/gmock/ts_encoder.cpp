@@ -111,7 +111,7 @@ void SkipDecision(mfxVideoParam& par, eEncoderFunction function)
     if (function != QUERYIOSURF && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
     {
         mfxExtCodingOption3* CO3 = GetExtBufferPtr(par);
-        if (CO3->GPB == MFX_CODINGOPTION_OFF)
+        if (CO3 && CO3->GPB == MFX_CODINGOPTION_OFF)
         {
             //CodingOption3.GPB == OFF is not supported on Windows
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
