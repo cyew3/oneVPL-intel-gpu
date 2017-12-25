@@ -26,7 +26,7 @@ namespace hevce_frame_qp
         } set_par[MAX_NPARS];
     };
 
-    class TestSuite : tsVideoEncoder, tsParserHEVCAU, tsSurfaceProcessor, tsBitstreamProcessor
+    class TestSuite : tsVideoEncoder, tsParserHEVC2, tsSurfaceProcessor, tsBitstreamProcessor
     {
     public:
         static const unsigned int n_cases;
@@ -68,6 +68,7 @@ namespace hevce_frame_qp
             //if (frames < framesToEncode)
             {
                 m_pCtrl->QP = 1 + rand() % 50;
+                m_pCtrl->QP += (m_par.mfx.FrameInfo.BitDepthLuma - 8) * 6;
                 qp.push_back(m_pCtrl->QP);
 
                 s.Data.TimeStamp = s.Data.FrameOrder = frames++;
@@ -84,14 +85,22 @@ namespace hevce_frame_qp
 
             while (checked++ < nFrames)
             {
-                auto& AU = ParseOrDie();
-                auto& S = AU.pic->slice[0]->slice[0];
+                auto& hdr = ParseOrDie();
 
-                if (bs.TimeStamp < framesToEncode)
+                for (auto pNALU = &hdr; pNALU; pNALU = pNALU->next)
                 {
-                    mfxI16 QP  = S.slice_qp_delta + S.pps->init_qp_minus26 + 26;
-                    EXPECT_EQ(qp[bs.TimeStamp], QP) << "ERROR: Frame's QP is not equal to mfxEncodeCtrl's per frame QP\n";
-                    encoded++;
+                    if (!IsHEVCSlice(pNALU->nal_unit_type))
+                        continue;
+
+                    auto& S = *pNALU->slice;
+
+                    if (bs.TimeStamp < framesToEncode)
+                    {
+                        mfxI16 QP  = S.qp_delta + S.pps->init_qp_minus26 + 26;
+                        QP += (m_par.mfx.FrameInfo.BitDepthLuma - 8) * 6;
+                        EXPECT_EQ(qp[bs.TimeStamp], QP) << "ERROR: Frame's QP is not equal to mfxEncodeCtrl's per frame QP\n";
+                        encoded++;
+                    }
                 }
             }
 
