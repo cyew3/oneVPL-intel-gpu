@@ -2766,7 +2766,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             {
                 outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255;
             }
-            if (pParams->VideoSignalInfo[index].NominalRange == MFX_NOMINALRANGE_16_235)
+            if (pParams->VideoSignalInfoOut.NominalRange == MFX_NOMINALRANGE_16_235)
             {
                 outColorSpace.RGB_Range = D3D11_RGB_NOMINALRANGE_16_235;
                 outColorSpace.Nominal_Range = D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
