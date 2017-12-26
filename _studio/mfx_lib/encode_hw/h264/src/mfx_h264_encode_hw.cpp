@@ -1394,7 +1394,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     
     bool useGPUsurf = !(m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
-    amtScd.Init(m_core, m_video.mfx.FrameInfo,
+    amtScd.Init(m_core, m_cmDevice, m_video.mfx.FrameInfo,
         m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH, m_video.mfx.FrameInfo.Width, MFX_PICSTRUCT_PROGRESSIVE, useGPUsurf);
 
     // init slice divider

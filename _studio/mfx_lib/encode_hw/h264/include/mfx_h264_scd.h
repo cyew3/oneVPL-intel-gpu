@@ -426,32 +426,32 @@ public:
 class ASC {
 public:
     CmDevice
-        *device;
+        *device     = NULL;
     CmQueue
-        *queue;
+        *queue      = NULL;
     CmSurface2D
-        *pSurface;
+        *pSurface   = NULL;
     CmSurface2DUP
-        *pSurfaceCp;
+        *pSurfaceCp = NULL;
     SurfaceIndex
-        *pIdxSurf,
-        *pIdxSurfCp;
+        *pIdxSurf   = NULL,
+        *pIdxSurfCp = NULL;
     CmProgram
-        *program;
+        *program    = NULL;
     CmKernel
-        *kernel_p,
-        *kernel_t,
-        *kernel_b,
-        *kernel_cp;
+        *kernel_p   = NULL,
+        *kernel_t   = NULL,
+        *kernel_b   = NULL,
+        *kernel_cp  = NULL;
     CmThreadSpace
-        *threadSpace,
-        *threadSpaceCp;
+        *threadSpace   = NULL,
+        *threadSpaceCp = NULL;
     CmEvent
-        *e;
+        *e        = NULL;
     CM_STATUS
         status;
     mfxU8
-        *frameBkp;
+        *frameBkp = NULL;
     mfxU32
         gpuImPitch,
         threadsWidth,
@@ -467,17 +467,19 @@ public:
     mfxFrameSurface1
         *scdmfxFrame;
     VideoCORE
-        *scdCore;
+        *scdCore  = NULL;
 private:
     int 
         gpuwidth,
         gpuheight;
 
-    const int subWidth = 128;
+    const int subWidth  = 128;
     const int subHeight = 64;
 
     bool
-        cmDeviceAssigned;
+        cmDeviceAssigned = false;
+    bool
+        extCmDevice      = false;
     int gpustep_w;
     int gpustep_h;
 
@@ -485,7 +487,8 @@ private:
     mfxFrameAllocResponse m_mctfmfxAlocResponse;
     
     
-    CmTask *task;
+    CmTask
+        *task = NULL;
     
     mfxU32
         version,
@@ -497,11 +500,11 @@ private:
     INT
         res;
     ASCVidRead
-        *support;
+        *support    = NULL;
     ASCVidData
-        *dataIn;
+        *dataIn     = NULL;
     ASCVidSample
-        **videoData;
+        **videoData = NULL;
     bool
         dataReady,
         GPUProc,
@@ -541,12 +544,11 @@ private:
     void SetHeight(mfxI32 Height);
     void SetNextField();
     void SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32 Pitch);
-    void ReadOutputImage();
     void alloc();
     INT IO_Setup();
     INT Setup_Environment(const mfxFrameInfo& FrameInfo);
     void SetUltraFastDetection();
-    INT InitGPUsurf(VideoCORE *core, bool useGPUsurf);
+    INT InitGPUsurf(VideoCORE *core, CmDevice *m_cmDevice, bool useGPUsurf);
     void Params_Init();
     void InitStruct();
     void VidRead_Init();
@@ -569,7 +571,7 @@ private:
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex2;
     ASC_API mfxStatus CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
 public:
-    ASC_API INT Init(VideoCORE * core, const mfxFrameInfo& FrameInfo,
+    ASC_API INT Init(VideoCORE * core, CmDevice *m_cmDevice, const mfxFrameInfo& FrameInfo,
         mfxU16 width, mfxU16 height,
         mfxU16 pitch, mfxU16 interlaceMode, bool useHWsurf);
     /*ASC_API void Init(mfxI32 width, mfxI32 height, mfxI32 pitch, mfxU32 interlaceMode);

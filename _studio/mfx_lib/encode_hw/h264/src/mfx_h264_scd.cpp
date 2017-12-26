@@ -1295,7 +1295,7 @@ ASC_API bool ASC::Query_ASCCmDevice() {
     return cmDeviceAssigned;
 }
 
-INT ASC::InitGPUsurf(VideoCORE *core, bool useGPUsurf) {
+INT ASC::InitGPUsurf(VideoCORE *core, CmDevice *m_cmDevice, bool useGPUsurf) {
 
     Reset_ASCCmDevice();
     if (!core || !useGPUsurf) {
@@ -1303,8 +1303,15 @@ INT ASC::InitGPUsurf(VideoCORE *core, bool useGPUsurf) {
         program = NULL;
     }
     else if (useGPUsurf) {
-        res = CreateCmDevicePtr(core, device, &version);
-        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        if (m_cmDevice) {
+            extCmDevice = true;
+            device = m_cmDevice;
+        }
+        else {
+            extCmDevice = false;
+            res = CreateCmDevicePtr(core, device, &version);
+            SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        }
         Set_ASCCmDevice();
         res = device->CreateQueue(queue);
         SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
@@ -1668,7 +1675,7 @@ INT ASC::CreateCmDevicePtr(VideoCORE * core, CmDevice *& _device, mfxU32 * _vers
     return CM_SUCCESS;
 }
 
-ASC_API INT ASC::Init(VideoCORE * core, const mfxFrameInfo& FrameInfo,
+ASC_API INT ASC::Init(VideoCORE * core, CmDevice *m_cmDevice, const mfxFrameInfo& FrameInfo,
     mfxU16 Width, mfxU16 Height,
     mfxU16 Pitch, mfxU16 interlaceMode,
     bool useGPUsurf) {
@@ -1686,7 +1693,7 @@ ASC_API INT ASC::Init(VideoCORE * core, const mfxFrameInfo& FrameInfo,
     dataIn->layer = new ASCImDetails;
     videoData = new ASCVidSample *[ASCVIDEOSTATSBUF];
     support = new ASCVidRead;
-    res = InitGPUsurf(core, useGPUsurf);
+    res = InitGPUsurf(core, m_cmDevice, useGPUsurf);
     CM_CHK_RESULT(res);
     for (mfxI32 i = 0; i < ASCVIDEOSTATSBUF; i++)
         videoData[i] = new ASCVidSample;
@@ -1805,6 +1812,8 @@ ASC_API void ASC::Close() {
     if (threadSpaceCp) device->DestroyThreadSpace(threadSpaceCp);
     if (Query_ASCCmDevice())
         scdCore->FreeFrames(&m_scdmfxAlocResponse);
+    if(!extCmDevice)
+        if (device)    ::DestroyCmDevice(device);
 }
 #if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
 ASC_API void ASC::Close(FILE *videoFile, FILE *scReportFile) {
