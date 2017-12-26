@@ -716,8 +716,9 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     return MFX_TASK_DONE;
 }
 
-mfxStatus VP9CompleteProc(void * /* p_state */, void * /* pp_param */, mfxStatus)
+mfxStatus VP9CompleteProc(void *p_state, void * /* pp_param */, mfxStatus)
 {
+    delete (VideoDECODEVP9_HW::VP9DECODERoutineData*)p_state;
     return MFX_ERR_NONE;
 }
 
