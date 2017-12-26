@@ -178,8 +178,8 @@ enum
 
     CODED_PIC_ALIGN_W       = 16,
     CODED_PIC_ALIGN_H       = 16,
-//    DEFAULT_LCU_SIZE        = 32,
-    MAX_SLICES              = 200,
+
+    MAX_SLICES              = 600,
     DEFAULT_LTR_INTERVAL    = 16,
 
     MAX_NUM_ROI             = 8,
