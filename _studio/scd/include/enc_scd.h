@@ -27,6 +27,14 @@ enum eTaskStage
     , DO_SCD               = 0b1000
 };
 
+enum eCloseOrder
+{
+      CO_TaskManager = 0 //close first - sync all tasks
+    , CO_SCD             //before CmDevice
+    , CO_Surfaces   
+    , CO_CmDevice
+};
+
 struct Task
 {
     void Reset()
@@ -99,6 +107,8 @@ protected:
     mfxVideoParam m_vpar;
     mfxVideoParam m_vpar_init;
     mfxExtOpaqueSurfaceAlloc m_osa;
+    CmDevice* m_pCmDevice;
+    AutoDestructor m_destructor;
 };
 
 }

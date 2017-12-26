@@ -234,6 +234,7 @@ mfxStatus ASC::CreateCmKernels() {
     m_kernel_p = NULL;
     m_kernel_t = NULL;
     m_kernel_b = NULL;
+    m_threadSpace = NULL;
 
     m_threadsWidth = subWidth / OUT_BLOCK;
     m_threadsHeight = subHeight;
@@ -389,8 +390,10 @@ mfxStatus ASC::IO_Setup() {
         SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 #endif
     }
-    else
+    else {
         m_kernel_cp = NULL;
+        m_threadSpaceCp = NULL;
+    }
 
     return sts;
 }
@@ -647,6 +650,8 @@ ASC_API void ASC::Close() {
         if (m_kernel_b)  m_device->DestroyKernel(m_kernel_b);
         if (m_kernel_cp) m_device->DestroyKernel(m_kernel_cp);
         if (m_program)   m_device->DestroyProgram(m_program);
+        if (m_threadSpace)   m_device->DestroyThreadSpace(m_threadSpace);
+        if (m_threadSpaceCp) m_device->DestroyThreadSpace(m_threadSpaceCp);
     }
 
     m_kernel_p  = NULL;
@@ -655,6 +660,8 @@ ASC_API void ASC::Close() {
     m_kernel_cp = NULL;
     m_program   = NULL;
     m_device    = NULL;
+    m_threadSpace   = NULL;
+    m_threadSpaceCp = NULL;
 }
 
 void ASC::SubSampleASC_ImagePro(mfxU8 *frame, mfxI32 srcWidth, mfxI32 srcHeight, mfxI32 inputPitch, ASCLayers dstIdx, mfxU32 /*parity*/) {

@@ -14,6 +14,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <algorithm>
+#include <functional>
+#include <map>
 #include "mfxplugin++.h"
 
 namespace SCDTools
@@ -221,6 +223,40 @@ protected:
     mfxFrameAllocResponse m_response;
     mfxFrameInfo m_info;
     mfxFrameAllocator* m_pAlloc;
+};
+
+class AutoDestructor
+{
+private:
+    std::multimap<mfxU32, std::function<void()> > m_cbMap;
+public:
+    inline void Swap(AutoDestructor& other)
+    {
+        m_cbMap.swap(other.m_cbMap);
+    }
+
+    ~AutoDestructor()
+    {
+        Call();
+    }
+
+    template<class ...Ts>
+    inline void Add(mfxU32 order, Ts... bindArgs)
+    {
+        m_cbMap.emplace(order, std::bind(bindArgs...));
+    }
+
+    inline void Clear()
+    {
+        m_cbMap.clear();
+    }
+
+    inline void Call()
+    {
+        for (auto& entry : m_cbMap)
+            entry.second();
+        Clear();
+    }
 };
 
 }

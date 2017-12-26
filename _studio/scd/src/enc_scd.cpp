@@ -215,7 +215,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     mfxCoreParam corePar = {};
     mfxVideoParam tmp;
     mfxExtOpaqueSurfaceAlloc* pOSA = 0;
-    AutoClose<Plugin> close(this);
+    AutoDestructor destructor;
 
     qsts = Query(par, &tmp);
     if (qsts < 0)
@@ -252,6 +252,8 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         MFX_CHECK_STS(sts);
 
         m_osa.In = pOSA->In;
+
+        destructor.Add((mfxU32)CO_Surfaces, &MFXCoreInterface::UnmapOpaqueSurface, &((MFXCoreInterface&)*this), m_osa.In.NumSurface, m_osa.In.Type, m_osa.In.Surfaces);
     }
 
     if (isSysIn())
@@ -263,9 +265,12 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
         sts = InternalSurfaces::Alloc(FrameAllocator(), request);
         MFX_CHECK_STS(sts);
+
+        destructor.Add((mfxU32)CO_Surfaces, &InternalSurfaces::Free, &((InternalSurfaces&)*this));
     }
 
     TaskManager::Reset(m_vpar.AsyncDepth);
+    destructor.Add((mfxU32)CO_TaskManager, &TaskManager::Close, &((TaskManager&)*this));
 
     mfxHandleType hdlType =
           (corePar.Impl & MFX_IMPL_VIA_D3D9) ? MFX_HANDLE_D3D9_DEVICE_MANAGER
@@ -282,7 +287,7 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
         sts = CreateAccelerationDevice(hdlType, &hdl);
     MFX_CHECK_STS(sts);
 
-    CmDevice* pCmDevice = 0;
+    m_pCmDevice = 0;
     UINT version;
     INT cmSts = CM_SUCCESS;
 
@@ -290,36 +295,36 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     {
 #ifdef _WIN32
     case MFX_HANDLE_D3D9_DEVICE_MANAGER:
-        cmSts = CreateCmDevice(pCmDevice, version, (IDirect3DDeviceManager9*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
+        cmSts = CreateCmDevice(m_pCmDevice, version, (IDirect3DDeviceManager9*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
         break;
     case MFX_HANDLE_D3D11_DEVICE:
-        cmSts = CreateCmDevice(pCmDevice, version, (ID3D11Device*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
+        cmSts = CreateCmDevice(m_pCmDevice, version, (ID3D11Device*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
         break;
 #else
     case MFX_HANDLE_VA_DISPLAY:
-        cmSts = CreateCmDevice(pCmDevice, version, (VADisplay*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
+        cmSts = CreateCmDevice(m_pCmDevice, version, (VADisplay*)hdl, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE);
         break;
 #endif
     default:
         break;
     }
-    MFX_CHECK(pCmDevice && cmSts == CM_SUCCESS, MFX_ERR_DEVICE_FAILED);
+    MFX_CHECK(m_pCmDevice && cmSts == CM_SUCCESS, MFX_ERR_DEVICE_FAILED);
+    destructor.Add((mfxU32)CO_CmDevice, DestroyCmDevice, m_pCmDevice);
 
     sts = SCD::Init(
         par->mfx.FrameInfo.CropW,
         par->mfx.FrameInfo.CropH,
         par->mfx.FrameInfo.Width,
         par->mfx.FrameInfo.PicStruct,
-        pCmDevice);
+        m_pCmDevice);
     MFX_CHECK_STS(sts);
+    destructor.Add((mfxU32)CO_SCD, &SCD::Close, &((SCD&)*this));
 
     sts = SetGoPSize(Immediate_GoP);
     MFX_CHECK_STS(sts);
 
+    destructor.Swap(m_destructor);
     m_bInit = true;
-
-    if (qsts >= 0)
-        close.Cancel();
 
     return qsts;
 }
@@ -368,18 +373,7 @@ mfxStatus Plugin::Close()
 {
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
 
-    TaskManager::Close();
-    SCD::Close();
-    InternalSurfaces::Free();
-
-    if (m_vpar.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        if (m_osa.In.NumSurface)
-            UnmapOpaqueSurface(m_osa.In.NumSurface, m_osa.In.Type, m_osa.In.Surfaces);
-
-        m_osa.In.NumSurface = 0;
-    }
-
+    m_destructor.Call();
     m_bInit = false;
 
     return MFX_ERR_NONE;
