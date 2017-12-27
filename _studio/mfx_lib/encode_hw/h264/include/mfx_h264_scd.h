@@ -294,7 +294,7 @@ public:
         *Rs,
         *RsCs,
         *SAD;
-    ASC_API void   InitFrame(ASCImDetails *pDetails);
+    ASC_API INT    InitFrame(ASCImDetails *pDetails);
     ASC_API mfxI32 Close();
 };
 
@@ -403,6 +403,8 @@ typedef struct {
 }AscLtrData;
 /////////////////////////////////////////////////
 
+
+#if ASCTUNEDATA
 #define SCD_CHECK_CM_ERR(STS, ERR) if ((STS) != CM_SUCCESS) { printf("FAILED at file: %s, line: %d, cmerr: %d\n", __FILE__, __LINE__, STS); return ERR; }
 #define SCDMFX_CHECK_CM_ERR(STS) if ((STS) != CM_SUCCESS) { printf("FAILED at file: %s, line: %d, cmerr: %d\n", __FILE__, __LINE__, STS); return MFX_ERR_ABORTED; }
 
@@ -416,6 +418,20 @@ do {                                                            \
         exit(EXIT_FAILURE);                                     \
     }                                                           \
 } while(false)
+#else
+
+#define SCD_CHECK_CM_ERR(STS, ERR) if ((STS) != CM_SUCCESS) { return ERR; }
+#define SCDMFX_CHECK_CM_ERR(STS) if ((STS) != CM_SUCCESS) { return MFX_ERR_ABORTED; }
+
+#define CM_CHK_RESULT(cm_call)                                   \
+if (cm_call != CM_SUCCESS) {                                     \
+return cm_call;                                                  \
+}
+#define CM_CHK_RESULT_DATA_READY(cm_call)                        \
+if (cm_call != CM_SUCCESS) {                                     \
+return false;                                                    \
+}
+#endif
 
 class ASCRuntimeError : public std::exception
 {
@@ -497,8 +513,8 @@ private:
         hwSize;
 
 private:
-    INT
-        res;
+    //INT
+    //    res;
     ASCVidRead
         *support    = NULL;
     ASCVidData
@@ -540,8 +556,8 @@ private:
     INT VidSample_Alloc();
     void VidSample_dispose();
     void VidRead_dispose();
-    void SetWidth(mfxI32 Width);
-    void SetHeight(mfxI32 Height);
+    INT SetWidth(mfxI32 Width);
+    INT SetHeight(mfxI32 Height);
     void SetNextField();
     void SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32 Pitch);
     void alloc();
@@ -576,7 +592,7 @@ public:
         mfxU16 pitch, mfxU16 interlaceMode, bool useHWsurf);
     /*ASC_API void Init(mfxI32 width, mfxI32 height, mfxI32 pitch, mfxU32 interlaceMode);
     ASC_API void Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, bool LTR_on);*/
-    ASC_API void SetPitch(mfxI32 Pitch);
+    ASC_API INT SetPitch(mfxI32 Pitch);
     ASC_API void SetControlLevel(mfxU8 level);
     ASC_API void Reset_ASCCmDevice();
     ASC_API void Set_ASCCmDevice();
@@ -590,7 +606,7 @@ public:
     ASC_API void Set_LTR_Status();
     ASC_API void Reset_LTR_Status();
     ASC_API bool Query_LTR_Status();
-    ASC_API void SetGoPSize(mfxU32 GoPSize);
+    ASC_API INT SetGoPSize(mfxU32 GoPSize);
     ASC_API INT SetInterlaceMode(mfxU32 interlaceMode);
     ASC_API void ResetGoPSize();
     ASC_API void Close();
@@ -603,7 +619,7 @@ public:
     ASC_API void PutFrameInterlaced(mfxU8 *frame);
     ASC_API INT PutFrame(mfxFrameSurface1 *surface);
     ASC_API INT PutFrame(mfxU8 *frame);
-    ASC_API void CopyFrameSurface(mfxFrameSurface1 *surfaceSrc);
+    ASC_API INT CopyFrameSurface(mfxFrameSurface1 *surfaceSrc);
     ASC_API bool Get_Last_frame_Data();
     ASC_API mfxU32 Get_starting_frame_number();
     ASC_API mfxU32 Get_frame_number();

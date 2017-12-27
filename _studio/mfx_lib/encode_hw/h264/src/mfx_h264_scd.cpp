@@ -994,16 +994,17 @@ mfxI32 ASClogBase2aligned(mfxI32 number) {
     return (mfxI32)pow(2, (double)data);
 }
 
-void ASCU8AllocandSet(pmfxU8 *ImageLayer, mfxI32 imageSize) {
+INT ASCU8AllocandSet(pmfxU8 *ImageLayer, mfxI32 imageSize) {
 #if defined(_WIN32) || defined(_WIN64)
     *ImageLayer = (pmfxU8)_aligned_malloc(imageSize, 0x1000);// 16);
 #else
 	*ImageLayer = (pmfxU8) memalign(0x1000, imageSize);
 #endif
     if (*ImageLayer == NULL)
-        exit(MEMALLOCERRORU8);
+        return MFX_ERR_MEMORY_ALLOC;
     else
         memset(*ImageLayer, 0, imageSize);
+    return MFX_ERR_NONE;
 }
 
 void PdYuvImage_Alloc(ASCYUV *pImage, mfxI32 dimVideoExtended) {
@@ -1013,34 +1014,37 @@ void PdYuvImage_Alloc(ASCYUV *pImage, mfxI32 dimVideoExtended) {
     ASCU8AllocandSet(&pImage->data, dimAligned);
 }
 
-void PdMVector_Alloc(ASCMVector **MV, mfxI32 mvArraysize) {
+INT PdMVector_Alloc(ASCMVector **MV, mfxI32 mvArraysize) {
     mfxI32
         MVspace = sizeof(ASCMVector) * mvArraysize;
     *MV = new ASCMVector[MVspace];//(MVector*) malloc(MVspace);
     if (*MV == NULL)
-        exit(MEMALLOCERRORMV);
+        return MFX_ERR_MEMORY_ALLOC;
     else
         memset(*MV, 0, MVspace);
+    return MFX_ERR_NONE;
 }
 
-void PdRsCs_Alloc(pmfxU16 *RCs, mfxI32 mvArraysize) {
+INT PdRsCs_Alloc(pmfxU16 *RCs, mfxI32 mvArraysize) {
     mfxI32
         MVspace = sizeof(mfxU16) * mvArraysize;
     *RCs = (pmfxU16)malloc(MVspace);
     if (*RCs == NULL)
-        exit(MEMALLOCERROR);
+        return MFX_ERR_MEMORY_ALLOC;
     else
         memset(*RCs, 0, MVspace);
+    return MFX_ERR_NONE;
 }
 
-void PdSAD_Alloc(pmfxU16 *SAD, mfxI32 mvArraysize) {
+INT PdSAD_Alloc(pmfxU16 *SAD, mfxI32 mvArraysize) {
     mfxI32
         MVspace = sizeof(mfxU16) * mvArraysize;
     *SAD = (pmfxU16)malloc(MVspace);
     if (*SAD == NULL)
-        exit(MEMALLOCERROR);
+        return MFX_ERR_MEMORY_ALLOC;
     else
         memset(*SAD, 0, MVspace);
+    return MFX_ERR_NONE;
 }
 
 void Pdmem_disposeGeneral(ASCimageData *Buffer) {
@@ -1085,7 +1089,7 @@ PDISTTbl2[NumTSC*NumSC] =
 static mfxU32 lmt_sc2[NumSC] = { 112, 255, 512, 1536, 4096, 6144, 10752, 16384, 23040, UINT_MAX };
 static mfxU32 lmt_tsc2[NumTSC] = { 24, 48, 72, 96, 128, 160, 192, 224, 256, UINT_MAX };
 
-void ASCimageData::InitFrame(ASCImDetails *pDetails) {
+INT ASCimageData::InitFrame(ASCImDetails *pDetails) {
     mfxU32
         imageSpaceSize = pDetails->Extended_Height * pDetails->Extended_Width,
         mvSpaceSize = (pDetails->_cheight * pDetails->_cwidth) >> 6,
@@ -1118,18 +1122,19 @@ void ASCimageData::InitFrame(ASCImDetails *pDetails) {
     RsCs = (mfxU16 *)memalign(0x1000, sizeof(mfxU16) * texSpaceSize);
     pInteger = (ASCMVector *)memalign(0x1000, sizeof(ASCMVector)  * mvSpaceSize);
 #endif
-    if (Image.data == NULL) exit(-6660);
-    if (SAD == NULL) exit(-6660);
-    if (Rs == NULL) exit(-6660);
+    if (Image.data == NULL)  return MFX_ERR_MEMORY_ALLOC;
+    if (SAD == NULL)  return MFX_ERR_MEMORY_ALLOC;
+    if (Rs == NULL)  return MFX_ERR_MEMORY_ALLOC;
     memset(Rs, 0, sizeof(mfxU16) * texSpaceSize);
-    if (Cs == NULL) exit(-6660);
+    if (Cs == NULL)  return MFX_ERR_MEMORY_ALLOC;
     memset(Cs, 0, sizeof(mfxU16) * texSpaceSize);
-    if (RsCs == NULL) exit(-6660);
+    if (RsCs == NULL)  return MFX_ERR_MEMORY_ALLOC;
     memset(RsCs, 0, sizeof(mfxU16) * texSpaceSize);
-    if (pInteger == NULL) exit(-6660);
+    if (pInteger == NULL)  return MFX_ERR_MEMORY_ALLOC;
     memset(pInteger, 0, sizeof(ASCMVector)  * mvSpaceSize);
     //Pointer conf.
     Image.Y = Image.data + pDetails->initial_point;
+    return MFX_ERR_NONE;
 }
 
 mfxI32 ASCimageData::Close() {
@@ -1269,7 +1274,7 @@ INT ASC::Setup_Environment(const mfxFrameInfo& FrameInfo) {
         // GetFrameHDL is used as QfIn[].mfxFrme is allocated via call to Core Alloc functoin
         MFX_CHECK_STS(scdCore->GetFrameHDL(scdmfxFrame->Data.MemId, reinterpret_cast<mfxHDL*>(&handle)));
 
-        res = device->CreateSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurface);
+        INT res = device->CreateSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurface);
         CM_CHK_RESULT(res);
         res = pSurface->GetIndex(pIdxSurf);
         CM_CHK_RESULT(res);
@@ -1296,7 +1301,7 @@ ASC_API bool ASC::Query_ASCCmDevice() {
 }
 
 INT ASC::InitGPUsurf(VideoCORE *core, CmDevice *m_cmDevice, bool useGPUsurf) {
-
+    INT res = CM_SUCCESS;
     Reset_ASCCmDevice();
     if (!core || !useGPUsurf) {
         device = NULL;
@@ -1333,7 +1338,7 @@ INT ASC::InitGPUsurf(VideoCORE *core, CmDevice *m_cmDevice, bool useGPUsurf) {
             res = device->LoadProgram((void *)genx_cnl_h264_scd, sizeof(genx_cnl_h264_scd), program, "nojitter");
 #endif
         else
-            exit(-6661);
+            return CM_FAILURE;
 #endif
         CM_CHK_RESULT(res);
     }
@@ -1360,9 +1365,9 @@ void ASC::Params_Init() {
 }
 
 ASC_API INT ASC::SetInterlaceMode(mfxU32 interlaceMode) {
+    INT res = CM_SUCCESS;
     if (interlaceMode > ASCbotfieldFirst_frame) {
-        printf("\nError: Interlace Mode invalid, valid values are: 1 (progressive), 2 (TFF), 3 (BFF)\n");
-        exit(3008);
+        return CM_NOT_IMPLEMENTED;
     }
     else
         dataIn->interlaceMode = interlaceMode;
@@ -1429,6 +1434,7 @@ ASC_API INT ASC::SetInterlaceMode(mfxU32 interlaceMode) {
 }
 
 INT ASC::VidSample_Alloc() {
+    INT res = CM_SUCCESS;
     for (mfxI32 i = 0; i < ASCVIDEOSTATSBUF; i++) {
         videoData[i]->layer.InitFrame(dataIn->layer);
         if (Query_ASCCmDevice()) {
@@ -1455,7 +1461,7 @@ INT ASC::VidSample_Alloc() {
 #else
         frameBkp = (mfxU8*)memalign(0x1000, physicalSize);
 #endif
-        if (frameBkp == NULL) exit(-666);
+        if (frameBkp == NULL)  return CM_FAILURE;
         memset(frameBkp, 0, physicalSize);
         res = device->CreateSurface2DUP(gpuImPitch, gpuheight, CM_SURFACE_FORMAT_NV12, (void *)frameBkp, pSurfaceCp);
         CM_CHK_RESULT(res);
@@ -1498,6 +1504,7 @@ void ASC::alloc() {
 }
 
 INT ASC::IO_Setup() {
+    INT res = CM_SUCCESS;
     alloc();
 
     if (Query_ASCCmDevice()) {
@@ -1579,36 +1586,31 @@ void ASC::SetUltraFastDetection() {
     pPutFrameFunc = &ASC::PutFrameProgressive;
 }
 
-void ASC::SetWidth(mfxI32 Width) {
-    if (Width < SMALL_WIDTH) {
-        printf("\nError: Width value is too small, it needs to be bigger than %i\n", SMALL_WIDTH);
-        exit(3003);
-    }
+INT ASC::SetWidth(mfxI32 Width) {
+    if (Width < SMALL_WIDTH)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else
         _width = Width;
+    return MFX_ERR_NONE;
 }
 
-void ASC::SetHeight(mfxI32 Height) {
-    if (Height < SMALL_HEIGHT) {
-        printf("\nError: Height value is too small, it needs to be bigger than %i\n", SMALL_HEIGHT);
-        exit(3004);
-    }
+INT ASC::SetHeight(mfxI32 Height) {
+    if (Height < SMALL_HEIGHT)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else
         _height = Height;
+    return MFX_ERR_NONE;
 }
 
-ASC_API void ASC::SetPitch(mfxI32 Pitch) {
-    if (_width < SMALL_WIDTH) {
-        printf("\nError: Width value has not been set, init the variables first\n");
-        exit(3006);
-    }
+ASC_API INT ASC::SetPitch(mfxI32 Pitch) {
+    if (_width < SMALL_WIDTH)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-    if (Pitch < _width) {
-        printf("\nError: Pitch value is too small, it needs to be bigger than %i\n", _width);
-        exit(3005);
-    }
+    if (Pitch < _width)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
     else
         _pitch = Pitch;
+    return MFX_ERR_NONE;
 }
 
 void ASC::SetNextField() {
@@ -1660,7 +1662,7 @@ CmDevice * ASC::TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * _version) {
         if (res != MFX_ERR_NONE || !display)
             return 0;
 
-        if ((result = ::CreateCmDevice(device, *_version, display, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE)) != CM_SUCCESS)
+        if ((result = ::CreateCmDevice(_device, *_version, display, CM_DEVICE_CREATE_OPTION_SCRATCH_SPACE_DISABLE)) != CM_SUCCESS)
             return 0;
 #endif
     }
@@ -1671,7 +1673,8 @@ CmDevice * ASC::TryCreateCmDevicePtr(VideoCORE * core, mfxU32 * _version) {
 INT ASC::CreateCmDevicePtr(VideoCORE * core, CmDevice *& _device, mfxU32 * _version) {
     _device = TryCreateCmDevicePtr(core, _version);
     if (_device == 0)
-        throw ASCRuntimeError();
+        //throw ASCRuntimeError();
+        return CM_FAILURE;
     return CM_SUCCESS;
 }
 
@@ -1679,7 +1682,7 @@ ASC_API INT ASC::Init(VideoCORE * core, CmDevice *m_cmDevice, const mfxFrameInfo
     mfxU16 Width, mfxU16 Height,
     mfxU16 Pitch, mfxU16 interlaceMode,
     bool useGPUsurf) {
-    res = 0;
+    INT res = MFX_ERR_NONE;
     scdCore = core;
     GPUProc = 0;
     is_LTR_on = false;
@@ -1721,10 +1724,6 @@ ASC_API INT ASC::Init(VideoCORE * core, CmDevice *m_cmDevice, const mfxFrameInfo
 //}
 
 ASC_API void ASC::SetControlLevel(mfxU8 level) {
-    if (level >= RF_DECISION_LEVEL) {
-        printf("\nWarning: Control level too high, shot change detection disabled! (%i)\n", level);
-        printf("Control levels 0 to %i, smaller value means more sensitive detection\n", RF_DECISION_LEVEL);
-    }
     support->control = level;
 }
 
@@ -1764,21 +1763,17 @@ ASC_API bool ASC::Query_LTR_Status() {
     return is_LTR_on;
 }
 
-ASC_API void ASC::SetGoPSize(mfxU32 GoPSize) {
-    if (GoPSize > Double_HEVC_Gop) {
-        //printf("\nError: GoPSize is too big! (%i)\n", GoPSize);
-        exit(3002);
-    }
-    else if (GoPSize == Forbidden_GoP) {
-        //printf("\nError: GoPSize value cannot be zero!\n");
-        exit(3001);
-    }
-    else if (GoPSize > HEVC_Gop && GoPSize <= Double_HEVC_Gop)
-        //printf("\nWarning: Your GoPSize is larger than usual! (%i)\n", GoPSize);
+ASC_API INT ASC::SetGoPSize(mfxU32 GoPSize) {
+    if (GoPSize > Double_HEVC_Gop)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    else if (GoPSize == Forbidden_GoP)
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     support->gopSize = GoPSize;
     support->pendingSch = 0;
+    return MFX_ERR_NONE;
 }
+
 
 ASC_API void ASC::ResetGoPSize() {
     SetGoPSize(Immediate_GoP);
@@ -2191,15 +2186,12 @@ void RsCsCalc_bound_C(pmfxU16 pRs, pmfxU16 pCs, pmfxU16 pRsCs, pmfxU32 pRsFrame,
     mfxU16 accRs = 0;
     mfxU16 accCs = 0;
 
-    //printf("\n");
     for (mfxI32 i = 0; i < len; i++)
     {
-        //	printf("%i\t", pRs[i]);
         accRs += pRs[i] >> 7;
         accCs += pCs[i] >> 7;
         pRsCs[i] = (pRs[i] + pCs[i]) >> 1;
     }
-    //printf("\n");
 
     *pRsFrame = accRs;
     *pCsFrame = accCs;
@@ -2980,22 +2972,6 @@ bool ShotDetect(ASCimageData Data, ASCimageData DataRef, ASCImDetails imageInfo,
             current->TSCindex, current->SCindex, current->Cs,
             current->diffAFD, current->negBalance, current->ssDCval,
             current->refDCval, current->RsDiff, controlLevel);
-
-#if ASCTUNEDATA
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
-    fprintf(dataFile, "%s\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\t%i\n",
-        imageInfo.inputFilename, current->frameNum,
-        current->Rs, current->Cs, current->SC,
-        current->AFD, current->TSC, current->RsDiff,
-        current->CsDiff, current->RsCsDiff, current->MVdiffVal,
-        current->avgVal, current->ssDCval, current->refDCval,
-        current->gchDC, current->posBalance, current->negBalance,
-        current->diffAFD, current->diffTSC, current->diffRsCsDiff,
-        current->diffMVdiffVal, current->SCindex, current->TSCindex,
-        SChange);
-    fclose(dataFile);
-#endif
-#endif
     current->ltr_flag = Hint_LTR_op_on(current->RsCsDiff, current->MVdiffVal, current->AFD);
     return SChange;
 }
@@ -3061,17 +3037,8 @@ void CorrectionForGoPSize(ASCVidRead *support, mfxU32 PdIndex) {
 }
 
 bool ASC::CompareStats(mfxU8 current, mfxU8 reference) {
-    if (current > 2 || reference > 2 || current == reference) {
-        printf("Error: Invalid stats comparison\n");
-        exit(-666);
-    }
+    reference;
     mfxU8 comparison = 0;
-    /*comparison += NABS((mfxI32)(support->logic[current]->Rs - support->logic[reference]->Rs)) < 70;
-    comparison += NABS((mfxI32)(support->logic[current]->Cs - support->logic[reference]->Cs)) < 70;
-    comparison += NABS((mfxI32)(support->logic[current]->SC - support->logic[reference]->SC)) < 90;
-    comparison += (!(dataIn->interlaceMode > ASCprogressive_frame) && support->logic[current]->AFD <= 1) || (dataIn->interlaceMode > ASCprogressive_frame);
-    if (comparison == 4)*/
-
     comparison += support->logic[current]->AFD == 0;
     comparison += support->logic[current]->RsCsDiff == 0;
     comparison += support->logic[current]->TSCindex == 0;
@@ -3216,6 +3183,7 @@ ASC_LTR_DEC ASC::Continue_LTR_Mode(mfxU16 goodLTRLimit, mfxU16 badLTRLimit) {
 }
 
 INT ASC::SetKernel(SurfaceIndex *idxFrom, mfxU32 parity) {
+    INT res = CM_SUCCESS;
     mfxU32 argIdx = 0;
     //Progressive Point subsampling kernel
 
@@ -3255,6 +3223,7 @@ INT ASC::SetKernel(SurfaceIndex *idxFrom, mfxU32 parity) {
 }
 
 bool ASC::RunFrame(mfxFrameSurface1 *surface, mfxU32 parity) {
+    INT res;
     videoData[ASCCurrent_Frame]->frame_number = videoData[ASCReference_Frame]->frame_number + 1;
     scdCore->IncreaseReference(&(scdmfxFrame->Data));
 
@@ -3270,19 +3239,19 @@ bool ASC::RunFrame(mfxFrameSurface1 *surface, mfxU32 parity) {
 
     e = NULL;// CM_NO_EVENT;
     res = SetKernel(idxFrom, parity);
-    CM_CHK_RESULT(res);
+    CM_CHK_RESULT_DATA_READY(res);
 #ifndef CMRT_EMU
     res = queue->Enqueue(task, e);
 #else
     res = queue->Enqueue(task, e, threadSpace);
 #endif
-    CM_CHK_RESULT(res);
+    CM_CHK_RESULT_DATA_READY(res);
     res = e->WaitForTaskFinished();
-    CM_CHK_RESULT(res);
+    CM_CHK_RESULT_DATA_READY(res);
     res = device->DestroyTask(task);
-    CM_CHK_RESULT(res);
+    CM_CHK_RESULT_DATA_READY(res);
     res = queue->DestroyEvent(e);
-    CM_CHK_RESULT(res);
+    CM_CHK_RESULT_DATA_READY(res);
     /*res = device->DestroySurface(p_surfaceFrom);
     CM_CHK_RESULT(res);*/
 
@@ -3603,9 +3572,13 @@ ASC_API mfxStatus ASC::calc_RsCs_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, m
 ASC_API mfxStatus ASC::calc_RsCs_Surf(mfxFrameSurface1 *surface, mfxF64 &rscs) {
     if (!Query_ASCCmDevice())
         return MFX_ERR_DEVICE_FAILED;
-    CopyFrameSurface(surface);
-    calc_RsCs_pic(frameBkp, gpuwidth, gpuheight, gpuImPitch, rscs);
-    return MFX_ERR_NONE;
+    int err = CopyFrameSurface(surface);
+    if (!err) {
+        calc_RsCs_pic(frameBkp, gpuwidth, gpuheight, gpuImPitch, rscs);
+        return MFX_ERR_NONE;
+    }
+    else
+        return MFX_ERR_UNKNOWN;
 }
 
 ASC_API mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
@@ -3640,7 +3613,8 @@ ASC_API mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurfac
 
 }
 
-void ASC::CopyFrameSurface(mfxFrameSurface1 *surfaceSrc) {
+INT ASC::CopyFrameSurface(mfxFrameSurface1 *surfaceSrc) {
+    INT res = CM_SUCCESS;
     scdCore->IncreaseReference(&(scdmfxFrame->Data));
 
     CmSurface2D* p_surfaceFrom = 0;
@@ -3701,6 +3675,7 @@ void ASC::CopyFrameSurface(mfxFrameSurface1 *surfaceSrc) {
 #endif
 #endif
     scdCore->DecreaseReference(&(scdmfxFrame->Data));
+    return res;
 }
 
 ASC_API INT ASC::PutFrame(mfxFrameSurface1 *surface) {
@@ -3718,8 +3693,6 @@ ASC_API INT ASC::PutFrame(mfxU8 *frame) {
 ASC_API bool ASC::Get_Last_frame_Data() {
     if (dataReady)
         GeneralBufferRotation();
-    else
-        printf("Warning: Trying to grab data not ready\n");
     return(dataReady);
 }
 
@@ -3877,7 +3850,6 @@ void ExtendBorders(pmfxU8 ImageToExtend, ASCImDetails imageInfo) {
     borderv = imageInfo.vertical_pad;
     // section 1 at bottom
     // obtain pointer to start of bottom row of original frame
-    //if((U32)StartPtr %4) printf("Not 4 Byte aligned");
     pByteSrc = ImageToExtend + imageInfo.endPoint + imageInfo.horizontal_pad + imageInfo.horizontal_pad;
     bRow = pByteSrc - imageInfo.Extended_Width;
     for (row = 0; row<borderv; row++) {

@@ -1390,12 +1390,18 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 #endif
 
-    //MFX_CHECK(m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE, MFX_ERR_UNSUPPORTED); //Interlaced mode has not been tested for this implementation
-    
-    bool useGPUsurf = !(m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY);
+    {
+        bool useGPUsurf = false;
+        if (IsOn(extOpt2->ExtBRC) &&
+            (m_video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || m_video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
+            && (m_video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE))
+            useGPUsurf = !(m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY);
 
-    amtScd.Init(m_core, m_cmDevice, m_video.mfx.FrameInfo,
-        m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH, m_video.mfx.FrameInfo.Width, MFX_PICSTRUCT_PROGRESSIVE, useGPUsurf);
+        int err = amtScd.Init(m_core, m_cmDevice, m_video.mfx.FrameInfo,
+            m_video.mfx.FrameInfo.CropW, m_video.mfx.FrameInfo.CropH, m_video.mfx.FrameInfo.Width, MFX_PICSTRUCT_PROGRESSIVE, useGPUsurf);
+        if (err != MFX_ERR_NONE)
+            return MFX_ERR_UNSUPPORTED;
+    }
 
     // init slice divider
     bool fieldCoding = (m_video.mfx.FrameInfo.PicStruct & MFX_PICSTRUCT_PROGRESSIVE) == 0;
@@ -2535,6 +2541,8 @@ mfxStatus ImplementationAvc::CalculateRaCa(DdiTask const &task, mfxU16 &raca128)
     mfxExtOpaqueSurfaceAlloc const * extOpaq = GetExtBuffer(m_video);
     mfxFrameSurface1 * surface = task.m_yuv;
 
+    raca128 = 0;
+
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY || m_video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
         (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
@@ -2551,7 +2559,6 @@ mfxStatus ImplementationAvc::CalculateRaCa(DdiTask const &task, mfxU16 &raca128)
             if (surface == 0)
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
         }
-
 
         mfxFrameData Data = surface->Data;
         mfxFrameInfo Info = surface->Info;
@@ -2579,9 +2586,11 @@ mfxStatus ImplementationAvc::CalculateRaCa(DdiTask const &task, mfxU16 &raca128)
             if (ptr)
                 status = amtScd.calc_RsCs_pic(ptr, w, h, Data.Pitch, raca);
         }
-        if (raca < MIN_RACA) raca = MIN_RACA;
-        if (raca > MAX_RACA) raca = MAX_RACA;
-        raca128 = (mfxU16)(raca * RACA_SCALE);
+        if (status == MFX_ERR_NONE) {
+            if (raca < MIN_RACA) raca = MIN_RACA;
+            if (raca > MAX_RACA) raca = MAX_RACA;
+            raca128 = (mfxU16)(raca * RACA_SCALE);
+        }
     }
     return status;
 }
