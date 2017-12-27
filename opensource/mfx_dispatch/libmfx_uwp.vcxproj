@@ -56,7 +56,7 @@
     <ProjectGuid>{313EE96A-7923-4A18-AFFA-9247181364D3}</ProjectGuid>
     <RootNamespace>libmfx_proc_table</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <ProjectName>dispatcher_msdk_proc_table</ProjectName>
+    <ProjectName>libmfx_uwp</ProjectName>
     <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -88,8 +88,8 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <OutDir>$(SolutionDir)build\lib\$(Configuration)\$(PlatformTarget)\</OutDir>
-    <IntDir>$(SolutionDir)build\objs\$(Configuration)\$(PlatformTarget)\$(ProjectName)\</IntDir>
+    <!-- <OutDir>..\..\..\build\win_$(Platform)\lib\</OutDir> -->
+    <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
     <IncludePath>$(MINIDDK_ROOT)\Include\um;$(MINIDDK_ROOT)\Include\shared;$(IncludePath)</IncludePath>
     <LibraryPath>$(MINIDDK_ROOT)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -116,15 +116,19 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\Intel.Dispatcher.StaticLib.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\Intel.Dispatcher.StaticLib.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\Intel.Dispatcher.StaticLib.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\Intel.Dispatcher.StaticLib.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
@@ -145,7 +149,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;$(SolutionDir)include;$(SolutionDir)gfx_msdk-api\include;$(SolutionDir)gfx_msdk-api\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\include;..\..\intel_api_uwp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINAPI_FAMILY=WINAPI_FAMILY_APP;MEDIASDK_UWP_PROCTABLE;WIN32;_DEBUG;_LIB;MFX_VA;_ALLOW_MSC_VER_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_RUNTIME_LIBRARY_MISMATCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <WarningLevel>Level4</WarningLevel>
@@ -156,8 +160,8 @@
     <Lib />
     <Lib />
     <Lib>
-      <AdditionalDependencies>intel_gfx_api-$(PlatformTarget).lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\dll\$(Configuration)\$(PlatformTarget)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>intel_gfx_api-$(PlatformTarget)_d.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)..\build\win_$(Platform)\lib\</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
   </ItemDefinitionGroup>
@@ -167,7 +171,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;$(SolutionDir)include;$(SolutionDir)gfx_msdk-api\include;$(SolutionDir)gfx_msdk-api\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\include;..\..\intel_api_uwp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINAPI_FAMILY=WINAPI_FAMILY_APP;MEDIASDK_UWP_PROCTABLE;WIN64;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -180,8 +184,8 @@
     <Lib />
     <Lib />
     <Lib>
-      <AdditionalDependencies>intel_gfx_api-$(PlatformTarget).lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\dll\$(Configuration)\$(PlatformTarget)\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>intel_gfx_api-$(PlatformTarget)_d.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)..\build\win_$(Platform)\lib\</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
   </ItemDefinitionGroup>
@@ -190,7 +194,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>include;$(SolutionDir)include;$(SolutionDir)gfx_msdk-api\include;$(SolutionDir)gfx_msdk-api\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\include;..\..\intel_api_uwp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINAPI_FAMILY=WINAPI_FAMILY_APP;MEDIASDK_UWP_PROCTABLE;WIN32;NDEBUG;_LIB;MFX_VA;_ALLOW_MSC_VER_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_RUNTIME_LIBRARY_MISMATCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -202,7 +206,7 @@
     <Lib />
     <Lib>
       <AdditionalDependencies>intel_gfx_api-$(PlatformTarget).lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\dll\$(Configuration)\$(PlatformTarget)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)..\build\win_$(Platform)\lib\</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
   </ItemDefinitionGroup>
@@ -214,7 +218,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>include;$(SolutionDir)include;$(SolutionDir)gfx_msdk-api\include;$(SolutionDir)gfx_msdk-api\opensource\mfx_dispatch\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;..\..\include;..\..\intel_api_uwp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WINAPI_FAMILY=WINAPI_FAMILY_APP;MEDIASDK_UWP_PROCTABLE;WIN64;NDEBUG;_LIB;_ALLOW_MSC_VER_MISMATCH;_ALLOW_ITERATOR_DEBUG_LEVEL_MISMATCH;_ALLOW_RUNTIME_LIBRARY_MISMATCH;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level4</WarningLevel>
@@ -225,7 +229,7 @@
     <Lib />
     <Lib>
       <AdditionalDependencies>intel_gfx_api-$(PlatformTarget).lib;</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)build\dll\$(Configuration)\$(PlatformTarget)\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(MfxBuildDir)..\build\win_$(Platform)\lib\</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
     </Lib>
   </ItemDefinitionGroup>

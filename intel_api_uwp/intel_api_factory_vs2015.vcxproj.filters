@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="dispatcher">
+      <UniqueIdentifier>{102ce933-e908-4f0c-ad4f-16925dcf6874}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dispatcher\src">
+      <UniqueIdentifier>{05176c73-c554-499f-b981-a1d562fb8035}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dispatcher\include">
+      <UniqueIdentifier>{5eae89d7-632e-4712-9c3f-70ffa6e14c56}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\intel_api.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\pch.cpp" />
+    <ClCompile Include="src\intel_api_factory.cpp" />
+    <ClCompile Include="..\opensource\mfx_dispatch\src\main.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_critical_section.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_dispatcher.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_dispatcher_log.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_dxva2_device.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_function_table.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_library_iterator.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_load_dll.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_load_plugin.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_plugin_hive.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\targetver.h" />
+    <ClInclude Include="include\intel_api_factory.h" />
+    <ClInclude Include="src\resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_critical_section.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_dispatcher.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_dispatcher_defs.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_dispatcher_log.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_dxva2_device.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_exposed_functions_list.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_library_iterator.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_load_dll.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_load_plugin.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_plugin_hive.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_win_reg_key.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\mfxaudio_exposed_functions_list.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="src\intel_gfx_api.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

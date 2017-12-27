@@ -9,3 +9,7 @@ _build
 __cmake
 /.project
 .gitreview
+*.ipch
+*.opendb
+*.db
+*.aps
