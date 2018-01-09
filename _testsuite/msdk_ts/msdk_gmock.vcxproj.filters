@@ -816,6 +816,9 @@
     <ClCompile Include="src\gmock\test_suites\vpp_init.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\avce_force_repartition_check.cpp">
+      <Filter>Source Files\test_suites\avce</Filter>
+    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_intra_refresh.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>

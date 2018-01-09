@@ -283,6 +283,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dynamic_intra_refresh.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_dts.cpp" />
+    <ClCompile Include="src\gmock\test_suites\avce_force_repartition_check.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_interlace.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_input_rgb_colorspace.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_inter_mbs.cpp" />
