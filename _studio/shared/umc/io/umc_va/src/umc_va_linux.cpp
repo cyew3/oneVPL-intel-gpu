@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_va_base.h>
@@ -312,8 +312,8 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VP8)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VP9)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VC1)
-#ifndef ANDROID
                                   && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
+#ifndef ANDROID
                                   && ((m_Profile & VA_CODEC) != UMC::VA_JPEG)
 #endif
                                     );
