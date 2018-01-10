@@ -83,4 +83,20 @@
 #define ASC_ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif //defined(_WIN32) || defined(_WIN64)
 
+#if (defined( _WIN32 ) || defined ( _WIN64 ))
+#if (defined( _WIN64))
+#define ARCH64
+#else
+#define ARCH32
+#endif
+#endif
+
+#if (defined (__GNUC__))
+#if (defined( __x86_64__ ) || defined( __ppc64__ ))
+#define ARCH64
+#else
+#define ARCH32
+#endif
+#endif
+
 #endif //__ASC_DEFS__

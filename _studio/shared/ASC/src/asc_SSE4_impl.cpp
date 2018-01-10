@@ -164,10 +164,21 @@ void RsCsCalc_4x4_SSE4(pmfxU8 pSrc, int srcPitch, int wblocks, int hblocks, pmfx
 
             // store
             rs0 = _mm_packus_epi32(rs0, cs0);
+#ifdef ARCH64
             pmfxU64 t = (pmfxU64)&(pRs[i * wblocks + j]);
             *t = _mm_extract_epi64(rs0, 0);
             t = (pmfxU64)&(pCs[i * wblocks + j]);
             *t = _mm_extract_epi64(rs0, 1);
+#else
+            pmfxU32 t = (pmfxU32)&(pRs[i * wblocks + j]);
+            *t = _mm_extract_epi32(rs0, 0);
+             t = (pmfxU32)&(pRs[i * wblocks + j + 2]);
+            *t = _mm_extract_epi32(rs0, 1);
+            t = (pmfxU32)&(pCs[i * wblocks + j]);
+            *t = _mm_extract_epi32(rs0, 2);
+            t = (pmfxU32)&(pCs[i * wblocks + j + 2]);
+            *t = _mm_extract_epi32(rs0, 3);
+#endif
 
             pSrc -= 4 * srcPitch;
             pSrc += 16;
@@ -272,8 +283,16 @@ void RsCsCalc_bound_SSE4(pmfxU16 pRs, pmfxU16 pCs, pmfxU16 pRsCs, pmfxU32 pRsFra
         accCs = _mm_add_epi32(accCs, cs);
 
         rc = _mm_packus_epi32(rc, rc);
+#ifdef ARCH64
         pmfxU64 t = (pmfxU64)&(pRsCs[i]);
         *t = _mm_extract_epi64(rc, 0);
+#else
+        pmfxU32 t = (pmfxU32)&(pRsCs[i]);
+        *t = _mm_extract_epi32(rc, 0);
+        t = (pmfxU32)&(pRsCs[i + 2]);
+        *t = _mm_extract_epi32(rc, 1);
+#endif
+
     }
 
     if (i < len)
