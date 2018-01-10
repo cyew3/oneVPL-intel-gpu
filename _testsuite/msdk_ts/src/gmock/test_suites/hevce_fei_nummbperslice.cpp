@@ -11,6 +11,7 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_fei_warning.h"
 
 namespace hevce_fei_nummbperslice {
 
@@ -18,7 +19,7 @@ namespace hevce_fei_nummbperslice {
     {
     public:
         TestSuite()
-            : tsVideoEncoder(MFX_CODEC_HEVC, MSDK_PLUGIN_TYPE_FEI)
+            : tsVideoEncoder(MFX_CODEC_HEVC, true, MSDK_PLUGIN_TYPE_FEI)
 #ifdef MANUAL_DEBUG_MODE
             , m_tsBsWriter("test_out.h265")
 #endif
@@ -220,6 +221,8 @@ namespace hevce_fei_nummbperslice {
     {
         TS_START;
         const tc_struct& tc = test_case[id];
+
+        CHECK_HEVC_FEI_SUPPORT();
 
         // create mfx session
         MFXInit();

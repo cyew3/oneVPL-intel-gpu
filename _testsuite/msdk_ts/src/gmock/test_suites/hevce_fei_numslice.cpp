@@ -19,7 +19,7 @@ namespace hevce_fei_numslice
     {
     public:
         TestSuite()
-            : tsVideoEncoder(MFX_CODEC_HEVC, MSDK_PLUGIN_TYPE_FEI)
+            : tsVideoEncoder(MFX_CODEC_HEVC, true, MSDK_PLUGIN_TYPE_FEI)
 #ifdef MANUAL_DEBUG_MODE
             , m_tsBsWriter("test.h265")
 #endif
