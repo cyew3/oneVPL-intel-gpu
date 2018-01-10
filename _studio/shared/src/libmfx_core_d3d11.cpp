@@ -608,7 +608,7 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
             pCmDevice = m_pCmCopy.get()->GetCmDevice<ID3D11Device>(m_pD11Device);
             if (!pCmDevice)
                 return NULL;
-            if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize())
+            if (MFX_ERR_NONE != m_pCmCopy.get()->Initialize(GetHWType()))
                 return NULL;
             m_bCmCopy = true;
         }
@@ -632,7 +632,7 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
                 m_pCmCopy.reset();
                 return NULL;
             }else{
-                if(MFX_ERR_NONE != m_pCmCopy.get()->Initialize())
+                if(MFX_ERR_NONE != m_pCmCopy.get()->Initialize(GetHWType()))
                     return NULL;
                 else
                     m_bCmCopy = true;
