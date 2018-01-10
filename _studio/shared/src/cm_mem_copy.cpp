@@ -2111,10 +2111,8 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
         return MFX_ERR_DEVICE_FAILED;
 
     m_HWType = hwtype;
-#if defined (MFX_VA_LINUX)
-    if (m_HWType == MFX_HW_UNKNOWN)  // sometimes linux don't know platform
-        m_HWType = MFX_HW_IVB;
-#endif
+    if (m_HWType == MFX_HW_UNKNOWN)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     m_timeout = m_HWType >= MFX_HW_ICL ? CM_MAX_TIMEOUT_SIM : CM_MAX_TIMEOUT_MS;
