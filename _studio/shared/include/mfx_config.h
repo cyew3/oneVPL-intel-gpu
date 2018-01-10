@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_CONFIG_H_
@@ -384,5 +384,9 @@
         #define MFX_ENABLE_VPP_SCD_PARALLEL_COPY
     #endif //defined (AS_VPP_SCD_PLUGIN)
 #endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
+
+#if MFX_VERSION >= 1023 && defined(MFX_VA_WIN)
+#define MFX_ENABLE_H264_REPARTITION_CHECK
+#endif
 
 #endif // _MFX_CONFIG_H_

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_platform_headers.h"
@@ -16,6 +16,8 @@
 #if defined(_WIN32) || defined(_WIN64)
 
 #define DDI_086
+//#define AVC_DDI_VERSION_0952
+#define REPARTITION_CHECK
 
 //#include "d3dumddi.h"
 
@@ -558,12 +560,27 @@ typedef struct tagENCODE_CAPS
             UINT    MoveRectSupport         : 1;
             UINT    FrameSizeTolerance      : 1;
             UINT    HWCounterAutoIncrement  : 2;
-            UINT                            : 19;
+            UINT    MBControlSupport        : 1;
+#ifdef REPARTITION_CHECK
+            UINT    ForceRepartitionCheckSupport : 1;
+            UINT                            : 17;
+#else
+            UINT                            : 18;
+#endif
         };
         UINT      CodingLimits2;
     };
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
+#ifdef AVC_DDI_VERSION_0952
+    USHORT   reserved16bits0;
+    USHORT   reserved16bits1;
+    USHORT   MaxNumOfConcurrentFramesMinus1;
+    UINT     reserved32bits0;
+    UINT     reserved32bits1;
+    UINT     reserved32bits2;
+    UINT     reserved32bits3;
+#endif
 } ENCODE_CAPS;
 
 // DDI v0.947
@@ -949,6 +966,12 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_H264
     ENCODE_SCENARIO ScenarioInfo;
     ENCODE_CONTENT  ContentInfo;
     ENCODE_FRAME_SIZE_TOLERANCE FrameSizeTolerance;
+#ifdef AVC_DDI_VERSION_0952
+    USHORT  SlidingWindowSize;
+    UINT    MaxBitRatePerSlidingWindow;
+    UINT    MinBitRatePerSlidingWindow;
+#endif
+
 
 } ENCODE_SET_SEQUENCE_PARAMETERS_H264;
 
@@ -1079,7 +1102,13 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_H264
             UINT        bSliceLevelReport                        : 1;
             UINT        bDisableSubpixel                         : 1;
             UINT        bDisableRollingIntraRefreshOverlap       : 1;
-            UINT        bReserved                                : 18;
+#ifdef REPARTITION_CHECK
+            UINT        ForceRepartitionCheck                    : 2;
+            UINT        bReserved                                : 16;
+#else
+            UINT                                                 : 18;
+#endif
+
 
         };
         BOOL    UserFlags;

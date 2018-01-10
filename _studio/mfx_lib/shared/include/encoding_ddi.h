@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __ENCODING_DDI_H__
@@ -183,7 +183,7 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS
 
     ENCODE_AES128_CIPHER_COUNTER aes_counter;
 
-    UINT    Reserved1;
+    UINT    StreamId;
     UINT    Reserved2;
     UINT    Reserved3;
     UINT    Reserved4;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -2404,6 +2404,29 @@ void MfxHwH264Encode::ConfigureTask(
 
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
     task.m_collectUnitsInfo = IsOn(extOpt3->EncodedUnitsInfo);
+#endif
+
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
+    {
+        mfxExtCodingOption3 const *     extOpt3Cur = extOpt3; // won't check it at runtime for now
+        switch (extOpt3Cur->RepartitionCheckEnable)
+        {
+        case MFX_CODINGOPTION_OFF:
+            // Favor Speed
+            task.m_RepartitionCheck = 2; // 2: FORCE_DISABLE – Disable this feature totally for all cases.
+            break;
+        case MFX_CODINGOPTION_ON:
+            // Favor Quality
+            task.m_RepartitionCheck = 1;  //1: FORCE_ENABLE – Enable this feature totally for all cases.
+            break;
+        case MFX_CODINGOPTION_ADAPTIVE:
+            // keep design to driver
+            task.m_RepartitionCheck = 0;
+            break;
+        default:
+            assert(!"Invalid value for RepartitionCheckEnable!");
+        }
+    }
 #endif
 }
 

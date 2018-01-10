@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1367,16 +1367,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     }
 
 #if MFX_VERSION >= 1023
-    #ifdef MFX_ENABLE_H264_REPARTITION_CHECK
-        #ifdef MFX_VA_LINUX
-            // todo: check if other options don't contradict
-        #else
-            #error "unimplemented code"
-        #endif
-    #else //MFX_ENABLE_H264_REPARTITION_CHECK
-    
+    #ifndef MFX_ENABLE_H264_REPARTITION_CHECK
         MFX_CHECK(extOpt3.RepartitionCheckEnable == MFX_CODINGOPTION_UNKNOWN, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
     #endif //MFX_ENABLE_H264_REPARTITION_CHECK
 #endif // MFX_VERSION >= 1023
 

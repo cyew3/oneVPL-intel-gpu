@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -104,7 +104,7 @@ void MfxHwH264Encode::FillSpsBuffer(
     sps.UserMaxIFrameSize                       = extOpt3.MaxFrameSizeI ? extOpt3.MaxFrameSizeI : extOpt2->MaxFrameSize;
     sps.UserMaxPBFrameSize                      = extOpt3.MaxFrameSizeP;
     sps.bAutoMaxPBFrameSizeForSceneChange       = IsOn(extOpt3.AdaptiveMaxFrameSize) ? 1 : 0;
-    
+
     if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
         switch (extVsi->MatrixCoefficients)
         {
@@ -321,7 +321,7 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
     if (GetExtBuffer(task.m_ctrl.ExtParam, task.m_ctrl.NumExtParam, MFX_EXTBUFF_ENCODER_WIDI_USAGE))
         pps.InputType = eType_DRM_SECURE;
 #endif
-       
+
     mfxU32 i = 0;
     for (; i < task.m_dpb[fieldId].Size(); i++)
     {
@@ -401,6 +401,10 @@ void MfxHwH264Encode::FillVaringPartOfPpsBuffer(
 
     pps.BRCMaxQp = task.m_maxQP;
     pps.BRCMinQp = task.m_minQP;
+
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK)
+    pps.ForceRepartitionCheck = task.m_RepartitionCheck;
+#endif
 }
 
 

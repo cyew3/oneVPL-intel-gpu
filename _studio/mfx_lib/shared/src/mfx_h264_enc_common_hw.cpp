@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -68,6 +68,20 @@ namespace
         if (opt != MFX_CODINGOPTION_UNKNOWN &&
             opt != MFX_CODINGOPTION_ON &&
             opt != MFX_CODINGOPTION_OFF)
+        {
+            opt = MFX_CODINGOPTION_UNKNOWN;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool CheckTriStateOptionWithAdaptive(mfxU16 & opt)
+    {
+        if (opt != MFX_CODINGOPTION_UNKNOWN &&
+            opt != MFX_CODINGOPTION_ON &&
+            opt != MFX_CODINGOPTION_OFF &&
+            opt != MFX_CODINGOPTION_ADAPTIVE)
         {
             opt = MFX_CODINGOPTION_UNKNOWN;
             return false;
@@ -4796,6 +4810,19 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 #endif
 
+#ifdef MFX_ENABLE_H264_REPARTITION_CHECK
+    if (!CheckTriStateOptionWithAdaptive(extOpt3->RepartitionCheckEnable)) changed = true;
+#ifdef MFX_VA_WIN
+        if ((extOpt3->RepartitionCheckEnable != MFX_CODINGOPTION_ADAPTIVE) &&
+            (extOpt3->RepartitionCheckEnable != MFX_CODINGOPTION_UNKNOWN) &&
+            !hwCaps.ForceRepartitionCheckSupport)
+        {
+            extOpt3->RepartitionCheckEnable = 0;
+            unsupported = true;
+        }
+#endif // MFX_VA_WIN
+#endif // MFX_ENABLE_H264_REPARTITION_CHECK
+
     return unsupported
         ? MFX_ERR_UNSUPPORTED
         : (changed || warning)
@@ -5888,6 +5915,13 @@ void MfxHwH264Encode::SetDefaults(
     SetDefaultOff(extOpt3->DirectBiasAdjustment);
     SetDefaultOff(extOpt3->GlobalMotionBiasAdjustment);
     SetDefaultOff(extOpt3->LowDelayBRC);
+
+#ifdef MFX_ENABLE_H264_REPARTITION_CHECK
+#ifdef MFX_VA_WIN
+    if (extOpt3->RepartitionCheckEnable == MFX_CODINGOPTION_UNKNOWN)
+        extOpt3->RepartitionCheckEnable = MFX_CODINGOPTION_ADAPTIVE;
+#endif // MFX_VA_WIN
+#endif // MFX_ENABLE_H264_REPARTITION_CHECK
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1008,6 +1008,9 @@ namespace MfxHwH264Encode
             , m_LtrQp(0)
             , m_RefOrder(-1)
             , m_RefQp(0)
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
+            , m_RepartitionCheck(0)
+#endif
         {
             Zero(m_ctrl);
             Zero(m_internalListCtrl);
@@ -1227,6 +1230,11 @@ namespace MfxHwH264Encode
         bool m_userTimeout;
 #endif
         eMFXHWType m_hwType;  // keep HW type information
+
+#if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
+        mfxU8 m_RepartitionCheck; //  DDI level ForceRepartitionCheck
+#endif
+
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
         bool m_collectUnitsInfo;
         mutable std::vector<mfxEncodedUnitInfo> m_headersCache[2]; //Headers for every field
