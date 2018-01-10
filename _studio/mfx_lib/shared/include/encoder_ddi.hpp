@@ -16,7 +16,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 
 #define DDI_086
-//#define AVC_DDI_VERSION_0952
+#define AVC_DDI_VERSION_0952
 #define REPARTITION_CHECK
 
 //#include "d3dumddi.h"
