@@ -1,0 +1,349 @@
+__default_reviewers__:
+- vasily.aristarkhov@intel.com
+- oleg.nabiullin@intel.com
+
+codeowners:
+  paths:
+  - CODEOWNERS.yaml
+  reviewers:
+  - alexander.dydychkin@intel.com
+  - dmitry.kozlov@intel.com
+  - alexander.zhogov@intel.com
+  - eugene.ponomarev@intel.com
+
+camera plugin:
+  paths:
+  - _studio/camera_pipe
+  - _testsuite/msdk_ts/src/gmock/test_suites/camera
+  reviewers:
+  - roman.bykadorov@intel.com
+
+screen_capture:
+  paths:
+  - _studio/screen_capture
+  - _testsuite/msdk_ts/src/gmock/test_suites/screen_capture
+  reviewers:
+  - alexey.s.kokoshnikov@intel.com
+
+ptir:
+  paths:
+  - _studio/ptir
+  - _testsuite/msdk_ts/src/gmock/test_suites/ptir
+  reviewers:
+  - tuyet.trang.lam@intel.com
+
+mfx_player:
+  paths:
+  - _testsuite/mfx_player
+  - _studio/shared/umc/codec/h264_spl
+  - _studio/shared/umc/codec/vc1_spl
+  - _studio/shared/umc/codec/asf_spl
+  - _studio/shared/umc/codec/avi_spl
+  - _studio/shared/umc/codec/demuxer
+  - _studio/shared/umc/codec/mpeg4_spl
+  - _studio/shared/umc/codec/spl_common
+  reviewers:
+  - sergey.solodkov@intel.com
+  - andrey.larionov@intel.com
+
+mfx_transcoder:
+  paths:
+  - _testsuite/mfx_transcoder
+  - _studio/shared/umc/codec/h264_spl
+  - _studio/shared/umc/codec/vc1_spl
+  - _studio/shared/umc/codec/asf_spl
+  - _studio/shared/umc/codec/avi_spl
+  - _studio/shared/umc/codec/demuxer
+  - _studio/shared/umc/codec/mpeg4_spl
+  - _studio/shared/umc/codec/spl_common
+  reviewers:
+  - sergey.solodkov@intel.com
+  - andrey.larionov@intel.com
+
+h264d:
+  paths:
+  - _studio/mfx_lib/dec/h264
+  - _studio/mfx_lib/decode/h264
+  - _studio/shared/umc/codec/h264_dec
+  - _testsuite/msdk_ts/src/gmock/test_suites/avcd
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - sergey.solodkov@intel.com
+  - roman.kazantsev@intel.com
+  - dmitry.gurulev@intel.com
+
+h264e:
+  paths:
+  - _studio/mfx_lib/enc/h264
+  - _studio/mfx_lib/enc_hw/h264
+  - _studio/mfx_lib/encode_hw/h264
+  - _studio/mfx_lib/encode/h264
+  - _studio/shared/umc/codec/h264_enc
+  - _studio/mfx_lib/pak/h264
+  - _studio/shared/umc/codec/me
+  - _testsuite/msdk_ts/src/gmock/test_suites/avce
+  reviewers:
+  - oleg.nabiullin@intel.com
+  - andrey.morozov@intel.com
+  - alexey.s.kokoshnikov@intel.com
+  - roman.kazantsev@intel.com
+  - andrey.larionov@intel.com
+  - evgeniy.starov@intel.com
+  - stanislav.efremov@intel.com
+  - timofei.a.kulakov@intel.com
+
+mpeg2d:
+  paths:
+  - _studio/mfx_lib/dec/mpeg2
+  - _studio/mfx_lib/decode/mpeg2
+  - _testsuite/msdk_ts/src/gmock/test_suites/mpeg2d
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - alexei.leonenko@intel.com
+  - dmitry.gurulev@intel.com
+
+mpeg2e:
+  paths:
+  - _studio/mfx_lib/enc/mpeg2
+  - _studio/mfx_lib/enc_hw/mpeg2
+  - _studio/mfx_lib/encode/mpeg2
+  - _studio/mfx_lib/encode_hw/mpeg2
+  - _studio/shared/umc/codec/mpeg2_enc
+  - _studio/mfx_lib/pak/mpeg2
+  - _studio/shared/umc/codec/me
+  - _testsuite/msdk_ts/src/gmock/test_suites/mpeg2e
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - oleg.nabiullin@intel.com
+  - alexey.s.kokoshnikov@intel.com
+
+vc1:
+  paths:
+  - _studio/mfx_lib/decode/vc1
+  - _studio/shared/umc/codec/vc1_dec
+  - _studio/shared/umc/codec/vc1_common
+  - _studio/mfx_lib/enc/vc1
+  - _studio/mfx_lib/encode/vc1
+  - _studio/shared/umc/codec/vc1_enc
+  - _studio/shared/umc/codec/vc1_common
+  - _testsuite/msdk_ts/src/gmock/test_suites/vc1
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - sergey.solodkov@intel.com
+  - alexei.leonenko@intel.com
+  - dmitry.gurulev@intel.com
+
+hevcd:
+  paths:
+  - _studio/mfx_lib/decode/h265
+  - _studio/shared/umc/codec/h265_dec
+  - _testsuite/msdk_ts/src/gmock/test_suites/hevcd
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - alexei.leonenko@intel.com
+  - dmitry.gurulev@intel.com
+
+hevce:
+  paths:
+  - _studio/hevce_hw
+  - _testsuite/msdk_ts/src/gmock/test_suites/hevce
+  reviewers:
+  - oleg.nabiullin@intel.com
+  - andrey.morozov@intel.com
+  - alexey.s.kokoshnikov@intel.com
+  - alexei.leonenko@intel.com
+  - evgeniy.starov@intel.com
+  - sergey.a.osipov@intel.com
+  - timofei.a.kulakov@intel.com
+
+hevce-gacc:
+  paths:
+  - _studio/mfx_lib/encode/h265
+  - _studio/mfx_lib/genx/h265_encode
+  - _studio/mfx_lib/optimization/h265
+  reviewers:
+  - nikolai.p.shostak@intel.com
+
+mjpegd:
+  paths:
+  - _studio/mfx_lib/decode/mjpeg
+  - _studio/shared/umc/codec/jpeg_common
+  - _studio/shared/umc/codec/jpeg_dec
+  - _testsuite/msdk_ts/src/gmock/test_suites/mjpegd
+  - _testsuite/msdk_ts/src/gmock/test_suites/jpegd
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - oleg.nabiullin@intel.com
+  - dmitry.brazhkin@intel.com
+  - andrey.larionov@intel.com
+  - dmitry.gurulev@intel.com
+
+mjpege:
+  paths:
+  - _studio/mfx_lib/encode/mjpeg
+  - _studio/mfx_lib/encode_hw/mjpeg
+  - _studio/shared/umc/codec/jpeg_common
+  - _studio/shared/umc/codec/jpeg_enc
+  - _testsuite/msdk_ts/src/gmock/test_suites/mjpege
+  - _testsuite/msdk_ts/src/gmock/test_suites/jpege
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - oleg.nabiullin@intel.com
+  - dmitry.brazhkin@intel.com
+  - roman.kazantsev@intel.com
+
+vp8d:
+  paths:
+  - _studio/mfx_lib/decode/vp8
+  - _studio/shared/umc/codec/vp8_dec
+  - _testsuite/msdk_ts/src/gmock/test_suites/vp8d
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - sergey.solodkov@intel.com
+  - alexei.leonenko@intel.com
+  - dmitry.gurulev@intel.com
+
+vp8e:
+  paths:
+  - _studio/mfx_lib/encode/vp8
+  - _studio/mfx_lib/encode_hw/vp8
+  - _testsuite/msdk_ts/src/gmock/test_suites/vp8e
+  reviewers:
+  - alexey.s.kokoshnikov@intel.com
+  - alexei.leonenko@intel.com
+
+vp9d:
+  paths:
+  - _studio/mfx_lib/decode/vp9
+  - _studio/shared/umc/codec/vp9_dec
+  - _testsuite/msdk_ts/src/gmock/test_suites/vp9d
+  reviewers:
+  - sergey.solodkov@intel.com
+  - alexei.leonenko@intel.com
+  - dmitry.gurulev@intel.com
+
+vp9e:
+  paths:
+  - _studio/vp9e_hw
+  - _testsuite/msdk_ts/src/gmock/test_suites/vp9e
+  reviewers:
+  - alexey.s.kokoshnikov@intel.com
+  - alexei.leonenko@intel.com
+  - stanislav.efremov@intel.com
+  - dmitryx.malishev@intel.com
+
+vpp:
+  paths:
+  - _studio/mfx_lib/vpp
+  - _studio/shared/umc/codec/color_space_converter
+  - _studio/shared/umc/codec/scene_analyzer
+  - _testsuite/msdk_ts/src/gmock/test_suites/vpp
+  reviewers:
+  - dmitry.ermilov@intel.com
+  - oleg.nabiullin@intel.com
+  - roman.bykadorov@intel.com
+  - andrey.larionov@intel.com
+  - tuyet.trang.lam@intel.com
+
+tests:
+  paths:
+  - _testsuite/msdk_ts
+  reviewers:
+  - olga.tsiruleva@intel.com
+  - alexey.s.kokoshnikov@intel.com
+  - nikolay.korshunov@intel.com
+
+mvce:
+  paths:
+  - _studio/mfx_lib/encode_hw/mvc
+  reviewers:
+  - stanislav.efremov@intel.com
+  - alexey.s.kokoshnikov@intel.com
+
+avc_fei:
+  paths:
+  - _studio/mfx_lib/fei
+  - _testsuite/msdk_ts/src/gmock/test_suites/fei
+  - samples/sample_fei
+  reviewers:
+  - miroslav.goncharenko@intel.com
+  - dmitry.ermilov@intel.com
+  - oleg.nabiullin@intel.com
+  - leonid.a.kulakov@intel.com
+  - jerry.dong@intel.com
+
+hevc_fei:
+  paths:
+  - _studio/hevc_fei
+  - samples/sample_hevc_fei
+  - _testsuite/msdk_ts/src/gmock/test_suites/hevc_fei
+  - _testsuite/msdk_ts/src/gmock/test_suites/hevce_fei
+  reviewers:
+  - miroslav.goncharenko@intel.com
+  - dmitry.ermilov@intel.com
+  - leonid.a.kulakov@intel.com
+  - olga.tsiruleva@intel.com
+  - viktoria.maksimova@intel.com
+  - alexandra.tyugina@intel.com
+
+audio:
+  paths:
+  - _studio/mfx_lib/audio_decode
+  - _studio/mfx_lib/audio_encode
+  - _studio/shared/umc/codec/mp3_common
+  - _studio/shared/umc/codec/mp3_dec
+  - _studio/shared/umc/codec/aac_common
+  - _studio/shared/umc/codec/aac_dec
+  - _studio/shared/umc/codec/aac_enc
+  reviewers:
+  - fedor.zharinov@intel.com
+
+samples:
+  paths:
+  - samples
+  reviewers:
+  - fedor.zharinov@intel.com
+  - timofei.a.kulakov@intel.com
+
+core:
+  paths:
+  - _studio/mfx_lib/shared
+  - _studio/shared
+  - _studio/shared/umc/core
+  - _studio/shared/umc/io
+  - _studio/mfx_lib/cmrt_cross_platform
+  - _studio/mfx_lib/scheduler
+  reviewers:
+  - vasily.aristarkhov@intel.com
+  - oleg.nabiullin@intel.com
+  - artem.shaporenko@intel.com
+
+android:
+  paths:
+  - android
+  reviewers:
+  - olga.a.kasatkina@intel.com
+
+build:
+  paths:
+  - builder
+  reviewers:
+  - oleg.nabiullin@intel.com
+  - andrew.k.wrobel@intel.com
+  - vladimir.shalimov@intel.com
+
+pavp:
+  paths:
+  - pavp
+  - _studio/pavp
+  - _testsuite/mfx_pavp
+  reviewers:
+  - andrey.somsikov@intel.com
+
+plugin:
+  paths:
+  - _studio/mfx_lib/plugin
+  reviewers:
+  - vasily.aristarkhov@intel.com
+  - artem.shaporenko@intel.com
+  - oleg.nabiullin@intel.com
