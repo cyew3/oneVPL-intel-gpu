@@ -11,7 +11,7 @@
 #ifndef __UMC_HEVC_DDI_H
 #define __UMC_HEVC_DDI_H
 
-#define DDI_VERSION 947
+#define DDI_VERSION 949
 
 #pragma warning(disable: 4201)
 
@@ -372,6 +372,9 @@ typedef struct _DXVA_Intel_Slice_HEVC_Ext_Long
     CHAR    slice_act_y_qp_offset;                 // [-12..12]
     CHAR    slice_act_cb_qp_offset;                // [-12..12]
     CHAR    slice_act_cr_qp_offset;                // [-12..12]
+#endif
+#if DDI_VERSION >= 949
+    UCHAR   use_integer_mv_flag;                   // [0..1]
 #endif
 } DXVA_Intel_Slice_HEVC_EXT_Long, *LPDXVA_Intel_Slice_HEVC_EXT_Long;
 #endif //DDI_VERSION > 943

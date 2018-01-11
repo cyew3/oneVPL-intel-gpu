@@ -711,6 +711,9 @@ namespace UMC_HEVC_DECODER
         header->slice_act_cb_qp_offset = (CHAR)sh->slice_act_cb_qp_offset;
         header->slice_act_cr_qp_offset = (CHAR)sh->slice_act_cr_qp_offset;
 #endif
+#if DDI_VERSION >= 949
+        header->use_integer_mv_flag    = (UCHAR)sh->use_integer_mv_flag;
+#endif
     }
 #endif
 
