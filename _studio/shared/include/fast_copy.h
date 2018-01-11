@@ -23,6 +23,7 @@
 #include "mfx_trace.h"
 #include "mfxdefs.h"
 #include <algorithm>
+#include "umc_mutex.h"
 
 enum
 {
@@ -130,6 +131,12 @@ public:
         {
             return MFX_ERR_NULL_PTR;
         }
+
+        /* The purpose of mutex here is to make the Copy() atomic.
+         * Without it CPU utilization grows dramatically due to cache trashing.
+         */
+        static UMC::Mutex mutex; // This is thread-safe since C++11
+        UMC::AutomaticUMCMutex guard(mutex);
 
         mfxCopyRect<mfxU8>(pSrc, srcPitch, pDst, dstPitch, roi, flag);
 

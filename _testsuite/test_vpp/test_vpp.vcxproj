@@ -105,7 +105,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;MFX_D3D11_ENABLED;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -125,7 +125,7 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;MFX_D3D11_ENABLED;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <TreatWarningAsError>false</TreatWarningAsError>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
@@ -147,7 +147,7 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm_plus\include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;common\include\vm;common\include;include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>true</UseFullPaths>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -170,7 +170,7 @@
       <FunctionLevelLinking>false</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;MFX_D3D11_SUPPORT=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>common\include\vm;common\include;include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\_studio\shared\umc\core\umc\include;..\..\_studio\shared\umc\core\vm_plus\include;common\include\vm;common\include;include;..\..\..\mdp_msdk-contrib\igfx_s3dcontrol\external\\include;$(MSDK_API_ROOT)\include;..\shared\include;..\..\_studio\shared\umc\core\vm\include;..\..\_studio\shared\include;..\..\_studio\mfx_lib\shared\include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <UseFullPaths>true</UseFullPaths>
       <ControlFlowGuard>Guard</ControlFlowGuard>
