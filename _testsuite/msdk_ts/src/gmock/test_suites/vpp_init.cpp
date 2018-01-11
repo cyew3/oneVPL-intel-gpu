@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright (c) 2018 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_init.cpp
 
@@ -178,7 +178,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR, &tsStruct::mfxVideoParam.Protected,           MFX_PROTECTION_PAVP},
         },
     },
-    {/*13*/ MFX_ERR_NONE, STANDARD,
+    {/*13*/
+        // MFX_PROTECTION_PAVP is only supported on Windows
+        #if defined (WIN32) || (WIN64)
+            MFX_ERR_NONE,
+        #else
+            MFX_ERR_INVALID_VIDEO_PARAM,
+        #endif
+            STANDARD,
         {
             {MFX_PAR, &tsStruct::mfxVideoParam.Protected,           MFX_PROTECTION_PAVP},
             {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern,           MFX_IOPATTERN_IN_VIDEO_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY},

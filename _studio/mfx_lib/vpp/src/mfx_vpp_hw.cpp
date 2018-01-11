@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
+// Copyright (c) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -4986,7 +4986,7 @@ mfxStatus ConfigureExecuteParams(
                 {
                     executeParams.scalingMode = MFX_SCALING_MODE_DEFAULT;
                 }
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1025)
                 else if (MFX_EXTBUFF_VPP_COLOR_CONVERSION == bufferId)
                 {
                     executeParams.chromaSiting = MFX_CHROMA_SITING_UNKNOWN;
