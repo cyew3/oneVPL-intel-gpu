@@ -1,0 +1,16 @@
+codeowners:
+  paths:
+  - CODEOWNERS.yaml
+  reviewers:
+  - alexander.dydychkin@intel.com
+  - dmitry.kozlov@intel.com
+  - alexander.zhogov@intel.com
+  - eugene.ponomarev@intel.com
+
+__default_reviewers__:
+- sergey.plotnikov@intel.com
+- oleg.nabiullin@intel.com
+- sergey.solodkov@intel.com
+- alexei.leonenko@intel.com
+- thomas.m.johnson@intel.com
+- evgeniy.starov@intel.com
