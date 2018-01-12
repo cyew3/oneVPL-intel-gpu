@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1773,7 +1773,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.sign_data_hiding_enabled_flag         = 0;
     m_pps.cabac_init_present_flag               = 0;
     m_pps.num_ref_idx_l0_default_active_minus1  = NumRefLX[0] - 1;
-    m_pps.num_ref_idx_l1_default_active_minus1  = 0;
+    m_pps.num_ref_idx_l1_default_active_minus1  = NumRefLX[1] - 1;
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
 
