@@ -213,7 +213,7 @@ _studio/shared/include/mfx_common_linux_bxt.h
 _studio/shared/include/mfx_common_linux_bxtmin.h
 _studio/shared/include/mfx_common_linux_cfl.h
 _studio/shared/include/mfx_ext_buffers.h
-_studio/shared/include/mfx_mfe_adapter.h
+_studio/mfx_lib/shared/include/mfx_mfe_adapter.h
 _studio/shared/include/mfx_reflect.h
 _studio/shared/include/mfx_scd.h
 _studio/shared/include/mfx_timing.h
@@ -244,7 +244,7 @@ _studio/shared/src/libmfx_allocator_vaapi.cpp
 _studio/shared/src/libmfx_core.cpp
 _studio/shared/src/libmfx_core_factory.cpp
 _studio/shared/src/libmfx_core_vaapi.cpp
-_studio/shared/src/mfx_mfe_adapter.cpp
+_studio/mfx_lib/shared/src/mfx_mfe_adapter.cpp
 _studio/shared/src/mfx_scd.cpp
 _studio/shared/src/mfx_static_assert_structs.cpp
 _studio/shared/src/mfx_umc_alloc_wrapper.cpp
