@@ -463,6 +463,7 @@
     <ClCompile Include="src\gmock\test_suites\hevcd_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_corruption.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_chroma_siting.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_composition.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_deinterlac_inv_telec.cpp" />
