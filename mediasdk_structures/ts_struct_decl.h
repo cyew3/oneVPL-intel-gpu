@@ -469,6 +469,11 @@ STRUCT(mfxExtVPPComposite,
     FIELD_T(mfxVPPCompInputStream*, InputStream)
 )
 
+STRUCT(mfxExtColorConversion,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, ChromaSiting)
+)
+
 STRUCT(mfxExtVPPVideoSignalInfo_InOut,
     FIELD_T(mfxU16, TransferMatrix )
     FIELD_T(mfxU16, NominalRange   )
