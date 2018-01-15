@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008 - 2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008 - 2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <string>
@@ -1857,7 +1857,8 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, w);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_P010 )
+    else if( pInfo->FourCC == MFX_FOURCC_P010 ||
+             pInfo->FourCC == MFX_FOURCC_P016)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
 
@@ -1951,7 +1952,8 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_Y210)
+    else if( pInfo->FourCC == MFX_FOURCC_Y210 ||
+             pInfo->FourCC == MFX_FOURCC_Y216 )
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
@@ -1967,6 +1969,15 @@ mfxStatus CRawVideoWriter::WriteFrame(
         for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, 4*w);
+        }
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_Y416)
+    {
+        ptr = (mfxU8*)pData->U + pInfo->CropX * 8 + pInfo->CropY * pitch;
+
+        for(i = 0; i < h; i++)
+        {
+            WriteLine(ptr + i * pitch, 8*w);
         }
     }
     else
