@@ -5,15 +5,19 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
-#include <stdio.h>
-#include <cm.h>
-/*
-#include <genx_vme.h>
-#include "..\include\genx_fcopy_cmcode.h"
-*/
+#include <cm/cm.h>
+
+typedef unsigned char       uint1;  // unsigned byte
+typedef unsigned short      uint2;  // unsigned word
+typedef unsigned int        uint4;  // unsigned dword
+typedef unsigned long long  uint8;  // unsigned qword
+typedef char                int1;   // byte
+typedef short               int2;   // word
+typedef int                 int4;   // dword
+typedef long long           int8;   // qword
 
 extern "C" _GENX_MAIN_  void
 MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)

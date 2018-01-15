@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <stdio.h>
@@ -24,7 +24,7 @@ void make_copyright(FILE* f)
 "// nondisclosure agreement with Intel Corporation and may not be copied\n"
 "// or disclosed except in accordance with the terms of that agreement.\n"
 "//\n"
-"// Copyright(c) 2016 Intel Corporation. All Rights Reserved.\n"
+"// Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.\n"
 "//\n"
 );
 }
