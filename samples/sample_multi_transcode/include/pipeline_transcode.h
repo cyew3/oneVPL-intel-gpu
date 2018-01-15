@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2017, Intel Corporation
+Copyright (c) 2005-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -143,6 +143,7 @@ namespace TranscodingSample
         msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN]; // source bitstream file
         msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN]; // destination bitstream file
         msdk_char  strDumpVppCompFile[MSDK_MAX_FILENAME_LEN]; // VPP composition output dump file
+        msdk_char  strMfxParamsDumpFile[MSDK_MAX_FILENAME_LEN];
 
         // specific encode parameters
         mfxU16 nTargetUsage;
@@ -807,6 +808,8 @@ namespace TranscodingSample
 
         msdk_string       m_sGenericPluginPath;
         mfxU16            m_nRotationAngle;
+
+        msdk_string       m_strMfxParamsDumpFile;
 
         void FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct);
 #endif //MFX_VERSION >= 1022

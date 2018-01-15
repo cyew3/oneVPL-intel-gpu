@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2017, Intel Corporation
+Copyright (c) 2005-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -1513,6 +1513,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             }
             skipped+=2;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-dump")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.strMfxParamsDumpFile))
+            {
+                PrintError(MSDK_STRING("Dump file name \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust")))
         {
             InputParams.bRobust = true;
@@ -1955,4 +1965,3 @@ bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputP
     return true;
 
 } //bool  CmdProcessor::GetNextSessionParams(TranscodingSample::sInputParams &InputParams)
-

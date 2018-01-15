@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2017, Intel Corporation
+Copyright (c) 2005-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,6 +32,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <cstring>
 
 #include "plugin_loader.h"
+#include "parameters_dumper.h"
 
 // let's use std::max and std::min instead
 #undef max
@@ -3390,6 +3391,9 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     statisticsWindowSize = pParams->statisticsWindowSize;
     if (statisticsWindowSize > m_MaxFramesForTranscode)
         statisticsWindowSize = m_MaxFramesForTranscode;
+
+    m_strMfxParamsDumpFile.assign(pParams->strMfxParamsDumpFile);
+
     if (pParams->statisticsLogFile)
     {
         //same log file for intput/output
@@ -3687,6 +3691,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
         }
 #endif //MFX_VERSION >= 1022
     }
+
     m_bIsInit = true;
 
     return sts;
@@ -3760,6 +3765,12 @@ mfxStatus CTranscodingPipeline::CompleteInit()
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
         MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
+    }
+
+    // Dumping components configuration if required
+    if (m_strMfxParamsDumpFile.size())
+    {
+        CParametersDumper::DumpLibraryConfiguration(m_strMfxParamsDumpFile, m_pmfxDEC.get(), m_pmfxVPP.get(), m_pmfxENC.get(), &m_mfxDecParams, &m_mfxVppParams, &m_mfxEncParams);
     }
 
     m_bIsInit = true;
