@@ -170,6 +170,7 @@ mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
         msdk_analyzer_sink sink;
         is_loaded = true;
         sts = disp_MFXInitEx(par, session);
+        is_loaded = false;
         if (sts != MFX_ERR_NONE)
         {
             Log::WriteLog(context.dump("ver", par.Version));
@@ -178,7 +179,6 @@ mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
             free(loader);
             return MFX_ERR_NOT_FOUND;
         }
-        is_loaded = false;
         char libModuleName[MAX_PATH];
 
         GetModuleFileName((HMODULE)(*(MFX_DISP_HANDLE**)(session))->hModule, libModuleName, MAX_PATH);
@@ -188,9 +188,7 @@ mfxStatus TracerInit (mfxInitParam par, mfxSession *session)
            free(loader);
            return MFX_ERR_NOT_FOUND;
         }
-        g_mfxlib = new char[MAX_PATH];
-        strcpy_s(g_mfxlib, MAX_PATH, libModuleName);
-        h_mfxdll = LoadLibrary(g_mfxlib);
+        h_mfxdll = LoadLibrary(libModuleName);
     }
     loader->dlhandle = h_mfxdll;
 
