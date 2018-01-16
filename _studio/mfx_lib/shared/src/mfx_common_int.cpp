@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common_int.h"
@@ -594,8 +594,8 @@ mfxStatus CheckFramePointers(mfxFrameInfo const& info, mfxFrameData const& data)
         case MFX_FOURCC_P210:        MFX_CHECK(data.Y && data.UV, MFX_ERR_UNDEFINED_BEHAVIOR); break;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
-        case MFX_FOURCC_Y216:        MFX_CHECK(data.Y16 && data.U16 && data.V16, MFX_ERR_UNDEFINED_BEHAVIOR);
-        case MFX_FOURCC_Y416:        MFX_CHECK(data.Y16 && data.U16 && data.V16 && data.A , MFX_ERR_UNDEFINED_BEHAVIOR);
+        case MFX_FOURCC_Y216:        MFX_CHECK(data.Y16 && data.U16 && data.V16, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+        case MFX_FOURCC_Y416:        MFX_CHECK(data.Y16 && data.U16 && data.V16 && data.A , MFX_ERR_UNDEFINED_BEHAVIOR); break;
 #endif
 
         case MFX_FOURCC_RGB3:        MFX_CHECK(data.R && data.G && data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
