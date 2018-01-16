@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -3739,8 +3739,8 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
         mfxU32  len   = (mfxU32)pipelineList.size();
         mfxU32* pList = (len > 0) ? (mfxU32*)&pipelineList[0] : NULL;
 
-        // Input has to be interlace
-        if (!(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_TFF) && !(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_BFF))
+        // Input can not be progressive
+        if (!(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_TFF) && !(par->vpp.In.PicStruct & MFX_PICSTRUCT_FIELD_BFF) && !(par->vpp.In.PicStruct == MFX_PICSTRUCT_UNKNOWN))
         {
             sts = GetWorstSts(sts, MFX_ERR_INVALID_VIDEO_PARAM);
         }
