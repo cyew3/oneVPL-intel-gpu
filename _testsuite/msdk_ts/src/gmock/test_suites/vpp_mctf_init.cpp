@@ -16,7 +16,20 @@ File Name: vpp_mctf_init.cpp
 
 Description:
 This suite tests VPP - MCTF initialization\n
+<<<<<<< HEAD
 1 test case for check unsupported on Windows
+=======
+50 test cases with the following differences:
+- Valid, invalid or already inited session\n
+- Filters\n
+- Video or system IOPattern\n
+- Output status
+
+Algorithm:
+- Initialize Media SDK lib\n
+- Set frame allocator\n
+- Initialize the VPP operation\n
+>>>>>>> [msdk_gmock] To update tests for MCTF
 */
 
 #include "ts_vpp.h"
@@ -93,11 +106,428 @@ namespace vpp_mctf_init
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
         // mctf related tests
-        {/*00*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+        //// this is sort of negative test (needs to be removed or on/off depending on a platform?)
+        //{/*00*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+        //    {
+        //        { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+        //    },
+        //}
+        //,
+        {/*00*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength,        21 },
+            },
+        },
+
+        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength,        std::numeric_limits<mfxU16>::max() },
+            },
+        },
+
+        {/*02*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
+            },
+        },
+
+        {/*03*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength,        10 },
+            },
+        },
+
+        {/*04*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
+            },
+        },
+        // check output fourCC
+
+        {/*05*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_YV12 },
             },
-        }
+        },
+        {/*06*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_NV16 },
+            },
+        },
+
+        {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_YUY2 },
+            },
+        },
+        {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_RGB3 },
+            },
+        },
+        {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_RGB4 },
+            },
+        },
+        {/*10*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_P010 },
+            },
+        },
+        {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_P016 },
+            },
+        },
+        {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_P210 },
+            },
+        },
+        {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_BGR4 },
+            },
+        },
+        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_A2RGB10 },
+            },
+        },
+        {/*15*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_ARGB16 },
+            },
+        },
+        {/*16*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_ABGR16 },
+            },
+        },
+        {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_R16 },
+            },
+        },
+        {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_AYUV },
+            },
+        },
+        {/*19*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_AYUV_RGB4 },
+            },
+        },
+        {/*20*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_UYVY },
+            },
+        },
+        {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_Y210 },
+            },
+        },
+        {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_Y216 },
+            },
+        },
+        {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_Y410 },
+            },
+        },
+        {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_Y416 },
+            },
+        },
+
+        // mctf does not work with interlace
+        {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_UNKNOWN },
+            },
+        },
+        // mctf does not work with interlace
+        {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TFF },
+            },
+        },
+
+        // mctf does not work with interlace
+        {/*27*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+            },
+        },
+
+        {/*28*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_NV12 },
+            },
+        },
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        // mctf, overlap param
+        {/*29*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_ON },
+            },
+        },
+
+        {/*30*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_OFF },
+            },
+        },
+
+        {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_ADAPTIVE },
+            },
+        },
+
+        {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_ADAPTIVE + 1 },
+            },
+        },
+
+        {/*33*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_UNKNOWN },
+            },
+        },
+
+        // mctf, deblock param
+        {/*34*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_ON },
+            },
+        },
+
+        {/*35*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_OFF },
+            },
+        },
+
+        {/*36*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_ADAPTIVE },
+            },
+        },
+
+        {/*37*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_ADAPTIVE + 1 },
+            },
+        },
+
+        {/*38*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_UNKNOWN },
+            },
+        },
+
+        // mctf, TemporalMode param
+        {/*39*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_SPATIAL },
+            },
+        },
+
+        {/*40*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_1REF },
+            },
+        },
+
+        {/*41*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_2REF },
+            },
+        },
+
+        {/*42*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_4REF },
+            },
+        },
+
+        {/*43*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_UNKNOWN },
+            },
+        },
+
+        {/*44*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_MCTF_TEMPORAL_MODE_4REF + 1 },
+            },
+        },
+
+        // mctf, MVPrecision param
+        {/*45*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_INTEGER },
+            },
+        },
+
+        {/*46*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_HALFPEL },
+            },
+        },
+
+        {/*47*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_QUARTERPEL },
+            },
+        },
+
+        {/*48*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_UNKNOWN },
+            },
+        },
+
+        {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        3 },
+            },
+        },
+
+        {/*50*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_QUARTERPEL + 1 },
+            },
+        },
+
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*51*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_4REF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
+
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
+            },
+        },
+
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_2REF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
+
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
+            },
+        },
+
+        {/*53*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_1REF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
+
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
+            },
+        },
+
+        {/*54*/ MFX_ERR_NONE, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_SPATIAL },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
+
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
+            },
+        },
+
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_4REF },
+                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
+            },
+        },
+
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_2REF },
+                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
+            },
+        },
+
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*57*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_1REF },
+                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
+            },
+        },
+
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_SPATIAL },
+                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
+            },
+        },
+#endif
+
+        // by default, 2-ref case is used; its incompatible with FRC
+        {/*59*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
+
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
+            },
+        },
+        // any FRC-like algorithm is bad for MCTF with delays
+        {/*60*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_EXTBUFF_VPP_MCTF },
+                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
+            },
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -116,6 +546,7 @@ namespace vpp_mctf_init
         if (MFX_FOURCC_YV12 == m_par.vpp.In.FourCC && MFX_ERR_NONE == tc.sts
             && MFX_OS_FAMILY_WINDOWS == g_tsOSFamily && g_tsImpl & MFX_IMPL_VIA_D3D11)
             sts = MFX_WRN_PARTIAL_ACCELERATION;
+
         if (NULL_PTR_SESSION != tc.mode)
         {
             MFXInit();

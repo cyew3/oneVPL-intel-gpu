@@ -80,81 +80,31 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\test_sample_allocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_common.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_alloc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_session.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_encoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_ext_buffers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_surface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_bitstream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_struct.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_struct_decl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_trace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_ext_buffers_decl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_plugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_decoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_streams.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_vpp.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_platforms.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_preenc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_enc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_pak.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_transcoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_fei_warning.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_mvc_warning.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\gmock\ts_typedef.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <ClInclude Include="include\gmock\ts_bitstream.h" />
+    <ClInclude Include="include\gmock\ts_common.h" />
+    <ClInclude Include="include\gmock\ts_alloc.h" />
+    <ClInclude Include="include\gmock\ts_decoder.h" />
+    <ClInclude Include="include\gmock\ts_enc.h" />
+    <ClInclude Include="include\gmock\ts_fei_warning.h" />
+    <ClInclude Include="include\gmock\ts_mvc_warning.h" />
+    <ClInclude Include="include\gmock\ts_pak.h" />
+    <ClInclude Include="include\gmock\ts_encoder.h" />
+    <ClInclude Include="include\gmock\ts_ext_buffers.h" />
+    <ClInclude Include="include\gmock\ts_ext_buffers_decl.h" />
+    <ClInclude Include="include\gmock\ts_preenc.h" />
+    <ClInclude Include="include\gmock\ts_parser.h" />
+    <ClInclude Include="include\gmock\ts_platforms.h" />
+    <ClInclude Include="include\gmock\ts_plugin.h" />
+    <ClInclude Include="include\gmock\ts_session.h" />
+    <ClInclude Include="include\gmock\ts_streams.h" />
+    <ClInclude Include="include\gmock\ts_struct.h" />
+    <ClInclude Include="include\gmock\ts_struct_decl.h" />
+    <ClInclude Include="include\gmock\ts_surface.h" />
+    <ClInclude Include="include\gmock\ts_trace.h" />
+    <ClInclude Include="include\gmock\ts_transcoder.h" />
+    <ClInclude Include="include\gmock\ts_typedef.h" />
+    <ClInclude Include="include\gmock\ts_vpp.h" />
+    <ClInclude Include="include\test_sample_allocator.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -1101,6 +1051,21 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_lcu.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_douse.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_frame_async.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_getvideoparam.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_query_platform.cpp">
+      <Filter>Source Files\test_suites\vpp</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

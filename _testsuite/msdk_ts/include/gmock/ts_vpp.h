@@ -72,7 +72,7 @@ public:
     mfxStatus SetFrameAllocator();
     mfxStatus SetFrameAllocator(mfxSession session, mfxFrameAllocator *allocator);
 
-    mfxStatus RunFrameVPPAsync();
+    mfxStatus RunFrameVPPAsync(bool bNullInput = false, bool bNullOutput = false);
     virtual mfxStatus RunFrameVPPAsync(mfxSession session, mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxExtVppAuxData *aux, mfxSyncPoint *syncp);
 
     mfxStatus RunFrameVPPAsyncEx();

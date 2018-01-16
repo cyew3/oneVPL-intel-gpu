@@ -329,7 +329,7 @@ mfxStatus tsVideoVPP::AllocSurfaces()
     return m_pSurfPoolOut->AllocSurfaces(m_request[1]);
 }
 
-mfxStatus tsVideoVPP::RunFrameVPPAsync()
+mfxStatus tsVideoVPP::RunFrameVPPAsync(bool bNullInput, bool bNullOutput)
 {
     if(m_default)
     {
@@ -343,8 +343,8 @@ mfxStatus tsVideoVPP::RunFrameVPPAsync()
             AllocSurfaces();
         }
 
-        m_pSurfIn  = m_pSurfPoolIn->GetSurface();
-        m_pSurfOut = m_pSurfPoolOut->GetSurface();
+        m_pSurfIn  = bNullInput ? nullptr : m_pSurfPoolIn->GetSurface();
+        m_pSurfOut = bNullOutput ? nullptr : m_pSurfPoolOut->GetSurface();
 
         if(m_surf_in_processor)
         {
