@@ -24,7 +24,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
-//#include "mfx_ext_buffers.h"
 
 #ifndef MFX_VERSION
 #error MFX_VERSION not defined
@@ -125,6 +124,16 @@ typedef struct
     FilterConfig mode;
 
 } sDenoiseParam;
+
+#ifdef ENABLE_MCTF
+typedef struct
+{
+    mfxExtVppMctf        params;
+    FilterConfig         mode;
+} sMCTFParam;
+#endif
+
+
 
 typedef struct
 {

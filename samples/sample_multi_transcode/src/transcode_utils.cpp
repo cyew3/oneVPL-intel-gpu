@@ -148,6 +148,30 @@ void TranscodingSample::PrintHelp()
 
     msdk_printf(MSDK_STRING("  -mfe_timeout <N> multi-frame encode timeout in milliseconds - set per sessions control\n"));
 #endif
+#ifdef ENABLE_MCTF
+#if !defined ENABLE_MCTF_EXT
+    msdk_printf(MSDK_STRING("  -mctf [Strength]\n"));
+    msdk_printf(MSDK_STRING("        Strength is an optional value;  it is in range [0...20]\n"));
+    msdk_printf(MSDK_STRING("        value 0 makes MCTF operates in auto mode;\n"));
+    msdk_printf(MSDK_STRING("        values [1...20] makes MCTF operates with fixed-strength mode;\n"));
+    msdk_printf(MSDK_STRING("        In fixed-strength mode, MCTF strength can be adjusted at framelevel;\n"));
+    msdk_printf(MSDK_STRING("        If no Strength is given, MCTF operates in auto mode.\n"));
+#else
+    msdk_printf(MSDK_STRING("  -mctf MctfMode:BitsPerPixel:Strength:ME:Overlap:DB\n"));
+    msdk_printf(MSDK_STRING("        every parameter may be missed; in this case default value is used.\n"));
+    msdk_printf(MSDK_STRING("        MctfMode: 0 - spatial filter\n"));
+    msdk_printf(MSDK_STRING("        MctfMode: 1- temporal filtering, 1 backward reference\n"));
+    msdk_printf(MSDK_STRING("        MctfMode: 2- temporal filtering, 1 backward & 1 forward reference\n"));
+    msdk_printf(MSDK_STRING("        MctfMode: 3- temporal filtering, 2 backward & 2 forward references\n"));
+    msdk_printf(MSDK_STRING("        MctfMode:  other values: force default mode to be used\n"));
+    msdk_printf(MSDK_STRING("        BitsPerPixel: float, valid range [0...12.0]; if exists, is used for automatic filter strength adaptation. Default is 0.0\n"));
+    msdk_printf(MSDK_STRING("        Strength: integer, [0...20]. Default value is 0.\n"));
+    msdk_printf(MSDK_STRING("        ME: Motion Estimation precision; 0 - integer ME (default); 1 - quater-pel ME\n"));
+    msdk_printf(MSDK_STRING("        Overlap: 0 - do not apply overlap ME (default); 1 - to apply overlap ME\n"));
+    msdk_printf(MSDK_STRING("        DB: 0 - do not apply deblock Filter (default); 1 - to apply Deblock Filter\n"));
+#endif //ENABLE_MCTF_EXT
+#endif //ENABLE_MCTF
+
     msdk_printf(MSDK_STRING("  -robust       Recover from gpu hang errors as the come\n"));
     msdk_printf(MSDK_STRING("  -async        Depth of asynchronous pipeline. default value 1\n"));
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
@@ -768,6 +792,149 @@ bool CmdProcessor::ParseROIFile(const msdk_char *roi_file_name, std::vector<mfxE
     return true;
 }
 #endif //MFX_VERSION >= 1022
+#ifdef ENABLE_MCTF
+
+// returns a pointer to start of argument with a number argn;
+// if failes to find argn, returns NULL
+msdk_char* ParseArgn(msdk_char* pIn, mfxU32 argn, msdk_char separator) {
+
+    msdk_char* pstr = pIn;
+    if (!argn)
+        return pIn;
+    else {
+        for (mfxU32 n = 0; n != argn; ++n) {
+            while (separator != *pstr && msdk_char('\0') != *pstr)
+                ++pstr;
+            if (msdk_char('\0') == *pstr)
+                return NULL;
+            else
+                ++pstr;
+        }
+        return pstr;
+    }
+};
+
+template <typename T>
+void ArgConvert(msdk_char* pIn, mfxU32 argn, msdk_char* pattern, T* pArg, T ArgDefault, mfxU32& NumOfGoodConverts) {
+    msdk_char* pargs = ParseArgn(pIn, argn, msdk_char(':'));
+    if (pargs) {
+        if (!msdk_sscanf(pargs, pattern, pArg))
+            *pArg = ArgDefault;
+        else
+            ++NumOfGoodConverts;
+    };
+}
+
+void ParseMCTFParams(msdk_char* strInput[], mfxU32 nArgNum, mfxU32& curArg, TranscodingSample::sInputParams * pParams)
+{
+    mfxU32& i = curArg;
+    if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-mctf")))
+    {
+        pParams->mctfParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+        pParams->mctfParam.params.FilterStrength = 0;
+#if defined ENABLE_MCTF_EXT
+        pParams->mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_2REF; // default
+        pParams->mctfParam.params.BitsPerPixelx100k = 0;
+        pParams->mctfParam.params.Deblocking = MFX_CODINGOPTION_OFF;
+        pParams->mctfParam.params.Overlap = MFX_CODINGOPTION_OFF;
+        pParams->mctfParam.params.MVPrecision = MFX_MVPRECISION_INTEGER;
+#endif
+
+
+        if (i + 1 < nArgNum)
+        {
+            mfxU16 _strength(0);
+            mfxU32 strength_idx = 0;
+            mfxU32 ParsedArgsNumber = 0;
+#if defined ENABLE_MCTF_EXT
+            strength_idx = 2;
+#endif
+            //the order of arguments is:
+            // MctfMode:BitsPerPixel:Strength:ME:Overlap:DB
+
+            ArgConvert(strInput[i + 1], strength_idx, MSDK_STRING("%hd:%*c"), &_strength, _strength, ParsedArgsNumber);
+#if defined ENABLE_MCTF_EXT
+            mfxU16 _refnum(2);
+            mfxF64 _bitsperpixel(0.0);
+            mfxU16 _me_precision(0);
+            mfxU16 _overlap(0);
+            mfxU16 _deblock(0);
+
+            ArgConvert(strInput[i + 1], 0, MSDK_STRING("%hd:%*c"), &_refnum, _refnum, ParsedArgsNumber);
+            ArgConvert(strInput[i + 1], 1, MSDK_STRING("%lf:%*c"), &_bitsperpixel, _bitsperpixel, ParsedArgsNumber);
+            ArgConvert(strInput[i + 1], 3, MSDK_STRING("%hd:%*c"), &_me_precision, _me_precision, ParsedArgsNumber);
+            ArgConvert(strInput[i + 1], 4, MSDK_STRING("%hd:%*c"), &_overlap, _overlap, ParsedArgsNumber);
+            ArgConvert(strInput[i + 1], 5, MSDK_STRING("%hd:%*c"), &_deblock, _deblock, ParsedArgsNumber);
+#endif
+            if (ParsedArgsNumber > 0)
+            {
+                pParams->mctfParam.mode = VPP_FILTER_ENABLED_CONFIGURED;
+            }
+            else
+            {
+                pParams->mctfParam.mode = VPP_FILTER_ENABLED_DEFAULT;
+                msdk_printf(MSDK_STRING("MCTF works in default mode; no parameters are passed.\n"));
+            }
+            pParams->mctfParam.params.FilterStrength = _strength;
+#if defined ENABLE_MCTF_EXT
+            pParams->mctfParam.params.BitsPerPixelx100k = mfxU32(_bitsperpixel*MCTF_BITRATE_MULTIPLIER);
+            switch (_refnum) {
+            case 0:
+                pParams->mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_SPATIAL;
+                break;
+            case 1:
+                pParams->mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_1REF;
+                break;
+            case 2:
+                pParams->mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_2REF;
+                break;
+            case 3:
+                pParams->mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_4REF;
+                break;
+            default:
+                pParams->mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_UNKNOWN;
+            };
+            switch (_deblock) {
+            case 0:
+                pParams->mctfParam.params.Deblocking = MFX_CODINGOPTION_OFF;
+                break;
+            case 1:
+                pParams->mctfParam.params.Deblocking = MFX_CODINGOPTION_ON;
+                break;
+            default:
+                pParams->mctfParam.params.Deblocking = MFX_CODINGOPTION_UNKNOWN;
+            };
+            switch (_overlap) {
+            case 0:
+                pParams->mctfParam.params.Overlap = MFX_CODINGOPTION_OFF;
+                break;
+            case 1:
+                pParams->mctfParam.params.Overlap = MFX_CODINGOPTION_ON;
+                break;
+            default:
+                pParams->mctfParam.params.Overlap = MFX_CODINGOPTION_UNKNOWN;
+            };
+            switch (_me_precision) {
+            case 0:
+                pParams->mctfParam.params.MVPrecision = MFX_MVPRECISION_INTEGER;
+                break;
+            case 1:
+                pParams->mctfParam.params.MVPrecision = MFX_MVPRECISION_QUARTERPEL;
+                break;
+            default:
+                pParams->mctfParam.params.MVPrecision = MFX_MVPRECISION_UNKNOWN;
+            };
+#endif
+            if(ParsedArgsNumber)
+                i++;
+        }
+        else
+        {
+            msdk_printf(MSDK_STRING("MCTF works in default mode; no parameters are passed.\n"));
+        }
+    }
+}
+#endif
 
 mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
 {
@@ -1680,6 +1847,12 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
                 return MFX_ERR_UNSUPPORTED;
             }
         }
+#ifdef ENABLE_MCTF
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-mctf")))
+        {
+            ParseMCTFParams(argv, argc, i, &InputParams);
+        }
+#endif
         else
         {
             PrintError(MSDK_STRING("Invalid input argument number %d %s"), i, argv[i]);

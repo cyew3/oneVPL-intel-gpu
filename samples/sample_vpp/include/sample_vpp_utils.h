@@ -88,7 +88,11 @@ enum
     ALLOC_IMPL_VIA_D3D11    = 2,
     ALLOC_IMPL_VIA_VAAPI    = 4
 };
-
+#ifdef ENABLE_MCTF
+const mfxU16  MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE = 2;
+const mfxU16  MCTF_MID_FILTER_STRENGTH = 10;
+const mfxF64  MCTF_LOSSLESS_BPP = 12.0;
+#endif
 //#define BACKWARD_COMPATIBILITY
 
 typedef struct _ownFrameInfo
@@ -116,6 +120,9 @@ typedef struct _filtersParam
     sProcAmpParam             *pProcAmpParam      ;
     sDetailParam              *pDetailParam       ;
     sDenoiseParam             *pDenoiseParam      ;
+#ifdef ENABLE_MCTF
+    sMCTFParam                *pMctfParam         ;
+#endif
     sVideoAnalysisParam       *pVAParam           ;
     sIDetectParam             *pIDetectParam      ;
     sFrameRateConversionParam *pFRCParam          ;
@@ -139,6 +146,9 @@ struct sInputParams
     /* Video Enhancement Algorithms */
     std::vector<sDIParam                 > deinterlaceParam;
     std::vector<sDenoiseParam            > denoiseParam;
+#ifdef ENABLE_MCTF
+    std::vector<sMCTFParam               > mctfParam;
+#endif
     std::vector<sDetailParam             > detailParam;
     std::vector<sProcAmpParam            > procampParam;
     std::vector<sFrameRateConversionParam> frcParam;
@@ -272,6 +282,8 @@ struct sMemoryAllocator
     mfxAllocatorParams* pAllocatorParams;
     bool                bUsedAsExternalAllocator;
 
+    // storage for ext-buffers pointers assosiated with input surfaces;
+    std::vector<mfxExtBuffer*> pExtBuffersStorageSurfaceIn[MAX_INPUT_STREAMS];
     mfxFrameSurface1*     pSurfacesIn[MAX_INPUT_STREAMS]; // SINGLE_IN/OUT/MULTIPLE_INs
     mfxFrameSurface1*     pSurfacesOut;
     mfxFrameAllocResponse responseIn[MAX_INPUT_STREAMS];  // SINGLE_IN/OUT/MULTIPLE_INs
@@ -440,6 +452,9 @@ struct sAppResources
     mfxExtVPPProcAmp    procampConfig;
     mfxExtVPPDetail     detailConfig;
     mfxExtVPPDenoise    denoiseConfig;
+#ifdef ENABLE_MCTF
+    mfxExtVppMctf       mctfConfig;
+#endif
     mfxExtVPPRotation   rotationConfig;
     mfxExtVPPScaling    scalingConfig;
 #ifdef ENABLE_FF

@@ -80,6 +80,12 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #error MFX_VERSION not defined
 #endif
 
+#ifdef ENABLE_MCTF
+const mfxU16  MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE = 2;
+const mfxU16  MCTF_MID_FILTER_STRENGTH = 10;
+const mfxF64  MCTF_LOSSLESS_BPP = 12.0;
+#endif
+
 namespace TranscodingSample
 {
     extern mfxU32 MFX_STDCALL TranscodeRoutine(void   *pObj);
@@ -118,6 +124,22 @@ namespace TranscodingSample
         mfxU32 DstH;
         mfxU16 TileId;
     };
+
+#ifdef ENABLE_MCTF
+    typedef enum
+    {
+        VPP_FILTER_DISABLED = 0,
+        VPP_FILTER_ENABLED_DEFAULT = 1,
+        VPP_FILTER_ENABLED_CONFIGURED = 7
+
+    } VPPFilterMode;
+
+    typedef struct
+    {
+        mfxExtVppMctf        params;
+        VPPFilterMode         mode;
+    } sMCTFParam;
+#endif
 
     enum ExtBRCType {
         EXTBRC_DEFAULT,
@@ -276,6 +298,9 @@ namespace TranscodingSample
         bool bROIasQPMAP;
 #endif //MFX_VERSION >= 1022
         sInputParams();
+#ifdef ENABLE_MCTF
+        sMCTFParam mctfParam;
+#endif
         void Reset();
     };
 

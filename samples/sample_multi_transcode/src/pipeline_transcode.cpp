@@ -34,6 +34,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "plugin_loader.h"
 #include "parameters_dumper.h"
 
+#include "sample_utils.h"
+
 // let's use std::max and std::min instead
 #undef max
 #undef min
@@ -76,6 +78,17 @@ void sInputParams::Reset()
 {
     memset(static_cast<__sInputParams*>(this), 0, sizeof(__sInputParams));
 
+#ifdef ENABLE_MCTF
+    mctfParam.mode = VPP_FILTER_DISABLED;
+    mctfParam.params.FilterStrength = 0;
+#ifdef ENABLE_MCTF_EXT
+    mctfParam.params.BitsPerPixelx100k = 0;
+    mctfParam.params.Deblocking = MFX_CODINGOPTION_OFF;
+    mctfParam.params.Overlap = MFX_CODINGOPTION_OFF;
+    mctfParam.params.TemporalMode = MFX_MCTF_TEMPORAL_MODE_2REF;
+    mctfParam.params.MVPrecision = MFX_MVPRECISION_INTEGER;
+#endif
+#endif
     priority = MFX_PRIORITY_NORMAL;
     libType = MFX_IMPL_SOFTWARE;
     MaxFrameNumber = MFX_INFINITE;
@@ -392,6 +405,9 @@ mfxStatus CTranscodingPipeline::VPPPreInit(sInputParams *pParams)
              (m_mfxDecParams.mfx.FrameInfo.CropH != pParams->nDstHeight && pParams->nDstHeight) ||
              (pParams->bEnableDeinterlacing) || (pParams->DenoiseLevel!=-1) || (pParams->DetailLevel!=-1) || (pParams->FRCAlgorithm) ||
              (bVppCompInitRequire) || (pParams->fieldProcessingMode) ||
+#ifdef ENABLE_MCTF
+            (VPP_FILTER_DISABLED != pParams->mctfParam.mode) ||
+#endif
              (pParams->EncoderFourCC && decoderFourCC && pParams->EncoderFourCC != decoderFourCC && m_bEncodeEnable))
         {
             if (m_bIsFieldWeaving || m_bIsFieldSplitting)
@@ -685,6 +701,46 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 
     pExtSurface->pSurface = pmfxSurface;
     mfxStatus sts = MFX_ERR_NONE;
+
+#ifdef ENABLE_MCTF
+    bool bAttachMctfBuffer = false;
+    mfxExtVppMctf * MctfRTParams = NULL;
+    if (bAttachMctfBuffer && pSurfaceIn->pSurface)
+    {
+        // get a new (or existing) Mctf control buffer. 
+        MctfRTParams = GetMctfParamBuffer<mfxExtVppMctf, MFX_EXTBUFF_VPP_MCTF>(pSurfaceIn->pSurface);
+        if (MctfRTParams)
+        {
+            // suppose the following is going to to be pass:
+            MctfRTParams->FilterStrength = MCTF_MID_FILTER_STRENGTH;
+#if defined ENABLE_MCTF_EXT
+            MctfRTParams->BitsPerPixelx100k = mfxU32(MCTF_LOSSLESS_BPP * MCTF_BITRATE_MULTIPLIER);
+            MctfRTParams->Deblocking = MFX_CODINGOPTION_OFF;
+#endif
+            WipeOutExtParams(pSurfaceIn->pSurface, true, MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE);
+
+
+            if (pSurfaceIn->pSurface->Data.NumExtParam >= MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE) {
+                msdk_printf(MSDK_STRING("number of attached buffers to an input surface >= maximum allowed\n"));
+                sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+                return sts;
+            }
+            else
+                pSurfaceIn->pSurface->Data.ExtParam[pSurfaceIn->pSurface->Data.NumExtParam++] = reinterpret_cast<mfxExtBuffer*>(MctfRTParams);
+        }
+        else
+        {
+            msdk_printf(MSDK_STRING("the extended buffer is not created; nothing can be attached; exit.\n"));
+            sts = MFX_ERR_UNDEFINED_BEHAVIOR;
+            return(sts);
+        }
+    }
+    else if (!bAttachMctfBuffer && pSurfaceIn->pSurface)
+    {
+        pSurfaceIn->pSurface->Data.NumExtParam = 0;
+    }
+#endif
+
     for(;;)
     {
         sts = m_pmfxVPP->RunFrameVPPAsync(pSurfaceIn->pSurface, pmfxSurface, NULL, &pExtSurface->Syncp);
@@ -2978,6 +3034,16 @@ mfxStatus CTranscodingPipeline::AllocFrames(mfxFrameAllocRequest *pRequest, bool
         {
             surface->Data.MemId = pResponse->mids[i];
         }
+#ifdef ENABLE_MCTF
+        if (isDecAlloc)
+        {
+            // to allocate a buffer of pointers to buffer and initialize it 
+            surface->Data.ExtParam = new mfxExtBuffer*[MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE];
+            for (size_t k = 0; k < MAX_NUM_OF_ATTACHED_BUFFERS_FOR_IN_SUFACE; ++k)
+                surface->Data.ExtParam[k] = NULL;
+            surface->Data.NumExtParam = 0;
+        }
+#endif
 
         (isDecAlloc) ? m_pSurfaceDecPool.push_back(surface):m_pSurfaceEncPool.push_back(surface);
     }
@@ -3337,6 +3403,12 @@ void CTranscodingPipeline::FreeFrames()
     mfxU32 i;
     for (i = 0; i < m_pSurfaceDecPool.size(); i++)
     {
+#ifdef ENABLE_MCTF
+        if (m_pSurfaceDecPool[i]->Data.ExtParam) {
+            delete[]m_pSurfaceDecPool[i]->Data.ExtParam;
+            m_pSurfaceDecPool[i]->Data.ExtParam = NULL;
+        }
+#endif
         MSDK_SAFE_DELETE(m_pSurfaceDecPool[i]);
     }
 
@@ -3354,6 +3426,9 @@ void CTranscodingPipeline::FreeFrames()
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxEncResponse);
         m_pMFXAllocator->Free(m_pMFXAllocator->pthis, &m_mfxDecResponse);
     }
+#ifdef ENABLE_MCTF
+    GetMctfParamBuffer<mfxExtVppMctf, MFX_EXTBUFF_VPP_MCTF>((mfxFrameSurface1*)NULL, true);
+#endif
 } // CTranscodingPipeline::FreeFrames()
 
 mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
