@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_VA_WIN)
@@ -82,6 +82,7 @@ enum PRODUCT_FAMILY
     IGFX_ICELAKE,
     IGFX_ICELAKE_LP,
     IGFX_LAKEFIELD,
+    IGFX_JASPERLAKE,
     IGFX_TIGERLAKE_LP,
     IGFX_TIGERLAKE_HP,
 
@@ -135,6 +136,8 @@ eMFXHWType GetHardwareType(const mfxU32 adapterNum, mfxU32 platformFromDriver)
         return MFX_HW_CNX_G;
     case IGFX_LAKEFIELD:
         return MFX_HW_LKF;
+    case IGFX_JASPERLAKE:
+        return MFX_HW_JSL;
     case IGFX_TIGERLAKE_LP:
         return MFX_HW_TGL_LP;
     case IGFX_TIGERLAKE_HP:

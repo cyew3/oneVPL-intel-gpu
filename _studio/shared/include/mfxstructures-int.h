@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXSTRUCTURES_INT_H__
@@ -67,6 +67,7 @@ enum eMFXHWType
     MFX_HW_CNX_G     = MFX_HW_ICL + 2,
 
     MFX_HW_LKF       = 0x1500000,
+    MFX_HW_JSL       = MFX_HW_LKF + 1,
 
     MFX_HW_TGL_LP    = 0x1600000,
     MFX_HW_TGL_HP    = MFX_HW_TGL_LP + 1,

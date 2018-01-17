@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <assert.h>
@@ -877,6 +877,7 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_ICL    :
     case MFX_HW_ICL_LP : platform->CodeName = MFX_PLATFORM_ICELAKE;     break;
     case MFX_HW_LKF    : platform->CodeName = MFX_PLATFORM_LAKEFIELD;   break;
+    case MFX_HW_JSL    : platform->CodeName = MFX_PLATFORM_JASPERLAKE;  break;
     case MFX_HW_TGL_LP :
     case MFX_HW_TGL_HP : platform->CodeName = MFX_PLATFORM_TIGERLAKE;   break;
 #endif

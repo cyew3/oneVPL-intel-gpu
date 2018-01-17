@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -567,6 +567,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     case MFX_HW_GLK:
     case MFX_HW_CFL:
     case MFX_HW_CNL:
+    case MFX_HW_JSL:
 #endif
         name = sDXVA2_ModeH264_VLD_NoFGT;
 #ifndef OPEN_SOURCE
