@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_roi.cpp
 
@@ -22,6 +22,7 @@ File Name: hevce_roi.cpp
 #define HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS (3)
 #endif // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
 
+#define TBD_ON_RUNTIME (0xffff)
 #define HEVCE_ROI_MAXIMUM_ABS_QP_VALUE (51)
 #define HEVCE_ROI_MAXIMUM_ABS_QP_PRIORITY (3)
 
@@ -31,11 +32,11 @@ namespace hevce_roi
     {
         NONE,
         MFX_PAR,
-        CORRECT_ROI,
-        WRONG_ROI,
         WRONG_ROI_OUT_OF_IMAGE,
         CHECK_QUERY,
         MAX_SUPPORTED_REGIONS,
+        CAPS_NUM_ROI_EQ_MAX, // NumROI will be queried from caps in runtime for this type of test
+        CAPS_NUM_ROI_GT_MAX, // NumROI will be queried from caps in runtime for this type of test
         NOT_ALIGNED_ROI
     };
 
@@ -89,292 +90,228 @@ namespace hevce_roi
     const tc_struct TestSuite::test_case[] =
     {
         // one correct region [quantity, top, left, right, bottom, qp-alter]
-        {/*00*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 0, 1, 32, 32, 64, 64, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*00*/ MFX_ERR_NONE, NONE, NONE, 0, 1, 32, 32, 64, 64, 11 },
 
         // one correct region with not aligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 0, 1, 10, 20, 120, 150, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, 0, 1, 10, 20, 120, 150, 11, },
 
         // one region with out of range coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 0, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*02*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11 },
+
+        // checking Query with unsupported ROI quantity [quantity, top, left, right, bottom, qp-alter]
+        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, CAPS_NUM_ROI_GT_MAX, 0, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
 
         // unsupported ROI quantity [quantity, top, left, right, bottom, qp-alter]
-        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, 0, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 1, 32, 32, 64, 64, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, CAPS_NUM_ROI_GT_MAX, 0, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
+
+        // checking maximum supported regions from Caps on Query [quantity, top, left, right, bottom, qp-alter]
+        {/*05*/ MFX_ERR_NONE, CHECK_QUERY, CAPS_NUM_ROI_EQ_MAX, 0, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
+
+        // checking maximum supported regions from Caps on Encode [quantity, top, left, right, bottom, qp-alter]
+        {/*06*/ MFX_ERR_NONE, NONE, CAPS_NUM_ROI_EQ_MAX, 0, TBD_ON_RUNTIME, 32, 32, 64, 64, 1 },
 
         // one region with invalid dimensions [quantity, top, left, right, bottom, qp-alter]
-        {/*04*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, 0, 1, 128, 128, 32, 32, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*07*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 128, 128, 32, 32, 11 },
 
         // region with invalid unaligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*05*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, 0, 1, 111, 13, 3, 1, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 111, 13, 3, 1, 11},
 
         // three correct regions [quantity, top, left, right, bottom, qp-alter]
-        {/*06*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 0, 3, 32, 32, 64, 64, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*09*/ MFX_ERR_NONE, NONE, NONE, 0, 3, 32, 32, 64, 64, 11 },
 
         // three regions where some regions are out of the image [quantity, top, left, right, bottom, qp-alter]
-        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, 0, 3, 32, 32, 64, 64, 13,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, 0, 3, 32, 32, 64, 64, 13 },
 
         // one correct region with incorrect positive qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*08*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, 0, 1, 32, 32, 128, 128, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 32, 32, 128, 128, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1 },
 
         // one correct region with incorrect negative qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*09*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, 0, 1, 32, 32, 64, 64, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*12*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 32, 32, 64, 64, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1 },
 
         // one correct region with CBR [quantity, top, left, right, bottom, qp-alter]
-        {/*10*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 0, 1, 32, 32, 128, 128, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
-        },
-
-        // one correct region with CBR, incorrect qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*11*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, 0, 1, 32, 32, 64, 64, HEVCE_ROI_MAXIMUM_ABS_QP_PRIORITY + 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
-        },
-
-        // one correct region with VBR [quantity, top, left, right, bottom, qp-alter]
-        {/*12*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 0, 1, 32, 32, 64, 64, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        // CBR is no more supported - all new drivers are reporting caps.ROIBRCPriorityLevelSupport = 0.
+        {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 32, 32, 128, 128, 1,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // one null-region [quantity, top, left, right, bottom, qp-alter]
-        {/*13*/ MFX_ERR_NONE, CORRECT_ROI, NONE, 0, 1, 0, 0, 0, 0, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*14*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 0, 1, 0, 0, 0, 0, 11 },
 
         // checking Query with correct region [quantity, top, left, right, bottom, qp-alter]
-        {/*14*/ MFX_ERR_NONE, CHECK_QUERY, NONE, 0, 1, 32, 32, 128, 128, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*15*/ MFX_ERR_NONE, CHECK_QUERY, NONE, 0, 1, 32, 32, 128, 128, 11 },
 
         // checking Query with correct region and incorrect qp-alter [quantity, top, left, right, bottom, qp-alter]
-        {/*15*/ MFX_ERR_UNSUPPORTED, CHECK_QUERY, NONE, 0, 1, 32, 32, 128, 128, 0xff,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*16*/ MFX_ERR_UNSUPPORTED, CHECK_QUERY, NONE, 0, 1, 32, 32, 128, 128, 0xff },
 
         // requesting Query for maximum supported regions [quantity, top, left, right, bottom, qp-alter]
-        {/*16*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, MAX_SUPPORTED_REGIONS, 0, MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS, 32, 32, 64, 64, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, MAX_SUPPORTED_REGIONS, 0, MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS, 32, 32, 64, 64, 1 },
 
         // checking Query with one region with not aligned coordinates [quantity, top, left, right, bottom, qp-alter]
-        {/*17*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, NOT_ALIGNED_ROI, 0, 1, 10, 20, 30, 40, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
-            }
-        },
+        {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, NOT_ALIGNED_ROI, 0, 1, 10, 20, 30, 40, 1 },
 
 #if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_CFL)
 #if MFX_VERSION > 1021
         // one correct delta QP based region in CBR
-        {/*18*/ MFX_ERR_NONE, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, 20,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*19*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, 20,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // one correct delta QP based region in VBR
-        {/*19*/ MFX_ERR_NONE, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, -20,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*20*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, -20,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // one delta QP based region with not aligned coordinates in CBR
-        {/*20*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 13, 30, 110, 111, 20,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 13, 30, 110, 111, 20,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // one delta QP based region with not aligned coordinates in VBR
-        {/*21*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 10, 10, 20, 20, -20,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*22*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 10, 10, 20, 20, -20,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // one region with invalid size in CBR
-        {/*22*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // one region with invalid size in VBR
-        {/*23*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // unsupported number of regions in CBR
-        {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 1, 32, 32, 64, 64, 15,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 1, 32, 32, 64, 64, 15,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // unsupported number of regions in VBR
-        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 23, 32, 32, 64, 64, 15,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*26*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 23, 32, 32, 64, 64, 15,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // one region with invalid dimensions in CBR
-        {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 64, 64, 32, 32, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 64, 64, 32, 32, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // region with invalid dimensions in VBR
-        {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 128, 128, 32, 32, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 128, 128, 32, 32, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // three correct regions in CBR
-        {/*28*/ MFX_ERR_NONE, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 64, 64, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*29*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 64, 64, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // three correct regions in VBR
-        {/*29*/ MFX_ERR_NONE, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 64, 64, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*30*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 64, 64, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // three regions where some regions are out of the image in CBR
-        {/*30*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 128, 128, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 128, 128, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // three regions where some regions are out of the image in VBR
-        {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 64, 64, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, WRONG_ROI_OUT_OF_IMAGE, NONE, MFX_ROI_MODE_QP_DELTA, 3, 32, 32, 64, 64, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // one correct region with incorrect positive QP delta in CBR
-        {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 128, 128, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 128, 128, HEVCE_ROI_MAXIMUM_ABS_QP_VALUE + 1,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // one correct region with incorrect negative QP delta in VBR
-        {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, WRONG_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {/*34*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, (-1)*HEVCE_ROI_MAXIMUM_ABS_QP_VALUE - 1,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // one null-region in CBR
-        {/*34*/ MFX_ERR_NONE, CORRECT_ROI, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0, 0, 0, 0, 11,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {/*35*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 0, 0, 0, 0, 11,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // checking Query with correct region in CBR
         {/*35*/ MFX_ERR_NONE, CHECK_QUERY, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 128, 128, 21,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // checking Query with correct region and incorrect QP delta in VBR
         {/*36*/ MFX_ERR_UNSUPPORTED, CHECK_QUERY, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 128, 0xff,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // requesting Query for maximum supported regions in CBR
         {/*37*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MFX_ROI_MODE_QP_DELTA, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 5, 16, 16, 64, 64, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // requesting Query for maximum supported regions in VBR
         {/*38*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, MAX_SUPPORTED_REGIONS, MFX_ROI_MODE_QP_DELTA, HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS + 5, 16, 16, 64, 64, 1,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
-            }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
+        }
         },
 
         // checking Query with one region with not aligned coordinates in CBR
         {/*39*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, NOT_ALIGNED_ROI, MFX_ROI_MODE_QP_DELTA, 1, 11, 11, 33, 33, 21,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 
         // checking Query with one region with not aligned coordinates in VBR
         {/*40*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, NOT_ALIGNED_ROI, MFX_ROI_MODE_QP_DELTA, 1, 10, 20, 30, 40, 21,
-            {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
-            }
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR },
+        }
         },
 #endif // #if  MFX_VERSION > 1021
 #endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
@@ -525,13 +462,41 @@ namespace hevce_roi
 
         g_tsStreamPool.Reg();
 
+        ENCODE_CAPS_HEVC caps = {};
+
+        if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+        {
+            mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+            g_tsStatus.check(GetCaps(&caps, &capSize));
+        }
+        else
+        {
+            caps.MaxNumOfROI = HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS;
+        }
+
         mfxExtEncoderROI& roi = m_par;
-        roi.NumROI            = tc.roi_cnt;
+
+        if (tc.sub_type == CAPS_NUM_ROI_GT_MAX)
+        {
+            EXPECT_EQ(tc.roi_cnt, TBD_ON_RUNTIME);
+            roi.NumROI = caps.MaxNumOfROI + 1;
+        }
+        else if (tc.sub_type == CAPS_NUM_ROI_EQ_MAX)
+        {
+            EXPECT_EQ(tc.roi_cnt, TBD_ON_RUNTIME);
+            roi.NumROI = caps.MaxNumOfROI;
+        }
+        else
+        {
+            EXPECT_NE(tc.roi_cnt, TBD_ON_RUNTIME);
+            roi.NumROI = tc.roi_cnt;
+        }
+
 #if MFX_VERSION > 1021
-        roi.ROIMode           = tc.roi_mode;
+        roi.ROIMode = tc.roi_mode;
 #endif // MFX_VERSION > 1021
         const mfxU32 multiplier = tc.type == WRONG_ROI_OUT_OF_IMAGE ? m_par.mfx.FrameInfo.Width : 32;
-        const mfxU32 end_count = tc.roi_cnt > MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS ? MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS : tc.roi_cnt;
+        const mfxU32 end_count = roi.NumROI > MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS ? MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS : roi.NumROI;
         for(mfxU32 i = 0; i < end_count; ++i)
         {
             roi.ROI[i].Top        = tc.top + i*multiplier;
@@ -553,9 +518,9 @@ namespace hevce_roi
             mfxExtEncoderROI& roi = pout; 
             Query(m_session, &m_par, &pout);
 
-            if(tc.sub_type == MAX_SUPPORTED_REGIONS)
+            if (tc.sub_type == CAPS_NUM_ROI_GT_MAX || tc.sub_type == CAPS_NUM_ROI_EQ_MAX || tc.sub_type == MAX_SUPPORTED_REGIONS)
             {
-                EXPECT_EQ(HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS, roi.NumROI);
+                EXPECT_EQ(caps.MaxNumOfROI, roi.NumROI); //check that after Query() NumROI is equal to max supported value 
             }
             else if(tc.sub_type == NOT_ALIGNED_ROI)
             {
