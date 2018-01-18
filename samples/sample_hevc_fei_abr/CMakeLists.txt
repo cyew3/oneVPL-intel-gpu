@@ -11,7 +11,6 @@ endif()
 
 include_directories (
   ${CMAKE_CURRENT_SOURCE_DIR}/../sample_common/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/dso
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
