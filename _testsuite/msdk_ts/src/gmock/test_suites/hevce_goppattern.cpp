@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_goppattern.cpp
 
@@ -421,9 +421,9 @@ namespace hevce_goppattern
     }
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_goppattern, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_hevce_goppattern, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_hevce_goppattern, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_hevce_goppattern, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_hevce_goppattern, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_hevce_goppattern, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_goppattern, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_goppattern, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_goppattern, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_goppattern, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_goppattern, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
 };
