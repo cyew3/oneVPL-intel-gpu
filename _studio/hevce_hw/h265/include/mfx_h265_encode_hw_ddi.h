@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -281,6 +281,7 @@ public:
     FeedbackStorage()
         : m_pool_size(0)
         , m_fb_size(0)
+        , m_type(QUERY_STATUS_PARAM_FRAME)
     {
     }
 
