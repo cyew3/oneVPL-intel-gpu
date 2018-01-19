@@ -1001,9 +1001,9 @@ namespace MfxHwH264Encode
 #endif
             , m_hwType(MFX_HW_UNKNOWN)
             , m_SceneChange(0)
-            , m_enabledSwBrcLtr(false)
+            , m_LowDelayPyramidLayer(0)
             , m_frameLtrOff(1)
-            , m_frameLtrRe(0)
+            , m_frameLtrReassign(0)
             , m_LtrOrder(-1)
             , m_LtrQp(0)
             , m_RefOrder(-1)
@@ -1240,9 +1240,9 @@ namespace MfxHwH264Encode
         mutable std::vector<mfxEncodedUnitInfo> m_headersCache[2]; //Headers for every field
 #endif
         mfxU32 m_SceneChange;
-        bool   m_enabledSwBrcLtr;
+        mfxU32 m_LowDelayPyramidLayer;
         mfxU32 m_frameLtrOff;
-        mfxU32 m_frameLtrRe;
+        mfxU32 m_frameLtrReassign;
         mfxI32 m_LtrOrder;
         mfxI32 m_LtrQp;
         mfxI32 m_RefOrder;
@@ -1438,15 +1438,17 @@ namespace MfxHwH264Encode
         memset(&par,0,sizeof(par));
         par.FrameType = task->m_type[task->m_fid[0]];
         par.picStruct = 0;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        par.FrameCmplx   = task->m_frcmplx;
-        par.LongTerm     = (task->m_longTermFrameIdx != NO_INDEX_U8) ? 1 : 0;
-        par.SceneChange  = (mfxU16) task->m_SceneChange;
-#endif
         par.DisplayOrder = task->m_frameOrder;
         par.EncodedOrder = task->m_encOrder;
         par.PyramidLayer = (mfxU16)task->m_loc.level;
         par.NumRecode = (mfxU16)task->m_repack;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        par.FrameCmplx = task->m_frcmplx;
+        par.LongTerm = (task->m_longTermFrameIdx != NO_INDEX_U8) ? 1 : 0;
+        par.SceneChange = (mfxU16)task->m_SceneChange;
+        if (!par.PyramidLayer && (task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_P) && task->m_LowDelayPyramidLayer)
+            par.PyramidLayer = (mfxU16) task->m_LowDelayPyramidLayer;
+#endif
     }
 
     class BrcIface
@@ -2117,7 +2119,7 @@ namespace MfxHwH264Encode
         ASC       amtScd;
         mfxStatus SCD_Put_Frame(DdiTask & newTask);
         void      SCD_Get_FrameType(DdiTask & newTask);
-        mfxStatus CalculateRaCa(DdiTask const & task, mfxU16 &raca);
+        mfxStatus CalculateFrameCmplx(DdiTask const & task, mfxU16 &raca);
         void      Prd_LTR_Operation(DdiTask & newTask);
 
         mfxStatus UpdateBitstream(
@@ -2239,7 +2241,7 @@ namespace MfxHwH264Encode
         mfxU32      m_frameOrder;
         mfxU32      m_baseLayerOrder;
         mfxU32      m_frameOrderIdrInDisplayOrder;    // frame order of last IDR frame (in display order)
-        mfxU32      m_frameOrderIfrInDisplayOrder;    // frame order of last I frame (in display order)
+        mfxU32      m_frameOrderIntraInDisplayOrder;  // frame order of last I frame (in display order)
         mfxU32      m_frameOrderStartTScalStructure; // starting point of temporal scalability structure
 
         // parameters for Intra refresh
@@ -2319,7 +2321,7 @@ namespace MfxHwH264Encode
         mfxU32 m_bestGOPCost[MAX_B_FRAMES];
         std::vector<SVCPAKObject>       m_mbData;
 #endif
-        bool        m_enabledSwBrcLtr;
+        mfxU32      m_LowDelayPyramidLayer;
         mfxI32      m_LtrQp;
         mfxI32      m_LtrOrder;
         mfxI32      m_RefQp;
@@ -3455,7 +3457,8 @@ namespace MfxHwH264Encode
         DdiTaskIter           begin,
         DdiTaskIter           end,
         bool                  gopStrict,
-        bool                  flush);
+        bool                  flush,
+        bool                  closeGopForSceneChange);
 
     DdiTaskIter FindFrameToStartEncode(
         MfxVideoParam const & video,

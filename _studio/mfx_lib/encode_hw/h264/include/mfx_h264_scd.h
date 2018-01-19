@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -524,7 +524,6 @@ private:
     bool
         dataReady,
         GPUProc,
-        is_LTR_on,
         pendingSC,
         lastIwasSC;
     mfxI32
@@ -603,9 +602,6 @@ public:
     ASC_API void Set_pendingSC_Status();
     ASC_API void Reset_pendingSC_Status();
     ASC_API bool Query_pendingSC_Status();
-    ASC_API void Set_LTR_Status();
-    ASC_API void Reset_LTR_Status();
-    ASC_API bool Query_LTR_Status();
     ASC_API INT SetGoPSize(mfxU32 GoPSize);
     ASC_API INT SetInterlaceMode(mfxU32 interlaceMode);
     ASC_API void ResetGoPSize();
@@ -629,6 +625,8 @@ public:
     ASC_API mfxI32 Get_frame_Spatial_complexity();
     ASC_API mfxI32 Get_frame_Temporal_complexity();
     ASC_API bool Get_LTR_advice();
+    ASC_API mfxU32 Get_PDist_advice();
+    ASC_API bool Get_RepeatedFrame_advice();
     //ASC_API void printStats(ASCTSCstat data, char *filename, FILE *SADOut);
     //ASC_API void printStats(mfxI32 index, char *filename, FILE *SADOut);
     ASC_API void setInputFileName(char *filename);

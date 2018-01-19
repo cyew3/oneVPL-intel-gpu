@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENC_COMMON_HW_H__
@@ -730,6 +730,12 @@ namespace MfxHwH264Encode
     bool IsLookAheadSupported(
         MfxVideoParam const & video,
         eMFXHWType            platform);
+
+    bool  IsExtBrcSceneChangeSupported(
+        MfxVideoParam const & video);
+
+    bool IsAdaptiveLtrOn(
+        MfxVideoParam const & video);
 
     mfxU8 DetermineQueryMode(mfxVideoParam * in);
 

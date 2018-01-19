@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h264_scd.h"
@@ -1577,7 +1577,8 @@ bool SCDetectRF(mfxI32 diffMVdiffVal, mfxU32 RsCsDiff, mfxU32 MVDiff, mfxU32 Rs,
     mfxI32 diffAFD, mfxU32 negBalance, mfxU32 ssDCval, mfxU32 refDCval, mfxU32 RsDiff,
     mfxU8 control);
 
-bool Hint_LTR_op_on(mfxU32 RsCsDiff, mfxU32 MVDiff, mfxU32 AFD);
+
+bool Hint_LTR_op_on(mfxU32 SC, mfxU32 TSC);
 
 void ASC::SetUltraFastDetection() {
     support->size = ASCSmall_Size;
@@ -1685,7 +1686,7 @@ ASC_API INT ASC::Init(VideoCORE * core, CmDevice *m_cmDevice, const mfxFrameInfo
     INT res = MFX_ERR_NONE;
     scdCore = core;
     GPUProc = 0;
-    is_LTR_on = false;
+
     device = NULL;
     queue = NULL;
     program = NULL;
@@ -1718,11 +1719,6 @@ ASC_API INT ASC::Init(VideoCORE * core, CmDevice *m_cmDevice, const mfxFrameInfo
     return res;
 }
 
-//ASC_API void ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 interlaceMode, bool LTR_on) {
-//    Init(Width, Height, Pitch, interlaceMode);
-//    is_LTR_on = LTR_on;
-//}
-
 ASC_API void ASC::SetControlLevel(mfxU8 level) {
     support->control = level;
 }
@@ -1749,18 +1745,6 @@ ASC_API void ASC::Reset_pendingSC_Status() {
 
 ASC_API bool ASC::Query_pendingSC_Status() {
     return pendingSC;
-}
-
-ASC_API void ASC::Set_LTR_Status() {
-    is_LTR_on = true;
-}
-
-ASC_API void ASC::Reset_LTR_Status() {
-    is_LTR_on = false;
-}
-
-ASC_API bool ASC::Query_LTR_Status() {
-    return is_LTR_on;
 }
 
 ASC_API INT ASC::SetGoPSize(mfxU32 GoPSize) {
@@ -2972,7 +2956,8 @@ bool ShotDetect(ASCimageData Data, ASCimageData DataRef, ASCImDetails imageInfo,
             current->TSCindex, current->SCindex, current->Cs,
             current->diffAFD, current->negBalance, current->ssDCval,
             current->refDCval, current->RsDiff, controlLevel);
-    current->ltr_flag = Hint_LTR_op_on(current->RsCsDiff, current->MVdiffVal, current->AFD);
+
+    current->ltr_flag = Hint_LTR_op_on(current->SC, current->TSC);
     return SChange;
 }
 
@@ -3741,9 +3726,23 @@ ASC_API mfxI32 ASC::Get_frame_Temporal_complexity() {
         return NULL;
 }
 
+ASC_API mfxU32 ASC::Get_PDist_advice() {
+    if (dataReady)
+        return support->logic[ASCprevious_frame_data]->pdist;
+    else
+        return NULL;
+}
+
 ASC_API bool ASC::Get_LTR_advice() {
     if (dataReady)
         return support->logic[ASCprevious_frame_data]->ltr_flag;
+    else
+        return NULL;
+}
+
+ASC_API bool ASC::Get_RepeatedFrame_advice() {
+    if (dataReady)
+        return support->logic[ASCprevious_frame_data]->repeatedFrame;
     else
         return NULL;
 }
@@ -3797,6 +3796,7 @@ void ASC::GeneralBufferRotation() {
         videoData[ASCReference_Frame]->frame_number = videoData[ASCCurrent_Frame]->frame_number;
         support->logic[ASCcurrent_frame_data]->Schg = 0;
         support->logic[ASCprevious_frame_data]->Schg = 0;
+        support->logic[ASCprevious_frame_data]->repeatedFrame = true;
         support->logic[ASCprevious_previous_frame_data]->Schg = 0;
     }
     else {
@@ -3809,7 +3809,6 @@ void ASC::GeneralBufferRotation() {
         support->logic[ASCprevious_frame_data] = support->logic[ASCcurrent_frame_data];
         support->logic[ASCcurrent_frame_data] = metaTransfer;
     }
-        
 }
 
 #if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
@@ -38750,12 +38749,9 @@ bool SCDetectRF(
     return(sum > RF_DECISION_LEVEL + control);
 }
 
-bool Hint_LTR_op_on(mfxU32 RsCsDiff, mfxU32 MVDiff, mfxU32 AFD) {
-    bool
-        conditions[2];
-    conditions[0] = RsCsDiff < ((-133.9 * log(AFD)) + 406.7);
-    conditions[1] = (MVDiff < ((-25.97 * log(RsCsDiff)) + 185.71));
-    return (conditions[0] && conditions[1]);
+bool Hint_LTR_op_on(mfxU32 SC, mfxU32 TSC) {
+    bool ltr = TSC *TSC < (IPP_MAX(SC, 64) / 12);
+    return ltr;
 }
 
 }
