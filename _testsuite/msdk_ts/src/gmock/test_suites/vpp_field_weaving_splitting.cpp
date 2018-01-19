@@ -4,40 +4,28 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(C) 2018 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_field_weaving_splitting.cpp
 
 \* ****************************************************************************** */
 
 /*!
-\file vpp_init.cpp
-\brief Gmock test vpp_init
-
-Description:
-This suite tests VPP initialization\n
-35 test cases with the following differences:
-- Valid, invalid or already inited session\n
-- Filters\n
-- Video or system IOPattern\n
-- Output status
-
-Algorithm:
-- Initialize Media SDK lib\n
-- Set frame allocator\n
-- Initialize the VPP operation\n
-*/
-
-/*!
-\file vpp_fieldSplitting.cpp
-\brief Gmock test vpp_fieldSplitting
+\file vpp_field_weaving_splitting.cpp
+\brief Gmock test vpp_field_weaving_splitting
 
 Description:
 Field splitting is used for transcoding interlace frames into 2 HEVC field pictures (with half vertical dimension each, see HEVC spec annex D.2.19) 
 sequence_Type_flag = 1 //Field picture
 progressive_source_flag = 0 // input is interlace
-VPP processing:
-- Input frame  is interlace, provided output surface is set with MFX_PICSTRUCT_FIELD_SINGLE to request for field splitting
+MFX_EXTBUFF_VPP_FIELD_SPLITTING filter is enabled when input picture is a frame (!MFX_PICSTRUCT_FIELD_SINGLE) and output picture is a Field (MFX_PICSTRUCT_FIELD_SINGLE). 
+When input is a single field (MFX_PICSTRUCT_FIELD_SINGLE) and output is a frame (interlaced or progressive), the SDK enables field weaving optionally with deinterlacing. 
+Field weaving is stiching 2 fields into an interlace frame.
+
+
+VPP processing for Field Splitting:
+- Input frame  is interlace, provided output surface is set with MFX_PICSTRUCT_FIELD_SINGLE to request for field splitting 
+  Input can have an unknown PicStruct at Init, but then correct picStruct can be set in frame's SEI during decode.
 - Output is 2 half size progressive picture fields:
   * if input is picture structure is TFF, output PicStruct is MFX_PICSTRUCT_FIELD_TOP followed by MFX_PICSTRUCT_FIELD_BOTTOM
   * if input is picture structure is BFF, output PicStruct is MFX_PICSTRUCT_FIELD_BOTTOM followed by MFX_PICSTRUCT_FIELD_TOP
@@ -52,7 +40,7 @@ This suite tests that VPP FieldSplitting sets MFX_PICSTRUCT_FIELD_TOP/MFX_PICSTR
 - Call Init, VPP functions
 - Check that output picstruct should be MFX_PICSTRUCT_FIELD_TOP/MFX_PICSTRUCT_FIELD_BOTTOM per frame output
  VPP input:
-   interlace stream, input PicStruct = MFX_PICSTRUCT_FIELD_SINGLE
+   interlace stream, input PicStruct contains MFX_PICSTRUCT_FIELD_TFF, MFX_PICSTRUCT_FIELD_BFF or MFX_PICSTRUCT_UNKNOWN
  VPP output:
   output picstruct should be MFX_PICSTRUCT_FIELD_TOP/MFX_PICSTRUCT_FIELD_BOTTOM per frame output
 
@@ -206,22 +194,17 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR_1, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
         },
     },
-    {/*04 - Progressive input is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
+    {/*04 - Unknown input picture structure to be setup later */ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, 1, false,
+        {   {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_UNKNOWN},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE},
+        },
+    },
+    {/*05 - Progressive input is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
         {   {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE},
         },
     },
-    {/*05 - TFF|Single input is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
-        {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
-        },
-    },
-    {/*06 - BFF|Single input is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
-        {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
-        },
-    },
-    {/*07 - Progressive input is expected to fail for reset */  MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, 3,true,
+    {/*06 - Progressive input is expected to fail for reset */  MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, 3,true,
         {   {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TFF},
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE},
             {RESET, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_PROGRESSIVE},
@@ -233,14 +216,19 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
     },
     // weaving
-    {/*08 - TFF*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, 1, false,
+    {/*07 - TFF*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, 1, false,
         {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
             { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TFF },
         },
     },
-    {/*09 - BFF*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, 2, false,
+    {/*08 - BFF*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, 2, false,
         {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
             { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_BFF },
+        },
+    },
+    {/*09 - UNKNOWN*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, 2, false,
+        {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
+            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_UNKNOWN },
         },
     },
     {/*10 - Alternate between TFF and BFF */ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, 7, false,
@@ -255,22 +243,13 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { MFX_PAR_1, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TFF },
         },
     },
-    {/*12 - Progressive output is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
+    // to Check
+    {/*12 - Progressive output is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, 3,false,
         {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
             { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_PROGRESSIVE },
         },
     },
-    {/*13 - TFF|Single output is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
-        {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
-            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TOP },
-        },
-    },
-    {/*14 - BFF|Single output is expected to fail */  MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, 3,false,
-        {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
-            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_BOTTOM },
-        },
-    },
-    {/*15 - Progressive output is expected to fail for reset */  MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, 3,true,
+    {/*13 - Progressive output is expected to fail for reset */  MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, 3,true,
         {   { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
             { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TFF },
             { RESET, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_SINGLE },
@@ -322,7 +301,8 @@ int TestSuite::RunTest(const TestSuite::tc_struct& tc)
     g_tsStatus.expect(sts_init);
     Init(m_session, m_pPar);
 
-    if (sts_init >= MFX_ERR_NONE)
+
+    if (sts_init >= MFX_ERR_NONE && (m_par.vpp.In.PicStruct != MFX_PICSTRUCT_UNKNOWN) && (m_par.vpp.Out.PicStruct != MFX_PICSTRUCT_UNKNOWN))
     {
         AllocSurfaces();
         // One input frame produces 2 output field pictures
