@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright (c) 2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_init.cpp
 
@@ -399,6 +399,61 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_YUY2},
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_RGB4},
+        },
+    },
+    // VPP field pass-through
+    {/*48*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_BOTTOM},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM},
+        },
+    },
+    {/*49*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_SINGLE},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE},
+        },
+    },
+    {/*50*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_SINGLE},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
+        },
+    },
+    {/*51*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_SINGLE},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM},
+        },
+    },
+    {/*52*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_BOTTOM},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE},
+        },
+    },
+    {/*53*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_BOTTOM},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
+        },
+    },
+    {/*54*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TOP},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM},
+        },
+    },
+    {/*55*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TOP},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE},
+        },
+    },
+    {/*56*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TOP},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
         },
     },
 };

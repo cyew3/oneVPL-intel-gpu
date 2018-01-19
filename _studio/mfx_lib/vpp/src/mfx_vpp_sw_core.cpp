@@ -1060,10 +1060,13 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
             }
         }
 
+        // Check for invalid cases
         if (out->vpp.In.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
             out->vpp.In.PicStruct != MFX_PICSTRUCT_FIELD_TFF   &&
             out->vpp.In.PicStruct != MFX_PICSTRUCT_FIELD_BFF   &&
             out->vpp.In.PicStruct != MFX_PICSTRUCT_FIELD_SINGLE &&
+            out->vpp.In.PicStruct != MFX_PICSTRUCT_FIELD_TOP && // Field pass-through
+            out->vpp.In.PicStruct != MFX_PICSTRUCT_FIELD_BOTTOM &&
             out->vpp.In.PicStruct != MFX_PICSTRUCT_UNKNOWN)
         {
 
@@ -1121,7 +1124,9 @@ mfxStatus VideoVPPBase::Query(VideoCORE * core, mfxVideoParam *in, mfxVideoParam
         if (out->vpp.Out.PicStruct != MFX_PICSTRUCT_PROGRESSIVE &&
             out->vpp.Out.PicStruct != MFX_PICSTRUCT_FIELD_TFF   &&
             out->vpp.Out.PicStruct != MFX_PICSTRUCT_FIELD_BFF   &&
-            out->vpp.Out.PicStruct != MFX_PICSTRUCT_FIELD_SINGLE &&
+            out->vpp.Out.PicStruct != MFX_PICSTRUCT_FIELD_SINGLE && // Field pass-through
+            out->vpp.Out.PicStruct != MFX_PICSTRUCT_FIELD_TOP &&
+            out->vpp.Out.PicStruct != MFX_PICSTRUCT_FIELD_BOTTOM &&
             out->vpp.Out.PicStruct != MFX_PICSTRUCT_UNKNOWN)
         {
             if(out->vpp.Out.PicStruct)

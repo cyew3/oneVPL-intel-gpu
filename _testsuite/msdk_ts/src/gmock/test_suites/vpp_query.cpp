@@ -291,12 +291,65 @@ namespace vpp_query
         },
         {/*30*/ STANDART, MFX_ERR_NONE,
         {
-
             { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YUY2 },
-            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_RGB4 }
+            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_RGB4 },
         }
         },
-
+        // test MFX_PICSTRUCT_FIELD_SINGLE pass-through
+        {/*31*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_BOTTOM},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM},
+        }
+        },
+        {/*32*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_SINGLE},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE},
+        }
+        },
+        {/*33*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_SINGLE},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
+        }
+        },
+        {/*34*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE },
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,  MFX_PICSTRUCT_FIELD_BOTTOM},
+        }
+        },
+        {/*35*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_BOTTOM},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE},
+        }
+        },
+        {/*36*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TOP},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_BOTTOM},
+        }
+        },
+        {/*37*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_TOP},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_SINGLE},
+        }
+        },
+        {/*38*/ STANDART, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct, MFX_PICSTRUCT_FIELD_TOP },
+            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct, MFX_PICSTRUCT_FIELD_TOP }
+        }
+        },
+        {/*39*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.PicStruct,    MFX_PICSTRUCT_FIELD_BOTTOM},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
+        }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
