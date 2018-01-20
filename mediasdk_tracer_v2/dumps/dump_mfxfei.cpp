@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 */
 #include "dump.h"
@@ -441,6 +441,17 @@ std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepac
 
     return str;
 }
+
+#if (MFX_VERSION >= 1025)
+std::string DumpContext::dump(const std::string structName, const mfxExtFeiRepackStat &_struct)
+{
+    std::string str;
+    str += dump(structName + ".Header", _struct.Header) + "\n";
+    DUMP_FIELD(NumPasses);
+    DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+#endif
 
 std::string DumpContext::dump(const std::string structName, const mfxFeiDecStreamOutMBCtrl &_struct)
 {

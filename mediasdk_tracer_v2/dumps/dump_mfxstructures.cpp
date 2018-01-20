@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -47,7 +47,10 @@ std::string DumpContext::dump(const std::string structName, const mfxEncodeCtrl 
     std::string str;
     str += dump(structName + ".Header", EncodeCtrl.Header) + "\n";
     str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(EncodeCtrl.reserved) + "\n";
+#if (MFX_VERSION >= 1025)
+    str += structName + ".reserved1=" + ToString(EncodeCtrl.reserved1) + "\n";
     str += structName + ".MfxNalUnitType=" + ToString(EncodeCtrl.MfxNalUnitType) + "\n";
+#endif
     str += structName + ".SkipFrame=" + ToString(EncodeCtrl.SkipFrame) + "\n";
     str += structName + ".QP=" + ToString(EncodeCtrl.QP) + "\n";
     str += structName + ".FrameType=" + ToString(EncodeCtrl.FrameType) + "\n";
@@ -216,9 +219,15 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(QuantScaleType);
     DUMP_FIELD(IntraVLCFormat);
     DUMP_FIELD(ScanType);
-    DUMP_FIELD(EncodedUnitsInfo);
+    DUMP_FIELD(ExtBrcAdaptiveLTR);
 #endif
+#if ((MFX_VERSION < MFX_VERSION_NEXT) && (MFX_VERSION >= 1025))
+    DUMP_FIELD_RESERVED(reserved5);
+#endif
+#if (MFX_VERSION >= 1025)
+    DUMP_FIELD(EncodedUnitsInfo);
     DUMP_FIELD(EnableNalUnitType);
+#endif
     DUMP_FIELD_RESERVED(reserved);
     return str;
 }
@@ -307,10 +316,19 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameData &
         str += structName + ".Cb=" + ToHexFormatString(frameData.Cb) + "\n";
         str += structName + ".U=" + ToHexFormatString(frameData.U) + "\n";
         str += structName + ".G=" + ToHexFormatString(frameData.G) + "\n";
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        str += structName + ".Y410=" + ToHexFormatString(frameData.Y410) + "\n";
+#endif
         str += structName + ".Cr=" + ToHexFormatString(frameData.Cr) + "\n";
         str += structName + ".V=" + ToHexFormatString(frameData.V) + "\n";
         str += structName + ".B=" + ToHexFormatString(frameData.B) + "\n";
         str += structName + ".A=" + ToHexFormatString(frameData.A) + "\n";
+#if (MFX_VERSION >= 1025)
+        str += structName + ".A2RGB10->A=" + ToString(frameData.A2RGB10->A) + "\n";
+        str += structName + ".A2RGB10->R=" + ToString(frameData.A2RGB10->R) + "\n";
+        str += structName + ".A2RGB10->G=" + ToString(frameData.A2RGB10->G) + "\n";
+        str += structName + ".A2RGB10->B=" + ToString(frameData.A2RGB10->B) + "\n";
+#endif
     }
     str += structName + ".MemId=" + ToString(frameData.MemId) + "\n";
     str += structName + ".Corrupted=" + ToString(frameData.Corrupted) + "\n";
@@ -1285,6 +1303,20 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtDecVide
     return str;
 }
 
+std::string DumpContext::dump(const std::string structName, const  mfxExtMBQP &ExtMBQP)
+{
+    std::string str;
+    str += dump(structName + ".Header", ExtMBQP.Header) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtMBQP.reserved) + "\n";
+    str += structName + ".Mode=" + ToString(ExtMBQP.Mode) + "\n";
+    str += structName + ".BlockSize=" + ToString(ExtMBQP.BlockSize) + "\n";
+    str += structName + ".NumQPAlloc=" + ToString(ExtMBQP.NumQPAlloc) + "\n";
+    str += structName + ".QP=" + ToString(ExtMBQP.QP) + "\n";
+    str += structName + ".DeltaQP=" + ToString(ExtMBQP.DeltaQP) + "\n";
+    str += structName + "reserverd2=" + ToString(ExtMBQP.reserved2) + "\n";
+    return str;
+}
+
 #if (MFX_VERSION >= 1025)
 std::string DumpContext::dump(const std::string structName, const  mfxExtMasteringDisplayColourVolume &_struct) {
     std::string str;
@@ -1356,6 +1388,14 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtEncoded
     }
 
     DUMP_FIELD_RESERVED(reserved);
+    return str;
+}
+
+std::string DumpContext::dump(const std::string structName, const mfxExtColorConversion &ExtColorConversion) {
+    std::string str;
+    str += dump(structName + ".Header", ExtColorConversion.Header) + "\n";
+    str += structName + ".ChromaSiting=" + ToString(ExtColorConversion.ChromaSiting) + "\n";
+    str += structName + ".reserved[]=" + DUMP_RESERVED_ARRAY(ExtColorConversion.reserved) + "\n";
     return str;
 }
 

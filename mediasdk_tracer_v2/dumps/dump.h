@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -432,6 +432,11 @@ public:
                         case MFX_EXTBUFF_FEI_REPACK_CTRL:
                             str += dump(name, *((mfxExtFeiRepackCtrl*)_struct.ExtParam[i])) + "\n";
                             break;
+#if (MFX_VERSION >= 1025)
+                        case MFX_EXTBUFF_FEI_REPACK_STAT:
+                            str += dump(name, *((mfxExtFeiRepackStat*)_struct.ExtParam[i])) + "\n";
+                            break;
+#endif
                         case MFX_EXTBUFF_VPP_MIRRORING:
                             str += dump(name, *((mfxExtVPPMirroring*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -446,6 +451,9 @@ public:
                             break;
                         case MFX_EXTBUFF_BRC:
                             str += dump(name, *((mfxExtBRC*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_MBQP:
+                            str += dump(name, *((mfxExtMBQP*)_struct.ExtParam[i])) + "\n";
                             break;
 #if (MFX_VERSION >= 1025)
                         case  MFX_EXTBUFF_DECODE_ERROR_REPORT:
@@ -465,6 +473,9 @@ public:
                             break;
                         case MFX_EXTBUFF_ENCODED_UNITS_INFO:
                             str += dump(name, *((mfxExtEncodedUnitsInfo*)_struct.ExtParam[i])) + "\n";
+                            break;
+                        case MFX_EXTBUFF_VPP_COLOR_CONVERSION:
+                            str += dump(name, *((mfxExtColorConversion*)_struct.ExtParam[i])) + "\n";
                             break;
 #endif
 #if (MFX_VERSION >= 1026)
@@ -586,6 +597,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMVOverPicBoundaries);
     DEFINE_DUMP_FUNCTION(mfxExtVPPColorFill);
     DEFINE_DUMP_FUNCTION(mfxExtDecVideoProcessing);
+    DEFINE_DUMP_FUNCTION(mfxExtMBQP);
 #if (MFX_VERSION >= 1025)
     DEFINE_DUMP_FUNCTION(mfxExtDecodeErrorReport);
     DEFINE_DUMP_FUNCTION(mfxExtMasteringDisplayColourVolume);
@@ -593,8 +605,8 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameParam);
     DEFINE_DUMP_FUNCTION(mfxExtMultiFrameControl);
     DEFINE_DUMP_FUNCTION(mfxExtEncodedUnitsInfo);
+    DEFINE_DUMP_FUNCTION(mfxExtColorConversion);
 #endif
-
 #if (MFX_VERSION >= 1026)
     DEFINE_DUMP_FUNCTION(mfxExtVppMctf);
 #endif
@@ -638,6 +650,9 @@ public:
     DEFINE_DUMP_FUNCTION(mfxFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiPakMBCtrl);
     DEFINE_DUMP_FUNCTION(mfxExtFeiRepackCtrl);
+#if (MFX_VERSION >= 1025)
+    DEFINE_DUMP_FUNCTION(mfxExtFeiRepackStat);
+#endif
     DEFINE_DUMP_FUNCTION(mfxExtFeiParam);
     DEFINE_DUMP_FUNCTION(mfxPAKInput);
     DEFINE_DUMP_FUNCTION(mfxPAKOutput);
