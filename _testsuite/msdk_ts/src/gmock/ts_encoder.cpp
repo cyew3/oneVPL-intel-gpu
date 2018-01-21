@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -432,11 +432,12 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
             }
             MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
         }
-
+        mfxU16 width = m_pPar->mfx.FrameInfo.Width ? m_pPar->mfx.FrameInfo.Width : 720;
+        mfxU16 height = m_pPar->mfx.FrameInfo.Height ? m_pPar->mfx.FrameInfo.Height : 480;
         // Query the supported encode functions
         {
-            desc.SampleWidth = m_pPar->mfx.FrameInfo.Width;
-            desc.SampleHeight = m_pPar->mfx.FrameInfo.Height;
+            desc.SampleWidth = width;
+            desc.SampleHeight = height;
             desc.OutputFormat = DXGI_FORMAT_NV12;
             desc.Guid = guid;
 
@@ -446,8 +447,8 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
 
         // CreateVideoDecoder
         {
-            desc.SampleWidth = m_pPar->mfx.FrameInfo.Width;
-            desc.SampleHeight = m_pPar->mfx.FrameInfo.Height;
+            desc.SampleWidth = width;
+            desc.SampleHeight = height;
             desc.OutputFormat = DXGI_FORMAT_NV12;
             desc.Guid = guid;
 
