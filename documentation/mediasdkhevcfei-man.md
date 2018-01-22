@@ -8,20 +8,20 @@ In this manual term "AVC FEI" is often used to distinguish general FEI extension
 
 ## Acronyms and Abbreviations
 
-| | |
+| |
 --- | ---
 **FEI** | Flexible Encode Infrastructure
 **PreENC** | Pre Encoding - preliminary stage of encoding process, usually used for content analysis.
 **ENC** | ENCode - first stage of encoding process that includes motion estimation and mode decision.
 **PAK** | PAcK - last stage of encoding process that includes bit packing.
 **MVP** | Motion Vector Predictor.
-
+**QP**  | Quantization Parameter.
 
 
 <div style="page-break-before:always" />
 # Architecture
 
-HEVC FEI is built as extension of AVC FEI. It uses the same classes of functions **ENC**, **PAK** and **ENCODE**. It has the same four kinds of calls PreENC, ENCODE, ENC and PAK. And the same major usage models "PreENC followed by ENCODE" and "ENC followed by PAK". See *Architecture* chapter of the *SDK API Reference Manual for Flexible Encode Infrastructure* for more details.
+HEVC FEI is built as extension of AVC FEI. It uses the same classes of functions **ENCODE**  and provides the same major usage model "PreENC followed by ENCODE", with AVC FEI PreENC. See *Architecture* chapter of the *SDK API Reference Manual for Flexible Encode Infrastructure* for more details.
 
 ## Direct access to VA buffers
 
@@ -155,7 +155,7 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies frame level control for ENCODE and ENC usage models. It is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
+This extension buffer specifies frame level control for ENCODE. It is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model.
 
 **Members**
 
@@ -212,9 +212,10 @@ typedef struct {
 ```
 
 **Description**
-This extension buffer specifies MV predictors for ENCODE and ENC usage models. To enable usage of this buffer the application should set `MVPredictor` field in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure to non-zero value.
 
-This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
+This extension buffer specifies MV predictors for ENCODE. To enable usage of this buffer the application should set `MVPredictor` field in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure to non-zero value.
+
+This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model.
 
 This buffer has different layout from AVC. Each `mfxFeiHevcEncMVPredictors` element in Data array corresponds to 16x16 block of pixels from input frame. Four such elements are combined in group that corresponds to 32x32 block of pixels. Elements are located in zig-zag order inside group and groups are located in raster scan order inside buffer. Due to such layout input frame size should be aligned to 32 before calculation of buffer size. That means that buffer width in elements should be calculated as `((picture width + 31)/32)*2` and buffer height as `((picture height + 31)/32)*2`.
 
@@ -277,13 +278,30 @@ typedef struct {
 
 **Description**
 
-This extension buffer specifies per CU QP values for ENCODE and ENC usage models. To enable its usage for ENCODE and ENC set `PerCuQp` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure.
+This extension buffer specifies per CTU QP values for ENCODE usage models. To enable its usage for ENCODE set `PerCuQp` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure.
 
-This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
+ mfxExtFeiHevcEncQP structure contains QP values for a stream. Each value in Data array corresponds to 32x32 block of pixels from an input frame. The width in elements (pitch) should be aligned to 64 and calculated as `((((picture width + 31) / 32) + 63) / 64)*64`, where `(picture width + 31 / 32)` is a number of 32x32 CTUs, `(+ 63) / 64) * 64)` is an alignment to 64. Height should be aligned to 4 and calculated as `((((picture height + 31) / 32) + 3) / 4) * 4`.
 
-**TODO: add layout description here.**
+###### Working with QP buffer
+```C
+mfxExtFeiHevcEncQP qp_buffer;
+mfxU32 Pitch   = ((((picture_width + 31) / 32) + 63) / 64) * 64;
+mfxU32 Height  = ((((picture_height + 31) / 32) + 3) / 4) * 4;
+vaCreateBuffer(display, context, type, Pitch, Height, NULL, &qp_buffer.VaBufferID);
+vaMapBuffer(display, qp_buffer.VaBufferID, (void**)&qp_buffer.Data);
+//Fill QP buffer with QP values in range [0,51]
+vaUnmapBuffer(display, qp_buffer.VaBufferID);
 
-Note, that depending on HW capabilities some limitations on QP values may apply. Please refer to release notes for further details.
+```
+Figure 4 shows an example of the buffer layout. A blue rectangle represents an input frame. Each black rectangle represents one element in Data array corresponding to 32x32 block of pixels.
+
+###### Figure 4: QP layout
+
+![QP layout](./pic/qp_layout.png)
+
+For example, let's take stream with `picture_width = 350` and `picture_height = 280`. Calculating pitch for this stream `((((350 + 31) / 32) + 63) / 64)*64 = 64` and height `((((280 + 31) / 32) + 3) / 4) * 4 = 12`, size of Data 64 x 12 = 768. Picture width in CTU `(350 + 31) / 32 = 11` and picture height in CTU `(280 + 31) / 32 = 9`. QP values located in buffer on positions 0, 1, 2 … 10 will be applicable, other values 11, 12, … 63  in a row are ignored. Next applicable values will be 64, 65, … , 74, the other values 75, 76, … ,127  in a row ignored, etc. This operation continues 9 rows, values in row 10, 11, 12 are ignored (elements on positions 576, 577, ... ,768 are ignores).
+
+This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model.
 
 **Members**
 
@@ -327,9 +345,9 @@ typedef struct {
 
 **Description**
 
-This structure specifies CTU level control parameters for ENCODE and ENC usage models. To enable its usage for ENCODE and ENC set `PerCtuInput` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure.
+This structure specifies CTU level control parameters for ENCODE. To enable its usage for ENCODE set `PerCtuInput` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure.
 
-This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model and to the `mfxENCInput` for ENC.
+This structure is used during runtime and should be attached to the `mfxEncodeCtrl` structure for ENCODE usage model.
 
 **Members**
 
