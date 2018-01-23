@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 File Name: vp9e_init.cpp
 
@@ -161,7 +161,9 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
             }
         },
-        {/*22 Valid crop region*/ MFX_ERR_NONE, CROP, W,
+        //It is applicable for 420-format because of ChromaFormat restrictions
+        //TODO: it is not applicable for 444-format, needs to be fixed
+        {/*22 Unsupported cropW*/ MFX_ERR_UNSUPPORTED, CROP, W,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
@@ -169,7 +171,7 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 480 },
             }
         },
-        {/*23 Valid crop region*/ MFX_ERR_NONE, CROP, H,
+        {/*23 Unsupported cropH*/ MFX_ERR_UNSUPPORTED, CROP, H,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 480 },
