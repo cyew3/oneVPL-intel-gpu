@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -45,6 +45,12 @@ namespace UMC_AV1_DECODER
     void av1_bitdepth_colorspace_sampling(AV1Bitstream* bs, FrameHeader* fh)
     {
         GetBitDepthAndColorSpace(bs, fh);
+    }
+
+    inline
+    void av1_get_render_size(AV1Bitstream* bs, FrameHeader* fh)
+    {
+        GetDisplaySize(bs, fh);
     }
 
     inline
@@ -158,31 +164,32 @@ namespace UMC_AV1_DECODER
 #endif
 
     inline
+    int read_inv_signed_literal(AV1Bitstream* bs, int bits) {
+        const unsigned sign = bs->GetBit();
+        const unsigned literal = bs->GetBits(bits);
+        if (sign == 0)
+            return literal; // if positive: literal
+        else
+            return literal - (1 << bits); // if negative: complement to literal with respect to 2^bits
+    }
+
+    inline
     void av1_setup_quantization(AV1Bitstream* bs, FrameHeader* fh)
     {
         fh->baseQIndex = bs->GetBits(QINDEX_BITS);
 
         if (bs->GetBit())
-        {
-            fh->y_dc_delta_q = bs->GetBits(4);
-            fh->y_dc_delta_q = bs->GetBit() ? -fh->y_dc_delta_q : fh->y_dc_delta_q;
-        }
+            fh->y_dc_delta_q = read_inv_signed_literal(bs, 6);
         else
             fh->y_dc_delta_q = 0;
 
         if (bs->GetBit())
-        {
-            fh->uv_dc_delta_q = bs->GetBits(4);
-            fh->uv_dc_delta_q = bs->GetBit() ? -fh->uv_dc_delta_q : fh->uv_dc_delta_q;
-        }
+            fh->uv_dc_delta_q = read_inv_signed_literal(bs, 6);
         else
             fh->uv_dc_delta_q = 0;
 
         if (bs->GetBit())
-        {
-            fh->uv_ac_delta_q = bs->GetBits(4);
-            fh->uv_ac_delta_q = bs->GetBit() ? -fh->uv_ac_delta_q : fh->uv_ac_delta_q;
-        }
+            fh->uv_ac_delta_q = read_inv_signed_literal(bs, 6);
         else
             fh->uv_ac_delta_q = 0;
 
@@ -626,6 +633,8 @@ namespace UMC_AV1_DECODER
         {
             fh->width = GetBits(16) + 1;
             fh->height = GetBits(16) + 1;
+
+            av1_get_render_size(this, fh);
         }
     }
 
@@ -838,6 +847,13 @@ namespace UMC_AV1_DECODER
             fh->uv_ac_delta_q == 0 && fh->uv_dc_delta_q == 0;
     }
 
+    inline void CopyBitDepthAndSampling(FrameHeader* fh, FrameHeader const* prev_fh)
+    {
+        fh->bit_depth = prev_fh->bit_depth;
+        fh->subsamplingX = prev_fh->subsamplingX;
+        fh->subsamplingY = prev_fh->subsamplingY;
+    }
+
     void AV1Bitstream::GetFrameHeaderFull(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh)
     {
         if (!fh || !sh)
@@ -845,6 +861,9 @@ namespace UMC_AV1_DECODER
 
         if (!fh->width || !fh->height)
             throw av1_exception(UMC::UMC_ERR_FAILED);
+
+        if (fh->frameType != KEY_FRAME)
+            CopyBitDepthAndSampling(fh, prev_fh);
 
         if (!fh->errorResilientMode)
         {
@@ -858,7 +877,6 @@ namespace UMC_AV1_DECODER
         else
         {
             fh->refreshFrameContext = REFRESH_FRAME_CONTEXT_FORWARD;
-            fh->frameParallelDecodingMode = 1;
         }
 
         // This flag will be overridden by the call to vp9_setup_past_independence
