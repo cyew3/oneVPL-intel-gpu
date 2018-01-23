@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_vp9_dec_defs.h"
@@ -139,7 +139,7 @@ namespace UMC_AV1_DECODER
     {
         SequenceHeader const& sh = frame->GetSeqHeader();
 
-#if UMC_AV1_DECODER_REV >= 251
+#if AV1D_DDI_VERSION >= 11
         picParam->dwFormatAndPictureInfoFlags.fields.frame_id_numbers_present_flag = sh.frame_id_numbers_present_flag;
         picParam->dwFormatAndPictureInfoFlags.fields.use_reference_buffer = sh.frame_id_numbers_present_flag;
 #else
@@ -193,11 +193,13 @@ namespace UMC_AV1_DECODER
                 Ipp8u idxInDPB = (Ipp8u)info.activeRefIdx[ref_idx];
                 picParam->ref_frame_idx[ref_idx].bPicEntry = idxInDPB;
                 picParam->ref_frame_sign_bias[ref_idx + 1] = (UCHAR)info.refFrameSignBias[ref_idx];
+#if AV1D_DDI_VERSION < 15
                 picParam->ref_frame_width_minus1[ref_idx] = (USHORT)info.sizesOfRefFrame[idxInDPB].width - 1;
                 picParam->ref_frame_height_minus1[ref_idx] = (USHORT)info.sizesOfRefFrame[idxInDPB].height - 1;
+#endif
             }
 
-#if UMC_AV1_DECODER_REV == 0
+#if AV1D_DDI_VERSION < 14
             picParam->num_ref_idx_active = INTER_REFS; // TODO: implement proper setting. Don't understand how to get number of active refs - need to check code of aomdec.
 #endif
         }
@@ -206,7 +208,7 @@ namespace UMC_AV1_DECODER
         picParam->filter_level = (UCHAR)info.lf.filterLevel;
         picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
         picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
-#if UMC_AV1_DECODER_REV == 0
+#if AV1D_DDI_VERSION < 12
         picParam->compressed_header_size = (USHORT)info.firstPartitionSize;
 
         for (mfxU8 i = 0; i < UMC_VP9_DECODER::VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
@@ -246,13 +248,13 @@ namespace UMC_AV1_DECODER
         memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: implement proper setting
         memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: implement proper setting
 
-#if UMC_AV1_DECODER_REV == 0
+#if AV1D_DDI_VERSION >= 11
+        picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
+        picParam->cdef_sec_damping = (UCHAR)info.cdefSecDamping;
+#else
         picParam->dwModeControlFlags.fields.dering_damping = info.cdefDeringDamping;
         picParam->dwModeControlFlags.fields.clpf_damping = info.cdefClpfDamping;
         picParam->dwModeControlFlags.fields.nb_cdef_strengths = info.nbCdefStrengths;
-#else
-        picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
-        picParam->cdef_sec_damping = (UCHAR)info.cdefSecDamping;
 #endif
         for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
@@ -272,7 +274,7 @@ namespace UMC_AV1_DECODER
 
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
         picParam->log2_tile_cols = (UCHAR)info.log2TileColumns;
-#if UMC_AV1_DECODER_REV >= 251
+#if AV1D_DDI_VERSION >= 11
         // TODO: add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (USHORT)info.tileCols;
         picParam->tile_rows = (USHORT)info.tileRows;
@@ -285,7 +287,15 @@ namespace UMC_AV1_DECODER
         FrameHeader const& info =
             frame->GetFrameHeader();
 
+#if AV1D_DDI_VERSION >= 15
+        tileGroupParam->BSOBUDataLocation = info.frameHeaderLength;
+        // hardcode info about tiles for rev 0.25.1
+        tileGroupParam->StartTileIdx = 0;
+        tileGroupParam->EndTileIdx = 0;
+        tileGroupParam->NumTilesInBuffer = 1;
+#else
         tileGroupParam->BSNALunitDataLocation = info.frameHeaderLength;
+#endif
         tileGroupParam->TileGroupBytesInBuffer = info.frameDataSize - info.frameHeaderLength;
         tileGroupParam->wBadTileGroupChopping = 0;
     }

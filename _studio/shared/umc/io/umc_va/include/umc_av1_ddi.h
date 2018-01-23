@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_AV1_DDI_H
@@ -34,6 +34,12 @@ typedef struct _DXVA_PicEntry_AV1
 } DXVA_PicEntry_AV1, *PDXVA_PicEntry_AV1;
 
 #if UMC_AV1_DECODER_REV == 0
+#define AV1D_DDI_VERSION 8
+#elif UMC_AV1_DECODER_REV == 251
+#define AV1D_DDI_VERSION 15
+#endif
+
+#if AV1D_DDI_VERSION == 8
 // DDI version 0.08
 typedef struct _segmentation_AV1 {
     union {
@@ -203,8 +209,7 @@ typedef struct _DXVA_Intel_PicParams_AV1
     UINT        StatusReportFeedbackNumber;
 } DXVA_Intel_PicParams_AV1, *LPDXVA_Intel_PicParams_AV1;
 
-#else if UMC_AV1_DECODER_REV == 251
-// DDI version 0.13
+#elif AV1D_DDI_VERSION > 10
 typedef struct _segmentation_AV1 {
         union {
             struct {
@@ -217,8 +222,6 @@ typedef struct _segmentation_AV1 {
             };
             UCHAR wSegmentInfoFlags;
         };
-        // UCHAR tree_probs[7];
-        // UCHAR pred_probs[3];
         SHORT feature_data[8][4];
         UCHAR feature_mask[8];
     } DXVA_segmentation_AV1;
@@ -262,8 +265,10 @@ typedef struct _DXVA_Intel_PicParams_AV1
     //UCHAR       num_ref_idx_active;         // [0..6]
     DXVA_PicEntry_AV1   ref_frame_idx[7];       //
     UCHAR       ref_frame_sign_bias[8];         // [0..1]
+#if AV1D_DDI_VERSION <= 14
     USHORT  ref_frame_width_minus1[7];  // [0..65535]
     USHORT  ref_frame_height_minus1[7]; // [0..65535]
+#endif
     USHORT  current_frame_id;
     USHORT  ref_frame_id[8];
     // UCHAR        refresh_frame_flags;
@@ -383,16 +388,27 @@ typedef struct _DXVA_Intel_PicParams_AV1
     UINT        BSBytesInBuffer;
     UINT        StatusReportFeedbackNumber;
 } DXVA_Intel_PicParams_AV1, *LPDXVA_Intel_PicParams_AV1;
-
 #endif
 
 //tile group control data buffer
+#if AV1D_DDI_VERSION >= 15
+typedef struct _DXVA_Intel_Tile_Group_AV1_Short
+{
+    UINT        BSOBUDataLocation;
+    UINT        TileGroupBytesInBuffer;
+    USHORT      wBadTileGroupChopping;
+    UINT        StartTileIdx;
+    UINT        EndTileIdx;
+    UINT        NumTilesInBuffer;
+} DXVA_Intel_Tile_Group_AV1_Short, *LPDXVA_Intel_Tile_Group_AV1_Short;
+#else
 typedef struct _DXVA_Intel_Tile_Group_AV1_Short
 {
     UINT        BSNALunitDataLocation;
     UINT        TileGroupBytesInBuffer;
     USHORT      wBadTileGroupChopping;
 } DXVA_Intel_Tile_Group_AV1_Short, *LPDXVA_Intel_Tile_Group_AV1_Short;
+#endif
 
 //quantization matrix data buffer
 typedef struct _THREE_QM_FACTORS
