@@ -30,9 +30,8 @@
 #pragma warning(disable : 4101)
 #include <iostream>
 #include <dxva.h>
-#endif
-
 //#define VP9_STATUS_REPORTING_ENABLED //need to implement different code for Intel/MSFT guids, disable for now
+#endif
 
 using namespace UMC_VP9_DECODER;
 
@@ -42,7 +41,6 @@ inline
 bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 {
 #ifdef MFX_VA_WIN
-
     if (p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile0_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -62,9 +60,8 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
     {
         return false;
     }
-
     // todo : VA API alternative ?
-#endif
+#endif // MFX_VA_WIN
 
 #ifdef ANDROID
     if (p_video_param->mfx.FrameInfo.Width > 4096 || p_video_param->mfx.FrameInfo.Height > 4096)

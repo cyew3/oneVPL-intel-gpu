@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -134,7 +134,7 @@ class VideoDECODEVP9: public VideoDECODE
         mfxHDL m_vpx_codec;
 };
 
-#endif // MFX_ENABLE_VP8_VIDEO_DECODE
+#endif // MFX_ENABLE_VP9_VIDEO_DECODE
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 namespace MFX_VP9_Utility

@@ -22,7 +22,7 @@ set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 mfx_include_dirs()
 
-list( APPEND Decoders h264 h265 mpeg2  vp8 mjpeg vc1 )
+list( APPEND Decoders h264 h265 mpeg2 vp8 vp9 mjpeg vc1 )
 foreach( dir ${Decoders} )
   include_directories( ${MSDK_LIB_ROOT}/decode/${dir}/include )
   include_directories( ${MSDK_UMC_ROOT}/codec/${dir}_dec/include )
@@ -72,6 +72,14 @@ set( sources "" )
 file( GLOB_RECURSE srcs "${SRC_DIR}/*.c" "${SRC_DIR}/*.cpp" )
 list( APPEND sources ${srcs})
 make_library( mpeg2_dec hw static )
+
+### VP9 Decoder
+set( SRC_DIR "${MSDK_UMC_ROOT}/codec/vp9_dec/src" )
+set( defs "${WARNING_FLAGS}" )
+set( sources "" )
+file( GLOB_RECURSE srcs "${SRC_DIR}/*.c" "${SRC_DIR}/*.cpp" )
+list( APPEND sources ${srcs})
+make_library( vp9_dec hw static )
 
 ### VC1 Decoder
 set( SRC_DIR "${MSDK_UMC_ROOT}/codec/vc1_dec/src" )
