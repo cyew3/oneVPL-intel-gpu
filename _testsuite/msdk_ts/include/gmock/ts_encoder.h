@@ -4,7 +4,7 @@
 ////     This software is supplied under the terms of a license agreement or
 ////     nondisclosure agreement with Intel Corporation and may not be copied
 ////     or disclosed except in accordance with the terms of that agreement.
-////          Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+////          Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 ////
 
 #pragma once
@@ -13,6 +13,12 @@
 #include "ts_ext_buffers.h"
 #include "ts_surface.h"
 #include <memory>
+
+enum {
+    MFX_FOURCC_P012 = MFX_MAKEFOURCC('P', '0', '1', '2'),
+    MFX_FOURCC_Y212 = MFX_MAKEFOURCC('Y', '2', '1', '2'),
+    MFX_FOURCC_Y412 = MFX_MAKEFOURCC('Y', '4', '1', '2'),
+};
 
 class tsSharedCtrl
 {

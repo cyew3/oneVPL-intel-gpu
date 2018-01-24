@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2017, Intel Corporation
+Copyright (c) 2005-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -165,8 +165,11 @@ mfxStatus D3DFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         desc.Format != D3DFMT_IMC3 &&
         desc.Format != D3DFMT_AYUV
 #ifdef ENABLE_PS
-        && desc.Format != D3DFMT_Y210 &&
-        desc.Format != D3DFMT_Y410
+        && desc.Format != D3DFMT_P016
+        && desc.Format != D3DFMT_Y210
+        && desc.Format != D3DFMT_Y216
+        && desc.Format != D3DFMT_Y410
+        && desc.Format != D3DFMT_Y416
 #endif
         )
         return MFX_ERR_LOCK_MEMORY;

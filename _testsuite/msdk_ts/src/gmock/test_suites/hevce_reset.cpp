@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_reset.cpp
 
@@ -29,12 +29,11 @@ namespace hevce_reset
             mfxU32 type;
             mfxU32 sub_type;
             mfxU32 repeat;
-            const std::string stream[2];
             struct f_pair
             {
                 mfxU32 ext_type;
                 const  tsStruct::Field* f;
-                mfxU32 v;
+                mfxI32 v;
             } set_par[MAX_NPARS];
         };
 
@@ -50,14 +49,12 @@ namespace hevce_reset
             MFX_PAR,
             MFX_PAR_RESET,
             HANDLE_NOT_SET,
-            ALLOCK,
-            MAX,
             NULL_SESSION,
-            NOT_INIT,
+            NO_INIT,
             INIT_FAIL,
             CLOSED,
             NULL_PAR,
-            NOT_SYNC,
+            NO_SYNC,
             EXT_BUFF,
             CROP,
             IOPATTERN,
@@ -68,8 +65,12 @@ namespace hevce_reset
             XY,
             PROTECTED,
             CHANGE,
+            W_GT_MAX,
+            H_GT_MAX,
             WRONG,
             INVALID,
+            NO_ENCODE,
+            DELTA,
             NONE
         };
 
@@ -92,223 +93,152 @@ namespace hevce_reset
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/* 0*/ MFX_ERR_NONE, MFX_ERR_NONE, NONE, NONE, 1,
-            { "", "" },
-
+        {/* 0*/ MFX_ERR_NONE, MFX_ERR_NONE, NONE, NO_ENCODE, 1,
         },
         {/* 1*/ MFX_ERR_NONE, MFX_ERR_NONE, NONE, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 2*/ MFX_ERR_NONE, MFX_ERR_NONE, NONE, NONE, 50,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
-        {/* 3*/ MFX_ERR_INVALID_HANDLE, MFX_ERR_INVALID_HANDLE, NULL_SESSION, NONE, 1,
-            { "", "" },
-
+        {/* 3*/ MFX_ERR_INVALID_HANDLE, MFX_ERR_INVALID_HANDLE, NULL_SESSION, NO_ENCODE, 1,
         },
-        {/* 4*/ MFX_ERR_NOT_INITIALIZED, MFX_ERR_NOT_INITIALIZED, NOT_INIT, NONE, 1,
-            { "", "" },
-
+        {/* 4*/ MFX_ERR_NOT_INITIALIZED, MFX_ERR_NOT_INITIALIZED, NO_INIT, NO_ENCODE, 1,
         },
-        {/* 5*/ MFX_ERR_NOT_INITIALIZED, MFX_ERR_NOT_INITIALIZED, INIT_FAIL, NONE, 1,
-            { "", "" },
-            {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 }
-            }
+        {/* 5*/ MFX_ERR_NOT_INITIALIZED, MFX_ERR_NOT_INITIALIZED, INIT_FAIL, NO_ENCODE, 1,
         },
-        {/* 6*/ MFX_ERR_NOT_INITIALIZED, MFX_ERR_NOT_INITIALIZED, CLOSED, NONE, 1,
-            { "", "" },
-
+        {/* 6*/ MFX_ERR_NOT_INITIALIZED, MFX_ERR_NOT_INITIALIZED, CLOSED, NO_ENCODE, 1,
         },
-        {/* 7*/ MFX_ERR_NULL_PTR, MFX_ERR_NULL_PTR, NULL_PAR, NONE, 1,
-            { "", "" },
-
+        {/* 7*/ MFX_ERR_NULL_PTR, MFX_ERR_NULL_PTR, NULL_PAR, NO_ENCODE, 1,
         },
         //IOPattern
         {/* 8*/ MFX_ERR_NONE, MFX_ERR_NONE, NONE, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY }
             }
-
         },
         {/* 9*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY }
             }
-
         },
         {/* 10*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY }
             }
-
         },
-        {/* 11*/ MFX_ERR_NONE, MFX_ERR_NONE, IOPATTERN, NONE, 1,
-            { "", "" },//can't use opaque allock
+        {/* 11*/ MFX_ERR_NONE, MFX_ERR_NONE, IOPATTERN, NO_ENCODE, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY },
             }
-
         },
         {/* 12*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
             }
-
         },
         {/* 13*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_OPAQUE_MEMORY }
             }
-
         },
         {/* 14*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, IOPATTERN, WRONG, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.IOPattern, 0x800 }
             }
-
         },
         //Chroma Format
         {/* 15*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_RESERVED1 }
             }
-
         },
         //resolution
-        {/* 16*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 16*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 + 32 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576 +32 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 + 32 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 + 32 }
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 64 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 64 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 64 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 64 },
             }
-
         },
-        {/* 17*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-            {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 8192 + 32 },
-            }
-
+        {/* 17*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, W_GT_MAX, 1,
+         },
+        {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, RESOLUTION, H_GT_MAX, 1,
         },
-        {/* 18*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 8192 + 32 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1 },
             }
-
         },
-        {/* 19*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 736 + 1 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1 },
             }
-
-        },
-        {/* 20*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, RESOLUTION, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-            {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 576 + 1 },
-            }
-
         },
         //Crops
         {/* 21*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 10 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 50 },
             }
-
         },
         {/* 22*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, XY, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 10 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 50 },
             }
-
         },
-        {/* 23*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 23*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 50 },
             }
-
         },
-        {/* 24*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 24*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 + 10 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 50 },
             }
-
         },
-        {/* 25*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 25*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, CROP, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 736 + 10 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 + 10 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 50 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 50 },
             }
-
         },
-        {/* 26*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 26*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 - 1 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 0 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 1 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 0 },
-
             }
-
         },
-        {/* 27*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 27*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 - 1 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 0 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 0 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
 
             }
-
         },
-        {/* 28*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
+        {/* 28*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, CROP, DELTA, 1,
             {
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, 720 - 1 },
-                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 576 - 1 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, -1 },
+                { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, -1 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 1 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 1 },
-
             }
 
         },
         //Async Depth
         {/* 29*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NONE, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.AsyncDepth, 10 }
             }
-
         },
         {/* 30*/ MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, NONE, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.AsyncDepth, 1 }
             }
-
         },
         //Protected
         {/* 31*/ MFX_ERR_INVALID_VIDEO_PARAM,
@@ -318,11 +248,9 @@ namespace hevce_reset
                                       MFX_ERR_NONE
 #endif
                                                          , PROTECTED, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP }
             }
-
         },
         {/* 32*/ MFX_ERR_INVALID_VIDEO_PARAM,
 #if (defined(LINUX32) || defined(LINUX64))
@@ -331,105 +259,67 @@ namespace hevce_reset
                                       MFX_ERR_NONE
 #endif
                                                          , PROTECTED, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_PAVP }
             }
-
         },
         {/* 33*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, PROTECTED, INVALID, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.Protected, 0xfff }
             }
-
         },
         //Frame Rate
         {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, FRAMERATE, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 }
             }
-
         },
         {/* 35*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FRAMERATE, WRONG, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN,350 },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 1 }
             }
-
         },
         //FourCC
         {/* 36*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, FOURCC, WRONG, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_YV12 },
             }
-
         },
         // PicStruct
         {/* 37*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, PIC_STRUCT, CHANGE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
             {
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, 255 },
             }
-
         },
         // Ext Buffer
         {/* 38*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION_SPSPPS, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 39*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_VIDEO_SIGNAL_INFO, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 40*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 41*/ MFX_ERR_NONE, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_CODING_OPTION2, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 42*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_DOUSE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 43*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 44*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 45*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 46*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 47*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 48*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         {/* 49*/ MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NULL_PTR, EXT_BUFF, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
         },
         //not wait finish encoding
-        {/* 50*/ MFX_ERR_NONE, MFX_ERR_NONE, NOT_SYNC, NONE, 1,
-            { "forBehaviorTest/foster_720x576.yuv", "" },
-
+        {/* 50*/ MFX_ERR_NONE, MFX_ERR_NONE, NO_SYNC, NONE, 1,
         },
     };
 
@@ -447,76 +337,175 @@ namespace hevce_reset
         TS_START
 
         mfxStatus sts = tc.sts_sw;
-        tsSurfaceProcessor *reader;
+        tsRawReader *reader;
         mfxHDL hdl;
         mfxHandleType type;
         mfxEncryptedData ed;
         mfxStatus init_fail = MFX_ERR_INVALID_VIDEO_PARAM;
+        const char* stream = NULL;
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
 
-        if (fourcc_id == MFX_FOURCC_NV12)
+        if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) ||
+            (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data))))
         {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_YUY2)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_Y210)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else
-        {
-            g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
-            return 0;
-        }
-
-        const char* stream0 = nullptr;
-        const char* stream1 = nullptr;
-
-        if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
-        {
-            //empty surface for encoding with REXT, ok for this test
-            stream0 = nullptr;
-            stream1 = nullptr;
-        }
-        else
-        {
-            //real streams for NV12
-            if (tc.stream[0] != "")
+            if ((g_tsHWtype < MFX_HW_SKL) &&
+                (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
             {
-                stream0 = g_tsStreamPool.Get(tc.stream[0]);
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+                g_tsStatus.check(sts);
+                return 0;
             }
 
-            if (tc.stream[1] != "")
+            if ((g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
+                && (fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_Y216))
             {
-                stream1 = g_tsStreamPool.Get(tc.stream[1]);
+                g_tsLog << "\n\nWARNING: 4:2:2 formats are supported in HEVCe DualPipe only!\n\n\n";
+                throw tsSKIP;
             }
-            else if(tc.stream[0] != "")
+
+            if ((g_tsConfig.lowpower == MFX_CODINGOPTION_OFF)
+                && (fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == MFX_FOURCC_Y416))
             {
-                stream1 = g_tsStreamPool.Get(tc.stream[0]);
+                g_tsLog << "\n\nWARNING: 4:4:4 formats are supported in HEVCe VDENC only!\n\n\n";
+                throw tsSKIP;
             }
+
+            sts = tc.sts_hw;
         }
 
-        g_tsStreamPool.Reg();
+        if (tc.sub_type != NO_ENCODE)
+        {
+            if (fourcc_id == MFX_FOURCC_NV12)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+                if (g_tsConfig.sim) {
+                    stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
+                    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+                }
+                else {
+                    stream = g_tsStreamPool.Get("YUV/720x480p_30.00_4mb_h264_cabac_180s.yuv");
+                    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
+                    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+                }
+            }
+            else if (fourcc_id == MFX_FOURCC_P010)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                m_par.mfx.FrameInfo.Shift = 1;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+                if (g_tsConfig.sim) {
+                    stream = g_tsStreamPool.Get("YUV10bit420_ms/Kimono1_176x144_24_p010_shifted.yuv");
+                    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+                }
+                else {
+                    stream = g_tsStreamPool.Get("YUV10bit420_ms/Kimono1_352x288_24_p010_shifted.yuv");
+                    m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
+                    m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+                }
+            }
+            else if (fourcc_id == MFX_FOURCC_YUY2)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+                stream = g_tsStreamPool.Get("YUV8bit422/Kimono1_176x144_24_yuy2.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else if (fourcc_id == MFX_FOURCC_Y210)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                m_par.mfx.FrameInfo.Shift = 1;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+                stream = g_tsStreamPool.Get("YUV10bit422/Kimono1_176x144_24_y210.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else if (fourcc_id == MFX_FOURCC_AYUV)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+
+                stream = g_tsStreamPool.Get("YUV8bit444/Kimono1_176x144_24_ayuv.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else if (fourcc_id == MFX_FOURCC_Y410)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+
+                stream = g_tsStreamPool.Get("YUV10bit444/Kimono1_176x144_24_y410.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else if (fourcc_id == MFX_FOURCC_P012)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+                m_par.mfx.FrameInfo.Shift = 1;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+
+                stream = g_tsStreamPool.Get("YUV16bit420/FruitStall_176x144_240_p016.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else if (fourcc_id == MFX_FOURCC_Y212)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+                m_par.mfx.FrameInfo.Shift = 1;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+
+                stream = g_tsStreamPool.Get("YUV16bit422/FruitStall_176x144_240_y216.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else if (fourcc_id == MFX_FOURCC_Y412)
+            {
+                m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
+                m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+                m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+
+                stream = g_tsStreamPool.Get("YUV16bit444/FruitStall_176x144_240_y416.yuv");
+
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else
+            {
+                g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
+                return 0;
+            }
+
+            g_tsStreamPool.Reg();
+        }
 
         MFXInit();
-
-        //set default param
-        m_par.mfx.FrameInfo.Width = 720;
-        m_par.mfx.FrameInfo.Height = 576;
-        m_par.mfx.FrameInfo.CropH = 0;
-        m_par.mfx.FrameInfo.CropW = 0;
+        Load();
 
         SETPARS(m_pPar, MFX_PAR);
-
-        Load();
 
         if (!GetAllocator())
         {
@@ -543,39 +532,16 @@ namespace hevce_reset
             }
         }
 
-        if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) ||
-            (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_GACC.Data, sizeof(MFX_PLUGINID_HEVCE_GACC.Data))))
+        if (stream)
         {
-            if ((g_tsHWtype < MFX_HW_SKL) &&
-               (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
-            {
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-                g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-                g_tsStatus.check(sts);
-                return 0;
-            }
-
-            if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
-                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
-            {
-                g_tsLog << "\n\nWARNING: 422 format only supported on ICL+ and ENC+PAK!\n\n\n";
-                throw tsSKIP;
-            }
-
-            sts = tc.sts_hw;
-            m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
-            m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
-            init_fail = MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-
-        if (stream0)
-        {
-            reader = new tsRawReader(stream0, m_pPar->mfx.FrameInfo);
+            reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
+            reader->m_disable_shift_hack = true; // don't shift
             m_filler = reader;
         }
 
-        if (tc.type != NOT_INIT)
+        g_tsStatus.check(GetCaps(&caps, &capSize));
+
+        if (tc.type != NO_INIT)
         {
             if (tc.type == INIT_FAIL)
             {
@@ -588,7 +554,7 @@ namespace hevce_reset
                 Init();
                 GetVideoParam();
 
-                if (tc.stream[0] != "")
+                if (tc.sub_type != NO_ENCODE)
                 {
                     // Encode 1 frame
                     if (m_filler)
@@ -604,7 +570,7 @@ namespace hevce_reset
 
                         g_tsStatus.check(); TS_CHECK_MFX;
 
-                        if (tc.type != NOT_SYNC)
+                        if (tc.type != NO_SYNC)
                             SyncOperation(); TS_CHECK_MFX;
                         encoded++;
                     }
@@ -614,12 +580,53 @@ namespace hevce_reset
             }
         }
 
-        SETPARS(m_pPar, MFX_PAR_RESET);
+        if (tc.sub_type != DELTA) {  // not dependent from resolution params
+            SETPARS(m_pPar, MFX_PAR_RESET);
+        } else {
+            for (mfxU32 i = 0; i < MAX_NPARS; i++) {
+                if (tc.set_par[i].f && tc.set_par[i].ext_type == MFX_PAR_RESET) {
+                    if (tc.type == RESOLUTION)
+                    {
+                        if (tc.set_par[i].f->name.find("Width") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.Width += tc.set_par[i].v;
+                        if (tc.set_par[i].f->name.find("Height") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.Height += tc.set_par[i].v;
+                        if (tc.set_par[i].f->name.find("CropW") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.CropW += tc.set_par[i].v;
+                        if (tc.set_par[i].f->name.find("CropH") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.CropH += tc.set_par[i].v;
+                    }
+                    if (tc.type == CROP)
+                    {
+                        if (tc.set_par[i].f->name.find("CropX") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.CropX += tc.set_par[i].v;
+                        if (tc.set_par[i].f->name.find("CropY") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.CropY += tc.set_par[i].v;
+                        if (tc.set_par[i].f->name.find("CropW") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.CropW += tc.set_par[i].v;
+                        if (tc.set_par[i].f->name.find("CropH") != std::string::npos)
+                            m_pPar->mfx.FrameInfo.CropH += tc.set_par[i].v;
+                    }
+                }
+            }
+        }
+
+        if (tc.type == RESOLUTION)
+        {
+            if (tc.sub_type == W_GT_MAX)
+                m_pPar->mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
+            if (tc.sub_type == H_GT_MAX)
+                m_pPar->mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+        }
+
+        if ((tc.type == FRAMERATE) && (tc.sub_type == CHANGE) && (g_tsConfig.sim))
+        {   // for lowres in sim mode Level is not changed in case of fps increase
+            sts = MFX_ERR_NONE;
+        }
 
         if (tc.type == EXT_BUFF)
         {
             m_par.AddExtBuffer(tc.sub_type, GetBufSzById(tc.sub_type));
-
         }
 
         for (mfxU32 i = 0; i < tc.repeat; i++)
@@ -637,7 +644,7 @@ namespace hevce_reset
         if (sts >= 0)
         {
 
-            if (tc.stream[0] != "" || tc.stream[1] != "")
+            if (tc.sub_type != NO_ENCODE)
             {
                 if (tc.type == PROTECTED)
                 {
@@ -647,20 +654,6 @@ namespace hevce_reset
                     ed.Data = m_bitstream.Data;
                     m_bitstream.EncryptedData = &ed;
                 }
-
-                if (stream1)
-                {
-                    reader = new tsRawReader(stream1, m_pPar->mfx.FrameInfo);
-                    m_filler = reader;
-                }
-                else if (stream0)
-                {
-                    reader = new tsRawReader(stream0, m_pPar->mfx.FrameInfo);
-                    m_filler = reader;
-                }
-
-                if (m_filler)
-                    m_filler->m_max = 1;
 
                 EncodeFrames(1, true);
             }
@@ -680,6 +673,12 @@ namespace hevce_reset
     }
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_reset, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_reset, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_reset, RunTest_Subtype<MFX_FOURCC_P012>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_reset, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_reset, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_reset, RunTest_Subtype<MFX_FOURCC_Y212>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_reset, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_reset, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_reset, RunTest_Subtype<MFX_FOURCC_Y412>, n_cases);
 }

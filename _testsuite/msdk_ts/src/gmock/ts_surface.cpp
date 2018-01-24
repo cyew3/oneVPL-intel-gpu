@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -22,13 +22,18 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
     case MFX_FOURCC_AYUV: m_pFrame = new tsFrameAYUV(s.Data); break;
     case MFX_FOURCC_P010:
+    case MFX_FOURCC_P016:
         if (s.Info.Shift == 0)
             m_pFrame = new tsFrameP010s0(s.Data);
         else
             m_pFrame = new tsFrameP010(s.Data);
         break;
-    case MFX_FOURCC_Y210: m_pFrame = new tsFrameY210(s.Data); break;
-    case MFX_FOURCC_Y410: m_pFrame = new tsFrameY410(s.Data); break;
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
+        m_pFrame = new tsFrameY210(s.Data); break;
+    case MFX_FOURCC_Y410:
+    case MFX_FOURCC_Y416:
+        m_pFrame = new tsFrameY410(s.Data); break;
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;
     case MFX_FOURCC_R16:  m_pFrame = new tsFrameR16(s.Data); break;
@@ -213,7 +218,7 @@ bool tsFrameAYUV::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const &
 
 bool tsFrameP010::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
 {
-    if (   srcInfo.FourCC == MFX_FOURCC_P010
+    if (  (srcInfo.FourCC == MFX_FOURCC_P010 || srcInfo.FourCC == MFX_FOURCC_P016)
         && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
         && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
         && srcInfo.Shift == dstInfo.Shift)
@@ -602,7 +607,10 @@ void tsRawReader::Init(mfxFrameInfo fi)
         m_fsz = m_fsz * 2;
 
     if (   MFX_FOURCC_P010 == m_surf.Info.FourCC
-        || MFX_FOURCC_Y210 == m_surf.Info.FourCC)
+        || MFX_FOURCC_P016 == m_surf.Info.FourCC
+        || MFX_FOURCC_Y210 == m_surf.Info.FourCC
+        || MFX_FOURCC_Y216 == m_surf.Info.FourCC
+        || MFX_FOURCC_Y416 == m_surf.Info.FourCC)
     {
         fsz = fsz * 2;
         m_fsz = m_fsz * 2;
@@ -637,17 +645,20 @@ void tsRawReader::Init(mfxFrameInfo fi)
         pitch = fi.Width * 4;
         break;
     case MFX_FOURCC_P010:
-        m_data.Y16     = (mfxU16*) m_buf;
-        m_data.U16    = (mfxU16*) (m_data.Y + fsz);
+    case MFX_FOURCC_P016:
+        m_data.Y16   = (mfxU16*) m_buf;
+        m_data.U16   = (mfxU16*) (m_data.Y + fsz);
         pitch        = fi.Width * 2;
         break;
     case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y216:
         m_data.Y16 = (mfxU16*)m_buf;
         m_data.U16 = m_data.Y16 + 1;
         m_data.V16 = m_data.Y16 + 3;
         pitch = fi.Width * 4;
         break;
     case MFX_FOURCC_Y410:
+    case MFX_FOURCC_Y416:
         m_data.Y410 = (mfxY410*)m_buf;
         pitch = fi.Width * 4;
         break;
@@ -854,7 +865,7 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
         {
             for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
             {
-                IppStatus sts = ippsCRC32_8u(s.Data.Y + pitch * i + s.Info.CropX, count, &m_crc);
+                IppStatus sts = ippsCRC32_8u(s.Data.Y + pitch * i + s.Info.CropX, (mfxU32)count, &m_crc);
                 if (sts != ippStsNoErr)
                 {
                     g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
@@ -863,7 +874,7 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
             }
             for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
             {
-                IppStatus sts = ippsCRC32_8u(s.Data.UV + pitch * i + s.Info.CropX, count, &m_crc);
+                IppStatus sts = ippsCRC32_8u(s.Data.UV + pitch * i + s.Info.CropX, (mfxU32)count, &m_crc);
                 if (sts != ippStsNoErr)
                 {
                     g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
@@ -881,7 +892,7 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
 
             for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++)
             {
-                IppStatus sts = ippsCRC32_8u(ptr + i * pitch, count, &m_crc);
+                IppStatus sts = ippsCRC32_8u(ptr + i * pitch, (mfxU32)count, &m_crc);
                 if (sts != ippStsNoErr)
                 {
                     g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
