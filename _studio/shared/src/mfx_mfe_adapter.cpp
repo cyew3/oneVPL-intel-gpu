@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -190,6 +190,7 @@ mfxStatus MFEVAAPIEncoder::Destroy()
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
     m_streams_pool.clear();
+    m_streamsMap.clear();
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
