@@ -80,8 +80,8 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(MfxIppIncludeDir);include;..\..\core\umc\include;..\..\core\vm\include;..\..\core\vm_plus\include;..\..\io\media_buffers\include;..\..\io\umc_io\include;..\..\..\include;..\..\..\..\..\..\mdp_msdk-api\include;..\..\..\..\mfx_lib\shared\include;..\..\io\umc_va\include;..\..\codec\vp9_dec\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_VP9D_PLUGIN;WIN32;_LIB;MFX_VA;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="$(Configuration.Contains('Release'))">NDEBUG;UMC_AV1_DECODER_REV=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <PreprocessorDefinitions Condition="$(Configuration.Contains('Debug'))">_DEBUG;UMC_AV1_DECODER_REV=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration.Contains('Release'))">NDEBUG;UMC_AV1_DECODER_REV=251;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="$(Configuration.Contains('Debug'))">_DEBUG;UMC_AV1_DECODER_REV=251;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <TreatWarningAsError>true</TreatWarningAsError>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
