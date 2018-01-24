@@ -18,6 +18,14 @@
 #include "umc_av1_utils.h"
 #include "umc_av1_frame.h"
 
+//#define AV1D_LOGGING
+#if defined(AV1D_LOGGING) && (defined(WIN32) || defined(WIN64))
+#define AV1D_LOG(string, ...) do { printf("(AV1D log) %s ",__FUNCTION__); printf(string, ##__VA_ARGS__); printf("\n"); fflush(0); } \
+                              while (0)
+#else
+#define AV1D_LOG(string, ...)
+#endif
+
 namespace UMC_AV1_DECODER
 {
     inline
@@ -33,29 +41,36 @@ namespace UMC_AV1_DECODER
     inline
     Ipp32u av1_profile(AV1Bitstream* bs)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         Ipp32u profile = bs->GetBit();
         profile |= bs->GetBit() << 1;
         if (profile > 2)
             profile += bs->GetBit();
 
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
         return profile;
     }
 
     inline
     void av1_bitdepth_colorspace_sampling(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         GetBitDepthAndColorSpace(bs, fh);
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
     inline
     void av1_get_render_size(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         GetDisplaySize(bs, fh);
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
     inline
     void av1_setup_loop_filter(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         fh->lf.filterLevel = bs->GetBits(6);
         fh->lf.sharpnessLevel = bs->GetBits(3);
 
@@ -90,11 +105,13 @@ namespace UMC_AV1_DECODER
                 }
             }
         }
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
     inline
     void av1_read_cdef(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         memset(fh->cdefStrength, 0, sizeof(fh->cdefStrength));
         memset(fh->cdefUVStrength, 0, sizeof(fh->cdefUVStrength));
 #if UMC_AV1_DECODER_REV == 0
@@ -116,20 +133,24 @@ namespace UMC_AV1_DECODER
                 bs->GetBits(7) : 0;
         }
 #endif
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
     inline
     void av1_read_tx_mode(AV1Bitstream* bs, FrameHeader* fh, bool allLosless)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         if (allLosless)
             fh->txMode = ONLY_4X4;
         else
             fh->txMode = bs->GetBit() ? TX_MODE_SELECT : (TX_MODE)bs->GetBits(2);
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
     inline
     void av1_read_frame_reference_mode(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         fh->referenceMode = SINGLE_REFERENCE;
         bool compoundRefAllowed = false;
 #if UMC_AV1_DECODER_REV == 0
@@ -146,12 +167,14 @@ namespace UMC_AV1_DECODER
             fh->referenceMode = bs->GetBit() ? REFERENCE_MODE_SELECT :
                 bs->GetBit() ? COMPOUND_REFERENCE : SINGLE_REFERENCE;
         }
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
 #if UMC_AV1_DECODER_REV >= 251
     inline
     void av1_read_compound_tools(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         if (!IsFrameIntraOnly(fh) && fh->referenceMode != COMPOUND_REFERENCE)
         {
             fh->allowInterIntraCompound = bs->GetBit();
@@ -160,6 +183,7 @@ namespace UMC_AV1_DECODER
         {
             fh->allowMaskedCompound = bs->GetBit();
         }
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 #endif
 
@@ -176,6 +200,7 @@ namespace UMC_AV1_DECODER
     inline
     void av1_setup_quantization(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         fh->baseQIndex = bs->GetBits(QINDEX_BITS);
 
         if (bs->GetBit())
@@ -205,11 +230,13 @@ namespace UMC_AV1_DECODER
             fh->maxQMLevel = bs->GetBits(QM_LEVEL_BITS);
         }
 #endif
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
     inline
     bool av1_setup_segmentation(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         bool segmentQuantizerActive = false;
         fh->segmentation.updateMap = 0;
         fh->segmentation.updateData = 0;
@@ -264,6 +291,7 @@ namespace UMC_AV1_DECODER
             }
         }
 
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
         return segmentQuantizerActive;
     }
 
@@ -317,6 +345,7 @@ namespace UMC_AV1_DECODER
     inline
     void av1_read_tile_info(AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         const Ipp32u alignedWidth = ALIGN_POWER_OF_TWO(fh->width, MI_SIZE_LOG2);
         int minLog2TileColumns, maxLog2TileColumns, maxOnes;
         const Ipp32u miCols = alignedWidth >> MI_SIZE_LOG2;
@@ -349,6 +378,7 @@ namespace UMC_AV1_DECODER
         bs->GetBits(numBits); // tg_start
         bs->GetBits(numBits); // tg_size
 #endif
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
 #if UMC_AV1_DECODER_REV >= 251
@@ -475,6 +505,7 @@ namespace UMC_AV1_DECODER
                                        WarpedMotionParams const* ref_params,
                                        AV1Bitstream* bs, FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         TRANSFORMATION_TYPE type;
         type = static_cast<TRANSFORMATION_TYPE>(bs->GetBit());
         if (type != IDENTITY) {
@@ -552,6 +583,7 @@ namespace UMC_AV1_DECODER
         case IDENTITY: break;
         default: throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 #endif
 
@@ -601,6 +633,7 @@ namespace UMC_AV1_DECODER
 
     void AV1Bitstream::GetSequenceHeader(SequenceHeader* sh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
 #if UMC_AV1_DECODER_REV >= 251
         sh->frame_id_numbers_present_flag = GetBit();
         if (sh->frame_id_numbers_present_flag) {
@@ -613,10 +646,12 @@ namespace UMC_AV1_DECODER
         sh->frame_id_length_minus7 = FRAME_ID_LENGTH_MINUS7;
         sh->delta_frame_id_length_minus2 = DELTA_FRAME_ID_LENGTH_MINUS2;
 #endif
+        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }
 
     void AV1Bitstream::GetFrameSizeWithRefs(FrameHeader* fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
         bool bFound = false;
         for (Ipp8u i = 0; i < INTER_REFS; ++i)
         {
@@ -636,10 +671,13 @@ namespace UMC_AV1_DECODER
 
             av1_get_render_size(this, fh);
         }
+        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }
 
     void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader* sh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
+
         if (!fh || !sh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
@@ -815,6 +853,8 @@ namespace UMC_AV1_DECODER
 #endif
             }
         }
+
+        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }
 
     static bool IsAllLosless(FrameHeader const * fh)
@@ -856,6 +896,7 @@ namespace UMC_AV1_DECODER
 
     void AV1Bitstream::GetFrameHeaderFull(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh)
     {
+        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
         if (!fh || !sh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
@@ -1004,6 +1045,7 @@ namespace UMC_AV1_DECODER
                 }
             }
         }
+        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }
 
 } // namespace UMC_AV1_DECODER
