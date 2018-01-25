@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 #include "mfx_common.h"
 
@@ -602,6 +602,11 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
     request->Info = tmp.mfx.FrameInfo;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     request->Info.Shift = (tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+                           tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
+                           tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
+                           tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416 ||
+#endif
                            tmp.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) ? 1: 0;
 #else
     request->Info.Shift = tmp.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10? 1: 0;
