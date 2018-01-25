@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -481,6 +481,8 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
         break;
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_GLK:
+    case PLATFORM_INTEL_CFL:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_skl, sizeof(genx_hevce_analyze_gradient_32x32_best_skl));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_skl, sizeof(genx_hevce_prepare_src_skl));
         programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_skl, sizeof(genx_hevce_hme_and_me_p32_4mv_skl));
