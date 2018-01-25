@@ -3002,6 +3002,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     mfxU32 indx = 0;
     mfxU32 deinterlaceAlgorithm = 0;
+    bool FMDEnable = 0;
 
     // bkwdFrames
     for(i = 0; i < pTask->bkwdRefCount; i++)
@@ -3373,10 +3374,12 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     {
         m_executeParams.iTargetInterlacingMode = DEINTERLACE_DISABLE;
         m_executeParams.iDeinterlacingAlgorithm = 0;
+        m_executeParams.bFMDEnable = false;
     }
 
     // Check for progressive frames in interlace streams
     deinterlaceAlgorithm = m_executeParams.iDeinterlacingAlgorithm;
+    FMDEnable = m_executeParams.bFMDEnable;
 
     static mfxU32 num_progressive = 0;
     mfxU32 currFramePicStruct = m_executeSurf[pTask->bkwdRefCount].frameInfo.PicStruct;
@@ -3407,6 +3410,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
     if (isCurrentProgressive)
     {
         m_executeParams.iDeinterlacingAlgorithm = 0;
+        m_executeParams.bFMDEnable = false;
     }
 
     // Need special handling for progressive frame in 30i->60p ADI mode
@@ -3419,14 +3423,23 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         {
             // First field comes from interlace reference
             if ((!isPreviousProgressive) && isFirstField)
+            {
                 m_executeParams.iDeinterlacingAlgorithm = deinterlaceAlgorithm;
+                m_executeParams.bFMDEnable = FMDEnable;
+            }
             else
+            {
                 m_executeParams.iDeinterlacingAlgorithm = 0; // Disable DI for current frame
+                m_executeParams.bFMDEnable = false;
+            }
         }
 
         // Disable DI when previous frame is progressive and current frame is interlace
         if (isPreviousProgressive && (!isCurrentProgressive) && isFirstField)
+        {
             m_executeParams.iDeinterlacingAlgorithm = 0; // Disable DI for first output frame
+            m_executeParams.bFMDEnable = false;
+        }
     }
 
 
@@ -3470,6 +3483,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
     // restore value for m_executeParams.iDeinterlacingAlgorithm
     m_executeParams.iDeinterlacingAlgorithm = deinterlaceAlgorithm;
+    m_executeParams.bFMDEnable = FMDEnable;
     m_frame_num++; // used to derive first or second field
     return MFX_ERR_NONE;
 
