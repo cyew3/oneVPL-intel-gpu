@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -304,6 +304,7 @@ template <unsigned fourcc, unsigned profile>
 char const* query_stream(unsigned int id, std::integral_constant<unsigned, fourcc>, std::integral_constant<unsigned, profile>)
 { return query_stream(id, std::integral_constant<unsigned, fourcc>{}); }
 
+#if !defined(OPEN_SOURCE)
 /* SCC */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
 { return "conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc"; }
@@ -313,6 +314,7 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOUR
 { return "conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
 { return "conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc"; }
+#endif
 
 template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
 struct TestSuite
@@ -342,9 +344,11 @@ TS_REG_TEST_SUITE(hevc12d_420_p016_decode_frame_async, TestSuite<MFX_FOURCC_P016
 TS_REG_TEST_SUITE(hevc12d_422_y216_decode_frame_async, TestSuite<MFX_FOURCC_Y216>::RunTest, TestSuite<MFX_FOURCC_Y216>::n_cases);
 TS_REG_TEST_SUITE(hevc12d_444_y416_decode_frame_async, TestSuite<MFX_FOURCC_Y416>::RunTest, TestSuite<MFX_FOURCC_Y416>::n_cases);
 
+#if !defined(OPEN_SOURCE)
 TS_REG_TEST_SUITE(hevcd_420_nv12_scc_decode_frame_async,   (TestSuite<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
 TS_REG_TEST_SUITE(hevcd_444_ayuv_scc_decode_frame_async,   (TestSuite<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_420_p010_scc_decode_frame_async, (TestSuite<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_444_y410_scc_decode_frame_async, (TestSuite<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuite<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
+#endif
 
 }

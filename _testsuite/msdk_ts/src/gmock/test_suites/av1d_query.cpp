@@ -10,6 +10,7 @@ Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 
 #include "ts_decoder.h"
 #include "ts_struct.h"
+#if !defined(OPEN_SOURCE)
 
 namespace av1d_query
 {
@@ -439,3 +440,4 @@ TS_REG_TEST_SUITE(av1d_8b_420_nv12_query,   (TestSuiteExt<MFX_FOURCC_NV12, MFX_P
 TS_REG_TEST_SUITE(av1d_10b_420_p010_query, (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::n_cases));
 
 }
+#endif

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -940,6 +940,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>:
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::test_cases) / sizeof(TestSuite::tc_struct);
 
+#if !defined(OPEN_SOURCE)
 /* 8b 420 SCC */
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases[] =
@@ -1182,6 +1183,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
+#endif
 
 template <unsigned fourcc, unsigned profile>
 int TestSuiteExt<fourcc, profile>::RunTest(unsigned int id)
@@ -1227,8 +1229,10 @@ TS_REG_TEST_SUITE(hevc12d_420_p016_query, (TestSuiteExt<MFX_FOURCC_P016, MFX_PRO
 TS_REG_TEST_SUITE(hevc12d_422_y216_query, (TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::RunTest), (TestSuiteExt<MFX_FOURCC_Y216, MFX_PROFILE_HEVC_REXT>::n_cases));
 TS_REG_TEST_SUITE(hevc12d_444_y416_query, (TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::RunTest), (TestSuiteExt<MFX_FOURCC_Y416, MFX_PROFILE_HEVC_REXT>::n_cases));
 
+#if !defined(OPEN_SOURCE)
 TS_REG_TEST_SUITE(hevcd_420_nv12_scc_query,   (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
 TS_REG_TEST_SUITE(hevcd_444_ayuv_scc_query,   (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_420_p010_scc_query, (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
 TS_REG_TEST_SUITE(hevc10d_444_y410_scc_query, (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
+#endif
 }

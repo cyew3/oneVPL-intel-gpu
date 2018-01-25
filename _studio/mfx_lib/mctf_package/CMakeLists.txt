@@ -1,5 +1,5 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
-add_definitions( -DMFX_VA)
+
 mfx_include_dirs( )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/mctf/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/include )
@@ -24,5 +24,5 @@ list( APPEND LIBS
       asc
 )
 set( defs "${defs} ${WARNING_FLAGS}")
-make_library( mctf  none static )
+make_library( mctf  hw static )
 set( defs "" )

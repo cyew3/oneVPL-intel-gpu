@@ -76,7 +76,7 @@ set( defs "" )
 list( APPEND mdirs
   scheduler vpp decode/vc1
   decode/mjpeg decode/h264 decode/mpeg2 cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2 encode_hw/mjpeg
-  decode/h265 decode/vp8 decode/vp9
+  decode/h265 decode/vp8 decode/vp9 mctf_package/mctf
   )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_common )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_preenc )
@@ -185,6 +185,7 @@ list( APPEND LIBS
   mfx_common
   mfx_common_hw
   asc
+  mctf_hw
   vpp_hw
   h264_common
   h264_preenc

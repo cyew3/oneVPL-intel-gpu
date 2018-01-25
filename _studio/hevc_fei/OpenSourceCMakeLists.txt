@@ -104,16 +104,12 @@ endforeach()
   list( APPEND LIBS
     mfx_hevce_lib_hw
     mfx_common_hw
-    media_buffers
-    umc_io
-    umc_va_elk_hw
     umc
     vm
     vm_plus
     ${ITT_LIBS}
     pthread
     dl
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   )
 
 set( defs "${API_FLAGS} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_FEI_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVC_FEI_HW_DESCRIPTION}\"\\\" ${HEVCE_FEI_HW_version_defs}" )

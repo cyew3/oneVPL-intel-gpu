@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevcd_init.cpp
 
@@ -371,6 +371,7 @@ TS_REG_TEST_SUITE_TMPL(
     TS_BITS(12, 8, 10), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV420)
 );
 
+#if !defined(OPEN_SOURCE)
 TS_REG_TEST_SUITE_TMPL(
     hevcd_420_nv12_scc_init,
     MFX_PROFILE_HEVC_SCC,
@@ -398,6 +399,7 @@ TS_REG_TEST_SUITE_TMPL(
     MFX_FOURCC_Y410,
     TS_BITS(10, 8, 12), TS_CHROMAS(MFX_CHROMAFORMAT_YUV444, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422)
 );
+#endif
 
 #undef TS_BITS
 #undef TS_CHROMAS

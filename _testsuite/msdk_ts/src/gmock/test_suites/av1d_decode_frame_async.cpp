@@ -12,6 +12,7 @@ Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
+#if !defined(OPEN_SOURCE)
 namespace av1d_decode_frame_async
 {
     class TestSuite
@@ -360,3 +361,4 @@ TS_REG_TEST_SUITE(av1d_10b_420_p010_decode_frame_async,  (TestSuiteExt<MFX_FOURC
 
 }
 #undef TEST_NAME
+#endif

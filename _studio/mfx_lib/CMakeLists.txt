@@ -139,7 +139,7 @@ foreach( variant
     pak
     mfx_common_${variant}
     asc
-    mctf
+    mctf_hw
     vpp_${variant}
     h264_common
     h264_preenc
@@ -308,7 +308,7 @@ foreach( variant sw )
     pak
     decode_${variant}
     asc
-    mctf
+    mctf_hw
     vpp_${variant}
     cmrt_cross_platform_hw
     genx_h264_encode_embeded

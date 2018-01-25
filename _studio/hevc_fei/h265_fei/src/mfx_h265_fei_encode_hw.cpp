@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -69,7 +69,7 @@ mfxStatus H265FeiEncodePlugin::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFram
     mfxStatus sts = m_core.QueryPlatform(&p);
     MFX_CHECK_STS(sts);
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
     bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = p.CodeName >= MFX_PLATFORM_ICELAKE;
 #else
     bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = false;

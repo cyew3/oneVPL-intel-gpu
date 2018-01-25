@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_reflect.h"
@@ -24,10 +24,13 @@
 #include "mfxcamera.h"
 #include "mfxfei.h"
 #include "mfxla.h"
+#include "mfxsc.h"
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#include "mfxfeihevc.h"
+#endif
 
 #ifndef OPEN_SOURCE
-#include "mfxfeihevc.h"
-#include "mfxsc.h"
 #include "mfxfeih265.h"
 #endif // !OPEN_SOURCE
 

@@ -12,6 +12,7 @@ File Name: av1d_init.cpp
 #include "ts_decoder.h"
 #include "ts_struct.h"
 
+#if !defined(OPEN_SOURCE)
 namespace av1d_init
 {
 
@@ -317,3 +318,4 @@ TS_REG_TEST_SUITE_TMPL(
 
 #undef TS_REG_TEST_SUITE_TMPL
 }
+#endif

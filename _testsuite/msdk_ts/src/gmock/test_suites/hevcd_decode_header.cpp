@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -414,12 +414,14 @@ int TestSuite::RunTest(unsigned int id)
         EXPECT_EQ(sps.bit_depth_luma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthLuma);
         EXPECT_EQ(sps.bit_depth_chroma_minus8 + 8, m_par.mfx.FrameInfo.BitDepthChroma);
 
+#if !defined(OPEN_SOURCE)
         if ( (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC) && (g_tsHWtype < MFX_HW_TGL) && (g_tsOSFamily == MFX_OS_FAMILY_LINUX) )
         {
             // SCC not supported before Gen12
             EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
         }
         else
+#endif
         {
             if (m_par.mfx.FrameInfo.ChromaFormat == 0)
             {

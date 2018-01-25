@@ -155,7 +155,7 @@ endforeach()
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
 #====MCTF
     asc
-    mctf
+    mctf_hw
   )
 
 set( defs "-DAS_CAMERA_PLUGIN -DAS_VPP_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${CAMERA_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${CAMERA_DESCRIPTION}\"\\\" ${camera_version_defs}" )
