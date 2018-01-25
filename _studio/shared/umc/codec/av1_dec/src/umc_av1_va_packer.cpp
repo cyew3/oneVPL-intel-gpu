@@ -261,6 +261,13 @@ namespace UMC_AV1_DECODER
             picParam->cdef_strengths[i] = (UCHAR)info.cdefStrength[i];
             picParam->cdef_uv_strengths[i] = (UCHAR)info.cdefUVStrength[i];
         }
+#if AV1D_DDI_VERSION >= 11
+        picParam->dwModeControlFlags.fields.using_qmatrix = info.useQMatrix;
+#endif
+#if UMC_AV1_DECODER_REV >= 251
+        picParam->dwModeControlFlags.fields.min_qmlevel = info.minQMLevel;
+        picParam->dwModeControlFlags.fields.max_qmlevel = info.maxQMLevel;
+#endif
         picParam->dwModeControlFlags.fields.delta_q_present_flag = info.deltaQPresentFlag;
         picParam->dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.deltaQRes);
         picParam->dwModeControlFlags.fields.delta_lf_present_flag = info.deltaLFPresentFlag;
