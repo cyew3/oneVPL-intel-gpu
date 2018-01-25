@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <vm_thread.h>
@@ -193,8 +193,6 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Create)(
 {
     H264CoreEncoderType* core_enc = (H264CoreEncoderType *)state;
     H264EncoderParams_Create(&core_enc->m_info);
-
-    core_enc->m_pBitStream = NULL;
     core_enc->memAlloc = NULL;
     core_enc->profile_frequency = 1;
     core_enc->m_iProfileIndex = 0;
@@ -1693,20 +1691,27 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
 #endif // UMC_RESTRICTED_CODE_MBT
 
 //#ifndef ALT_BITSTREAM_ALLOC //TRY
-    core_enc->m_pAllocEncoderInst = (Ipp8u*)H264_Malloc(numOfSliceEncs * bsSize + DATA_ALIGN);
-    if (core_enc->m_pAllocEncoderInst == NULL)
-        return UMC_ERR_ALLOC;
-    core_enc->m_pBitStream = align_pointer<Ipp8u*>(core_enc->m_pAllocEncoderInst, DATA_ALIGN);
+    core_enc->m_pAllocEncoderInst = new Ipp8u* [numOfSliceEncs];
+    for (i = 0; i < numOfSliceEncs; i++)
+    {
+        core_enc->m_pAllocEncoderInst[i] = (Ipp8u*)H264_Malloc(bsSize + DATA_ALIGN);
+        if (core_enc->m_pAllocEncoderInst[i] == NULL)
+            return UMC_ERR_ALLOC;
+    }
 //#endif // ALT_BITSTREAM_ALLOC //TRY
 
     core_enc->m_pbitstreams = (H264BsRealType**)H264_Malloc(numOfSliceEncs * sizeof(H264BsRealType*));
     if (core_enc->m_pbitstreams == NULL)
         return UMC_ERR_ALLOC;
 
+    bool bsSizeDevided = false;
 #ifndef UMC_RESTRICTED_CODE_MBT
 #ifdef MB_THREADING
     if (core_enc->m_info.entropy_coding_mode == 0)
+    {
         bsSize >>= 1;
+        bsSizeDevided = true;
+    }
 #endif // MB_THREADING
 #endif // UMC_RESTRICTED_CODE_MBT
 
@@ -1720,7 +1725,10 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
         H264ENC_MAKE_NAME(H264BsReal_Create)(core_enc->m_pbitstreams[i], tmpBitstreamPtr, bsSize, core_enc->m_info.chroma_format_idc, status);
 #else // ALT_BITSTREAM_ALLOC
         */
-        H264ENC_MAKE_NAME(H264BsReal_Create)(core_enc->m_pbitstreams[i], core_enc->m_pBitStream + i * bsSize, bsSize, core_enc->m_info.chroma_format_idc, status);
+        if (bsSizeDevided)
+            H264ENC_MAKE_NAME(H264BsReal_Create)(core_enc->m_pbitstreams[i], core_enc->m_pAllocEncoderInst[i / 2] + (i % 2) * bsSize, bsSize, core_enc->m_info.chroma_format_idc, status);
+        else
+            H264ENC_MAKE_NAME(H264BsReal_Create)(core_enc->m_pbitstreams[i], core_enc->m_pAllocEncoderInst[i], bsSize, core_enc->m_info.chroma_format_idc, status);
 //#endif // ALT_BITSTREAM_ALLOC //TRY
         if (status != UMC_OK)
             return status;
@@ -1747,7 +1755,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
         if (!core_enc->m_Slices_MBT[i].m_pbitstream)
             return UMC_ERR_ALLOC;
         if(core_enc->m_info.entropy_coding_mode == 0)
-            status = H264ENC_MAKE_NAME(H264BsReal_Create)((H264BsRealType*)core_enc->m_Slices_MBT[i].m_pbitstream, core_enc->m_pBitStream + numOfSliceEncs * bsSize + i * (bsSize / core_enc->m_info.numThreads), bsSize / core_enc->m_info.numThreads, core_enc->m_info.chroma_format_idc, status);
+            status = H264ENC_MAKE_NAME(H264BsReal_Create)((H264BsRealType*)core_enc->m_Slices_MBT[i].m_pbitstream, core_enc->m_pAllocEncoderInst[numOfSliceEncs / 2] + i * (bsSize / core_enc->m_info.numThreads), bsSize / core_enc->m_info.numThreads, core_enc->m_info.chroma_format_idc, status);
         else
             status = H264ENC_MAKE_NAME(H264BsReal_Create)((H264BsRealType*)core_enc->m_Slices_MBT[i].m_pbitstream, 0, 0, core_enc->m_info.chroma_format_idc, status); // the buffer itself won't be used
         if (status != UMC_OK)
@@ -2073,11 +2081,17 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Close)(
     }
 
 #ifndef ALT_BITSTREAM_ALLOC
-    if (core_enc->m_pAllocEncoderInst) {
-        H264_Free(core_enc->m_pAllocEncoderInst);
+    if (core_enc->m_pAllocEncoderInst != NULL) {
+        for (int i = 0; i < core_enc->m_info.num_slices*((core_enc->m_info.coding_type == 1 || core_enc->m_info.coding_type == 3) + 1); i++)
+        {
+            H264_Free(core_enc->m_pAllocEncoderInst[i]);
+            core_enc->m_pAllocEncoderInst[i] = NULL;
+        }
+        delete[] core_enc->m_pAllocEncoderInst;
         core_enc->m_pAllocEncoderInst = NULL;
     }
 #endif // ALT_BITSTREAM_ALLOC
+
     if( core_enc->eFrameType != NULL ){
         H264_Free(core_enc->eFrameType);
         core_enc->eFrameType = NULL;

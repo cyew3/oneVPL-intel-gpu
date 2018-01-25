@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -1300,7 +1300,7 @@ typedef struct sH264CoreEncoderType
     Ipp32s                          m_MaxLongTermFrameIdx;
 
 //protected:
-    Ipp8u*                          m_pAllocEncoderInst;
+    Ipp8u**                         m_pAllocEncoderInst;
 
     // flags read by DetermineFrameType while sequencing the profile:
     bool                            m_bMakeNextFrameKey;
@@ -1343,7 +1343,6 @@ typedef struct sH264CoreEncoderType
 #endif // MB_THREADING
 #endif // UMC_RESTRICTED_CODE_MBT
     Ipp32s m_iProfileIndex;
-    Ipp8u* m_pBitStream;   // Pointer to bitstream buffer.
     Ipp32u m_uFrames_Num;  // Decode order frame number.
     Ipp32u m_uFrameCounter;
     Ipp32s m_Pitch;
