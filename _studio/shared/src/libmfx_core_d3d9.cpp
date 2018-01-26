@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -324,9 +324,6 @@ mfxStatus D3D9VideoCORE::InternalInit()
 
     if (platformFromDriver == 12) // 12 - IGFX_GT, sandybridge
         m_bCmCopyAllowed = false;
-
-    if (m_HWType == MFX_HW_LKF)
-        m_bCmCopyAllowed = false;   // no CmCopy kernels for LKF
 
     return MFX_ERR_NONE;
 }
