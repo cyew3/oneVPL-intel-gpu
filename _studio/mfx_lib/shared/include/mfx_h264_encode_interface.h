@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -30,7 +30,11 @@
 #endif
 
 #ifdef MFX_ENABLE_MFE
+#ifdef MFX_VA_WIN
+#include "mfx_mfe_adapter_dxva.h"
+#else
 #include "mfx_mfe_adapter.h"
+#endif
 #endif
 
 namespace MfxHwH264Encode
@@ -171,8 +175,12 @@ namespace MfxHwH264Encode
     DriverEncoder* CreatePlatformSvcEncoder( VideoCORE* core );
 #endif
 
-#if defined(MFX_ENABLE_MFE) && !defined(MFX_VA_WIN)
+#if defined(MFX_ENABLE_MFE)
+#if !defined(MFX_VA_WIN)
     MFEVAAPIEncoder* CreatePlatformMFEEncoder( VideoCORE* core );
+#else
+    MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
+#endif
 #endif
 
 }; // namespace

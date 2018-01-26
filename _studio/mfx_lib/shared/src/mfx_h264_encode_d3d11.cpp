@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -36,34 +36,6 @@ using namespace MfxHwH264Encode;
 mfxU16 ownConvertD3DFMT_TO_MFX(DXGI_FORMAT format);
 mfxU8 convertDX9TypeToDX11Type(mfxU8 type);
 
-namespace
-{
-    HRESULT DecoderExtension(
-        ID3D11VideoContext *context,
-        ID3D11VideoDecoder *decoder,
-        D3D11_VIDEO_DECODER_EXTENSION & param)
-    {
-#ifdef DEBUG
-        printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
-#endif 
-        HRESULT hr = S_OK;
-        try
-        {
-            hr = context->DecoderExtension(decoder, &param);
-        }
-        catch (...)
-        {
-            MFX_LTRACE((MFX_TRACE_PARAMS, MFX_TRACE_LEVEL_EXTCALL, "", "Exception at DecoderExtension: context=%p decoder=%p function=%d", context, decoder, param.Function));
-            throw;
-        };
-
-#ifdef DEBUG
-        printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
-#endif 
-        return hr;
-    }
-};
-
 D3D11Encoder::D3D11Encoder()
 : m_core(0)
 , m_pVideoDevice(0)
@@ -84,6 +56,10 @@ D3D11Encoder::D3D11Encoder()
 , m_capsQuery()
 , m_capsGet()
 , m_timeoutForTDR(0)
+#if defined(MFX_ENABLE_MFE)
+, m_StreamInfo()
+, m_pMFEAdapter(NULL)
+#endif
 {
 }
 
@@ -196,7 +172,14 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     FillConstPartOfSliceBuffer(par, m_slice);
 
     m_headerPacker.Init(par, m_caps);
-
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMFEAdapter != NULL)
+    {
+        mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
+        mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE);
+        return sts;
+    }
+#endif
     return MFX_ERR_NONE;
 }
 
@@ -948,7 +931,7 @@ mfxStatus D3D11Encoder::Init(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Init");
     MFX_CHECK_NULL_PTR2(pVideoDevice, pVideoContext);
-
+    mfxStatus sts = MFX_ERR_NONE;
     m_pVideoDevice  = pVideoDevice;
     m_pVideoContext = pVideoContext;
 
@@ -957,7 +940,7 @@ mfxStatus D3D11Encoder::Init(
         m_guid = DXVA2_Intel_Encode_AVC;
     else if(guid == MSDK_Private_Guid_Encode_AVC_LowPower_Query)
         m_guid = DXVA2_INTEL_LOWPOWERENCODE_AVC;
-    else 
+    else
         m_guid = guid;
 
     m_requestedGuid = guid;
@@ -968,7 +951,7 @@ mfxStatus D3D11Encoder::Init(
     // Device creation for MVC dependent view requires special processing for DX11.
     // For MVC dependent view encoding device from Core can't be used (it's already used for base view). Need to create new one.
     // Also newly created encoding device for MVC dependent view shouldn't be stored inside Core.
-    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View);
+    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View) && (guid != DXVA2_Intel_MFE_AVC);
 
     ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID); 
     if (!pVideoDecoder)
@@ -993,7 +976,17 @@ mfxStatus D3D11Encoder::Init(
                 && video_desc.Guid == m_guid)
                 m_pDecoder = pVideoDecoder->get();
         }
-
+#if defined(MFX_ENABLE_MFE)
+        else if (guid == DXVA2_Intel_MFE_AVC)
+        {
+            m_pMFEAdapter = CreatePlatformMFEEncoder(m_core);
+            sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext);
+            if (sts != MFX_ERR_NONE)
+                return sts;
+            m_pDecoder = m_pMFEAdapter->GetVideoDecoder();
+            return MFX_ERR_NONE;
+        }
+#endif
         if (!m_pDecoder)
         {
 
@@ -1105,7 +1098,7 @@ mfxStatus D3D11Encoder::Init(
     // [7] Query encode service caps: see QueryCompBufferInfo
 
 
-    return MFX_ERR_NONE;
+    return sts;
 
 } // void D3D11Encoder::PackSlice(...)
 

@@ -81,6 +81,8 @@
 
         #define MFX_D3D9_ENABLED
 
+//        #define MFX_ENABLE_MFE
+
     #elif defined(__APPLE__)
         #undef  MFX_VA_OSX
         #define MFX_VA_OSX

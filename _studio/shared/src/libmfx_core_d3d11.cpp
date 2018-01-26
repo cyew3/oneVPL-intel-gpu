@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -599,6 +599,22 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return (void*)&m_comptr;
     }
+#ifdef MFX_ENABLE_MFE
+    else if (MFXMFEDDIENCODER_SEARCH_GUID == guid)
+    {
+        if (!m_mfe.get())
+        {
+            m_mfe = (MFEDXVAEncoder*)m_session->m_pOperatorCore->QueryGUID<ComPtrCore<MFEDXVAEncoder> >(&VideoCORE::QueryCoreInterface, MFXMFEDDIENCODER_GUID);
+            if (m_mfe.get())
+                m_mfe.get()->AddRef();
+        }
+        return (void*)&m_mfe;
+    }
+    else if (MFXMFEDDIENCODER_GUID == guid)
+    {
+        return (void*)&m_mfe;
+    }
+#endif
     else if (MFXICORECM_GUID == guid)
     {
         CmDevice* pCmDevice = NULL;

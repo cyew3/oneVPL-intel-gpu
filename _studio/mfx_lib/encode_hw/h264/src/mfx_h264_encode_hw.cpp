@@ -840,15 +840,39 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         m_isWiDi = true;
     }
 #endif
-
+    GUID guid;
+#if defined(MFX_ENABLE_MFE)
+    mfxExtMultiFrameParam* mfeParam = (mfxExtMultiFrameParam*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
+#endif
+    if (IsOn(m_video.mfx.LowPower))
+    {
+        guid = DXVA2_INTEL_LOWPOWERENCODE_AVC;
+    }
+#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+    else if (mfeParam && mfeParam->MaxNumFrames > 1 || mfeParam->MFMode < MFX_MF_AUTO)
+    {
+        guid = DXVA2_Intel_MFE_AVC;
+    }
+#endif
+    else
+    {
+        guid = DXVA2_Intel_Encode_AVC;
+    }
     sts = m_ddi->CreateAuxilliaryDevice(
         m_core,
-#if defined(LOWPOWERENCODE_AVC)
-        IsOn(m_video.mfx.LowPower) ? DXVA2_INTEL_LOWPOWERENCODE_AVC :
-#endif
-        DXVA2_Intel_Encode_AVC,
+        guid,
         GetFrameWidth(m_video),
         GetFrameHeight(m_video));
+#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+    if (sts != MFX_ERR_NONE && guid == DXVA2_Intel_MFE_AVC)
+    {
+        mfeParam->MaxNumFrames = 0;
+        mfeParam->MFMode = MFX_MF_DISABLED;
+        return sts;
+    }
+
+    else
+#endif
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
 

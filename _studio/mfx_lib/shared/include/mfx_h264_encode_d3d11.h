@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENCODE_D3D11__H
@@ -28,8 +28,9 @@
 
 #include <d3d11.h>
 #include "mfx_h264_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
-
-
+#if defined (MFX_ENABLE_MFE)
+#include "mfx_mfe_adapter_dxva.h"
+#endif
 namespace MfxHwH264Encode
 {
     class OutputBitstream;
@@ -142,6 +143,9 @@ namespace MfxHwH264Encode
         ID3D11VideoDevice *                         m_pVideoDevice;
         ID3D11VideoContext *                        m_pVideoContext;
         ID3D11VideoDecoder *                        m_pDecoder;
+#if defined (MFX_ENABLE_MFE)
+        MFEDXVAEncoder *                            m_pMFEAdapter;
+#endif
         GUID                                        m_guid;
         GUID                                        m_requestedGuid;
 
@@ -157,6 +161,7 @@ namespace MfxHwH264Encode
         ENCODE_SET_PICTURE_PARAMETERS_H264          m_pps;
         std::vector<ENCODE_SET_SLICE_HEADER_H264>   m_slice;
         std::vector<ENCODE_COMPBUFFERDESC>          m_compBufDesc;
+        ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
 
         std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
         CachedFeedback                              m_feedbackCached;
@@ -308,7 +313,33 @@ namespace MfxHwH264Encode
     };
 
 }; // namespace
+namespace
+{
+    HRESULT DecoderExtension(
+        ID3D11VideoContext *context,
+        ID3D11VideoDecoder *decoder,
+        D3D11_VIDEO_DECODER_EXTENSION & param)
+    {
+#ifdef DEBUG
+        printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
+#endif 
+        HRESULT hr = S_OK;
+        try
+        {
+            hr = context->DecoderExtension(decoder, &param);
+        }
+        catch (...)
+        {
+            MFX_LTRACE((MFX_TRACE_PARAMS, MFX_TRACE_LEVEL_EXTCALL, "", "Exception at DecoderExtension: context=%p decoder=%p function=%d", context, decoder, param.Function));
+            throw;
+        };
 
+#ifdef DEBUG
+        printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
+#endif 
+        return hr;
+    }
+};
 #endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && (MFX_D3D11_ENABLED)
 #endif // __MFX_H264_ENCODE_D3D11__H
 /* EOF */

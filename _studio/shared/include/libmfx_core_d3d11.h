@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -21,7 +21,9 @@
 #include "libmfx_core.h"
 #include "encoding_ddi.h"
 #include "libmfx_allocator_d3d11.h"
-
+#if defined (MFX_ENABLE_MFE)
+#include "mfx_mfe_adapter_dxva.h"
+#endif
 #include <d3d11.h>
 
 #if defined (MFX_ENABLE_VPP) && !defined(MFX_RT)
@@ -174,6 +176,9 @@ private:
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;
     ComPtrCore<ID3D11VideoDecoder>       m_comptr;
+#ifdef MFX_ENABLE_MFE
+    ComPtrCore<MFEDXVAEncoder>           m_mfe;
+#endif
     bool m_bCmCopy;
     bool m_bCmCopySwap;
     bool m_bCmCopyAllowed;
