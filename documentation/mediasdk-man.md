@@ -692,6 +692,7 @@ The SDK configures the video processing pipeline operation based on the differen
 - When the input color format is YUY2 and the output color format is NV12, the SDK enables color conversion from YUY2 to NV12.
 - When the input is interleaved and the output is progressive, the SDK enables de-interlacing.
 - When the input is a single field and the output is interlaced or progressive, the SDK enable field weaving, optionally with deinterlacing.
+- When the input is a interlaced and the output is single field, the SDK enable field splitting.
 
 In addition to specifying the input and output formats, the application can provide hints to fine-tune the video processing pipeline operation. The application can disable filters in pipeline by using [mfxExtVPPDoNotUse](#mfxExtVPPDoNotUse) structure; enable them by using [mfxExtVPPDoUse](#mfxExtVPPDoUse) structure and configure them by using dedicated configuration structures. See Table 4 for complete list of configurable video processing filters, their IDs and configuration structures. See the [ExtendedBufferID](#ExtendedBufferID) enumerator for more details.
 
