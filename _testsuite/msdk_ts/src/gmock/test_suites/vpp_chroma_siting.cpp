@@ -68,28 +68,25 @@ namespace vpp_chroma_siting
         //! \param id - test case number
         int RunTest(unsigned int id);
         //! \brief Initialize params common mfor whole test suite
-        tsExtBufType<mfxVideoParam> initParams();
+        void initParams();
         //! The number of test cases
         static const unsigned int n_cases;
         //! \brief Set of test cases
         static const tc_struct test_case[];
     };
 
-    tsExtBufType<mfxVideoParam> TestSuite::initParams() {
-        tsExtBufType <mfxVideoParam> par;
-        par.vpp.In.FourCC = MFX_FOURCC_RGB4;
-        par.vpp.In.BitDepthLuma = 8;
-        par.vpp.In.BitDepthChroma = 8;
-        par.vpp.In.Shift = 0;
-        par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+    void TestSuite::initParams() {
+        m_par.vpp.In.FourCC = MFX_FOURCC_RGB4;
+        m_par.vpp.In.BitDepthLuma = 8;
+        m_par.vpp.In.BitDepthChroma = 8;
+        m_par.vpp.In.Shift = 0;
+        m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
 
-        par.vpp.Out.FourCC = MFX_FOURCC_NV12;
-        par.vpp.Out.BitDepthLuma = 8;
-        par.vpp.Out.BitDepthChroma = 8;
-        par.vpp.Out.Shift = 0;
-        par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-
-        return par;
+        m_par.vpp.Out.FourCC = MFX_FOURCC_NV12;
+        m_par.vpp.Out.BitDepthLuma = 8;
+        m_par.vpp.Out.BitDepthChroma = 8;
+        m_par.vpp.Out.Shift = 0;
+        m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
 
   const tc_struct TestSuite::test_case[] =
@@ -136,8 +133,7 @@ namespace vpp_chroma_siting
         TS_START;
         auto& tc = test_case[id];
 
-        m_par = initParams();
-
+        initParams();
         MFXInit();
 
         SETPARS(&m_par, MFX_EXTBUFF_COLOR_CONVERSION);
