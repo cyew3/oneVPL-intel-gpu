@@ -27,14 +27,10 @@
 #include "umc_av1_utils.h"
 #include "umc_av1_frame.h"
 
-#ifndef MFX_VA
-#include "umc_av1_decoder_mt.h"
-#else
 #include "libmfx_core_hw.h"
 #include "umc_va_dxva2.h"
 
 #include "umc_av1_decoder_va.h"
-#endif
 
 #include <algorithm>
 
@@ -129,12 +125,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
 
     if (m_platform == MFX_PLATFORM_SOFTWARE)
     {
-#if defined (MFX_VA)
         return MFX_ERR_UNSUPPORTED;
-#else
-        m_decoder.reset(new UMC_AV1_DECODER::AV1DecoderMT());
-        m_allocator.reset(new mfx_UMC_FrameAllocator());
-#endif
     }
     else
     {
