@@ -1,6 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 mfx_include_dirs( )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../encode_hw/h264/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/brc/include )

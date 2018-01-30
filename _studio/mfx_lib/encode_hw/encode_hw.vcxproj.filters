@@ -62,9 +62,6 @@
     <ClCompile Include="h264\src\mfx_h264_encode_cm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="h264\src\mfx_h264_scd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode_hw.h">

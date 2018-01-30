@@ -180,6 +180,9 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType 
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
 
+CmSurface2DUP * CreateSurface(CmDevice * device, void *mem, mfxU32 width, mfxU32 height, mfxU32 fourcc);
+
+
 SurfaceIndex * CreateVmeSurfaceG75(
     CmDevice *      device,
     CmSurface2D *   source,

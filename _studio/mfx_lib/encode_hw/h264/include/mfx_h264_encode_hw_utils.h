@@ -7,7 +7,6 @@
 //
 // Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
-
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
 
@@ -31,9 +30,7 @@
 #include "mfx_h264_encode_cm.h"
 #include "ippi.h"
 #include "vm_time.h"
-//#include "asc.h"
-// Copy of SCD, using MfxHwH264Encode namespace, remove when SCD avaiable in MSDK
-#include "mfx_h264_scd.h"
+#include "asc.h"
 
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
@@ -353,6 +350,17 @@ namespace MfxHwH264Encode
             CmDevice *             device,
             mfxFrameAllocRequest & req);
 
+        mfxStatus AllocCmSurfacesUP(
+            CmDevice *             device,
+            mfxFrameAllocRequest & req);
+        mfxStatus AllocFrames(
+            VideoCORE *            core,
+            mfxFrameAllocRequest & req);
+        mfxStatus UpdateResourcePointers(
+            mfxU32                 idxScd,
+            void *                 memY,
+            void *                 gpuSurf);
+
         void * GetSysmemBuffer(mfxU32 idx);
 
         mfxU32 Lock(mfxU32 idx);
@@ -371,9 +379,11 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse(MfxFrameAllocResponse const &);
         MfxFrameAllocResponse & operator =(MfxFrameAllocResponse const &);
 
-        static void DestroyBuffer  (CmDevice * device, void * p);
-        static void DestroySurface (CmDevice * device, void * p);
-        static void DestroyBufferUp(CmDevice * device, void * p);
+        static void DestroyBuffer     (CmDevice * device, void * p);
+        static void DestroySurface    (CmDevice * device, void * p);
+        static void DestroySurface2DUP(CmDevice * device, void * p);
+        static void DestroyBufferUp   (CmDevice * device, void * p);
+        
         void (*m_cmDestroy)(CmDevice *, void *);
 
         VideoCORE * m_core;
@@ -1008,6 +1018,10 @@ namespace MfxHwH264Encode
             , m_LtrQp(0)
             , m_RefOrder(-1)
             , m_RefQp(0)
+            , m_wsSubSamplingEv(0)
+            , m_wsSubSamplingTask(0)
+            , m_wsGpuImage(0)
+            , m_Yscd(0)
 #if defined(MFX_ENABLE_H264_REPARTITION_CHECK) && defined(MFX_VA_WIN)
             , m_RepartitionCheck(0)
 #endif
@@ -1247,6 +1261,12 @@ namespace MfxHwH264Encode
         mfxI32 m_LtrQp;
         mfxI32 m_RefOrder;
         mfxI32 m_RefQp;
+        mfxU32         m_idxScd;
+        CmEvent       *m_wsSubSamplingEv;
+        CmTask        *m_wsSubSamplingTask;
+        CmSurface2DUP *m_wsGpuImage;
+        SurfaceIndex  *m_wsIdxGpuImage;
+        mfxU8         *m_Yscd;
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;
@@ -1443,9 +1463,9 @@ namespace MfxHwH264Encode
         par.PyramidLayer = (mfxU16)task->m_loc.level;
         par.NumRecode = (mfxU16)task->m_repack;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        par.FrameCmplx = task->m_frcmplx;
-        par.LongTerm = (task->m_longTermFrameIdx != NO_INDEX_U8) ? 1 : 0;
-        par.SceneChange = (mfxU16)task->m_SceneChange;
+        par.FrameCmplx   = task->m_frcmplx;
+        par.LongTerm     = (task->m_longTermFrameIdx != NO_INDEX_U8) ? 1 : 0;
+        par.SceneChange  = (mfxU16) task->m_SceneChange;
         if (!par.PyramidLayer && (task->m_type[task->m_fid[0]] & MFX_FRAMETYPE_P) && task->m_LowDelayPyramidLayer)
             par.PyramidLayer = (mfxU16) task->m_LowDelayPyramidLayer;
 #endif
@@ -1946,6 +1966,8 @@ namespace MfxHwH264Encode
             STG_START_AGOP,
             STG_WAIT_AGOP,
 #endif
+            STG_START_SCD,
+            STG_WAIT_SCD,
             STG_START_LA,
             STG_WAIT_LA,
             STG_START_HIST,
@@ -1962,6 +1984,8 @@ namespace MfxHwH264Encode
             STG_BIT_START_AGOP          = 1 << STG_START_AGOP,
             STG_BIT_WAIT_AGOP          = 1 << STG_WAIT_AGOP,
 #endif
+            STG_BIT_START_SCD     = 1 << STG_START_SCD,
+            STG_BIT_WAIT_SCD      = 1 << STG_WAIT_SCD,
             STG_BIT_START_LA      = 1 << STG_START_LA,
             STG_BIT_WAIT_LA       = 1 << STG_WAIT_LA,
             STG_BIT_START_HIST    = 1 << STG_START_HIST,
@@ -1997,6 +2021,7 @@ namespace MfxHwH264Encode
 #if defined(_WIN32) || defined(_WIN64)
     #define CM_SURFACE_FORMAT_NV12                  (D3DFORMAT)MAKEFOURCC('N','V','1','2')
 #endif
+    using ns_asc::ASC;
 
     class ImplementationAvc : public VideoENCODE
     {
@@ -2115,12 +2140,18 @@ namespace MfxHwH264Encode
         }
 
     protected:
-
         ASC       amtScd;
-        mfxStatus SCD_Put_Frame(DdiTask & newTask);
-        void      SCD_Get_FrameType(DdiTask & newTask);
-        mfxStatus CalculateFrameCmplx(DdiTask const & task, mfxU16 &raca);
-        void      Prd_LTR_Operation(DdiTask & newTask);
+        mfxStatus SCD_Put_Frame(
+            DdiTask & newTask);
+        mfxStatus SCD_Get_FrameType(
+            DdiTask & newTask);
+        mfxStatus CalculateFrameCmplx(
+            DdiTask const &task,
+            mfxU16 &raca128);
+        mfxStatus Prd_LTR_Operation(
+            DdiTask & task);
+        void      AssignFrameTypes(
+            DdiTask & newTask);
 
         mfxStatus UpdateBitstream(
             DdiTask & task,
@@ -2139,6 +2170,9 @@ namespace MfxHwH264Encode
             mfxBitstream * bs);
 
         void OnNewFrame();
+        void SubmitScd();
+        void OnScdQueried();
+        void OnScdFinished();
 
 #if USE_AGOP
         void SubmitAdaptiveGOP();
@@ -2226,6 +2260,8 @@ namespace MfxHwH264Encode
 
         std::list<DdiTask>  m_free;
         std::list<DdiTask>  m_incoming;
+        std::list<DdiTask>  m_ScDetectionStarted;
+        std::list<DdiTask>  m_ScDetectionFinished;
         std::list<DdiTask>  m_reordering;
         std::list<DdiTask>  m_lookaheadStarted;
         std::list<DdiTask>  m_lookaheadFinished;
@@ -2267,7 +2303,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_mbAGOP;
         MfxFrameAllocResponse   m_curbeAGOP;
 #endif
-
+        MfxFrameAllocResponse   m_scd;
         MfxFrameAllocResponse   m_raw;
         MfxFrameAllocResponse   m_rawSkip;
         MfxFrameAllocResponse   m_rawLa;
@@ -2278,6 +2314,7 @@ namespace MfxHwH264Encode
         MfxFrameAllocResponse   m_bit;
         MfxFrameAllocResponse   m_opaqResponse;     // Response for opaq
         MfxFrameAllocResponse   m_histogram;
+
         ENCODE_CAPS             m_caps;
         mfxStatus               m_failedStatus;
         mfxU32                  m_inputFrameType;
@@ -2326,6 +2363,7 @@ namespace MfxHwH264Encode
         mfxI32      m_LtrOrder;
         mfxI32      m_RefQp;
         mfxI32      m_RefOrder;
+
     };
 
 #ifndef OPEN_SOURCE

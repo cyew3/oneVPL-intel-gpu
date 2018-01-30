@@ -4,10 +4,10 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 */
-#include "asc_SSE4_impl.h"
+#include "asc_sse4_impl.h"
 
 void ME_SAD_8x8_Block_Search_SSE4(mfxU8 *pSrc, mfxU8 *pRef, int pitch, int xrange, int yrange,
     mfxU16 *bestSAD, int *bestX, int *bestY)

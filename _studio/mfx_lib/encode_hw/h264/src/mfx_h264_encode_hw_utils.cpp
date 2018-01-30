@@ -4434,6 +4434,14 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
                 NumFrameActual = m_numFrameActualReturnedByAllocFrames;
                 m_core->FreeFrames(this);
             }
+            for (size_t i = 0; i < m_sysmems.size(); i++)
+            {
+                if (m_sysmems[i])
+                {
+                    CM_ALIGNED_FREE(m_sysmems[i]);
+                    m_sysmems[i] = 0;
+                }
+            }
         }
     }
 
@@ -4465,6 +4473,11 @@ void MfxFrameAllocResponse::DestroyBuffer(CmDevice * device, void * p)
 void MfxFrameAllocResponse::DestroySurface(CmDevice * device, void * p)
 {
     device->DestroySurface((CmSurface2D *&)p);
+}
+
+void MfxFrameAllocResponse::DestroySurface2DUP(CmDevice * device, void * p)
+{
+    device->DestroySurface2DUP((CmSurface2DUP *&)p);
 }
 
 void MfxFrameAllocResponse::DestroyBufferUp(CmDevice * device, void * p)
@@ -4590,6 +4603,64 @@ mfxStatus MfxFrameAllocResponse::AllocCmSurfaces(
     m_core     = 0;
     m_cmDevice = device;
     m_cmDestroy = &DestroySurface;
+    return MFX_ERR_NONE;
+}
+mfxStatus MfxFrameAllocResponse::AllocCmSurfacesUP(
+    CmDevice *             device,
+    mfxFrameAllocRequest & req)
+{
+    if (m_core || m_cmDevice)
+        return Error(MFX_ERR_MEMORY_ALLOC);
+
+    req.NumFrameSuggested = req.NumFrameMin;
+    mfxU32 size = req.Info.Width * req.Info.Height;
+
+    m_mids.resize(req.NumFrameMin, 0);
+    m_locked.resize(req.NumFrameMin, 0);
+    m_sysmems.resize(req.NumFrameMin, 0);
+
+    for (int i = 0; i < req.NumFrameMin; i++) {
+        m_sysmems[i] = CM_ALIGNED_MALLOC(size, 0x1000);
+        m_mids[i] = CreateSurface(device, m_sysmems[i], req.Info.Width, req.Info.Height, req.Info.FourCC);
+    }
+
+    NumFrameActual = req.NumFrameMin;
+    mids = &m_mids[0];
+
+    m_core = 0;
+    m_cmDevice = device;
+    m_cmDestroy = &DestroySurface2DUP;
+    return MFX_ERR_NONE;
+}
+mfxStatus MfxFrameAllocResponse::AllocFrames(
+    VideoCORE *            core,
+    mfxFrameAllocRequest & req)
+{
+    if (m_core || m_cmDevice)
+        return Error(MFX_ERR_MEMORY_ALLOC);
+
+    req.NumFrameSuggested = req.NumFrameMin;
+    mfxU32 size = req.Info.Width * req.Info.Height;
+
+    m_locked.resize(req.NumFrameMin, 0);
+    m_sysmems.resize(req.NumFrameMin, 0);
+
+    for (int i = 0; i < req.NumFrameMin; i++) {
+        m_sysmems[i] = CM_ALIGNED_MALLOC(size, 0x1000);
+    }
+
+    NumFrameActual = req.NumFrameMin;
+
+    m_core = core;
+    m_cmDestroy = 0;
+    return MFX_ERR_NONE;
+}
+mfxStatus MfxFrameAllocResponse::UpdateResourcePointers(mfxU32 idxScd, void * memY, void * gpuSurf)
+{
+    if (m_mids.size() < idxScd || m_sysmems.size() < idxScd)
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+    m_mids[idxScd] = gpuSurf;
+    m_sysmems[idxScd] = memY;
     return MFX_ERR_NONE;
 }
 

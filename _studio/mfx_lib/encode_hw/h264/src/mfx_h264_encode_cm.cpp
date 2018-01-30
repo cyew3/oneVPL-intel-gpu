@@ -404,7 +404,6 @@ CmBufferUP * CreateBuffer(CmDevice * device, mfxU32 size, void * mem)
     return buffer;
 }
 
-
 CmSurface2D * CreateSurface(CmDevice * device, IDirect3DSurface9 * d3dSurface)
 {
     int result = CM_SUCCESS;
@@ -467,6 +466,15 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
     if (device && (result = device->CreateSurface2D(width, height, CM_SURFACE_FORMAT(fourcc), cmSurface)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return cmSurface;
+}
+
+CmSurface2DUP * CreateSurface(CmDevice * device, void *mem, mfxU32 width, mfxU32 height, mfxU32 fourcc)
+{
+    int result = CM_SUCCESS;
+    CmSurface2DUP * cmSurface = 0;
+    if (device && (result = device->CreateSurface2DUP(width, height, CM_SURFACE_FORMAT(fourcc), mem, cmSurface)) != CM_SUCCESS)
         throw CmRuntimeError();
     return cmSurface;
 }

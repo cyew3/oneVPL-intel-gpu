@@ -5,15 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #ifndef __ASC_DEFS__
 #define __ASC_DEFS__
 
 #define ASCTUNEDATA       0
-#define ENABLE_RF         1
-
-#define DUMP_Yonly_small_128x64 0
 
 #undef  NULL
 #define NULL              0
@@ -26,14 +23,10 @@
 #define FLOAT_MAX         2241178.0
 #define FRAMEMUL          16
 #define CHROMASUBSAMPLE   4
-#define SMALL_WIDTH       128//112
-#define SMALL_HEIGHT      64
-#define LN2               0.6931471805599453
-#define MEMALLOCERROR     1000
-#define MEMALLOCERRORU8   1001
-#define MEMALLOCERRORMV   1002
+#define ASC_SMALL_WIDTH   128
+#define ASC_SMALL_HEIGHT  64
 #define MAXLTRHISTORY     120
-#define SMALL_AREA        8192//13 bits
+#define ASC_SMALL_AREA    8192//13 bits
 #define S_AREA_SHIFT      13
 #define TSC_INT_SCALE     5
 #define GAINDIFF_THR      20
@@ -46,22 +39,12 @@
 
 #define Clamp(x)           ((x<0)?0:((x>255)?255:x))
 #define RF_DECISION_LEVEL 10
-#define NEWFEATURE        0
-#if NEWFEATURE
-#define TSCSTATBUFFER     4
-#define VIDEOSTATSBUF     4
-#else
+
 #define TSCSTATBUFFER     3
-#define VIDEOSTATSBUF     2
-#endif
-#define SIMILITUDVAL      4
-#define NODELAY           1 //No delay checks the resulting decision directly after the comparison has been done, no last frame in scene info or nest frame is a scene change
+#define ASCVIDEOSTATSBUF  2
+
 #define SCD_BLOCK_PIXEL_WIDTH   32
 #define SCD_BLOCK_HEIGHT        8
-
-#define EXTRANEIGHBORS
-#define SAD_SEARCH_VSTEP  2  // 1=FS 2=FHS
-#define DECISION_THR      6 //Total number of trees is 13, decision has to be bigger than 6 to say it is a scene change.
 
 #ifdef _DEBUG
     #define ASC_PRINTF(...)     printf(__VA_ARGS__)

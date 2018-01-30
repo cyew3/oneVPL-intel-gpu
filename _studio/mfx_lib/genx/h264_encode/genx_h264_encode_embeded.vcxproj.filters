@@ -35,21 +35,6 @@
     <ClCompile Include="src\genx_cnl_simple_me_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\genx_h264_scd.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_bdw_h264_scd_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_hsw_h264_scd_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_skl_h264_scd_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\genx_cnl_h264_scd_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_skl_simple_me_isa.h">
@@ -62,18 +47,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\genx_cnl_simple_me_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_bdw_h264_scd_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_hsw_h264_scd_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_skl_h264_scd_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\genx_cnl_h264_scd_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

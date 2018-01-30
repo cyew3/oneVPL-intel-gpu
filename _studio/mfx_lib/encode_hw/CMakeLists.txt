@@ -10,6 +10,7 @@ mfx_include_dirs( )
 foreach( dir ${vdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/${dir}/include )
 endforeach()
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../cmrt_cross_platform/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../enc_hw/mpeg2/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../pak/mpeg2/include )
@@ -37,6 +38,11 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_mpeg2_encode_vaapi.cpp
     )
 endforeach()
+
+set( LIBS "" )
+  list( APPEND LIBS
+  asc
+  )
 
 set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
 make_library( encode hw static )

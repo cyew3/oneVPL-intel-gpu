@@ -1265,6 +1265,19 @@ bool MfxHwH264Encode::IsExtBrcSceneChangeSupported(
     return extbrcsc;
 }
 
+bool MfxHwH264Encode::IsCmNeededForSCD(
+    MfxVideoParam const & video)
+{
+    bool useCm = false;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    // If frame in Sys memory then Cm is not needed
+    mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(video);
+    useCm = !(video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (extOpaq->In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)));
+#endif
+    return useCm;
+}
+
 bool MfxHwH264Encode::IsAdaptiveLtrOn(
     MfxVideoParam const & video)
 {

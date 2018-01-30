@@ -26,6 +26,7 @@ list( APPEND cdirs
   )
 foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/umc/codec/${dir}/include )
+  include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/asc/include )
 endforeach( )
 
 # =============================================================================
@@ -135,6 +136,7 @@ foreach( variant
     h264_sse3
     pak
     mfx_common_${variant}
+    asc
     vpp_${variant}
     h264_common
     h264_preenc
@@ -296,6 +298,7 @@ foreach( variant sw )
     encode
     pak
     decode_${variant}
+    asc
     vpp_${variant}
     cmrt_cross_platform_hw
     genx_h264_encode_embeded

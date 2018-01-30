@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #pragma once
 #ifndef _ASC_COMMON_IMPL_H_
 #define _ASC_COMMON_IMPL_H_
 #include "asc_defs.h"
-#include "ASCstructures.h"
+#include "asc_structures.h"
 
 
 static const int HIST_THRESH_LO = 1;

@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #include "asc_defs.h"
-#include "../include/MotionEstimationEngine.h"
-#include "../include/ME_asc.h"
-#include "../include/ASCstructures.h"
+#include "../include/motion_estimation_engine.h"
+#include "../include/me_asc.h"
+#include "../include/asc_structures.h"
 #include <iostream>
 #include <vector>
 #include <sstream>
@@ -287,13 +287,13 @@ mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn,
     if (neighbor_count) {
         Nmv.x /= neighbor_count;
         Nmv.y /= neighbor_count;
-        if ((Nmv.x + ((xLoc + 1) * MVBLK_SIZE)) > SMALL_WIDTH)
-            Nmv.x -= (Nmv.x + ((xLoc + 1) * MVBLK_SIZE)) - SMALL_WIDTH;
+        if ((Nmv.x + ((xLoc + 1) * MVBLK_SIZE)) > ASC_SMALL_WIDTH)
+            Nmv.x -= (Nmv.x + ((xLoc + 1) * MVBLK_SIZE)) - ASC_SMALL_WIDTH;
         else if (((xLoc * MVBLK_SIZE) + Nmv.x) < 0)
             Nmv.x -= ((xLoc * MVBLK_SIZE) + Nmv.x);
 
-        if ((Nmv.y + ((yLoc + 1) * MVBLK_SIZE)) > SMALL_HEIGHT)
-            Nmv.y -= (Nmv.y + ((yLoc + 1) * MVBLK_SIZE)) - SMALL_HEIGHT;
+        if ((Nmv.y + ((yLoc + 1) * MVBLK_SIZE)) > ASC_SMALL_HEIGHT)
+            Nmv.y -= (Nmv.y + ((yLoc + 1) * MVBLK_SIZE)) - ASC_SMALL_HEIGHT;
         else if (((yLoc * MVBLK_SIZE) + Nmv.y) < 0)
             Nmv.y -= ((yLoc * MVBLK_SIZE) + Nmv.y);
 

@@ -17,6 +17,7 @@ set(VP9_DECODER_SW_GUID    "a9a276ec7a854a598c30e0dc5748f1f6")
 mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/asc/include )
 
 include_directories( ${MSDK_LIB_ROOT}/decode/h265/include )
 include_directories( ${MSDK_LIB_ROOT}/encode/h265/include )
@@ -452,7 +453,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
     ${prefix}/mfx_h264_encode_hw_utils.cpp
     ${prefix}/mfx_h264_encode_hw_utils_new.cpp
     ${prefix}/mfx_h264_encode_hw.cpp
-    ${prefix}/mfx_h264_scd.cpp
   )
 endforeach()
 
@@ -464,10 +464,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/h264_encode/src )
     ${prefix}/genx_hsw_simple_me_proto.cpp
     ${prefix}/genx_hsw_histogram_isa.cpp
     ${prefix}/genx_skl_histogram_isa.cpp
-    ${prefix}/genx_bdw_h264_scd_isa.cpp
-    ${prefix}/genx_cnl_h264_scd_isa.cpp
-    ${prefix}/genx_hsw_h264_scd_isa.cpp
-    ${prefix}/genx_skl_h264_scd_isa.cpp
   )
 endforeach()
 
@@ -525,6 +521,7 @@ foreach( variant hw )
     umc
     vm
     vm_plus
+    asc
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread

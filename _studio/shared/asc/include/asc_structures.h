@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #ifndef _ASCSTRUCTURES_H_
 #define _ASCSTRUCTURES_H_
@@ -171,20 +171,12 @@ typedef struct ASCImage_details {
         pitch,                      //horizontal_pad + _cwidth + horizontal_pad
         Extended_Width,             //horizontal_pad + _cwidth + horizontal_pad
         Extended_Height,            //vertical_pad + _cheight + vertical_pad
-        Total_non_corrected_pixels,
-        Pixels_in_Y_layer,          //_cwidth * _cheight
-        Pixels_in_U_layer,          //Pixels_in_Y_layer / 4 (assuming 4:2:0)
-        Pixels_in_V_layer,          //Pixels_in_Y_layer / 4 (assuming 4:2:0)
-        Pixels_in_full_frame,       //Pixels_in_Y_layer * 3 / 2 (assuming 4:2:0)
         block_width,                //User input
         block_height,               //User input
-        Pixels_in_block,            //block_width x block_height
         Width_in_blocks,            //_cwidth / block_width
         Height_in_blocks,           //_cheight / block_height
-        Blocks_in_Frame,            //Pixels_in_Y_layer / Pixels_in_block
         initial_point,              //(Extended_Width * vertical_pad) + horizontal_pad
         sidesize,                   //_cheight + (1 * vertical_pad)
-        endPoint,                   //(sidesize * Extended_Width) - horizontal_pad
         MVspaceSize;                //Pixels_in_Y_layer / block_width / block_height
 }ASCImDetails;
 
@@ -206,11 +198,6 @@ typedef struct ASCVideo_characteristics {
     ASCTime
         timer;
 }ASCVidData;
-
-typedef bool(*t_SCDetect)(mfxI32 diffMVdiffVal, mfxU32 RsCsDiff,   mfxU32 MVDiff,   mfxU32 Rs,       mfxU32 AFD,
-                          mfxU32 CsDiff,        mfxI32 diffTSC,    mfxU32 TSC,      mfxU32 gchDC,    mfxI32 diffRsCsdiff,
-                          mfxU32 posBalance,    mfxU32 SC,         mfxU32 TSCindex, mfxU32 Scindex,  mfxU32 Cs,
-                          mfxI32 diffAFD,       mfxU32 negBalance, mfxU32 ssDCval,  mfxU32 refDCval, mfxU32 RsDiff);
 
 typedef struct ASCstats_structure {
     mfxI32
@@ -265,5 +252,5 @@ typedef struct ASCstats_structure {
         ltr_flag;
 }ASCTSCstat;
 
-} //namespace ns_asc
+}; //namespace ns_asc
 #endif //_STRUCTURES_H_

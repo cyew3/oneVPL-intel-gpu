@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #ifndef _IOFUNCTIONS_H_
 #define _IOFUNCTIONS_H_
 
-#include "ASCstructures.h"
+#include "asc_structures.h"
 #include "asc.h"
 using namespace ns_asc;
 
@@ -30,17 +30,7 @@ mfxF64 CatchTime(ASCTime *timer, int indexInit, int indexEnd, const char* messag
 void imageInit(ASCYUV *buffer);
 void nullifier(ASCimageData *Buffer);
 void ImDetails_Init(ASCImDetails *Rdata);
-void ASCTSCstat_Init(ASCTSCstat **logic);
-
-
-mfxI32 ASClogBase2aligned(mfxI32 number);
-void ASCU8AllocandSet(pmfxU8 *ImageLayer, mfxI32 imageSize);
-void PdYuvImage_Alloc(ASCYUV *pImage, mfxI32 dimVideoExtended);
-void PdMVector_Alloc(ASCMVector **MV, mfxI32 mvArraysize);
-void PdRsCs_Alloc(pmfxF32 *RCs, mfxI32 mvArraysize);
-void PdSAD_Alloc(pmfxU32 *SAD, mfxI32 mvArraysize);
-void Pdmem_AllocGeneral(ASCimageData *Buffer, ASCImDetails Rval);
-void Pdmem_disposeGeneral(ASCimageData *Buffer);
+mfxStatus ASCTSCstat_Init(ASCTSCstat **logic);
 
 
 #endif //_IOFUNCTIONS_H_

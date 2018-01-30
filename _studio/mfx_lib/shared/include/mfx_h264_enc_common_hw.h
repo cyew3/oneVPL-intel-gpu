@@ -734,6 +734,9 @@ namespace MfxHwH264Encode
     bool  IsExtBrcSceneChangeSupported(
         MfxVideoParam const & video);
 
+    bool IsCmNeededForSCD(
+        MfxVideoParam const & video);
+
     bool IsAdaptiveLtrOn(
         MfxVideoParam const & video);
 

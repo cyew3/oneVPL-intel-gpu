@@ -154,31 +154,6 @@ embed_isa genx_cnl_histogram.isa
 move genx_cnl_histogram.cpp .\src\genx_cnl_histogram_isa.cpp
 move genx_cnl_histogram.h .\include\genx_cnl_histogram_isa.h
 
-@echo Genx Compilation for h264 SCD kernels
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen7_5 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_hsw_h264_scd.isa
-embed_isa genx_hsw_h264_scd.isa
-move genx_hsw_h264_scd.cpp .\src\genx_hsw_h264_scd_isa.cpp
-move genx_hsw_h264_scd.h .\include\genx_hsw_h264_scd_isa.h
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen8 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_bdw_h264_scd.isa
-embed_isa genx_bdw_h264_scd.isa
-move genx_bdw_h264_scd.cpp .\src\genx_bdw_h264_scd_isa.cpp
-move genx_bdw_h264_scd.h .\include\genx_bdw_h264_scd_isa.h
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen9 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_skl_h264_scd.isa
-embed_isa genx_skl_h264_scd.isa
-move genx_skl_h264_scd.cpp .\src\genx_skl_h264_scd_isa.cpp
-move genx_skl_h264_scd.h .\include\genx_skl_h264_scd_isa.h
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_cnl_h264_scd.isa
-embed_isa genx_cnl_h264_scd.isa
-move genx_cnl_h264_scd.cpp .\src\genx_cnl_h264_scd_isa.cpp
-move genx_cnl_h264_scd.h .\include\genx_cnl_h264_scd_isa.h
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>
@@ -210,32 +185,6 @@ move genx_bdw_simple_me.h .\include\genx_bdw_simple_me_isa.h
 rem copy genx_hsw_simple_me.isa ..\..\..\..\build\win_$(Platform)\bin
 rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmrt32.dll ..\..\..\..\build\win_$(Platform)\bin
 rem copy %25INSTALLDIR%25\runtime\lib\x86\igfxcmjit32.dll ..\..\..\..\build\win_$(Platform)\bin
-
-@echo Genx Compilation for h264 SCD kernels
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen7_5 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_hsw_h264_scd.isa
-embed_isa genx_hsw_h264_scd.isa
-move genx_hsw_h264_scd.cpp .\src\genx_hsw_h264_scd_isa.cpp
-move genx_hsw_h264_scd.h .\include\genx_hsw_h264_scd_isa.h
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen8 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_bdw_h264_scd.isa
-embed_isa genx_bdw_h264_scd.isa
-move genx_bdw_h264_scd.cpp .\src\genx_bdw_h264_scd_isa.cpp
-move genx_bdw_h264_scd.h .\include\genx_bdw_h264_scd_isa.h
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen9 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_skl_h264_scd.isa
-embed_isa genx_skl_h264_scd.isa
-move genx_skl_h264_scd.cpp .\src\genx_skl_h264_scd_isa.cpp
-move genx_skl_h264_scd.h .\include\genx_skl_h264_scd_isa.h
-
-icl /c /Qxcm /Qxcm_release /Qxcm_jit_target=gen10 .\src\genx_h264_scd.cpp /mCM_print_asm_count
-move genx_h264_scd.isa genx_cnl_h264_scd.isa
-embed_isa genx_cnl_h264_scd.isa
-move genx_cnl_h264_scd.cpp .\src\genx_cnl_h264_scd_isa.cpp
-move genx_cnl_h264_scd.h .\include\genx_cnl_h264_scd_isa.h
 </Command>
     </PreBuildEvent>
     <CustomBuildStep>
@@ -358,31 +307,19 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_bdw_h264_scd_isa.cpp" />
     <ClCompile Include="src\genx_bdw_simple_me.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_bdw_simple_me_isa.cpp" />
-    <ClCompile Include="src\genx_cnl_h264_scd_isa.cpp" />
-    <ClCompile Include="src\genx_h264_scd.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|x64'">false</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="src\genx_histogram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\genx_hsw_h264_scd_isa.cpp" />
     <ClCompile Include="src\genx_hsw_simple_me.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_hsw_simple_me_isa.cpp" />
-    <ClCompile Include="src\genx_skl_h264_scd_isa.cpp" />
     <ClCompile Include="src\genx_skl_histogram_isa.cpp" />
     <ClCompile Include="src\genx_skl_simple_me.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -390,12 +327,8 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     <ClCompile Include="src\genx_skl_simple_me_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\genx_bdw_h264_scd_isa.h" />
     <ClInclude Include="include\genx_bdw_simple_me_isa.h" />
-    <ClInclude Include="include\genx_cnl_h264_scd_isa.h" />
-    <ClInclude Include="include\genx_hsw_h264_scd_isa.h" />
     <ClInclude Include="include\genx_hsw_simple_me_isa.h" />
-    <ClInclude Include="include\genx_skl_h264_scd_isa.h" />
     <ClInclude Include="include\genx_skl_histogram_isa.h" />
     <ClInclude Include="include\genx_skl_simple_me_isa.h" />
   </ItemGroup>

@@ -5,20 +5,20 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "asc.h"
 #include "asc_defs.h"
-#include "asc_CPU_dispatcher.h"
+#include "asc_cpu_dispatcher.h"
 #include "libmfx_core_interface.h"
 #include "genx_scd_bdw_isa.h"
 #include "genx_scd_skl_isa.h"
 #include "genx_scd_bxt_isa.h"
 #include "genx_scd_cnl_isa.h"
 #include "../include/tree.h"
-#include "../include/IOfunctions.h"
-#include "../include/MotionEstimationEngine.h"
+#include "../include/iofunctions.h"
+#include "../include/motion_estimation_engine.h"
 #include <limits.h>
 #include <algorithm>
 
@@ -42,6 +42,32 @@ static mfxI8
 };
 static mfxU32 lmt_sc2[NumSC] = { 112, 255, 512, 1536, 4096, 6144, 10752, 16384, 23040, UINT_MAX };
 static mfxU32 lmt_tsc2[NumTSC] = { 24, 48, 72, 96, 128, 160, 192, 224, 256, UINT_MAX };
+
+ASC_API ASCimageData::ASCimageData() {
+    Image.data = nullptr;
+    Image.Y = nullptr;
+    Image.U = nullptr;
+    Image.V = nullptr;
+    Image.extHeight = 0;
+    Image.extWidth = 0;
+    Image.hBorder = 0;
+    Image.wBorder = 0;
+    Image.height = 0;
+    Image.width = 0;
+    Image.pitch = 0;
+    
+    pInteger = nullptr;
+    gpuImage = nullptr;
+    idxImage = nullptr;
+    Cs = nullptr;
+    Rs = nullptr;
+    RsCs = nullptr;
+    SAD = nullptr;
+    
+    CsVal = 0;
+    RsVal = 0;
+    avgval = 0;
+}
 
 mfxStatus ASCimageData::InitFrame(ASCImDetails *pDetails) {
     mfxU32
@@ -76,7 +102,12 @@ mfxStatus ASCimageData::InitFrame(ASCImDetails *pDetails) {
     RsCs = (mfxU16 *)memalign(0x1000, sizeof(mfxU16) * texSpaceSize);
     pInteger = (ASCMVector *)memalign(0x1000, sizeof(ASCMVector)  * mvSpaceSize);
 #endif
-    if (Image.data == NULL || SAD == NULL || Rs == NULL)
+    if (Image.data == NULL)
+        return MFX_ERR_MEMORY_ALLOC;
+    //Pointer conf.
+    memset(Image.data, 0, sizeof(mfxU8) * imageSpaceSize);
+    Image.Y = Image.data + pDetails->initial_point;
+    if (SAD == NULL || Rs == NULL)
         return MFX_ERR_MEMORY_ALLOC;
     memset(Rs, 0, sizeof(mfxU16) * texSpaceSize);
     if (Cs == NULL)
@@ -88,9 +119,35 @@ mfxStatus ASCimageData::InitFrame(ASCImDetails *pDetails) {
     if (pInteger == NULL)
         return MFX_ERR_MEMORY_ALLOC;
     memset(pInteger, 0, sizeof(ASCMVector)  * mvSpaceSize);
-    //Pointer conf.
-    Image.Y = Image.data + pDetails->initial_point;
+    return MFX_ERR_NONE;
+}
 
+mfxStatus ASCimageData::InitAuxFrame(ASCImDetails *pDetails) {
+    mfxU32
+        imageSpaceSize = pDetails->Extended_Height * pDetails->Extended_Width;
+
+    Image.extHeight = pDetails->Extended_Height;
+    Image.extWidth = pDetails->Extended_Width;
+    Image.pitch = pDetails->Extended_Width;
+    Image.height = pDetails->_cheight;
+    Image.width = pDetails->_cwidth;
+    Image.hBorder = pDetails->vertical_pad;
+    Image.wBorder = pDetails->horizontal_pad;
+    Image.data = NULL;
+    Image.Y = NULL;
+    Image.U = NULL;
+    Image.V = NULL;
+    //Memory Allocation
+#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
+    Image.data = (mfxU8*)_aligned_malloc(imageSpaceSize, 0x1000);
+#else
+    Image.data = (mfxU8*)memalign(0x1000, imageSpaceSize);
+#endif
+    if (Image.data == NULL)
+        return MFX_ERR_MEMORY_ALLOC;
+    //Pointer conf.
+    memset(Image.data, 0, sizeof(mfxU8) * imageSpaceSize);
+    Image.Y = Image.data + pDetails->initial_point;
     return MFX_ERR_NONE;
 }
 
@@ -122,37 +179,81 @@ void ASCimageData::Close() {
     if (Image.data)
         free(Image.data);
 #endif
-    Rs = NULL;
-    Cs = NULL;
-    RsCs = NULL;
-    pInteger = NULL;
-    SAD = NULL;
-    Image.data = NULL;
-    Image.Y = NULL;
-    Image.U = NULL;
-    Image.V = NULL;
+    Rs = nullptr;
+    Cs = nullptr;
+    RsCs = nullptr;
+    pInteger = nullptr;
+    SAD = nullptr;
+    Image.data = nullptr;
+    Image.Y = nullptr;
+    Image.U = nullptr;
+    Image.V = nullptr;
 }
 
-ASC_API void ASC::CatchEndTime() {
-    TimeStop(&m_dataIn->timer);
-    ASC_PRINTF("\nAverage time per frame: %0.3f ms.\n", m_dataIn->timer.calctime / m_dataIn->processed_frames);
-    CatchTime(&m_dataIn->timer, "Total process time:");
+ASC_API ASC::ASC()
+{
+    m_device = nullptr;
+    m_queue  = nullptr;
+    m_pSurfaceCp = nullptr;
+    m_pIdxSurfCp = nullptr;
+    m_program    = nullptr;
+    m_kernel_p = nullptr;
+    m_kernel_t = nullptr;
+    m_kernel_b = nullptr;
+    m_kernel_cp = nullptr;
+    m_threadSpace = nullptr,
+    m_threadSpaceCp = nullptr;
+    m_subSamplingEv = nullptr;
+    m_frameCopyEv   = nullptr;
+    m_task = nullptr,
+    m_taskCp = nullptr;
+    
+    m_gpuImPitch = 0;
+    m_threadsWidth = 0;
+    m_threadsHeight = 0;
+    m_gpuwidth = 0,
+    m_gpuheight = 0;
+    
+    m_frameBkp = nullptr;
+    m_support  = nullptr;
+    m_dataIn   = nullptr;
+    m_videoData = nullptr;
+    
+    m_dataReady = false;
+    m_cmDeviceAssigned = false;
+    m_is_LTR_on = false;
+    m_ASCinitialized = false;
+    
+    m_width = 0;
+    m_height = 0;
+    m_pitch = 0;
+
+    m_AVX2_available = 0;
+    m_SSE4_available = 0;
+    GainOffset = nullptr;
+    RsCsCalc_4x4 = nullptr;
+    RsCsCalc_bound = nullptr;
+    RsCsCalc_diff = nullptr;
+    ImageDiffHistogram = nullptr;
+    ME_SAD_8x8_Block_Search = nullptr;
+    Calc_RaCa_pic = nullptr;
+    resizeFunc = nullptr;
 }
 
 void ASC::Setup_Environment() {
     m_dataIn->accuracy = 1;
 
-    m_dataIn->layer->Original_Width = SMALL_WIDTH;
-    m_dataIn->layer->Original_Height = SMALL_HEIGHT;
-    m_dataIn->layer->_cwidth = SMALL_WIDTH;
-    m_dataIn->layer->_cheight = SMALL_HEIGHT;
+    m_dataIn->layer->Original_Width = ASC_SMALL_WIDTH;
+    m_dataIn->layer->Original_Height = ASC_SMALL_HEIGHT;
+    m_dataIn->layer->_cwidth = ASC_SMALL_WIDTH;
+    m_dataIn->layer->_cheight = ASC_SMALL_HEIGHT;
 
     m_dataIn->layer->block_width = 8;
     m_dataIn->layer->block_height = 8;
     m_dataIn->layer->vertical_pad = 0;
     m_dataIn->layer->horizontal_pad = 0;
-    m_dataIn->layer->Extended_Height = m_dataIn->layer->vertical_pad + SMALL_HEIGHT + m_dataIn->layer->vertical_pad;
-    m_dataIn->layer->Extended_Width = m_dataIn->layer->horizontal_pad + SMALL_WIDTH + m_dataIn->layer->horizontal_pad;
+    m_dataIn->layer->Extended_Height = m_dataIn->layer->vertical_pad + ASC_SMALL_HEIGHT + m_dataIn->layer->vertical_pad;
+    m_dataIn->layer->Extended_Width = m_dataIn->layer->horizontal_pad + ASC_SMALL_WIDTH + m_dataIn->layer->horizontal_pad;
     m_dataIn->layer->pitch = m_dataIn->layer->Extended_Width;
     m_dataIn->layer->Height_in_blocks = m_dataIn->layer->_cheight / m_dataIn->layer->block_height;
     m_dataIn->layer->Width_in_blocks = m_dataIn->layer->_cwidth / m_dataIn->layer->block_width;
@@ -175,11 +276,14 @@ bool ASC::Query_ASCCmDevice() {
 
 mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     INT res = CM_SUCCESS;
+    m_subSamplingEv = nullptr;
+    m_frameCopyEv   = nullptr;
 
     Reset_ASCCmDevice();
     m_device = pCmDevice;
     if (!m_device)
         res = CM_FAILURE;
+
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     Set_ASCCmDevice();
 
@@ -235,6 +339,7 @@ mfxStatus ASC::CreateCmKernels() {
     m_kernel_t = NULL;
     m_kernel_b = NULL;
     m_threadSpace = NULL;
+    m_threadSpaceCp = NULL;
 
     m_threadsWidth = subWidth / OUT_BLOCK;
     m_threadsHeight = subHeight;
@@ -263,7 +368,6 @@ mfxStatus ASC::CreateCmKernels() {
     res = m_kernel_b->AssociateThreadSpace(m_threadSpace);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 #endif
-
     return MFX_ERR_NONE;
 }
 
@@ -285,41 +389,42 @@ ASC_API mfxStatus ASC::SetInterlaceMode(ASCFTS interlaceMode) {
         resizeFunc = &ASC::SubSampleASC_ImagePro;
     }
     m_dataIn->currentField = m_dataIn->StartingField;
-
     return MFX_ERR_NONE;
 }
 
 mfxStatus ASC::VidSample_Alloc() {
-    INT res;
+    INT res = CM_SUCCESS;
 
-    for (mfxI32 i = 0; i < VIDEOSTATSBUF; i++) {
-        m_videoData[i]->layer.InitFrame(m_dataIn->layer);
-
-        if (Query_ASCCmDevice()) {
+    for (mfxI32 i = 0; i < ASCVIDEOSTATSBUF; i++)
+    {
+        MFX_SAFE_CALL(m_videoData[i]->layer.InitFrame(m_dataIn->layer));
+        if (Query_ASCCmDevice())
+        {
             res = m_device->CreateSurface2DUP(m_dataIn->layer->Extended_Width, m_dataIn->layer->Extended_Height, CM_SURFACE_FORMAT_A8, (void *)m_videoData[i]->layer.Image.data, m_videoData[i]->layer.gpuImage);
             SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
             res = m_videoData[i]->layer.gpuImage->GetIndex(m_videoData[i]->layer.idxImage);
             SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
         }
-        else {
-            m_videoData[i]->layer.gpuImage = NULL;
-            m_videoData[i]->layer.idxImage = NULL;
+        else
+        {
+            m_videoData[i]->layer.gpuImage = nullptr;
+            m_videoData[i]->layer.idxImage = nullptr;
         }
     }
 
-    if (Query_ASCCmDevice()) {
+    if (Query_ASCCmDevice())
+    {
         mfxU32
             physicalSize = 0;
         res = m_device->GetSurface2DInfo(m_gpuwidth, m_gpuheight, CM_SURFACE_FORMAT_NV12, m_gpuImPitch, physicalSize);
         SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-
-        m_frameBkp = NULL;
+        m_frameBkp = nullptr;
 #if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
         m_frameBkp = (mfxU8*)_aligned_malloc(physicalSize, 0x1000);
 #else
         m_frameBkp = (mfxU8*)memalign(0x1000, physicalSize);
 #endif
-        if (m_frameBkp == NULL)
+        if (m_frameBkp == nullptr)
             return MFX_ERR_MEMORY_ALLOC;
         memset(m_frameBkp, 0, physicalSize);
         res = m_device->CreateSurface2DUP(m_gpuImPitch, m_gpuheight, CM_SURFACE_FORMAT_NV12, (void *)m_frameBkp, m_pSurfaceCp);
@@ -327,19 +432,69 @@ mfxStatus ASC::VidSample_Alloc() {
         res = m_pSurfaceCp->GetIndex(m_pIdxSurfCp);
         SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     }
-    else {
-        m_frameBkp = NULL;
-        m_pSurfaceCp = NULL;
-        m_pIdxSurfCp = NULL;
+    else
+    {
+        m_frameBkp = nullptr;
+        m_pSurfaceCp = nullptr;
+        m_pIdxSurfCp = nullptr;
     }
-
     return MFX_ERR_NONE;
 }
 
-void ASC::VidSample_dispose() {
-    for (mfxI32 i = VIDEOSTATSBUF - 1; i >= 0; i--) {
-        if (m_videoData[i] != NULL) {
+mfxStatus ASC::AssignResources(mfxU8 position, mfxU8 *pixelData)
+{
+    if (!IsASCinitialized())
+        return MFX_ERR_DEVICE_FAILED;
+    if (pixelData == nullptr)
+        return MFX_ERR_DEVICE_FAILED;
+    m_videoData[position]->layer.Image.Y = pixelData;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus ASC::AssignResources(mfxU8 position, CmSurface2DUP *inputFrame, mfxU8 *pixelData)
+{
+    if (!IsASCinitialized())
+        return MFX_ERR_DEVICE_FAILED;
+    if (inputFrame == nullptr)
+        return MFX_ERR_DEVICE_FAILED;
+    //std::swap(m_videoData[position]->layer.gpuImage, inputFrame);
+    m_videoData[position]->layer.gpuImage = inputFrame;
+    m_videoData[position]->layer.gpuImage->GetIndex(m_videoData[position]->layer.idxImage);
+    if (pixelData == nullptr)
+        return MFX_ERR_DEVICE_FAILED;
+    /*std::swap(m_videoData[position]->layer.Image.data, pixelData);
+    m_videoData[position]->layer.Image.Y = m_videoData[position]->layer.Image.data;*/
+    m_videoData[position]->layer.Image.Y = pixelData;
+    return MFX_ERR_NONE;
+}
+
+mfxStatus ASC::SwapResources(mfxU8 position, CmSurface2DUP **inputFrame, mfxU8 **pixelData)
+{
+    if (!IsASCinitialized())
+        return MFX_ERR_DEVICE_FAILED;
+    if (inputFrame == nullptr)
+        return MFX_ERR_DEVICE_FAILED;
+    std::swap(m_videoData[position]->layer.gpuImage, *inputFrame);
+    m_videoData[position]->layer.gpuImage->GetIndex(m_videoData[position]->layer.idxImage);
+    if (pixelData == nullptr)
+        return MFX_ERR_DEVICE_FAILED;
+    std::swap(m_videoData[position]->layer.Image.data, *pixelData);
+    m_videoData[position]->layer.Image.Y = m_videoData[position]->layer.Image.data;
+    return MFX_ERR_NONE;
+}
+
+void ASC::VidSample_dispose()
+{
+    for (mfxI32 i = ASCVIDEOSTATSBUF - 1; i >= 0; i--)
+    {
+        if (m_videoData[i] != nullptr)
+        {
             m_videoData[i]->layer.Close();
+            if (m_videoData[i]->layer.gpuImage) {
+                m_device->DestroySurface2DUP(m_videoData[i]->layer.gpuImage);
+                m_videoData[i]->layer.gpuImage = nullptr;
+                m_videoData[i]->layer.idxImage = nullptr;
+            }
             delete (m_videoData[i]);
         }
     }
@@ -349,13 +504,15 @@ void ASC::VidSample_dispose() {
     free(m_frameBkp);
 #endif
 }
-void ASC::VidRead_dispose() {
-    if (m_support->logic != NULL) {
+void ASC::VidRead_dispose()
+{
+    if (m_support->logic != nullptr)
+    {
         for (mfxI32 i = 0; i < TSCSTATBUFFER; i++)
             delete m_support->logic[i];
         delete[] m_support->logic;
     }
-    if (m_support->gainCorrection.Image.data != NULL)
+    if (m_support->gainCorrection.Image.data != nullptr)
         m_support->gainCorrection.Close();
 }
 
@@ -369,70 +526,78 @@ mfxStatus ASC::InitCPU() {
 
 mfxStatus ASC::IO_Setup() {
     mfxStatus sts = MFX_ERR_NONE;
-    INT res;
     sts = alloc();
     SCD_CHECK_MFX_ERR(sts);
-
-    if (Query_ASCCmDevice()) {
-        res = m_device->CreateKernel(m_program, CM_KERNEL_FUNCTION(surfaceCopy_Y), m_kernel_cp);
-        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-
+    if (Query_ASCCmDevice())
+    {
+        SCD_CHECK_CM_ERR(m_device->CreateKernel(m_program, CM_KERNEL_FUNCTION(surfaceCopy_Y), m_kernel_cp), MFX_ERR_DEVICE_FAILED);
         m_threadsWidth = (UINT)ceil((double)m_gpuwidth / SCD_BLOCK_PIXEL_WIDTH);
         m_threadsHeight = (UINT)ceil((double)m_gpuheight / SCD_BLOCK_HEIGHT);
-        res = m_device->CreateThreadSpace(m_threadsWidth, m_threadsHeight, m_threadSpaceCp);
-        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-        res = m_threadSpaceCp->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
-        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-        res = m_kernel_cp->SetThreadCount(m_threadsWidth * m_threadsHeight);
-        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        SCD_CHECK_CM_ERR(m_device->CreateThreadSpace(m_threadsWidth, m_threadsHeight, m_threadSpaceCp), MFX_ERR_DEVICE_FAILED);
+        SCD_CHECK_CM_ERR(m_threadSpaceCp->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY), MFX_ERR_DEVICE_FAILED);
+        SCD_CHECK_CM_ERR(m_kernel_cp->SetThreadCount(m_threadsWidth * m_threadsHeight), MFX_ERR_DEVICE_FAILED);
 #ifndef CMRT_EMU
-        res = m_kernel_cp->AssociateThreadSpace(m_threadSpaceCp);
-        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        SCD_CHECK_CM_ERR(m_kernel_cp->AssociateThreadSpace(m_threadSpaceCp), MFX_ERR_DEVICE_FAILED);
 #endif
     }
-    else {
-        m_kernel_cp = NULL;
-        m_threadSpaceCp = NULL;
+    else
+    {
+        m_kernel_cp = nullptr;
+        m_threadSpaceCp = nullptr;
     }
-
     return sts;
 }
 
 void ASC::InitStruct() {
-    m_dataIn = NULL;
-    m_support = NULL;
-    m_videoData = NULL;
-    resizeFunc = NULL;
+    m_dataIn = nullptr;
+    m_support = nullptr;
+    m_videoData = nullptr;
+    resizeFunc = nullptr;
 }
 
-void ASC::VidRead_Init() {
-    m_support->control = 0;
-    m_support->average = 0;
-    m_support->avgSAD = 0;
-    m_support->gopSize = 1;
-    m_support->pendingSch = 0;
+mfxStatus ASC::VidRead_Init() {
+    mfxStatus sts = MFX_ERR_NONE;
+    m_support->control                 = 0;
+    m_support->average                 = 0;
+    m_support->avgSAD                  = 0;
+    m_support->gopSize                 = 1;
+    m_support->pendingSch              = 0;
     m_support->lastSCdetectionDistance = 0;
-    m_support->detectedSch = 0;
-    m_support->logic = new ASCTSCstat *[TSCSTATBUFFER];
-    ASCTSCstat_Init(m_support->logic);
-    m_support->PDistanceTable = PDISTTbl2;
-    m_support->detectFunc = NULL;
-    m_support->size = ASCSmall_Size;
-    m_support->firstFrame = true;
-    m_support->gainCorrection.Image.data = NULL;
-    m_support->gainCorrection.Image.Y = NULL;
-    m_support->gainCorrection.Image.U = NULL;
-    m_support->gainCorrection.Image.V = NULL;
-    m_support->gainCorrection.Cs = NULL;
-    m_support->gainCorrection.Rs = NULL;
-    m_support->gainCorrection.RsCs = NULL;
-    m_support->gainCorrection.pInteger = NULL;
-    m_support->gainCorrection.SAD = NULL;
-    m_support->gainCorrection.InitFrame(m_dataIn->layer);
+    m_support->detectedSch             = 0;
+    m_support->frameOrder              = 0;
+    m_support->PDistanceTable            = PDISTTbl2;
+    m_support->size                      = ASCSmall_Size;
+    m_support->firstFrame                = true;
+    m_support->gainCorrection.Image.data = nullptr;
+    m_support->gainCorrection.Image.Y    = nullptr;
+    m_support->gainCorrection.Image.U    = nullptr;
+    m_support->gainCorrection.Image.V    = nullptr;
+    m_support->gainCorrection.Cs         = nullptr;
+    m_support->gainCorrection.Rs         = nullptr;
+    m_support->gainCorrection.RsCs       = nullptr;
+    m_support->gainCorrection.pInteger   = nullptr;
+    m_support->gainCorrection.SAD        = nullptr;
+    try
+    {
+        m_support->logic = new ASCTSCstat *[TSCSTATBUFFER];
+    }
+    catch (...)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    sts = ASCTSCstat_Init(m_support->logic);
+    SCD_CHECK_MFX_ERR(sts);
+//#if USE_SCD
+    sts = m_support->gainCorrection.InitAuxFrame(m_dataIn->layer);
+//#else
+//    sts = m_support->gainCorrection.InitFrame(m_dataIn->layer);
+//#endif
+    SCD_CHECK_MFX_ERR(sts);
+    return sts;
 }
 
 void ASC::VidSample_Init() {
-    for(mfxI32 i = 0; i < VIDEOSTATSBUF; i++) {
+    for(mfxI32 i = 0; i < ASCVIDEOSTATSBUF; i++) {
         nullifier(&m_videoData[i]->layer);
         imageInit(&m_videoData[i]->layer.Image);
         m_videoData[i]->frame_number = -1;
@@ -443,13 +608,12 @@ void ASC::VidSample_Init() {
 
 void ASC::SetUltraFastDetection() {
     m_support->size = ASCSmall_Size;
-    m_support->detectFunc = NULL;
     resizeFunc = &ASC::SubSampleASC_ImagePro;
 }
 
 mfxStatus ASC::SetWidth(mfxI32 Width) {
-    if(Width < SMALL_WIDTH) {
-        ASC_PRINTF("\nError: Width value is too small, it needs to be bigger than %i\n", SMALL_WIDTH);
+    if(Width < ASC_SMALL_WIDTH) {
+        ASC_PRINTF("\nError: Width value is too small, it needs to be bigger than %i\n", ASC_SMALL_WIDTH);
         return MFX_ERR_UNSUPPORTED;
     }
     else
@@ -459,8 +623,8 @@ mfxStatus ASC::SetWidth(mfxI32 Width) {
 }
 
 mfxStatus ASC::SetHeight(mfxI32 Height) {
-    if(Height < SMALL_HEIGHT) {
-        ASC_PRINTF("\nError: Height value is too small, it needs to be bigger than %i\n", SMALL_HEIGHT);
+    if(Height < ASC_SMALL_HEIGHT) {
+        ASC_PRINTF("\nError: Height value is too small, it needs to be bigger than %i\n", ASC_SMALL_HEIGHT);
         return MFX_ERR_UNSUPPORTED;
     }
     else
@@ -470,7 +634,7 @@ mfxStatus ASC::SetHeight(mfxI32 Height) {
 }
 
 mfxStatus ASC::SetPitch(mfxI32 Pitch) {
-    if(m_width < SMALL_WIDTH) {
+    if(m_width < ASC_SMALL_WIDTH) {
         ASC_PRINTF("\nError: Width value has not been set, init the variables first\n");
         return MFX_ERR_UNSUPPORTED;
     }
@@ -497,6 +661,7 @@ mfxStatus ASC::SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32 Pitch) {
     sts = SetHeight(Height);
     SCD_CHECK_MFX_ERR(sts);
     sts = SetPitch(Pitch);
+    SCD_CHECK_MFX_ERR(sts);
     return sts;
 }
 
@@ -513,13 +678,16 @@ mfxStatus ASC::SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32 Pitch) {
 #define ASC_CPU_DISP_INIT_AVX2_SSE4_C       ASC_CPU_DISP_INIT_SSE4_C
 #define ASC_CPU_DISP_INIT_AVX2_C            ASC_CPU_DISP_INIT_C
 #endif
-
-ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice) {
+ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice)
+{
     mfxStatus sts = MFX_ERR_NONE;
     INT res;
-    m_device = NULL;
-    m_queue = NULL;
-    m_program = NULL;
+    m_device = nullptr;
+    m_queue = nullptr;
+    m_program = nullptr;
+
+    m_task = nullptr;
+    m_taskCp = nullptr;
 
     m_AVX2_available = CpuFeature_AVX2();
     m_SSE4_available = CpuFeature_SSE41();
@@ -543,18 +711,43 @@ ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 Pi
 #endif
 
     InitStruct();
-    m_dataIn = new ASCVidData;
-    m_dataIn->layer = NULL;
-    m_dataIn->layer = new ASCImDetails;
-    m_videoData = new ASCVidSample *[VIDEOSTATSBUF];
-    m_support = new ASCVidRead;
+    try
+    {
+        m_dataIn = new ASCVidData;
+    }
+    catch (...)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
+    m_dataIn->layer = nullptr;
+    try
+    {
+        m_dataIn->layer = new ASCImDetails;
+        m_videoData = new ASCVidSample *[ASCVIDEOSTATSBUF];
+        m_support = new ASCVidRead;
+    }
+    catch (...)
+    {
+        return MFX_ERR_MEMORY_ALLOC;
+    }
 
-    res = InitGPUsurf(pCmDevice);
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+    if (pCmDevice)
+    {
+        res = InitGPUsurf(pCmDevice);
+        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+    }
 
-    for (mfxI32 i = 0; i < VIDEOSTATSBUF; i++)
-        m_videoData[i] = new ASCVidSample;
-
+    for (mfxI32 i = 0; i < ASCVIDEOSTATSBUF; i++)
+    {
+        try
+        {
+            m_videoData[i] = new ASCVidSample;
+        }
+        catch (...)
+        {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+    }
     Params_Init();
 
     sts = SetDimensions(Width, Height, Pitch);
@@ -569,7 +762,8 @@ ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 Pi
     sts = IO_Setup();
     SCD_CHECK_MFX_ERR(sts);
 
-    VidRead_Init();
+    sts = VidRead_Init();
+    SCD_CHECK_MFX_ERR(sts);
     SetUltraFastDetection();
 
     if (Query_ASCCmDevice()) {
@@ -578,13 +772,16 @@ ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 Pi
     }
 
     sts = SetInterlaceMode((PicStruct & MFX_PICSTRUCT_FIELD_TFF) ? ASCtopfieldfirst_frame :
-                           (PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? ASCbotfieldFirst_frame :
-                           ASCprogressive_frame);
+        (PicStruct & MFX_PICSTRUCT_FIELD_BFF) ? ASCbotfieldFirst_frame :
+        ASCprogressive_frame);
     SCD_CHECK_MFX_ERR(sts);
-
     m_dataReady = false;
-
+    m_ASCinitialized = (sts == MFX_ERR_NONE);
     return sts;
+}
+
+ASC_API bool ASC::IsASCinitialized(){
+    return m_ASCinitialized;
 }
 
 ASC_API void ASC::SetControlLevel(mfxU8 level) {
@@ -619,22 +816,22 @@ ASC_API void ASC::ResetGoPSize() {
 }
 
 ASC_API void ASC::Close() {
-    if(m_videoData != NULL) {
+    if(m_videoData != nullptr) {
         VidSample_dispose();
         delete[] m_videoData;
-        m_videoData = NULL;
+        m_videoData = nullptr;
     }
 
-    if(m_support != NULL) {
+    if(m_support != nullptr) {
         VidRead_dispose();
         delete m_support;
-        m_support = NULL;
+        m_support = nullptr;
     }
 
-    if(m_dataIn != NULL) {
+    if(m_dataIn != nullptr) {
         delete m_dataIn->layer;
         delete m_dataIn;
-        m_dataIn = NULL;
+        m_dataIn = nullptr;
     }
 
     if (m_device) {
@@ -650,18 +847,22 @@ ASC_API void ASC::Close() {
         if (m_kernel_b)  m_device->DestroyKernel(m_kernel_b);
         if (m_kernel_cp) m_device->DestroyKernel(m_kernel_cp);
         if (m_program)   m_device->DestroyProgram(m_program);
+        if (m_pSurfaceCp) m_device->DestroySurface2DUP(m_pSurfaceCp);
         if (m_threadSpace)   m_device->DestroyThreadSpace(m_threadSpace);
         if (m_threadSpaceCp) m_device->DestroyThreadSpace(m_threadSpaceCp);
+        if (m_task) m_device->DestroyTask(m_task);
+        if (m_taskCp) m_device->DestroyTask(m_taskCp);
     }
 
-    m_kernel_p  = NULL;
-    m_kernel_t  = NULL;
-    m_kernel_b  = NULL;
-    m_kernel_cp = NULL;
-    m_program   = NULL;
-    m_device    = NULL;
-    m_threadSpace   = NULL;
-    m_threadSpaceCp = NULL;
+    m_pSurfaceCp = nullptr;
+    m_kernel_p  = nullptr;
+    m_kernel_t  = nullptr;
+    m_kernel_b  = nullptr;
+    m_kernel_cp = nullptr;
+    m_program   = nullptr;
+    m_device    = nullptr;
+    m_threadSpace   = nullptr;
+    m_threadSpaceCp = nullptr;
 }
 
 void ASC::SubSampleASC_ImagePro(mfxU8 *frame, mfxI32 srcWidth, mfxI32 srcHeight, mfxI32 inputPitch, ASCLayers dstIdx, mfxU32 /*parity*/) {
@@ -721,7 +922,7 @@ void ASC::SubSample_Point(
     avgLuma = (mfxI16)(sumAll >> 13);
 }
 
-void ASC::RsCsCalc() {
+mfxStatus ASC::RsCsCalc() {
     ASCYUV
          *pFrame = &m_videoData[ASCCurrent_Frame]->layer.Image;
     ASCImDetails
@@ -735,15 +936,24 @@ void ASC::RsCsCalc() {
     mfxI16
         diff = m_videoData[ASCReference_Frame]->layer.avgval - m_videoData[ASCCurrent_Frame]->layer.avgval;
     ss = m_videoData[ASCReference_Frame]->layer.Image.Y;
-    if (!m_support->firstFrame && abs(diff) >= GAINDIFF_THR)
+    if (!m_support->firstFrame && abs(diff) >= GAINDIFF_THR) {
+        if (m_support->gainCorrection.Image.Y == nullptr)
+            return MFX_ERR_MEMORY_ALLOC;
         GainOffset(&ss, &m_support->gainCorrection.Image.Y, (mfxU16)vidCar._cwidth, (mfxU16)vidCar._cheight, (mfxU16)vidCar.Extended_Width, diff);
+    }
     ss = m_videoData[ASCCurrent_Frame]->layer.Image.Y;
 
     RsCsCalc_4x4(ss, pFrame->pitch, wblocks, hblocks, m_videoData[ASCCurrent_Frame]->layer.Rs, m_videoData[ASCCurrent_Frame]->layer.Cs);
     RsCsCalc_bound(m_videoData[ASCCurrent_Frame]->layer.Rs, m_videoData[ASCCurrent_Frame]->layer.Cs, m_videoData[ASCCurrent_Frame]->layer.RsCs, &m_videoData[ASCCurrent_Frame]->layer.RsVal, &m_videoData[ASCCurrent_Frame]->layer.CsVal, wblocks, hblocks);
+    return MFX_ERR_NONE;
 }
 
-mfxI32 ASC::ShotDetect(ASCimageData& Data, ASCimageData& DataRef, ASCImDetails& imageInfo, ASCTSCstat *current, ASCTSCstat *reference, t_SCDetect detectFunc, mfxU8 controlLevel) {
+bool Hint_LTR_op_on(mfxU32 SC, mfxU32 TSC) {
+    bool ltr = TSC *TSC < (IPP_MAX(SC, 64) / 12);
+    return ltr;
+}
+
+mfxI32 ASC::ShotDetect(ASCimageData& Data, ASCimageData& DataRef, ASCImDetails& imageInfo, ASCTSCstat *current, ASCTSCstat *reference, mfxU8 controlLevel) {
     pmfxU8
         ssFrame = Data.Image.Y,
         refFrame = DataRef.Image.Y;
@@ -778,7 +988,6 @@ mfxI32 ASC::ShotDetect(ASCimageData& Data, ASCimageData& DataRef, ASCImDetails& 
     current->diffRsCsDiff  = current->RsCsDiff - reference->RsCsDiff;
     current->diffMVdiffVal = current->MVdiffVal - reference->MVdiffVal;
     mfxI32
-#if ENABLE_RF
         SChange = SCDetectRF(
             current->diffMVdiffVal, current->RsCsDiff,   current->MVdiffVal,
             current->Rs,            current->AFD,        current->CsDiff,
@@ -787,17 +996,7 @@ mfxI32 ASC::ShotDetect(ASCimageData& Data, ASCimageData& DataRef, ASCImDetails& 
             current->TSCindex,      current->SCindex,    current->Cs,
             current->diffAFD,       current->negBalance, current->ssDCval,
             current->refDCval,      current->RsDiff,     controlLevel);
-    detectFunc;
-#else
-        SChange = detectFunc(
-            current->diffMVdiffVal, current->RsCsDiff,   current->MVdiffVal,
-            current->Rs,            current->AFD,        current->CsDiff,
-            current->diffTSC,       current->TSC,        current->gchDC,
-            current->diffRsCsDiff,  current->posBalance, current->SC,
-            current->TSCindex,      current->SCindex,    current->Cs,
-            current->diffAFD,       current->negBalance, current->ssDCval,
-            current->refDCval,      current->RsDiff);
-#endif
+
 #if ASCTUNEDATA
     {
         FILE *dataFile = NULL;
@@ -814,6 +1013,7 @@ mfxI32 ASC::ShotDetect(ASCimageData& Data, ASCimageData& DataRef, ASCImDetails& 
         fclose(dataFile);
     }
 #endif
+    current->ltr_flag = Hint_LTR_op_on(current->SC, current->TSC);
     return SChange;
 }
 
@@ -961,7 +1161,7 @@ void ASC::DetectShotChangeFrame() {
                                                           m_support->logic[ASCcurrent_frame_data]->SCindex];
         m_support->logic[ASCcurrent_frame_data]->TSC >>= 5;
         /*------Shot Detection------*/
-        m_support->logic[ASCcurrent_frame_data]->Schg = ShotDetect(m_videoData[ASCCurrent_Frame]->layer, m_videoData[ASCReference_Frame]->layer, *m_dataIn->layer, m_support->logic[ASCcurrent_frame_data], m_support->logic[ASCprevious_frame_data], m_support->detectFunc, m_support->control);
+        m_support->logic[ASCcurrent_frame_data]->Schg = ShotDetect(m_videoData[ASCCurrent_Frame]->layer, m_videoData[ASCReference_Frame]->layer, *m_dataIn->layer, m_support->logic[ASCcurrent_frame_data], m_support->logic[ASCprevious_frame_data], m_support->control);
         m_support->logic[ASCprevious_frame_data]->lastFrameInShot = (mfxU8)m_support->logic[ASCcurrent_frame_data]->Schg;
         m_support->logic[ASCcurrent_frame_data]->repeatedFrame = FrameRepeatCheck();
     }
@@ -1048,13 +1248,13 @@ ASC_LTR_DEC ASC::Continue_LTR_Mode(mfxU16 goodLTRLimit, mfxU16 badLTRLimit) {
         return NO_LTR;
 }
 
-mfxStatus ASC::SetKernel(SurfaceIndex *idxFrom, mfxU32 parity) {
+mfxStatus ASC::SetKernel(SurfaceIndex *idxFrom, SurfaceIndex *idxTo, CmTask **subSamplingTask, mfxU32 parity) {
     mfxU32 argIdx = 0;
     INT res;
     //Progressive Point subsampling kernel
 
     CmKernel
-        **subKernel = NULL;
+        **subKernel = nullptr;
 
     if (m_dataIn->interlaceMode == ASCprogressive_frame) {
         subKernel = &m_kernel_p;
@@ -1074,7 +1274,7 @@ mfxStatus ASC::SetKernel(SurfaceIndex *idxFrom, mfxU32 parity) {
 
     res = (*subKernel)->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxFrom);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = (*subKernel)->SetKernelArg(argIdx++, sizeof(SurfaceIndex), m_videoData[ASCCurrent_Frame]->layer.idxImage);
+    res = (*subKernel)->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxTo);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     res = (*subKernel)->SetKernelArg(argIdx++, sizeof(int), &m_gpuwidth);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
@@ -1084,33 +1284,70 @@ mfxStatus ASC::SetKernel(SurfaceIndex *idxFrom, mfxU32 parity) {
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     res = (*subKernel)->SetKernelArg(argIdx++, sizeof(int), &tmp_subHeight);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-
-    res = m_device->CreateTask(m_task);
+    /*if (*subSamplingTask)
+    res = (*subSamplingTask)->Reset();
+    else
+    */res = m_device->CreateTask(*subSamplingTask);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = m_task->AddKernel((*subKernel));
+    res = (*subSamplingTask)->AddKernel((*subKernel));
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus ASC::RunFrame(SurfaceIndex *idxFrom, mfxU32 parity) {
-    CmEvent* e = NULL;// CM_NO_EVENT;
-    INT res;
-    res = SetKernel(idxFrom, parity);
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-#ifndef CMRT_EMU
-    res = m_queue->Enqueue(m_task, e);
-#else
-    res = m_queue->Enqueue(m_task, e, m_threadSpace);
-#endif
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = e->WaitForTaskFinished();
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = m_device->DestroyTask(m_task);
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = m_queue->DestroyEvent(e);
-    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+mfxStatus ASC::SetKernel(SurfaceIndex *idxFrom, CmTask **subSamplingTask, mfxU32 parity) {
+    return (SetKernel(idxFrom, m_videoData[ASCCurrent_Frame]->layer.idxImage, subSamplingTask, parity));
+}
 
+mfxStatus ASC::SetKernel(SurfaceIndex *idxFrom, mfxU32 parity) {
+    return(SetKernel(idxFrom, &m_task, parity));
+}
+
+#ifndef CMRT_EMU
+mfxStatus ASC::QueueFrame(SurfaceIndex *idxFrom, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+#else
+mfxStatus ASC::QueueFrame(SurfaceIndex *idxFrom, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, CmThreadSpace *subThreadSpace, mfxU32 parity)
+#endif
+{
+if (!m_ASCinitialized)
+return MFX_ERR_NOT_INITIALIZED;
+*subSamplingEv = NULL;// CM_NO_EVENT;
+INT res;
+res = SetKernel(idxFrom, idxTo, subSamplingTask, parity);
+SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+#ifndef CMRT_EMU
+res = m_queue->Enqueue(*subSamplingTask, *subSamplingEv);
+#else
+res = m_queue->Enqueue(*subSamplingTask, *subSamplingEv, subThreadSpace);
+#endif
+SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+return MFX_ERR_NONE;
+}
+
+#ifndef CMRT_EMU
+mfxStatus ASC::QueueFrame(SurfaceIndex *idxFrom, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+#else
+mfxStatus ASC::QueueFrame(SurfaceIndex *idxFrom, CmEvent **subSamplingEv, CmTask **subSamplingTask, CmThreadSpace *subThreadSpace, mfxU32 parity)
+#endif
+{
+#ifndef CMRT_EMU
+    return(QueueFrame(idxFrom, m_videoData[ASCCurrent_Frame]->layer.idxImage, subSamplingEv, subSamplingTask, parity));
+#else
+    return(QueueFrame(idxFrom, m_videoData[ASCCurrent_Frame]->layer.idxImage, subSamplingEv, subSamplingTask, subThreadSpace, parity));
+#endif
+}
+
+mfxStatus ASC::QueueFrame(SurfaceIndex *idxFrom, mfxU32 parity) {
+    return(
+#ifndef CMRT_EMU
+        QueueFrame(idxFrom, &m_subSamplingEv, &m_task, parity)
+#else
+        QueueFrame(idxFrom, &m_subSamplingEv, &m_task, m_threadSpace, parity)
+#endif
+        );
+}
+
+void ASC::AscFrameAnalysis() {
     mfxU8
         *ss = m_videoData[ASCCurrent_Frame]->layer.Image.Y;
 
@@ -1130,26 +1367,125 @@ mfxStatus ASC::RunFrame(SurfaceIndex *idxFrom, mfxU32 parity) {
     sumAll >>= 13;
     m_videoData[ASCCurrent_Frame]->layer.avgval = (mfxU16)sumAll;
     RsCsCalc();
-#if DUMP_Yonly_small_128x64
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
-    FILE
-        *dataFile = NULL;
-    fopen_s(&dataFile, "Yonly_small_128x64.yuv", "ab");
-    fwrite(m_videoData[ASCCurrent_Frame]->layer.Image.Y, 1, SMALL_AREA, dataFile);
-    /*for (int i = 0; i < 64; i++)
-    fwrite(m_videoData[ASCCurrent_Frame]->layer[0].Image.Y + (i * (SMALL_WIDTH + 4)), 1, SMALL_WIDTH, dataFile);*/
-    //fwrite(m_videoData[ASCScene_Diff_Frame]->layer[0].Image.Y + (i * (SMALL_WIDTH + 4)), 1, SMALL_WIDTH, dataFile);
-    fclose(dataFile);
-#endif
-#endif
     DetectShotChangeFrame();
     Put_LTR_Hint();
     GeneralBufferRotation();
+}
+
+ASC_API bool ASC::Query_resize_Event() {
+    return (m_subSamplingEv != nullptr);
+}
+
+ASC_API mfxStatus ASC::ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingTask, CmSurface2DUP **inputFrame, mfxU8 **pixelData)
+{
+    pixelData; inputFrame;
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    INT res;
+    if (*subSamplingEv) {
+        res = (*subSamplingEv)->WaitForTaskFinished();
+        if (res == CM_EXCEED_MAX_TIMEOUT)
+            return MFX_ERR_GPU_HANG;
+        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        if(inputFrame != nullptr && pixelData != nullptr)
+            MFX_SAFE_CALL(SwapResources(ASCCurrent_Frame, inputFrame, pixelData))
+        AscFrameAnalysis();
+        res = m_queue->DestroyEvent(*subSamplingEv);
+        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        res = m_device->DestroyTask(*subSamplingTask);
+        SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+        m_dataReady = (res == CM_SUCCESS);
+    }
+    else {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+    return MFX_ERR_NONE;
+}
+
+ASC_API mfxStatus ASC::ProcessQueuedFrame()
+{
+    return ProcessQueuedFrame(&m_subSamplingEv, &m_task, nullptr, nullptr);
+}
+
+mfxStatus ASC::RunFrame(SurfaceIndex *idxFrom, mfxU32 parity) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    CmEvent* e = NULL;// CM_NO_EVENT;
+    INT res;
+    res = SetKernel(idxFrom, parity);
+    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+#ifndef CMRT_EMU
+    res = m_queue->Enqueue(m_task, e);
+#else
+    res = m_queue->Enqueue(m_task, e, m_threadSpace);
+#endif
+    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+    res = e->WaitForTaskFinished();
+    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+    res = m_device->DestroyTask(m_task);
+    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+    res = m_queue->DestroyEvent(e);
+    SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+
+    AscFrameAnalysis();
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus ASC::QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+{
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
+
+    CmSurface2D* p_surfaceFrom = nullptr;
+    SurfaceIndex* idxFrom = nullptr;
+
+    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+
+    mfxStatus sts = QueueFrame(idxFrom, idxTo, subSamplingEv, subSamplingTask, parity);
+    SCD_CHECK_MFX_ERR(sts);
+
+    return MFX_ERR_NONE;
+}
+
+
+mfxStatus ASC::QueueFrame(mfxHDL frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+{
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
+
+    CmSurface2D* p_surfaceFrom = nullptr;
+    SurfaceIndex* idxFrom = nullptr;
+
+    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+
+    mfxStatus sts = QueueFrame(idxFrom, subSamplingEv, subSamplingTask, parity);
+    SCD_CHECK_MFX_ERR(sts);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus ASC::QueueFrame(mfxHDL frameHDL, mfxU32 parity) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
+
+    CmSurface2D* p_surfaceFrom = nullptr;
+    SurfaceIndex* idxFrom = nullptr;
+
+    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+
+    mfxStatus sts = QueueFrame(idxFrom, parity);
+    SCD_CHECK_MFX_ERR(sts);
 
     return MFX_ERR_NONE;
 }
 
 mfxStatus ASC::RunFrame(mfxHDL frameHDL, mfxU32 parity) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
     m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
 
     CmSurface2D* p_surfaceFrom = 0;
@@ -1160,36 +1496,45 @@ mfxStatus ASC::RunFrame(mfxHDL frameHDL, mfxU32 parity) {
     mfxStatus sts = RunFrame(idxFrom, parity);
     SCD_CHECK_MFX_ERR(sts);
 
-#if NODELAY
     return MFX_ERR_NONE;
-#else
-    return (!m_support->logic[ASCprevious_frame_data]->firstFrame) ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
-#endif
 }
 
 mfxStatus ASC::RunFrame(mfxU8 *frame, mfxU32 parity) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
     m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
     (this->*(resizeFunc))(frame, m_width, m_height, m_pitch, (ASCLayers)0, parity);
     RsCsCalc();
-#if DUMP_Yonly_small_128x64
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
-    FILE
-        *dataFile = NULL;
-    fopen_s(&dataFile, "Yonly_small_128x64.yuv", "ab");
-    for (int i = 0; i < 64; i++)
-        fwrite(m_videoData[ASCCurrent_Frame]->layer.Image.Y + (i * (SMALL_WIDTH + 4)), 1, SMALL_WIDTH, dataFile);
-    //fwrite(m_videoData[ASCScene_Diff_Frame]->layer.Image.Y + (i * (SMALL_WIDTH + 4)), 1, SMALL_WIDTH, dataFile);
-    fclose(dataFile);
-#endif
-#endif
     DetectShotChangeFrame();
     Put_LTR_Hint();
     GeneralBufferRotation();
-#if NODELAY
     return MFX_ERR_NONE;
-#else
-    return (!m_support->logic[ASCprevious_frame_data]->firstFrame) ? MFX_ERR_NONE : MFX_ERR_MORE_DATA;
-#endif
+}
+
+ASC_API mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf) {
+    mfxStatus sts = QueueFrame(idxSurf, ASCTopField);
+    return sts;
+}
+
+ASC_API mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSamplingEv, CmTask *subSamplingTask) {
+    mfxStatus sts = QueueFrame(idxSurf, &subSamplingEv, &subSamplingTask, ASCTopField);
+    return sts;
+}
+
+ASC_API mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
+{
+    mfxStatus sts = QueueFrame(surface, idxTo, subSamplingEv, subSamplingTask, ASCTopField);
+    return sts;
+}
+
+ASC_API mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, CmEvent **subSamplingEv, CmTask **subSamplingTask) {
+    mfxStatus sts = QueueFrame(surface, subSamplingEv, subSamplingTask, ASCTopField);
+    return sts;
+}
+
+ASC_API mfxStatus ASC::QueueFrameProgressive(mfxHDL surface) {
+    mfxStatus sts = QueueFrame(surface, ASCTopField);
+    return sts;
 }
 
 ASC_API mfxStatus ASC::PutFrameProgressive(SurfaceIndex* idxSurf) {
@@ -1206,13 +1551,13 @@ ASC_API mfxStatus ASC::PutFrameProgressive(mfxHDL surface) {
 
 ASC_API mfxStatus ASC::PutFrameProgressive(mfxU8 *frame, mfxI32 Pitch) {
     mfxStatus sts;
-
     if (Pitch > 0) {
         sts = SetPitch(Pitch);
         SCD_CHECK_MFX_ERR(sts);
     }
 
     sts = RunFrame(frame, ASCTopField);
+    SCD_CHECK_MFX_ERR(sts);
     m_dataReady = (sts == MFX_ERR_NONE);
     return sts;
 }
@@ -1231,9 +1576,22 @@ ASC_API mfxStatus ASC::PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch) {
     return sts;
 }
 
+ASC_API mfxStatus ASC::QueueFrameInterlaced(SurfaceIndex* idxSurf) {
+    mfxStatus sts = QueueFrame(idxSurf, m_dataIn->currentField);
+    m_dataReady = (sts == MFX_ERR_NONE);
+    SetNextField();
+    return sts;
+}
+
 ASC_API mfxStatus ASC::PutFrameInterlaced(SurfaceIndex* idxSurf) {
     mfxStatus sts = RunFrame(idxSurf, m_dataIn->currentField);
     m_dataReady = (sts == MFX_ERR_NONE);
+    SetNextField();
+    return sts;
+}
+
+ASC_API mfxStatus ASC::QueueFrameInterlaced(mfxHDL surface) {
+    mfxStatus sts = QueueFrame(surface, m_dataIn->currentField);
     SetNextField();
     return sts;
 }
@@ -1247,6 +1605,8 @@ ASC_API mfxStatus ASC::PutFrameInterlaced(mfxHDL surface) {
 
 
 ASC_API mfxStatus ASC::calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
     return Calc_RaCa_pic(pSrc, width, height, pitch, RsCs);
 }
 
@@ -1296,6 +1656,8 @@ mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, Sur
 }
 
 mfxStatus ASC::CopyFrameSurface(mfxHDL frameHDL) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
     CmSurface2D* p_surfaceFrom = 0;
     mfxStatus sts;
     INT res;
@@ -1304,7 +1666,7 @@ mfxStatus ASC::CopyFrameSurface(mfxHDL frameHDL) {
     sts = CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
     SCD_CHECK_MFX_ERR(sts);
 
-    CmEvent* e = NULL;// CM_NO_EVENT;
+    m_frameCopyEv = NULL;// CM_NO_EVENT;
     mfxU32 argIdx = 0;
     //Copy pixels kernel
     res = m_kernel_cp->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxFrom);
@@ -1321,34 +1683,22 @@ mfxStatus ASC::CopyFrameSurface(mfxHDL frameHDL) {
     res = m_kernel_cp->SetKernelArg(argIdx++, sizeof(mfxU32), &m_gpuImPitch);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
-    res = m_device->CreateTask(m_task);
+    res = m_device->CreateTask(m_taskCp);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = m_task->AddKernel(m_kernel_cp);      //progressive
+    res = m_taskCp->AddKernel(m_kernel_cp);      //progressive
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 #ifndef CMRT_EMU
-    res = m_queue->Enqueue(m_task, e);
+    res = m_queue->Enqueue(m_taskCp, m_frameCopyEv);
 #else
-    res = m_queue->Enqueue(m_task, e, m_threadSpace);
+    res = m_queue->Enqueue(m_taskCp, m_frameCopyEv, m_threadSpaceCp);
 #endif
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = e->WaitForTaskFinished();
+    res = m_frameCopyEv->WaitForTaskFinished();
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = m_device->DestroyTask(m_task);
+    res = m_device->DestroyTask(m_taskCp);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-    res = m_queue->DestroyEvent(e);
+    res = m_queue->DestroyEvent(m_frameCopyEv);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
-#if DUMP_Yonly_original
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
-    FILE
-        *dataFile = NULL;
-    fopen_s(&dataFile, "Yonly_original.yuv", "ab");
-    fwrite(m_frameBkp, 1, m_width * m_height, dataFile);
-    /*for (int i = 0; i < 64; i++)
-    fwrite(m_videoData[ASCCurrent_Frame]->layer[0].Image.Y + (i * (SMALL_WIDTH + 4)), 1, SMALL_WIDTH, dataFile);*/
-    //fwrite(m_videoData[ASCScene_Diff_Frame]->layer[0].Image.Y + (i * (SMALL_WIDTH + 4)), 1, SMALL_WIDTH, dataFile);
-    fclose(dataFile);
-#endif
-#endif
     return sts;
 }
 
@@ -1368,15 +1718,6 @@ ASC_API mfxU32 ASC::Get_frame_number() {
     if(m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->frameNum;
     else
-        return 0;
-}
-
-ASC_API mfxU32 ASC::Get_frame_variation_status() {
-#if NEWFEATURE
-    if (m_dataReady)
-        return m_support->logic[ASCSceneVariation_frame_data]->Schg;
-    else
-#endif
         return 0;
 }
 
@@ -1414,13 +1755,23 @@ ASC_API mfxI32 ASC::Get_frame_Temporal_complexity() {
         return 0;
 }
 
+ASC_API mfxU32 ASC::Get_PDist_advice() {
+    if (m_dataReady)
+        return m_support->logic[ASCprevious_frame_data]->pdist;
+    else
+        return NULL;
+}
+
 ASC_API bool ASC::Get_LTR_advice() {
     if (m_dataReady)
-#if NODELAY
         return m_support->logic[ASCprevious_frame_data]->ltr_flag;
-#else
-        return m_support->logic[ASCcurrent_frame_data]->ltr_flag;
-#endif
+    else
+        return NULL;
+}
+
+ASC_API bool ASC::Get_RepeatedFrame_advice() {
+    if (m_dataReady)
+        return m_support->logic[ASCprevious_frame_data]->repeatedFrame;
     else
         return NULL;
 }
@@ -1429,11 +1780,26 @@ ASC_API bool ASC::Get_LTR_advice() {
 ***********************************************************************
 * \Brief Tells if LTR mode should be on/off or forced on.
 *
-* \return  ASC_LTR_DEC to flag stop(false)/continue(true) or force (2)
+* \return  ASC_LTR_DEC& to flag stop(false)/continue(true) or force (2)
 *          LTR operation
 */
-ASC_API ASC_LTR_DEC ASC::get_LTR_op_hint() {
-    return Continue_LTR_Mode(50, 5);
+ASC_API mfxStatus ASC::get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint) {
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    scd_LTR_hint = Continue_LTR_Mode(50, 5);
+    return MFX_ERR_NONE;
+}
+
+ASC_API bool ASC::Check_last_frame_processed(mfxU32 frameOrder) {
+    if (m_support->frameOrder <= frameOrder && (m_support->frameOrder == frameOrder && frameOrder > 0))
+        return 0;
+    else
+        m_support->frameOrder = frameOrder;
+    return 1;
+}
+
+ASC_API void ASC::Reset_last_frame_processed() {
+    m_support->frameOrder = 0;
 }
 
 ASC_API mfxI32 ASC::Get_CpuFeature_AVX2() {
@@ -1457,15 +1823,6 @@ void ASC::GeneralBufferRotation() {
     ASCTSCstat
         *metaTransfer;
 
-#if (VIDEOSTATSBUF > 3)
-    if ((m_support->logic[ASCSceneVariation_frame_data]->copyFrameDelay == 1 && m_support->logic[ASCprevious_frame_data]->Schg == 1) || m_support->logic[ASCSceneVariation_frame_data]->Schg == 1){
-        videoTransfer = m_videoData[0];
-        m_videoData[0] = m_videoData[VIDEOSTATSBUF - 2];
-        m_videoData[VIDEOSTATSBUF - 2] = videoTransfer;
-        memcpy(m_support->logic[ASCSceneVariation_frame_data], m_support->logic[ASCprevious_frame_data], sizeof(ASCTSCstat));
-        m_support->logic[ASCSceneVariation_frame_data]->Schg = 1;
-    }
-#endif
     if (m_support->logic[ASCcurrent_frame_data]->repeatedFrame) {
         m_videoData[ASCReference_Frame]->frame_number = m_videoData[ASCCurrent_Frame]->frame_number;
         m_support->logic[ASCcurrent_frame_data]->Schg = 0;

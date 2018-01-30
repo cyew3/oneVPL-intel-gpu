@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #ifndef _MOTIONESTIMATIONENGINE_H_
 #define _MOTIONESTIMATIONENGINE_H_
 
-#include "ASCstructures.h"
+#include "asc_structures.h"
 #include "asc.h"
 
 namespace ns_asc {

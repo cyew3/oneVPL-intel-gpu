@@ -20,34 +20,34 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\asc.h" />
-    <ClInclude Include="include\ASCstructures.h" />
-    <ClInclude Include="include\asc_AVX2_impl.h" />
+    <ClInclude Include="include\asc_structures.h" />
+    <ClInclude Include="include\asc_avx2_impl.h" />
     <ClInclude Include="include\asc_common_impl.h" />
-    <ClInclude Include="include\asc_CPU_dispatcher.h" />
-    <ClInclude Include="include\asc_C_impl.h" />
+    <ClInclude Include="include\asc_cpu_dispatcher.h" />
+    <ClInclude Include="include\asc_c_impl.h" />
     <ClInclude Include="include\asc_defs.h" />
-    <ClInclude Include="include\asc_SSE4_impl.h" />
-    <ClInclude Include="include\CPUdetect.h" />
+    <ClInclude Include="include\asc_sse4_impl.h" />
+    <ClInclude Include="include\cpu_detect.h" />
     <ClInclude Include="include\genx_scd_bdw_isa.h" />
     <ClInclude Include="include\genx_scd_bxt_isa.h" />
     <ClInclude Include="include\genx_scd_cnl_isa.h" />
     <ClInclude Include="include\genx_scd_skl_isa.h" />
-    <ClInclude Include="include\IOfunctions.h" />
-    <ClInclude Include="include\ME_asc.h" />
-    <ClInclude Include="include\MotionEstimationEngine.h" />
+    <ClInclude Include="include\iofunctions.h" />
+    <ClInclude Include="include\me_asc.h" />
+    <ClInclude Include="include\motion_estimation_engine.h" />
     <ClInclude Include="include\tree.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\asc.cpp" />
-    <ClCompile Include="src\asc_AVX2_impl.cpp" />
-    <ClCompile Include="src\asc_C_impl.cpp" />
-    <ClCompile Include="src\asc_SSE4_impl.cpp" />
+    <ClCompile Include="src\asc_avx2_impl.cpp" />
+    <ClCompile Include="src\asc_c_impl.cpp" />
+    <ClCompile Include="src\asc_sse4_impl.cpp" />
     <ClCompile Include="src\genx_scd_bdw_isa.cpp" />
     <ClCompile Include="src\genx_scd_bxt_isa.cpp" />
     <ClCompile Include="src\genx_scd_cnl_isa.cpp" />
     <ClCompile Include="src\genx_scd_skl_isa.cpp" />
-    <ClCompile Include="src\IOfunctions.cpp" />
-    <ClCompile Include="src\MotionEstimationEngine.cpp" />
+    <ClCompile Include="src\iofunctions.cpp" />
+    <ClCompile Include="src\motion_estimation_engine.cpp" />
     <ClCompile Include="src\tree.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

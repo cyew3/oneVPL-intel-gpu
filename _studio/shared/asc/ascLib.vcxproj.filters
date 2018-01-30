@@ -18,28 +18,28 @@
     <ClInclude Include="include\asc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\asc_AVX2_impl.h">
+    <ClInclude Include="include\asc_avx2_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\asc_C_impl.h">
+    <ClInclude Include="include\asc_c_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\asc_common_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\asc_CPU_dispatcher.h">
+    <ClInclude Include="include\asc_cpu_dispatcher.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\asc_defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\asc_SSE4_impl.h">
+    <ClInclude Include="include\asc_sse4_impl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ASCstructures.h">
+    <ClInclude Include="include\asc_structures.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\CPUdetect.h">
+    <ClInclude Include="include\cpu_detect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\genx_scd_bdw_isa.h">
@@ -54,13 +54,13 @@
     <ClInclude Include="include\genx_scd_skl_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\IOfunctions.h">
+    <ClInclude Include="include\iofunctions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ME_asc.h">
+    <ClInclude Include="include\me_asc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\MotionEstimationEngine.h">
+    <ClInclude Include="include\motion_estimation_engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\tree.h">
@@ -71,13 +71,13 @@
     <ClCompile Include="src\asc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\asc_AVX2_impl.cpp">
+    <ClCompile Include="src\asc_avx2_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\asc_C_impl.cpp">
+    <ClCompile Include="src\asc_c_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\asc_SSE4_impl.cpp">
+    <ClCompile Include="src\asc_sse4_impl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\genx_scd_bdw_isa.cpp">
@@ -92,10 +92,10 @@
     <ClCompile Include="src\genx_scd_skl_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\IOfunctions.cpp">
+    <ClCompile Include="src\iofunctions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\MotionEstimationEngine.cpp">
+    <ClCompile Include="src\motion_estimation_engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\tree.cpp">

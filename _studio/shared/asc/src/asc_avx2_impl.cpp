@@ -5,9 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
-#include "asc_AVX2_impl.h"
+#include "asc_avx2_impl.h"
 
 #if defined(__AVX2__)
 
