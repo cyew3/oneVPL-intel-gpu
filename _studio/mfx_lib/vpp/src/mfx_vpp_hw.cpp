@@ -1515,15 +1515,15 @@ mfxStatus  VideoVPPHW::CopyPassThrough(mfxFrameSurface1 *pInputSurface, mfxFrame
 
     if (m_pCore->IsExternalFrameAllocator())
     {
-        if (!(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY) && (srcPattern & MFX_MEMTYPE_DXVA2_DECODER_TARGET)) 
-            srcPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
-        else
+        if (m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
             srcPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
-
-        if (!(m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (dstPattern & MFX_MEMTYPE_DXVA2_DECODER_TARGET)) 
-            dstPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
         else
+            srcPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
+
+        if (m_IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
             dstPattern |= MFX_MEMTYPE_INTERNAL_FRAME;
+        else
+            dstPattern |= MFX_MEMTYPE_EXTERNAL_FRAME;
     }
     else
     {
