@@ -59,7 +59,7 @@ namespace hevce_goppattern
 
     const tc_struct TestSuite::test_case[] =
     {
-        //invalid GopRefDist = 1, GopPicSize = 1
+        //ERR_NONE for no B and WRN in case of B for GopRefDist = 1, GopPicSize = 1
         {/*00*/ MFX_ERR_NONE, 0, {}, {
                                         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
                                         { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 }
@@ -160,6 +160,47 @@ namespace hevce_goppattern
         tsSurfaceProcessor *reader;
         bool skip = false;
 
+        if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+        {
+            if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+            {
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
+                return 0;
+            }
+            if ((fourcc_id == MFX_FOURCC_P010)
+                && (g_tsHWtype < MFX_HW_KBL)) {
+                g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_YUY2 ||
+                 fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410)
+                && (g_tsHWtype < MFX_HW_ICL))
+            {
+                g_tsLog << "\n\nWARNING: RExt formats are only supported starting from ICL!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == GMOCK_FOURCC_P012 || fourcc_id == GMOCK_FOURCC_Y212 || fourcc_id == GMOCK_FOURCC_Y412)
+                && (g_tsHWtype < MFX_HW_TGL))
+            {
+                g_tsLog << "\n\nWARNING: 12b formats are only supported starting from TGL!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == GMOCK_FOURCC_Y212)
+                && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 4:2:2 formats are NOT supported on VDENC!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == GMOCK_FOURCC_Y412)
+                && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 4:4:4 formats are only supported on VDENC!\n\n\n";
+                throw tsSKIP;
+            }
+        }
+
         MFXInit();
         Load();
 
@@ -174,10 +215,16 @@ namespace hevce_goppattern
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
 
-            stream = g_tsStreamPool.Get("YUV/720x480p_30.00_4mb_h264_cabac_180s.yuv");
-
-            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
-            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+            if (g_tsConfig.sim) {
+                stream = g_tsStreamPool.Get("YUV/salesman_176x144_449.yuv");
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+            }
+            else {
+                stream = g_tsStreamPool.Get("YUV/720x480p_30.00_4mb_h264_cabac_180s.yuv");
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
+            }
         }
         else if (fourcc_id == MFX_FOURCC_P010)
         {
@@ -197,16 +244,28 @@ namespace hevce_goppattern
                 m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
             }
         }
+        else if (fourcc_id == GMOCK_FOURCC_P012)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+
+            stream = g_tsStreamPool.Get("YUV16bit420/FruitStall_176x144_240_p016.yuv");
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
         else if (fourcc_id == MFX_FOURCC_YUY2)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
 
-            stream = g_tsStreamPool.Get("YUV8bit422/Kimono1_352x288_24_yuy2.yuv");
+            stream = g_tsStreamPool.Get("YUV8bit422/Kimono1_176x144_24_yuy2.yuv");
 
-            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
-            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
         }
         else if (fourcc_id == MFX_FOURCC_Y210)
         {
@@ -215,10 +274,22 @@ namespace hevce_goppattern
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
 
-            stream = g_tsStreamPool.Get("YUV10bit422/Kimono1_352x288_24_y210.yuv");
+            stream = g_tsStreamPool.Get("YUV10bit422/Kimono1_176x144_24_y210.yuv");
 
-            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
-            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_Y212)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+
+            stream = g_tsStreamPool.Get("YUV16bit422/FruitStall_176x144_240_y216.yuv");
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
         }
         else if (fourcc_id == MFX_FOURCC_AYUV)
         {
@@ -226,10 +297,10 @@ namespace hevce_goppattern
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
 
-            stream = g_tsStreamPool.Get("YUV8bit444/Kimono1_352x288_24_ayuv.yuv");
+            stream = g_tsStreamPool.Get("YUV8bit444/Kimono1_176x144_24_ayuv.yuv");
 
-            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
-            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
         }
         else if (fourcc_id == MFX_FOURCC_Y410)
         {
@@ -237,10 +308,22 @@ namespace hevce_goppattern
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
 
-            stream = g_tsStreamPool.Get("YUV10bit444/Kimono1_352x288_24_y410.yuv");
+            stream = g_tsStreamPool.Get("YUV10bit444/Kimono1_176x144_24_y410.yuv");
 
-            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 352;
-            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 288;
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_Y412)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+
+            stream = g_tsStreamPool.Get("YUV16bit444/FruitStall_176x144_240_y416.yuv");
+
+            m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
+            m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
         }
         else
         {
@@ -273,76 +356,7 @@ namespace hevce_goppattern
 
         SETPARS(m_pPar, MFX_PAR);
 
-        if (fourcc_id == MFX_FOURCC_NV12)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_P010)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-            m_par.mfx.FrameInfo.Shift = 1;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else if (fourcc_id == MFX_FOURCC_AYUV)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_Y410)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else if (fourcc_id == MFX_FOURCC_YUY2)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-        }
-        else if (fourcc_id == MFX_FOURCC_Y210)
-        {
-            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
-            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-        }
-        else
-        {
-            g_tsLog << "WARNING: invalid fourcc_id parameter: " << fourcc_id << "\n";
-            return 0;
-        }
-
-        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
-        {
-            if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
-            {
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-                g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                Query();
-                return 0;
-            }
-            else if (m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && g_tsHWtype < MFX_HW_KBL) {
-                g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
-                throw tsSKIP;
-            }
-            else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
-                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
-            {
-                g_tsLog << "\n\nWARNING: 422 formats only supported on ICL+ and ENC+PAK!\n\n\n";
-                throw tsSKIP;
-            }
-            else if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
-                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
-            {
-                g_tsLog << "\n\nWARNING: 444 formats only supported on ICL+ and VDENC!\n\n\n";
-                throw tsSKIP;
-            }
-        }
-        else
+        if (0 != memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
             if (m_par.mfx.GopPicSize < (m_par.mfx.GopRefDist + 1))
             {
@@ -357,9 +371,8 @@ namespace hevce_goppattern
 
         if (!skip)
         {
-            g_tsStatus.expect(tc.sts);
-
             Init();
+            g_tsStatus.expect(tc.sts);
 
             //call test function
             if (tc.sts >= MFX_ERR_NONE)
@@ -422,8 +435,12 @@ namespace hevce_goppattern
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_goppattern, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_goppattern, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_goppattern, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_goppattern, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_goppattern, RunTest_Subtype<GMOCK_FOURCC_P012>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_goppattern, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_goppattern, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_goppattern, RunTest_Subtype<GMOCK_FOURCC_Y212>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_goppattern, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_goppattern, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_goppattern, RunTest_Subtype<GMOCK_FOURCC_Y412>, n_cases);
+
 };
