@@ -458,7 +458,7 @@ namespace hevce_reset
                 m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
                 m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
             }
-            else if (fourcc_id == MFX_FOURCC_P012)
+            else if (fourcc_id == GMOCK_FOURCC_P012)
             {
                 m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
                 m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
@@ -470,7 +470,7 @@ namespace hevce_reset
                 m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
                 m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
             }
-            else if (fourcc_id == MFX_FOURCC_Y212)
+            else if (fourcc_id == GMOCK_FOURCC_Y212)
             {
                 m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
                 m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
@@ -482,7 +482,7 @@ namespace hevce_reset
                 m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 176;
                 m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 144;
             }
-            else if (fourcc_id == MFX_FOURCC_Y412)
+            else if (fourcc_id == GMOCK_FOURCC_Y412)
             {
                 m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
                 m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -674,11 +674,11 @@ namespace hevce_reset
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_reset, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_reset, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_reset, RunTest_Subtype<MFX_FOURCC_P012>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_reset, RunTest_Subtype<GMOCK_FOURCC_P012>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_reset, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_reset, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_reset, RunTest_Subtype<MFX_FOURCC_Y212>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_reset, RunTest_Subtype<GMOCK_FOURCC_Y212>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_reset, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_reset, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_reset, RunTest_Subtype<MFX_FOURCC_Y412>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_reset, RunTest_Subtype<GMOCK_FOURCC_Y412>, n_cases);
 }

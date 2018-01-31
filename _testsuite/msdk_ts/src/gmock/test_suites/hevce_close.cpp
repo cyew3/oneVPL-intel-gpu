@@ -103,14 +103,14 @@ namespace hevce_close
             }
 
             if ((g_tsConfig.lowpower == MFX_CODINGOPTION_ON) &&
-                (fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_Y212))
+                (fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == GMOCK_FOURCC_Y212))
             {
                 g_tsLog << "\n\nWARNING: 4:2:2 formats are supported in HEVCe DualPipe only!\n\n\n";
                 throw tsSKIP;
             }
 
             if ((g_tsConfig.lowpower == MFX_CODINGOPTION_OFF) &&
-                (fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == MFX_FOURCC_Y412))
+                (fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == GMOCK_FOURCC_Y412))
             {
                 g_tsLog << "\n\nWARNING: 4:4:4 formats are supported in HEVCe VDENC only!\n\n\n";
                 throw tsSKIP;
@@ -163,21 +163,21 @@ namespace hevce_close
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
         }
-        else if (fourcc_id == MFX_FOURCC_P012)
+        else if (fourcc_id == GMOCK_FOURCC_P012)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
         }
-        else if (fourcc_id == MFX_FOURCC_Y212)
+        else if (fourcc_id == GMOCK_FOURCC_Y212)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
         }
-        else if (fourcc_id == MFX_FOURCC_Y412)
+        else if (fourcc_id == GMOCK_FOURCC_Y412)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
@@ -269,11 +269,11 @@ namespace hevce_close
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_close, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_close, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_close, RunTest_Subtype<MFX_FOURCC_P012>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_close, RunTest_Subtype<GMOCK_FOURCC_P012>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_close, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_close, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_close, RunTest_Subtype<MFX_FOURCC_Y212>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_close, RunTest_Subtype<GMOCK_FOURCC_Y212>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_close, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_close, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_close, RunTest_Subtype<MFX_FOURCC_Y412>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_close, RunTest_Subtype<GMOCK_FOURCC_Y412>, n_cases);
 };

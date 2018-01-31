@@ -15,9 +15,9 @@
 #include <memory>
 
 enum {
-    MFX_FOURCC_P012 = MFX_MAKEFOURCC('P', '0', '1', '2'),
-    MFX_FOURCC_Y212 = MFX_MAKEFOURCC('Y', '2', '1', '2'),
-    MFX_FOURCC_Y412 = MFX_MAKEFOURCC('Y', '4', '1', '2'),
+    GMOCK_FOURCC_P012 = MFX_MAKEFOURCC('P', '0', '1', '2'),
+    GMOCK_FOURCC_Y212 = MFX_MAKEFOURCC('Y', '2', '1', '2'),
+    GMOCK_FOURCC_Y412 = MFX_MAKEFOURCC('Y', '4', '1', '2'),
 };
 
 class tsSharedCtrl
