@@ -195,9 +195,6 @@ tsVideoEncoder::tsVideoEncoder(mfxU32 CodecId, bool useDefaults, MsdkPluginType 
             m_par.mfx.FrameInfo.Width  = m_par.mfx.FrameInfo.CropW = 720;
             m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 480;
         }
-        if (g_tsHWtype == MFX_HW_CNL || g_tsHWtype == MFX_HW_ICL)
-            if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)   // 32 bytes alignment for VDENC ????
-                m_par.mfx.FrameInfo.Width = (m_par.mfx.FrameInfo.Width + 31) & ~0x1F;
         m_par.mfx.FrameInfo.FrameRateExtN = 30;
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
 
