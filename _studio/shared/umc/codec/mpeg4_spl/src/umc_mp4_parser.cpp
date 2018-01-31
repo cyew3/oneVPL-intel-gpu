@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_mp4_spl.h"
@@ -1268,7 +1268,8 @@ Status MP4Splitter::Read_stsd_table(DataReader *dr, T_minf_data * /*minf*/, T_st
         table->esds.objectTypeID = 0xf4;
     }
 
-    if ( table->format[0]=='h'&& table->format[1]=='v'&& table->format[2]=='c'&& table->format[3]=='1' )
+    if ( (table->format[0]=='h'&& table->format[1]=='v'&& table->format[2]=='c'&& table->format[3]=='1') ||
+         (table->format[0]=='h'&& table->format[1]=='e'&& table->format[2]=='v'&& table->format[3]=='1'))
     {
         ret = Read_h264_video(dr, table, &leaf_atom); // this suites hvcC at the moment
         table->esds.objectTypeID = 0xf5;
