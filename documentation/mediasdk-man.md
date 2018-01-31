@@ -3665,8 +3665,7 @@ The SDK API 1.25 adds `EncodedUnitsInfo` field.
 
 The SDK API 1.25 adds `EnableNalUnitType` field.
 
-The SDK API **TBD** adds `ExtBrcAdaptiveLTR` field.
-
+The SDK API 1.26 adds `ExtBrcAdaptiveLTR` field.
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
 **Definition**
@@ -3979,8 +3978,6 @@ typedef struct {
 **Change History**
 
 This structure is available since SDK API 1.26.
-
-The SDK API 1.26 adds `FilterStrength` field.
 
 The SDK API **TBD** adds `Overlap`, `BitsPerPixelx100k`, `Deblocking`, `TemporalMode` and `MVPrecision` fields.
 
@@ -6057,7 +6054,7 @@ This structure is available since SDK API 1.14.
 
 The SDK API 1.16 adds `GeneralConstraintFlags` field.
 
-The SDK API **TBD** adds `SampleAdaptiveOffset` and `LCUSize` fields.
+The SDK API 1.26 adds `SampleAdaptiveOffset` and `LCUSize` fields.
 
 ## <a id='mfxExtPredWeightTable'>mfxExtPredWeightTable</a>
 
@@ -6563,7 +6560,8 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-sp
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.26.
+The SDK API **TBD** adds `LoopFilterRefDelta`,`LoopFilterModeDelta`,`NumTileRows` and `NumTileColumns` fields.
 
 ## <a id='mfxExtVP9Segmentation'>mfxExtVP9Segmentation</a>
 
@@ -6621,7 +6619,7 @@ Also the buffer can be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure
 
 **Change History**
 
-This structure is available since SDK API **TBD**.
+This structure is available since SDK API 1.26.
 
 ## <a id='mfxExtVP9TemporalLayers'>mfxExtVP9TemporalLayers</a>
 
@@ -6660,7 +6658,7 @@ Temporal layer structure is reset (re-started) after key-frames.
 
 **Change History**
 
-This structure is available since SDK API **TBD**
+This structure is available since SDK API 1.26
 
 ## <a id='mfxExtBRC'>mfxExtBRC</a>
 
@@ -6901,7 +6899,7 @@ Structure describes frame parameters required for external BRC functions.
 
 This structure is available since SDK API 1.24.
 
-SDK API **TBD** adds `SceneChange`, `LongTerm` and `FrameCmplx`.
+SDK API 1.26 adds `SceneChange`, `LongTerm` and `FrameCmplx`.
 
 ## <a id='mfxBRCFrameCtrl'>mfxBRCFrameCtrl</a>
 
@@ -8356,7 +8354,7 @@ The `VP9ReferenceFrame` enumerator itemizes reference frame type by [mfxVP9Segme
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.26.
 
 
 ## <a id='SegmentIdBlockSize'>SegmentIdBlockSize</a>
@@ -8377,7 +8375,7 @@ The `SegmentIdBlockSize` enumerator indicates the block size represented by each
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.26.
 
 
 ## <a id='SegmentFeature'>SegmentFeature</a>
@@ -8397,7 +8395,7 @@ The `SegmentFeature` enumerator indicates features enabled for the segment. Thes
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.26.
 
 
 ## <a id='InsertHDRPayload'>InsertHDRPayload</a>
@@ -8434,7 +8432,7 @@ The `SampleAdaptiveOffset` enumerator uses bit-ORed values to itemize correspodi
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.26.
 
 ## <a id='BRCStatus'>BRCStatus</a>
 

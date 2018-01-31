@@ -484,7 +484,7 @@ public:
                             break;
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
                         case MFX_EXTBUFF_VP9_SEGMENTATION:
                             str += dump(name, *((mfxExtVP9Segmentation*)_struct.ExtParam[i])) + "\n";
                             break;
@@ -611,7 +611,7 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtVppMctf);
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
 
     DEFINE_DUMP_FUNCTION(mfxVP9SegmentParam);
     DEFINE_DUMP_FUNCTION(mfxExtVP9Segmentation);

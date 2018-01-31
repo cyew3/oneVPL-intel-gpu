@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2007-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2007-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -774,13 +774,20 @@ typedef struct {
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      ConstrainedIntraPredFlag;  /* tri-state option */
-    mfxU16      TransformSkip;             /* tri-state option; HEVC transform_skip_enabled_flag */
-
+#else
+    mfxU16      reserved6;
+#endif
+#if (MFX_VERSION >= 1026)
+    mfxU16      TransformSkip;  /* tri-state option; HEVC transform_skip_enabled_flag */
+#else
+    mfxU16      reserved7;
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16      TargetChromaFormatPlus1;   /* Minus 1 specifies target encoding chroma format (see ColorFormat enum). May differ from input one. */
     mfxU16      TargetBitDepthLuma;        /* Target encoding bit depth for luma samples. May differ from input one. */
     mfxU16      TargetBitDepthChroma;      /* Target encoding bit depth for chroma samples. May differ from input one. */
 #else
-    mfxU16      reserved4[5];
+    mfxU16      reserved4[3];
 #endif
     mfxU16      BRCPanicMode;              /* tri-state option */
 
@@ -793,22 +800,21 @@ typedef struct {
     mfxU16      QuantScaleType;            /* For MPEG2 specifies mapping between quantiser_scale_code and quantiser_scale (see QuantScaleType enum) */
     mfxU16      IntraVLCFormat;            /* For MPEG2 specifies which table shall be used for coding of DCT coefficients of intra macroblocks (see IntraVLCFormat enum) */
     mfxU16      ScanType;                  /* For MPEG2 specifies transform coefficients scan pattern (see ScanType enum) */
-    mfxU16      EncodedUnitsInfo;          /* tri-state option */
-    mfxU16      EnableNalUnitType;         /* tri-state option */
-    mfxU16      ExtBrcAdaptiveLTR;         /* tri-state option for ExtBRC */
-
-    mfxU16      reserved[163];
-#elif (MFX_VERSION >= 1025)
-    mfxU16      reserved5[3];
-
-    mfxU16      EncodedUnitsInfo;          /* tri-state option */
-    mfxU16      EnableNalUnitType;         /* tri-state option */
-
-    mfxU16      reserved[164];
 #else
-
-    mfxU16      reserved[169];
+    mfxU16      reserved5[3];
 #endif
+#if (MFX_VERSION >= 1025)
+    mfxU16      EncodedUnitsInfo;          /* tri-state option */
+    mfxU16      EnableNalUnitType;         /* tri-state option */
+#else
+    mfxU16      reserved8[2];
+#endif
+#if (MFX_VERSION >= 1026)
+    mfxU16      ExtBrcAdaptiveLTR;         /* tri-state option for ExtBRC */
+#else
+    mfxU16      reserved9
+#endif
+    mfxU16      reserved[163];
 } mfxExtCodingOption3;
 
 /* IntraPredBlockSize/InterPredBlockSize */
@@ -904,15 +910,15 @@ enum {
 #endif
 #if (MFX_VERSION >= 1026)
     MFX_EXTBUFF_VPP_MCTF                        = MFX_MAKEFOURCC('M', 'C', 'T', 'F'),
+    MFX_EXTBUFF_VP9_SEGMENTATION                = MFX_MAKEFOURCC('9', 'S', 'E', 'G'),
+    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('9', 'T', 'M', 'L'),
+    MFX_EXTBUFF_VP9_PARAM                       = MFX_MAKEFOURCC('9', 'P', 'A', 'R'),
 #endif
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_DPB                             = MFX_MAKEFOURCC('E','D','P','B'),
     MFX_EXTBUFF_TEMPORAL_LAYERS                 = MFX_MAKEFOURCC('T','M','P','L'),
     MFX_EXTBUFF_AVC_SCALING_MATRIX              = MFX_MAKEFOURCC('A','V','S','M'),
     MFX_EXTBUFF_MPEG2_QUANT_MATRIX              = MFX_MAKEFOURCC('M','2','Q','M'),
-    MFX_EXTBUFF_VP9_SEGMENTATION                = MFX_MAKEFOURCC('9','S','E','G'),
-    MFX_EXTBUFF_VP9_TEMPORAL_LAYERS             = MFX_MAKEFOURCC('9','T','M','L'),
-    MFX_EXTBUFF_VP9_PARAM                       = MFX_MAKEFOURCC('9','P','A','R'),
     MFX_EXTBUFF_TASK_DEPENDENCY                 = MFX_MAKEFOURCC('S','Y','N','C'),
 #endif
 };
@@ -1639,7 +1645,7 @@ enum {
     MFX_HEVC_CONSTR_REXT_LOWER_BIT_RATE     = (1 << 8)
 };
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
 
 /* SampleAdaptiveOffset */
 enum {
@@ -1658,7 +1664,7 @@ typedef struct {
     mfxU16          PicWidthInLumaSamples;
     mfxU16          PicHeightInLumaSamples;
     mfxU64          GeneralConstraintFlags;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     mfxU16          SampleAdaptiveOffset;   /* see enum SampleAdaptiveOffset, valid during Init and Runtime */
     mfxU16          LCUSize;
     mfxU16          reserved[116];
@@ -1951,7 +1957,7 @@ typedef struct {
 
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
 /* VP9ReferenceFrame */
 enum {
     MFX_VP9_REF_INTRA   = 0,
@@ -2018,20 +2024,25 @@ typedef struct {
 
     mfxU16  WriteIVFHeaders;        /* tri-state option */
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxI16  LoopFilterRefDelta[4];
     mfxI16  LoopFilterModeDelta[2];
-
+#else // API 1.26
+    mfxI16  reserved1[6];
+#endif
     mfxI16  QIndexDeltaLumaDC;
     mfxI16  QIndexDeltaChromaAC;
     mfxI16  QIndexDeltaChromaDC;
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
-
     mfxU16  reserved[110];
+#else // API 1.26
+    mfxU16  reserved[112];
+#endif
 } mfxExtVP9Param;
 
-#endif
+#endif // #if (MFX_VERSION >= 1026)
 
 #if (MFX_VERSION >= 1025)
 /* Multi-Frame Mode */

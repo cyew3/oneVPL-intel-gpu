@@ -110,6 +110,9 @@ EXTBUF(mfxExtMoveRect               , MFX_EXTBUFF_MOVING_RECTANGLES         )
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtVP9DecodedFrameInfo    , MFX_EXTBUFF_VP9_DECODED_FRAME_INFO    )
+#endif
+
+#if (MFX_VERSION >= 1026)
 EXTBUF(mfxExtVP9Segmentation        , MFX_EXTBUFF_VP9_SEGMENTATION          )
 EXTBUF(mfxExtVP9TemporalLayers      , MFX_EXTBUFF_VP9_TEMPORAL_LAYERS       )
 EXTBUF(mfxExtVP9Param               , MFX_EXTBUFF_VP9_PARAM                 )

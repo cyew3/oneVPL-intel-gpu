@@ -204,8 +204,11 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(BRCPanicMode);
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     DUMP_FIELD(ConstrainedIntraPredFlag);
+#endif
+#if (MFX_VERSION >= 1026)
     DUMP_FIELD(TransformSkip);
-
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     DUMP_FIELD(TargetChromaFormatPlus1);   /* Minus 1 specifies target encoding chroma format (see ColorFormat enum). May differ from input one. */
     DUMP_FIELD(TargetBitDepthLuma);        /* Target encoding bit depth for luma samples. May differ from input one. */
     DUMP_FIELD(TargetBitDepthChroma);      /* Target encoding bit depth for chroma samples. May differ from input one. */
@@ -219,7 +222,6 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
     DUMP_FIELD(QuantScaleType);
     DUMP_FIELD(IntraVLCFormat);
     DUMP_FIELD(ScanType);
-    DUMP_FIELD(ExtBrcAdaptiveLTR);
 #endif
 #if ((MFX_VERSION < MFX_VERSION_NEXT) && (MFX_VERSION >= 1025))
     DUMP_FIELD_RESERVED(reserved5);
@@ -227,6 +229,9 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
 #if (MFX_VERSION >= 1025)
     DUMP_FIELD(EncodedUnitsInfo);
     DUMP_FIELD(EnableNalUnitType);
+#endif
+#if (MFX_VERSION >= 1026)
+    DUMP_FIELD(ExtBrcAdaptiveLTR)
 #endif
     DUMP_FIELD_RESERVED(reserved);
     return str;
@@ -1147,7 +1152,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtHEVCPara
     DUMP_FIELD(PicWidthInLumaSamples);
     DUMP_FIELD(PicHeightInLumaSamples);
     DUMP_FIELD(GeneralConstraintFlags);
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     DUMP_FIELD(SampleAdaptiveOffset);
     DUMP_FIELD(LCUSize);
 #endif
@@ -1416,7 +1421,7 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVppMctf
 
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
 
 std::string DumpContext::dump(const std::string structName, const  mfxVP9SegmentParam &_struct)
 {
@@ -1484,14 +1489,17 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Para
     DUMP_FIELD(FrameWidth);
     DUMP_FIELD(FrameHeight);
     DUMP_FIELD(WriteIVFHeaders);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     str += structName + ".LoopFilterRefDelta[4]=" + DUMP_RESERVED_ARRAY(_struct.LoopFilterRefDelta) + "\n";
     str += structName + ".LoopFilterModeDelta[2]=" + DUMP_RESERVED_ARRAY(_struct.LoopFilterModeDelta) + "\n";
+#endif
     DUMP_FIELD(QIndexDeltaLumaDC);
     DUMP_FIELD(QIndexDeltaChromaAC);
     DUMP_FIELD(QIndexDeltaChromaDC);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     DUMP_FIELD(NumTileRows);
     DUMP_FIELD(NumTileColumns);
-
+#endif
     return str;
 }
 
