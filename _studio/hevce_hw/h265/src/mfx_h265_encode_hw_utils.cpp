@@ -89,7 +89,7 @@ mfxU8 PLayer(
 
     if (par.isLowDelay())
     {
-        mfxU32 RSPIndex = order/ (par.isField() ? 2:1) % par.NumRefLX[0];
+        mfxU32 RSPIndex = order/ (par.isField() ? 2:1) % par.m_ext.CO3.NumRefActiveP[0];
         RSPIndex = RSPIndex % (sizeof(PPyrLayer)/sizeof(PPyrLayer[0]));
         return Min<mfxU8>(7, PPyrLayer[RSPIndex]);
     }
@@ -594,7 +594,6 @@ MfxVideoParam::MfxVideoParam()
 #endif
 {
     Zero(*(mfxVideoParam*)this);
-    Zero(NumRefLX);
     Zero(m_platform);
 }
 
@@ -627,7 +626,6 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
 #endif
 {
     Zero(*(mfxVideoParam*)this);
-    Zero(NumRefLX);
     Zero(m_platform);
     Construct(par);
     SyncVideoToCalculableParam();
@@ -639,8 +637,6 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
     InitialDelayInKB = par.InitialDelayInKB;
     TargetKbps       = par.TargetKbps;
     MaxKbps          = par.MaxKbps;
-    NumRefLX[0]      = par.NumRefLX[0];
-    NumRefLX[1]      = par.NumRefLX[1];
     LTRInterval      = par.LTRInterval;
     LCUSize          = par.LCUSize;
     HRDConformance   = par.HRDConformance;
@@ -1355,8 +1351,8 @@ void MfxVideoParam::SyncHeadersToMfxParam()
         }
     }
 
-    NumRefLX[0] = m_pps.num_ref_idx_l0_default_active_minus1 + 1;
-    NumRefLX[1] = m_pps.num_ref_idx_l1_default_active_minus1 + 1;
+    m_ext.DDI.NumActiveRefP = m_ext.DDI.NumActiveRefBL0 = m_pps.num_ref_idx_l0_default_active_minus1 + 1;
+    m_ext.DDI.NumActiveRefBL1 = m_pps.num_ref_idx_l1_default_active_minus1 + 1;
 
     if (m_pps.tiles_enabled_flag)
     {
@@ -1557,7 +1553,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
                 {
                     mfxI32 layer = PLayer(cur->m_poc - lastIPoc, *this);
                     nRef[0] = (mfxU8)CO3.NumRefActiveP[layer];
-                    nRef[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], NumRefLX[1]);
+                    nRef[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], m_ext.DDI.NumActiveRefBL1);
                 }
 
                 ConstructRPL(*this, dpb, !!(cur->m_frameType & MFX_FRAMETYPE_B), cur->m_poc, cur->m_tid, cur->m_secondField, isBFF()? !cur->m_secondField : cur->m_secondField, rpl, nRef);
@@ -1772,8 +1768,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.num_extra_slice_header_bits           = 0;
     m_pps.sign_data_hiding_enabled_flag         = 0;
     m_pps.cabac_init_present_flag               = 0;
-    m_pps.num_ref_idx_l0_default_active_minus1  = NumRefLX[0] - 1;
-    m_pps.num_ref_idx_l1_default_active_minus1  = NumRefLX[1] - 1;
+    m_pps.num_ref_idx_l0_default_active_minus1  = Max(m_ext.DDI.NumActiveRefP, m_ext.DDI.NumActiveRefBL0) -1;
+    m_pps.num_ref_idx_l1_default_active_minus1  = m_ext.DDI.NumActiveRefBL1 -1;
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
 
@@ -2803,7 +2799,7 @@ void UpdateDPB(
         if (par.isLowDelay() && st0 == 0)  //P pyramid if no LTR. Pyramid is possible if NumRefFrame > 1
         {
             if (!par.isField() || GetFrameNum(true, dpb[1].m_poc, dpb[1].m_secondField) == GetFrameNum(true, dpb[0].m_poc, dpb[0].m_secondField))
-                for (st0 = 1; ((GetFrameNum(par.isField(), dpb[st0].m_poc, dpb[st0].m_secondField) - (GetFrameNum(par.isField(), dpb[0].m_poc, dpb[0].m_secondField))) % par.NumRefLX[0] ) == 0 && st0 < end; st0++);
+                for (st0 = 1; ((GetFrameNum(par.isField(), dpb[st0].m_poc, dpb[st0].m_secondField) - (GetFrameNum(par.isField(), dpb[0].m_poc, dpb[0].m_secondField))) % par.m_ext.CO3.NumRefActiveP[0] ) == 0 && st0 < end; st0++);
         }
         else
         {
@@ -3022,7 +3018,7 @@ void ConstructRPL(
                     {
                         mfxI32 i;
                         // !!! par.NumRefLX[0] used here as distance between "strong" STR, not NumRefActive for current frame
-                        for (i = 0; (i < l0) && (((GetFrameNum(par.isField(),DPB[RPL[0][0]].m_poc, DPB[RPL[0][0]].m_secondField) - GetFrameNum(par.isField(),DPB[RPL[0][i]].m_poc, DPB[RPL[0][i]].m_secondField)) % par.NumRefLX[0]) == 0); i++);
+                        for (i = 0; (i < l0) && (((GetFrameNum(par.isField(),DPB[RPL[0][0]].m_poc, DPB[RPL[0][0]].m_secondField) - GetFrameNum(par.isField(),DPB[RPL[0][i]].m_poc, DPB[RPL[0][i]].m_secondField)) % par.m_ext.CO3.NumRefActiveP[0]) == 0); i++);
                         Remove(RPL[0], (i >= (par.isField() ? l0 - 2 : l0 - 1) ? 0 : i));
                         l0--;
                     }
@@ -3558,7 +3554,7 @@ void ConfigureTask(
     {
         mfxI32 layer = PLayer(task.m_poc - prevTask.m_lastIPoc, par);
         task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveP[layer];
-        task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.NumRefLX[1]);
+        task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1);
     }
 
     if (!isI)

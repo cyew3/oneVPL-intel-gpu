@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -617,6 +617,7 @@ namespace ExtBuffer
     {
         _CopyPar1(NumActiveRefBL0);
         _CopyPar1(NumActiveRefBL1);
+        _CopyPar1(NumActiveRefP);
         _CopyPar1(LCUSize);
         _CopyPar1(QpAdjust);
     }
@@ -873,7 +874,6 @@ public:
     mfxU32 InitialDelayInKB;
     mfxU32 TargetKbps;
     mfxU32 MaxKbps;
-    mfxU16 NumRefLX[2]; // max num active refs
     mfxU32 LTRInterval;
     mfxU32 LCUSize;
     bool   HRDConformance;
