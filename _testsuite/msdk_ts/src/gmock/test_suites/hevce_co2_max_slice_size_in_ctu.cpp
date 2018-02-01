@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -305,15 +305,12 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         if (tc.mode & RESET) {
             mfxExtCodingOption2& cod2 = m_par;
             if (g_tsHWtype >= MFX_HW_CNL)   // row aligned
-                cod2.NumMbPerSlice = (rand() % heightLCU) * widthLCU;
+                cod2.NumMbPerSlice = (rand() % heightLCU + 1) * widthLCU;
             else
-                cod2.NumMbPerSlice = rand() % m_numLCU;
+                cod2.NumMbPerSlice = rand() % m_numLCU + 1;
 
             if ((m_par.mfx.NumSlice != 0)
-                && (m_par.mfx.NumSlice != (m_numLCU + cod2.NumMbPerSlice - 1) / cod2.NumMbPerSlice))
-                g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-            if (   (m_par.mfx.NumSlice != 0)
-                && (m_par.mfx.NumSlice != (m_numLCU + cod2.NumMbPerSlice - 1) / cod2.NumMbPerSlice))
+                && (m_par.mfx.NumSlice != CEIL_DIV(m_numLCU, cod2.NumMbPerSlice))) // check alignment. if not aligned - expect WRN
                 g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
             m_expected = cod2.NumMbPerSlice;
             Reset();
