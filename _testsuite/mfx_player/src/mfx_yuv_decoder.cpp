@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -29,6 +29,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     , m_nFrames(0)
     , m_pOutlineFileName(vm_string_strlen(outlineInput) ? outlineInput : NULL)
 {
+    if (m_pOutlineFileName != NULL)
+        GetInfoFromOutline(&frameParam);
     mfxFrameInfo &info = m_vParam.mfx.FrameInfo;
     mfxFrameInfo &infoIn = frameParam.mfx.FrameInfo;
 
@@ -369,6 +371,31 @@ mfxStatus MFXYUVDecoder::GetVideoParam(mfxVideoParam* par)
     MFX_CHECK_POINTER(par);
 
     par->mfx.FrameInfo    = m_vParam.mfx.FrameInfo;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MFXYUVDecoder::GetInfoFromOutline(mfxVideoParam* par)
+{
+    //read frameinfo (width and heigth) from outline
+
+    if (NULL == m_pOutlineReader.get())
+    {
+        OutlineFactoryAbstract * pFactory = NULL;
+
+        MFX_CHECK_POINTER(pFactory = GetOutlineFactory());
+        MFX_CHECK_POINTER((m_pOutlineReader.reset(pFactory->CreateReader()), m_pOutlineReader.get()));
+        m_pOutlineReader->Init(m_pOutlineFileName);
+    }
+
+    Entry_Read *pEntry = NULL;
+    MFX_CHECK_POINTER(pEntry = m_pOutlineReader->GetSequenceEntry(0));
+
+    UMC::VideoDecoderParams info;
+    m_pOutlineReader->ReadSequenceStruct(pEntry, &info);
+
+    par->mfx.FrameInfo.Width  = info.info.clip_info.width;
+    par->mfx.FrameInfo.Height = info.info.clip_info.height;
 
     return MFX_ERR_NONE;
 }

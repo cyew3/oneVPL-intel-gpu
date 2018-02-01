@@ -2399,6 +2399,8 @@ mfxStatus MFXDecPipeline::CreateYUVSource()
             , m_pFactory.get()
             , m_inParams.strOutlineInputFile));
         bGenerateViewIds = true;
+        m_YUV_Width  = m_inParams.FrameInfo.Width  = yuvDecParam.mfx.FrameInfo.Width;
+        m_YUV_Height = m_inParams.FrameInfo.Height = yuvDecParam.mfx.FrameInfo.Height;
     }
     else
     {
@@ -4410,7 +4412,7 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             MFX_CHECK(1 + argv != argvEnd);
             MFX_CHECK(0 == vm_string_strcpy_s(m_inParams.strOutlineInputFile, MFX_ARRAY_SIZE(m_inParams.strOutlineInputFile), argv[1]));
             argv++;
-
+            m_inParams.bYuvReaderMode = true;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-repeat"), VM_STRING("repeat mode works only with -o. Writes to file on the first iteration and compare on the following)"), OPT_INT_32))
         {
