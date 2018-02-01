@@ -179,11 +179,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
     },
     {/*13*/
-        // MFX_PROTECTION_PAVP is only supported on Windows
-        #if defined (WIN32) || (WIN64)
-            MFX_ERR_NONE,
-        #else
+        // MFX_PROTECTION_PAVP is unsupported on Linux
+        #if defined LINUX
             MFX_ERR_INVALID_VIDEO_PARAM,
+        #else
+            MFX_ERR_NONE,
         #endif
             STANDARD,
         {

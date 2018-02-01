@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_COMMON_LINUX_BDW_H_
@@ -34,22 +34,22 @@
     #define MFX_ENABLE_H264_REPARTITION_CHECK
 #endif
 
-#if (MFX_VERSION < MFX_VERSION_NEXT)
-
+    // Unsupported on Linux:
     #define MFX_PROTECTED_FEATURE_DISABLE
+    #define MFX_CAMERA_FEATURE_DISABLE
+
+#if (MFX_VERSION < MFX_VERSION_NEXT)
     #define MFX_CLOSED_PLATFORMS_DISABLE
-    #define MFX_CAMERA_FEATURE_DISABLE 
     #define MFX_EXT_DPB_HEVC_DISABLE
     #define MFX_ADAPTIVE_PLAYBACK_DISABLE
     #define MFX_FUTURE_FEATURE_DISABLE
-
-#endif 
+#endif
 
 #if (MFX_VERSION >= 1025)
     #if !defined(AS_H264LA_PLUGIN)
         #define MFX_ENABLE_MFE
     #endif
-#endif 
+#endif
 
 //#define MFX_ENABLE_H264_VIDEO_PAK
 //#define MFX_ENABLE_H264_VIDEO_ENC
