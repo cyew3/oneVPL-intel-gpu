@@ -66,6 +66,8 @@ __genx_hsw_simple_me__
 __genx_skl_h264_scd__
 __genx_skl_histogram__
 __genx_skl_simple_me__
+__skl_copy_kernel_genx__
+__cht_copy_kernel_genx__
 __MFX_H264LA_PLUGIN_INCLUDED__
 AS_H264LA_PLUGIN
 __MFX_HEVC_DEC_PLUGIN_INCLUDED__
