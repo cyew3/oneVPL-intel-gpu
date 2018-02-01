@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -146,6 +146,9 @@ public:
                 {
                 case MFX_EXTBUFF_HEVCFEI_ENC_QP:
                     (reinterpret_cast<mfxExtFeiHevcEncQP*>(&eb))->VaBufferID = VA_INVALID_ID;
+                    break;
+                case MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL:
+                    (reinterpret_cast<mfxExtFeiHevcEncCtuCtrl*>(&eb))->VaBufferID = VA_INVALID_ID;
                     break;
                 // TODO: Add more HEVC FEI buffers
                 default:
