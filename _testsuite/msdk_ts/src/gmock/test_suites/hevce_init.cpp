@@ -13,6 +13,9 @@ File Name: hevce_init.cpp
 #include "ts_encoder.h"
 #include "ts_struct.h"
 
+#define INVALID_WIDTH   16384
+#define INVALID_HEIGHT  16384
+
 namespace hevce_init
 {
     class TestSuite : tsVideoEncoder
@@ -219,7 +222,7 @@ namespace hevce_init
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
         //FourCC for RExt
-        {/*00*/ MFX_ERR_NONE, FOURCC, NONE},
+        {/*00*/ MFX_ERR_NONE, NONE, NONE},
         //FourCC
         {/*01*/ MFX_ERR_NONE, NONE, NONE,
             {
@@ -569,19 +572,41 @@ namespace hevce_init
             }
         }
 
+
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
         g_tsStatus.check(GetCaps(&caps, &capSize));
 
         if (tc.type == RESOLUTION && tc.sub_type == INVALID_MAX) {
-            m_par.mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
-            m_par.mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+            {
+                m_par.mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
+                m_par.mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+            } else
+            {
+                m_par.mfx.FrameInfo.Width = INVALID_WIDTH;
+                m_par.mfx.FrameInfo.Height = INVALID_HEIGHT;
+            }
         }
         else if (tc.type == RESOLUTION_W && tc.sub_type == INVALID_MAX) {
-            m_par.mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
+            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+            {
+                m_par.mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
+            }
+            else
+            {
+                m_par.mfx.FrameInfo.Width = INVALID_WIDTH;
+            }
         }
         else if (tc.type == RESOLUTION_H && tc.sub_type == INVALID_MAX) {
-            m_par.mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+            {
+                m_par.mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+            }
+            else
+            {
+                m_par.mfx.FrameInfo.Height = INVALID_HEIGHT;
+            }
         }
 
         sts = tc.sts;
