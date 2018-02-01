@@ -125,8 +125,8 @@ namespace UMC_AV1_DECODER
         }
 #else
         fh->cdefPriDamping = fh->cdefSecDamping = bs->GetBits(2) + 3;
-        const mfxU32 cdefBits = bs->GetBits(2);
-        mfxU32 nbCdefStrengths = 1 << cdefBits;
+        fh->cdefBits = bs->GetBits(2);
+        mfxU32 nbCdefStrengths = 1 << fh->cdefBits;
         for (Ipp8u i = 0; i < nbCdefStrengths; i++) {
             fh->cdefStrength[i] = bs->GetBits(7);
             fh->cdefUVStrength[i] = fh->subsamplingX == fh->subsamplingY ?

@@ -251,6 +251,7 @@ namespace UMC_AV1_DECODER
 #if AV1D_DDI_VERSION >= 11
         picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
         picParam->cdef_sec_damping = (UCHAR)info.cdefSecDamping;
+        picParam->cdef_bits = (UCHAR)info.cdefBits;
 #else
         picParam->dwModeControlFlags.fields.dering_damping = info.cdefDeringDamping;
         picParam->dwModeControlFlags.fields.clpf_damping = info.cdefClpfDamping;

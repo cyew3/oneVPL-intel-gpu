@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -204,6 +204,7 @@ namespace UMC_AV1_DECODER
 #else
         Ipp32u cdefPriDamping;
         Ipp32u cdefSecDamping;
+        Ipp32u cdefBits;
 #endif
         Ipp32u cdefStrength[CDEF_MAX_STRENGTHS];
         Ipp32u cdefUVStrength[CDEF_MAX_STRENGTHS];
