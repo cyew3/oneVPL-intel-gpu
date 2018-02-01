@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifdef _DEBUG
@@ -427,7 +427,7 @@ static const GuidProfile guidProfiles[] =
 
 #if defined(NTDDI_WIN10_TH2)
     { VP9_VLD,                                                                  DXVA_ModeVP9_VLD_Profile0},
-    { VP9_VLD | VA_PROFILE_10,                                                  DXVA_ModeVP9_VLD_10bit_Profile2_private_copy},
+    { VP9_VLD | VA_PROFILE_10,                                                  DXVA_ModeVP9_VLD_10bit_Profile2},
 #endif
     { VP9_VLD,                                                                  DXVA_Intel_ModeVP9_Profile0_VLD },
     { VP9_VLD | VA_PROFILE_10,                                                  DXVA_Intel_ModeVP9_Profile2_10bit_VLD },

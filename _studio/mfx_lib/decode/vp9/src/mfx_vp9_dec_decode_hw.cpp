@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -55,7 +55,7 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 #if defined(NTDDI_WIN10_TH2)
         p_core->IsGuidSupported(DXVA_ModeVP9_VLD_Profile0, p_video_param) != MFX_ERR_NONE &&
-        p_core->IsGuidSupported(DXVA_ModeVP9_VLD_10bit_Profile2_private_copy, p_video_param) != MFX_ERR_NONE)
+        p_core->IsGuidSupported(DXVA_ModeVP9_VLD_10bit_Profile2, p_video_param) != MFX_ERR_NONE)
 #else
        TRUE)
 #endif

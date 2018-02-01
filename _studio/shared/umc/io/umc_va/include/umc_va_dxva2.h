@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -73,10 +73,6 @@ DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD,
 0x1d5c4d76, 0xb55a, 0x4430, 0x90, 0x4c, 0x33, 0x83, 0xa7, 0xae, 0x3b, 0x16);
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
-
-DEFINE_GUID(DXVA_ModeVP9_VLD_10bit_Profile2_private_copy,
-0xa4c749ef, 0x6ecf, 0x48aa, 0x84, 0x48, 0x50, 0xa7, 0xa1, 0x16, 0x5f, 0xf7);
-
 
 DEFINE_GUID_(sDXVA_Intel_ModeH264_VLD_MVC, 0xe296bf50, 0x8808, 0x4ff8, 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c);
 
