@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 Description:
-This test suite checks what Levels are supported by HEVC FEI Encoder.
+This test suite checks what Levels are supported by HEVC FEI and HEVC legacy Encoders.
 
 In HEVC Standard there are 13 Levels:  1, 2, 2.1, 3, 3.1, 4, 4.1, 5, 5.1, 5.2, 6, 6.1, 6.2
 First 26 positive test cases are intended to test those 13 Levels.
@@ -40,7 +40,7 @@ Height is computed as maximum available value for the given Level.
 Algorithm:
 - MFXInit
 - set FrameInfo according to specified Level
-- load Hevc FEI plugin
+- load Hevc FEI/legacy plugin
 - Init
 - EncodeFrames
 */
@@ -50,15 +50,14 @@ Algorithm:
 #include "ts_fei_warning.h"
 #include "ts_decoder.h"
 
-#include <iostream>
 #include <fstream>
 
-namespace hevce_fei_level_profile {
+namespace hevce_levels_support {
 
 // In case you need to verify the output manually, define the MANUAL_DEBUG_MODE macro. The output files are:
-// hevce_fei_level_profile.h265 stores encoded bitstream,
-// hevce_fei_level_profile1.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the first 13 test cases,
-// hevce_fei_level_profile2.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the next 13 test cases.
+// hevce_levels_support.h265 stores encoded bitstream,
+// hevce_levels_support1.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the first 13 test cases,
+// hevce_levels_support2.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the next 13 test cases.
 //#define MANUAL_DEBUG_MODE
 
 // A structure to store constraints values for one Level
@@ -95,6 +94,7 @@ constexpr LevelConstraints TableA6[13] =
 
 constexpr mfxU16 NumberOfLevels = sizeof(TableA6)/sizeof(LevelConstraints);
 
+template <MsdkPluginType PluginID>
 class TestSuite : tsVideoEncoder, tsParserHEVC, tsBitstreamProcessor
 {
 public:
@@ -107,22 +107,25 @@ public:
 #endif
 
     TestSuite()
-    : tsVideoEncoder(MFX_CODEC_HEVC, true, MSDK_PLUGIN_TYPE_FEI)
+    : tsVideoEncoder(MFX_CODEC_HEVC, true, PluginID)
     , tsParserHEVC()
     , tsBitstreamProcessor()
 #ifdef MANUAL_DEBUG_MODE
-    , m_tsBsWriter("hevce_fei_level_profile.h265")
+    , m_tsBsWriter("hevce_levels_support.h265")
 #endif
     {
         m_bs_processor = this;
         m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
         m_par.AsyncDepth = 1;
 
-        // Set all parameters necessary for working with HEVC FEI encoder:
-        mfxExtFeiHevcEncFrameCtrl& feiCtrl =  m_ctrl;
-        feiCtrl.SubPelMode         = 3; // quarter-pixel motion estimation
-        feiCtrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
-        feiCtrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
+        if (PluginID == MSDK_PLUGIN_TYPE_FEI)
+        {
+            // Set all parameters necessary for working with HEVC FEI encoder:
+            mfxExtFeiHevcEncFrameCtrl& feiCtrl =  m_ctrl;
+            feiCtrl.SubPelMode         = 3; // quarter-pixel motion estimation
+            feiCtrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
+            feiCtrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
+        }
     }
 
     mfxI32 RunTest(mfxU16 id);
@@ -146,8 +149,8 @@ private:
         // c) The value of pic_height_in_luma_samples shall be less than or equal to Sqrt( MaxLumaPs * 8 ).
         // ...
         // where MaxLumaPs is specified in Table A.6.
-        // Due to the restriction of HEVC FEI Encoder implementation, the maximum supported resolution is 4096x2176.
-        // If a greater resolution is specified for HEVC FEI Encoder, the Query function terminates with MFX_ERR_UNSUPPORTED status.
+        // Due to the restriction of HEVC Encoder implementation, the maximum supported resolution is 4096x2176.
+        // If a greater resolution is specified for HEVC Encoder, the Query function terminates with MFX_ERR_UNSUPPORTED status.
         if (maxWidthFlag)
         {
             m_par.mfx.FrameInfo.Width  = std::min((mfxU16)(LevelParam.MaxResolution & ~(alignment-1)), MaxWidth);
@@ -178,9 +181,9 @@ private:
         #ifdef MANUAL_DEBUG_MODE
             std::ofstream stream;
             if (maxWidthFlag)
-                stream.open("hevce_fei_level_profile1.log", std::ios::app);
+                stream.open("hevce_levels_support1.log", std::ios::app);
             else
-                stream.open("hevce_fei_level_profile2.log", std::ios::app);
+                stream.open("hevce_levels_support2.log", std::ios::app);
         #else
             std::ostream &stream = g_tsLog;
         #endif
@@ -233,10 +236,12 @@ private:
 
 }; // end of class TestSuite
 
-mfxI32 TestSuite::RunTest(mfxU16 id)
+template <MsdkPluginType PluginID>
+mfxI32 TestSuite<PluginID>::RunTest(mfxU16 id)
 {
     TS_START;
-    CHECK_HEVC_FEI_SUPPORT();
+    if (PluginID == MSDK_PLUGIN_TYPE_FEI)
+        CHECK_HEVC_FEI_SUPPORT();
 
     MFXInit();
 
@@ -245,7 +250,7 @@ mfxI32 TestSuite::RunTest(mfxU16 id)
     // Set FrameInfo values according to specified Level
     SetParsPositiveTC(TableA6[table_id], maxWidthFlag);
     PrintDebugInfo(TableA6[table_id], maxWidthFlag);
-    // Load HEVC FEI plugin
+    // Load HEVC FEI/legacy plugin
     Load();
     Init();
     EncodeFrames(5);
@@ -254,5 +259,12 @@ mfxI32 TestSuite::RunTest(mfxU16 id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevce_fei_level_profile);
-} // end of namespace hevce_fei_level_profile
+#define TestSuite TestSuite<MSDK_PLUGIN_TYPE_FEI>
+TS_REG_TEST_SUITE_CLASS(hevce_fei_levels_support);
+#undef TestSuite
+
+#define TestSuite TestSuite<MSDK_PLUGIN_TYPE_NONE>
+TS_REG_TEST_SUITE_CLASS(hevce_levels_support);
+#undef TestSuite
+
+} // end of namespace hevce_levels_support
