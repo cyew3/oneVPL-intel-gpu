@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_SCHEDULER_DX11_EVENT)
@@ -19,11 +19,13 @@
 #include <mfxdefs.h>
 
 #include "libmfx_core_interface.h"
+#include "d3d11_decode_accelerator.h"
 
-DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report, 
+DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 0x49761bec, 0x4b63, 0x4349, 0xa5, 0xff, 0x87, 0xff, 0xdf, 0x8, 0x84, 0x66);
 
-
+// this is common class
+// it used for both DX9 and DX11
 class DX11GlobalEvent
 {
 public:
@@ -33,37 +35,67 @@ public:
     };
     virtual ~DX11GlobalEvent()
     {
-        // handle is managed by UMD - don't need to touch 
+        // handle is managed by UMD - don't need to touch
         //if (m_event_handle)
         //    CloseHandle(m_event_handle);
     };
     HANDLE CreateBatchBufferEvent()
     {
         HRESULT hres = 0;
-        ID3D11VideoDecoder* pVideoDecoder;
-        ComPtrCore<ID3D11VideoDecoder>* pWrpVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_pCore, MFXID3D11DECODER_GUID); 
-        if (!pWrpVideoDecoder)
+        ID3D11VideoDecoder* pVideoDecoder=NULL;
+
+        // that should never happened but better to check
+        if (m_pCore == NULL)
         {
-            // Get D3D11 Video decoder after MSDK decoder's creation
-            m_pCore->GetVA((mfxHDL*)&pVideoDecoder, MFX_MEMTYPE_FROM_DECODE);
-            if (!pVideoDecoder)
-                return NULL;
+            return NULL;
         }
-        else
+
+        ComPtrCore<ID3D11VideoDecoder>* pWrpVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_pCore, MFXID3D11DECODER_GUID);
+
+        // only D3D11VideoCORE supports MFXID3D11DECODER_GUID
+        if (pWrpVideoDecoder == NULL)
         {
-            // Get D3D11 Video decoder after MSDK encoder's creation
-            // any of them can be used to get global event handle
-            pVideoDecoder = pWrpVideoDecoder->get();
+            // it is not DX11Core
+            return NULL;
+        }
+
+        // Get D3D11 Video decoder after MSDK encoder's creation
+        // any of them can be used to get global event handle
+        pVideoDecoder = pWrpVideoDecoder->get();
+
+        // if no decoder from MSDK encoder's
+        // Get D3D11 Video decoder after MSDK decoder's creation
+        if (pVideoDecoder == NULL)
+        {
+            MFXD3D11Accelerator* mpUMCVA = NULL;
+
+            m_pCore->GetVA((mfxHDL*)&mpUMCVA, MFX_MEMTYPE_FROM_DECODE);
+
+            if (mpUMCVA == NULL)
+            {
+                return NULL;
+            }
+
+            mpUMCVA->GetVideoDecoder((void**)&pVideoDecoder);
+        }
+
+        if (pVideoDecoder == NULL)
+        {
+            return NULL;
         }
 
         D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_pCore);
         if (!pD3d11)
+        {
             return NULL;
+        }
 
         ID3D11VideoContext* pD3D11Context =  pD3d11->GetD3D11VideoContext();
         if (!pD3D11Context)
+        {
             return NULL;
-        
+        }
+
         {
             D3D11_VIDEO_DECODER_EXTENSION dec_ext;
 
@@ -78,7 +110,6 @@ public:
 
 
             hres = pD3D11Context->DecoderExtension(pVideoDecoder, &dec_ext);
-            
 
             if (FAILED(hres))
                 return NULL;
