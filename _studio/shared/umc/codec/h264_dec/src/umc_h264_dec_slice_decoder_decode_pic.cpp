@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -205,8 +205,6 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
             }
         }
 
-        pRefPicList0[m_SliceHeader.num_ref_idx_l0_active] = 0;
-
 #ifdef ENABLE_LIST_TRACE
         {
         FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
@@ -233,12 +231,14 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
         if (pReorderInfo_L0->num_entries > 0)
             ReOrderRefPicList(pRefPicList0, pFields0, pReorderInfo_L0, uMaxPicNum, views, dIdIndex, 0);
 
+        pRefPicList0[m_SliceHeader.num_ref_idx_l0_active] = 0;
+
         if (BPREDSLICE == m_SliceHeader.slice_type)
         {
-            pRefPicList1[m_SliceHeader.num_ref_idx_l1_active] = 0;
-
             if (pReorderInfo_L1->num_entries > 0)
                 ReOrderRefPicList(pRefPicList1, pFields1, pReorderInfo_L1, uMaxPicNum, views, dIdIndex, 1);
+
+            pRefPicList1[m_SliceHeader.num_ref_idx_l1_active] = 0;
         }
 
 
