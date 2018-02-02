@@ -246,6 +246,7 @@ namespace TranscodingSample
 
         mfxU16 WeightedPred;
         mfxU16 WeightedBiPred;
+        mfxU16 ExtBrcAdaptiveLTR;
 
         // MVC Specific Options
         bool   bIsMVC; // true if Multi-View-Codec is in use

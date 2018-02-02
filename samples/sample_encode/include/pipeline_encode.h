@@ -158,6 +158,7 @@ struct sInputParams
 
     mfxU16 QVBRQuality;
     mfxU16 LowDelayBRC;
+    mfxU16 ExtBrcAdaptiveLTR;
 
     mfxU16 IntRefType;
     mfxU16 IntRefCycleSize;

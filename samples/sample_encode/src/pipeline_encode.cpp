@@ -571,7 +571,8 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     // set up mfxCodingOption3
     if (pInParams->nGPB || pInParams->LowDelayBRC || pInParams->WeightedPred || pInParams->WeightedBiPred
         || pInParams->nPRefType || pInParams->IntRefCycleDist || pInParams->nAdaptiveMaxFrameSize
-        || pInParams->nNumRefActiveP || pInParams->nNumRefActiveBL0 || pInParams->nNumRefActiveBL1 || pInParams->QVBRQuality)
+        || pInParams->nNumRefActiveP || pInParams->nNumRefActiveBL0 || pInParams->nNumRefActiveBL1
+        || pInParams->ExtBrcAdaptiveLTR || pInParams->QVBRQuality)
     {
         if (pInParams->CodecId == MFX_CODEC_HEVC)
         {
@@ -590,6 +591,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption3.IntRefCycleDist= pInParams->IntRefCycleDist;
         m_CodingOption3.AdaptiveMaxFrameSize = pInParams->nAdaptiveMaxFrameSize;
         m_CodingOption3.QVBRQuality    = pInParams->QVBRQuality;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        m_CodingOption3.ExtBrcAdaptiveLTR = pInParams->ExtBrcAdaptiveLTR;
+#endif
 
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
     }

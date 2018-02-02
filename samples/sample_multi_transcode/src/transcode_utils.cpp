@@ -278,7 +278,10 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("  -WeightedBiPred::default|implicit     Enambles weighted bi-prediction usage\n"));
 
 #if (MFX_VERSION >= 1024)
-    msdk_printf(MSDK_STRING("  -extbrc::<on,off,implicit>           Enables external BRC for AVC and HEVC encoders"));
+    msdk_printf(MSDK_STRING("  -extbrc:<on,off,implicit>           Enables external BRC for AVC and HEVC encoders"));
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    msdk_printf(MSDK_STRING("  -ExtBrcAdaptiveLTR:<on,off>         Set AdaptiveLTR for implicit extbrc"));
 #endif
     msdk_printf(MSDK_STRING("  -vpp_comp <sourcesNum>      Enables composition from several decoding sessions. Result is written to the file\n"));
     msdk_printf(MSDK_STRING("  -vpp_comp_only <sourcesNum> Enables composition from several decoding sessions. Result is shown on screen\n"));
@@ -1913,6 +1916,16 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::implicit")))
         {
             InputParams.nExtBRC = EXTBRC_IMPLICIT;
+        }
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ExtBrcAdaptiveLTR:on")))
+        {
+            InputParams.ExtBrcAdaptiveLTR = MFX_CODINGOPTION_ON;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-ExtBrcAdaptiveLTR:off")))
+        {
+            InputParams.ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
         }
 
 #endif
