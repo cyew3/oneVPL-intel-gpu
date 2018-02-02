@@ -1597,6 +1597,14 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.bUseOpaqueMemory = false;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::sys")))
+        {
+            InputParams.VppOutPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp::vid")))
+        {
+            InputParams.VppOutPattern = MFX_IOPATTERN_OUT_VIDEO_MEMORY;
+        }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-vpp_comp_dst_x")))
         {
             VAL_CHECK(i + 1 == argc, i, argv[i]);
