@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2016-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -426,8 +426,41 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {},
     },
+    {/*38*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_P016},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV420},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          1},
+        },
+        {},
+        MFX_HW_TGL
+    },
+    {/*39*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_Y216},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          1},
+        },
+        {},
+        MFX_HW_TGL
+    },
+    {/*40*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+        {
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_Y416},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV444},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthLuma,   12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.BitDepthChroma, 12},
+            {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          1},
+        },
+        {},
+        MFX_HW_TGL
+    },
 #if !defined(_WIN32)
-    {/*38*/ MFX_ERR_NONE,
+    {/*41*/ MFX_ERR_NONE,
         {
             {INIT,  &tsStruct::mfxExtVPPFieldProcessing.Mode,     MFX_VPP_COPY_FRAME},
 
@@ -801,4 +834,55 @@ namespace vpp_10b_444_y410_reset
         }
     };
     TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_reset);
+}
+
+namespace vpp_12b_420_p016_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC         = m_par.vpp.Out.FourCC         = MFX_FOURCC_P016;
+            m_par.vpp.In.BitDepthLuma   = m_par.vpp.Out.BitDepthLuma   = 12;
+            m_par.vpp.In.BitDepthChroma = m_par.vpp.Out.BitDepthChroma = 12;
+            m_par.vpp.In.Shift          = m_par.vpp.Out.Shift          = 1;
+            m_par.vpp.In.ChromaFormat   = m_par.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_12b_420_p016_reset);
+}
+
+namespace vpp_12b_422_y216_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC         = m_par.vpp.Out.FourCC         = MFX_FOURCC_Y216;
+            m_par.vpp.In.BitDepthLuma   = m_par.vpp.Out.BitDepthLuma   = 12;
+            m_par.vpp.In.BitDepthChroma = m_par.vpp.Out.BitDepthChroma = 12;
+            m_par.vpp.In.Shift          = m_par.vpp.Out.Shift          = 1;
+            m_par.vpp.In.ChromaFormat   = m_par.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV422;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_12b_422_y216_reset);
+}
+
+namespace vpp_12b_444_y416_reset
+{
+    class TestSuite : public vpp_reset::TestSuite
+    {
+    public:
+        TestSuite() : vpp_reset::TestSuite()
+        {
+            m_par.vpp.In.FourCC         = m_par.vpp.Out.FourCC         = MFX_FOURCC_Y416;
+            m_par.vpp.In.BitDepthLuma   = m_par.vpp.Out.BitDepthLuma   = 12;
+            m_par.vpp.In.BitDepthChroma = m_par.vpp.Out.BitDepthChroma = 12;
+            m_par.vpp.In.Shift          = m_par.vpp.Out.Shift          = 1;
+            m_par.vpp.In.ChromaFormat   = m_par.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV444;
+        }
+    };
+    TS_REG_TEST_SUITE_CLASS(vpp_12b_444_y416_reset);
 }
