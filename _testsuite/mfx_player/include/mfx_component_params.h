@@ -67,7 +67,6 @@ public:
         , m_nDropCount()
         , m_bForceMVCDetection()
         , m_VP9_Smooth_DRC(false)
-        , m_bShiftWasSet(false)
       {
           PipelineObjectDescBase dsc(VIDEO_SESSION_NATIVE);
           m_Session = pFactory->CreateVideoSession(&dsc);
@@ -189,8 +188,6 @@ public:
     mfxU32                          m_OutFourcc;
 
     bool                            m_VP9_Smooth_DRC;
-
-    bool                            m_bShiftWasSet;
 
     std::vector<mfxU32>             m_SkippedFrames; // List of frames to be skipped at encoding
 

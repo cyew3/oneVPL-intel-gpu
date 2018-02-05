@@ -101,8 +101,6 @@ File Name: .h
 #endif
 #include "mfx_thread.h"
 
-#include "mfxplugin.h"
-
 #include <iostream>
 #include <math.h>
 
@@ -122,46 +120,6 @@ using namespace std;
 #endif
 
 //////////////////////////////////////////////////////////////////////////
-
-inline mfxPluginUID ConvertUID(tstring uid)
-{
-    mfxPluginUID res_uid;
-    mfxU32 i = 0;
-    mfxU32 hex = 0;
-    for (i = 0; i != 16; i++)
-    {
-        hex = 0;
-#if defined(_WIN32) || defined(_WIN64)
-        if (1 != swscanf_s(uid.c_str() + 2 * i, L"%2x", &hex))
-#else
-        if (1 != sscanf(uid.c_str() + 2 * i, "%2x", &hex))
-#endif
-        {
-            MFX_TRACE_ERR(VM_STRING("Failed to parse plugin uid: ") << uid.c_str());
-        }
-#if defined(_WIN32) || defined(_WIN64)
-        if (hex == 0 && (const wchar_t *)uid.c_str() + 2 * i != wcsstr((const wchar_t *)uid.c_str() + 2 * i, L"00"))
-#else
-        if (hex == 0 && uid.c_str() + 2 * i != strstr(uid.c_str() + 2 * i, "00"))
-#endif
-        {
-            MFX_TRACE_ERR(VM_STRING("Failed to parse plugin uid: ") << uid.c_str());
-        }
-        res_uid.Data[i] = (mfxU8)hex;
-    }
-
-    return res_uid;
-}
-
-inline bool CompareTwoPluginUID(mfxPluginUID pl1, mfxPluginUID pl2)
-{
-    for (size_t i = 0; i < 16; ++i)
-    {
-        if (pl1.Data[i] != pl2.Data[i])
-            return false;
-    }
-    return true;
-}
 
 MFXDecPipeline::MFXDecPipeline(IMFXPipelineFactory *pFactory)
     : m_YUV_Width(0)
@@ -310,14 +268,6 @@ mfxStatus MFXDecPipeline::BuildMFXPart()
     //some type of renders depends on decoder's output parameters
     MFX_CHECK_STS_SET_ERR(CreateRender(), PE_CREATE_RND);
     TIME_PRINT(VM_STRING("CreateRnd"));
-
-    if (!m_components[eREN].m_bShiftWasSet &&
-        !CompareTwoPluginUID(MFX_PLUGINID_HEVCE_SW, ConvertUID((tstring)m_inParams.strEncPluginGuid)) &&
-        !CompareTwoPluginUID(MFX_PLUGINID_HEVCE_GACC, ConvertUID((tstring)m_inParams.strEncPluginGuid)) &&
-        (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010))
-    {
-        m_components[eREN].m_params.mfx.FrameInfo.Shift = 1;
-    }
 
     MFX_CHECK_STS_SET_ERR(CreateVPP(), PE_CREATE_VPP);
     TIME_PRINT(VM_STRING("CreateVPP"));
@@ -5105,11 +5055,6 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
             else HANDLE_BOOL_OPTION(m_inParams.bUseOverlay, VM_STRING("-overlay"), VM_STRING("Use overlay for rendering"));
             else if (0 != (nPattern = m_OptProc.Check(argv[0], VM_STRING("-(dec|enc):shift)"), VM_STRING("Desired data shift in frame data"), OPT_INT_32)))
             {
-                if (0 != m_OptProc.Check(argv[0], VM_STRING("-enc:shift)"), VM_STRING("Desired data shift in frame data"), OPT_INT_32))
-                    m_components[eREN].m_bShiftWasSet = true;
-                else if (0 != m_OptProc.Check(argv[0], VM_STRING("-dec:shift)"), VM_STRING("Desired data shift in frame data"), OPT_INT_32))
-                    m_components[eDEC].m_bShiftWasSet = true;
-
                 ComponentsContainer::iterator component;
                 component = std::find_if(m_components.begin(), m_components.end(),
                     std::bind2nd(mem_var_isequal<ComponentParams, tstring>(&ComponentParams::m_ShortName), tstring(argv[0]).substr(1, 3)));
