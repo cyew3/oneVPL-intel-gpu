@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -445,6 +445,51 @@ namespace MfxHwVideoProcessing
 
                    VideoSignalInfo.clear();
                    VideoSignalInfo.assign(1, VideoSignalInfoIn);
+            };
+
+            bool IsDoNothing()
+            {
+                CustomRateData refCustomRateData;
+                memset(&refCustomRateData, 0, sizeof(CustomRateData));
+                if (memcmp(&refCustomRateData, &customRateData, sizeof(CustomRateData)))
+                    return false;
+                if (iDeinterlacingAlgorithm != 0 ||
+                    bFMDEnable != 0 ||
+                    bDenoiseAutoAdjust != 0 ||
+                    bDetailAutoAdjust != 0 ||
+                    denoiseFactor != 0 ||
+                    detailFactor != 0 ||
+                    iTargetInterlacingMode != 0 ||
+                    bEnableProcAmp != false ||
+                    bSceneDetectionEnable != false ||
+                    bVarianceEnable != false ||
+                    bImgStabilizationEnable != false ||
+                    bFRCEnable != false ||
+                    bComposite != false ||
+                    bFieldWeaving != false ||
+                    iFieldProcessingMode != 0 ||
+#ifndef MFX_CAMERA_FEATURE_DISABLE
+                    bCameraPipeEnabled != false ||
+                    bCameraBlackLevelCorrection != false ||
+                    bCameraGammaCorrection != false ||
+                    bCameraHotPixelRemoval != false ||
+                    bCameraWhiteBalaceCorrection != false ||
+                    bCCM != false ||
+                    bCameraLensCorrection != false ||
+#endif
+                    rotation != 0 ||
+                    scalingMode != MFX_SCALING_MODE_DEFAULT ||
+                    mirroring != 0 ||
+                    scene != VPP_NO_SCENE_CHANGE ||
+                    bDeinterlace30i60p != false
+#if (MFX_VERSION >= 1025)
+                    || chromaSiting != MFX_CHROMA_SITING_UNKNOWN
+#endif
+                )
+                    return false;
+                if (memcmp(&VideoSignalInfoIn, &VideoSignalInfoOut, sizeof(SignalInfo)))
+                    return false;
+                return true;
             };
 
         //surfaces
