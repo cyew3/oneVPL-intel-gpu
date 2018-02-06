@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -164,6 +164,15 @@ UMC::Status DecReferencePictureMarking_H265::UpdateRefPicMarking(ViewItem_H265 &
             // mark the picture as "unused for reference" if it is not in
             // the Reference Picture Set
             if(pTmp->m_PicOrderCnt != pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb && !isReferenced)
+            {
+                pTmp->SetisShortTermRef(false);
+                pTmp->SetisLongTermRef(false);
+                DEBUG_PRINT1((VM_STRING("Dereferencing frame with POC %d, busy = %d\n"), pTmp->m_PicOrderCnt, pTmp->GetRefCounter()));
+            }
+            // WA: To fix incorrect stream having same (as incoming slice) POC in DPB
+            // Mark a older frame having similar POCs within DPBList as unused reference frame if similar mutiple POCs are found
+            // within the DPBList. This is to prevent the DPBList from max out with unused reference frame kept as reference picture.
+            else if(pTmp->m_PicOrderCnt == pSlice->GetSliceHeader()->slice_pic_order_cnt_lsb && !isReferenced && pTmp->isShortTermRef())
             {
                 pTmp->SetisShortTermRef(false);
                 pTmp->SetisLongTermRef(false);
