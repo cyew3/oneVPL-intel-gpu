@@ -483,6 +483,7 @@ mfxStatus H265CmCtx::AllocateCmResources(mfxFEIH265Param *param, void *core)
     case PLATFORM_INTEL_KBL:
     case PLATFORM_INTEL_GLK:
     case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_BXT:
         programGradient         = ReadProgram(device, genx_hevce_analyze_gradient_32x32_best_skl, sizeof(genx_hevce_analyze_gradient_32x32_best_skl));
         programPrepareSrc       = ReadProgram(device, genx_hevce_prepare_src_skl, sizeof(genx_hevce_prepare_src_skl));
         programHmeMe32          = ReadProgram(device, genx_hevce_hme_and_me_p32_4mv_skl, sizeof(genx_hevce_hme_and_me_p32_4mv_skl));
