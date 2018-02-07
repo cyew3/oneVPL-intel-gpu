@@ -325,87 +325,9 @@ namespace vpp_query
 
 namespace vpp_rext_query
 {
-    const struct
-    {
-        mfxU32 FourCC;
-        mfxU16 ChromaFormat;
-        mfxU16 BdY;
-        mfxU16 BdC;
-        mfxU16 Shift;
-    } Formats[] =
-    {
-        /*00*/{ MFX_FOURCC_NV12, MFX_CHROMAFORMAT_YUV420, 8, 8, 0 },
-        /*01*/{ MFX_FOURCC_YV12, MFX_CHROMAFORMAT_YUV420, 8, 8, 0 },
-        /*02*/{ MFX_FOURCC_UYVY, MFX_CHROMAFORMAT_YUV422, 8, 8, 0 },
-        /*03*/{ MFX_FOURCC_YUY2, MFX_CHROMAFORMAT_YUV422, 8, 8, 0 },
-        /*04*/{ MFX_FOURCC_AYUV, MFX_CHROMAFORMAT_YUV444, 8, 8, 0 },
-        /*05*/{ MFX_FOURCC_RGB4, MFX_CHROMAFORMAT_YUV444, 8, 8, 0 },
-        /*06*/{ MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420, 10, 10, 1 },
-        /*07*/{ MFX_FOURCC_Y210, MFX_CHROMAFORMAT_YUV422, 10, 10, 1 },
-        /*08*/{ MFX_FOURCC_Y410, MFX_CHROMAFORMAT_YUV444, 10, 10, 0 },
-        /*09*/{ MFX_FOURCC_A2RGB10, MFX_CHROMAFORMAT_YUV444, 10, 10, 0 },
-        /*10*/{ MFX_FOURCC_P016, MFX_CHROMAFORMAT_YUV420, 12, 12, 1 },
-        /*11*/{ MFX_FOURCC_Y216, MFX_CHROMAFORMAT_YUV422, 12, 12, 1 },
-        /*12*/{ MFX_FOURCC_Y416, MFX_CHROMAFORMAT_YUV444, 12, 12, 1 },
-    };
-    const unsigned int nFormats = sizeof(vpp_rext_query::Formats) / sizeof(vpp_rext_query::Formats[0]);
-    const mfxStatus HW = MFX_ERR_NONE;
-    const mfxStatus SW = MFX_WRN_PARTIAL_ACCELERATION;
-    const mfxStatus NO = MFX_ERR_UNSUPPORTED;
+    using namespace tsVPPInfo;
 
-    const mfxStatus CCSupport[][nFormats][nFormats] =
-    {
-        {//gen9
-        //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
-        /*   NV12*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   YV12*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   UYVY*/{  SW,   SW,   NO,   SW,   NO,   SW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   YUY2*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   AYUV*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   RGB4*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   P010*/{  SW,   NO,   NO,   NO,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   Y210*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*   Y410*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        },
-        {//gen11
-        //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
-        /*   NV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   YV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   UYVY*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   YUY2*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   RGB4*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*A2RGB10*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
-        /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
-        },
-        {//gen12
-        //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
-        /*   NV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   YV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   UYVY*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   YUY2*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   RGB4*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*A2RGB10*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*P016/12*/{  HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*Y216/12*/{  HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        /*Y416/12*/{  HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
-        },
-    };
-
-    template<mfxU16 FmtID>
+    template<eFmtId FmtID>
     class TestSuite : public vpp_query::TestSuite
     {
     public:
@@ -413,24 +335,24 @@ namespace vpp_rext_query
             : vpp_query::TestSuite()
         {}
 
-        static const unsigned int n_cases = nFormats;
+        static const unsigned int n_cases = NumFormats;
 
         int RunTest(unsigned int id)
         {
-            m_par.vpp.Out.FourCC            = vpp_rext_query::Formats[FmtID].FourCC;
-            m_par.vpp.Out.ChromaFormat      = vpp_rext_query::Formats[FmtID].BdY;
-            m_par.vpp.Out.BitDepthLuma      = vpp_rext_query::Formats[FmtID].BdC;
-            m_par.vpp.Out.BitDepthChroma    = vpp_rext_query::Formats[FmtID].ChromaFormat;
-            m_par.vpp.Out.Shift             = vpp_rext_query::Formats[FmtID].Shift;
+            m_par.vpp.Out.FourCC            = Formats[FmtID].FourCC;
+            m_par.vpp.Out.BitDepthLuma      = Formats[FmtID].BdY;
+            m_par.vpp.Out.BitDepthChroma    = Formats[FmtID].BdC;
+            m_par.vpp.Out.ChromaFormat      = Formats[FmtID].ChromaFormat;
+            m_par.vpp.Out.Shift             = Formats[FmtID].Shift;
 
-            m_par.vpp.In.FourCC             = vpp_rext_query::Formats[id].FourCC;
-            m_par.vpp.In.ChromaFormat       = vpp_rext_query::Formats[id].BdY;
-            m_par.vpp.In.BitDepthLuma       = vpp_rext_query::Formats[id].BdC;
-            m_par.vpp.In.BitDepthChroma     = vpp_rext_query::Formats[id].ChromaFormat;
-            m_par.vpp.In.Shift              = vpp_rext_query::Formats[id].Shift;
+            m_par.vpp.In.FourCC             = Formats[id].FourCC;
+            m_par.vpp.In.BitDepthLuma       = Formats[id].BdY;
+            m_par.vpp.In.BitDepthChroma     = Formats[id].BdC;
+            m_par.vpp.In.ChromaFormat       = Formats[id].ChromaFormat;
+            m_par.vpp.In.Shift              = Formats[id].Shift;
 
             vpp_query::tc_struct tc = { vpp_query::STANDART };
-            tc.expected_sts = vpp_rext_query::CCSupport[(g_tsHWtype >= MFX_HW_ICL) + (g_tsHWtype >= MFX_HW_TGL)][id][FmtID];
+            tc.expected_sts = CCSupport()[id][FmtID];
 
             return  vpp_query::TestSuite::RunTest(tc);
         }
@@ -443,17 +365,17 @@ namespace vpp_rext_query
         TS_REG_TEST_SUITE_CLASS(NAME);                       \
     }
 
-    REG_VPP_REXT_QUERY_TEST(vpp_8b_420_yv12_query, 1);
-    REG_VPP_REXT_QUERY_TEST(vpp_8b_422_uyvy_query, 2);
-    REG_VPP_REXT_QUERY_TEST(vpp_8b_422_yuy2_query, 3);
-    REG_VPP_REXT_QUERY_TEST(vpp_8b_444_ayuv_query, 4);
-    REG_VPP_REXT_QUERY_TEST(vpp_8b_444_rgb4_query, 5);
-    REG_VPP_REXT_QUERY_TEST(vpp_10b_420_p010_query, 6);
-    REG_VPP_REXT_QUERY_TEST(vpp_10b_422_y210_query, 7);
-    REG_VPP_REXT_QUERY_TEST(vpp_10b_444_y410_query, 8);
-    REG_VPP_REXT_QUERY_TEST(vpp_12b_420_p016_query, 10);
-    REG_VPP_REXT_QUERY_TEST(vpp_12b_422_y216_query, 11);
-    REG_VPP_REXT_QUERY_TEST(vpp_12b_444_y416_query, 12);
+    REG_VPP_REXT_QUERY_TEST(vpp_8b_420_yv12_query, FMT_ID_8B_420_YV12);
+    REG_VPP_REXT_QUERY_TEST(vpp_8b_422_uyvy_query, FMT_ID_8B_422_UYVY);
+    REG_VPP_REXT_QUERY_TEST(vpp_8b_422_yuy2_query, FMT_ID_8B_422_YUY2);
+    REG_VPP_REXT_QUERY_TEST(vpp_8b_444_ayuv_query, FMT_ID_8B_444_AYUV);
+    REG_VPP_REXT_QUERY_TEST(vpp_8b_444_rgb4_query, FMT_ID_8B_444_RGB4);
+    REG_VPP_REXT_QUERY_TEST(vpp_10b_420_p010_query, FMT_ID_10B_420_P010);
+    REG_VPP_REXT_QUERY_TEST(vpp_10b_422_y210_query, FMT_ID_10B_422_Y210);
+    REG_VPP_REXT_QUERY_TEST(vpp_10b_444_y410_query, FMT_ID_10B_444_Y410);
+    REG_VPP_REXT_QUERY_TEST(vpp_12b_420_p016_query, FMT_ID_12B_420_P016);
+    REG_VPP_REXT_QUERY_TEST(vpp_12b_422_y216_query, FMT_ID_12B_422_Y216);
+    REG_VPP_REXT_QUERY_TEST(vpp_12b_444_y416_query, FMT_ID_12B_444_Y416);
 #undef REG_VPP_REXT_QUERY_TEST
 }
 

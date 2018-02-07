@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -90,3 +90,45 @@ public:
     mfxStatus SetHandle();
     mfxStatus SetHandle(mfxSession session, mfxHandleType type, mfxHDL handle);
 };
+
+namespace tsVPPInfo
+{
+    struct CFormat
+    {
+        mfxU32 FourCC;
+        mfxU16 ChromaFormat;
+        mfxU16 BdY;
+        mfxU16 BdC;
+        mfxU16 Shift;
+    };
+
+    typedef enum eFmtId
+    {
+          FMT_ID_8B_420_NV12 = 0
+        , FMT_ID_8B_420_YV12
+        , FMT_ID_8B_422_UYVY
+        , FMT_ID_8B_422_YUY2
+        , FMT_ID_8B_444_AYUV
+        , FMT_ID_8B_444_RGB4
+        , FMT_ID_10B_420_P010
+        , FMT_ID_10B_422_Y210
+        , FMT_ID_10B_444_Y410
+        , FMT_ID_10B_444_A2RGB10
+        , FMT_ID_12B_420_P016
+        , FMT_ID_12B_422_Y216
+        , FMT_ID_12B_444_Y416
+        , NumFormats
+    } eFmtId;
+
+    typedef mfxStatus TCCSupport[NumFormats][NumFormats];
+
+    extern const CFormat Formats[NumFormats];
+    extern const TCCSupport CCSupportTable[3];
+
+    inline const TCCSupport& CCSupport()
+    {
+        return CCSupportTable[
+              (g_tsHWtype >= MFX_HW_ICL)
+            + (g_tsHWtype >= MFX_HW_TGL)];
+    }
+}

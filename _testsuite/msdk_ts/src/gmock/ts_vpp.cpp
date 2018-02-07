@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -657,3 +657,76 @@ mfxStatus tsVideoVPP::SetFrameAllocator(mfxSession session, mfxFrameAllocator* a
 {
     return tsSession::SetFrameAllocator(session, allocator);
 }
+
+const tsVPPInfo::CFormat tsVPPInfo::Formats[tsVPPInfo::NumFormats] =
+{
+    /*00*/{ MFX_FOURCC_NV12, MFX_CHROMAFORMAT_YUV420,  8,  8, 0 },
+    /*01*/{ MFX_FOURCC_YV12, MFX_CHROMAFORMAT_YUV420,  8,  8, 0 },
+    /*02*/{ MFX_FOURCC_UYVY, MFX_CHROMAFORMAT_YUV422,  8,  8, 0 },
+    /*03*/{ MFX_FOURCC_YUY2, MFX_CHROMAFORMAT_YUV422,  8,  8, 0 },
+    /*04*/{ MFX_FOURCC_AYUV, MFX_CHROMAFORMAT_YUV444,  8,  8, 0 },
+    /*05*/{ MFX_FOURCC_RGB4, MFX_CHROMAFORMAT_YUV444,  8,  8, 0 },
+    /*06*/{ MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420, 10, 10, 1 },
+    /*07*/{ MFX_FOURCC_Y210, MFX_CHROMAFORMAT_YUV422, 10, 10, 1 },
+    /*08*/{ MFX_FOURCC_Y410, MFX_CHROMAFORMAT_YUV444, 10, 10, 0 },
+    /*09*/{ MFX_FOURCC_A2RGB10, MFX_CHROMAFORMAT_YUV444, 10, 10, 0 },
+    /*10*/{ MFX_FOURCC_P016, MFX_CHROMAFORMAT_YUV420, 12, 12, 1 },
+    /*11*/{ MFX_FOURCC_Y216, MFX_CHROMAFORMAT_YUV422, 12, 12, 1 },
+    /*12*/{ MFX_FOURCC_Y416, MFX_CHROMAFORMAT_YUV444, 12, 12, 1 },
+};
+
+const mfxStatus HW = MFX_ERR_NONE;
+const mfxStatus SW = MFX_WRN_PARTIAL_ACCELERATION;
+const mfxStatus NO = MFX_ERR_UNSUPPORTED;
+
+const tsVPPInfo::TCCSupport tsVPPInfo::CCSupportTable[3] =
+{
+    {//gen9
+    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
+    /*   NV12*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   YV12*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   UYVY*/{  SW,   SW,   NO,   SW,   NO,   SW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   YUY2*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   AYUV*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   RGB4*/{  HW,   SW,   NO,   HW,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   P010*/{  SW,   NO,   NO,   NO,   NO,   HW,   SW,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   Y210*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*   Y410*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    },
+    {//gen11
+    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
+    /*   NV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   YV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   UYVY*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   YUY2*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   RGB4*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*A2RGB10*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    },
+    {//gen12
+    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
+    /*   NV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   YV12*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   UYVY*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   YUY2*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   RGB4*/{  HW,   SW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*A2RGB10*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*P016/12*/{  HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*Y216/12*/{  HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    /*Y416/12*/{  HW,   NO,   HW,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    HW,     HW,     HW },
+    },
+};
