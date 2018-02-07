@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #define ENABLE_OUTPUT    // Disabling this flag removes all YUV file writing
@@ -740,6 +740,8 @@ protected:
 
     mfxStatus FillCompositionParams()
     {
+        memset(&m_VPPComp, 0, sizeof(mfxExtVPPComposite));
+
         m_VPPComp.Header.BufferId = MFX_EXTBUFF_VPP_COMPOSITE;
         m_VPPComp.Header.BufferSz = sizeof(mfxExtVPPComposite);
         m_VPPComp.NumInputStream  = (mfxU16) m_nStreams;
