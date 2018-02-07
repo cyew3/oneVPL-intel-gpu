@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 File Name: avce_repeat_pps.cpp
 \* ****************************************************************************** */
@@ -176,7 +176,7 @@ namespace avce_repeat_pps
         mfxStatus q_sts;
         mfxStatus i_sts;
 
-        if (g_tsImpl == MFX_IMPL_HARDWARE){
+        if((g_tsImpl & MFX_IMPL_HARDWARE) || (g_tsImpl & MFX_IMPL_VIA_D3D11)){
             q_sts = tc.hw_sts.QueryStatus;
             i_sts = tc.hw_sts.InitStatus;
         }
