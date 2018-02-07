@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -557,15 +557,13 @@ namespace vp9e_temporal_scalability
         mfxU32 checked = 0;
 
         SetBuffer(bs);
-
-        /*
+/*
         // Dump encoded stream to file
         const int encoded_size = bs.DataLength;
         static FILE *fp_vp9 = fopen("vp9e_encoded_temporal_scalability.vp9", "wb");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fflush(fp_vp9);
-        */
-
+*/
         m_TestPtr->m_encoded_frame_sizes[m_ChunkCount] = bs.DataLength;
 
         while (checked++ < nFrames)
@@ -595,7 +593,7 @@ namespace vp9e_temporal_scalability
                         {
                             if (bs.Data[bs.DataLength - index_size] == superframe_header)
                             {
-                                // Let's check second frame
+                                // Let's check the second frame inside the superframe
                                 const unsigned char frame_header = bs.Data[bs.DataLength - index_size - 1];
 
                                 const unsigned char header_marker = (frame_header >> 6) & 0x2;
@@ -740,36 +738,51 @@ namespace vp9e_temporal_scalability
                             const mfxF64 psnrY = PSNR(src, res, 0);
                             const mfxF64 psnrU = PSNR(src, res, 1);
                             const mfxF64 psnrV = PSNR(src, res, 2);
-                            pInputSurface->Data.Locked--;
-                            m_pInputSurfaces->erase(hdr.FrameOrder);
+
                             const mfxF64 minPsnr = VP9E_PSNR_THRESHOLD;
 
-                            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
-                                << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
+                            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR_Y=" << psnrY << " PSNR_U="
+                                << psnrU << " PSNR_V=" << psnrV << " size=" << bs.DataLength << "\n";
 
                             if (psnrY < minPsnr)
                             {
-                                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
+                                ADD_FAILURE() << "ERROR: PSNR_Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
                                 throw tsFAIL;
                             }
                             if (psnrU < minPsnr)
                             {
-                                ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                                ADD_FAILURE() << "ERROR: PSNR_U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
                                 throw tsFAIL;
                             }
                             if (psnrV < minPsnr)
                             {
-                                ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                                ADD_FAILURE() << "ERROR: PSNR_V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
                                 throw tsFAIL;
                             }
                         }
                     }
                     else
                     {
-                        g_tsLog << "ERROR: DecodeFrameAsync() failed with status " << decode_status; throw tsFAIL;
+                        g_tsLog << "ERROR: DecodeFrameAsync() failed with the status " << decode_status; throw tsFAIL;
                     }
 
                     m_DecodedFramesCount++;
+                }
+            }
+
+            if (m_CheckPsnr)
+            {
+                // now delete stored source frame regardless of whether it was used was checking on not
+                mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
+                if (pInputSurface)
+                {
+                    pInputSurface->Data.Locked--;
+                    m_pInputSurfaces->erase(hdr.FrameOrder);
+                }
+                else
+                {
+                    ADD_FAILURE() << "ERROR: Received encoded frame with unexpected hdr.FrameOrder=" << hdr.FrameOrder;
+                    throw tsFAIL;
                 }
             }
 
@@ -1249,6 +1262,8 @@ namespace vp9e_temporal_scalability
 
                 // this is to disable super-frame headers check
                 temporal_layers_ext_params = nullptr;
+
+                m_LayerToCheck = -1;
             }
             else if (tc.type & CHECK_SWITCH_ON_TEMP_SCAL)
             {
