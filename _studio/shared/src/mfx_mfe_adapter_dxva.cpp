@@ -33,6 +33,11 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
     , m_maxFramesToCombine(0)
     , m_framesCollected(0)
     , m_time_frequency(vm_time_get_frequency())
+    , m_pAvcCAPS(NULL)
+    , m_pHevcCAPS(NULL)
+#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
+    , m_pAv1CAPS(NULL)
+#endif
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
@@ -64,6 +69,55 @@ void MFEDXVAEncoder::Release()
         delete this;
 }
 
+MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
+{
+    HRESULT hr = S_OK;
+    switch (codecId)
+    {
+    case DDI_CODEC_AVC:
+    {
+        if (!m_pAvcCAPS)
+        {
+            D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+            MFE_CODEC ddi_codec = DDI_CODEC_AVC;
+            decoderExtParam.Function = ENCODE_MFE_SET_CODEC_ID;
+            decoderExtParam.pPrivateInputData = &ddi_codec;
+            decoderExtParam.PrivateInputDataSize = sizeof(MFE_CODEC);
+            decoderExtParam.pPrivateOutputData = 0;
+            decoderExtParam.PrivateOutputDataSize = 0;
+            decoderExtParam.ResourceCount = 0;
+            decoderExtParam.ppResourceList = 0;
+
+            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
+            if (hr != S_OK)
+            {
+                return NULL;
+            }
+            m_pAvcCAPS = new ENCODE_CAPS;
+            decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+            decoderExtParam.pPrivateInputData = 0;
+            decoderExtParam.PrivateInputDataSize = 0;
+            decoderExtParam.pPrivateOutputData = m_pAvcCAPS;
+            decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS);
+            decoderExtParam.ResourceCount = 0;
+            decoderExtParam.ppResourceList = 0;
+
+            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
+            if (hr != S_OK)
+            {
+                return NULL;
+            }
+        }
+        return (CAPS)m_pAvcCAPS;
+    }
+    case DDI_CODEC_HEVC: return (CAPS)m_pHevcCAPS;
+#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
+    case DDI_CODEC_AV1: return (CAPS)m_pAv1CAPS;
+#endif
+    default: return nullptr;
+    };
+}
+
 mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
                                  ID3D11VideoContext *pVideoContext)
 {
@@ -76,13 +130,10 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     //ToDo - align linux to the same.
     if (NULL != m_pMfeContext)
     {
-        //vm_mutex_lock(&m_mfe_guard);
         //TMP WA for SKL due to number of frames limitation in different scenarios:
         //to simplify submission process and not add additional checks for frame wait depending on input parameters
         //if there are encoder want to run less frames within the same MFE Adapter(parent session) align to less now
         //in general just if someone set 3, but another one set 2 after that(or we need to decrease due to parameters) - use 2 for all.
-        //m_maxFramesToCombine = m_maxFramesToCombine > par.MaxNumFrames ? par.MaxNumFrames : m_maxFramesToCombine;
-        //vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_NONE;
     }
     D3D11_VIDEO_DECODER_DESC video_desc;
@@ -108,7 +159,7 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     UINT profileCount = m_pVideoDevice->GetVideoDecoderProfileCount();
     assert(profileCount > 0);
 
-    HRESULT hr;
+    HRESULT hr = S_OK;
     bool isFound = false;
     GUID profileGuid;
     for (UINT indxProfile = 0; indxProfile < profileCount; indxProfile++)
@@ -116,7 +167,7 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
         hr = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
         if (hr != S_OK)
             return MFX_ERR_DEVICE_FAILED;
-        if (DXVA2_Intel_MFE_AVC == profileGuid)
+        if (DXVA2_Intel_MFE == profileGuid)
         {
             isFound = true;
             break;
@@ -129,20 +180,21 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     }
 
     video_desc.SampleWidth  = 4096;//hardcoded for AVC now
-    video_desc.SampleHeight = 4096;
+    video_desc.SampleHeight = 4096;//even for HEVC we don't need higher resolution for MFE, this to be managed individually per codec.
     video_desc.OutputFormat = DXGI_FORMAT_NV12;
-    video_desc.Guid = DXVA2_Intel_MFE_AVC;
-
+    video_desc.Guid = DXVA2_Intel_MFE;
 
     video_config.ConfigDecoderSpecific = ENCODE_ENC_PAK;
     video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
-    
+
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateMFEDevice");
         hr = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pMfeContext);
 
         if (hr != S_OK)
+        {
             return MFX_ERR_DEVICE_FAILED;
+        }
     }
     return MFX_ERR_NONE;
 }

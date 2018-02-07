@@ -1349,8 +1349,14 @@ MFX_ERR_NONE - if no errors
 mfxStatus MfxHwH264Encode::QueryHwCaps(VideoCORE* core, ENCODE_CAPS & hwCaps, mfxVideoParam * par)
 {
     GUID guid = MSDK_Private_Guid_Encode_AVC_Query;
-
-    if (IsOn(par->mfx.LowPower))
+#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+    if (MfxHwH264Encode::GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_MULTI_FRAME_PARAM))
+    {
+        guid = DXVA2_Intel_MFE;
+    }
+    else
+#endif
+    if(IsOn(par->mfx.LowPower))
     {
         guid = MSDK_Private_Guid_Encode_AVC_LowPower_Query;
     }

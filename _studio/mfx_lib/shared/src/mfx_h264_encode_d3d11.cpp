@@ -176,6 +176,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     if (m_pMFEAdapter != NULL)
     {
         mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
+        m_StreamInfo.CodecId = DDI_CODEC_AVC;
         mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE);
         return sts;
     }
@@ -510,7 +511,16 @@ mfxStatus D3D11Encoder::Execute(
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
 
     UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
-
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMFEAdapter != NULL)
+    {
+        ENCODE_MULTISTREAM_INFO streamInfo = m_StreamInfo;
+        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
+        m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(ENCODE_MULTISTREAM_INFO));
+        m_compBufDesc[bufCnt].pCompBuffer = &streamInfo;
+        bufCnt++;
+    }
+#endif
     m_sps.bNoAccelerationSPSInsertion = !task.m_insertSps[fieldId];
 
     m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
@@ -695,6 +705,27 @@ mfxStatus D3D11Encoder::Execute(
             hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
         }
         CHECK_HRES(hr);
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMFEAdapter != NULL)
+        {
+            mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
+            /*if(!task.m_userTimeout)
+            {
+            mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
+            if (passed < task.m_mfeTimeToWait)
+            {
+            timeout = timeout - passed;//-time for encode;//need to add a table with encoding times to
+            }
+            else
+            {
+            timeout = 0;
+            }
+            }*/
+            mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout));
+            if (sts != MFX_ERR_NONE)
+                return sts;
+        }
+#endif
     }
     else
     {
@@ -951,7 +982,7 @@ mfxStatus D3D11Encoder::Init(
     // Device creation for MVC dependent view requires special processing for DX11.
     // For MVC dependent view encoding device from Core can't be used (it's already used for base view). Need to create new one.
     // Also newly created encoding device for MVC dependent view shouldn't be stored inside Core.
-    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View) && (guid != DXVA2_Intel_MFE_AVC);
+    bool bUseDecoderInCore = (guid != MSDK_Private_Guid_Encode_MVC_Dependent_View) && (guid != DXVA2_Intel_MFE);
 
     ComPtrCore<ID3D11VideoDecoder>* pVideoDecoder = QueryCoreInterface<ComPtrCore<ID3D11VideoDecoder>>(m_core, MFXID3D11DECODER_GUID); 
     if (!pVideoDecoder)
@@ -977,14 +1008,21 @@ mfxStatus D3D11Encoder::Init(
                 m_pDecoder = pVideoDecoder->get();
         }
 #if defined(MFX_ENABLE_MFE)
-        else if (guid == DXVA2_Intel_MFE_AVC)
+        else if (guid == DXVA2_Intel_MFE)
         {
+            if(m_pMFEAdapter == NULL)
             m_pMFEAdapter = CreatePlatformMFEEncoder(m_core);
             sts = m_pMFEAdapter->Create(m_pVideoDevice, m_pVideoContext);
             if (sts != MFX_ERR_NONE)
                 return sts;
             m_pDecoder = m_pMFEAdapter->GetVideoDecoder();
-            return MFX_ERR_NONE;
+            if (m_pDecoder == NULL)
+                return MFX_ERR_UNSUPPORTED;
+            ENCODE_CAPS* caps = (ENCODE_CAPS*)m_pMFEAdapter->GetCaps(DDI_CODEC_AVC);
+            if (caps != NULL)
+                m_caps = *caps;
+            else
+                return MFX_ERR_UNSUPPORTED;
         }
 #endif
         if (!m_pDecoder)
@@ -1080,6 +1118,7 @@ mfxStatus D3D11Encoder::Init(
 #if 1
     // [3] Query the encoding device capabilities 
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+
     decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
     decoderExtParam.pPrivateInputData = 0;
     decoderExtParam.PrivateInputDataSize = 0;

@@ -95,21 +95,26 @@ static const GUID DXVA2_INTEL_PAVP =
 static const GUID DXVA2_INTEL_LOWPOWERENCODE_AVC = 
 {0x1424d4dc, 0x7cf5, 0x4bb1, { 0x9c, 0xd7, 0xb6, 0x37, 0x17, 0xa7, 0x2a, 0x6b} };
 
-//Currently 2 guids for HEVC and AVC, later there should be single GUID making HEVC and AVC(and whatever we add later for multiframe) working in single MFE Context
-// {AE45547E-307C-47EC-B57E-636DA4DE6429}
-static const GUID DXVA2_Intel_MFE_AVC =
-{ 0xae45547e, 0x307c, 0x47ec,{ 0xb5, 0x7e, 0x63, 0x6d, 0xa4, 0xde, 0x64, 0x29 } };
+//single GUID making HEVC and AVC(and whatever we add later for multiframe) working in single MFE Context
 // {036DFF40-94A6-45B3-A0B3-71F0CDF35129}
-static const GUID DXVA2_Intel_MFE_HEVC =
+static const GUID DXVA2_Intel_MFE =
 { 0x36dff40, 0x94a6, 0x45b3,{ 0xa0, 0xb3, 0x71, 0xf0, 0xcd, 0xf3, 0x51, 0x29 } };
 
-#define ENCODE_MFE_START_ID 0x113 //Kick start MFE encoding
+#define ENCODE_MFE_START_ID      0x113 //Kick start MFE encoding
 #define ENCODE_MFE_END_STREAM_ID 0x114 //Indicate which streams to be destroyed in MFE
+#define ENCODE_MFE_SET_CODEC_ID  0x115 //set codec for MFE GUID before query to indicate what caps structure to be reported.
+typedef enum tagMFE_CODEC
+{
+    DDI_CODEC_AVC = 0,
+    DDI_CODEC_HEVC,
+    DDI_CODEC_AV1
+} MFE_CODEC;
 
 typedef struct tagENCODE_MULTISTREAM_INFO
 {
-    UINT StreamId;
-    UINT reserved32bits[3];
+    UINT        StreamId;
+    MFE_CODEC   CodecId;
+    UINT        reserved32bits[3];
 } ENCODE_MULTISTREAM_INFO;
 
 #define AVC_D3D9_DDI_VERSION 928

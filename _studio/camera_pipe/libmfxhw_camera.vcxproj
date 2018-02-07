@@ -186,6 +186,7 @@
     <ClInclude Include="..\shared\include\mfx_vpp_hint_buf.h" />
     <ClInclude Include="..\shared\include\mfx_vpp_interface.h" />
     <ClInclude Include="..\shared\include\mfx_vpp_vaapi_simulation.h" />
+    <ClInclude Include="..\hevce_hw\h265\include\hevce_ddi_main.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

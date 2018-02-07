@@ -30,7 +30,7 @@
   <!-- Common item definitions -->
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(MSDK_STUDIO_ROOT)\hevce_hw\h265\include;..\mfx_lib\genx\field_copy\src;..\shared\umc\codec\vc1_dec\include;..\mfx_lib\fei\include;..\shared\umc\codec\color_space_converter\include;..\shared\umc\io\umc_va\include;..\shared\umc\codec\me\include;..\shared\umc\io\media_buffers\include;..\mfx_lib\vpp\include;..\shared\umc\codec\brc\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MFX_VA;MFX_VA_WIN;MFX_RT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
     </ClCompile>

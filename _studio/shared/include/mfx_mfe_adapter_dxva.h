@@ -19,9 +19,10 @@
 #include "vm_time.h"
 #include <mfxstructures.h>
 #include "encoding_ddi.h"
-
+#include "hevce_ddi_main.h"
 class MFEDXVAEncoder
 {
+    typedef void* CAPS;
     struct m_stream_ids_t
     {
         ENCODE_MULTISTREAM_INFO info;
@@ -79,7 +80,13 @@ public:
     //so for DXVA MFE implementation the same context being used for encoder and MFE submission
     ID3D11VideoDecoder* GetVideoDecoder();
     mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
-
+    //returns pointer to particular caps with only read access, NULL if caps not set.
+    CAPS GetCaps(MFE_CODEC codecId);
+//placeholder
+#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
+    ENCODE_CAPS_AV1 GetCaps() { return m_pAv1CAPS; };
+    void SetCaps(ENCODE_CAPS_AV1 caps) { m_pAv1CAPS = caps; };
+#endif
     virtual void AddRef();
     virtual void Release();
 
@@ -117,6 +124,12 @@ private:
     // m_pipelineStreams or when collection timeout elapses.
     mfxU32 m_framesCollected;
 
+    //To save caps for different codecs and reuse - no need in cycling query each time
+    ENCODE_CAPS *m_pAvcCAPS;
+    ENCODE_CAPS_HEVC *m_pHevcCAPS;
+#ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
+    ENCODE_CAPS_AV1 *m_pAv1CAPS;
+#endif
     // We need contexts extracted from m_toSubmit to
     // place to a linear vector to pass them to vaMFSubmit
     std::vector<ENCODE_COMPBUFFERDESC> m_contexts;

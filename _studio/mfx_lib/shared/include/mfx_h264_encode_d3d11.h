@@ -161,8 +161,9 @@ namespace MfxHwH264Encode
         ENCODE_SET_PICTURE_PARAMETERS_H264          m_pps;
         std::vector<ENCODE_SET_SLICE_HEADER_H264>   m_slice;
         std::vector<ENCODE_COMPBUFFERDESC>          m_compBufDesc;
+#if defined(MFX_ENABLE_MFE)
         ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
-
+#endif
         std::vector<ENCODE_QUERY_STATUS_PARAMS>     m_feedbackUpdate;
         CachedFeedback                              m_feedbackCached;
         HeaderPacker                                m_headerPacker;

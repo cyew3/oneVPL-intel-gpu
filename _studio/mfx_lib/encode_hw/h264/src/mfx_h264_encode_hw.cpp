@@ -851,7 +851,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
     else if (mfeParam && mfeParam->MaxNumFrames > 1 || mfeParam->MFMode < MFX_MF_AUTO)
     {
-        guid = DXVA2_Intel_MFE_AVC;
+        guid = DXVA2_Intel_MFE;
     }
 #endif
     else
@@ -864,13 +864,12 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         GetFrameWidth(m_video),
         GetFrameHeight(m_video));
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-    if (sts != MFX_ERR_NONE && guid == DXVA2_Intel_MFE_AVC)
+    if (sts != MFX_ERR_NONE && guid == DXVA2_Intel_MFE)
     {
         mfeParam->MaxNumFrames = 0;
         mfeParam->MFMode = MFX_MF_DISABLED;
         return sts;
     }
-
     else
 #endif
     if (sts != MFX_ERR_NONE)
