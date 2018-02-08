@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 File Name: avce_adaptivegop.cpp
 \* ****************************************************************************** */
@@ -112,22 +112,22 @@ namespace avce_adaptivegop{
         {/*01*/ MFX_ERR_NONE, MFX_ERR_NONE,
                                             {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_OFF},
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_OFF}}},
-        {/*02*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                                             {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_ON},
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_OFF}}},
-        {/*03*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        {/*03*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                                             {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_OFF},
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_ON}}},
-        {/*04*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                                             {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_ON},
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_ON}}},
-        {/*05*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
-                                            {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_ADAPTIVE},
+        {/*05*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+                                            {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_ADAPTIVE},   //Invalid value
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_ADAPTIVE}}},
-        {/*06*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                                             {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_ADAPTIVE},
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_OFF}}},
-        {/*07*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM,
+        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
                                             {{MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveI, MFX_CODINGOPTION_OFF},
                                              {MFX_PAR, &tsStruct::mfxExtCodingOption2.AdaptiveB, MFX_CODINGOPTION_ADAPTIVE}}}
     };
@@ -143,13 +143,33 @@ namespace avce_adaptivegop{
         SETPARS(&m_par, MFX_PAR);
 
         g_tsStatus.expect(tc.q_sts);
-        Query();
 
         mfxExtCodingOption2 *m_co2 = reinterpret_cast <mfxExtCodingOption2*>(m_par.GetExtBuffer(MFX_EXTBUFF_CODING_OPTION2));
+        mfxU32 AdaptiveIbefore = m_co2->AdaptiveI;
+        mfxU32 AdaptiveBbefore = m_co2->AdaptiveB;
 
-        if (tc.q_sts != MFX_ERR_NONE){
-            EXPECT_EQ(0, m_co2->AdaptiveI) << "AdaptiveI was not zeroed";
-            EXPECT_EQ(0, m_co2->AdaptiveB) << "AdaptiveB was not zeroed";
+        Query();
+
+        if (tc.q_sts > MFX_ERR_NONE)
+        {
+            if (AdaptiveIbefore == MFX_CODINGOPTION_ON) 
+            {
+                EXPECT_EQ(32, m_co2->AdaptiveI) << "AdaptiveI wasn't turned off";
+            }
+            else if (AdaptiveIbefore != MFX_CODINGOPTION_OFF && AdaptiveIbefore != MFX_CODINGOPTION_UNKNOWN)
+            {
+                EXPECT_NE(AdaptiveIbefore, m_co2->AdaptiveI) << "AdaptiveI value wasn't changed";
+            }
+
+            if (AdaptiveBbefore == MFX_CODINGOPTION_ON)
+            {
+                EXPECT_EQ(32, m_co2->AdaptiveB) << "AdaptiveB wasn't turned off";
+            }
+            else if (AdaptiveBbefore != MFX_CODINGOPTION_OFF && AdaptiveBbefore != MFX_CODINGOPTION_UNKNOWN)
+            {
+                EXPECT_NE(AdaptiveBbefore, m_co2->AdaptiveB) << "AdaptiveB value wasn't changed";
+            }
+
             SETPARS(&m_par, MFX_PAR);
         }
 
