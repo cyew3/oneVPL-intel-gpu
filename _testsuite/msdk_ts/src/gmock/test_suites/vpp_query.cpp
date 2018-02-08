@@ -301,6 +301,11 @@ namespace vpp_query
         mfxSession work_ses = m_session;
 
         SETPARS(&m_par, MFX_PAR);
+
+        std::auto_ptr<mfxVideoParam> outPar(new mfxVideoParam);
+        memset(outPar.get(), 0, sizeof(mfxVideoParam));
+        m_pParOut = outPar.get();
+
         if(tc.mode == MODE::SESSION_NULL) {
             work_ses = 0;
         }
@@ -314,6 +319,15 @@ namespace vpp_query
         }
 
         g_tsStatus.expect(tc.expected_sts);
+
+        // Windows Limitation: With DirectX* 11.1 interface MFX_FOURCC_YV12 supported only via software fallback
+        if ((g_tsImpl & MFX_IMPL_VIA_D3D11) &&
+            (m_par.vpp.In.FourCC == MFX_FOURCC_YV12) &&
+            (tc.expected_sts == MFX_ERR_NONE))
+        {
+            g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
+        }
+
         Query(work_ses, m_pPar, m_pParOut);
         TS_END;
         return 0;
