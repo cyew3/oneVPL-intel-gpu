@@ -324,10 +324,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameData &
         str += structName + ".B=" + ToHexFormatString(frameData.B) + "\n";
         str += structName + ".A=" + ToHexFormatString(frameData.A) + "\n";
 #if (MFX_VERSION >= 1025)
-        str += structName + ".A2RGB10->A=" + ToString(frameData.A2RGB10->A) + "\n";
-        str += structName + ".A2RGB10->R=" + ToString(frameData.A2RGB10->R) + "\n";
-        str += structName + ".A2RGB10->G=" + ToString(frameData.A2RGB10->G) + "\n";
-        str += structName + ".A2RGB10->B=" + ToString(frameData.A2RGB10->B) + "\n";
+        str += structName + ".A2RGB10=" + ToString(frameData.A2RGB10) + "\n";
 #endif
     }
     str += structName + ".MemId=" + ToString(frameData.MemId) + "\n";
