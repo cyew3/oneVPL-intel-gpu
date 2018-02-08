@@ -483,6 +483,7 @@ namespace hevce_query
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
         }
         else
