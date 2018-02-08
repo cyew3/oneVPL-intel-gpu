@@ -39,7 +39,7 @@ namespace HevcRplUtils
 
     struct PocDistanceIsLess : public BasePredicateForRefPicure
     {
-        PocDistanceIsLess(Dpb const & dpb, mfxU32 poc)
+        PocDistanceIsLess(Dpb const & dpb, mfxI32 poc)
         : BasePredicateForRefPicure(dpb)
         , m_poc(poc)
         {
@@ -51,12 +51,12 @@ namespace HevcRplUtils
                 (std::abs(m_dpb[l].m_poc - m_poc)) <
                 (std::abs(m_dpb[r].m_poc - m_poc));
         }
-        mfxU32 m_poc;
+        mfxI32 m_poc;
     };
 
     struct PocDistanceIsGreater : public BasePredicateForRefPicure
     {
-        PocDistanceIsGreater(Dpb const & dpb, mfxU32 poc)
+        PocDistanceIsGreater(Dpb const & dpb, mfxI32 poc)
         : BasePredicateForRefPicure(dpb)
         , m_poc(poc)
         {
@@ -68,7 +68,7 @@ namespace HevcRplUtils
                 (std::abs(m_dpb[l].m_poc - m_poc)) >
                 (std::abs(m_dpb[r].m_poc - m_poc));
         }
-        mfxU32 m_poc;
+        mfxI32 m_poc;
     };
 
     struct InterlacePocDistanceIsLess : public BasePredicateForRefPicure
