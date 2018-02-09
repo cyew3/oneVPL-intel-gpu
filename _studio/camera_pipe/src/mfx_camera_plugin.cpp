@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_camera_plugin.h"
@@ -1487,7 +1487,7 @@ mfxStatus MFXCamera_Plugin::Reset(mfxVideoParam *par)
     pipeParams.Caps        = m_Caps;
     pipeParams.GammaParams = m_GammaParams;
     pipeParams.par         = *par;
-    m_CameraProcessor->Reset(&newParam, &pipeParams);
+    mfxSts = m_CameraProcessor->Reset(&newParam, &pipeParams);
 
     m_mfxVideoParam = newParam;
     m_PipeParams    = pipeParams;

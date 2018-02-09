@@ -1603,17 +1603,9 @@ mfxStatus D3D9CameraProcessor::Reset(mfxVideoParam *par, CameraParams * FramePar
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    mfxU16 width  = m_params.vpp.In.CropW;
-    mfxU16 height = (m_params.vpp.In.CropH/2)*2;  // WA for driver bug: crash in case of odd height
-
-    if ( width > m_width || height > m_height )
-    {
-        // Resolution up is not supported
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-    }
     m_executeParams->reset = true;
-    m_width  = width;
-    m_height = height;
+    m_width  = m_params.vpp.In.CropW;;
+    m_height = (m_params.vpp.In.CropH / 2) * 2;  // WA for driver bug: crash in case of odd height;
 
     return sts;
 }
