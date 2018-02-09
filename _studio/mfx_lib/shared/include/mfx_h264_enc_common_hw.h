@@ -875,7 +875,8 @@ namespace MfxHwH264Encode
         mfxEncodeCtrl *       ctrl,
         mfxFrameSurface1 *    surface,
         mfxBitstream *        bs,
-        ENCODE_CAPS const &   caps);
+        ENCODE_CAPS const &   caps,
+        eMFXHWType            platform = MFX_HW_UNKNOWN);
 
     mfxStatus CheckFEIRunTimeExtBuffersContent(
         MfxVideoParam const & video,

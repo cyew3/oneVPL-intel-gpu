@@ -514,6 +514,10 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
 
     if (!pPWT)
         pPWT = &task.m_pwt[fieldId];
+    else if ((task.m_hwType >= MFX_HW_KBL) &&
+        ((pPWT->LumaLog2WeightDenom && pPWT->LumaLog2WeightDenom != 6) ||
+        (pPWT->ChromaLog2WeightDenom && pPWT->ChromaLog2WeightDenom != 6)))
+        pPWT = &task.m_pwt[fieldId];
 
     mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
 
@@ -581,6 +585,10 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
     mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
 
     if (!pPWT)
+        pPWT = &task.m_pwt[fieldId];
+    else if ((task.m_hwType >= MFX_HW_KBL) &&
+             ((pPWT->LumaLog2WeightDenom && pPWT->LumaLog2WeightDenom != 6) ||
+              (pPWT->ChromaLog2WeightDenom && pPWT->ChromaLog2WeightDenom != 6)))
         pPWT = &task.m_pwt[fieldId];
 
     size_t numSlices = task.m_SliceInfo.size();

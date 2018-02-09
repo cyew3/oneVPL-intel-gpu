@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -423,7 +423,52 @@ namespace avce_weight_prediction
         Init(m_session, m_pPar);
         if (tc.sts == MFX_ERR_NONE)
         {
-            EncodeFrames(NumFrames);
+            if ((tc.WeightPredP == EXP_WEIGHT_PEREDICTION || tc.WeightPredB == EXP_WEIGHT_PEREDICTION) &&
+                (tc.DenomLuma != 6 || tc.DenomLuma != 6) &&
+                g_tsHWtype >= MFX_HW_KBL) // Driver limitation
+            {
+                mfxU32 async = TS_MIN(NumFrames, TS_MAX(0, m_par.AsyncDepth - 1));
+                mfxU32 encoded = 0;
+                mfxU32 submitted = 0;
+                mfxSyncPoint sp;
+
+                while (encoded < NumFrames)
+                {
+                    mfxStatus sts = EncodeFrameAsync();
+
+                    if (sts == MFX_ERR_MORE_DATA)
+                    {
+                        if (!m_pSurf)
+                        {
+                            if (submitted)
+                            {
+                                encoded += submitted;
+                                SyncOperation(sp);
+                            }
+                            break;
+                        }
+
+                        continue;
+                    }
+                    g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                    g_tsStatus.check(); TS_CHECK_MFX;
+                    g_tsStatus.expect(MFX_ERR_NONE);
+                    sp = m_syncpoint;
+
+                    if (++submitted >= async)
+                    {
+                        SyncOperation(); TS_CHECK_MFX;
+                        encoded += submitted;
+                        submitted = 0;
+                        async = TS_MIN(async, (NumFrames - encoded));
+                    }
+                }
+                g_tsLog << encoded << " FRAMES ENCODED\n";
+            }
+            else
+            {
+                EncodeFrames(NumFrames);
+            }
         }
 #ifdef DEBUG
         FILE *f = fopen("out.h264", "wb");

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -4924,7 +4924,7 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         // Check Runtime extension buffers if not buffered frames processing
         if (ctrl != 0 && ctrl->NumExtParam)
         {
-            checkSts = CheckRunTimeExtBuffers(video, ctrl, surface, bs, caps);
+            checkSts = CheckRunTimeExtBuffers(video, ctrl, surface, bs, caps, hwType);
             if (checkSts < MFX_ERR_NONE) { return checkSts; }
         }
         else

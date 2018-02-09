@@ -3072,7 +3072,52 @@ void MfxHwH264Encode::CalcPredWeightTable(
         bool fade = true;
 
         if (external)
+        {
+            if ((task.m_hwType >= MFX_HW_KBL) &&
+                ((external->LumaLog2WeightDenom && external->LumaLog2WeightDenom != 6) ||
+                (external->ChromaLog2WeightDenom && external->ChromaLog2WeightDenom != 6)))
+            {
+                task.m_pwt[fid] = *external;
+                // ajust weights for Denom == 6
+                if (external->LumaLog2WeightDenom && (external->LumaLog2WeightDenom != 6))
+                {
+                    for (mfxU8 i = 0; i < 2; i++)//list
+                        for (mfxU8 j = 0; j < 32; j++)//entry
+                        {
+                            if (task.m_pwt[fid].LumaWeightFlag[i][j])
+                            {
+                                if (task.m_pwt[fid].LumaLog2WeightDenom <= 6)
+                                    task.m_pwt[fid].Weights[i][j][0][0] = task.m_pwt[fid].Weights[i][j][0][0] * (1 << (6 - task.m_pwt[fid].LumaLog2WeightDenom));//2^(6-k)
+                                else
+                                    task.m_pwt[fid].Weights[i][j][0][0] /= (1 << (task.m_pwt[fid].LumaLog2WeightDenom - 6));//2^(-1)
+                            }
+                        }
+                    task.m_pwt[fid].LumaLog2WeightDenom = 6;
+                }
+                if (external->ChromaLog2WeightDenom && (external->ChromaLog2WeightDenom != 6))
+                {
+                    for (mfxU8 i = 0; i < 2; i++)//list
+                        for (mfxU8 j = 0; j < 32; j++)//entry
+                        {
+                            if (task.m_pwt[fid].ChromaWeightFlag[i][j])
+                            {
+                                if (task.m_pwt[fid].ChromaLog2WeightDenom <= 6)
+                                {
+                                    task.m_pwt[fid].Weights[i][j][1][0] = task.m_pwt[fid].Weights[i][j][1][0] * (1 << (6 - task.m_pwt[fid].ChromaLog2WeightDenom));//2^(6-k)
+                                    task.m_pwt[fid].Weights[i][j][2][0] = task.m_pwt[fid].Weights[i][j][2][0] * (1 << (6 - task.m_pwt[fid].ChromaLog2WeightDenom));//2^(6-k)
+                                }
+                                else
+                                {
+                                    task.m_pwt[fid].Weights[i][j][1][0] /= (1 << (task.m_pwt[fid].ChromaLog2WeightDenom - 6));//2^(-1)
+                                    task.m_pwt[fid].Weights[i][j][2][0] /= (1 << (task.m_pwt[fid].ChromaLog2WeightDenom - 6));//2^(-1)
+                                }
+                            }
+                        }
+                    task.m_pwt[fid].ChromaLog2WeightDenom = 6;
+                }
+            }
             continue;
+        }
 
         //fprintf(stderr, "FO: %04d POC %04d:\n", task.m_frameOrder, task.GetPoc()[fid]); fflush(stderr);
 
