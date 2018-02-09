@@ -8,11 +8,17 @@
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\build\</MfxBuildDir>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM' ">
+  <PropertyGroup Condition="'$(ProjectName)'!='libmfx_uwp' and ('$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM')">
     <TargetName>$(ProjectName)-$(PlatformTarget)_d</TargetName>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release' or '$(Configuration)'=='release' or '$(Configuration)'=='Release_Intel' or '$(Configuration)'=='Release_MD'">
+  <PropertyGroup Condition="'$(ProjectName)'!='libmfx_uwp' and ('$(Configuration)'=='Release' or '$(Configuration)'=='release' or '$(Configuration)'=='Release_Intel' or '$(Configuration)'=='Release_MD')">
     <TargetName>$(ProjectName)-$(PlatformTarget)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ProjectName)'=='libmfx_uwp' and ('$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM')">
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(ProjectName)'=='libmfx_uwp' and ('$(Configuration)'=='Release' or '$(Configuration)'=='release' or '$(Configuration)'=='Release_Intel' or '$(Configuration)'=='Release_MD')">
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <Target Name="MediaSdkRootCheck" BeforeTargets="Build">
     <Warning Text="Unable to find MEDIASDK_ROOT environment variable. Build may fail due to missing IPP libraries." Condition="!Exists('$(MEDIASDK_ROOT)')" />
