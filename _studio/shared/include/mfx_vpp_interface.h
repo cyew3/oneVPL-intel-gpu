@@ -450,6 +450,7 @@ namespace MfxHwVideoProcessing
                , MctfMVPrecision(MFX_MVPRECISION_INTEGER)
 #endif
 #endif
+               , reset(0)
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -626,6 +627,7 @@ namespace MfxHwVideoProcessing
         mfxU16       MctfMVPrecision;
 #endif
 #endif
+        bool reset;
     };
 
     class DriverVideoProcessing

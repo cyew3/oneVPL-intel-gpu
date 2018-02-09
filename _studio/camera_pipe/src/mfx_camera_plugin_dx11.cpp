@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (_WIN32) || defined (_WIN64)
@@ -152,7 +152,7 @@ mfxStatus D3D11CameraProcessor::Reset(mfxVideoParam *par, CameraParams * FramePa
         // Resolution up is not supported
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-
+    m_executeParams->reset = true;
     m_width  = width;
     m_height = height;
 

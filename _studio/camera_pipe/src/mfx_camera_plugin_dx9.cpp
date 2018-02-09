@@ -1183,7 +1183,7 @@ HRESULT DXVAHDVideoProcessor::SetCameraPipeWhiteBalance(CameraWhiteBalanceParams
 mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *executeParams)
 {
     HRESULT hr;
-    if ( ! m_bIsSet )
+    if (!m_bIsSet || executeParams->reset)
     {
 
     DXVAHD_BLT_STATE_TARGET_RECT_DATA targetRectData;
@@ -1293,7 +1293,8 @@ mfxStatus DXVAHDVideoProcessor::Execute(MfxHwVideoProcessing::mfxExecuteParams *
     hr = SetVideoProcessStreamState(0, DXVAHD_STREAM_STATE_D3DFORMAT, sizeof(d3dFormatData), &d3dFormatData);
     CHECK_HRES(hr);
 
-    m_bIsSet = false;
+    m_bIsSet = true;
+    executeParams->reset = false;
     }
 
     DXVAHD_STREAM_DATA *pStream;
@@ -1610,7 +1611,7 @@ mfxStatus D3D9CameraProcessor::Reset(mfxVideoParam *par, CameraParams * FramePar
         // Resolution up is not supported
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-
+    m_executeParams->reset = true;
     m_width  = width;
     m_height = height;
 
@@ -1627,7 +1628,6 @@ mfxStatus D3D9CameraProcessor::AsyncRoutine(AsyncParams *pParam)
     mfxU32 surfInIndex;
     sts = PreWorkInSurface(pParam->surf_in, &surfInIndex, &tmpSurf);
     MFX_CHECK_STS(sts);
-    ZeroMemory(&m_executeParams[surfInIndex], sizeof(MfxHwVideoProcessing::mfxExecuteParams));
     
     mfxU32 surfOutIndex = 0;
     sts = PreWorkOutSurface(pParam->surf_out, &surfOutIndex, &m_executeParams[surfInIndex]);

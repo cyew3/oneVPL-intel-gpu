@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_D3D11_ENABLED)
@@ -2035,7 +2035,7 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
     mfxFrameInfo pOutInfo = pParams->targetSurface.frameInfo;
     RECT         pRect    = {};
 
-    if ( ! m_CameraSet )
+    if (!m_CameraSet || pParams->reset)
     {
         m_bUseEventHandle = true;
 
@@ -2095,6 +2095,7 @@ mfxStatus D3D11VideoProcessor::ExecuteCameraPipe(mfxExecuteParams *pParams)
             sts = CameraPipeSetVignetteParams(&pParams->CameraVignetteCorrection);
             MFX_CHECK_STS(sts);
         }
+        pParams->reset = false;
     }
 
     pRect.top = pRect.left = 0;
