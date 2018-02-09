@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_get_video_param.cpp
 
@@ -84,10 +84,53 @@ namespace hevce_get_video_param
         mfxHandleType type;
         mfxVideoParam new_par = {};
 
+        if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+        {
+            if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+            {
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                g_tsLog << "WARNING: Unsupported HW Platform!\n";
+                Query();
+                return 0;
+            }
+
+            if ((fourcc_id == MFX_FOURCC_P010)
+                && (g_tsHWtype < MFX_HW_KBL)) {
+                g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_YUY2 ||
+                fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410)
+                && (g_tsHWtype < MFX_HW_ICL))
+            {
+                g_tsLog << "\n\nWARNING: RExt formats are only supported starting from ICL!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == GMOCK_FOURCC_P012 || fourcc_id == GMOCK_FOURCC_Y212 || fourcc_id == GMOCK_FOURCC_Y412)
+                && (g_tsHWtype < MFX_HW_TGL))
+            {
+                g_tsLog << "\n\nWARNING: 12b formats are only supported starting from TGL!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == GMOCK_FOURCC_Y212)
+                && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 4:2:2 formats are NOT supported on VDENC!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == GMOCK_FOURCC_Y412)
+                && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: 4:4:4 formats are only supported on VDENC!\n\n\n";
+                throw tsSKIP;
+            }
+
+        }
+
         MFXInit();
         Load();
 
-        //set defoult param
+        //set default param
         m_par.mfx.FrameInfo.Width = 736;
         m_par.mfx.FrameInfo.Height = 576;
         m_par.mfx.FrameInfo.CropW = 720;
@@ -113,6 +156,20 @@ namespace hevce_get_video_param
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
         }
+        else if (fourcc_id == MFX_FOURCC_P010)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_P012)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        }
         else if (fourcc_id == MFX_FOURCC_YUY2)
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
@@ -123,7 +180,34 @@ namespace hevce_get_video_param
         {
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y210;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_Y212)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        }
+        else if (fourcc_id == MFX_FOURCC_AYUV)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
+        }
+        else if (fourcc_id == MFX_FOURCC_Y410)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
+        }
+        else if (fourcc_id == GMOCK_FOURCC_Y412)
+        {
+            m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
+            m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+            m_par.mfx.FrameInfo.Shift = 1;
+            m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 12;
         }
         else
         {
@@ -143,25 +227,6 @@ namespace hevce_get_video_param
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
         {
-            if (g_tsHWtype < MFX_HW_SKL) // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
-            {
-                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-                g_tsLog << "WARNING: Unsupported HW Platform!\n";
-                Query();
-                return 0;
-            }
-
-            if ((m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 || m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2)
-                && (g_tsHWtype < MFX_HW_ICL || g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
-            {
-                g_tsLog << "\n\nWARNING: 422 format only supported on ICL+ and ENC+PAK!\n\n\n";
-                throw tsSKIP;
-            }
-
-            //HEVCE_HW need aligned width and height for 32
-            m_par.mfx.FrameInfo.Width = ((m_par.mfx.FrameInfo.Width + 32 - 1) & ~(32 - 1));
-            m_par.mfx.FrameInfo.Height = ((m_par.mfx.FrameInfo.Height + 32 - 1) & ~(32 - 1));
-
             //set handle
             if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
                 || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
@@ -243,6 +308,12 @@ namespace hevce_get_video_param
     }
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_get_video_param, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_get_video_param, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_get_video_param, RunTest_Subtype<GMOCK_FOURCC_P012>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_get_video_param, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_422_y210_get_video_param, RunTest_Subtype<MFX_FOURCC_Y210>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_422_y216_get_video_param, RunTest_Subtype<GMOCK_FOURCC_Y212>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_get_video_param, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_get_video_param, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_444_y416_get_video_param, RunTest_Subtype<GMOCK_FOURCC_Y412>, n_cases);
 };
