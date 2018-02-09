@@ -2189,7 +2189,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         mfxU32 nLCU  = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
         mfxU32 nTile = Max<mfxU32>(par.m_ext.HEVCTiles.NumTileColumns, 1) * Max<mfxU32>(par.m_ext.HEVCTiles.NumTileRows, 1);
 
-        changed += CheckRange(par.m_ext.CO2.NumMbPerSlice, 0, nLCU / nTile);
+        mfxU32 minNumMbPerSlice = CeilDiv(nLCU, MAX_SLICES) / nTile;
+        changed += CheckRange(par.m_ext.CO2.NumMbPerSlice, minNumMbPerSlice, nLCU / nTile);
     }
 
     changed += CheckOption(par.mfx.NumSlice, MakeSlices(par, caps.SliceStructure), 0);
