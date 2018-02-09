@@ -133,7 +133,7 @@ mfxStatus CEncoder::CreateAllocator()
 void CEncoder::DeleteFrames()
 {
     // delete surfaces array
-    m_nEncSurfaces = 0; 
+    m_nEncSurfaces = 0;
     m_pEncSurfaces.reset();
 
     // delete frames
@@ -159,7 +159,7 @@ CEncoder::CEncoder():
     , m_encCtrl({ 0 })
     , _CTS(cancellation_token_source())
 {
-} 
+}
 
 CEncoder::~CEncoder()
 {
@@ -175,7 +175,7 @@ std::shared_ptr<CEncoder> CEncoder::Instantiate(mfxVideoParam &pParams)
     mfxInitParam initPar = { 0 };
 
     // minimum API version with which library is initialized
-    // set to 1.0 and later we will query actual version of 
+    // set to 1.0 and later we will query actual version of
     // the library which will got leaded
     mfxVersion version = { {20, 1} };
     initPar.Version = version;
@@ -193,8 +193,8 @@ std::shared_ptr<CEncoder> CEncoder::Instantiate(mfxVideoParam &pParams)
 
     if (sts >= MFX_ERR_NONE && !enc->m_pmfxENC)
         sts = MFX_ERR_MEMORY_ALLOC;
-    
-    if (sts >= MFX_ERR_NONE)   
+
+    if (sts >= MFX_ERR_NONE)
         sts = enc->CreateAllocator();
 
     if (sts >= MFX_ERR_NONE)
@@ -275,7 +275,7 @@ mfxStatus CEncoder::AllocEncoderInputFrames()
     return sts;
 }
 
-mfxU32 CEncoder::GetPictureSize() 
+mfxU32 CEncoder::GetPictureSize()
 {
     return m_mfxEncParams.mfx.FrameInfo.Height * m_mfxEncParams.mfx.FrameInfo.Width * FourCCToBPP(m_mfxEncParams.mfx.FrameInfo.FourCC) / 8;
 }
@@ -343,7 +343,7 @@ CEncoder::ReadAndEncodeAsync(StorageFile ^ storageSource, StorageFile ^ storageS
                     }
                 }
 
-                transaction->CommitAsync();
+                create_task(transaction->CommitAsync(), _CTS.get_token()).get();
             }, _CTS.get_token());
 
             //
@@ -373,7 +373,7 @@ mfxStatus ExtendMfxBitstream(mfxBitstream& pBitstream, mfxU32 nSize)
     if (pBitstream.Data) {
         memmove(pData, pBitstream.Data + pBitstream.DataOffset, pBitstream.DataLength);
     }
-    
+
     WipeMfxBitstream(pBitstream);
 
     pBitstream.Data = pData;
@@ -429,7 +429,7 @@ mfxStatus CEncoder::ProceedFrame(const mfxU8* bufferSrc, mfxU32 buffersize, mfxS
     pitch = pData.Pitch;
 
     auto src = bufferSrc;
-    auto dst = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;    
+    auto dst = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
 
     // load Y
     for (mfxU32 Yh = 0; Yh < h; Yh++) {
@@ -481,7 +481,7 @@ mfxStatus CEncoder::ProceedFrame(const mfxU8* bufferSrc, mfxU32 buffersize, mfxS
 
             case MFX_ERR_MORE_DATA:
                 // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
-                // indicates that there are no more buffered frames         
+                // indicates that there are no more buffered frames
                 sts = MFX_ERR_NONE;
                 break;
         }
