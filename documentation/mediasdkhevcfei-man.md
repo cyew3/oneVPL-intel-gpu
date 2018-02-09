@@ -355,9 +355,9 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 --- | ---
 `Header.BufferId` | Buffer ID, must be 'MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL'.
 `VaBufferID` | VA buffer ID. It is used by buffer allocator and SDK encoder and should not be directly set or changed by application.
-`Pitch`<br>`Height` | Pitch and height of `Data` buffer in elements. `Pitch` may be bigger than picture width divided by CTU size, and `Height` may be bigger than picture height divided by CTU size due to alignment requirements of underlying HW implementation. This value is set by buffer allocator and should not be directly set or changed by application.<br><br>To access an element located in specified row and column next code may be used: <br> `mfxFeiHevcEncCtuCtrl *ctrl = buf.Data + row * buf.Pitch + col;`
-`Data` | Buffer that holds per CTU control parameters.
-`ForceToIntra` <br>`ForceToInter` | If one of these values is set to 1, then current CTU encoded accordingly, as Intra or Inter. If more than one value is set or all values are zero, then encoder decides CTU type.
+`Pitch`<br>`Height` | Pitch and height of `Data` buffer in elements. `Height` must be 1, while `Pitch` should be equal to the total number of CTUs in the frame. These values are set by buffer allocator and should not be directly set or changed by application.
+`Data` | Buffer that holds per CTU control parameters. The `mfxFeiHevcEncCtuCtrl` elements inside the `Data` buffer are mapped to the CTUs inside the frame in the usual raster scan order, e.g. the CTU that is X-th from the left side of the frame and Y-th from the top side of the frame corresponds to the `Data[ (Y - 1) * frame_width_in_ctus + (X - 1) ]` element.
+`ForceToIntra` <br>`ForceToInter` | If one of these values is set to 1, then the current CTU will be encoded accordingly, as Intra (each CU inside the CTU will be intra-coded) or Inter (each CU inside the CTU will be inter-coded as either "AMVP", "Merge" or "Skip"). If both values are set to 1, then the CTU will be encoded as Inter (see above).
 
 **Change History**
 
