@@ -92,7 +92,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -113,7 +113,7 @@
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <ExceptionHandling>Async</ExceptionHandling>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -132,7 +132,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -159,7 +159,7 @@
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -179,6 +179,7 @@
     <None Include="src\intel_api.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_win_reg_key.cpp" />
     <ClCompile Include="src\intel_api_factory.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>

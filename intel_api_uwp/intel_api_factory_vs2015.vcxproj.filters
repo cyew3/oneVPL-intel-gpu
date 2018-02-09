@@ -51,6 +51,9 @@
     <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_plugin_hive.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
+    <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_win_reg_key.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\pch.h" />
