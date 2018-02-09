@@ -1137,6 +1137,7 @@ mfxStatus CTranscodingPipeline::Encode()
     ExtendedSurface VppExtSurface = {};
     ExtendedBS      *pBS = NULL;
     bool isQuit = false;
+    bool bPollFlag = false;
     bool bInsertIDR = false;
     int nFramesAlreadyPut = 0;
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
@@ -1294,7 +1295,23 @@ mfxStatus CTranscodingPipeline::Encode()
         {
             if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
             {
+                if (bPollFlag)
+                {
+                    VppExtSurface.pSurface = 0;
+                }
                 sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
+
+                // Count only real surfaces
+                if (VppExtSurface.pSurface)
+                {
+                    m_nProcessedFramesNum++;
+                }
+
+                if (m_nProcessedFramesNum >= m_MaxFramesForTranscode)
+                {
+                    bPollFlag = true;
+                }
+
                 if (!sts)
                     nFramesAlreadyPut++;
             }
@@ -1331,7 +1348,6 @@ mfxStatus CTranscodingPipeline::Encode()
         // check encoding result
         MSDK_CHECK_STATUS(sts, "<EncodeOneFrame|Surface2BS> failed");
 
-        m_nProcessedFramesNum++;
         // output statistics if several conditions are true OR we've approached
         // the end, and statisticsWindowSize is not 0, but number of frames is
         // not multiple of statisticsWindowSize; should use m_nProcessedFramesNum
@@ -1403,12 +1419,6 @@ mfxStatus CTranscodingPipeline::Encode()
                 continue;
             }
         } // if (m_nVPPCompEnable != VppCompOnly)
-
-        /* Exit condition */
-        if (m_nProcessedFramesNum == m_MaxFramesForTranscode)
-        {
-            break;
-        }
 
         msdk_tick nFrameTime = msdk_time_get_tick() - nBeginTime;
         if (nFrameTime < m_nReqFrameTime)
@@ -1710,7 +1720,7 @@ mfxStatus CTranscodingPipeline::Transcode()
             m_mfxDecParams.mfx.FrameInfo.PicStruct = DecExtSurface.pSurface->Info.PicStruct;
         }
         // pre-process a frame
-        if (m_pmfxVPP.get())
+        if (m_pmfxVPP.get() && bNeedDecodedFrames)
         {
             if (m_bIsFieldWeaving)
             {
@@ -1805,22 +1815,17 @@ mfxStatus CTranscodingPipeline::Transcode()
         SetEncCtrlRT(VppExtSurface, bInsertIDR);
         bInsertIDR = false;
 
-        // encode frame only if it wasn't encoded enough
-        if(bNeedDecodedFrames)
-        {
-            if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
-            {
-                sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
-            }
-            else
-            {
+        if (bNeedDecodedFrames)
+            m_nProcessedFramesNum++;
 
-                sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
-            }
+        if(m_mfxEncParams.mfx.CodecId != MFX_CODEC_DUMP)
+        {
+            sts = EncodeOneFrame(&VppExtSurface, &m_BSPool.back()->Bitstream);
         }
         else
         {
-            sts = MFX_ERR_MORE_DATA;
+
+            sts = Surface2BS(&VppExtSurface, &m_BSPool.back()->Bitstream, m_encoderFourCC);
         }
 
         // check if we need one more frame from decode
@@ -1841,7 +1846,6 @@ mfxStatus CTranscodingPipeline::Transcode()
         // check encoding result
         MSDK_CHECK_STATUS(sts, "<EncodeOneFrame|Surface2BS> failed");
 
-        m_nProcessedFramesNum++;
         if(statisticsWindowSize)
         {
         if ( (statisticsWindowSize && m_nOutputFramesNum && 0 == m_nProcessedFramesNum % statisticsWindowSize) ||
