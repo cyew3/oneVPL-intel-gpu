@@ -237,6 +237,7 @@
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp" />
     <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp" />
+    <ClCompile Include="src\gmock\test_suites\av1d_get_video_param.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_init.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\av1d_reset.cpp" />
