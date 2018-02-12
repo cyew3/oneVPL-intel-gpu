@@ -1,3 +1,14 @@
+OpenSourceCMakeLists.txt
+_studio/hevce_hw/OpenSourceCMakeLists.txt
+_studio/mfx_lib/OpenSourceCMakeLists.txt
+_studio/mfx_lib/decode/OpenSourceCMakeLists.txt
+_studio/mfx_lib/encode_hw/OpenSourceCMakeLists.txt
+_studio/mfx_lib/fei/OpenSourceCMakeLists.txt
+_studio/mfx_lib/plugin/OpenSourceCMakeLists.txt
+_studio/mfx_lib/vpp/OpenSourceCMakeLists.txt
+_studio/shared/asc/OpenSourceCMakeLists.txt
+_studio/shared/mfx_trace/OpenSourceCMakeLists.txt
+_studio/shared/umc/OpenSourceCMakeLists.txt
 builder/ConfTargets.cmake
 builder/FindFunctions.cmake
 builder/FindGlobals.cmake
