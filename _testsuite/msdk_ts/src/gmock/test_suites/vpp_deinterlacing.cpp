@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//     Copyright (c) 2016-2017 Intel Corporation. All Rights Reserved.
+//     Copyright (c) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -33,7 +33,7 @@ public:
         RESET,
     };
 
-private:
+protected:
 
     enum
     {
@@ -54,6 +54,8 @@ private:
     };
 
     static const tc_struct test_case[];
+
+    int RunTest(const tc_struct& tc);
 };
 
 const TestSuite::tc_struct TestSuite::test_case[] =
@@ -106,8 +108,12 @@ const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(Test
 
 int TestSuite::RunTest(unsigned int id)
 {
+    return RunTest(test_case[id]);
+}
+
+int TestSuite::RunTest(const tc_struct& tc)
+{
     TS_START;
-    const tc_struct& tc = test_case[id];
 
     mfxStatus sts = tc.sts;
 
@@ -180,186 +186,57 @@ TS_REG_TEST_SUITE_CLASS(vpp_deinterlacing);
 
 }
 
-namespace vpp_8b_420_yv12_deinterlacing
+namespace vpp_rext_deinterlacing
 {
+    using namespace tsVPPInfo;
+
+    template<eFmtId FmtID>
     class TestSuite : public vpp_deinterlacing::TestSuite
     {
     public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC             = MFX_FOURCC_YV12;
-            m_par.vpp.In.BitDepthLuma       = 8;
-            m_par.vpp.In.BitDepthChroma     = 8;
-            m_par.vpp.In.Shift              = 0;
-            m_par.vpp.In.ChromaFormat       = MFX_CHROMAFORMAT_YUV420;
+        TestSuite()
+            : vpp_deinterlacing::TestSuite()
+        {}
 
-            m_par.vpp.Out.FourCC            = MFX_FOURCC_NV12;
-            m_par.vpp.Out.BitDepthLuma      = 8;
-            m_par.vpp.Out.BitDepthChroma    = 8;
-            m_par.vpp.Out.Shift             = 0;
-            m_par.vpp.Out.ChromaFormat      = MFX_CHROMAFORMAT_YUV420;
+        int RunTest(unsigned int id)
+        {
+            m_par.vpp.In.FourCC         = m_par.vpp.Out.FourCC         = Formats[FmtID].FourCC;
+            m_par.vpp.In.BitDepthLuma   = m_par.vpp.Out.BitDepthLuma   = Formats[FmtID].BdY;
+            m_par.vpp.In.BitDepthChroma = m_par.vpp.Out.BitDepthChroma = Formats[FmtID].BdC;
+            m_par.vpp.In.ChromaFormat   = m_par.vpp.Out.ChromaFormat   = Formats[FmtID].ChromaFormat;
+            m_par.vpp.In.Shift          = m_par.vpp.Out.Shift          = Formats[FmtID].Shift;
+
+            tc_struct tc = test_case[id];
+            if (MFX_ERR_UNSUPPORTED == CCSupport()[FmtID][FmtID])
+            {
+                tc.sts = MFX_ERR_UNSUPPORTED;
+            }
+            else if (!tc.sts && MFX_WRN_PARTIAL_ACCELERATION == CCSupport()[FmtID][FmtID])
+            {
+                tc.sts = MFX_WRN_PARTIAL_ACCELERATION;
+            }
+
+            return  vpp_deinterlacing::TestSuite::RunTest(tc);
         }
     };
-    TS_REG_TEST_SUITE_CLASS(vpp_8b_420_yv12_deinterlacing);
-}
 
-namespace vpp_8b_422_uyvy_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC             = MFX_FOURCC_UYVY;
-            m_par.vpp.In.BitDepthLuma       = 8;
-            m_par.vpp.In.BitDepthChroma     = 8;
-            m_par.vpp.In.Shift              = 0;
-            m_par.vpp.In.ChromaFormat       = MFX_CHROMAFORMAT_YUV422;
+#define REG_TEST(NAME, FMT_ID)                                     \
+    namespace NAME                                                 \
+    {                                                              \
+        typedef vpp_rext_deinterlacing::TestSuite<FMT_ID> TestSuite; \
+        TS_REG_TEST_SUITE_CLASS(NAME);                             \
+    }
 
-            m_par.vpp.Out.FourCC            = MFX_FOURCC_UYVY;
-            m_par.vpp.Out.BitDepthLuma      = 8;
-            m_par.vpp.Out.BitDepthChroma    = 8;
-            m_par.vpp.Out.Shift             = 0;
-            m_par.vpp.Out.ChromaFormat      = MFX_CHROMAFORMAT_YUV422;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_8b_422_uyvy_deinterlacing);
-}
-
-namespace vpp_8b_422_yuy2_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC             = MFX_FOURCC_YUY2;
-            m_par.vpp.In.BitDepthLuma       = 8;
-            m_par.vpp.In.BitDepthChroma     = 8;
-            m_par.vpp.In.Shift              = 0;
-            m_par.vpp.In.ChromaFormat       = MFX_CHROMAFORMAT_YUV422;
-
-            m_par.vpp.Out.FourCC            = MFX_FOURCC_YUY2;
-            m_par.vpp.Out.BitDepthLuma      = 8;
-            m_par.vpp.Out.BitDepthChroma    = 8;
-            m_par.vpp.Out.Shift             = 0;
-            m_par.vpp.Out.ChromaFormat      = MFX_CHROMAFORMAT_YUV422;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_8b_422_yuy2_deinterlacing);
-}
-
-namespace vpp_8b_444_ayuv_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC             = MFX_FOURCC_AYUV;
-            m_par.vpp.In.BitDepthLuma       = 8;
-            m_par.vpp.In.BitDepthChroma     = 8;
-            m_par.vpp.In.Shift              = 0;
-            m_par.vpp.In.ChromaFormat       = MFX_CHROMAFORMAT_YUV444;
-
-            m_par.vpp.Out.FourCC            = MFX_FOURCC_AYUV;
-            m_par.vpp.Out.BitDepthLuma      = 8;
-            m_par.vpp.Out.BitDepthChroma    = 8;
-            m_par.vpp.Out.Shift             = 0;
-            m_par.vpp.Out.ChromaFormat      = MFX_CHROMAFORMAT_YUV444;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_ayuv_deinterlacing);
-}
-
-namespace vpp_8b_444_rgb4_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC             = MFX_FOURCC_RGB4;
-            m_par.vpp.In.BitDepthLuma       = 8;
-            m_par.vpp.In.BitDepthChroma     = 8;
-            m_par.vpp.In.Shift              = 0;
-            m_par.vpp.In.ChromaFormat       = MFX_CHROMAFORMAT_YUV444;
-
-            m_par.vpp.Out.FourCC            = MFX_FOURCC_RGB4;
-            m_par.vpp.Out.BitDepthLuma      = 8;
-            m_par.vpp.Out.BitDepthChroma    = 8;
-            m_par.vpp.Out.Shift             = 0;
-            m_par.vpp.Out.ChromaFormat      = MFX_CHROMAFORMAT_YUV444;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_8b_444_rgb4_deinterlacing);
-}
-
-namespace vpp_10b_420_p010_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC = MFX_FOURCC_P010;
-            m_par.vpp.In.BitDepthLuma = 10;
-            m_par.vpp.In.BitDepthChroma = 10;
-            m_par.vpp.In.Shift = 1;
-            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-
-            m_par.vpp.Out.FourCC = MFX_FOURCC_P010;
-            m_par.vpp.Out.BitDepthLuma = 10;
-            m_par.vpp.Out.BitDepthChroma = 10;
-            m_par.vpp.Out.Shift = 1;
-            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_10b_420_p010_deinterlacing);
-}
-
-namespace vpp_10b_422_y210_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC = MFX_FOURCC_Y210;
-            m_par.vpp.In.BitDepthLuma = 10;
-            m_par.vpp.In.BitDepthChroma = 10;
-            m_par.vpp.In.Shift = 1;
-            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-
-            m_par.vpp.Out.FourCC = MFX_FOURCC_Y210;
-            m_par.vpp.Out.BitDepthLuma = 10;
-            m_par.vpp.Out.BitDepthChroma = 10;
-            m_par.vpp.Out.Shift = 1;
-            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_10b_422_y210_deinterlacing);
-}
-
-namespace vpp_10b_444_y410_deinterlacing
-{
-    class TestSuite : public vpp_deinterlacing::TestSuite
-    {
-    public:
-        TestSuite() : vpp_deinterlacing::TestSuite()
-        {
-            m_par.vpp.In.FourCC = MFX_FOURCC_Y410;
-            m_par.vpp.In.BitDepthLuma = 10;
-            m_par.vpp.In.BitDepthChroma = 10;
-            m_par.vpp.In.Shift = 0;
-            m_par.vpp.In.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-
-            m_par.vpp.Out.FourCC = MFX_FOURCC_Y410;
-            m_par.vpp.Out.BitDepthLuma = 10;
-            m_par.vpp.Out.BitDepthChroma = 10;
-            m_par.vpp.Out.Shift = 0;
-            m_par.vpp.Out.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
-        }
-    };
-    TS_REG_TEST_SUITE_CLASS(vpp_10b_444_y410_deinterlacing);
+    REG_TEST(vpp_8b_420_yv12_deinterlacing, FMT_ID_8B_420_YV12);
+    REG_TEST(vpp_8b_422_uyvy_deinterlacing, FMT_ID_8B_422_UYVY);
+    REG_TEST(vpp_8b_422_yuy2_deinterlacing, FMT_ID_8B_422_YUY2);
+    REG_TEST(vpp_8b_444_ayuv_deinterlacing, FMT_ID_8B_444_AYUV);
+    REG_TEST(vpp_8b_444_rgb4_deinterlacing, FMT_ID_8B_444_RGB4);
+    REG_TEST(vpp_10b_420_p010_deinterlacing, FMT_ID_10B_420_P010);
+    REG_TEST(vpp_10b_422_y210_deinterlacing, FMT_ID_10B_422_Y210);
+    REG_TEST(vpp_10b_444_y410_deinterlacing, FMT_ID_10B_444_Y410);
+    REG_TEST(vpp_12b_420_p016_deinterlacing, FMT_ID_12B_420_P016);
+    REG_TEST(vpp_12b_422_y216_deinterlacing, FMT_ID_12B_422_Y216);
+    REG_TEST(vpp_12b_444_y416_deinterlacing, FMT_ID_12B_444_Y416);
+#undef REG_TEST
 }
