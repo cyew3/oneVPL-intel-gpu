@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -211,7 +211,7 @@ namespace hevce_transformskip
         auto& tc = TCList[id];
         mfxExtCodingOption3& CO3 = enc.m_par;
         BitstreamChecker checker;
-        const mfxU32 nFrames = 4;
+        const mfxU32 nFrames = (g_tsConfig.sim) ? 1 : 4;
 
         mfxFrameInfo srcFI = {};
         srcFI.BitDepthLuma = 8;
@@ -452,10 +452,64 @@ namespace hevce_transformskip
         return 0;
     }
 
+    int testP012(unsigned int id)
+    {
+        TS_START;
+        tsVideoEncoder enc(MFX_CODEC_HEVC);
+        enc.m_par.mfx.FrameInfo.BitDepthLuma = 12;
+        enc.m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        enc.m_par.mfx.FrameInfo.Shift = 1;
+        enc.m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        enc.m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P016;
+        enc.m_par.mfx.QPI = enc.m_par.mfx.QPP = enc.m_par.mfx.QPB = 26 + 24;
+
+        return test(id, enc);
+        TS_END;
+
+        return 0;
+    }
+
+    int testY212(unsigned int id)
+    {
+        TS_START;
+        tsVideoEncoder enc(MFX_CODEC_HEVC);
+        enc.m_par.mfx.FrameInfo.BitDepthLuma = 12;
+        enc.m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        enc.m_par.mfx.FrameInfo.Shift = 1;
+        enc.m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
+        enc.m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y216;
+        enc.m_par.mfx.QPI = enc.m_par.mfx.QPP = enc.m_par.mfx.QPB = 26 + 24;
+
+        return test(id, enc);
+        TS_END;
+
+        return 0;
+    }
+
+    int testY412(unsigned int id)
+    {
+        TS_START;
+        tsVideoEncoder enc(MFX_CODEC_HEVC);
+        enc.m_par.mfx.FrameInfo.BitDepthLuma = 12;
+        enc.m_par.mfx.FrameInfo.BitDepthChroma = 12;
+        enc.m_par.mfx.FrameInfo.Shift = 1;
+        enc.m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+        enc.m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y416;
+        enc.m_par.mfx.QPI = enc.m_par.mfx.QPP = enc.m_par.mfx.QPB = 26 + 24;
+
+        return test(id, enc);
+        TS_END;
+
+        return 0;
+    }
+
     TS_REG_TEST_SUITE(hevce_8b_420_nv12_transformskip, testNV12, sizeof(TCList) / sizeof(TCList[0]));
     TS_REG_TEST_SUITE(hevce_8b_422_yuy2_transformskip, testYUY2, sizeof(TCList) / sizeof(TCList[0]));
     TS_REG_TEST_SUITE(hevce_8b_444_ayuv_transformskip, testAYUV, sizeof(TCList) / sizeof(TCList[0]));
     TS_REG_TEST_SUITE(hevce_10b_420_p010_transformskip, testP010, sizeof(TCList) / sizeof(TCList[0]));
     TS_REG_TEST_SUITE(hevce_10b_422_y210_transformskip, testY210, sizeof(TCList) / sizeof(TCList[0]));
     TS_REG_TEST_SUITE(hevce_10b_444_y410_transformskip, testY410, sizeof(TCList) / sizeof(TCList[0]));
+    TS_REG_TEST_SUITE(hevce_12b_420_p016_transformskip, testP012, sizeof(TCList) / sizeof(TCList[0]));
+    TS_REG_TEST_SUITE(hevce_12b_422_y216_transformskip, testY212, sizeof(TCList) / sizeof(TCList[0]));
+    TS_REG_TEST_SUITE(hevce_12b_444_y416_transformskip, testY412, sizeof(TCList) / sizeof(TCList[0]));
 };
