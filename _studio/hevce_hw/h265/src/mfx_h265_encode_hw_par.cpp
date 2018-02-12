@@ -1922,7 +1922,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (par.mfx.TargetUsage && caps.TUSupport)
         changed += CheckTU(caps.TUSupport, par.mfx.TargetUsage);
 
-    changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? par.mfx.GopPicSize - 1 : 0xFFFF));
+    changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? Max(1, par.mfx.GopPicSize - 1) : 0xFFFF));
 
     invalid += CheckOption(par.Protected
 #if !defined(MFX_VA_LINUX) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
