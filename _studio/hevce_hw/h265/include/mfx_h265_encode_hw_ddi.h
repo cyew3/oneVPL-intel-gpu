@@ -20,6 +20,11 @@
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
 #include "mfx_mfe_adapter_dxva.h"
 #endif
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#include "mfx_win_event_cache.h"
+#endif
+
 #include <memory>
 #include <vector>
 
@@ -264,6 +269,9 @@ public:
     {
         return MFX_ERR_NONE;
     }
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    std::unique_ptr<EventCache> m_EventCache;
+#endif
 };
 
 class DDIHeaderPacker

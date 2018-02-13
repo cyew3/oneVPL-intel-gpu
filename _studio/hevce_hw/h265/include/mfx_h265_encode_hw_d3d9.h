@@ -15,12 +15,13 @@
 #include "auxiliary_device.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include "mfx_h265_encode_hw_ddi_trace.h"
+#include "mfx_h265_encode_hw_d3d_common.h"
 
 namespace MfxHwH265Encode
 {
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-class D3D9Encoder : public DriverEncoder, DDIHeaderPacker, DDITracer
+class D3D9Encoder : public D3DXCommonEncoder, DDIHeaderPacker, DDITracer
 {
 public:
     D3D9Encoder();
@@ -49,11 +50,6 @@ public:
         D3DDDIFORMAT            type);
 
     virtual
-    mfxStatus Execute(
-        Task const &task,
-        mfxHDLPair surface);
-
-    virtual
     mfxStatus QueryCompBufferInfo(
         D3DDDIFORMAT           type,
         mfxFrameAllocRequest & request);
@@ -61,11 +57,6 @@ public:
     virtual
     mfxStatus QueryEncodeCaps(
         ENCODE_CAPS_HEVC & caps);
-
-
-    virtual
-    mfxStatus QueryStatus(
-        Task & task);
 
     virtual
     mfxStatus Destroy();
@@ -75,6 +66,17 @@ public:
     {
         return DDIHeaderPacker::PackHeader(task, nut);
     }
+
+protected:
+    // async call
+    virtual
+    mfxStatus QueryStatusAsync(
+        Task & task);
+
+    virtual
+    mfxStatus ExecuteImpl(
+        Task const &task,
+        mfxHDLPair surface);
 
 private:
     MFXCoreInterface*              m_core;

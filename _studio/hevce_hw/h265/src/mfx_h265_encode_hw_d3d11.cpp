@@ -283,6 +283,9 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
     m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
     m_maxSlices = Min(m_maxSlices, (mfxU32)MAX_SLICES);
 
+    mfxStatus sts = D3DXCommonEncoder::Init(m_core);
+    MFX_CHECK_STS(sts);
+
     return MFX_ERR_NONE;
 }
 
@@ -343,6 +346,10 @@ mfxU8 convertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA;
     case D3DDDIFMT_INTELENCODE_MBQPDATA:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    case D3DDDIFMT_INTELENCODE_SYNCOBJECT:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT;
+#endif
     default:
         break;
     }
@@ -464,6 +471,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
         m_feedbackPool.Reset(response.NumFrameActual, fbType, m_maxSlices);
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->Init(response.NumFrameActual);
+#endif
+
     return MFX_ERR_NONE;
 }
 
@@ -475,7 +487,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
     executeParams.NumCompBuffers++;
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDLPair pair)
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & task, mfxHDLPair pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
@@ -693,6 +705,32 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
 #else
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        {
+            // allocate the event
+            Task & task1 = const_cast<Task &>(task);
+            task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
+
+            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+            decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+            decoderExtParams.pPrivateInputData = &task1.m_GpuEvent;
+            decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent);
+            decoderExtParams.pPrivateOutputData = NULL;
+            decoderExtParams.PrivateOutputDataSize = 0;
+            decoderExtParams.ResourceCount = 0;
+            decoderExtParams.ppResourceList = NULL;
+
+            HRESULT hr;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+                hr = DecoderExtension(decoderExtParams);
+            }
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+#endif
+
         HRESULT hr;
         D3D11_VIDEO_DECODER_EXTENSION ext = {};
 
@@ -711,7 +749,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
             hr = m_vcontext->DecoderEndFrame(m_vdecoder);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-#endif
+#endif //MFX_SKIP_FRAME_SUPPORT
 #if defined(MFX_ENABLE_MFE)
         if (m_pMfeAdapter != NULL)
         {
@@ -734,9 +772,9 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & task)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatusAsync");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber

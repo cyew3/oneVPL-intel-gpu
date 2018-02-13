@@ -399,6 +399,10 @@ typedef struct _Task : DpbFrame
 #endif // MFX_ENABLE_MFE
 
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    GPU_SYNC_EVENT_HANDLE m_GpuEvent;
+#endif
+
 }Task;
 
 enum
@@ -1068,7 +1072,6 @@ private:
     UMC::Mutex m_listMutex;
     mfxU16     m_resetHeaders;
     LastReordFieldInfo  m_lastFieldInfo;
-
 };
 
 class FrameLocker : public mfxFrameData

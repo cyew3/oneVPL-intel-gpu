@@ -209,6 +209,9 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(Mf
     m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
     m_maxSlices = Min(m_maxSlices, (mfxU32)MAX_SLICES);
 
+    mfxStatus sts = D3DXCommonEncoder::Init(m_core);
+    MFX_CHECK_STS(sts);
+
     return MFX_ERR_NONE;
 }
 
@@ -330,6 +333,11 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
         m_feedbackPool.Reset(response.NumFrameActual, fbType, m_maxSlices);
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->Init(response.NumFrameActual);
+#endif
+
     return MFX_ERR_NONE;
 }
 
@@ -341,7 +349,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
     executeParams.NumCompBuffers++;
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDLPair pair)
+mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & task, mfxHDLPair pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Execute");
 #ifndef HEADER_PACKING_TEST
@@ -512,6 +520,16 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        // allocate the event
+        Task & task1 = const_cast<Task &>(task);
+        task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+        m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
+
+        hr = Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent, (void*)0);
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#endif
+
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_ENC_PAK_ID");
             hr = Execute(ENCODE_ENC_PAK_ID, executeParams, (void *)0);
@@ -536,7 +554,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatus(Task & task)
+mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & task)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus");
 #ifndef HEADER_PACKING_TEST
