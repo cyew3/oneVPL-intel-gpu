@@ -198,6 +198,7 @@ static IdTable tbl_fourcc[] = {
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     TABLE_ENTRY(MFX_FOURCC_Y216),
     TABLE_ENTRY(MFX_FOURCC_Y416),
+    TABLE_ENTRY(MFX_FOURCC_RGBP),
 #endif
 };
 

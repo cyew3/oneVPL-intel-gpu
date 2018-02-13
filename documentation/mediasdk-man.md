@@ -7409,6 +7409,7 @@ The `ColorFourCC` enumerator itemizes color formats.
 `MFX_FOURCC_NV16` | 4:2:2 color format with similar to NV12 layout.
 `MFX_FOURCC_RGB565` | 2 bytes per pixel, uint16 in little-endian format, where bits 0-4 are blue, bits 5-10 are green and bits 11-15 are red.
 `MFX_FOURCC_RGB4` | RGB4 (RGB32) color planes
+`MFX_FOURCC_RGBP` | RGB 24 bit planar layout (3 separate channels, 8-bits per sample each) <br><br>This format should be mapped to D3DFMT_R8G8B8 or VA_FOURCC_RGBP.
 `MFX_FOURCC_YUY2` | YUY2 color planes
 `MFX_FOURCC_P8` | Internal SDK color format. The application should use one of the functions below to create such surface, depending on Direct3D version.<br><br>Direct3D9<br><br>IDirectXVideoDecoderService::CreateSurface()<br><br>Direct3D11<br><br>ID3D11Device::CreateBuffer()
 `MFX_FOURCC_P8_TEXTURE` | Internal SDK color format. The application should use one of the functions below to create such surface, depending on Direct3D version.<br><br>Direct3D9<br><br>IDirectXVideoDecoderService::CreateSurface()<br><br>Direct3D11<br><br>ID3D11Device::CreateTexture2D()
@@ -7444,7 +7445,7 @@ The SDK API 1.17 adds `MFX_FOURCC_ABGR16`, `MFX_FOURCC_AYUV`, `MFX_FOURCC_AYUV_R
 `MFX_FOURCC_UYVY`.
 
 The SDK API **TBD** adds `MFX_FOURCC_P016`, `MFX_FOURCC_Y210`, `MFX_FOURCC_Y216`, `MFX_FOURCC_Y410`,
-`MFX_FOURCC_Y416` and `MFX_FOURCC_RGB565`.
+`MFX_FOURCC_Y416`, `MFX_FOURCC_RGB565` and `MFX_FOURCC_RGBP`.
 
 ## <a id='Corruption'>Corruption</a>
 
