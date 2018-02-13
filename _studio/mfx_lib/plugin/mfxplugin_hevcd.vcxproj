@@ -520,6 +520,7 @@
   <ItemGroup>
     <ClInclude Include="include\mfx_hevc_dec_plugin.h" />
     <ClInclude Include="include\mfx_plugin_module.h" />
+    <ClInclude Include="include\mfx_stub_dec_plugin.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
@@ -576,6 +577,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_hevc_dec_plugin.cpp" />
+    <ClCompile Include="src\mfx_stub_dec_plugin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="libmfxsw_plugin_hevcd.rc" />

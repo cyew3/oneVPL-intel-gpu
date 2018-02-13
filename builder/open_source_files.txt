@@ -111,6 +111,8 @@ _studio/mfx_lib/plugin/src/mfx_h264la_plugin.cpp
 _studio/mfx_lib/plugin/src/mfx_hevc_dec_plugin.cpp
 _studio/mfx_lib/plugin/src/mfx_hevc_enc_plugin.cpp
 _studio/mfx_lib/plugin/src/mfx_vpp_plugin.cpp
+_studio/mfx_lib/plugin/include/mfx_stub_dec_plugin.h
+_studio/mfx_lib/plugin/src/mfx_stub_dec_plugin.cpp
 _studio/mfx_lib/scheduler/include/mfx_dependency_item.h
 _studio/mfx_lib/scheduler/include/mfx_scheduler_core.h
 _studio/mfx_lib/scheduler/include/mfx_scheduler_core_handle.h

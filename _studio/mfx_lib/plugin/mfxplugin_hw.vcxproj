@@ -660,6 +660,7 @@
     <ClInclude Include="include\mfx_hevc_dec_plugin.h" />
     <ClInclude Include="include\mfx_hevc_enc_plugin.h" />
     <ClInclude Include="include\mfx_plugin_module.h" />
+    <ClInclude Include="include\mfx_stub_dec_plugin.h" />
     <ClInclude Include="include\mfx_vp8_dec_plugin.h" />
     <ClInclude Include="include\mfx_vp9_dec_plugin.h" />
     <ClInclude Include="resource.h" />
@@ -673,15 +674,6 @@
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\codec\color_space_converter\color_space_converter_hw.vcxproj">
       <Project>{57fe8dac-c7c4-4df4-9a36-2fee040dff38}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\h265_dec\h265_dec_hw.vcxproj">
-      <Project>{c712ba45-ac67-4a16-bd5d-2619eb325182}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\vp8_dec\vp8_dec_hw.vcxproj">
-      <Project>{ebaf2767-b73d-43fb-aaae-1698484b7c27}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\shared\umc\codec\vp9_dec\vp9_dec_hw.vcxproj">
-      <Project>{a6112fed-b0f8-4396-bad8-ffb466df85ce}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\shared\umc\core\umc\base_classes.vcxproj">
       <Project>{31991d83-f6a2-49d9-bdc5-64e85d055a1c}</Project>
@@ -738,6 +730,7 @@
   <ItemGroup>
     <ClCompile Include="src\mfx_hevc_dec_plugin.cpp" />
     <ClCompile Include="src\mfx_hevc_enc_plugin.cpp" />
+    <ClCompile Include="src\mfx_stub_dec_plugin.cpp" />
     <ClCompile Include="src\mfx_unified_dec_plugin.cpp" />
     <ClCompile Include="src\mfx_vp8_dec_plugin.cpp" />
     <ClCompile Include="src\mfx_vp9_dec_plugin.cpp" />

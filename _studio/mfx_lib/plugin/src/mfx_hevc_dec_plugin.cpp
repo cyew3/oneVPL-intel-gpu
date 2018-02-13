@@ -5,22 +5,19 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_hevc_dec_plugin.h"
-#include "mfx_session.h"
-#include "vm_sys_info.h"
 
 //defining module template for decoder plugin
 #include "mfx_plugin_module.h"
 
 #include "plugin_version_linux.h"
 
-#include <mfx_trace.h>
+#include "mfx_utils.h"
 
 #ifndef UNIFIED_PLUGIN
-
 MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
     return MFXHEVCDecoderPlugin::Create();
 }
@@ -28,7 +25,6 @@ MSDK_PLUGIN_API(MFXDecoderPlugin*) mfxCreateDecoderPlugin() {
 MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
     return MFXHEVCDecoderPlugin::CreateByDispatcher(uid, plugin);
 }
-
 #endif
 
 #ifndef MFX_VA
@@ -37,91 +33,79 @@ const mfxPluginUID MFXHEVCDecoderPlugin::g_HEVCDecoderGuid = {0x15,0xdd,0x93,0x6
 const mfxPluginUID MFXHEVCDecoderPlugin::g_HEVCDecoderGuid = {0x33, 0xa6, 0x1c, 0x0b, 0x4c, 0x27, 0x45, 0x4c, 0xa8, 0xd8, 0x5d, 0xde, 0x75, 0x7c, 0x6f, 0x8e};
 #endif
 
+#ifdef MFX_VA
+static
+MFXHEVCDecoderPlugin* GetHEVCDecoderInstance()
+{
+    static MFXHEVCDecoderPlugin instance{};
+    return &instance;
+}
+
+MFXDecoderPlugin* MFXHEVCDecoderPlugin::Create()
+{ return GetHEVCDecoderInstance(); }
+#else
 MFXHEVCDecoderPlugin::MFXHEVCDecoderPlugin(bool CreateByDispatcher)
-{
-    m_session = 0;
-    m_pmfxCore = 0;
-    memset(&m_PluginParam, 0, sizeof(mfxPluginParam));
+    : MFXStubDecoderPlugin(CreateByDispatcher)
+{}
 
-    m_PluginParam.CodecId = MFX_CODEC_HEVC;
-    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
-    m_PluginParam.MaxThreadNum = 1;
-    m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
-    m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
-    m_PluginParam.PluginUID = g_HEVCDecoderGuid;
-    m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_DECODE;
-    m_PluginParam.PluginVersion = 1;
-    m_createdByDispatcher = CreateByDispatcher;
+MFXDecoderPlugin* MFXHEVCDecoderPlugin::Create()
+{
+    return new MFXHEVCDecoderPlugin(false);
 }
-
-MFXHEVCDecoderPlugin::~MFXHEVCDecoderPlugin()
-{
-    if (m_session)
-    {
-        PluginClose();
-    }
-}
-
-mfxStatus MFXHEVCDecoderPlugin::PluginInit(mfxCoreInterface *core)
-{
-    if (!core)
-        return MFX_ERR_NULL_PTR;
-    mfxCoreParam par;
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    MFX_TRACE_INIT();
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXHEVCDecoderPlugin::PluginInit");
-
-    m_pmfxCore = core;
-    mfxRes = m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &par);
-    MFX_CHECK_STS(mfxRes);
-
- #if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
-    par.Impl = MFX_IMPL_SOFTWARE;
 #endif
 
-    mfxRes = MFXInit(par.Impl, &par.Version, &m_session);
-    MFX_CHECK_STS(mfxRes);
-
-    mfxRes = MFXInternalPseudoJoinSession((mfxSession) m_pmfxCore->pthis, m_session);
-    MFX_CHECK_STS(mfxRes);
-
-    return mfxRes;
-}
-
-mfxStatus MFXHEVCDecoderPlugin::PluginClose()
+mfxStatus  MFXHEVCDecoderPlugin::_GetPluginParam(mfxHDL /*pthis*/, mfxPluginParam *par)
 {
-    mfxStatus mfxRes = MFX_ERR_NONE;
-    mfxStatus mfxRes2 = MFX_ERR_NONE;
-    if (m_session)
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXHEVCDecoderPlugin::PluginClose");
-        //The application must ensure there is no active task running in the session before calling this (MFXDisjoinSession) function.
-        mfxRes = MFXVideoDECODE_Close(m_session);
-        //Return the first met wrn or error
-        if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED)
-            mfxRes2 = mfxRes;
-        mfxRes = MFXInternalPseudoDisjoinSession(m_session);
-        if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED && mfxRes2 == MFX_ERR_NONE)
-            mfxRes2 = mfxRes;
-        mfxRes = MFXClose(m_session);
-        if(mfxRes != MFX_ERR_NONE && mfxRes != MFX_ERR_NOT_INITIALIZED && mfxRes2 == MFX_ERR_NONE)
-            mfxRes2 = mfxRes;
-        m_session = 0;
-    }
-    MFX_TRACE_CLOSE();
-    if (m_createdByDispatcher) {
-        delete this;
-    }
+    MFX_CHECK_NULL_PTR1(par);
 
-    return mfxRes2;
-}
+    memset(par, 0, sizeof(mfxPluginParam));
 
-mfxStatus MFXHEVCDecoderPlugin::GetPluginParam(mfxPluginParam *par)
-{
-    if (!par)
-        return MFX_ERR_NULL_PTR;
-    *par = m_PluginParam;
+    par->CodecId = MFX_CODEC_HEVC;
+    par->ThreadPolicy = MFX_THREADPOLICY_SERIAL;
+    par->MaxThreadNum = 1;
+    par->APIVersion.Major = MFX_VERSION_MAJOR;
+    par->APIVersion.Minor = MFX_VERSION_MINOR;
+    par->PluginUID = g_HEVCDecoderGuid;
+    par->Type = MFX_PLUGINTYPE_VIDEO_DECODE;
+    par->PluginVersion = 1;
 
     return MFX_ERR_NONE;
 }
+
+mfxStatus MFXHEVCDecoderPlugin::GetPluginParam(mfxPluginParam* par)
+{
+    return _GetPluginParam(this, par);
+}
+
+#ifndef MFX_VA
+mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
+{
+    MFX_CHECK_NULL_PTR1(mfxPlg);
+
+    if (memcmp(&guid, &g_HEVCDecoderGuid, sizeof(mfxPluginUID))) {
+        return MFX_ERR_NOT_FOUND;
+    }
+
+    MFXHEVCDecoderPlugin* plugin = nullptr;
+    mfxStatus sts = MFXStubDecoderPlugin::CreateInstance(&plugin);
+    MFX_CHECK_STS(sts);
+
+    plugin->m_createdByDispatcher = true;
+    *mfxPlg = (mfxPlugin)*plugin->m_adapter;
+
+    return MFX_ERR_NONE;
+}
+#else
+mfxStatus MFXHEVCDecoderPlugin::CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
+{
+    if (memcmp(& guid , &g_HEVCDecoderGuid, sizeof(mfxPluginUID))) {
+        return MFX_ERR_NOT_FOUND;
+    }
+
+    MFXStubDecoderPlugin::CreateByDispatcher(guid, mfxPlg);
+    mfxPlg->pthis          = reinterpret_cast<mfxHDL>(MFXHEVCDecoderPlugin::Create());
+    mfxPlg->GetPluginParam = _GetPluginParam;
+
+    return MFX_ERR_NONE;
+}
+#endif

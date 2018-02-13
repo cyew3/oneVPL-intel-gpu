@@ -185,6 +185,7 @@ set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   list( APPEND sources.plus
     ${prefix}/mfx_hevc_dec_plugin.cpp
+    ${prefix}/mfx_stub_dec_plugin.cpp
   )
 endforeach()
 
@@ -693,6 +694,7 @@ set( sources.plus "" )
 foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/src )
   list( APPEND sources.plus
     ${prefix}/mfx_vp8_dec_plugin.cpp
+    ${prefix}/mfx_stub_dec_plugin.cpp
   )
 endforeach()
 
@@ -829,6 +831,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 set( sources.plus "" )
 list( APPEND sources.plus
   ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp9_dec_plugin.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_stub_dec_plugin.cpp
 )
 
 foreach( variant

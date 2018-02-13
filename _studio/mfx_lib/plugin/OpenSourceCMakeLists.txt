@@ -154,11 +154,18 @@ if( DEFINED HEVC_DECODER_HW_GUID )
   set_file_and_product_version( ${hevc_version} version_defs )
 
   list( APPEND sources ${plugin_common_sources} )
-  list( APPEND sources
-    ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp
-    ${MSDK_LIB_ROOT}/decode/h265/src/mfx_h265_dec_decode.cpp
-    ${MSDK_LIB_ROOT}/plugin/src/mfx_hevc_dec_plugin.cpp
+  list( APPEND sources ${MSDK_LIB_ROOT}/shared/src/libmfxsw_decode.cpp )
+
+  set( prefix ${MSDK_LIB_ROOT}/plugin/src )
+  list( APPEND sources.plus
+    ${prefix}/mfx_hevc_dec_plugin.cpp
+    ${prefix}/mfx_stub_dec_plugin.cpp
   )
+  set( prefix ${MSDK_LIB_ROOT}/decode/h265/src )
+  list( APPEND sources
+    ${prefix}/mfx_h265_dec_decode.cpp
+  )
+
   list( APPEND LIBS
     umc_h265_hw
     umc_va_hw
@@ -325,6 +332,7 @@ if( DEFINED VP8_DECODER_HW_GUID )
   set( prefix ${MSDK_LIB_ROOT}/plugin/src )
   list( APPEND sources.plus
     ${prefix}/mfx_vp8_dec_plugin.cpp
+    ${prefix}/mfx_stub_dec_plugin.cpp
   )
   set( prefix ${MSDK_LIB_ROOT}/decode/vp8/src )
   list( APPEND sources

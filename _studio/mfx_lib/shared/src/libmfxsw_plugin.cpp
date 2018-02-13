@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxplugin.h>
@@ -160,6 +160,12 @@ namespace
 
 } // namespace
 
+const mfxPluginUID NativePlugins[] =
+{
+    MFX_PLUGINID_HEVCD_HW,
+    MFX_PLUGINID_VP8D_HW,
+    MFX_PLUGINID_VP9D_HW
+};
 
 mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
                                 const mfxPlugin *par)
@@ -168,7 +174,9 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
 
     // check error(s)
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    
+    MFX_CHECK_NULL_PTR1(par);
+    MFX_CHECK_NULL_PTR1(par->GetPluginParam);
+
     try
     {
         SessionPtr sessionPtr(session, type);
@@ -177,12 +185,24 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
         std::unique_ptr<VideoDECODE> &decPtr = sessionPtr.codec<VideoDECODE>();
         std::unique_ptr<VideoVPP> &vppPtr = sessionPtr.codec<VideoVPP>();
         std::unique_ptr<VideoENC> &preEncPtr = sessionPtr.codec<VideoENC>();
+        mfxPluginParam pluginParam = {};
 
         // the plugin with the same type is already exist
         if (pluginPtr.get() || decPtr.get() || encPtr.get() || preEncPtr.get())
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
+
+        //check is this plugin was included into MSDK lib as a native component
+        mfxRes = par->GetPluginParam(par->pthis, &pluginParam);
+        MFX_CHECK_STS(mfxRes);
+
+        for (auto& uid : NativePlugins)
+        {
+            if (!memcmp(&uid, &pluginParam.PluginUID, sizeof(uid)))
+                return MFX_ERR_NONE; //do nothing
+        }
+
         // create a new plugin's instance
         pluginPtr.reset(CreateUSERSpecificClass(type));
         MFX_CHECK(pluginPtr.get(), MFX_ERR_INVALID_VIDEO_PARAM);
@@ -285,7 +305,7 @@ mfxStatus MFXVideoUSER_Unregister(mfxSession session, mfxU32 type)
         SessionPtr sessionPtr(session, type);
         std::unique_ptr<VideoCodecUSER> & registeredPlg = sessionPtr.plugin();
         if (NULL == registeredPlg.get())
-            return MFX_ERR_NOT_INITIALIZED;
+            return MFX_ERR_NONE;
 
         // wait until all tasks are processed
         session->m_pScheduler->WaitForTaskCompletion(registeredPlg.get());
