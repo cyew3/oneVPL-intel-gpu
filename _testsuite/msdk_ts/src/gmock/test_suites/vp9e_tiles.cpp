@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -1094,6 +1094,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             pInputSurface->Data.Locked--;
             m_pInputSurfaces->erase(hdr.FrameOrder);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
+
+            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
+                << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
+
             if (psnrY < minPsnr)
             {
                 ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
@@ -1385,13 +1389,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
         std::map<mfxU32, mfxFrameSurface1*>* pInputSurfaces = totalFramesToEncode ?
             &inputSurfaces : 0;
-
+        /*
         if (totalFramesToEncode && tc.type & SCALABLE_PIPE)
         {
             // workaround for decoder issue - it crashes simics on attempt to decode frames with both tile rows and columns
             // TODO: remove this once decoder issue is fixed
             pInputSurfaces = 0;
         }
+        */
 
         for (mfxU8 idx = 0; idx < numIterations; idx++)
         {
