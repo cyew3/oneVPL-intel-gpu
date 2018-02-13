@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <math.h>
@@ -2636,6 +2636,11 @@ void ConvertCaps2ListDoUse(MfxHwVideoProcessing::mfxVppCaps& caps, std::vector<m
     if(caps.uRotation)
     {
         list.push_back(MFX_EXTBUFF_VPP_ROTATION);
+    }
+
+    if(caps.uMirroring)
+    {
+        list.push_back(MFX_EXTBUFF_VPP_MIRRORING);
     }
 
     if(caps.uScaling)
