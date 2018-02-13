@@ -7142,6 +7142,28 @@ If [mfxExtCodingOption3](#mfxExtCodingOption3)`::EncodedUnitsInfo` was set to `M
 
 The number of filled items in `UnitInfo` is `min(NumUnitsEncoded, NumUnitsAlloc)`.
 
+For counting a minimal amount of encoded units you can use algorithm:
+
+```C
+nSEI = amountOfApplicationDefinedSEI;
+if (CodingOption3.NumSlice[IPB] != 0 || mfxVideoParam.mfx.NumSlice != 0)
+  ExpectedAmount = 10 + nSEI + Max(CodingOption3.NumSlice[IPB], mfxVideoParam.mfx.NumSlice);
+else if (CodingOption2.NumMBPerSlice != 0)
+  ExpectedAmount = 10 + nSEI + (FrameWidth * FrameHeight) / (256 * CodingOption2.NumMBPerSlice);
+else if (CodingOption2.MaxSliceSize != 0)
+  ExpectedAmount = 10 + nSEI + Round(MaxBitrate / (FrameRate*CodingOption2.MaxSliceSize));
+else
+  ExpectedAmount = 10 + nSEI;
+
+if (mfxFrameInfo.PictStruct != MFX_PICSTRUCT_PROGRESSIVE)
+  ExpectedAmount = ExpectedAmount * 2;
+
+if (temporalScaleabilityEnabled)
+  ExpectedAmount = ExpectedAmount * 2;
+```
+
+Encoders support: AVC
+
 **Change History**
 
 This structure is available since SDK API 1.25.
