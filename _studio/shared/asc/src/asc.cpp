@@ -1710,6 +1710,16 @@ ASC_API bool ASC::Get_Last_frame_Data() {
     return(m_dataReady);
 }
 
+ASC_API mfxU16 ASC::Get_asc_subsampling_width()
+{
+    return mfxU16(subWidth);
+}
+
+ASC_API mfxU16 ASC::Get_asc_subsampling_height()
+{
+    return mfxU16(subHeight);
+}
+
 ASC_API mfxU32 ASC::Get_starting_frame_number() {
     return m_dataIn->starting_frame;
 }

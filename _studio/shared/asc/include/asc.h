@@ -12,7 +12,6 @@
 
 #include <string>
 #include "asc_structures.h"
-#include "asc_defs.h"
 
 namespace ns_asc {
 
@@ -269,6 +268,8 @@ public:
     ASC_API mfxStatus PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch);
 
     ASC_API bool   Get_Last_frame_Data();
+    ASC_API mfxU16 Get_asc_subsampling_width();
+    ASC_API mfxU16 Get_asc_subsampling_height();
     ASC_API mfxU32 Get_starting_frame_number();
     ASC_API mfxU32 Get_frame_number();
     ASC_API mfxU32 Get_frame_shot_Decision();

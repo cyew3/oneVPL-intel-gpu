@@ -1262,8 +1262,8 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
     {
         request.Info.FourCC = MFX_FOURCC_P8;
         request.NumFrameMin = mfxU16(m_video.AsyncDepth);
-        request.Info.Width = ASC_SMALL_WIDTH;
-        request.Info.Height = ASC_SMALL_HEIGHT;
+        request.Info.Width = amtScd.Get_asc_subsampling_width();
+        request.Info.Height = amtScd.Get_asc_subsampling_height();
         if (IsCmNeededForSCD(m_video))
         {
             if (!m_cmDevice)
