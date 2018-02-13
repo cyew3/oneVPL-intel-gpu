@@ -884,6 +884,7 @@ STRUCT(mfxExtCodingOption3,
     FIELD_T(mfxU16, ScanType)
     FIELD_T(mfxU16, EncodedUnitsInfo)
     FIELD_T(mfxU16, EnableNalUnitType)
+    FIELD_T(mfxU16, ExtBrcAdaptiveLTR)     /* tri-state option for ExtBrcAdaptiveLTR */
 )
 #else
 STRUCT(mfxExtCodingOption3,
