@@ -3,7 +3,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014 - 2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014 - 2018 Intel Corporation. All Rights Reserved.
 //
 
 STRUCT(mfxI16Pair,
@@ -1024,6 +1024,11 @@ STRUCT(mfxExtVPPFieldProcessing,
 STRUCT(mfxExtVPPRotation,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16      , Angle)
+)
+
+STRUCT(mfxExtVPPMirroring,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16      , Type)
 )
 
 STRUCT(mfxExtScreenCaptureParam,
