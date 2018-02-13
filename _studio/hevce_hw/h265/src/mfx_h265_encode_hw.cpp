@@ -987,7 +987,8 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     }
 
     if (brcReset &&
-        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
+        m_vpar.mfx.RateControlMethod == MFX_RATECONTROL_CBR &&
+        (parNew.HRDConformance || !isIdrRequired))
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
     // waiting for submitted in driver tasks
