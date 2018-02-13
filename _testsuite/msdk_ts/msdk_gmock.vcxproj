@@ -25,8 +25,8 @@
     <RootNamespace>msdk_gmock</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup>  
-    <PreferredToolArchitecture>x64</PreferredToolArchitecture>  
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -483,6 +483,9 @@
     <ClCompile Include="src\gmock\test_suites\vpp_field_weaving_splitting.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_hw_wrn_filter_skipped.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_init.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_query_extbuf.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vpp_mctf_reset.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_multi_view.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_pts_suite.cpp" />
     <ClCompile Include="src\gmock\test_suites\vpp_query.cpp" />
