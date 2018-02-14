@@ -102,6 +102,30 @@
     <AppxBundle>Always</AppxBundle>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <ClCompile>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -161,7 +185,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\x64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_msdk_proc_table-x64.lib; WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>libmfx_uwp.lib; WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -173,7 +197,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\x64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_msdk_proc_table-x64.lib; ;WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>libmfx_uwp.lib; ;WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

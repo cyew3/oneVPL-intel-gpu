@@ -97,28 +97,28 @@
     <AppxPackageDir>D:\Projects\UWP_SUPPORT\samples\AppPackages\simple_encoder_uwp\2\</AppxPackageDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug (insecure libmfx load)|Win32'">
-    <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug (insecure libmfx load)|x64'">
-    <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\</OutDir>
-    <IntDir>$(OutDir)..\objs\$(ProjectName)\</IntDir>
+    <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
+    <IntDir>$(OutDir)..\obj\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -127,8 +127,8 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_proc_table-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -139,8 +139,8 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_proc_table-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -151,8 +151,8 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_proc_table-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -163,8 +163,8 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_proc_table-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -175,8 +175,8 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_proc_table-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>
@@ -187,8 +187,8 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dispatcher_proc_table-$(PlatformTarget).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
   </ItemDefinitionGroup>

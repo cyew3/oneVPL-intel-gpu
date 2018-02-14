@@ -94,7 +94,7 @@ my @list_config    = qw(release debug);
 
 sub usage {
   print "\n";
-  print "Copyright (c) 2012-2017 Intel Corporation. All rights reserved.\n";
+  print "Copyright (c) 2012-2018 Intel Corporation. All rights reserved.\n";
   print "This script performs Intel(R) Media SDK Samples projects creation and build.\n\n";
   print "Usage: perl build.pl --cmake=ARCH.GENERATOR.CONFIG [options]\n";
   print "\n";
