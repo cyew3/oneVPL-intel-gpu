@@ -4,13 +4,16 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+
+//#define DUMP_BS
+#define MAX_P_PYRAMID_WIDTH 3
 
 namespace hevce_p_pyramid
 {
@@ -21,6 +24,9 @@ public:
         : tsVideoEncoder(MFX_CODEC_HEVC)
         , tsParserHEVC()
         , m_anchorPOC(0)
+#ifdef DUMP_BS
+        , m_writer("debug_hevce_p_pyramid.265")
+#endif
     {
         m_bs_processor = this;
         set_trace_level(0);
@@ -40,7 +46,10 @@ private:
     };
     std::list<DPBPic> m_dpb;
     mfxI32 m_anchorPOC;
-    mfxI32 m_maxIdx;
+    mfxI32 m_pyramidWidth;
+#ifdef DUMP_BS
+    tsBitstreamWriter m_writer;
+#endif
 
     struct tc_struct
     {
@@ -63,19 +72,27 @@ using namespace BS_HEVC;
 
 mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 {
-    const mfxU16 pattern[4] = {0,2,1,2};
+    const mfxU16 pattern[3][3] = 
+    {
+        {0, 0, 0}, //pattern for pyramid width = 1
+        {0, 1, 0}, //pattern for pyramid width = 2
+        {0, 2, 1}  //pattern for pyramid width = 3
+    };
     mfxExtCodingOption3& CO3 = m_par;
 
     SetBuffer0(bs);
+
+#ifdef DUMP_BS
+    m_writer.ProcessBitstream(bs, nFrames);
+#endif
 
     auto& AU = ParseOrDie();
     auto& S = AU.pic->slice[0]->slice[0];
 
     mfxI16 QP  = S.slice_qp_delta + S.pps->init_qp_minus26 + 26;
     mfxI16 QPX = m_par.mfx.QPP;
-    mfxI32 idx = abs(AU.pic->PicOrderCntVal - m_anchorPOC) % m_maxIdx;
-    mfxU16 layer = pattern[idx];
-
+    mfxI32 idx = abs(AU.pic->PicOrderCntVal - m_anchorPOC) % m_pyramidWidth;
+    mfxU16 layer = pattern[m_pyramidWidth - 1][idx];
     g_tsLog << "POC: " << AU.pic->PicOrderCntVal << " Layer: "<< layer << "\n";
 
     if (S.type == I)
@@ -130,7 +147,10 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             for (auto it = m_dpb.begin(); it != m_dpb.end(); it ++)
             {
                 if (weak->layer < it->layer)
-                    weak = it;
+                {
+                    weak = it; 
+                    break;
+                }
             }
 
             m_dpb.erase(weak);
@@ -168,7 +188,8 @@ int TestSuite::RunTest(unsigned int id)
     GetVideoParam();
     Close();
 
-    m_maxIdx = CO3.NumRefActiveP[0];
+    EXPECT_NE(m_par.mfx.NumRefFrame, 0);
+    m_pyramidWidth = TS_MIN(m_par.mfx.NumRefFrame, MAX_P_PYRAMID_WIDTH);
 
     CO3.EnableQPOffset = MFX_CODINGOPTION_ON;
     memcpy(CO3.QPOffset, tc.QPOffset, sizeof(CO3.QPOffset));
