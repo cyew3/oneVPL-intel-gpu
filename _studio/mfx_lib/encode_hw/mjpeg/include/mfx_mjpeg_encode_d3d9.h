@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MJPEG_ENCODE_D3D9_H__
@@ -24,7 +24,8 @@
 #include "mfxpcp.h"
 
 #include "mfx_mjpeg_encode_hw_utils.h"
-#include "mfx_mjpeg_encode_interface.h"
+
+#include "mfx_mjpeg_encode_d3d_common.h"
 
 
 namespace MfxHwMJpegEncode
@@ -49,7 +50,7 @@ namespace MfxHwMJpegEncode
     };
 
     // encoder
-    class D3D9Encoder : public DriverEncoder
+    class D3D9Encoder : public D3DXCommonEncoder
     {
     public:
         D3D9Encoder();
@@ -73,7 +74,7 @@ namespace MfxHwMJpegEncode
             mfxFrameAllocResponse & response);
 
         virtual
-        mfxStatus Execute(DdiTask &task, mfxHDL surface);
+        mfxStatus ExecuteImpl(DdiTask &task, mfxHDL surface);
 
         virtual
         mfxStatus QueryBitstreamBufferInfo(
@@ -84,16 +85,17 @@ namespace MfxHwMJpegEncode
             JpegEncCaps & caps);
 
         virtual
-        mfxStatus QueryStatus(
-            DdiTask & task);
-
-        virtual
         mfxStatus UpdateBitstream(
             mfxMemId    MemId,
             DdiTask   & task);
 
         virtual
         mfxStatus Destroy();
+
+    protected:
+        virtual
+        mfxStatus QueryStatusAsync(
+            DdiTask & task);
 
     private:
         D3D9Encoder(D3D9Encoder const &);              // no implementation

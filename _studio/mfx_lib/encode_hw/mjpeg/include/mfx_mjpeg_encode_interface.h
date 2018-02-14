@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MJPEG_ENCODE_INTERFACE_H__
@@ -21,6 +21,10 @@
 #include "mfxvideo++int.h"
 
 #include "mfx_mjpeg_encode_hw_utils.h"
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#include "mfx_win_event_cache.h"
+#endif
 
 namespace MfxHwMJpegEncode
 {
@@ -68,6 +72,10 @@ namespace MfxHwMJpegEncode
 
         virtual
         mfxStatus Destroy() = 0;
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        std::unique_ptr<EventCache> m_EventCache;
+#endif
     };
 
     DriverEncoder* CreatePlatformMJpegEncoder( VideoCORE* core );

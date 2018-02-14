@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -276,10 +276,15 @@ mfxStatus D3D9Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_feedbackUpdate.resize(response.NumFrameActual);
     m_feedbackCached.Reset(response.NumFrameActual);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->Init(response.NumFrameActual);
+#endif
+
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
+mfxStatus D3D9Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
 {
     MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
     ExecuteBuffers *pExecuteBuffers = task.m_pDdiData;
@@ -366,6 +371,16 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
         HRESULT hr = m_pAuxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+        // allocate the event
+        task.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+        m_EventCache->GetEvent(task.m_GpuEvent.gpuSyncEvent);
+
+        hr = m_pAuxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, &task.m_GpuEvent, sizeof(task.m_GpuEvent));
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#endif
+
         hr = m_pAuxDevice->Execute(ENCODE_ENC_PAK_ID, &encodeExecuteParams, sizeof(encodeExecuteParams));
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
@@ -380,9 +395,9 @@ mfxStatus D3D9Encoder::Execute(DdiTask &task, mfxHDL surface)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::QueryStatus(DdiTask & task)
+mfxStatus D3D9Encoder::QueryStatusAsync(DdiTask & task)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatusAsync");
     MFX_CHECK_WITH_ASSERT(m_pAuxDevice, MFX_ERR_NOT_INITIALIZED);
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber

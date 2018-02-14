@@ -70,6 +70,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         height);
 
     m_core = core;
+
     return sts;
 }
 
@@ -200,10 +201,15 @@ mfxStatus D3D11Encoder::RegisterBitstreamBuffer(mfxFrameAllocResponse& response)
     m_feedbackUpdate.resize(response.NumFrameActual);
     m_feedbackCached.Reset(response.NumFrameActual);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->Init(response.NumFrameActual);
+#endif
+
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
+mfxStatus D3D11Encoder::ExecuteImpl(DdiTask &task, mfxHDL surface)
 {
     HRESULT hr  = S_OK;
     mfxHDLPair* inputPair = static_cast<mfxHDLPair*>(surface);
@@ -306,6 +312,28 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
         bufCnt++;
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    {
+        // allocate the event
+        task.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+        m_EventCache->GetEvent(task.m_GpuEvent.gpuSyncEvent);
+
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+        decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+        decoderExtParams.pPrivateInputData = &task.m_GpuEvent;
+        decoderExtParams.PrivateInputDataSize = sizeof(task.m_GpuEvent);
+        decoderExtParams.pPrivateOutputData = NULL;
+        decoderExtParams.PrivateOutputDataSize = 0;
+        decoderExtParams.ResourceCount = 0;
+        decoderExtParams.ppResourceList = NULL;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+            hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        }
+        CHECK_HRES(hr);
+    }
+#endif
+
     // [2.4] send to driver
     D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
     decoderExtParams.Function              = ENCODE_ENC_PAK_ID;
@@ -322,9 +350,9 @@ mfxStatus D3D11Encoder::Execute(DdiTask &task, mfxHDL surface)
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D11Encoder::QueryStatus(DdiTask & task)
+mfxStatus D3D11Encoder::QueryStatusAsync(DdiTask & task)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatus");
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "QueryStatusAsync");
 
     // After SNB once reported ENCODE_OK for a certain feedbackNumber
     // it will keep reporting ENCODE_NOTAVAILABLE for same feedbackNumber.
@@ -521,7 +549,6 @@ mfxStatus D3D11Encoder::Init(
     // [5] Set encryption
 
     // [6] specific encoder caps
-
 
     return MFX_ERR_NONE;
 
