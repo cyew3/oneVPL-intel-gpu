@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -336,6 +336,16 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
         mfxStatus task_sts = MFX_ERR_NONE;
         mfxU64 start = GetHighPerformanceCounter();
         mfxU64 frequency = vm_time_get_frequency();
+#if defined(WIN32) || defined(WIN64)
+
+        DWORD tid = GetCurrentThreadId();
+        {
+            // lock
+            UMC::AutomaticMutex guard(m_guard);
+            m_timeToRunMap[tid] = timeToWait;
+            // unlock
+        }
+#endif
         while (MFX_WRN_IN_EXECUTION == pTask->opRes)
         {
             task_sts = GetTask(call, previousTaskHandle, 0);
@@ -369,6 +379,14 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
                 }
             }
         }
+#if defined(WIN32) || defined(WIN64)
+        {
+            // lock
+            UMC::AutomaticMutex guard(m_guard);
+            m_timeToRunMap.erase(tid);
+            // unlock
+        }
+#endif
         //
         // inspect the task
         //
@@ -438,6 +456,32 @@ mfxStatus mfxSchedulerCore::Synchronize(mfxTaskHandle handle, mfxU32 timeToWait)
     }
 }
 
+mfxStatus mfxSchedulerCore::GetTimeout(mfxU32& maxTimeToRun)
+{
+#if defined(WIN32) || defined(WIN64)
+    if (MFX_SINGLE_THREAD != m_param.flags)
+        return MFX_ERR_UNSUPPORTED;
+
+    DWORD tid = GetCurrentThreadId();
+
+    {
+        UMC::AutomaticMutex guard(m_guard);
+
+        try
+        {
+            maxTimeToRun = m_timeToRunMap[tid];
+        }
+        catch (std::out_of_range e)
+        {
+            return MFX_ERR_NOT_FOUND;
+        }
+    }
+
+    return MFX_ERR_NONE;
+#else
+    return MFX_ERR_UNSUPPORTED;
+#endif
+}
 
 mfxStatus mfxSchedulerCore::WaitForDependencyResolved(const void *pDependency)
 {

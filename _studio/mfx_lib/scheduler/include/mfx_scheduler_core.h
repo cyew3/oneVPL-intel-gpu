@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_SCHEDULER_CORE_H)
@@ -232,6 +232,10 @@ public:
 
     //MFX_SCHEDULER_TASK is only one consumer
     void ResolveDependencyTable(MFX_SCHEDULER_TASK *pTask);
+
+    // WA for SINGLE THREAD MODE
+    virtual
+    mfxStatus GetTimeout(mfxU32 & maxTimeToRun);
 protected:
     // Destructor is protected to avoid deletion the object by occasion.
     virtual
@@ -456,6 +460,10 @@ protected:
 #if defined  (MFX_D3D11_ENABLED)
     DX11GlobalEvent* m_pdx11event;
 #endif
+#endif
+
+#if defined(WIN32) || defined(WIN64)
+    std::map<DWORD, mfxU32> m_timeToRunMap;
 #endif
 
 private:

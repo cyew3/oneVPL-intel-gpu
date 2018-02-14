@@ -252,6 +252,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_ddi_enc_dump.cpp" />
+    <ClCompile Include="src\mfx_h264_encode_d3d_common.cpp" />
     <ClCompile Include="src\mfx_h264_enc_common_hw.cpp" />
     <ClCompile Include="src\mfx_h264_encode_d3d11.cpp" />
     <ClCompile Include="src\mfx_h264_encode_d3d9.cpp" />
@@ -260,11 +261,13 @@
     <ClCompile Include="src\mfx_mpeg2_encode_d3d11.cpp" />
     <ClCompile Include="src\mfx_mpeg2_encode_d3d9.cpp" />
     <ClCompile Include="src\mfx_mpeg2_encode_factory.cpp" />
+    <ClCompile Include="src\mfx_win_event_cache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\encoder_ddi.hpp" />
     <ClInclude Include="include\encoding_ddi.h" />
     <ClInclude Include="include\mfx_ddi_enc_dump.h" />
+    <ClInclude Include="include\mfx_h264_encode_d3d_common.h" />
     <ClInclude Include="include\mfx_h264_enc_common_hw.h" />
     <ClInclude Include="include\mfx_h264_encode_d3d11.h" />
     <ClInclude Include="include\mfx_h264_encode_d3d9.h" />
@@ -273,6 +276,7 @@
     <ClInclude Include="include\mfx_mpeg2_encode_d3d11.h" />
     <ClInclude Include="include\mfx_mpeg2_encode_d3d9.h" />
     <ClInclude Include="include\mfx_mpeg2_encode_interface.h" />
+    <ClInclude Include="include\mfx_win_event_cache.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

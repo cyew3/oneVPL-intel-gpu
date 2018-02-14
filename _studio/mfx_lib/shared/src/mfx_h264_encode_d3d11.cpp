@@ -633,6 +633,25 @@ mfxStatus D3D11Encoder::Execute(
         bufCnt++;
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    {
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+        decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+        decoderExtParams.pPrivateInputData = RemoveConst(&task.m_GpuEvent[fieldId]);
+        decoderExtParams.PrivateInputDataSize = sizeof(task.m_GpuEvent[fieldId]);
+        decoderExtParams.pPrivateOutputData = NULL;
+        decoderExtParams.PrivateOutputDataSize = 0;
+        decoderExtParams.ResourceCount = 0;
+        decoderExtParams.ppResourceList = NULL;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+            hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+
+        }
+        CHECK_HRES(hr);
+    }
+#endif
+
     if (SkipFlag != 0)
     {
         m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
@@ -771,7 +790,7 @@ mfxStatus D3D11Encoder::Execute(
 } //  mfxStatus D3D11Encoder::Execute(...)
 
 
-mfxStatus D3D11Encoder::QueryStatus(
+mfxStatus D3D11Encoder::QueryStatusAsync(
     DdiTask & task,
     mfxU32    fieldId)
 {
@@ -1132,7 +1151,7 @@ mfxStatus D3D11Encoder::Init(
     CHECK_HRES(hRes);
 #endif
 
-
+    D3DXCommonEncoder::Init(m_core);
     // [6] specific encoder caps
 
     // [7] Query encode service caps: see QueryCompBufferInfo
@@ -1195,6 +1214,10 @@ mfxU8 convertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
     case D3DDDIFMT_INTELENCODE_MBCONTROL:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBCONTROL;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    case D3DDDIFMT_INTELENCODE_SYNCOBJECT:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT;
+#endif
     default:
         break;
     }

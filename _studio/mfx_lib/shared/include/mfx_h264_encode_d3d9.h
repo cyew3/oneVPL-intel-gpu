@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENCODE_D3D9__H
@@ -25,7 +25,7 @@
 #include "mfxpcp.h"
 
 #include "mfx_h264_enc_common_hw.h"
-#include "mfx_h264_encode_interface.h"
+#include "mfx_h264_encode_d3d_common.h"
 
 #define IDX_NOT_FOUND 0xffffffff
 
@@ -58,6 +58,12 @@ namespace MfxHwH264Encode
         {
             return Execute(func, 0, 0, &out, sizeof(out));
         }
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        HRESULT Execute(mfxU32 func, GPU_SYNC_EVENT_HANDLE &in)
+        {
+            return Execute(func, &in, sizeof(in), 0, 0);
+        }
+#endif
 
     }; // class AuxiliaryDeviceHlp : public AuxiliaryDevice
 
@@ -177,7 +183,7 @@ namespace MfxHwH264Encode
         mfxU32                              fieldId);
 
     // encoder
-    class D3D9Encoder : public DriverEncoder
+    class D3D9Encoder : public D3DXCommonEncoder
     {
     public:
         D3D9Encoder();
@@ -243,10 +249,12 @@ namespace MfxHwH264Encode
         //    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
         //    ENCODE_MBDATA_LAYOUT &                layout);
 
+    protected:
+        // async call
         virtual
-        mfxStatus QueryStatus(
-            DdiTask & task,
-            mfxU32    fieldId);
+        mfxStatus QueryStatusAsync(
+        DdiTask & task,
+        mfxU32    fieldId);
 
         virtual
         mfxStatus Destroy();

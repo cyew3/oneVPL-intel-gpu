@@ -32,6 +32,10 @@
 #include "vm_time.h"
 #include "asc.h"
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#include "mfx_win_event_cache.h"
+#endif
+
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
 
@@ -1039,6 +1043,9 @@ namespace MfxHwH264Encode
             m_headersCache[0].reserve(10);
             m_headersCache[1].reserve(10);
 #endif
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+            Zero(m_GpuEvent);
+#endif
         }
 
         bool operator == (const DdiTask& task)
@@ -1269,6 +1276,9 @@ namespace MfxHwH264Encode
         CmSurface2DUP *m_wsGpuImage;
         SurfaceIndex  *m_wsIdxGpuImage;
         mfxU8         *m_Yscd;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        GPU_SYNC_EVENT_HANDLE m_GpuEvent[2]; // events for every field.
+#endif
     };
 
     typedef std::list<DdiTask>::iterator DdiTaskIter;
@@ -2365,6 +2375,9 @@ namespace MfxHwH264Encode
         mfxI32      m_LtrOrder;
         mfxI32      m_RefQp;
         mfxI32      m_RefOrder;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        std::unique_ptr<EventCache> m_EventCache;
+#endif
 
     };
 

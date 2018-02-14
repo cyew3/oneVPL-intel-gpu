@@ -24,7 +24,7 @@
 #include "mfxpcp.h"
 
 #include "mfx_h264_enc_common_hw.h"
-#include "mfx_h264_encode_interface.h"
+#include "mfx_h264_encode_d3d_common.h"
 
 #include <d3d11.h>
 #include "mfx_h264_encode_d3d9.h" // suggest that the same syncop based on cache functionality is used
@@ -36,7 +36,7 @@ namespace MfxHwH264Encode
     class OutputBitstream;
 
 
-    class D3D11Encoder : public DriverEncoder
+    class D3D11Encoder : public D3DXCommonEncoder
     {
     public:
         D3D11Encoder();
@@ -107,8 +107,10 @@ namespace MfxHwH264Encode
         //    ENCODE_SET_SEQUENCE_PARAMETERS_H264 & sps,
         //    ENCODE_MBDATA_LAYOUT &                layout);
 
+    protected:
+        // async call
         virtual
-        mfxStatus QueryStatus(
+        mfxStatus QueryStatusAsync(
             DdiTask & task,
             mfxU32    fieldId);
 

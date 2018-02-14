@@ -1179,6 +1179,8 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
         m_timeoutForTDR = MFX_H264ENC_HW_TASK_TIMEOUT;
     }
 
+    D3DXCommonEncoder::Init(m_core);
+
     return MFX_ERR_NONE;
 }
 
@@ -1743,8 +1745,12 @@ mfxStatus D3D9Encoder::Execute(
             HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-            //::Dump(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+            hr = m_auxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, RemoveConst(task.m_GpuEvent[fieldId]));
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#endif
 
+            //::Dump(encodeExecuteParams, DXVA2_Intel_Encode_AVC);
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
                 hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
@@ -1800,7 +1806,7 @@ mfxStatus D3D9Encoder::Execute(
     return MFX_ERR_NONE;
 }
 
-mfxStatus D3D9Encoder::QueryStatus(
+mfxStatus D3D9Encoder::QueryStatusAsync(
     DdiTask & task,
     mfxU32    fieldId)
 {

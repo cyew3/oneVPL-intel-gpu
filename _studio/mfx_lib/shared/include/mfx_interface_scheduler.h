@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_INTERFACE_SCHEDULER_H
@@ -26,7 +26,6 @@ MFX_GUID MFXIScheduler_GUID =
 static const
 MFX_GUID MFXIScheduler2_GUID =
 { 0xdc775b1c, 0x951d, 0x421f, { 0xbf, 0xd8, 0xca, 0x56, 0x2d, 0x95, 0xa4, 0x18 } };
-
 
 enum mfxSchedulerFlags
 {
@@ -137,6 +136,9 @@ public:
 
     virtual
     mfxStatus DoWork() = 0;
+
+    virtual
+    mfxStatus GetTimeout(mfxU32 & maxTimeToRun) = 0;
 };
 
 #endif // __MFX_INTERFACE_SCHEDULER_H

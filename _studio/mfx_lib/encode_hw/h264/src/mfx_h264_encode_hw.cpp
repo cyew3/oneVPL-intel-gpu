@@ -1424,6 +1424,11 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     m_videoInit = m_video;
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->Init(m_rec.NumFrameActual);
+#endif
+
     return checkStatus;
 }
 
@@ -2382,6 +2387,14 @@ void ImplementationAvc::OnEncodingQueried(DdiTaskIter task)
 
     if (m_useMbControlSurfs && task->m_isMBControl)
         ReleaseResource(m_mbControl, task->m_midMBControl);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    for (mfxU32 f = 0; f <= task->m_fieldPicFlag; f++)
+    {
+        mfxU8 fieldId = task->m_fid[f];
+        m_EventCache->ReturnEvent(task->m_GpuEvent[fieldId].gpuSyncEvent);
+    }
+#endif
 
     mfxU32 numBits = 8 * (task->m_bsDataLength[0] + task->m_bsDataLength[1]);
     *task = DdiTask();
@@ -3359,7 +3372,14 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             else
                 task->m_AUStartsFromSlice[f] = 0;
 
-            mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, fieldId, m_sei);
+            mfxStatus sts = MFX_ERR_NONE;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+            // allocate the event
+            task->m_GpuEvent[fieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            sts = m_EventCache->GetEvent(task->m_GpuEvent[fieldId].gpuSyncEvent);
+            MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
+#endif
+            sts = m_ddi->Execute(task->m_handleRaw.first, *task, fieldId, m_sei);
             MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
@@ -3962,8 +3982,11 @@ mfxStatus ImplementationAvc::QueryStatus(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ImplementationAvc::QueryStatus");
     if (task.m_bsDataLength[fid] == 0)
     {
-        mfxStatus sts = m_ddi->QueryStatus(task, fid);
-        //printf("m_ddi->QueryStatus 1: %d, %d\n", task.m_encOrder, sts);
+        mfxStatus sts = MFX_TASK_BUSY;
+
+        sts = m_ddi->QueryStatus(task, fid);
+        MFX_TRACE_3("m_ddi->QueryStatus", "Task[field=%d feedback=%d] sts=%d \n", fid, task.m_statusReportNumber[fid], sts);
+
         if (sts == MFX_WRN_DEVICE_BUSY)
             return MFX_TASK_BUSY;
 
