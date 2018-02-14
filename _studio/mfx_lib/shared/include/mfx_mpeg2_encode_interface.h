@@ -155,8 +155,10 @@ namespace MfxHwMpeg2Encode
             , m_fFrameRate()
             , m_FrameRateExtN()
             , m_FrameRateExtD()
-        {
-        }
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+            , m_GpuEvent()
+#endif
+        {}
 
         mfxStatus Init (const mfxVideoParamEx_MPEG2* par, mfxU32 funcId, bool bAllowBRC = false);
         mfxStatus Close();
@@ -219,8 +221,10 @@ namespace MfxHwMpeg2Encode
         mfxU32                                  m_FrameRateExtN;
         mfxU32                                  m_FrameRateExtD;
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        GPU_SYNC_EVENT_HANDLE       m_GpuEvent;
+#endif
     };
-
 
     class DriverEncoder
     {
@@ -241,7 +245,7 @@ namespace MfxHwMpeg2Encode
 
         virtual mfxStatus FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers) = 0;
 
-        virtual mfxStatus FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt) = 0;
+        virtual mfxStatus FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt) = 0;
 
         virtual mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers) = 0;
     };

@@ -19,7 +19,6 @@
 // SOFTWARE.
 
 #include "mfx_win_event_cache.h"
-#include "vm_mutex.h"
 #if defined (MFX_VA_WIN)
 
 /*
@@ -68,6 +67,7 @@ MFX_ERR_NONE if successes
 */
 mfxStatus  EventCache::GetEvent(EVENT_TYPE& event)
 {
+    std::lock_guard<std::mutex> lock(m_guard);
     event = m_Free.front();
     m_Free.pop_front();
     return MFX_ERR_NONE;
@@ -79,6 +79,7 @@ MFX_ERR_NONE if successes
 */
 mfxStatus  EventCache::ReturnEvent(EVENT_TYPE& event)
 {
+    std::lock_guard<std::mutex> lock(m_guard);
     m_Free.push_back(event);
     return MFX_ERR_NONE;
 }

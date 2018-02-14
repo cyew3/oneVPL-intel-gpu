@@ -23,6 +23,8 @@
 
 #include "mfx_common.h"
 #include <deque>
+#include <mutex>
+
 #if defined(MFX_VA_WIN)
 
 class EventCache
@@ -64,7 +66,9 @@ public:
 private:
     std::deque<EVENT_TYPE> m_Free;
     mfxU16 m_nInitNumberOfEvents;
+    std::mutex m_guard;
 };
+
 #endif /* #if defined(MFX_VA_WIN) */
 #endif /* #ifndef __MFX_WIN_EVENT_CACHE_H__ */
 

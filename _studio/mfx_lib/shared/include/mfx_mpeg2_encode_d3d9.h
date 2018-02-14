@@ -36,21 +36,25 @@
 #include "mfxpcp.h"
 
 #include "mfx_mpeg2_enc_common_hw.h"
-#include "mfx_mpeg2_encode_interface.h"
+#include "mfx_mpeg2_encode_d3d_common.h"
 
 namespace MfxHwMpeg2Encode
 {
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    class D3D9Encoder : public D3DXCommonEncoder
+#else
     class D3D9Encoder : public DriverEncoder
+#endif
     {
     public:
         explicit D3D9Encoder(VideoCORE* core);
 
         virtual ~D3D9Encoder();
         virtual mfxStatus QueryEncodeCaps(ENCODE_CAPS & caps);
-        
-        virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);                 
 
-        virtual mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0);                
+        virtual mfxStatus Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId);
+
+        virtual mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU8* pUserData = 0, mfxU32 userDataLen = 0);
 
         virtual mfxStatus Close();
 
@@ -60,10 +64,12 @@ namespace MfxHwMpeg2Encode
 
         virtual mfxStatus FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers);
 
-        virtual mfxStatus FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt);
+        virtual mfxStatus FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt);
 
         virtual mfxStatus SetFrames (ExecuteBuffers* pExecuteBuffers);
-    
+
+        virtual mfxStatus QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSizemfxU32);
+
     private:
 
         // Declare private copy constructor to avoid accidental assignment
@@ -71,11 +77,11 @@ namespace MfxHwMpeg2Encode
         D3D9Encoder(const D3D9Encoder &);
         D3D9Encoder & operator = (const D3D9Encoder &);
 
-        mfxStatus Init_MPEG2_ENC(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);         
+        mfxStatus Init_MPEG2_ENC(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);
         mfxStatus Init_MPEG2_ENCODE (ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);
 
-        mfxStatus Execute_ENC    (ExecuteBuffers* pExecuteBuffers, mfxU8 *pUserData = 0, mfxU32 userDataLen = 0);        
-        mfxStatus Execute_ENCODE (ExecuteBuffers* pExecuteBuffers, mfxU8 *pUserData, mfxU32 userDataLen);                
+        mfxStatus Execute_ENC    (ExecuteBuffers* pExecuteBuffers, mfxU8 *pUserData = 0, mfxU32 userDataLen = 0);
+        mfxStatus Execute_ENCODE (ExecuteBuffers* pExecuteBuffers, mfxU8 *pUserData, mfxU32 userDataLen);
 
         mfxStatus QueryCompBufferInfo(D3DDDIFORMAT type,mfxFrameAllocRequest* pRequest);
         mfxStatus CreateCompBuffers  (ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);
@@ -85,10 +91,10 @@ namespace MfxHwMpeg2Encode
         mfxStatus GetBuffersInfo();
         mfxStatus QueryMbDataLayout();
         mfxStatus Init(const GUID& guid, ENCODE_FUNC func, ExecuteBuffers* pExecuteBuffers);
-        mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);        
+        mfxStatus Execute(ExecuteBuffers* pExecuteBuffers, mfxU32 func, mfxU8* pUserData, mfxU32 userDataLen);
         mfxStatus Register (const mfxFrameAllocResponse* pResponse, D3DDDIFORMAT type);
         mfxI32    GetRecFrameIndex (mfxMemId memID);
-        mfxI32    GetRawFrameIndex (mfxMemId memIDe, bool bAddFrames);    
+        mfxI32    GetRawFrameIndex(mfxMemId memIDe, bool bAddFrames);
 
 
         VideoCORE*                          m_core;
@@ -98,7 +104,7 @@ namespace MfxHwMpeg2Encode
         std::vector<D3DDDIFORMAT> m_uncompBufInfo;
         ENCODE_MBDATA_LAYOUT m_layout;
         mfxFeedback                             m_feedback;
-    
+
         mfxFrameAllocResponse               m_allocResponseMB;
         mfxFrameAllocResponse               m_allocResponseBS;
         mfxRecFrames                        m_recFrames;
@@ -108,11 +114,12 @@ namespace MfxHwMpeg2Encode
 #ifdef MPEG2_ENC_HW_PERF
         vm_time lock_MB_data_time[3];
         vm_time copy_MB_data_time[3];
-#endif 
+#endif
+
     };
 };
 
 #endif
-#endif //#if defined (MFX_ENABLE_H264_VIDEO_ENCODE) && defined (MFX_VA_WIN)
+#endif //#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 #endif //#ifndef __MFX_MPEG2_ENCODE_D3D9__H
 /* EOF */

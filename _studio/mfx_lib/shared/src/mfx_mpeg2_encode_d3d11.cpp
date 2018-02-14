@@ -30,7 +30,6 @@
 #include "libmfx_core_interface.h"
 #include "vm_time.h"
 
-
 #ifndef D3DDDIFMT_NV12
 #define D3DDDIFMT_NV12 (D3DDDIFORMAT)(MAKEFOURCC('N', 'V', '1', '2'))
 #endif
@@ -254,7 +253,7 @@ mfxStatus D3D11Encoder::Init_MPEG2_ENCODE(ExecuteBuffers* pExecuteBuffers, mfxU3
 
 mfxStatus D3D11Encoder::Init(ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames, mfxU32 funcId)
 {
-    mfxStatus sts = MFX_ERR_UNSUPPORTED; 
+    mfxStatus sts = MFX_ERR_UNSUPPORTED;
 
     if( ENCODE_ENC_PAK_ID == funcId )
     {
@@ -406,12 +405,9 @@ mfxStatus D3D11Encoder::Init(
     }
 #endif
 
- 
-
     // [6] specific encoder caps
 
     // [7] Query encode service caps: see QueryCompBufferInfo
-
 
     return MFX_ERR_NONE;
 
@@ -718,6 +714,14 @@ mfxStatus D3D11Encoder::Register(
     //    m_feedbackCached.Reset( response.NumFrameActual );
     //}
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    if (m_bIsBlockingTaskSyncEnabled)
+    {
+        m_EventCache.reset(new EventCache());
+        m_EventCache->Init(256); // allocate a cache for 256 elements as _NUM_STORED_FEEDBACKS
+    }
+#endif
+
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::Register(...)
@@ -990,10 +994,32 @@ mfxStatus D3D11Encoder::Execute(
             encodeCompBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
             encodeCompBufferDesc[bufCnt].DataSize       = sizeof (payload);
             encodeCompBufferDesc[bufCnt].pCompBuffer    = &payload;
-            bufCnt++;        
+            bufCnt++;
         }
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    if (m_bIsBlockingTaskSyncEnabled)
+    {
+        // allocate the event
+        pExecuteBuffers->m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+        m_EventCache->GetEvent(pExecuteBuffers->m_GpuEvent.gpuSyncEvent);
+
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+        decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+        decoderExtParams.pPrivateInputData = &pExecuteBuffers->m_GpuEvent;
+        decoderExtParams.PrivateInputDataSize = sizeof(pExecuteBuffers->m_GpuEvent);
+        decoderExtParams.pPrivateOutputData = NULL;
+        decoderExtParams.PrivateOutputDataSize = 0;
+        decoderExtParams.ResourceCount = 0;
+        decoderExtParams.ppResourceList = NULL;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+            hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+        }
+        CHECK_HRES(hr);
+    }
+#endif
 
     //// individual header by individual pCompBuffer
     //for( mfxU32 i = 0; i < m_packedSlice.size(); i++ )
@@ -1027,6 +1053,7 @@ mfxStatus D3D11Encoder::Execute(
     //for (mfxU32 i = 0; i<16 && m_pps.RefFrameList[i].bPicEntry != 0xff; i++)
     //    printf("%d ", m_pps.RefFrameList[i].Index7Bits);
     //printf("\n");
+
 
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
@@ -1226,54 +1253,65 @@ mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
 } // mfxStatus D3D11Encoder::FillMBBufferPointer(ExecuteBuffers* pExecuteBuffers)
 
-
-mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
+mfxStatus D3D11Encoder::QueryStatusAsync(mfxU32 nFeedback, mfxU32 &bitstreamSize)
 {
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::FillBSBuffer");
-    MFX::AutoTimer timer("CopyBS");
-    mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameData Frame = {0};
-    ENCODE_QUERY_STATUS_PARAMS queryStatus = {0};
-
-    MFX_CHECK(nBitstream < DWORD(m_allocResponseBS.NumFrameActual),MFX_ERR_NOT_FOUND);
-    
-    
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "D3D11Encoder::QueryStatusAsync");
+    ENCODE_QUERY_STATUS_PARAMS queryStatus = { 0 };
     if (m_feedback.isUpdateNeeded())
     {
-         D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
 #ifdef NEW_STATUS_REPORTING_DDI_0915
         ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
         feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
         feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
-        decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
+        decoderExtParams.Function = ENCODE_QUERY_STATUS_ID;
 #ifdef NEW_STATUS_REPORTING_DDI_0915
-        decoderExtParams.pPrivateInputData     = &feedbackDescr;
-        decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
+        decoderExtParams.pPrivateInputData = &feedbackDescr;
+        decoderExtParams.PrivateInputDataSize = sizeof(feedbackDescr);
 #else // NEW_STATUS_REPORTING_DDI_0915
-        decoderExtParams.pPrivateInputData     = 0;
-        decoderExtParams.PrivateInputDataSize  = 0;
-#endif // NEW_STATUS_REPORTING_DDI_0915        
-        decoderExtParams.pPrivateOutputData    = m_feedback.GetPointer();
+        decoderExtParams.pPrivateInputData = 0;
+        decoderExtParams.PrivateInputDataSize = 0;
+#endif // NEW_STATUS_REPORTING_DDI_0915
+        decoderExtParams.pPrivateOutputData = m_feedback.GetPointer();
         decoderExtParams.PrivateOutputDataSize = m_feedback.GetSize();
-        decoderExtParams.ResourceCount         = 0;
-        decoderExtParams.ppResourceList        = 0;
+        decoderExtParams.ResourceCount = 0;
+        decoderExtParams.ppResourceList = 0;
         HRESULT hRes;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "ENCODE_QUERY_STATUS_ID");
             hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
         }
-       
+
         MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
         MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
     }
-    MFX_CHECK(m_feedback.GetFeedback(nFeedback,queryStatus),MFX_ERR_DEVICE_FAILED);        
+    MFX_CHECK(m_feedback.GetFeedback(nFeedback, queryStatus), MFX_ERR_DEVICE_FAILED);
     MFX_CHECK(queryStatus.bStatus != ENCODE_NOTREADY, MFX_WRN_DEVICE_BUSY);
     MFX_CHECK(queryStatus.bStatus == ENCODE_OK, MFX_ERR_DEVICE_FAILED);
+    bitstreamSize = queryStatus.bitstreamSize;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, mfxBitstream* pBitstream, Encryption *pEncrypt)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::FillBSBuffer");
+    MFX::AutoTimer timer("CopyBS");
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxFrameData Frame = { 0 };
+    mfxU32 bitstreamSize = 0;
+
+    MFX_CHECK(nBitstream < DWORD(m_allocResponseBS.NumFrameActual), MFX_ERR_NOT_FOUND);
+
+    sts = QueryStatusAsync(nFeedback, bitstreamSize);
+
+    if (sts != MFX_ERR_NONE)
+        return sts;
 
     Frame.MemId = m_allocResponseBS.mids[nBitstream];
-    sts = m_core->LockFrame(Frame.MemId,&Frame);
+    sts = m_core->LockFrame(Frame.MemId, &Frame);
     MFX_CHECK_STS(sts);
 
     pEncrypt = pEncrypt;
@@ -1282,33 +1320,30 @@ mfxStatus D3D11Encoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
     {
         MFX_CHECK_NULL_PTR1(pBitstream->EncryptedData);
         MFX_CHECK_NULL_PTR1(pBitstream->EncryptedData->Data);
-        MFX_CHECK(pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset + queryStatus.bitstreamSize < pBitstream->EncryptedData->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-        memcpy_s(pBitstream->EncryptedData->Data + pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset, pBitstream->EncryptedData->MaxLength, Frame.Y, queryStatus.bitstreamSize);
-        pBitstream->EncryptedData->DataLength += queryStatus.bitstreamSize;
+        MFX_CHECK(pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset + bitstreamSize < pBitstream->EncryptedData->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+        memcpy_s(pBitstream->EncryptedData->Data + pBitstream->EncryptedData->DataLength + pBitstream->EncryptedData->DataOffset, pBitstream->EncryptedData->MaxLength, Frame.Y, bitstreamSize);
+        pBitstream->EncryptedData->DataLength += bitstreamSize;
         pBitstream->EncryptedData->CipherCounter.IV = pEncrypt->m_aesCounter.IV;
         pBitstream->EncryptedData->CipherCounter.Count = pEncrypt->m_aesCounter.Count;
         pEncrypt->m_aesCounter.Increment();
         if (pEncrypt->m_aesCounter.IsWrapped())
         {
-              pEncrypt->m_aesCounter.ResetWrappedFlag();
-        }            
+            pEncrypt->m_aesCounter.ResetWrappedFlag();
+        }
     }
     else
 #endif
     {
-        MFX_CHECK(pBitstream->DataLength + pBitstream->DataOffset + queryStatus.bitstreamSize < pBitstream->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
-        memcpy_s(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, pBitstream->MaxLength, Frame.Y, queryStatus.bitstreamSize);
-        pBitstream->DataLength += queryStatus.bitstreamSize;     
+        MFX_CHECK(pBitstream->DataLength + pBitstream->DataOffset + bitstreamSize < pBitstream->MaxLength, MFX_ERR_NOT_ENOUGH_BUFFER);
+        memcpy_s(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, pBitstream->MaxLength, Frame.Y, bitstreamSize);
+        pBitstream->DataLength += bitstreamSize;
     }
-
-  
 
     sts = m_core->UnlockFrame(Frame.MemId);
     MFX_CHECK_STS(sts);
 
     return sts;
-} 
-
+}
 
 mfxStatus D3D11Encoder::RegisterRefFrames (const mfxFrameAllocResponse* pResponse)
 {

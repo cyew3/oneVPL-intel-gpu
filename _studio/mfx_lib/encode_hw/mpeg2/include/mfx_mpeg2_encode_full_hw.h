@@ -28,10 +28,14 @@
 
 #include <umc_mutex.h>
 
-#include "mfx_mpeg2_encode_interface.h"
 #include "mfxvideo++int.h"
 #include "mfx_mpeg2_encode_utils_hw.h"
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#include "mfx_mpeg2_encode_d3d_common.h"
+#else
+#include "mfx_mpeg2_encode_interface.h"
+#endif
 //#define BRC_WA
 
 namespace MPEG2EncoderHW
@@ -41,10 +45,13 @@ namespace MPEG2EncoderHW
     private:
         VideoCORE*                              m_core;
         MfxHwMpeg2Encode::ExecuteBuffers*       m_pExecuteBuffers;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        MfxHwMpeg2Encode::D3DXCommonEncoder*    m_pDdiEncoder;
+#else
         MfxHwMpeg2Encode::DriverEncoder*        m_pDdiEncoder;
+#endif
         bool                                    m_bStage2Ready;
         bool                                    m_bHWInput;
-
 
     public:
         MFXVideoENCODEMPEG2_HW_DDI(VideoCORE *core, mfxStatus *sts)
@@ -60,6 +67,7 @@ namespace MPEG2EncoderHW
           {
               Close();
           }
+
           mfxStatus Close()
           {
               if (m_pExecuteBuffers)
@@ -96,7 +104,12 @@ namespace MPEG2EncoderHW
 
               if (!m_pDdiEncoder)
               {
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+                  m_pDdiEncoder = dynamic_cast<MfxHwMpeg2Encode::D3DXCommonEncoder*>(MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder(m_core));
+                  m_pDdiEncoder->InitCommonEnc(m_core);
+#else
                   m_pDdiEncoder = MfxHwMpeg2Encode::CreatePlatformMpeg2Encoder(m_core);
+#endif
                   MFX_CHECK_NULL_PTR1(m_pDdiEncoder);
               }
               else
@@ -140,17 +153,25 @@ namespace MPEG2EncoderHW
                      !!GetExtBuffer(pIntTask->m_sEncodeInternalParams.ExtParam,
                                     pIntTask->m_sEncodeInternalParams.NumExtParam, MFX_EXTBUFF_GPU_HANG);
 #endif
+
              mfxStatus sts = MFX_ERR_NONE;
+
              sts = SubmitFrame(&pIntTask->m_FrameParams, &pIntTask->m_Frames, pUserData, userDataLen, qp);
              MFX_CHECK_STS (sts);
+
              pIntTask->m_FeedbackNumber       = m_pExecuteBuffers->m_pps.StatusReportFeedbackNumber;
              pIntTask->m_BitstreamFrameNumber = (mfxU32)m_pExecuteBuffers->m_idxBs;
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+             pIntTask->m_GpuEvent = m_pExecuteBuffers->m_GpuEvent;
+#endif
+
              return sts;
          }
 
          static void QuantIntoScaleTypeAndCode (Ipp32s quant_value, Ipp32s &q_scale_type, Ipp32s &quantiser_scale_code)
          {
-             if(quant_value > 7 && quant_value <= 62) 
+             if(quant_value > 7 && quant_value <= 62)
              {
                  q_scale_type = 0;
                  quantiser_scale_code = (quant_value + 1) >> 1;
@@ -218,7 +239,6 @@ namespace MPEG2EncoderHW
 
               sts = m_pDdiEncoder->SetFrames(m_pExecuteBuffers);
               MFX_CHECK_STS(sts);
-
               sts = m_pDdiEncoder->Execute(m_pExecuteBuffers, pUserData,userDataLen);
               MFX_CHECK_STS(sts);
               m_bStage2Ready = true;
@@ -233,10 +253,12 @@ public:
               {
                   return MFX_ERR_NOT_INITIALIZED;
               }
-
-              sts = m_pDdiEncoder->FillBSBuffer(pIntTask->m_FeedbackNumber, pIntTask->m_BitstreamFrameNumber,pIntTask->m_pBitstream, &m_pExecuteBuffers->m_encrypt);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+              sts = m_pDdiEncoder->FillBSBuffer(pIntTask->m_FeedbackNumber, pIntTask->m_BitstreamFrameNumber, pIntTask->m_pBitstream, &m_pExecuteBuffers->m_encrypt, &pIntTask->m_GpuEvent);
+#else
+              sts = m_pDdiEncoder->FillBSBuffer(pIntTask->m_FeedbackNumber, pIntTask->m_BitstreamFrameNumber, pIntTask->m_pBitstream, &m_pExecuteBuffers->m_encrypt);
+#endif
               MFX_CHECK_STS(sts);
-
 
               return sts;
           }
@@ -370,8 +392,6 @@ public:
 
         virtual
         mfxTaskThreadingPolicy GetThreadingPolicy(void) {return MFX_TASK_THREADING_INTRA;}
-     
-
 
     protected:
         inline bool is_initialized() {return m_pController!=0;}

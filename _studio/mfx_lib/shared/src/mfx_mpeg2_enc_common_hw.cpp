@@ -23,9 +23,9 @@
 #if defined(MFX_ENABLE_MPEG2_VIDEO_ENC)|| defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 
 #include "assert.h"
-//#include "mfx_mpeg2_enc_ddi_hw.h"
 #include "mfx_enc_common.h"
 #include "mfx_mpeg2_encode_interface.h"
+#include "mfx_mpeg2_enc_common_hw.h"
 
 #include <memory>
 
