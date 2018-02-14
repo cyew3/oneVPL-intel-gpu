@@ -241,6 +241,21 @@ MVP may be specified for 16x16 or 32x32 block of pixels, see description of `Blo
 
 ![MVP layout](./pic/mvp_layout.png)
 
+To disable MVPs for some particular 16x16 block inside 32x32 group `BlockSize` should be set to 1 and reference indexes `RefL0, RefL1` values to 0xf. Possible case when there are some 16x16 blocks for which predictors are
+need to be disabled while preserving MVP data for other blocks within 32x32 group illustrated on Figure 4:
+
+###### Figure 4: How to skip MVPs for particular 16x16 block
+
+![MVP skip mode layout](./pic/16x16_mvp_block_skip_mode.png)
+
+On the figure 4 orange represent that MV predictors are disabled for this particular 16x16 block. Corresponding element in `mfxExtFeiHevcEncMVPredictors::Data` buffer `BlockSize` is set to 1, `RefL0, RefL1` are set to 0xf and all vectors in `MV` are set to (0x8000; 0x8000).
+
+Blue represent that MV predictors are enabled for this particular 16x16 block. Corresponding element in the buffer has `BlockSize` set to 1 and other members set appropriately to provide actual MVP data.
+
+Green represent that MV predictors are enabled for this whole 32x32 block group. MVP data provided in the buffer element corresponding to this 16x16 block is used within the group. This element `BlockSize` is set to 2.
+
+White indicates that this 16x16 block uses values from left-upper block inside this 32x32 group. Values in the buffer element corresponding to this 16x16 block are ignored.
+
 **Members**
 
 | | |
@@ -250,9 +265,9 @@ MVP may be specified for 16x16 or 32x32 block of pixels, see description of `Blo
 `Pitch`<br>`Height` | Pitch and height of `Data` buffer in elements. `Pitch` may be bigger than picture width divided by CTU size, and `Height` may be bigger than picture height divided by CTU size due to alignment requirements of underlying HW implementation. This value is set by buffer allocator and should not be directly set or changed by application.<br><br>To access an element located in specified row and column next code may be used: <br> `mfxFeiHevcEncMVPredictors *mvp = buf.Data + row * buf.Pitch + col;`
 `Data` | Buffer that holds actual MV predictors.
 `RefIdx[4]` | Array of reference indexes for each MV predictor. Index in the array is a predictor number.
-`RefL0, RefL1` | L0 and L1 reference indexes.
-`BlockSize` | Block size for which MV predictors are specified. <br><br> 0x0 - disable MVPs for current block<br> 0x1 - MVPs for 16x16 blocks<br> 0x2 - MVPs for 32x32 block<br><br>It is used only if `MVPredictor` variable in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure is set to 0x07.
-`MV[4][2]` | Up to 4 MV predictors per 16x16 block. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference.<br><br>0x8000 value should be used for intra CTUs.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
+`RefL0, RefL1` | L0 and L1 reference indexes. To skip external predictors for this block set it to 0xf.
+`BlockSize` | Block size for which MV predictors are specified. <br><br> 0x0 - MVPs disabled for this 32x32 block<br> 0x1 - MVPs enabled per 16x16 block for this 32x32 block<br> 0x2 - MVPs enabled per 32x32 block, the rest of 16x16 block data within this 32x32 block is ignored <br><br>It is used only if `MVPredictor` variable in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure is set to 0x07.
+`MV[4][2]` | Up to 4 MV predictors per 16x16 block. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference.<br><br>Use 0x8000 value to indicate that application treats CUs related to this block as Intra and doesn't provide predictors.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
 
 **Change History**
 
@@ -293,9 +308,9 @@ vaMapBuffer(display, qp_buffer.VaBufferID, (void**)&qp_buffer.Data);
 vaUnmapBuffer(display, qp_buffer.VaBufferID);
 
 ```
-Figure 4 shows an example of the buffer layout. A blue rectangle represents an input frame. Each black rectangle represents one element in Data array corresponding to 32x32 block of pixels.
+Figure 5 shows an example of the buffer layout. A blue rectangle represents an input frame. Each black rectangle represents one element in Data array corresponding to 32x32 block of pixels.
 
-###### Figure 4: QP layout
+###### Figure 5: QP layout
 
 ![QP layout](./pic/qp_layout.png)
 
