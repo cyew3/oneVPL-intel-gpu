@@ -103,6 +103,9 @@ protected:
 
     mfxStatus AllocEncoderInputFrames();
     mfxStatus AllocEncoderOutputBitream();
+
+    mfxU32 nFramesProcessed = 0;
+    mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
 };
 
 #endif // __PIPELINE_UWP_ENCODE_H__

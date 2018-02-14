@@ -186,6 +186,10 @@ void MainPage::HandleFilePickerException()
     }
 }
 
+mfxU32 MainPage::CalculateBitrate(int frameSize)
+{
+    return frameSize < 414720 ? frameSize * 25 / 2592 : (frameSize - 414720) * 25 / 41088 +4000;
+}
 
 mfxVideoParam MainPage::LoadParams()
 {
@@ -195,14 +199,19 @@ mfxVideoParam MainPage::LoadParams()
     Params.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
     Params.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
 
-    Params.mfx.TargetKbps = Params.mfx.MaxKbps = 300;
     Params.mfx.TargetUsage = MFX_TARGETUSAGE_BALANCED;
 
     Params.mfx.FrameInfo.FrameRateExtN = 30;
     Params.mfx.FrameInfo.FrameRateExtD = 1;
 
-    Params.mfx.FrameInfo.Width = textBoxWidth->Text->Length() ? _wtoi(textBoxWidth->Text->Begin()) : 176;
-    Params.mfx.FrameInfo.Height = textBoxHeight->Text->Length() ? _wtoi(textBoxHeight->Text->Begin()) : 144;
+    Params.mfx.FrameInfo.CropX = 0;
+    Params.mfx.FrameInfo.CropY = 0;
+    Params.mfx.FrameInfo.CropW = textBoxWidth->Text->Length() ? _wtoi(textBoxWidth->Text->Begin()) : 176;
+    Params.mfx.FrameInfo.CropH = textBoxHeight->Text->Length() ? _wtoi(textBoxHeight->Text->Begin()) : 144;
+    Params.mfx.FrameInfo.Width = Params.mfx.FrameInfo.CropW;
+    Params.mfx.FrameInfo.Height = Params.mfx.FrameInfo.CropH;
+
+    Params.mfx.TargetKbps = Params.mfx.MaxKbps = CalculateBitrate(Params.mfx.FrameInfo.Width*Params.mfx.FrameInfo.Height);
 
     auto FccValue = safe_cast<TextBlock^>(FccComboBox->SelectedItem)->Text;
 
@@ -230,11 +239,6 @@ mfxVideoParam MainPage::LoadParams()
     
 
     Params.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-
-    Params.mfx.FrameInfo.CropX = 0;
-    Params.mfx.FrameInfo.CropY = 0;
-    Params.mfx.FrameInfo.CropW = Params.mfx.FrameInfo.Width;
-    Params.mfx.FrameInfo.CropH = Params.mfx.FrameInfo.Height;
 
     return Params;
 }

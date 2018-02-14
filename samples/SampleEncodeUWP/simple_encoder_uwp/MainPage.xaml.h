@@ -56,6 +56,8 @@ namespace simple_encoder
         void FileSavePickerClick(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void HandleFilePickerException();
 
+        mfxU32 CalculateBitrate(int frameSize);
+
         mfxVideoParam LoadParams();
         void DoEncode();
 

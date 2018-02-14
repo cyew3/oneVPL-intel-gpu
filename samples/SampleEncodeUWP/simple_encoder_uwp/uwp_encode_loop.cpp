@@ -277,7 +277,7 @@ mfxStatus CEncoder::AllocEncoderInputFrames()
 
 mfxU32 CEncoder::GetPictureSize()
 {
-    return m_mfxEncParams.mfx.FrameInfo.Height * m_mfxEncParams.mfx.FrameInfo.Width * FourCCToBPP(m_mfxEncParams.mfx.FrameInfo.FourCC) / 8;
+    return m_mfxEncParams.mfx.FrameInfo.CropH * m_mfxEncParams.mfx.FrameInfo.CropW * FourCCToBPP(m_mfxEncParams.mfx.FrameInfo.FourCC) / 8;
 }
 
 void CEncoder::CancelEncoding()
@@ -305,13 +305,13 @@ CEncoder::ReadAndEncodeAsync(StorageFile ^ storageSource, StorageFile ^ storageS
 
                 auto bufferData = ref new Platform::Array<byte>(picSize);
 
-                StorageStreamTransaction^ transaction = create_task(storageSink->OpenTransactedWriteAsync(), _CTS.get_token()).get();
+                auto outputStream = create_task(storageSink->OpenAsync(FileAccessMode::ReadWrite), _CTS.get_token()).get();
 
                 mfxStatus sts = MFX_ERR_NONE;
                 auto UnconsumedBufferLength = streamReader->UnconsumedBufferLength;
-                auto dataWriter = ref new DataWriter(transaction->Stream);
-
-                while (((UnconsumedBufferLength >= picSize) && (MFX_ERR_NONE == sts)))
+                auto dataWriter = ref new DataWriter(outputStream);
+                int totalLength = 0, tl2 = 0;
+                while (MFX_ERR_NONE == sts)
                 {
                     if (_CTS.get_token().is_canceled()) {
 
@@ -320,30 +320,49 @@ CEncoder::ReadAndEncodeAsync(StorageFile ^ storageSource, StorageFile ^ storageS
 
                     mfxSyncPoint EncSyncP = nullptr;
 
-                    streamReader->ReadBytes(bufferData);
-                    UnconsumedBufferLength = streamReader->UnconsumedBufferLength;
+                    if (UnconsumedBufferLength >= picSize)
+                    {
+                        // Reading data from file and encoding it
+                        streamReader->ReadBytes(bufferData);
+                        UnconsumedBufferLength = streamReader->UnconsumedBufferLength;
 
-                    sts = ProceedFrame(bufferData->begin(), bufferData->Length, EncSyncP);
+                        sts = ProceedFrame(bufferData->begin(), bufferData->Length, EncSyncP);
+                    }
+                    else
+                    {
+                        sts = ProceedFrame(NULL, 0, EncSyncP);
+                    }
 
-                    if (EncSyncP) {
+                    if (EncSyncP && MFX_ERR_NONE == sts) {
 
                         sts = m_mfxSession.SyncOperation(EncSyncP, MSDK_WAIT_INTERVAL);
 
                         if (MFX_ERR_NONE == sts) {
 
                             dataWriter->WriteBytes(ref new Platform::Array<byte>(m_mfxBS.Data + m_mfxBS.DataOffset, m_mfxBS.DataLength));
+                            
+                            //FILE* fp;
+                            //Windows::Storage::StorageFolder^ localFolder = Windows::Storage::ApplicationData::Current->LocalFolder;
+                            //auto pathName = localFolder->Path + "\\dump.h264";
+                            //_wfopen_s(&fp, pathName->Data(), L"ab");
+                            //fwrite(m_mfxBS.Data + m_mfxBS.DataOffset, m_mfxBS.DataLength, 1, fp);
+                            //fclose(fp);
+
+                            totalLength += m_mfxBS.DataLength;
 
                             m_mfxBS.DataOffset = m_mfxBS.DataLength = 0;
                             reporter.report(mfxU32(100 - double(UnconsumedBufferLength * 100) / (istr->Size)));
-
-                            if (create_task(transaction->Stream->FlushAsync(), _CTS.get_token()).get()) {
-                                mfxU32 bytesStored = create_task(dataWriter->StoreAsync(), _CTS.get_token()).get();
-                            }
+//                            create_task(transaction->Stream->FlushAsync(), _CTS.get_token()).wait();
+                            auto task1 = create_task(dataWriter->StoreAsync(), _CTS.get_token());
+                            task1.wait();
+                            create_task(outputStream->FlushAsync(), _CTS.get_token()).wait();
+                            tl2 += task1.get();
                         }
                     }
                 }
 
-                create_task(transaction->CommitAsync(), _CTS.get_token()).get();
+                //create_task(transaction->CommitAsync(), _CTS.get_token()).wait();
+                outputStream = nullptr;
             }, _CTS.get_token());
 
             //
@@ -403,9 +422,6 @@ mfxStatus CEncoder::ProceedFrame(const mfxU8* bufferSrc, mfxU32 buffersize, mfxS
 
     mfxStatus sts = MFX_ERR_NONE;
 
-    static mfxU16 nEncSurfIdx = 0;     // index of free surface for encoder input (vpp output)
-    mfxU32 nFramesProcessed = 0;
-
     sts = MFX_ERR_NONE;
     MSDK_CHECK_ERROR(nEncSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 
@@ -416,55 +432,62 @@ mfxStatus CEncoder::ProceedFrame(const mfxU8* bufferSrc, mfxU32 buffersize, mfxS
     mfxU32 h = 0;
     mfxU32 pitch = 0;
 
-    // read luma plane
-    if (pInfo.CropH > 0 && pInfo.CropW > 0) {
-        w = pInfo.CropW;
-        h = pInfo.CropH;
-    }
-    else {
-        w = pInfo.Width;
-        h = pInfo.Height;
-    }
-
-    pitch = pData.Pitch;
-
-    auto src = bufferSrc;
-    auto dst = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
-
-    // load Y
-    for (mfxU32 Yh = 0; Yh < h; Yh++) {
-        memcpy_s(dst, w, src, w);
-        dst += pitch;
-        src += w;
-    }
-
-    // read crmoma planes
-    w /= 2;
-    h /= 2;
-
-    dst = pData.UV + pInfo.CropX + (pInfo.CropY / 2) * pitch;
-
-    auto srcU = src;
-    auto srcV = srcU + h * w;
-
-    // load UV interlieved bcos encoder understands NV12
-    for (mfxU32 UVh = 0; UVh < h; UVh++) {
-
-        for (mfxU32 UVw = 0; UVw < w; UVw++) {
-            dst[UVw*2] = srcU[UVw];
-            dst[UVw*2+1] = srcV[UVw];
+    if (bufferSrc)
+    {
+        // read luma plane
+        if (pInfo.CropH > 0 && pInfo.CropW > 0) {
+            w = pInfo.CropW;
+            h = pInfo.CropH;
+        }
+        else {
+            w = pInfo.Width;
+            h = pInfo.Height;
         }
 
-        dst += pitch;
+        pitch = pData.Pitch;
 
-        srcU += w;
-        srcV += w;
+        auto src = bufferSrc;
+        auto dst = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
+
+        // load Y
+        for (mfxU32 Yh = 0; Yh < h; Yh++) {
+            memcpy_s(dst, w, src, w);
+            dst += pitch;
+            src += w;
+        }
+
+        // read chroma planes
+        w /= 2;
+        h /= 2;
+
+        dst = pData.UV + pInfo.CropX + (pInfo.CropY / 2) * pitch;
+
+        auto srcU = src;
+        auto srcV = srcU + h * w;
+
+        // load UV interlieved because encoder understands NV12 - in case of loading data from YUV
+        for (mfxU32 UVh = 0; UVh < h; UVh++) {
+
+            for (mfxU32 UVw = 0; UVw < w; UVw++) {
+                dst[UVw * 2] = srcU[UVw];
+                dst[UVw * 2 + 1] = srcV[UVw];
+            }
+
+            dst += pitch;
+
+            srcU += w;
+            srcV += w;
+        }
+
+        // at this point surface for encoder contains either a frame from file or a frame processed by vpp
+        sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &m_mfxBS, &EncSyncP);
+
+        nEncSurfIdx = (nEncSurfIdx + 1) % m_nEncSurfaces;
     }
-
-    // at this point surface for encoder contains either a frame from file or a frame processed by vpp
-    sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &m_mfxBS, &EncSyncP);
-
-    nEncSurfIdx = (nEncSurfIdx + 1) % m_nEncSurfaces;
+    else
+    {
+        sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &m_mfxBS, &EncSyncP);
+    }
 
     if ((!EncSyncP) && (MFX_ERR_NONE != sts)) {
 
@@ -480,9 +503,9 @@ mfxStatus CEncoder::ProceedFrame(const mfxU8* bufferSrc, mfxU32 buffersize, mfxS
                 break;
 
             case MFX_ERR_MORE_DATA:
-                // MFX_ERR_MORE_DATA is the correct status to exit buffering loop with
-                // indicates that there are no more buffered frames
-                sts = MFX_ERR_NONE;
+                // MFX_ERR_MORE_DATA means either that we're just started( if we acutally have data in bufferSrc) 
+                // or that we've completed encoding and flushed buffers (is bufferSrc is NULL)
+                sts = bufferSrc ? MFX_ERR_NONE : sts;
                 break;
         }
     }

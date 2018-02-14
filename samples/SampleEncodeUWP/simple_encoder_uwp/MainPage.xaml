@@ -25,13 +25,13 @@
         <TextBlock HorizontalAlignment="Left" Margin="199,110,0,0" TextWrapping="Wrap" Text="Height" VerticalAlignment="Top" Height="18" Width="78"/>
         <TextBlock HorizontalAlignment="Left" Margin="397,110,0,0" TextWrapping="Wrap" Text="FCC" VerticalAlignment="Top" Height="18" Width="73"/>
         <ComboBox x:Name="FccComboBox" HorizontalAlignment="Stretch" Margin="475,103,45,0" VerticalAlignment="Top" SelectedIndex="0">
-            <TextBlock Text="NV12"/>
-            <TextBlock Text="NV16"/>
+            <TextBlock Text="YUV"/>
+<!--            <TextBlock Text="NV16"/>
             <TextBlock Text="YUV422"/>
             <TextBlock Text="YUV444"/>
             <TextBlock Text="RGB24"/>
             <TextBlock Text="P010"/>
-            <TextBlock Text="P210"/>
+            <TextBlock Text="P210"/> -->
         </ComboBox>
 
     </Grid>
