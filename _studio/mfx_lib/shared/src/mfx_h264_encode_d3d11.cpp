@@ -177,7 +177,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     {
         mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
         m_StreamInfo.CodecId = DDI_CODEC_AVC;
-        mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE);
+        mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE,(mfxU32)m_feedbackUpdate.size());
         return sts;
     }
 #endif
@@ -289,7 +289,7 @@ mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequ
     request.Info.Height = m_compBufInfo[i].CreationHeight;
     request.Info.FourCC = ownConvertD3DFMT_TO_MFX( (DXGI_FORMAT)(m_compBufInfo[i].CompressedFormats) ); // P8
 
-    return MFX_ERR_NONE;    
+    return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
 
@@ -792,45 +792,45 @@ mfxStatus D3D11Encoder::QueryStatus(
 #endif // NEW_STATUS_REPORTING_DDI_0915
 
     // if task is not in cache then query its status
+
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
-        try
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMFEAdapter != NULL)
         {
-            /*HRESULT hr = m_auxDevice->Execute(
-                ENCODE_QUERY_STATUS_ID,
-                (void *)0,
-                0,
-                &m_feedbackUpdate[0],
-                (mfxU32)m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));*/
-
-            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-
-            decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
-#ifdef NEW_STATUS_REPORTING_DDI_0915
-            decoderExtParams.pPrivateInputData     = &feedbackDescr;
-            decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
-#else // NEW_STATUS_REPORTING_DDI_0915
-            decoderExtParams.pPrivateInputData     = 0;
-            decoderExtParams.PrivateInputDataSize  = 0;
-#endif // NEW_STATUS_REPORTING_DDI_0915
-            decoderExtParams.pPrivateOutputData    = &m_feedbackUpdate[0];
-            decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
-            decoderExtParams.ResourceCount         = 0;
-            decoderExtParams.ppResourceList        = 0;
-            HRESULT hRes = 0;
+            mfxStatus sts = m_pMFEAdapter->GetStatusReport(m_StreamInfo, task.m_statusReportNumber[fieldId], &m_feedbackUpdate[0], (mfxU32)m_feedbackUpdate.size());
+            if (sts != MFX_ERR_NONE)
+                return sts;
+        }
+        else
+#endif
+        {
+            try
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
-                hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+
+                D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+
+                decoderExtParams.Function              = ENCODE_QUERY_STATUS_ID;
+                decoderExtParams.pPrivateInputData     = &feedbackDescr;
+                decoderExtParams.PrivateInputDataSize  = sizeof(feedbackDescr);
+                decoderExtParams.pPrivateOutputData    = &m_feedbackUpdate[0];
+                decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(m_feedbackUpdate[0]));
+                decoderExtParams.ResourceCount         = 0;
+                decoderExtParams.ppResourceList        = 0;
+                HRESULT hRes = 0;
+                {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
+                    hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+                }
+
+                MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
+                MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
             }
-
-            MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+            catch (...)
+            {
+                return MFX_ERR_DEVICE_FAILED;
+            }
         }
-        catch (...)
-        {
-            return MFX_ERR_DEVICE_FAILED;
-        }
-
         // Put all with ENCODE_OK into cache.
         m_feedbackCached.Update(m_feedbackUpdate);
 
