@@ -75,11 +75,10 @@ namespace av1_close
         const tc_struct& tc = test_case[id];
 
         MFXInit();
-        Load();
 
         //set default param
         g_tsStreamPool.Reg();
-        tsBitstreamReader reader(sname, 100000);
+        tsBitstreamReaderIVF reader(sname, 1000000);
         m_bs_processor = &reader;
 
         SETPARS(m_pPar, MFX_PAR);
@@ -124,7 +123,11 @@ namespace av1_close
 
     /* 8 bit */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>)
-    { return "conformance/av1/self_coded/foreman_352x288_420.av1"; }
+    { return "conformance/av1/from_fulsim/akiyo0_176x144_8b_420_LowLatency_qp12.ivf"; }
+
+    /* 10 bit */
+    char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
+    { return "conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf"; }
 
     template <unsigned fourcc>
     struct TestSuiteEx
@@ -142,5 +145,6 @@ namespace av1_close
         }
     };
 
-    TS_REG_TEST_SUITE(av1d_8b_420_close,   TestSuiteEx<MFX_FOURCC_NV12>::RunTest, TestSuiteEx<MFX_FOURCC_NV12>::n_cases);
+    TS_REG_TEST_SUITE(av1d_8b_420_nv12_close,  TestSuiteEx<MFX_FOURCC_NV12>::RunTest, TestSuiteEx<MFX_FOURCC_NV12>::n_cases);
+    TS_REG_TEST_SUITE(av1d_10b_420_p010_close, TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
 };
