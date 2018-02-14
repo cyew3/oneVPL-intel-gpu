@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -156,12 +156,13 @@ namespace MFX_HEVC_PP
             totalZeroCost = _mm_add_epi64(totalZeroCost, dst1);
             _mm_store_si128((__m128i *)(zlCosts+i+6), dst1);
         }
-#if defined(__x86_64__)
-        return _mm_extract_epi64(totalZeroCost, 0) + _mm_extract_epi64(totalZeroCost, 1);
-#else
-        const Ipp64s lowerBits = (Ipp64s)_mm_extract_epi32(totalZeroCost, 0) | (((Ipp64s)_mm_extract_epi32(totalZeroCost, 1)) << 32);
-        const Ipp64s highBits  = (Ipp64s)_mm_extract_epi32(totalZeroCost, 2) | (((Ipp64s)_mm_extract_epi32(totalZeroCost, 3) ) << 32);
+// to compile 32 bit binaries on Android platforms using Clang
+#if defined(ANDROID) && !defined(__x86_64__)
+        const Ipp64s lowerBits = (Ipp64s)(Ipp32u)_mm_extract_epi32(totalZeroCost, 0) | (((Ipp64s)(Ipp32u)_mm_extract_epi32(totalZeroCost, 1)) << 32);
+        const Ipp64s highBits  = (Ipp64s)(Ipp32u)_mm_extract_epi32(totalZeroCost, 2) | (((Ipp64s)(Ipp32u)_mm_extract_epi32(totalZeroCost, 3) ) << 32);
         return lowerBits + highBits;
+#else
+        return _mm_extract_epi64(totalZeroCost, 0) + _mm_extract_epi64(totalZeroCost, 1);
 #endif
     }
 
