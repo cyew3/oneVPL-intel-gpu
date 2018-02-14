@@ -4125,6 +4125,13 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!CheckTriStateOption(extOpt3->ExtBrcAdaptiveLTR)) changed = true;
 
+#ifdef MFX_AUTOLTR_FEATURE_DISABLE
+    if (IsOn(extOpt3->ExtBrcAdaptiveLTR))
+    {
+        extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
+        changed = true;
+    }
+#else // else MFX_AUTOLTR_FEATURE_DISABLE == MFX_AUTOLTR_FEATURE_ENABLED
     if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && IsOff(extOpt2->ExtBRC)) 
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
@@ -4164,7 +4171,8 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             changed = true;
         }
     }
-#endif
+#endif //MFX_AUTOLTR_FEATURE_DISABLE
+#endif // API VERSION CHECK
 
     if (hwCaps.UserMaxFrameSizeSupport == 0 && ((extOpt2->MaxFrameSize) || (extOpt3->MaxFrameSizeI) || (extOpt3->MaxFrameSizeP)))
     {
@@ -6022,6 +6030,7 @@ void MfxHwH264Encode::SetDefaults(
     if (extOpt3->ExtBrcAdaptiveLTR == MFX_CODINGOPTION_UNKNOWN)
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
+        #ifndef MFX_AUTOLTR_FEATURE_DISABLE
         mfxExtBRC const * extBRC = GetExtBuffer(par);
         // remove check when sample extbrc is same as implicit extbrc
         // currently added for no behaviour change in sample extbrc
@@ -6031,6 +6040,7 @@ void MfxHwH264Encode::SetDefaults(
             // make sure to call CheckVideoParamQueryLike 
             // or add additional conditions above (num ref & num active)
         }
+        #endif
     }
 
     mfxExtBRC const * extBRC = GetExtBuffer(par);

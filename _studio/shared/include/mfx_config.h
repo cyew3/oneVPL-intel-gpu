@@ -392,4 +392,9 @@
 #define MFX_ENABLE_H264_REPARTITION_CHECK
 #endif
 
+// Win SDK 2018 R1 release - disable AUTO_LTR
+#if MFX_VERSION >= 1026 && ( defined(_WIN32) || defined(_WIN64) )
+    //#define MFX_AUTOLTR_FEATURE_DISABLE
+#endif
+
 #endif // _MFX_CONFIG_H_
