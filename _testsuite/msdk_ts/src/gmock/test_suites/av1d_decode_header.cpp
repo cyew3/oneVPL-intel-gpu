@@ -101,6 +101,19 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          352 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         288 } },
     },
+
+    {/* 3*/ MFX_ERR_NONE,  "from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf",
+      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             0 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   10 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 10 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,         MFX_FOURCC_P010 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct,      MFX_PICSTRUCT_PROGRESSIVE },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,   MFX_CHROMAFORMAT_YUV420 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,   1 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,   1 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          640 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         360 } },
+    },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
