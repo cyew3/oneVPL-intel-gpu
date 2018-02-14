@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -234,7 +234,6 @@ public:
         mfxU16 GopRefDist;
         mfxU16 IdrInterval;
         mfxU16 PicStruct;
-        mfxU16 PRefType;
         mfxU16 BRefType;
     };
 
@@ -249,31 +248,31 @@ public:
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    /*01*/ {6, 5, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*02*/ {6, 4, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*03*/ {6, 3, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_PYRAMID, MFX_B_REF_PYRAMID},
-    /*04*/ {6, 2, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*05*/ {6, 1, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*06*/ {0, 5, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*07*/ {0, 4, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*08*/ {0, 3, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_PYRAMID, MFX_B_REF_PYRAMID},
-    /*09*/ {0, 2, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*10*/ {0, 1, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*11*/ {6, 5, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_DEFAULT, MFX_B_REF_OFF},
-    /*12*/ {6, 4, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*13*/ {6, 3, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_PYRAMID, MFX_B_REF_PYRAMID},
-    /*14*/ {6, 2, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*15*/ {6, 1, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*16*/ {0, 5, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*17*/ {0, 4, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*18*/ {0, 3, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_PYRAMID, MFX_B_REF_PYRAMID},
-    /*19*/ {0, 2, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*20*/ {0, 1, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*21*/ {6, 5, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*22*/ {6, 4, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_DEFAULT, MFX_B_REF_PYRAMID},
-    /*23*/ {6, 3, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_PYRAMID, MFX_B_REF_PYRAMID},
-    /*24*/ {6, 2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
-    /*25*/ {6, 1, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_P_REF_PYRAMID, MFX_B_REF_OFF},
+    /*01*/ {6, 5, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_PYRAMID},
+    /*02*/ {6, 4, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_PYRAMID},
+    /*03*/ {6, 3, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_PYRAMID},
+    /*04*/ {6, 2, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_OFF},
+    /*05*/ {6, 1, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_OFF},
+    /*06*/ {0, 5, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_PYRAMID},
+    /*07*/ {0, 4, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_PYRAMID},
+    /*08*/ {0, 3, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_PYRAMID},
+    /*09*/ {0, 2, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_OFF},
+    /*10*/ {0, 1, 0, MFX_PICSTRUCT_PROGRESSIVE, MFX_B_REF_OFF},
+    /*11*/ {6, 5, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_OFF},
+    /*12*/ {6, 4, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_PYRAMID},
+    /*13*/ {6, 3, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_PYRAMID},
+    /*14*/ {6, 2, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_OFF},
+    /*15*/ {6, 1, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_OFF},
+    /*16*/ {0, 5, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_PYRAMID},
+    /*17*/ {0, 4, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_PYRAMID},
+    /*18*/ {0, 3, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_PYRAMID},
+    /*19*/ {0, 2, 0, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_OFF},
+    /*20*/ {0, 1, 0, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_OFF},
+    /*21*/ {6, 5, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_PYRAMID},
+    /*22*/ {6, 4, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_PYRAMID},
+    /*23*/ {6, 3, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_PYRAMID},
+    /*24*/ {6, 2, 1, MFX_PICSTRUCT_FIELD_TFF,   MFX_B_REF_OFF},
+    /*25*/ {6, 1, 1, MFX_PICSTRUCT_FIELD_BFF,   MFX_B_REF_OFF},
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -289,8 +288,6 @@ int TestSuite::RunTest(unsigned int id)
     m_par.AsyncDepth = 1;
     m_par.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
 
-    //CodingOption3/2
-    mfxExtCodingOption3& CO3 = m_par;
     mfxExtCodingOption2& CO2 = m_par;
 
     m_par.mfx.GopPicSize = 30;
@@ -300,7 +297,6 @@ int TestSuite::RunTest(unsigned int id)
     m_par.mfx.NumRefFrame         = tc.NumRefFrame;
     m_par.mfx.GopRefDist          = tc.GopRefDist;
     m_par.mfx.IdrInterval         = tc.IdrInterval;
-    CO3.PRefType                  = tc.PRefType;
     CO2.BRefType                  = tc.BRefType;
 
     Init();
