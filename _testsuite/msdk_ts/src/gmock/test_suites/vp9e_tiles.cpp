@@ -123,7 +123,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         SCALABLE_PIPE = 0x020000,
         UNALIGNED_RESOL = 0x040000 | CHECK_FULL_INITIALIZATION,
         DYNAMIC_CHANGE = 0x080000 | CHECK_FULL_INITIALIZATION,
-        EXPERIMENTAL = 0x800000
+        CHECK_ASYNC2 = 0x100000,
+        CHECK_ASYNC3 = 0x200000
     };
 
     const std::vector<TestSubtype> executeTests =
@@ -147,7 +148,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         SCALABLE_PIPE,
         UNALIGNED_RESOL,
         DYNAMIC_CHANGE,
-        //EXPERIMENTAL
+        CHECK_ASYNC2,
+        CHECK_ASYNC3
     };
 
     enum
@@ -585,20 +587,68 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
             }
         },
+
+        // below test cases check async encoding together with tiles
+        {/*76*/ MFX_ERR_NONE, MAX_TILE_ROWS | CBR | TU4 | CHECK_ASYNC2,
+            { { ITER_LENGTH, SET_W(704), SET_H(576), SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(1) } }
+        },
+        {/*77*/ MFX_ERR_NONE, BASIC_TILE_COLS | CBR | TU4 | CHECK_ASYNC2,
+            { { ITER_LENGTH, SET_W(1408), SET_H(1152), SET_NUM_ROWS(1), SET_NUM_COLS(BASIC_NUM_TILE_COLS) } }
+        },
+        {/*78*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | CHECK_ASYNC2,
+            {
+                { ITER_LENGTH, SET_W(1408), SET_H(1152),
+                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(4) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
+                { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
+            }
+        },
+        {/*79*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CQP | SCALABLE_PIPE | CHECK_ASYNC2,
+            {
+                { ITER_LENGTH, SET_W(1408), SET_H(1152),
+                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
+                { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
+            }
+        },
+        {/*80*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | CHECK_ASYNC3,
+            {
+                { ITER_LENGTH, SET_W(1408), SET_H(1152),
+                SET_NUM_ROWS(4), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(4) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(2) },
+                { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(1) },
+            }
+        },
+        {/*81*/ MFX_ERR_NONE, DYNAMIC_CHANGE | CBR | SCALABLE_PIPE | CHECK_ASYNC3,
+            {
+                { ITER_LENGTH, SET_W(1408), SET_H(1152),
+                SET_NUM_ROWS(4), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
+                { ITER_LENGTH, SET_NUM_ROWS(1), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(2), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
+                { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(1) },
+                { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
+            }
+        },
     };
 
     const tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*76*/ MFX_ERR_NONE, CQP | TU4,
+        {/*82*/ MFX_ERR_NONE, CQP | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
         },
-        {/*77*/ MFX_ERR_NONE, CQP | TU4,
+        {/*83*/ MFX_ERR_NONE, CQP | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
         },
-        {/*78*/ MFX_ERR_NONE, CBR | TU4,
+        {/*84*/ MFX_ERR_NONE, CBR | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
         },
-        {/*79*/ MFX_ERR_NONE, CBR | TU4,
+        {/*85*/ MFX_ERR_NONE, CBR | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
         },
     };
@@ -810,7 +860,19 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 par.mfx.BufferSizeInKB = 0;
             }
         }
-        par.AsyncDepth = 1; // TODO: check async operations as well
+
+        if (testType & CHECK_ASYNC3)
+        {
+            par.AsyncDepth = 3;
+        }
+        else if (testType & CHECK_ASYNC2)
+        {
+            par.AsyncDepth = 2;
+        }
+        else
+        {
+            par.AsyncDepth = 1;
+        }
     }
 
     class Iteration
