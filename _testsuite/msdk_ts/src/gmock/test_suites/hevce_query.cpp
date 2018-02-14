@@ -383,7 +383,6 @@ namespace hevce_query
     int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
     {
         TS_START;
-
         mfxHDL hdl;
         mfxHandleType type;
         mfxExtBuffer* buff_in = NULL;
@@ -503,7 +502,9 @@ namespace hevce_query
                 );
         }
 
-        g_tsStatus.check(GetCaps(&caps, &capSize));
+        mfxStatus caps_sts = GetCaps(&caps, &capSize);
+        if (caps_sts != MFX_ERR_UNSUPPORTED)
+            g_tsStatus.check(caps_sts);
 
         if (tc.sub_type != DELTA) {  // not dependent from resolution params
             SETPARS(m_pPar, MFX_PAR);

@@ -411,10 +411,20 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
 
     HRESULT hr;
     GUID guid;
-    if (g_tsConfig.lowpower & MFX_CODINGOPTION_ON)
-        guid = DXVA2_Intel_LowpowerEncode_HEVC_Main;
-    else
-        guid = DXVA2_Intel_Encode_HEVC_Main;
+    if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))) {
+        if (g_tsConfig.lowpower & MFX_CODINGOPTION_ON)
+            guid = DXVA2_Intel_LowpowerEncode_HEVC_Main;
+        else
+            guid = DXVA2_Intel_Encode_HEVC_Main;
+    }
+    else {
+        if (pCapsSize) {
+            memset(pCaps, 0, *pCapsSize);
+            pCapsSize[0] = 0;
+        }
+
+        return MFX_ERR_UNSUPPORTED;
+    }
 
     if (!m_is_handle_set && g_tsImpl != MFX_IMPL_SOFTWARE)
     {

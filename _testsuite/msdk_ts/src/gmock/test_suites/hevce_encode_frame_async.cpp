@@ -364,7 +364,9 @@ namespace hevce_encode_frame_async
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
 
-        g_tsStatus.check(GetCaps(&caps, &capSize));
+        sts = GetCaps(&caps, &capSize);
+        if (sts != MFX_ERR_UNSUPPORTED)
+            g_tsStatus.check(sts);
 
         //g_tsLog << "CAPS: LCUSizeSupported = " << caps.LCUSizeSupported << "\n";
         //g_tsLog << "CAPS: SliceStructure = " << caps.SliceStructure << "\n";

@@ -15,6 +15,8 @@ File Name: hevce_reset.cpp
 
 namespace hevce_reset
 {
+#define INVALID_WIDTH   16384
+#define INVALID_HEIGHT  16384
 
     class TestSuite : tsVideoEncoder
     {
@@ -539,7 +541,9 @@ namespace hevce_reset
             m_filler = reader;
         }
 
-        g_tsStatus.check(GetCaps(&caps, &capSize));
+        mfxStatus caps_sts = GetCaps(&caps, &capSize);
+        if (caps_sts != MFX_ERR_UNSUPPORTED)
+            g_tsStatus.check(caps_sts);
 
         if (tc.type != NO_INIT)
         {
@@ -614,9 +618,19 @@ namespace hevce_reset
         if (tc.type == RESOLUTION)
         {
             if (tc.sub_type == W_GT_MAX)
-                m_pPar->mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
+            {
+                if (caps.MaxPicWidth)
+                    m_pPar->mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
+                else
+                    m_pPar->mfx.FrameInfo.Width = INVALID_WIDTH + 16;
+            }
             if (tc.sub_type == H_GT_MAX)
-                m_pPar->mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+            {
+                if (caps.MaxPicHeight)
+                    m_pPar->mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
+                else
+                    m_pPar->mfx.FrameInfo.Height = INVALID_HEIGHT + 16;
+            }
         }
 
         if ((tc.type == FRAMERATE) && (tc.sub_type == CHANGE) && (g_tsConfig.sim))

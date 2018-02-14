@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2007-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2007-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_slice_size_report.cpp
 
@@ -125,12 +125,13 @@ int TestSuite::RunTest (unsigned int id)
 
     ENCODE_CAPS_HEVC caps = {};
     mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
-    g_tsStatus.check(GetCaps(&caps, &capSize));
+    mfxStatus sts = GetCaps(&caps, &capSize);
 
-    if (!caps.SliceByteSizeCtrl || !caps.SliceLevelReportSupport) {
+    if (!caps.SliceByteSizeCtrl || !caps.SliceLevelReportSupport || (sts == MFX_ERR_UNSUPPORTED)) {
         g_tsLog << "\n\nWARNING: SliceByteSizeCtrl or SliceLevelReportSupport is not supported in this platform. Test is skipped.\n\n\n";
         throw tsSKIP;
     }
+    g_tsStatus.check(sts);
 
     mfxU32 maxslices = ((m_par.mfx.FrameInfo.Width + (lcu_size - 1)) / lcu_size) * ((m_par.mfx.FrameInfo.Height + (lcu_size - 1)) / lcu_size);
 

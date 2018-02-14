@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -708,6 +708,8 @@ namespace {
         errInvalidParam = !CheckMax(fi.CropY, CodecLimits::MAX_HEIGHT - 1);
         errInvalidParam = !CheckMax(fi.CropW, CodecLimits::MAX_WIDTH);
         errInvalidParam = !CheckMax(fi.CropH, CodecLimits::MAX_HEIGHT);
+        if ((!fi.Width) || (!fi.Height))
+            errInvalidParam = true;
         if (fi.Width & 15)
             fi.Width = 0, errInvalidParam = true;
         if (fi.Height & 15)
@@ -1701,6 +1703,7 @@ mfxStatus MFXVideoENCODEH265::Close()
 mfxStatus MFXVideoENCODEH265::Query(MFXCoreInterface1 *core, mfxVideoParam *in, mfxVideoParam *out)
 {
     mfxStatus st = MFX_ERR_NONE;
+    mfxStatus wrn = MFX_ERR_NONE;
     if (out == NULL)
         return MFX_ERR_NULL_PTR;
 
@@ -1720,11 +1723,17 @@ mfxStatus MFXVideoENCODEH265::Query(MFXCoreInterface1 *core, mfxVideoParam *in, 
             return MFX_ERR_UNDEFINED_BEHAVIOR;
 
         CopyParam(*out, *in);
+
+        if (out->mfx.FrameInfo.Width & 15)
+            out->mfx.FrameInfo.Width = AlignValue(out->mfx.FrameInfo.Width, 16), wrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        if (out->mfx.FrameInfo.Height & 15)
+            out->mfx.FrameInfo.Height = AlignValue(out->mfx.FrameInfo.Height, 16), wrn = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+        
         st = CheckParam(*out);
-       
+
         if (st == MFX_ERR_UNSUPPORTED || st == MFX_ERR_INVALID_VIDEO_PARAM)
             return MFX_ERR_UNSUPPORTED;
-        else if (st == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
+        else if (st == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM || wrn == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM)
             return MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 

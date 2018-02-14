@@ -599,10 +599,12 @@ namespace hevce_init
 
         ENCODE_CAPS_HEVC caps = {};
         mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
-        g_tsStatus.check(GetCaps(&caps, &capSize));
+        sts = GetCaps(&caps, &capSize);
+        if (sts != MFX_ERR_UNSUPPORTED)
+            g_tsStatus.check(sts);
 
         if (tc.type == RESOLUTION && tc.sub_type == INVALID_MAX) {
-            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+            if (caps.MaxPicWidth && caps.MaxPicHeight)
             {
                 m_par.mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
                 m_par.mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
@@ -613,7 +615,7 @@ namespace hevce_init
             }
         }
         else if (tc.type == RESOLUTION_W && tc.sub_type == INVALID_MAX) {
-            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+            if (caps.MaxPicWidth)
             {
                 m_par.mfx.FrameInfo.Width = caps.MaxPicWidth + 32;
             }
@@ -623,7 +625,7 @@ namespace hevce_init
             }
         }
         else if (tc.type == RESOLUTION_H && tc.sub_type == INVALID_MAX) {
-            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && (0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))))
+            if (caps.MaxPicHeight)
             {
                 m_par.mfx.FrameInfo.Height = caps.MaxPicHeight + 32;
             }
