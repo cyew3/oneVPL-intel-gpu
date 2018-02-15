@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -197,6 +197,9 @@ namespace UMC_HEVC_DECODER
 
         if (pPicParamSet->pps_curr_pic_ref_enabled_flag)
         {
+            if (count == sizeof(pPicParam->RefFrameList) / sizeof(pPicParam->RefFrameList[0]))
+                throw h265_exception(UMC_ERR_FAILED);
+
             pPicParam->PicOrderCntValList[count] = pCurrentFrame->m_PicOrderCnt;
 
             pPicParam->RefFrameList[count].Index7bits = pCurrentFrame->m_index;
