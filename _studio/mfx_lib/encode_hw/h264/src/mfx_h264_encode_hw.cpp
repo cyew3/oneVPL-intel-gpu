@@ -2529,15 +2529,15 @@ mfxStatus ImplementationAvc::SCD_Get_FrameType(DdiTask & task)
 
         if (IsOn(extOpt2->AdaptiveI))
         {
-            mfxI32 idist = (mfxI32)(m_frameOrder - m_frameOrderIntraInDisplayOrder);
-        mfxI32 idrdist = (mfxI32)(m_frameOrder - m_frameOrderIdrInDisplayOrder);
-        mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
-        mfxI32 numRef = IPP_MIN(extDdi->NumActiveRefP, m_video.mfx.NumRefFrame);
+            mfxI32 idist = (mfxI32)(task.m_frameOrder - m_frameOrderIntraInDisplayOrder);
+            mfxI32 idrdist = (mfxI32)(task.m_frameOrder - m_frameOrderIdrInDisplayOrder);
+            mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+            mfxI32 numRef = IPP_MIN(extDdi->NumActiveRefP, m_video.mfx.NumRefFrame);
         
-        mfxI32 minPDist = numRef * m_video.mfx.GopRefDist;
-        mfxI32 minIdrDist = (task.m_frameLtrOff ? numRef : IPP_MAX(8,numRef)) * (bPyr ? 2 : m_video.mfx.GopRefDist);
-        minIdrDist = IPP_MIN(minIdrDist, m_video.mfx.GopPicSize/2);
-        minPDist = IPP_MIN(minPDist, minIdrDist);
+            mfxI32 minPDist = numRef * m_video.mfx.GopRefDist;
+            mfxI32 minIdrDist = (task.m_frameLtrOff ? numRef : IPP_MAX(8,numRef)) * (bPyr ? 2 : m_video.mfx.GopRefDist);
+            minIdrDist = IPP_MIN(minIdrDist, m_video.mfx.GopPicSize/2);
+            minPDist = IPP_MIN(minPDist, minIdrDist);
 
             if (!(task.m_type[0] & MFX_FRAMETYPE_I) && idist < minPDist && IsOn(extOpt2->AdaptiveB))
             {
@@ -2559,11 +2559,11 @@ mfxStatus ImplementationAvc::SCD_Get_FrameType(DdiTask & task)
             }
             else
             {
-            // IDR
+                // IDR
                 task.m_ctrl.FrameType = (MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF | MFX_FRAMETYPE_IDR);
                 task.m_type = ExtendFrameType(task.m_ctrl.FrameType);
-        }
-    } 
+             }
+        } 
         else if (IsOn(extOpt2->AdaptiveB))
         {
             if (!(task.m_type[0] & MFX_FRAMETYPE_I))
@@ -2700,7 +2700,7 @@ void ImplementationAvc::AssignFrameTypes(DdiTask & newTask)
 
     if (newTask.GetFrameType() & MFX_FRAMETYPE_B)
     {
-        newTask.m_loc = GetBiFrameLocation(m_video, m_frameOrder - m_frameOrderIdrInDisplayOrder);
+        newTask.m_loc = GetBiFrameLocation(m_video, newTask.m_frameOrder - m_frameOrderIdrInDisplayOrder);
         newTask.m_type[0] |= newTask.m_loc.refFrameFlag;
         newTask.m_type[1] |= newTask.m_loc.refFrameFlag;
     }
@@ -2802,11 +2802,18 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
         if (!m_video.mfx.EncodedOrder)
         {
-            if (newTask.m_type[0] == 0)
-                newTask.m_type = GetFrameType(m_video, m_frameOrder - m_frameOrderIdrInDisplayOrder);
+            if (IsExtBrcSceneChangeSupported(m_video))
+            {
+                newTask.m_frameOrder = m_frameOrder;
+            }
+            else
+            {
+                if (newTask.m_type[0] == 0)
+                    newTask.m_type = GetFrameType(m_video, m_frameOrder - m_frameOrderIdrInDisplayOrder);
 
-            newTask.m_frameOrder = m_frameOrder;
-            AssignFrameTypes(newTask);
+                newTask.m_frameOrder = m_frameOrder;
+                AssignFrameTypes(newTask);
+            }
 
             m_frameOrder++;
         }
@@ -2866,6 +2873,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         if (IsExtBrcSceneChangeSupported(m_video))
         {
             DdiTask & task = m_ScDetectionFinished.front();
+            if (task.m_type[0] == 0)
+                task.m_type = GetFrameType(m_video, task.m_frameOrder - m_frameOrderIdrInDisplayOrder);
+
             MFX_CHECK_STS(Prd_LTR_Operation(task));
             MFX_CHECK_STS(SCD_Get_FrameType(task));
             AssignFrameTypes(task);

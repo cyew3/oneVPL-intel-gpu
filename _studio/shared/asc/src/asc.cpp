@@ -1835,8 +1835,10 @@ void ASC::GeneralBufferRotation() {
 
     if (m_support->logic[ASCcurrent_frame_data]->repeatedFrame) {
         m_videoData[ASCReference_Frame]->frame_number = m_videoData[ASCCurrent_Frame]->frame_number;
+        m_support->logic[ASCprevious_frame_data]->frameNum = m_support->logic[ASCcurrent_frame_data]->frameNum;
         m_support->logic[ASCcurrent_frame_data]->Schg = 0;
         m_support->logic[ASCprevious_frame_data]->Schg = 0;
+        m_support->logic[ASCprevious_frame_data]->repeatedFrame = true;
         m_support->logic[ASCprevious_previous_frame_data]->Schg = 0;
     }
     else {

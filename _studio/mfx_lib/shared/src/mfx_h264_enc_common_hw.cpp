@@ -1260,7 +1260,7 @@ bool MfxHwH264Encode::IsExtBrcSceneChangeSupported(
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
     extbrcsc = (IsOn(extOpt2->ExtBRC) &&
         (video.mfx.RateControlMethod == MFX_RATECONTROL_CBR || video.mfx.RateControlMethod == MFX_RATECONTROL_VBR)
-        && (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE));
+        && (video.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE) && !video.mfx.EncodedOrder);
 #endif
     return extbrcsc;
 }
