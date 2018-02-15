@@ -211,7 +211,7 @@ int TestSuite::RunTest(tc_struct const& tc)
     {
         if (m_bs_processor)
             delete m_bs_processor;
-        m_bs_processor = new tsBitstreamReader(stream0, 100000);
+        m_bs_processor = new tsBitstreamReaderIVF(stream0, 100000);
     } else
     {
         m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
@@ -280,19 +280,37 @@ struct TestSuiteExt
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/self_coded/foreman_352x288_420.av1", ""},
-    {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
-    {REPEAT, 0, {2}}}
+    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf", ""},
+        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
+        {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/self_coded/foreman_352x288_420.av1", ""},
+    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/self_coded/foreman_352x288_420.av1", "conformance/av1/self_coded/foreman_352x288_422.av1"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf", "conformance/av1/from_fulsim/football_352x288_8b_444_LowLatency_qp12.ivf"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_NV12>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12>::test_cases) / sizeof(TestSuite::tc_struct);
+
+/* 10b 420 */
+template <>
+TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010>::test_cases[] =
+{
+    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf", ""},
+        {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
+        {REPEAT, 0, {2}}}
+    },
+
+    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf", ""},
+        {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
+        {REPEAT, 0, {2}}}
+    },
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf", "conformance/av1/self_coded/Kimono1_640x360_10b_444.av1"}},
+};
+template <>
+unsigned int const TestSuiteExt<MFX_FOURCC_P010>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010>::test_cases) / sizeof(TestSuite::tc_struct);
 
 template <unsigned fourcc>
 int TestSuiteExt<fourcc>::RunTest(unsigned int id)
@@ -305,6 +323,7 @@ int TestSuiteExt<fourcc>::RunTest(unsigned int id)
     return suite.RunTest(tc);
 }
 
-TS_REG_TEST_SUITE(av1d_8b_420_reset,     TestSuiteExt<MFX_FOURCC_NV12>::RunTest, TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(av1d_8b_420_nv12_reset,  TestSuiteExt<MFX_FOURCC_NV12>::RunTest, TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(av1d_10b_420_p010_reset, TestSuiteExt<MFX_FOURCC_P010>::RunTest, TestSuiteExt<MFX_FOURCC_P010>::n_cases);
 
 }
