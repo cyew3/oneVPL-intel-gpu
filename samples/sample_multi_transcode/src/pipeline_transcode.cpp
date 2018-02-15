@@ -1951,6 +1951,11 @@ mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstream* 
 {
     mfxStatus       sts = MFX_ERR_MORE_DATA;
     // get result coded stream
+    if (!pSurf->pSurface)
+    {
+        return MFX_ERR_MORE_DATA;
+    }
+
     if(pSurf->Syncp)
     {
         sts = m_pmfxSession->SyncOperation(pSurf->Syncp, MSDK_WAIT_INTERVAL);
