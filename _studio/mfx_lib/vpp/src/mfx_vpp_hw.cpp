@@ -2286,7 +2286,43 @@ mfxStatus  VideoVPPHW::Init(
         int res = 0;
         if (NULL == m_pCmProgram)
         {
-            res = m_pCmDevice->LoadProgram((void *)genx_fcopy_cmcode, sizeof(genx_fcopy_cmcode), m_pCmProgram);
+            eMFXHWType m_platform = m_pCore->GetHWType();
+            switch (m_platform)
+            {
+            case MFX_HW_BDW:
+            case MFX_HW_CHT:
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen8,sizeof(genx_fcopy_gen8),m_pCmProgram,"nojitter");
+                break;
+            case MFX_HW_SCL:
+            case MFX_HW_APL:
+            case MFX_HW_KBL:
+            case MFX_HW_CFL:
+        #ifndef MFX_CLOSED_PLATFORMS_DISABLE
+            case MFX_HW_GLK:
+        #endif
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen9,sizeof(genx_fcopy_gen9),m_pCmProgram,"nojitter");
+                break;
+        #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+            case MFX_HW_CNL:
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen10,sizeof(genx_fcopy_gen10),m_pCmProgram,"nojitter");
+                break;
+        #endif  // PRE_SI_TARGET_PLATFORM_GEN10
+        #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            case MFX_HW_ICL:
+            case MFX_HW_ICL_LP:
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11,sizeof(genx_fcopy_gen11),m_pCmProgram,"nojitter");
+                break;
+        #endif  // PRE_SI_TARGET_PLATFORM_GEN11
+        #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            case MFX_HW_TGL_HP:
+            case MFX_HW_TGL_LP:
+                res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12,sizeof(genx_fcopy_gen12),m_pCmProgram,"nojitter");
+                break;
+        #endif  // PRE_SI_TARGET_PLATFORM_GEN12
+            default:
+                res = CM_FAILURE;
+                break;
+            }
             if(res != 0 ) return MFX_ERR_DEVICE_FAILED;
         }
 

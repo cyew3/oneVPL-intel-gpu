@@ -479,6 +479,12 @@ _studio/mfx_lib/cmrt_cross_platform/include/cmvm.h
 _studio/mfx_lib/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 _studio/mfx_lib/genx/field_copy/include/genx_fcopy_cmcode_isa.h
 _studio/mfx_lib/genx/field_copy/src/genx_fcopy_cmcode_isa.cpp
+_studio/mfx_lib/genx/field_copy/include/genx_fcopy_gen7_5_isa.h
+_studio/mfx_lib/genx/field_copy/src/genx_fcopy_gen7_5_isa.cpp
+_studio/mfx_lib/genx/field_copy/include/genx_fcopy_gen8_isa.h
+_studio/mfx_lib/genx/field_copy/src/genx_fcopy_gen8_isa.cpp
+_studio/mfx_lib/genx/field_copy/include/genx_fcopy_gen9_isa.h
+_studio/mfx_lib/genx/field_copy/src/genx_fcopy_gen9_isa.cpp
 _studio/mfx_lib/genx/copy_kernels/include/cht_copy_kernel_genx_isa.h
 _studio/mfx_lib/genx/copy_kernels/include/skl_copy_kernel_genx_isa.h
 _studio/mfx_lib/genx/copy_kernels/src/genx_cht_copy_isa.cpp

@@ -116,6 +116,7 @@ foreach( variant
     umc_va_elk_hw
     cmrt_cross_platform_hw
     copy_kernels_hw
+    field_copy_kernels_hw
     decode_${variant}
     encode_hw
     enc_hw

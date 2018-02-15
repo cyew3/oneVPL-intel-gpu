@@ -29,7 +29,17 @@
   #include "mfx_scd.h"        // Scene change detection
  #endif
  #include "cm_mem_copy.h"         // Needed for mirroring kernels
-#include "genx_fcopy_cmcode_isa.cpp" // Field copy kernel
+ #include "genx_fcopy_gen8_isa.h" // Field copy kernels
+ #include "genx_fcopy_gen9_isa.h"
+ #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+  #include "genx_fcopy_gen10_isa.h"
+ #endif
+ #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+  #include "genx_fcopy_gen11_isa.h"
+ #endif
+ #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+  #include "genx_fcopy_gen12_isa.h"
+ #endif
 #else
 #undef MFX_ENABLE_MCTF
 #undef MFX_ENABLE_MCTF_EXT

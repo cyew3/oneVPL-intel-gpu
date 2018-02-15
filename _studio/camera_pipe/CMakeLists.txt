@@ -100,7 +100,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
   )
 endforeach()
 
-include_directories( ${MSDK_LIB_ROOT}/genx/field_copy/src )
+include_directories( ${MSDK_LIB_ROOT}/genx/field_copy/include )
 include_directories( ${MSDK_LIB_ROOT}/vpp/include )
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
 include_directories( ${MSDK_STUDIO_ROOT}/shared/umc/codec/color_space_converter/include )
@@ -148,6 +148,7 @@ endforeach()
     umc
     vm
     vm_plus
+    field_copy_kernels_hw
     ${ITT_LIBS}
     pthread
     dl

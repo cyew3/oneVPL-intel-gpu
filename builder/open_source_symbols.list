@@ -78,6 +78,9 @@ _MFX_H264_PREENC_H_
 _MFX_ENC_EXT_H_
 _MFX_PAK_EXT_H_
 __genx_fcopy_cmcode__
+__genx_fcopy_gen7_5__
+__genx_fcopy_gen8__
+__genx_fcopy_gen9__
 __genx_bdw_simple_me__
 __genx_hsw_histogram__
 __genx_hsw_simple_me__

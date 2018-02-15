@@ -144,6 +144,13 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
   )
 endforeach()
 
+foreach( prefix ${MSDK_LIB_ROOT}/genx/field_copy/src )
+  list( APPEND sources
+    ${prefix}/genx_fcopy_gen8_isa.cpp
+    ${prefix}/genx_fcopy_gen9_isa.cpp
+  )
+endforeach()
+
 set( USE_STRICT_NAME TRUE )
 set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libmfx.map" )
 

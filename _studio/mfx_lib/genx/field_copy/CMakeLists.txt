@@ -26,3 +26,22 @@ if( 0 )
   set( defs "" )
 
 endif()
+
+set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
+
+mfx_include_dirs( )
+
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
+
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
+set( sources "" )
+set( sources.plus "" )
+list( APPEND sources
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen8_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen9_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen10_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen11_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen12_isa.cpp
+)
+make_library( field_copy_kernels hw static )
+set( defs "" )

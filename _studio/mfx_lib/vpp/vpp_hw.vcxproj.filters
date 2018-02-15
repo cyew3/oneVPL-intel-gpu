@@ -21,6 +21,9 @@
     <Filter Include="Header Files\vme">
       <UniqueIdentifier>{63f9647d-95fc-47f1-8107-2df4783c0ed6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\field_copy">
+      <UniqueIdentifier>{d17db453-aaf2-4acd-8379-2969e3cc37ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\mfx_vpp_factory.cpp">
@@ -124,6 +127,24 @@
     </ClCompile>
     <ClCompile Include="..\..\shared\src\mfx_scd.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen7_5_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen8_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen9_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen10_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen11_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
+    </ClCompile>
+    <ClCompile Include="..\genx\field_copy\src\genx_fcopy_gen12_isa.cpp">
+      <Filter>Source Files\field_copy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

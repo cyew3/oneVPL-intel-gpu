@@ -47,8 +47,7 @@ MFX_LOCAL_SRC_FILES_HW := \
     $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/src/*.cpp)))
 
 MFX_LOCAL_C_INCLUDES := \
-    $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
-    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/field_copy/src
+    $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
 
 MFX_LOCAL_C_INCLUDES_IMPL := \
     $(MFX_LOCAL_C_INCLUDES) \
@@ -57,6 +56,8 @@ MFX_LOCAL_C_INCLUDES_IMPL := \
 MFX_LOCAL_C_INCLUDES_HW := \
     $(MFX_LOCAL_C_INCLUDES_IMPL) \
     $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/field_copy/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/copy_kernels/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/asc/include
 
@@ -149,6 +150,24 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_enc_common_hw.cpp \
     mfx_h264_encode_vaapi.cpp \
     mfx_h264_encode_factory.cpp)
+
+MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/copy_kernels/src/, \
+    embed_isa.c \
+    genx_cht_copy_isa.cpp \
+    genx_cnl_copy_isa.cpp \
+    genx_icl_copy_isa.cpp \
+    genx_icllp_copy_isa.cpp \
+    genx_skl_copy_isa.cpp \
+    genx_tgl_copy_isa.cpp \
+    genx_tgllp_copy_isa.cpp)
+
+MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/field_copy/src/, \
+    genx_fcopy_gen7_5_isa.cpp \
+    genx_fcopy_gen8_isa.cpp \
+    genx_fcopy_gen9_isa.cpp \
+    genx_fcopy_gen10_isa.cpp \
+    genx_fcopy_gen11_isa.cpp \
+    genx_fcopy_gen12_isa.cpp)
 
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/src/, \
     genx_me_skl_isa.cpp \
