@@ -289,7 +289,7 @@ namespace av1d_decode_frame_async
     /* 8 bit */
     TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_AV1_0>)
     {
-        static const TestSuite::stream_desc sd{ 352, 288, "conformance/av1/self_coded/foreman_352x288_420.av1" };
+        static const TestSuite::stream_desc sd{ 352, 288, "conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf" };
         return sd;
     }
 
@@ -314,6 +314,34 @@ namespace av1d_decode_frame_async
     template <>
     unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::test_cases) / sizeof(TestSuite::tc_struct);
 
+    /* 10 bit */
+    TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_AV1_2>)
+    {
+        static const TestSuite::stream_desc sd{ 640, 360, "conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf" };
+        return sd;
+    }
+
+    /* 10b 420 */
+    template <>
+    TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::test_cases[] =
+    {
+        {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 8, RUNTIME_SURF} },
+        {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_P010, RUNTIME_SURF},
+                                                     {&tsStruct::mfxFrameSurface1.Info.ChromaFormat, MFX_CHROMAFORMAT_YUV422, RUNTIME_SURF},
+                                                   } },
+        {/*34*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_AYUV, AFTER_INIT},
+                                                          {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                        } },
+        {/*35*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_NV12, AFTER_INIT},
+                                                          {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV420, AFTER_INIT},
+                                                        } },
+        {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, MFX_FOURCC_Y410, AFTER_INIT},
+                                                          {&tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, MFX_CHROMAFORMAT_YUV444, AFTER_INIT},
+                                                        } },
+    };
+    template <>
+    unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::test_cases) / sizeof(TestSuite::tc_struct);
+
     template <unsigned fourcc, unsigned profile>
     int TestSuiteExt<fourcc, profile>::RunTest(unsigned int id)
     {
@@ -327,7 +355,8 @@ namespace av1d_decode_frame_async
         return suite.RunTest(tc, sd);
     }
 
-TS_REG_TEST_SUITE(av1d_8b_420_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::n_cases));
+TS_REG_TEST_SUITE(av1d_8b_420_nv12_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::n_cases));
+TS_REG_TEST_SUITE(av1d_10b_420_p010_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::n_cases));
 
 }
 #undef TEST_NAME
