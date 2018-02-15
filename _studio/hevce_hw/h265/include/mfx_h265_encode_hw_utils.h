@@ -531,7 +531,7 @@ namespace ExtBuffer
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         _CopyPar1(GeneralConstraintFlags);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
         _CopyPar1(SampleAdaptiveOffset);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)

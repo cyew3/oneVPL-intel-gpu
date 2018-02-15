@@ -879,7 +879,31 @@ mfxU32 GetDefaultLCUSize(MfxVideoParam const & par,
 
 #ifdef PRE_SI_TARGET_PLATFORM_GEN10
 
-bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
+//bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
+//{
+//    /*
+//    -    LCUSizeSupported - Supported LCU sizes, bit fields
+//    0b001 : 16x16
+//    0b010 : 32x32
+//    0b100 : 64x64
+//    */
+//    assert(LCUSizeSupported > 0);
+//
+//    if (LCUSize == 0) { // zero is allowed
+//        return true;
+//    }
+//
+//    if ((LCUSize == 16) || (LCUSize == 32) || (LCUSize == 64)) {    // explicitly assigned lcusize
+//        if ((LCUSize >> 4) & LCUSizeSupported)
+//            return true;
+//    }
+//
+//    LCUSize = 0;
+//    return false;
+//}
+
+
+bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU16& LCUSize)
 {
     /*
     -    LCUSizeSupported - Supported LCU sizes, bit fields
@@ -889,8 +913,7 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
     */
     assert(LCUSizeSupported > 0);
 
-    if (LCUSize == 0) { // default behavior
-        LCUSize = (1 << (CeilLog2(LCUSizeSupported + 1) + 3)); // set max supported
+    if (LCUSize == 0) { // zero is allowed
         return true;
     }
 
@@ -899,6 +922,7 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
             return true;
     }
 
+    LCUSize = 0;
     return false;
 }
 
@@ -1183,6 +1207,9 @@ void InheritDefaultValues(
     //InheritOption(extHEVCInit->PicWidthInLumaSamples,   extHEVCReset->PicWidthInLumaSamples);
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     InheritOption(extHEVCInit->SampleAdaptiveOffset, extHEVCReset->SampleAdaptiveOffset);
+#if (MFX_VERSION >= 1026)
+    InheritOption(extHEVCInit->LCUSize, extHEVCReset->LCUSize);
+#endif
 #endif
 
     mfxExtHEVCTiles const * extHEVCTilInit  = &parInit.m_ext.HEVCTiles;
@@ -1550,18 +1577,37 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckTriStateOption(par.mfx.LowPower);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    if (par.m_ext.DDI.LCUSize != 0)
     {
-        if (par.m_ext.DDI.LCUSize)  // LCUSize from input params
+        if (CheckLCUSize(caps.LCUSizeSupported, par.m_ext.DDI.LCUSize))
+        {
             par.LCUSize = par.m_ext.DDI.LCUSize;
-
-        if (!CheckLCUSize(caps.LCUSizeSupported, par.LCUSize))
+        }
+        else
             invalid++;
     }
-    else
-#endif //PRE_SI_TARGET_PLATFORM_GEN10
+
+#if (MFX_VERSION >= 1026)
+    if (par.m_ext.HEVCParam.LCUSize != 0)
+    {
+        if (CheckLCUSize(caps.LCUSizeSupported, par.m_ext.HEVCParam.LCUSize))
+        {
+            par.LCUSize = par.m_ext.HEVCParam.LCUSize;
+        }
+        else
+            invalid++;
+    }
+
+    // HEVCParam.LCUSize have a priority.
+    if ((par.m_ext.DDI.LCUSize != 0) &&  (par.m_ext.DDI.LCUSize != par.m_ext.HEVCParam.LCUSize))
+    {
+        par.m_ext.DDI.LCUSize = 0;
+        changed++;
+    }
+#endif // MFX_VERSION >= 1026 
+#endif // defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (!par.LCUSize)
-        par.LCUSize = GetDefaultLCUSize(par, caps);
+        par.LCUSize = GetDefaultLCUSize(par, caps); //  that a local copy of actual value;
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
@@ -2627,8 +2673,18 @@ void SetDefaults(
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
 
-    if (!par.LCUSize)
-        par.LCUSize = GetDefaultLCUSize(par, hwCaps);
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    // CheckVideoParam is always called before SetDefaults
+    // par.LCUSize must be set to correct correct user provided value or default one
+    ////    if (!par.LCUSize)
+    ////        par.LCUSize = GetDefaultLCUSize(par, hwCaps);
+    // just report this value back to user parameters
+#if MFX_VERSION >= 1026 
+    par.m_ext.HEVCParam.LCUSize = (mfxU16)par.LCUSize; // typecast is safe since value must be valid 8,16,32,64
+#endif
+    par.m_ext.DDI.LCUSize = (mfxU16)par.LCUSize;
+#endif
 
     if (par.mfx.CodecLevel)
     {

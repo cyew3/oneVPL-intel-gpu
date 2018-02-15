@@ -862,6 +862,8 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     sts = CheckHeaders(parNew, m_caps);
     MFX_CHECK_STS(sts);
 
+    MFX_CHECK(m_vpar.LCUSize ==  parNew.LCUSize, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM); // LCU Size Can't be changed
+
 #if defined PRE_SI_TARGET_PLATFORM_GEN11
     {
         mfxFrameInfo recNew = {};
