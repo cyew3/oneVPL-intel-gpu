@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -249,6 +249,32 @@ public:
     inline tsSample<mfxU16>& V16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_uv[(h / 2) * (m_pitch / 2) + (w % 2 == 0 ? w : (w - 1)) + 1]); return m_sample; }
 };
 
+class tsFrameP016 : public tsFrameAbstract
+{
+public:
+    mfxU32 m_pitch;
+    mfxU16* m_y;
+    mfxU16* m_uv;
+    tsSampleImpl<mfxU16, mfxU16> m_sample_impl;
+    tsSample<mfxU16> m_sample;
+
+    tsFrameP016(mfxFrameData d)
+        : m_pitch( mfxU32(d.PitchHigh << 16) + d.PitchLow)
+        , m_y(d.Y16)
+        , m_uv(d.U16)
+        , m_sample(&m_sample_impl)
+    {}
+
+    virtual ~tsFrameP016() { }
+
+    inline bool isYUV16() {return true;};
+    inline tsSample<mfxU16>& Y16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * (m_pitch/2) + w], 0xfff0, 4); return m_sample; }
+    inline tsSample<mfxU16>& U16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1))], 0xfff0, 4); return m_sample; }
+    inline tsSample<mfxU16>& V16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_uv[(h/2) * (m_pitch/2) + (w%2==0?w:(w-1)) + 1], 0xfff0, 4); return m_sample; }
+
+    bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
+};
+
 class tsFrameY210 : public tsFrameAbstract
 {
 public:
@@ -277,6 +303,34 @@ public:
     bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
 };
 
+class tsFrameY216 : public tsFrameAbstract
+{
+public:
+    mfxU32 m_pitch;
+    mfxU16* m_y;
+    mfxU16* m_u;
+    mfxU16* m_v;
+    tsSampleImpl<mfxU16, mfxU16> m_sample_impl;
+    tsSample<mfxU16> m_sample;
+
+    tsFrameY216(mfxFrameData d)
+        : m_pitch((mfxU32(d.PitchHigh << 16) + d.PitchLow) / 2)
+        , m_y(d.Y16)
+        , m_u(d.U16)
+        , m_v(d.V16)
+        , m_sample(&m_sample_impl)
+    {}
+
+    virtual ~tsFrameY216() { }
+
+    inline bool isYUV16() { return true; };
+    inline tsSample<mfxU16>& Y16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * m_pitch + w * 2], 0xfff0, 4); return m_sample; }
+    inline tsSample<mfxU16>& U16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_u[h * m_pitch + (w / 2) * 4], 0xfff0, 4); return m_sample; }
+    inline tsSample<mfxU16>& V16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_v[h * m_pitch + (w / 2) * 4], 0xfff0, 4);return m_sample; }
+
+    bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
+};
+
 class tsFrameY410 : public tsFrameAbstract
 {
 private:
@@ -297,6 +351,34 @@ public:
     inline tsSample<mfxU16>& U16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * m_pitch + w], 0x000003ff,  0); return m_sample; }
     inline tsSample<mfxU16>& Y16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * m_pitch + w], 0x000ffc00, 10); return m_sample; }
     inline tsSample<mfxU16>& V16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * m_pitch + w], 0x3ff00000, 20); return m_sample; }
+
+    bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
+};
+
+class tsFrameY416 : public tsFrameAbstract
+{
+private:
+    mfxU32 m_pitch;
+    mfxU16* m_y;
+    mfxU16* m_u;
+    mfxU16* m_v;
+    tsSampleImpl<mfxU16, mfxU16> m_sample_impl;
+    tsSample<mfxU16> m_sample;
+public:
+    tsFrameY416(mfxFrameData d)
+        : m_pitch((mfxU32(d.PitchHigh << 16) + d.PitchLow) / 2)
+        , m_y(d.Y16)
+        , m_u(d.U16)
+        , m_v(d.V16)
+        , m_sample(&m_sample_impl)
+    {}
+
+    virtual ~tsFrameY416() { }
+
+    inline bool isYUV16() { return true; };
+    inline tsSample<mfxU16>& U16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_y[h * m_pitch + w * 4], 0xffc0, 4); return m_sample; }
+    inline tsSample<mfxU16>& Y16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_u[h * m_pitch + w * 4], 0xffc0, 4); return m_sample; }
+    inline tsSample<mfxU16>& V16(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_v[h * m_pitch + w * 4], 0xffc0, 4); return m_sample; }
 
     bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
 };

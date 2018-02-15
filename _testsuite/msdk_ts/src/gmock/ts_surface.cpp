@@ -22,18 +22,16 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_YUY2: m_pFrame = new tsFrameYUY2(s.Data); break;
     case MFX_FOURCC_AYUV: m_pFrame = new tsFrameAYUV(s.Data); break;
     case MFX_FOURCC_P010:
-    case MFX_FOURCC_P016:
         if (s.Info.Shift == 0)
             m_pFrame = new tsFrameP010s0(s.Data);
         else
             m_pFrame = new tsFrameP010(s.Data);
         break;
-    case MFX_FOURCC_Y210:
-    case MFX_FOURCC_Y216:
-        m_pFrame = new tsFrameY210(s.Data); break;
-    case MFX_FOURCC_Y410:
-    case MFX_FOURCC_Y416:
-        m_pFrame = new tsFrameY410(s.Data); break;
+    case MFX_FOURCC_P016: m_pFrame = new tsFrameP016(s.Data); break;    // currently 12b only
+    case MFX_FOURCC_Y210: m_pFrame = new tsFrameY210(s.Data); break;
+    case MFX_FOURCC_Y216: m_pFrame = new tsFrameY216(s.Data); break;    // currently 12b only
+    case MFX_FOURCC_Y410: m_pFrame = new tsFrameY410(s.Data); break;
+    case MFX_FOURCC_Y416: m_pFrame = new tsFrameY416(s.Data); break;    // currently 12b only
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;
     case MFX_FOURCC_R16:  m_pFrame = new tsFrameR16(s.Data); break;
@@ -218,12 +216,62 @@ bool tsFrameAYUV::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const &
 
 bool tsFrameP010::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
 {
-    if (  (srcInfo.FourCC == MFX_FOURCC_P010 || srcInfo.FourCC == MFX_FOURCC_P016)
+    if (  srcInfo.FourCC == MFX_FOURCC_P010
         && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
         && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
         && srcInfo.Shift == dstInfo.Shift)
     {
         auto& src = (const tsFrameP010 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU8* pDst = (mfxU8*)m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
+        mfxU8* pSrc = (mfxU8*)src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
+        maxw *= 2;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        pDst = (mfxU8*)m_uv + (m_pitch * dstInfo.CropY / 2) + dstInfo.CropX * 2;
+        pSrc = (mfxU8*)src.m_uv + (src.m_pitch * srcInfo.CropY / 2) + srcInfo.CropX * 2;
+        maxh /= 2;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameP016::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (  srcInfo.FourCC == MFX_FOURCC_P016
+        && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
+        && srcInfo.Shift == dstInfo.Shift)
+    {
+        auto& src = (const tsFrameP016 &)srcAbstract;
         mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
         mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
 
@@ -304,11 +352,50 @@ bool tsFrameY210::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const &
     return false;
 }
 
+bool tsFrameY216::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (   srcInfo.FourCC == MFX_FOURCC_Y216
+        && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
+        && srcInfo.Shift == dstInfo.Shift)
+    {
+        auto& src = (const tsFrameY216 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        mfxU16* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 2;
+        mfxU16* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 2;
+        maxw *= 4;
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 bool tsFrameY410::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
 {
     if (   srcInfo.FourCC == MFX_FOURCC_Y410
         && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
-        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma)
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
+        && srcInfo.Shift == dstInfo.Shift)
     {
         auto& src = (const tsFrameY410 &)srcAbstract;
         mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
@@ -326,6 +413,44 @@ bool tsFrameY410::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const &
         auto* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX;
         auto* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX;
         maxw *= sizeof(*pDst);
+
+        for (mfxU32 h = 0; h < maxh; h++)
+        {
+            if (!memcpy(pDst, pSrc, maxw))
+                return false;
+            pDst += m_pitch;
+            pSrc += src.m_pitch;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+bool tsFrameY416::Copy(tsFrameAbstract const & srcAbstract, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo)
+{
+    if (srcInfo.FourCC == MFX_FOURCC_Y416
+        && srcInfo.BitDepthLuma == dstInfo.BitDepthLuma
+        && srcInfo.BitDepthChroma == dstInfo.BitDepthChroma
+        && srcInfo.Shift == dstInfo.Shift)
+    {
+        auto& src = (const tsFrameY416 &)srcAbstract;
+        mfxU32 maxw = TS_MIN(dstInfo.Width, srcInfo.Width);
+        mfxU32 maxh = TS_MIN(dstInfo.Height, srcInfo.Height);
+
+        if (dstInfo.CropW
+            && dstInfo.CropH
+            && srcInfo.CropW
+            && srcInfo.CropH)
+        {
+            maxw = TS_MIN(dstInfo.CropW, srcInfo.CropW);
+            maxh = TS_MIN(dstInfo.CropH, srcInfo.CropH);
+        }
+
+        auto* pDst = m_y + (m_pitch * dstInfo.CropY) + dstInfo.CropX * 4;
+        auto* pSrc = src.m_y + (src.m_pitch * srcInfo.CropY) + srcInfo.CropX * 4;
+        maxw *= sizeof(*pDst) * 4;
 
         for (mfxU32 h = 0; h < maxh; h++)
         {
