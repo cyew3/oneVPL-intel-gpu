@@ -322,7 +322,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {},
     },
-    {/*28*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM,
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_UYVY},
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
@@ -331,7 +331,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET, &tsStruct::mfxVideoParam.vpp.Out.Shift,          0},
         },
         {},
-        MFX_HW_ICL
     },
     {/*29*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
@@ -405,7 +404,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         },
         {},
     },
-    {/*36*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+    {/*36*/
+#if !defined(_WIN32)
+        MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
+#else
+        MFX_ERR_INVALID_VIDEO_PARAM,
+#endif
         {
             {RESET, &tsStruct::mfxVideoParam.vpp.In.FourCC,         MFX_FOURCC_UYVY},
             {RESET, &tsStruct::mfxVideoParam.vpp.In.ChromaFormat,   MFX_CHROMAFORMAT_YUV422},
@@ -414,7 +418,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {RESET, &tsStruct::mfxVideoParam.vpp.In.Shift,          0},
         },
         {},
-        MFX_HW_ICL
     },
     {/*37*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM,
         {
