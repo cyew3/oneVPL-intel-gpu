@@ -71,7 +71,7 @@ move "%1\samples\Media_Samples_Guide.pdf" "%1\Media_Samples_Guide.pdf"
 #copy /Y "%3\..\..\..\..\release\EULAs\Master EULA for Intel Sw Development Products September 2015.pdf" "%1\Samples EULA.pdf"
 #xcopy %3\..\..\third_party_programs.txt %1\
 #xcopy %3\..\..\site_license_materials.txt %1\
-xcopy  /Y%3\..\..\README %1\Samples\*
+xcopy /Y %3\..\..\README %1\Samples\*
 
 xcopy /S /Y %4\ocl_motion_estimation\* %1\samples\ocl_motion_estimation\*
 xcopy /S /Y %4\ocl_motion_estimation_advanced\* %1\samples\ocl_motion_estimation_advanced\*
@@ -86,6 +86,9 @@ For %%A in ("%filename%") do (
     Set Folder=%%~dpA
     Set Name=%%~nxA
 )
-"c:\Program Files\7-Zip\7z.exe" a -ttar -so %Name%.tar %1 | "c:\Program Files\7-Zip\7z.exe" a -tgzip -si %1.tar.gz
+rem "c:\Program Files\7-Zip\7z.exe" a -ttar -so %Name%.tar %1 | "c:\Program Files\7-Zip\7z.exe" a -tgzip -si %1.tar.gz
+tar cvf t.tar.gz %1.tar
+"c:\Program Files\7-Zip\7z.exe" a -gzip %1.tar %1.tar.gz
+erase %1.tar
 
 rem echo !!!!!!!! DO NOT FORGET TO COPY OPENCL SAMPLES !!!!!!!!
