@@ -256,6 +256,10 @@
     <ClCompile Include="mjpeg\src\mfx_mjpeg_dec_decode.cpp" />
     <ClCompile Include="mpeg2\src\mfx_mpeg2_decode.cpp" />
     <ClCompile Include="vc1\src\mfx_vc1_decode.cpp" />
+    <ClCompile Include="vp8\src\mfx_vp8_dec_decode_common.cpp" />
+    <ClCompile Include="vp8\src\mfx_vp8_dec_decode_hw.cpp" />
+    <ClCompile Include="vp8\src\mfx_vp8_dec_decode_hw_dxva.cpp" />
+    <ClCompile Include="vp8\src\mfx_vp8_dec_decode_tables.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode_hw.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_dec_decode_utils.cpp" />

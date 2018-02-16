@@ -105,10 +105,17 @@
     #if !defined(ANDROID)
         // h264d
         #define MFX_ENABLE_H264_VIDEO_DECODE
+
         // h265d
-        #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-            #define MFX_ENABLE_H265_VIDEO_DECODE
-        #endif
+#if defined(MFX_VA)
+        #define MFX_ENABLE_H265_VIDEO_DECODE
+#endif
+#if defined(MFX_VA)
+        #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+#endif
+#if defined(MFX_VA)
+        #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+#endif
 
         //h264e
         #define MFX_ENABLE_H264_VIDEO_ENCODE
