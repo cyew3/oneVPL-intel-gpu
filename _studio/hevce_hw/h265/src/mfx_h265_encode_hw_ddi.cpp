@@ -704,12 +704,8 @@ void FillSpsBuffer(
 //        sps.AVBRConvergence = par.mfx.Convergence;
     }
 
-#if (HEVCE_DDI_VERSION >= 966)
     sps.FrameRate.Numerator     = par.mfx.FrameInfo.FrameRateExtN;
     sps.FrameRate.Denominator   = par.mfx.FrameInfo.FrameRateExtD;
-#else
-    sps.FramesPer100Sec = (mfxU16)(mfxU64(100) * par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
-#endif
     sps.InitVBVBufferFullnessInBit = 8000 * par.InitialDelayInKB;
     sps.VBVBufferSizeInBit         = 8000 * par.BufferSizeInKB;
 
@@ -941,12 +937,10 @@ void FillPpsBuffer(
         pps.MinDeltaQp = -51;
     }
 
-#if (HEVCE_DDI_VERSION >= 960)
     // if ENCODE_BLOCKQPDATA surface is provided
     pps.NumDeltaQpForNonRectROI = 0;    // if no non-rect ROI
     // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
-#endif
 #endif // MFX_ENABLE_HEVCE_ROI
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -1000,12 +994,10 @@ void FillPpsBuffer(
         pps.MinDeltaQp = -51;
     }
 
-#if (HEVCE_DDI_VERSION >= 960)
     // if ENCODE_BLOCKQPDATA surface is provided
     pps.NumDeltaQpForNonRectROI = 0;    // if no non-rect ROI
     // pps.NumDeltaQpForNonRectROI    // total number of different delta QPs for non-rect ROI ( + the same for rect ROI should not exceed MaxNumDeltaQP in caps
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
-#endif
 #endif // MFX_ENABLE_HEVCE_ROI
 
 #ifdef MFX_ENABLE_HEVCE_DIRTY_RECT
@@ -1048,15 +1040,12 @@ void FillPpsBuffer(
     }
     pps.StatusReportFeedbackNumber = task.m_statusReportNumber;
 
-#if (HEVCE_DDI_VERSION >= 960)
     mfxExtAVCEncoderWiDiUsage* extWiDi = ExtBuffer::Get(task.m_ctrl);
 
     if (extWiDi)
         pps.InputType = eType_DRM_SECURE;
     else
         pps.InputType = eType_DRM_NONE;
-#endif
-
     pps.nal_unit_type = task.m_shNUT;
 }
 

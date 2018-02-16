@@ -23,7 +23,6 @@ DDITracer::DDITracer(ENCODER_TYPE type)
     , m_type(type)
 {
     m_log = fopen("MSDK_HEVCE_HW_DDI_LOG.txt", "w");
-    Trace("HEVCE_DDI_VERSION", HEVCE_DDI_VERSION);
 }
 
 DDITracer::~DDITracer()
@@ -101,46 +100,36 @@ DECL_START(ENCODE_COMPBUFFERDESC)
     {
     case D3DDDIFMT_INTELENCODE_SPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:
-#if (HEVCE_DDI_VERSION >= 960)
-#if (HEVCE_DDI_VERSION >= 991)
         if (m_type == ENCODER_SCC)
             TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC*)pBuf,
             (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC)));
         else
-#endif
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT)));
         else
-#endif //(HEVCE_DDI_VERSION >= 960)
             TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)));
         break;
     case D3DDDIFMT_INTELENCODE_PPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:
-#if (HEVCE_DDI_VERSION >= 960)
-#if (HEVCE_DDI_VERSION >= 991)
         if (m_type == ENCODER_SCC)
             TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC*)pBuf,
             (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC)));
         else
-#endif
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT)));
         else
-#endif //(HEVCE_DDI_VERSION >= 960)
             TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC)));
         break;
     case D3DDDIFMT_INTELENCODE_SLICEDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA:
-#if (HEVCE_DDI_VERSION >= 960)
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_SLICE_HEADER_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC_REXT)));
         else
-#endif //(HEVCE_DDI_VERSION >= 960)
             TraceArray((ENCODE_SET_SLICE_HEADER_HEVC*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_SLICE_HEADER_HEVC)));
         break;
@@ -203,11 +192,7 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", ROIDeltaQPSupport         );
     TRACE("%d", ROIBRCPriorityLevelSupport);
 
-#if (HEVCE_DDI_VERSION >= 966)
     TRACE("%d", BlockSize);
-#else
-    TRACE("%d", ROIBlockSize);
-#endif
 
     TRACE("%d", SliceLevelReportSupport      );
     TRACE("%d", MaxNumOfTileColumnsMinus1    );
@@ -240,12 +225,9 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", TargetBitRate);
     TRACE("%d", MaxBitRate);
     TRACE("%d", MinBitRate);
-#if (HEVCE_DDI_VERSION >= 966)
     TRACE("%d", FrameRate.Numerator);
     TRACE("%d", FrameRate.Denominator);
-#else
-    TRACE("%d", FramesPer100Sec);
-#endif
+
     TRACE("%d", InitVBVBufferFullnessInBit);
     TRACE("%d", VBVBufferSizeInBit);
 
@@ -261,11 +243,7 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", QpAdjustment         );
     TRACE("%d", ROIValueInDeltaQP    );
 
-#if (HEVCE_DDI_VERSION >= 966)
     TRACE("%d", BlockQPforNonRectROI);
-#else
-    TRACE("%d", BlockQPInDeltaQPIndex);
-#endif
 
     TRACE("%d", UserMaxFrameSize );
     //TRACE("%d", AVBRAccuracy     );
@@ -378,10 +356,8 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE("%d", MaxDeltaQp);
     TRACE("%d", MinDeltaQp);
 
-#if (HEVCE_DDI_VERSION >= 960)
     TRACE("%d", NumDeltaQpForNonRectROI);
     TRACE_ARRAY_ROW("%d", NonRectROIDeltaQpList, 16);
-#endif
     
     TRACE("%d", SkipFrameFlag);
     TRACE("%d", NumSkipFrames);
@@ -437,9 +413,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
         }
     }
 
-#if (HEVCE_DDI_VERSION >= 960)
     TRACE("%d", InputType);
-#endif
 DECL_END
 #undef FIELD_FORMAT
 
@@ -469,11 +443,7 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     TRACE("%d", beta_offset_div2);
     TRACE("%d", tc_offset_div2);
     TRACE("%d", luma_log2_weight_denom);
-#if (HEVCE_DDI_VERSION >= 966)
     TRACE("%d", delta_chroma_log2_weight_denom);
-#else
-    TRACE("%d", chroma_log2_weight_denom);
-#endif
 
     TRACE_ARRAY_ROW("%d", luma_offset[0], 15);
     TRACE_ARRAY_ROW("%d", luma_offset[1], 15);
@@ -545,13 +515,11 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC)
     //TRACE("%d", MaxSlizeSizeInBytes);
     TRACE("%d", SliceQpDeltaBitOffset);
 
-#if (HEVCE_DDI_VERSION >= 966)
     TRACE("%d", SliceSAOFlagBitOffset);
     TRACE("%d", BitLengthSliceHeaderStartingPortion);
     TRACE("%d", SliceHeaderByteOffset);
     TRACE("%d", PredWeightTableBitOffset);
     TRACE("%d", PredWeightTableBitLength);
-#endif
 DECL_END
 #undef FIELD_FORMAT
 
@@ -611,9 +579,6 @@ DECL_START(ENCODE_QUERY_STATUS_SLICE_PARAMS)
     }
 DECL_END
 #undef FIELD_FORMAT
-
-
-#if (HEVCE_DDI_VERSION >= 960)
 
 #define FIELD_FORMAT "%-38s"
 DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT)
@@ -683,9 +648,6 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC_REXT)
 DECL_END
 #undef FIELD_FORMAT
 
-#endif //(HEVCE_DDI_VERSION >= 960)
-
-#if (HEVCE_DDI_VERSION >= 991)
 #define FIELD_FORMAT "%-38s"
 DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC)
    Trace((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const &)b, idx);
@@ -707,12 +669,8 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC)
    TRACE("%d", pps_act_y_qp_offset_plus5);
    TRACE("%d", pps_act_cb_qp_offset_plus5);
    TRACE("%d", pps_act_cr_qp_offset_plus3);
-
-// pps.PredictorPaletteEntries[3][128];
-// TRACE_ARRAY_ROW("%d", cb_qp_offset_list, 6);
 DECL_END
 #undef FIELD_FORMAT
-#endif //(HEVCE_DDI_VERSION >= 991)
 
 #endif //#ifdef DDI_TRACE
 }

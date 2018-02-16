@@ -1068,11 +1068,7 @@ mfxStatus CheckAndFixDirtyRect(ENCODE_CAPS_HEVC const & caps, MfxVideoParam cons
         DirtyRect->NumRect = 0;
     }
 
-#if (HEVCE_DDI_VERSION >= 967)
-    changed += CheckMax(DirtyRect->NumRect, caps.MaxNumOfDirtyRect);
-#else
     changed += CheckMax(DirtyRect->NumRect, MAX_NUM_DIRTY_RECT);
-#endif  // (HEVCE_DDI_VERSION >= 967)
 
     for (mfxU16 i = 0; i < DirtyRect->NumRect; i++)
     {

@@ -44,16 +44,12 @@ public:
 
     void Trace(D3D11_VIDEO_DECODER_EXTENSION const & b, mfxU32 idx);
 
-#if (HEVCE_DDI_VERSION >= 960)
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC_REXT const & b, mfxU32 idx);
-#endif // (HEVCE_DDI_VERSION >= 960)
 
-#if (HEVCE_DDI_VERSION >= 991)
     void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC const & b, mfxU32 idx);
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC const & b, mfxU32 idx);
-#endif // (HEVCE_DDI_VERSION >= 991)
 
     inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };
     void Trace(const char* name, mfxU32 value);

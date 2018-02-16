@@ -11,8 +11,6 @@
 
 #include "encoding_ddi.h"
 
-#define HEVCE_DDI_VERSION 991
-
 typedef struct tagENCODE_CAPS_HEVC
 {
     union{
@@ -68,22 +66,6 @@ typedef struct tagENCODE_CAPS_HEVC
 
     union {
         struct {
-#if (HEVCE_DDI_VERSION >= 970)
-            UINT    SliceLevelReportSupport         : 1;
-            UINT    CTULevelReportSupport           : 1;
-            UINT    SearchWindow64Support           : 1;
-            UINT    reserved                        : 2;
-            UINT    IntraRefreshBlockUnitSize       : 2;
-            UINT    LCUSizeSupported                : 3;
-            UINT    MaxNumDeltaQP                   : 4;
-            UINT    DirtyRectSupport                : 1;
-            UINT    MoveRectSupport                 : 1;
-            UINT    FrameSizeToleranceSupport       : 1;
-            UINT    HWCounterAutoIncrementSupport   : 2;
-            UINT    ROIDeltaQPSupport               : 1;
-            UINT    MaxNumOfTileColumnsMinus1       : 5;
-            UINT                                    : 7; // For future expansion
-#else
             UINT    SliceLevelReportSupport         : 1;
             UINT    MaxNumOfTileColumnsMinus1       : 4;
             UINT    IntraRefreshBlockUnitSize       : 2;
@@ -95,17 +77,12 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    HWCounterAutoIncrementSupport   : 2;
             UINT    ROIDeltaQPSupport               : 1;
             UINT                                    : 12; // For future expansion
-#endif  // (HEVCE_DDI_VERSION >= 970)
         };
         UINT    CodingLimits2;
     };
 
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
-#if (HEVCE_DDI_VERSION >= 967)
-    USHORT   MaxNumOfDirtyRect;
-    USHORT   MaxNumOfMoveRect;
-#endif
 } ENCODE_CAPS_HEVC;
 
 #if !defined(OPEN_SOURCE)
