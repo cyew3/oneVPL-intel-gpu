@@ -1090,5 +1090,8 @@
     <ClCompile Include="src\gmock\test_suites\av1d_get_payload.cpp">
       <Filter>Source Files\test_suites\av1</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_lcu.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
