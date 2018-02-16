@@ -40,9 +40,13 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
 #endif // PRE_SI_TARGET_PLATFORM_GEN10
     else if(std::memcmp(uid.Data, MFXCamera_Plugin::g_Camera_PluginGuid.Data, sizeof(uid.Data)) == 0)
         return MFXCamera_Plugin::CreateByDispatcher(uid, plugin);
-#if defined (WIN64)
+#if defined (WIN64) && defined(AS_HEVCE_PLUGIN)
     else if (std::memcmp(uid.Data, MFXHEVCEncoderPlugin::g_HEVCEncoderGuid.Data, sizeof(uid.Data)) == 0)
         return MFXHEVCEncoderPlugin::CreateByDispatcher(uid, plugin);
-#endif // WIN34
+#if defined(AS_HEVCE_DP_PLUGIN)
+    else if (std::memcmp(uid.Data, MFXHEVCEncoderDPPlugin::g_HEVCEncoderDPGuid.Data, sizeof(uid.Data)) == 0)
+        return MFXHEVCEncoderDPPlugin::CreateByDispatcher(uid, plugin);
+#endif
+#endif //#if defined (WIN64) && defined(AS_HEVCE_PLUGIN)
     else return MFX_ERR_NOT_FOUND;
 }

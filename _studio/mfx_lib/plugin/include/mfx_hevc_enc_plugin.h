@@ -147,6 +147,61 @@ protected:
     bool                m_createdByDispatcher;
     std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
 };
+
+#if defined( AS_HEVCE_DP_PLUGIN)
+
+class MFXHEVCEncoderDPPlugin : public MFXHEVCEncoderPlugin
+{
+public:
+    static const mfxPluginUID g_HEVCEncoderDPGuid;
+    static MFXEncoderPlugin* Create() {
+        return new MFXHEVCEncoderDPPlugin(false);
+    }
+    static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg) {
+        if (memcmp(&guid, &g_HEVCEncoderDPGuid, sizeof(mfxPluginUID))) {
+            return MFX_ERR_NOT_FOUND;
+        }
+        MFXHEVCEncoderDPPlugin* tmp_pplg = 0;
+        try
+        {
+            tmp_pplg = new MFXHEVCEncoderDPPlugin(false);
+        }
+        catch (std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        catch (MFX_CORE_CATCH_TYPE)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+
+        try
+        {
+            tmp_pplg->m_adapter.reset(new MFXPluginAdapter<MFXEncoderPlugin>(tmp_pplg));
+        }
+        catch (std::bad_alloc&)
+        {
+            delete tmp_pplg;
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+
+        *mfxPlg = tmp_pplg->m_adapter->operator mfxPlugin();
+        tmp_pplg->m_createdByDispatcher = true;
+        return MFX_ERR_NONE;
+    }
+
+protected:
+    MFXHEVCEncoderDPPlugin(bool CreateByDispatcher) : MFXHEVCEncoderPlugin(CreateByDispatcher)
+    {
+        m_PluginParam.PluginUID = g_HEVCEncoderDPGuid;
+
+        MFX_TRACE_INIT();
+    }
+    virtual ~MFXHEVCEncoderDPPlugin() {}
+};
+
+#endif //#if defined( AS_HEVCE_DP_PLUGIN )
+
 #endif //#if defined( AS_HEVCE_PLUGIN )
 
 #if defined(_WIN32) || defined(_WIN64)
