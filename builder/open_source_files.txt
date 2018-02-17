@@ -18,6 +18,7 @@ builder/FindPackages.cmake
 builder/FindTrace.cmake
 builder/FindVTune.cmake
 builder/FindOpenCL.cmake
+_studio/hevce_hw/libmfx_h265e_plugin.map
 _studio/hevce_hw/h265/include/hevce_ddi_main.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw_brc.h

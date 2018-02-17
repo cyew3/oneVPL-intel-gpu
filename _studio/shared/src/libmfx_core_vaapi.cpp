@@ -34,19 +34,6 @@
 #include "va/va.h"
 #include <va/va_backend.h>
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-
-#else
-    #if !(defined MFX_ADAPTIVE_PLAYBACK_DISABLE)
-        enum
-        {
-            MFX_HANDLE_VA_CONFIG_ID = 6,
-            MFX_HANDLE_VA_CONTEXT_ID = 7
-        };
-
-    #endif
-#endif
-
 #define MFX_CHECK_HDL(hdl) {if (!hdl) MFX_RETURN(MFX_ERR_INVALID_HANDLE);}
 
 typedef struct drm_i915_getparam {
@@ -392,7 +379,7 @@ VAAPIVideoCORE::GetHandle(
     MFX_CHECK_NULL_PTR1(handle);
     UMC::AutomaticUMCMutex guard(m_guard);
 
-#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
     if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type )
     {
         if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
@@ -421,7 +408,7 @@ VAAPIVideoCORE::SetHandle(
     {
         switch ((mfxU32)type)
         {
-#ifndef MFX_ADAPTIVE_PLAYBACK_DISABLE
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
         case MFX_HANDLE_VA_CONFIG_ID:
             // if device manager already set
             if (m_VAConfigHandle != (mfxHDL)VA_INVALID_ID)
