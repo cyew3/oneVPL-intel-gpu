@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -19,7 +19,6 @@
 
 #include <memory>
 
-//#define MFX_VA
 #include "libmfx_core_interface.h"
 #include "libmfx_core_factory.h"
 

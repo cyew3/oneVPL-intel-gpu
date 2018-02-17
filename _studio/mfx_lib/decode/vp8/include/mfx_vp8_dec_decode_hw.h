@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_VP8_DECODE_HW_H_
@@ -263,5 +263,5 @@ private:
 };
 
 #endif // _MFX_VP8_DECODE_HW_H_
-#endif // MFX_ENABLE_VP8_VIDEO_DECODE && MFX_VA
+#endif // MFX_ENABLE_VP8_VIDEO_DECODE_HW && MFX_VA
 /* EOF */

@@ -1001,5 +1001,4 @@ namespace MfxHwVideoProcessing
 
 
 #endif // __MFX_VPP_HW_H
-//#endif // MFX_VA
 #endif // MFX_ENABLE_VPP
