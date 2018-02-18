@@ -3564,7 +3564,11 @@ typedef struct {
     mfxU16      NumRefActiveBL0[8];
     mfxU16      NumRefActiveBL1[8];
 
-    mfxU16      reserved4[5];
+    mfxU16      reserved6;
+
+    mfxU16      TransformSkip;             /* tri-state option */
+
+    mfxU16      reserved4[3];
 
     mfxU16      BRCPanicMode;              /* tri-state option */
     mfxU16      LowDelayBRC;               /* tri-state option */
@@ -3626,6 +3630,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `EnableQPOffset` | Enables `QPOffset` control.<br><br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 `QPOffset` | When `EnableQPOffset` set to ON and RateControlMethod is CQP specifies QP offset per pyramid layer.<br>For B-pyramid, B-frame QP = QPB + QPOffset[layer].<br>For P-pyramid, P-frame QP = QPP + QPOffset[layer].
 `NumRefActiveP`, `NumRefActiveBL0`, `NumRefActiveBL1` | Max number of active references for P and B frames in reference picture lists 0 and 1 correspondingly. Array index is pyramid layer.
+`TransformSkip` | For HEVC if this option turned ON, transform_skip_enabled_flag will be set to 1 in PPS, OFF specifies that transform_skip_enabled_flag will be set to 0.
 `BRCPanicMode` | Controls panic mode in AVC and MPEG2 encoders.
 `LowDelayBRC`  | When rate control method is `MFX_RATECONTROL_VBR`, `MFX_RATECONTROL_QVBR` or `MFX_RATECONTROL_VCM` this parameter specifies frame size tolerance. Set this parameter to `MFX_CODINGOPTION_ON` to allow strictly obey average frame size set by `MaxKbps`, e.g. cases when `MaxFrameSize == (MaxKbps*1000)/(8* FrameRateExtN/FrameRateExtD)`.<br>Also `MaxFrameSizeI` and `MaxFrameSizeP` can be set separately.
 `EnableMBForceIntra` | Turn ON this option to enable usage of [mfxExtMBForceIntra](#mfxExtMBForceIntra) for AVC encoder. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. This parameter is valid only during initialization.
@@ -3665,7 +3670,8 @@ The SDK API 1.25 adds `EncodedUnitsInfo` field.
 
 The SDK API 1.25 adds `EnableNalUnitType` field.
 
-The SDK API 1.26 adds `ExtBrcAdaptiveLTR` field.
+The SDK API 1.26 adds `TransformSkip`, `ExtBrcAdaptiveLTR` fields.
+
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
 **Definition**
