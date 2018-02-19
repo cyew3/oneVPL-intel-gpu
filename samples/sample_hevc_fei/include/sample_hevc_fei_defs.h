@@ -528,7 +528,7 @@ template<mfxU32 alignment> inline mfxU32 align(mfxU32 val)
 // Version for run-time alignment arguments
 inline mfxU32 align(mfxU32 val, mfxU32 alignment)
 {
-    if ((alignment != 0) && !(alignment & (alignment - 1)))
+    if ((alignment == 0) || (alignment & (alignment - 1)))
     {
         throw mfxError(MFX_ERR_UNKNOWN, "Alignment should be a power of 2");
     }
