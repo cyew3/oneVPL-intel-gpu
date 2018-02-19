@@ -46,6 +46,7 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     ${prefix}/mfx_enc_common.cpp
     ${prefix}/mfx_mpeg2_dec_common.cpp
     ${prefix}/mfx_critical_error_handler.cpp
+    ${prefix}/mfx_vpx_dec_common.cpp
   )
 endforeach()
 
@@ -75,6 +76,7 @@ set( defs "" )
 list( APPEND mdirs
   scheduler vpp decode/vc1
   decode/mjpeg decode/h264 decode/mpeg2 cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2 encode_hw/mjpeg
+  decode/h265 decode/vp8 decode/vp9
   )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_common )
 include_directories( ${MSDK_LIB_ROOT}/fei/h264_preenc )
@@ -190,6 +192,7 @@ list( APPEND LIBS
   h264_pak
   vc1_common
   vc1_dec_hw
+  umc_h265_hw
   ${ITT_LIBS}
   pthread
   dl

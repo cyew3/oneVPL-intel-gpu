@@ -6,7 +6,7 @@ mfx_include_dirs( )
 
 list( APPEND mdirs
   scheduler vpp encode_hw/mjpeg
-  decode/h264 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
+  decode/h264 decode/h265 decode/vp8 decode/vp9 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
   decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
   audio_decode/aac audio_decode/mp3 audio_encode/aac genx/copy_kernels
   mctf_package/mctf
@@ -21,7 +21,7 @@ foreach( dir ${mdirs} )
 endforeach( )
 
 list( APPEND cdirs
-  brc h264_enc mpeg2_dec
+  brc h264_enc mpeg2_dec vp9_dec
   color_space_converter mpeg2_enc jpeg_enc vc1_dec vc1_common
   aac_dec common aac_common mp3_common mp3_dec aac_enc
   )
@@ -150,6 +150,12 @@ foreach( variant
     pthread
     dl
   )
+
+  if(${variant} MATCHES hw)
+  list( APPEND LIBS
+    umc_h265_${variant}
+  )
+  endif()
 
   set( defs "${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
   make_library( ${mfxlibname} ${variant} shared)

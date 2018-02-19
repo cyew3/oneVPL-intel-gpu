@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_COMMON_LINUX_CFL_H_
@@ -19,6 +19,13 @@
 
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE
+
+#if defined (MFX_VA)
+    #define MFX_ENABLE_H265_VIDEO_DECODE
+    #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+    //#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+#endif
+
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_DECODE
 #endif
@@ -208,6 +215,10 @@
     #undef MFX_ENABLE_MP3_AUDIO_DECODE
     #undef MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
     #undef MFX_ENABLE_H264_VIDEO_FEI_PREENC
+    #undef MFX_ENABLE_VP8_VIDEO_DECODE
+    #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
+    #undef MFX_ENABLE_VP9_VIDEO_DECODE
+    #undef MFX_ENABLE_VP9_VIDEO_DECODE_HW
 #endif // #if defined(AS_HEVCD_PLUGIN)
 #if defined(AS_CAMERA_PLUGIN)
     #define MFX_ENABLE_VPP
