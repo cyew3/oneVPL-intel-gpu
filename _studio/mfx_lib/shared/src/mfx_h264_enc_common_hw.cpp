@@ -1238,7 +1238,7 @@ bool MfxHwH264Encode::IsExtBrcSceneChangeSupported(
     MfxVideoParam const & video)
 {
     bool extbrcsc = false;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     // extbrc API change dependency
     mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
     extbrcsc = (IsOn(extOpt2->ExtBRC) &&
@@ -1252,7 +1252,7 @@ bool MfxHwH264Encode::IsCmNeededForSCD(
     MfxVideoParam const & video)
 {
     bool useCm = false;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     // If frame in Sys memory then Cm is not needed
     mfxExtOpaqueSurfaceAlloc * extOpaq = GetExtBuffer(video);
     useCm = !(video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
@@ -1265,7 +1265,7 @@ bool MfxHwH264Encode::IsAdaptiveLtrOn(
     MfxVideoParam const & video)
 {
     bool altr = false;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     mfxExtCodingOption3 const *   extOpt3 = GetExtBuffer(video);
     altr = IsOn(extOpt3->ExtBrcAdaptiveLTR);
 #endif
@@ -4105,7 +4105,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 #endif
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     if (!CheckTriStateOption(extOpt3->ExtBrcAdaptiveLTR)) changed = true;
 
 #ifdef MFX_AUTOLTR_FEATURE_DISABLE
@@ -4155,7 +4155,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         }
     }
 #endif //MFX_AUTOLTR_FEATURE_DISABLE
-#endif // API VERSION CHECK
+#endif // (MFX_VERSION >= 1026)
 
     if (hwCaps.UserMaxFrameSizeSupport == 0 && ((extOpt2->MaxFrameSize) || (extOpt3->MaxFrameSizeI) || (extOpt3->MaxFrameSizeP)))
     {
@@ -6009,7 +6009,7 @@ void MfxHwH264Encode::SetDefaults(
 #endif // MFX_VA_WIN
 #endif // MFX_ENABLE_H264_REPARTITION_CHECK
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
     if (extOpt3->ExtBrcAdaptiveLTR == MFX_CODINGOPTION_UNKNOWN)
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
@@ -6050,7 +6050,7 @@ void MfxHwH264Encode::SetDefaults(
         else if (par.mfx.GopRefDist == 1)
             extOpt3->PRefType = MFX_P_REF_SIMPLE;
     }
-#endif
+#endif //(MFX_VERSION >= 1026)
 
     CheckVideoParamQueryLike(par, hwCaps, platform, vaType);
 
