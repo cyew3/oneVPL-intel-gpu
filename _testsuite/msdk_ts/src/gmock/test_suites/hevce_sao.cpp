@@ -233,6 +233,12 @@ namespace hevce_sao
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
         enc.Query();
+        // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL, just check that Query returns UNSUPPORTED
+        if (0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))
+            && g_tsHWtype < MFX_HW_SKL)
+        {
+            throw tsSKIP;
+        }
 
         if (unsupported && tc.SaoInit != MFX_SAO_DISABLE)
         {

@@ -19,7 +19,7 @@ enum eEncoderFunction
     , QUERYIOSURF
 };
 
-void SkipDecision(mfxVideoParam& par, eEncoderFunction function)
+void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction function)
 {
     if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON)
     {
@@ -77,6 +77,54 @@ void SkipDecision(mfxVideoParam& par, eEncoderFunction function)
                 expect = MFX_ERR_INVALID_VIDEO_PARAM;
             g_tsStatus.last();
             g_tsStatus.expect(expect);
+        }
+    }
+
+    if (0 == memcmp(uid.Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+    {
+		// MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+        if (g_tsHWtype < MFX_HW_SKL)
+        {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: Unsupported HW Platform!\n";
+        }
+
+        // skip all HEVCe tests with unsupported fourcc
+        mfxU32 fourcc_id = par.mfx.FrameInfo.FourCC;
+        if ((fourcc_id == MFX_FOURCC_P010) && (g_tsHWtype < MFX_HW_KBL))
+        {
+            g_tsLog << "\n\nWARNING: P010 format only supported on KBL+!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+        if ((fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_YUY2 ||
+            fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410)
+            && (g_tsHWtype < MFX_HW_ICL))
+        {
+            g_tsLog << "\n\nWARNING: RExt formats are only supported starting from ICL!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+        if ((fourcc_id == MFX_FOURCC_P016 || fourcc_id == MFX_FOURCC_Y216 || fourcc_id == MFX_FOURCC_Y416)
+            && (g_tsHWtype < MFX_HW_TGL))
+        {
+            g_tsLog << "\n\nWARNING: 12b formats are only supported starting from TGL!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+        if ((fourcc_id == MFX_FOURCC_YUY2 || fourcc_id == MFX_FOURCC_Y210 || fourcc_id == MFX_FOURCC_Y216)
+            && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: 4:2:2 formats are NOT supported on VDENC!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+        if ((fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == MFX_FOURCC_Y416)
+            && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: 4:4:4 formats are only supported on VDENC!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
         }
     }
 
@@ -314,7 +362,7 @@ mfxStatus tsVideoEncoder::Init(mfxSession session, mfxVideoParam *par)
     TRACE_FUNC2(MFXVideoENCODE_Init, session, par);
     if (par)
     {
-        SkipDecision(*par, INIT);
+        SkipDecision(*par, *m_uid, INIT);
     }
     g_tsStatus.check( MFXVideoENCODE_Init(session, par) );
 
@@ -543,7 +591,7 @@ mfxStatus tsVideoEncoder::Query(mfxSession session, mfxVideoParam *in, mfxVideoP
     TRACE_FUNC3(MFXVideoENCODE_Query, session, in, out);
     if (in)
     {
-        SkipDecision(*in, QUERY);
+        SkipDecision(*in, *m_uid, QUERY);
     }
     g_tsStatus.check( MFXVideoENCODE_Query(session, in, out) );
     TS_TRACE(out);
@@ -572,7 +620,7 @@ mfxStatus tsVideoEncoder::QueryIOSurf(mfxSession session, mfxVideoParam *par, mf
     TRACE_FUNC3(MFXVideoENCODE_QueryIOSurf, session, par, request);
     if (par)
     {
-        SkipDecision(*par, QUERYIOSURF);
+        SkipDecision(*par, *m_uid, QUERYIOSURF);
     }
     g_tsStatus.check( MFXVideoENCODE_QueryIOSurf(session, par, request) );
     TS_TRACE(request);
@@ -590,7 +638,7 @@ mfxStatus tsVideoEncoder::Reset(mfxSession session, mfxVideoParam *par)
     TRACE_FUNC2(MFXVideoENCODE_Reset, session, par);
     if (par)
     {
-        SkipDecision(*par, RESET);
+        SkipDecision(*par, *m_uid, RESET);
     }
     g_tsStatus.check( MFXVideoENCODE_Reset(session, par) );
 
