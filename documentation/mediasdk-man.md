@@ -237,7 +237,7 @@ Before calling any SDK functions, the application must initialize the SDK librar
 
 The function [MFXInit](#MFXInit) starts (initializes) an SDK session. [MFXClose](#MFXClose) closes (de-initializes) the SDK session. To avoid memory leaks, always call [MFXClose](#MFXClose) after [MFXInit](#MFXInit).
 
-The application can initialize a session as a software-based session ([MFX_IMPL_SOFTWARE](#mfxIMPL)) or a hardware-based session ([MFX_IMPL_HARDARE](#mfxIMPL),). In the former case, the SDK functions execute on a CPU, and in the latter case, the SDK functions use platform acceleration capabilities. For platforms that expose multiple graphic devices, the application can initialize the SDK session on any alternative graphic device ([MFX_IMPL_HARDWARE1](#mfxIMPL)…[MFX_IMPL_HARDWARE4](#mfxIMPL)).
+The application can initialize a session as a software-based session ([MFX_IMPL_SOFTWARE](#mfxIMPL)) or a hardware-based session ([MFX_IMPL_HARDWARE](#mfxIMPL),). In the former case, the SDK functions execute on a CPU, and in the latter case, the SDK functions use platform acceleration capabilities. For platforms that expose multiple graphic devices, the application can initialize the SDK session on any alternative graphic device ([MFX_IMPL_HARDWARE1](#mfxIMPL)…[MFX_IMPL_HARDWARE4](#mfxIMPL)).
 
 The application can also initialize a session to be automatic ([MFX_IMPL_AUTO](#mfxIMPL) or [MFX_IMPL_AUTO_ANY](#mfxIMPL)), instructing the dispatcher library to detect the platform capabilities and choose the best SDK library available. After initialization, the SDK returns the actual implementation through the [MFXQueryIMPL](#MFXQueryIMPL) function.
 
