@@ -332,7 +332,7 @@ mfxStatus MFEDXVAEncoder::Destroy()
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait)
+mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait, bool skipFrame)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Submit");
     vm_mutex_lock(&m_mfe_guard);
@@ -382,6 +382,14 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
         m_toSubmit.splice(m_toSubmit.end(), m_submitted_pool, cur_stream);
         cur_stream->reset();//cleanup stream state
     }
+    if (skipFrame)
+    {
+        //if frame is skipped - threat it as submitted without real submission
+        //to not lock other streams waiting for it
+        m_submitted_pool.splice(m_submitted_pool.end(), m_toSubmit, cur_stream);
+        vm_mutex_unlock(&m_mfe_guard);
+        return MFX_ERR_NONE;
+    }
     ++m_framesCollected;
     if (m_streams_pool.empty())
     {
@@ -400,7 +408,6 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
     }
     vm_tick start_tick = vm_time_get_tick();
     vm_tick spent_ticks = 0;
-
     while (m_framesCollected < framesToSubmit &&
            !cur_stream->isFieldSubmitted() &&
            timeToWait > spent_ticks)
@@ -418,7 +425,7 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
         }
     }
     //for interlace we will return stream back to stream pool when first field submitted
-    //to submit next one imediately after than, and don't count it as submitted
+    //to submit next one imediately after that, and don't count it as submitted
     if (!cur_stream->isFieldSubmitted())
     {
         // Form a linear array of stream info comp buffers for submission

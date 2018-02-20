@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_MFE_ADAPTER_
@@ -76,7 +76,7 @@ public:
     mfxStatus Join(VAContextID ctx, bool doubleField);
     mfxStatus Disjoin(VAContextID ctx);
     mfxStatus Destroy();
-    mfxStatus Submit(VAContextID context, vm_tick timeToWait);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
+    mfxStatus Submit(VAContextID context, vm_tick timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
 
     virtual void AddRef();
     virtual void Release();

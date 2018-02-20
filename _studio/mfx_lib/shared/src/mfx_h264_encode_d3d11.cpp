@@ -705,27 +705,6 @@ mfxStatus D3D11Encoder::Execute(
             hr = m_pVideoContext->DecoderEndFrame(m_pDecoder);
         }
         CHECK_HRES(hr);
-#if defined(MFX_ENABLE_MFE)
-        if (m_pMFEAdapter != NULL)
-        {
-            mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
-            /*if(!task.m_userTimeout)
-            {
-            mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
-            if (passed < task.m_mfeTimeToWait)
-            {
-            timeout = timeout - passed;//-time for encode;//need to add a table with encoding times to
-            }
-            else
-            {
-            timeout = 0;
-            }
-            }*/
-            mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout));
-            if (sts != MFX_ERR_NONE)
-                return sts;
-        }
-#endif
     }
     else
     {
@@ -757,6 +736,28 @@ mfxStatus D3D11Encoder::Execute(
         m_numSkipFrames ++;
         m_sizeSkipFrames += feedback.bitstreamSize;
     }
+
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMFEAdapter != NULL)
+    {
+        mfxU32 timeout = task.m_mfeTimeToWait >> task.m_fieldPicFlag;
+        /*if(!task.m_userTimeout)
+        {
+        mfxU32 passed = (task.m_beginTime - vm_time_get_tick());
+        if (passed < task.m_mfeTimeToWait)
+        {
+        timeout = timeout - passed;//-time for encode;//need to add a table with encoding times
+        }
+        else
+        {
+        timeout = 0;
+        }
+        }*/
+        mfxStatus sts = m_pMFEAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), SkipFlag == 1);
+        if (sts != MFX_ERR_NONE)
+            return sts;
+    }
+#endif
 
     m_sps.bResetBRC = false;
 

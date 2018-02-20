@@ -83,7 +83,7 @@ public:
     //MSFT runtime restrict multiple contexts per device
     //so for DXVA MFE implementation the same context being used for encoder and MFE submission
     ID3D11VideoDecoder* GetVideoDecoder();
-    mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
+    mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
     //returns pointer to particular caps with only read access, NULL if caps not set.
     CAPS GetCaps(MFE_CODEC codecId);
 //placeholder
