@@ -1,12 +1,12 @@
-/*//////////////////////////////////////////////////////////////////////////////
-////                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
-*/
-
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
+//
 const unsigned char genx_fcopy_gen9[8681] = { 
 0x43,0x49,0x53,0x41,0x03,0x06,0x01,0x00,0x0b,0x4d,0x62,0x43,0x6f,0x70,0x79,0x46,
 0x69,0x65,0x4c,0x64,0x32,0x00,0x00,0x00,0x4f,0x16,0x00,0x00,0xe8,0x05,0x00,0x00,
