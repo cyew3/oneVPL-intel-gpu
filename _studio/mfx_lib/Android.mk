@@ -29,6 +29,7 @@ MFX_LOCAL_DIRS_HW := \
     $(addprefix enc_hw/, $(MFX_LOCAL_ENCODERS)) \
     $(addprefix encode_hw/, $(MFX_LOCAL_ENCODERS)) \
     genx/h264_encode \
+    mctf_package/mctf \
     cmrt_cross_platform
 
 MFX_OPTIMIZATION_FILES := \
@@ -55,7 +56,9 @@ MFX_LOCAL_C_INCLUDES_IMPL := \
 
 MFX_LOCAL_C_INCLUDES_HW := \
     $(MFX_LOCAL_C_INCLUDES_IMPL) \
-    $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include))
+    $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/include \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/shared/asc/include
 
 MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libmfx_lib_merged_hw \
@@ -65,6 +68,7 @@ MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libumc_io_merged_hw \
     libumc_core_merged \
     libmfx_trace_hw \
+    libasc \
     libsafec \
     libippj_l \
     libippvc_l \
@@ -145,6 +149,14 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_enc_common_hw.cpp \
     mfx_h264_encode_vaapi.cpp \
     mfx_h264_encode_factory.cpp)
+
+MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/src/, \
+    genx_me_skl_isa.cpp \
+    genx_me_bdw_isa.cpp \
+    genx_mc_skl_isa.cpp \
+    genx_mc_bdw_isa.cpp \
+    genx_sd_skl_isa.cpp \
+    genx_sd_bdw_isa.cpp)
 
 MFX_LIB_SHARED_FILES_1 := $(addprefix mfx_lib/shared/src/, \
     libmfxsw.cpp \

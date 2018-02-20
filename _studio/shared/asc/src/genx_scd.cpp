@@ -13,7 +13,9 @@
 #pragma warning(disable: 4189)
 #pragma warning(disable: 4505)
 #include "cm/cm.h"
-#include <cm/cmtl.h>
+#ifndef ANDROID
+  #include <cm/cmtl.h>
+#endif
 //#include <cm/genx_vme.h>
 
 #define INTERDATA_SIZE_SMALL    8
