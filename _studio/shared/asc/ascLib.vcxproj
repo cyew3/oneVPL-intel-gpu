@@ -356,7 +356,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\asc\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -384,7 +384,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\asc\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -412,7 +412,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\asc\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -440,7 +440,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -468,7 +468,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -496,7 +496,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -522,7 +522,8 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\asc\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
@@ -555,7 +556,8 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\asc\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
@@ -588,7 +590,8 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\asc\include;$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
@@ -621,7 +624,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
@@ -658,7 +661,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
@@ -695,7 +698,7 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <AdditionalIncludeDirectories>.\include;$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h264_encode\include;$(MSDK_API_ROOT)\include;$(MfxIppIncludeDir);$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4996;1478;</DisableSpecificWarnings>
+      <DisableSpecificWarnings>1478;</DisableSpecificWarnings>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
