@@ -7212,7 +7212,7 @@ SDK API 1.8 added `MFX_CODEC_HEVC` definition.
 
 SDK API 1.19 added `MFX_CODEC_VP9` definition.
 
-SDK API **TBD** added `MFX_CODEC_AV1` definition.
+SDK API 1.25 added `MFX_CODEC_AV1` definition.
 
 ## <a id='CodecLevel'>CodecLevel</a>
 
@@ -7475,7 +7475,9 @@ SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 
 SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO` and `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_EXTBUFF_VP9_TEMPORAL_LAYERS`, `MFX_EXTBUFF_TASK_DEPENDENCY`, `MFX_EXTBUFF_VPP_MCTF`.
+SDK API 1.26 adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_EXTBUFF_VP9_TEMPORAL_LAYERS`, `MFX_EXTBUFF_VPP_MCTF`.
+
+SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY`.
 
 See additional change history in the structure definitions.
 
@@ -8419,7 +8421,7 @@ The `InsertHDRPayload` enumerator itemizes HDR payloads insertion rules.
 
 **Change History**
 
-This enumerator is available since SDK API **TBD**.
+This enumerator is available since SDK API 1.25.
 
 ## <a id='SampleAdaptiveOffset'>SampleAdaptiveOffset</a>
 
