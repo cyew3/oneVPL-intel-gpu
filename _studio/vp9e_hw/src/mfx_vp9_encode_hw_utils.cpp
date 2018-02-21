@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -507,15 +507,11 @@ mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::ve
         {
             if (dpb[i])
             {
-                dpb[i]->refCount--;
-                if (dpb[i]->refCount == 0)
-                {
-                    mfxStatus sts = FreeSurface(dpb[i], pCore);
-                    MFX_CHECK_STS(sts);
-                }
+                mfxStatus sts = DecreaseRef(dpb[i], pCore);
+                MFX_CHECK_STS(sts);
             }
             dpb[i] = pRecFrame;
-            dpb[i]->refCount++;
+            IncreaseRef(dpb[i]);
         }
     }
     return MFX_ERR_NONE;

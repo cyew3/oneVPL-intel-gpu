@@ -242,6 +242,24 @@ enum // identifies memory type at encoder input w/o any details
     {
         return (pFrame->pSurface->Data.Locked == 0);
     }
+    inline void IncreaseRef(sFrameEx* &pFrame)
+    {
+        pFrame->refCount++;
+    }
+    inline mfxStatus DecreaseRef(sFrameEx* &pFrame, mfxCoreInterface* pCore)
+    {
+        if (pFrame->refCount)
+        {
+            pFrame->refCount--;
+            if (pFrame->refCount == 0)
+            {
+                mfxStatus sts = FreeSurface(pFrame, pCore);
+                MFX_CHECK_STS(sts);
+            }
+        }
+
+        return MFX_ERR_NONE;
+    }
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
@@ -708,6 +726,9 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         MFX_CHECK_STS(sts);
         sts = FreeSurface(task.m_pSegmentMap, pCore);
         MFX_CHECK_STS(sts);
+        sts = DecreaseRef(task.m_pRecFrame, pCore);
+        MFX_CHECK_STS(sts);
+        task.m_pRecFrame = 0;
 
         const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
         if (curMfxPar.m_numLayers && task.m_frameParam.temporalLayer == curMfxPar.m_numLayers - 1 &&

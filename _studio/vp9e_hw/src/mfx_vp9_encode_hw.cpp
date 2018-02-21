@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfxvideo++int.h"
@@ -888,6 +888,8 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             // submit the frame to the driver
             sts = m_ddi->Execute(newFrame, surfaceHDL.first);
             MFX_CHECK_STS(sts);
+
+            IncreaseRef(newFrame.m_pRecFrame);
 
             {
                 UMC::AutomaticUMCMutex guard(m_taskMutex);
