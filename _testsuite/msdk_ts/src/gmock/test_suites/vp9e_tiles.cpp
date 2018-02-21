@@ -1484,10 +1484,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         m_filler = feeder;
 
-        // prepare bitstream checker
-        BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);
-        m_bs_processor = &bs;
-
         *m_pPar = iterations[0]->m_param[SET];
         mfxVideoParam* pOutPar = &iterations[0]->m_param[GET];
 
@@ -1498,7 +1494,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 g_tsLog << "SKIPPED: Resolution > 4k isn't supported until ICL!\n";
                 return 0;
             }
-            g_tsStatus.expect(MFX_ERR_NONE);
+
+            if (fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_AYUV || fourcc == MFX_FOURCC_Y410)
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            else
+                g_tsStatus.expect(MFX_ERR_NONE);
+
             mfxExtVP9Param* vp9Param = (mfxExtVP9Param*) m_pPar->ExtParam[SET];
             if (vp9Param && (vp9Param->NumTileRows > 1 || vp9Param->NumTileColumns > 1))
             {
@@ -1510,6 +1511,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             g_tsStatus.check(sts);
             return 0;
         }
+
+        // prepare bitstream checker
+        BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);
+        m_bs_processor = &bs;
 
         // QUERY SECTION
         if (tc.type & QUERY)
