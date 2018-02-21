@@ -295,20 +295,30 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     res = m_device->GetCaps(CAP_GPU_PLATFORM, hwSize, &hwType);
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
-#if CMRT_EMU
-    res = m_device->LoadProgram((void *)genx_scd_skl, sizeof(genx_scd_skl), m_program);
-#else
-    if (hwType == PLATFORM_INTEL_BDW)
+    switch (hwType)
+    {
+    case PLATFORM_INTEL_BDW:
         res = m_device->LoadProgram((void *)genx_scd_bdw, sizeof(genx_scd_bdw), m_program, "nojitter");
-    else if (hwType == PLATFORM_INTEL_SKL || hwType == PLATFORM_INTEL_KBL)
-        res = m_device->LoadProgram((void *)genx_scd_skl, sizeof(genx_scd_skl), m_program, "nojitter");
-    else if (hwType == PLATFORM_INTEL_BXT)
-        res = m_device->LoadProgram((void *)genx_scd_bxt, sizeof(genx_scd_bxt), m_program, "nojitter");
-    else if (hwType == PLATFORM_INTEL_CNL)
-        res = m_device->LoadProgram((void *)genx_scd_cnl, sizeof(genx_scd_cnl), m_program, "nojitter");
-    else
-        res = CM_NOT_IMPLEMENTED;
+        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_KBL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+    case PLATFORM_INTEL_GLK:
+    case PLATFORM_INTEL_CFL:
 #endif
+        res = m_device->LoadProgram((void *)genx_scd_skl, sizeof(genx_scd_skl), m_program, "nojitter");
+        break;
+    case PLATFORM_INTEL_BXT:
+        res = m_device->LoadProgram((void *)genx_scd_bxt, sizeof(genx_scd_bxt), m_program, "nojitter");
+        break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+    case PLATFORM_INTEL_CNL:
+        res = m_device->LoadProgram((void *)genx_scd_cnl, sizeof(genx_scd_cnl), m_program, "nojitter");
+        break;
+#endif
+    default:
+        res = CM_NOT_IMPLEMENTED;
+}
     SCD_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     return MFX_ERR_NONE;
