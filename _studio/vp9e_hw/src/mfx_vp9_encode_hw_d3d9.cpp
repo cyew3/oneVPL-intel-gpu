@@ -220,9 +220,7 @@ void FillPpsBuffer(
     pps.DstFrameWidthMinus1 = pps.SrcFrameWidthMinus1;
     pps.DstFrameHeightMinus1 = pps.SrcFrameHeightMinus1;
 
-    // for VP9 encoder driver uses CurrOriginalPic to get input frame from raw surfaces chain. It's incorrect behavior. Workaround on MSDK level is to set CurrOriginalPic = 0.
-    // this WA works for synchronous encoding only. For async encoding fix in driver is required.
-    pps.CurrOriginalPic      = 0;
+    pps.CurrOriginalPic      = (UCHAR)task.m_pRecFrame->idInPool;
     pps.CurrReconstructedPic = (UCHAR)task.m_pRecFrame->idInPool;
 
     mfxU16 refIdx = 0;
