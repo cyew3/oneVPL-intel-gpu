@@ -2447,6 +2447,14 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         mfxU16 maxForward  = Min<mfxU16>(caps.MaxNum_Reference0, maxDPB);
         mfxU16 maxBackward = Min<mfxU16>(caps.MaxNum_Reference1, maxDPB);
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+        if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+        {
+            maxForward  = Min<mfxU16>(maxForward,  GetMaxNumRef(par, true));
+            maxBackward = Min<mfxU16>(maxBackward, GetMaxNumRef(par, false));
+        }
+#endif
+
         changed += CheckMax(par.m_ext.DDI.NumActiveRefP,   maxForward);
         changed += CheckMax(par.m_ext.DDI.NumActiveRefBL0, maxForward);
         changed += CheckMax(par.m_ext.DDI.NumActiveRefBL1, maxBackward);

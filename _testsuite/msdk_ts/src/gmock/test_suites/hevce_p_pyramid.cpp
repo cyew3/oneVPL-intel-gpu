@@ -34,6 +34,7 @@ public:
     ~TestSuite() { }
 
     int RunTest(unsigned int id);
+    mfxU16 FindMax(mfxU16 arr[], mfxU16 size);
     mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 
     static const unsigned int n_cases;
@@ -67,6 +68,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 /*02*/ {30, {}, {1, 2, 2}},
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
+
+mfxU16 TestSuite::FindMax(mfxU16 arr[], mfxU16 size)
+{
+    mfxU16 max = arr[0];
+
+    for (mfxU16 i = 1; i < size; i++)
+        if (arr[i] > max) max = arr[i];
+
+    return max;
+}
 
 using namespace BS_HEVC;
 
@@ -191,9 +202,16 @@ int TestSuite::RunTest(unsigned int id)
     EXPECT_NE(m_par.mfx.NumRefFrame, 0);
     m_pyramidWidth = TS_MIN(m_par.mfx.NumRefFrame, MAX_P_PYRAMID_WIDTH);
 
+    mfxU16 maxActual = FindMax(CO3.NumRefActiveP, sizeof(CO3.NumRefActiveP) / sizeof(mfxU16));
+
     CO3.EnableQPOffset = MFX_CODINGOPTION_ON;
     memcpy(CO3.QPOffset, tc.QPOffset, sizeof(CO3.QPOffset));
     memcpy(CO3.NumRefActiveP, tc.NumRefActive, sizeof(CO3.NumRefActiveP));
+
+    mfxU16 maxTest = FindMax(CO3.NumRefActiveP, sizeof(CO3.NumRefActiveP) / sizeof(mfxU16));
+
+    if (maxActual < maxTest)
+        g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
     Init();
     GetVideoParam();
