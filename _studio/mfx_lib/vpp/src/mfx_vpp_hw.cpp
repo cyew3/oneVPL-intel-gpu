@@ -4974,8 +4974,8 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
                 mfxExtVppMctf * pMctfBuf = reinterpret_cast<mfxExtVppMctf *>(GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VPP_MCTF));
                 if (pMctfBuf)
                 {
-                    if (MFX_MCTF_TEMPORAL_MODE_SPATIAL == pMctfBuf->TemporalMode ||
-                        MFX_MCTF_TEMPORAL_MODE_1REF == pMctfBuf->TemporalMode)
+                    if (MCTF_TEMPORAL_MODE_SPATIAL == pMctfBuf->TemporalMode ||
+                        MCTF_TEMPORAL_MODE_1REF == pMctfBuf->TemporalMode)
                         bHasFrameDelay = false;
                 }
 #endif

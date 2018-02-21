@@ -355,7 +355,7 @@ mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
 {
     mfxU32  buffer_size(0);
     switch (refNum) {
-    case MFX_MCTF_TEMPORAL_MODE_4REF:
+    case MCTF_TEMPORAL_MODE_4REF:
     {
         number_of_References = FOUR_REFERENCES;
         DefaultIdx2Out = 1;
@@ -364,7 +364,7 @@ mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
         buffer_size = FOUR_REFERENCES + 1;
     };
     break;
-    case MFX_MCTF_TEMPORAL_MODE_2REF:
+    case MCTF_TEMPORAL_MODE_2REF:
     {
         number_of_References = TWO_REFERENCES;
         DefaultIdx2Out = 0;
@@ -373,7 +373,7 @@ mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
         buffer_size = TWO_REFERENCES + 1;
     };
     break;
-    case MFX_MCTF_TEMPORAL_MODE_1REF:
+    case MCTF_TEMPORAL_MODE_1REF:
     {
         number_of_References = ONE_REFERENCE;
         DefaultIdx2Out = 0;
@@ -382,7 +382,7 @@ mfxStatus CMC::MCTF_InitQueue(mfxU16 refNum)
         buffer_size = ONE_REFERENCE + 1;
     };
     break;
-    case MFX_MCTF_TEMPORAL_MODE_SPATIAL:
+    case MCTF_TEMPORAL_MODE_SPATIAL:
     { //refNum == 0
         number_of_References = NO_REFERENCES;
         DefaultIdx2Out = 0;
