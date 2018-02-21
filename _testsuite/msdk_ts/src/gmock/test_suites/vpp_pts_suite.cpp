@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 File Name: vpp_pts.cpp
 \* ****************************************************************************** */
@@ -319,7 +319,7 @@ namespace vpp_pts_suite
             if(g_tsStatus.get() == 0) {
                 m_surf_out.insert(std::make_pair(*m_pSyncPoint, m_pSurfOut));
                 if(m_pSurfOut) {
-                    m_pSurfOut->Data.Locked++;
+                    msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
                 }
             }
 

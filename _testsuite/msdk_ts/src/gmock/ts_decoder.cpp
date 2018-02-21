@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -344,9 +344,9 @@ mfxStatus tsVideoDecoder::DecodeFrameAsync()
     if(g_tsStatus.get() == MFX_ERR_NONE || (g_tsStatus.get() == MFX_WRN_VIDEO_PARAM_CHANGED && *m_pSyncPoint != NULL))
     {
         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
-        if(m_pSurfOut)
+        if (m_pSurfOut)
         {
-            m_pSurfOut->Data.Locked ++;
+            msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
         }
     }
 
@@ -385,7 +385,7 @@ mfxStatus tsVideoDecoder::SyncOperation(mfxSyncPoint syncp)
     mfxStatus res = SyncOperation(m_session, syncp, MFX_INFINITE);
     if(m_default && pS && pS->Data.Locked)
     {
-        pS->Data.Locked --;
+        msdk_atomic_dec16(&pS->Data.Locked);
     }
 
     if (m_default && m_surf_processor && g_tsStatus.get() == MFX_ERR_NONE)

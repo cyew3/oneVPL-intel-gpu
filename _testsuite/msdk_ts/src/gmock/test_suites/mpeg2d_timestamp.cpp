@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -306,7 +306,7 @@ int TestSuite::RunTest(unsigned int id)
             m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
             if(m_pSurfOut)
             {
-                m_pSurfOut->Data.Locked ++;
+                msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
             }
         }
         if (m_pBitstream && (res == MFX_ERR_MORE_SURFACE || res == MFX_ERR_NONE))
@@ -330,7 +330,7 @@ int TestSuite::RunTest(unsigned int id)
                         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
                         if(m_pSurfOut)
                         {
-                            m_pSurfOut->Data.Locked ++;
+                            msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
                         }
                     }
                 }

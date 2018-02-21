@@ -1,3 +1,13 @@
+/* ****************************************************************************** *\
+
+INTEL CORPORATION PROPRIETARY INFORMATION
+This software is supplied under the terms of a license agreement or nondisclosure
+agreement with Intel Corporation and may not be copied or disclosed except in
+accordance with the terms of that agreement
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
+
+\* ****************************************************************************** */
+
 #include "ts_vpp.h"
 #include "ts_struct.h"
 
@@ -78,7 +88,7 @@ int TestSuite::RunTest(unsigned int id)
     //free surfaces locked by test
     for(std::map<mfxSyncPoint,mfxFrameSurface1*>::iterator it = m_surf_out.begin(); it != m_surf_out.end(); ++it) //iterate through output surfaces map
     {
-        (*it).second->Data.Locked --; //access surface and decrease locked counter
+        msdk_atomic_dec16(&(*it).second->Data.Locked); //access surface and decrease locked counter
     }
     ///////////////////////////////////////////////////////////////////////////
     g_tsStatus.expect(tc.sts);

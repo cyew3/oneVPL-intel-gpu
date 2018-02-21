@@ -1,10 +1,10 @@
-﻿/* ****************************************************************************** *\
+/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -223,7 +223,7 @@ namespace vp9e_big_resolution
                 const mfxF64 psnrY = PSNR(src, res, 0);
                 const mfxF64 psnrU = PSNR(src, res, 1);
                 const mfxF64 psnrV = PSNR(src, res, 2);
-                pInputSurface->Data.Locked--;
+                msdk_atomic_dec16(&pInputSurface->Data.Locked);
                 m_pInputSurfaces->erase(hdr.FrameOrder);
                 const mfxF64 minPsnr = PSNR_THRESHOLD;
 
@@ -302,7 +302,7 @@ namespace vp9e_big_resolution
         if (m_pInputSurfaces)
         {
             mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
-            pStorageSurf->Data.Locked++;
+            msdk_atomic_inc16(&pStorageSurf->Data.Locked);
             tsFrame in = tsFrame(*pSurf);
             tsFrame store = tsFrame(*pStorageSurf);
             store = in;

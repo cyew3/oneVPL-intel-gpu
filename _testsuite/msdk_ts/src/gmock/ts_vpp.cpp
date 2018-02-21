@@ -10,6 +10,9 @@ Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 #include "ts_vpp.h"
 
+
+
+
 tsVideoVPP::tsVideoVPP(bool useDefaults, mfxU32 plugin_id)
     : m_default(useDefaults)
     , m_initialized(false)
@@ -354,7 +357,7 @@ mfxStatus tsVideoVPP::RunFrameVPPAsync()
         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
         if(m_pSurfOut)
         {
-            m_pSurfOut->Data.Locked ++;
+            msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
         }
     }
 
@@ -393,7 +396,8 @@ mfxStatus tsVideoVPP::SyncOperation(mfxSyncPoint syncp)
 
     if(m_default && pS && pS->Data.Locked)
     {
-        pS->Data.Locked --;
+
+        msdk_atomic_dec16(&pS->Data.Locked);
     }
 
     if (m_default && m_surf_out_processor && g_tsStatus.get() == MFX_ERR_NONE)
@@ -507,7 +511,7 @@ mfxStatus tsVideoVPP::RunFrameVPPAsyncEx()
         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
         if(m_pSurfOut)
         {
-            m_pSurfOut->Data.Locked ++;
+            msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
         }
     }
 

@@ -4,12 +4,13 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
 #pragma once
 
+#include "atomic_defs.h"
 #include "gtest/gtest.h"
 #include "ts_trace.h"
 #include "ts_plugin.h"

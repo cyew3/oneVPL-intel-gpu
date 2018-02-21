@@ -1034,7 +1034,7 @@ namespace vp9e_temporal_scalability
         if (m_pInputSurfaces)
         {
             mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
-            pStorageSurf->Data.Locked++;
+            msdk_atomic_inc16(&pStorageSurf->Data.Locked);
             tsFrame in = tsFrame(*pSurf);
             tsFrame store = tsFrame(*pStorageSurf);
             store = in;

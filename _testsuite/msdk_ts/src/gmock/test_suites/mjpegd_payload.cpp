@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -179,7 +179,7 @@ namespace mjpegd_payload
         {
             if (m_curr_frame >= m_nframes)
             {
-                s.Data.Locked++;
+                msdk_atomic_inc16(&s.Data.Locked);
                 m_eos = true;
                 return MFX_ERR_NONE;
             }

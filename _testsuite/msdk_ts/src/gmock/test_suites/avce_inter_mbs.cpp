@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -175,7 +175,7 @@ public:
 
             if (f.surf)
             {
-                f.surf->Data.Locked++;
+                msdk_atomic_inc16(&f.surf->Data.Locked);
                 f.surf->Data.FrameOrder = m_cur++;
                 f.type = GetFrameType(m_par, f.surf->Data.FrameOrder, m_isBPyramid);
                 m_queue.push_back(f);
@@ -193,12 +193,14 @@ public:
 
                     if (m_dpb.size() > m_par.mfx.NumRefFrame)
                     {
-                        m_dpb.begin()->surf->Data.Locked--;
+                        msdk_atomic_dec16(&m_dpb.begin()->surf->Data.Locked);
                         m_dpb.erase(m_dpb.begin());
                     }
                 }
                 else
-                    f.surf->Data.Locked--;
+                {
+                    msdk_atomic_dec16(&f.surf->Data.Locked);
+                }
 
                 m_queue.erase(it);
 

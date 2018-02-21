@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -273,7 +273,7 @@ int TestSuite::RunTest(unsigned int id)
     /*** Starting preenc ***/
     for (int i =0; i < FRAME_TO_ENCODE; i++) {
         p_PreENCInput[i]->InSurface = &surfacesPool[i];
-        p_PreENCInput[i]->InSurface->Data.Locked++;
+        msdk_atomic_inc16(&p_PreENCInput[i]->InSurface->Data.Locked);
         FEIPreEncCtrl[i].RefFrame[0] = (i == 0) ? NULL : p_PreENCInput[i - 1]->InSurface;
         FEIPreEncCtrl[i].RefFrame[1] = NULL;
         p_PreENCInput[i]->NumFrameL0 = (i == 0) ? 0 : 1;

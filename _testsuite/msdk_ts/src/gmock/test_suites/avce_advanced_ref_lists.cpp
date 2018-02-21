@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -400,7 +400,7 @@ bool isOlder(Frame& i, Frame& j)
 
             if (f.surf)
             {
-                f.surf->Data.Locked++;
+                msdk_atomic_inc16(&f.surf->Data.Locked);
                 f.surf->Data.FrameOrder = m_c++;
                 f.type = GetFrameType(m_par, f.surf->Data.FrameOrder, m_isBPyramid);
                 m_queue.push_back(f);
@@ -420,12 +420,14 @@ bool isOlder(Frame& i, Frame& j)
                     {
                         FrameIterator toRemove = m_isBPyramid ? 
                             std::min_element(m_dpb.begin(), m_dpb.end(), isOlder) : m_dpb.begin();
-                        toRemove->surf->Data.Locked--;
+                        msdk_atomic_dec16(&toRemove->surf->Data.Locked);
                         m_dpb.erase(toRemove);
                     }
                 }
                 else
-                    f.surf->Data.Locked--;
+                {
+                    msdk_atomic_dec16(&f.surf->Data.Locked);
+                }
 
                 m_queue.erase(it);
 

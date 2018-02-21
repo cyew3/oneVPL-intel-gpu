@@ -1106,7 +1106,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         if (m_pInputSurfaces)
         {
             mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
-            pStorageSurf->Data.Locked++;
+            msdk_atomic_inc16(&pStorageSurf->Data.Locked);
             tsFrame in = tsFrame(*pSurf);
             tsFrame store = tsFrame(*pStorageSurf);
             store = in;
@@ -1631,7 +1631,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             const mfxF64 psnrY = PSNR(src, res, 0);
             const mfxF64 psnrU = PSNR(src, res, 1);
             const mfxF64 psnrV = PSNR(src, res, 2);
-            pInputSurface->Data.Locked--;
+            msdk_atomic_dec16(&pInputSurface->Data.Locked);
             m_pInputSurfaces->erase(m_numFrame);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
 
