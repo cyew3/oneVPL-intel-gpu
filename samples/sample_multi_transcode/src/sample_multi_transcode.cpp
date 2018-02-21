@@ -394,7 +394,7 @@ void Launcher::Run()
     m_StartTime = GetTick();
 
     // Robust flag is applied to every seession if enabled in one
-    if (m_pSessionArray[0]->pPipeline->IsRobust())
+    if (m_pSessionArray[0]->pPipeline->GetRobustFlag())
     {
         DoRobustTranscoding();
     }
@@ -449,7 +449,7 @@ void Launcher::DoTranscoding()
                         // Stop all the sessions if an error happened in one
                         // But do not stop in robust mode when gpu hang's happened
                         if (m_pSessionArray[i]->transcodingSts != MFX_ERR_GPU_HANG ||
-                            !m_pSessionArray[i]->pPipeline->IsRobust())
+                            !m_pSessionArray[i]->pPipeline->GetRobustFlag())
                         {
                             for (size_t j = 0; j < m_pSessionArray.size(); j++)
                             {
@@ -696,11 +696,11 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         }
 
         // All sessions have to know if robust mode enabled
-        if (m_InputParamsArray[i].bRobust)
+        if (m_InputParamsArray[i].nRobustFlag)
         {
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
             {
-                m_InputParamsArray[j].bRobust = true;
+                m_InputParamsArray[j].nRobustFlag = m_InputParamsArray[i].nRobustFlag;
             }
         }
 

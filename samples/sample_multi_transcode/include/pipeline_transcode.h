@@ -179,6 +179,11 @@ namespace TranscodingSample
         EXTBRC_IMPLICIT
     };
 
+    enum RobustMode {
+        ROBUST_FULL = 1, // Reset all the components, devices, buffers, etc.
+        ROBUST_SOFT = 2  // Simply start transcoding again, just with insertion of IDR
+    };
+
     struct __sInputParams
     {
         // session parameters
@@ -188,7 +193,7 @@ namespace TranscodingSample
         mfxIMPL libType;  // Type of used mediaSDK library
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
         mfxU16 nThreadsNum; // number of internal session threads number
-        bool   bRobust;   // Robust transcoding mode. Allows auto-recovery after hardware errors
+        size_t nRobustFlag;   // Robust transcoding mode. Allows auto-recovery after hardware errors
 
         mfxU32 EncodeId; // type of output coded video
         mfxU32 DecodeId; // type of input coded video
@@ -614,7 +619,7 @@ namespace TranscodingSample
         inline void SetPipelineID(mfxU32 id){m_nID = id;}
         void StopSession();
         bool IsOverlayUsed();
-        bool IsRobust();
+        size_t GetRobustFlag();
     protected:
         virtual mfxStatus CheckRequiredAPIVersion(mfxVersion& version, sInputParams *pParams);
 
@@ -831,9 +836,11 @@ namespace TranscodingSample
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
         MSDKMutex       m_mStopSession;
-        bool            m_bIsRobust;
+        size_t          m_nRobustFlag;
 
         bool isHEVCSW;
+
+        bool m_bInsertIDR;
 
         std::auto_ptr<ExtendedBSStore>        m_pBSStore;
 

@@ -131,7 +131,7 @@ namespace TranscodingSample
         //store a name of a Logfile
         msdk_tstring                                 DumpLogFileName;
         mfxU32                                       m_nTimeout;
-        bool                                         m_bRobust;
+        size_t                                       nRobustFlag;
         bool                                         shouldUseGreedyFormula;
         std::vector<msdk_string>                     m_lines;
     private:

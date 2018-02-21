@@ -174,6 +174,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_nOutputFramesNum(0),
     shouldUseGreedyFormula(false),
     isHEVCSW(false),
+    m_bInsertIDR(false),
     m_vppCompDumpRenderMode(0),
     m_nRotationAngle(0)
 {
@@ -281,7 +282,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bUseOverlay = false;
     m_bForceStop = false;
     m_bIsInterOrJoined = false;
-    m_bIsRobust = false;
+    m_nRobustFlag = 0;
     m_nRotationAngle = 0;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
@@ -1230,7 +1231,6 @@ mfxStatus CTranscodingPipeline::Encode()
     ExtendedBS      *pBS = NULL;
     bool isQuit = false;
     bool bPollFlag = false;
-    bool bInsertIDR = false;
     int nFramesAlreadyPut = 0;
     SafetySurfaceBuffer   *curBuffer = m_pBuffer;
 
@@ -1274,7 +1274,7 @@ mfxStatus CTranscodingPipeline::Encode()
             mfxU32 NumFramesForReset = m_pParentPipeline ? m_pParentPipeline->GetNumFramesForReset() : 0;
             if (NumFramesForReset && !(nFramesAlreadyPut % NumFramesForReset) )
             {
-                bInsertIDR = true;
+                m_bInsertIDR = true;
             }
 
             if (NULL == DecExtSurface.pSurface)
@@ -1380,8 +1380,8 @@ mfxStatus CTranscodingPipeline::Encode()
             m_pBSProcessor->ResetOutput();
         }
 
-        SetEncCtrlRT(VppExtSurface, bInsertIDR);
-        bInsertIDR = false;
+        SetEncCtrlRT(VppExtSurface, m_bInsertIDR);
+        m_bInsertIDR = false;
 
         if ((m_nVPPCompEnable != VppCompOnly) || (m_nVPPCompEnable == VppCompOnlyEncode))
         {
@@ -1747,7 +1747,6 @@ mfxStatus CTranscodingPipeline::Transcode()
     bool bNeedDecodedFrames = true; // indicates if we need to decode frames
     bool bEndOfFile = false;
     bool bLastCycle = false;
-    bool bInsertIDR = false;
     bool shouldReadNextFrame=true;
 
     time_t start = time(0);
@@ -1774,7 +1773,7 @@ mfxStatus CTranscodingPipeline::Transcode()
                 {
                     if (!bLastCycle)
                     {
-                        bInsertIDR = true;
+                        m_bInsertIDR = true;
 
                         m_pBSProcessor->ResetInput();
                         m_pBSProcessor->ResetOutput();
@@ -1904,8 +1903,8 @@ mfxStatus CTranscodingPipeline::Transcode()
 
         // Set Encoding control if it is required.
 
-        SetEncCtrlRT(VppExtSurface, bInsertIDR);
-        bInsertIDR = false;
+        SetEncCtrlRT(VppExtSurface, m_bInsertIDR);
+        m_bInsertIDR = false;
 
         if (bNeedDecodedFrames)
             m_nProcessedFramesNum++;
@@ -3511,7 +3510,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
     m_bUseOverlay = pParams->DecodeId == MFX_CODEC_RGB4 ? true : false;
-    m_bIsRobust = pParams->bRobust;
+    m_nRobustFlag = pParams->nRobustFlag;
     m_nRotationAngle = pParams->nRotationAngle;
     m_sGenericPluginPath = pParams->strVPPPluginDLLPath;
     m_decoderPluginParams = pParams->decoderPluginParams;
@@ -4069,9 +4068,9 @@ mfxStatus CTranscodingPipeline::LoadGenericPlugin()
     return MFX_ERR_NONE;
 }
 
-bool CTranscodingPipeline::IsRobust()
+size_t CTranscodingPipeline::GetRobustFlag()
 {
-    return m_bIsRobust;
+    return m_nRobustFlag;
 }
 
 void CTranscodingPipeline::Close()
@@ -4140,6 +4139,20 @@ mfxStatus CTranscodingPipeline::Reset()
         isDecoderPlugin = m_pUserDecoderPlugin.get() ? true : false,
         isEncoderPlugin = m_pUserEncoderPlugin.get() ? true : false,
         isPreEncPlugin = m_pUserEncPlugin.get() ? true : false;
+
+    if (m_nRobustFlag == ROBUST_SOFT)
+    {
+        if (isEnc)
+        {
+            m_bInsertIDR = true;
+
+            m_BSPool.clear();
+            m_pBSStore->ReleaseAll();
+            m_pBSStore->FlushAll();
+        }
+
+        return MFX_ERR_NONE;
+    }
 
     // Close components being used
     if (isDec)

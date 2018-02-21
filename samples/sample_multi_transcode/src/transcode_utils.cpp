@@ -148,6 +148,7 @@ void TranscodingSample::PrintHelp()
 
     msdk_printf(MSDK_STRING("  -mfe_timeout <N> multi-frame encode timeout in milliseconds - set per sessions control\n"));
 #endif
+
 #ifdef ENABLE_MCTF
 #if !defined ENABLE_MCTF_EXT
     msdk_printf(MSDK_STRING("  -mctf [Strength]\n"));
@@ -172,7 +173,9 @@ void TranscodingSample::PrintHelp()
 #endif //ENABLE_MCTF_EXT
 #endif //ENABLE_MCTF
 
-    msdk_printf(MSDK_STRING("  -robust       Recover from gpu hang errors as the come\n"));
+    msdk_printf(MSDK_STRING("  -robust       Recover from gpu hang errors as the come (by resetting components)\n"));
+    msdk_printf(MSDK_STRING("  -robust:soft  Recover from gpu hang errors without components reset\n"));
+
     msdk_printf(MSDK_STRING("  -async        Depth of asynchronous pipeline. default value 1\n"));
     msdk_printf(MSDK_STRING("  -join         Join session with other session(s), by default sessions are not joined\n"));
     msdk_printf(MSDK_STRING("  -priority     Use priority for join sessions. 0 - Low, 1 - Normal, 2 - High. Normal by default\n"));
@@ -397,7 +400,7 @@ CmdProcessor::CmdProcessor()
     statisticsLogFile = NULL;
     DumpLogFileName.clear();
     shouldUseGreedyFormula=false;
-    m_bRobust = false;
+    nRobustFlag = 0;
 
 } //CmdProcessor::CmdProcessor()
 
@@ -468,7 +471,11 @@ mfxStatus CmdProcessor::ParseCmdLine(int argc, msdk_char *argv[])
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-robust")))
         {
-            m_bRobust = true;
+            nRobustFlag = ROBUST_FULL;
+        }
+        else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-robust:soft")))
+        {
+            nRobustFlag = ROBUST_SOFT;
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-?")) )
         {
@@ -1032,8 +1039,8 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
     TranscodingSample::sInputParams InputParams;
     if (m_nTimeout)
         InputParams.nTimeout = m_nTimeout;
-    if (m_bRobust)
-        InputParams.bRobust = true;
+    if (nRobustFlag)
+        InputParams.nRobustFlag = nRobustFlag;
 
     InputParams.shouldUseGreedyFormula = shouldUseGreedyFormula;
 
@@ -1189,7 +1196,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust")))
         {
-            InputParams.bRobust = true;
+            InputParams.nRobustFlag = ROBUST_FULL;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust:soft")))
+        {
+            InputParams.nRobustFlag = ROBUST_SOFT;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-threads")))
         {
@@ -1773,7 +1784,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust")))
         {
-            InputParams.bRobust = true;
+            InputParams.nRobustFlag = ROBUST_FULL;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-robust:soft")))
+        {
+            InputParams.nRobustFlag = ROBUST_SOFT;
         }
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-opencl")))
         {
