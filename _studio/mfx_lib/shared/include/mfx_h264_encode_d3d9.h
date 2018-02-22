@@ -214,7 +214,7 @@ namespace MfxHwH264Encode
 
         virtual
         mfxStatus Execute(
-            mfxHDL                     surface,
+            mfxHDLPair                 pair,
             DdiTask const &            task,
             mfxU32                     fieldId,
             PreAllocatedVector const & sei);
@@ -341,7 +341,7 @@ namespace MfxHwH264Encode
 
         virtual
         mfxStatus Execute(
-            mfxHDL                     surface,
+            mfxHDLPair                 pair,
             DdiTask const &            task,
             mfxU32                     fieldId,
             PreAllocatedVector const & sei);

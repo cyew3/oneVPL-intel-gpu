@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "ipps.h"
@@ -1551,7 +1551,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
                 PrepareSeiMessageBufferDepView(impl.m_video, curTask, firstFieldId, impl.m_sei);
 
             sts = impl.m_ddi[0]->Execute(
-                surfaceHDL.first,
+                surfaceHDL,
                 curTask,
                 firstFieldId,
                 impl.m_sei);
@@ -1575,7 +1575,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
                 PrepareSeiMessageBufferDepView(impl.m_video, curTask, !firstFieldId, impl.m_sei);
 
             sts = impl.m_ddi[0]->Execute(
-                surfaceHDL.first,
+                surfaceHDL,
                 curTask,
                 !firstFieldId,
                 impl.m_sei);
@@ -1696,7 +1696,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
                 // submit 'dummy' task to driver
                 sts = impl.m_ddi[encIdx]->Execute(
-                    surfaceHDL.first,
+                    surfaceHDL,
                     dummyTask,
                     firstFieldId,
                     impl.m_sei);
@@ -1708,7 +1708,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                 if (interlace)
                 {
                     sts = impl.m_ddi[encIdx]->Execute(
-                        surfaceHDL.first,
+                        surfaceHDL,
                         dummyTask,
                         !firstFieldId,
                         impl.m_sei);
@@ -1818,7 +1818,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
     // here is workaround for SNB/IVB. Need to use 1 encoder per view to guarantee HRD conformance for each view
     sts = impl.m_ddi[encIdx]->Execute(
-        surfaceHDL.first,
+        surfaceHDL,
         task,
         firstFieldId,
         impl.m_sei);
@@ -1863,14 +1863,14 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
         // here is workaround for SNB/IVB. Need to use 1 encoder per view to guarantee HRD conformance for each view
         if (MFX_HW_D3D11 == impl.m_core->GetVAType())
             sts = impl.m_ddi[encIdx]->Execute(
-                surfaceHDL.first,
+                surfaceHDL,
                 task,
                 !firstFieldId,
                 impl.m_sei);
         else
             if (MFX_HW_D3D11 == impl.m_core->GetVAType())
             sts = impl.m_ddi[encIdx]->Execute(
-                surfaceHDL.first,
+                surfaceHDL,
                 task,
                 !firstFieldId,
                 impl.m_sei);

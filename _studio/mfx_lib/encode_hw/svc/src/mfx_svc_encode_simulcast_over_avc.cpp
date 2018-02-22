@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -163,12 +163,12 @@ mfxStatus MultipleAvcEncoder::Register(
 }
 
 mfxStatus MultipleAvcEncoder::Execute(
-    mfxHDL                     surface,
+    mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
 {
-    return m_ddi[task.m_did]->Execute(surface, task, fieldId, sei);
+    return m_ddi[task.m_did]->Execute(pair, task, fieldId, sei);
 }
 
 mfxStatus MultipleAvcEncoder::QueryCompBufferInfo(

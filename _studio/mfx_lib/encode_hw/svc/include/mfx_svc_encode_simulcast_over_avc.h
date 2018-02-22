@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -42,7 +42,7 @@ namespace MfxHwH264Encode
             D3DDDIFORMAT            type);
 
         virtual mfxStatus Execute(
-            mfxHDL                     surface,
+            mfxHDLPair                 pair,
             DdiTask const &            task,
             mfxU32                     fieldId,
             PreAllocatedVector const & sei);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -163,7 +163,7 @@ mfxStatus VideoPAK_PAK::RunFramePAK(mfxPAKInput *in, mfxPAKOutput *out)
 #if MFX_VERSION >= 1023
         PrepareSeiMessageBuffer(m_video, task, task.m_fid[f]);
 #endif // MFX_VERSION >= 1023
-        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
+        sts = m_ddi->Execute(task.m_handleRaw, task, task.m_fid[f], m_sei);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 

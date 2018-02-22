@@ -1977,13 +1977,14 @@ bool operator!=(const ENCODE_ENC_CTRL_CAPS& l, const ENCODE_ENC_CTRL_CAPS& r)
 //static int debug_frame_bum = 0;
 
 mfxStatus VAAPIEncoder::Execute(
-    mfxHDL          surface,
+    mfxHDLPair      pair,
     DdiTask const & task,
     mfxU32          fieldId,
     PreAllocatedVector const & sei)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
 
+    mfxHDL surface = pair.first;
     VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
     VASurfaceID reconSurface;
     VASurfaceID *inputSurface = (VASurfaceID*)surface;

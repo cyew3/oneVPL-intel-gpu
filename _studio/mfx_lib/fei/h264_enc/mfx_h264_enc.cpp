@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -100,7 +100,7 @@ mfxStatus VideoENC_ENC::RunFrameVmeENC(mfxENCInput *in, mfxENCOutput *out)
 
     for (mfxU32 f = f_start; f <= fieldCount; ++f)
     {
-        sts = m_ddi->Execute(task.m_handleRaw.first, task, task.m_fid[f], m_sei);
+        sts = m_ddi->Execute(task.m_handleRaw, task, task.m_fid[f], m_sei);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
     }
 

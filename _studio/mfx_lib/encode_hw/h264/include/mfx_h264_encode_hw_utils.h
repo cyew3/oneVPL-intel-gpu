@@ -3342,7 +3342,7 @@ namespace MfxHwH264Encode
         mfxStatus CopyRawSurface(
             DdiTask const & task);
 
-        mfxHDL GetRawSurfaceHandle(
+        mfxHDLPair GetRawSurfaceHandle(
             DdiTask const & task);
 
         mfxStatus UpdateBitstream(

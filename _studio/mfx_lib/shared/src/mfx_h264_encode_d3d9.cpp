@@ -1452,7 +1452,7 @@ namespace
 };
 
 mfxStatus D3D9Encoder::Execute(
-    mfxHDL                     surface,
+    mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
@@ -1460,6 +1460,7 @@ mfxStatus D3D9Encoder::Execute(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
+    mfxHDL surface = pair.first;
     ENCODE_PACKEDHEADER_DATA packedSei = { 0 };
 
     ENCODE_EXECUTE_PARAMS encodeExecuteParams = { 0 };
@@ -2967,7 +2968,7 @@ namespace
 };
 
 mfxStatus D3D9SvcEncoder::Execute(
-    mfxHDL                     surface,
+    mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
@@ -2976,7 +2977,7 @@ mfxStatus D3D9SvcEncoder::Execute(
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
     sei;
-
+    mfxHDL                  surface = pair.first;
     mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(*m_video);
 
     mfxU32 ppsid = GetPpsId(*m_video, task.m_did, task.m_qid, task.m_tid);

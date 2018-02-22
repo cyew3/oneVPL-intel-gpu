@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_ENCODE_VAAPI__H
@@ -147,7 +147,7 @@ namespace MfxHwH264Encode
         // (mfxExecuteBuffers& data)
         virtual
         mfxStatus Execute(
-            mfxHDL          surface,
+            mfxHDLPair      pair,
             DdiTask const & task,
             mfxU32          fieldId,
             PreAllocatedVector const & sei);
@@ -325,7 +325,7 @@ namespace MfxHwH264Encode
 
         virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
         virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
-        virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
+        virtual mfxStatus Execute(mfxHDLPair pair, DdiTask const & task,
                 mfxU32 fieldId, PreAllocatedVector const & sei);
         virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
         virtual mfxStatus Destroy();
@@ -358,7 +358,7 @@ namespace MfxHwH264Encode
         virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
         virtual mfxStatus Reset(MfxVideoParam const & par);
         virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
-        virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
+        virtual mfxStatus Execute(mfxHDLPair pair, DdiTask const & task,
                 mfxU32 fieldId, PreAllocatedVector const & sei);
         virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
         virtual mfxStatus Destroy();
@@ -392,7 +392,7 @@ namespace MfxHwH264Encode
         virtual mfxStatus CreateAccelerationService(MfxVideoParam const & par);
         virtual mfxStatus Reset(MfxVideoParam const & par);
         virtual mfxStatus Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type);
-        virtual mfxStatus Execute(mfxHDL surface, DdiTask const & task,
+        virtual mfxStatus Execute(mfxHDLPair pair, DdiTask const & task,
                 mfxU32 fieldId, PreAllocatedVector const & sei);
         virtual mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
         virtual mfxStatus Destroy();

@@ -405,13 +405,16 @@ mfxStatus D3D11Encoder::Register( mfxMemId     /*memId*/, D3DDDIFORMAT /*type*/)
 
 
 mfxStatus D3D11Encoder::Execute(
-    mfxHDL                     surface,
+    mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
 {   
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     ENCODE_PACKEDHEADER_DATA packedSei = { 0 };
+
+    ID3D11Resource * pSurface = static_cast<ID3D11Resource *>(pair.first);
+    UINT subResourceIndex = (UINT)(UINT_PTR)(pair.second);
 
     HRESULT hr = S_OK;
     UCHAR   SkipFlag = task.SkipFlag();
@@ -488,7 +491,7 @@ mfxStatus D3D11Encoder::Execute(
     resourceList.resize(resourceCount);
 
     resourceList[RES_ID_BITSTREAM] = static_cast<ID3D11Resource *>(m_bsQueue[task.m_idxBs[fieldId]].first);
-    resourceList[RES_ID_ORIGINAL]  = static_cast<ID3D11Resource *>(surface);
+    resourceList[RES_ID_ORIGINAL] = pSurface;
 
     if (task.m_isMBQP)
         resourceList[RES_ID_MBQP]      = static_cast<ID3D11Resource *>(m_mbqpQueue[task.m_idxMBQP].first);
@@ -541,7 +544,7 @@ mfxStatus D3D11Encoder::Execute(
     m_compBufDesc[bufCnt].pCompBuffer          = &m_pps;
 
     ENCODE_INPUT_DESC encodeInputDesc;
-    encodeInputDesc.ArraSliceOriginal = 0;
+    encodeInputDesc.ArraSliceOriginal = subResourceIndex;
     encodeInputDesc.IndexOriginal     = RES_ID_ORIGINAL;
     encodeInputDesc.ArraySliceRecon   = (UINT)(size_t(m_reconQueue[task.m_idxRecon].second));
     encodeInputDesc.IndexRecon        = RES_ID_RECONSTRUCT;
@@ -1482,7 +1485,7 @@ namespace
 
 
 mfxStatus D3D11SvcEncoder::Execute(
-    mfxHDL                     surface,
+    mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
     PreAllocatedVector const & sei)
@@ -1490,13 +1493,12 @@ mfxStatus D3D11SvcEncoder::Execute(
     sei;
 
     HRESULT hr = S_OK;
-    mfxHDLPair *     inputPair      = static_cast<mfxHDLPair *>(surface);
-    ID3D11Resource * pInputD3D11Res = static_cast<ID3D11Resource *>(inputPair->first);
+    ID3D11Resource * pInputD3D11Res = static_cast<ID3D11Resource *>(pair.first);
 
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC outputDesc;
     outputDesc.DecodeProfile = m_guid;
     outputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
-    outputDesc.Texture2D.ArraySlice = UINT(size_t(inputPair->second)); 
+    outputDesc.Texture2D.ArraySlice = UINT(size_t(pair.second)); 
     SAFE_RELEASE(m_pVDOView);
     hr = m_pVideoDevice->CreateVideoDecoderOutputView(pInputD3D11Res, &outputDesc, &m_pVDOView);
     CHECK_HRES(hr);
@@ -1588,7 +1590,7 @@ mfxStatus D3D11SvcEncoder::Execute(
     }
 
     ENCODE_INPUT_DESC encodeInputDesc = { 0 };
-    encodeInputDesc.ArraSliceOriginal = (UINT)(size_t(inputPair->second));
+    encodeInputDesc.ArraSliceOriginal = (UINT)(size_t(pair.second));
     encodeInputDesc.IndexOriginal     = RES_ID_ORIGINAL;
     encodeInputDesc.ArraySliceRecon   = (UINT)(size_t(m_reconQueue[task.m_did][task.m_idxRecon].second));
     encodeInputDesc.IndexRecon        = RES_ID_RECONSTRUCT;

@@ -3379,7 +3379,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             sts = m_EventCache->GetEvent(task->m_GpuEvent[fieldId].gpuSyncEvent);
             MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 #endif
-            sts = m_ddi->Execute(task->m_handleRaw.first, *task, fieldId, m_sei);
+            sts = m_ddi->Execute(task->m_handleRaw, *task, fieldId, m_sei);
             MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
 #ifndef MFX_AVC_ENCODING_UNIT_DISABLE
@@ -3605,7 +3605,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                         for (mfxU32 f = 0; f <= curTask->m_fieldPicFlag; f++)
                         {
                             PrepareSeiMessageBuffer(m_video, *curTask, curTask->m_fid[f], m_sei);
-                            while ((sts =  m_ddi->Execute(curTask->m_handleRaw.first, *curTask, curTask->m_fid[f], m_sei)) == MFX_TASK_BUSY)
+                            while ((sts =  m_ddi->Execute(curTask->m_handleRaw, *curTask, curTask->m_fid[f], m_sei)) == MFX_TASK_BUSY)
                             {
                                 vm_time_sleep(0);
                             }
@@ -3696,7 +3696,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
         mfxU32 f = 1; // coding second field
         PrepareSeiMessageBuffer(m_video, *task, task->m_fid[f], m_sei);
 
-        mfxStatus sts = m_ddi->Execute(task->m_handleRaw.first, *task, task->m_fid[f], m_sei);
+        mfxStatus sts = m_ddi->Execute(task->m_handleRaw, *task, task->m_fid[f], m_sei);
         MFX_CHECK(sts == MFX_ERR_NONE, Error(sts));
 
         task->m_bsDataLength[0] = task->m_bsDataLength[1] = 0;
