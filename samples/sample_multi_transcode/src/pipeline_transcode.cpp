@@ -4157,6 +4157,7 @@ mfxStatus CTranscodingPipeline::Reset()
     // Release output bitstram pools
     m_BSPool.clear();
     m_pBSStore->ReleaseAll();
+    m_pBSStore->FlushAll();
 
     // Load external decoder plugin
     if (isDecoderPlugin)
@@ -4315,6 +4316,7 @@ mfxStatus CTranscodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
     MSDK_CHECK_STATUS(sts, "m_pmfxENC->GetVideoParam failed");
 
     mfxU32 new_size = 0;
+
     // if encoder provided us information about buffer size
     if (0 != par.mfx.BufferSizeInKB)
     {

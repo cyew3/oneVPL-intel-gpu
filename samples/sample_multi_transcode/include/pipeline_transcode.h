@@ -473,6 +473,15 @@ namespace TranscodingSample
             }
             return;
         }
+        void FlushAll()
+        {
+            for (mfxU32 i = 0; i < m_pExtBS.size(); i++)
+            {
+                m_pExtBS[i].Bitstream.DataLength = 0;
+                m_pExtBS[i].Bitstream.DataOffset = 0;
+            }
+            return;
+        }
     protected:
         std::vector<ExtendedBS> m_pExtBS;
 

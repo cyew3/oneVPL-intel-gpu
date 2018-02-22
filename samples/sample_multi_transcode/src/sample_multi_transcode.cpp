@@ -489,6 +489,7 @@ void Launcher::DoTranscoding()
             }
         }
     }
+    m_HDLArray.clear();
 }
 
 void Launcher::DoRobustTranscoding()
