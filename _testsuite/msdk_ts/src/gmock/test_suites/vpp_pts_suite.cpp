@@ -237,6 +237,13 @@ namespace vpp_pts_suite
         auto& tc = test_case[id];
         SETPARS(&m_par, MFX_PAR);
 
+        if ((g_tsImpl & MFX_IMPL_VIA_D3D11) &&
+            (m_par.vpp.In.FourCC == MFX_FOURCC_YV12))
+        {
+            g_tsLog << "SKIPPED! Windows Limitation: With DirectX* 11.1 interface MFX_FOURCC_YV12 supported only via software fallback\n";
+            return 0;
+        }
+
         mfxExtVPPDoNotUse* buf = (mfxExtVPPDoNotUse*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_DONOTUSE);
         if(buf != nullptr) {
             buf->AlgList = new mfxU32[buf->NumAlg];
