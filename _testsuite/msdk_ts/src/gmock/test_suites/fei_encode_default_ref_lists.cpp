@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -456,6 +456,11 @@ public:
                     g_tsLog << " List " << list << ":\n";
                     for (mfxU32 idx = 0; idx < lx[list]; idx++)
                     {
+                        if (!sh->RefPicList[list][idx])
+                        {
+                            g_tsLog << "ERROR: sh->RefPicList[" << list <<"][" << idx << "] is NULL\n";
+                            return MFX_ERR_ABORTED;
+                        }
                         g_tsLog << " - Actual: " << sh->RefPicList[list][idx]->PicOrderCnt
                             << " - Expected: " << emu.ListX[list][idx] << "\n";
                         EXPECT_EQ(emu.ListX[list][idx], sh->RefPicList[list][idx]->PicOrderCnt)
