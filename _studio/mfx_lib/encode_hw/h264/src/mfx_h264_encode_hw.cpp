@@ -1985,7 +1985,7 @@ void ImplementationAvc::SubmitAdaptiveGOP()
 
     //fprintf(stderr,"new_Frame=%d\n", newTask.m_frameOrder);
     //downsample 4X
-    task.m_cmRaw = CreateSurface(m_cmDevice, task.m_handleRaw.first, m_currentVaType);
+    task.m_cmRaw = CreateSurface(m_cmDevice, task.m_handleRaw, m_currentVaType);
     task.m_cmRaw4X = (CmSurface2D *)AcquireResource(m_raw4X);
     assert(task.m_cmRaw != NULL || task.m_cmRaw4X != NULL);
     task.m_cmEventAGOP = m_cmCtx->DownSample4XAsync(task.m_cmRaw, task.m_cmRaw4X);
@@ -2983,7 +2983,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 #if USE_AGOP
             if(!(task->m_cmRaw))
 #endif
-                task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
+                task->m_cmRaw = CreateSurface(m_cmDevice, task->m_handleRaw, m_currentVaType);
         }
 
         if (IsOn(extOpt3.FadeDetection) && m_cmCtx.get() && m_cmCtx->isHistogramSupported())
@@ -2997,7 +2997,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
 
             memset(task->m_cmHistSys, 0, sizeof(uint)* 512);
 
-            task->m_cmRawForHist = CreateSurface(m_cmDevice, task->m_handleRaw.first, m_currentVaType);
+            task->m_cmRawForHist = CreateSurface(m_cmDevice, task->m_handleRaw, m_currentVaType);
         }
 
         task->m_isENCPAK = m_isENCPAK;

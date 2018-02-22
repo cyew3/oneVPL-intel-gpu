@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "ipps.h"
@@ -434,6 +434,14 @@ CmSurface2D * CreateSurface2DSubresource(CmDevice * device, ID3D11Texture2D * d3
     return cmSurface;
 }
 
+CmSurface2D * CreateSurface2DbySubresourceIndex(CmDevice * device, ID3D11Texture2D * d3dSurface, UINT subResourceIndex)
+{
+    int result = CM_SUCCESS;
+    CmSurface2D * cmSurface = 0;
+    if (device && d3dSurface && (result = device->CreateSurface2DbySubresourceIndex(d3dSurface, subResourceIndex, 0 , cmSurface)) != CM_SUCCESS)
+        throw CmRuntimeError();
+    return cmSurface;
+}
 
 CmSurface2D * CreateSurface(CmDevice * device, AbstractSurfaceHandle vaSurface)
 {
@@ -459,6 +467,23 @@ CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType 
         throw CmRuntimeError();
     }
 }
+
+CmSurface2D * CreateSurface(CmDevice * device, mfxHDLPair nativeSurfaceIndexPair, eMFXVAType vatype)
+{
+    switch (vatype)
+    {
+    case MFX_HW_D3D9:
+        return CreateSurface(device, (IDirect3DSurface9 *)nativeSurfaceIndexPair.first);
+    case MFX_HW_D3D11:
+        return CreateSurface2DbySubresourceIndex(device, (ID3D11Texture2D *)nativeSurfaceIndexPair.first, static_cast<UINT>((size_t)nativeSurfaceIndexPair.second));
+    case MFX_HW_VAAPI:
+        return CreateSurface(device, nativeSurfaceIndexPair.first);
+    default:
+        throw CmRuntimeError();
+    }
+
+}
+
 
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc)

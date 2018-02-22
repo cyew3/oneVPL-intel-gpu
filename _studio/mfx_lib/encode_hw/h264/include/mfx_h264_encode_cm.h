@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -177,6 +177,8 @@ CmSurface2D * CreateSurface(CmDevice * device, ID3D11Texture2D * d3dSurface);
 CmSurface2D * CreateSurface2DSubresource(CmDevice * device, ID3D11Texture2D * d3dSurface);
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxHDL nativeSurface, eMFXVAType vatype);
+
+CmSurface2D * CreateSurface(CmDevice * device, mfxHDLPair nativeSurfaceIndexPair, eMFXVAType vatype);
 
 CmSurface2D * CreateSurface(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fourcc);
 
