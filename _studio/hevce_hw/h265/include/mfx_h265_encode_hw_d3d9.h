@@ -51,7 +51,7 @@ public:
     virtual
     mfxStatus Execute(
         Task const &task,
-        mfxHDL surface);
+        mfxHDLPair surface);
 
     virtual
     mfxStatus QueryCompBufferInfo(

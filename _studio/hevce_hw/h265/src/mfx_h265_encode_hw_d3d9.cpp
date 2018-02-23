@@ -341,7 +341,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
     executeParams.NumCompBuffers++;
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDL surface)
+mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDLPair pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::Execute");
 #ifndef HEADER_PACKING_TEST
@@ -508,7 +508,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, m
         HRESULT hr;
         {
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "BeginFrame");
-            hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
+            hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)pair.first, 0);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 

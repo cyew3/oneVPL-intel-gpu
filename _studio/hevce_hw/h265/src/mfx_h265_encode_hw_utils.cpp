@@ -427,25 +427,26 @@ mfxStatus GetNativeHandleToRawSurface(
     MFXCoreInterface &    core,
     MfxVideoParam const & video,
     Task const &          task,
-    mfxHDL &              nativeHandle)
+    mfxHDLPair &          handle)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocator & fa = core.FrameAllocator();
     mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
     mfxFrameSurface1 * surface = task.m_surf_real;
 
-    nativeHandle = 0;
+    Zero(handle);
+    mfxHDL * nativeHandle = &handle.first;
 
     if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
         || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
-        sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
+        sts = fa.GetHDL(fa.pthis, task.m_midRaw, nativeHandle);
     else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
              || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         if (task.m_midRaw == NULL)
-            sts = core.GetFrameHandle(&surface->Data, &nativeHandle);
+            sts = core.GetFrameHandle(&surface->Data, nativeHandle);
         else
-            sts = fa.GetHDL(fa.pthis, task.m_midRaw, &nativeHandle);
+            sts = fa.GetHDL(fa.pthis, task.m_midRaw, nativeHandle);
     }
     else
         return (MFX_ERR_UNDEFINED_BEHAVIOR);

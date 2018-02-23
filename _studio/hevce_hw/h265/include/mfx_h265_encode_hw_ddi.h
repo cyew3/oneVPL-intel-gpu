@@ -230,7 +230,7 @@ public:
     virtual
     mfxStatus Execute(
         Task const &task,
-        mfxHDL surface) = 0;
+        mfxHDLPair pair) = 0;
 
     virtual
     mfxStatus QueryCompBufferInfo(

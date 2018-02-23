@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1301,13 +1301,13 @@ mfxStatus SetSkipFrame(
     return MFX_ERR_NONE;
 }
 
-mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDL surface)
+mfxStatus VAAPIEncoder::Execute(Task const & task, mfxHDLPair pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::Execute");
 
     VAEncPackedHeaderParameterBuffer packed_header_param_buffer;
     VASurfaceID reconSurface;
-    VASurfaceID *inputSurface = (VASurfaceID*)surface;
+    VASurfaceID *inputSurface = (VASurfaceID*)pair.first;
     VABufferID  codedBuffer;
     mfxU32      i;
     mfxU32      packedDataSize = 0;

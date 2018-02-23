@@ -1297,7 +1297,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
                 MFX_CHECK_STS(sts);
             }
 #ifndef HEADER_PACKING_TEST
-            sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL.first);
+            sts = GetNativeHandleToRawSurface(m_core, m_vpar, *taskForExecute, surfaceHDL);
             MFX_CHECK_STS(sts);
 
             if (!IsFrameToSkip(*taskForExecute,  m_rec, m_vpar.isSWBRC()))
@@ -1314,7 +1314,7 @@ mfxStatus Plugin::Execute(mfxThreadTask thread_task, mfxU32 /*uid_p*/, mfxU32 /*
 #endif
             ExtraTaskPreparation(*taskForExecute);
 
-            sts = m_ddi->Execute(*taskForExecute, surfaceHDL.first);
+            sts = m_ddi->Execute(*taskForExecute, surfaceHDL);
             MFX_CHECK_STS(sts);
 
             m_task.SubmitForQuery(taskForExecute);

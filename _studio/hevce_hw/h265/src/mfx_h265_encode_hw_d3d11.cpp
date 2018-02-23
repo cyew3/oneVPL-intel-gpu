@@ -472,7 +472,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
     executeParams.NumCompBuffers++;
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
-mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDL surface)
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, mfxHDLPair pair)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::Execute");
     MFX_CHECK_WITH_ASSERT(m_vdecoder, MFX_ERR_NOT_INITIALIZED);
@@ -483,6 +483,10 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 #if defined(MFX_SKIP_FRAME_SUPPORT)
     HevcSkipMode skipMode(task.m_SkipMode);
 #endif
+
+    ID3D11Resource * surface = static_cast<ID3D11Resource *>(pair.first);
+    UINT subResourceIndex = (UINT)(UINT_PTR)(pair.second);
+
     executeParams.pCompressedBuffers = &m_cbd[0];
     Zero(m_cbd);
     
@@ -500,7 +504,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
     std::vector<ID3D11Resource*> resourceList(RES_ID_REF + m_reconQueue.size());
 
     resourceList[RES_ID_BS ] = (ID3D11Resource*)m_bsQueue[task.m_idxBs].first;
-    resourceList[RES_ID_RAW] = (ID3D11Resource*)surface;
+    resourceList[RES_ID_RAW] = surface;
 
     for (mfxU32 i = 0; i < m_reconQueue.size(); i ++)
         resourceList[RES_ID_REF + i] = (ID3D11Resource*)m_reconQueue[i].first;
@@ -509,7 +513,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA,          m_pps,      1);
     {
         // attach resources to PPSDATA
-        ein.ArraSliceOriginal = 0;
+        ein.ArraSliceOriginal = subResourceIndex;
         ein.IndexOriginal     = RES_ID_RAW;
         ein.ArraySliceRecon   = (UINT)(size_t(m_reconQueue[task.m_idxRec].second));
         ein.IndexRecon        = RES_ID_REC;
