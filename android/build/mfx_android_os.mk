@@ -9,7 +9,7 @@
 MFX_C_INCLUDES_LIBVA := \
   $(TARGET_OUT_HEADERS)/libva
 
-ifneq ($(filter MFX_O_MR1,$(MFX_ANDROID_VERSION)),)
+ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)
   MFX_C_INCLUDES_LIBVA += \
     frameworks/native/libs/nativebase/include \
     frameworks/native/libs/nativewindow/include \
@@ -38,9 +38,14 @@ ifeq ($(BOARD_USES_GRALLOC1),true)
   MFX_C_INCLUDES_OMX += $(INTEL_MINIGBM)/cros_gralloc
 endif
 
-ifneq ($(filter MFX_O_MR1,$(MFX_ANDROID_VERSION)),)
+ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)
   MFX_HEADER_LIBRARIES_OMX := \
     media_plugin_headers \
     libhardware_headers \
     libui_headers
+endif
+
+ifneq ($(filter MFX_P,$(MFX_ANDROID_VERSION)),)
+  MFX_HEADER_LIBRARIES_OMX += \
+    libbase_headers
 endif
