@@ -719,7 +719,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 
 mfxStatus D3D9Encoder::Execute(
     Task const & task,
-    mfxHDL          surface)
+    mfxHDLPair   pair)
 {
     VP9_LOG("\n (VP9_LOG) Frame %d D3D9Encoder::Execute +", task.m_frameOrder);
 
@@ -792,7 +792,7 @@ mfxStatus D3D9Encoder::Execute(
 
     try
     {
-        HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)surface, 0);
+        HRESULT hr = m_auxDevice->BeginFrame((IDirect3DSurface9 *)pair.first, 0);
         if (FAILED(hr))
         {
             VP9_LOG("\n FATAL: error status from the driver on BeginFrame(): [%x]!\n", hr);

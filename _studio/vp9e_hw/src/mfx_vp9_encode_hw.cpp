@@ -886,7 +886,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             // submit the frame to the driver
-            sts = m_ddi->Execute(newFrame, surfaceHDL.first);
+            sts = m_ddi->Execute(newFrame, surfaceHDL);
             MFX_CHECK_STS(sts);
 
             IncreaseRef(newFrame.m_pRecFrame);

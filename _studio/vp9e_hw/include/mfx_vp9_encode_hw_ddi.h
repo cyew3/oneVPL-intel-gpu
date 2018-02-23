@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -128,7 +128,7 @@ typedef struct tagENCODE_CAPS_VP9
         virtual
         mfxStatus Execute(
             Task const &task,
-            mfxHDL surface) = 0;
+            mfxHDLPair pair) = 0;
 
         virtual
         mfxStatus QueryCompBufferInfo(

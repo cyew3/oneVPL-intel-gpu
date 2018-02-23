@@ -416,12 +416,15 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 
 mfxStatus D3D11Encoder::Execute(
     Task const & task,
-    mfxHDL       surface)
+    mfxHDLPair   pair)
 {
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::Execute +");
 
     std::vector<ENCODE_COMPBUFFERDESC> compBufferDesc;
     compBufferDesc.resize(MAX_NUM_COMP_BUFFERS_VP9);
+
+    ID3D11Resource * surface = static_cast<ID3D11Resource *>(pair.first);
+    UINT subResourceIndex = (UINT)(UINT_PTR)(pair.second);
 
     // prepare resource list
     // it contains resources in video memory that needed for the encoding operation
@@ -440,7 +443,7 @@ mfxStatus D3D11Encoder::Execute(
     resourceList.resize(resourceCount);
 
     resourceList[RES_ID_BITSTREAM] = static_cast<ID3D11Resource *>(m_bsQueue[task.m_pOutBs->idInPool].first);
-    resourceList[RES_ID_ORIGINAL] = static_cast<ID3D11Resource *>(surface);
+    resourceList[RES_ID_ORIGINAL] = surface;
 
     for (mfxU32 i = 0; i < m_reconQueue.size(); i++)
     {
@@ -486,7 +489,7 @@ mfxStatus D3D11Encoder::Execute(
     compBufferDesc[bufCnt].pCompBuffer = &m_pps;
 
     ENCODE_INPUT_DESC encodeInputDesc;
-    encodeInputDesc.ArraSliceOriginal = 0;
+    encodeInputDesc.ArraSliceOriginal = subResourceIndex;
     encodeInputDesc.IndexOriginal = RES_ID_ORIGINAL;
     encodeInputDesc.ArraySliceRecon = (UINT)(size_t(m_reconQueue[task.m_pRecFrame->idInPool].second));
     encodeInputDesc.IndexRecon = RES_ID_RECONSTRUCT;
