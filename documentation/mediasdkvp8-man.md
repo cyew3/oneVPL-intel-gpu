@@ -1,6 +1,6 @@
 # Overview
 
-The SDK(Software Development Kit) is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
+Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
 
 This document describes the SDK extension to support VP8 video codec.
 
@@ -13,7 +13,7 @@ such as `mfxStatus`.
 
 | | |
 --- | ---
-`SDK` | Intel® Media Server Studio – SDK
+**SDK** | Intel® Media Software Development Kit – SDK
 `API` | Application Programming Interface
 
 # Architecture & Programming Guide

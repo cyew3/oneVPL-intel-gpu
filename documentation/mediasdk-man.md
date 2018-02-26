@@ -1,6 +1,6 @@
 # Overview
 
-Intel® Media Server Studio – SDK, further referred to as the SDK, is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
+Intel® Media Software Development Kit – SDK, further referred to as the SDK, is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video processing. The API library covers a wide range of Intel platforms.
 
 This document describes the SDK API.
 
@@ -31,7 +31,7 @@ boldface, such as [mfxStatus](#mfxStatus).
 **QP** | Quantization Parameter
 **RGB3** | Twenty-four-bit RGB color format. Also known as RGB24
 **RGB4** | Thirty-two-bit RGB color format. Also known as RGB32
-**SDK** | Intel® Media Server Studio – SDK
+**SDK** | Intel® Media Software Development Kit – SDK
 **SEI** | Supplemental Enhancement Information
 **SPS** | Sequence Parameter Set
 **VA API** | Video Acceleration API

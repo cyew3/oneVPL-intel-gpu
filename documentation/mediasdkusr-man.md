@@ -1,6 +1,6 @@
 # Overview
 
-The **SDK** (Software Development Kit) is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video preprocessing. The API library covers a wide range of Intel platforms.
+Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video preprocessing. The API library covers a wide range of Intel platforms.
 
 This document describes an API extension that allows user-defined functions into the transcoding pipeline. Please refer to the *SDK Developer Reference* for a complete description of the API.
 
@@ -12,7 +12,7 @@ The SDK API uses the Verdana typeface for normal prose. With the exception of se
 
 | | |
 --- | ---
-**SDK** | Intel® Media Server Studio – SDK
+**SDK** | Intel® Media Software Development Kit – SDK
 **CORE** | SDK auxiliary functions for memory allocation and asynchronous operation synchronization
 **DECODE** | SDK decoding functions
 **ENCODE** | SDK encoding functions

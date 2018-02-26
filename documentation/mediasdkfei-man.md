@@ -1,6 +1,6 @@
 # Overview
 
-The SDK (Software Development Kit) is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video preprocessing.
+Intel® Media Software Development Kit – SDK is a software development library that exposes the media acceleration capabilities of Intel platforms for decoding, encoding and video preprocessing.
 
 This document describes Flexible Encode Infrastructure extension (FEI) of the SDK for fine-tuning of hardware encoding pipeline. Please refer to the *SDK API Reference Manual* for a complete description of the API.
 
@@ -16,7 +16,7 @@ The SDK API uses the Verdana typeface for normal prose. With the exception of se
 
 | | |
 --- | ---
-**SDK** | Intel® Media Server Studio - SDK and Intel® Integrated Native Developer Environment Media SDK for Windows
+**SDK** | Intel® Media Software Development Kit – SDK and Intel® Integrated Native Developer Environment Media SDK for Windows
 **FEI** | Flexible Encode Infrastructure
 **ENC** | ENCode – first stage of encoding process that include motion estimation and MB mode decision.
 **PAK** | PAcK – last stage of encoding process that include bit packing.
