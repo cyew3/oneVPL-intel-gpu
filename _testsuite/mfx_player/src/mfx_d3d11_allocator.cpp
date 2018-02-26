@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 - 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011 - 2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -568,7 +568,7 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
 
         if(request->Type&MFX_MEMTYPE_SHARED_RESOURCE)
         {
-            desc.BindFlags &= D3D11_BIND_SHADER_RESOURCE;
+            desc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
             desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
         }
 
