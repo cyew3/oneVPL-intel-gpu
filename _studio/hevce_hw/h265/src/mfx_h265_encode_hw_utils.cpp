@@ -1831,12 +1831,12 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #endif
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-    if ((m_platform.CodeName == MFX_PLATFORM_CANNONLAKE) ||
-        (m_platform.CodeName == MFX_PLATFORM_ICELAKE))
+    if ((m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE))
     {
-        m_pps.diff_cu_qp_delta_depth = 2;
         if (IsOn(mfx.LowPower))
             m_pps.diff_cu_qp_delta_depth = 3;
+        else
+            m_pps.diff_cu_qp_delta_depth = 2;
     }
 #endif
 
