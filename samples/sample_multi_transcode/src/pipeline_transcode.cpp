@@ -68,6 +68,37 @@ mfxU32 MFX_STDCALL TranscodingSample::TranscodeRoutine(void   *pObj)
     return 0;
 } // mfxU32 __stdcall TranscodeRoutine(void   *pObj)
 
+#ifdef ENABLE_MCTF
+namespace TranscodingSample
+{
+    const sMctfRunTimeParam* sMctfRunTimeParams::GetCurParam()
+    {
+        if (CurIdx >= RunTimeParams.size())
+            return NULL;
+        else
+            return &(RunTimeParams[CurIdx]);
+    }
+
+    void sMctfRunTimeParams::MoveForward()
+    {
+        if(CurIdx < RunTimeParams.size())
+        ++CurIdx;
+    }
+
+    void sMctfRunTimeParams::Restart()
+    {
+        CurIdx = 0;
+    }
+
+    void sMctfRunTimeParams::Reset()
+    {
+        CurIdx = 0;
+        RunTimeParams.clear();
+    }
+}
+#endif
+
+
 // set structure to define values
 sInputParams::sInputParams()
 {
@@ -81,6 +112,7 @@ void sInputParams::Reset()
 #ifdef ENABLE_MCTF
     mctfParam.mode = VPP_FILTER_DISABLED;
     mctfParam.params.FilterStrength = 0;
+    mctfParam.rtParams.Reset();
 #ifdef ENABLE_MCTF_EXT
     mctfParam.params.BitsPerPixelx100k = 0;
     mctfParam.params.Deblocking = MFX_CODINGOPTION_OFF;
@@ -706,14 +738,16 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
 #ifdef ENABLE_MCTF
     bool bAttachMctfBuffer = false;
     mfxExtVppMctf * MctfRTParams = NULL;
+
+    bAttachMctfBuffer = NULL != m_MctfRTParams.GetCurParam();
     if (bAttachMctfBuffer && pSurfaceIn->pSurface)
     {
-        // get a new (or existing) Mctf control buffer. 
+        // get a new (or existing) Mctf control buffer
         MctfRTParams = GetMctfParamBuffer<mfxExtVppMctf, MFX_EXTBUFF_VPP_MCTF>(pSurfaceIn->pSurface);
         if (MctfRTParams)
         {
             // suppose the following is going to to be pass:
-            MctfRTParams->FilterStrength = MCTF_MID_FILTER_STRENGTH;
+            MctfRTParams->FilterStrength = m_MctfRTParams.GetCurParam()->FilterStrength;
 #if defined ENABLE_MCTF_EXT
             MctfRTParams->BitsPerPixelx100k = mfxU32(MCTF_LOSSLESS_BPP * MCTF_BITRATE_MULTIPLIER);
             MctfRTParams->Deblocking = MFX_CODINGOPTION_OFF;
@@ -728,6 +762,7 @@ mfxStatus CTranscodingPipeline::VPPOneFrame(ExtendedSurface *pSurfaceIn, Extende
             }
             else
                 pSurfaceIn->pSurface->Data.ExtParam[pSurfaceIn->pSurface->Data.NumExtParam++] = reinterpret_cast<mfxExtBuffer*>(MctfRTParams);
+            m_MctfRTParams.MoveForward();
         }
         else
         {
@@ -2952,6 +2987,12 @@ mfxStatus CTranscodingPipeline::AddLaStreams(mfxU16 width, mfxU16 height)
 
     m_mfxVppParams.ExtParam = &m_VppExtParamsStorage.ExtBuffers[0]; // vector is stored linearly in memory
     m_mfxVppParams.NumExtParam = (mfxU16)m_VppExtParamsStorage.ExtBuffers.size();
+
+#ifdef ENABLE_MCTF
+    // would it be more efficienct to get a pointer?
+    m_MctfRTParams = pInParams->mctfParam.rtParams;
+    m_MctfRTParams.Restart();
+#endif
 
     return MFX_ERR_NONE;
 

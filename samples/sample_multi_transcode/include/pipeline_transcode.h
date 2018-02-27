@@ -134,11 +134,42 @@ namespace TranscodingSample
 
     } VPPFilterMode;
 
-    typedef struct
+    // this is a structure with mctf-parameteres
+    // that can be changed in run-time;
+    struct sMctfRunTimeParam
     {
+#ifdef ENABLE_MCTF_EXT
+#if 0
+        mfxU32 BitsPerPixelx100k;
+        mfxU16 Deblock;
+#endif
+#endif
+        mfxU16 FilterStrength;
+    };
+
+    struct sMctfRunTimeParams
+    {
+        mfxU32 CurIdx;
+        std::vector<sMctfRunTimeParam> RunTimeParams;
+        // returns rt-param corresponding to CurIdx or NULL if
+        // CurIdx is behind available info
+        const sMctfRunTimeParam* GetCurParam();
+        // move CurIdx forward
+        void MoveForward();
+        // set CurIdx to the begining; restart indexing;
+        void Restart();
+        // reset vector & index
+        void Reset();
+        // test for emptiness
+        bool Empty() { return RunTimeParams.empty(); };
+    };
+
+    struct sMCTFParam
+    {
+        sMctfRunTimeParams   rtParams;
         mfxExtVppMctf        params;
-        VPPFilterMode         mode;
-    } sMCTFParam;
+        VPPFilterMode        mode;
+    };
 #endif
 
     enum ExtBRCType {
@@ -847,6 +878,10 @@ namespace TranscodingSample
 
         void FillMBQPBuffer(mfxExtMBQP &qpMap, mfxU16 pictStruct);
 #endif //MFX_VERSION >= 1022
+
+#ifdef  ENABLE_MCTF
+        sMctfRunTimeParams   m_MctfRTParams;
+#endif
     private:
         DISALLOW_COPY_AND_ASSIGN(CTranscodingPipeline);
 

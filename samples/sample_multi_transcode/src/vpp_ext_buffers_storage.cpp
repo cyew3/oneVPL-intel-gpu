@@ -68,6 +68,9 @@ mfxStatus CVPPExtBuffersStorage::Init(TranscodingSample::sInputParams* params)
         mctfFilter.Header.BufferId = MFX_EXTBUFF_VPP_MCTF;
         mctfFilter.Header.BufferSz = sizeof(mfxExtVppMctf);
         mctfFilter.FilterStrength = params->mctfParam.params.FilterStrength;
+        //.if an external file is given & at least 1 value is given, use it.
+        if (!params->mctfParam.rtParams.Empty())
+            mctfFilter.FilterStrength = params->mctfParam.rtParams.GetCurParam()->FilterStrength;
 #if defined ENABLE_MCTF_EXT
         mctfFilter.Overlap = params->mctfParam.params.Overlap;
         mctfFilter.TemporalMode = params->mctfParam.params.TemporalMode;
