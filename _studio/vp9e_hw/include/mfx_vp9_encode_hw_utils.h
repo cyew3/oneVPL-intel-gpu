@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -631,7 +631,9 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
     inline mfxU32 CalcNumSurfRecon(mfxVideoParam const & video)
     {
-        return video.mfx.NumRefFrame + CalcNumTasks(video);
+        // encoder arcitecture presumably allows to re-use recon surfaces,
+        // so there is no need to allocate additional surfaces for async depth.
+        return video.mfx.NumRefFrame + 1;
     }
 
     inline mfxU32 CalcNumSurfRaw(mfxVideoParam const & video)

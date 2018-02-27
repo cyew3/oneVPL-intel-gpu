@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -120,6 +120,9 @@ private:
 
     mfxU32 m_width;
     mfxU32 m_height;
+
+    mfxU8 m_CurrOriginalPicIndex;
+    mfxU8 m_MaxTaskCount;
 
     UMC::Mutex m_guard;
 };

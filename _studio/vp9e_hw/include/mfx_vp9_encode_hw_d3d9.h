@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -251,7 +251,8 @@ void FillPpsBuffer(
     VP9MfxVideoParam const & par,
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
-    BitOffsets const &offsets);
+    BitOffsets const &offsets,
+    mfxU8 &original_pic_index);
 
 mfxStatus FillSegmentMap(Task const & task,
     mfxCoreInterface* m_pmfxCore);
@@ -370,6 +371,9 @@ private:
 
     mfxU32 m_width;
     mfxU32 m_height;
+
+    mfxU8 m_CurrOriginalPicIndex;
+    mfxU8 m_MaxTaskCount;
 
     UMC::Mutex m_guard;
 };
