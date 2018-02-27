@@ -3463,7 +3463,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 | | |
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_CODING_OPTION2](#ExtendedBufferID).
-`IntRefType` | Specifies intra refresh type. The major goal of intra refresh is improvement of error resilience without significant impact on encoded bitstream size caused by I frames. The SDK encoder achieves this by encoding part of each frame in refresh cycle using intra MBs. Zero value means no refresh. One means vertical refresh, by column of MBs. This parameter is valid only during initialization. When used with [temporal scalability](#Temporal_scalability), intra refresh applied only to base layer.
+`IntRefType` | Specifies intra refresh type. See the [IntraRefreshTypes](#IntraRefreshTypes). The major goal of intra refresh is improvement of error resilience without significant impact on encoded bitstream size caused by I frames. The SDK encoder achieves this by encoding part of each frame in refresh cycle using intra MBs. `MFX_REFRESH_NO` means no refresh. `MFX_REFRESH_VERTICAL` means vertical refresh, by column of MBs. `MFX_REFRESH_HORIZONTAL` means horizontal refresh, by rows of MBs. `MFX_REFRESH_SLICE` means horizontal refresh by slices without overlapping. In case of `MFX_REFRESH_SLICE` SDK ignores IntRefCycleSize (size of refresh cycle equals number slices).  This parameter is valid during initialization and runtime. When used with [temporal scalability](#Temporal_scalability), intra refresh applied only to base layer.
 `IntRefCycleSize` | Specifies number of pictures within refresh cycle starting from 2. 0 and 1 are invalid values. This parameter is valid only during initialization
 `IntRefQPDelta` | Specifies QP difference for inserted intra MBs. This is signed value in [-51, 51] range. This parameter is valid during initialization and runtime.
 `MaxFrameSize` | Specify maximum encoded frame size in byte. This parameter is used in AVBR and VBR bitrate control modes and ignored in others. The SDK encoder tries to keep frame size below specified limit but minor overshoots are possible to preserve visual quality. This parameter is valid during initialization and runtime.
@@ -8421,6 +8421,26 @@ The `PayloadCtrlFlags` enumerator itemizes additional payload properties.
 **Change History**
 
 This enumerator is available since SDK API 1.19.
+
+
+## <a id='IntraRefreshTypes'>IntraRefreshTypes</a>
+
+**Description**
+
+The `IntraRefreshTypes` enumerator itemizes types of intra refresh.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_REFRESH_NO` | Encode without refresh.
+`MFX_REFRESH_VERTICAL` | Vertical refresh, by column of MBs.
+`MFX_REFRESH_HORIZONTAL` | Horizontal refresh, by rows of MBs.
+`MFX_REFRESH_SLICE` | Horizontal refresh by slices without overlapping.
+
+**Change History**
+
+This enumerator is available since SDK API 1.23.
 
 
 ## <a id='VP9ReferenceFrame'>VP9ReferenceFrame</a>
