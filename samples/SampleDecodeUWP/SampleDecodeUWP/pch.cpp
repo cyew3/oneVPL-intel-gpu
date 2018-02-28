@@ -22,7 +22,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "mfxvideo.h"
 
 #include <initguid.h>
-#include "intel_api_factory.h"
 
 msdk_string StatusToString(mfxStatus sts)
 {
