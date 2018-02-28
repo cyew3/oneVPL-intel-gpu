@@ -7,4 +7,8 @@
 \mock_encoder_plugin\
 \sample_mondello\
 \sample_h265_gaa\
+\SampleDecodeUWP\
+\SampleEncodeUWP\
 \_scripts\
+about-the-video.txt
+readme-setup.txt

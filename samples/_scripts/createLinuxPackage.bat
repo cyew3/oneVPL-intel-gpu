@@ -87,8 +87,9 @@ For %%A in ("%filename%") do (
     Set Name=%%~nxA
 )
 rem "c:\Program Files\7-Zip\7z.exe" a -ttar -so %Name%.tar %1 | "c:\Program Files\7-Zip\7z.exe" a -tgzip -si %1.tar.gz
-..\..\..\mdp_msdk-tools\tar\tar cvf t.tar.gz %1.tar
-"c:\Program Files\7-Zip\7z.exe" a -gzip %1.tar %1.tar.gz
-erase %1.tar
+erase %Name%.tar
+..\..\..\mdp_msdk-tools\tar\tar -C %Folder% -cvf %Name%.tar %Name%
+"c:\Program Files\7-Zip\7z.exe" a -tgzip %1.tar.gz %Name%.tar
+erase %Name%.tar
 
 rem echo !!!!!!!! DO NOT FORGET TO COPY OPENCL SAMPLES !!!!!!!!
