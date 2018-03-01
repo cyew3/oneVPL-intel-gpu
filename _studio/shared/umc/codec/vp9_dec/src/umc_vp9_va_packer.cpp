@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_vp9_dec_defs.h"
@@ -547,7 +547,9 @@ void PackerVA::PackPicParams(VADecPictureParameterBufferVP9* picParam, VP9Decode
         picParam->segment_pred_probs[i] = info->segmentation.predProbs[i];
 
     picParam->profile = info->profile;
-    picParam->bit_depth = info->bit_depth - 8;
+    // We need to set bit_depth directly to structure VADecPictureParameterBufferVP9
+    // Calculating to (bit_depth - 8) performs on driver side (to variable BitDepthMinus8)
+    picParam->bit_depth = info->bit_depth;
 }
 
 void PackerVA::PackSliceParams(VASliceParameterBufferVP9* sliceParam, VP9DecoderFrame const* info)
