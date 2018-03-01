@@ -2087,7 +2087,8 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
             return sts;
         }
     }
-
+    // frameorder required for reflist, dbp, and decrefpicmarking operations
+    if (pSurf) pSurf->Data.FrameOrder = m_nFramesRead;
     m_nFramesRead++;
 
     return sts;
