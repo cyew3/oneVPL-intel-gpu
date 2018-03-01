@@ -67,9 +67,23 @@ namespace UMC_AV1_DECODER
     const Ipp8u MAX_SB_SIZE_LOG2              = 6;
     const Ipp8u MI_SIZE_LOG2                  = 2;
     const Ipp8u MAX_MIB_SIZE_LOG2             = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
+
+#if UMC_AV1_DECODER_REV >= 252
+    const Ipp8u  MAX_MB_PLANE                 = 3;
+    const Ipp16u RESTORATION_TILESIZE_MAX     = 256;
+#endif
+
 #endif
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
     const Ipp8u MAX_MODE_LF_DELTAS            = 2;
+
+#if UMC_AV1_DECODER_REV >= 252
+    enum SB_SIZE
+    {
+        BLOCK_64X64 = 0,
+        BLOCK_128x128 = 1,
+    };
+#endif
 
     enum {
         RESET_FRAME_CONTEXT_NONE = 0,
@@ -137,13 +151,24 @@ namespace UMC_AV1_DECODER
     struct SequenceHeader
     {
         int frame_id_numbers_present_flag;
+#if UMC_AV1_DECODER_REV >= 252
+        int frame_id_length;
+        int delta_frame_id_length;
+#else
         int frame_id_length_minus7;
         int delta_frame_id_length_minus2;
+#endif
     };
 
     struct Loopfilter
     {
+#if UMC_AV1_DECODER_REV >= 252
+        Ipp32s filterLevel[2];
+        Ipp32s filterLevelU;
+        Ipp32s filterLevelV;
+#else
         Ipp32s filterLevel;
+#endif
 
         Ipp32s sharpnessLevel;
         Ipp32s lastSharpnessLevel;
@@ -166,6 +191,24 @@ namespace UMC_AV1_DECODER
         Ipp16u beta;
         Ipp16u gamma;
         Ipp16u delta;
+    };
+#endif
+
+#if UMC_AV1_DECODER_REV >= 252
+    enum RestorationType
+    {
+        RESTORE_NONE,
+        RESTORE_WIENER,
+        RESTORE_SGRPROJ,
+        RESTORE_SWITCHABLE,
+        RESTORE_SWITCHABLE_TYPES = RESTORE_SWITCHABLE,
+        RESTORE_TYPES = 4,
+    };
+
+    struct RestorationInfo
+    {
+        RestorationType frameRestorationType;
+        Ipp32s restorationUnitSize;
     };
 #endif
 
@@ -227,6 +270,11 @@ namespace UMC_AV1_DECODER
         Ipp32u tileSizeBytes;
 
         Loopfilter lf;
+
+#if UMC_AV1_DECODER_REV >= 252
+        Ipp32u sbSize;
+        RestorationInfo rstInfo[MAX_MB_PLANE];
+#endif
     };
 
     inline bool IsFrameIntraOnly(FrameHeader const * fh)

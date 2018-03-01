@@ -37,6 +37,8 @@ typedef struct _DXVA_PicEntry_AV1
 #define AV1D_DDI_VERSION 8
 #elif UMC_AV1_DECODER_REV == 251
 #define AV1D_DDI_VERSION 15
+#elif UMC_AV1_DECODER_REV == 252
+#define AV1D_DDI_VERSION 15
 #endif
 
 #if AV1D_DDI_VERSION == 8
@@ -274,8 +276,10 @@ typedef struct _DXVA_Intel_PicParams_AV1
     // UCHAR        refresh_frame_flags;
 
     // deblocking filter
-#if 1
-    // driver still uses single filter level even after switch to DDI 0.12 - let's mimic this behavior so far
+#if UMC_AV1_DECODER_REV <= 252
+    // driver still uses single filter level even after switch to DDI 0.11
+    // for Rev 0.25.1 we mimic this behavior
+    // for Rev 0.25.2 there is no final clarity - let's mimic this behavior so far
     // TODO: change once driver support for different filter levels will be added
     UCHAR       filter_level;                  // [0..63]
 #else

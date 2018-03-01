@@ -205,7 +205,21 @@ namespace UMC_AV1_DECODER
         }
 
         picParam->CurrPic.bPicEntry = (UCHAR)frame->GetMemID();
+        // driver still uses single filter level even after switch to DDI 0.11
+        // for Rev 0 we just use DDI 0.08 with single filter_level
+        // for Rev 0.25.1 we mimic driver's behavior
+        // for Rev 0.25.2 there is no final clarity - let's mimic driver's behavior so far (take filter_level[0] and discard levels for U and V planes)
+        // TODO: change once driver support for different filter levels will be added
+#if UMC_AV1_DECODER_REV > 252
+        picParam->filter_level[0] = (UCHAR)info.lf.filterLevel[0];
+        picParam->filter_level[1] = (UCHAR)info.lf.filterLevel[1];
+        picParam->filter_level_u = (UCHAR)info.lf.filterLevelU;
+        picParam->filter_level_v = (UCHAR)info.lf.filterLevelV;
+#elif UMC_AV1_DECODER_REV == 252
+        picParam->filter_level = (UCHAR)info.lf.filterLevel[0];
+#else
         picParam->filter_level = (UCHAR)info.lf.filterLevel;
+#endif
         picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
         picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
 #if AV1D_DDI_VERSION < 12
