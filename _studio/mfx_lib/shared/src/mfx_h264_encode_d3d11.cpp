@@ -474,7 +474,7 @@ mfxStatus D3D11Encoder::Execute(
             m_compBufDesc.resize(10 + m_slice.size());
             m_pps.NumSlice = mfxU8(m_slice.size());
         }
-    }       
+    }
     // prepare resource list
     // it contains resources in video memory that needed for the encoding operation
     mfxU32       RES_ID_BITSTREAM   = 0;          // bitstream surface takes first place in resourceList
@@ -515,7 +515,7 @@ mfxStatus D3D11Encoder::Execute(
     if (m_pMFEAdapter != NULL)
     {
         ENCODE_MULTISTREAM_INFO streamInfo = m_StreamInfo;
-        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA);
+        m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS);
         m_compBufDesc[bufCnt].DataSize = mfxU32(sizeof(ENCODE_MULTISTREAM_INFO));
         m_compBufDesc[bufCnt].pCompBuffer = &streamInfo;
         bufCnt++;
