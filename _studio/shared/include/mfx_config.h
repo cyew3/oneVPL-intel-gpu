@@ -413,6 +413,10 @@
 #endif
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#define MFX_ENABLE_FOURCC_RGB565
+#endif
+
 #if defined(_WIN32) || defined(_WIN64)
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 #endif

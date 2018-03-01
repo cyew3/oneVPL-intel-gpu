@@ -1566,6 +1566,18 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 #endif
 
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+    case MFX_FOURCC_RGB565:
+        {
+            mfxU8* ptrSrc = pSrc->Data.B;
+            mfxU8* ptrDst = pDst->Data.B;
+            roi.width *= 2;
+            sts = FastCopy::Copy(ptrDst, dstPitch, ptrSrc, srcPitch, roi, copyFlag);
+            MFX_CHECK_STS(sts);
+            break;
+        }
+#endif // MFX_ENABLE_FOURCC_RGB565
+
     case MFX_FOURCC_RGB3:
         {
             mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);

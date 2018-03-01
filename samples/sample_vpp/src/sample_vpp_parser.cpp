@@ -308,6 +308,12 @@ mfxU32 Str2FourCC( msdk_char* strInput )
     {
         fourcc = MFX_FOURCC_YV12;
     }
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+    else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb565")) )
+    {
+        fourcc = MFX_FOURCC_RGB565;
+    }
+#endif // MFX_ENABLE_FOURCC_RGB565
     else if ( 0 == msdk_stricmp(strInput, MSDK_STRING("rgb3")) )
     {
         fourcc = MFX_FOURCC_RGB3;

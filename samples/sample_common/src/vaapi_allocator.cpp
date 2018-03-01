@@ -31,6 +31,11 @@ enum {
     MFX_FOURCC_VP8_SEGMAP  = MFX_MAKEFOURCC('V','P','8','S'),
 };
 
+// TODO: remove this internal definition once it appears in VA API
+#if !defined (VA_FOURCC_R5G6B5)
+#define VA_FOURCC_R5G6B5 MFX_MAKEFOURCC('R','G','1','6')
+#endif // VA_FOURCC_R5G6B5
+
 unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
 {
     switch (fourcc)
@@ -43,6 +48,10 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_UYVY;
     case MFX_FOURCC_YV12:
         return VA_FOURCC_YV12;
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+    case MFX_FOURCC_RGB565:
+        return VA_FOURCC_R5G6B5;
+#endif // MFX_ENABLE_FOURCC_RGB565
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
     case MFX_FOURCC_P8:
@@ -151,6 +160,9 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_YV12 != va_fourcc) &&
                        (VA_FOURCC_YUY2 != va_fourcc) &&
                        (VA_FOURCC_UYVY != va_fourcc) &&
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+                       (VA_FOURCC_R5G6B5 != va_fourcc) &&
+#endif // MFX_ENABLE_FOURCC_RGB565
                        (VA_FOURCC_ARGB != va_fourcc) &&
                        (VA_FOURCC_P010 != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc)))
@@ -449,6 +461,18 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+            case VA_FOURCC_R5G6B5:
+                if (mfx_fourcc == MFX_FOURCC_RGB565)
+                {
+                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->G = ptr->B;
+                    ptr->R = ptr->B;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+#endif // MFX_ENABLE_FOURCC_RGB565
             case VA_FOURCC_ARGB:
                 if (mfx_fourcc == MFX_FOURCC_RGB4)
                 {
