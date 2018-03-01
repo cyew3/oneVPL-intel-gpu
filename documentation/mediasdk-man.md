@@ -3641,7 +3641,7 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `ScanType` | For MPEG2 specifies transform coefficients scan pattern (see [ScanType](#ScanType) enum).
 `EncodedUnitsInfo` | Turn this option ON to make encoded units info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
 `EnableNalUnitType` | If this option is turned ON, then HEVC encoder uses NAL unit type provided by application in [mfxEncodeCtrl](#mfxEncodeCtrl)**::MfxNalUnitType** field. <br><br>This parameter is valid only during initialization.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
-`ExtBrcAdaptiveLTR` | Turn OFF to prevent Adaptive marking of Long Term Reference Frames when using [ExtBRC](#External_Bit_Rate_Control). When ON and using [ExtBRC](#External_Bit_Rate_Control), encoders will mark, modify, or remove LTR frames based on encoding parameters and content properties.
+`ExtBrcAdaptiveLTR` | Turn OFF to prevent Adaptive marking of Long Term Reference Frames when using [ExtBRC](#External_Bit_Rate_Control). When ON and using [ExtBRC](#External_Bit_Rate_Control), encoders will mark, modify, or remove LTR frames based on encoding parameters and content properties. The application must set each input frame's [mfxFrameData](#mfxFrameData)**::FrameOrder** for correct operation of LTR.
 
 
 **Change History**
