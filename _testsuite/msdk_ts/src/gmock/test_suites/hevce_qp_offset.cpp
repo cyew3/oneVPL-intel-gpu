@@ -3,12 +3,15 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+
+//#define DUMP_BS
+#define MAX_P_PYRAMID_WIDTH 3
 
 namespace hevce_qp_offset
 {
@@ -19,6 +22,9 @@ public:
     TestSuite()
         : tsVideoEncoder(MFX_CODEC_HEVC)
         , tsParserHEVC()
+#ifdef DUMP_BS
+        , m_writer("debug_hevce_qp_offset.265")
+#endif
     {
         m_bs_processor = this;
         set_trace_level(0);
@@ -59,12 +65,21 @@ private:
 
     const tc_struct* m_tc;
     mfxI32 m_anchorPOC;
+    mfxU16 m_numRefFrame;
+#ifdef DUMP_BS
+    tsBitstreamWriter m_writer;
+#endif
 };
 
 const mfxU16 B3[3]   = {1,0,1};
 const mfxU16 B7[7]   = {2,1,2,0,2,1,2};
 const mfxU16 B15[15] = {3,2,3,1,3,2,3,0,3,2,3,1,3,2,3};
-const mfxU16 P4[4]   = {0,2,1,2};
+const mfxU16 P[9] = 
+{
+    0, 0, 0, //pattern for pyramid width = 1
+    0, 1, 0, //pattern for pyramid width = 2
+    0, 2, 1, //pattern for pyramid width = 3
+};
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
@@ -75,7 +90,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}
         },
         {},
-        P4, 4
+        P, 0
     },
 /* 01 */
     {
@@ -85,7 +100,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON}
         },
         {-10, -5, 4, },
-        P4, 4
+        P, 0
     },
 /* 02 */
     {
@@ -140,7 +155,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_OFF}
         },
         {0, 2, 4, 8},
-        P4, 4
+        P, 0
     },
 /* 07 */
     {
@@ -150,7 +165,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_OFF}
         },
         {},
-        P4, 4
+        P, 0
     },
 /* 08 */
     {
@@ -192,7 +207,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON}
         },
         { -2, 0, 2},
-        P4, 4
+        P, 0
     },
 };
 
@@ -205,6 +220,10 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     mfxExtCodingOption3& CO3 = m_par;
 
     SetBuffer0(bs);
+
+#ifdef DUMP_BS
+    m_writer.ProcessBitstream(bs, nFrames);
+#endif
 
     auto& AU = ParseOrDie();
     auto& S = AU.pic->slice[0]->slice[0];
@@ -234,9 +253,10 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
         }
         else if (CO3.EnableQPOffset == MFX_CODINGOPTION_ON)
         {
-            mfxI32 maxIdx = BPyr ? m_tc->pattern_size : CO3.NumRefActiveP[0];
+            mfxU16 pyramidWidth = TS_MIN(m_numRefFrame, MAX_P_PYRAMID_WIDTH);
+            mfxI32 maxIdx = BPyr ? m_tc->pattern_size : pyramidWidth;
             mfxI32 idx = (abs(AU.pic->PicOrderCntVal - m_anchorPOC) - BPyr) % maxIdx;
-            mfxU16 layer = m_tc->pattern[idx];
+            mfxU16 layer = BPyr ? m_tc->pattern[idx] : m_tc->pattern[idx + (pyramidWidth - 1) * MAX_P_PYRAMID_WIDTH];
             EXPECT_EQ(QPX + CO3.QPOffset[layer], QP) << " (layer = " << layer << ")";
         }
         else
@@ -304,6 +324,7 @@ int TestSuite::RunTest(unsigned int id)
     if (tc.sts >= 0 && m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
     {
         GetVideoParam();
+        m_numRefFrame = m_par.mfx.NumRefFrame;
         EncodeFrames(50);
     }
 
