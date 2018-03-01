@@ -849,7 +849,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
         guid = DXVA2_INTEL_LOWPOWERENCODE_AVC;
     }
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-    else if (mfeParam && mfeParam->MaxNumFrames > 1 || mfeParam->MFMode < MFX_MF_AUTO)
+    else if (mfeParam && mfeParam->MaxNumFrames > 1 || mfeParam->MFMode >= MFX_MF_AUTO)
     {
         guid = DXVA2_Intel_MFE;
     }

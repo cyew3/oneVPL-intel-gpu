@@ -876,7 +876,23 @@ mfxU32 GetDefaultLCUSize(MfxVideoParam const & par,
 
     return LCUSize;
 }
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+mfxU16 GetDefaultMFECount(MfxVideoParam const & par,
+    ENCODE_CAPS_HEVC const & hwCaps)
+{
+    par; hwCaps;
+    // 4 by default now
+    return 4;
+}
 
+mfxU32 GetDefaultMFETimeout(MfxVideoParam const & par)
+{
+    par;
+    //10 minutes now for pre-si
+    return 10*60*1000000;
+}
+
+#endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN10
 
 //bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU32& LCUSize)
@@ -1569,6 +1585,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     mfxExtDirtyRect* DirtyRect = &par.m_ext.DirtyRect;
 #endif // MFX_ENABLE_HEVCE_DIRTY_RECT
 
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    mfxExtMultiFrameParam* mfeParam = &par.m_ext.mfeParam;
+    mfxExtMultiFrameControl* mfeControl = &par.m_ext.mfeControl;
+#endif // MFX_ENABLE_HEVCE_DIRTY_RECT
     changed += CheckTriStateOption(par.mfx.LowPower);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
@@ -2647,6 +2667,24 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckTriStateOption(par.m_ext.DDI.QpAdjust);
 #endif //defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    if (mfeParam !=NULL && mfeParam->MaxNumFrames > 1)
+    {
+        if (mfeParam->MFMode == MFX_MF_DEFAULT)
+        {
+            //only Manual mode for pre-si now
+            mfeParam->MFMode = MFX_MF_MANUAL;
+        }
+        mfxU16 maxNumFrames = GetDefaultMFECount(par, caps);
+        if (mfeParam->MaxNumFrames > maxNumFrames)
+            mfeParam->MaxNumFrames = maxNumFrames;
+        if (mfeControl != NULL && mfeControl->Timeout == 0)
+        {
+            mfeControl->Timeout = GetDefaultMFETimeout(par);
+        }
+    }
+
+#endif
     if (sts == MFX_ERR_NONE && changed)
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 

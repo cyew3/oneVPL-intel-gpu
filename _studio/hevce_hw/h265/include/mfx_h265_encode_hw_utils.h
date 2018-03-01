@@ -393,6 +393,11 @@ typedef struct _Task : DpbFrame
 #endif  // MFX_ENABLE_HEVCE_DIRTY_RECT
 
     mfxU16        m_SkipMode;
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    mfxU32        m_mfeTimeToWait;
+    bool          m_flushMfe;
+#endif // MFX_ENABLE_MFE
+
 
 }Task;
 
@@ -458,6 +463,10 @@ namespace ExtBuffer
          MFX_EXTBUFF_MBQP,
          MFX_EXTBUFF_ENCODER_ROI,
          MFX_EXTBUFF_DIRTY_RECTANGLES,
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+         MFX_EXTBUFF_MULTI_FRAME_PARAM,
+         MFX_EXTBUFF_MULTI_FRAME_CONTROL,
+#endif
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI
          MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME,
          MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO
@@ -511,6 +520,11 @@ namespace ExtBuffer
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI
         EXTBUF(mfxExtMasteringDisplayColourVolume, MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME);
         EXTBUF(mfxExtContentLightLevelInfo, MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO);
+#endif
+
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        EXTBUF(mfxExtMultiFrameParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
+        EXTBUF(mfxExtMultiFrameControl, MFX_EXTBUFF_MULTI_FRAME_CONTROL);
 #endif
     #undef EXTBUF
 
@@ -860,6 +874,10 @@ public:
 #endif
 #if !defined(MFX_EXT_BRC_DISABLE)
         mfxExtBRC                   extBRC;
+#endif
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        mfxExtMultiFrameParam       mfeParam;
+        mfxExtMultiFrameControl     mfeControl;
 #endif
         mfxExtEncoderROI            ROI;
         mfxExtDirtyRect             DirtyRect;

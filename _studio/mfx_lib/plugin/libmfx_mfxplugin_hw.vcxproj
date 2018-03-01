@@ -797,6 +797,7 @@
     <ClCompile Include="..\..\shared\src\libmfx_core_factory.cpp" />
     <ClCompile Include="..\..\shared\src\libmfx_core_hw.cpp" />
     <ClCompile Include="..\..\shared\src\mfx_dxva2_device.cpp" />
+    <ClCompile Include="..\..\shared\src\mfx_mfe_adapter_dxva.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_d3d11.cpp" />
     <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_d3d9.cpp" />
@@ -919,6 +920,8 @@
     <ClInclude Include="..\genx\copy_kernels\include\tgllp_copy_kernel_genx_isa.h" />
     <ClInclude Include="..\genx\copy_kernels\include\tgl_copy_kernel_genx_isa.h" />
     <ClInclude Include="..\scheduler\include\mfx_dependency_item.h" />
+    <ClInclude Include="..\shared\include\encoder_ddi.hpp" />
+    <ClInclude Include="..\shared\include\encoding_ddi.h" />
     <ClInclude Include="..\shared\include\mfx_check_hardware_support.h" />
     <ClInclude Include="..\shared\include\mfx_common_decode_int.h" />
     <ClInclude Include="..\shared\include\mfx_common_int.h" />

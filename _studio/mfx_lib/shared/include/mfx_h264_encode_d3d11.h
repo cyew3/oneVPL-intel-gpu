@@ -316,33 +316,7 @@ namespace MfxHwH264Encode
     };
 
 }; // namespace
-namespace
-{
-    HRESULT DecoderExtension(
-        ID3D11VideoContext *context,
-        ID3D11VideoDecoder *decoder,
-        D3D11_VIDEO_DECODER_EXTENSION & param)
-    {
-#ifdef DEBUG
-        printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
-#endif 
-        HRESULT hr = S_OK;
-        try
-        {
-            hr = context->DecoderExtension(decoder, &param);
-        }
-        catch (...)
-        {
-            MFX_LTRACE((MFX_TRACE_PARAMS, MFX_TRACE_LEVEL_EXTCALL, "", "Exception at DecoderExtension: context=%p decoder=%p function=%d", context, decoder, param.Function));
-            throw;
-        };
 
-#ifdef DEBUG
-        printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
-#endif 
-        return hr;
-    }
-};
 #endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && (MFX_D3D11_ENABLED)
 #endif // __MFX_H264_ENCODE_D3D11__H
 /* EOF */

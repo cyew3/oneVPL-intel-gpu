@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -44,24 +44,6 @@ enum
     MFX_FOURCC_P8_MBDATA = MFX_MAKEFOURCC('P','8','M','B'),
 };
 
-
-namespace
-{
-    HRESULT DecoderExtension(
-        ID3D11VideoContext *            context,
-        ID3D11VideoDecoder *            decoder,
-        D3D11_VIDEO_DECODER_EXTENSION & param)
-    {
-#ifdef DEBUG
-        printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
-#endif
-        HRESULT hr = context->DecoderExtension(decoder, &param);
-#ifdef DEBUG
-        printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
-#endif
-        return hr;
-    }
-};
 
 D3D11Encoder::D3D11Encoder(VideoCORE* core) 
 : m_core(core) 

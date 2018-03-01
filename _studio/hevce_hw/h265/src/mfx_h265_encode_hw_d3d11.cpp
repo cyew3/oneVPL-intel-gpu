@@ -38,6 +38,10 @@ D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
     , m_maxSlices(0)
     , m_sps()
     , m_pps()
+#if defined(MFX_ENABLE_MFE)
+    , m_StreamInfo()
+    , m_pMfeAdapter(NULL)
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT 
 #if defined(MFX_ENABLE_HEVCE_SCC)
@@ -93,93 +97,109 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         MFX_CHECK(m_vdevice, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(m_vcontext, MFX_ERR_DEVICE_FAILED);
     }
-
-    // [1] Query supported decode profiles
+    if(guid != DXVA2_Intel_MFE)
     {
-        bool isFound = false;
-
-        UINT profileCount;
+        // [1] Query supported decode profiles
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
-            profileCount = m_vdevice->GetVideoDecoderProfileCount();
+            bool isFound = false;
+
+            UINT profileCount;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfileCount");
+                profileCount = m_vdevice->GetVideoDecoderProfileCount();
+            }
+            assert( profileCount > 0 );
+
+            for (UINT i = 0; i < profileCount; i ++)
+            {
+                GUID profileGuid;
+
+                {
+                    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
+                    hr = m_vdevice->GetVideoDecoderProfile(i, &profileGuid);
+                }
+                MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+                if (m_guid == profileGuid)
+                {
+                    isFound = true;
+                    break;
+                }
+            }
+            MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
         }
-        assert( profileCount > 0 );
 
-        for (UINT i = 0; i < profileCount; i ++)
+        // [2] Query the supported encode functions
         {
-            GUID profileGuid;
+            desc.SampleWidth  = m_width;
+            desc.SampleHeight = m_height;
+            desc.OutputFormat = DXGI_FORMAT_NV12;
+            desc.Guid         = m_guid;
 
             {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderProfile");
-                hr = m_vdevice->GetVideoDecoderProfile(i, &profileGuid);
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
+                hr = m_vdevice->GetVideoDecoderConfigCount(&desc, &count);
             }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
 
-            if (m_guid == profileGuid)
+        // [3] CreateVideoDecoder
+        {
+            desc.SampleWidth  = m_width;
+            desc.SampleHeight = m_height;
+            desc.OutputFormat = DXGI_FORMAT_NV12;
+            desc.Guid         = m_guid;
+
+    #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+            config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;
+            config.guidConfigBitstreamEncryption = m_pavp ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
+    #else
+            config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;
+            config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
+    #endif
+            if (!!m_vdecoder)
+                m_vdecoder.Release();
+
             {
-                isFound = true;
-                break;
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+                hr = m_vdevice->CreateVideoDecoder(&desc, &config, &m_vdecoder);
             }
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
-        MFX_CHECK(isFound, MFX_ERR_UNSUPPORTED);
-    }
 
-    // [2] Query the supported encode functions
-    {
-        desc.SampleWidth  = m_width;
-        desc.SampleHeight = m_height;
-        desc.OutputFormat = DXGI_FORMAT_NV12;
-        desc.Guid         = m_guid;
-
+        // [4] Query the encoding device capabilities
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetVideoDecoderConfigCount");
-            hr = m_vdevice->GetVideoDecoderConfigCount(&desc, &count);
+            D3D11_VIDEO_DECODER_EXTENSION ext = {};
+            ext.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+            ext.pPrivateInputData = 0;
+            ext.PrivateInputDataSize = 0;
+            ext.pPrivateOutputData = &m_caps;
+            ext.PrivateOutputDataSize = sizeof(m_caps);
+            ext.ResourceCount = 0;
+            ext.ppResourceList = 0;
+
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
+                hr = DecoderExtension(ext);
+            }
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
         }
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
     }
-
-    // [3] CreateVideoDecoder
+#if defined(MFX_ENABLE_MFE)
+    else
     {
-        desc.SampleWidth  = m_width;
-        desc.SampleHeight = m_height;
-        desc.OutputFormat = DXGI_FORMAT_NV12;
-        desc.Guid         = m_guid;
+        m_pMfeAdapter = CreatePlatformMFEEncoder(core);
+        if (m_pMfeAdapter == NULL)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        m_pMfeAdapter->Create(m_vdevice, m_vcontext);
+        ENCODE_CAPS_HEVC * caps = (ENCODE_CAPS_HEVC *)m_pMfeAdapter->GetCaps(DDI_CODEC_HEVC);
+        if(caps == NULL)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        m_caps = *caps;
+        m_vdecoder = m_pMfeAdapter->GetVideoDecoder();
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        config.ConfigDecoderSpecific         = m_widi ? (ENCODE_ENC_PAK | ENCODE_WIDI) : ENCODE_ENC_PAK;
-        config.guidConfigBitstreamEncryption = m_pavp ? DXVA2_INTEL_PAVP : DXVA_NoEncrypt;
-#else
-        config.ConfigDecoderSpecific         = ENCODE_ENC_PAK;
-        config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
+    }
 #endif
-        if (!!m_vdecoder)
-            m_vdecoder.Release();
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
-            hr = m_vdevice->CreateVideoDecoder(&desc, &config, &m_vdecoder);
-        }
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-    }
-
-    // [4] Query the encoding device capabilities
-    {
-        D3D11_VIDEO_DECODER_EXTENSION ext = {};
-        ext.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
-        ext.pPrivateInputData = 0;
-        ext.PrivateInputDataSize = 0;
-        ext.pPrivateOutputData = &m_caps;
-        ext.PrivateOutputDataSize = sizeof(m_caps);
-        ext.ResourceCount = 0;
-        ext.ppResourceList = 0;
-
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "DecoderExtension");
-            hr = DecoderExtension(ext);
-        }
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-    }
-
     Trace(m_guid, 0);
     Trace(m_caps, 0);
 
@@ -228,7 +248,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
         }
     }
 #endif
-
+    /* not used
     ext.Function = ENCODE_ENC_CTRL_CAPS_ID;
     ext.pPrivateOutputData = &m_capsQuery;
     ext.PrivateOutputDataSize = sizeof(m_capsQuery);
@@ -242,7 +262,14 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
 
     hr = DecoderExtension(ext);
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
-
+    */
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMfeAdapter != NULL)
+    {
+        m_StreamInfo.CodecId = DDI_CODEC_HEVC;
+        m_pMfeAdapter->Join(par.m_ext.mfeParam, m_StreamInfo, false, (int)m_feedbackPool.size());
+    }
+#endif
     FillSpsBuffer(par, m_caps, m_sps);
     FillPpsBuffer(par, m_caps, m_pps);
     FillSliceBuffer(par, m_sps, m_pps, m_slice);
@@ -458,7 +485,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 #endif
     executeParams.pCompressedBuffers = &m_cbd[0];
     Zero(m_cbd);
-
+    
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
@@ -491,6 +518,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
 
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
+
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMfeAdapter != NULL)
+    {
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS, m_StreamInfo, 1);
+    }
+#endif
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
     if (task.m_bCUQPMap)
@@ -670,6 +704,15 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Execute(Task const & task, 
             hr = m_vcontext->DecoderEndFrame(m_vdecoder);
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+#endif
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMfeAdapter != NULL)
+        {
+            mfxU32 timeout = task.m_mfeTimeToWait;
+            mfxStatus sts = m_pMfeAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), false);
+            if (sts != MFX_ERR_NONE)
+                return sts;
+        }
 #endif
 #endif
     }

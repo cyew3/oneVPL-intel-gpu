@@ -106,6 +106,8 @@
     <ClInclude Include="include\mfx_camera_plugin_dx11.h" />
     <ClInclude Include="include\mfx_camera_plugin_dx9.h" />
     <ClInclude Include="include\mfx_camera_plugin_utils.h" />
+    <ClInclude Include="..\mfx_lib\shared\include\encoder_ddi.hpp" />
+    <ClInclude Include="..\mfx_lib\shared\include\encoding_ddi.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +143,7 @@
     <ClCompile Include="src\mfx_camera_plugin_dx11.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_dx9.cpp" />
     <ClCompile Include="src\mfx_camera_plugin_utils.cpp" />
+    <ClCompile Include="..\shared\src\mfx_mfe_adapter_dxva.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="camera_pipe.rc" />

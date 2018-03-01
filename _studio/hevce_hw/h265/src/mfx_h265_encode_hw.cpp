@@ -327,10 +327,16 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
 
     m_ddi.reset( CreateHWh265Encoder(&m_core, ddiType) );
     MFX_CHECK(m_ddi.get(), MFX_ERR_UNSUPPORTED);
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12) && defined(MFX_VA_WIN)
+    bool mfeEnabled = (m_vpar.m_ext.mfeParam.MaxNumFrames > 1) || (m_vpar.m_ext.mfeParam.MFMode >= MFX_MF_AUTO);
+    GUID encoder_guid = mfeEnabled ? DXVA2_Intel_MFE : GetGUID(m_vpar);
+#else
+    GUID encoder_guid = GetGUID(m_vpar);
+#endif
 
     sts = m_ddi->CreateAuxilliaryDevice(
         &m_core,
-        GetGUID(m_vpar),
+        encoder_guid,
         m_vpar.m_ext.HEVCParam.PicWidthInLumaSamples,
         m_vpar.m_ext.HEVCParam.PicHeightInLumaSamples);
     MFX_CHECK(MFX_SUCCEEDED(sts), MFX_ERR_DEVICE_FAILED);

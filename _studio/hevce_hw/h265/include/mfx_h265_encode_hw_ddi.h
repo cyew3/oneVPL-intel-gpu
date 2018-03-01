@@ -17,7 +17,9 @@
 
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_bs.h"
-
+#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+#include "mfx_mfe_adapter_dxva.h"
+#endif
 #include <memory>
 #include <vector>
 
@@ -168,7 +170,9 @@ const GUID GuidTable[3][3][3] =
 #endif
 };
 #endif
-
+#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+MFEDXVAEncoder* CreatePlatformMFEEncoder(MFXCoreInterface* core);
+#endif
 mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* pCore);
 
 class DriverEncoder;

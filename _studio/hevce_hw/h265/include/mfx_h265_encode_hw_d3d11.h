@@ -89,7 +89,10 @@ private:
     CComPtr<ID3D11VideoDecoder>                 m_vdecoder;
     CComQIPtr<ID3D11VideoDevice>                m_vdevice;
     CComQIPtr<ID3D11VideoContext>               m_vcontext;
-
+#if defined(MFX_ENABLE_MFE)
+    MFEDXVAEncoder*                             m_pMfeAdapter;
+    ENCODE_MULTISTREAM_INFO                     m_StreamInfo;
+#endif
     ENCODE_CAPS_HEVC                            m_caps;
     ENCODE_ENC_CTRL_CAPS                        m_capsQuery;
     ENCODE_ENC_CTRL_CAPS                        m_capsGet;

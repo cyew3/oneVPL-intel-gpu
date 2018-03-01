@@ -736,6 +736,10 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     ExtBuffer::Construct(par, m_ext.DisplayColour, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.LightLevel, m_ext.m_extParam, base.NumExtParam);
 #endif
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    ExtBuffer::Construct(par, m_ext.mfeParam, m_ext.m_extParam, base.NumExtParam);
+    ExtBuffer::Construct(par, m_ext.mfeControl, m_ext.m_extParam, base.NumExtParam);
+#endif
 }
 
 mfxStatus MfxVideoParam::FillPar(mfxVideoParam& par, bool query)
@@ -762,7 +766,10 @@ mfxStatus MfxVideoParam::GetExtBuffers(mfxVideoParam& par, bool query)
     ExtBuffer::Set(par, m_ext.CO);
     ExtBuffer::Set(par, m_ext.CO2);
     ExtBuffer::Set(par, m_ext.CO3);
-
+#if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    ExtBuffer::Set(par, m_ext.mfeParam);
+    ExtBuffer::Set(par, m_ext.mfeControl);
+#endif
 #if !defined(MFX_EXT_BRC_DISABLE)
     ExtBuffer::Set(par, m_ext.ResetOpt);
 #endif

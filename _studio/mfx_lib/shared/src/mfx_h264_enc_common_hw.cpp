@@ -857,7 +857,7 @@ namespace
         }
         else
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        if (platform >= MFX_HW_TGL)
+        if (platform >= MFX_HW_TGL_HP)
             return 4;
 #endif
             return 1;//to be adjusted based on performance measurements on other platforms

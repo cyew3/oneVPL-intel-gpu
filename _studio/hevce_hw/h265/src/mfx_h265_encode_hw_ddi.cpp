@@ -16,6 +16,7 @@
 #if defined (MFX_VA_WIN)
 #include "mfx_h265_encode_hw_d3d9.h"
 #include "mfx_h265_encode_hw_d3d11.h"
+
 #elif defined (MFX_VA_LINUX)
 #include "mfx_h265_encode_vaapi.h"
 #endif
@@ -109,6 +110,33 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
 
     return 0;
 }
+
+#if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
+MFEDXVAEncoder* CreatePlatformMFEEncoder(MFXCoreInterface* core)
+{
+
+    if (core)
+    {
+        mfxCoreParam par = {};
+
+        if (core->GetCoreParam(&par))
+            return NULL;
+        MFEDXVAEncoder * mfe_adapter = NULL;
+        switch (par.Impl & 0xF00)
+        {
+        case MFX_IMPL_VIA_D3D11:
+            //to be switched to QueryCoreInterface directly when encoder moved to library.
+            core->GetHandle((mfxHandleType)9, ((mfxHDL*)&mfe_adapter));
+            return mfe_adapter;
+        case MFX_IMPL_VIA_D3D9:
+        default:
+            return NULL;
+        }
+    }
+
+    return NULL;
+}
+#endif
 
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
 mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)

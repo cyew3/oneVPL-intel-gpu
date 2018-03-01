@@ -14,13 +14,39 @@
 #define _ENCODER_DDI_HPP
 
 #if defined(_WIN32) || defined(_WIN64)
-
+#include "mfx_trace.h"
 #define DDI_086
 #define AVC_DDI_VERSION_0952
 #define REPARTITION_CHECK
 
 //#include "d3dumddi.h"
+namespace
+{
+    HRESULT DecoderExtension(
+        ID3D11VideoContext *context,
+        ID3D11VideoDecoder *decoder,
+        D3D11_VIDEO_DECODER_EXTENSION & param)
+    {
+#ifdef DEBUG
+        printf("\rDecoderExtension: context=%p decoder=%p function=%d\n", context, decoder, param.Function); fflush(stdout);
+#endif
+        HRESULT hr = S_OK;
+        try
+        {
+            hr = context->DecoderExtension(decoder, &param);
+        }
+        catch (...)
+        {
+            MFX_LTRACE((MFX_TRACE_PARAMS, MFX_TRACE_LEVEL_EXTCALL, "", "Exception at DecoderExtension: context=%p decoder=%p function=%d", context, decoder, param.Function));
+            throw;
+        };
 
+#ifdef DEBUG
+        printf("\rDecoderExtension: hresult=%d\n", hr); fflush(stdout);
+#endif
+        return hr;
+    }
+};
 // structure to pass surface list to LRB Emulation DLL for Windows
 typedef struct
 {
