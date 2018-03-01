@@ -812,7 +812,7 @@ typedef struct {
 #if (MFX_VERSION >= 1026)
     mfxU16      ExtBrcAdaptiveLTR;         /* tri-state option for ExtBRC */
 #else
-    mfxU16      reserved9
+    mfxU16      reserved9;
 #endif
     mfxU16      reserved[163];
 } mfxExtCodingOption3;
