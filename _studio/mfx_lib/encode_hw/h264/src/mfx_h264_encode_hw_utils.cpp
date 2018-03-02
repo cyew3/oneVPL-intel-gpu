@@ -1220,6 +1220,25 @@ namespace HwUtils
         mfxU32                           m_extFrameTag;
     };
 
+    struct FindInDpbByFrameOrder
+    {
+        FindInDpbByFrameOrder(
+            std::vector<Reconstruct> const & recons,
+            mfxU32                           frameOrder)
+            : m_recons(recons)
+            , m_frameOrder(frameOrder)
+        {
+        }
+
+        bool operator ()(DpbFrame const & dpbFrame) const
+        {
+            return m_recons[dpbFrame.m_frameIdx].m_frameOrder == m_frameOrder;
+        }
+
+        std::vector<Reconstruct> const & m_recons;
+        mfxU32                           m_frameOrder;
+    };
+
     struct OrderByFrameNumWrap
     {
         OrderByFrameNumWrap(
@@ -1291,6 +1310,9 @@ void TaskManager::UpdateDpb(
         ? &task.m_internalListCtrl
         : ext_ctrl;
 
+    bool useInternalFrameOrder = false;
+    if (ctrl && ctrl == &task.m_internalListCtrl) useInternalFrameOrder = true;
+
     if (type & MFX_FRAMETYPE_IDR)
     {
         bool currFrameIsLongTerm = false;
@@ -1304,7 +1326,7 @@ void TaskManager::UpdateDpb(
         {
             for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != 0xffffffff; i++)
             {
-                if (ctrl->LongTermRefList[i].FrameOrder == task.m_extFrameTag)
+                if (ctrl->LongTermRefList[i].FrameOrder == (useInternalFrameOrder ? task.m_frameOrder : task.m_extFrameTag))
                 {
                     marking.long_term_reference_flag = 1;
                     currFrameIsLongTerm = true;
@@ -1350,10 +1372,22 @@ void TaskManager::UpdateDpb(
 
             for (mfxU32 i = 0; i < 16 && ctrl->RejectedRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
             {
-                DpbFrame * ref = std::find_if(
-                    currDpb.Begin(),
-                    currDpb.End(),
-                    HwUtils::FindInDpbByExtFrameTag(m_recons, ctrl->RejectedRefList[i].FrameOrder));
+                DpbFrame * ref = currDpb.End();
+
+                if (!useInternalFrameOrder)
+                {
+                    ref = std::find_if(
+                        currDpb.Begin(),
+                        currDpb.End(),
+                        HwUtils::FindInDpbByExtFrameTag(m_recons, ctrl->RejectedRefList[i].FrameOrder));
+                }
+                else
+                {
+                    ref = std::find_if(
+                        currDpb.Begin(),
+                        currDpb.End(),
+                        HwUtils::FindInDpbByFrameOrder(m_recons, ctrl->RejectedRefList[i].FrameOrder));
+                }
 
                 if (ref != currDpb.End())
                 {
@@ -1374,10 +1408,21 @@ void TaskManager::UpdateDpb(
 
             for (mfxU32 i = 0; i < 16 && ctrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
             {
-                DpbFrame * dpbFrame = std::find_if(
-                    currDpb.Begin(),
-                    currDpb.End(),
-                    HwUtils::FindInDpbByExtFrameTag(m_recons, ctrl->LongTermRefList[i].FrameOrder));
+                DpbFrame * dpbFrame = currDpb.End();
+                if (!useInternalFrameOrder)
+                {
+                    dpbFrame = std::find_if(
+                        currDpb.Begin(),
+                        currDpb.End(),
+                        HwUtils::FindInDpbByExtFrameTag(m_recons, ctrl->LongTermRefList[i].FrameOrder));
+                }
+                else
+                {
+                    dpbFrame = std::find_if(
+                        currDpb.Begin(),
+                        currDpb.End(),
+                        HwUtils::FindInDpbByFrameOrder(m_recons, ctrl->LongTermRefList[i].FrameOrder));
+                }
 
                 if (dpbFrame != currDpb.End() && dpbFrame->m_longterm == 0)
                 {
@@ -1403,7 +1448,7 @@ void TaskManager::UpdateDpb(
 
                     dpbFrame->m_longterm = 1;
                 }
-                else if (ctrl->LongTermRefList[i].FrameOrder == task.m_extFrameTag)
+                else if (ctrl->LongTermRefList[i].FrameOrder == (useInternalFrameOrder ? task.m_frameOrder : task.m_extFrameTag))
                 {
                     // frame is not in dpb, but it is a current frame
                     // mark it as 'long-term'
