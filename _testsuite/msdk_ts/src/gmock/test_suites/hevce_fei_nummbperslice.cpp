@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -123,95 +123,119 @@ namespace hevce_fei_nummbperslice {
             { SET_RESOLUTION_176x144,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
         } },
+        {/*04*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_176x144,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 100},
+        } },
 
         // 352x288
-        {/*04*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_352x288,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
-        } },
         {/*05*/ MFX_ERR_NONE,
             { SET_RESOLUTION_352x288,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 30 },
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
         } },
         {/*06*/ MFX_ERR_NONE,
             { SET_RESOLUTION_352x288,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 99 },
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 30 },
         } },
         {/*07*/ MFX_ERR_NONE,
             { SET_RESOLUTION_352x288,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 99 },
+        } },
+        {/*08*/ MFX_ERR_NONE,
+            { SET_RESOLUTION_352x288,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
+        } },
+        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_352x288,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 100 },
         } },
 
         // 720x480
-        {/*08*/ MFX_ERR_NONE,
+        {/*10*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
             { SET_RESOLUTION_720x480,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
-        } },
-        {/*09*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_720x480,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 23 },
-        } },
-        {/*10*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_720x480,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 150 },
         } },
         {/*11*/ MFX_ERR_NONE,
             { SET_RESOLUTION_720x480,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 23 },
+        } },
+        {/*12*/ MFX_ERR_NONE,
+            { SET_RESOLUTION_720x480,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 150 },
+        } },
+        {/*13*/ MFX_ERR_NONE,
+            { SET_RESOLUTION_720x480,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
+        } },
+        {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_720x480,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 300 },
         } },
 
         // 1280x720
-        {/*12*/ MFX_ERR_NONE,
+        {/*15*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
             { SET_RESOLUTION_1280x720,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
         } },
-        {/*13*/ MFX_ERR_NONE,
+        {/*16*/ MFX_ERR_NONE,
             { SET_RESOLUTION_1280x720,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 40 },
         } },
-        {/*14*/ MFX_ERR_NONE,
+        {/*17*/ MFX_ERR_NONE,
             { SET_RESOLUTION_1280x720,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 95 },
         } },
-        {/*15*/ MFX_ERR_NONE,
+        {/*18*/ MFX_ERR_NONE,
             { SET_RESOLUTION_1280x720,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
         } },
+        {/*19*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_1280x720,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1000 },
+        } },
 
         // 1920x1088
-        {/*16*/ MFX_ERR_NONE,
+        {/*20*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
             { SET_RESOLUTION_1920x1088,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
-        } },
-        {/*17*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_1920x1088,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 30 },
-        } },
-        {/*18*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_1920x1088,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 180 },
-        } },
-        {/*19*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_1920x1088,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
-        } },
-
-        // 4096x2160
-        {/*20*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_4096x2160,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
         } },
         {/*21*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_4096x2160,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 60 },
+            { SET_RESOLUTION_1920x1088,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 30 },
         } },
         {/*22*/ MFX_ERR_NONE,
-            { SET_RESOLUTION_4096x2160,
+            { SET_RESOLUTION_1920x1088,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 180 },
         } },
         {/*23*/ MFX_ERR_NONE,
+            { SET_RESOLUTION_1920x1088,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
+        } },
+        {/*24*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_1920x1088,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 3000 },
+        } },
+
+        // 4096x2160
+        {/*25*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_4096x2160,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 1 },
+        } },
+        {/*26*/ MFX_ERR_NONE,
+            { SET_RESOLUTION_4096x2160,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 60 },
+        } },
+        {/*27*/ MFX_ERR_NONE,
+            { SET_RESOLUTION_4096x2160,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 180 },
+        } },
+        {/*28*/ MFX_ERR_NONE,
             { SET_RESOLUTION_4096x2160,
             { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 0 },
+        } },
+        {/*29*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
+            { SET_RESOLUTION_4096x2160,
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 9000 },
         } },
     };
 
@@ -233,9 +257,17 @@ namespace hevce_fei_nummbperslice {
         SETPARS(m_par, MFX_PAR);
         SETPARS(m_par, CDO2_PAR);
 
-        g_tsStatus.expect(tc.exp_sts);
-        Init();
+        mfxExtCodingOption2& co2 = m_par;
+        mfxU16 before_query = co2.NumMbPerSlice;
 
+        g_tsStatus.expect(tc.exp_sts);
+        Query();
+
+        if (tc.exp_sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
+            EXPECT_NE(before_query, co2.NumMbPerSlice) << "ERROR: NumMbPerSlice was not changed";
+        }
+
+        Init();
         EncodeFrames(4);
 
         TS_END;
