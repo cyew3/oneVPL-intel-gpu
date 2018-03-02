@@ -3130,20 +3130,21 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
     mfxFrameSurface1 in = *inExternal;
     mfxStatus st = MFX_ERR_NONE;
 
-    if (out->m_picStruct != PROGR) {
-        if (out->m_bottomFieldFlag) {
-            in.Data.Y += in.Data.Pitch;
-            in.Data.UV += in.Data.Pitch;
-        }
-        in.Data.Pitch *= 2;
-    }
-
     // attach original surface to frame
     out->m_origin = m_inputFrameDataPool.Allocate();
 
     if (m_videoParam.inputVideoMem) { //   from d3d to internal frame in system memory
         if ((st = fa.Lock(fa.pthis,in.Data.MemId, &in.Data)) != MFX_ERR_NONE)
             Throw(std::runtime_error("LockExternalFrame failed"));
+
+        if (out->m_picStruct != PROGR) {
+            if (out->m_bottomFieldFlag) {
+                in.Data.Y += in.Data.Pitch;
+                in.Data.UV += in.Data.Pitch;
+            }
+            in.Data.Pitch *= 2;
+        }
+
         //(m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_NV16)
         //    ? CopyAndPad<Ipp8u>(in, *out->m_origin, m_videoParam.fourcc)
         //    : CopyAndPad<Ipp16u>(in, *out->m_origin, m_videoParam.fourcc);
@@ -3170,6 +3171,14 @@ void H265Encoder::InitNewFrame(Frame *out, mfxFrameSurface1 *inExternal)
             if ((st = fa.Lock(fa.pthis,in.Data.MemId, &in.Data)) != MFX_ERR_NONE)
                 Throw(std::runtime_error("LockExternalFrame failed"));
             locked = true;
+        }
+
+        if (out->m_picStruct != PROGR) {
+            if (out->m_bottomFieldFlag) {
+                in.Data.Y += in.Data.Pitch;
+                in.Data.UV += in.Data.Pitch;
+            }
+            in.Data.Pitch *= 2;
         }
 
         (m_videoParam.fourcc == MFX_FOURCC_NV12 || m_videoParam.fourcc == MFX_FOURCC_NV16)
