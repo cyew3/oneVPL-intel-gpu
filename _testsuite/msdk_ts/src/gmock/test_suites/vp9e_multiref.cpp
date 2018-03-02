@@ -780,13 +780,23 @@ namespace vp9e_multiref
                     }
                 }
 
-                mfxU32 inter_only_frames_qnt = CalculateInterOnlyFramesQnt(sizes_vector);
+                if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+                {
+                    mfxU32 inter_only_frames_qnt = CalculateInterOnlyFramesQnt(sizes_vector);
 
-                printf("===> TOTAL STREAM SIZE IS %d [%d inter-only frames]\n", all_frames_size, inter_only_frames_qnt);
+                    printf("===> TOTAL STREAM SIZE IS %d [%d inter-only frames]\n", all_frames_size, inter_only_frames_qnt);
 
-                EXPECT_EQ(tc.expected_inter_only_frames_qnt, inter_only_frames_qnt)
-                    << "ERROR: DPB-buffer not utilized in the expected way: should be " <<
-                    tc.expected_inter_only_frames_qnt << " inter-predicted frames, but detected " << inter_only_frames_qnt;
+                    EXPECT_EQ(tc.expected_inter_only_frames_qnt, inter_only_frames_qnt)
+                        << "ERROR: DPB-buffer not utilized in the expected way: should be " <<
+                        tc.expected_inter_only_frames_qnt << " inter-predicted frames, but detected " << inter_only_frames_qnt;
+                }
+                else
+                {
+                    // VP9e encoder inserts frames with higher quality several times per second when BRC is used.
+                    // That makes impossible to estimate predictions to frames in DPB by a frame size.
+                    // More compicatied algorithm required or stream parser with ability to extract motion vectors.
+                    g_tsLog << "INFO: DPB-buffer utilization check skipped for BRC-based encoding cases!\n";
+                }
             }
         }
 
