@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\builder\MSDK.Common.props" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -97,7 +98,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include;$(MSDK_API_ROOT)/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -115,7 +116,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include;$(MSDK_API_ROOT)/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -133,7 +134,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include;$(MSDK_API_ROOT)/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -156,7 +157,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;$(INTELMEDIASDKROOT)\include;..\..\..\mdp_msdk-lib\_studio\shared\include;..\..\..\mdp_msdk-contrib\yaml-cpp\include;$(MSDK_API_ROOT)/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ControlFlowGuard>Guard</ControlFlowGuard>
     </ClCompile>
