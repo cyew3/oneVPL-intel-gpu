@@ -1426,7 +1426,7 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     m_EventCache.reset(new EventCache());
-    m_EventCache->Init(m_rec.NumFrameActual);
+    m_EventCache->Init(m_bit.NumFrameActual);
 #endif
 
     return checkStatus;
