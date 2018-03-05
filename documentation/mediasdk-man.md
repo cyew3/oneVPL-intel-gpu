@@ -691,8 +691,8 @@ The SDK configures the video processing pipeline operation based on the differen
 
 - When the input color format is YUY2 and the output color format is NV12, the SDK enables color conversion from YUY2 to NV12.
 - When the input is interleaved and the output is progressive, the SDK enables de-interlacing.
-- When the input is a single field and the output is interlaced or progressive, the SDK enable field weaving, optionally with deinterlacing.
-- When the input is a interlaced and the output is single field, the SDK enable field splitting.
+- When the input is single field and the output is interlaced or progressive, the SDK enables field weaving, optionally with deinterlacing.
+- When the input is interlaced and the output is single field, the SDK enables field splitting.
 
 In addition to specifying the input and output formats, the application can provide hints to fine-tune the video processing pipeline operation. The application can disable filters in pipeline by using [mfxExtVPPDoNotUse](#mfxExtVPPDoNotUse) structure; enable them by using [mfxExtVPPDoUse](#mfxExtVPPDoUse) structure and configure them by using dedicated configuration structures. See Table 4 for complete list of configurable video processing filters, their IDs and configuration structures. See the [ExtendedBufferID](#ExtendedBufferID) enumerator for more details.
 
@@ -4574,7 +4574,7 @@ typedef struct {
 
 **Description**
 
-The `mfxExtMasteringDisplayColourVolume` structure configures the HDR SEI message. If application attaches this structure to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure at [runtime](#MFXVideoENCODE_EncodeFrameAsync), the encoder inserts the HDR SEI message for current frame and ignores `InsertPayloadToggle`. If application attaches this structure to the [mfxVideoParam](#mfxVideoParam) structure during [initialization](#MFXVideoENCODE_Init) or [reset](#MFXVideoENCODE_Reset), the encoder inserts HDR SEI message based on `InsertPayloadToggle`. Fields semantic defined in ITU-T* H.265 Annex D.
+The `mfxExtMasteringDisplayColourVolume` configures the HDR SEI message. If application attaches this structure to the [mfxEncodeCtrl](#mfxEncodeCtrl) at [runtime](#MFXVideoENCODE_EncodeFrameAsync), the encoder inserts the HDR SEI message for current frame and ignores `InsertPayloadToggle`. If application attaches this structure to the [mfxVideoParam](#mfxVideoParam) during [initialization](#MFXVideoENCODE_Init) or [reset](#MFXVideoENCODE_Reset), the encoder inserts HDR SEI message based on `InsertPayloadToggle`. Fields semantic defined in ITU-T* H.265 Annex D.
 
 **Members**
 
@@ -8000,7 +8000,7 @@ The `RateControlMethod` enumerator itemizes bitrate control methods.
 `MFX_RATECONTROL_ICQ` | Use the Intelligent Constant Quality algorithm. This algorithm improves subjective video quality of encoded stream. Depending on content, it may or may not decrease objective video quality. Only one control parameter is used - quality factor, specified by [mfxInfoMFX](#mfxInfoMFX)**::ICQQuality**.
 `MFX_RATECONTROL_VCM` | Use the Video Conferencing Mode algorithm. This algorithm is similar to the VBR and uses the same set of parameters [mfxInfoMFX](#mfxInfoMFX)**::InitialDelayInKB**`,` **TargetKbps**and**MaxKbps**. It is tuned for IPPP GOP pattern and streams with strong temporal correlation between frames. It produces better objective and subjective video quality in these conditions than other bitrate control algorithms. It does not support interlaced content, B frames and produced stream is not HRD compliant.
 `MFX_RATECONTROL_LA_ICQ` | Use intelligent constant quality algorithm with look ahead. Quality factor is specified by [mfxInfoMFX](#mfxInfoMFX)**::ICQQuality**. To control LA depth the application can use [mfxExtCodingOption2](#mfxExtCodingOption2)**::LookAheadDepth** parameter.<br><br>This method is not HRD compliant.
-`MFX_RATECONTROL_LA_EXT` | Use extended look ahead rate control algorithm. It is intended for one to N transcode scenario and requires presence of [mfxExtLAFrameStatistics](#mfxExtLAFrameStatistics) structure at encoder input at runtime. Rate control supported by AVC and HEVC encoders.
+`MFX_RATECONTROL_LA_EXT` | Use extended look ahead rate control algorithm. It is intended for one to N transcode scenario and requires presence of [mfxExtLAFrameStatistics](#mfxExtLAFrameStatistics) structure at encoder input at runtime. Rate control is supported by AVC and HEVC encoders.
 `MFX_RATECONTROL_LA_HRD` | Use HRD compliant look ahead rate control algorithm.<br><br>
 `MFX_RATECONTROL_QVBR` | Use the variable bitrate control algorithm with constant quality. This algorithm trying to achieve the target subjective quality with the minimum number of bits, while the bitrate constraint and HRD compliancy are satisfied. It uses the same set of parameters as VBR and quality factor specified by [mfxExtCodingOption3](#mfxExtCodingOption3)**::QVBRQuality**.
 
