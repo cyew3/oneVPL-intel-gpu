@@ -179,5 +179,5 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(av1_query_io_surf);
+TS_REG_TEST_SUITE_CLASS(av1d_query_io_surf);
 }
