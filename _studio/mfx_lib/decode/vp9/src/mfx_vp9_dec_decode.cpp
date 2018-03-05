@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <limits>
@@ -1211,6 +1211,8 @@ mfxStatus FillVideoParam(VideoCORE* core, UMC_VP9_DECODER::VP9DecoderFrame const
     params->mfx.FrameInfo.AspectRatioW = 1;
     params->mfx.FrameInfo.AspectRatioH = 1;
 
+    params->mfx.FrameInfo.CropX = 0;
+    params->mfx.FrameInfo.CropY = 0;
     params->mfx.FrameInfo.CropW = static_cast<mfxU16>(frame.width);
     params->mfx.FrameInfo.CropH = static_cast<mfxU16>(frame.height);
 
