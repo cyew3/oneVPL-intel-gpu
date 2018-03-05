@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -705,6 +705,19 @@ mfxU16 color_format2chroma_format(UMC::ColorFormat format)
     }
 }
 
+inline
+mfxU16 av1_native_profile_to_mfx_profile(mfxU16 native)
+{
+    switch (native)
+    {
+    case 0: return MFX_PROFILE_AV1_0;
+    case 1: return MFX_PROFILE_AV1_1;
+    case 2: return MFX_PROFILE_AV1_2;
+    case 3: return MFX_PROFILE_AV1_3;
+    default: return 0;
+    }
+}
+
 mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC::VideoDecoderParams const* vp, mfxVideoParam* par)
 {
     VM_ASSERT(vp);
@@ -721,7 +734,7 @@ mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC::VideoDecoderP
         color_format2chroma_format(vp->info.color_format);
 
     par->mfx.FrameInfo            = p.mfx.FrameInfo;
-    par->mfx.CodecProfile         = p.mfx.CodecProfile;
+    par->mfx.CodecProfile         = av1_native_profile_to_mfx_profile(p.mfx.CodecProfile);
     par->mfx.CodecLevel           = p.mfx.CodecLevel;
     par->mfx.DecodedOrder         = p.mfx.DecodedOrder;
     par->mfx.MaxDecFrameBuffering = p.mfx.MaxDecFrameBuffering;
