@@ -1491,7 +1491,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             if (m_pPar->mfx.FrameInfo.Width > 4096 || m_pPar->mfx.FrameInfo.Height > 4096)
             {
-                g_tsLog << "SKIPPED: Resolution > 4k isn't supported until ICL!\n";
+                g_tsLog << "WARNING: Resolution > 4k isn't supported until ICL!\n";
                 return 0;
             }
 
