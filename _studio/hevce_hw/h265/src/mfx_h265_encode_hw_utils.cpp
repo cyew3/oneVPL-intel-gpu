@@ -2360,7 +2360,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
         }
      }
 
-    s.loop_filter_across_slices_enabled_flag = 0;
+    s.loop_filter_across_slices_enabled_flag = m_pps.loop_filter_across_slices_enabled_flag;
 
     if (m_pps.tiles_enabled_flag || m_pps.entropy_coding_sync_enabled_flag)
     {
