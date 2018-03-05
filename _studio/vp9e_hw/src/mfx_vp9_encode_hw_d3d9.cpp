@@ -205,8 +205,7 @@ void FillPpsBuffer(
     VP9MfxVideoParam const & par,
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
-    BitOffsets const &offsets,
-    mfxU8 &original_pic_index)
+    BitOffsets const &offsets)
 {
     Zero(pps);
 
@@ -221,12 +220,9 @@ void FillPpsBuffer(
     pps.DstFrameWidthMinus1 = pps.SrcFrameWidthMinus1;
     pps.DstFrameHeightMinus1 = pps.SrcFrameHeightMinus1;
 
-    // CurrOriginalPic should be used to get correct input surface from the pool,
-    // but now it actually used by the driver to allocate and manage some internal
-    // resources that is wrong from the arcitecture perspective, but without this WA
-    // on the MSDK side some issues happen with async tasks submitting. The value itself
-    // is just round-robin counter that aligned with max_parallel_tasks value.
-    pps.CurrOriginalPic      = (UCHAR)original_pic_index;
+    // for VP9 encoder driver uses CurrOriginalPic to get input frame from raw surfaces chain. It's incorrect behavior. Workaround on MSDK level is to set CurrOriginalPic = 0.
+    // this WA works for synchronous encoding only. For async encoding fix in driver is required.
+    pps.CurrOriginalPic      = 0;
     pps.CurrReconstructedPic = (UCHAR)task.m_pRecFrame->idInPool;
 
     mfxU16 refIdx = 0;
@@ -485,8 +481,6 @@ D3D9Encoder::D3D9Encoder()
     , m_seqParam()
     , m_width(0)
     , m_height(0)
-    , m_CurrOriginalPicIndex(0)
-    , m_MaxTaskCount(1)
 {
 } // D3D9Encoder::D3D9Encoder(VideoCORE* core)
 
@@ -609,8 +603,6 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
-
-    m_MaxTaskCount = static_cast<mfxU8>(CalcNumTasks(par));
 
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
@@ -761,8 +753,7 @@ mfxStatus D3D9Encoder::Execute(
     mfxU16 bytesWritten = PrepareFrameHeader(curMfxPar, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
 
     // fill PPS DDI structure for current frame
-    FillPpsBuffer(curMfxPar, task, m_pps, offsets, m_CurrOriginalPicIndex);
-    m_CurrOriginalPicIndex = m_CurrOriginalPicIndex < (m_MaxTaskCount - 1) ? (m_CurrOriginalPicIndex + 1) : 0;
+    FillPpsBuffer(curMfxPar, task, m_pps, offsets);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_PPSDATA;
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_pps));

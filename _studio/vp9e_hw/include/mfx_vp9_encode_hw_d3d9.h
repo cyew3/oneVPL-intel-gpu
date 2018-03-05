@@ -251,8 +251,7 @@ void FillPpsBuffer(
     VP9MfxVideoParam const & par,
     Task const & task,
     ENCODE_SET_PICTURE_PARAMETERS_VP9 & pps,
-    BitOffsets const &offsets,
-    mfxU8 &original_pic_index);
+    BitOffsets const &offsets);
 
 mfxStatus FillSegmentMap(Task const & task,
     mfxCoreInterface* m_pmfxCore);
@@ -371,9 +370,6 @@ private:
 
     mfxU32 m_width;
     mfxU32 m_height;
-
-    mfxU8 m_CurrOriginalPicIndex;
-    mfxU8 m_MaxTaskCount;
 
     UMC::Mutex m_guard;
 };

@@ -631,9 +631,7 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
     inline mfxU32 CalcNumSurfRecon(mfxVideoParam const & video)
     {
-        // encoder arcitecture presumably allows to re-use recon surfaces,
-        // so there is no need to allocate additional surfaces for async depth.
-        return video.mfx.NumRefFrame + 1;
+        return video.mfx.NumRefFrame + CalcNumTasks(video);
     }
 
     inline mfxU32 CalcNumSurfRaw(mfxVideoParam const & video)

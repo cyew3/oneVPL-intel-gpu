@@ -121,9 +121,6 @@ private:
     mfxU32 m_width;
     mfxU32 m_height;
 
-    mfxU8 m_CurrOriginalPicIndex;
-    mfxU8 m_MaxTaskCount;
-
     UMC::Mutex m_guard;
 };
 #endif // (MFX_VA_LINUX)

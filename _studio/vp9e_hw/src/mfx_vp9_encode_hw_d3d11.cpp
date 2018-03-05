@@ -60,8 +60,6 @@ D3D11Encoder::D3D11Encoder()
     , m_seqParam()
     , m_width(0)
     , m_height(0)
-    , m_CurrOriginalPicIndex(0)
-    , m_MaxTaskCount(1)
 {
     m_pContext.Release();
     m_pVDecoder.Release();
@@ -218,8 +216,6 @@ mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
-
-    m_MaxTaskCount = static_cast<mfxU8>(CalcNumTasks(par));
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAccelerationService -");
     return MFX_ERR_NONE;
@@ -483,8 +479,7 @@ mfxStatus D3D11Encoder::Execute(
     mfxU16 bytesWritten = PrepareFrameHeader(curMfxPar, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
 
     // fill PPS DDI structure for current frame
-    FillPpsBuffer(curMfxPar, task, m_pps, offsets, m_CurrOriginalPicIndex);
-    m_CurrOriginalPicIndex = m_CurrOriginalPicIndex < (m_MaxTaskCount - 1) ? (m_CurrOriginalPicIndex + 1) : 0;
+    FillPpsBuffer(curMfxPar, task, m_pps, offsets);
 
     compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA);
     compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(m_pps));
