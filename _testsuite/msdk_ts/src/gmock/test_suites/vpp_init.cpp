@@ -395,6 +395,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Saturation,       binary_64f64u(16)},
         },
     },
+    {/*47*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_YUY2},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_RGB4},
+        },
+    },
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);

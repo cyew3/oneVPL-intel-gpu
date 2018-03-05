@@ -288,7 +288,14 @@ namespace vpp_query
         {
             {MFX_PAR , &tsStruct::mfxVideoParam.AsyncDepth, 10 }
         }
+        },
+        {/*30*/ STANDART, MFX_ERR_NONE,
+        {
+
+            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_YUY2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_RGB4 }
         }
+        },
 
     };
 
