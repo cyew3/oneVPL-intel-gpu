@@ -83,6 +83,12 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("Y210");
     case MFX_FOURCC_Y410:
         return VM_STRING("Y410");
+    case MFX_FOURCC_P016:
+        return VM_STRING("P016");
+    case MFX_FOURCC_Y216:
+        return VM_STRING("Y216");
+    case MFX_FOURCC_Y416:
+        return VM_STRING("Y416");
     default:
         return VM_STRING("Unknown");
     }
@@ -153,14 +159,18 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     CHECK_POINTER_NO_RET(pMfxParams);    
 
     Info = pMfxParams->vpp.In;
-    vm_string_printf(VM_STRING("Input format\t%s\n"), FourCC2Str( Info.FourCC ));  
+    vm_string_printf(VM_STRING("Input format\t%s\n"), FourCC2Str( Info.FourCC ));
+    vm_string_printf(VM_STRING("BitDepth\t%d\n"), Info.BitDepthLuma);
+    vm_string_printf(VM_STRING("Shift\t%d\n"), Info.Shift);
     vm_string_printf(VM_STRING("Resolution\t%dx%d\n"), Info.Width, Info.Height);
     vm_string_printf(VM_STRING("Crop X,Y,W,H\t%d,%d,%d,%d\n"), Info.CropX, Info.CropY, Info.CropW, Info.CropH);
     vm_string_printf(VM_STRING("Frame rate\t%.2f\n"), (mfxF64)Info.FrameRateExtN / Info.FrameRateExtD);
     vm_string_printf(VM_STRING("PicStruct\t%s\n"), PicStruct2Str(Info.PicStruct));
 
     Info = pMfxParams->vpp.Out;
-    vm_string_printf(VM_STRING("Output format\t%s\n"), FourCC2Str( Info.FourCC ));  
+    vm_string_printf(VM_STRING("Output format\t%s\n"), FourCC2Str( Info.FourCC ));
+    vm_string_printf(VM_STRING("BitDepth\t%d\n"), Info.BitDepthLuma);
+    vm_string_printf(VM_STRING("Shift\t%d\n"), Info.Shift);
     vm_string_printf(VM_STRING("Resolution\t%dx%d\n"), Info.Width, Info.Height);
     vm_string_printf(VM_STRING("Crop X,Y,W,H\t%d,%d,%d,%d\n"), Info.CropX, Info.CropY, Info.CropW, Info.CropH);
     vm_string_printf(VM_STRING("Frame rate\t%.2f\n"), (mfxF64)Info.FrameRateExtN / Info.FrameRateExtD);
@@ -312,6 +322,8 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     pParams->vpp.In.Shift           = pInParams->frameInfoIn[paramID].Shift;
     pParams->vpp.In.FourCC          = pInParams->frameInfoIn[paramID].FourCC;
     pParams->vpp.In.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;  
+    pParams->vpp.In.BitDepthLuma    = pInParams->frameInfoIn[paramID].BitDepth;
+    pParams->vpp.In.BitDepthChroma  = pInParams->frameInfoIn[paramID].BitDepth;
 
     pParams->vpp.In.CropX = pInParams->frameInfoIn[paramID].CropX;
     pParams->vpp.In.CropY = pInParams->frameInfoIn[paramID].CropY;
@@ -334,7 +346,9 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     /* output data */
     pParams->vpp.Out.Shift           = pInParams->frameInfoOut[paramID].Shift;
     pParams->vpp.Out.FourCC          = pInParams->frameInfoOut[paramID].FourCC;
-    pParams->vpp.Out.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;             
+    pParams->vpp.Out.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
+    pParams->vpp.Out.BitDepthLuma    = pInParams->frameInfoOut[paramID].BitDepth;
+    pParams->vpp.Out.BitDepthChroma  = pInParams->frameInfoOut[paramID].BitDepth;
 
     pParams->vpp.Out.CropX = pInParams->frameInfoOut[paramID].CropX;
     pParams->vpp.Out.CropY = pInParams->frameInfoOut[paramID].CropY;

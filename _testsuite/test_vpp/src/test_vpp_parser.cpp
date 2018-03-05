@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2010 - 2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010 - 2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "test_vpp_utils.h"
@@ -1268,6 +1268,18 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                     pParams->frameInfoOut[0].FourCC = MFX_FOURCC_NV12;
                     pParams->isOutYV12 = true;
                 }
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-sbd")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].BitDepth);
+            }
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dbd")))
+            {
+                VAL_CHECK(1 + i == nArgNum);
+                i++;
+                vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].BitDepth);
             }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-dbitshift")))
             {
