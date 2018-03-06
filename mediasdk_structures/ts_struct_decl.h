@@ -1321,6 +1321,7 @@ STRUCT(mfxExtSCD,
 )
 #endif // defined(__MFXSCD_H__)
 
+#if (MFX_VERSION >= 1026)
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 STRUCT(mfxExtVppMctf,
     FIELD_S(mfxExtBuffer, Header)
@@ -1336,4 +1337,5 @@ STRUCT(mfxExtVppMctf,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU16, FilterStrength)
 )
+#endif
 #endif
