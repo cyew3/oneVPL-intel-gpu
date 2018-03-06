@@ -120,6 +120,15 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     m_platform = MFX_VPX_Utility::GetPlatform(m_core, par);
+    eMFXHWType type = MFX_HW_UNKNOWN;
+    if (m_platform == MFX_PLATFORM_HARDWARE)
+    {
+        type = m_core->GetHWType();
+    }
+
+    if (CheckVideoParamDecoders(par, m_core->IsExternalFrameAllocator(), type) < MFX_ERR_NONE)
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if (!MFX_VPX_Utility::CheckVideoParam(par, MFX_CODEC_AV1, m_platform))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
