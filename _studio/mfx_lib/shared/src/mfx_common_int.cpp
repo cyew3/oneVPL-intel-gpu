@@ -88,6 +88,10 @@ mfxStatus CheckFrameInfoCommon(mfxFrameInfo  *info, mfxU32 /* codecId */)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+    if ((info->BitDepthLuma && (info->BitDepthLuma < 8)) ||
+        (info->BitDepthChroma && (info->BitDepthChroma < 8)))
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+
     if (info->BitDepthLuma > 8 || info->BitDepthChroma > 8)
     {
         switch (info->FourCC)
