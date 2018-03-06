@@ -341,13 +341,6 @@ CEncoder::ReadAndEncodeAsync(StorageFile ^ storageSource, StorageFile ^ storageS
 
                             dataWriter->WriteBytes(ref new Platform::Array<byte>(m_mfxBS.Data + m_mfxBS.DataOffset, m_mfxBS.DataLength));
                             
-                            //FILE* fp;
-                            //Windows::Storage::StorageFolder^ localFolder = Windows::Storage::ApplicationData::Current->LocalFolder;
-                            //auto pathName = localFolder->Path + "\\dump.h264";
-                            //_wfopen_s(&fp, pathName->Data(), L"ab");
-                            //fwrite(m_mfxBS.Data + m_mfxBS.DataOffset, m_mfxBS.DataLength, 1, fp);
-                            //fclose(fp);
-
                             totalLength += m_mfxBS.DataLength;
 
                             m_mfxBS.DataOffset = m_mfxBS.DataLength = 0;

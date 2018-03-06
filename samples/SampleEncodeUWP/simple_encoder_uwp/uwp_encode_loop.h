@@ -75,8 +75,6 @@ protected:
 
     mfxVideoParam m_mfxEncParams;
 
-    mfxU32 m_InputFourCC;
-
     mfxBitstream m_mfxBS;
 
     std::unique_ptr<MFXFrameAllocator> m_pMFXAllocator;
@@ -90,8 +88,6 @@ protected:
     std::vector<mfxExtBuffer*> m_EncExtParams;
 
     mfxU32 m_nFramesRead;
-    bool   m_bInsertIDR;
-    bool   m_bTimeOutExceed;
 
     mfxEncodeCtrl m_encCtrl;
 

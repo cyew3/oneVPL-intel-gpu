@@ -29,11 +29,17 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 CDecodingPipeline::CDecodingPipeline()
     : pluginsManager(session)
 {
+    fileSource = nullptr;
+    rendererPanel = nullptr;
     IsHWLib = true;
     pipelineStatus = PS_NONE;
     codecID = MFX_CODEC_AVC;
     AsyncDepth = 4;
     OnPipelineStatusChanged = NULL;
+    impl= 0;
+    isDecodingEnding = false;
+
+    MSDK_ZERO_MEMORY(decoderParams);
 }
 
 bool CDecodingPipeline::Init()

@@ -51,8 +51,8 @@ public:
     CMfxFrameSurfaceExt* GetExtSurface(mfxFrameSurface1* pSurf);
 
 protected:
-    CSurfacesPool(const CSurfacesPool&){};
-    CSurfacesPool& operator =(const CSurfacesPool&){};
+    CSurfacesPool(const CSurfacesPool& src) { SleepInterval = src.SleepInterval; }
+    CSurfacesPool& operator =(const CSurfacesPool&) { return *this; };
 
     // IMPORTANT:mids stored inside response object and passed here are reused in Pool object. 
     // DO NOT free mids array after calling to this function (it will be automatically freed during pool object destruction)

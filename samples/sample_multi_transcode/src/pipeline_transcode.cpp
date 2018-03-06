@@ -241,6 +241,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     outputStatistics.SetDirection(MSDK_STRING("Output"));
 
     m_numEncoders = 0;
+    m_encoderFourCC = 0;
     m_libvaBackend = 0;
     statisticsWindowSize=0;
     m_bIsFieldWeaving = false;

@@ -33,9 +33,13 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 CSimpleBitstreamReader::CSimpleBitstreamReader()
 {
+    stream = nullptr;
+    dataReader = nullptr;
+
     m_bInited = false;
     fileSize = 0;
     bytesCompleted = 0;
+    MSDK_ZERO_MEMORY(BitStream);
 }
 
 CSimpleBitstreamReader::~CSimpleBitstreamReader()

@@ -88,7 +88,7 @@ private:
     CSurfacesPool surfacesPool;
     std::list<CMfxFrameSurfaceExt*> decodingSurfaces;
 
-    SampleDecodeUWP::CRendererPanel^ rendererPanel = nullptr;
+    SampleDecodeUWP::CRendererPanel^ rendererPanel;
 
     Windows::Storage::StorageFile^ fileSource;
 
