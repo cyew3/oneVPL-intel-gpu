@@ -86,10 +86,10 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  0},
         {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  0}}},
     {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {
-        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  MAX_WIDTH + 1},
-        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, MAX_HEIGHT + 1},
-        {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  MAX_WIDTH + 1},
-        {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  MAX_HEIGHT + 1}}},
+        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  MAX_WIDTH + 16},
+        {&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, MAX_HEIGHT + 16},
+        {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  MAX_WIDTH + 16},
+        {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  MAX_HEIGHT + 16}}},
     {/*19*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 4},
     {/*20*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 5},
     {/*21*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 6},
@@ -246,8 +246,8 @@ template <
 >
 TestSuite::tc_struct const TestSuiteExt<profile, fourcc, void(b1, b2...), void(c1, c2...)>::test_cases[] =
 {
-    {/*28*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value},{ ChromaFormat, c1::value } }},
-    {/*29*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
+    {/*26*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {BitDepthLuma, b1::value},{ ChromaFormat, c1::value } }},
+    {/*27*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1, {{FourCC, fourcc}, {ChromaFormat, c1::value}}},
 
     //c3 pack specifies wrong chroma formats
     detail::make_chroma_format_tc(MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, fourcc, c2{})...,
