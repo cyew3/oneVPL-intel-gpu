@@ -124,6 +124,9 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
     {
         switch(type)
         {
+// On Android implementaion of all decoders is placed in libmfx
+// That's why we don't need default plugins for these codecs
+#if !defined(ANDROID)
         case MSDK_VDECODE:
             switch(uCodecid)
             {
@@ -135,6 +138,7 @@ const mfxPluginUID & msdkGetPluginUID(mfxIMPL impl, msdkComponentType type, mfxU
                 return MFX_PLUGINID_VP9D_HW;
             }
             break;
+#endif
         case MSDK_VENCODE:
             switch(uCodecid)
             {
