@@ -87,6 +87,9 @@ protected:
     }
 };
 
+const mfxU32 MAX_WIDTH = 16384;
+const mfxU32 MAX_HEIGHT = 16384;
+
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_NONE, },
@@ -104,23 +107,22 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*12*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, {577}}},
     {/*13*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {255}}},
     {/*14*/ MFX_ERR_UNSUPPORTED,
-       {{MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  {4106}},
-        {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, {4106}}}
+       {{MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  { MAX_WIDTH + 16}},
+        {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, { MAX_HEIGHT + 16}}}
     },
     {/*15*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.DecodedOrder, {2}}},
     {/*16*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, {MFX_PICSTRUCT_FIELD_TFF}}},
     {/*17*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, {MFX_PICSTRUCT_FIELD_BFF}}},
-    {/*18*/ MFX_ERR_NONE, {MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, {MFX_PICSTRUCT_FIELD_SINGLE}}},
+    {/*18*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, {MFX_PICSTRUCT_FIELD_SINGLE}}},
     {/*19*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.ExtendedPicStruct, {2}}},
     {/*20*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.Protected, {16}}},
-    {/*21*/ MFX_ERR_UNSUPPORTED, {NATIVE}},
 
-    {/* 22*/ MFX_ERR_UNSUPPORTED,
+    {/* 21*/ MFX_ERR_UNSUPPORTED,
         { {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {1}},
           {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {1}} }
     },
 
-    {/* 23*/ MFX_ERR_UNSUPPORTED,
+    {/* 22*/ MFX_ERR_UNSUPPORTED,
         { {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {42}},
           {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {42}} }
     },
@@ -180,15 +182,15 @@ int TestSuite::RunTest(tc_struct const& tc)
         EXPECT_NE(out_par.mfx.CodecId, (mfxU32)0);
         EXPECT_NE(out_par.mfx.CodecProfile, 0);
         EXPECT_NE(out_par.mfx.CodecLevel, 0);
-        EXPECT_NE(out_par.mfx.ExtendedPicStruct, 0);
+        EXPECT_EQ(out_par.mfx.ExtendedPicStruct, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.FourCC, (mfxU32)0);
         EXPECT_NE(out_par.mfx.FrameInfo.Width, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.Height, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.FrameRateExtN, (mfxU32)0);
         EXPECT_NE(out_par.mfx.FrameInfo.FrameRateExtD, (mfxU32)0);
-        EXPECT_NE(out_par.mfx.FrameInfo.AspectRatioW, 0);
-        EXPECT_NE(out_par.mfx.FrameInfo.AspectRatioH, 0);
-        EXPECT_NE(out_par.mfx.FrameInfo.PicStruct, 0);
+        EXPECT_EQ(out_par.mfx.FrameInfo.AspectRatioW, 0);
+        EXPECT_EQ(out_par.mfx.FrameInfo.AspectRatioH, 0);
+        EXPECT_EQ(out_par.mfx.FrameInfo.PicStruct, 0);
         EXPECT_NE(out_par.mfx.FrameInfo.ChromaFormat, 0);
     }
 
@@ -211,18 +213,18 @@ struct TestSuiteExt
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::test_cases[] =
 {
-    {/*24*/ MFX_ERR_NONE,
+    {/*23*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
     },
 
-    {/*25*/ MFX_ERR_NONE,
+    {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
     },
 
-    {/*26*/ MFX_ERR_NONE,
+    {/*25*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
@@ -230,30 +232,31 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::tes
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
     },
 
-    {/*27*/ MFX_ERR_UNSUPPORTED,
+    {/*26*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, { MFX_CHROMAFORMAT_YUV422 } },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } },
     },
 
-    {/*28*/ MFX_ERR_UNSUPPORTED,
+    {/*27*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, { MFX_CHROMAFORMAT_YUV444 } },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } } },
+    },
+
+    {/*28*/ MFX_ERR_UNSUPPORTED,
+        { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {10} } }
+
     },
 
     {/*29*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {10} },
-          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
-    },
-
-    {/*30*/ MFX_ERR_UNSUPPORTED,
-        { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12} },
-          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_NV12} } }
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_NV12 } },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12} },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12} } }
     },
 };
 template <>
@@ -263,18 +266,18 @@ unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::n_cases = T
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_AV1_0>::test_cases[] =
 {
-    {/*24*/ MFX_ERR_NONE,
+    {/*23*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
 
-    {/*25*/ MFX_ERR_NONE,
+    {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
 
-    {/*26*/ MFX_ERR_NONE,
+    {/*25*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
@@ -282,19 +285,19 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_AV1_0>::tes
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
 
-    {/*27*/ MFX_ERR_UNSUPPORTED,
+    {/*26*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
 
-    {/*28*/ MFX_ERR_UNSUPPORTED,
+    {/*27*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
 
-    {/*29*/ MFX_ERR_UNSUPPORTED,
+    {/*28*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
@@ -302,7 +305,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_AV1_0>::tes
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_YUY2} } }
     },
 
-    {/*30*/ MFX_ERR_UNSUPPORTED,
+    {/*29*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12} },
@@ -317,18 +320,18 @@ unsigned int const TestSuiteExt<MFX_FOURCC_YUY2, MFX_PROFILE_AV1_0>::n_cases = T
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_AV1_0>::test_cases[] =
 {
-    {/*24*/ MFX_ERR_NONE,
+    {/*23*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
-    {/*25*/ MFX_ERR_NONE,
+    {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
-    {/*26*/ MFX_ERR_NONE,
+    {/*25*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
@@ -336,19 +339,19 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_AV1_0>::tes
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
-    {/*27*/ MFX_ERR_UNSUPPORTED,
+    {/*26*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
-    {/*28*/ MFX_ERR_UNSUPPORTED,
+    {/*27*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV422} },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
-    {/*29*/ MFX_ERR_UNSUPPORTED,
+    {/*28*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
@@ -356,7 +359,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_AV1_0>::tes
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_AYUV} } }
     },
 
-    {/*30*/ MFX_ERR_UNSUPPORTED,
+    {/*29*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_0} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV444} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12} },
@@ -371,18 +374,18 @@ unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_AV1_0>::n_cases = T
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::test_cases[] =
 {
-    {/*24*/ MFX_ERR_NONE,
+    {/*23*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
     },
 
-    {/*25*/ MFX_ERR_NONE,
+    {/*24*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_2} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
     },
 
-    {/*26*/ MFX_ERR_NONE,
+    {/*25*/ MFX_ERR_NONE,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_2} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {10} },
@@ -390,30 +393,30 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::tes
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
     },
 
-    {/*27*/ MFX_ERR_UNSUPPORTED,
+    {/*26*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, { MFX_CHROMAFORMAT_YUV422 } },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_P010 } } },
     },
 
-    {/*28*/ MFX_ERR_UNSUPPORTED,
+    {/*27*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, { MFX_CHROMAFORMAT_YUV444 } },
           { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,{ MFX_FOURCC_P010 } } },
+    },
+
+    {/*28*/ MFX_ERR_UNSUPPORTED,
+        { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_2} },
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {8} },
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
     },
 
     {/*29*/ MFX_ERR_UNSUPPORTED,
         { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_2} },
           { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {8} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {8} },
-          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
-    },
-
-    {/*30*/ MFX_ERR_UNSUPPORTED,
-        { { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.CodecProfile, {MFX_PROFILE_AV1_2} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat, {MFX_CHROMAFORMAT_YUV420} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12} },
-          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12} },
-          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {12} },
+          { MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, {12} },
+          { MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC, {MFX_FOURCC_P010} } }
     },
 };
 template <>
