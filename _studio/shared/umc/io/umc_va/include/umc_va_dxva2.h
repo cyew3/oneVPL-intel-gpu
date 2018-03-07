@@ -174,6 +174,10 @@ public:
     void* GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf = NULL, Ipp32s size = -1, Ipp32s index = -1);
     Status ReleaseBuffer(Ipp32s type);
 
+    virtual Status BeginFrame(Ipp32s  index) = 0; // Begin decoding for specified index
+    // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
+    virtual Status BeginFrame(Ipp32s  index, Ipp32u fieldId);
+
 private:
 
     virtual Status GetCompBufferInternal(UMCVACompBuffer*) = 0;

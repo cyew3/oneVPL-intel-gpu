@@ -74,6 +74,14 @@ private:
     deleter_func m_func;
 };
 
+// Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
+Status DXAccelerator::BeginFrame(Ipp32s  index, Ipp32u fieldId)
+{
+    (void)fieldId;
+    Status sts = BeginFrame(index);
+    return sts;
+}
+
 void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*size*/, Ipp32s /*index*/)
 {
     UMCVACompBuffer* buffer = FindBuffer(type);

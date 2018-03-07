@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -114,7 +114,7 @@ public:
         if (!m_va)
             return;
 
-        Status sts = m_va->BeginFrame(pFrame->GetFrameData()->GetFrameMID());
+        Status sts = m_va->BeginFrame(pFrame->GetFrameData()->GetFrameMID(), field);
         if (sts != UMC_OK)
             throw h264_exception(sts);
 
@@ -189,6 +189,14 @@ protected:
             return (item.m_index != m_index) || (item.m_field != m_field);
         }
     };
+
+    // Check cached feedback if found
+    // frame removed from cache and marked as completed
+    bool CheckCachedFeedbackAndComplete(H264DecoderFrameInfo * au);
+
+    // Mark frame as Completed and update Error stasus
+    // according to uiStatus reported by driver
+    void SetCompletedAndErrorStatus(Ipp8u uiStatus, H264DecoderFrameInfo * au);
 
     typedef std::vector<ReportItem> Report;
     Report m_reports;

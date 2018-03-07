@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -169,6 +169,44 @@ enum
     NUMBER_OF_STATUS = 512,
 };
 
+
+void TaskBrokerSingleThreadDXVA::SetCompletedAndErrorStatus(Ipp8u uiStatus, H264DecoderFrameInfo * au)
+{
+    switch (uiStatus)
+    {
+    case 1:
+        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MINOR);
+        break;
+    case 2:
+        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+        break;
+    case 3:
+        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+        break;
+    case 4:
+        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
+        break;
+    }
+
+    au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
+    CompleteFrame(au->m_pFrame);
+}
+
+
+bool TaskBrokerSingleThreadDXVA::CheckCachedFeedbackAndComplete(H264DecoderFrameInfo * au)
+{
+    for (Ipp32u i = 0; i < m_reports.size(); i++)
+    {
+        if ((m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index) && (au->IsBottom() == (m_reports[i].m_field != 0)))
+        {
+            SetCompletedAndErrorStatus(m_reports[i].m_status, au);
+            m_reports.erase(m_reports.begin() + i);
+            return true;
+        }
+    }
+    return false;
+}
+
 bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 {
     AutomaticUMCMutex guard(m_mGuard);
@@ -182,52 +220,26 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         return false;
 
 #if defined(UMC_VA_DXVA)
-    DXVA_Status_H264 pStatusReport[NUMBER_OF_STATUS];
-
     bool wasCompleted = false;
 
+
+    DXVA_Status_H264 pStatusReport[NUMBER_OF_STATUS];
+
+    // check cached feedback
+    // may be frame was marked as ready during last QueryStatus call
     if (m_reports.size() && m_FirstAU)
     {
         H264DecoderFrameInfo * au = m_FirstAU;
-        bool wasFound = false;
         while (au)
         {
-            for (Ipp32u i = 0; i < m_reports.size(); i++)
+            if (CheckCachedFeedbackAndComplete(au) == false)
             {
-                if ((m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index) && (au->IsBottom() == (m_reports[i].m_field != 0)))
-                {
-                    switch (m_reports[i].m_status)
-                    {
-                    case 1:
-                        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MINOR);
-                        break;
-                    case 2:
-                        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                        break;
-                    case 3:
-                        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                        break;
-                    case 4:
-                        au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                        break;
-                    }
-
-                    au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
-                    CompleteFrame(au->m_pFrame);
-                    wasFound = true;
-                    wasCompleted = true;
-
-                    m_reports.erase(m_reports.begin() + i);
-                    break;
-                }
+                break;
             }
 
-            if (!wasFound)
-                break;
-
+            wasCompleted = true;
             au = au->GetNextAU();
         }
-
         SwitchCurrentAU();
     }
 
@@ -257,24 +269,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
             if (pStatusReport[i].CurrPic.Index7Bits == au->m_pFrame->m_index)
             {
-                switch (pStatusReport[i].bStatus)
-                {
-                case 1:
-                    au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MINOR);
-                    break;
-                case 2:
-                    au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                    break;
-                case 3:
-                    au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                    break;
-                case 4:
-                    au->m_pFrame->SetErrorFlagged(ERROR_FRAME_MAJOR);
-                    break;
-                }
-
-                au->SetStatus(H264DecoderFrameInfo::STATUS_COMPLETED);
-                CompleteFrame(au->m_pFrame);
+                SetCompletedAndErrorStatus(pStatusReport[i].bStatus, au);
                 wasFound = true;
                 break;
             }

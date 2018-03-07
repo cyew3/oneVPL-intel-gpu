@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VA_BASE_H__
@@ -295,6 +295,15 @@ public:
     virtual Status Reset(void);
 
     virtual Status BeginFrame   (Ipp32s  index) = 0; // Begin decoding for specified index
+
+    // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
+    // By default just calls BeginFrame(index). must be overridden by child class
+    virtual Status BeginFrame(Ipp32s  index, Ipp32u fieldId )
+    {
+        // by default just calls BeginFrame(index)
+        (void)fieldId;
+        return BeginFrame(index);
+    }
     virtual void*  GetCompBuffer(Ipp32s            buffer_type,
                                  UMCVACompBuffer** buf   = NULL,
                                  Ipp32s            size  = -1,
