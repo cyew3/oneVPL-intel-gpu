@@ -630,7 +630,7 @@ int main(int argc, msdk_char *argv[])
         {
 #ifdef ENABLE_MCTF
             bool bAttachMctfBuffer = false;
-            mfxExtVppMctf* MctfRTParams;
+            mfxExtVppMctf* MctfRTParams=NULL;
 #endif
             mfxU16 viewID = 0;
             mfxU16 viewIndx = 0;
