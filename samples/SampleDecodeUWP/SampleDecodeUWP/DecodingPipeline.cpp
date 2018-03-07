@@ -222,6 +222,8 @@ void CDecodingPipeline::OnClose()
         surf->UserLock = false;
     }
 
+    rendererPanel->ClearQueue();
+
     // Wait for all surfaces to be unlocked (from UserLock)
     while (surfacesPool.GetUserLockedCount())
     {

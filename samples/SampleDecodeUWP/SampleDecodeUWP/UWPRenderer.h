@@ -44,6 +44,8 @@ public:
     void SetFrameRate(double frameRate) { timeoutTicks = (msdk_tick)(CMSDKTime::GetFrequency() / frameRate); }
     void SetPlay(bool isPlaying);
 
+    void ClearQueue();
+
 protected:
     mfxStatus RenderFrame(CMfxFrameSurfaceExt* pSrf);
 

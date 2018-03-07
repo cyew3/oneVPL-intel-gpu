@@ -44,6 +44,12 @@ namespace SampleDecodeUWP
             renderer.SetPlay(isPlaying);
         }
 
+
+        void ClearQueue()
+        {
+            renderer.ClearQueue();
+        }
+
     private:
         CUWPRenderer renderer;
         void OnLayoutUpdated(Platform::Object ^sender, Platform::Object ^args);
