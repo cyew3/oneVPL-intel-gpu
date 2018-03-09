@@ -2258,7 +2258,7 @@ mfxStatus CmCopyWrapper::Release(void)
 } // mfxStatus CmCopyWrapper::Release(void)
 
 CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode,
-                                               std::map<void *, CmSurface2D *> & tableCmRelations,
+                                               std::map<mfxHDLPair, CmSurface2D *> & tableCmRelations,
                                                std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex)
 {
     cmStatus cmSts = 0;
@@ -2266,50 +2266,30 @@ CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 
     CmSurface2D *pCmSurface2D;
     SurfaceIndex *pCmSrcIndex;
 
-    std::map<void *, CmSurface2D *>::iterator it;
+    std::map<mfxHDLPair, CmSurface2D *>::iterator it;
+    mfxHDLPair pair = static_cast<mfxHDLPair>(*(mfxHDLPair *)pSrc);
 
-    it = tableCmRelations.find(pSrc);
+    it = tableCmRelations.find(pair);
 
     if (tableCmRelations.end() == it)
     {
         UMC::AutomaticUMCMutex guard(m_guard);
-        if (true == isSecondMode)
-        {
-#ifdef MFX_VA_WIN
-            HRESULT hRes = S_OK;
-            D3DLOCKED_RECT sLockRect;
 
-            hRes |= ((IDirect3DSurface9 *)pSrc)->LockRect(&sLockRect, NULL, D3DLOCK_NOSYSLOCK | D3DLOCK_READONLY);
+        cmSts = m_pCmDevice->CreateSurface2D(pair, pCmSurface2D);
 
-            m_pCmDevice->CreateSurface2D(width, height, (D3DFORMAT)(MAKEFOURCC('N', 'V', '1', '2')), pCmSurface2D);
-            pCmSurface2D->WriteSurface((mfxU8 *) sLockRect.pBits, NULL);
-
-            ((IDirect3DSurface9 *)pSrc)->UnlockRect();
-#endif // MFX_VA_WIN
-
-#if defined(MFX_VA_LINUX)
-            m_pCmDevice->CreateSurface2D(width, height, (CM_SURFACE_FORMAT)(MFX_MAKEFOURCC('N', 'V', '1', '2')), pCmSurface2D);
-#endif
-        }
-        else
-        {
-            cmSts = m_pCmDevice->CreateSurface2D((AbstractSurfaceHandle *) pSrc, pCmSurface2D);
-            CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
-            tableCmRelations.insert(std::pair<void *, CmSurface2D *>(pSrc, pCmSurface2D));
-        }
+        CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
+        tableCmRelations.insert(std::pair<mfxHDLPair, CmSurface2D *>(pair, pCmSurface2D));
 
         cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
         CHECK_CM_STATUS_RET_NULL(cmSts, MFX_ERR_DEVICE_FAILED);
 
         tableCmIndex.insert(std::pair<CmSurface2D *, SurfaceIndex *>(pCmSurface2D, pCmSrcIndex));
-
         m_surfacesInCreationOrder.push_back(pCmSurface2D);
     }
     else
     {
         pCmSurface2D = it->second;
     }
-
     return pCmSurface2D;
 
 } // CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode)

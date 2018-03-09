@@ -1800,6 +1800,7 @@ public:
     CM_RT_API virtual INT CreateBuffer(UINT size, CmBuffer* & pSurface) = 0;
     CM_RT_API virtual INT CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format, CmSurface2D* & pSurface) = 0;
     CM_RT_API virtual INT CreateSurface3D(UINT width, UINT height, UINT depth, CM_SURFACE_FORMAT format, CmSurface3D* & pSurface) = 0;
+    CM_RT_API virtual INT CreateSurface2D(mfxHDLPair D3DSurfPair, CmSurface2D* & pSurface) = 0;
     CM_RT_API virtual INT CreateSurface2D(AbstractSurfaceHandle pD3DSurf, CmSurface2D* & pSurface) = 0;
     //CM_RT_API virtual INT CreateSurface2D( AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D**  pSpurface ) = 0;
     CM_RT_API virtual INT DestroySurface(CmBuffer* & pSurface) = 0;
@@ -2589,6 +2590,7 @@ public:
     CM_RT_API virtual INT CreateBuffer(UINT size, CmBuffer* & pSurface) = 0;
     CM_RT_API virtual INT CreateSurface2D(UINT width, UINT height, CM_SURFACE_FORMAT format, CmSurface2D* & pSurface) = 0;
     CM_RT_API virtual INT CreateSurface3D(UINT width, UINT height, UINT depth, CM_SURFACE_FORMAT format, CmSurface3D* & pSurface) = 0;
+    CM_RT_API virtual INT CreateSurface2D(mfxHDLPair D3DSurfPair, CmSurface2D* & pSurface) = 0;
     CM_RT_API virtual INT CreateSurface2D(AbstractSurfaceHandle pD3DSurf, CmSurface2D* & pSurface) = 0;
     //CM_RT_API virtual INT CreateSurface2D( AbstractSurfaceHandle * pD3DSurf, const UINT surfaceCount, CmSurface2D**  pSpurface ) = 0;
     CM_RT_API virtual INT DestroySurface(CmBuffer* & pSurface) = 0;

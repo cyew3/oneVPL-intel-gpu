@@ -876,8 +876,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         if (canUseCMCopy)
         {
-            pSrc->Data.MemId = ((mfxHDLPair*)pSrc->Data.MemId)->first;
-            pDst->Data.MemId = ((mfxHDLPair*)pDst->Data.MemId)->first;
             sts = pCmCopy->CopyVideoToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
@@ -898,7 +896,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
     {
         if (canUseCMCopy)
         {
-            pSrc->Data.MemId = ((mfxHDLPair*)pSrc->Data.MemId)->first;
             sts = pCmCopy->CopyVideoToSys(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }
@@ -998,7 +995,6 @@ mfxStatus D3D11VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSur
 
         if (canUseCMCopy)
         {
-            pDst->Data.MemId = ((mfxHDLPair*)pDst->Data.MemId)->first;
             sts = pCmCopy->CopySysToVideo(pDst, pSrc);
             MFX_CHECK_STS(sts);
         }

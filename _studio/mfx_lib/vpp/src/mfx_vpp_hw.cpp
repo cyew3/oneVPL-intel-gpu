@@ -3338,7 +3338,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
                     verticalPitch = (verticalPitch % srcTempSurface.Data.Pitch)? 0 : verticalPitch / srcTempSurface.Data.Pitch;
                     mfxU32 srcPitch = srcTempSurface.Data.PitchLow + ((mfxU32)srcTempSurface.Data.PitchHigh << 16);
 
-                    sts = m_pCmCopy->CopyMirrorSystemToVideoMemory(dstHandle.first, 0, srcTempSurface.Data.Y, srcPitch, (mfxU32)verticalPitch, roi, MFX_FOURCC_NV12);
+                    sts = m_pCmCopy->CopyMirrorSystemToVideoMemory(&dstHandle, 0, srcTempSurface.Data.Y, srcPitch, (mfxU32)verticalPitch, roi, MFX_FOURCC_NV12);
                     MFX_CHECK_STS(sts);
 
                     if (true == isSrcLocked)
@@ -3491,7 +3491,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
             verticalPitch = (verticalPitch % dstTempSurface.Data.Pitch)? 0 : verticalPitch / dstTempSurface.Data.Pitch;
             mfxU32 dstPitch = dstTempSurface.Data.PitchLow + ((mfxU32)dstTempSurface.Data.PitchHigh << 16);
 
-            sts = m_pCmCopy->CopyMirrorVideoToSystemMemory(dstTempSurface.Data.Y, dstPitch, (mfxU32)verticalPitch, srcHandle.first, 0, roi, MFX_FOURCC_NV12);
+            sts = m_pCmCopy->CopyMirrorVideoToSystemMemory(dstTempSurface.Data.Y, dstPitch, (mfxU32)verticalPitch, &srcHandle, 0, roi, MFX_FOURCC_NV12);
             MFX_CHECK_STS(sts);
 
             if (true == isDstLocked)
@@ -4051,7 +4051,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "HW_VPP: Mirror (d3d->d3d)");
         IppiSize roi = {pTask->output.pSurf->Info.Width, pTask->output.pSurf->Info.Height};
-        sts = m_pCmCopy->CopyMirrorVideoToVideoMemory(m_executeParams.targetSurface.hdl.first, m_executeSurf[0].hdl.first, roi, MFX_FOURCC_NV12);
+        sts = m_pCmCopy->CopyMirrorVideoToVideoMemory(&m_executeParams.targetSurface.hdl, &m_executeSurf[0].hdl, roi, MFX_FOURCC_NV12);
         MFX_CHECK_STS(sts);
 #ifdef MFX_ENABLE_MCTF
         // this is correct that outputForApp is used:

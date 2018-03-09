@@ -785,7 +785,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMem
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9VideoCORE::DoFastCopyWrapper");
     mfxStatus sts;
 
-    mfxHDL srcHandle, dstHandle;
+    mfxHDLPair srcHandle, dstHandle;
     mfxMemId srcMemId, dstMemId;
 
     mfxFrameSurface1 srcTempSurface, dstTempSurface;
@@ -825,10 +825,10 @@ mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMem
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetExternalFrameHDL(srcMemId, &srcHandle);
+            sts = GetExternalFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = srcHandle;
+            srcTempSurface.Data.MemId = &srcHandle;
         }
     }
     else if (srcMemType & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -850,10 +850,10 @@ mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMem
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetFrameHDL(srcMemId, &srcHandle);
+            sts = GetFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = srcHandle;
+            srcTempSurface.Data.MemId = &srcHandle;
         }
     }
 
@@ -876,10 +876,10 @@ mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMem
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetExternalFrameHDL(dstMemId, &dstHandle);
+            sts = GetExternalFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = dstHandle;
+            dstTempSurface.Data.MemId = &dstHandle;
         }
     }
     else if (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -901,10 +901,10 @@ mfxStatus D3D9VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMem
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetFrameHDL(dstMemId, &dstHandle);
+            sts = GetFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = dstHandle;
+            dstTempSurface.Data.MemId = &dstHandle;
         }
     }
 
@@ -1011,8 +1011,8 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
             mfxU32 counter = 0;
             do
             {
-                stretchRectResult = direct3DDevice->StretchRect((IDirect3DSurface9*) pSrc->Data.MemId, &rect,
-                                                                (IDirect3DSurface9*) pDst->Data.MemId, &rect,
+                stretchRectResult = direct3DDevice->StretchRect((IDirect3DSurface9*) ((mfxHDLPair *)pSrc->Data.MemId)->first, &rect,
+                                                                (IDirect3DSurface9*) ((mfxHDLPair *)pDst->Data.MemId)->first, &rect,
                                                                  D3DTEXF_LINEAR);
                 if (FAILED(stretchRectResult))
                     Sleep(20);
@@ -1039,7 +1039,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
         }
         else
         {
-            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *) pSrc->Data.MemId;
+            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *)((mfxHDLPair *)pSrc->Data.MemId)->first;
 
             hRes  = pSurface->GetDesc(&sSurfDesc);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
@@ -1085,7 +1085,7 @@ mfxStatus D3D9VideoCORE::DoFastCopyExtended(mfxFrameSurface1 *pDst, mfxFrameSurf
         }
         else
         {
-            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *) pDst->Data.MemId;
+            IDirect3DSurface9 *pSurface = (IDirect3DSurface9 *)((mfxHDLPair *)pDst->Data.MemId)->first;
 
             hRes  = pSurface->GetDesc(&sSurfDesc);
             MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);

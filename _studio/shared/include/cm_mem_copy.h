@@ -71,6 +71,11 @@ typedef mfxI32 cmStatus;
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
+static bool operator < (const mfxHDLPair & l, const mfxHDLPair & r)
+{
+    return (l.first == r.first) ? (l.second < r.second) : (l.first < r.first);
+};
+
 class CmDevice;
 class CmBuffer;
 class CmBufferUP;
@@ -305,7 +310,7 @@ protected:
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex;
     std::map<CmBufferUP *,  SurfaceIndex *> m_tableSysIndex;
 
-    std::map<void *, CmSurface2D *> m_tableCmRelations2;
+    std::map<mfxHDLPair, CmSurface2D *> m_tableCmRelations2;
     std::map<mfxU8 *, CmBufferUP *> m_tableSysRelations2;
 
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex2;
@@ -317,7 +322,7 @@ protected:
     UMC::Mutex m_guard;
 
     CmSurface2D * CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode,
-                                    std::map<void *, CmSurface2D *> & tableCmRelations,
+                                    std::map<mfxHDLPair, CmSurface2D *> & tableCmRelations,
                                     std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex);
 
     SurfaceIndex  * CreateUpBuffer(mfxU8 *pDst, mfxU32 memSize,

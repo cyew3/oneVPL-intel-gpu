@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(OSX)
@@ -121,7 +121,7 @@ namespace
 
 #endif /* #if defined(CM_WIN) */
 
-enum { DX9=1, DX11=2, VAAPI=3 };
+enum { DX9 = 1, DX11 = 2, VAAPI = 3 };
 
 #if defined(CM_WIN) 
 typedef INT (* CreateCmDeviceDx9FuncTypeEx)(CmDx9::CmDevice *&, UINT &, IDirect3DDeviceManager9 *, UINT);
@@ -164,6 +164,19 @@ public:
         case DX11:  return m_dx11->GetD3D11Device((ID3D11Device *&)pDevice);
 #else
         case VAAPI: return CM_NOT_IMPLEMENTED;
+#endif
+        default:    return CM_NOT_IMPLEMENTED;
+        }
+    }
+
+    INT CreateSurface2D(mfxHDLPair D3DSurfPair, CmSurface2D *& pSurface)
+    {
+        switch (m_platform) {
+#if defined(CM_WIN)
+        case DX9:   return m_dx9->CreateSurface2D((IDirect3DSurface9 *)D3DSurfPair.first, pSurface);
+        case DX11:  return m_dx11->CreateSurface2DbySubresourceIndex((ID3D11Texture2D *)D3DSurfPair.first, static_cast<UINT>((size_t)D3DSurfPair.second), 0, pSurface);
+#else
+        case VAAPI: return m_linux->CreateSurface2D(*(VASurfaceID*)D3DSurfPair.first, pSurface);
 #endif
         default:    return CM_NOT_IMPLEMENTED;
         }
