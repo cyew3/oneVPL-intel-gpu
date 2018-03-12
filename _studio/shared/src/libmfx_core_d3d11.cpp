@@ -1158,7 +1158,7 @@ bool D3D11VideoCORE::IsCompatibleForOpaq()
 {
     if (!m_bUseExtManager)
     {
-        return (m_session->m_pScheduler->GetNumRef() > 2)?false:true;
+        return m_session->m_pOperatorCore->HaveJoinedSessions() == false;
     }
     return true;
 }

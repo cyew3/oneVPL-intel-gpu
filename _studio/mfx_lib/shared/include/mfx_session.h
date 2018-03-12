@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(_MFX_SESSION_H)
@@ -137,11 +137,11 @@ struct _mfxSession
     inline
     bool IsParentSession(void)
     {
-        // parent session has multiple references to its scheduler.
-        // regular session has 2 references to the scheduler.
-        // child session has only 1 reference to it.
-        if(m_pSchedulerAllocated)
-            return (2 < m_pSchedulerAllocated->GetNumRef());
+        // if a session has m_pSchedulerAllocated != NULL
+        // and the number of "Cores" > 1, then it's a parrent session.
+        // and the number of "Cores" == 1, then it's a regular session.
+        if (m_pSchedulerAllocated)
+            return m_pOperatorCore->HaveJoinedSessions();
         else
             return false;
     }
