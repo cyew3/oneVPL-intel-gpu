@@ -74,12 +74,105 @@ private:
     deleter_func m_func;
 };
 
+DXAccelerator::DXAccelerator()
+{
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+    m_EventsMap.Init();
+#endif
+}
+
+DXAccelerator::~DXAccelerator()
+{
+    Close();
+}
+
+UMC::Status DXAccelerator::Close(void)
+{
+
+    return VideoAccelerator::Close();
+}
+
 // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
 Status DXAccelerator::BeginFrame(Ipp32s  index, Ipp32u fieldId)
 {
     (void)fieldId;
     Status sts = BeginFrame(index);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+    if (sts != UMC_OK)
+        return sts;
+    DdiEvent ev;
+    const uint8_t GPU_COMPONENT_DECODE_ID = 2;
+    ev.m_gpuComponentId = GPU_COMPONENT_DECODE_ID; // GPU_COMPONENT_DECODE
+
+    ev.gpuSyncEvent = m_EventsMap.GetFreeEventAndMap( index, fieldId);
+
+    if (ev.gpuSyncEvent == INVALID_HANDLE_VALUE)
+        return UMC_ERR_INVALID_PARAMS;
+
+    sts = RegisterGpuEvent(ev);
+#ifdef  _DEBUG
+    MFX_TRACE_3("RegisterGpuEvent", "index=%d, fieldId=%d event %p", index, fieldId, ev.gpuSyncEvent);
+#endif
+
+#endif
     return sts;
+}
+
+Status DXAccelerator::SyncTask(Ipp32s index, void * error)
+{
+    (void)index;
+    (void)error;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+    const Ipp32u timeoutms = 5000; // TIMEOUT FOR DECODE OPERATION
+    const size_t MAX_FIELD_SUPPORTED = 2;
+
+    Status sts = UMC_OK;
+    
+    HANDLE handle[MAX_FIELD_SUPPORTED] = { INVALID_HANDLE_VALUE,INVALID_HANDLE_VALUE };
+    size_t count = 0;
+
+    EventCache::MapValue events = m_EventsMap.GetEvents(index);
+    if (sts != UMC_OK)
+        return sts;
+
+    if (events[0] != INVALID_HANDLE_VALUE)
+    {
+        handle[count]=events[0];
+        count++;
+    }
+    if (events[1] != INVALID_HANDLE_VALUE)
+    {
+        handle[count] = events[1];
+        count++;
+    }
+
+    if (count == 0 )
+        return UMC::UMC_ERR_INVALID_PARAMS;
+
+#ifdef  _DEBUG
+    MFX_TRACE_3("WaitForMultipleObjects", "(count = %d handle[0] = %p handle[1] = %p)", (int)count, handle[0], handle[1]);
+#endif
+    HRESULT waitRes = WaitForMultipleObjects((DWORD)count, handle, TRUE, timeoutms);
+
+#ifdef  _DEBUG
+    MFX_TRACE_2("WaitForMultipleObjects", "index = %d HR=%d", index, waitRes);
+#endif
+
+    if (WAIT_TIMEOUT == waitRes)
+    {
+        return UMC::UMC_ERR_TIMEOUT;
+    }
+    else if (WAIT_OBJECT_0 != waitRes)
+    {
+        sts = UMC::UMC_ERR_DEVICE_FAILED;
+    }
+
+    (void)m_EventsMap.FreeEvents(index);
+
+    return sts;
+#else
+    return UMC_ERR_UNSUPPORTED;
+#endif
 }
 
 void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*size*/, Ipp32s /*index*/)
@@ -385,6 +478,35 @@ Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
     CHECK_HR(hr);
     return UMC_OK;
 }
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+Status DXVA2Accelerator::RegisterGpuEvent(DdiEvent &ev)
+{
+    DXVA2_DecodeExecuteParams executeParams;
+    DXVA2_DecodeExtensionData extensionData;
+    HRESULT hr;
+
+    memset(&executeParams, 0, sizeof(DXVA2_DecodeExecuteParams));
+    memset(&extensionData, 0, sizeof(DXVA2_DecodeExtensionData));
+
+    executeParams.NumCompBuffers = 0;
+    executeParams.pCompressedBuffers = 0;
+    executeParams.pExtensionData = &extensionData;
+    extensionData.Function = 0x11; //DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE
+    extensionData.pPrivateInputData = &ev;
+    extensionData.PrivateInputDataSize = sizeof(ev);
+
+    hr = m_pDXVAVideoDecoder->Execute(&executeParams);
+
+#ifdef  _DEBUG
+    MFX_TRACE_1("RegisterGpuEvent"," HR = %d", hr);
+#endif
+    if (FAILED(hr))
+        return UMC::UMC_ERR_DEVICE_FAILED;
+
+    return UMC_OK;
+}
+#endif
 
 Status DXVA2Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
 {
@@ -724,7 +846,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                 auto_deleter_stdcall_void<VOID> automatic1(pConfig, &CoTaskMemFree);
 
                 bool isHEVCGUID = (m_Profile & 0xf) == VA_H265;
-                
+
                 // Find a supported configuration.
                 int idxConfig = -1;
                 for (UINT iConfig = 0; iConfig < cConfigurations; iConfig++)
@@ -863,7 +985,7 @@ Status DXVA2Accelerator::Close()
 #endif
 
     m_bInitilized = FALSE;
-    return VideoAccelerator::Close();
+    return DXAccelerator::Close();
 }
 
 #endif // UMC_VA_DXVA

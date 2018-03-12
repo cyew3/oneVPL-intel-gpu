@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -89,6 +89,7 @@ public:
     PackerDXVA2(VideoAccelerator * va, TaskSupplier * supplier);
 
     Status GetStatusReport(void * pStatusReport, size_t size);
+    virtual Status SyncTask(H264DecoderFrame*, void * error);
 
     void PackAU(const H264DecoderFrame*, Ipp32s isTop);
 

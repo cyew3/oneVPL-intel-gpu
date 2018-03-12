@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -35,9 +35,9 @@ class mfx_UMC_FrameAllocator;
 
 class MFXD3D11Accelerator : public UMC::DXAccelerator
 {
-    
+
 public:
-    MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice, 
+    MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice,
                         ID3D11VideoContext *pVideoContext);
 
     virtual ~MFXD3D11Accelerator()
@@ -47,7 +47,7 @@ public:
 
     // I/F between core and accelerator
     virtual UMC::Status Init(UMC::VideoAcceleratorParams *pParams) {pParams; return UMC::UMC_ERR_UNSUPPORTED;};
-    
+
     // Will use this function instead of previos two: FindConfiguration, Init
     mfxStatus CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator);
 
@@ -57,7 +57,6 @@ public:
     virtual UMC::Status ExecuteExtensionBuffer(void * buffer){buffer;return UMC::UMC_ERR_UNSUPPORTED;};
     virtual HRESULT GetVideoDecoderDriverHandle(HANDLE *pDriverHandle) {return m_pDecoder->GetDriverHandle(pDriverHandle);};
     virtual UMC::Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
-    virtual UMC::Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC::UMC_ERR_UNSUPPORTED;}
     virtual UMC::Status QueryTaskStatus(Ipp32s , void *, void *) { return UMC::UMC_ERR_UNSUPPORTED;}
     virtual UMC::Status EndFrame(void * handle = 0);
 
@@ -69,7 +68,11 @@ public:
     };
 
     virtual UMC::Status Close();
-    
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+protected:
+    virtual UMC::Status RegisterGpuEvent(DdiEvent &ev);
+#endif
 private:
 
     mfxStatus GetSuitVideoDecoderConfig(const mfxVideoParam            *param,        //in
@@ -78,7 +81,7 @@ private:
 
 
     D3D11_VIDEO_DECODER_BUFFER_TYPE MapDXVAToD3D11BufType(const Ipp32s DXVABufType) const;
-                                    
+
 
     UMC::Status GetCompBufferInternal(UMC::UMCVACompBuffer*);
     UMC::Status ReleaseBufferInternal(UMC::UMCVACompBuffer*);
@@ -87,11 +90,11 @@ private:
 
     ID3D11VideoDevice               *m_pVideoDevice;
     ID3D11VideoContext              *m_pVideoContext;
-    
-    // we own video decoder, let using com pointer 
+
+    // we own video decoder, let using com pointer
     CComPtr<ID3D11VideoDecoder>      m_pDecoder;
 
-    // current decoer
+    // current decoder
     GUID                              m_DecoderGuid;
 
     ID3D11VideoDecoderOutputView *m_pVDOView;

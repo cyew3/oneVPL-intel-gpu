@@ -213,6 +213,7 @@
   <ItemGroup>
     <ClCompile Include="src\umc_va_dxva2.cpp" />
     <ClCompile Include="src\umc_va_dxva2_protected.cpp" />
+    <ClCompile Include="src\umc_win_event_cache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\umc_hevc_ddi.h" />
@@ -220,6 +221,7 @@
     <ClInclude Include="include\umc_mvc_ddi.h" />
     <ClInclude Include="include\umc_va_dxva2.h" />
     <ClInclude Include="include\umc_va_dxva2_protected.h" />
+    <ClInclude Include="include\umc_win_event_cache.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

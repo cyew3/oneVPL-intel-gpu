@@ -55,9 +55,6 @@ private:
     std::vector<EVENT_TYPE> m_Free;
     mfxU16 m_nInitNumberOfEvents;
 };
-
-extern vm_mutex gLock;
-
 #endif /* #if defined(MFX_VA_WIN) */
 #endif /* #ifndef __MFX_WIN_EVENT_CACHE_H__ */
 

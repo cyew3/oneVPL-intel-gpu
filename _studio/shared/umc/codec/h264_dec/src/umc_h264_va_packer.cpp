@@ -115,6 +115,11 @@ PackerDXVA2::PackerDXVA2(VideoAccelerator * va, TaskSupplier * supplier)
 {
 }
 
+Status PackerDXVA2::SyncTask(H264DecoderFrame* pFrame, void * error)
+{
+    return m_va->SyncTask(pFrame->GetFrameData()->GetFrameMID(), error);
+}
+
 Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
 {
     return m_va->ExecuteStatusReportBuffer(pStatusReport, (Ipp32u)size);

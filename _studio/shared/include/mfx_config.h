@@ -401,5 +401,4 @@
 #endif
 #endif
 
-
 #endif // _MFX_CONFIG_H_

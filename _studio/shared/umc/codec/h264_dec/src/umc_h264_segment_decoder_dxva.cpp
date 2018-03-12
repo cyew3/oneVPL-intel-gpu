@@ -222,70 +222,74 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 #if defined(UMC_VA_DXVA)
     bool wasCompleted = false;
 
-
-    DXVA_Status_H264 pStatusReport[NUMBER_OF_STATUS];
-
-    // check cached feedback
-    // may be frame was marked as ready during last QueryStatus call
-    if (m_reports.size() && m_FirstAU)
+    for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
-        H264DecoderFrameInfo * au = m_FirstAU;
-        while (au)
-        {
-            if (CheckCachedFeedbackAndComplete(au) == false)
-            {
-                break;
-            }
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+        //skip second field for sync.
+        H264DecoderFrameInfo* prev = au->GetPrevAU();
+        bool skip = (prev && prev->m_pFrame == au->m_pFrame);
+        Status waitSts = UMC_OK;
 
+        if (!skip)
+        {
+            m_mGuard.Unlock();
+
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+            waitSts = dxva_sd->GetPacker()->SyncTask(au->m_pFrame, NULL);
+            m_mGuard.Lock();
+        }
+#endif
+        // Regardless of wait status check feedback and query status
+        // if found in cache or reported by driver
+        // just will mark frame as completed one more time
+        if (CheckCachedFeedbackAndComplete(au) == true)
+        {
             wasCompleted = true;
-            au = au->GetNextAU();
         }
-        SwitchCurrentAU();
-    }
-
-    //memset (&pStatusReport, 0, sizeof(pStatusReport));
-    for(int i = 0; i < NUMBER_OF_STATUS; i++)
-        pStatusReport[i].bStatus = 3;
-
-    dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Status_H264)* NUMBER_OF_STATUS);
-
-    for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
-    {
-        if(pStatusReport[i].bStatus == 3)
-            throw h264_exception(UMC_ERR_DEVICE_FAILED);
-        if (!pStatusReport[i].StatusReportFeedbackNumber || pStatusReport[i].CurrPic.Index7Bits == 127 ||
-            (pStatusReport[i].StatusReportFeedbackNumber & 0x80000000))
-            continue;
-
-        wasCompleted = true;
-        bool wasFound = false;
-        for (H264DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
+        else
         {
-            if (pStatusReport[i].field_pic_flag)
+            // not in cache. request status then
+            //DXVA_Status_H264 pStatusReport[NUMBER_OF_STATUS];
+            DXVA_Status_H264 pStatusReport[NUMBER_OF_STATUS];
+
+            for (int i = 0; i < NUMBER_OF_STATUS; i++)
+                pStatusReport[i].bStatus = 3;
+
+            dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Status_H264)* NUMBER_OF_STATUS);
+
+            for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
             {
-                if ((pStatusReport[i].CurrPic.AssociatedFlag == 1) != au->IsBottom())
+                if (pStatusReport[i].bStatus == 3)
+                    throw h264_exception(UMC_ERR_DEVICE_FAILED);
+                if (!pStatusReport[i].StatusReportFeedbackNumber || pStatusReport[i].CurrPic.Index7Bits == 127 ||
+                    (pStatusReport[i].StatusReportFeedbackNumber & 0x80000000))
                     continue;
-            }
 
-            if (pStatusReport[i].CurrPic.Index7Bits == au->m_pFrame->m_index)
-            {
-                SetCompletedAndErrorStatus(pStatusReport[i].bStatus, au);
-                wasFound = true;
-                break;
+                wasCompleted = true;
+                if ((pStatusReport[i].CurrPic.Index7Bits == (Ipp32u)au->m_pFrame->m_index) && (au->IsBottom() == (pStatusReport[i].CurrPic.AssociatedFlag != 0)))
+                {
+                    SetCompletedAndErrorStatus(pStatusReport[i].bStatus, au);
+                }
+                else
+                {
+                    if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].CurrPic.Index7Bits, pStatusReport[i].CurrPic.AssociatedFlag, 0)) == m_reports.end())
+                    {
+                        m_reports.push_back(ReportItem(pStatusReport[i].CurrPic.Index7Bits, pStatusReport[i].CurrPic.AssociatedFlag, pStatusReport[i].bStatus));
+                    }
+                }
             }
-
-            break;
         }
 
-        if (!wasFound)
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+        //check exit from waiting status.
+        if (waitSts != UMC_OK)
         {
-            if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].CurrPic.Index7Bits, pStatusReport[i].CurrPic.AssociatedFlag, 0)) == m_reports.end())
-            {
-                m_reports.push_back(ReportItem(pStatusReport[i].CurrPic.Index7Bits, pStatusReport[i].CurrPic.AssociatedFlag, pStatusReport[i].bStatus));
-            }
+            // we have a problem wait is failed due to some reason
+            SetCompletedAndErrorStatus(2, au); //ERROR_FRAME_MAJOR
+            au->m_pFrame->SetError(UMC_ERR_DEVICE_FAILED);
         }
+#endif
     }
-
     SwitchCurrentAU();
 
     if (!wasCompleted && m_FirstAU)

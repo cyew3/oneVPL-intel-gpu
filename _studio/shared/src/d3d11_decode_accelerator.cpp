@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined  (MFX_VA)
@@ -248,6 +248,35 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
 } // mfxStatus  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+Status MFXD3D11Accelerator::RegisterGpuEvent(DdiEvent &ev)
+{
+    HRESULT hr = S_OK;
+
+    // [2.4] send to driver
+    D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+    decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+    decoderExtParams.pPrivateInputData = &(ev);
+    decoderExtParams.PrivateInputDataSize = sizeof(ev);
+    decoderExtParams.pPrivateOutputData = NULL;
+    decoderExtParams.PrivateOutputDataSize = 0;
+    decoderExtParams.ResourceCount = 0;
+    decoderExtParams.ppResourceList = NULL;
+
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "RegisterGpuEventHandle");
+        hr = m_pVideoContext->DecoderExtension(m_pDecoder, &decoderExtParams);
+    }
+#ifdef _DEBUG
+    MFX_TRACE_1("RegisterGpuEvent"," HR = %d\n", hr);
+#endif
+
+    if SUCCEEDED(hr)
+        return UMC_OK;
+
+    return UMC_ERR_DEVICE_FAILED;
+}
+#endif
 
 Status MFXD3D11Accelerator::EndFrame(void *handle)
 {
@@ -409,7 +438,7 @@ Status MFXD3D11Accelerator::Close()
     m_videoProcessingVA = 0;
 #endif
 
-    return VideoAccelerator::Close();
+    return DXAccelerator::Close();
 }
 
 bool MFXD3D11Accelerator::IsIntelCustomGUID() const

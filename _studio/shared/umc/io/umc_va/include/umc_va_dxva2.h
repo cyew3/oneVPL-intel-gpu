@@ -23,6 +23,10 @@
 #include "umc_mvc_ddi.h"
 #include "umc_hevc_ddi.h"
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#include "umc_win_event_cache.h"
+#endif
+
 #define DEFINE_GUID_(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     static const GUID name = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 
@@ -170,6 +174,9 @@ class DXAccelerator : public VideoAccelerator
     DYNAMIC_CAST_DECL(DXAccelerator, VideoAccelerator);
 
 public:
+    DXAccelerator();
+    virtual ~DXAccelerator();
+    virtual Status Close(void);
 
     void* GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf = NULL, Ipp32s size = -1, Ipp32s index = -1);
     Status ReleaseBuffer(Ipp32s type);
@@ -178,11 +185,11 @@ public:
     // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
     virtual Status BeginFrame(Ipp32s  index, Ipp32u fieldId);
 
+    virtual Status SyncTask(Ipp32s index, void * error = NULL);
 private:
 
     virtual Status GetCompBufferInternal(UMCVACompBuffer*) = 0;
     virtual Status ReleaseBufferInternal(UMCVACompBuffer*) = 0;
-
 protected:
 
     UMCVACompBuffer* FindBuffer(Ipp32s type);
@@ -191,6 +198,18 @@ protected:
 
     UMCVACompBuffer         m_pCompBuffer[MAX_BUFFER_TYPES];
     std::vector<Ipp32s>     m_bufferOrder;
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+    struct DdiEvent
+    {
+        uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID
+        HANDLE          gpuSyncEvent;
+    };
+
+    UMC::EventCache m_EventsMap;
+protected:
+    virtual Status RegisterGpuEvent(DdiEvent &ev) = 0;
+#endif
 };
 
 class DXVA2Accelerator : public DXAccelerator
@@ -210,7 +229,6 @@ public:
     virtual Status Execute();
     virtual Status ExecuteExtensionBuffer(void * buffer);
     virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
-    virtual Status SyncTask(Ipp32s index, void * error = NULL) { index; error; return UMC_ERR_UNSUPPORTED;}
     virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
     virtual Status EndFrame(void * handle = 0);
 
@@ -236,6 +254,9 @@ protected:
                           DXVA2_ConfigPictureDecode     *pDecoderConfig,
                           int                           cNumberSurfaces);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+    virtual Status RegisterGpuEvent(DdiEvent &ev);
+#endif
 private:
 
     Status GetCompBufferInternal(UMCVACompBuffer*);
