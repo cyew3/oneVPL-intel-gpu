@@ -41,6 +41,7 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
+    vm_mutex_set_invalid(&m_mfe_status_guard);
     m_feedbackUpdate.clear();
     m_cachedFeedback.clear();
     m_contexts.reserve(MAX_FRAMES_TO_COMBINE);
@@ -112,7 +113,42 @@ MFEDXVAEncoder::CAPS MFEDXVAEncoder::GetCaps(MFE_CODEC codecId)
         }
         return (CAPS)m_pAvcCAPS;
     }
-    case DDI_CODEC_HEVC: return (CAPS)m_pHevcCAPS;
+    case DDI_CODEC_HEVC:
+    {
+        if (!m_pHevcCAPS)
+        {
+            D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+            MFE_CODEC ddi_codec = DDI_CODEC_HEVC;
+            decoderExtParam.Function = ENCODE_MFE_SET_CODEC_ID;
+            decoderExtParam.pPrivateInputData = &ddi_codec;
+            decoderExtParam.PrivateInputDataSize = sizeof(MFE_CODEC);
+            decoderExtParam.pPrivateOutputData = 0;
+            decoderExtParam.PrivateOutputDataSize = 0;
+            decoderExtParam.ResourceCount = 0;
+            decoderExtParam.ppResourceList = 0;
+
+            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
+            if (hr != S_OK)
+            {
+                return NULL;
+            }
+            m_pHevcCAPS = new ENCODE_CAPS_HEVC;
+            decoderExtParam.Function = ENCODE_QUERY_ACCEL_CAPS_ID;
+            decoderExtParam.pPrivateInputData = 0;
+            decoderExtParam.PrivateInputDataSize = 0;
+            decoderExtParam.pPrivateOutputData = m_pHevcCAPS;
+            decoderExtParam.PrivateOutputDataSize = sizeof(ENCODE_CAPS_HEVC);
+            decoderExtParam.ResourceCount = 0;
+            decoderExtParam.ppResourceList = 0;
+
+            hr = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParam);
+            if (hr != S_OK)
+            {
+                return NULL;
+            }
+        }
+        return (CAPS)m_pHevcCAPS;
+    }
 #ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
     case DDI_CODEC_AV1: return (CAPS)m_pAv1CAPS;
 #endif
@@ -226,12 +262,12 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
     {
         return MFX_ERR_NOT_INITIALIZED;
     }
-    info.StreamId = (int)m_streams_pool.size();
     if (info.StreamId != 0)
     {
         assert(info.StreamId);
         return MFX_ERR_UNDEFINED_BEHAVIOR;//something went wrong and we got non zero StreamID from encoder;
     }
+    info.StreamId = (int)m_streams_pool.size();
     for (iter = m_streams_pool.begin(); iter != m_streams_pool.end(); iter++)
     {
         //if we get into mfxU32 max - fail now(assume we never get so big amount of streams reallocation in one process session)
