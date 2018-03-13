@@ -3576,12 +3576,15 @@ int RunGpu(
     CmDevice *device, CmQueue *queue, CmKernel *kernel, int WIDTH, int HEIGHT)
 {
     int res;
+    mfxHDLPair in_pair = static_cast<mfxHDLPair>(*(mfxHDLPair *)inD3DSurf);
+    mfxHDLPair out_pair = static_cast<mfxHDLPair>(*(mfxHDLPair *)outD3DSurf);
     CmSurface2D *input = 0;
-    res = device->CreateSurface2D( inD3DSurf, input);
+    CmSurface2D *output = 0;
+
+    res = device->CreateSurface2D(in_pair, input);
     CHECK_CM_ERR(res);
 
-    CmSurface2D *output = 0;
-    res = device->CreateSurface2D(outD3DSurf, output);
+    res = device->CreateSurface2D(out_pair, output);
     CHECK_CM_ERR(res);
 
     unsigned int tsWidth = WIDTH / 16;
@@ -3990,7 +3993,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
                 imfxFPMode = (imfxFPMode == TFF2FIELD) ? BFF2FIELD : TFF2FIELD;
             }
         }
-        sts = ProcessFieldCopy(m_executeSurf[0].hdl.first, m_executeParams.targetSurface.hdl.first, imfxFPMode);
+        sts = ProcessFieldCopy((mfxHDL)&m_executeSurf[0].hdl, (mfxHDL)&m_executeParams.targetSurface.hdl, imfxFPMode);
         MFX_CHECK_STS(sts);
 
         if ((imfxFPMode == FIELD2TFF) || (imfxFPMode == FIELD2BFF))
@@ -4002,7 +4005,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
             // copy the second field to frame
             imfxFPMode = (imfxFPMode == FIELD2TFF) ? FIELD2BFF : FIELD2TFF;
-            sts = ProcessFieldCopy(m_executeSurf[1].hdl.first, m_executeParams.targetSurface.hdl.first, imfxFPMode);
+            sts = ProcessFieldCopy((mfxHDL)&m_executeSurf[1].hdl, (mfxHDL)&m_executeParams.targetSurface.hdl, imfxFPMode);
             MFX_CHECK_STS(sts);
         }
 
