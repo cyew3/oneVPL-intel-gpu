@@ -33,12 +33,15 @@ typedef struct _DXVA_PicEntry_AV1
     };
 } DXVA_PicEntry_AV1, *PDXVA_PicEntry_AV1;
 
-#if UMC_AV1_DECODER_REV == 0
-#define AV1D_DDI_VERSION 8
-#elif UMC_AV1_DECODER_REV == 251
-#define AV1D_DDI_VERSION 15
-#elif UMC_AV1_DECODER_REV == 252
-#define AV1D_DDI_VERSION 15
+#if UMC_AV1_DECODER_REV == 0 // Rev 0
+    #define AV1D_DDI_VERSION 8
+#elif UMC_AV1_DECODER_REV == 251 // Rev 0.25.1
+    // The driver uses mix of DDI 0.10 and DDI 0.15 for Rev 0.25.1.
+    // We use DDI 0.15 as basic version and handle insertions of 0.10 by macro DDI_MIX_FOR_REV_251.
+    #define AV1D_DDI_VERSION 15
+    #define DDI_MIX_FOR_REV_251
+#elif UMC_AV1_DECODER_REV == 252 // Rev 0.25.2
+    #define AV1D_DDI_VERSION 18
 #endif
 
 #if AV1D_DDI_VERSION == 8
@@ -58,6 +61,7 @@ typedef struct _segmentation_AV1 {
     //UCHAR pred_probs[3];
     SHORT feature_data[8][4];
     UCHAR feature_mask[8];
+
 } DXVA_segmentation_AV1;
 
 // picture params buffer
@@ -218,7 +222,9 @@ typedef struct _segmentation_AV1 {
                 UCHAR   enabled         : 1;
                 UCHAR   update_map      : 1;
                 UCHAR   temporal_update : 1;
+#if AV1D_DDI_VERSION < 17
                 UCHAR   abs_delta       : 1;
+#endif
                 UCHAR   update_data     : 1;
                 UCHAR   Reserved4Bits   : 3;
             };
@@ -226,6 +232,12 @@ typedef struct _segmentation_AV1 {
         };
         SHORT feature_data[8][4];
         UCHAR feature_mask[8];
+
+#if AV1D_DDI_VERSION >= 16
+        // CONFIG_Q_SEGMENTATION
+        UCHAR q_lvls; // [0..255]
+        SHORT q_delta[8]; // [-255..255]
+#endif
     } DXVA_segmentation_AV1;
 
 typedef struct _DXVA_Intel_PicParams_AV1
@@ -252,15 +264,34 @@ typedef struct _DXVA_Intel_PicParams_AV1
             UINT    use_reference_buffer            : 1;
             UINT    cur_frame_mv_precision_level    : 2;
             UINT    reset_frame_context         : 2;    // [0..2]
+#if AV1D_DDI_VERSION >= 16
+            UINT    monochrome : 1;
+            UINT    allow_intrabc : 1;
+            UINT    seq_force_integer_mv : 2;	// [0..2]
+            UINT    ReservedFormatInfo2Bits : 7;
+#else
             UINT    ReservedFormatInfo2Bits         : 11;
+#endif
         } fields;
         UINT value;
     } dwFormatAndPictureInfoFlags;
 
+#if AV1D_DDI_VERSION >= 16
+    USHORT    max_frame_width_minus1;     // [0..65535]
+    USHORT    max_frame_height_minus1;    // [0..65535]
+#endif
+
     USHORT  frame_width_minus1;         // [0..65535]
     USHORT  frame_height_minus1;        // [0..65535]
+#if AV1D_DDI_VERSION >= 16
+    UCHAR   superres_scale_denominator; // [9..16]
+#endif
 
-    UCHAR       BitDepthMinus8;            // [0, 2, 4]
+#if AV1D_DDI_VERSION >= 18
+    UCHAR       bit_depth;               // [8, 10, 12]
+#else
+    UCHAR       BitDepthMinus8;         // [0, 2, 4]
+#endif
     UCHAR       frame_interp_filter;              // [0..9]
 
     DXVA_PicEntry_AV1   ref_frame_map[8];
@@ -276,16 +307,16 @@ typedef struct _DXVA_Intel_PicParams_AV1
     // UCHAR        refresh_frame_flags;
 
     // deblocking filter
-#if UMC_AV1_DECODER_REV <= 252
+#if AV1D_DDI_VERSION >= 11 && !defined(DDI_MIX_FOR_REV_251)
+    UCHAR       filter_level[2];            // [0..63]
+    UCHAR       filter_level_u;             // [0..63]
+    UCHAR       filter_level_v;             // [0..63]
+#else
     // driver still uses single filter level even after switch to DDI 0.11
     // for Rev 0.25.1 we mimic this behavior
     // for Rev 0.25.2 there is no final clarity - let's mimic this behavior so far
     // TODO: change once driver support for different filter levels will be added
     UCHAR       filter_level;                  // [0..63]
-#else
-    UCHAR       filter_level[2];            // [0..63]
-    UCHAR       filter_level_u;             // [0..63]
-    UCHAR       filter_level_v;             // [0..63]
 #endif
     UCHAR       sharpness_level;            // [0..7]
     union
@@ -306,8 +337,15 @@ typedef struct _DXVA_Intel_PicParams_AV1
     // quantization
     USHORT  base_qindex;                // [0..255]
     CHAR        y_dc_delta_q;           // [-63..63]
+#if AV1D_DDI_VERSION >= 17
+    CHAR        u_dc_delta_q;   // [-63..63]
+    CHAR        u_ac_delta_q;   // [-63..63]
+    CHAR        v_dc_delta_q;   // [-63..63]
+    CHAR        v_ac_delta_q;   // [-63..63]
+#else
     CHAR        uv_dc_delta_q;          // [-63..63]
     CHAR        uv_ac_delta_q;          // [-63..63]
+#endif
 
     union
     {
@@ -324,6 +362,12 @@ typedef struct _DXVA_Intel_PicParams_AV1
             UINT    delta_lf_present_flag       : 1;    // [0..1]
             UINT    log2_delta_lf_res       : 2;    // [0..3]
 
+#if AV1D_DDI_VERSION >= 16
+            // CONFIG_LOOPFILTER_LEVEL
+            UINT    delta_lf_multi : 1;  	// [0..1]
+#endif
+
+
             // read_tx_mode
             //UINT  tx_mode_select      : 1;    // [0..1]
             //UINT  frame_tx_mode       : 2;    // [0..3]
@@ -338,8 +382,10 @@ typedef struct _DXVA_Intel_PicParams_AV1
 
             UINT    reduced_tx_set_used     : 1;    // [0..1]
 
+#if AV1D_DDI_VERSION < 16
             // global motion
             UINT    transformation_type     : 3;    // [0..7]
+#endif
 
             // tiles
             UINT    uniform_tile_spacing_flag   : 1;    // [0..1]
@@ -349,12 +395,21 @@ typedef struct _DXVA_Intel_PicParams_AV1
             // screen content
             UINT    allow_screen_content_tools  : 1;    // [0..1]
 
-            UINT    ReservedField       : 2;    // [0]
+#if AV1D_DDI_VERSION >= 16
+            UINT    skip_mode_present : 1;      // [0..1]
+            UINT    ReservedField     : 3;    // [0]
+#else
+            UINT    ReservedField : 2;    // [0]
+#endif
        }    fields;
         UINT  value;
     } dwModeControlFlags;
 
     DXVA_segmentation_AV1   stAV1Segments;
+
+#if AV1D_DDI_VERSION >= 18 || defined(DDI_MIX_FOR_REV_251p5)
+    UINT                   tg_size_bit_offset;
+#endif
 
     UCHAR       log2_tile_cols;         // [0..6]
     UCHAR       log2_tile_rows;         // [0..6]
@@ -381,12 +436,26 @@ typedef struct _DXVA_Intel_PicParams_AV1
             USHORT  yframe_restoration_type : 2;    // [0..3]
             USHORT  cbframe_restoration_type    : 2;    // [0..3]
             USHORT  crframe_restoration_type    : 2;    // [0..3]
+#if AV1D_DDI_VERSION >= 16
+            USHORT  lr_unit_shift : 2;  // [0..2]
+            USHORT  lr_uv_shift : 1;    // [0..1]
+            USHORT  ReservedField : 7;  // [0]
+
+#else
             USHORT  restoration_tilesize_shift_0    : 2;    // [0..2]
             USHORT  restoration_tilesize_shift_1    : 2;    // [0..3]
-            USHORT      ReservedField       : 6;    // [0]
+            USHORT  ReservedField       : 6;    // [0]
+#endif
        }    fields;
         USHORT  value;
     } LoopRestorationFlags;
+
+#if AV1D_DDI_VERSION >= 16
+    // global motion
+    UCHAR   gm_type[7];     // [0..3]
+    INT     gm_params[7][6];
+#endif
+
 
     UCHAR       UncompressedHeaderLengthInBytes;// [0..255]
     UINT        BSBytesInBuffer;
@@ -395,7 +464,15 @@ typedef struct _DXVA_Intel_PicParams_AV1
 #endif
 
 //tile group control data buffer
-#if AV1D_DDI_VERSION >= 15
+#if AV1D_DDI_VERSION >= 17 || defined(DDI_MIX_FOR_REV_251p5)
+typedef struct _DXVA_Intel_BitStream_AV1_Short
+{
+    UINT        BSOBUDataLocation;
+    UINT        BitStreamBytesInBuffer;
+    USHORT      wBadBSBufferChopping;
+} DXVA_Intel_BitStream_AV1_Short, *LPDXVA_Intel_BitStream_AV1_Short;
+
+#elif AV1D_DDI_VERSION >= 15
 typedef struct _DXVA_Intel_Tile_Group_AV1_Short
 {
     UINT        BSOBUDataLocation;
