@@ -141,14 +141,15 @@ template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y416, res_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
 
 
-TS_REG_TEST_SUITE(hevcd_res_change,        (TestSuiteExt<MFX_FOURCC_NV12, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, res_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevcd_422_res_change,    (TestSuiteExt<MFX_FOURCC_YUY2, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, res_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevcd_444_res_change,    (TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_res_change,             (TestSuiteExt<MFX_FOURCC_NV12, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_res_change, (TestSuiteExt<MFX_FOURCC_YUY2, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_res_change, (TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, res_change_tag>::n_cases));
 
-TS_REG_TEST_SUITE(hevc10d_res_change,      (TestSuiteExt<MFX_FOURCC_P010, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, res_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_rext_res_change, (TestSuiteExt<MFX_FOURCC_P010, res_change_10b_422_rext_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, res_change_10b_422_rext_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_422_res_change,  (TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_444_res_change,  (TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_res_change,            (TestSuiteExt<MFX_FOURCC_P010, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_res_change, (TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_res_change, (TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, res_change_tag>::n_cases));
+
+TS_REG_TEST_SUITE(hevcd_10b_420_p010_rext_res_change, (TestSuiteExt<MFX_FOURCC_P010, res_change_10b_422_rext_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, res_change_10b_422_rext_tag>::n_cases));
 
 TS_REG_TEST_SUITE(hevcd_12b_420_p016_res_change, (TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P016, res_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevcd_12b_422_y216_res_change, (TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y216, res_change_tag>::n_cases));
