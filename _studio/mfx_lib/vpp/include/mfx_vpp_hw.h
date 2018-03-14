@@ -984,7 +984,7 @@ namespace MfxHwVideoProcessing
         // these maps are used to track cm-surfaces for MCTF
         // CmCopyWrapper also has similar maps, but it implements
         // additional functionallity which is not required for MCTF
-        std::map<void *, CmSurface2D *> m_MCTFtableCmRelations2;
+        std::map<mfxHDLPair, CmSurface2D *> m_MCTFtableCmRelations2;
         std::map<CmSurface2D *, SurfaceIndex *> m_MCTFtableCmIndex2;
 #endif
 

@@ -2556,20 +2556,21 @@ mfxStatus VideoVPPHW::ClearCmSurfaces2D()
 mfxStatus VideoVPPHW::CreateCmSurface2D(void *pSrcHDL, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
 {
     INT cmSts = 0;
-    std::map<void *, CmSurface2D *>::iterator it;
+    std::map<mfxHDLPair, CmSurface2D *>::iterator it;
     std::map<CmSurface2D *, SurfaceIndex *>::iterator it_idx;
+    mfxHDLPair SrcPair = static_cast<mfxHDLPair>(*(mfxHDLPair *)pSrcHDL);
 
     if (!m_pMctfCmDevice)
         return MFX_ERR_NOT_INITIALIZED;
 
-    it = m_MCTFtableCmRelations2.find(pSrcHDL);
+    it = m_MCTFtableCmRelations2.find(SrcPair);
     if (m_MCTFtableCmRelations2.end() == it)
     {
         //UMC::AutomaticUMCMutex guard(m_guard);
         {
-            cmSts = m_pMctfCmDevice->CreateSurface2D((AbstractSurfaceHandle *)pSrcHDL, pCmSurface2D);
+            cmSts = m_pMctfCmDevice->CreateSurface2D(SrcPair, pCmSurface2D);
             MFX_CHECK((CM_SUCCESS == cmSts), MFX_ERR_DEVICE_FAILED);
-            m_MCTFtableCmRelations2.insert(std::pair<void *, CmSurface2D *>(pSrcHDL, pCmSurface2D));
+            m_MCTFtableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
         }
 
         cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
@@ -4591,17 +4592,18 @@ mfxStatus VideoVPPHW::SubmitToMctf(void *pState, void *pParam, bool* bMctfReadyT
 
 
   
-            mfxHDLPair handle;
+            mfxHDLPair handle = {};
             CmSurface2D* pSurfCm(nullptr), *pSurfOutCm(nullptr);
             SurfaceIndex* pSurfIdxCm(nullptr), *pSurfOutIdxCm(nullptr);
 
             MFX_SAFE_CALL(pHwVpp->GetFrameHandle(pSurf, handle, bInForcedInternalAlloc));
-            MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurfCm, pSurfIdxCm));
+            MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(&handle), pSurfCm, pSurfIdxCm));
 
             if (pd3dSurf) 
             {
+                handle = {};
                 MFX_SAFE_CALL(pHwVpp->GetFrameHandle(pd3dSurf, handle, bOutForcedInternalAlloc));
-                MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurfOutCm, pSurfOutIdxCm));
+                MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(&handle), pSurfOutCm, pSurfOutIdxCm));
             }
             
             //sts = pHwVpp->m_pMCTFilter->MCTF_PUT_FRAME(MctfData, pSurf, pd3dSurf, bInForcedInternalAlloc, bOutForcedInternalAlloc);
@@ -4661,12 +4663,12 @@ mfxStatus VideoVPPHW::QueryFromMctf(void *pState, void *pParam, bool bMctfReadyT
             pSurf = &d3dSurf;
         }
 
-        mfxHDLPair handle;
+        mfxHDLPair handle = {};
         CmSurface2D* pSurfCm(nullptr);
         SurfaceIndex* pSurfIdxCm(nullptr);
 
         MFX_SAFE_CALL(pHwVpp->GetFrameHandle(pSurf, handle, bForcedInternalAlloc));
-        MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(handle.first), pSurfCm, pSurfIdxCm));
+        MFX_SAFE_CALL(pHwVpp->CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(&handle), pSurfCm, pSurfIdxCm));
 
         pHwVpp->m_pMCTFilter->MCTF_GET_FRAME(pSurfCm);
         pHwVpp->m_pMCTFilter->MCTF_TrackTimeStamp(pSurf);
