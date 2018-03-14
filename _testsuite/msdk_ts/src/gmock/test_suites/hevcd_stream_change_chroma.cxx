@@ -113,13 +113,13 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y416, chroma_change_tag>::tes
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y416, chroma_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y416, chroma_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
 
-TS_REG_TEST_SUITE(hevcd_chroma_change,       (TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevcd_422_chroma_change,   (TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevcd_444_chroma_change,   (TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_chroma_change,              (TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, chroma_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_chroma_change,  (TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, chroma_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_chroma_change,  (TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, chroma_change_tag>::n_cases));
 
-TS_REG_TEST_SUITE(hevc10d_chroma_change,     (TestSuiteExt<MFX_FOURCC_P010, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, chroma_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_422_chroma_change, (TestSuiteExt<MFX_FOURCC_Y210, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, chroma_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_444_chroma_change, (TestSuiteExt<MFX_FOURCC_Y410, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, chroma_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevc10d_chroma_change,            (TestSuiteExt<MFX_FOURCC_P010, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, chroma_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_chroma_change, (TestSuiteExt<MFX_FOURCC_Y210, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, chroma_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_chroma_change, (TestSuiteExt<MFX_FOURCC_Y410, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, chroma_change_tag>::n_cases));
 
 TS_REG_TEST_SUITE(hevcd_12b_420_p016_chroma_change, (TestSuiteExt<MFX_FOURCC_P016, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P016, chroma_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevcd_12b_422_y216_chroma_change, (TestSuiteExt<MFX_FOURCC_Y216, chroma_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y216, chroma_change_tag>::n_cases));
