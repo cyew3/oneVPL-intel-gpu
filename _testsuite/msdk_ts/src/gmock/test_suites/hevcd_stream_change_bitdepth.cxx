@@ -96,12 +96,12 @@ template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y416, bitdepth_change_tag>::n_cases = sizeof(TestSuiteExt<MFX_FOURCC_Y416, bitdepth_change_tag>::test_cases) / sizeof(TestSuite::tc_struct[max_num_ctrl]);
 
 TS_REG_TEST_SUITE(hevcd_bitdepth_change,       (TestSuiteExt<MFX_FOURCC_NV12, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, bitdepth_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevcd_422_bitdepth_change,   (TestSuiteExt<MFX_FOURCC_YUY2, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, bitdepth_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevcd_444_bitdepth_change,   (TestSuiteExt<MFX_FOURCC_AYUV, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, bitdepth_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_bitdepth_change,   (TestSuiteExt<MFX_FOURCC_YUY2, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_YUY2, bitdepth_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_bitdepth_change,   (TestSuiteExt<MFX_FOURCC_AYUV, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, bitdepth_change_tag>::n_cases));
 
 TS_REG_TEST_SUITE(hevc10d_bitdepth_change,     (TestSuiteExt<MFX_FOURCC_P010, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, bitdepth_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_422_bitdepth_change, (TestSuiteExt<MFX_FOURCC_Y210, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, bitdepth_change_tag>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_444_bitdepth_change, (TestSuiteExt<MFX_FOURCC_Y410, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, bitdepth_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_bitdepth_change, (TestSuiteExt<MFX_FOURCC_Y210, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y210, bitdepth_change_tag>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_bitdepth_change, (TestSuiteExt<MFX_FOURCC_Y410, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, bitdepth_change_tag>::n_cases));
 
 TS_REG_TEST_SUITE(hevcd_12b_420_p016_bitdepth_change, (TestSuiteExt<MFX_FOURCC_P016, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_P016, bitdepth_change_tag>::n_cases));
 TS_REG_TEST_SUITE(hevcd_12b_422_y216_bitdepth_change, (TestSuiteExt<MFX_FOURCC_Y216, bitdepth_change_tag>::RunTest), (TestSuiteExt<MFX_FOURCC_Y216, bitdepth_change_tag>::n_cases));
