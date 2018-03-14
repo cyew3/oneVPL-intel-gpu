@@ -80,9 +80,10 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         }
     }
 
-    if (0 == memcmp(uid.Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))
+    if ( (par.mfx.CodecId == MFX_CODEC_HEVC) &&
+         (uid.Data) && (0 == memcmp(uid.Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) )
     {
-		// MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
+        // MFX_PLUGIN_HEVCE_HW - unsupported on platform less SKL
         if (g_tsHWtype < MFX_HW_SKL)
         {
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
