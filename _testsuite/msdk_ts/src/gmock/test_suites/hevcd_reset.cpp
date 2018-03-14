@@ -515,23 +515,23 @@ int TestSuiteExt<fourcc, profile>::RunTest(unsigned int id)
     return suite.RunTest(tc);
 }
 
-TS_REG_TEST_SUITE(hevcd_reset,     TestSuiteExt<MFX_FOURCC_NV12>::RunTest, TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
-TS_REG_TEST_SUITE(hevcd_422_reset, TestSuiteExt<MFX_FOURCC_YUY2>::RunTest, TestSuiteExt<MFX_FOURCC_YUY2>::n_cases);
-TS_REG_TEST_SUITE(hevcd_444_reset, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
+TS_REG_TEST_SUITE(hevcd_reset,             TestSuiteExt<MFX_FOURCC_NV12>::RunTest, TestSuiteExt<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_reset, TestSuiteExt<MFX_FOURCC_YUY2>::RunTest, TestSuiteExt<MFX_FOURCC_YUY2>::n_cases);
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_reset, TestSuiteExt<MFX_FOURCC_AYUV>::RunTest, TestSuiteExt<MFX_FOURCC_AYUV>::n_cases);
 
-TS_REG_TEST_SUITE(hevc10d_reset,     TestSuiteExt<MFX_FOURCC_P010>::RunTest, TestSuiteExt<MFX_FOURCC_P010>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_422_reset, TestSuiteExt<MFX_FOURCC_Y210>::RunTest, TestSuiteExt<MFX_FOURCC_Y210>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_444_reset, TestSuiteExt<MFX_FOURCC_Y410>::RunTest, TestSuiteExt<MFX_FOURCC_Y410>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_reset,            TestSuiteExt<MFX_FOURCC_P010>::RunTest, TestSuiteExt<MFX_FOURCC_P010>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_reset, TestSuiteExt<MFX_FOURCC_Y210>::RunTest, TestSuiteExt<MFX_FOURCC_Y210>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_reset, TestSuiteExt<MFX_FOURCC_Y410>::RunTest, TestSuiteExt<MFX_FOURCC_Y410>::n_cases);
 
-TS_REG_TEST_SUITE(hevc12d_420_p016_reset, TestSuiteExt<MFX_FOURCC_P016>::RunTest, TestSuiteExt<MFX_FOURCC_P016>::n_cases);
-TS_REG_TEST_SUITE(hevc12d_422_y216_reset, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
-TS_REG_TEST_SUITE(hevc12d_444_y416_reset, TestSuiteExt<MFX_FOURCC_Y416>::RunTest, TestSuiteExt<MFX_FOURCC_Y416>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_420_p016_reset, TestSuiteExt<MFX_FOURCC_P016>::RunTest, TestSuiteExt<MFX_FOURCC_P016>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_422_y216_reset, TestSuiteExt<MFX_FOURCC_Y216>::RunTest, TestSuiteExt<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_444_y416_reset, TestSuiteExt<MFX_FOURCC_Y416>::RunTest, TestSuiteExt<MFX_FOURCC_Y416>::n_cases);
 
 #if !defined(OPEN_SOURCE)
-TS_REG_TEST_SUITE(hevcd_420_nv12_scc_reset,   (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
-TS_REG_TEST_SUITE(hevcd_444_ayuv_scc_reset,   (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_420_p010_scc_reset, (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_444_y410_scc_reset, (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_420_nv12_scc_reset,  (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_scc_reset,  (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_420_p010_scc_reset, (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_scc_reset, (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
 #endif
 
 }
