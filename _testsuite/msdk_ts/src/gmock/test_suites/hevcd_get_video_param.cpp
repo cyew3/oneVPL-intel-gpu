@@ -560,23 +560,23 @@ struct TestSuiteEx
     }
 };
 
-TS_REG_TEST_SUITE(hevcd_get_video_param,     TestSuiteEx<MFX_FOURCC_NV12>::RunTest, TestSuiteEx<MFX_FOURCC_NV12>::n_cases);
-TS_REG_TEST_SUITE(hevcd_422_get_video_param, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, TestSuiteEx<MFX_FOURCC_YUY2>::n_cases);
-TS_REG_TEST_SUITE(hevcd_444_get_video_param, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, TestSuiteEx<MFX_FOURCC_AYUV>::n_cases);
+TS_REG_TEST_SUITE(hevcd_get_video_param,             TestSuiteEx<MFX_FOURCC_NV12>::RunTest, TestSuiteEx<MFX_FOURCC_NV12>::n_cases);
+TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_get_video_param, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, TestSuiteEx<MFX_FOURCC_YUY2>::n_cases);
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_get_video_param, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, TestSuiteEx<MFX_FOURCC_AYUV>::n_cases);
 
-TS_REG_TEST_SUITE(hevc10d_get_video_param,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_422_get_video_param, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, TestSuiteEx<MFX_FOURCC_Y210>::n_cases);
-TS_REG_TEST_SUITE(hevc10d_444_get_video_param, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, TestSuiteEx<MFX_FOURCC_Y410>::n_cases);
+TS_REG_TEST_SUITE(hevc10d_get_video_param,            TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_get_video_param, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, TestSuiteEx<MFX_FOURCC_Y210>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_get_video_param, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, TestSuiteEx<MFX_FOURCC_Y410>::n_cases);
 
-TS_REG_TEST_SUITE(hevc12d_420_p016_get_video_param, TestSuiteEx<MFX_FOURCC_P016>::RunTest, TestSuiteEx<MFX_FOURCC_P016>::n_cases);
-TS_REG_TEST_SUITE(hevc12d_422_y216_get_video_param, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
-TS_REG_TEST_SUITE(hevc12d_444_y416_get_video_param, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_420_p016_get_video_param, TestSuiteEx<MFX_FOURCC_P016>::RunTest, TestSuiteEx<MFX_FOURCC_P016>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_422_y216_get_video_param, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_444_y416_get_video_param, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
 
 #if !defined(OPEN_SOURCE)
-TS_REG_TEST_SUITE(hevcd_420_nv12_scc_get_video_param,   (TestSuiteEx<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
-TS_REG_TEST_SUITE(hevcd_444_ayuv_scc_get_video_param,   (TestSuiteEx<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_420_p010_scc_get_video_param, (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
-TS_REG_TEST_SUITE(hevc10d_444_y410_scc_get_video_param, (TestSuiteEx<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_420_nv12_scc_get_video_param,  (TestSuiteEx<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_scc_get_video_param,  (TestSuiteEx<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_420_p010_scc_get_video_param, (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
+TS_REG_TEST_SUITE(hevcd_10b_444_y410_scc_get_video_param, (TestSuiteEx<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases));
 #endif
 
 }
