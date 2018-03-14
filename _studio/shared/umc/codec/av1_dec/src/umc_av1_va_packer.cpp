@@ -230,7 +230,7 @@ namespace UMC_AV1_DECODER
         // for Rev 0.25.1 we mimic driver's behavior
         // for Rev 0.25.2 there is no final clarity - let's mimic driver's behavior so far (take filter_level[0] and discard levels for U and V planes)
         // TODO: change once driver support for different filter levels will be added
-#if UMC_AV1_DECODER_REV == 252
+#if UMC_AV1_DECODER_REV == 2520
         picParam->filter_level = (UCHAR)info.lf.filterLevel[0];
 #else
         picParam->filter_level = (UCHAR)info.lf.filterLevel;
@@ -306,7 +306,7 @@ namespace UMC_AV1_DECODER
 #if AV1D_DDI_VERSION >= 11
         picParam->dwModeControlFlags.fields.using_qmatrix = info.useQMatrix;
 #endif
-#if UMC_AV1_DECODER_REV >= 251
+#if UMC_AV1_DECODER_REV >= 2510
         picParam->dwModeControlFlags.fields.min_qmlevel = info.minQMLevel;
         picParam->dwModeControlFlags.fields.max_qmlevel = info.maxQMLevel;
 #endif
@@ -320,6 +320,10 @@ namespace UMC_AV1_DECODER
         picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
         picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allowScreenContentTools;
         picParam->dwModeControlFlags.fields.ReservedField = 0;
+
+#if AV1D_DDI_VERSION >= 18 || defined(DDI_MIX_FOR_REV_251p5)
+        picParam->tg_size_bit_offset = info.tileGroupBitOffset;
+#endif
 
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
         picParam->log2_tile_cols = (UCHAR)info.log2TileColumns;

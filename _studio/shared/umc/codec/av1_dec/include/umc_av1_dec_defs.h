@@ -68,7 +68,7 @@ namespace UMC_AV1_DECODER
     const Ipp8u MI_SIZE_LOG2                  = 2;
     const Ipp8u MAX_MIB_SIZE_LOG2             = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
 
-#if UMC_AV1_DECODER_REV >= 252
+#if UMC_AV1_DECODER_REV >= 2520
     const Ipp8u  MAX_MB_PLANE                 = 3;
     const Ipp16u RESTORATION_TILESIZE_MAX     = 256;
 #endif
@@ -77,7 +77,7 @@ namespace UMC_AV1_DECODER
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
     const Ipp8u MAX_MODE_LF_DELTAS            = 2;
 
-#if UMC_AV1_DECODER_REV >= 252
+#if UMC_AV1_DECODER_REV >= 2520
     enum SB_SIZE
     {
         BLOCK_64X64 = 0,
@@ -151,7 +151,7 @@ namespace UMC_AV1_DECODER
     struct SequenceHeader
     {
         int frame_id_numbers_present_flag;
-#if UMC_AV1_DECODER_REV >= 252
+#if UMC_AV1_DECODER_REV >= 2520
         int frame_id_length;
         int delta_frame_id_length;
 #else
@@ -162,7 +162,7 @@ namespace UMC_AV1_DECODER
 
     struct Loopfilter
     {
-#if UMC_AV1_DECODER_REV >= 252
+#if UMC_AV1_DECODER_REV >= 2520
         Ipp32s filterLevel[2];
         Ipp32s filterLevelU;
         Ipp32s filterLevelV;
@@ -183,7 +183,7 @@ namespace UMC_AV1_DECODER
         Ipp8s modeDeltas[MAX_MODE_LF_DELTAS];
     };
 
-#if UMC_AV1_DECODER_REV >= 251
+#if UMC_AV1_DECODER_REV >= 2510
     struct WarpedMotionParams {
         TRANSFORMATION_TYPE wmtype;
         Ipp32s wmmat[8];
@@ -194,7 +194,7 @@ namespace UMC_AV1_DECODER
     };
 #endif
 
-#if UMC_AV1_DECODER_REV >= 252
+#if UMC_AV1_DECODER_REV >= 2520
     enum RestorationType
     {
         RESTORE_NONE,
@@ -252,7 +252,7 @@ namespace UMC_AV1_DECODER
         Ipp32u cdefStrength[CDEF_MAX_STRENGTHS];
         Ipp32u cdefUVStrength[CDEF_MAX_STRENGTHS];
 
-#if UMC_AV1_DECODER_REV >= 251
+#if UMC_AV1_DECODER_REV >= 2510
         Ipp32u allowInterIntraCompound;
         Ipp32u allowMaskedCompound;
         Ipp32u globalMotionType;
@@ -271,7 +271,11 @@ namespace UMC_AV1_DECODER
 
         Loopfilter lf;
 
-#if UMC_AV1_DECODER_REV >= 252
+#if UMC_AV1_DECODER_REV >= 2515
+        Ipp32u tileGroupBitOffset;
+#endif
+
+#if UMC_AV1_DECODER_REV >= 2520
         Ipp32u sbSize;
         RestorationInfo rstInfo[MAX_MB_PLANE];
 #endif

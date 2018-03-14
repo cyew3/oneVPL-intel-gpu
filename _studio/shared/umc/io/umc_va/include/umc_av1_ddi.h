@@ -35,12 +35,20 @@ typedef struct _DXVA_PicEntry_AV1
 
 #if UMC_AV1_DECODER_REV == 0 // Rev 0
     #define AV1D_DDI_VERSION 8
-#elif UMC_AV1_DECODER_REV == 251 // Rev 0.25.1
+#elif UMC_AV1_DECODER_REV == 2510 // Rev 0.25.1
     // The driver uses mix of DDI 0.10 and DDI 0.15 for Rev 0.25.1.
     // We use DDI 0.15 as basic version and handle insertions of 0.10 by macro DDI_MIX_FOR_REV_251.
     #define AV1D_DDI_VERSION 15
     #define DDI_MIX_FOR_REV_251
-#elif UMC_AV1_DECODER_REV == 252 // Rev 0.25.2
+#elif UMC_AV1_DECODER_REV == 2515 // intermediate state: tile support (which is a feature of Rev 0.25.2) implemented on top of Rev 0.25.1
+    // For this intermediate state driver uses mix of DDI 0.10, 0.15, 0.17 and 0.18
+    // We use DDI 0.15 as basic version and handle insertions of other DDI versions by macro DDI_MIX_FOR_REV_251p5.
+    #define AV1D_DDI_VERSION 15
+    #define DDI_MIX_FOR_REV_251p5
+    #if defined(DDI_MIX_FOR_REV_251p5)
+        #define DDI_MIX_FOR_REV_251
+    #endif
+#elif UMC_AV1_DECODER_REV == 2520 // Rev 0.25.2
     #define AV1D_DDI_VERSION 18
 #endif
 
