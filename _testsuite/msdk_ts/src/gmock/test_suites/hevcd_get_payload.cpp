@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -274,11 +274,11 @@ namespace hevcd_get_payload
         }
     };
 
-    TS_REG_TEST_SUITE(hevcd_get_payload,     TestSuiteEx<MFX_FOURCC_NV12>::RunTest, 3);
-    TS_REG_TEST_SUITE(hevcd_422_get_payload, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, 1);
-    TS_REG_TEST_SUITE(hevcd_444_get_payload, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevcd_get_payload,             TestSuiteEx<MFX_FOURCC_NV12>::RunTest, 3);
+    TS_REG_TEST_SUITE(hevcd_8b_422_yuy2_get_payload, TestSuiteEx<MFX_FOURCC_YUY2>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevcd_8b_444_ayuv_get_payload, TestSuiteEx<MFX_FOURCC_AYUV>::RunTest, 1);
 
-    TS_REG_TEST_SUITE(hevc10d_get_payload,     TestSuiteEx<MFX_FOURCC_P010>::RunTest, 1);
-    TS_REG_TEST_SUITE(hevc10d_422_get_payload, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, 1);
-    TS_REG_TEST_SUITE(hevc10d_444_get_payload, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevc10d_get_payload,            TestSuiteEx<MFX_FOURCC_P010>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevcd_10b_422_y210_get_payload, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, 1);
+    TS_REG_TEST_SUITE(hevcd_10b_444_y410_get_payload, TestSuiteEx<MFX_FOURCC_Y410>::RunTest, 1);
 }
