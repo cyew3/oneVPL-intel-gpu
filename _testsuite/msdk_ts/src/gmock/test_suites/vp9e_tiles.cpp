@@ -99,6 +99,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
     private:
         static const tc_struct test_case[];
+        mfxStatus EncodeFrames(mfxU32 n, mfxU32 flags = 0);
         int RunTest(const tc_struct& tc, mfxU32 fourcc, const unsigned int id);
     };
 
@@ -124,7 +125,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         UNALIGNED_RESOL = 0x040000 | CHECK_FULL_INITIALIZATION,
         DYNAMIC_CHANGE = 0x080000 | CHECK_FULL_INITIALIZATION,
         CHECK_ASYNC2 = 0x100000,
-        CHECK_ASYNC3 = 0x200000
+        CHECK_ASYNC3 = 0x200000,
+        CHECK_MULTIREF = 0x400000
     };
 
     const std::vector<TestSubtype> executeTests =
@@ -149,7 +151,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         UNALIGNED_RESOL,
         DYNAMIC_CHANGE,
         CHECK_ASYNC2,
-        CHECK_ASYNC3
+        CHECK_ASYNC3,
+        CHECK_MULTIREF
     };
 
     enum
@@ -635,20 +638,38 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { ITER_LENGTH, SET_NUM_ROWS(MAX_NUM_ROWS), SET_NUM_COLS(MAX_PIPES_SUPPORTED) },
             }
         },
+
+        // below test cases check multiref encoding together with tiles
+        {/*82*/ MFX_ERR_NONE, CQP | TU1 | CHECK_MULTIREF,
+            { { 10, SET_W(704), SET_H(576), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
+        },
+        {/*83*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_MULTIREF,
+            { { 10, SET_W(704), SET_H(576), SET_NUM_ROWS(2), SET_NUM_COLS(2) } }
+        },
+        {/*84*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_MULTIREF | CHECK_ASYNC3,
+            { { 10, SET_W(704), SET_H(576), SET_NUM_ROWS(2), SET_NUM_COLS(2) } }
+        },
+        {/*85*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_MULTIREF | CHECK_ASYNC3 | DYNAMIC_CHANGE,
+            {
+                { 5, SET_W(704), SET_H(576), SET_NUM_ROWS(2), SET_NUM_COLS(2) },
+                { 5, SET_NUM_ROWS(1), SET_NUM_COLS(1) },
+                { 5, SET_NUM_ROWS(2), SET_NUM_COLS(2) }
+            }
+        },
     };
 
     const tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*82*/ MFX_ERR_NONE, CQP | TU4,
+        {/*86*/ MFX_ERR_NONE, CQP | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
         },
-        {/*83*/ MFX_ERR_NONE, CQP | TU4,
+        {/*87*/ MFX_ERR_NONE, CQP | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
         },
-        {/*84*/ MFX_ERR_NONE, CBR | TU4,
+        {/*88*/ MFX_ERR_NONE, CBR | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
         },
-        {/*85*/ MFX_ERR_NONE, CBR | TU4,
+        {/*89*/ MFX_ERR_NONE, CBR | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
         },
     };
@@ -872,6 +893,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         else
         {
             par.AsyncDepth = 1;
+        }
+
+        if (testType & CHECK_MULTIREF)
+        {
+            par.mfx.NumRefFrame = 3;
         }
     }
 
@@ -1344,6 +1370,44 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
 
         return needToRun;
+    }
+
+    mfxStatus TestSuite::EncodeFrames(mfxU32 n, mfxU32 flags)
+    {
+        mfxU32 encoded = 0;
+        mfxU32 submitted = 0;
+        mfxU32 async = TS_MAX(1, m_par.AsyncDepth);
+        mfxSyncPoint sp = nullptr;
+
+        async = TS_MIN(n, async);
+
+        while (submitted < n)
+        {
+            mfxStatus encode_status = EncodeFrameAsync();
+
+            submitted++;
+
+            if (MFX_ERR_MORE_DATA == encode_status)
+            {
+                continue;
+            }
+
+            g_tsStatus.check(); TS_CHECK_MFX;
+
+            sp = m_syncpoint;
+            SyncOperation(); TS_CHECK_MFX;
+
+            encoded++;
+        }
+
+        if (async > 1)
+        {
+            DrainEncodedBitstream();
+        }
+
+        g_tsLog << n << " FRAMES ENCODED\n";
+
+        return g_tsStatus.get();
     }
 
     template <mfxU32 fourcc>
