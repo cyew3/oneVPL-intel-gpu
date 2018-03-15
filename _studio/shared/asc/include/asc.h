@@ -152,7 +152,7 @@ private:
         ltr_check_history;
 
     // these maps will be used by m_pCmCopy to track already created surfaces
-    std::map<void *, CmSurface2D *> m_tableCmRelations2;
+    std::map<mfxHDLPair, CmSurface2D *> m_tableCmRelations2;
     std::map<CmSurface2D *, SurfaceIndex *> m_tableCmIndex2;
 
     int m_AVX2_available;

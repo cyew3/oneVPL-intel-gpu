@@ -25,6 +25,11 @@
 using std::min;
 using std::max;
 
+static bool operator < (const mfxHDLPair & l, const mfxHDLPair & r)
+{
+    return (l.first == r.first) ? (l.second < r.second) : (l.first < r.first);
+};
+
 namespace ns_asc {
 static mfxI8
     PDISTTbl2[NumTSC*NumSC] =
@@ -1636,16 +1641,17 @@ ASC_API mfxStatus ASC::calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs) {
 mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
 {
     INT cmSts = 0;
-    std::map<void *, CmSurface2D *>::iterator it;
+    std::map<mfxHDLPair, CmSurface2D *>::iterator it;
     std::map<CmSurface2D *, SurfaceIndex *>::iterator it_idx;
-    it = m_tableCmRelations2.find(pSrcD3D);
+    mfxHDLPair SrcPair = static_cast<mfxHDLPair>(*(mfxHDLPair *)pSrcD3D);
+    it = m_tableCmRelations2.find(SrcPair);
     if (m_tableCmRelations2.end() == it)
     {
         //UMC::AutomaticUMCMutex guard(m_guard);
         {
-            cmSts = m_device->CreateSurface2D((AbstractSurfaceHandle *)pSrcD3D, pCmSurface2D);
+            cmSts = m_device->CreateSurface2D(SrcPair, pCmSurface2D);
             SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
-            m_tableCmRelations2.insert(std::pair<void *, CmSurface2D *>(pSrcD3D, pCmSurface2D));
+            m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
         }
 
         cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);

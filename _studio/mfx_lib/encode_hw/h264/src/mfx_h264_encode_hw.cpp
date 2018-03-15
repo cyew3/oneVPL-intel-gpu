@@ -2490,7 +2490,7 @@ mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
         }
         else
             return MFX_ERR_DEVICE_FAILED;
-        MFX_SAFE_CALL(amtScd.QueueFrameProgressive(handle.first, task.m_wsIdxGpuImage, &task.m_wsSubSamplingEv, &task.m_wsSubSamplingTask));
+        MFX_SAFE_CALL(amtScd.QueueFrameProgressive(reinterpret_cast<mfxHDL*>(&handle), task.m_wsIdxGpuImage, &task.m_wsSubSamplingEv, &task.m_wsSubSamplingTask));
     }
     else 
     {
@@ -2633,7 +2633,7 @@ mfxStatus ImplementationAvc::CalculateFrameCmplx(DdiTask const &task, mfxU16 &ra
         {
             MFX_SAFE_CALL(m_core->GetExternalFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle), false));
         }
-        MFX_SAFE_CALL(amtScd.calc_RaCa_Surf(handle.first, raca));
+        MFX_SAFE_CALL(amtScd.calc_RaCa_Surf(reinterpret_cast<mfxHDL*>(&handle), raca));
     }
     else
     {
