@@ -1001,6 +1001,7 @@ STRUCT(mfxExtChromaLocInfo,
     FIELD_T(mfxU16      , ChromaSampleLocTypeBottomField)
 )
 
+#if !defined(OPEN_SOURCE)
 STRUCT(mfxExtFEIH265Param,
     FIELD_S(mfxExtBuffer, Header)
     FIELD_T(mfxU32      , MaxCUSize)
@@ -1019,6 +1020,7 @@ STRUCT(mfxExtFEIH265Output,
     FIELD_S(mfxExtBuffer      , Header)
     FIELD_T(mfxFEIH265Output* , feiOut)
 )
+#endif
 
 STRUCT(mfxExtDecodedFrameInfo,
     FIELD_S(mfxExtBuffer, Header)
@@ -1039,7 +1041,9 @@ STRUCT(mfxInitParam,
     FIELD_T(mfxExtBuffer** , ExtParam       )
     FIELD_T(mfxU16         , NumExtParam    )
     FIELD_T(mfxU16         , GPUCopy        )
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
     FIELD_T(mfxU16         , AltDependencies)
+#endif
 )
 
 #else

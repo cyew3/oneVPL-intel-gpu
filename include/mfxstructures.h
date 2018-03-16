@@ -463,7 +463,7 @@ enum {
     MFX_PROFILE_HEVC_MAIN10           =2,
     MFX_PROFILE_HEVC_MAINSP           =3,
     MFX_PROFILE_HEVC_REXT             =4,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && (PRE_SI_GEN >= 10)
     MFX_PROFILE_HEVC_SCC              =9,
 #endif
 
@@ -490,7 +490,7 @@ enum {
     MFX_PROFILE_VP9_2                       = 3,
     MFX_PROFILE_VP9_3                       = 4,
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && (PRE_SI_GEN >= 11)
     /* AV1 Profiles */
     MFX_PROFILE_AV1_0                       = 1,
     MFX_PROFILE_AV1_1                       = 2,
@@ -538,7 +538,7 @@ enum {
     MFX_RATECONTROL_LA_EXT    =12,
     MFX_RATECONTROL_LA_HRD    =13,
     MFX_RATECONTROL_QVBR      =14,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPENSOURCE)
     MFX_RATECONTROL_VME       =15,
 #endif
 };
