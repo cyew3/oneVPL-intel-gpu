@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfxdefs.h"
@@ -341,7 +341,8 @@ mfxTraceU32 MFXTrace_Init()
     }
 
 #if (MFX_VERSION >= 1025)
-    if (g_OutputMode & (MFX_TRACE_OUTPUT_ETW | MFX_TRACE_OUTPUT_TEXTLOG))
+    if (!g_Reflection.m_bIsInitialized &&
+        g_OutputMode & (MFX_TRACE_OUTPUT_ETW | MFX_TRACE_OUTPUT_TEXTLOG))
     {
         g_Reflection.DeclareMsdkStructs();
         g_Reflection.m_bIsInitialized = true;
