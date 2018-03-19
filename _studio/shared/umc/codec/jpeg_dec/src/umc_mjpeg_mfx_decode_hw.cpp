@@ -83,6 +83,10 @@ Status MJPEGVideoDecoderMFX_HW::Reset(void)
         m_cachedReadyTaskIndex.clear();
         m_cachedCorruptedTaskIndex.clear();
         m_submittedTaskIndex.clear();
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
+        if (m_va && m_va->IsGPUSyncEventEnable())
+            m_pic_index.clear();
+#endif
     }
 
     return MJPEGVideoDecoderBaseMFX::Reset();
@@ -96,6 +100,10 @@ Status MJPEGVideoDecoderMFX_HW::Close(void)
         m_cachedReadyTaskIndex.clear();
         m_cachedCorruptedTaskIndex.clear();
         m_submittedTaskIndex.clear();
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
+        if (m_va && m_va->IsGPUSyncEventEnable())
+            m_pic_index.clear();
+#endif
     }
 
     return MJPEGVideoDecoderBaseMFX::Close();
@@ -148,8 +156,26 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(uint32_t statusReport
     std::set<mfxU32>::iterator iteratorCorrupted;
 
     AutomaticUMCMutex guard(m_guard);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
+    if (m_va && m_va->IsGPUSyncEventEnable())
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+        auto iteratorPicIndex = m_pic_index.find(statusReportFeedbackNumber);
+        if (m_pic_index.end() != iteratorPicIndex)
+        {
+            UMC::Status waitSts = m_va->SyncTask((int32_t)(iteratorPicIndex->second), NULL);
+            if (waitSts != UMC_OK && waitSts != UMC_ERR_TIMEOUT)
+                return MFX_ERR_DEVICE_FAILED;
+            if (waitSts == UMC_OK)
+                m_pic_index.erase(iteratorPicIndex);
+        }
+    }
+#endif
+
     iteratorReady = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), statusReportFeedbackNumber);
     iteratorSubmitted = find(m_submittedTaskIndex.begin(), m_submittedTaskIndex.end(), statusReportFeedbackNumber);
+
     if (m_cachedReadyTaskIndex.end() == iteratorReady){
         for (mfxU32 i = 0; i < numStructures; i += 1){
             queryStatus[i].bStatus = 3;
@@ -367,12 +393,16 @@ Status MJPEGVideoDecoderMFX_HW::GetFrameHW(MediaDataEx* in)
     if (m_statusReportFeedbackCounter >= UINT_MAX)
         m_statusReportFeedbackCounter = 1;
 
-    sts = m_va->BeginFrame(m_frameData.GetFrameMID());
+    sts = m_va->BeginFrame(m_frameData.GetFrameMID(), 0);
     if (sts != UMC_OK)
         return sts;
     {
         AutomaticUMCMutex guard(m_guard);
         m_submittedTaskIndex.insert(m_statusReportFeedbackCounter);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_JPEGD
+        if (m_va->IsGPUSyncEventEnable())
+            m_pic_index.insert(std::pair<uint32_t, FrameMemID>(m_statusReportFeedbackCounter, m_frameData.GetFrameMID()));
+#endif
     }
     /////////////////////////////////////////////////////////////////////////////////////////
 
