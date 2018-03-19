@@ -267,7 +267,7 @@ White indicates that this 16x16 block uses values from left-upper block inside t
 `RefIdx[4]` | Array of reference indexes for each MV predictor. Index in the array is a predictor number.
 `RefL0, RefL1` | L0 and L1 reference indexes. To skip external predictors for this block set it to 0xf.
 `BlockSize` | Block size for which MV predictors are specified. <br><br> 0x0 - MVPs disabled for this 32x32 block<br> 0x1 - MVPs enabled per 16x16 block for this 32x32 block<br> 0x2 - MVPs enabled per 32x32 block, the rest of 16x16 block data within this 32x32 block is ignored <br><br>It is used only if `MVPredictor` variable in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure is set to 0x07.
-`MV[4][2]` | Up to 4 MV predictors per 16x16 block. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference.<br><br>Use 0x8000 value to indicate that application treats CUs related to this block as Intra and doesn't provide predictors.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
+`MV[4][2]` | Up to 4 MV predictors per 16x16 block. First index is predictor number, second is 0 for L0 reference and 1 for L1 reference. Each MVP component is given in quarter-pixel units.<br><br>Use 0x8000 value to indicate that application treats CUs related to this block as Intra and doesn't provide predictors.<br><br>Number of actual predictors is defined by `NumMVPredictors[2]` value in the [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) structure. Unused MV predictors are ignored.
 
 **Change History**
 
