@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -39,7 +39,7 @@ namespace UMC_HEVC_DECODER
         PackerDXVA2(UMC::VideoAccelerator * va);
 
         virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
-        virtual UMC::Status SyncTask(Ipp32s /*index*/, void * /*error*/) { return UMC::UMC_ERR_UNSUPPORTED; }
+        virtual UMC::Status SyncTask(Ipp32s index, void * error);
 
         virtual void BeginFrame(H265DecoderFrame*);
         virtual void EndFrame();

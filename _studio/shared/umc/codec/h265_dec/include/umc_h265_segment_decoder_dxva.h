@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -112,7 +112,7 @@ public:
         if (!m_va)
             return;
 
-        UMC::Status sts = m_va->BeginFrame(pFrame->GetFrameMID());
+        UMC::Status sts = m_va->BeginFrame(pFrame->GetFrameMID(), 0);
         if (sts != UMC::UMC_OK)
             throw h265_exception(sts);
 

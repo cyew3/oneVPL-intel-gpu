@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -202,22 +202,66 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
     SwitchCurrentAU();
 #endif
 #elif defined(UMC_VA_DXVA)
-    DXVA_Intel_Status_HEVC pStatusReport[NUMBER_OF_STATUS];
-
     bool wasCompleted = false;
 
-    if (m_reports.size() && m_FirstAU)
+    for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
-        Ipp32u i = 0;
-        H265DecoderFrameInfo * au = m_FirstAU;
-        bool wasFound = false;
-        while (au)
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+        UMC::Status sts = UMC::UMC_OK;
+        Ipp32s index = au->m_pFrame->GetFrameMID();
+        m_mGuard.Unlock();
         {
-            for (; i < m_reports.size(); i++)
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+            sts = dxva_sd->GetPacker()->SyncTask(index, NULL);
+        }
+        m_mGuard.Lock();
+#endif
+
+        for (Ipp32u i = 0; i < m_reports.size(); i++)
+        {
+            if (m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index)
             {
-                if ((m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index) /* && (au->IsBottom() == (m_reports[i].m_field != 0)) */)
+                switch (m_reports[i].m_status)
                 {
-                    switch (m_reports[i].m_status)
+                case 1:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
+                    break;
+                case 2:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
+                case 3:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
+                case 4:
+                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+                    break;
+                }
+
+                au->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+                CompleteFrame(au->m_pFrame);
+                wasCompleted = true;
+
+                m_reports.erase(m_reports.begin() + i);
+                break;
+            }
+        }
+
+        if (!wasCompleted)
+        {
+            DXVA_Intel_Status_HEVC pStatusReport[NUMBER_OF_STATUS];
+
+            memset(&pStatusReport, 0, sizeof(pStatusReport));
+            dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_HEVC)* NUMBER_OF_STATUS);
+
+            for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+            {
+                if (!pStatusReport[i].StatusReportFeedbackNumber)
+                    continue;
+
+                bool wasFound = false;
+                if (au && pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
+                {
+                    switch (pStatusReport[i].bStatus)
                     {
                     case 1:
                         au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
@@ -237,75 +281,30 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
                     CompleteFrame(au->m_pFrame);
                     wasFound = true;
                     wasCompleted = true;
+                }
 
-                    m_reports.erase(m_reports.begin() + i);//, (i + 1 == m_reports.size()) ? m_reports.end() : m_reports.begin() + i + i);
-                    break;
+                if (!wasFound)
+                {
+                    if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, 0)) == m_reports.end())
+                    {
+                        m_reports.push_back(ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, pStatusReport[i].bStatus));
+                        wasCompleted = true;
+                    }
                 }
             }
-
-            if (!wasFound)
-                break;
-
-            au = au->GetNextAU();
         }
-
-        SwitchCurrentAU();
-
-        //m_reports.erase(m_reports.begin(), m_reports.begin() + i);
-    }
-
-    for (;;)
-    {
-        memset (&pStatusReport, 0, sizeof(pStatusReport));
-        dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_HEVC)* NUMBER_OF_STATUS);
-
-        for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+        //check exit from waiting status.
+        if (sts != UMC::UMC_OK)
         {
-            if (!pStatusReport[i].StatusReportFeedbackNumber)
-                continue;
-
-            bool wasFound = false;
-            H265DecoderFrameInfo * au = m_FirstAU;
-            if (au && pStatusReport[i].current_picture.Index7Bits == au->m_pFrame->m_index)
-            {
-                switch (pStatusReport[i].bStatus)
-                {
-                case 1:
-                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MINOR);
-                    break;
-                case 2:
-                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
-                    break;
-                case 3:
-                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
-                    break;
-                case 4:
-                    au->m_pFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
-                    break;
-                }
-
-                au->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
-                CompleteFrame(au->m_pFrame);
-                wasFound = true;
-                wasCompleted = true;
-            }
-
-            if (!wasFound)
-            {
-                if (std::find(m_reports.begin(), m_reports.end(), ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, 0)) == m_reports.end())
-                {
-                    m_reports.push_back(ReportItem(pStatusReport[i].current_picture.Index7Bits, 0/*field*/, pStatusReport[i].bStatus));
-                    wasCompleted = true;
-                }
-            }
+            // SyncTask failed for some reason
+            au->m_pFrame->SetError(UMC::UMC_ERR_DEVICE_FAILED);
+            au->SetStatus(H265DecoderFrameInfo::STATUS_COMPLETED);
+            CompleteFrame(au->m_pFrame);
         }
-
-        SwitchCurrentAU();
-        if (!m_FirstAU)
-            break;
-
-        break;
+#endif
     }
+    SwitchCurrentAU();
 
     if (!wasCompleted && m_FirstAU)
     {

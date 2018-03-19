@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -33,6 +33,11 @@ namespace UMC_HEVC_DECODER
     Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
     {
         return m_va->ExecuteStatusReportBuffer(pStatusReport, (Ipp32u)size);
+    }
+
+    Status PackerDXVA2::SyncTask(Ipp32s index, void * error)
+    {
+        return m_va->SyncTask(index, error);
     }
 
     void PackerDXVA2::BeginFrame(H265DecoderFrame*)
