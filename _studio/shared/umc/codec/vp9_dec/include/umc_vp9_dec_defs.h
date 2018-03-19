@@ -5,11 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_VP9_VIDEO_DECODER
+#if defined(UMC_ENABLE_VP9_VIDEO_DECODER) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
 
 #ifndef __UMC_VP9_DEC_DEFS_DEC_H__
 #define __UMC_VP9_DEC_DEFS_DEC_H__

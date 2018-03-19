@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_DEFS_H__
@@ -61,6 +61,10 @@
     #define UMC_ENABLE_H265_VIDEO_DECODER
     #define UMC_ENABLE_MPEG2_VIDEO_DECODER
     //#define UMC_ENABLE_VP9_VIDEO_DECODER
+#if defined(LINUX_TARGET_PLATFORM_ATS)
+    #define UMC_ENABLE_AV1_VIDEO_DECODER
+#endif
+
 
     // video encoders
     #define UMC_ENABLE_H264_VIDEO_ENCODER

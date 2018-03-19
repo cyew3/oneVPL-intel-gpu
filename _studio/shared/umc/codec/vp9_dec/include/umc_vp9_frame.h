@@ -9,7 +9,7 @@
 //
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_VP9_VIDEO_DECODER
+#if defined(UMC_ENABLE_VP9_VIDEO_DECODER) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
 
 #ifndef __UMC_VP9_FRAME_H__
 #define __UMC_VP9_FRAME_H__

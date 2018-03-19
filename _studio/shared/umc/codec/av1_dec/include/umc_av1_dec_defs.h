@@ -37,11 +37,7 @@ namespace UMC_AV1_DECODER
 
     const Ipp8u MINIMAL_DATA_SIZE = 4;
 
-    enum FRAME_TYPE
-    {
-        KEY_FRAME = 0,
-        INTER_FRAME = 1
-    };
+    typedef UMC_VP9_DECODER::VP9_FRAME_TYPE FRAME_TYPE;
 
 #if UMC_AV1_DECODER_REV == 0
     const Ipp8u FRAME_ID_NUMBERS_PRESENT_FLAG = 1;
@@ -283,7 +279,7 @@ namespace UMC_AV1_DECODER
 
     inline bool IsFrameIntraOnly(FrameHeader const * fh)
     {
-        return (fh->frameType == KEY_FRAME || fh->intraOnly);
+        return (fh->frameType == FRAME_TYPE::KEY_FRAME || fh->intraOnly);
     }
 
     inline bool IsFrameResilent(FrameHeader const * fh)

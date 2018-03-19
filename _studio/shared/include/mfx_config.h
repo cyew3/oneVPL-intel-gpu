@@ -296,6 +296,8 @@
         #include "mfx_common_linux_bsw.h"
     #elif defined(LINUX_TARGET_PLATFORM_BDW)    // PRE_SI_GEN == 9
         #include "mfx_common_linux_bdw.h"
+    #elif defined(LINUX_TARGET_PLATFORM_ATS)    // PRE_SI_GEN == 12
+        #include "mfx_common_linux_ats.h"
     #elif defined(LINUX_TARGET_PLATFORM_TBD)
         #include "mfx_common_lnx_tbd.h"
     #else

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -13,6 +13,8 @@
 
 #include "umc_av1_frame.h"
 #include "umc_av1_utils.h"
+#include <limits>
+#include <algorithm>
 
 #include "umc_frame_data.h"
 #include "umc_media_data.h"

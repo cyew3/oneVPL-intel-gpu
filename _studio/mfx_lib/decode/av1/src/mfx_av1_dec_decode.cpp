@@ -408,7 +408,8 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    auto info = std::make_unique<TaskInfo>();
+    std::unique_ptr<TaskInfo> info(new TaskInfo);
+    //auto info = std::make_unique<TaskInfo>();
     info->surface_work = GetOriginalSurface(surface_work);
     if (*surface_out)
         info->surface_out = GetOriginalSurface(*surface_out);
