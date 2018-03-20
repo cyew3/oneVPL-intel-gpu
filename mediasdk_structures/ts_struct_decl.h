@@ -1032,18 +1032,17 @@ STRUCT(mfxExtDecodeErrorReport,
     FIELD_T(mfxU32      , ErrorTypes)
 )
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
 
 STRUCT(mfxInitParam,
-    FIELD_T(mfxIMPL        , Implementation )
-    FIELD_S(mfxVersion     , Version        )
-    FIELD_T(mfxU16         , ExternalThreads)
-    FIELD_T(mfxExtBuffer** , ExtParam       )
-    FIELD_T(mfxU16         , NumExtParam    )
-    FIELD_T(mfxU16         , GPUCopy        )
-#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
-    FIELD_T(mfxU16         , AltDependencies)
-#endif
+    FIELD_T(mfxIMPL, Implementation)
+    FIELD_S(mfxVersion, Version)
+    FIELD_T(mfxU16, ExternalThreads)
+    FIELD_T(mfxExtBuffer**, ExtParam)
+    FIELD_T(mfxU16, NumExtParam)
+    FIELD_T(mfxU16, GPUCopy)
+    FIELD_T(mfxU16, AltDependencies)
 )
 
 #else
