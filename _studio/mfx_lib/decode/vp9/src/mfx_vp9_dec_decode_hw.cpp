@@ -654,7 +654,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
         return MFX_ERR_NONE;
     }
 
-#ifdef MFX_VA_LINUX
+#if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
 
     UMC::Status status = decoder.m_va->SyncTask(data.currFrameId);
     if (status != UMC::UMC_OK)
@@ -853,7 +853,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
     if (!m_frameInfo.show_existing_frame)
     {
-        if (UMC::UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame))
+        if (UMC::UMC_OK != m_va->BeginFrame(m_frameInfo.currFrame, 0))
             return MFX_ERR_DEVICE_FAILED;
 
         sts = PackHeaders(&m_bs, m_frameInfo);
