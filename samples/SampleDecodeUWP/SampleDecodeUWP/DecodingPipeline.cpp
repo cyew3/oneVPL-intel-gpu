@@ -98,10 +98,10 @@ bool CDecodingPipeline::OnStart()
     //--- Allocating surfaces and putting them into surfaces pool
     req.NumFrameMin = req.NumFrameSuggested = req.NumFrameSuggested + BUFFERED_FRAMES_NUM; // One more surface for rendering
     mfxFrameAllocResponse resp;
-    MSDK_ZERO_MEMORY(resp);
+    MSDK_ZERO_MEMORY(resp); 
     sts = allocator.AllocFrames(&req, &resp);
     MSDK_CHECK_STATUS_BOOL(sts, "Cannot allocate frames");
-    surfacesPool.Create(resp.mids, resp.NumFrameActual, 0, resp.MemType, &allocator, req.Info);
+    surfacesPool.Create(resp.mids, resp.NumFrameActual, 0, req.Type, &allocator, req.Info);
 
     //--- Initializing decoder
     sts = pDecoder->Init(&decoderParams);

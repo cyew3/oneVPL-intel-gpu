@@ -150,7 +150,6 @@ mfxFrameAllocResponse CSurfacesPool::GenerateAllocResponse()
         response.mids[i]=it->second.Data.MemId;
     }
     response.NumFrameActual=(mfxU16)surfaces.size();
-    response.MemType = memType;
     return response;
 }
 
