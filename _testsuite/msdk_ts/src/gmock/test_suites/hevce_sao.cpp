@@ -437,7 +437,7 @@ namespace hevce_sao
     int testP010(unsigned int id)
     {
         TS_START;
-        auto stream = g_tsStreamPool.Get("YUV10bit420/Kimono1_352x288_24_p010_shifted.yuv");
+        auto stream = g_tsStreamPool.Get("YUV10bit420_ms/Kimono1_352x288_24_p010_shifted.yuv");
         g_tsStreamPool.Reg();
 
         tsVideoEncoder enc(MFX_CODEC_HEVC);
