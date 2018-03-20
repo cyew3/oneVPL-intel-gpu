@@ -740,6 +740,12 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_size         = sizeof(VASliceParameterBufferHEVC);
                 va_num_elements = size/sizeof(VASliceParameterBufferHEVC);
                 break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            case UMC::VA_AV1:
+                va_size         = sizeof(VABitStreamParameterBufferAV1);
+                va_num_elements = size/sizeof(VABitStreamParameterBufferAV1);
+                break;
+#endif
             default:
                 va_size         = 0;
                 va_num_elements = 0;

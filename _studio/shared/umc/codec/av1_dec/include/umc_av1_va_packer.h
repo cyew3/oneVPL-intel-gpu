@@ -21,6 +21,10 @@
     #include "umc_av1_ddi.h"
 #endif
 
+#ifdef UMC_VA_LINUX
+    #include <va/va_dec_av1.h>
+#endif
+
 namespace UMC
 { class MediaData; }
 
@@ -91,6 +95,31 @@ private:
 };
 
 #endif // UMC_VA_DXVA
+
+#if defined(UMC_VA_LINUX)
+
+class PackerVA
+    : public Packer
+{
+
+public:
+
+    PackerVA(UMC::VideoAccelerator * va);
+
+    UMC::Status GetStatusReport(void * pStatusReport, size_t size);
+
+    void BeginFrame();
+    void EndFrame();
+
+    void PackAU(UMC_VP9_DECODER::VP9Bitstream*, AV1DecoderFrame const*);
+
+ private:
+
+    void PackPicParams(VADecPictureParameterBufferAV1*, AV1DecoderFrame const*);
+    void PackBitstreamControlParams(VABitStreamParameterBufferAV1*, AV1DecoderFrame const*);
+};
+
+#endif // UMC_VA_LINUX
 
 } // namespace UMC_AV1_DECODER
 

@@ -40,6 +40,8 @@ namespace UMC_AV1_DECODER
     {
 #ifdef UMC_VA_DXVA
         return new PackerIntel(va);
+#elif defined(UMC_VA_LINUX)
+        return new PackerVA(va);
 #else
         return 0;
 #endif
@@ -404,6 +406,201 @@ namespace UMC_AV1_DECODER
 #endif
 
 #endif // UMC_VA_DXVA
+
+#ifdef UMC_VA_LINUX
+/****************************************************************************************************/
+// Linux VAAPI packer implementation
+/****************************************************************************************************/
+
+    PackerVA::PackerVA(UMC::VideoAccelerator * va)
+        : Packer(va)
+    {}
+
+    UMC::Status PackerVA::GetStatusReport(void * pStatusReport, size_t size)
+    {
+        return UMC_OK;
+    }
+
+    void PackerVA::BeginFrame() {}
+    void PackerVA::EndFrame() {}
+
+    void PackerVA::PackAU(UMC_VP9_DECODER::VP9Bitstream* bs, AV1DecoderFrame const* info)
+    {
+        if (!bs || !info)
+            throw av1_exception(MFX_ERR_NULL_PTR);
+
+        UMC::UMCVACompBuffer* pCompBuf = NULL;
+        VADecPictureParameterBufferAV1 *picParam =
+            (VADecPictureParameterBufferAV1*)m_va->GetCompBuffer(VAPictureParameterBufferType, &pCompBuf, sizeof(VADecPictureParameterBufferAV1));
+
+        if (!picParam)
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        memset(picParam, 0, sizeof(VADecPictureParameterBufferAV1));
+        PackPicParams(picParam, info);
+
+        pCompBuf = NULL;
+        VABitStreamParameterBufferAV1 *bsControlParam =
+            (VABitStreamParameterBufferAV1*)m_va->GetCompBuffer(VASliceParameterBufferType, &pCompBuf, sizeof(VABitStreamParameterBufferAV1));
+        if (!bsControlParam)
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        memset(bsControlParam, 0, sizeof(VABitStreamParameterBufferAV1));
+        PackBitstreamControlParams(bsControlParam, info);
+
+        Ipp8u* data;
+        Ipp32u length;
+        bs->GetOrg(&data, &length);
+        Ipp32u const offset = bs->BytesDecoded();
+        length -= offset;
+
+        pCompBuf = NULL;
+        mfxU8 *bistreamData = (mfxU8*)m_va->GetCompBuffer(VASliceDataBufferType, &pCompBuf, length);
+        if (!bistreamData)
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        mfx_memcpy(bistreamData, length, data + offset, length);
+        pCompBuf->SetDataSize(length);
+    }
+
+    void PackerVA::PackPicParams(VADecPictureParameterBufferAV1* picParam, AV1DecoderFrame const* frame)
+    {
+        SequenceHeader const& sh = frame->GetSeqHeader();
+
+        FrameHeader const& info =
+            frame->GetFrameHeader();
+
+        picParam->frame_width_minus1 = (uint16_t)info.width - 1;
+        picParam->frame_height_minus1 = (uint16_t)info.height - 1;
+
+        picParam->pic_fields.bits.frame_type = info.frameType;
+        picParam->pic_fields.bits.show_frame = info.showFrame;
+        picParam->pic_fields.bits.error_resilient_mode = info.errorResilientMode;
+        picParam->pic_fields.bits.intra_only = info.intraOnly;
+        picParam->pic_fields.bits.extra_plane = 0;
+
+        picParam->pic_fields.bits.allow_high_precision_mv = info.allowHighPrecisionMv;
+        picParam->interp_filter = (uint8_t)info.interpFilter;
+        picParam->pic_fields.bits.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
+        picParam->seg_info.segment_info_fields.bits.enabled = info.segmentation.enabled;;
+        picParam->seg_info.segment_info_fields.bits.temporal_update = info.segmentation.temporalUpdate;
+        picParam->seg_info.segment_info_fields.bits.update_map = info.segmentation.updateMap;
+
+        for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        {
+            picParam->seg_info.feature_mask[i] = (uint8_t)info.segmentation.featureMask[i];
+            for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
+                picParam->seg_info.feature_data[i][j] = (int16_t)info.segmentation.featureData[i][j];
+        }
+
+        picParam->pic_fields.bits.reset_frame_context = info.resetFrameContext;
+        picParam->pic_fields.bits.refresh_frame_context = info.refreshFrameContext;
+        picParam->pic_fields.bits.frame_context_idx = info.frameContextIdx;
+
+        if (UMC_VP9_DECODER::KEY_FRAME == info.frameType)
+            for (int i = 0; i < NUM_REF_FRAMES; i++)
+            {
+                picParam->ref_frame_map[i] = VA_INVALID_SURFACE;
+            }
+        else
+        {
+            for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+                picParam->ref_frame_map[ref] = (VASurfaceID)m_va->GetSurfaceID(frame->frame_dpb[ref]->GetMemID());
+
+            for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
+            {
+                Ipp8u idxInDPB = (Ipp8u)info.activeRefIdx[ref_idx];
+                picParam->ref_frame_idx[ref_idx] = idxInDPB;
+                picParam->ref_frame_sign_bias[ref_idx + 1] = (uint8_t)info.refFrameSignBias[ref_idx];
+            }
+        }
+
+        picParam->current_frame = (VASurfaceID)m_va->GetSurfaceID(frame->GetMemID());
+
+        picParam->filter_level[0] = (uint8_t)info.lf.filterLevel[0];
+        picParam->filter_level[1] = (uint8_t)info.lf.filterLevel[1];
+        picParam->filter_level_u = (uint8_t)info.lf.filterLevelU;
+        picParam->filter_level_v = (uint8_t)info.lf.filterLevelV;
+
+        picParam->sharpness_level = (uint8_t)info.lf.sharpnessLevel;
+        picParam->uncompressed_frame_header_length_in_bytes = (uint8_t)info.frameHeaderLength;
+
+        picParam->bit_stream_bytes_in_buffer = info.frameDataSize;
+
+        picParam->profile = (uint8_t)info.profile;
+        picParam->log2_bit_depth_minus8 = (uint8_t)(info.bit_depth - 8); // DDI for Rev 0.25.2 uses bit_depth instead of log2 - 8
+                                                                       // TODO: fix when va_dec_av1.h will be fixed
+
+        picParam->pic_fields.bits.subsampling_x = (uint8_t)info.subsamplingX;
+        picParam->pic_fields.bits.subsampling_y = (uint8_t)info.subsamplingY;
+
+        picParam->ref_fields.bits.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
+        picParam->ref_fields.bits.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
+        for (Ipp8u i = 0; i < TOTAL_REFS; i++)
+        {
+            picParam->ref_deltas[i] = info.lf.refDeltas[i];
+        }
+        for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
+        {
+            picParam->mode_deltas[i] = info.lf.modeDeltas[i];
+        }
+
+        picParam->ref_fields.bits.use_prev_frame_mvs = info.usePrevMVs;
+
+        picParam->base_qindex = (int16_t)info.baseQIndex;
+        picParam->y_dc_delta_q = (int8_t)info.y_dc_delta_q;
+        picParam->u_dc_delta_q = (int8_t)info.uv_dc_delta_q;
+        picParam->v_dc_delta_q = (int8_t)info.uv_dc_delta_q;
+        picParam->u_ac_delta_q = (int8_t)info.uv_ac_delta_q;
+        picParam->v_ac_delta_q = (int8_t)info.uv_ac_delta_q;
+
+        memset(&picParam->seg_info.feature_data, 0, sizeof(picParam->seg_info.feature_data)); // TODO: implement proper setting
+        memset(&picParam->seg_info.feature_mask, 0, sizeof(picParam->seg_info.feature_mask)); // TODO: implement proper setting
+
+        picParam->cdef_pri_damping = (uint8_t)info.cdefPriDamping;
+        picParam->cdef_sec_damping = (uint8_t)info.cdefSecDamping;
+        picParam->cdef_bits = (uint8_t)info.cdefBits;
+
+        for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        {
+            picParam->cdef_strengths[i] = (uint8_t)info.cdefStrength[i];
+            picParam->cdef_uv_strengths[i] = (uint8_t)info.cdefUVStrength[i];
+        }
+        picParam->mode_fields.bits.using_qmatrix = info.useQMatrix;
+        picParam->mode_fields.bits.min_qmlevel = info.minQMLevel;
+        picParam->mode_fields.bits.max_qmlevel = info.maxQMLevel;
+        picParam->mode_fields.bits.delta_q_present_flag = info.deltaQPresentFlag;
+        picParam->mode_fields.bits.log2_delta_q_res = CeilLog2(info.deltaQRes);
+        picParam->mode_fields.bits.delta_lf_present_flag = info.deltaLFPresentFlag;
+        picParam->mode_fields.bits.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
+        picParam->mode_fields.bits.tx_mode = info.txMode;
+        picParam->mode_fields.bits.reference_mode = info.referenceMode;
+        picParam->mode_fields.bits.reduced_tx_set_used = info.reducedTxSetUsed;
+        picParam->mode_fields.bits.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
+        picParam->mode_fields.bits.allow_screen_content_tools = info.allowScreenContentTools;
+
+        // Rev 0.25.2 requires passing of tile group info bit offset to the driver
+        // TODO: uncomment when this parameter will be added to va_dec_av1.h
+        //picParam->tg_size_bit_offset = info.tileGroupBitOffset;
+
+        picParam->log2_tile_rows = (uint8_t)info.log2TileRows;
+        picParam->log2_tile_cols = (uint8_t)info.log2TileColumns;
+        // TODO: add proper calculation of tile_rows/tile_cols during read of uncompressed header
+        picParam->tile_cols = (uint16_t)info.tileCols;
+        picParam->tile_rows = (uint16_t)info.tileRows;
+
+        picParam->tile_size_bytes = (uint8_t)info.tileSizeBytes;
+    }
+
+    void PackerVA::PackBitstreamControlParams(VABitStreamParameterBufferAV1* bsControlParam, AV1DecoderFrame const* frame)
+    {
+        FrameHeader const& info = frame->GetFrameHeader();
+
+        bsControlParam->bit_stream_data_offset = info.frameHeaderLength;
+        bsControlParam->bit_stream_data_size = info.frameDataSize - info.frameHeaderLength;
+        bsControlParam->bit_stream_data_flag = 0;
+    }
+#endif // UMC_VA_LINUX
 
 } // namespace UMC_AV1_DECODER
 

@@ -62,6 +62,9 @@
 #include <va/va_vpp.h>
 #include <va/va_dec_vp9.h>
 #include <va/va_dec_hevc.h>
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#include <va/va_dec_av1.h>
+#endif
 
 #ifndef UNREFERENCED_PARAMETER
 #define UNREFERENCED_PARAMETER(p) (p);
