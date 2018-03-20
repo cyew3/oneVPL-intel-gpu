@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 1985-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 1985-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <cm/cm.h>
@@ -736,10 +736,10 @@ surfaceCopy_write_P010_shift(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, in
     read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 6, inData6);
     read(DWALIGNED(INBUF_IDX), linear_offset_byte + width_byte * 7, inData7);
 
-    outData0.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)<<bitshift;
-    outData1.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16)<<bitshift;
-    outData2.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32)<<bitshift;
-    outData3.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48)<<bitshift;
+    outData0.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0).format<ushort>() <<bitshift;
+    outData1.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16).format<ushort>() <<bitshift;
+    outData2.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32).format<ushort>() <<bitshift;
+    outData3.format<ushort>() = inData_m.select<SUB_BLOCK_HEIGHT, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48).format<ushort>() <<bitshift;
 
     write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte,                          vertOffset, outData0);
     write_plane(OUTBUF_IDX, GENX_SURFACE_Y_PLANE, horizOffset_byte + sub_block_width_byte,   vertOffset, outData1);
@@ -768,10 +768,10 @@ surfaceCopy_write_P010_shift(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, in
     read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte * 2, inData_NV12_2);
     read(DWALIGNED(INBUF_IDX), linear_offset_NV12_byte + width_byte * 3, inData_NV12_3);
 
-    outData_NV12_0.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0)<<bitshift;
-    outData_NV12_1.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16)<<bitshift;
-    outData_NV12_2.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32)<<bitshift;
-    outData_NV12_3.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48)<<bitshift;
+    outData_NV12_0.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 0).format<ushort>() <<bitshift;
+    outData_NV12_1.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 16).format<ushort>() <<bitshift;
+    outData_NV12_2.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 32).format<ushort>() <<bitshift;
+    outData_NV12_3.format<ushort>() = inData_NV12_m.select<SUB_BLOCK_HEIGHT_NV12, 1, SUB_BLOCK_PIXEL_WIDTH*2, 1>(0, 48).format<ushort>() <<bitshift;
 
     write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte,                          vertOffset >> 1, outData_NV12_0);
     write_plane(OUTBUF_IDX, GENX_SURFACE_UV_PLANE, horizOffset_byte + sub_block_width_byte,   vertOffset >> 1, outData_NV12_1);

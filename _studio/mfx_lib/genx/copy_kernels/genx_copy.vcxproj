@@ -147,13 +147,14 @@ SET INSTALLDIR=$(MEDIASDK_ROOT)\CMRT
 SET ICLDIR=%25INSTALLDIR%25\compiler
 SET PATH=%25ICLDIR%25\bin%3b%25ICLDIR%25\lib%3b%25PATH%25
 SET INCLUDE=%25ICLDIR%25\include%3b%25ICLDIR%25\include\cm%3b%25INCLUDE%25
-cmc -c -Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o cht_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o skl_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen10 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o cnl_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen11lp .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o icllp_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen11 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o icl_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen12lp .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o tgllp_copy_kernel_genx.isa
-cmc -c -Qxcm_jit_target=gen12 .\src\skl_copy_kernel_genx.cpp -Qxcm_print_asm_count -mCM_printregusage -o tgl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen8 .\src\cht_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o cht_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen9 .\src\skl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o skl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen10 .\src\skl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o cnl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen11lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icllp_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen11 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o icl_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen12lp .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgllp_copy_kernel_genx.isa
+cmc -c -Qxcm_jit_target=gen12 .\src\icl_copy_kernel_genx.cpp -Qxcm_release -Qxcm_print_asm_count -mCM_printregusage -o tgl_copy_kernel_genx.isa
+
 cl .\src\embed_isa.c
 embed_isa cht_copy_kernel_genx.isa
 embed_isa skl_copy_kernel_genx.isa
@@ -300,10 +301,13 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     <ClCompile Include="src\embed_isa.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="src\genx_cht_copy_isa.cpp" />
     <ClCompile Include="src\genx_skl_copy_isa.cpp" />
+    <ClCompile Include="src\icl_copy_kernel_genx.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\skl_copy_kernel_genx.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
