@@ -489,6 +489,12 @@ mfxStatus VideoDECODEVP9_HW::GetVideoParam(mfxVideoParam *par)
     par->mfx.FrameInfo.AspectRatioH = m_vInitPar.mfx.FrameInfo.AspectRatioH;
     par->mfx.FrameInfo.AspectRatioW = m_vInitPar.mfx.FrameInfo.AspectRatioW;
 
+    if ((par->mfx.FrameInfo.AspectRatioH == 0) && (par->mfx.FrameInfo.AspectRatioW == 0))
+    {
+        par->mfx.FrameInfo.AspectRatioH = 1;
+        par->mfx.FrameInfo.AspectRatioW = 1;
+    }
+
     return MFX_ERR_NONE;
 }
 
