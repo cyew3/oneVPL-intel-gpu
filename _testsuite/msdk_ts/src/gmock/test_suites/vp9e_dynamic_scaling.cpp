@@ -1422,33 +1422,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             , m_testId(testId)
             , m_dpbSlotsForPrevFrame(0)
             , m_numFrame(0)
-        {
-            const mfxFrameInfo& targetFi = (*m_pIterations)[0]->m_param[CHECK].mfx.FrameInfo;
-            mfxU32 w = targetFi.Width;
-            mfxU32 h = targetFi.Height;
-
-            mfxFrameInfo& fi = m_pPar->mfx.FrameInfo;
-            mfxInfoMFX& mfx = m_pPar->mfx;
-            fi.AspectRatioW = fi.AspectRatioH = 1;
-            fi.Width = fi.CropW = w;
-            fi.Height = fi.CropH = h;
-            fi.FourCC = targetFi.FourCC;
-            fi.ChromaFormat = targetFi.ChromaFormat;
-            fi.BitDepthLuma = targetFi.BitDepthLuma;
-            fi.BitDepthChroma = targetFi.BitDepthChroma;
-            fi.Shift = targetFi.Shift;
-            mfx.CodecProfile = GetCodecProfile(fi.FourCC);
-            mfx.CodecLevel = 0;
-            m_pPar->AsyncDepth = 1;
-            m_par_set = true;
-
-            if (m_pInputSurfaces)
-            {
-                g_tsStatus.expect(MFX_ERR_NONE);
-                AllocSurfaces();
-                Init();
-            }
-        };
+        {}
         ~BitstreamChecker() {}
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
@@ -1597,6 +1571,42 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // decode frame and calculate PSNR for Y plane
         if (m_pInputSurfaces)
         {
+            // do the decoder initialization on the first encoded frame
+            if (m_numFrame == 0)
+            {
+                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + IVF_SEQ_HEADER_SIZE_BYTES;
+                m_pBitstream->Data = bs.Data + headers_shift;
+                m_pBitstream->DataOffset = 0;
+                m_pBitstream->DataLength = bs.DataLength - headers_shift;
+                m_pBitstream->MaxLength = bs.MaxLength;
+
+                m_pPar->AsyncDepth = 1;
+
+                mfxStatus decode_header_status = DecodeHeader();
+
+                mfxStatus init_status = Init();
+                m_par_set = true;
+                if (init_status >= 0)
+                {
+                    if (m_default && !m_request.NumFrameMin)
+                    {
+                        QueryIOSurf();
+                    }
+
+                    mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
+                    if (alloc_status < 0)
+                    {
+                        g_tsLog << "ERROR: Could not allocate surfaces for the decoder, status " << alloc_status;
+                        throw tsFAIL;
+                    }
+                }
+                else
+                {
+                    g_tsLog << "ERROR: Could not inilialize the decoder, Init() returned " << init_status;
+                    throw tsFAIL;
+                }
+            }
+
             const mfxU32 ivfSize = hdr.FrameOrder == 0 ? MAX_IVF_HEADER_SIZE : IVF_PIC_HEADER_SIZE_BYTES;
             if (m_numFrame && (hdr.FrameOrder == 0))
             {
