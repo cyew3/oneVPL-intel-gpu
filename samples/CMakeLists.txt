@@ -30,6 +30,7 @@ include( ../builder/FindGlobals.cmake )
 include( ../builder/FindMFX.cmake )
 include( ../builder/FindPackages.cmake )
 include( ../builder/FindVTune.cmake )
+include( ../builder/FindGTest.cmake )
 
 set( NOT_CONFIGURED "" CACHE INTERNAL "" )
 set( SKIPPING "" CACHE INTERNAL "" )
