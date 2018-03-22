@@ -113,8 +113,10 @@ namespace hevce_sao
 
                 if (slice.sao_chroma_flag)
                 {
-                    EXPECT_GT(AppliedSAOPercent[1], 10);
-                    EXPECT_GT(AppliedSAOPercent[2], 10);
+                    //EXPECT_GT(AppliedSAOPercent[1], 10);
+                    //EXPECT_GT(AppliedSAOPercent[2], 10);
+                    EXPECT_GE(AppliedSAOPercent[1], 0); // based on validation results
+                    EXPECT_GE(AppliedSAOPercent[2], 0);
                 }
                 else
                 {
@@ -177,18 +179,18 @@ namespace hevce_sao
 
     const TestCase TCList[] =
     {
-        { 1, sD,       4, sD,{} },
-        { 1, sD,       7, sD,{} },
-        { 4, sD,       1, sD,{} },
-        { 4, sD,       7, sD,{} },
-        { 7, sD,       1, sD,{} },
-        { 7, sD,       4, sD,{} },
-        { 7, sY,       4, sD,{} },
-        { 4, sD,       4, s0,         {0, sY, 0, sC, sY | sC} },
-        { 4, s0,       4, sY,         {s0, 0, 0, sC, 0} },
-        { 4, sY,       4, sC | sY,    {} },
-        { 4, sC,       4, sY,         {} },
-        { 4, sY | sC,  4, s0,         {} },
+/* 0 */ { 1, sD,       4, sD,{} },
+/* 1 */ { 1, sD,       7, sD,{} },
+/* 2 */ { 4, sD,       1, sD,{} },
+/* 3 */ { 4, sD,       7, sD,{} },
+/* 4 */ { 7, sD,       1, sD,{} },
+/* 5 */ { 7, sD,       4, sD,{} },
+/* 6 */ { 7, sY,       4, sD,{} },
+/* 7 */ { 4, sD,       4, s0,         {0, sY, 0, sC, sY | sC} },
+/* 8 */ { 4, s0,       4, sY,         {s0, 0, 0, sC, 0} },
+/* 9 */ { 4, sY,       4, sC | sY,    {} },
+/* 10 */{ 4, sC,       4, sY,         {} },
+/* 11 */{ 4, sY | sC,  4, s0,         {} },
     };
 
     bool isUnsupported(tsExtBufType<mfxVideoParam>& par)
@@ -198,7 +200,7 @@ namespace hevce_sao
 
         return (g_tsHWtype < MFX_HW_CNL)
             //|| LCUSize == 16
-            || par.mfx.TargetUsage == 7
+            || ((g_tsHWtype < MFX_HW_ICL) && (par.mfx.TargetUsage == 7))
             || (CO3 && CO3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT)
             || (CO3 && CO3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT)
             || (   (g_tsHWtype == MFX_HW_CNL)
@@ -263,17 +265,9 @@ namespace hevce_sao
         {
             EXPECT_EQ(tc.SaoInit, hp.SampleAdaptiveOffset);
         }
-        else if (enc.m_par.mfx.TargetUsage == 1)
+        else
         {
             EXPECT_EQ((MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA), hp.SampleAdaptiveOffset);
-        }
-        else if (enc.m_par.mfx.TargetUsage == 4)
-        {
-            EXPECT_EQ(MFX_SAO_UNKNOWN, hp.SampleAdaptiveOffset);
-        }
-        else if (enc.m_par.mfx.TargetUsage == 7)
-        {
-            EXPECT_EQ(MFX_SAO_DISABLE, hp.SampleAdaptiveOffset);
         }
 
         BreakOnFailure();
@@ -322,7 +316,17 @@ namespace hevce_sao
         else if (unsupported && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
+        if (tc.TUReset > tc.TUInit) // NumRefFrame can depend on new TU
+            g_tsStatus.disable_next_check();
+
         enc.Reset();
+
+        if (tc.TUReset > tc.TUInit)
+            if ((g_tsStatus.get() != MFX_ERR_NONE) &&
+                (g_tsStatus.get() != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM))
+            {
+                g_tsStatus.check(); TS_CHECK_MFX;
+            }
 
         if (idrRequired && ro.StartNewSequence == MFX_CODINGOPTION_OFF)
         {
@@ -340,17 +344,9 @@ namespace hevce_sao
         {
             EXPECT_EQ(saoReset, hp.SampleAdaptiveOffset);
         }
-        else if (enc.m_par.mfx.TargetUsage == 1)
+        else
         {
             EXPECT_EQ((MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA), hp.SampleAdaptiveOffset);
-        }
-        else if (enc.m_par.mfx.TargetUsage == 4)
-        {
-            EXPECT_EQ(MFX_SAO_UNKNOWN, hp.SampleAdaptiveOffset);
-        }
-        else if (enc.m_par.mfx.TargetUsage == 7)
-        {
-            EXPECT_EQ(MFX_SAO_DISABLE, hp.SampleAdaptiveOffset);
         }
 
         BreakOnFailure();
