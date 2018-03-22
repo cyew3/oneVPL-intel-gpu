@@ -102,13 +102,11 @@ MFX_LOCAL_STATIC_LIBRARIES_SW := \
 
 MFX_LOCAL_LDFLAGS_HW += \
     $(MFX_LDFLAGS) \
-    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
-    -Wl,--no-warn-shared-textrel
+    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map
 
 MFX_LOCAL_LDFLAGS_SW += \
     $(MFX_LDFLAGS) \
-    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map \
-    -Wl,--no-warn-shared-textrel
+    -Wl,--version-script=$(LOCAL_PATH)/mfx_lib/libmfx.map
 
 # =============================================================================
 

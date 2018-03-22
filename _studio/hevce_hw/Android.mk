@@ -26,8 +26,7 @@ MFX_LOCAL_STATIC_LIBRARIES := \
 
 MFX_LOCAL_LDFLAGS := \
     $(MFX_LDFLAGS) \
-    -Wl,--version-script=$(LOCAL_PATH)/libmfx_h265e_plugin.map \
-    -Wl,--no-warn-shared-textrel
+    -Wl,--version-script=$(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/plugin/libmfxsw_plugin.map
 
 # =============================================================================
 

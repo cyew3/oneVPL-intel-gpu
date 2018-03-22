@@ -4,7 +4,6 @@
 #
 # Defined variables:
 #   MFX_CFLAGS_INTERNAL - all flags needed to build MFX targets
-#   MFX_CFLAGS_INTERNAL_HW - all flags needed to build MFX HW targets
 #   MFX_C_INCLUDES_INTERNAL - all include paths needed to build MFX targets
 #   MFX_C_INCLUDES_INTERNAL_HW - all include paths needed to build MFX HW targets
 
@@ -14,10 +13,6 @@ MFX_CFLAGS_INTERNAL := \
 
 MFX_CFLAGS_INTERNAL_32 := -DLINUX32
 MFX_CFLAGS_INTERNAL_64 := -DLINUX32 -DLINUX64
-
-MFX_CFLAGS_INTERNAL_HW := \
-    $(MFX_CFLAGS_INTERNAL) \
-    -Wno-error=non-virtual-dtor
 
 MFX_C_INCLUDES_INTERNAL :=  \
     $(MFX_C_INCLUDES) \

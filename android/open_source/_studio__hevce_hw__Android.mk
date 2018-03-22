@@ -22,8 +22,7 @@ MFX_LOCAL_STATIC_LIBRARIES := \
 
 MFX_LOCAL_LDFLAGS := \
     $(MFX_LDFLAGS) \
-    -Wl,--version-script=$(LOCAL_PATH)/libmfx_h265e_plugin.map \
-    -Wl,--no-warn-shared-textrel
+    -Wl,--version-script=$(MFX_HOME)/_studio/mfx_lib/plugin/libmfxsw_plugin.map
 
 # =============================================================================
 
@@ -37,7 +36,7 @@ LOCAL_C_INCLUDES := \
     $(MFX_C_INCLUDES_INTERNAL_HW)
 
 LOCAL_CFLAGS := \
-    $(MFX_CFLAGS_INTERNAL_HW) \
+    $(MFX_CFLAGS_INTERNAL) \
     -DMFX_ENABLE_H265_VIDEO_ENCODE
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 
@@ -67,7 +66,7 @@ LOCAL_C_INCLUDES := \
     $(MFX_C_INCLUDES_INTERNAL_HW)
 
 LOCAL_CFLAGS := \
-    $(MFX_CFLAGS_INTERNAL_HW) \
+    $(MFX_CFLAGS_INTERNAL) \
     -DMFX_ENABLE_H265_VIDEO_ENCODE
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 

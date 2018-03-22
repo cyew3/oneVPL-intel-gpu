@@ -73,8 +73,7 @@ endif
 
 MFX_CFLAGS_INTERNAL_HW := \
     $(MFX_CFLAGS_INTERNAL) \
-    -DMFX_VA \
-    -Wno-error=non-virtual-dtor
+    -DMFX_VA
 
 MFX_CFLAGS_LUCAS := -DLUCAS_DLL
 
