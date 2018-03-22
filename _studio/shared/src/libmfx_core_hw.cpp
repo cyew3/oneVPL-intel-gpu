@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -116,11 +116,11 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
 #endif
         break;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_CODEC_AV1:
         profile |= VA_AV1;
         break;
-#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+#endif // PRE_SI_TARGET_PLATFORM_GEN12
 
     case MFX_CODEC_HEVC:
         profile |= VA_H265;

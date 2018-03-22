@@ -116,9 +116,9 @@ enum VideoAccelerationProfile
     VA_VP8          = 0x0006,
     VA_H265         = 0x0007,
     VA_VP9          = 0x0008,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VA_AV1          = 0x0009,
-#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+#endif // PRE_SI_TARGET_PLATFORM_GEN12
 
     // Entry points
     VA_ENTRY_POINT  = 0xfff00,
@@ -164,9 +164,9 @@ enum VideoAccelerationProfile
     VP8_VLD         = VA_VP8 | VA_VLD,
     HEVC_VLD        = VA_H265 | VA_VLD,
     VP9_VLD         = VA_VP9 | VA_VLD,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     AV1_VLD         = VA_AV1 | VA_VLD,
-#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+#endif // PRE_SI_TARGET_PLATFORM_GEN12
 
 #ifndef OPEN_SOURCE
     H264_VLD_MVC                = VA_H264 | VA_VLD | VA_PROFILE_MVC,

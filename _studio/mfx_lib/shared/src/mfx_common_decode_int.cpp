@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common_decode_int.h"
@@ -252,7 +252,7 @@ mfxU32 ConvertUMCStreamTypeToCodec(UMC::VideoStreamType type)
         case UMC::H264_VIDEO:  return MFX_CODEC_AVC;
         case UMC::HEVC_VIDEO:  return MFX_CODEC_HEVC;
         case UMC::VP9_VIDEO:   return MFX_CODEC_VP9;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         case UMC::AV1_VIDEO:   return MFX_CODEC_AV1;
 #endif
         default:

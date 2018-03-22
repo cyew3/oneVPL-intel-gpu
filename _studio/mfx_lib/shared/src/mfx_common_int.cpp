@@ -244,7 +244,7 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
             )
             return MFX_ERR_INVALID_VIDEO_PARAM;
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         case MFX_CODEC_AV1:
             if (   info->FourCC != MFX_FOURCC_NV12
                 && info->FourCC != MFX_FOURCC_YV12
@@ -371,9 +371,9 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
         case MFX_CODEC_JPEG:
         case MFX_CODEC_VP8:
         case MFX_CODEC_VP9:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_CODEC_AV1:
-#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
+#endif // PRE_SI_TARGET_PLATFORM_GEN12
             break;
         default:
             return MFX_ERR_INVALID_VIDEO_PARAM;
