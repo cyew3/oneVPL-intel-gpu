@@ -1348,7 +1348,7 @@ inline bool isSAOSupported(MfxVideoParam const & par)
     On Gen10/CNL both VDEnc and VME, this flag should be set to 0 for 10-bit encoding.
     On CNL+, this flag should be set to 0 for max LCU size is 16x16 */
     if (   par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
-        || par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED
+        || (par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED && par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE)
         || par.m_ext.CO3.WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT
         || par.m_ext.CO3.WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT
         || par.LCUSize == 16
@@ -1371,36 +1371,6 @@ inline bool isSAOSupported(MfxVideoParam const & par)
     }
     return true;
 }
-
-namespace TUDefault
-{
-    inline mfxU16 TU(mfxU16 tu)
-    {
-        return tu ? Clip3<mfxU16>(1, 7, tu) : 4;
-    }
-
-    mfxU16 SAO(mfxU16 tu)
-    {
-        static const mfxU16 tumap[7] =
-        {
-            /*1*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*2*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*3*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*4*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*5*/   MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA,
-            /*6*/   MFX_SAO_DISABLE,
-            /*7*/   MFX_SAO_DISABLE
-        };
-
-        return tumap[TU(tu) - 1];
-    }
-
-    inline mfxU16 SAO(MfxVideoParam const & par)
-    {
-        return isSAOSupported(par) ? SAO(par.mfx.TargetUsage) : MFX_SAO_DISABLE;
-    }
-
-} //namespace TUDefault
 
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
 
@@ -3125,7 +3095,7 @@ void SetDefaults(
         CO3.TransformSkip = MFX_CODINGOPTION_OFF;
 
     if (!par.m_ext.HEVCParam.SampleAdaptiveOffset)
-        par.m_ext.HEVCParam.SampleAdaptiveOffset = TUDefault::SAO(par);
+        par.m_ext.HEVCParam.SampleAdaptiveOffset = isSAOSupported(par) ? (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA) : MFX_SAO_DISABLE;
 
     if (!par.m_ext.DDI.QpAdjust)
         par.m_ext.DDI.QpAdjust = (par.mfx.TargetUsage < MFX_TARGETUSAGE_6) ? (mfxU16)MFX_CODINGOPTION_ON : (mfxU16)MFX_CODINGOPTION_OFF;
