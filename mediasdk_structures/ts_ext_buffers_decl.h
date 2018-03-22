@@ -123,6 +123,7 @@ EXTBUF(mfxExtVP9Param               , MFX_EXTBUFF_VP9_PARAM                 )
 #endif
 
 EXTBUF(mfxExtHEVCParam              , MFX_EXTBUFF_HEVC_PARAM                )
+EXTBUF(mfxExtHEVCTiles              , MFX_EXTBUFF_HEVC_TILES                )
 EXTBUF(mfxExtPredWeightTable        , MFX_EXTBUFF_PRED_WEIGHT_TABLE         )
 
 #if defined(__MFXBRC_H__)

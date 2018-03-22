@@ -1178,6 +1178,12 @@ STRUCT(mfxExtHEVCParam,
 
 #endif
 
+STRUCT(mfxExtHEVCTiles,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, NumTileRows)
+    FIELD_T(mfxU16, NumTileColumns)
+)
+
 STRUCT(mfxExtHEVCRegion,
     FIELD_S(mfxExtBuffer, Header )
     FIELD_T(mfxU32      , RegionId)
