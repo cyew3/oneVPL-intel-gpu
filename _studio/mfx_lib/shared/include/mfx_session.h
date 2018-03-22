@@ -65,7 +65,7 @@ public:
     }
 
 protected:
-    mfx_core_ptr(mfx_core_ptr<T>& ptr);
+    mfx_core_ptr(const mfx_core_ptr<T>& ptr);
     mfx_core_ptr<T>& operator=(mfx_core_ptr<T>& ptr);
     bool m_bIsNew;
     T*   m_ptr;

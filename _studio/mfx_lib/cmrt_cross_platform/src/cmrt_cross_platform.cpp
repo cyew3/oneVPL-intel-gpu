@@ -121,6 +121,14 @@ namespace
 
 #endif /* #if defined(CM_WIN) */
 
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+
 enum { DX9 = 1, DX11 = 2, VAAPI = 3 };
 
 #if defined(CM_WIN) 
@@ -520,6 +528,12 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 }
 
 CmEvent *CM_NO_EVENT = ((CmEvent *)(-1));
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic pop
+#endif
 
 #endif // !defined(OSX)
 

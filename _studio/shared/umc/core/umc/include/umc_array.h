@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__UMC_ARRAY_H)
@@ -34,7 +34,7 @@ public:
     }
 
     //Copy constructor
-    Array(Array &src)
+    Array(const Array &src)
     {
         m_pArray = (item_t *)0;
         m_numItems = 0;

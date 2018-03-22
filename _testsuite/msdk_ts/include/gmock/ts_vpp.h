@@ -43,7 +43,7 @@ public:
     tsSurfacePool               m_spool_out;
 
     tsVideoVPP(bool useDefaults = true, mfxU32 id = 0);
-    ~tsVideoVPP();
+    virtual ~tsVideoVPP();
 
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);

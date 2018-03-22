@@ -14,7 +14,7 @@
 namespace hevcd_frametype
 {
 
-class TestSuite : tsVideoDecoder
+class TestSuite : public tsVideoDecoder
 {
     mfxU16                     frame;
     tsExtBufType<mfxFrameData> frame_type;

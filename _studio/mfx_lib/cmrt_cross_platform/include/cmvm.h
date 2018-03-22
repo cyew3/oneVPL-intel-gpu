@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__CM_VM_H__) && !defined(CM_VM_H)
@@ -15,6 +15,14 @@
 #include <assert.h>
 #include <limits>
 #include <limits.h>
+
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
 
 typedef unsigned int   uint;
 typedef unsigned short ushort;
@@ -1361,5 +1369,11 @@ vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index_x, const 
     return ret;
 }
 // end of iselect for 2D matrix
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic pop
+#endif
 
 #endif

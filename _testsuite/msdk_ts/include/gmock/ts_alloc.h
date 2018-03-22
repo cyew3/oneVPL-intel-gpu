@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -33,7 +33,7 @@ private:
 
 public:
     tsSurfacePool(frame_allocator* allocator = 0, bool d3d11 = !!((g_tsImpl) & 0xF00));
-    ~tsSurfacePool();
+    virtual ~tsSurfacePool();
 
     inline frame_allocator* GetAllocator() { return m_allocator; }
     inline mfxU32           PoolSize()     { return (mfxU32)m_pool.size(); }

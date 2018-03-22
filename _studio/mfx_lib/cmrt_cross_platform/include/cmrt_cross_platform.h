@@ -46,6 +46,19 @@
 #endif
 #endif
 
+#if defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#endif
+
+#if defined(__INTEL_COMPILER)
+  #pragma warning(push)
+  #pragma warning(disable:2289)
+#endif
+
 class SurfaceIndex
 {
 public:
@@ -2694,6 +2707,16 @@ int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName
 #undef ULONG
 #endif
 
+#endif
+
+#if defined(__INTEL_COMPILER)
+  #pragma warning(pop)
+#endif
+
+#if defined(__clang__)
+  #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic pop
 #endif
 
 #endif // !defined(OSX)
