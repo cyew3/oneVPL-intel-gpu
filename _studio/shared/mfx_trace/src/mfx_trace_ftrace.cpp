@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_trace.h"
@@ -143,6 +143,8 @@ mfxTraceU32 MFXTraceFtrace_vDebugMessage(mfxTraceStaticHandle* //static_handle
     , va_list args
     )
 {
+    (void)function_name;
+
     if (trace_handle == -1) return 1;
     
     if (MFX_TRACE_LEVEL_INTERNAL_VTUNE != level)
@@ -216,6 +218,10 @@ mfxTraceU32 MFXTraceFtrace_BeginTask(mfxTraceStaticHandle *static_handle
     , mfxTraceTaskHandle *handle
     , const void * /*task_params*/)
 {
+    (void)static_handle;
+    (void)task_name;
+    (void)handle;
+
     if (trace_handle == -1) return 1;
 
     if (MFX_TRACE_LEVEL_INTERNAL_VTUNE == level)
@@ -232,6 +238,8 @@ mfxTraceU32 MFXTraceFtrace_EndTask(mfxTraceStaticHandle * //static_handle
     , mfxTraceTaskHandle *handle
     )
 {
+    (void)handle;
+
     if (trace_handle == -1) return 1;
 
 

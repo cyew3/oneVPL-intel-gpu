@@ -61,6 +61,8 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
         return false;
     }
     // todo : VA API alternative ?
+#else
+    (void)p_core;
 #endif // MFX_VA_WIN
 
 #ifdef ANDROID

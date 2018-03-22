@@ -154,6 +154,8 @@ namespace MfxHwH264EncodeHW
             return 0;
         return d3dIface->GetD3D9DeviceManager();
 #else
+    (void)core;
+
     throw std::logic_error("GetDeviceManager not implemented on Linux for Look Ahead");
 #endif
     }

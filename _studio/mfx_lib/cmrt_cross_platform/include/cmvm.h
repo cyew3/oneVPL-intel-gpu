@@ -674,7 +674,7 @@ public:
 
 /*
     STREAM
-*/   
+*/
 
 template <typename T, uint SZ>
 int stream<T, SZ>::extract_data(void *buf, uint size)
@@ -682,6 +682,8 @@ int stream<T, SZ>::extract_data(void *buf, uint size)
     uint i;
 
     assert(SZ * sizeof(T) <= size);
+
+    (void)size;
 
     for (i = 0; i< SZ; i++) {
         ((T*)buf)[i] = get(i);

@@ -519,6 +519,14 @@ int MEforGen75::BidirectionalMESearchUnitChroma(I32 *dist, U8 *subpredmode)
 int MEforGen75::CheckBidirectionalField(U8 *src, I16PAIR mv0, I16PAIR mv1, I32 bw, I32 bh, I32 *d0, I32 *d1)
 /*****************************************************************************************************/
 {
+    (void)src;
+    (void)mv0;
+    (void)mv1;
+    (void)bw;
+    (void)bh;
+    (void)d0;
+    (void)d1;
+
     return ERR_UNSUPPORTED;
     /*
     U8    rblk0[256], rblk1[256];

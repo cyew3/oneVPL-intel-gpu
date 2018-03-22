@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -892,6 +892,8 @@ void MAKE_NAME(h265_InterpLuma_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
     VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( ((width & 0x03) == 0) && ((height & 0x01) == 0) );
 
+    (void)offset;
+
     rem = (width & 0x07);
 
     width -= rem;
@@ -919,6 +921,8 @@ void MAKE_NAME(h265_InterpLumaFast_s8_d16_V)(INTERP_S8_D16_PARAMETERS_LIST)
 
     VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( ((width & 0x03) == 0) && ((height & 0x01) == 0) );
+
+    (void)offset;
 
     rem = (width & 0x07);
 
@@ -1032,6 +1036,8 @@ void MAKE_NAME(h265_InterpChroma_s8_d16_V) ( INTERP_S8_D16_PARAMETERS_LIST )
 
     VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( ((width & 0x01) == 0) && ((height & 0x01) == 0) );
+
+    (void)offset;
 
     rem = (width & 0x07);
 

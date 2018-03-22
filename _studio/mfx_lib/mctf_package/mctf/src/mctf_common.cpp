@@ -240,6 +240,8 @@ void CMC::TimeStart(int index) {
 #if defined (_WIN32) || defined(_WIN64)
 //    QueryPerformanceCounter(&pTimer->tPause[index]);
     index = index;
+#else
+    (void)index;
 #endif
 }
 
@@ -272,6 +274,11 @@ mfxF64 CMC::CatchTime(int indexInit, int indexEnd, const char* message, int prin
         ASC_PRINTF("%s %0.3f ms.\r", message, timeval);
     return timeval;
 #else
+    (void)indexInit;
+    (void)indexEnd;
+    (void)message;
+    (void)print;
+
     return 0.0;
 #endif
 }

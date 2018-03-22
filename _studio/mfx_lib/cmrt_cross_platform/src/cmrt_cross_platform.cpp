@@ -166,6 +166,10 @@ public:
 
     INT GetDevice(AbstractDeviceHandle & pDevice)
     {
+#if !defined(CM_WIN)
+        (void)pDevice;
+#endif
+
         switch (m_platform) {
 #if defined(CM_WIN)
         case DX9:   return m_dx9->GetD3DDeviceManager((IDirect3DDeviceManager9 *&)pDevice);
@@ -205,6 +209,14 @@ public:
 
     INT CreateSurface2DSubresource(AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D ** ppSurfaces, UINT & createdSurfaceCount, UINT option)
     {
+#if !defined(CM_WIN)
+        (void)pD3D11Texture2D;
+        (void)subresourceCount;
+        (void)ppSurfaces;
+        (void)createdSurfaceCount;
+        (void)option;
+#endif
+
         switch (m_platform) {
 #if defined(CM_WIN)
         case DX9:   return CM_NOT_IMPLEMENTED;
@@ -218,6 +230,13 @@ public:
 
     INT CreateSurface2DbySubresourceIndex(AbstractSurfaceHandle pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D *& pSurface)
     {
+#if !defined(CM_WIN)
+        (void)pD3D11Texture2D;
+        (void)FirstArraySlice;
+        (void)FirstMipSlice;
+        (void)pSurface;
+#endif
+
         switch (m_platform) {
 #if defined(CM_WIN)
         case DX9:   return CM_NOT_IMPLEMENTED;

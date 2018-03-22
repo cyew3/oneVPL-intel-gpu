@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -280,6 +280,8 @@ void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
     VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( (width & 0x03) == 0 );
 
+    (void)offset;
+
     rem = (width & 0x07);
 
     width -= rem;
@@ -307,6 +309,8 @@ void MAKE_NAME(h265_InterpLumaFast_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
 
     VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( (width & 0x03) == 0 );
+
+    (void)offset;
 
     rem = (width & 0x07);
 
@@ -431,6 +435,8 @@ void MAKE_NAME(h265_InterpChroma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST, int pl
 
     VM_ASSERT( (shift == 0 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( (width & 0x01) == 0 );
+
+    (void)offset;
 
     rem = (width & 0x07);
 
@@ -572,6 +578,8 @@ void MAKE_NAME(h265_InterpLuma_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST)
     VM_ASSERT( (shift <= 2 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( (width & 0x03) == 0 );
 
+    (void)offset;
+
     switch (shift) {
     case 6:  t_InterpLuma_s16_d16_H<6, 32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
 
@@ -586,6 +594,8 @@ void MAKE_NAME(h265_InterpLumaFast_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST)
 {
     VM_ASSERT( (shift <= 2 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( (width & 0x03) == 0 );
+
+    (void)offset;
 
     switch (shift) {
     case 6:  t_InterpLumaFast_s16_d16_H<6, 32>(pSrc, srcPitch, pDst, dstPitch, tab_index, width, height);  break;
@@ -671,6 +681,8 @@ void MAKE_NAME(h265_InterpChroma_s16_d16_H)(INTERP_S16_D16_PARAMETERS_LIST, int 
 
     VM_ASSERT( (shift <= 2 && offset == 0) || (shift == 6 && offset == (1 << (shift-1))) );
     VM_ASSERT( (width & 0x01) == 0 );
+
+    (void)offset;
 
     rem = (width & 0x03);
     width -= rem;

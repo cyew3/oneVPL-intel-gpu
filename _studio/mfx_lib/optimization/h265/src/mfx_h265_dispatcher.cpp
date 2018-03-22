@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1101,6 +1101,8 @@ void SetTargetPX()
 
 IppStatus MFX_HEVC_PP::InitDispatcher(Ipp32s cpuFeature)
 {
+    (void)cpuFeature;
+
     return ippStsNoErr;
 }
 

@@ -89,6 +89,15 @@ int MEforGen75::IntraAVS8x8SearchUnit( )
 int MEforGen75::IntraPredictAVS8x8(U8 *src, U8 *lft, U8 *l_b, U8 *top, U8 *r_t, int edge, U8 *mode, int *dist)
 /*********************************************************************************/
 {
+    (void)src;
+    (void)lft;
+    (void)l_b;
+    (void)top;
+    (void)r_t;
+    (void)edge;
+    (void)mode;
+    (void)dist;
+
     return ERR_UNSUPPORTED;
     /*
     U8      tmp[8],lmp[8];

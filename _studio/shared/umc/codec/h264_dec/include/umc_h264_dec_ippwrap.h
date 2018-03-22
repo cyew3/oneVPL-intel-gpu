@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -21,9 +21,16 @@
 #include "mfx_h264_dispatcher.h"
 #include "umc_h264_dec_structures.h"
 
-#if defined(LINUX) && defined(__GNUC__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+// Aproximately 800 warnings "-Wunused-parameter"
+#if defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wunused-parameter"
+#elif defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wunused-parameter"
 #endif
 
 typedef struct _IppiBidir1_8u
@@ -901,8 +908,11 @@ namespace UMC
 
 } // namespace UMC
 
-#if defined(LINUX) && defined(__GNUC__)
-# pragma GCC diagnistic pop
+#if defined(__GNUC__)
+  #pragma GCC diagnostic pop // "-Wunused-parameter"
+  #pragma GCC diagnistic pop // "-Wdeprecated-declarations"
+#elif defined(__clang__)
+  #pragma clang diagnostic pop // "-Wunused-parameter"
 #endif
 
 #endif // __UMC_H264_DEC_IPP_WRAP_H

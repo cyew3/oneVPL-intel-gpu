@@ -679,6 +679,10 @@ int MEforGen75::GetSad4x4(U8 *src, U8 *blk, int blkw)
 int MEforGen75::GetSad4x4F(U8 *src, U8 *blk, int blkw)
 /*********************************************************************************/
 {
+    (void)src;
+    (void)blk;
+    (void)blkw;
+
     return ERR_UNSUPPORTED;
     /*
     int        d = 0;

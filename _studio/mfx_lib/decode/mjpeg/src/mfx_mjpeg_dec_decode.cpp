@@ -1834,6 +1834,10 @@ mfxU32 VideoDECODEMJPEGBase_HW::AdjustFrameAllocRequest(mfxFrameAllocRequest *re
 
 void VideoDECODEMJPEGBase_HW::AdjustFourCC(mfxFrameInfo *requestFrameInfo, mfxInfoMFX *info, eMFXHWType hwType, eMFXVAType vaType, bool *needVpp)
 {
+#if !defined(MFX_VA_WIN)
+    (void)vaType;
+#endif
+
     if (info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_UNKNOWN || info->JPEGColorFormat == MFX_JPEG_COLORFORMAT_YCbCr)
     {
         #if defined (MFX_VA_LINUX)
