@@ -89,12 +89,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <PackageCertificateKeyFile>simple_encoder_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>simple_encoder_uwp_TemporaryKey.pfx</PackageCertificateKeyFile>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
     <AppxBundle>Auto</AppxBundle>
     <AppxPackageDir>D:\Projects\UWP_SUPPORT\samples\AppPackages\simple_encoder_uwp\2\</AppxPackageDir>
+    <PackageCertificateThumbprint>035DDF1151EB1A2D66845851F57EDAE8D3C2E5DD</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\simple_encoder_uwp\</OutDir>
@@ -219,7 +220,7 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="simple_encoder_TemporaryKey.pfx" />
+    <None Include="simple_encoder_uwp_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Assets\LockScreenLogo.scale-200.png" />
