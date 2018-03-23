@@ -1764,17 +1764,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         MFXInit(); TS_CHECK_MFX;
         Load();
 
-        if ((fourcc == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
-            || ((fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_AYUV
-                || fourcc == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
-        {
-            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
-            g_tsLog << "WARNING: Unsupported HW Platform!\n";
-            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
-            g_tsStatus.check(sts);
-            return 0;
-        }
-
         // prepare pool of input streams
         std::map<Resolution, std::string> inputStreams;
         if (fourcc == MFX_FOURCC_NV12)
@@ -1859,12 +1848,23 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             iterations.push_back(pIter);
         }
 
+        *m_pPar = iterations[0]->m_param[SET];
+        mfxVideoParam* pOutPar = &iterations[0]->m_param[GET];
+
+        if ((fourcc == MFX_FOURCC_NV12 && g_tsHWtype < MFX_HW_CNL)
+            || ((fourcc == MFX_FOURCC_P010 || fourcc == MFX_FOURCC_AYUV
+                || fourcc == MFX_FOURCC_Y410) && g_tsHWtype < MFX_HW_ICL))
+        {
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            g_tsLog << "WARNING: Unsupported HW Platform!\n";
+            mfxStatus sts = MFXVideoENCODE_Query(m_session, m_pPar, m_pParOut);
+            g_tsStatus.check(sts);
+            return 0;
+        }
+
         // prepare bitstream checker
         BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);
         m_bs_processor = &bs;
-
-        *m_pPar = iterations[0]->m_param[SET];
-        mfxVideoParam* pOutPar = &iterations[0]->m_param[GET];
 
         Init();
 
