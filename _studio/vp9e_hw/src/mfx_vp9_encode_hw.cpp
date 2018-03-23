@@ -304,7 +304,8 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, GetGuid(m_video),
         m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
-    MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
 
     ENCODE_CAPS_VP9 caps = {};
     m_ddi->QueryEncodeCaps(caps);

@@ -158,6 +158,7 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
         hr = m_pVDevice->GetVideoDecoderConfigCount(&desc, &count);
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        MFX_CHECK(count > 0, MFX_ERR_UNSUPPORTED);
     }
 
     // [3] CreateVideoDecoder
