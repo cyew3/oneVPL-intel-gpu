@@ -494,8 +494,15 @@ bool IsRoiDifferent(mfxFrameSurface1 *input, mfxFrameSurface1 *output)
 
 void ShowPipeline( std::vector<mfxU32> pipelineList )
 {
+#if !defined(_DEBUG) && \
+    !defined(_WIN32) && !defined(_WIN64) || \
+    !defined(LINUX) && !defined(LINUX32) && !defined(LINUX64)
+
+    (void)pipelineList;
+#endif
+
 #ifdef _DEBUG
-#if defined (_WIN32) || defined(_WIN64)
+#if defined(_WIN32) || defined(_WIN64)
     mfxU32 filterIndx;
     char cStr[256];
 

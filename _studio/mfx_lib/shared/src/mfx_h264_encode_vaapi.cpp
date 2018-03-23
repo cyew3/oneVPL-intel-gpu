@@ -544,6 +544,8 @@ mfxStatus SetQualityLevel(
     VABufferID & qualityParams_id,
     mfxEncodeCtrl const * pCtrl)
 {
+    (void)pCtrl;
+
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterBufferQualityLevel *quality_param;
@@ -1070,6 +1072,8 @@ void UpdateSliceSizeLimited(
     MfxVideoParam const                        & par,
     std::vector<ExtVASurface> const & reconQueue)
 {
+    (void)sps;
+
     mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     mfxU32 idx = 0, ref = 0;
 
@@ -3193,6 +3197,10 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
     ExtVASurface const & curFeedback,
     mfxU32  codedStatus)
 {
+#if (!defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) && !defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)) || MFX_VERSION < 1025
+    (void)codedStatus;
+#endif
+
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENCPAK) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
 
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIEncoder::QueryStatusFEI");
@@ -3299,6 +3307,10 @@ mfxStatus VAAPIEncoder::QueryStatusFEI(
 
     return MFX_ERR_NONE;
 #else
+    (void)task;
+    (void)feiFieldId;
+    (void)curFeedback;
+
     return MFX_ERR_UNKNOWN;
 #endif
 } //mfxStatus VAAPIEncoder::QueryStatusFEI

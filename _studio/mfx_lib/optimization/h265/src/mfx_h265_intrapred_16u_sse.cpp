@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1108,6 +1108,8 @@ ALIGN_DECL(16) static const Ipp8s proj_32x32[][4][16] = {
     template <int width>
     static inline void PredAngle18(Ipp16u *pSrc1, Ipp16u *pSrc2, Ipp16u *pDst2)
     {
+        (void)pSrc2;
+
         /* use common kernel for mode 18 */
         MFX_HEVC_PP::NAME(h265_PredictIntra_Ang_NoTranspose_16u)(18, pSrc1, pDst2, width, width);
         return;

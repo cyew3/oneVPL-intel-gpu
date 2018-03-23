@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -353,6 +353,16 @@ int MEforGen75::SubpelRefineBlock(U8   *qsrc, int dist_idx, int bw, int bh, int 
 int MEforGen75::SubpelRefineBlockField(U8   *qsrc, I16PAIR *mvs, I32 *dist, int bw, int bh, int dx, int dy, int isb, bool half_pel)
 /*****************************************************************************************************/
 {
+    (void)qsrc;
+    (void)mvs;
+    (void)dist;
+    (void)bw;
+    (void)bh;
+    (void)dx;
+    (void)dy;
+    (void)isb;
+    (void)half_pel;
+
     return ERR_UNSUPPORTED;
     /*
     int        j, d;
@@ -629,6 +639,11 @@ int  MEforGen75::GetFtqBlockUV(U8 *src, U8 *ref, int bw, int bh, U8 blkidx)
 int  MEforGen75::GetSadBlockField(U8   *src, U8   *ref, int bw, int bh)
 /*****************************************************************************************************/
 {
+    (void)src;
+    (void)ref;
+    (void)bw;
+    (void)bh;
+
     return ERR_UNSUPPORTED;
     /*
     int d = 0;
@@ -1254,6 +1269,13 @@ int MEforGen75::GetReferenceBlock2Tap(U8 *blk, U8 *ref, short qx, short qy, int 
 int MEforGen75::GetReferenceBlockField(U8   *blk, U8   *ref, short qx, short qy, int bw, int bh)
 /*****************************************************************************************************/
 {
+    (void)blk;
+    (void)ref;
+    (void)qx;
+    (void)qy;
+    (void)bw;
+    (void)bh;
+
     return ERR_UNSUPPORTED;
     /*
 #if 1 // sync with HW

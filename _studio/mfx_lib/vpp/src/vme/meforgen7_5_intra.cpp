@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -674,6 +674,8 @@ int MEforGen75::Intra8x8ChromaSearchUnit( )
 U32 MEforGen75::GetSadChroma(U8 *in_Src, U8 *in_Blk, U32 in_N)
 /*********************************************************************************/
 {
+    (void)in_N;
+
     U32    i, j, d = 0;
 
     for (i = 0; i < 4; i++)

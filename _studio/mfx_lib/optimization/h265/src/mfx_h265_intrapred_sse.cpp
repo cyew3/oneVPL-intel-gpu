@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -2313,6 +2313,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
         /* see calling code - if any of this changes, code would need to be rewritten */
         VM_ASSERT(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
 
+        (void)width;
+
         p0 = pSrcDst;
         if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {
             /* fast path: set 128 consecutive pixels to 128 */
@@ -2436,6 +2438,8 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
 
         /* see calling code - if any of this changes, code would need to be rewritten */
         VM_ASSERT(width == 32 && pSrcDst[0] == topLeft && pSrcDst[2*width] == topRight && pSrcDst[4*width] == bottomLeft);
+
+        (void)width;
 
         p0 = pSrcDst;
         if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {

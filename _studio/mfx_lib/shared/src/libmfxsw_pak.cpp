@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -34,6 +34,13 @@
 #if !defined (MFX_RT)
 VideoPAK *CreatePAKSpecificClass(mfxVideoParam *par, mfxU32 codecProfile, VideoCORE *pCore)
 {
+#if !defined(MFX_ENABLE_H264_VIDEO_PAK) && \
+    (!defined(MFX_VA_LINUX) || !defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) || !defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)) && \
+    !defined(MFX_ENABLE_MPEG2_VIDEO_PAK)
+
+    (void)pCore;
+#endif
+
     VideoPAK *pPAK = (VideoPAK *) 0;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
 

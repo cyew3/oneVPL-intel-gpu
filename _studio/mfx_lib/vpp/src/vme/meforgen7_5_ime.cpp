@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2786,6 +2786,9 @@ void MEforGen75::GetDistortionSUChroma(U8 *srcU, U8 *srcV, U8 *refU, U8 *refV, I
 int MEforGen75::GetDistortionSUField(U8   *ref, I32 *dif)
 /*****************************************************************************************************/
 {
+    (void)ref;
+    (void)dif;
+
     return ERR_UNSUPPORTED;
     /*
     U8      *src = SrcFieldMB;

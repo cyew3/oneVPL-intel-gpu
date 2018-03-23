@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_user_plugin.h>
@@ -391,26 +391,46 @@ mfxStatus VideoUSERPlugin::GetPayload(mfxU64 *ts, mfxPayload *payload) {
 #pragma warning (disable: 4100)
 
 mfxStatus VideoUSERPlugin::GetFrameParam(mfxFrameParam *par) {
+    (void)par;
+
     return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VideoUSERPlugin::GetEncodeStat(mfxEncodeStat *stat) {
+    (void)stat;
+
     return MFX_ERR_UNSUPPORTED;
 }
 mfxStatus VideoUSERPlugin::GetDecodeStat(mfxDecodeStat *stat) {
+    (void)stat;
+
     return MFX_ERR_UNSUPPORTED;
 }
 mfxStatus VideoUSERPlugin::GetVPPStat(mfxVPPStat *stat) {
+    (void)stat;
+
     return MFX_ERR_UNSUPPORTED;
 }
 mfxStatus VideoUSERPlugin::SetSkipMode(mfxSkipMode mode) {
+    (void)mode;
+
     return MFX_ERR_UNSUPPORTED;
 }
 
 mfxStatus VideoUSERPlugin::EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
+    (void)ctrl;
+    (void)pInternalParams;
+    (void)surface;
+    (void)bs;
+
     return MFX_ERR_UNSUPPORTED;
 }
 mfxStatus VideoUSERPlugin::CancelFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) {
+    (void)ctrl;
+    (void)pInternalParams;
+    (void)surface;
+    (void)bs;
+
     return MFX_ERR_UNSUPPORTED;
 }
 mfxStatus VideoUSERPlugin::EncFrame(mfxENCInput * /* in */, mfxENCOutput * /* out */)

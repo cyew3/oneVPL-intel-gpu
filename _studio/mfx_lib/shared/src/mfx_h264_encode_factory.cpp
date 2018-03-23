@@ -81,10 +81,12 @@ DriverEncoder* MfxHwH264Encode::CreatePlatformH264Encoder( VideoCORE* core )
         return NULL;
     }
 #elif defined (MFX_VA_LINUX)
+    (void)core;
 
     return new VAAPIEncoder;//( core );
 
 #elif defined (MFX_VA_OSX)
+    (void)core;
 
     return NULL;
 

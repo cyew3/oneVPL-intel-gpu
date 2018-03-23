@@ -479,6 +479,8 @@ mfxStatus mfxSchedulerCore::GetTimeout(mfxU32& maxTimeToRun)
 
     return MFX_ERR_NONE;
 #else
+    (void)maxTimeToRun;
+
     return MFX_ERR_UNSUPPORTED;
 #endif
 }
