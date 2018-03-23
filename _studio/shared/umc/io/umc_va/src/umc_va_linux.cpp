@@ -97,7 +97,10 @@ Ipp32u g_Profiles[] =
     UMC::VC1_VLD,
     UMC::VP8_VLD,
     UMC::VP9_VLD,
-    UMC::JPEG_VLD
+    UMC::JPEG_VLD,
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    UMC::AV1_VLD,
+#endif
 };
 
 // va profile priorities for different codecs
@@ -136,6 +139,13 @@ VAProfile g_VP9Profiles[] =
     VAProfileVP9Profile0
 };
 
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+VAProfile g_AV1Profiles[] =
+{
+    VAProfileAV1
+};
+#endif
+
 VAProfile g_JPEGProfiles[] =
 {
     VAProfileJPEGBaseline
@@ -168,6 +178,11 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
     case UMC::VA_VP9:
         if (profile < UMC_ARRAY_SIZE(g_VP9Profiles)) va_profile = g_VP9Profiles[profile];
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case UMC::VA_AV1:
+        if (profile < UMC_ARRAY_SIZE(g_AV1Profiles)) va_profile = g_AV1Profiles[profile];
+        break;
+#endif
     case UMC::VA_JPEG:
         if (profile < UMC_ARRAY_SIZE(g_JPEGProfiles)) va_profile = g_JPEGProfiles[profile];
         break;
@@ -313,6 +328,9 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VP9)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_VC1)
                                   && ((m_Profile & VA_CODEC) != UMC::VA_MPEG2)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
+                                  && ((m_Profile & VA_CODEC) != UMC::VA_AV1)
+#endif
 #ifndef ANDROID
                                   && ((m_Profile & VA_CODEC) != UMC::VA_JPEG)
 #endif

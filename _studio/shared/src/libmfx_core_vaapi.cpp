@@ -667,6 +667,11 @@ VAAPIVideoCORE::CreateVA(
     case MFX_CODEC_JPEG:
         profile |= VA_JPEG;
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_CODEC_AV1:
+        profile |= VA_AV1;
+        break;
+#endif
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -1278,6 +1283,13 @@ mfxStatus VAAPIVideoCORE::IsGuidSupported(const GUID /*guid*/,
             return MFX_ERR_UNSUPPORTED;
     case MFX_CODEC_VP9:
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case MFX_CODEC_AV1:
+        // comment platform check so far as there is no Linux driver which reports TGL platform
+        //if (m_HWType < MFX_HW_TGL_LP)
+        //    return MFX_ERR_UNSUPPORTED;
+        break;
+#endif
     default:
         return MFX_ERR_UNSUPPORTED;
     }

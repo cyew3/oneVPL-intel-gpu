@@ -40,8 +40,11 @@ namespace MFX_VPX_Utility
     mfxU16 MatchProfile(mfxU32 fourcc)
     {
         fourcc;
-        return MFX_PROFILE_VP9_0;
+        return MFX_PROFILE_AV1_0;
     }
+
+    const GUID DXVA_Intel_ModeAV1_VLD =
+        { 0xca44afc5, 0xe1d0, 0x42e6, { 0x91, 0x54, 0xb1, 0x27, 0x18, 0x6d, 0x4d, 0x40 } };
 
     inline
     bool CheckGUID(VideoCORE* core, eMFXHWType type, mfxVideoParam const* par)
@@ -49,9 +52,12 @@ namespace MFX_VPX_Utility
         mfxVideoParam vp = *par;
         mfxU16 profile = vp.mfx.CodecProfile & 0xFF;
         if (profile == MFX_PROFILE_UNKNOWN)
-            vp.mfx.CodecProfile = MatchProfile(vp.mfx.FrameInfo.FourCC);
+        {
+            profile = MatchProfile(vp.mfx.FrameInfo.FourCC);;
+            vp.mfx.CodecProfile = profile;
+        }
 
-    #if defined (MFX_VA_WIN)
+#if defined (MFX_VA_WIN)
         mfxU32 const va_profile =
             ChooseProfile(&vp, type) & (UMC::VA_CODEC | UMC::VA_ENTRY_POINT);
 
@@ -69,12 +75,22 @@ namespace MFX_VPX_Utility
             );
 
         return p != l;
-    #elif defined (MFX_VA_LINUX)
-        return false;
-    #else
+#elif defined (MFX_VA_LINUX)
+        if (core->IsGuidSupported(DXVA_Intel_ModeAV1_VLD, &vp) != MFX_ERR_NONE)
+            return false;
+
+        //Linux doesn't check GUID, just [mfxVideoParam]
+        switch (profile)
+        {
+            case MFX_PROFILE_AV1_0:
+            case MFX_PROFILE_AV1_2:
+                return true;
+            default: return false;
+        }
+#else
         core; type; par;
         return false;
-    #endif
+#endif
     }
 
     eMFXPlatform GetPlatform(VideoCORE* core, mfxVideoParam const* par)
