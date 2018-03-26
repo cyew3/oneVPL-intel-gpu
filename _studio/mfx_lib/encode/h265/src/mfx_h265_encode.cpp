@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -427,6 +427,9 @@ static void TaskLogDump()
         intParam.AnalyzeCmplx = /*mfx.EncodedOrder ? 0 : */optHevc.AnalyzeCmplx - 1;
 
         if(intParam.AnalyzeCmplx && intParam.BiPyramidLayers > 1 && intParam.LowresFactor && mfx.RateControlMethod != CQP)
+            intParam.FullresMetrics = 1;
+
+        if (intParam.LowresFactor && mfx.RateControlMethod == CQP && (intParam.DeltaQpMode&AMT_DQP_PAQ))
             intParam.FullresMetrics = 1;
 
         intParam.RateControlDepth = optHevc.RateControlDepth;
