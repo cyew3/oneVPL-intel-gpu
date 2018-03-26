@@ -143,64 +143,51 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
         {INIT|MFXVPAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, {208}}}
     },
     {/*10*/ MFX_ERR_NONE, {BITSTREAM, &tsStruct::mfxBitstream.DataFlag, {MFX_BITSTREAM_COMPLETE_FRAME}}},
-    {/*11*/ MFX_ERR_UNDEFINED_BEHAVIOR,
-        {
-            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::LARGE_PITCH_LOCK}},
-            {INIT|MEMID, 0, { 1 }}
-        }
-    },
-    {/*12*/ MFX_ERR_UNDEFINED_BEHAVIOR,
-        {
-            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-            {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::LARGE_PITCH_LOCK}},
-        }
-    },
-    {/*13*/ MFX_ERR_UNDEFINED_BEHAVIOR, {BITSTREAM, &tsStruct::mfxBitstream.DataOffset, {100001}}},
-    {/*14*/ MFX_ERR_MORE_SURFACE, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Locked, {1}}},
-    {/*15*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*11*/ MFX_ERR_UNDEFINED_BEHAVIOR, {BITSTREAM, &tsStruct::mfxBitstream.DataOffset, {100001}}},
+    {/*12*/ MFX_ERR_MORE_SURFACE, {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Locked, {1}}},
+    {/*13*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::ZERO_LUMA_LOCK}},
             {INIT|MEMID, 0, {1}}
         }
     },
-    {/*16*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*14*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::ZERO_LUMA_LOCK}},
         }
     },
-    {/*17*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
-    {/*18*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}},
-    {/*19*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*15*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}}},
+    {/*16*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}},
+    {/*17*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.PitchHigh, {0x8000}}
         }
     },
-    {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*18*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {0}}
         }
     },
-    {/*21*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
-    {/*22*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
-    {/*23*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*19*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
+    {/*20*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
+    {/*21*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
             {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {1}}
         }
     },
-    {/*24*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*22*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
             {INIT|MEMID, 0, { 1 }}
         }
     },
-    {/*25*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*23*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
