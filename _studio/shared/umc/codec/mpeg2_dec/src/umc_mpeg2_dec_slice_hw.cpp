@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -743,6 +743,9 @@ Status MPEG2VideoDecoderHW::DecodeSlice(VideoContext  *video, int task_num)
 
     if (pack_w.pSliceInfo->wHorizontalPosition > 0 && pack_w.pSliceInfoBuffer < pack_w.pSliceInfo)
         pack_w.pSliceInfo[-1].wNumberMBsInSlice  = (WORD)(macroblock_address_increment - pack_w.pSliceInfo[-1].wHorizontalPosition);
+#else
+    (void)video;
+    (void)task_num;
 #endif
 
     pack_w.pSliceInfo++;

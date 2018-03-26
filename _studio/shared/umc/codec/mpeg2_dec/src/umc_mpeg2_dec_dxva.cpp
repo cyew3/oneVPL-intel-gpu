@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <stdio.h>
@@ -580,6 +580,8 @@ PackVA::SaveVLDParameters(
     Ipp32s              task_num,
     Ipp32s              source_mb_height)
 {
+    (void)source_mb_height;
+
     int i;
     int NumOfItem;
 
@@ -716,6 +718,8 @@ PackVA::SetBufferSize(
     int             size_bs,
     int             size_sl)
 {
+        (void)size_bs;
+
         try
         {
             UMCVACompBuffer*  CompBuf  = NULL;

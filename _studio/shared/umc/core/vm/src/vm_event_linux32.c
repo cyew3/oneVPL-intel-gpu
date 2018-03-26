@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -76,6 +76,11 @@ vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state)
 vm_status vm_event_named_init(vm_event *event,
                               Ipp32s manual, Ipp32s state, const char *pcName)
 {
+    (void)event;
+    (void)manual;
+    (void)state;
+    (void)pcName;
+
     /* linux version of named events is not supported by now */
     return VM_OPERATION_FAILED;
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -54,7 +54,7 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus QueryVariance(
             mfxU32 frameIndex,
-            std::vector<mfxU32> &variance) { return MFX_ERR_UNSUPPORTED; }
+            std::vector<mfxU32> &variance);
 
         virtual BOOL IsRunning() { return m_bRunning; }
 

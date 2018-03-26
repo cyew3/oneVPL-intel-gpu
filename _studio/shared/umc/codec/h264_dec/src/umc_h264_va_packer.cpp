@@ -67,7 +67,11 @@ Status Packer::QueryTaskStatus(Ipp32s index, void * status, void * error)
 }
 
 Status Packer::QueryStreamOut(H264DecoderFrame* pFrame)
-{ return UMC_OK; }
+{
+    (void)pFrame;
+
+    return UMC_OK;
+}
 
 Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
 {
@@ -1731,6 +1735,9 @@ PackerVA::PackerVA(VideoAccelerator * va, TaskSupplier * supplier)
 
 Status PackerVA::GetStatusReport(void * pStatusReport, size_t size)
 {
+    (void)pStatusReport;
+    (void)size;
+
     return UMC_OK;
 }
 

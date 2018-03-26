@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1624,6 +1624,8 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
 #elif defined(UMC_VA_LINUX)
 Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrapper* pDecryptParams)
 {
+    (void)pDecryptParams;
+
     if (!pSource)
     {
         return UMC_OK;
@@ -1726,6 +1728,9 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
 #else
 Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrapper* pDecryptParams)
 {
+    (void)pSource;
+    (void)pDecryptParams;
+
     return UMC_ERR_NOT_IMPLEMENTED;
 }
 #endif

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -788,6 +788,8 @@ Status VC1VideoDecoderSW::Close(void)
 
 Status VC1VideoDecoderSW::VC1DecodeFrame(MediaData* in, VideoData* out_data)
 {
+    (void)in;
+
     Status umcRes = UMC_OK;
     bool skip = false;
 
@@ -1183,6 +1185,9 @@ bool VC1VideoDecoderSW::InitVAEnvironment()
 
 Status VC1VideoDecoderSW::GetAndProcessPerformedDS(MediaData* in, VideoData* out_data, UMC::VC1FrameDescriptor **pPerfDescriptor)
 {
+    (void)in;
+    (void)out_data;
+
     VC1FrameDescriptor *pCurrDescriptor = NULL;
 
     Status umcRes = UMC_OK;
@@ -1239,6 +1244,10 @@ Status VC1VideoDecoderSW::GetAndProcessPerformedDS(MediaData* in, VideoData* out
 
 Status VC1VideoDecoderSW::ProcessPrevFrame(VC1FrameDescriptor *pCurrDescriptor, MediaData* in, VideoData* out_data)
 {
+    (void)pCurrDescriptor;
+    (void)in;
+    (void)out_data;
+
     Status     umcRes = UMC::UMC_OK;
     if (m_pPrevDescriptor)
     {

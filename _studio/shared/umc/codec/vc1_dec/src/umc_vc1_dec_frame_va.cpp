@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -999,6 +999,9 @@ namespace UMC
         Ipp32u StartCodeOffset,
         Ipp32u ChoppingType) //compatibility with Windows code
     {
+        (void)pContext;
+        (void)ChoppingType;
+
         if (SliceBufIndex)
             ++m_pSliceInfo;
 

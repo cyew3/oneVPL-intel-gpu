@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -106,6 +106,8 @@ Ipp32s vm_dir_open(vm_dir **dd, vm_char *path) {
 /*
  * directory traverse */
 Ipp32s vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
+  (void)nchars;
+
   Ipp32s rtv = 0;
   if (dd != NULL) {
    struct dirent *ent=readdir(dd);

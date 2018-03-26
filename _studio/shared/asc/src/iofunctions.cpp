@@ -17,18 +17,25 @@ void TimeStart(ASCTime* timer) {
 #if defined (_WIN32) || (_WIN64)
     QueryPerformanceFrequency(&timer->tFrequency);
     QueryPerformanceCounter(&timer->tStart);
+#else
+    (void)timer;
 #endif
 }
 
 void TimeStart(ASCTime* timer, int index) {
 #if defined (_WIN32) || (_WIN64)
     QueryPerformanceCounter(&timer->tPause[index]);
+#else
+    (void)timer;
+    (void)index;
 #endif
 }
 
 void TimeStop(ASCTime* timer) {
 #if defined (_WIN32) || (_WIN64)
     QueryPerformanceCounter(&timer->tStop);
+#else
+    (void)timer;
 #endif
 }
 
@@ -50,6 +57,10 @@ mfxF64 CatchTime(ASCTime *timer, int index, const char* message) {
     ASC_PRINTF("%s %0.3f ms.\n", message, timeval);
     return timeval;
 #else
+    (void)timer;
+    (void)index;
+    (void)message;
+
     return 0.0;
 #endif
 }
@@ -63,6 +74,11 @@ mfxF64 CatchTime(ASCTime *timer, int indexInit, int indexEnd, const char* messag
     ASC_PRINTF("%s %0.3f ms.\n", message, timeval);
     return timeval;
 #else
+    (void)timer;
+    (void)indexInit;
+    (void)indexEnd;
+    (void)message;
+
     return 0.0;
 #endif
 }

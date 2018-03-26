@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_va_video_processing.h"
@@ -49,6 +49,8 @@ Status VideoProcessingVA::Init(mfxVideoParam * , mfxExtDecVideoProcessing * )
 
 Status VideoProcessingVA::Init(mfxVideoParam * vpParams, mfxExtDecVideoProcessing * videoProcessing)
 {
+    (void)vpParams;
+
     VAProcPipelineParameterBuffer *pipelineBuf = &m_pipelineParams;
 
     pipelineBuf->surface = 0;  // should filled in packer

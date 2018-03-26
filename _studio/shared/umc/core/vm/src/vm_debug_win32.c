@@ -409,7 +409,13 @@ Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *fun
 #if defined(LINUX32)
 void vm_debug_trace_ex(Ipp32s level, const vm_char *func_name, const vm_char *file_name,
                        Ipp32s num_line, const vm_char *format, ...)
-{}
+{
+    (void)level;
+    (void)func_name;
+    (void)file_name;
+    (void)num_line;
+    (void)format;
+}
 #endif
 
 //#endif

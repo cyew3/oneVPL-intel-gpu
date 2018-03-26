@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1717,6 +1717,8 @@ namespace UMC
 
     FrameMemID VC1TaskStoreSW::LockSurface(FrameMemID* mid, bool isSkip)
     {
+        (void)isSkip;
+
         // B frames TBD
         Status sts;
         Ipp32s Idx;
@@ -1808,6 +1810,8 @@ namespace UMC
         bool IsReorder,
         Ipp16s* pResidBuf)
     {
+        (void)IsReorder;
+
         Ipp32u i;
         Ipp8u* pBuf;
         m_pSHeap->s_new(&m_pDescriptorQueue, m_iNumFramesProcessing);

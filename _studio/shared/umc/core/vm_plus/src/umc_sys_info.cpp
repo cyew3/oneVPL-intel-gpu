@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_sys_info.h"
@@ -164,6 +164,10 @@ sSystemInfo *SysInfo::GetSysInfo(void)
 
 void GetCpuUseTime(vm_char* proc_name, vm_tick* process_use, vm_tick* total_use)
 {
+#if defined(_WIN32_WCE) || (!defined(_WIN32) && !defined(_WIN64) && !defined(_WIN32_WCE))
+    (void)proc_name;
+#endif
+
 #if (defined(_WIN32) || defined(_WIN64)) || defined(_WIN32_WCE)
 #if (defined(_WIN32_WCE))
     *process_use = GetIdleTime();

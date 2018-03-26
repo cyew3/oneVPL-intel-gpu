@@ -482,6 +482,16 @@ mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
 } // mfxStatus VAAPIVideoProcessing::QueryCapabilities(mfxVppCaps& caps)
 
+mfxStatus VAAPIVideoProcessing::QueryVariance(
+            mfxU32 frameIndex,
+            std::vector<mfxU32> &variance)
+{
+    (void)frameIndex;
+    (void)variance;
+
+    return MFX_ERR_UNSUPPORTED;
+} // mfxStatus VAAPIVideoProcessing::QueryVariance(mfxU32 frameIndex, std::vector<mfxU32> &variance)
+
 /// Setup VPP VAAPI driver parameters
 /*!
  Setup VPP surfaces and VPP VAAPI parameters.

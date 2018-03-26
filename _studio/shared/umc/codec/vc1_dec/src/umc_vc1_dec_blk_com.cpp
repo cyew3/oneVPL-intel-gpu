@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -235,6 +235,8 @@ IppStatus DecodeBlockInter8x8_VC1(IppiBitstream* pBitstream, Ipp16s* pDst,
                       const  Ipp8u* pZigzagTbl,  const IppiACDecodeSet_VC1 * pDecodeSet,
                       IppiEscInfo_VC1* pEscInfo, Ipp32s subBlockPattern)
 {
+    (void)subBlockPattern;
+
     Ipp32s last_flag = 0;
     Ipp16s run = 0, level = 0;
     Ipp32s curr_position = 0;

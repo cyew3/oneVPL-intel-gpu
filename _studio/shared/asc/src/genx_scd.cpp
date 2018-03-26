@@ -145,6 +145,10 @@ SubSamplePoint_b(SurfaceIndex ibuf, SurfaceIndex obuf, uint in_width, uint in_he
 _GENX_MAIN_  void
 surfaceCopy_Y(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, uint width_dword, uint height, uint width_stride)
 {
+    (void)width_dword;
+    (void)height;
+    (void)width_stride;
+
     //write Y plane
     matrix<uchar, BLOCK_HEIGHT, BLOCK_PIXEL_WIDTH> inData_m;
     vector_ref<uchar, BLOCK_PIXEL_WIDTH> inData0(inData_m.row(0));

@@ -104,6 +104,10 @@ struct checker
 inline
 bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 {
+#if !defined(MFX_VA_WIN)
+    (void)type;
+#endif
+
     mfxVideoParam vp = *param;
     mfxU16 profile = vp.mfx.CodecProfile & 0xFF;
     if (profile == MFX_PROFILE_UNKNOWN)
@@ -155,7 +159,7 @@ eMFXPlatform GetPlatform_H265(VideoCORE * core, mfxVideoParam * par)
         return MFX_PLATFORM_SOFTWARE;
 
 #if !defined (MFX_VA) && defined (AS_HEVCD_PLUGIN)
-    core;
+    (void)core;
     //we sure that plug-in implementation is SW
     return MFX_PLATFORM_SOFTWARE;
 #else
@@ -192,6 +196,8 @@ bool IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par)
     //On SKL and BXT 10 bit decoder is hybrid (doesn't work) and 8 bit is supported by FF decoder that tested to works well
     if (hwtype >= MFX_HW_SCL && par->mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN)
         return true;
+#else
+    (void)hwtype;
 #endif
 
     return false;
