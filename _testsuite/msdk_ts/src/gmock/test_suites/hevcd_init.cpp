@@ -59,7 +59,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 {
     {/* 0*/ MFX_ERR_INVALID_HANDLE, frame_allocator::ALLOC_MAX, false, SESSION, 1},
     {/* 1*/ MFX_ERR_NULL_PTR, frame_allocator::ALLOC_MAX, false, MFXVP, 1},
-    {/* 2*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, UID, 1},
+    {/* 2*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, UID, 1},
     {/* 3*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, false, NONE, 1},
     {/* 4*/ MFX_ERR_NONE, frame_allocator::ALLOC_MAX, true, NONE, 1},
     {/* 5*/ MFX_ERR_INVALID_VIDEO_PARAM, frame_allocator::ALLOC_MAX, false, NONE, 1, {&tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},

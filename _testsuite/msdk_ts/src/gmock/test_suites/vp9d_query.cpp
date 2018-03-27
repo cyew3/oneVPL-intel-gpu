@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -150,7 +150,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*03*/ MFX_ERR_NULL_PTR, NULL_PAR_OUT},
     {/*04*/ MFX_ERR_NULL_PTR, NULL_PAR_BOTH},
     {/*05*/ MFX_ERR_NONE, FAILED_INIT},
-    {/*06*/ MFX_ERR_UNSUPPORTED, PLUGIN_NOT_LOADED},
+    {/*06*/ MFX_ERR_NONE, PLUGIN_NOT_LOADED},
     {/*07*/ MFX_ERR_NONE, NO_EXT_ALLOCATOR},
     {/*08*/ MFX_ERR_NONE, NO_EXT_ALLOCATOR, {IOPattern, MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
 

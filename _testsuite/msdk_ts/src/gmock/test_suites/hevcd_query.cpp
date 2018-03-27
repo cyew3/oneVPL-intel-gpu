@@ -116,7 +116,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*18*/ MFX_ERR_NONE, {MFX_IN|VALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, {MFX_PICSTRUCT_FIELD_SINGLE}}},
     {/*19*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.ExtendedPicStruct, {2}}},
     {/*20*/ MFX_ERR_UNSUPPORTED, {MFX_IN|INVALID, &tsStruct::mfxVideoParam.Protected, {16}}},
-    {/*21*/ MFX_ERR_UNSUPPORTED, {NATIVE}},
+    {/*21*/ MFX_ERR_NONE, {NATIVE}},
 
     {/* 22*/ MFX_ERR_UNSUPPORTED,
         { {MFX_IN|INVALID, &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma, {1}},
