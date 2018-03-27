@@ -623,7 +623,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*57*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_5, RESOLUTION, NOT_ALLIGNED, {
+        {/*57*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_5, RESOLUTION, NOT_ALLIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_5},
 
            },
@@ -660,7 +660,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*63*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_51, RESOLUTION, NOT_ALLIGNED, {
+        {/*63*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_51, RESOLUTION, NOT_ALLIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_51},
 
            },
@@ -697,7 +697,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*69*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_52, RESOLUTION, NOT_ALLIGNED, {
+        {/*69*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_52, RESOLUTION, NOT_ALLIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_52},
 
            },
@@ -728,7 +728,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*74*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_6, RESOLUTION, NOT_ALLIGNED, {
+        {/*74*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_6, RESOLUTION, NOT_ALLIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_6},
 
            },
@@ -759,7 +759,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*79*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_61, RESOLUTION, NOT_ALLIGNED, {
+        {/*79*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_61, RESOLUTION, NOT_ALLIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_61},
 
            },
@@ -790,7 +790,7 @@ namespace hevce_level_profile
            },
         },
         // wrong resolution
-        {/*84*/ MFX_ERR_UNSUPPORTED, MFX_LEVEL_HEVC_62, RESOLUTION, NOT_ALLIGNED, {
+        {/*84*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_LEVEL_HEVC_62, RESOLUTION, NOT_ALLIGNED, {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.CodecLevel, MFX_LEVEL_HEVC_62},
 
            },
@@ -995,14 +995,6 @@ namespace hevce_level_profile
                     throw tsSKIP;
                 }
 
-                if (tc.sts == MFX_ERR_UNSUPPORTED)
-                {
-                    if ( ((tc.type == RESOLUTION) && (tc.sub_type == NOT_ALLIGNED)) ||
-                         (tc.type == SLICE) )
-                    {
-                        g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
-                    }
-                }
                 if (g_tsStatus.m_expected != MFX_ERR_UNSUPPORTED)
                 {
                     if ((m_par.mfx.FrameInfo.Width > 4096) || (m_par.mfx.FrameInfo.Height > 2176))
