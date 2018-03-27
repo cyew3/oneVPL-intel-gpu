@@ -4133,14 +4133,18 @@ The `mfxExtVPPProcAmp` structure is a hint structure that configures the **VPP**
 | | |
 --- | ---
 `Header.BufferId` | Must be [MFX_EXTBUFF_VPP_PROCAMP](#ExtendedBufferID)
-`Brightness` | The brightness parameter is in the range of -100.0F to 100.0F, in increments of 0.1F. The default brightness value is 0.0F.
-`Contrast` | The contrast parameter is in the range of 0.0F to 10.0F, in increments of 0.01F. The default contrast value is 1.0F.
-`Hue` | The hue parameter is in the range of -180F to 180F, in increments of 0.1F. The default hue value is 0.0F.
-`Saturation` | The saturation parameter is in the range of 0.0F to 10.0F, in increments of 0.01F. The default saturation value is 1.0F.
+`Brightness` | The brightness parameter is in the range of -100.0F to 100.0F, in increments of 0.1F. Setting this field to 0.0F will disable brightness adjustment.
+`Contrast` | The contrast parameter in the range of 0.0F to 10.0F, in increments of 0.01F, is used for manual contrast adjustment. Setting this field to 1.0F will disable contrast adjustment. If the parameter is negative, contrast will be adjusted automatically.
+`Hue` | The hue parameter is in the range of -180F to 180F, in increments of 0.1F. Setting this field to 0.0F will disable hue adjustment.
+`Saturation` | The saturation parameter is in the range of 0.0F to 10.0F, in increments of 0.01F. Setting this field to 1.0F will disable saturation adjustment.
+
+**Note:** There are no default values for fields in this structure, all settings must be explicitly specified every time this buffer is submitted for processing.
 
 **Change History**
 
 This structure is available since SDK API 1.1.
+
+The SDK API **TBD** adds automatically adjusted contrast.
 
 ## <a id='mfxExtVPPImageStab'>mfxExtVPPImageStab</a>
 
