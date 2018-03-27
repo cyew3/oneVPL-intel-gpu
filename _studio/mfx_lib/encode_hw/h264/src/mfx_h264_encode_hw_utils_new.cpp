@@ -3067,7 +3067,7 @@ void MfxHwH264Encode::CalcPredWeightTable(
     for (mfxU32 field = 0; field <= task.m_fieldPicFlag; field++)
     {
         mfxU32 fid = task.m_fid[field];
-
+        Zero(task.m_pwt[fid]);
         mfxExtPredWeightTable const * external = GetExtBuffer(task.m_ctrl, field);
         bool fade = true;
 
