@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -314,15 +314,7 @@ void TestSuite::AllocOpaque()
 {
     if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
-        //AllocSurfaces();
-        m_par.AddExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION, sizeof(mfxExtOpaqueSurfaceAlloc));
-        mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-
-        mfxFrameAllocRequest request = {};
-        g_tsStatus.disable_next_check();
-        QueryIOSurf(m_session, m_pPar, &request);
-        
-        tsSurfacePool::AllocOpaque(request, *osa);
+        AllocOpaqueSurfaces();
     }
 }
 
