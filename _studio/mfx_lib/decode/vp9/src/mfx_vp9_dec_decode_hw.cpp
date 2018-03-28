@@ -111,6 +111,13 @@ VideoDECODEVP9_HW::~VideoDECODEVP9_HW(void)
     Close();
 }
 
+
+static bool CheckVP9BitDepthRestriction(mfxFrameInfo *info)
+{
+    return ((info->BitDepthLuma == FourCcBitDepth(info->FourCC)) &&
+     (info->BitDepthLuma == info->BitDepthChroma));
+}
+
 mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 {
     UMC::AutomaticUMCMutex guard(m_mGuard);
@@ -135,7 +142,19 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 
     m_FrameAllocator.reset(new mfx_UMC_FrameAllocator_D3D());
 
-    m_vPar = m_vInitPar = *par;
+    m_vInitPar = *par;
+
+    if (!InitBitDepthFields(&m_vInitPar.mfx.FrameInfo))
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    if (!CheckVP9BitDepthRestriction(&m_vInitPar.mfx.FrameInfo))
+    {
+        return MFX_ERR_INVALID_VIDEO_PARAM;
+    }
+
+    m_vPar = m_vInitPar;
 
     m_vInitPar.IOPattern = (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
         | (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
