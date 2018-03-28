@@ -50,6 +50,8 @@ typedef struct _DXVA_PicEntry_AV1
     #endif
 #elif UMC_AV1_DECODER_REV == 2520 // Rev 0.25.2
     #define AV1D_DDI_VERSION 18
+    #define DDI_HACKS_FOR_REV_252 // Rev 0.25.2 uses some minor DDI changes in comparison with 0.18
+                                  // such changes are handled by macro DDI_HACKS_FOR_REV_252
 #endif
 
 #if AV1D_DDI_VERSION == 8
@@ -238,7 +240,15 @@ typedef struct _segmentation_AV1 {
             };
             UCHAR wSegmentInfoFlags;
         };
+#if AV1D_DDI_VERSION >= 16
+#ifdef DDI_HACKS_FOR_REV_252
+        SHORT feature_data[8][7];
+#else
+        SHORT feature_data[8][8];
+#endif
+#else
         SHORT feature_data[8][4];
+#endif
         UCHAR feature_mask[8];
 
 #if AV1D_DDI_VERSION >= 16
@@ -296,7 +306,11 @@ typedef struct _DXVA_Intel_PicParams_AV1
 #endif
 
 #if AV1D_DDI_VERSION >= 18
+#ifdef DDI_HACKS_FOR_REV_252
+    UCHAR       BitDepthMinus8;          // [0, 2, 4]
+#else
     UCHAR       bit_depth;               // [8, 10, 12]
+#endif
 #else
     UCHAR       BitDepthMinus8;         // [0, 2, 4]
 #endif
@@ -322,8 +336,6 @@ typedef struct _DXVA_Intel_PicParams_AV1
 #else
     // driver still uses single filter level even after switch to DDI 0.11
     // for Rev 0.25.1 we mimic this behavior
-    // for Rev 0.25.2 there is no final clarity - let's mimic this behavior so far
-    // TODO: change once driver support for different filter levels will be added
     UCHAR       filter_level;                  // [0..63]
 #endif
     UCHAR       sharpness_level;            // [0..7]

@@ -223,6 +223,10 @@ namespace UMC_AV1_DECODER
             fh->rstInfo[2].restorationUnitSize =
                 fh->rstInfo[1].restorationUnitSize;
         }
+
+        fh->lrUnitShift = static_cast<Ipp32u>(log(fh->rstInfo[0].restorationUnitSize / (RESTORATION_TILESIZE_MAX >> 2)) / log(2));
+        fh->lrUVShift = static_cast<Ipp32u>(log(fh->rstInfo[0].restorationUnitSize / fh->rstInfo[1].restorationUnitSize) / log(2));
+
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 #endif
@@ -289,30 +293,41 @@ namespace UMC_AV1_DECODER
     }
 
     inline
+    Ipp32s av1_read_q_delta(AV1Bitstream* bs)
+    {
+        return (bs->GetBit()) ?
+            read_inv_signed_literal(bs, 6) : 0;
+    }
+
+    inline
     void av1_setup_quantization(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
-        fh->baseQIndex = bs->GetBits(QINDEX_BITS);
+        fh->baseQIndex = bs->GetBits(UMC_VP9_DECODER::QINDEX_BITS);
 
-        if (bs->GetBit())
-            fh->y_dc_delta_q = read_inv_signed_literal(bs, 6);
-        else
-            fh->y_dc_delta_q = 0;
+        fh->y_dc_delta_q = av1_read_q_delta(bs);
 
-        if (bs->GetBit())
-            fh->uv_dc_delta_q = read_inv_signed_literal(bs, 6);
-        else
-            fh->uv_dc_delta_q = 0;
+#if UMC_AV1_DECODER_REV >= 2520
+        fh->u_dc_delta_q = av1_read_q_delta(bs);
+        fh->u_ac_delta_q = av1_read_q_delta(bs);
+        fh->v_dc_delta_q = fh->u_dc_delta_q;
+        fh->v_ac_delta_q = fh->u_ac_delta_q;
 
-        if (bs->GetBit())
-            fh->uv_ac_delta_q = read_inv_signed_literal(bs, 6);
-        else
-            fh->uv_ac_delta_q = 0;
+        fh->lossless = (0 == fh->baseQIndex &&
+            0 == fh->y_dc_delta_q &&
+            0 == fh->u_dc_delta_q &&
+            0 == fh->u_ac_delta_q &&
+            0 == fh->v_dc_delta_q &&
+            0 == fh->v_ac_delta_q);
+#else
+        fh->uv_dc_delta_q = av1_read_q_delta(bs);
+        fh->uv_ac_delta_q = av1_read_q_delta(bs);
 
         fh->lossless = (0 == fh->baseQIndex &&
             0 == fh->y_dc_delta_q &&
             0 == fh->uv_dc_delta_q &&
             0 == fh->uv_ac_delta_q);
+#endif
 
 #if UMC_AV1_DECODER_REV >= 2510
         fh->useQMatrix = bs->GetBit();
@@ -368,7 +383,7 @@ namespace UMC_AV1_DECODER
                                 segmentQuantizerActive = true;
                             EnableSegFeature(fh->segmentation, i, (SEG_LVL_FEATURES)j);
 
-                            nBits = GetUnsignedBits(SEG_FEATURE_DATA_MAX[j]);
+                            nBits = UMC_VP9_DECODER::GetUnsignedBits(SEG_FEATURE_DATA_MAX[j]);
                             data = bs->GetBits(nBits);
                             data = data > SEG_FEATURE_DATA_MAX[j] ? SEG_FEATURE_DATA_MAX[j] : data;
 
@@ -409,8 +424,14 @@ namespace UMC_AV1_DECODER
 #endif
 
 #if UMC_AV1_DECODER_REV >= 2510
+
+#if UMC_AV1_DECODER_REV >= 2520
+    const Ipp8u MIN_TILE_WIDTH_MAX_SB = 2;
+    const Ipp8u MAX_TILE_WIDTH_MAX_SB = 32;
+#else
     const Ipp8u MIN_TILE_WIDTH_MAX_SB = 4;
     const Ipp8u MAX_TILE_WIDTH_MAX_SB = 64;
+#endif
 
     void AV1GetTileNBits(const Ipp32s miCols, Ipp32s & minLog2TileCols, Ipp32s & maxLog2TileCols)
     {
@@ -820,7 +841,7 @@ namespace UMC_AV1_DECODER
         fh->frameType = static_cast<VP9_FRAME_TYPE>(GetBit());
         fh->showFrame = GetBit();
 #if UMC_AV1_DECODER_REV > 0
-        if (fh->frameType != KEY_FRAME)
+        if (fh->frameType != VP9_FRAME_TYPE::KEY_FRAME)
         {
             fh->intraOnly = fh->showFrame ? 0 : GetBit();
         }
@@ -845,7 +866,7 @@ namespace UMC_AV1_DECODER
             fh->display_frame_id = GetBits(frame_id_len);
         }
 
-        if (KEY_FRAME == fh->frameType)
+        if (VP9_FRAME_TYPE::KEY_FRAME == fh->frameType)
         {
 #if UMC_AV1_DECODER_REV == 0
             if (!av1_sync_code(this))
@@ -925,7 +946,7 @@ namespace UMC_AV1_DECODER
 
                 for (Ipp8u i = 0; i < INTER_REFS; ++i)
                 {
-                    Ipp32s const  ref = GetBits(REF_FRAMES_LOG2);
+                    Ipp32s const ref = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
                     fh->activeRefIdx[i] = ref;
                     fh->refFrameSignBias[i] = GetBit();
 
@@ -971,7 +992,7 @@ namespace UMC_AV1_DECODER
                 if (IsSegFeatureActive(fh->segmentation, i, SEG_LVL_ALT_Q))
                 {
                     const Ipp32s data = GetSegData(fh->segmentation, i, SEG_LVL_ALT_Q);
-                    segQIndex = clamp(fh->segmentation.absDelta == SEGMENT_ABSDATA ? data : fh->baseQIndex + data, 0, MAXQ);
+                    segQIndex = UMC_VP9_DECODER::clamp(fh->segmentation.absDelta == UMC_VP9_DECODER::SEGMENT_ABSDATA ? data : fh->baseQIndex + data, 0, UMC_VP9_DECODER::MAXQ);
                 }
                 if (segQIndex)
                 {
@@ -989,11 +1010,26 @@ namespace UMC_AV1_DECODER
             fh->uv_ac_delta_q == 0 && fh->uv_dc_delta_q == 0;
     }
 
-    inline void CopyBitDepthAndSampling(FrameHeader* fh, FrameHeader const* prev_fh)
+    inline void InheritFromKeyFrame(FrameHeader* fh, FrameHeader const* prev_fh)
     {
+#if UMC_AV1_DECODER_REV >= 2520
+        fh->sbSize = prev_fh->sbSize;
+#endif
         fh->bit_depth = prev_fh->bit_depth;
         fh->subsamplingX = prev_fh->subsamplingX;
         fh->subsamplingY = prev_fh->subsamplingY;
+    }
+
+    inline void InheritFromPrevFrame(FrameHeader* fh, FrameHeader const* prev_fh)
+    {
+        InheritFromKeyFrame(fh, prev_fh);
+
+        for (Ipp32u i = 0; i < TOTAL_REFS; i++)
+            fh->lf.refDeltas[i] = prev_fh->lf.refDeltas[i];
+
+        for (Ipp32u i = 0; i < MAX_MODE_LF_DELTAS; i++)
+            fh->lf.modeDeltas[i] = prev_fh->lf.modeDeltas[i];
+
     }
 
     void AV1Bitstream::GetFrameHeaderFull(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh)
@@ -1004,9 +1040,6 @@ namespace UMC_AV1_DECODER
 
         if (!fh->width || !fh->height)
             throw av1_exception(UMC::UMC_ERR_FAILED);
-
-        if (fh->frameType != KEY_FRAME)
-            CopyBitDepthAndSampling(fh, prev_fh);
 
         if (!fh->errorResilientMode)
         {
@@ -1026,6 +1059,15 @@ namespace UMC_AV1_DECODER
         if (IsFrameResilent(fh))
         {
             SetupPastIndependence(*fh);
+
+            if (fh->frameType != VP9_FRAME_TYPE::KEY_FRAME)
+            {
+                InheritFromKeyFrame(fh, prev_fh);
+            }
+        }
+        else
+        {
+            InheritFromPrevFrame(fh, prev_fh);
         }
 
         av1_setup_loop_filter(this, fh);
@@ -1036,11 +1078,17 @@ namespace UMC_AV1_DECODER
 
         av1_setup_quantization(this, fh);
 
+#if UMC_AV1_DECODER_REV >= 2520
+        av1_setup_segmentation(this, fh);
+        bool deltaQAllowed = 1;
+#else
         bool segmentQuantizerActive = av1_setup_segmentation(this, fh);
+        bool deltaQAllowed = !segmentQuantizerActive;
+#endif
 
         fh->deltaQRes = 1;
         fh->deltaLFRes = 1;
-        if (segmentQuantizerActive == false && fh->baseQIndex > 0)
+        if (deltaQAllowed && fh->baseQIndex > 0)
             fh->deltaQPresentFlag = GetBit();
 
         if (fh->deltaQPresentFlag)
@@ -1049,7 +1097,12 @@ namespace UMC_AV1_DECODER
             fh->deltaLFPresentFlag = GetBit();
 
             if (fh->deltaLFPresentFlag)
+            {
                 fh->deltaLFRes = 1 << GetBits(2);
+#if UMC_AV1_DECODER_REV >= 2520
+                fh->deltaLFMulti = GetBit();
+#endif
+            }
         }
 
         bool allLosless = IsAllLosless(fh);

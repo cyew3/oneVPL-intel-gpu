@@ -22,12 +22,11 @@
 
 namespace UMC_AV1_DECODER
 {
-    using UMC_VP9_DECODER::NUM_REF_FRAMES;
-
     class AV1DecoderFrame;
     typedef std::vector<AV1DecoderFrame*> DPBType;
 
     using UMC_VP9_DECODER::NUM_REF_FRAMES;
+    using UMC_VP9_DECODER::VP9_FRAME_TYPE;
 
     const Ipp8u SYNC_CODE_0 = 0x49;
     const Ipp8u SYNC_CODE_1 = 0x83;
@@ -36,8 +35,6 @@ namespace UMC_AV1_DECODER
     const Ipp8u FRAME_MARKER = 0x2;
 
     const Ipp8u MINIMAL_DATA_SIZE = 4;
-
-    typedef UMC_VP9_DECODER::VP9_FRAME_TYPE FRAME_TYPE;
 
 #if UMC_AV1_DECODER_REV == 0
     const Ipp8u FRAME_ID_NUMBERS_PRESENT_FLAG = 1;
@@ -60,14 +57,16 @@ namespace UMC_AV1_DECODER
 
     const Ipp8u CDEF_MAX_STRENGTHS            = 8;
 
-    const Ipp8u MAX_SB_SIZE_LOG2              = 6;
-    const Ipp8u MI_SIZE_LOG2                  = 2;
-    const Ipp8u MAX_MIB_SIZE_LOG2             = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
-
 #if UMC_AV1_DECODER_REV >= 2520
     const Ipp8u  MAX_MB_PLANE                 = 3;
     const Ipp16u RESTORATION_TILESIZE_MAX     = 256;
+    const Ipp8u MAX_SB_SIZE_LOG2 = 7;
+#else
+    const Ipp8u MAX_SB_SIZE_LOG2 = 6;
 #endif
+
+    const Ipp8u MI_SIZE_LOG2 = 2;
+    const Ipp8u MAX_MIB_SIZE_LOG2 = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
 
 #endif
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
@@ -78,6 +77,39 @@ namespace UMC_AV1_DECODER
     {
         BLOCK_64X64 = 0,
         BLOCK_128x128 = 1,
+    };
+
+    using UMC_VP9_DECODER::VP9_MAX_NUM_OF_SEGMENTS;
+    using UMC_VP9_DECODER::MAX_LOOP_FILTER;
+
+    enum SEG_LVL_FEATURES {
+        SEG_LVL_ALT_Q,       // Use alternate Quantizer ....
+        SEG_LVL_ALT_LF_Y_V,  // Use alternate loop filter value on y plane vertical
+        SEG_LVL_ALT_LF_Y_H,  // Use alternate loop filter value on y plane horizontal
+        SEG_LVL_ALT_LF_U,    // Use alternate loop filter value on u plane
+        SEG_LVL_ALT_LF_V,    // Use alternate loop filter value on v plane
+        SEG_LVL_REF_FRAME,   // Optional Segment reference frame
+        SEG_LVL_SKIP,        // Optional Segment (0,0) + skip mode
+        SEG_LVL_MAX
+    };
+
+    const Ipp8u SEG_FEATURE_DATA_SIGNED[SEG_LVL_MAX] = { 1, 1, 1, 1, 1, 0, 0};
+    const Ipp8u SEG_FEATURE_DATA_MAX[SEG_LVL_MAX] = { UMC_VP9_DECODER::MAXQ,
+                                                      MAX_LOOP_FILTER, MAX_LOOP_FILTER, MAX_LOOP_FILTER, MAX_LOOP_FILTER,
+                                                      3,
+                                                      0 };
+
+    struct AV1Segmentation
+    {
+        Ipp8u enabled;
+        Ipp8u updateMap;
+        Ipp8u updateData;
+        Ipp8u absDelta;
+        Ipp8u temporalUpdate;
+
+        Ipp32s featureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
+        Ipp32u featureMask[VP9_MAX_NUM_OF_SEGMENTS];
+
     };
 #endif
 
@@ -236,6 +268,10 @@ namespace UMC_AV1_DECODER
         Ipp32u deltaLFPresentFlag;
         Ipp32u deltaLFRes;
 
+#if UMC_AV1_DECODER_REV >= 2520
+        Ipp32u deltaLFMulti;
+#endif
+
 #if UMC_AV1_DECODER_REV == 0
         Ipp32u cdefDeringDamping;
         Ipp32u cdefClpfDamping;
@@ -274,12 +310,22 @@ namespace UMC_AV1_DECODER
 #if UMC_AV1_DECODER_REV >= 2520
         Ipp32u sbSize;
         RestorationInfo rstInfo[MAX_MB_PLANE];
+
+        AV1Segmentation segmentation;
+
+        Ipp32s u_dc_delta_q;
+        Ipp32s u_ac_delta_q;
+        Ipp32s v_dc_delta_q;
+        Ipp32s v_ac_delta_q;
+
+        Ipp32u lrUnitShift;
+        Ipp32u lrUVShift;
 #endif
     };
 
     inline bool IsFrameIntraOnly(FrameHeader const * fh)
     {
-        return (fh->frameType == FRAME_TYPE::KEY_FRAME || fh->intraOnly);
+        return (fh->frameType == VP9_FRAME_TYPE::KEY_FRAME || fh->intraOnly);
     }
 
     inline bool IsFrameResilent(FrameHeader const * fh)

@@ -170,6 +170,11 @@ namespace UMC_AV1_DECODER
         picParam->dwFormatAndPictureInfoFlags.fields.extra_plane = 0;
 
         picParam->dwFormatAndPictureInfoFlags.fields.allow_high_precision_mv = info.allowHighPrecisionMv;
+#if UMC_AV1_DECODER_REV >= 2520
+        // SB size info was present in DDI since ver. 0.11
+        // but appeared in bitstream syntax only in rev. 0.25.2
+        picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128x128) ? 1 : 0;
+#endif
         picParam->frame_interp_filter = (UCHAR)info.interpFilter;
         picParam->dwFormatAndPictureInfoFlags.fields.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
         picParam->stAV1Segments.enabled = info.segmentation.enabled;;
@@ -228,13 +233,7 @@ namespace UMC_AV1_DECODER
         // driver still uses single filter level even after switch to DDI 0.11
         // for Rev 0 we just use DDI 0.08 with single filter_level
         // for Rev 0.25.1 we mimic driver's behavior
-        // for Rev 0.25.2 there is no final clarity - let's mimic driver's behavior so far (take filter_level[0] and discard levels for U and V planes)
-        // TODO: change once driver support for different filter levels will be added
-#if UMC_AV1_DECODER_REV == 2520
-        picParam->filter_level = (UCHAR)info.lf.filterLevel[0];
-#else
         picParam->filter_level = (UCHAR)info.lf.filterLevel;
-#endif
 #endif
         picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
         picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
@@ -253,7 +252,11 @@ namespace UMC_AV1_DECODER
 
         picParam->profile = (UCHAR)info.profile;
 #if AV1D_DDI_VERSION >= 18
+#ifdef DDI_HACKS_FOR_REV_252
+        picParam->BitDepthMinus8 = (UCHAR)info.bit_depth - 8;
+#else
         picParam->bit_depth = (UCHAR)info.bit_depth;
+#endif
 #else
         picParam->BitDepthMinus8 = (UCHAR)(info.bit_depth - 8);
 #endif
@@ -277,10 +280,10 @@ namespace UMC_AV1_DECODER
         picParam->base_qindex = (SHORT)info.baseQIndex;
         picParam->y_dc_delta_q = (CHAR)info.y_dc_delta_q;
 #if AV1D_DDI_VERSION >= 17
-        picParam->u_dc_delta_q = (CHAR)info.uv_dc_delta_q;
-        picParam->v_dc_delta_q = (CHAR)info.uv_dc_delta_q;
-        picParam->u_ac_delta_q = (CHAR)info.uv_ac_delta_q;
-        picParam->v_ac_delta_q = (CHAR)info.uv_ac_delta_q;
+        picParam->u_dc_delta_q = (CHAR)info.u_dc_delta_q;
+        picParam->v_dc_delta_q = (CHAR)info.v_dc_delta_q;
+        picParam->u_ac_delta_q = (CHAR)info.u_ac_delta_q;
+        picParam->v_ac_delta_q = (CHAR)info.v_ac_delta_q;
 #else
         picParam->uv_dc_delta_q = (CHAR)info.uv_dc_delta_q;
         picParam->uv_ac_delta_q = (CHAR)info.uv_ac_delta_q;
@@ -307,6 +310,8 @@ namespace UMC_AV1_DECODER
         picParam->dwModeControlFlags.fields.using_qmatrix = info.useQMatrix;
 #endif
 #if UMC_AV1_DECODER_REV >= 2510
+        // min/max QM info was present in DDI since ver. 0.08
+        // but appeared in bitstream syntax only in rev. 0.25.1
         picParam->dwModeControlFlags.fields.min_qmlevel = info.minQMLevel;
         picParam->dwModeControlFlags.fields.max_qmlevel = info.maxQMLevel;
 #endif
@@ -314,12 +319,45 @@ namespace UMC_AV1_DECODER
         picParam->dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.deltaQRes);
         picParam->dwModeControlFlags.fields.delta_lf_present_flag = info.deltaLFPresentFlag;
         picParam->dwModeControlFlags.fields.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
+#if AV1D_DDI_VERSION >= 16
+        picParam->dwModeControlFlags.fields.delta_lf_multi = info.deltaLFMulti;
+#endif
         picParam->dwModeControlFlags.fields.tx_mode = info.txMode;
         picParam->dwModeControlFlags.fields.reference_mode = info.referenceMode;
+#if UMC_AV1_DECODER_REV >= 2510
+        // compound prediction info was present in DDI since ver. 0.11
+        // but appeared in bitstream syntax only in rev 0.25.1
+        picParam->dwModeControlFlags.fields.allow_interintra_compound = info.allowInterIntraCompound;
+        picParam->dwModeControlFlags.fields.allow_masked_compound = info.allowMaskedCompound;
+#endif
         picParam->dwModeControlFlags.fields.reduced_tx_set_used = info.reducedTxSetUsed;
         picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
         picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allowScreenContentTools;
         picParam->dwModeControlFlags.fields.ReservedField = 0;
+
+#if AV1D_DDI_VERSION >= 11 && UMC_AV1_DECODER_REV >= 2520
+        // loop restoration info was present in DDI since ver. 0.11
+        // but appeared in bitstream syntax only in rev 0.25.2
+        picParam->LoopRestorationFlags.fields.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
+        picParam->LoopRestorationFlags.fields.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
+        picParam->LoopRestorationFlags.fields.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
+        picParam->LoopRestorationFlags.fields.lr_unit_shift = info.lrUnitShift;
+        picParam->LoopRestorationFlags.fields.lr_uv_shift = info.lrUVShift;
+#endif
+
+#if AV1D_DDI_VERSION >= 16
+        for (Ipp8u i = 0; i < INTER_REFS; i++)
+        {
+            picParam->gm_type[i] = (UCHAR)info.global_motion[i + 1].wmtype;
+        }
+        for (Ipp8u i = 0; i < INTER_REFS; i++)
+        {
+            for (auto j = 0; j < 6; j++) // why only 6?
+            {
+                picParam->gm_params[i][j] = info.global_motion[i + 1].wmmat[j];
+            }
+        }
+#endif
 
 #if AV1D_DDI_VERSION >= 18 || defined(DDI_MIX_FOR_REV_251p5)
         picParam->tg_size_bit_offset = info.tileGroupBitOffset;
