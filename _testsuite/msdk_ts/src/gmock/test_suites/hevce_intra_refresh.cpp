@@ -38,8 +38,15 @@ Algorithm:
 #include "ts_struct.h"
 #include "ts_parser.h"
 
+
 /*! \brief Main test name space */
 namespace hevce_intra_refresh{
+
+    using namespace BS_HEVC2;
+
+#ifdef _DEBUG
+#define DEBUG_STREAM "hevce_dynamic_intra_refresh.h265"
+#endif
 
     enum
     {
@@ -54,6 +61,7 @@ namespace hevce_intra_refresh{
         UNSUPPORTED = 0,
         DUALPIPE_SUPPORTED = 0x1,
         LOWPOWER_SUPPORTED = 0x2,
+        PERFORM_ENCODING = 0x4,
     };
 
     static int  getPlatfromFlags()
@@ -94,10 +102,35 @@ namespace hevce_intra_refresh{
     };
 
     //!\brief Main test class
-    class TestSuite:tsVideoEncoder{
+    class TestSuite:public tsVideoEncoder ,public tsBitstreamProcessor, public tsParserHEVC2
+#ifdef DEBUG_STREAM
+        , public tsBitstreamWriter
+#endif
+    {
+    private:
+
+    const mfxU16 NumFrames = 6;
+    mfxU8 minCuSize = 8;
+    mfxU8 widthInMinCu;
+    mfxU8 heightInMinCu;
+    std::vector<mfxU8> pCu;
+
+    mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
+    inline bool IsHEVCSlice(Bs32u nut) { return (nut <= 21) && ((nut < 10) || (nut > 15)); }
+    void fillBitMap(mfxU8* pMap, mfxU8 value, Bs32u log2CbSize, mfxU32 lineShift);
+    bool CheckRollingI();
+    bool firstFrame = true;
+
     public:
         //! \brief A constructor (HEVC encoder)
-        TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC) { }
+        TestSuite() : tsVideoEncoder(MFX_CODEC_HEVC)
+            , tsParserHEVC2(PARSE_SSD)
+#ifdef DEBUG_STREAM
+            , tsBitstreamWriter(DEBUG_STREAM)
+#endif
+        {
+            m_bs_processor = this;
+        }
         //! \brief A destructor
         ~TestSuite() { }
         //! \brief Main method. Runs test case
@@ -109,9 +142,83 @@ namespace hevce_intra_refresh{
         tsExtBufType<mfxVideoParam> initParams();
         //! \brief Set of test cases
         static const tc_struct test_case[];
+
+        inline bool IsIntra(CU* cu) { return cu->PredMode == MODE_INTRA; };
     };
 
-    tsExtBufType<mfxVideoParam> TestSuite::initParams() {
+void TestSuite::fillBitMap(mfxU8* pMap, mfxU8 value, Bs32u log2CbSize, mfxU32 lineShift = 0) {
+        //Set cuSizeInMinCu as size of CU in blocks 8x8
+        mfxU32 cuSizeInMinCu = (mfxU32)pow(2, log2CbSize - 3);
+        if (!lineShift)
+            lineShift = cuSizeInMinCu;
+        for (Bs32u i = 0; i < cuSizeInMinCu; i++) {
+            for (Bs32u j = 0; j < cuSizeInMinCu; j++) {
+                *(pMap++) = value;
+            }
+            pMap += lineShift - cuSizeInMinCu;
+        }
+    }
+
+bool TestSuite::CheckRollingI() {
+        for (auto isCuRefreshed : pCu) {
+            if (!isCuRefreshed)
+                return false;
+        }
+        return true;
+    }
+
+mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
+{
+    if (bs.Data)
+    SetBuffer0(bs);
+
+    mfxU32 checked = 0;
+
+    while (checked++ < nFrames)
+    {
+        auto& hdr = ParseOrDie();
+
+        //IntraRefresh does not makes sense in the case I frames.
+        if (firstFrame) {
+            firstFrame = false;
+            continue;
+        }
+
+        for (auto pNALU = &hdr; pNALU; pNALU = pNALU->next)
+        {
+            if (!IsHEVCSlice(pNALU->nal_unit_type))
+                continue;
+            auto& slice = *pNALU->slice;
+            for (auto pCTU = slice.ctu; pCTU; pCTU = pCTU->Next)
+            {
+                auto cu = pCTU->Cu;
+                while (cu)
+                {
+                    if (IsIntra(cu))
+                        fillBitMap(&pCu[cu->x / minCuSize + cu->y / minCuSize * widthInMinCu], 1, cu->log2CbSize, widthInMinCu);
+                    cu = cu->Next;
+                }
+            }
+        }
+#ifdef DEBUG_STREAM
+        g_tsLog << "Intra:\n";
+        mfxU32 arrayIndex = 0;
+        for (int i = 0; i < heightInMinCu; i++) {
+            for (int j = 0; j < widthInMinCu; j++) {
+                g_tsLog << (int)pCu[arrayIndex++];
+            }
+            g_tsLog << "\n";
+        }
+#endif
+    }
+#ifdef DEBUG_STREAM
+    tsBitstreamWriter::ProcessBitstream(bs, nFrames);
+#endif
+    bs.DataLength = 0;
+    return MFX_ERR_NONE;
+}
+
+tsExtBufType<mfxVideoParam> TestSuite::initParams() {
         tsExtBufType <mfxVideoParam> par;
         par.mfx.LowPower                = g_tsConfig.lowpower;
         par.mfx.CodecId                 = MFX_CODEC_HEVC;
@@ -122,10 +229,10 @@ namespace hevce_intra_refresh{
         par.mfx.FrameInfo.FrameRateExtN = 30;
         par.mfx.FrameInfo.FrameRateExtD = 1;
         par.mfx.FrameInfo.ChromaFormat  = MFX_CHROMAFORMAT_YUV420;
-        par.mfx.FrameInfo.Width         = 320;
-        par.mfx.FrameInfo.Height        = 240;
-        par.mfx.FrameInfo.CropW         = 320;
-        par.mfx.FrameInfo.CropH         = 240;
+        par.mfx.FrameInfo.Width         = 352;
+        par.mfx.FrameInfo.Height        = 288;
+        par.mfx.FrameInfo.CropW         = 352;
+        par.mfx.FrameInfo.CropH         = 288;
         par.mfx.TargetKbps              = 5000;
         par.mfx.MaxKbps                 = par.mfx.TargetKbps;
         par.mfx.RateControlMethod       = 3;
@@ -144,6 +251,9 @@ namespace hevce_intra_refresh{
         co2->IntRefQPDelta   = 0;
         return par;
     }
+
+
+
 
 #define co2_IntRefType &tsStruct::mfxExtCodingOption2.IntRefType
 #define co2_IntRefCycleSize &tsStruct::mfxExtCodingOption2.IntRefCycleSize
@@ -241,7 +351,23 @@ namespace hevce_intra_refresh{
         // INVALID when platform == CNL && LowPower is OFF or platform != CNL && LowPower is ON
         {/*11*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, (mfxStatus)0,
           UNSUPPORTED,
-        { TEST_CASE_PARAMETERS(CDO2_PAR,  1, 2, 0) } }
+        { TEST_CASE_PARAMETERS(CDO2_PAR,  1, 2, 0) } },
+        // VALID VERTICAL PARAMS WITH ENCODE
+        {/*12*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        LOWPOWER_SUPPORTED | DUALPIPE_SUPPORTED | PERFORM_ENCODING,
+        { { CDO2_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 },
+          TEST_CASE_PARAMETERS(CDO2_PAR,  1, 5, 0),
+          TEST_CASE_PARAMETERS(QUERY_EXP, 1, 5, 0),
+          TEST_CASE_PARAMETERS(INIT_EXP,  1, 5, 0),
+          TEST_CASE_PARAMETERS(RESET_EXP, 1, 5, 0) } },
+        // VALID HORIZONTAL PARAMS WITH ENCODE
+        {/*13*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        LOWPOWER_SUPPORTED | DUALPIPE_SUPPORTED | PERFORM_ENCODING,
+        { { CDO2_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 6 },
+          TEST_CASE_PARAMETERS(CDO2_PAR,  2, 5, 0),
+          TEST_CASE_PARAMETERS(QUERY_EXP, 2, 5, 0),
+          TEST_CASE_PARAMETERS(INIT_EXP,  2, 5, 0),
+          TEST_CASE_PARAMETERS(RESET_EXP, 2, 5, 0) } }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
@@ -269,6 +395,39 @@ namespace hevce_intra_refresh{
 
         MFXInit();
 
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+
+        if (g_tsHWtype)
+            g_tsStatus.expect(MFX_ERR_NONE);
+        g_tsStatus.check(this->GetCaps(&caps, &capSize));
+        if (0 == caps.RollingIntraRefresh)
+        {
+            if ((g_tsHWtype < MFX_HW_SKL) ||
+                (g_tsConfig.lowpower != MFX_CODINGOPTION_ON && (g_tsHWtype >= MFX_HW_CNL)))
+            {
+                g_tsLog << "\n\nWARNING: SKIP test unsupported platform.\n\n";
+                throw tsSKIP;
+            } else 
+            {
+                g_tsLog << "Error! Platform is unsupported but expected it is.\n\n";
+                throw tsFAIL;
+            }
+        } else
+        {
+            if ((g_tsHWtype < MFX_HW_SKL) ||
+                (g_tsConfig.lowpower != MFX_CODINGOPTION_ON && (g_tsHWtype >= MFX_HW_CNL)))
+            {
+                g_tsLog << "Error! Platform is supported but expected it isn't.\n\n";
+                throw tsFAIL;
+            }
+        }
+
+        auto stream = g_tsStreamPool.Get("forBehaviorTest/foreman_cif.nv12");
+        g_tsStreamPool.Reg();
+        tsRawReader reader(stream, m_par.mfx.FrameInfo, 100);
+        m_filler = &reader;
+
         Load();
 
         tsExtBufType<mfxVideoParam> out_par;
@@ -294,8 +453,19 @@ namespace hevce_intra_refresh{
         else
             EXPECT_TRUE(COMPAREPARS(out_par, INIT_EXP)) << "Error! Paremeters mistmach.";
 
+        if (PERFORM_ENCODING & tc.mask)
+        {
+            //Create matrix with min Cu size.
+            widthInMinCu = m_par.mfx.FrameInfo.Width / minCuSize;
+            heightInMinCu = m_par.mfx.FrameInfo.Height / minCuSize;
+            pCu.resize(widthInMinCu * heightInMinCu, 0);
+            EncodeFrames(NumFrames);
+            SyncOperation();
+            EXPECT_TRUE(CheckRollingI()) << "Error! RollingIntraRefresh is not successful.";
+        }
+
         // Case #11 tests only Query and Init functions
-        if (id != 11)
+        if (id < 11)
         {
             MFXClose();
 
@@ -328,6 +498,3 @@ namespace hevce_intra_refresh{
     //! \brief Regs test suite into test system
     TS_REG_TEST_SUITE_CLASS(hevce_intra_refresh);
 }
-
-
-
