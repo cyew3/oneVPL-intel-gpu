@@ -639,8 +639,11 @@ mfxStatus ImplementationAvc::Query(
     }
     else if (5 == queryMode)
     {
+        MfxVideoParam tmp = *in;
+        eMFXHWType platform = core->GetHWType();
+        (void)SetLowPowerDefault(tmp, platform);
 #if defined(LOWPOWERENCODE_AVC)
-        if(IsOn(in->mfx.LowPower))
+        if(IsOn(tmp.mfx.LowPower))
             return QueryGuid(core, DXVA2_INTEL_LOWPOWERENCODE_AVC);
 #endif
         return QueryGuid(core, DXVA2_Intel_Encode_AVC);
