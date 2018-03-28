@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -424,43 +424,10 @@ bool CheckFourcc(mfxU32 fourcc, mfxU16 codecProfile, mfxFrameInfo const* frameIn
         //no profile defined, try to derive it from FOURCC
         codecProfile = MatchProfile(fourcc);
 
-    if (!fi.BitDepthLuma)
+    if (!InitBitDepthFields(&fi))
     {
-        //no depth defined, derive it from FOURCC
-        switch (fourcc)
-        {
-            case MFX_FOURCC_NV12:
-            case MFX_FOURCC_NV16:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
-            case MFX_FOURCC_YUY2:
-            case MFX_FOURCC_AYUV:
-#endif
-                fi.BitDepthLuma = 8;
-                break;
-
-            case MFX_FOURCC_P010:
-            case MFX_FOURCC_P210:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
-            case MFX_FOURCC_Y210:
-            case MFX_FOURCC_Y410:
-#endif
-                fi.BitDepthLuma = 10;
-                break;
-
-#ifdef PRE_SI_TARGET_PLATFORM_GEN12
-            case MFX_FOURCC_P016:
-            case MFX_FOURCC_Y216:
-            case MFX_FOURCC_Y416:
-                fi.BitDepthLuma = 12;
-                break;
-#endif
-            default:
-                return false;
-        }
+        return false;
     }
-
-    if (!fi.BitDepthChroma)
-        fi.BitDepthChroma = fi.BitDepthLuma;
 
     return
         CalculateFourcc(codecProfile, &fi) == fourcc;

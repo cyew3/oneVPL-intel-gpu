@@ -335,3 +335,57 @@ void RefCounter::DecrementReference()
         Free();
     }
 }
+
+mfxU16 FourCcBitDepth(mfxU32 fourCC)
+{
+    mfxU16 bitDepth = 0;
+
+    switch (fourCC)
+    {
+    case MFX_FOURCC_NV12:
+    case MFX_FOURCC_NV16:
+#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+    case MFX_FOURCC_YUY2:
+    case MFX_FOURCC_AYUV:
+#endif
+        bitDepth = 8;
+        break;
+
+    case MFX_FOURCC_P010:
+    case MFX_FOURCC_P210:
+#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+    case MFX_FOURCC_Y210:
+    case MFX_FOURCC_Y410:
+#endif
+        bitDepth = 10;
+        break;
+
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+    case MFX_FOURCC_P016:
+    case MFX_FOURCC_Y216:
+    case MFX_FOURCC_Y416:
+        bitDepth = 12;
+        break;
+#endif
+    default:
+        bitDepth = 0;
+    }
+
+    return bitDepth;
+}
+
+bool InitBitDepthFields(mfxFrameInfo *info)
+{
+    if (info->BitDepthLuma == 0)
+    {
+        info->BitDepthLuma = FourCcBitDepth(info->FourCC);
+    }
+
+    if (info->BitDepthChroma == 0)
+    {
+        info->BitDepthChroma = info->BitDepthLuma;
+    }
+
+    return ((info->BitDepthLuma != 0) &&
+        (info->BitDepthChroma != 0));
+}

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_COMMON_DECODE_INT_H__
@@ -37,6 +37,9 @@ void ConvertUMCParamsToMFX(UMC::VideoStreamInfo const*, mfxVideoParam*);
 void ConvertUMCParamsToMFX(UMC::VideoDecoderParams const*, mfxVideoParam*);
 
 bool IsNeedChangeVideoParam(mfxVideoParam *par);
+
+mfxU16 FourCcBitDepth(mfxU32 fourCC);
+bool InitBitDepthFields(mfxFrameInfo *info);
 
 inline mfxU32 ExtractProfile(mfxU32 profile)
 {
