@@ -73,7 +73,7 @@ BEGIN
             VALUE "InternalName", "mfxplugin_h264la_hw"
             VALUE "LegalCopyright", "Copyright© 2014-2016 Intel Corporation"
             VALUE "LegalTrademarks", "Intel Corporation"
-            VALUE "ProductName", "Intel® Media Server Studio"
+            VALUE "ProductName", "Intel® Media SDK"
             VALUE "ProductVersion", "1.8.1"
         END
     END
