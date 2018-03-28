@@ -496,7 +496,6 @@ void tsVideoDecoder::AllocOpaqueSurfaces()
     mfxExtOpaqueSurfaceAlloc *osa = (mfxExtOpaqueSurfaceAlloc*)m_par.GetExtBuffer(MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 
     mfxFrameAllocRequest request = {};
-    g_tsStatus.disable_next_check();
     QueryIOSurf(m_session, m_pPar, &request);
 
     tsSurfacePool::AllocOpaque(request, *osa);

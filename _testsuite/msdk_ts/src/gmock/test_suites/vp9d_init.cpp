@@ -69,8 +69,6 @@ private:
         INIT = 0,
     };
 
-    void AllocOpaque();
-
     int RunTest(const tc_struct& tc);
 };
 
@@ -264,12 +262,11 @@ int TestSuite::RunTest(const tc_struct& tc)
 
     tsStruct::SetPars(m_par, tc, INIT);
 
-    if(NO_EXT_ALLOCATOR != tc.mode)
+    if (NO_EXT_ALLOCATOR != tc.mode)
     {
         bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
         UseDefaultAllocator(isSW);
         m_pFrameAllocator = GetAllocator();
-        SetFrameAllocator(m_session, GetAllocator());
 
         if (!isSW && !m_is_handle_set)
         {
@@ -277,6 +274,15 @@ int TestSuite::RunTest(const tc_struct& tc)
             mfxHandleType type = static_cast<mfxHandleType>(0);
             GetAllocator()->get_hdl(type, hdl);
             SetHandle(m_session, type, hdl);
+        }
+
+        if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+        {
+            AllocOpaqueSurfaces();
+        }
+        else
+        {
+            SetFrameAllocator(m_session, GetAllocator());
         }
     }
 
