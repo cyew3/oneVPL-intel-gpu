@@ -151,7 +151,7 @@ const unsigned int TestSuite::n_cases_ayuv = sizeof(TestSuite::test_case_ayuv)/s
 
 const TestSuite::tc_struct TestSuite::test_case_p010[] =
 {
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P010}, {BitDepthLuma, 0}}},
+    {/*27*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P010}, {BitDepthLuma, 0}}},
     {/*28*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P010}, {BitDepthLuma, 10}}},
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P010}, {BitDepthLuma, 8}}},
     {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P010}, {ChromaFormat, MFX_CHROMAFORMAT_YUV444}}},
@@ -164,7 +164,7 @@ const unsigned int TestSuite::n_cases_p010 = sizeof(TestSuite::test_case_p010)/s
 
 const TestSuite::tc_struct TestSuite::test_case_y410[] =
 {
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y410}, {BitDepthLuma, 0}}},
+    {/*27*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y410}, {BitDepthLuma, 0}}},
     {/*28*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y410}, {BitDepthLuma, 10}}},
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y410}, {BitDepthLuma, 8}}},
     {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y410}, {ChromaFormat, MFX_CHROMAFORMAT_YUV420}}},
@@ -177,8 +177,8 @@ const unsigned int TestSuite::n_cases_y410 = sizeof(TestSuite::test_case_y410)/s
 
 const TestSuite::tc_struct TestSuite::test_case_p016[] =
 {
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P016}, {BitDepthLuma, 0}}},
-    {/*28*/ MFX_ERR_NONE, 0,                {{FourCC, MFX_FOURCC_P016}, {BitDepthLuma, 12}}},
+    {/*27*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P016}, {BitDepthLuma, 0}}},
+    {/*28*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P016}, {BitDepthLuma, 12}}},
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P016}, {BitDepthLuma, 8}}},
     {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P016}, {BitDepthLuma, 10}}},
     {/*31*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_P016}, {ChromaFormat, MFX_CHROMAFORMAT_YUV444}}},
@@ -191,8 +191,8 @@ const unsigned int TestSuite::n_cases_p016 = sizeof(TestSuite::test_case_p016)/s
 
 const TestSuite::tc_struct TestSuite::test_case_y416[] =
 {
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y416}, {BitDepthLuma, 0}}},
-    {/*28*/ MFX_ERR_NONE, 0,                {{FourCC, MFX_FOURCC_Y416}, {BitDepthLuma, 12}}},
+    {/*27*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y416}, {BitDepthLuma, 0}}},
+    {/*28*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y416}, {BitDepthLuma, 12}}},
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y416}, {BitDepthLuma, 8}}},
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y416}, {BitDepthLuma, 10}}},
     {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y416}, {ChromaFormat, MFX_CHROMAFORMAT_YUV420}}},
