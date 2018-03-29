@@ -213,13 +213,6 @@ namespace MfxHwH264Encode
             D3DDDIFORMAT            type);
 
         virtual
-        mfxStatus Execute(
-            mfxHDLPair                 pair,
-            DdiTask const &            task,
-            mfxU32                     fieldId,
-            PreAllocatedVector const & sei);
-
-        virtual
         mfxStatus QueryCompBufferInfo(
             D3DDDIFORMAT           type,
             mfxFrameAllocRequest & request);
@@ -253,8 +246,15 @@ namespace MfxHwH264Encode
         // async call
         virtual
         mfxStatus QueryStatusAsync(
-        DdiTask & task,
-        mfxU32    fieldId);
+            DdiTask & task,
+            mfxU32    fieldId);
+
+        virtual
+        mfxStatus ExecuteImpl(
+            mfxHDLPair pair,
+            DdiTask const & task,
+            mfxU32 fieldId,
+            PreAllocatedVector const & sei);
 
         virtual
         mfxStatus Destroy();

@@ -10,7 +10,6 @@
 
 #include "mfx_win_event_cache.h"
 #include "vm_mutex.h"
-
 #if defined (MFX_VA_WIN)
 
 /*
@@ -59,8 +58,8 @@ MFX_ERR_NONE if successes
 */
 mfxStatus  EventCache::GetEvent(EVENT_TYPE& event)
 {
-    event = m_Free.back();
-    m_Free.pop_back();
+    event = m_Free.front();
+    m_Free.pop_front();
     return MFX_ERR_NONE;
 }
 

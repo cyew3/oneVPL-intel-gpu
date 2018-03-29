@@ -369,7 +369,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_NV12) ? 
         m_reconQueue: (type == D3DDDIFMT_INTELENCODE_MBQPDATA) ? 
         m_mbqpQueue : m_bsQueue;
-    
+
     queue.resize(response.NumFrameActual);
 
     //wo_d3d11
@@ -392,6 +392,11 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
         m_feedbackCached.Reset( response.NumFrameActual );
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        m_EventCache.reset(new EventCache());
+        m_EventCache->Init(response.NumFrameActual);
+#endif
+
     return MFX_ERR_NONE;
 
 } // mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
@@ -404,7 +409,7 @@ mfxStatus D3D11Encoder::Register( mfxMemId     /*memId*/, D3DDDIFORMAT /*type*/)
 } // mfxStatus D3D11Encoder::Register(...)
 
 
-mfxStatus D3D11Encoder::Execute(
+mfxStatus D3D11Encoder::ExecuteImpl(
     mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
@@ -636,25 +641,6 @@ mfxStatus D3D11Encoder::Execute(
         bufCnt++;
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    {
-        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-        decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
-        decoderExtParams.pPrivateInputData = RemoveConst(&task.m_GpuEvent[fieldId]);
-        decoderExtParams.PrivateInputDataSize = sizeof(task.m_GpuEvent[fieldId]);
-        decoderExtParams.pPrivateOutputData = NULL;
-        decoderExtParams.PrivateOutputDataSize = 0;
-        decoderExtParams.ResourceCount = 0;
-        decoderExtParams.ppResourceList = NULL;
-        {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
-            hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
-
-        }
-        CHECK_HRES(hr);
-    }
-#endif
-
     if (SkipFlag != 0)
     {
         m_compBufDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDHEADERDATA;
@@ -699,6 +685,30 @@ mfxStatus D3D11Encoder::Execute(
 
     if(SkipFlag != 1)
     {
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        {
+            // allocate the event
+            DdiTask & task1 = RemoveConst(task);
+            task1.m_GpuEvent[fieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            m_EventCache->GetEvent(task1.m_GpuEvent[fieldId].gpuSyncEvent);
+
+            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+            decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+            decoderExtParams.pPrivateInputData = &task1.m_GpuEvent[fieldId];
+            decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent[fieldId]);
+            decoderExtParams.pPrivateOutputData = NULL;
+            decoderExtParams.PrivateOutputDataSize = 0;
+            decoderExtParams.ResourceCount = 0;
+            decoderExtParams.ppResourceList = NULL;
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+                hr = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
+
+            }
+            CHECK_HRES(hr);
+        }
+#endif
+
         m_pps.SkipFrameFlag  = SkipFlag ? SkipFlag : !!m_numSkipFrames;
         m_pps.NumSkipFrames  = m_numSkipFrames;
         m_pps.SizeSkipFrames = m_sizeSkipFrames;
@@ -818,6 +828,7 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
 
     if (feedback == 0 || feedback->bStatus != ENCODE_OK)
     {
+
 #if defined(MFX_ENABLE_MFE)
         if (m_pMFEAdapter != NULL)
         {
@@ -845,7 +856,6 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
                     hRes = DecoderExtension(m_pVideoContext, m_pDecoder, decoderExtParams);
                 }
-
                 MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
                 MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
             }

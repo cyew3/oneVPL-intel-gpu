@@ -1422,6 +1422,11 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
         m_feedbackCached.Reset(response.NumFrameActual);
     }
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    m_EventCache.reset(new EventCache());
+    m_EventCache->Init(response.NumFrameActual);
+#endif
+
     return MFX_ERR_NONE;
 }
 
@@ -1459,7 +1464,7 @@ namespace
     }
 };
 
-mfxStatus D3D9Encoder::Execute(
+mfxStatus D3D9Encoder::ExecuteImpl(
     mfxHDLPair                 pair,
     DdiTask const &            task,
     mfxU32                     fieldId,
@@ -1755,7 +1760,12 @@ mfxStatus D3D9Encoder::Execute(
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-            hr = m_auxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, RemoveConst(task.m_GpuEvent[fieldId]));
+            // allocate the event
+            DdiTask & task1 = RemoveConst(task);
+            task1.m_GpuEvent[fieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            m_EventCache->GetEvent(task1.m_GpuEvent[fieldId].gpuSyncEvent);
+
+            hr = m_auxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent[fieldId]);
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 #endif
 

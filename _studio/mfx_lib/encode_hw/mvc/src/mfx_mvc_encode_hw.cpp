@@ -1164,16 +1164,6 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
         MFX_CHECK_STS(sts);
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    m_EventCache.reset(new EventCache());
-    int nNumEvents = 0;
-    for (mfxU32 i = 0; i < m_numEncs; i++)
-    {
-        nNumEvents += m_bitstream[i].NumFrameActual;
-    }
-    m_EventCache->Init(nNumEvents);
-#endif
-
     m_spsSubsetSpsDiff = 0;
 // MVC BD }
 
@@ -1552,12 +1542,6 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
         // it is important since driver seems to be able to maintain only 4 reference frames
         // PatchTask() function does all required patches to current task
         {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-            // allocate the event
-            task[i]->m_GpuEvent[firstFieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-            sts = impl.m_EventCache->GetEvent(task[i]->m_GpuEvent[firstFieldId].gpuSyncEvent);
-            MFX_CHECK_STS(sts);
-#endif
             DdiTask curTask = *task[i];
             impl.PatchTask(task, curTask, firstFieldId);
 
@@ -1573,16 +1557,14 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
                 impl.m_sei);
 
             MFX_CHECK_STS(sts);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+            task[i]->m_GpuEvent[firstFieldId] = curTask.m_GpuEvent[firstFieldId];
+#endif
         }
 
         if ((task[0]->GetPicStructForEncode() & MFX_PICSTRUCT_PROGRESSIVE) == 0)
         {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-            // allocate the event
-            task[i]->m_GpuEvent[!firstFieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-            sts = impl.m_EventCache->GetEvent(task[i]->m_GpuEvent[!firstFieldId].gpuSyncEvent);
-            MFX_CHECK_STS(sts);
-#endif
             // same patching for second field
             DdiTask curTask = *task[i];
             impl.PatchTask(task, curTask, !firstFieldId);
@@ -1602,6 +1584,10 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
                 !firstFieldId,
                 impl.m_sei);
             MFX_CHECK_STS(sts);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+            task[i]->m_GpuEvent[!firstFieldId] = curTask.m_GpuEvent[!firstFieldId];
+#endif
         }
     }
 
@@ -1669,18 +1655,6 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
             // 2nd encoder perform 'dummy' encoding of 1st IDR of base view to get reconstruct and register it as reference inside driver
             if (realTask.m_type[firstFieldId] & MFX_FRAMETYPE_IDR && realTask.m_frameOrder == 0)
             {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-                // allocate the event
-                mvcTask[0]->m_GpuEvent[firstFieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-                sts = impl.m_EventCache->GetEvent(mvcTask[0]->m_GpuEvent[firstFieldId].gpuSyncEvent);
-                MFX_CHECK_STS(sts);
-                if (interlace)
-                {
-                    mvcTask[0]->m_GpuEvent[!firstFieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-                    sts = impl.m_EventCache->GetEvent(mvcTask[0]->m_GpuEvent[!firstFieldId].gpuSyncEvent);
-                    MFX_CHECK_STS(sts);
-                }
-#endif
                 // 'dummy' task is used for encoding of 1st frame of base view
                 DdiTask dummyTask = *mvcTask[0];
                 dummyTask.m_dpb[firstFieldId].Resize(0);
@@ -1737,6 +1711,9 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
                 MFX_CHECK_STS(sts);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+                realTask.m_GpuEvent[firstFieldId] = dummyTask.m_GpuEvent[firstFieldId];
+#endif
                 // submit 2nd field of 'dummy' task to driver
                 if (interlace)
                 {
@@ -1747,6 +1724,10 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                         impl.m_sei);
 
                     MFX_CHECK_STS(sts);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+                    realTask.m_GpuEvent[!firstFieldId] = dummyTask.m_GpuEvent[!firstFieldId];
+#endif
                 }
 
                 do
@@ -1759,18 +1740,11 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
                 if (sts != MFX_ERR_NONE)
                     return Error(MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-                impl.m_EventCache->ReturnEvent(dummyTask.m_GpuEvent[interlace ? !firstFieldId : firstFieldId].gpuSyncEvent);
-#endif
-
                 if (interlace)
                 {
                     sts = impl.m_ddi[encIdx]->QueryStatus(dummyTask, firstFieldId);
                     if (sts != MFX_ERR_NONE)
                         return Error(MFX_ERR_DEVICE_FAILED);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-                    impl.m_EventCache->ReturnEvent(dummyTask.m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
                 }
 
                 mfxI32 m_initCpbRemovalDiff = impl.m_hrd[task.m_viewIdx].GetInitCpbRemovalDelay();
@@ -1852,13 +1826,6 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
         PrepareSeiMessageBufferDepView(impl.m_video, task, firstFieldId, impl.m_sei);
     }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    // allocate the event
-    task.m_GpuEvent[firstFieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-    sts = impl.m_EventCache->GetEvent(task.m_GpuEvent[firstFieldId].gpuSyncEvent);
-    MFX_CHECK_STS(sts);
-#endif
-
     impl.PatchTask(mvcTask, task, firstFieldId);
 
     realTask.m_addRepackSize[firstFieldId] = task.m_addRepackSize[firstFieldId]; // need to save padding size to remove it from encoded frame
@@ -1871,6 +1838,10 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
         impl.m_sei);
 
     MFX_CHECK_STS(sts);
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    realTask.m_GpuEvent[firstFieldId] = task.m_GpuEvent[firstFieldId];
+#endif
 
     // FIXME: w/a for SNB issue with HRD at high bitrates
     if (impl.m_useWAForHighBitrates)
@@ -1907,12 +1878,6 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
         realTask.m_addRepackSize[!firstFieldId] = task.m_addRepackSize[!firstFieldId]; // need to save padding size to remove it from encoded frame
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        // allocate the event
-        task.m_GpuEvent[!firstFieldId].m_gpuComponentId = GPU_COMPONENT_ENCODE;
-        sts = impl.m_EventCache->GetEvent(task.m_GpuEvent[!firstFieldId].gpuSyncEvent);
-        MFX_CHECK_STS(sts);
-#endif
         // here is workaround for SNB/IVB. Need to use 1 encoder per view to guarantee HRD conformance for each view
         if (MFX_HW_D3D11 == impl.m_core->GetVAType())
             sts = impl.m_ddi[encIdx]->Execute(
@@ -1930,6 +1895,9 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
 
         MFX_CHECK_STS(sts);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        realTask.m_GpuEvent[!firstFieldId] = task.m_GpuEvent[!firstFieldId];
+#endif
         // FIXME: w/a for SNB issue with HRD at high bitrates
         if (impl.m_useWAForHighBitrates)
             impl.m_submittedPicStructs[task.m_viewIdx].push_back(task.GetPicStructForEncode());
@@ -1969,9 +1937,7 @@ mfxStatus ImplementationMvc::TaskRoutineQuery(
         // need to call TaskManager::CompleteTask
         // even if error occurs during status query
         CompleteTaskOnExitMvc completer(impl.m_taskMan, task);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        impl.m_EventCache->ReturnEvent(task[opt->NumView - 1]->m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
+
         // Task submitted earlier should be ready by this moment
         // otherwise report device error
         for (mfxU32 i = 0; i < opt->NumView - 1; i++)
@@ -1981,9 +1947,6 @@ mfxStatus ImplementationMvc::TaskRoutineQuery(
 // MVC BD }
             if (sts != MFX_ERR_NONE)
                 return Error(MFX_ERR_DEVICE_FAILED);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-            impl.m_EventCache->ReturnEvent(task[i]->m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
         }
 
         sts = impl.UpdateBitstream(task, firstFieldId);
@@ -2001,9 +1964,7 @@ mfxStatus ImplementationMvc::TaskRoutineQuery(
         // need to call TaskManager::CompleteTask
         // even if error occurs during status query
         CompleteTaskOnExitMvc completer(impl.m_taskMan, task);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        impl.m_EventCache->ReturnEvent(task[opt->NumView - 1]->m_GpuEvent[!firstFieldId].gpuSyncEvent);
-#endif
+
         // Task submitted earlier should be ready by this moment
         // otherwise report device error
 // MVC BD {
@@ -2011,10 +1972,6 @@ mfxStatus ImplementationMvc::TaskRoutineQuery(
 // MVC BD }
         if (sts != MFX_ERR_NONE)
             return Error(MFX_ERR_DEVICE_FAILED);
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        impl.m_EventCache->ReturnEvent(task[opt->NumView - 1]->m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
 
         for (mfxU32 i = 0; i < opt->NumView - 1; i++)
         {
@@ -2024,18 +1981,11 @@ mfxStatus ImplementationMvc::TaskRoutineQuery(
             if (sts != MFX_ERR_NONE)
                 return Error(MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-            impl.m_EventCache->ReturnEvent(task[i]->m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
 // MVC BD {
             sts = impl.m_ddi[0]->QueryStatus(*task[i], !firstFieldId);
 // MVC BD }
             if (sts != MFX_ERR_NONE)
                 return Error(MFX_ERR_DEVICE_FAILED);
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-            impl.m_EventCache->ReturnEvent(task[i]->m_GpuEvent[!firstFieldId].gpuSyncEvent);
-#endif
         }
 
         sts = impl.UpdateBitstream(task, firstFieldId);
@@ -2114,10 +2064,6 @@ mfxStatus ImplementationMvc::TaskRoutineQueryOneView(
         if (sts != MFX_ERR_NONE)
             return Error(MFX_ERR_DEVICE_FAILED);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        impl.m_EventCache->ReturnEvent(task.m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
-
         if (task.m_viewIdx == 0)
             sts = impl.UpdateBitstreamBaseView(task, firstFieldId);
         else
@@ -2139,19 +2085,11 @@ mfxStatus ImplementationMvc::TaskRoutineQueryOneView(
         // even if error occurs during status query
         CompleteTaskOnExitMvcOneView completer(impl.m_taskMan, task);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        impl.m_EventCache->ReturnEvent(task.m_GpuEvent[!firstFieldId].gpuSyncEvent);
-#endif
-
         // Task submitted earlier should be ready by this moment
         // otherwise report device error
         sts = impl.m_ddi[encIdx]->QueryStatus(task, firstFieldId);
         if (sts != MFX_ERR_NONE)
             return Error(MFX_ERR_DEVICE_FAILED);
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        impl.m_EventCache->ReturnEvent(task.m_GpuEvent[firstFieldId].gpuSyncEvent);
-#endif
 
         if (task.m_viewIdx == 0)
         {

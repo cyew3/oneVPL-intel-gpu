@@ -22,6 +22,10 @@
 
 #include "mfx_h264_enc_common_hw.h"
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#include "mfx_win_event_cache.h"
+#endif
+
 // structures will be abstracted (ENCODE_CAPS, D3DDDIFORMAT)
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
@@ -168,6 +172,10 @@ namespace MfxHwH264Encode
         virtual
         mfxStatus SetEncCtrlCaps(
             ENCODE_ENC_CTRL_CAPS const & caps) { caps; return MFX_ERR_UNSUPPORTED; };
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        std::unique_ptr<EventCache> m_EventCache;
+#endif
     };
 
     DriverEncoder* CreatePlatformH264Encoder( VideoCORE* core ); 

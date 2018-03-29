@@ -32,10 +32,6 @@
 #include "vm_time.h"
 #include "asc.h"
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#include "mfx_win_event_cache.h"
-#endif
-
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
 
@@ -2375,9 +2371,6 @@ namespace MfxHwH264Encode
         mfxI32      m_LtrOrder;
         mfxI32      m_RefQp;
         mfxI32      m_RefOrder;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        std::unique_ptr<EventCache> m_EventCache;
-#endif
     };
 
 #ifndef OPEN_SOURCE
@@ -2925,10 +2918,6 @@ namespace MfxHwH264Encode
 #ifdef MVC_ADD_REF
         mfxI32                      m_bufferSizeModifier; // required to obey HRD conformance after 'dummy' run in ViewOutput mode
 #endif // MVC_ADD_REF
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        std::unique_ptr<EventCache> m_EventCache;
-#endif
     };
 #endif // #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
 

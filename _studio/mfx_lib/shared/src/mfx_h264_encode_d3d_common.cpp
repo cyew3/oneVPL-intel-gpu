@@ -63,6 +63,22 @@ mfxStatus D3DXCommonEncoder::Destroy()
     return MFX_ERR_NONE;
 }
 
+mfxStatus D3DXCommonEncoder::Execute(mfxHDLPair pair, DdiTask const & task, mfxU32 fieldId, PreAllocatedVector const & sei)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    // Put dummy event in the task. Real event will be attached if the current task is not to be skipped
+    DdiTask & task1 = const_cast<DdiTask&>(task);
+    task1.m_GpuEvent[fieldId].gpuSyncEvent = INVALID_HANDLE_VALUE;
+#endif
+
+    sts = ExecuteImpl(pair, task, fieldId, sei);
+    MFX_CHECK_STS(sts);
+
+    return MFX_ERR_NONE;
+}
+
 // sync call
 mfxStatus D3DXCommonEncoder::WaitTaskSync(
     DdiTask & task,
@@ -96,13 +112,14 @@ mfxStatus D3DXCommonEncoder::WaitTaskSync(
 
 mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
 {
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::QueryStatus");
-        mfxStatus sts = MFX_ERR_NONE;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3DXCommonEncoder::QueryStatus");
+    mfxStatus sts = MFX_ERR_NONE;
 
-        // use GPUTaskSync call to wait task completion.
+    // use GPUTaskSync call to wait task completion.
 #if defined(MFX_ENABLE_HW_BLOCKING_TASK_SYNC)
-
+    // If the task was submitted to the driver
+    if (task.m_GpuEvent[fieldId].gpuSyncEvent != INVALID_HANDLE_VALUE)
+    {
         mfxU32 timeOutMs = DEFAULT_TIMEOUT_AVCE_HW;
 
         if (m_bSingleThreadMode)
@@ -112,6 +129,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
         }
 
         sts = WaitTaskSync(task, fieldId, timeOutMs);
+
         // for single thread mode the timeOutMs can be too small, need to use an extra check
         mfxU32 curTime = vm_time_get_current_time();
         if (sts == MFX_WRN_DEVICE_BUSY && m_bSingleThreadMode)
@@ -121,22 +139,22 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
             else
                 return MFX_WRN_DEVICE_BUSY;
         }
-        else if(sts == MFX_WRN_DEVICE_BUSY && !m_bSingleThreadMode)
+        else if (sts == MFX_WRN_DEVICE_BUSY && !m_bSingleThreadMode)
             return MFX_ERR_GPU_HANG;
 
-        sts = QueryStatusAsync(task, fieldId);
-        // if WaitTaskSync() call was successful but the task isn't ready in QueryStatusAsync()
-        // it means synchronization is broken.
-        if (sts == MFX_WRN_DEVICE_BUSY)
-        {
-            MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "ERROR !!! QueryStatus", "(ReportNumber==%d) => sts == MFX_ERR_DEVICE_FAILED", task.m_statusReportNumber[fieldId]);
-            sts = MFX_ERR_DEVICE_FAILED;
-        }
-#else
-        sts = QueryStatusAsync(task, fieldId);
-#endif
-        return sts;
+        // Return event to the EventCache
+        m_EventCache->ReturnEvent(task.m_GpuEvent[fieldId].gpuSyncEvent);
+        task.m_GpuEvent[fieldId].gpuSyncEvent = INVALID_HANDLE_VALUE;
     }
+    // If the task was skipped or blocking sync call is succeded try to get the current task status
+    sts = QueryStatusAsync(task, fieldId);
+    if (sts == MFX_WRN_DEVICE_BUSY)
+        sts = MFX_ERR_GPU_HANG;
+
+#else
+sts = QueryStatusAsync(task, fieldId);
+#endif
+return sts;
 }
 
 #endif // #if defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)

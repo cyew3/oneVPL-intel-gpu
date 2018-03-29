@@ -12,7 +12,7 @@
 #define __MFX_WIN_EVENT_CACHE_H__
 
 #include "mfx_common.h"
-
+#include <deque>
 #if defined(MFX_VA_WIN)
 
 class EventCache
@@ -52,7 +52,7 @@ public:
         (void)Close();
     }
 private:
-    std::vector<EVENT_TYPE> m_Free;
+    std::deque<EVENT_TYPE> m_Free;
     mfxU16 m_nInitNumberOfEvents;
 };
 #endif /* #if defined(MFX_VA_WIN) */

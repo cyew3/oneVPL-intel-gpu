@@ -33,6 +33,9 @@ namespace MfxHwH264Encode
         virtual
             mfxStatus QueryStatus(DdiTask & task, mfxU32 fieldId);
 
+        virtual
+            mfxStatus Execute(mfxHDLPair pair, DdiTask const & task, mfxU32 fieldId, PreAllocatedVector const & sei);
+
         // Init
         virtual
             mfxStatus Init(VideoCORE *core);
@@ -47,6 +50,8 @@ namespace MfxHwH264Encode
 
         // sync call
         virtual mfxStatus WaitTaskSync(DdiTask & task, mfxU32 fieldId, mfxU32 timeOutM);
+
+        virtual mfxStatus ExecuteImpl(mfxHDLPair pair, DdiTask const & task, mfxU32 fieldId, PreAllocatedVector const & sei) = 0;
 
         MFXIScheduler2 *pSheduler;
         bool m_bSingleThreadMode;
