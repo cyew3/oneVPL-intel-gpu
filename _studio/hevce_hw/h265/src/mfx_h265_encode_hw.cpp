@@ -313,10 +313,11 @@ mfxStatus Plugin::InitImpl(mfxVideoParam *par)
     sts = ExtBuffer::CheckBuffers(*par);
     MFX_CHECK_STS(sts);
 
-    m_vpar = *par;
-
-    sts = m_core.QueryPlatform(&m_vpar.m_platform);
+    mfxPlatform platform;
+    sts = m_core.QueryPlatform(&platform);
     MFX_CHECK_STS(sts);
+
+    m_vpar = MfxVideoParam(*par, platform);
 
     mfxStatus lpsts = SetLowpowerDefault(m_vpar);
 
@@ -587,7 +588,12 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
 
     MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
 
-    MfxVideoParam tmp = *par;
+    mfxPlatform platform;
+    sts = m_core.QueryPlatform(&platform);
+    MFX_CHECK_STS(sts);
+
+    MfxVideoParam tmp(*par, platform);
+
     ENCODE_CAPS_HEVC caps = {};
 
     sts = ExtBuffer::CheckBuffers(*par);
@@ -606,8 +612,6 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request,
         break;
     default: return MFX_ERR_INVALID_VIDEO_PARAM;
     }
-
-    m_core.QueryPlatform(&tmp.m_platform);
 
     (void)SetLowpowerDefault(tmp);
 
@@ -682,7 +686,12 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     }
     else
     {
-        MfxVideoParam tmp = *in;
+        mfxPlatform platform;
+        sts = m_core.QueryPlatform(&platform);
+        MFX_CHECK_STS(sts);
+
+        MfxVideoParam tmp(*in, platform);
+
         ENCODE_CAPS_HEVC caps = {};
         mfxExtEncoderCapability * enc_cap = ExtBuffer::Get(*in);
 
@@ -690,9 +699,6 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
         {
             return MFX_ERR_UNSUPPORTED;
         }
-
-        sts = m_core.QueryPlatform(&tmp.m_platform);
-        MFX_CHECK_STS(sts);
 
         MFX_CHECK(in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
 
@@ -842,7 +848,11 @@ mfxStatus  Plugin::Reset(mfxVideoParam *par)
     sts = ExtBuffer::CheckBuffers(*par);
     MFX_CHECK_STS(sts);
 
-    MfxVideoParam parNew = *par;
+    mfxPlatform platform;
+    sts = m_core.QueryPlatform(&platform);
+    MFX_CHECK_STS(sts);
+
+    MfxVideoParam parNew(*par, platform);
 
     mfxExtEncoderResetOption * pResetOpt = ExtBuffer::Get(*par);
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);

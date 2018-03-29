@@ -512,24 +512,20 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 
 namespace ExtBuffer
 {
-    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf, mfxExtBuffer* pBuffers[], mfxU16 & numbuffers)
+    bool Construct(mfxVideoParam const & par, mfxExtHEVCParam& buf, mfxExtBuffer* pBuffers[], mfxU16 & numbuffers, mfxU32 codedPicAlignment)
     {
         if (!Construct<mfxVideoParam, mfxExtHEVCParam>(par, buf, pBuffers, numbuffers))
         {
-            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? (mfxU16)(par.mfx.FrameInfo.CropW + par.mfx.FrameInfo.CropX) : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
-            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? (mfxU16)(par.mfx.FrameInfo.CropH + par.mfx.FrameInfo.CropY)  : par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
+            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? (mfxU16)(par.mfx.FrameInfo.CropW + par.mfx.FrameInfo.CropX)  : par.mfx.FrameInfo.Width, codedPicAlignment);
+            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? (mfxU16)(par.mfx.FrameInfo.CropH + par.mfx.FrameInfo.CropY)  : par.mfx.FrameInfo.Height, codedPicAlignment);
 
             return false;
         }
-        if (buf.PicWidthInLumaSamples== 0)
-            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? (mfxU16)(par.mfx.FrameInfo.CropW + par.mfx.FrameInfo.CropX) : par.mfx.FrameInfo.Width, CODED_PIC_ALIGN_W);
-        else
-            buf.PicWidthInLumaSamples  = Align(buf.PicWidthInLumaSamples, CODED_PIC_ALIGN_W);
+        if (buf.PicWidthInLumaSamples == 0)
+            buf.PicWidthInLumaSamples  = Align(par.mfx.FrameInfo.CropW > 0 ? (mfxU16)(par.mfx.FrameInfo.CropW + par.mfx.FrameInfo.CropX) : par.mfx.FrameInfo.Width, codedPicAlignment);
 
         if (buf.PicHeightInLumaSamples == 0)
-            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? (mfxU16)(par.mfx.FrameInfo.CropH + par.mfx.FrameInfo.CropY)  : par.mfx.FrameInfo.Height, CODED_PIC_ALIGN_H);
-        else
-            buf.PicHeightInLumaSamples = Align(buf.PicHeightInLumaSamples, CODED_PIC_ALIGN_H);
+            buf.PicHeightInLumaSamples = Align(par.mfx.FrameInfo.CropH > 0 ? (mfxU16)(par.mfx.FrameInfo.CropH + par.mfx.FrameInfo.CropY)  : par.mfx.FrameInfo.Height, codedPicAlignment);
 
         return true;
     }
@@ -595,20 +591,21 @@ namespace ExtBuffer
 };
 
 MfxVideoParam::MfxVideoParam()
-    : BufferSizeInKB  (0)
-    , InitialDelayInKB(0)
-    , TargetKbps      (0)
-    , MaxKbps         (0)
-    , LTRInterval     (0)
-    , PPyrInterval    (0)
-    , LCUSize         (0)
-    , HRDConformance  (false)
-    , RawRef          (false)
-    , bROIViaMBQP     (false)
-    , bMBQPInput      (false)
-    , RAPIntra        (false)
+    : BufferSizeInKB    (0)
+    , InitialDelayInKB  (0)
+    , TargetKbps        (0)
+    , MaxKbps           (0)
+    , LTRInterval       (0)
+    , PPyrInterval      (0)
+    , LCUSize           (0)
+    , CodedPicAlignment (0)
+    , HRDConformance    (false)
+    , RawRef            (false)
+    , bROIViaMBQP       (false)
+    , bMBQPInput        (false)
+    , RAPIntra          (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    , WiDi            (false)
+    , WiDi              (false)
 #endif
 {
     Zero(*(mfxVideoParam*)this);
@@ -617,35 +614,36 @@ MfxVideoParam::MfxVideoParam()
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
 {
+     Copy(m_platform, par.m_platform);
      Construct(par);
 
      Copy(m_vps, par.m_vps);
      Copy(m_sps, par.m_sps);
      Copy(m_pps, par.m_pps);
-     Copy(m_platform, par.m_platform);
 
      CopyCalcParams(par);
 }
 
-MfxVideoParam::MfxVideoParam(mfxVideoParam const & par)
-    : BufferSizeInKB  (0)
-    , InitialDelayInKB(0)
-    , TargetKbps      (0)
-    , MaxKbps         (0)
-    , LTRInterval     (0)
-    , PPyrInterval    (0)
-    , LCUSize         (0)
-    , HRDConformance  (false)
-    , RawRef          (false)
-    , bROIViaMBQP     (false)
-    , bMBQPInput      (false)
-    , RAPIntra        (false)
+MfxVideoParam::MfxVideoParam(mfxVideoParam const & par, mfxPlatform const & platform)
+    : BufferSizeInKB    (0)
+    , InitialDelayInKB  (0)
+    , TargetKbps        (0)
+    , MaxKbps           (0)
+    , LTRInterval       (0)
+    , PPyrInterval      (0)
+    , LCUSize           (0)
+    , CodedPicAlignment (0)
+    , HRDConformance    (false)
+    , RawRef            (false)
+    , bROIViaMBQP       (false)
+    , bMBQPInput        (false)
+    , RAPIntra          (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    , WiDi            (false)
+    , WiDi              (false)
 #endif
 {
     Zero(*(mfxVideoParam*)this);
-    Zero(m_platform);
+    Copy(m_platform, platform);
     Construct(par);
     SyncVideoToCalculableParam();
 }
@@ -670,7 +668,7 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
 
 MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
 {
-
+    Copy(m_platform, par.m_platform);
     Construct(par);
     CopyCalcParams(par);
 
@@ -686,14 +684,6 @@ MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
     return *this;
 }
 
-MfxVideoParam& MfxVideoParam::operator=(mfxVideoParam const & par)
-{
-    Construct(par);
-    SyncVideoToCalculableParam();
-    return *this;
-}
-
-
 void MfxVideoParam::Construct(mfxVideoParam const & par)
 {
     mfxVideoParam & base = *this;
@@ -705,7 +695,8 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     base.NumExtParam = 0;
     base.ExtParam = m_ext.m_extParam;
 
-    ExtBuffer::Construct(par, m_ext.HEVCParam, m_ext.m_extParam, base.NumExtParam);
+    CodedPicAlignment = GetAlignmentByPlatform(m_platform.CodeName);
+    ExtBuffer::Construct(par, m_ext.HEVCParam, m_ext.m_extParam, base.NumExtParam, CodedPicAlignment);
     ExtBuffer::Construct(par, m_ext.HEVCTiles, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.Opaque, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.CO,  m_ext.m_extParam, base.NumExtParam);

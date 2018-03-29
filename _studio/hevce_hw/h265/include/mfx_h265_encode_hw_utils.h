@@ -158,6 +158,10 @@ inline mfxU64 SwapEndian(mfxU64 val)
         ((val >>  8) & 0x00000000ff000000) | ((val >> 24) & 0x0000000000ff0000) |
         ((val >> 40) & 0x000000000000ff00) | ((val >> 56) & 0x00000000000000ff);
 }
+inline mfxU32 GetAlignmentByPlatform(mfxU32 platformCodeName)
+{
+    return platformCodeName >= MFX_PLATFORM_CANNONLAKE ? 8 : 16;
+}
 
 enum
 {
@@ -175,9 +179,6 @@ enum
 
     HW_SURF_ALIGN_W         = 16,
     HW_SURF_ALIGN_H         = 16,
-
-    CODED_PIC_ALIGN_W       = 16,
-    CODED_PIC_ALIGN_H       = 16,
 
     MAX_SLICES              = 200,// WA for driver issue regerding CNL and older platforms
     DEFAULT_LTR_INTERVAL    = 16,
@@ -900,6 +901,7 @@ public:
     mfxU32 LTRInterval;
     mfxU32 PPyrInterval;
     mfxU32 LCUSize;
+    mfxU32 CodedPicAlignment;
     bool   HRDConformance;
     bool   RawRef;
     bool   bROIViaMBQP;
@@ -912,9 +914,8 @@ public:
 
     MfxVideoParam();
     MfxVideoParam(MfxVideoParam const & par);
-    MfxVideoParam(mfxVideoParam const & par);
+    MfxVideoParam(mfxVideoParam const & par, mfxPlatform const & platform);
 
-    MfxVideoParam & operator = (mfxVideoParam const &);
     MfxVideoParam & operator = (MfxVideoParam const &);
 
     void SyncVideoToCalculableParam();
