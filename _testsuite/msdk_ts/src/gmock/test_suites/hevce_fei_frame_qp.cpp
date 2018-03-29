@@ -25,8 +25,6 @@ namespace hevce_fei_frame_qp
 
     struct tc_struct
     {
-        mfxStatus sts;
-        mfxU32 mode;
         struct f_pair
         {
             mfxU32 ext_type;
@@ -80,7 +78,8 @@ namespace hevce_fei_frame_qp
         enum
         {
             MFX_PAR = 1,
-            RESET,
+            EXT_COD2,
+            EXT_COD3
         };
 
         static const tc_struct test_case[];
@@ -132,8 +131,60 @@ namespace hevce_fei_frame_qp
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE, MFX_PAR, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1}},
-        {/*02*/ MFX_ERR_NONE, MFX_PAR, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 15}},
+        {/*00*/ {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1}},
+
+        {/*01*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  2},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_SIMPLE}}},
+
+        {/*02*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  4},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,  1},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_PYRAMID}}},
+
+        {/*03*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  10},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,  1},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_SIMPLE}}},
+
+        {/*04*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  3},
+          {EXT_COD2, &tsStruct::mfxExtCodingOption2.BRefType,  MFX_B_REF_PYRAMID},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_SIMPLE}}},
+
+        {/*05*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  5},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,  4},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_SIMPLE}}},
+
+        {/*06*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,       5},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,       3},
+          {EXT_COD2, &tsStruct::mfxExtCodingOption2.BRefType,       MFX_B_REF_PYRAMID},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,       MFX_P_REF_SIMPLE},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_OFF}}},
+
+        {/*07*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,       10},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,       9},
+          {EXT_COD2, &tsStruct::mfxExtCodingOption2.BRefType,       MFX_B_REF_PYRAMID},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,       MFX_P_REF_SIMPLE},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_OFF}}},
+
+
+        {/*08*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  6},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,  2},
+          {EXT_COD2, &tsStruct::mfxExtCodingOption2.BRefType,  MFX_B_REF_OFF},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_SIMPLE},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB,       MFX_CODINGOPTION_OFF}}},
+
+        {/*09*/
+          {{MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  30},
+          {MFX_PAR,  &tsStruct::mfxVideoParam.mfx.GopRefDist,  8},
+          {EXT_COD2, &tsStruct::mfxExtCodingOption2.BRefType,  MFX_B_REF_OFF},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.PRefType,  MFX_P_REF_SIMPLE},
+          {EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB,       MFX_CODINGOPTION_OFF}}},
     };
 
     const mfxU32 TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(tc_struct);
@@ -148,6 +199,12 @@ namespace hevce_fei_frame_qp
         MFXInit();
         Load();
         SETPARS(m_pPar, MFX_PAR);
+
+        mfxExtCodingOption2& co2 = m_par;
+        SETPARS(&co2, EXT_COD2);
+
+        mfxExtCodingOption3& co3 = m_par;
+        SETPARS(&co3, EXT_COD3);
 
         Init();
         EncodeFrames(m_framesToEncode);
