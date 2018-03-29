@@ -4,13 +4,14 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright (c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
 #include "ts_parser.h"
+#include "ts_fei_warning.h"
 
 //#define DUMP_BS
 #define FRAME_TO_ENCODE 70
@@ -20,6 +21,19 @@ Copyright(c) 2017 Intel Corporation. All Rights Reserved.
 namespace hevce_nalutype
 {
     using namespace BS_HEVC;
+
+    void SetDefaultsToCtrl(mfxExtFeiHevcEncFrameCtrl& ctrl)
+    {
+        memset(&ctrl, 0, sizeof(ctrl));
+
+        ctrl.Header.BufferId = MFX_EXTBUFF_HEVCFEI_ENC_CTRL;
+        ctrl.Header.BufferSz = sizeof(mfxExtFeiHevcEncFrameCtrl);
+        ctrl.SubPelMode = 3; // quarter-pixel motion estimation
+        ctrl.SearchWindow = 5; // 48 SUs 48x40 window full search
+        ctrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
+                                     // enable internal L0/L1 predictors: 1 - spatial predictors
+        ctrl.MultiPred[0] = ctrl.MultiPred[1] = 1;
+    }
 
     enum
     {
@@ -577,7 +591,9 @@ namespace hevce_nalutype
 
             ~TestSuite() {}
 
-            int RunTest(unsigned int id);
+            mfxI32 RunTest_FEI(const mfxU32 id);
+            mfxI32 RunTest(mfxU32 id, bool is_HEVCeFEI = false);
+
             mfxStatus ProcessSurface(mfxFrameSurface1& s);
             mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
 
@@ -918,13 +934,23 @@ namespace hevce_nalutype
         return MFX_ERR_NONE;
     }
 
+    mfxI32 TestSuite::RunTest_FEI(const mfxU32 id)
+    {
+        return RunTest(id, true);
+    }
 
-    int TestSuite::RunTest(unsigned int id)
+    mfxI32 TestSuite::RunTest(mfxU32 id, bool is_HEVCeFEI)
     {
         mfxStatus sts = MFX_ERR_NONE;
         const tc_struct& tc = test_case[id];
 
         TS_START;
+
+        if (is_HEVCeFEI) {
+            CHECK_HEVC_FEI_SUPPORT();
+        }
+
+        MFXInit();
 
         mfxExtCodingOption2& co2 = m_par;
         co2.BRefType = tc.BRefType;
@@ -941,12 +967,22 @@ namespace hevce_nalutype
 #endif
 
         m_par.mfx.FrameInfo.PicStruct = tc.PicStruct;
-        m_par.mfx.EncodedOrder  = tc.EncodedOrder;
-        m_par.mfx.GopRefDist  = tc.GopRefDist;
-        m_par.mfx.GopOptFlag  = tc.GopOptFlag;
+        m_par.mfx.EncodedOrder = tc.EncodedOrder;
+        m_par.mfx.GopRefDist = tc.GopRefDist;
+        m_par.mfx.GopOptFlag = tc.GopOptFlag;
         m_par.mfx.IdrInterval = tc.IdrInterval;
         m_par.AsyncDepth = 1;
-        m_par.mfx.GopPicSize  = 15;
+        m_par.mfx.GopPicSize = 15;
+
+        if (is_HEVCeFEI) {
+            g_tsPlugin.Reg(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC, MFX_PLUGINID_HEVC_FEI_ENCODE);
+            m_uid = g_tsPlugin.UID(MFX_PLUGINTYPE_VIDEO_ENC, MFX_CODEC_HEVC);
+            m_loaded = false;
+            Load();
+
+            mfxExtFeiHevcEncFrameCtrl& control = m_ctrl;
+            SetDefaultsToCtrl(m_ctrl);
+        }
 
         Init();
         GetVideoParam();
@@ -959,5 +995,6 @@ namespace hevce_nalutype
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS(hevce_nalutype);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_nalutype, RunTest, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_fei_nalutype, RunTest_FEI, n_cases);
 }
