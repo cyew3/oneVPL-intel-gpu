@@ -2530,7 +2530,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (platform >= MFX_HW_ICL)
+    if (platform > MFX_HW_ICL_LP)
     {
         if (bRateControlLA(par.mfx.RateControlMethod))
         {

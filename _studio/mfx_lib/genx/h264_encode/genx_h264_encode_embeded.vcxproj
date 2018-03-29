@@ -399,6 +399,10 @@ copy $(MEDIASDK_ROOT)\CMRT\compiler\lib\x86\libcm.dll ..\..\..\..\build\win_$(Pl
     </ClCompile>
     <ClCompile Include="src\genx_cnl_histogram_isa.cpp" />
     <ClCompile Include="src\genx_cnl_simple_me_isa.cpp" />
+    <ClCompile Include="src\genx_icl_histogram_isa.cpp" />
+    <ClCompile Include="src\genx_icl_simple_me_isa.cpp" />
+    <ClCompile Include="src\genx_icllp_histogram_isa.cpp" />
+    <ClCompile Include="src\genx_icllp_simple_me_isa.cpp" />
     <ClCompile Include="src\genx_histogram.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_HSW_Emu|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_THM|Win32'">true</ExcludedFromBuild>

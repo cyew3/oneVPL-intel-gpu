@@ -49,5 +49,17 @@
     <ClInclude Include="include\genx_cnl_simple_me_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\genx_icl_histogram_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_icl_simple_me_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_icllp_histogram_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_icllp_simple_me_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -713,6 +713,7 @@ SVCEncMB_I(SurfaceIndex CurbeDataSurfIndex,
     write(MBDataSurfIndex, offset, MBData.select<MBDATA_SIZE, 1>(0));
 
     cm_fence();
+    cm_signal();
 }
 
 _GENX_ inline
@@ -1958,6 +1959,7 @@ SVCEncMB_P(SurfaceIndex CurbeDataSurfIndex,
     write(MBDataSurfIndex, offset, MBData);
 
     cm_fence();
+    cm_signal();
 }
 
 _GENX_ inline
@@ -2817,6 +2819,7 @@ SVCEncMB_B(SurfaceIndex CurbeDataSurfIndex,
     write(MBDataSurfIndex, offset, MBData);
 
     cm_fence();
+    cm_signal();
 }
 
 /****************************************************************************************/
