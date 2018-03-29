@@ -138,6 +138,11 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
     {
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, MSDK_WAIT_INTERVAL);
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            msdk_printf(MSDK_STRING("GPU hang happened\n"));
+            sts = MFX_ERR_NONE;
+        }
         MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
 
         if (MFX_ERR_NONE == sts)
