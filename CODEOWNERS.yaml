@@ -207,6 +207,8 @@ vp8e:
   paths:
   - _studio/mfx_lib/encode/vp8
   - _studio/mfx_lib/encode_hw/vp8
+  - _studio/mfx_lib/shared/include/mfx_vpx_dec
+  - _studio/mfx_lib/shared/src/mfx_vpx_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/vp8e
   reviewers:
   - alexey.s.kokoshnikov@intel.com
@@ -215,12 +217,15 @@ vp8e:
 vp9d:
   paths:
   - _studio/mfx_lib/decode/vp9
+  - _studio/mfx_lib/shared/include/mfx_vpx_dec
+  - _studio/mfx_lib/shared/src/mfx_vpx_dec
   - _studio/shared/umc/codec/vp9_dec
   - _testsuite/msdk_ts/src/gmock/test_suites/vp9d
   reviewers:
   - sergey.solodkov@intel.com
   - alexei.leonenko@intel.com
   - dmitry.gurulev@intel.com
+  - mikhailx.aksenov@intel.com
 
 vp9e:
   paths:
@@ -231,6 +236,18 @@ vp9e:
   - alexei.leonenko@intel.com
   - stanislav.efremov@intel.com
   - dmitryx.malishev@intel.com
+
+av1d:
+  paths:
+  - _studio/mfx_lib/decode/av1
+  - _studio/mfx_lib/shared/include/mfx_vpx_dec
+  - _studio/mfx_lib/shared/src/mfx_vpx_dec
+  - _studio/shared/umc/codec/av1_dec
+  - _studio/shared/umc/io/umc_va/include/umc_av1
+  - _testsuite/msdk_ts/src/gmock/test_suites/av1d
+  reviewers:
+  - dmitry.gurulev@intel.com
+  - stanislav.efremov@intel.com
 
 vpp:
   paths:
