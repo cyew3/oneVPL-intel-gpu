@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXAUDIOPLUSPLUS_INTERNAL_H
@@ -158,7 +158,8 @@ public:
     mfxStatus DecodeFrameCheck(mfxBitstream *bs,  mfxAudioFrame *aFrame,
         MFX_ENTRY_POINT *pEntryPoint)
     {
-        pEntryPoint = pEntryPoint;
+        (void)pEntryPoint;
+
         return DecodeFrameCheck(bs, aFrame);
     }
     virtual

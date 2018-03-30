@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_AUDIO_RENDER_H__
@@ -71,9 +71,10 @@ public:
     virtual Status SetParams(MediaReceiverParams *pMedia,
                              Ipp32u  trickModes = UMC_TRICK_MODES_NO)
     {
-      pMedia = pMedia; // avoid unreference parameter warning
-      trickModes = trickModes;
-      return UMC_ERR_NOT_IMPLEMENTED;
+        (void)pMedia;
+        (void)trickModes;
+
+        return UMC_ERR_NOT_IMPLEMENTED;
     }
 
 };

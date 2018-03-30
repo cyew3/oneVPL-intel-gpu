@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXVIDEOPLUSPLUS_INTERNAL_H
@@ -350,7 +350,8 @@ public:
                                mfxEncodeInternalParams *pInternalParams,
                                MFX_ENTRY_POINT *pEntryPoint)
     {
-        pEntryPoint = pEntryPoint;
+        (void)pEntryPoint;
+
         return EncodeFrameCheck(ctrl, surface, bs, reordered_surface, pInternalParams);
     }
     virtual
@@ -403,7 +404,11 @@ public:
                                mfxFrameSurface1 *surface_work,
                                mfxFrameSurface1 **surface_out,
                                MFX_ENTRY_POINT *pEntryPoint) = 0;
-    virtual mfxStatus SetSkipMode(mfxSkipMode mode) {mode=mode;return MFX_ERR_UNSUPPORTED;};
+    virtual mfxStatus SetSkipMode(mfxSkipMode mode) {
+        (void)mode;
+
+        return MFX_ERR_UNSUPPORTED;
+    }
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload) = 0;
 
 };
@@ -434,8 +439,9 @@ public:
                             mfxExtVppAuxData *aux,
                             MFX_ENTRY_POINT *pEntryPoint)
     {
-        pEntryPoint = pEntryPoint;
-        aux = aux;
+        (void)pEntryPoint;
+        (void)aux;
+
         return VppFrameCheck(in, out);
     }
 

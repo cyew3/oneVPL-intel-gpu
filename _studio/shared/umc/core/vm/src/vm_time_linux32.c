@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "vm_time.h"
@@ -101,12 +101,10 @@ vm_status vm_time_close(vm_time_handle *handle)
 /* Start the process of time measure */
 vm_status vm_time_start(vm_time_handle handle, vm_time *m)
 {
+   (void)handle;
+
    if (NULL == m)
        return VM_NULL_PTR;
-
-   /*  touch unreferenced parameters.
-       Take into account Intel's compiler. */
-   handle = handle;
 
    m->start = vm_time_get_tick();
    return VM_OK;
@@ -116,12 +114,10 @@ vm_status vm_time_start(vm_time_handle handle, vm_time *m)
 /* Stop the process of time measure and obtain the sampling time in seconds */
 Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m)
 {
+   (void)handle;
+
    Ipp64f speed_sec;
    Ipp64s end;
-
-   /*  touch unreferenced parameters.
-       Take into account Intel's compiler. */
-   handle = handle;
 
    end = vm_time_get_tick();
    m->diff += (end - m->start);

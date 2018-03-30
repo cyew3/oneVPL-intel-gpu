@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -267,7 +267,7 @@ vm_thread_priority vm_get_current_thread_priority()
 
 void vm_set_current_thread_priority(vm_thread_priority priority)
 {
-    priority = priority;
+    (void)priority;
 }
 
 void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask)

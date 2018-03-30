@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_video_data.h"
@@ -325,10 +325,9 @@ Status VideoData::SetAlignment(Ipp32s iAlignment)
 // return UMC_OK on success, UMC_ERR_INVALID_STREAM if image is improperly described
 Status VideoData::Alloc(size_t requiredSize)
 {
-    size_t nSize;
+    (void)requiredSize;
 
-    // touch unreferenced parameters
-    requiredSize = requiredSize;
+    size_t nSize;
 
     // Release previous buffer
     ReleaseImage();

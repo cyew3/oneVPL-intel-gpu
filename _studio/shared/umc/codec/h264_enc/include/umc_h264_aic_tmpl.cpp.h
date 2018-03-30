@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -1080,8 +1080,7 @@ void H264ENC_MAKE_NAME(PlanarPredictLuma)(
         }
     }
 #else
-    // disable warning unref param
-    bitDepth = bitDepth;
+    (void)bitDepth;
 #undef xx
 #define xx(d) \
     _p_0 = _mm_srai_epi16(_p_y_0, 5); \

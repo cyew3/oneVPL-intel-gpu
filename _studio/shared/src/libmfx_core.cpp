@@ -1025,6 +1025,13 @@ mfxStatus CommonCORE::DecreasePureReference(mfxU16& Locked)
     }
 }// CommonCORE::IncreasePureReference(mfxFrameData *ptr)
 
+void CommonCORE::GetVA(mfxHDL* phdl, mfxU16 type)
+{
+    (void)type;
+
+    *phdl = 0;
+} // void CommonCORE::GetVA(mfxHDL* phdl, mfxU16 type)
+
 mfxStatus CommonCORE::IncreaseReference(mfxFrameData *ptr, bool ExtendedSearch)
 {
     MFX_CHECK_NULL_PTR1(ptr);

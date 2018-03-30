@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "math.h"
@@ -281,6 +281,9 @@ mfxStatus VideoVPP_SW::RunVPPTask(mfxFrameSurface1* in, mfxFrameSurface1* out, F
 
 mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
+    (void)threadNumber;
+    (void)callNumber;
+
     mfxStatus tskRes;
 
     VideoVPP_SW *pVPP = (VideoVPP_SW *)pState;
@@ -290,9 +293,6 @@ mfxStatus RunFrameVPPRoutine(void *pState, void *pParam, mfxU32 threadNumber, mf
     internalParam.aux = pAsyncParams->aux;
     internalParam.inPicStruct = pAsyncParams->inputPicStruct;
     internalParam.inTimeStamp = pAsyncParams->inputTimeStamp;
-
-    threadNumber = threadNumber;
-    callNumber = callNumber;
 
     tskRes = pVPP->RunVPPTask(pAsyncParams->surf_in, pAsyncParams->surf_out, &internalParam);
 
@@ -320,8 +320,9 @@ mfxStatus VideoVPP_SW::ResetTaskCounters()
 
 mfxStatus CompleteFrameVPPRoutine(void *pState, void *pParam, mfxStatus taskRes)
 {
+    (void)taskRes;
+
     VideoVPP_SW *pVPP = (VideoVPP_SW *)pState;
-    taskRes = taskRes;
 
     if (pParam)
     {

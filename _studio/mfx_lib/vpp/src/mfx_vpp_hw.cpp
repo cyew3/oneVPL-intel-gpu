@@ -3016,7 +3016,6 @@ mfxStatus VideoVPPHW::VppFrameCheck(
 {
     UMC::AutomaticUMCMutex guard(m_guard);
 
-    pEntryPoint= pEntryPoint;
     mfxStatus sts;
     mfxStatus intSts = MFX_ERR_NONE;
 
@@ -4389,12 +4388,11 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
 mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
+    (void)threadNumber;
+    (void)callNumber;
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::AsyncTaskSubmission");
     mfxStatus sts;
-
-    // touch unreferenced parameters(s)
-    threadNumber = threadNumber;
-    callNumber = callNumber;
 
 #ifdef MFX_ENABLE_MCTF
     VideoVPPHW *pHwVpp = (VideoVPPHW *)pState;
@@ -4413,11 +4411,11 @@ mfxStatus VideoVPPHW::AsyncTaskSubmission(void *pState, void *pParam, mfxU32 thr
 
 mfxStatus VideoVPPHW::QueryTaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber)
 {
+    (void)threadNumber;
+    (void)callNumber;
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoVPPHW::QueryTaskRoutine");
     mfxStatus sts = MFX_ERR_NONE;
-
-    threadNumber = threadNumber;
-    callNumber   = callNumber;
 
     VideoVPPHW *pHwVpp = (VideoVPPHW *) pState;
     DdiTask *pTask     = (DdiTask*) pParam;

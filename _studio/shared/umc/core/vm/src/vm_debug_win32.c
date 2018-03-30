@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if _MSC_VER >= 1600
@@ -307,15 +307,13 @@ vm_debug_output vm_debug_setoutput(vm_debug_output output)
 
 void vm_debug_setfile(vm_char *file, Ipp32s truncate)
 {
-    // touch unreferenced parameters
-    file = file;
-    truncate = truncate;
+    (void)file;
+    (void)truncate;
 }
 
 void vm_debug_message(const vm_char *format, ...)
 {
-    // touch unreferenced parameters
-    format = format;
+    (void)format;
 }
 
 #endif /* VM_DEBUG */
@@ -370,8 +368,7 @@ ErrorStringTable[] =
 
 Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, Ipp32u line)
 {
-    /* touch unreferenced parameter */
-    pthis = pthis;
+    (void)pthis;
 
 #ifdef VM_DEBUG
     {
@@ -399,11 +396,11 @@ Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *fun
     }
 #else
     // touch unreferenced parameters
-    hr = hr;
-    mess = mess;
-    func = func;
-    file = file;
-    line = line;
+    (void)hr;
+    (void)mess;
+    (void)func;
+    (void)file;
+    (void)line;
 #endif
 
     return hr;

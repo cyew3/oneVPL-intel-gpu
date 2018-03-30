@@ -2459,7 +2459,7 @@ UMC::Status TaskSupplier_H265::AllocateFrameData(H265DecoderFrame * pFrame, Ippi
 #ifndef MFX_VA
     pFrame->allocateCodingData(pSeqParamSet, pPicParamSet);
 #else
-    pPicParamSet = pPicParamSet;
+    (void)pPicParamSet;
 #endif
 
     return UMC::UMC_OK;

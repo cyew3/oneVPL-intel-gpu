@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -4023,8 +4023,6 @@ JERRCODE CJPEGDecoder::ReconstructMCURowLS(
   IppiSize  roi;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
-
-  thread_id = thread_id; // remove warning
 
   roi.width  = m_dst.width;
   roi.height = 1;
