@@ -6044,7 +6044,7 @@ mfxStatus  MfxHwH264Encode::CopyBitstream(VideoCORE           & core,
                                           mfxU8 *             bsData,
                                           mfxU32              bsSizeAvail)
 {
-    mfxFrameData bitstream = { 0 };
+    mfxFrameData bitstream = {};
 
     FrameLocker lock(&core, bitstream, task.m_midBit[fieldId]);
     MFX_CHECK(video.Protected == 0 || task.m_notProtected, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -6416,7 +6416,7 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfo(DdiTask &  task, mfxU32  MaxSliceWei
 {
     if (task.m_SliceInfo.size() == 0)  return MFX_ERR_NONE;
 
-    SliceStructInfo new_info[256] = {0};
+    SliceStructInfo new_info[256] = {};
     mfxU32  new_slice = 0;
     mfxU32  curMB = 0;
     mfxU32  old_slice = 0;
@@ -6476,9 +6476,9 @@ mfxStatus MfxHwH264Encode::CorrectSliceInfoForsed(DdiTask & task, mfxU32 widthLa
     if (!freeSlisesMax)
         return MFX_ERR_NONE;
 
-    mfxU32 bigSlices[256] ={0};
+    mfxU32 bigSlices[256] = {0};
     mfxU32 numBigSlices = 0;
-    SliceStructInfo new_info[256] = {0};
+    SliceStructInfo new_info[256] = {};
 
     mfxU32  widthMB   =  task.m_yuv->Info.Width/16;
     mfxU32  heightMB  =  task.m_yuv->Info.Height/16;

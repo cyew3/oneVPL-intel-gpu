@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <assert.h>
@@ -1143,7 +1143,7 @@ else {                                    \
 mfxStatus LoadSPSPPS(const mfxVideoParam* in, H264SeqParamSet& seq_parms, H264PicParamSet& pic_parms)
 {
     mfxExtCodingOptionSPSPPS* opt = 0;
-    mfxExtCodingOption sExtOpt ={0,};
+    mfxExtCodingOption sExtOpt = {};
     mfxExtCodingOption* extopt;
     mfxU32 tmp, i;
     mfxI32 tmps;

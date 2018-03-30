@@ -140,7 +140,7 @@ namespace
     {
         mfxExtMVCSeqDesc const * extMvc = GetExtBuffer(video);
 
-        mfxExtSpsHeader sps = { 0 };
+        mfxExtSpsHeader sps = {};
 
         InputBitstream ibs(avcSpsBegin, avcSpsEnd);
         ReadSpsHeader(ibs, sps);
@@ -920,7 +920,7 @@ mfxStatus ImplementationMvc::QueryIOSurf(
         inPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY,
         MFX_ERR_INVALID_VIDEO_PARAM);
 
-    ENCODE_CAPS hwCaps = { 0 };
+    ENCODE_CAPS hwCaps = {};
     mfxStatus sts = QueryHwCaps(core, hwCaps, par);
     if (sts != MFX_ERR_NONE)
         return MFX_WRN_PARTIAL_ACCELERATION;
@@ -1070,7 +1070,7 @@ mfxStatus ImplementationMvc::Init(mfxVideoParam *par)
 // MVC BD }
 
     // allocate raw/recon/bitstream surfaces
-    mfxFrameAllocRequest request = { 0 };
+    mfxFrameAllocRequest request = {};
     request.Info = m_video.mfx.FrameInfo;
 
     // allocate raw surfaces
@@ -2158,7 +2158,7 @@ mfxStatus ImplementationMvc::UpdateBitstream(
     // copy per-view bitstreams to system memory
     for (mfxU32 viewIdx = 0; viewIdx < extMvc->NumView; viewIdx++)
     {
-        mfxFrameData d3dBits = { 0, };
+        mfxFrameData d3dBits = {};
         DdiTask & subTask = *task[viewIdx];
 
         FrameLocker lock(
@@ -2353,7 +2353,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamBaseView(
     mfxU8 * mvcBitsEnd   = bs.Data + bs.MaxLength;
 
     // copy per-view bitstreams to system memory
-    mfxFrameData d3dBits = { 0, };
+    mfxFrameData d3dBits = {};
 
     FrameLocker lock(
         m_core,
@@ -2459,7 +2459,7 @@ mfxStatus ImplementationMvc::UpdateBitstreamDepView(
     mfxU8 * mvcBitsEnd   = bs.Data + bs.MaxLength;
 
     // copy per-view bitstreams to system memory
-    mfxFrameData d3dBits = { 0, };
+    mfxFrameData d3dBits = {};
     mfxU32 encIdx = m_numEncs > 1 ? task.m_viewIdx : 0;
 
     FrameLocker lock(
@@ -2749,8 +2749,8 @@ void ImplementationMvc::PatchTask(MvcTask const & mvcTask, DdiTask & curTask, mf
                 curTask.m_type[fieldId] &= ~MFX_FRAMETYPE_IDR;
 #ifdef MVC_ADD_REF
                 ArrayDpbFrame & curDpb = curTask.m_dpb[0];
-                mfxFrameData sourceD3DBits = { 0, };
-                mfxFrameData distD3DBits = { 0, };
+                mfxFrameData sourceD3DBits = {};
+                mfxFrameData distD3DBits = {};
 
                 // add inter-view reference to DPB
                 DpbFrame newDpbFrame;
@@ -2981,7 +2981,7 @@ mfxStatus ImplementationMvc::CopyRawSurface(DdiTask const & task)
 {
     if (m_inputFrameType == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
-        mfxFrameData d3dSurf = { 0 };
+        mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = task.m_yuv->Data;
 
         mfxU32 numRawSurfPerView = CalcNumSurfRaw(m_video);

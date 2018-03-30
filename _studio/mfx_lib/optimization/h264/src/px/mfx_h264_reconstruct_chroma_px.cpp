@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfxvideo.h"
@@ -80,7 +80,7 @@ void ippiReconstructChromaInter4x4MB_H264_16s8u_C2R(Coeffs **ppSrcDstCoeff,
                                                                    Ipp32u bypassFlag,
                                                                    Ipp32u bitDepth)
 {
-    Coeffs ChromaDC[2][8] = {0}; /* for DC coefficients of chroma */
+    Coeffs ChromaDC[2][8] = { {}, {} }; /* for DC coefficients of chroma */
     Plane *pDst, *pTmpDst;
     Coeffs tmpBuf[16] = {0};
     Ipp32u uBlock, i;

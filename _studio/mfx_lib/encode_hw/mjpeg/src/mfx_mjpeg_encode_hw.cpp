@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1092,7 +1092,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
     // WA for RGB swapping issue
     if (enc.m_vParam.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4)
     {
-        mfxFrameData dstSurf = { 0 };
+        mfxFrameData dstSurf = {};
         bool bExternalFrameLocked = false;
 
         if(enc.m_pCore->GetVAType() == MFX_HW_VAAPI )

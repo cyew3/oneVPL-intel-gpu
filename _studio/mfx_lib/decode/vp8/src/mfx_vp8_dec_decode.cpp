@@ -730,19 +730,19 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
 
     if (img)
     {
-        mfxFrameData inData = { 0 };
+        mfxFrameData inData = {};
         inData.Y = img->planes[VPX_PLANE_Y];
         inData.U = img->planes[VPX_PLANE_U];
         inData.V = img->planes[VPX_PLANE_V];
         inData.Pitch = (mfxU16)img->stride[VPX_PLANE_Y];
 
-        mfxFrameInfo inInfo = { 0 };
+        mfxFrameInfo inInfo = {};
         inInfo.Width  = (mfxU16)img->w;
         inInfo.Height = (mfxU16)img->h;
         inInfo.CropW  = (mfxU16)img->d_w;
         inInfo.CropH  = (mfxU16)img->d_h;
 
-        mfxFrameData outData = { 0 };
+        mfxFrameData outData = {};
         outData.Y  = (mfxU8*)p_thread_info->m_p_video_data->GetPlanePointer(0);
         outData.UV = (mfxU8*)p_thread_info->m_p_video_data->GetPlanePointer(1);
         outData.Pitch = (mfxU16)p_thread_info->m_p_video_data->GetPlanePitch(0);
