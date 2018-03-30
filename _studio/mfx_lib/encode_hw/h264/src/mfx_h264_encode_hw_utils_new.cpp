@@ -2457,7 +2457,7 @@ mfxStatus MfxHwH264Encode::CopyRawSurfaceToVideoMemory(
             surface->Data.DataFlag   = task.m_yuv->Data.DataFlag;
         }
 
-        mfxFrameData d3dSurf = { 0 };
+        mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = surface->Data;
 
         //FrameLocker lock1(&core, d3dSurf, task.m_midRaw);
@@ -2503,13 +2503,13 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
         sts = core.GetFrameHDL(task.m_midRaw, &task.m_handleRaw.first);
         MFX_CHECK_STS(sts);
     }
-    
+
 
     if (task.GetFrameType() & MFX_FRAMETYPE_I)
     {
-        mfxFrameData curr = { 0 };
+        mfxFrameData curr = {};
         curr.MemId = task.m_midRaw;
-        FrameLocker lock1(&core, curr, task.m_midRaw);  
+        FrameLocker lock1(&core, curr, task.m_midRaw);
         mfxU32 size = curr.Pitch*video.mfx.FrameInfo.Height;
         memset(curr.Y, 0, size);
 
@@ -2529,8 +2529,8 @@ mfxStatus MfxHwH264Encode::CodeAsSkipFrame(     VideoCORE &            core,
     if (task.GetFrameType() & MFX_FRAMETYPE_P)
     {
         DpbFrame& refFrame = task.m_dpb[0][task.m_list0[0][0] & 127];
-        mfxFrameData curr = { 0 };
-        mfxFrameData ref  = { 0 };
+        mfxFrameData curr = {};
+        mfxFrameData ref = {};
         curr.MemId = task.m_midRaw;
         ref.MemId  = refFrame.m_midRec;
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -80,10 +80,12 @@ IppStatus _own_ippiReconstructIntraNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp
 IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType)
 {
     IppiSize  DstSizeNZ[4];
-    static IppiSize QuantSize[8] = {VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK,
-                                    VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK,
-                                    VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK/2,
-                                    VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK/2};
+    static IppiSize QuantSize[8] = {
+                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK, 0},
+                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK, 0},
+                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK/2, 0},
+                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK/2, 0}
+                                  };
 
     //quantization and transformation
     if (VC1_BLK_INTER8X8 == BlkType)
@@ -193,10 +195,12 @@ IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp
 IppStatus _own_ippiReconstructInterNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType)
 {
     IppiSize  DstSizeNZ[4];
-    static IppiSize QuantSize[8] = {VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK,
-                                    VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK,
-                                    VC1_PIXEL_IN_BLOCK, VC1_PIXEL_IN_BLOCK/2,
-                                    VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK/2};
+    static IppiSize QuantSize[8] = {
+                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK, 0},
+                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK, 0},
+                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK/2, 0},
+                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK/2, 0}
+                                  };
 
     //quantization and transformation
     if (VC1_BLK_INTER8X8 == BlkType)

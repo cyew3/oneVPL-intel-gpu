@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -7825,7 +7825,7 @@ Status MFXVideoENCODEH264::ReorderListSVC( H264CoreEncoder_8u16s* core_enc, Enum
 
     mfxExtAVCRefListCtrl framelist = {{MFX_EXTBUFF_AVC_REFLIST_CTRL, sizeof(mfxExtAVCRefListCtrl)}, };
     mfxExtBuffer* bufptr = &framelist.Header;
-    mfxEncodeCtrl ctrl = {0,}, *pCtrl = 0;
+    mfxEncodeCtrl ctrl = {}, *pCtrl = 0;
     mfxU32 idx = 0, addedLT = 0;
     H264EncoderFrame_8u16s *pFrmLatest = 0;
 

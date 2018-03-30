@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -18,13 +18,13 @@
 
 static const Ipp32s VC1_VA_Bfraction_tbl[7][7] =
 {
-    0, 1, 3, 5,  114, 116, 122,
-    0, 2, 0, 6,    0, 117,   0,
-    0, 0, 4, 112,  0, 118, 123,
-    0, 0, 0, 113,  0, 119,   0,
-    0, 0, 0, 0,  115, 120, 124,
-    0, 0, 0, 0,    0, 121,   0,
-    0, 0, 0, 0,    0,   0, 125
+    { 0, 1, 3, 5,  114, 116, 122 },
+    { 0, 2, 0, 6,    0, 117,   0 },
+    { 0, 0, 4, 112,  0, 118, 123 },
+    { 0, 0, 0, 113,  0, 119,   0 },
+    { 0, 0, 0, 0,  115, 120, 124 },
+    { 0, 0, 0, 0,    0, 121,   0 },
+    { 0, 0, 0, 0,    0,   0, 125 }
 };
 
 #ifdef ALLOW_SW_VC1_FALLBACK

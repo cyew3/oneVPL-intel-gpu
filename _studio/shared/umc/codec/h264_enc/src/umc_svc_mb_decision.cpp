@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "ippdefs.h"
@@ -359,7 +359,7 @@ Ipp32u SVCBaseMode_MB_Decision(
       H264BsBase *pBitstream;
       Ipp32u sad_nr = 0;
       H264MacroblockLocalInfo sLocalMBinfo = {0,}, *pLocalMBinfo = 0, sLocalMBinfo0;
-      H264MacroblockGlobalInfo sGlobalMBinfo = {0,}, *pGlobalMBinfo = 0, sGlobalMBinfo0;
+      H264MacroblockGlobalInfo sGlobalMBinfo = {}, *pGlobalMBinfo = 0, sGlobalMBinfo0;
 
       baseModeSAD = 0;
       sad_nr = 0;

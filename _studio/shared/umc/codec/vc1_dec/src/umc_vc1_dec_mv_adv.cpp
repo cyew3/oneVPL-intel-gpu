@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1237,14 +1237,14 @@ void PredictInterlace2MV_Field_Adv(VC1MB* pCurrMB,
     Ipp32u SameTopField = 0;
     Ipp32u SameBottomField = 0;
 
-    Ipp16s MV_px[2][3] = {0,0,0,0,0,0};
-    Ipp16s MV_py[2][3] = {0,0,0,0,0,0};
+    Ipp16s MV_px[2][3] = { {0,0,0}, {0,0,0} };
+    Ipp16s MV_py[2][3] = { {0,0,0}, {0,0,0} };
 
-    Ipp16s MV_px_sameField[2][3] = {0,0,0,0,0,0};
-    Ipp16s MV_py_sameField[2][3] = {0,0,0,0,0,0};
+    Ipp16s MV_px_sameField[2][3] = { {0,0,0}, {0,0,0} };
+    Ipp16s MV_py_sameField[2][3] = { {0,0,0}, {0,0,0} };
 
-    Ipp16s MV_px_oppField[2][3] = {0,0,0,0,0,0};
-    Ipp16s MV_py_oppField[2][3] = {0,0,0,0,0,0};
+    Ipp16s MV_px_oppField[2][3] = { {0,0,0}, {0,0,0} };
+    Ipp16s MV_py_oppField[2][3] = { {0,0,0}, {0,0,0} };
 
     VC1MB *pA = NULL, *pB = NULL, *pC = NULL;
 

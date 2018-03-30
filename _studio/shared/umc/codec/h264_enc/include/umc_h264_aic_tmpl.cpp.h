@@ -1593,7 +1593,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectChromaMBs_8x8_NV12)(
         __ALIGN16 PIXTYPE uVertPred[2][64];
         __ALIGN16 PIXTYPE uHorizPred[2][64];
         __ALIGN16 PIXTYPE uDCPred[2][64];
-        Ipp32u uSum[2][16] = {0};
+        Ipp32u uSum[2][16] = {};
         Enum8x8PredType Best8x8Type;
         Ipp32u uSmallestSAD, idx;
         bool topAvailable = curr_slice->m_cur_mb.IntraNeighbours.mb_B >= 0;
@@ -2446,8 +2446,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_AIModeSelectOneMB_8x8)(
     //bool right_avbl = curr_slice->m_cur_mb.BlockNeighbours..mb_num >= 0;
     H264BlockLocation mb_ALoc;
     H264BlockLocation mb_BLoc;
-    H264MacroblockGlobalInfo mb_A = {0,};
-    H264MacroblockGlobalInfo mb_B = {0,};
+    H264MacroblockGlobalInfo mb_A = {};
+    H264MacroblockGlobalInfo mb_B = {};
 
     //Check availability
     if( uBlock & 0x2 ){
@@ -3375,8 +3375,8 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra8x8SelectRD)(
     bool right_above_avbl = curr_slice->m_cur_mb.IntraNeighbours.mb_C >= 0;
     H264BlockLocation mb_ALoc;
     H264BlockLocation mb_BLoc;
-    H264MacroblockGlobalInfo mb_A = {0,};
-    H264MacroblockGlobalInfo mb_B = {0,};
+    H264MacroblockGlobalInfo mb_A = {};
+    H264MacroblockGlobalInfo mb_B = {};
 
     //Check availability
     if( uBlock & 0x2 ){
@@ -3982,7 +3982,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
     Ipp64u uSAD,uSmallestSAD;
     __ALIGN16 PIXTYPE uVertPred[2][64];   // predictors from above, 4 4x4 Predictor blocks, U & V //first up lines for each block, then line+1 for each block and so on
     __ALIGN16 PIXTYPE uHorizPred[2][64];  // predictors from left, 4 4x4 Predictor blocks, U & V
-    Ipp32u uSum[2][16] =  {0};     // for DC, U & V - 16 predictors (a - d) each
+    Ipp32u uSum[2][16] = {};     // for DC, U & V - 16 predictors (a - d) each
     PIXTYPE *pAbove, *pLeft;
     Enum8x8PredType Best8x8Type = PRED8x8_DC;
     Ipp32u i, j, plane, num_rows, num_cols, wide, blocks,idx;
@@ -4295,7 +4295,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
     __ALIGN16 PIXTYPE pUSrc[64];
     __ALIGN16 PIXTYPE pVSrc[64];
     PIXTYPE * pInitSrc;
-    Ipp32u uSum[2][16] =  {0};     // for DC, U & V - 16 predictors (a - d) each
+    Ipp32u uSum[2][16] = {};     // for DC, U & V - 16 predictors (a - d) each
     PIXTYPE *pAbove, *pLeft;
     Enum8x8PredType Best8x8Type = PRED8x8_DC;
     Ipp32u i, j, plane,idx;
