@@ -994,7 +994,10 @@ namespace hevce_level_profile
                     g_tsLog << "\n\nWARNING: 444 formats are only supported on VDENC!\n\n\n";
                     throw tsSKIP;
                 }
-
+                if (tc.sts == MFX_ERR_UNSUPPORTED && tc.type == SLICE)
+                {
+                    g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
+                }
                 if (g_tsStatus.m_expected != MFX_ERR_UNSUPPORTED)
                 {
                     if ((m_par.mfx.FrameInfo.Width > 4096) || (m_par.mfx.FrameInfo.Height > 2176))
