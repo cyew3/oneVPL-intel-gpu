@@ -4,6 +4,7 @@ __INTEL_COMPILER
 __IPPJ_H__
 __MFXCAMERA_H__
 _MSC_VER
+_MSVC_LANG
 _OPENMP
 _SOCKET_SUPPORT
 _status_report_debug

@@ -38,7 +38,9 @@ using namespace UMC_VP9_DECODER;
 
 #include "mfx_thread_task.h"
 
+#ifdef _MSVC_LANG
 #pragma warning(disable : 4505)
+#endif
 
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_decoder.h"

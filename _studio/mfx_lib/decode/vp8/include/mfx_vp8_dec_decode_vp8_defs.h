@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -312,7 +312,10 @@ enum
     VP8_MV_NUM_PARTITIONS
 };
 
+#ifdef _MSVC_LANG
 #pragma warning (disable: 4201)
+#endif
+
 union vp8_MotionVector
 {
   struct {
@@ -330,8 +333,10 @@ typedef struct _vp8_LoopFilterInfo
 
 } vp8_LoopFilterInfo;
 
-
+#ifdef _MSVC_LANG
 #pragma warning (disable: 4324)
+#endif
+
 typedef struct _vp8_MbInfo
 {
   __ALIGN16(Ipp16s, coeffs, 25*16);
@@ -349,7 +354,7 @@ typedef struct _vp8_MbInfo
   Ipp8u mode;
   Ipp8u modeUV;
 
-  Ipp8u refFrame;    
+  Ipp8u refFrame;
 
   vp8_LoopFilterInfo lfInfo;
 } vp8_MbInfo;

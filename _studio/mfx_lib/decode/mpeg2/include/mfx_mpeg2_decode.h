@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_DECODE_H__
@@ -393,7 +393,9 @@ protected:
     Ipp32s m_SkipLevel;
 };
 
+#ifdef _MSVC_LANG
 #pragma warning(default: 4324)
+#endif
 
 #endif //MFX_ENABLE_MPEG2_VIDEO_DECODE
 #endif //__MFX_MPEG2_DECODE_H__

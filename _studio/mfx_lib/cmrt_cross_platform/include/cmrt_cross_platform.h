@@ -92,9 +92,11 @@ private:
 #endif
 };
 
+#ifdef _MSVC_LANG
 #pragma warning(push)
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4201)
+#endif
 
 typedef void * AbstractSurfaceHandle;
 typedef void * AbstractDeviceHandle;
@@ -1878,7 +1880,9 @@ int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * b
 int ReadProgramJit(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len);
 int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options = NULL);
 
+#ifdef _MSVC_LANG
 #pragma warning(pop)
+#endif
 
 #if !defined(CM_WIN)
 #undef LONG
@@ -2700,7 +2704,9 @@ int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * b
 int ReadProgramJit(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len);
 int CreateKernel(CmDevice * device, CmProgram * program, const char * kernelName, const void * fncPnt, CmKernel *& kernel, const char * options = NULL);
 
+#ifdef _MSVC_LANG
 #pragma warning(pop)
+#endif
 
 #if !defined(CM_WIN)
 #undef LONG

@@ -20,7 +20,9 @@
 #include "mfx_task.h"
 #include "vm_time.h"
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 using namespace MfxHwH264Encode;
 

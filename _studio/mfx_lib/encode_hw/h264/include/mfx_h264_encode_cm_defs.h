@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -13,10 +13,12 @@
 #include "mfx_common.h"
 #ifdef MFX_ENABLE_H264_VIDEO_ENCODE_HW
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4505)
 #pragma warning(push)
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4201)
+#endif
 
 #if !defined(OSX)
 #include "cmvm.h"
@@ -762,7 +764,9 @@ extern "C" void HistogramFields(
 
 };
 
+#ifdef _MSVC_LANG
 #pragma warning(pop)
+#endif
 
 #endif //!defined(OSX)
 

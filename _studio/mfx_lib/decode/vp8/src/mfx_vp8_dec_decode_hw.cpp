@@ -74,7 +74,9 @@ VideoDECODEVP8_HW::~VideoDECODEVP8_HW()
     Close();
 }
 
+#ifdef _MSVC_LANG
 #pragma warning (disable : 4189)
+#endif
 
 bool VideoDECODEVP8_HW::CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 {
