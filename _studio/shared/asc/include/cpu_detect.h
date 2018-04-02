@@ -20,7 +20,9 @@
 // 2) each stub configures a function pointer on first call
 //
 
+#ifdef _MSVC_LANG
 #pragma warning(disable:4505)
+#endif
 
 static mfxI32 CpuFeature_SSE41() {
 #if defined(_WIN32) || defined(_WIN64)
@@ -60,7 +62,9 @@ static mfxI32 CpuFeature_AVX2() {
 #endif //defined(__AVX2__)
 }
 
+#ifdef _MSVC_LANG
 #pragma warning(default:4505)
+#endif
 
 //
 // end Dispatcher

@@ -285,7 +285,9 @@ typedef struct {
 using namespace std;
 using namespace UMC;
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4311) // in HWVideoCORE::TraceFrames(): pointer truncation from 'void*' to 'int'
+#endif
 
 static
 eMFXHWType getPlatformType (VADisplay pVaDisplay)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -68,7 +68,7 @@ extern Ipp16s reset_dc[4];
 extern Ipp16s intra_dc_multi[4];
 
 
-struct sVideoFrameBuffer 
+struct sVideoFrameBuffer
 {
     typedef std::vector< std::pair<Ipp8u *,size_t> > UserDataVector;
 
@@ -100,7 +100,7 @@ struct sGOPTimeCode
     Ipp16u           gop_drop_frame_flag;
 };
 
-struct sSequenceHeader 
+struct sSequenceHeader
 {
     Ipp32s           mb_width[2*DPB_SIZE]; //the number of macroblocks in the row of the picture
     Ipp32s           mb_height[2*DPB_SIZE];//the number of macroblocks in the column of the picture
@@ -282,7 +282,9 @@ enum { FCodeFwdX = 0, FCodeFwdY = 1, FCodeBwdX = 2, FCodeBwdY = 3 };
 
 } // namespace UMC
 
+#ifdef _MSVC_LANG
 #pragma warning(default: 4324)
+#endif
 
 extern Ipp16s zero_memory[64*8];
 

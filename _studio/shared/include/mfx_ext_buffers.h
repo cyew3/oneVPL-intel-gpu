@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_EXT_BUFFERS_H__
@@ -85,7 +85,7 @@ typedef struct {
     mfxU16 LongStartCodes;          // tri-state, use long start-codes for all NALU
     mfxU16 CabacInitIdcPlus1;       // 0 - use default value, 1 - cabac_init_idc = 0 and so on
     mfxU16 NumActiveRefBL1;         //
-    mfxU16 QpUpdateRange;           // 
+    mfxU16 QpUpdateRange;           //
     mfxU16 RegressionWindow;        //
     mfxU16 LookAheadDependency;     // LookAheadDependency < LookAhead
     mfxU16 Hme;                     // tri-state
@@ -103,9 +103,9 @@ typedef struct {
 
 typedef struct {
     mfxExtBuffer Header;
-    mfxU16 bIntraQM;    
+    mfxU16 bIntraQM;
     mfxU16 bInterQM;
-    mfxU16 bChromaIntraQM;    
+    mfxU16 bChromaIntraQM;
     mfxU16 bChromaInterQM;
     mfxU8 IntraQM[64];
     mfxU8 InterQM[64];
@@ -134,7 +134,10 @@ typedef struct {
 #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
 #define MFX_EXTBUFF_VPP_VARIANCE_REPORT MFX_MAKEFOURCC('V','R','P','F')
 
+#ifdef _MSVC_LANG
 #pragma warning (disable: 4201 ) /* disable nameless struct/union */
+#endif
+
 typedef struct {
     mfxExtBuffer    Header;
     union{
@@ -151,7 +154,7 @@ typedef struct {
     mfxU16          SceneChangeRate;
     mfxU16          RepeatedFrame;
 
-    // variances 
+    // variances
     mfxU32          Variances[11];
 } mfxExtVppReport;
 #endif // #ifdef MFX_UNDOCUMENTED_VPP_VARIANCE_REPORT
@@ -223,8 +226,8 @@ typedef struct {
     mfxU16      IntraAngModesP;     // P slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
     mfxU16      IntraAngModesBRef;  // B Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
     mfxU16      IntraAngModesBnonRef;// B non Ref slice Intra Angular modes: 0-default 1-all; 2-all even + few odd; 3-gradient analysis + few modes, 99 -DC&Planar only, 100- disable
-    mfxU16      IntraChromaRDO;     // tri-state, adjusted intra chroma RDO 
-    mfxU16      FastInterp;         // tri-state, adjusted intra chroma RDO 
+    mfxU16      IntraChromaRDO;     // tri-state, adjusted intra chroma RDO
+    mfxU16      FastInterp;         // tri-state, adjusted intra chroma RDO
     mfxU16      SplitThresholdTabIndex;// 0,1,2 to select table
     mfxU16      CpuFeature;         // 0-auto, 1-px, 2-sse4, 3-sse4atom, 4-ssse3, 5-avx2
     mfxU16      TryIntra;           // Try Intra in Inter: 0-default, 1-Always, 2-Based on Content Analysis
@@ -239,7 +242,7 @@ typedef struct {
     mfxU16      IntraMinDepthSC;    // 0-default, 1+ use given
     mfxU16      InterMinDepthSTC;   // 0-default, 1+ use given
     mfxU16      MotionPartitionDepth;   // 0-default, 1+ use given
-    mfxU16      reserved1;          // 
+    mfxU16      reserved1;          //
     mfxU16      AnalyzeCmplx;       // 0-default, 1-off, 2-on
     mfxU16      RateControlDepth;   // how many frames analyzed by BRC including current frame
     mfxU16      LowresFactor;       // downscale factor for analyze complexity: 0-default 1-fullsize 2-halfsize 3-quartersize
@@ -249,7 +252,7 @@ typedef struct {
     mfxU16      NumRefLayers;       // 0-1-default, 2+ use given
     mfxU16      ConstQpOffset;      // allows setting negative QPs for 10bit: finalQP[IPB] = mfx.QP[IPB] - ConstQpOffset
     mfxU16      SplitThresholdMultiplier; //0-10-default: multipler = SplitThresholdMultiplier / 10.0
-    mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref 
+    mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref
     mfxU16      RepackForMaxFrameSize;
     mfxU16      reserved[34];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;

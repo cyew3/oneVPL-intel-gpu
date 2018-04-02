@@ -5,11 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4702 )
 #pragma warning( disable : 4100 )
+#endif
 
 #include "meforgen7_5.h"
 #if (__HAAR_SAD_OPT == 1)

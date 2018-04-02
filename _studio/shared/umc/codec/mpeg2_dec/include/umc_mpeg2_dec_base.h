@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 //  MPEG-2 is a international standard promoted by ISO/IEC and
@@ -85,7 +85,7 @@ namespace UMC
         Ipp32s GetCurrDecodingIndex(int task_num);
         Ipp32s GetNextDecodingIndex(int index);
         Ipp32s GetPrevDecodingIndex(int index);
-        
+
         void SetCorruptionFlag(int task_num);
         bool GetCorruptionFlag(int index);
 
@@ -250,6 +250,9 @@ namespace UMC
          virtual Status         UpdateFrameBuffer(int , Ipp8u* , Ipp8u*) = 0;
     };
 }
+
+#ifdef _MSVC_LANG
 #pragma warning(default: 4324)
+#endif
 
 #endif // UMC_ENABLE_MPEG2_VIDEO_DECODER

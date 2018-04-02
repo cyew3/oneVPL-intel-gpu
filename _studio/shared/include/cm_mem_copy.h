@@ -33,9 +33,11 @@
 #endif
 #if !defined(OSX)
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4505)
 #pragma warning(disable: 4100)
 #pragma warning(disable: 4201)
+#endif
 
 
 #include "umc_mutex.h"

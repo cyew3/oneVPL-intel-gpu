@@ -13,8 +13,10 @@
 
 #include "meforgen7_5.h"
 
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4100 )
+#endif
 
 // 16x16 intra prediction modes
 #define VER_16           0

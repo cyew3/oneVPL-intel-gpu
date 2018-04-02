@@ -14,12 +14,14 @@
 #include "meforgen7_5.h"
 #include "ipp.h"
 
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4127 )
 #pragma warning( disable : 4706 )
 #pragma warning( disable : 4189 )
 #pragma warning( disable : 4100 )
 #pragma warning( disable : 4702 )
+#endif
 
 
 //short const mvs[4] = {1,2,2,4};
