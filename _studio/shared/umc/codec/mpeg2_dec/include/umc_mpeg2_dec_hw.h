@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 //  MPEG-2 is a international standard promoted by ISO/IEC and
@@ -198,7 +198,10 @@ protected:
          Status BeginVAFrame(int task_num);
     };
 }
+
+#ifdef _MSVC_LANG
 #pragma warning(default: 4324)
+#endif
 
 #endif // #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 

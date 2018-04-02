@@ -24,7 +24,9 @@ mfx_reflect::AccessibleTypesCollection GetReflection()
 
 #ifdef MFX_TRACE_ENABLE
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127) // conditional expression is constant
+#endif
 
 extern "C"
 {

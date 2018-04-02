@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 //  MPEG-2 is a international standard promoted by ISO/IEC and
@@ -120,7 +120,7 @@ protected:
      virtual Status          ThreadingSetup(Ipp32s maxThreads);
      virtual Status UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*niqm);
      virtual void OnDecodePicHeaderEx(int task_num);
-     virtual Status ProcessRestFrame(int task_num);   
+     virtual Status ProcessRestFrame(int task_num);
      virtual void   quant_matrix_extension(int task_num);
 
     Status                  DecodeSlice_FrameI_420(VideoContext *video, int task_num);
@@ -174,6 +174,9 @@ private:
 
 };
 }
+
+#ifdef _MSVC_LANG
 #pragma warning(default: 4324)
+#endif
 
 #endif // UMC_ENABLE_MPEG2_VIDEO_DECODER

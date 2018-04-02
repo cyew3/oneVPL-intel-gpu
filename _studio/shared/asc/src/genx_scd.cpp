@@ -7,11 +7,15 @@
 //
 // Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
+
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4018)
 #pragma warning(disable: 4189)
 #pragma warning(disable: 4505)
+#endif
+
 #include "cm/cm.h"
 #ifndef ANDROID
   #include <cm/cmtl.h>
@@ -138,7 +142,7 @@ SubSamplePoint_b(SurfaceIndex ibuf, SurfaceIndex obuf, uint in_width, uint in_he
     write_plane(obuf, GENX_SURFACE_Y_PLANE, (ix * OUT_BLOCK), iy, out);
 }
 
-_GENX_MAIN_  void  
+_GENX_MAIN_  void
 surfaceCopy_Y(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, uint width_dword, uint height, uint width_stride)
 {
     //write Y plane
@@ -159,7 +163,7 @@ surfaceCopy_Y(SurfaceIndex INBUF_IDX, SurfaceIndex OUTBUF_IDX, uint width_dword,
 
     int horizOffset = get_thread_origin_x() * BLOCK_PIXEL_WIDTH;
     int vertOffset = get_thread_origin_y() * BLOCK_HEIGHT;
-    
+
     read(INBUF_IDX, horizOffset, vertOffset,     inData0);
     read(INBUF_IDX, horizOffset, vertOffset + 1, inData1);
     read(INBUF_IDX, horizOffset, vertOffset + 2, inData2);

@@ -54,7 +54,9 @@
 #include "umc_structures.h"
 #include "umc_dynamic_cast.h"
 
+#ifdef _MSVC_LANG
 #pragma warning(disable : 4201)
+#endif
 
 #ifdef UMC_VA_LINUX
 #include <va/va.h>
@@ -415,6 +417,8 @@ protected:
 
 #endif // __cplusplus
 
+#ifdef _MSVC_LANG
 #pragma warning(default : 4201)
+#endif
 
 #endif // __UMC_VA_BASE_H__

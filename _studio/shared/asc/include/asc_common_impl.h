@@ -164,7 +164,10 @@ static inline __m256i LoadPartialYmm(unsigned char *pSrc, mfxI32 len)
 }
 #endif //defined(__AVX2__)
 
+#ifdef _MSVC_LANG
 #pragma warning(disable:4505)
+#endif
+
 static void calc_RACA_4x4_C(mfxU8 *pSrc, mfxI32 pitch, mfxI32 *RS, mfxI32 *CS) {
     mfxI32 i, j;
     mfxU8 *pS = pSrc;
@@ -187,6 +190,9 @@ static void calc_RACA_4x4_C(mfxU8 *pSrc, mfxI32 pitch, mfxI32 *RS, mfxI32 *CS) {
     *CS += Cs >> 4;
     *RS += Rs >> 4;
 }
+
+#ifdef _MSVC_LANG
 #pragma warning(default:4505)
+#endif
 
 #endif //_ASC_COMMON_IMPL_H_

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -57,7 +57,9 @@ namespace UMC
 
 } // namespace UMC
 
+#ifdef _MSVC_LANG
 #pragma warning(default: 4324)
+#endif
 
 /*******************************************************/
 

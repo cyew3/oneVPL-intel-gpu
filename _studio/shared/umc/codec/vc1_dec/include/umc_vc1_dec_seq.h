@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -171,7 +171,10 @@ IppStatus DecodeBlockACIntra_VC1                        (IppiBitstream* pBitstre
                                                          const IppiACDecodeSet_VC1 * pDecodeSet,
                                                          IppiEscInfo_VC1* pEscInfo);
 
+#ifdef _MSVC_LANG
 #pragma warning(disable : 4100)
+#endif
+
 // interfaces should be tha same
 IppStatus DecodeBlockInter8x8_VC1                       (IppiBitstream* pBitstream,
                                                          Ipp16s* pDst,
@@ -219,7 +222,7 @@ Ipp32s CalculateLeftTopRightPositionFlag (VC1SingletonMB* sMB)
     {
         LeftTopRightPositionFlag |= VC1_LEFT_MB;
     }
-    
+
     //Right position
 
     if (sMB->m_currMBXpos == sMB->widthMB - 1)
