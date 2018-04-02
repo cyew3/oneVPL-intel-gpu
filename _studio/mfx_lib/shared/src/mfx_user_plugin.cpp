@@ -388,7 +388,9 @@ mfxStatus VideoUSERPlugin::GetPayload(mfxU64 *ts, mfxPayload *payload) {
     return m_plugin.Video->GetPayload(m_plugin.pthis, ts, payload);
 }
 
+#ifdef _MSVC_LANG
 #pragma warning (disable: 4100)
+#endif
 
 mfxStatus VideoUSERPlugin::GetFrameParam(mfxFrameParam *par) {
     (void)par;

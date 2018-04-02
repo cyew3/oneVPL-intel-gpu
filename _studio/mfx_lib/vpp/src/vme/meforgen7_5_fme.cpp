@@ -12,9 +12,11 @@
 #include "ipps.h"
 #include "meforgen7_5.h"
 
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4100 )
 #pragma warning( disable : 4702 )
+#endif
 
 #if (__HAAR_SAD_OPT == 1)
 #include "emmintrin.h"

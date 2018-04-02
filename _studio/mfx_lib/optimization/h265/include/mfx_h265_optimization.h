@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -18,7 +18,9 @@
 #include "ipps.h"
 #include <immintrin.h>
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
   #define H265_FORCEINLINE __forceinline

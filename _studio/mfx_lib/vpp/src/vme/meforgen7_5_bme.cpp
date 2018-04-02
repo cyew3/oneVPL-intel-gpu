@@ -5,13 +5,15 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "meforgen7_5.h"
 
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4100 )
+#endif
 
 /*****************************************************************************************************/
 int MEforGen75::BidirectionalMESearchUnit(I32 *dist, U8 *subpredmode)

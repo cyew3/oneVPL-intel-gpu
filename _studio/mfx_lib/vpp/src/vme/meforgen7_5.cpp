@@ -5,16 +5,18 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #include "ipps.h"
 #include "meforgen7_5.h"
 
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4244 )
 #pragma warning( disable : 4127 )
 #pragma warning( disable : 4706 )
+#endif
 
 const char version[]="[VideoLib%$#@&*]=IntelGen75VME Version 1.00a -01.01.2010";
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 // Inverse HEVC Transform functions optimised by intrinsics
@@ -29,7 +29,9 @@
 #include "mfx_ssse3_emulation.h"
 #endif
 
+#ifdef _MSVC_LANG
 #pragma warning (disable : 4310 ) /* disable cast truncates constant value */
+#endif
 
 namespace MFX_HEVC_PP
 {

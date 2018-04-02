@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H264_DISPATCHER_H__
@@ -15,7 +15,9 @@
 #include "ippvc.h"
 #include <cstddef>
 
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
   #define H264_FORCEINLINE __forceinline
