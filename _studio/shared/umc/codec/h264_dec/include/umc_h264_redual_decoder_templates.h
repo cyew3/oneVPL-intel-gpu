@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -19,11 +19,14 @@
 namespace UMC
 {
 
+#ifdef _MSVC_LANG
 // turn off the "code is not reachable from preceding code" remark
 #pragma warning(disable : 128)
+
 // turn off the "conditional expression is constant" warning
 #pragma warning(disable: 280)
 #pragma warning(disable: 4127)
+#endif
 
 enum
 {

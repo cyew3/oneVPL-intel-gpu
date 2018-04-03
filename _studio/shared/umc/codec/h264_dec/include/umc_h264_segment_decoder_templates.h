@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,7 +23,10 @@
 namespace UMC
 {
 
+// turn off the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 template <Ipp32s color_format, typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s is_field>
 class ColorSpecific
@@ -2605,7 +2608,10 @@ public:
     }
 };
 
+// restore the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(default: 4127)
+#endif
 
 // declare functions for creating proper decoders
 extern

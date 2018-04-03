@@ -2667,7 +2667,11 @@ void H264HeadersBitstream::unparsed_sei_message(H264SEIPayLoad *spl)
     AlignPointerRight();
 }
 
+// turn off the "local variable is initialized but not referenced" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable : 4189)
+#endif
+
 void H264HeadersBitstream::scalability_info(H264SEIPayLoad *spl)
 {
     spl->SEI_messages.scalability_info.temporal_id_nesting_flag = (Ipp8u)Get1Bit();
@@ -2889,7 +2893,10 @@ void H264HeadersBitstream::scalability_info(H264SEIPayLoad *spl)
     }
 }
 
+// restore the "local variable is initialized but not referenced" warning
+#ifdef _MSVC_LANG
 #pragma warning(default : 4189)
+#endif
 
 void SetDefaultScalingLists(H264SeqParamSet * sps)
 {

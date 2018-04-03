@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -35,7 +35,10 @@ extern pH265Interpolation_8u read_data_through_boundary_table_nv12_8u_pxmx[16];
 #define read_data_through_boundary_table_nv12_16u read_data_through_boundary_table_nv12_16u_pxmx
 extern pH265Interpolation_16u read_data_through_boundary_table_nv12_16u_pxmx[16];
 
+// turn off the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 template<typename PixType, Ipp32s chromaMult>
 void memset_with_mult(PixType *pDst, const PixType* nVal, Ipp32s nNum)
@@ -186,7 +189,10 @@ IppStatus ippiInterpolateBoundaryChromaBlock_NV12(Ipp32s iOverlappingType, Inter
     return ippStsNoErr;
 }
 
+// restore the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(default: 4127)
+#endif
 
 template<typename PixType, typename InterpolationStruct>
 IppStatus ippiInterpolateChromaBlock_Internal(InterpolationStruct *interpolateInfo, PixType *temporary_buffer)

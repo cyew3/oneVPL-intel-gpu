@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -91,8 +91,10 @@ IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpo
 // Check for frame boundaries and expand chroma border values if necessary
 IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
 
-
+// turn off the "unreferenced formal parameter" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4100)
+#endif
 
     // Set plane values inside of region of interest to val
     inline IppStatus SetPlane(Ipp8u value, Ipp8u* pDst, Ipp32s dstStep,
@@ -134,7 +136,10 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *inter
                         roiSize);
     }
 
+// restore the "unreferenced formal parameter" warning
+#ifdef _MSVC_LANG
 #pragma warning(default: 4100)
+#endif
 
 } /* namespace UMC_H265_DECODER */
 

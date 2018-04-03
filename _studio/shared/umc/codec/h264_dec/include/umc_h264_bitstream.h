@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -565,7 +565,9 @@ protected:
 };
 
 // disable the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 template <typename Coeffs, Ipp32s color_format>
 class BitStreamColorSpecific
@@ -660,7 +662,11 @@ public:
 
     } // void H264Bitstream::ResidualChromaDCBlock_CABAC(const Ipp32u *ctxIdxBase,
 };
+
+// restore the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(default: 4127)
+#endif
 
 } // namespace UMC
 

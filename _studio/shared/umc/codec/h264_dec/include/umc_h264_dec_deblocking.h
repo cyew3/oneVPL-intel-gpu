@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -80,7 +80,9 @@ Ipp32u INTERNAL_BLOCKS_MASK[NUMBER_OF_DIRECTION][12];
 #pragma pack(push, 16)
 
 // turn off "non-virtual destructor" remark
+#ifdef _MSVC_LANG
 #pragma warning(disable : 444)
+#endif
 
 typedef struct DeblockingParameters
 {
@@ -114,7 +116,9 @@ typedef struct DeblockingParametersMBAFF : public DeblockingParameters
 } DeblockingParametersMBAFF;
 
 // restore "non-virtual destructor" remark
+#ifdef _MSVC_LANG
 #pragma warning(default : 444)
+#endif
 
 #pragma pack(pop)
 

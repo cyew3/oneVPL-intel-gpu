@@ -54,7 +54,10 @@ typedef struct _IppiBidir1_16u
 
 namespace UMC
 {
+// turn off the "unreferenced formal parameter" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4100)
+#endif
 
     template<typename Plane>
     void ippiInterpolateLuma(const IppVCInterpolateBlock_16u *info_)
@@ -904,7 +907,10 @@ namespace UMC
                                                 bit_depth, chroma_format_idc, dir);
     }
 
+// restore the "unreferenced formal parameter" warning
+#ifdef _MSVC_LANG
 #pragma warning(default: 4100)
+#endif
 
 } // namespace UMC
 
