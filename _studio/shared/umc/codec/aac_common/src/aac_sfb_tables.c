@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -166,5 +166,9 @@ sSfbTableElement sfb_tables[] = {
 };
 
 #else
-# pragma warning( disable: 4206 )
+
+#ifdef _MSVC_LANG
+#pragma warning( disable: 4206 )
+#endif
+
 #endif //UMC_ENABLE_XXX

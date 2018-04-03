@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -125,7 +125,7 @@ Ipp32s best_codebooks_search(sEnc_individual_channel_stream* pStream,
 
       predPresent = 0;
       p_sfb_cb[pStream->max_sfb - 1] = (Ipp16s)index;
-      
+
       if (pred_flag != NULL)
       {
         pred_flag[pStream->max_sfb - 1] = isPred[pStream->max_sfb - 1][index];
@@ -409,6 +409,10 @@ void bit_count(sEnc_individual_channel_stream* pStream,
 #endif
 
 #else
-# pragma warning( disable: 4206 )
+
+#ifdef _MSVC_LANG
+#pragma warning( disable: 4206 )
+#endif
+
 #endif //UMC_ENABLE_XXX
 
