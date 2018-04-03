@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -304,6 +304,9 @@ mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session)
         session->m_pScheduler->WaitForTaskCompletion(session->m_pPAK.get());
         session->m_pScheduler->WaitForTaskCompletion(session->m_plgGen.get());
 
+        // create new self core operator
+        // restore original operator core.
+        session->m_pOperatorCore = new OperatorCORE(session->m_pCORE.get());
 
         // just zeroing pointer to external scheduler (it will be released in external session close)
         session->m_pScheduler = NULL;
