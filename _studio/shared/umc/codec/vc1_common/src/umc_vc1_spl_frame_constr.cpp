@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -79,7 +79,11 @@ namespace UMC
         return umcSts;
     }
 
+// turn off the "unreferenced formal parameter" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable : 4100)
+#endif
+
     Status vc1_frame_constructor_rcv::GetData(VC1FrameConstrInfo& Info)
     {
         if ((Ipp32u)Info.out->GetBufferSize() < (Ipp32u)Info.out->GetDataSize())
@@ -305,7 +309,7 @@ namespace UMC
 
                         currFramePos = currFramePos + size;
                         frameSize = frameSize + size;
-                        
+
                         if (Info.splMode == 1)
                         {
                             zeroNum = frameSize - 4*((frameSize)/4);
@@ -350,7 +354,7 @@ namespace UMC
                             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
                         MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
-                        
+
                         currFramePos = currFramePos + size;
                         frameSize = frameSize + size;
 
@@ -373,14 +377,14 @@ namespace UMC
 
                         //end of sequence
                         if((((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3))) == 0x0A010000)
-                        {                            
+                        {
                             size = (Ipp32u)(readPos- readBuf - readDataSize + 1);
 
                             MFX_INTERNAL_CPY(currFramePos, readBuf + readDataSize, size);
                             Info.out->SetDataSize(frameSize + size);
 
                             Info.in->SetDataSize(Info.in->GetDataSize() + size);
-                        
+
                             Info.stCodes->offsets[Info.stCodes->count] = (Ipp32u)(0);
                             Info.stCodes->values[Info.stCodes->count]  = ((*(readPos))<<24) + ((*(readPos-1))<<16) + ((*(readPos-2))<<8) + (*(readPos-3));
 

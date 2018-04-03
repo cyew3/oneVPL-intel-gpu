@@ -31,10 +31,16 @@
 # include <syslog.h>
 #endif
 
-
+#ifdef _MSVC_LANG
+// turn off the "'operator': 'identifier1' differs in levels of indirection from 'identifier2'" warning
 #pragma warning(disable:4047)
+
+// turn off the "'function': different types for formal and actual parameter 'parameter_number'" warning
 #pragma warning(disable:4024)
+
+// turn off the "'expression': incompatible types - from 'type1' to 'type2'" warning
 #pragma warning(disable:4133)
+#endif
 
 #if defined(UMC_VA) && ( defined(LINUX32) || defined(LINUX64) )
   #define UMC_VA_LINUX

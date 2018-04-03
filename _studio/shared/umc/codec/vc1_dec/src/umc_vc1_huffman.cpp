@@ -316,7 +316,11 @@ void HuffmanTableFree(Ipp32s *pDecodeTable)
 #if defined(__GNUC__)
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
+
+// turn off the "The compiler encountered a deprecated declaration" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable:4996)
+#endif
 
 int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
     Ipp32s*  pDst, const Ipp32s* pDecodeTable)

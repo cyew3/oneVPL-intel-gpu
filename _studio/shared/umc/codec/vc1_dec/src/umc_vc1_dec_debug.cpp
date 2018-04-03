@@ -115,14 +115,17 @@ void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *fo
     }
 }
 #else
+
+#ifdef _MSVC_LANG
 #pragma warning( disable : 4100 ) // disable debug, empty function
+#endif
 void VM_Debug::vm_debug_frame(Ipp32s _cur_frame, Ipp32s level, const vm_char *format,...)
 {
     (void)_cur_frame;
     (void)level;
     (void)format;
 }
-#endif
+#endif // VC1_DEBUG_ON
 
 #ifdef ALLOW_SW_VC1_FALLBACK
 void VM_Debug::_print_macroblocks(VC1Context* pContext)

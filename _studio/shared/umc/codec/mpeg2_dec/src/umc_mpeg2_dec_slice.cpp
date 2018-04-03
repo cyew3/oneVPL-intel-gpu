@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,7 +16,10 @@
 #include "umc_mpeg2_dec_sw.h"
 #include "umc_mpeg2_dec_tbl.h"
 
+// turn off the "conversion from 'type1' to 'type2', possible loss of data" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4244)
+#endif
 
 using namespace UMC;
 
@@ -383,12 +386,12 @@ Status MPEG2VideoDecoderSW::DecodeSliceHeader(VideoContext *video, int task_num)
 
 Status MPEG2VideoDecoderSW::DecodeSlice(VideoContext  *video, int task_num)
 {
-    if (MPEG1_VIDEO == video->stream_type) 
+    if (MPEG1_VIDEO == video->stream_type)
     {
         return DecodeSlice_MPEG1(video, task_num);
     }
 
-    try 
+    try
     {
         switch (video->color_format)
         {
@@ -398,13 +401,13 @@ Status MPEG2VideoDecoderSW::DecodeSlice(VideoContext  *video, int task_num)
                 {
                     return DecodeSlice_FrameI_420(video, task_num);
                 }
-                else 
+                else
                 {
                     if (FRAME_PICTURE == PictureHeader[task_num].picture_structure)
                     {
                         return DecodeSlice_FramePB_420(video, task_num);
-                    } 
-                    else 
+                    }
+                    else
                     {
                         return DecodeSlice_FieldPB_420(video, task_num);
                     }
@@ -413,14 +416,14 @@ Status MPEG2VideoDecoderSW::DecodeSlice(VideoContext  *video, int task_num)
                 break;
 
             case YUV422:
-                
+
                 if (MPEG2_I_PICTURE == PictureHeader[task_num].picture_coding_type)
                 {
                     return DecodeSlice_FrameI_422(video, task_num);
                 }
-                else 
+                else
                 {
-                    if (FRAME_PICTURE == PictureHeader[task_num].picture_structure) 
+                    if (FRAME_PICTURE == PictureHeader[task_num].picture_structure)
                     {
                         return DecodeSlice_FramePB_422(video, task_num);
                     }
@@ -429,9 +432,9 @@ Status MPEG2VideoDecoderSW::DecodeSlice(VideoContext  *video, int task_num)
                         return DecodeSlice_FieldPB_422(video, task_num);
                     }
                 }
-                
+
                 break;
-            
+
             default:
                 return UMC_ERR_INVALID_STREAM;
         }
@@ -875,7 +878,7 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
     }
 
     m_Spec->flag = flag_mpeg1;
-  
+
     return UMC_OK;
 }
 

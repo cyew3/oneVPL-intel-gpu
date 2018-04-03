@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,7 +14,10 @@
 #include "umc_mpeg2_dec_defs_sw.h"
 #include "umc_mpeg2_dec_sw.h"
 
+// turn off the "conversion from 'type1' to 'type2', possible loss of data" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4244)
+#endif
 
 using namespace UMC;
 

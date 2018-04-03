@@ -17,7 +17,10 @@
 #include "umc_mpeg2_dec_bstream.h"
 #include "mfx_trace.h"
 
+// turn off the "conversion from 'type1' to 'type2', possible loss of data" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4244)
+#endif
 
 using namespace UMC;
 #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)

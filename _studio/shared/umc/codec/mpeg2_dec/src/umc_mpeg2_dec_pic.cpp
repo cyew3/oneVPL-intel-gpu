@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,7 +23,10 @@
 #include "mfx_trace.h"
 #include "mfx_common_int.h"
 
+// turn off the "conversion from 'type1' to 'type2', possible loss of data" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4244)
+#endif
 
 #if defined (__ICL)
 // integer conversion resulted in truncation
@@ -382,7 +385,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
           shMask.memMask = NULL;
       }
 
-        shMask.memMask = (Ipp8u *) malloc(shMask.memSize);      
+        shMask.memMask = (Ipp8u *) malloc(shMask.memSize);
         memset(shMask.memMask, 0, shMask.memSize);
         memcpy_s(shMask.memMask, shMask.memSize, video->bs_sequence_header_start, shMask.memSize);
     }
@@ -498,7 +501,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
           H = m_ClipInfo.disp_clip_info.height;
       }
 
-      
+
       if (false == m_isAspectRatioFromInit)
       {
           switch (dar_code)
@@ -740,7 +743,7 @@ Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
     VideoContext *video = Video[task_num][threadID];
     Status umcRes = UMC_OK;
 
-    for (;;) 
+    for (;;)
     {
         umcRes = DecodeSliceHeader(video, task_num);
         if (umcRes == UMC_WRN_INVALID_STREAM)
@@ -768,7 +771,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 
     bool isCorrupted = false;
 
-    if (GET_REMAINED_BYTES(video->bs) < 4) 
+    if (GET_REMAINED_BYTES(video->bs) < 4)
     {
         // return header back
         UNGET_BITS_32(video->bs)
@@ -789,7 +792,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 
     switch (pic_type)
     {
-        case 1: 
+        case 1:
             PictureHeader[task_num].picture_coding_type = MPEG2_I_PICTURE;
             break;
 
@@ -811,7 +814,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
             return UMC_ERR_INVALID_STREAM;
     }
 
-    if (PictureHeader[task_num].d_picture) 
+    if (PictureHeader[task_num].d_picture)
         sequenceHeader.first_i_occure = 1; // no refs in this case
 
     pPic->low_in_range[0] = pPic->low_in_range[1] =
@@ -986,7 +989,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
                 frame_buffer.latest_prev = frame_buffer.latest_next;
                 frame_buffer.latest_next = frame_buffer.curr_index[task_num];
             }
-            
+
             frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index = frame_buffer.latest_prev;
             frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index = 0xffffffff;
 
@@ -1002,10 +1005,10 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
                         frame_buffer.ret_array[frame_buffer.ret_array_free] = frame_buffer.latest_prev;
                         frame_buffer.ret_index = frame_buffer.latest_prev;
                         frame_buffer.ret_array_free++;
-                        
+
                         if(frame_buffer.ret_array_free >= DPB_SIZE)
                             frame_buffer.ret_array_free = 0;
-                        
+
                         frame_buffer.ret_array_len++;
                     }
                 }
@@ -1018,7 +1021,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
                 {
                     ret_index -= DPB_SIZE;
                 }
-                
+
                 frame_buffer.ret_array[frame_buffer.ret_array_free] = ret_index;
                 frame_buffer.ret_index = ret_index;
                 frame_buffer.ret_array_free++;
@@ -1031,12 +1034,12 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
                 frame_buffer.ret_array_len++;
             }
         }
-        
+
         break;
 
     case MPEG2_B_PICTURE:
 
-        if (frame_buffer.field_buffer_index[task_num] == 0) 
+        if (frame_buffer.field_buffer_index[task_num] == 0)
         {
             sequenceHeader.b_curr_number++;
         }
@@ -1047,7 +1050,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 
         if (frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index < 0)
         {
-            frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index = 
+            frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index =
                 frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
         }
 
@@ -1071,14 +1074,14 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
               frame_buffer.ret_array[frame_buffer.ret_array_free] = ret_index;
               frame_buffer.ret_index = ret_index;
               frame_buffer.ret_array_free++;
-              
+
               if (frame_buffer.ret_array_free >= DPB_SIZE)
               {
                   frame_buffer.ret_array_free = 0;
               }
 
               frame_buffer.ret_array_len++;
-        } 
+        }
 
         break;
     }

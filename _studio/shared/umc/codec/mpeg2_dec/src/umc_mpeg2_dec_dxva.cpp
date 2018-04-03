@@ -18,7 +18,10 @@
 #include "vaapi_ext_interface.h"
 #endif
 
+// turn off the "conversion from 'type1' to 'type2', possible loss of data" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4244)
+#endif
 
 using namespace UMC;
 
