@@ -31,7 +31,6 @@
 #include "libmfx_core.h"
 #include "mfx_platform_headers.h"
 
-
 #if   defined(MFX_VA_WIN)
     #include "encoding_ddi.h"
 #elif defined(MFX_VA_LINUX) || defined(MFX_VA_OSX)
@@ -476,6 +475,9 @@ namespace MfxHwVideoProcessing
 #endif
 #endif
                , reset(0)
+#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+               , m_GpuEvent()
+#endif
             {
                    memset(&targetSurface, 0, sizeof(mfxDrvSurface));
                    dstRects.clear();
@@ -656,6 +658,9 @@ namespace MfxHwVideoProcessing
 #endif
 #endif
         bool reset;
+#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+        GPU_SYNC_EVENT_HANDLE m_GpuEvent;
+#endif
     };
 
     class DriverVideoProcessing
@@ -681,7 +686,6 @@ namespace MfxHwVideoProcessing
         virtual mfxStatus QueryVariance(
             mfxU32 frameIndex,
             std::vector<UINT> &variance) = 0;
-
     }; // DriverVideoProcessing
 
     DriverVideoProcessing* CreateVideoProcessing( VideoCORE* core );

@@ -2535,7 +2535,6 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             sizeof(VPE_FUNCTION),
             &iFunc);
         CHECK_HRES(hRes);
-
     }
 
     // [9] surface registration
@@ -2922,6 +2921,20 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
     }
 
     SetOutputBackgroundColor(bYCbCr, &Color);
+
+#ifdef MFX_ENABLE_VPP_HW_BLOCKING_TASK_SYNC
+    if (pParams->m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE) {
+        VPE_FUNCTION iFunc;
+        iFunc.Function = VPE_FN_SEND_GPU_EVENT_HANDLE;
+        iFunc.gpuSyncEvent = pParams->m_GpuEvent.gpuSyncEvent;
+
+        hRes = SetOutputExtension(
+            &(m_iface.guid),
+            sizeof(VPE_FUNCTION),
+            &iFunc);
+        CHECK_HRES(hRes);
+    }
+#endif
 
     UINT StreamCount;
 
