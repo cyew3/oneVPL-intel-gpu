@@ -7823,7 +7823,7 @@ Status MFXVideoENCODEH264::ReorderListSVC( H264CoreEncoder_8u16s* core_enc, Enum
 
     // Now build ref pic marking
 
-    mfxExtAVCRefListCtrl framelist = {{MFX_EXTBUFF_AVC_REFLIST_CTRL, sizeof(mfxExtAVCRefListCtrl)}, };
+    mfxExtAVCRefListCtrl framelist = {{MFX_EXTBUFF_AVC_REFLIST_CTRL, sizeof(mfxExtAVCRefListCtrl)}, 0, 0, {}, {}, {}, 0, {}};
     mfxExtBuffer* bufptr = &framelist.Header;
     mfxEncodeCtrl ctrl = {}, *pCtrl = 0;
     mfxU32 idx = 0, addedLT = 0;
@@ -8609,7 +8609,7 @@ Status MFXVideoENCODEH264::H264CoreEncoder_CompressFrame(
     Ipp32s picStartDataSize = 0;
     MediaData* dst = dst_main;
     Ipp8u  nal_header_ext[3] = {0,};
-    sNALUnitHeaderSVCExtension svc_header = {0, };
+    sNALUnitHeaderSVCExtension svc_header = {};
     Ipp32s min_qp = 0;// min slice QP before buffer overflow
     Ipp32s small_frame_qp = 0;
 

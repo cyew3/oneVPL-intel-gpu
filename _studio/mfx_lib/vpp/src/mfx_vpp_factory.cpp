@@ -5,21 +5,21 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 /* ****************************************************************************** */
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_VPP) 
+#if defined (MFX_ENABLE_VPP)
 #include "mfx_vpp_interface.h"
 
- 
+
 #if defined (MFX_VA_WIN)
     #include "fast_compositing_ddi.h"
 
-    
+
     #if defined (MFX_D3D11_ENABLED)
         #include "d3d11_video_processor.h"
     #endif
@@ -40,7 +40,7 @@ DriverVideoProcessing* MfxHwVideoProcessing::CreateVideoProcessing(VideoCORE* co
     //MFX_CHECK_NULL_PTR1( core );
     //assert( core );
     core;
-    
+
 #if   defined (MFX_VA_WIN) // Windows DirectX9
 
     if (MFX_HW_D3D9 == core->GetVAType())
@@ -66,7 +66,7 @@ DriverVideoProcessing* MfxHwVideoProcessing::CreateVideoProcessing(VideoCORE* co
     return new MacosVideoProcessing;
 
 #else
-    
+
     return NULL;
 
 #endif
@@ -82,7 +82,7 @@ mfxStatus VPPHWResMng::CreateDevice(VideoCORE * core){
     if ( ! m_ddi.get() )
         return MFX_ERR_DEVICE_FAILED;
 
-    mfxVideoParam par    = {0};
+    mfxVideoParam par    = {};
     par.vpp.In.Width     = 352;
     par.vpp.In.Height    = 288;
     par.vpp.In.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;

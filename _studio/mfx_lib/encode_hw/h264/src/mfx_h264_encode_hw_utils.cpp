@@ -3239,7 +3239,7 @@ mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
     brcprintf("\r%4d: do=%4d type=%c Rt=%7.3f-%7.3f curc=%4d numc=%2d ", m_laData[0].encOrder, m_laData[0].poc/2,
         GetFrameTypeLetter(par.FrameType), m_targetRateMin, m_targetRateMax, m_laData[0].interCost / m_totNumMb, mfxU32(m_laData.size()));
 
-    
+
     mfxF64 totalEstRate[52] = { 0.0 };
 
     for (mfxU32 qp = 0; qp < 52; qp++)
@@ -3357,7 +3357,7 @@ void LookAheadBrc2::PreEnc(const BRCFrameParams& par, std::vector<VmeData *> con
         if (vmeData[i]->encOrder < firstNewFrame || vmeData[i]->encOrder >= lastNewFrame)
             continue;
 
-        LaFrameData newData = { 0 };
+        LaFrameData newData = {};
         newData.encOrder  = vmeData[i]->encOrder;
         newData.poc       = vmeData[i]->poc;
         newData.interCost = vmeData[i]->interCost;
@@ -3413,7 +3413,7 @@ mfxU32 LookAheadBrc2::Report(const BRCFrameParams& par , mfxU32 dataLength, mfxU
 
     if (m_AvgBitrate)
         m_AvgBitrate->UpdateSlidingWindow(8 * dataLength, par.EncodedOrder, m_skipped>0, (par.FrameType & MFX_FRAMETYPE_I)!=0, par.NumRecode, qp);
- 
+
     m_framesBehind++;
     m_bitsBehind += realRatePerMb;
     mfxF64 framesBeyond = (mfxF64)(IPP_MAX(2, m_laData.size()) - 1 - m_first);
@@ -5061,7 +5061,7 @@ void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstVid, void const * srcSys, 
 #endif
 
 
-    
+
 }
 
 void CyclicTaskPool::Init(mfxU32 size)
@@ -5576,7 +5576,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     if (needAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
         writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
 
-    mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = { 0 };
+    mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = {};
     {
         mfxExtAvcSeiPicTiming msgPicTiming;
 
@@ -5731,7 +5731,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     mfxU8 const SEI_STARTCODE[5] = { 0, 0, 0, 1, 6 };
 
 // MVC BD {
-    mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = { 0 };
+    mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = {};
     mfxExtAvcSeiPicTiming msgPicTiming;
     mfxU32 sps_id = extSps->seqParameterSetId;
     sps_id = ((sps_id + !!task.m_viewIdx) & 0x1f);  // use appropriate sps id for dependent views

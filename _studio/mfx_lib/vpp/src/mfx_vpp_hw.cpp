@@ -2076,7 +2076,7 @@ mfxStatus VideoVPPHW::Query(VideoCORE *core, mfxVideoParam *par)
     mfxStatus sts = MFX_ERR_NONE;
     VPPHWResMng *vpp_ddi = 0;
     mfxVideoParam params = *par;
-    Config config = {0};
+    Config config = {};
     MfxHwVideoProcessing::mfxExecuteParams executeParams;
 
     sts = CheckIOMode(par, ALL);
@@ -2600,7 +2600,7 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
 
     VPPHWResMng* ddi = 0;
     mfxStatus sts = MFX_ERR_NONE;
-    mfxVideoParam tmpPar = {0};
+    mfxVideoParam tmpPar = {};
 
     sts = core->CreateVideoProcessing(&tmpPar);
     MFX_CHECK_STS( sts );
@@ -2647,7 +2647,7 @@ mfxStatus VideoVPPHW::QueryIOSurf(
     sts = CheckIOMode(par, ioMode);
     MFX_CHECK_STS(sts);
 
-    mfxVideoParam tmpPar = {0};
+    mfxVideoParam tmpPar = {};
     sts = core->CreateVideoProcessing(&tmpPar);
     MFX_CHECK_STS(sts);
 
@@ -5812,7 +5812,7 @@ mfxStatus ConfigureExecuteParams(
 
                         for (mfxU32 cnt = 0; cnt < StreamCount; ++cnt)
                         {
-                            DstRect rec = {0};
+                            DstRect rec = {};
                             rec.DstX = extComp->InputStream[cnt].DstX;
                             rec.DstY = extComp->InputStream[cnt].DstY;
                             rec.DstW = extComp->InputStream[cnt].DstW;

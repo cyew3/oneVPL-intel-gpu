@@ -4115,7 +4115,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         changed = true;
     }
 #else // else MFX_AUTOLTR_FEATURE_DISABLE == MFX_AUTOLTR_FEATURE_ENABLED
-    if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && IsOff(extOpt2->ExtBRC)) 
+    if (IsOn(extOpt3->ExtBrcAdaptiveLTR) && IsOff(extOpt2->ExtBRC))
     {
         extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;
         changed = true;
@@ -4764,7 +4764,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
 
     if (!CheckRangeDflt(extOpt2->DisableDeblockingIdc, 0, 2, 0)) changed = true;
     if (!CheckTriStateOption(extOpt2->EnableMAD)) changed = true;
-    
+
     if (!CheckTriStateOption(extOpt2->AdaptiveI)) changed = true;
     if (IsOn(extOpt2->AdaptiveI) && (!IsExtBrcSceneChangeSupported(par) || (par.mfx.GopOptFlag & MFX_GOP_STRICT)))
     {
@@ -6034,7 +6034,7 @@ void MfxHwH264Encode::SetDefaults(
         if (IsExtBrcSceneChangeSupported(par) && !extBRC->pthis)
         {
             extOpt3->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_ON;
-            // make sure to call CheckVideoParamQueryLike 
+            // make sure to call CheckVideoParamQueryLike
             // or add additional conditions above (num ref & num active)
         }
         #endif
@@ -9321,7 +9321,7 @@ namespace
 {
     ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size, mfxU32 skipEmulCount)
     {
-        ENCODE_PACKEDHEADER_DATA desc = { 0 };
+        ENCODE_PACKEDHEADER_DATA desc = {};
         desc.pData                  = data;
         desc.BufferSize             = size;
         desc.DataLength             = size;

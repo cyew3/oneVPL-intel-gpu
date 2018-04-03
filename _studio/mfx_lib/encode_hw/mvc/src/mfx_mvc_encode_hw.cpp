@@ -1524,7 +1524,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmit(
     mfxU32 firstFieldId = task[0]->GetFirstField();
 
     mfxStatus sts = MFX_ERR_NONE;
-    mfxHDLPair surfaceHDL = {0};
+    mfxHDLPair surfaceHDL = {};
 
     for (mfxU32 i = 0; i < opt->NumView; i++)
     {
@@ -1613,7 +1613,7 @@ mfxStatus ImplementationMvc::TaskRoutineSubmitOneView(
     mfxU32 encIdx = impl.m_numEncs > 1 ? realTask.m_viewIdx : 0;
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxHDLPair surfaceHDL = {0};
+    mfxHDLPair surfaceHDL = {};
 
     mfxU32 firstFieldId = realTask.GetFirstField();
 

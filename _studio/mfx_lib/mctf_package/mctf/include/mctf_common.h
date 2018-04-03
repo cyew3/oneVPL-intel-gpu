@@ -33,7 +33,7 @@ enum {
 };
 #endif
 
-// this is an internal structure to represent MCTF controls; 
+// this is an internal structure to represent MCTF controls;
 // is not exposed outside;
 typedef struct {
     mfxU16       Overlap;
@@ -232,7 +232,7 @@ inline std::tuple<mfxU64, mfxU64, mfxU64> GetAccurateGpuTime(CmQueue *queue, con
             queue->EnqueueCopyCPUToGPUFullStride(copyParam.gpumem, copyParam.cpumem, copyParam.pitch, 0, CM_FASTCOPY_OPTION_NONBLOCKING, e1);
             queue->Enqueue(task, e2, ts);
 
-            
+
         }
         e2->WaitForTaskFinished();
         mfxU64 time1, time2;
@@ -339,7 +339,7 @@ struct gpuFrameData {
         sc = tc = stc = 0;
         scene_idx = frame_number = noise_count = 0;
         noise_var = noise_sad = noise_sc = frame_sad = frame_sc = frame_Rs = frame_Cs = 0.0;
-        mfxMctfControl = IntMctfParams{ 0 };
+        mfxMctfControl = IntMctfParams{};
     }
 
 };
@@ -511,7 +511,7 @@ private:
     mfxU32 m_FrameRateExtN, m_FrameRateExtD;
     mfxU32 scene_numbers[5];
     mfxU64 time;
-   
+
     CM_STATUS status;
     mfxI32 res;
 
@@ -626,10 +626,10 @@ private:
     mfxI32 MCTF_RUN_ME_MRE( SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
                             SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
                             SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-                            mfxI8 forwardRefDist, mfxI8 backwardRefDist);   
+                            mfxI8 forwardRefDist, mfxI8 backwardRefDist);
     mfxI32 MCTF_WAIT_ME_MRE(SurfaceIndex *GenxRefs);
     mfxI32 MCTF_WAIT_ME_MRE(SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2);
-    
+
     mfxI32 MCTF_RUN_ME_MC_H(SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
                             SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
                             SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
@@ -686,7 +686,7 @@ private:
     mfxI32 MCTF_RUN_Denoise(mfxU16 srcNum);
     mfxI32 MCTF_RUN_Denoise();
 
-    // it will update strength/deblock/bitrate depending on the current mode MCTF operates & parameters 
+    // it will update strength/deblock/bitrate depending on the current mode MCTF operates & parameters
     // stored in QfIn, in a position srcNum; it will also update the current parameters (if for next frame
     // no information was passed)
     mfxStatus MCTF_UpdateRTParams(IntMctfParams* pMctfParam);
@@ -699,7 +699,7 @@ public:
 
     // sets filter-strength
     inline mfxStatus SetFilterStrenght(unsigned short fs);
-    
+
     // returns number of referencies MCTF operates on
     mfxU16 MCTF_GetReferenceNumber() { return MCTF_QUERY_NUMBER_OF_REFERENCES(); };
 

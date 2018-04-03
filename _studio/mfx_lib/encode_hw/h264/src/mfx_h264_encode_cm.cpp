@@ -427,7 +427,7 @@ CmSurface2D * CreateSurface(CmDevice * device, ID3D11Texture2D * d3dSurface)
     int result = CM_SUCCESS;
     CmSurface2D * cmSurface = 0;
     if (device && d3dSurface && (result = device->CreateSurface2D(d3dSurface, cmSurface)) != CM_SUCCESS)
-        throw CmRuntimeError(); 
+        throw CmRuntimeError();
     return cmSurface;
 }
 
@@ -687,7 +687,7 @@ namespace MfxHwH264EncodeHW
             costs.ModeCost[LUTMODE_INTRA_16x16]   = Map44LutValue((mfxU16)(lambda * 10  * had_bias), 0x8f);
             costs.ModeCost[LUTMODE_INTRA_8x8]     = Map44LutValue((mfxU16)(lambda * 14  * had_bias), 0x8f);
             costs.ModeCost[LUTMODE_INTRA_4x4]     = Map44LutValue((mfxU16)(lambda * 35  * had_bias), 0x8f);
-            
+
             costs.ModeCost[LUTMODE_INTER_16x16] = Map44LutValue((mfxU16)(lambda * 2.75 * had_bias), 0x8f);
             costs.ModeCost[LUTMODE_INTER_16x8]  = Map44LutValue((mfxU16)(lambda * 4.25 * had_bias), 0x8f);
             costs.ModeCost[LUTMODE_INTER_8x8q]  = Map44LutValue((mfxU16)(lambda * 1.32 * had_bias), 0x6f);
@@ -994,7 +994,7 @@ mfxStatus CmContext::QueryHistogram(CmEvent * e)
         return MFX_ERR_GPU_HANG;
     else if(status != CM_SUCCESS)
         throw CmRuntimeError();
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -1114,7 +1114,7 @@ mfxStatus CmContext::QueryVme(
                 if (mb.MbType5Bits != MBTYPE_BP_L0_16x16 &&
                     mb.MbType5Bits != MBTYPE_B_L1_16x16  &&
                     mb.MbType5Bits != MBTYPE_B_Bi_16x16)
-                { 
+                {
                 // fprintf(stdout,"MbType5Bits: %x\n", mb.MbType5Bits );fflush(stdout);
                     assert(0);
                 }
@@ -1261,7 +1261,7 @@ mfxU32 CmContext::CalcCostAGOP(
         }
     }
 
-    return cost; 
+    return cost;
 }
 
 CmEvent* CmContext::RunVmeAGOP(
@@ -1272,7 +1272,7 @@ CmEvent* CmContext::RunVmeAGOP(
     mfxU32 biWeight,
     CmBuffer *  curbe, //store for curbe data
     CmBufferUP* mb  //output data
-    ) 
+    )
 {
     mfxU32 numMbCols = m_video.mfx.FrameInfo.Width >> 6;  //work with 4X
     mfxU32 numMbRows = m_video.mfx.FrameInfo.Height >> 6; //work with 4X
@@ -1379,7 +1379,7 @@ bool CmContext::QueryVmeAGOP(
         p0->m_frameNum, p0->m_frameType, b->m_frameNum, b->m_frameType, p1->m_frameNum, p1->m_frameType);
 #endif
 #endif
-    return true; 
+    return true;
 }
 #endif
 
@@ -1457,7 +1457,7 @@ void CmContext::SetCurbeData(
     else*/ if (!transformFlag)
         skipVal /= 2;
 
-    mfxVMEUNIIn costs = {0};
+    mfxVMEUNIIn costs = {};
     SetCosts(costs, task.m_type[0], qp, intraSad, ftqBasedSkip);
 
     mfxVMEIMEIn spath;
@@ -1710,7 +1710,7 @@ void CmContext::SetCurbeData(
     else*/ if (!transformFlag)
         skipVal /= 2;
 
-    mfxVMEUNIIn costs = {0};
+    mfxVMEUNIIn costs = {};
     SetCosts(costs, frameType, qp, intraSad, ftqBasedSkip);
 
     mfxVMEIMEIn spath;

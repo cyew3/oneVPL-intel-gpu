@@ -910,7 +910,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::EncodeFrameCheck(
 
     mfxExtJPEGQuantTables*   jpegQT = NULL;
     mfxExtJPEGHuffmanTables* jpegHT = NULL;
-    JpegEncCaps              hwCaps = {0};
+    JpegEncCaps              hwCaps = {};
 
     mfxFrameSurface1 *surface = GetOriginalSurface(inSurface);
     // input surface is opaque surface
@@ -1105,8 +1105,8 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
                 bExternalFrameLocked = true;
             }
             MFX_CHECK(nativeSurf->Data.B != 0, MFX_ERR_LOCK_MEMORY);
-            
-        
+
+
             const int dstOrder[3] = {2, 1, 0};
             IppiSize roi = {nativeSurf->Info.Width, nativeSurf->Info.Height};
             IppiSize setroi = {nativeSurf->Info.Width*4, nativeSurf->Info.Height};
@@ -1121,7 +1121,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
                                     dstSurf.R, dstPitch,
                                     roi, dstOrder);
             MFX_CHECK(res, MFX_ERR_UNDEFINED_BEHAVIOR);
-        
+
             if (bExternalFrameLocked)
             {
                 sts = enc.m_pCore->UnlockExternalFrame(nativeSurf->Data.MemId, &nativeSurf->Data);
@@ -1140,7 +1140,7 @@ mfxStatus MFXVideoENCODEMJPEG_HW::TaskRoutineSubmitFrame(
             dst.Data = dstSurf;
             src_memtype = (mfxU16)((nativeSurf->Data.B == 0)?MFX_MEMTYPE_DXVA2_DECODER_TARGET:MFX_MEMTYPE_SYSTEM_MEMORY);
             src_memtype |= enc.m_isOpaqIn? MFX_MEMTYPE_INTERNAL_FRAME: MFX_MEMTYPE_EXTERNAL_FRAME;
-            sts = enc.m_pCore->DoFastCopyWrapper(&dst,MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME,nativeSurf, 
+            sts = enc.m_pCore->DoFastCopyWrapper(&dst,MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_INTERNAL_FRAME,nativeSurf,
                 src_memtype);
             MFX_CHECK_STS(sts);
         }
