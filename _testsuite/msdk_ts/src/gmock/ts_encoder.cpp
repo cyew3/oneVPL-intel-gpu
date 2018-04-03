@@ -129,6 +129,16 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         }
     }
 
+    if ( par.mfx.CodecId == MFX_CODEC_MPEG2 )
+    {
+        if ( g_tsImpl == MFX_IMPL_HARDWARE_ANY && g_tsHWtype == MFX_HW_APL )
+        {
+            g_tsLog << "\nMPEG2 HW Encode is not supported on BXT platform\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+    }
+
     if (   par.mfx.LowPower == MFX_CODINGOPTION_ON
         && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
         && function != QUERYIOSURF)
