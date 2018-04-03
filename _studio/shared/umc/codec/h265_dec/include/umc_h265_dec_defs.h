@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -922,7 +922,7 @@ struct H265SeqParamSetBase
 
     void Reset()
     {
-        H265SeqParamSetBase sps = {0};
+        H265SeqParamSetBase sps = {};
         *this = sps;
     }
 
@@ -1117,7 +1117,7 @@ struct H265PicParamSetBase
 
     void Reset()
     {
-        H265PicParamSetBase pps = {0};
+        H265PicParamSetBase pps = {};
         *this = pps;
     }
 };  // H265PicParamSetBase

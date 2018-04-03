@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -60,7 +60,7 @@
 namespace UMC_H264_ENCODER
 {
 
-const H264MotionVector null_mv = {0};
+const H264MotionVector null_mv = {};
 
 inline Ipp32s convertLumaQP(Ipp32s QP, Ipp32s bit_depth_src, Ipp32s bit_depth_dst)
 {

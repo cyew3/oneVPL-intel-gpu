@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -137,7 +137,7 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
     std::set<mfxU32>::iterator iteratorReady;
     std::set<mfxU32>::iterator iteratorSubmitted;
     std::set<mfxU32>::iterator iteratorCorrupted;
-    
+
     AutomaticUMCMutex guard(m_guard);
     iteratorReady = find(m_cachedReadyTaskIndex.begin(), m_cachedReadyTaskIndex.end(), statusReportFeedbackNumber);
     iteratorSubmitted = find(m_submittedTaskIndex.begin(), m_submittedTaskIndex.end(), statusReportFeedbackNumber);
@@ -194,7 +194,7 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
             if (m_cachedReadyTaskIndex.end() == iteratorReady)
             {
                 iteratorCorrupted = find(m_cachedCorruptedTaskIndex.begin(), m_cachedCorruptedTaskIndex.end(), statusReportFeedbackNumber);
-        
+
                 if(m_cachedCorruptedTaskIndex.end() == iteratorCorrupted)
                 {
                     if(m_submittedTaskIndex.end() != iteratorSubmitted && numZeroFeedback == numStructures )
@@ -209,7 +209,7 @@ mfxStatus MJPEGVideoDecoderMFX_HW::CheckStatusReportNumber(Ipp32u statusReportFe
                 m_submittedTaskIndex.erase(iteratorSubmitted);
                 return MFX_TASK_DONE;
             }
-    
+
             m_submittedTaskIndex.erase(iteratorSubmitted);
             m_cachedReadyTaskIndex.erase(iteratorReady);
         }
@@ -233,7 +233,7 @@ Status MJPEGVideoDecoderMFX_HW::_DecodeHeader(CBaseStreamInput* in, Ipp32s* cnt)
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 
-    IppiSize size = {0};
+    IppiSize size = {};
 
     Ipp32s frameChannels, framePrecision;
     jerr = m_decBase->ReadHeader(
@@ -569,7 +569,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
         picParams->NumCompInFrame            = (USHORT)m_decBase->m_jpeg_ncomp; // TODO: change for multi-scan images
         picParams->ChromaType                = (UCHAR)GetChromaType();
         picParams->TotalScans                = (USHORT)m_decBase->m_num_scans;
-                
+
         switch(m_rotation)
         {
         case 0:
@@ -786,7 +786,7 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
             compBuf->SetDataSize(compBuf->GetBufferSize());
             bitstreamTile = bitstreamTile - compBuf->GetBufferSize();
         }
-        
+
         sts = m_va->Execute();
         if (sts != UMC_OK)
             return sts;

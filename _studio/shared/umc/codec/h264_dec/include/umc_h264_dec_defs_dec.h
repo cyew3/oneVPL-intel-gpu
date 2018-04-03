@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -316,7 +316,7 @@ struct H264VUI
 {
     void Reset()
     {
-        H264VUI vui = {0};
+        H264VUI vui = {};
         // set some parameters by default
         vui.video_format = 5; // unspecified
         vui.video_full_range_flag = 0;
@@ -435,7 +435,7 @@ struct H264SeqParamSetBase
 
     void Reset()
     {
-        H264SeqParamSetBase sps = {0};
+        H264SeqParamSetBase sps = {};
         *this = sps;
     }
 
@@ -732,7 +732,7 @@ struct H264PicParamSetBase
 
     void Reset()
     {
-        H264PicParamSetBase pps = {0};
+        H264PicParamSetBase pps = {};
         *this = pps;
     }
 };

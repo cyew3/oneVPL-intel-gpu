@@ -358,9 +358,8 @@ Ipp32u SVCBaseMode_MB_Decision(
     if (core_enc->m_Analyse & (ANALYSE_RD_OPT | ANALYSE_RD_MODE)) {
       H264BsBase *pBitstream;
       Ipp32u sad_nr = 0;
-      H264MacroblockLocalInfo sLocalMBinfo = {0,}, *pLocalMBinfo = 0, sLocalMBinfo0;
+      H264MacroblockLocalInfo sLocalMBinfo = {}, *pLocalMBinfo = 0, sLocalMBinfo0;
       H264MacroblockGlobalInfo sGlobalMBinfo = {}, *pGlobalMBinfo = 0, sGlobalMBinfo0;
-
       baseModeSAD = 0;
       sad_nr = 0;
 

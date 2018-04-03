@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (__ICL)
@@ -6939,7 +6939,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_P)(
     bool doSplit = (meFlags & ANALYSE_P_8x8) &&  (BestSAD16x16 > check_threshold) && (mvsBudget >= 4);
     Ipp32u BestIntraSAD16x16 = MAX_SAD, BestIntraSAD8x8 = MAX_SAD, BestIntraSAD4x4 = MAX_SAD;
     Ipp32s intra_cost_chroma = 0;
-    H264MacroblockLocalInfo intraLocalMBinfo = {0,};
+    H264MacroblockLocalInfo intraLocalMBinfo = {};
     MB_Type BestIntraMBType = MBTYPE_INTRA;
     Ipp32s BestIntraSAD = MAX_SAD;
     if ((core_enc->m_Analyse & ANALYSE_INTRA_IN_ME) && (!resPredFlag))
@@ -8074,9 +8074,9 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
 
     Ipp32s  mpredflagL0 = 0, mpredflagL1 = 0;
     H264MotionVector BestPredMV4x4L0[4][4], BestPredMV8x4L0[4][2], BestPredMV4x8L0[4][2];
-    H264MotionVector BestPredMV8x8L0[4],  BestPredMV16x8L0[2], BestPredMV8x16L0[2], BestPredMV16x16L0 = {0,};
+    H264MotionVector BestPredMV8x8L0[4],  BestPredMV16x8L0[2], BestPredMV8x16L0[2], BestPredMV16x16L0 = {};
     H264MotionVector BestPredMV4x4L1[4][4], BestPredMV8x4L1[4][2], BestPredMV4x8L1[4][2];
-    H264MotionVector BestPredMV8x8L1[4],  BestPredMV16x8L1[2], BestPredMV8x16L1[2], BestPredMV16x16L1 = {0,};
+    H264MotionVector BestPredMV8x8L1[4],  BestPredMV16x8L1[2], BestPredMV8x16L1[2], BestPredMV16x16L1 = {};
     Ipp32s mpred4x4L0[4][4], mpred8x4L0[4][2], mpred4x8L0[4][2];
     Ipp32s mpred8x8L0[4],  mpred16x8L0[2], mpred8x16L0[2], mpred16x16L0 = 0;
     Ipp32s mpred4x4L1[4][4], mpred8x4L1[4][2], mpred4x8L1[4][2];
@@ -8813,7 +8813,7 @@ Ipp32s H264ENC_MAKE_NAME(H264CoreEncoder_ME_B)(
     bool doSplit = (meFlags & ANALYSE_B_8x8) && (BestSAD16x16 > check_threshold);
     Ipp32s BestInterSAD = MAX_SAD, intra_cost_chroma = 0, intra_cost_b = 0;
     Ipp32u BestIntraSAD16x16 = MAX_SAD, BestIntraSAD8x8 = MAX_SAD, BestIntraSAD4x4 = MAX_SAD;
-    H264MacroblockLocalInfo intraLocalMBinfo = {0,};
+    H264MacroblockLocalInfo intraLocalMBinfo = {};
     MB_Type BestIntraMBType = MBTYPE_INTRA;
     Ipp32s BestIntraSAD = MAX_SAD;
     if ((core_enc->m_Analyse & ANALYSE_INTRA_IN_ME) && (!resPredFlag)) {

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1145,7 +1145,7 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     const RefIndexType *pRefRefIndexL0;
     const RefIndexType *pRefRefIndexL1;
     H264DecoderFrame **pRefRefPicList;
-    
+
     H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
     // Set pointers to colocated list 0 ref index and MV
     pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
@@ -1406,7 +1406,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
     Ipp32u sb;
     Ipp32s ref_mvoffset, sboffset = 0;
     Ipp8s RefIndexL0 = 0, RefIndexL1 = 0;
-    H264DecoderMotionVector  MV = {0};
+    H264DecoderMotionVector  MV = {};
     Ipp32s mvxf, mvyf, mvxb, mvyb;
 
     // set up pointers to where MV and RefIndex will be stored

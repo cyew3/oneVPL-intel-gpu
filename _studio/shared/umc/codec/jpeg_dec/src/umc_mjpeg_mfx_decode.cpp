@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -421,19 +421,19 @@ Status MJPEGVideoDecoderMFX::AllocateFrame()
     {
         frm = RGB32;
     }
-    else if((JC_YCBCR == m_color || JC_GRAY == m_color) && 
+    else if((JC_YCBCR == m_color || JC_GRAY == m_color) &&
             NV12 == m_DecoderParams.info.color_format)
     {
         frm = NV12;
     }
     // WA to support YUY2 output when HW decoder uses SW fallback
-    else if((JC_YCBCR == m_color || JC_GRAY == m_color) && 
+    else if((JC_YCBCR == m_color || JC_GRAY == m_color) &&
             YUY2 == m_DecoderParams.info.color_format)
     {
         frm = NV12;
         m_needPostProcessing = true;
     }
-    else if(JC_RGB == m_color && 
+    else if(JC_RGB == m_color &&
             NV12 == m_DecoderParams.info.color_format)
     {
         // single scan
@@ -449,7 +449,7 @@ Status MJPEGVideoDecoderMFX::AllocateFrame()
         }
     }
     // WA to support YUY2 output when HW decoder uses SW fallback
-    else if(JC_RGB == m_color && 
+    else if(JC_RGB == m_color &&
             YUY2 == m_DecoderParams.info.color_format)
     {
         // single scan
@@ -465,7 +465,7 @@ Status MJPEGVideoDecoderMFX::AllocateFrame()
             m_needPostProcessing = true;
         }
     }
-    else if(JC_YCBCR == m_color && 
+    else if(JC_YCBCR == m_color &&
             RGB32 == m_DecoderParams.info.color_format)
     {
         // single scan
@@ -556,7 +556,7 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
     if(0 == out)
         return UMC_ERR_NULL_PTR;
     *out = 0;*/
-    vm_debug_trace1(VM_DEBUG_NONE, __VM_STRING("MJPEG, frame: %d\n"), m_frameNo);    
+    vm_debug_trace1(VM_DEBUG_NONE, __VM_STRING("MJPEG, frame: %d\n"), m_frameNo);
 
     // find appropriate source picture buffer
     picNum = 0;
@@ -574,7 +574,7 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
         Ipp32s nUsedBytes = 0;
 
         // set the source data
-        stream.Open((Ipp8u *) picBuffer.pBuf, 
+        stream.Open((Ipp8u *) picBuffer.pBuf,
                     picBuffer.imageHeaderSize + picBuffer.scanSize[0]);
 
         umcRes = _DecodeHeader(&stream, &nUsedBytes, threadNumber);
@@ -589,12 +589,12 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
     }
 
     // determinate scan number contained current piece
-    if(picBuffer.scanOffset[0] <= picBuffer.pieceOffset[pieceNum] && 
+    if(picBuffer.scanOffset[0] <= picBuffer.pieceOffset[pieceNum] &&
        (picBuffer.pieceOffset[pieceNum] < picBuffer.scanOffset[1] || 0 == picBuffer.scanOffset[1]))
     {
         curr_scan_no = 0;
     }
-    else if(picBuffer.scanOffset[1] <= picBuffer.pieceOffset[pieceNum] && 
+    else if(picBuffer.scanOffset[1] <= picBuffer.pieceOffset[pieceNum] &&
         (picBuffer.pieceOffset[pieceNum] < picBuffer.scanOffset[2] || 0 == picBuffer.scanOffset[2]))
     {
         curr_scan_no = 1;
@@ -641,8 +641,8 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
         return UMC_ERR_FAILED;
 
     // decode a next piece from the picture
-    umcRes = DecodePiece(picBuffer.fieldPos, 
-                         (mfxU32)picBuffer.pieceRSTOffset[pieceNum], 
+    umcRes = DecodePiece(picBuffer.fieldPos,
+                         (mfxU32)picBuffer.pieceRSTOffset[pieceNum],
                          (mfxU32)(picBuffer.pieceRSTOffset[pieceNum+1] - picBuffer.pieceRSTOffset[pieceNum]),
                          threadNumber);
 
@@ -803,7 +803,7 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
                             pDst[0][i*pDstPitch[0] + j*4 + 3] = 0xFF;
                         }
                     break;
-                
+
                 case 270:
 
                     for(Ipp32s i=0; i<m_frameDims.width; i++)
@@ -999,8 +999,8 @@ Status MJPEGVideoDecoderMFX::_DecodeHeader(CBaseStreamInput* in, Ipp32s* cnt, co
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 
-    IppiSize size = {0};
-    
+    IppiSize size = {};
+
     jerr = m_dec[threadNum]->ReadHeader(
         &size.width, &size.height, &m_frameChannels, &m_color, &sampling, &m_framePrecision);
 
