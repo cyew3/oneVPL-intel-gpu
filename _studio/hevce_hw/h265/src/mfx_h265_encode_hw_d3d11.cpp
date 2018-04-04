@@ -191,12 +191,15 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
         m_pMfeAdapter = CreatePlatformMFEEncoder(core);
         if (m_pMfeAdapter == NULL)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
-        m_pMfeAdapter->Create(m_vdevice, m_vcontext);
+        sts = m_pMfeAdapter->Create(m_vdevice, m_vcontext);
+        MFX_CHECK_STS(sts);
         ENCODE_CAPS_HEVC * caps = (ENCODE_CAPS_HEVC *)m_pMfeAdapter->GetCaps(DDI_CODEC_HEVC);
         if(caps == NULL)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         m_caps = *caps;
         m_vdecoder = m_pMfeAdapter->GetVideoDecoder();
+        if (m_vdecoder == NULL)
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     }
 #endif
