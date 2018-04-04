@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -265,10 +265,11 @@ void MFXVideoTest::SetUp()
             if (platform[1] == '1' && platform[2] == '0')
                 g_tsWinVersion = MFX_WIN_VER_W10;
         }
-        /* For Linux we have to common names
-         * (1): c7.2_bdw_64_server and variants
-         * (2): yocto_bxt_64_server */
-        else if ((platform[0] == 'c') || (platform[0] == 'y'))
+        /* For Linux we have following common names
+         * (1): c7.4_bdw_64_server and variants
+         * (2): yocto_bxt_64_server
+         * (3): u16.04.3_skl_64_server */
+        else if ((platform[0] == 'c') || (platform[0] == 'y') || (platform[0] == 'u'))
         {
             g_tsOSFamily = MFX_OS_FAMILY_LINUX;
         }
