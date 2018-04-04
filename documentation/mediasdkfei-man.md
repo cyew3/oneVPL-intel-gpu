@@ -1604,7 +1604,7 @@ This extension buffer specifies repack control parameters for ENCODE usage model
 | | |
 --- | ---
 `Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_FEI_REPACK_CTRL**.
-`MaxFrameSize` | Maximum frame or field size in bytes. If encoded picture size is greater than this value, then QP is increased by specified amount and picture repacked with higher QP.<br><br>If this value is zero, then whole extension buffer is ignored.
+`MaxFrameSize` | Maximum frame or field size in bytes. If encoded picture size is greater than this value, then QP is increased by specified amount and picture repacked with higher QP.<br><br>Valid range is (0, 64M). If input value is zero, then whole extension buffer is ignored; if input value is equal to or bigger than 64M bytes, it is truncated.<br><br>For input values in (0, 512K) bytes, the granularity is 128 bytes; for input values in [512K, 64M), the granularity is 16K bytes. Value that is not integral multiple of the granularity is rounded.
 `NumPasses` | Number of repack attempts. Zero value is not allowed. It should be equal to the number of QP deltas specified in **DeltaQP** array.<br><br>Actual number of packing can vary from 1, first attempt produced picture size lower than threshold, to **NumPasses + 1**. One original attempt plus **NumPasses** attempts with higher QPs.
 `DeltaQP` | QP increment for each pass. First pass uses QP specified by **mfxInfoMFX** structure. Second **OriginalQP + DeltaQP[0]**, third **OriginalQP + DeltaQP[0] + DeltaQP[1]** and so on.<br><br>Maximum number of QP deltas is 4.<br><br>It is application responsibility to guard against QP overflow.
 
