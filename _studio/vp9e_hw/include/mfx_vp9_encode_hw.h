@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -143,10 +143,6 @@ protected:
 
     mfxExtVP9Segmentation m_prevSegment;
     VP9FrameLevelParam m_prevFrameParam;
-
-    bool m_isFirstFrameSubmitted;
-    mfxU32 m_firstFrameWidth;
-    mfxU32 m_firstFrameHeight;
 };
 
 } // MfxHwVP9Encode

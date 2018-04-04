@@ -38,9 +38,6 @@ Plugin::Plugin(bool CreateByDispatcher)
     , m_initHeight(0)
     , m_frameOrderInGop(0)
     , m_frameOrderInRefStructure(0)
-    , m_isFirstFrameSubmitted(false)
-    , m_firstFrameWidth(0)
-    , m_firstFrameHeight(0)
 {
     m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
     m_PluginParam.MaxThreadNum = 1;
@@ -447,10 +444,6 @@ MFX_CHECK_STS(sts);
 
     m_bStartIVFSequence = true;
 
-    m_isFirstFrameSubmitted = false;
-    m_firstFrameWidth = 0;
-    m_firstFrameHeight = 0;
-
     m_initialized = true;
     m_resetBrc = false;
 
@@ -512,13 +505,6 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         && parBeforeReset.mfx.RateControlMethod == parAfterReset.mfx.RateControlMethod
         && parBeforeReset.mfx.LowPower == parAfterReset.mfx.LowPower,
         MFX_ERR_INCOMPATIBLE_VIDEO_PARAM);
-
-    // Remove this when driver is able to support upscale to max_width and max_height rather than first frame's width and height
-    MFX_CHECK((m_firstFrameWidth == 0 && m_firstFrameHeight == 0)
-        || (m_firstFrameWidth && m_firstFrameHeight
-        && m_firstFrameWidth >= parAfterReset.mfx.FrameInfo.Width
-        && m_firstFrameHeight >= parAfterReset.mfx.FrameInfo.Height),
-        MFX_ERR_INVALID_VIDEO_PARAM);
 
     m_video = parAfterReset;
     m_resetBrc = isBrcResetRequired(parBeforeReset, parAfterReset);
@@ -708,14 +694,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
             newFrame.m_pParam = &m_videoForParamChange.back(); // always use latest encoding parameters
 
-            if (!m_isFirstFrameSubmitted)
-            {
-                // Save first frame's width and height for future check of upscaling
-                // Remove this when driver is able to support upscale to max_width and max_height rather than first frame's width and height
-                m_firstFrameWidth = newFrame.m_pParam->mfx.FrameInfo.Width;
-                m_firstFrameHeight = newFrame.m_pParam->mfx.FrameInfo.Height;
-            }
-
             newFrame.m_resetBrc = m_resetBrc;
             m_resetBrc = false; // BRC reset is triggered only once.
 
@@ -737,8 +715,6 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
         {
             m_outs.push(bs);
         }
-
-        m_isFirstFrameSubmitted = true;
     }
 
     *task = (mfxThreadTask)surface;
