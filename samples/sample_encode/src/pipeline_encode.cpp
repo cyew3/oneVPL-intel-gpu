@@ -1726,6 +1726,8 @@ mfxStatus CEncodingPipeline::Run()
 
     mfxU32 nFramesProcessed = 0;
 
+    bool skipLoadingNextFrame = false;
+
     sts = MFX_ERR_NONE;
 
 #if defined (ENABLE_V4L2_SUPPORT)
@@ -1767,43 +1769,47 @@ mfxStatus CEncodingPipeline::Run()
         pSurf = &m_pEncSurfaces[nEncSurfIdx];
         if (!bVppMultipleOutput)
         {
-            // if vpp is enabled find free surface for vpp input and point pSurf to vpp surface
-            if (m_pmfxVPP)
+            if(!skipLoadingNextFrame)
             {
+                // if vpp is enabled find free surface for vpp input and point pSurf to vpp surface
+                if (m_pmfxVPP)
+                {
 #if defined (ENABLE_V4L2_SUPPORT)
-                if (isV4L2InputEnabled)
-                {
-                    nVppSurfIdx = v4l2Pipeline.GetOffQ();
-                }
+                    if (isV4L2InputEnabled)
+                    {
+                        nVppSurfIdx = v4l2Pipeline.GetOffQ();
+                    }
 #else
-                if (m_nMemBuffer)
-                {
-                    nVppSurfIdx = nVppSurfIdx % m_nMemBuffer;
-                }
-                else
-                {
-                    nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
-                }
-                MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
+                    if (m_nMemBuffer)
+                    {
+                        nVppSurfIdx = nVppSurfIdx % m_nMemBuffer;
+                    }
+                    else
+                    {
+                        nVppSurfIdx = GetFreeSurface(m_pVppSurfaces, m_VppResponse.NumFrameActual);
+                    }
+                    MSDK_CHECK_ERROR(nVppSurfIdx, MSDK_INVALID_SURF_IDX, MFX_ERR_MEMORY_ALLOC);
 #endif
 
-                pSurf = &m_pVppSurfaces[nVppSurfIdx];
+                    pSurf = &m_pVppSurfaces[nVppSurfIdx];
+                }
+
+                pSurf->Info.FrameId.ViewId = currViewNum;
+
+                m_statFile.StartTimeMeasurement();
+                sts = LoadNextFrame(pSurf);
+                m_statFile.StopTimeMeasurement();
+
+                if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed)
+                    continue;
+
+                MSDK_BREAK_ON_ERROR(sts);
+
+                if (MVC_ENABLED & m_MVCflags)
+                {
+                    currViewNum ^= 1; // Flip between 0 and 1 for ViewId
+                }
             }
-
-            pSurf->Info.FrameId.ViewId = currViewNum;
-
-            m_statFile.StartTimeMeasurement();
-            sts = LoadNextFrame(pSurf);
-            m_statFile.StopTimeMeasurement();
-
-            if ( (MFX_ERR_MORE_DATA == sts) && !m_bTimeOutExceed)
-                continue;
-
-            MSDK_BREAK_ON_ERROR(sts);
-
-            m_statFile.StopTimeMeasurement();
-            if (MVC_ENABLED & m_MVCflags) currViewNum ^= 1; // Flip between 0 and 1 for ViewId
-
         }
 
         // perform preprocessing if required
@@ -1812,7 +1818,8 @@ mfxStatus CEncodingPipeline::Run()
             bVppMultipleOutput = false; // reset the flag before a call to VPP
             for (;;)
             {
-                sts = m_pmfxVPP->RunFrameVPPAsync(&m_pVppSurfaces[nVppSurfIdx], &m_pEncSurfaces[nEncSurfIdx],
+                sts = m_pmfxVPP->RunFrameVPPAsync(skipLoadingNextFrame ?  NULL : &m_pVppSurfaces[nVppSurfIdx],
+                                                  &m_pEncSurfaces[nEncSurfIdx],
                     NULL, &VppSyncPoint);
 
                 if (m_nMemBuffer)
@@ -1834,10 +1841,16 @@ mfxStatus CEncodingPipeline::Run()
                     break; // not a warning
             }
 
+            skipLoadingNextFrame = false;
             // process errors
             if (MFX_ERR_MORE_DATA == sts)
             {
                 continue;
+            }
+            else if(MFX_ERR_MORE_SURFACE == sts)
+            {
+                skipLoadingNextFrame = true;
+                sts = MFX_ERR_NONE;
             }
             else
             {
