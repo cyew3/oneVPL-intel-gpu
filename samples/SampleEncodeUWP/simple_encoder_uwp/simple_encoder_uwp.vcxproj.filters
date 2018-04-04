@@ -62,7 +62,7 @@
     <AppxManifest Include="Package.appxmanifest" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="simple_encoder_TemporaryKey.pfx" />
+    <None Include="simple_encoder_uwp_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />

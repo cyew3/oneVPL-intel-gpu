@@ -242,7 +242,10 @@ mfxStatus CEncoder::AllocEncoderInputFrames()
     sts = m_pmfxENC->QueryIOSurf(&m_mfxEncParams, &EncRequest);
     MSDK_CHECK_STATUS(sts, "QueryIOSurf (for encoder) failed");
 
-    m_mfxEncParams.AsyncDepth = EncRequest.NumFrameMin;
+    sts = m_pmfxENC->Init(&m_mfxEncParams);
+    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
+
+    m_mfxEncParams.AsyncDepth = 1;
 
     if (EncRequest.NumFrameSuggested < m_mfxEncParams.AsyncDepth)
         return MFX_ERR_MEMORY_ALLOC;
@@ -268,9 +271,6 @@ mfxStatus CEncoder::AllocEncoderInputFrames()
         sts = m_pMFXAllocator->Lock(m_pMFXAllocator->pthis, m_EncResponse.mids[i], &(m_pEncSurfaces[i].Data));
         MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Lock failed");
     }
-
-    sts = m_pmfxENC->Init(&m_mfxEncParams);
-    MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
 
     return sts;
 }
@@ -473,6 +473,7 @@ mfxStatus CEncoder::ProceedFrame(const mfxU8* bufferSrc, mfxU32 buffersize, mfxS
         }
 
         // at this point surface for encoder contains either a frame from file or a frame processed by vpp
+        EncSyncP = 0;
         sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &m_mfxBS, &EncSyncP);
 
         nEncSurfIdx = (nEncSurfIdx + 1) % m_nEncSurfaces;

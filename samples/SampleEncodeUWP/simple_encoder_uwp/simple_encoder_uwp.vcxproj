@@ -164,7 +164,7 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
@@ -176,7 +176,7 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
@@ -188,7 +188,7 @@
       <AdditionalIncludeDirectories>$(INTELMEDIASDKROOT)\include;..\common;$(SolutionDir)..\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);$(SolutionDir)..\build\$(Configuration)\$(Platform)\bin\;$(SolutionDir)..\lib\$(PlatformTarget)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\$(Platform);</AdditionalLibraryDirectories>
       <AdditionalDependencies>libmfx_uwp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>intel_api-$(PlatformTarget).dll</DelayLoadDLLs>
     </Link>
