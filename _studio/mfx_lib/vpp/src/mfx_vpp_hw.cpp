@@ -3219,8 +3219,8 @@ mfxStatus VideoVPPHW::VppFrameCheck(
 
 mfxStatus VideoVPPHW::PreWorkOutSurface(ExtSurface & output)
 {
-    mfxHDLPair out;
-    mfxHDLPair hdl;
+    mfxHDLPair out = {};
+    mfxHDLPair hdl = {};
 
     if (!output.pSurf)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -3272,8 +3272,8 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 numSamples = (mfxU32)surfQueue.size();
-    mfxHDLPair hdl;
-    mfxHDLPair in;
+    mfxHDLPair hdl = {};
+    mfxHDLPair in = {};
 
     for (mfxU32 i = 0 ; i < numSamples; i += 1)
     {
@@ -3296,7 +3296,7 @@ mfxStatus VideoVPPHW::PreWorkInputSurface(std::vector<ExtSurface> & surfQueue)
 
                     IppiSize roi = {surfQueue[i].pSurf->Info.Width, surfQueue[i].pSurf->Info.Height};
 
-                    mfxHDLPair dstHandle;
+                    mfxHDLPair dstHandle = {};
                     mfxMemId srcMemId, dstMemId;
 
                     mfxFrameSurface1 srcTempSurface, dstTempSurface;
@@ -3451,7 +3451,7 @@ mfxStatus VideoVPPHW::PostWorkOutSurfaceCopy(ExtSurface & output)
 
             IppiSize roi = {output.pSurf->Info.Width, output.pSurf->Info.Height};
 
-            mfxHDLPair srcHandle;
+            mfxHDLPair srcHandle = {};
             mfxMemId srcMemId, dstMemId;
 
             mfxFrameSurface1 srcTempSurface, dstTempSurface;

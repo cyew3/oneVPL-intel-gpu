@@ -674,7 +674,7 @@ mfxStatus D3D11VideoCORE::DoFastCopyWrapper(mfxFrameSurface1 *pDst, mfxU16 dstMe
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11VideoCORE::DoFastCopyWrapper");
     mfxStatus sts;
 
-    mfxHDLPair srcHandle, dstHandle;
+    mfxHDLPair srcHandle = {}, dstHandle = {};
     mfxMemId srcMemId, dstMemId;
 
     mfxFrameSurface1 srcTempSurface, dstTempSurface;
