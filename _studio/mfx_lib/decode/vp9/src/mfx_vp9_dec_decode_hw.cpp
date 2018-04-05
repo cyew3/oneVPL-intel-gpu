@@ -149,6 +149,12 @@ mfxStatus VideoDECODEVP9_HW::Init(mfxVideoParam *par)
 
     m_in_framerate = (mfxF64) m_vInitPar.mfx.FrameInfo.FrameRateExtD / m_vInitPar.mfx.FrameInfo.FrameRateExtN;
 
+    if ((m_vPar.mfx.FrameInfo.AspectRatioH == 0) && (m_vPar.mfx.FrameInfo.AspectRatioW == 0))
+    {
+        m_vPar.mfx.FrameInfo.AspectRatioH = 1;
+        m_vPar.mfx.FrameInfo.AspectRatioW = 1;
+    }
+
     // allocate memory
     memset(&m_request, 0, sizeof(m_request));
     memset(&m_response, 0, sizeof(m_response));
@@ -485,15 +491,6 @@ mfxStatus VideoDECODEVP9_HW::GetVideoParam(mfxVideoParam *par)
 
     par->mfx.FrameInfo.FrameRateExtD = m_vInitPar.mfx.FrameInfo.FrameRateExtD;
     par->mfx.FrameInfo.FrameRateExtN = m_vInitPar.mfx.FrameInfo.FrameRateExtN;
-
-    par->mfx.FrameInfo.AspectRatioH = m_vInitPar.mfx.FrameInfo.AspectRatioH;
-    par->mfx.FrameInfo.AspectRatioW = m_vInitPar.mfx.FrameInfo.AspectRatioW;
-
-    if ((par->mfx.FrameInfo.AspectRatioH == 0) && (par->mfx.FrameInfo.AspectRatioW == 0))
-    {
-        par->mfx.FrameInfo.AspectRatioH = 1;
-        par->mfx.FrameInfo.AspectRatioW = 1;
-    }
 
     return MFX_ERR_NONE;
 }
