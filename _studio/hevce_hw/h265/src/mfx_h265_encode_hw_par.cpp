@@ -1267,6 +1267,7 @@ void InheritDefaultValues(
 
     InheritOption(extOpt3Init->IntRefCycleDist, extOpt3Reset->IntRefCycleDist);
     InheritOption(extOpt3Init->PRefType, extOpt3Reset->PRefType);
+    InheritOption(extOpt3Init->GPB, extOpt3Reset->GPB);
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     InheritOption(extOpt3Init->TransformSkip, extOpt3Reset->TransformSkip);
