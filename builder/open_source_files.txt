@@ -588,7 +588,9 @@ _studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode_hw.cpp
 _studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode_hw_vaapi.cpp
 _studio/mfx_lib/decode/vp8/src/mfx_vp8_dec_decode_tables.cpp
 _studio/mfx_lib/plugin/include/mfx_vp8_dec_plugin.h
+_studio/mfx_lib/plugin/include/mfx_vp9_dec_plugin.h
 _studio/mfx_lib/plugin/src/mfx_vp8_dec_plugin.cpp
+_studio/mfx_lib/plugin/src/mfx_vp9_dec_plugin.cpp
 _studio/mfx_lib/decode/vp9/include/mfx_vp9_dec_decode.h
 _studio/mfx_lib/decode/vp9/include/mfx_vp9_dec_decode_hw.h
 _studio/mfx_lib/decode/vp9/include/mfx_vp9_dec_decode_utils.h
