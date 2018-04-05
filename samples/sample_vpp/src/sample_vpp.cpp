@@ -673,6 +673,10 @@ int main(int argc, msdk_char *argv[])
                 sts = yuvReaders[nInStreamInd].GetNextInputFrame(&allocator,&realFrameInfoIn[nInStreamInd],&pInSurf[nInStreamInd],nInStreamInd);
                 MSDK_BREAK_ON_ERROR(sts);
 
+                // Set input timestamps according to input framerate
+                mfxU64 expectedPTS = (((mfxU64)(numGetFrames) * mfxParamsVideo.vpp.In.FrameRateExtD * 90000) / mfxParamsVideo.vpp.In.FrameRateExtN);
+                pInSurf[nInStreamInd]->Data.TimeStamp = expectedPTS;
+
                 if( bMultiView )
                 {
                     pInSurf[nInStreamInd]->Info.FrameId.ViewId = viewID;
