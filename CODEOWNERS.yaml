@@ -84,7 +84,6 @@ h264e:
   - _testsuite/msdk_ts/src/gmock/test_suites/avce
   reviewers:
   - oleg.nabiullin@intel.com
-  - andrey.morozov@intel.com
   - alexey.s.kokoshnikov@intel.com
   - roman.kazantsev@intel.com
   - andrey.larionov@intel.com
@@ -149,7 +148,6 @@ hevce:
   - _testsuite/msdk_ts/src/gmock/test_suites/hevce
   reviewers:
   - oleg.nabiullin@intel.com
-  - andrey.morozov@intel.com
   - alexey.s.kokoshnikov@intel.com
   - alexei.leonenko@intel.com
   - evgeniy.starov@intel.com
