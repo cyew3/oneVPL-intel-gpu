@@ -442,7 +442,7 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
         return MFX_ERR_UNSUPPORTED;
 
     return
-        MFX_VPX_Utility::Query(p_in, p_out, MFX_CODEC_VP9, type);
+        MFX_VPX_Utility::Query(p_core, p_in, p_out, MFX_CODEC_VP9, type);
 }
 
 mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_video_param, mfxFrameAllocRequest *p_request)

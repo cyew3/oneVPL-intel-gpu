@@ -249,7 +249,7 @@ mfxStatus VideoDECODEAV1::Query(VideoCORE* core, mfxVideoParam* in, mfxVideoPara
     MFX_CHECK(core, MFX_ERR_UNDEFINED_BEHAVIOR);
     MFX_CHECK_NULL_PTR1(out);
 
-    mfxStatus sts = MFX_VPX_Utility::Query(in, out, MFX_CODEC_AV1, core->GetHWType());
+    mfxStatus sts = MFX_VPX_Utility::Query(core, in, out, MFX_CODEC_AV1, core->GetHWType());
     if (sts != MFX_ERR_NONE)
         return sts;
 

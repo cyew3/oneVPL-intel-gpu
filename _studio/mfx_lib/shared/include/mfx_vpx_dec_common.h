@@ -16,7 +16,7 @@
 
 namespace MFX_VPX_Utility
 {
-    mfxStatus Query(mfxVideoParam const* in, mfxVideoParam* out, mfxU32 codecId, eMFXHWType type);
+    mfxStatus Query(VideoCORE*, mfxVideoParam const* in, mfxVideoParam* out, mfxU32 codecId, eMFXHWType type);
 
     bool CheckVideoParam(mfxVideoParam const*, mfxU32 codecId, eMFXPlatform platform = MFX_PLATFORM_HARDWARE);
     mfxStatus QueryIOSurfInternal(mfxVideoParam const*, mfxFrameAllocRequest*);
