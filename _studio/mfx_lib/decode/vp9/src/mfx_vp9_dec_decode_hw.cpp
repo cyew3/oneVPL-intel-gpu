@@ -442,8 +442,24 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
     if (!CheckHardwareSupport(p_core, p_in))
         return MFX_ERR_UNSUPPORTED;
 
-    return
-        MFX_VPX_Utility::Query(p_core, p_in, p_out, MFX_CODEC_VP9, type);
+    mfxStatus status = MFX_VPX_Utility::Query(p_core, p_in, p_out, MFX_CODEC_VP9, type);
+
+    if (p_in == NULL)
+    {
+        p_out->mfx.EnableReallocRequest = 1;
+    }
+    else
+    {
+        // Disable DRC realloc surface, unless the user explicitly enable it.
+        p_out->mfx.EnableReallocRequest = MFX_CODINGOPTION_OFF;
+
+        if (p_in->mfx.EnableReallocRequest == MFX_CODINGOPTION_ON)
+        {
+            p_out->mfx.EnableReallocRequest = MFX_CODINGOPTION_ON;
+        }
+    }
+
+    return status;
 }
 
 mfxStatus VideoDECODEVP9_HW::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_video_param, mfxFrameAllocRequest *p_request)
