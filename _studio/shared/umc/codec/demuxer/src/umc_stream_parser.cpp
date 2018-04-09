@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <ipps.h>
@@ -176,14 +176,19 @@ Status StreamParser::GetNextData(MediaData *pData, Ipp32u *pTrack)
         umcRes = UMC_OK;
     }
 
-    *pTrack = GetTrackByPidOrCreateNew(m_pPacket->iPid, NULL);
+    Ipp32s trackByPid = GetTrackByPidOrCreateNew(m_pPacket->iPid, NULL);
+    if (trackByPid >= 0)
+    {
+        *pTrack = trackByPid;
+
 #ifdef _BIG_ENDIAN_
-    if (*pTrack >= 0 && TRACK_PCM == m_pInfo[*pTrack]->m_Type)
-        ippsSwapBytes_16u_I((Ipp16u *)pData->GetDataPointer(), m_pPacket->uiSize / 2);
+        if (TRACK_PCM == m_pInfo[*pTrack]->m_Type)
+            ippsSwapBytes_16u_I((Ipp16u *)pData->GetDataPointer(), m_pPacket->uiSize / 2);
 #else
-    if (*pTrack >= 0 && TRACK_LPCM == m_pInfo[*pTrack]->m_Type)
-        ippsSwapBytes_16u_I((Ipp16u *)pData->GetDataPointer(), m_pPacket->uiSize / 2);
+        if (TRACK_LPCM == m_pInfo[*pTrack]->m_Type)
+            ippsSwapBytes_16u_I((Ipp16u *)pData->GetDataPointer(), m_pPacket->uiSize / 2);
 #endif // _BIG_ENDIAN_
+    }
 
     m_ParserState = HEADER;
     PacketToMediaData(*m_pPacket, *pData);

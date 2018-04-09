@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -55,7 +55,7 @@ JERRCODE CMemBuffInput::Close(void)
 
 JERRCODE CMemBuffInput::Seek(long offset, int origin)
 {
-  if(m_currpos + offset >= m_buflen || m_currpos + offset < 0)
+  if(m_currpos + offset >= m_buflen || (long)m_currpos + offset < 0)
   {
     return JPEG_ERR_BUFF;
   }

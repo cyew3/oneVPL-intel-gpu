@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -81,7 +81,7 @@ namespace UMC
             void s_new(T** pObj, Ipp32u size)
         {
             Ipp32s size_T = sizeof(T);
-            if ((m_iRemSize - align_value<Ipp32s>(size_T)*size) < 0)
+            if ((m_iRemSize - align_value<Ipp32s>(size_T)*((Ipp32s)size)) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
@@ -102,7 +102,7 @@ namespace UMC
                        Arg*   pArg)
         {
             Ipp32s size_T = sizeof(T);
-            if ((m_iRemSize - align_value<Ipp32s>(size_T)*size) < 0)
+            if ((m_iRemSize - align_value<Ipp32s>(size_T)*((Ipp32s)size)) < 0)
                 throw VC1Exceptions::vc1_exception(VC1Exceptions::mem_allocation_er);
             else
             {
@@ -281,7 +281,7 @@ namespace UMC
         {
             pDS->m_bIsReadyToDisplay = false;
             pDS->m_bIsReadyToLoad = true;
-            pDS->m_bIsBusy = false; 
+            pDS->m_bIsBusy = false;
             --m_iNumDSActiveinQueue;
             Ipp32u i;
             for (i = 0; i < m_iNumFramesProcessing; i++)
