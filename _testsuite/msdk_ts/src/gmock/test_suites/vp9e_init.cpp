@@ -241,15 +241,15 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ADAPTIVE },
             }
         },
-        {/*40 Invalid LowPowerValue*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,
-        {
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, 1 },
-        }
+        {/*40 Invalid LowPower value*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, 1 },
+            }
         },
-        {/*41 Unsupported LowPowerValue*/ MFX_ERR_UNSUPPORTED, NONE, NONE,
-        {
-            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF },
-        }
+        {/*41 Unsupported LowPower value*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF },
+            }
         },
 
         /* Check this on Post-Si (on Pre-Si long hanging)
