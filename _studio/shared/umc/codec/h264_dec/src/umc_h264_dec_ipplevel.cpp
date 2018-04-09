@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -435,8 +435,8 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
     Ipp32u        table_bits;
     Ipp8u         code_len;
     Ipp32s        i;
-    register Ipp32u  table_pos;
-    register Ipp32s  val;
+    Ipp32u  table_pos;
+    Ipp32s  val;
 
     /* check error(s) */
     IPP_BAD_PTR4_RET(ppBitStream,pOffset,ppPosCoefbuf,pNumCoeff)

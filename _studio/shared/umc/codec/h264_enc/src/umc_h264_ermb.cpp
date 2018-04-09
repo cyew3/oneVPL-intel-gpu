@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <math.h>
@@ -1079,7 +1079,7 @@ IppStatus TransformQuantOptFwd4x4_H264_16s_C1(
         if( coeff == 0 ){  //Take into account only sig_flag
             Ipp64u cost = (lambda*p_bits[state_sig]+128)>>8;
             for( ctx_id = 1; ctx_id<8; ctx_id++ ){
-                register node* n = &layer_next[ctx_id];
+                node* n = &layer_next[ctx_id];
                 if( n->cost != MAX_COST ){
                     n->cost += cost;
                     coeffs[last_coeff].coeff = 0;
@@ -1975,7 +1975,7 @@ void QuantOptLuma8x8_H264_16s_C1_8u16s(
         if( coeff == 0 ){  //Take into account only sig_flag
             Ipp64u cost = (lambda*p_bits[state_sig]+128)>>8;
             for( ctx_id = 1; ctx_id<8; ctx_id++ ){
-                register node8x8* n = &layer_next[ctx_id];
+                node8x8* n = &layer_next[ctx_id];
                 if( n->cost != MAX_COST ){
                     n->cost += cost;
                     coeffs[last_coeff].coeff = 0;

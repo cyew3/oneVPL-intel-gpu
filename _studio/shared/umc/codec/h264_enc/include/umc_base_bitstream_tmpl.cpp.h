@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(__GNUC__)
@@ -97,7 +97,7 @@ Status H264ENC_MAKE_NAME(H264BsReal_Create)(
         return UMC_ERR_ALLOC;
 
     bs->m_base.m_cabacStateSize = sizeOfCabacState;
-    
+
     bs->m_base.m_pStoredCabacState = (IppvcCABACState *)ippMalloc(sizeOfCabacState);
     if (bs->m_base.m_pStoredCabacState == 0)
         return UMC_ERR_ALLOC;
@@ -152,7 +152,7 @@ void H264ENC_MAKE_NAME(H264BsReal_RestoreIppCABACState)(
 
     MFX_INTERNAL_CPY(bs->m_base.pCabacState, bs->m_base.m_pStoredCabacState, bs->m_base.m_cabacStateSize);
     bs->m_base.m_numBins = bs->m_base.m_storedNumBins;
-    
+
     if(bsData)
     {
         if(bsData >= bsDataStart)
@@ -475,8 +475,8 @@ void H264ENC_MAKE_NAME(H264BsFake_EncodeBins_CABAC)(
     Ipp32s len)
 {
     H264BsFakeType* bs = (H264BsFakeType *)state;
-    register Ipp8u pStateIdx = *ctx;
-    register Ipp32s bits=0;
+    Ipp8u pStateIdx = *ctx;
+    Ipp32s bits=0;
 
     while (len>0)
     {

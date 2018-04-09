@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -963,8 +963,8 @@ IppStatus ownippiDecodeCAVLCCoeffs_H264_1u16s (Ipp32u **ppBitStream,
     Ipp32u        table_bits;
     Ipp8u         code_len;
     Ipp32s        i;
-    register Ipp32u  table_pos;
-    register Ipp32s  val;
+    Ipp32u  table_pos;
+    Ipp32s  val;
     Ipp32u *pbsBackUp;
     Ipp32s bsoffBackUp;
 
@@ -1781,8 +1781,8 @@ IppStatus ownippiDecodeCAVLCChromaDcCoeffs_H264_1u16s (Ipp32u **ppBitStream,
 
     /*ippiDecodeVLCPair_32s(ppBitStream, pOffset, pTblCoeffToken, */
     /*                              &sNumTrailingOnes,&sNumCoeff);*/
-    register Ipp32s table_pos;
-    register Ipp32s val;
+    Ipp32s table_pos;
+    Ipp32s val;
     Ipp32u          table_bits;
     Ipp8u           code_len;
     Ipp32u *pbsBackUp;

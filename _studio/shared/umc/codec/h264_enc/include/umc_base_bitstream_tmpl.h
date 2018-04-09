@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -266,8 +266,8 @@ Ipp32u H264ENC_MAKE_NAME(H264BsFake_PutVLCCode)(
 {
     H264BsFakeType* bs = (H264BsFakeType *)state;
     VM_ASSERT(val != 0);
-    register Ipp32s NN = val + 1;
-    register Ipp32s i = 0;
+    Ipp32s NN = val + 1;
+    Ipp32s i = 0;
 #if defined(__i386__) && defined(__GNUC__) && (__GNUC__ > 3) && !defined(__INTEL_COMPILER)
     i = 31 - __builtin_clz(NN);
 #elif defined(__INTEL_COMPILER) && (defined(__i386__) || defined(WIN32)) && !defined(WIN64)
@@ -284,7 +284,7 @@ Ipp32u H264ENC_MAKE_NAME(H264BsFake_PutVLCCode)(
     if (NN & 0x2) { i += 1; NN >>= 1; }
 #endif
 
-    register Ipp32u code_length;
+    Ipp32u code_length;
     //code_length = (1 + (i << 1)) & (~1) + 1;
     code_length = 1 + (i << 1);
     bs->m_base.m_bitOffset += (code_length << 8);
@@ -308,7 +308,7 @@ void H264ENC_MAKE_NAME(H264BsFake_EncodeSingleBin_CABAC)(
     Ipp32s code)
 {
     H264BsFakeType* bs = (H264BsFakeType *)state;
-    register Ipp8u pStateIdx = bs->m_base.context_array[ctx];
+    Ipp8u pStateIdx = bs->m_base.context_array[ctx];
     //bs->m_base.m_bitOffset += ( code ? p_bits[pStateIdx^64] : p_bits[pStateIdx] );
     bs->m_base.m_bitOffset += p_bits[pStateIdx ^ (code << 6)];
     bs->m_base.context_array[ctx] = transTbl[code][pStateIdx];
