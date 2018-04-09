@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FRAME_CONSTRUCTOR_H__
@@ -231,6 +231,14 @@ namespace UMC
     {
     public:
         ReorderQueue(void);
+
+        using LinkedList<InnerListElement>::Add;
+        using LinkedList<InnerListElement>::First;
+        using LinkedList<InnerListElement>::Last;
+        using LinkedList<InnerListElement>::Next;
+        using LinkedList<InnerListElement>::Prev;
+        using LinkedList<InnerListElement>::Get;
+
         Status Add(FCSample &rSample);
         Status Add(FCSample &rSample, Ipp32s idx);
         Status Remove(void);

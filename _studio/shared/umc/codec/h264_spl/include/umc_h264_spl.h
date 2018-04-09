@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_H264_SPLITTER_H__
@@ -46,6 +46,7 @@ namespace UMC
 
         virtual Status SetPosition(Ipp64f /*fPosition*/) {return UMC_OK;}
 
+        using Splitter::GetPosition;
         virtual Status GetPosition(Ipp64f &/*fPosition*/) {return UMC_OK;}
 
     protected:

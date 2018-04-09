@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_DEMUXER_H__
@@ -185,6 +185,7 @@ namespace UMC
         virtual Status GetNextData(MediaData *data, Ipp32u uiTrack);
 
         // trick-modes
+        using Splitter::SetPosition;
         virtual Status SetRate(Ipp64f rate);
         virtual Status SetPosition(Ipp64u pos);
         virtual Status SetTimePosition(Ipp64f timePos);

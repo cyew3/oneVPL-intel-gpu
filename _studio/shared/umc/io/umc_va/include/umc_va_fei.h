@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VA_FEI_H__
@@ -75,6 +75,8 @@ namespace UMC
         Status Close();
 
         Status Execute();
+
+        using LinuxVideoAccelerator::ReleaseBuffer;
         void ReleaseBuffer(VAStreamOutBuffer*);
         void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index);
         Status SyncTask(Ipp32s index, void * error = NULL);
