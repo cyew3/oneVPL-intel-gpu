@@ -128,7 +128,7 @@
       <Command>build_kernel.cmd analyze_gradient_32x32_best hsw /Qxcm_release</Command>
     </PreBuildEvent>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt64.lib;Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>

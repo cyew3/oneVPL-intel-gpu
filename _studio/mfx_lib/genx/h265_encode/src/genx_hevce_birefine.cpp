@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -15,15 +15,22 @@
 #pragma warning(disable: 4505)
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+//#include <cm/genx_vme.h>
 #define INTERDATA_SIZE_SMALL    8
 #define INTERDATA_SIZE_BIG      64   // 32x32 and 64x64 blocks
 #define MVDATA_SIZE     4 // mfxI16Pair
 #define MBDIST_SIZE     64  // 16*mfxU32
 #define DIST_SIZE       4
 
+typedef unsigned int uint4;
+typedef int int4;
+typedef short int2;
+typedef unsigned short uint2;
+typedef char int1;
+typedef unsigned char uint1;
+
 #if !defined(target_gen7_5) && !defined(target_gen8) && !defined(target_gen9) && !defined(CMRT_EMU)
-#error One of macro should be defined: target_gen7_5, target_gen8, target_gen9
+//#error One of macro should be defined: target_gen7_5, target_gen8, target_gen9
 #endif
 
 #ifdef target_gen8

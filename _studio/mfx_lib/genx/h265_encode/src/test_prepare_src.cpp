@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "stdio.h"
@@ -20,6 +20,7 @@
 #include "../include/test_common.h"
 #include "../include/genx_hevce_prepare_src_bdw_isa.h"
 #include "../include/genx_hevce_prepare_src_hsw_isa.h"
+#include "../include/genx_hevce_prepare_src_cnl_isa.h"
 #include "../include/genx_hevce_down_sample_mb_4tiers_bdw_isa.h"
 #include "../include/genx_hevce_down_sample_mb_4tiers_hsw_isa.h"
 

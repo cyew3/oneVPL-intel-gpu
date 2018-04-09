@@ -1,17 +1,16 @@
 @echo off
 setlocal
 
-if "%1"=="" goto HELP
-if "%2"=="" goto HELP
+if "%1"=="" goto  HELP
+if "%2"=="" goto  HELP
 
 set KERNEL=%1
-set OPTIONS=%~3
 
 set JIT_TARGET=
 if "%2"=="hsw" set JIT_TARGET=gen7_5 & set PLATFORM_NAME=hsw
 if "%2"=="bdw" set JIT_TARGET=gen8 & set PLATFORM_NAME=bdw
 if "%2"=="skl" set JIT_TARGET=gen9 & set PLATFORM_NAME=skl
-if "%2"=="cnl" set JIT_TARGET=gen9 & set PLATFORM_NAME=cnl
+if "%2"=="cnl" set JIT_TARGET=gen10 & set PLATFORM_NAME=cnl
 if "%JIT_TARGET%"=="" goto HELP
 
 set CURDIR=%cd%
@@ -42,9 +41,9 @@ SET INCLUDE=%ICLDIR%\include;%ICLDIR%\include\cm;%MSVSINCL%;%INCLUDE%
 
 echo === Run CM compiler ===
 del /Q %ISA_FILENAME_FINAL%.isa %ISA_FILENAME_BUILD%.isa
-set CM_COMPILER_OPTIONS=/c /Qunroll1 /Qxcm /Qxcm_jit_target=%JIT_TARGET% .\src\genx_hevce_%KERNEL%.cpp /mGLOB_override_limits /mCM_print_asm_count /mCM_printregusage /Dtarget_%JIT_TARGET% %OPTIONS%
+set CM_COMPILER_OPTIONS=-c -Qxcm_jit_target=%JIT_TARGET% .\src\genx_hevce_%KERNEL%.cpp -Qxcm_print_asm_count -mCM_printregusage -Qxcm_release
 echo CM compiler options: %CM_COMPILER_OPTIONS%
-icl %CM_COMPILER_OPTIONS%
+cmc %CM_COMPILER_OPTIONS%
 if not EXIST %ISA_FILENAME_BUILD%.isa goto :BUILD_KERNEL_FAILED
 ren %ISA_FILENAME_BUILD%.isa %ISA_FILENAME_FINAL%.isa
 

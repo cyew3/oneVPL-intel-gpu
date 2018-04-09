@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -15,7 +15,7 @@
 #pragma warning(disable: 4505)
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+//#include <cm/genx_vme.h>
 #include "../include/utility_genx.h"
 
 #define BORDER 4
@@ -28,6 +28,13 @@
 
 using namespace cmut;
 
+typedef unsigned int uint4;
+typedef int int4;
+typedef short int2;
+typedef unsigned short uint2;
+typedef char int1;
+typedef unsigned char uint1;
+
 _GENX_ vector<uint2, 36> g_Oneto36; //0, 1, 2, ..35
 _GENX_ matrix<uint1, SATD_BLOCKH, SATD_BLOCKW> g_m_src;
 _GENX_ matrix<uint1, SATD_BLOCKH, SATD_BLOCKW> g_m_avg;
@@ -38,7 +45,7 @@ _GENX_ matrix<uint1, SATD_BLOCKH, SATD_BLOCKW> g_m_avg;
 
 template <uint BLOCKW, uint BLOCKH>
 inline _GENX_
-void read_block(SurfaceIndex SURF_IN, uint x, uint y, matrix<uint1, BLOCKH, BLOCKW>& m_in)
+void read_block(SurfaceIndex SURF_IN, uint x, uint y, matrix_ref<uint1, BLOCKH, BLOCKW> m_in)
 {
     enum
     {
@@ -67,7 +74,7 @@ void read_block(SurfaceIndex SURF_IN, uint x, uint y, matrix<uint1, BLOCKH, BLOC
 
 
 template<uint R, uint C, uint WIDTH>
-void _GENX_ inline sad_fixWidth(matrix_ref<uchar, R, C> a, matrix_ref<uchar, R, C> b, vector<ushort, WIDTH> &sum) {
+void _GENX_ inline sad_fixWidth(matrix_ref<uchar, R, C> a, matrix_ref<uchar, R, C> b, vector_ref<ushort, WIDTH> sum) {
     
     sum = 0;
     matrix_ref<uchar, R*C/WIDTH, WIDTH> a_ref = a.template format<uchar, R*C/WIDTH, WIDTH>();
@@ -88,7 +95,7 @@ void CalcQpelSADFromIntPel(matrix<uint1, BLOCKH, BLOCKW> m_ref_left,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref_bot,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref,
                              matrix<uint1, BLOCKH, BLOCKW> m_src,
-                             vector< uint,9 >& sad)
+                             vector_ref< uint,9 > sad)
 {
     enum
     {
@@ -147,7 +154,7 @@ void CalcQpelSADFromHalfPel( matrix<uint1, BLOCKH, BLOCKW> m_ref_left,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref_botright,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref,
                              matrix<uint1, BLOCKH, BLOCKW> m_src,
-                             vector< uint,9 >& sad)
+                             vector_ref< uint,9 > sad)
 {
     enum
     {
@@ -198,7 +205,7 @@ template <uint W, uint H, uint BLOCKW, uint BLOCKH>
 inline _GENX_
 void InterpolateQpelAtIntPel(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG, 
-                             uint x, uint y, int2 xref, int2 yref, vector< uint,9 >& sad)
+                             uint x, uint y, int2 xref, int2 yref, vector_ref< uint,9 > sad)
 {
     matrix<uint1, BLOCKH, BLOCKW> m_src;
     matrix<uint1, BLOCKH, BLOCKW> m_ref;
@@ -240,7 +247,7 @@ template <uint W, uint H, uint BLOCKW, uint BLOCKH>
 inline _GENX_
 void InterpolateQpelAtHalfPelDiag(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG, 
-                             uint x, uint y, int2 xref, int2 yref, vector< uint,9 >& sad)
+                             uint x, uint y, int2 xref, int2 yref, vector_ref< uint,9 > sad)
 {
     matrix<uint1, BLOCKH, BLOCKW> m_src;
     matrix<uint1, BLOCKH, BLOCKW> m_ref;
@@ -281,7 +288,7 @@ template <uint W, uint H, uint BLOCKW, uint BLOCKH>
 inline _GENX_
 void InterpolateQpelAtHalfPelHorz(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG, 
-                             uint x, uint y, int2 xref, int2 yref, vector< uint,9 >& sad)
+                             uint x, uint y, int2 xref, int2 yref, vector_ref< uint,9 > sad)
 {
     matrix<uint1, BLOCKH, BLOCKW> m_src;
     matrix<uint1, BLOCKH, BLOCKW*2> m_ref;
@@ -330,7 +337,7 @@ template <uint W, uint H, uint BLOCKW, uint BLOCKH>
 inline _GENX_
 void InterpolateQpelAtHalfPelVert(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG, 
-                             uint x, uint y, int2 xref, int2 yref, vector< uint,9 >& sad)
+                             uint x, uint y, int2 xref, int2 yref, vector_ref< uint,9 > sad)
 {
     matrix<uint1, BLOCKH, BLOCKW> m_src;
     matrix<uint1, BLOCKH+1, BLOCKW> m_ref;
@@ -403,7 +410,7 @@ vector< uint,9 > QpelRefinement(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, Su
 }
 
 template<uint W, uint H>
-void _GENX_ inline transpose4Lines(matrix<short, H, W>& a) {
+void _GENX_ inline transpose4Lines(matrix_ref<short, H, W> a) {
    
     matrix_ref<int, H, W/2> a_int = a.template format<int, H, W/2>();
     matrix<short, 2, W/2> b;
@@ -428,7 +435,7 @@ void _GENX_ inline transpose4Lines(matrix<short, H, W>& a) {
 }
 
 template<uint W, uint H>
-void _GENX_ inline transpose8Lines(matrix<short, H, W>& a) {
+void _GENX_ inline transpose8Lines(matrix_ref<short, H, W> a) {
    
     matrix<short, 4, 4> b;
 #pragma unroll
@@ -687,7 +694,7 @@ inline  _GENX_ void CalcQpelSATDFromIntDiagPel8x8(matrix<uint1, BLOCKH, BLOCKW> 
                              matrix<uint1, BLOCKH, BLOCKW> m_ref_top,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref_bot,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref,
-                             vector< uint,9 >& sad)
+                             vector_ref< uint,9 > sad)
 {
     g_m_avg = cm_avg<uint1>(m_ref_top, m_ref_left);
     sad(0) = CalcBlockSATD8x8Combine<BLOCKH, BLOCKW>();
@@ -771,7 +778,7 @@ void CalcQpelSATDFromHalfPel8x8( matrix<uint1, BLOCKH, BLOCKW> m_ref_left,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref_botleft,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref_botright,
                              matrix<uint1, BLOCKH, BLOCKW> m_ref,
-                             vector< uint,9 >& sad)
+                             vector_ref< uint,9 > sad)
 {
     g_m_avg = cm_avg<uint1>(m_ref, m_ref_topleft);
     sad(0) = CalcBlockSATD8x8Combine<BLOCKH, BLOCKW>();
@@ -806,7 +813,7 @@ template <uint W, uint H, uint BLOCKW, uint BLOCKH, uint SADMODE>
 inline _GENX_
 void InterpolateQpelAtIntDiagPelSATD(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG, 
-                             uint x, uint y, int2 xref, int2 yref, int2 hpelMvx, int2 hpelMvy, vector< uint,9 >& sad)
+                             uint x, uint y, int2 xref, int2 yref, int2 hpelMvx, int2 hpelMvy, vector_ref< uint,9 > sad)
 {
     matrix<uint1, BLOCKH, BLOCKW> m_ref;
     matrix<uint1, BLOCKH, BLOCKW*2> m_ref_hori;
@@ -862,7 +869,7 @@ template <uint W, uint H, uint BLOCKW, uint BLOCKH, uint SADMODE>
 inline _GENX_
 void InterpolateQpelAtHoriVertPelSATD(SurfaceIndex SURF_SRC, SurfaceIndex SURF_REF, SurfaceIndex SURF_HPEL_HORZ,
                              SurfaceIndex SURF_HPEL_VERT, SurfaceIndex SURF_HPEL_DIAG, 
-                             uint x, uint y, int2 xref, int2 yref, int2 hpelMvx, int2 hpelMvy, vector< uint,9 >& sad)
+                             uint x, uint y, int2 xref, int2 yref, int2 hpelMvx, int2 hpelMvy, vector_ref< uint,9 > sad)
 {
     matrix<uint1, BLOCKH, BLOCKW*2> m_ref;
     matrix<uint1, BLOCKH, BLOCKW> m_ref_hori;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -15,7 +15,7 @@
 #pragma warning(disable: 4505)
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+//#include <cm/genx_vme.h>
 #include "../include/genx_hevce_me_common.h"
 
 template <uint H, uint W> inline _GENX_ vector<uint2,W> Sad(matrix_ref<uint1,H,W> m1, matrix_ref<uint1,H,W> m2)

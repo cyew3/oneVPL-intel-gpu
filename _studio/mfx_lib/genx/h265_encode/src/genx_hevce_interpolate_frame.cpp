@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -15,13 +15,20 @@
 #pragma warning(disable: 4505)
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+//#include <cm/genx_vme.h>
+
+typedef unsigned int uint4;
+typedef int int4;
+typedef short int2;
+typedef unsigned short uint2;
+typedef char int1;
+typedef unsigned char uint1;
 
 #define BORDER 4
 
 template <uint W, uint H>
 inline _GENX_
-void VerticalInterpolate(matrix<uint1, H+3, W> &data, matrix_ref<uint1, H, W> outV)
+void VerticalInterpolate(matrix_ref<uint1, H+3, W> data, matrix_ref<uint1, H, W> outV)
 {
     matrix<int2, H, W> interV; // x+0, y+0.5
 
@@ -87,7 +94,7 @@ void InterpolateBlockIVMerge(
 
 template <uint W, uint H>
 inline _GENX_
-void HoriDiagInterpolate(matrix<uint1, H+3, W*2> &data, matrix_ref<uint1, H, W> outH, matrix_ref<uint1, H, W> outD)
+void HoriDiagInterpolate(matrix_ref<uint1, H+3, W*2> data, matrix_ref<uint1, H, W> outH, matrix_ref<uint1, H, W> outD)
 {
     enum {
         BLOCK_W = W*2,

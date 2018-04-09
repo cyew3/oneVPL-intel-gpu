@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -15,7 +15,14 @@
 #pragma warning(disable: 4505)
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+//#include <cm/genx_vme.h>
+
+typedef unsigned int uint4;
+typedef int int4;
+typedef short int2;
+typedef unsigned short uint2;
+typedef char int1;
+typedef unsigned char uint1;
 
 #define INTERDATA_SIZE_SMALL    8
 #define INTERDATA_SIZE_BIG      64   // 32x32 and 64x64 blocks
@@ -25,8 +32,8 @@
 
 #define SLICE(VEC, FROM, HOWMANY, STEP) ((VEC).select<HOWMANY, STEP>(FROM))
 #define SLICE1(VEC, FROM, HOWMANY) SLICE(VEC, FROM, HOWMANY, 1)
-#define SELECT_N_ROWS(m, from, nrows) m.select<nrows, 1, m.COLS, 1>(from)
-#define SELECT_N_COLS(m, from, ncols) m.select<m.ROWS, 1, ncols, 1>(0, from)
+//#define SELECT_N_ROWS(m, from, nrows) m.select<nrows, 1, m.COLS, 1>(from)
+//#define SELECT_N_COLS(m, from, ncols) m.select<m.ROWS, 1, ncols, 1>(0, from)
 
 #define VME_SET_DWORD(dst, r, c, src)           \
     dst.row(r).format<uint4>().select<1, 1>(c) = src

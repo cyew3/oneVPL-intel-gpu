@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "stdio.h" 
@@ -17,6 +17,7 @@
 #include "../include/test_common.h"
 #include "../include/genx_hevce_interpolate_frame_bdw_isa.h"
 #include "../include/genx_hevce_interpolate_frame_hsw_isa.h"
+#include "../include/genx_hevce_interpolate_frame_cnl_isa.h"
 
 #ifdef CMRT_EMU
 extern "C"

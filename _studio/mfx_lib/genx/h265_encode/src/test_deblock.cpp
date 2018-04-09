@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "stdio.h"
@@ -17,6 +17,11 @@
 #include "../include/test_common.h"
 #include "../include/genx_hevce_deblock_hsw_isa.h"
 #include "../include/genx_hevce_deblock_bdw_isa.h"
+#include "../include/genx_hevce_deblock_cnl_isa.h"
+#ifndef CM_MAX_THREADSPACE_WIDTH
+// old style cm-spec
+#define CM_MAX_THREADSPACE_WIDTH (CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+#endif
 
 #ifdef CMRT_EMU
 extern "C" void Deblock(SurfaceIndex SURF_SRC, SurfaceIndex SURF_FRAME_CU_DATA, SurfaceIndex SURF_PARAM);

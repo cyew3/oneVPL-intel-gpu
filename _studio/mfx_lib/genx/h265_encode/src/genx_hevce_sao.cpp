@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -17,12 +17,20 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
 
 
 enum { W_STAT = 16, H_STAT = 16 };
 enum { W_STAT_CHROMA = 8, H_STAT_CHROMA = 16 };                // <=  use separate Chroma kernel with alternative threadspace
 //enum { W_STAT_CHROMA = W_STAT/2, H_STAT_CHROMA = H_STAT/2 }; // <=  switch on in case of use the same threadspace as for luma
+
+typedef unsigned int uint4;
+typedef int int4;
+typedef short int2;
+typedef unsigned short uint2;
+typedef char int1;
+typedef unsigned char uint1;
+
+#define FLT_MAX         3.402823466e+38F        /* max value */
 
 struct MiniVideoParam
 {
@@ -42,63 +50,42 @@ struct MiniVideoParam
     int4 offsetChroma;
 }; // sizeof == 48 bytes
 
-
-_GENX_ inline
-void ReadParam(SurfaceIndex PARAM, MiniVideoParam& param)
-{
-#if 0
-    vector<uint1, 48> data_pack;
-    read(PARAM, 0, data_pack);
-
-    param.Width  = data_pack.format<int4>()[0];
-    param.Height = data_pack.format<int4>()[1];
-    param.PicWidthInCtbs  = data_pack.format<int4>()[2];
-    param.PicHeightInCtbs = data_pack.format<int4>()[3];
-
-    //param.chromaFormatIdc = data_pack.format<int4>()[4];
-    param.MaxCUSize = data_pack.format<int4>()[5];
-    //param.bitDepthLuma = data_pack.format<int4>()[6];
-    //param.saoOpt = data_pack.format<int4>()[7];
-
-    param.m_rdLambda  = data_pack.format<float>()[8];
-    param.SAOChromaFlag = data_pack.format<int4>()[9];
-    param.enableBandOffset = data_pack.format<int4>()[10];
-    //param.reserved1  = data_pack.format<int4>()[10];
-    //param.reserved2 = data_pack.format<int4>()[11];
-#else
-    vector<uint1,64> part0, part1, part2, part3, part4;
-    vector<uint1,32> part5;
-    read(PARAM, 0, part0);
-    //read(PARAM, 64, part1);
-    read(PARAM, 128, part2);
-    //read(PARAM, 192, part3);
-    //read(PARAM, 256, part4);
-    read(PARAM, 320, part5);    
-
-    param.Width                  = part0.format<int2>()[26];
-    param.Height                 = part0.format<int2>()[27];
-    param.PicWidthInCtbs         = part0.format<int2>()[28];
-    param.PicHeightInCtbs        = part0.format<int2>()[29];
-    /*param.tcOffset               = part0.format<int2>()[30];
-    param.betaOffset             = part0.format<int2>()[31];
-    param.crossSliceBoundaryFlag = part1.format<uint1>()[122-64];
-    param.crossTileBoundaryFlag  = part1.format<uint1>()[123-64];
-    param.TULog2MinSize          = part1.format<uint1>()[124-64];
-    param.MaxCUDepth             = part1.format<uint1>()[125-64];
-    param.Log2MaxCUSize          = part1.format<uint1>()[126-64];
-    param.Log2NumPartInCU        = part1.format<uint1>()[127-64];*/
-    param.MaxCUSize              = part2.format<uint1>()[182-128];
-    //param.chromaFormatIdc        = part2.format<uint1>()[183-128];
-
-    // sao extension
-    param.m_rdLambda  = part5.format<float>()[4];
-    param.SAOChromaFlag = part5.format<int4>()[5];
-    param.enableBandOffset = part5.format<int4>()[6];
-    param.offsetChroma     = part5.format<int4>()[7];
-
-    //printf("\n lambda %15.3f enableBO \n", param.m_rdLambda, param.enableBandOffset);
-#endif
-}
+//
+//_GENX_ inline
+//void ReadParam(SurfaceIndex PARAM, MiniVideoParam& param)
+//{
+//    vector<uint1,64> part0, part1, part2, part3, part4;
+//    vector<uint1,32> part5;
+//    read(PARAM, 0, part0);
+//    //read(PARAM, 64, part1);
+//    read(PARAM, 128, part2);
+//    //read(PARAM, 192, part3);
+//    //read(PARAM, 256, part4);
+//    read(PARAM, 320, part5);    
+//
+//    param.Width                  = part0.format<int2>()[26];
+//    param.Height                 = part0.format<int2>()[27];
+//    param.PicWidthInCtbs         = part0.format<int2>()[28];
+//    param.PicHeightInCtbs        = part0.format<int2>()[29];
+//    /*param.tcOffset               = part0.format<int2>()[30];
+//    param.betaOffset             = part0.format<int2>()[31];
+//    param.crossSliceBoundaryFlag = part1.format<uint1>()[122-64];
+//    param.crossTileBoundaryFlag  = part1.format<uint1>()[123-64];
+//    param.TULog2MinSize          = part1.format<uint1>()[124-64];
+//    param.MaxCUDepth             = part1.format<uint1>()[125-64];
+//    param.Log2MaxCUSize          = part1.format<uint1>()[126-64];
+//    param.Log2NumPartInCU        = part1.format<uint1>()[127-64];*/
+//    param.MaxCUSize              = part2.format<uint1>()[182-128];
+//    //param.chromaFormatIdc        = part2.format<uint1>()[183-128];
+//
+//    // sao extension
+//    param.m_rdLambda  = part5.format<float>()[4];
+//    param.SAOChromaFlag = part5.format<int4>()[5];
+//    param.enableBandOffset = part5.format<int4>()[6];
+//    param.offsetChroma     = part5.format<int4>()[7];
+//
+//    //printf("\n lambda %15.3f enableBO \n", param.m_rdLambda, param.enableBandOffset);
+//}
 
 
 enum SaoModes
@@ -298,7 +285,8 @@ template<uint W, uint H> _GENX_ inline void GetEOStat(matrix_ref<uint1,H+2,W> re
         GetSign(recon.row(y+1), reconR.row(y+1), sign2);
         cls = sign1 + sign2;
         cls.merge(0, maskHor1 | vector<uint2,W>(maskVer0[y]));
-        Classify(diff.row(y), MakeRef(cls), totalDiffEO.template select<4,1,W,1>(0,0), totalCountEO.template select<4,1,W,1>(0,0), y);
+        //Classify(diff.row(y), MakeRef(cls), totalDiffEO.template select<4,1,W,1>(0,0), totalCountEO.template select<4,1,W,1>(0,0), y);
+        Classify(diff.row(y), cls, totalDiffEO.template select<4,1,W,1>(0,0), totalCountEO.template select<4,1,W,1>(0,0), y);
     }            
     // E90
     GetSign(recon.row(0), recon.row(1), sign.row(1));
@@ -307,7 +295,7 @@ template<uint W, uint H> _GENX_ inline void GetEOStat(matrix_ref<uint1,H+2,W> re
         GetSign(recon.row(y+1), recon.row(y+2), sign.row(y & 1));
         cls = sign.row(y & 1) - sign.row(1 - (y & 1));
         cls.merge(0, maskHor0 | vector<uint2,W>(maskVer1[y]));
-        Classify(diff.row(y), MakeRef(cls), totalDiffEO.template select<4,1,W,1>(4,0), totalCountEO.template select<4,1,W,1>(4,0), y);
+        Classify(diff.row(y), cls, totalDiffEO.template select<4,1,W,1>(4,0), totalCountEO.template select<4,1,W,1>(4,0), y);
     }
     // EO 135
     #pragma unroll
@@ -316,7 +304,7 @@ template<uint W, uint H> _GENX_ inline void GetEOStat(matrix_ref<uint1,H+2,W> re
         GetSign(recon.row(y+1), reconR.row(y+2), sign2);
         cls = sign1 + sign2;
         cls.merge(0, maskHor1 | vector<uint2,W>(maskVer1[y]));
-        Classify(diff.row(y), MakeRef(cls), totalDiffEO.template select<4,1,W,1>(8,0), totalCountEO.template select<4,1,W,1>(8,0), y);
+        Classify(diff.row(y), cls, totalDiffEO.template select<4,1,W,1>(8,0), totalCountEO.template select<4,1,W,1>(8,0), y);
     }            
     // EO 45
     #pragma unroll
@@ -325,7 +313,7 @@ template<uint W, uint H> _GENX_ inline void GetEOStat(matrix_ref<uint1,H+2,W> re
         GetSign(recon.row(y+1), reconR.row(y), sign2);
         cls = sign1 + sign2;
         cls.merge(0, maskHor1 | vector<uint2,W>(maskVer1[y]));
-        Classify(diff.row(y), MakeRef(cls), totalDiffEO.template select<4,1,W,1>(12,0), totalCountEO.template select<4,1,W,1>(12,0), y);
+        Classify(diff.row(y), cls, totalDiffEO.template select<4,1,W,1>(12,0), totalCountEO.template select<4,1,W,1>(12,0), y);
     }            
 
     if (chromaSplit == 0) {
@@ -818,7 +806,7 @@ template<uint W> _GENX_ inline void AddOffset(vector_ref<uint1,W> recon, vector_
     recon = cm_add<uint1>(recon, offset, SAT);
 }
 
-inline _GENX_ void SaoApplyImpl(SurfaceIndex SRC, SurfaceIndex DST, MiniVideoParam &par, vector_ref<int1,16> saoMode, int2 ox, int2 oy)
+inline _GENX_ void SaoApplyImpl(SurfaceIndex SRC, SurfaceIndex DST, int4 Width, int4 Height, vector_ref<int1,16> saoMode, int2 ox, int2 oy)
 {
     enum { W=32, H=8 };
 
@@ -827,7 +815,7 @@ inline _GENX_ void SaoApplyImpl(SurfaceIndex SRC, SurfaceIndex DST, MiniVideoPar
     vector<uint2,64> pely;
     cmtl::cm_vector_assign<uint2,64>(pely,0,1);
     pely += oy*64;
-    vector<uint2,64> maskVer = (pely == 0) | (pely >= par.Height - 1);
+    vector<uint2,64> maskVer = (pely == 0) | (pely >= Height - 1);
 
     matrix<int2,2,W> sign;
     vector<int2,W> cls;
@@ -915,7 +903,7 @@ inline _GENX_ void SaoApplyImpl(SurfaceIndex SRC, SurfaceIndex DST, MiniVideoPar
         vector<uint2,64> pelx;
         cmtl::cm_vector_assign<uint2,64>(pelx,0,1);
         pelx += ox*64;
-        vector<uint2,64> maskHor = (pelx == 0) | (pelx >= par.Width - 1);
+        vector<uint2,64> maskHor = (pelx == 0) | (pelx >= Width - 1);
 
         if (saoMode[1] == SAO_TYPE_EO_0) {
 
@@ -998,7 +986,7 @@ inline _GENX_ void SaoApplyImpl(SurfaceIndex SRC, SurfaceIndex DST, MiniVideoPar
 }
 
 // ctb based processing
-inline _GENX_ void SaoApplyImpl_Chroma(SurfaceIndex SRC, SurfaceIndex DST, MiniVideoParam &par, vector_ref<int1,16> saoMode, vector_ref<int1,16> saoModeV, int2 ox, int2 oy)
+inline _GENX_ void SaoApplyImpl_Chroma(SurfaceIndex SRC, SurfaceIndex DST, int4 Width, int4 Height, vector_ref<int1,16> saoMode, vector_ref<int1,16> saoModeV, int2 ox, int2 oy)
 {
     enum { W=32, H=8 };
 
@@ -1008,7 +996,7 @@ inline _GENX_ void SaoApplyImpl_Chroma(SurfaceIndex SRC, SurfaceIndex DST, MiniV
     vector<uint2,32> pely;
     cmtl::cm_vector_assign<uint2,32>(pely,0,1);
     pely += oy*32;
-    vector<uint2,32> maskVer = (pely == 0) | (pely >= par.Height/2 - 1);
+    vector<uint2,32> maskVer = (pely == 0) | (pely >= Height/2 - 1);
 
     matrix<int2,2,W> sign;
     vector<int2,W> cls;
@@ -1105,7 +1093,7 @@ inline _GENX_ void SaoApplyImpl_Chroma(SurfaceIndex SRC, SurfaceIndex DST, MiniV
         cmtl::cm_vector_assign<uint2,64>(pelx,0,1);
         pelx += ox*64;
         pelx >>= 1;
-        vector<uint2,64> maskHor = (pelx == 0) | (pelx >= par.Width/2 - 1);
+        vector<uint2,64> maskHor = (pelx == 0) | (pelx >= Width/2 - 1);
 
         if (saoMode[1] == SAO_TYPE_EO_0) {
 
@@ -1196,7 +1184,29 @@ inline _GENX_ void SaoApplyImpl_Chroma(SurfaceIndex SRC, SurfaceIndex DST, MiniV
 extern "C" _GENX_MAIN_ void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex STATS, uint start_mbX, uint start_mbY)
 {
     MiniVideoParam par;
-    ReadParam(PARAM, par);  
+    //ReadParam(PARAM, par);  
+    {
+        vector<uint1,64> part0, part1, part2, part3, part4;
+        vector<uint1,32> part5;
+        read(PARAM, 0, part0);
+        //read(PARAM, 64, part1);
+        read(PARAM, 128, part2);
+        //read(PARAM, 192, part3);
+        //read(PARAM, 256, part4);
+        read(PARAM, 320, part5);    
+
+        par.Width                  = part0.format<int2>()[26];
+        par.Height                 = part0.format<int2>()[27];
+        par.PicWidthInCtbs         = part0.format<int2>()[28];
+        par.PicHeightInCtbs        = part0.format<int2>()[29];        
+        par.MaxCUSize              = part2.format<uint1>()[182-128];       
+
+        // sao extension
+        par.m_rdLambda  = part5.format<float>()[4];
+        par.SAOChromaFlag = part5.format<int4>()[5];
+        par.enableBandOffset = part5.format<int4>()[6];
+        par.offsetChroma     = part5.format<int4>()[7];       
+    }
        
     int2 ox = get_thread_origin_x() + start_mbX;
     int2 oy = get_thread_origin_y() + start_mbY;
@@ -1353,7 +1363,29 @@ extern "C" _GENX_MAIN_ void SaoStat(SurfaceIndex SRC, SurfaceIndex RECON, Surfac
 extern "C" _GENX_MAIN_ void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex PARAM, SurfaceIndex STATS, uint start_mbX, uint start_mbY)
 {
     MiniVideoParam par;
-    ReadParam(PARAM, par);
+    //ReadParam(PARAM, par);
+    {
+        vector<uint1,64> part0, part1, part2, part3, part4;
+        vector<uint1,32> part5;
+        read(PARAM, 0, part0);
+        //read(PARAM, 64, part1);
+        read(PARAM, 128, part2);
+        //read(PARAM, 192, part3);
+        //read(PARAM, 256, part4);
+        read(PARAM, 320, part5);    
+
+        par.Width                  = part0.format<int2>()[26];
+        par.Height                 = part0.format<int2>()[27];
+        par.PicWidthInCtbs         = part0.format<int2>()[28];
+        par.PicHeightInCtbs        = part0.format<int2>()[29];        
+        par.MaxCUSize              = part2.format<uint1>()[182-128];       
+
+        // sao extension
+        par.m_rdLambda  = part5.format<float>()[4];
+        par.SAOChromaFlag = part5.format<int4>()[5];
+        par.enableBandOffset = part5.format<int4>()[6];
+        par.offsetChroma     = part5.format<int4>()[7];       
+    }
 
     int4 startOffset = par.offsetChroma;// in bytes
 
@@ -1429,7 +1461,29 @@ extern "C" _GENX_MAIN_ void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, 
 extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex SAO_MODES)
 {
     MiniVideoParam par;
-    ReadParam(PARAM, par);
+    //ReadParam(PARAM, par);
+    {
+        vector<uint1,64> part0, part1, part2, part3, part4;
+        vector<uint1,32> part5;
+        read(PARAM, 0, part0);
+        //read(PARAM, 64, part1);
+        read(PARAM, 128, part2);
+        //read(PARAM, 192, part3);
+        //read(PARAM, 256, part4);
+        read(PARAM, 320, part5);    
+
+        par.Width                  = part0.format<int2>()[26];
+        par.Height                 = part0.format<int2>()[27];
+        par.PicWidthInCtbs         = part0.format<int2>()[28];
+        par.PicHeightInCtbs        = part0.format<int2>()[29];        
+        par.MaxCUSize              = part2.format<uint1>()[182-128];       
+
+        // sao extension
+        par.m_rdLambda  = part5.format<float>()[4];
+        par.SAOChromaFlag = part5.format<int4>()[5];
+        par.enableBandOffset = part5.format<int4>()[6];
+        par.offsetChroma     = part5.format<int4>()[7];       
+    }
 
     int2 ox = get_thread_origin_x();
     int2 oy = get_thread_origin_y();
@@ -1783,7 +1837,29 @@ extern "C" _GENX_MAIN_ void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, 
 extern "C" _GENX_MAIN_ void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex SAO_MODES)
 {
     MiniVideoParam par;
-    ReadParam(PARAM, par);  
+    //ReadParam(PARAM, par);  
+    {
+        vector<uint1,64> part0, part1, part2, part3, part4;
+        vector<uint1,32> part5;
+        read(PARAM, 0, part0);
+        //read(PARAM, 64, part1);
+        read(PARAM, 128, part2);
+        //read(PARAM, 192, part3);
+        //read(PARAM, 256, part4);
+        read(PARAM, 320, part5);    
+
+        par.Width                  = part0.format<int2>()[26];
+        par.Height                 = part0.format<int2>()[27];
+        par.PicWidthInCtbs         = part0.format<int2>()[28];
+        par.PicHeightInCtbs        = part0.format<int2>()[29];        
+        par.MaxCUSize              = part2.format<uint1>()[182-128];
+        
+        // sao extension
+        par.m_rdLambda  = part5.format<float>()[4];
+        par.SAOChromaFlag = part5.format<int4>()[5];
+        par.enableBandOffset = part5.format<int4>()[6];
+        par.offsetChroma     = part5.format<int4>()[7];        
+    }
        
     int2 ox = get_thread_origin_x();
     int2 oy = get_thread_origin_y();
@@ -1792,7 +1868,8 @@ extern "C" _GENX_MAIN_ void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, Surface
     vector<int1,16> saoMode;
     read(SAO_MODES, ctb * 16, saoMode);
 
-    SaoApplyImpl(SRC, DST, par, saoMode, ox, oy);
+    SaoApplyImpl(SRC, DST, par.Width, par.Height, saoMode, ox, oy);    
+
     if (par.SAOChromaFlag) { // Active Chroma Processing
         int4 numCtbs = par.PicWidthInCtbs * par.PicHeightInCtbs;
         vector<int1,16> saoModeU;
@@ -1800,7 +1877,7 @@ extern "C" _GENX_MAIN_ void SaoApply(SurfaceIndex SRC, SurfaceIndex DST, Surface
         vector<int1,16> saoModeV;
         read(SAO_MODES, (2 * numCtbs * 16) + ctb * 16, saoModeV);
 
-        SaoApplyImpl_Chroma(SRC, DST, par, saoModeU, saoModeV, ox, oy);
+        SaoApplyImpl_Chroma(SRC, DST, par.Width, par.Height, saoModeU, saoModeV, ox, oy);
 
     } else { // Passive Chroma Processing (Copy)
         matrix<uint1,8,32> chroma;

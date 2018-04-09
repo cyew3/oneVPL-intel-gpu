@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "stdio.h"
@@ -19,10 +19,15 @@
 #include "../include/test_common.h"
 #include "../include/genx_hevce_hme_and_me_p32_4mv_bdw_isa.h"
 #include "../include/genx_hevce_hme_and_me_p32_4mv_hsw_isa.h"
+#include "../include/genx_hevce_hme_and_me_p32_4mv_cnl_isa.h"
+
 #include "../include/genx_hevce_me_p32_4mv_bdw_isa.h"
 #include "../include/genx_hevce_me_p32_4mv_hsw_isa.h"
+#include "../include/genx_hevce_me_p32_4mv_cnl_isa.h"
+
 #include "../include/genx_hevce_ime_3tiers_4mv_bdw_isa.h"
 #include "../include/genx_hevce_ime_3tiers_4mv_hsw_isa.h"
+#include "../include/genx_hevce_ime_3tiers_4mv_cnl_isa.h"
 
 #ifdef CMRT_EMU
 extern "C" void Ime3Tiers4Mv(SurfaceIndex CTRL, SurfaceIndex SRCREF_16X, SurfaceIndex SRCREF_8X, SurfaceIndex SRCREF_4X, SurfaceIndex MV_OUT);

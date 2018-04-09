@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <math.h>
@@ -19,6 +19,7 @@
 #include "../include/test_common.h"
 #include "../include/genx_hevce_sao_hsw_isa.h"
 #include "../include/genx_hevce_sao_bdw_isa.h"
+#include "../include/genx_hevce_sao_cnl_isa.h"
 
 #ifdef CMRT_EMU
 extern "C" void SaoStatAndEstimate(SurfaceIndex SURF_SRC, SurfaceIndex SURF_RECON, SurfaceIndex SURF_VIDEO_PARAM, Ipp32u recPaddingLu) {};
@@ -28,6 +29,11 @@ extern "C" void SaoStatChroma(SurfaceIndex SRC, SurfaceIndex RECON, SurfaceIndex
 extern "C" void SaoEstimate(SurfaceIndex PARAM, SurfaceIndex STATS, SurfaceIndex SAO_MODES);
 extern "C" void SaoEstimateAndApply(SurfaceIndex SRC, SurfaceIndex DST, SurfaceIndex PARAM, SurfaceIndex STATS) {}; 
 #endif //CMRT_EMU
+
+#ifndef CM_MAX_THREADSPACE_WIDTH
+// old style cm-spec
+#define CM_MAX_THREADSPACE_WIDTH (CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+#endif
 
 enum { GPU_STAT_BLOCK_WIDTH = 16, GPU_STAT_BLOCK_HEIGHT = 16 };
 

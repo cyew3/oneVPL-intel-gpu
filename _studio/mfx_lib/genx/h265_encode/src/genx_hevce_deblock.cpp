@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -15,7 +15,16 @@
 #pragma warning(disable: 4505)
 #include <cm/cm.h>
 #include <cm/cmtl.h>
-#include <cm/genx_vme.h>
+//#include <cm/genx_vme.h>
+
+typedef unsigned int uint4;
+typedef int int4;
+typedef short int2;
+typedef unsigned short uint2;
+typedef char int1;
+typedef unsigned char uint1;
+
+#define FLT_MAX         3.402823466e+38F        /* max value */
 
 struct DeblockParam
 {
@@ -52,6 +61,7 @@ struct H265CUData16
     vector<int2, 16>  outOfPic;
 };
 
+#if 0
 _GENX_ inline
 void GetEdgeStrength(
     H265CUData16        &cudataQ,
@@ -144,8 +154,9 @@ void GetEdgeStrength(
     strength.merge(0, is_intra_any);                       // strength=0
     strength.merge(2, is_intra_any & mask_checkIntraOnly); // strength=2
 }
+#endif
 
-
+#if 0
 _GENX_ inline
 void ReadCuData16(SurfaceIndex CU_DATA, vector_ref<uint4,16> addrs, H265CUData16 &cudata)
 {
@@ -181,6 +192,7 @@ void ReadCuData16(SurfaceIndex CU_DATA, vector_ref<uint4,16> addrs, H265CUData16
     cudata.cbf0.select<16,1>(0) = readbuf.select<16,4>(2) >> trIdx;
 
 }
+#endif
 
 
 _GENX_ inline void Filter4Edge(
@@ -264,7 +276,7 @@ _GENX_ inline void Filter4Edge(
     acc16w.merge(limit, acc16w < limit);
     limit = p0 + double_tc_spread;
     acc16w.merge(limit, acc16w > limit);
-    p0_new_strong = cm_add<uint1, int2, int2>(acc16w, 0, SAT);
+    p0_new_strong = cm_add<uint1/*, int2, int2*/>(acc16w, 0, SAT);
 
     // p1 = SAT((p2 + commonPartP + 2) >> 2)
     acc16w = p2 + commonPartPplus2;
@@ -273,7 +285,7 @@ _GENX_ inline void Filter4Edge(
     acc16w.merge(limit, acc16w < limit);
     limit = p1 + double_tc_spread;
     acc16w.merge(limit, acc16w > limit);
-    p1_new_strong = cm_add<uint1, int2, int2>(acc16w, 0, SAT);
+    p1_new_strong = cm_add<uint1/*, int2, int2*/>(acc16w, 0, SAT);
 
     // p2 = SAT((2 * p3 + 3 * p2 + commonPartP + 4) >> 3)
     acc16w = commonPartP + 4;
@@ -284,7 +296,7 @@ _GENX_ inline void Filter4Edge(
     acc16w.merge(limit, acc16w < limit);
     limit = p2 + double_tc_spread;
     acc16w.merge(limit, acc16w > limit);
-    p2_new_strong = cm_add<uint1, int2, int2>(acc16w, 0, SAT);
+    p2_new_strong = cm_add<uint1/*, int2, int2*/>(acc16w, 0, SAT);
 
     // q-processing
 
@@ -296,7 +308,7 @@ _GENX_ inline void Filter4Edge(
     acc16w.merge(limit, acc16w < limit);
     limit = q0 + double_tc_spread;
     acc16w.merge(limit, acc16w > limit);
-    q0_new_strong = cm_add<uint1, int2, int2>(acc16w, 0, SAT);
+    q0_new_strong = cm_add<uint1/*, int2, int2*/>(acc16w, 0, SAT);
 
     // q1 = SAT((q2 + commonPartQ + 2) >> 2)
     acc16w = q2 + commonPartQplus2;
@@ -305,7 +317,7 @@ _GENX_ inline void Filter4Edge(
     acc16w.merge(limit, acc16w < limit);
     limit = q1 + double_tc_spread;
     acc16w.merge(limit, acc16w > limit);
-    q1_new_strong = cm_add<uint1, int2, int2>(acc16w, 0, SAT);
+    q1_new_strong = cm_add<uint1/*, int2, int2*/>(acc16w, 0, SAT);
 
     // q2 = SAT((2 * q3 + 3 * q2 + commonPartQ + 4) >> 3)
     acc16w = commonPartQ + 4;
@@ -316,7 +328,7 @@ _GENX_ inline void Filter4Edge(
     acc16w.merge(limit, acc16w < limit);
     limit = q2 + double_tc_spread;
     acc16w.merge(limit, acc16w > limit);
-    q2_new_strong = cm_add<uint1, int2, int2>(acc16w, 0, SAT);
+    q2_new_strong = cm_add<uint1/*, int2, int2*/>(acc16w, 0, SAT);
 
     // update pixels with strong filtering
     vector<uint2,16> mask_strong2 = mask_strong & mask_apply_filter;
@@ -361,7 +373,7 @@ _GENX_ inline void Filter4Edge(
     acc16w >>= 1;
     acc16w.merge(-tc_half, acc16w < -tc_half);
     acc16w.merge(tc_half, acc16w > tc_half);
-    p1_new_weak = cm_add<uint1, uint1, int2>(p1, acc16w, SAT);
+    p1_new_weak = cm_add<uint1/*, uint1, int2*/>(p1, acc16w, SAT);
 
     // q1 = SAT(q1 + SAT((((q2 + q0 + 1) >> 1) - q1 - delta) >> 1))
     acc16w = cm_avg<int2>(q2, q0);
@@ -370,10 +382,10 @@ _GENX_ inline void Filter4Edge(
     acc16w >>= 1;
     acc16w.merge(-tc_half, acc16w < -tc_half);
     acc16w.merge(tc_half, acc16w > tc_half);
-    q1_new_weak = cm_add<uint1, uint1, int2>(q1, acc16w, SAT);
+    q1_new_weak = cm_add<uint1/*, uint1, int2*/>(q1, acc16w, SAT);
 
-    p0_new_weak = cm_add<uint1, uint1, int2>(p0, delta, SAT);
-    q0_new_weak = cm_add<uint1, uint1, int4>(q0, -delta, SAT);
+    p0_new_weak = cm_add<uint1/*, uint1, int2*/>(p0, delta, SAT);
+    q0_new_weak = cm_add<uint1/*, uint1, int4*/>(q0, -delta, SAT);
 
     // update pixels with weak filtering
     p1.merge(p1_new_weak, mask_weak_active & threshCond.replicate<4,1,4,0>(4));
@@ -423,6 +435,7 @@ const int1 CENTERX[] = { 4, 4, 12, 12, 4, 4, 12, 12, 0, 0, 8, 8, 0, 0, 8, 8 };
 const int1 CENTERY[] = { 0, 4, 0, 4, 8, 12, 8, 12, 0, 4, 0, 4, 8, 12, 8, 12 };
 
 // --------------------------------------------------------
+#if 0
 _GENX_ inline
 void ReadPQData(
     SurfaceIndex          CU_DATA,
@@ -480,7 +493,26 @@ void ReadPQData(
     tmpAddr.merge(maxAddr, tmpAddr > maxAddr);
     addr = tmpAddr;
 #endif
-    ReadCuData16(CU_DATA, addr, cudataQ);
+    //ReadCuData16(CU_DATA, addr, cudataQ);
+	{  
+		vector<uint1,64> readbuf;
+		read(CU_DATA, 0u, addr, readbuf.format<uint4>());
+		cudataQ.mv0.select<32,1>(0) = readbuf.format<int2>();
+
+		read(CU_DATA, 1u, addr, readbuf.format<uint4>());
+		cudataQ.mv1.select<32,1>(0) = readbuf.format<int2>();
+
+		read(CU_DATA, 4u, addr, readbuf.format<uint4>());
+		cudataQ.refIdx.format<uint2>() = readbuf.format<uint2>().select<16,2>(0);
+		cudataQ.depth.select<16,1>(0) = readbuf.select<16,4>(2);
+		cudataQ.predMode.select<16,1>(0) = readbuf.select<16,4>(3);
+
+		read(CU_DATA, 5u, addr, readbuf.format<uint4>());
+		vector_ref<uint1,16> trIdx = readbuf.select<16,4>(0);
+		cudataQ.totalDepth.select<16,1>(0) = trIdx + cudata.depth.select<16,1>(0);
+		cudataQ.qp.select<16,1>(0) = readbuf.select<16,4>(1);
+		cudataQ.cbf0.select<16,1>(0) = readbuf.select<16,4>(2) >> trIdx;
+	}
 
     addr = cudataP.ctbAddr << shift;
     addr += cudataP.absPartIdx;
@@ -491,9 +523,28 @@ void ReadPQData(
     tmpAddr.merge(maxAddr, tmpAddr > maxAddr);
     addr = tmpAddr;
 #endif
-    ReadCuData16(CU_DATA, addr, cudataP);
-}
+    //ReadCuData16(CU_DATA, addr, cudataP);
+	{
+		vector<uint1,64> readbuf;
+		read(CU_DATA, 0u, addr, readbuf.format<uint4>());
+		cudataP.mv0.select<32,1>(0) = readbuf.format<int2>();
 
+		read(CU_DATA, 1u, addr, readbuf.format<uint4>());
+		cudataP.mv1.select<32,1>(0) = readbuf.format<int2>();
+
+		read(CU_DATA, 4u, addr, readbuf.format<uint4>());
+		cudataP.refIdx.format<uint2>() = readbuf.format<uint2>().select<16,2>(0);
+		cudataP.depth.select<16,1>(0) = readbuf.select<16,4>(2);
+		cudataP.predMode.select<16,1>(0) = readbuf.select<16,4>(3);
+
+		read(CU_DATA, 5u, addr, readbuf.format<uint4>());
+		vector_ref<uint1,16> trIdx = readbuf.select<16,4>(0);
+		cudataP.totalDepth.select<16,1>(0) = trIdx + cudataP.depth.select<16,1>(0);
+		cudataP.qp.select<16,1>(0) = readbuf.select<16,4>(1);
+		cudataP.cbf0.select<16,1>(0) = readbuf.select<16,4>(2) >> trIdx;
+	}
+}
+#endif
 
 #define SWAP(TYPE, X,Y) { TYPE temp = X ; X = Y ; Y = temp; }
 
@@ -564,13 +615,197 @@ void Deblock(SurfaceIndex SRC_LU, SurfaceIndex SRC_CH, uint paddingLu, uint padd
     *  Q12 | Q13   Q14 | Q15
     */
 
-    ReadPQData(CU_DATA, param, scan2z, globXY, cudataP, cudataQ);
+    //ReadPQData(CU_DATA, param, scan2z, globXY, cudataP, cudataQ);
+	{
+		vector<int2,16> centerX(CENTERX); // xQ: 4, 4, 12, 12, 4, 4, 12, 12; xP: 0, 0, 8, 8, 0, 0, 8, 8
+		centerX += globXY[0];
+		vector<int2,16> centerY(CENTERY); // yQ: 0, 4, 0, 4, 8, 12, 8, 12; yP: 0, 4, 0, 4, 8, 12, 8, 12
+		centerY += globXY[1];
+
+		vector<int2,16> outOfPic;
+		outOfPic.select<8,1>(8)  = (centerX.select<8,1>(8) <= 0);           // Left Ps
+		outOfPic.select<8,1>(0)  = (centerX.select<8,1>(0) >= param.Width); // Right Qs
+		outOfPic.select<8,2>(0) |= (centerY.select<8,2>(0) <= 0);           // Top Ps and Qs
+		outOfPic.select<8,2>(1) |= (centerY.select<8,2>(1) >= param.Height);// Bottom Ps and Qs
+
+		vector<int2,16> ctbAddr = centerY >> param.Log2MaxCUSize;
+		ctbAddr = ctbAddr * param.PicWidthInCtbs;
+		vector<int2,16> ctbAddrX = centerX >> param.Log2MaxCUSize;
+		cudataQ.outOfPic.select<8,1>(0) = outOfPic.select<8,1>(0);
+		cudataP.outOfPic.select<8,1>(0) = outOfPic.select<8,1>(8);
+		ctbAddr += ctbAddrX;
+		cudataQ.ctbAddr.select<8,1>(0) = ctbAddr.select<8,1>(0);
+		cudataP.ctbAddr.select<8,1>(0) = ctbAddr.select<8,1>(8);
+
+		vector<uint2,16> pix_col = centerX & (param.MaxCUSize - 1);
+		vector<uint2,16> pix_row = centerY & (param.MaxCUSize - 1);
+		pix_col >>= param.TULog2MinSize;
+		pix_row >>= param.TULog2MinSize;
+
+		vector<uint2,8> y = scan2z.iselect(pix_row.select<8,1>(0)) * 2; // assuming pix_row.select<8,1>(0) == pix_row.select<8,1>(8)
+		vector<uint2,16> absPartIdx = scan2z.iselect(pix_col) + y.replicate<2>();
+		cudataQ.absPartIdx.select<8,1>(0) = absPartIdx.select<8,1>(0);
+		cudataP.absPartIdx.select<8,1>(0) = absPartIdx.select<8,1>(8);
+
+		cudataP.outOfPic.select<8,1>(8).merge(cudataP.outOfPic.replicate<4,2,2,0>(0), cudataQ.outOfPic.replicate<4,2,2,0>(0), 0x55);
+		cudataQ.outOfPic.select<8,1>(8).merge(cudataP.outOfPic.replicate<4,2,2,0>(1), cudataQ.outOfPic.replicate<4,2,2,0>(1), 0x55);
+		cudataP.absPartIdx.select<8,1>(8).merge(cudataP.absPartIdx.replicate<4,2,2,0>(0), cudataQ.absPartIdx.replicate<4,2,2,0>(0), 0x55);
+		cudataQ.absPartIdx.select<8,1>(8).merge(cudataP.absPartIdx.replicate<4,2,2,0>(1), cudataQ.absPartIdx.replicate<4,2,2,0>(1), 0x55);
+		cudataP.ctbAddr.select<8,1>(8).merge(cudataP.ctbAddr.replicate<4,2,2,0>(0), cudataQ.ctbAddr.replicate<4,2,2,0>(0), 0x55);
+		cudataQ.ctbAddr.select<8,1>(8).merge(cudataP.ctbAddr.replicate<4,2,2,0>(1), cudataQ.ctbAddr.replicate<4,2,2,0>(1), 0x55);
+
+		int2 shift = (param.MaxCUDepth << 1);
+		vector<uint4, 16> addr = cudataQ.ctbAddr << shift;
+		addr += cudataQ.absPartIdx;
+		addr *= 8; // addr and offsets are in dwords
+#ifdef CMRT_EMU
+		int4 maxAddr = ((param.PicWidthInCtbs * param.PicHeightInCtbs) << param.Log2NumPartInCU) * 10 - 10;
+		vector<int4, 16> tmpAddr = addr;
+		tmpAddr.merge(0, tmpAddr < 0);
+		tmpAddr.merge(maxAddr, tmpAddr > maxAddr);
+		addr = tmpAddr;
+#endif
+		//ReadCuData16(CU_DATA, addr, cudataQ);
+		{  
+			vector<uint1,64> readbuf;
+			read(CU_DATA, 0u, addr, readbuf.format<uint4>());
+			cudataQ.mv0.select<32,1>(0) = readbuf.format<int2>();
+
+			read(CU_DATA, 1u, addr, readbuf.format<uint4>());
+			cudataQ.mv1.select<32,1>(0) = readbuf.format<int2>();
+
+			read(CU_DATA, 4u, addr, readbuf.format<uint4>());
+			cudataQ.refIdx.format<uint2>() = readbuf.format<uint2>().select<16,2>(0);
+			cudataQ.depth.select<16,1>(0) = readbuf.select<16,4>(2);
+			cudataQ.predMode.select<16,1>(0) = readbuf.select<16,4>(3);
+
+			read(CU_DATA, 5u, addr, readbuf.format<uint4>());
+			vector_ref<uint1,16> trIdx = readbuf.select<16,4>(0);
+			cudataQ.totalDepth.select<16,1>(0) = trIdx + cudataQ.depth.select<16,1>(0);
+			cudataQ.qp.select<16,1>(0) = readbuf.select<16,4>(1);
+			cudataQ.cbf0.select<16,1>(0) = readbuf.select<16,4>(2) >> trIdx;
+		}
+
+		addr = cudataP.ctbAddr << shift;
+		addr += cudataP.absPartIdx;
+		addr *= 8; // addr and offsets are in dwords
+#ifdef CMRT_EMU
+		tmpAddr = addr;
+		tmpAddr.merge(0, tmpAddr < 0);
+		tmpAddr.merge(maxAddr, tmpAddr > maxAddr);
+		addr = tmpAddr;
+#endif
+		//ReadCuData16(CU_DATA, addr, cudataP);
+		{
+			vector<uint1,64> readbuf;
+			read(CU_DATA, 0u, addr, readbuf.format<uint4>());
+			cudataP.mv0.select<32,1>(0) = readbuf.format<int2>();
+
+			read(CU_DATA, 1u, addr, readbuf.format<uint4>());
+			cudataP.mv1.select<32,1>(0) = readbuf.format<int2>();
+
+			read(CU_DATA, 4u, addr, readbuf.format<uint4>());
+			cudataP.refIdx.format<uint2>() = readbuf.format<uint2>().select<16,2>(0);
+			cudataP.depth.select<16,1>(0) = readbuf.select<16,4>(2);
+			cudataP.predMode.select<16,1>(0) = readbuf.select<16,4>(3);
+
+			read(CU_DATA, 5u, addr, readbuf.format<uint4>());
+			vector_ref<uint1,16> trIdx = readbuf.select<16,4>(0);
+			cudataP.totalDepth.select<16,1>(0) = trIdx + cudataP.depth.select<16,1>(0);
+			cudataP.qp.select<16,1>(0) = readbuf.select<16,4>(1);
+			cudataP.cbf0.select<16,1>(0) = readbuf.select<16,4>(2) >> trIdx;
+		}
+	}
 
     // qPL = (QpQ + QpP + 1) >> 1
     vector<uint2,16> edge_qp = cm_avg<uint2>(cudataQ.qp, cudataP.qp);
 
     vector<uint2,16> strength;
-    GetEdgeStrength(cudataQ, cudataP, list0, list1, param.MaxCUDepth, strength);
+    //GetEdgeStrength(cudataQ, cudataP, list0, list1, param.MaxCUDepth, strength);
+	{
+		vector<uint2,16> is_intra_any = (cudataP.predMode | cudataQ.predMode); // 3 instrs less than this: (cudataP.predMode == (uint1)MODE_INTRA) | (cudataQ.predMode == (uint1)MODE_INTRA)
+		vector<uint2,16> xor_absPartIdx = (cudataP.absPartIdx ^ cudataQ.absPartIdx);
+
+		// vector<uint2,16> mask_cbf0_any = ((cudataQ.cbf0 >> cudataQ.trIdx) > 0) | ((cudataP.cbf0 >> cudataP.trIdx) > 0);
+		vector<uint2,16> mask_cbf0_any = (cudataQ.cbf0 > 0) | (cudataP.cbf0 > 0);
+
+		vector<uint2,16> notSameCuDepth = (cudataP.depth != cudataQ.depth);
+		vector<uint2,16> notSameTotDepth = (cudataP.totalDepth != cudataQ.totalDepth);
+		vector<uint2,16> notSameCtb = (cudataQ.ctbAddr != cudataP.ctbAddr);
+
+		// (xor_absPartIdx >> (((int2)MaxCUDepth - totDepthP) << 1)) > 0;
+		vector<uint2,16> mask_xor_absPartIdx = param.MaxCUDepth - cudataP.totalDepth;
+		mask_xor_absPartIdx <<= 1;
+		mask_xor_absPartIdx = xor_absPartIdx >> mask_xor_absPartIdx;
+		mask_xor_absPartIdx = mask_xor_absPartIdx > 0;
+
+		vector<uint2,16> mask_checkIntraOnly = notSameCtb | notSameCuDepth | notSameTotDepth | mask_xor_absPartIdx;
+		vector<uint2,16> mask_applyMV = (is_intra_any | (mask_checkIntraOnly & mask_cbf0_any)) == 0;
+
+		// check MV
+		vector<uint2,16> numRefsP = (cudataP.refIdx.select<16,2>(0) >= 0) + (cudataP.refIdx.select<16,2>(1) >= 0);
+		vector<uint2,16> numRefsQ = (cudataQ.refIdx.select<16,2>(0) >= 0) + (cudataQ.refIdx.select<16,2>(1) >= 0);
+
+		// maskTwoRef = ((numRefsQ + numRefsP) == 4) & mask_applyMV;
+		vector<uint2,16> maskTwoRef = numRefsQ + numRefsP;
+		maskTwoRef = maskTwoRef == 4;
+		maskTwoRef &= mask_applyMV;
+
+		vector<uint2,16> goodRefIdx0Q, goodRefIdx1Q, goodRefIdx0P, goodRefIdx1P;
+		vector<uint2,16> maskRef0AvailQ = (cudataQ.refIdx.select<16,2>(0) >= 0);
+		vector<uint2,16> maskRef0AvailP = (cudataP.refIdx.select<16,2>(0) >= 0);
+
+		goodRefIdx0Q.merge(cudataQ.refIdx.select<16,2>(0), 0, maskRef0AvailQ);
+		goodRefIdx0P.merge(cudataP.refIdx.select<16,2>(0), 0, maskRef0AvailP);
+		goodRefIdx1Q.merge(cudataQ.refIdx.select<16,2>(1), 0, (cudataQ.refIdx.select<16,2>(1) >= 0));
+		goodRefIdx1P.merge(cudataP.refIdx.select<16,2>(1), 0, (cudataP.refIdx.select<16,2>(1) >= 0));
+
+		vector<int4,16> refPoc0Q = list0.iselect(goodRefIdx0Q);
+		vector<int4,16> refPoc1Q = list1.iselect(goodRefIdx1Q);
+		vector<int4,16> refPoc0P = list0.iselect(goodRefIdx0P);
+		vector<int4,16> refPoc1P = list1.iselect(goodRefIdx1P);
+
+		{ // both P and Q have 2 refs
+			vector<uint2,32> t0 = cm_abs<uint2>(cm_add<int2>(cudataP.mv0, -cudataQ.mv0, SAT));
+			vector<uint2,32> t1 = cm_abs<uint2>(cm_add<int2>(cudataP.mv1, -cudataQ.mv1, SAT));
+			vector<uint2,16> res1 =  (t0.select<16,2>(0) >= 4) | (t0.select<16,2>(1) >= 4) | (t1.select<16,2>(0) >= 4) | (t1.select<16,2>(1) >= 4);
+
+			t0 = cm_abs<uint2>(cm_add<int2>(cudataP.mv0, -cudataQ.mv1, SAT));
+			t1 = cm_abs<uint2>(cm_add<int2>(cudataP.mv1, -cudataQ.mv0, SAT));
+			vector<uint2,16> res2 = (t0.select<16,2>(0) >= 4) | (t0.select<16,2>(1) >= 4) | (t1.select<16,2>(0) >= 4) | (t1.select<16,2>(1) >= 4);
+
+			vector<uint2,16> res3 = res1 & res2;
+
+			vector<uint2,16> mask_general = (((refPoc0Q == refPoc0P) & (refPoc1Q == refPoc1P)) | ((refPoc0Q == refPoc1P) & (refPoc1Q == refPoc0P)));
+			vector<uint2,16> mask_NotEqualPOC_P0P1 = (refPoc0P != refPoc1P);
+			vector<uint2,16> mask_EqualPOC_Q0P0 = (refPoc0Q == refPoc0P);
+			vector<uint2,16> mask_common1 = mask_general & maskTwoRef;
+			vector<uint2,16> mask_common2 = mask_common1 & mask_NotEqualPOC_P0P1;
+
+			strength.merge(res1, 1, mask_common2 & mask_EqualPOC_Q0P0); // mask_general & mask_NotEqualPOC_P0P1 & mask_EqualPOC_Q0P0 & maskTwoRef
+			strength.merge(res2, mask_common2 & !mask_EqualPOC_Q0P0); // mask_NotEqualPOC_P0P1 & !mask_EqualPOC_Q0P0 & maskTwoRef
+			strength.merge(res3, mask_common1 & !mask_NotEqualPOC_P0P1); // mask_general & !mask_NotEqualPOC_P0P1 & maskTwoRef
+		}
+
+		{ // both P and Q have 1 ref
+			vector<int4,16> refPocQ, refPocP;
+			refPocQ.merge(refPoc0Q, refPoc1Q, maskRef0AvailQ);
+			refPocP.merge(refPoc0P, refPoc1P, maskRef0AvailP);
+
+			vector<int2,32> mvQ, mvP;
+			mvQ.format<uint4>().merge(cudataQ.mv0.format<uint4>(), cudataQ.mv1.format<uint4>(), maskRef0AvailQ);
+			mvP.format<uint4>().merge(cudataP.mv0.format<uint4>(), cudataP.mv1.format<uint4>(), maskRef0AvailP);
+
+			vector<uint2,32> t = cm_abs<uint2>(cm_add<int2>(mvP, -mvQ, SAT));
+			vector<uint2,16> strengthOneRef = (t.select<16,2>(0) >= 4) | (t.select<16,2>(1) >= 4);
+			vector<uint2,16> maskOneRef = (refPocQ == refPocP) & numRefsP & numRefsQ & mask_applyMV;
+
+			strength.merge(strengthOneRef, maskOneRef);
+		}
+
+		strength.merge(0, is_intra_any);                       // strength=0
+		strength.merge(2, is_intra_any & mask_checkIntraOnly); // strength=2
+	}
 
     strength.merge(0, cudataP.outOfPic | cudataQ.outOfPic);
 
@@ -582,7 +817,7 @@ void Deblock(SurfaceIndex SRC_LU, SurfaceIndex SRC_CH, uint paddingLu, uint padd
     // calcualte ts
     // tcIdx = Clip3(0, 53, qPL + 2 * (bS - 1) + (slice_tc_offset_div2 << 1))
     vector<int2, 16> tmp1 = cm_add<int2>(param.tcOffset, -2) + cm_mul<int2>(strength, 2);
-    vector<uint2,16> tcIdx = cm_add<uint2, uint2, int2>(edge_qp, tmp1, SAT);
+    vector<uint2,16> tcIdx = cm_add<uint2/*, uint2, int2*/>(edge_qp, tmp1, SAT);
     tcIdx.merge(53, tcIdx > 53);
     vector<uint2,16> tc = tcTable.iselect(tcIdx);
     tc.merge(0, strength < 1);
@@ -590,7 +825,7 @@ void Deblock(SurfaceIndex SRC_LU, SurfaceIndex SRC_CH, uint paddingLu, uint padd
 
     // calcualte beta
     // betaIdx = Clip3(0, 51, qPL + (slice_beta_offset_div2 << 1))
-    vector<uint2,16> betaIdx = cm_add<uint2, uint2, int2>(edge_qp, param.betaOffset, SAT);
+    vector<uint2,16> betaIdx = cm_add<uint2/*, uint2, int2*/>(edge_qp, param.betaOffset, SAT);
     betaIdx.merge(51, betaIdx > 51);
     vector<uint2,16> beta = betaTable.iselect(betaIdx);
     vector<uint2,16> beta2 = (beta >> 2);

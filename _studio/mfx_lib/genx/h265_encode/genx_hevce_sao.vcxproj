@@ -91,7 +91,7 @@
       <OutputFile>$(TargetDir)/$(ProjectName).bsc</OutputFile>
     </Bscmake>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt64.lib;Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
@@ -129,7 +129,7 @@
       <Command>build_kernel_all_targets.cmd sao /Qxcm_release</Command>
     </PreBuildEvent>
     <Link>
-      <AdditionalDependencies>igfxcmrt64.lib;</AdditionalDependencies>
+      <AdditionalDependencies>igfxcmrt64.lib; Advapi32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(MEDIASDK_ROOT)\CMRT\compiler\lib\x64;$(MEDIASDK_ROOT)\CMRT\runtime\lib\x64</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>

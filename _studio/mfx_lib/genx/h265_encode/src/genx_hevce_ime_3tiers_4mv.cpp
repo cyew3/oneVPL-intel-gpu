@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma warning(disable: 4127)
@@ -19,7 +19,7 @@
 #include "../include/genx_hevce_me_common.h"
 
 #if !defined(target_gen7_5) && !defined(target_gen8) && !defined(target_gen9) && !defined(CMRT_EMU)
-#error One of macro should be defined: target_gen7_5, target_gen8, target_gen8_5
+//#error One of macro should be defined: target_gen7_5, target_gen8, target_gen8_5
 #endif
 
 #ifdef target_gen7_5
