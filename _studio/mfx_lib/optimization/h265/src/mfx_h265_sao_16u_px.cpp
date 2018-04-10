@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -14,7 +14,7 @@
 
 #include "mfx_h265_optimization.h"
 
-//#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+//#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || \
     defined(MFX_TARGET_OPTIMIZATION_PX) || \
     defined(MFX_TARGET_OPTIMIZATION_ATOM) || \
@@ -75,10 +75,10 @@ namespace MFX_HEVC_PP
 
         picWidthTmp  = picWidth;
         picHeightTmp = picHeight;
-        LCUWidth     = LCUWidth;
-        LCUHeight    = LCUHeight;
-        LPelX        = LPelX;
-        TPelY        = TPelY;
+        // LCUWidth     = LCUWidth;
+        // LCUHeight    = LCUHeight;
+        // LPelX        = LPelX;
+        // TPelY        = TPelY;
         RPelX        = LPelX + LCUWidth;
         BPelY        = TPelY + LCUHeight;
         RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
@@ -269,10 +269,10 @@ namespace MFX_HEVC_PP
 
         picWidthTmp  = picWidth;
         picHeightTmp = picHeight;
-        LCUWidth     = LCUWidth;
-        LCUHeight    = LCUHeight;
-        LPelX        = LPelX;
-        TPelY        = TPelY;
+        // LCUWidth     = LCUWidth;
+        // LCUHeight    = LCUHeight;
+        // LPelX        = LPelX;
+        // TPelY        = TPelY;
         RPelX        = LPelX + LCUWidth;
         BPelY        = TPelY + LCUHeight;
         RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
@@ -623,7 +623,7 @@ namespace MFX_HEVC_PP
 
                     recLineAbove = recLine - recStride;
                     Ipp16s *signUpLine = signLineBuf1;
-                    for (x=0; x< endX; x++) 
+                    for (x=0; x< endX; x++)
                     {
                         signUpLine[x] = getSign(recLine[x] - recLineAbove[x]);
                     }
@@ -634,7 +634,7 @@ namespace MFX_HEVC_PP
 
                         for (x=0; x<endX; x++)
                         {
-                            signDown  = getSign(recLine[x] - recLineBelow[x]); 
+                            signDown  = getSign(recLine[x] - recLineBelow[x]);
                             edgeType  = signDown + signUpLine[x];
                             signUpLine[x]= -signDown;
 
@@ -692,7 +692,7 @@ namespace MFX_HEVC_PP
                             diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                             count[edgeType] ++;
 
-                            signDownLine[x+1] = -signDown; 
+                            signDownLine[x+1] = -signDown;
                         }
                         signDownLine[startX] = getSign(recLineBelow[startX] - recLine[startX-1]);
 
@@ -752,7 +752,7 @@ namespace MFX_HEVC_PP
                             diff [edgeType] += (orgLine[x<<shift] - recLine[x]);
                             count[edgeType] ++;
 
-                            signUpLine[x-1] = -signDown; 
+                            signUpLine[x-1] = -signDown;
                         }
                         signUpLine[endX-1] = getSign(recLineBelow[endX-1] - recLine[endX]);
                         recLine  += recStride;
@@ -770,7 +770,7 @@ namespace MFX_HEVC_PP
                     {
                         for (x=0; x<endX; x++)
                         {
-                            int bandIdx= recLine[x] >> shiftBits; 
+                            int bandIdx= recLine[x] >> shiftBits;
                             diff [bandIdx] += (orgLine[x<<shift] - recLine[x]);
                             count[bandIdx]++;
                         }
@@ -790,6 +790,6 @@ namespace MFX_HEVC_PP
     } // void GetCtuStatistics_Internal(...)
 }; // namespace MFX_HEVC_PP
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) 
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */

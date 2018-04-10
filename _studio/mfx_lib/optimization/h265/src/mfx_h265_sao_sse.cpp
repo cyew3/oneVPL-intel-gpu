@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -103,10 +103,10 @@ namespace MFX_HEVC_PP
 
         picWidthTmp  = picWidth;
         picHeightTmp = picHeight;
-        LCUWidth     = LCUWidth;
-        LCUHeight    = LCUHeight;
-        LPelX        = LPelX;
-        TPelY        = TPelY;
+        // LCUWidth     = LCUWidth;
+        // LCUHeight    = LCUHeight;
+        // LPelX        = LPelX;
+        // TPelY        = TPelY;
         RPelX        = LPelX + LCUWidth;
         BPelY        = TPelY + LCUHeight;
         RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
@@ -580,10 +580,10 @@ namespace MFX_HEVC_PP
 
         picWidthTmp  = picWidth;
         picHeightTmp = picHeight;
-        LCUWidth     = LCUWidth;
-        LCUHeight    = LCUHeight;
-        LPelX        = LPelX;
-        TPelY        = TPelY;
+        // LCUWidth     = LCUWidth;
+        // LCUHeight    = LCUHeight;
+        // LPelX        = LPelX;
+        // TPelY        = TPelY;
         RPelX        = LPelX + LCUWidth;
         BPelY        = TPelY + LCUHeight;
         RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
@@ -630,10 +630,10 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
-                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);                    
+                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);
                     }
 
                     // store remaining 1..7 pixels
@@ -663,7 +663,7 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
                         XmmPartialStore((Ipp8u *)(&pRec[x]), recn, 2*(endX - x));
@@ -719,10 +719,10 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
-                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);                    
+                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);
                     }
 
                     // store remaining 1..7 pixels
@@ -752,7 +752,7 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
                         XmmPartialStore((Ipp8u *)(&pRec[x]), recn, 2*(LCUWidth - x));
@@ -816,10 +816,10 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
-                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);                    
+                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);
                     }
 
                     // store remaining 1..7 pixels
@@ -849,7 +849,7 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
                         XmmPartialStore((Ipp8u *)(&pRec[x]), recn, 2*(endX - x));
@@ -916,10 +916,10 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
-                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);                    
+                        _mm_storeu_si128((__m128i *)(&pRec[x]), recn);
                     }
 
                     // store remaining 1..15 pixels
@@ -954,7 +954,7 @@ namespace MFX_HEVC_PP
                         recn = _mm_add_epi16(rec0, offs);
 
                         // clip to [0, 2^bitDepth) */
-                        recn = _mm_max_epi16(recn, xmm_min);    
+                        recn = _mm_max_epi16(recn, xmm_min);
                         recn = _mm_min_epi16(recn, xmm_max);
 
                         XmmPartialStore((Ipp8u *)(&pRec[x]), recn, 2*(endX - x));
@@ -1011,10 +1011,10 @@ namespace MFX_HEVC_PP
 
         picWidthTmp  = picWidth;
         picHeightTmp = picHeight;
-        LCUWidth     = LCUWidth;
-        LCUHeight    = LCUHeight;
-        LPelX        = LPelX;
-        TPelY        = TPelY;
+        // LCUWidth     = LCUWidth;
+        // LCUHeight    = LCUHeight;
+        // LPelX        = LPelX;
+        // TPelY        = TPelY;
         RPelX        = LPelX + LCUWidth;
         BPelY        = TPelY + LCUHeight;
         RPelX        = RPelX > picWidthTmp  ? picWidthTmp  : RPelX;
@@ -1448,7 +1448,7 @@ void h265_sao_EO_0_sse4(
     count0 = _mm_hadd_epi16(count0, count2);
     count4 = _mm_hadd_epi16(count4, count4);
 
-    count0 = _mm_hadd_epi16(count0, count4); 
+    count0 = _mm_hadd_epi16(count0, count4);
 
     _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
     sse4_count[4] = _mm_extract_epi16(count0, 4);
@@ -1610,7 +1610,7 @@ void h265_sao_EO_90_sse4(
     count0 = _mm_hadd_epi16(count0, count2);
     count4 = _mm_hadd_epi16(count4, count4);
 
-    count0 = _mm_hadd_epi16(count0, count4); 
+    count0 = _mm_hadd_epi16(count0, count4);
 
     _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
     sse4_count[4] = _mm_extract_epi16(count0, 4);
@@ -1773,7 +1773,7 @@ void h265_sao_EO_135_sse4(
     count0 = _mm_hadd_epi16(count0, count2);
     count4 = _mm_hadd_epi16(count4, count4);
 
-    count0 = _mm_hadd_epi16(count0, count4); 
+    count0 = _mm_hadd_epi16(count0, count4);
 
     _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
     sse4_count[4] = _mm_extract_epi16(count0, 4);
@@ -1935,7 +1935,7 @@ void h265_sao_EO_45_sse4(
     count0 = _mm_hadd_epi16(count0, count2);
     count4 = _mm_hadd_epi16(count4, count4);
 
-    count0 = _mm_hadd_epi16(count0, count4); 
+    count0 = _mm_hadd_epi16(count0, count4);
 
     _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
     sse4_count[4] = _mm_extract_epi16(count0, 4);
@@ -2104,7 +2104,7 @@ void h265_sao_EO_general_sse4(
     count0 = _mm_hadd_epi16(count0, count2);
     count4 = _mm_hadd_epi16(count4, count4);
 
-    count0 = _mm_hadd_epi16(count0, count4); 
+    count0 = _mm_hadd_epi16(count0, count4);
 
     _mm_storel_epi64((__m128i *)&sse4_count[0], count0);
     sse4_count[4] = _mm_extract_epi16(count0, 4);
@@ -2315,7 +2315,7 @@ static void h265_sao_BO_sse(
                     recLine += recStride;
                     orgLine += orgStride;
                 }
-                        
+
                 IppiRect roi = {startX, startY, endX-startX, endY-startY};
                 Ipp32s sse4_diff[5] = {0};
                 Ipp16s sse4_count[5]= {0};
