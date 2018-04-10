@@ -64,7 +64,8 @@ endif
 
 ifeq ($(BOARD_USES_GRALLOC1),true)
   MFX_CFLAGS += \
-    -DMFX_OMX_USE_GRALLOC_1
+    -DMFX_OMX_USE_GRALLOC_1 \
+    -DMFX_C2_USE_GRALLOC_1
 endif
 
 # Setting version information for the binaries

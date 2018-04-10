@@ -4,6 +4,7 @@
 # Defined variables:
 #   MFX_C_INCLUDES_LIBVA - include paths to LibVA headers
 #   MFX_C_INCLUDES_OMX - include paths to OMX headers (all needed for plug-ins)
+#   MFX_C_INCLUDES_C2 - include paths to C2 headers (all needed for plug-ins)
 #   MFX_HEADER_LIBRARIES_OMX - import OMX headers
 
 MFX_C_INCLUDES_LIBVA := \
@@ -36,6 +37,7 @@ endif
 
 ifeq ($(BOARD_USES_GRALLOC1),true)
   MFX_C_INCLUDES_OMX += $(INTEL_MINIGBM)/cros_gralloc
+  MFX_C_INCLUDES_C2 := $(INTEL_MINIGBM)/cros_gralloc
 endif
 
 ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)

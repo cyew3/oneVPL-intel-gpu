@@ -23,3 +23,4 @@ __cmake
 content
 # Android sub-projects
 /samples/sample_openmax_plugins
+/samples/sample_c2_plugins
