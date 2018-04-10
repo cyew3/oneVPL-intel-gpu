@@ -293,9 +293,6 @@
     <ClCompile Include="src\gmock\test_suites\avce_co2_disable_deblocking.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp">
-      <Filter>Source Files\test_suites\hevcd</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\avce_co2_use_rawref.cpp">
       <Filter>Source Files\test_suites\avce</Filter>
     </ClCompile>
@@ -1066,6 +1063,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vpp_mctf_query_platform.cpp">
       <Filter>Source Files\test_suites\vpp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevcd_shift.cpp">
+      <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -985,12 +985,19 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
     mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
     size_t count = s.Info.CropW;
 
+    mfxU32 cropX = s.Info.CropX;
+
     switch (s.Info.FourCC) {
+        case MFX_FOURCC_P010:
+        case MFX_FOURCC_P016:
+            cropX *= 2;
+            count *= 2;
+
         case MFX_FOURCC_NV12:
         {
             for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
             {
-                IppStatus sts = ippsCRC32_8u(s.Data.Y + pitch * i + s.Info.CropX, (mfxU32)count, &m_crc);
+                IppStatus sts = ippsCRC32_8u(s.Data.Y + pitch * i + cropX, (mfxU32)count, &m_crc);
                 if (sts != ippStsNoErr)
                 {
                     g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
@@ -999,7 +1006,7 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
             }
             for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
             {
-                IppStatus sts = ippsCRC32_8u(s.Data.UV + pitch * i + s.Info.CropX, (mfxU32)count, &m_crc);
+                IppStatus sts = ippsCRC32_8u(s.Data.UV + pitch * i + cropX, (mfxU32)count, &m_crc);
                 if (sts != ippStsNoErr)
                 {
                     g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
@@ -1008,12 +1015,21 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
             }
             break;
         }
+
+        case MFX_FOURCC_Y416:
+            cropX *= 2;
+            count *= 2;
+        case MFX_FOURCC_Y210:
+        case MFX_FOURCC_Y216:
+            cropX *= 4;
+
         case MFX_FOURCC_RGB4:
+        case MFX_FOURCC_AYUV:
         {
             count *= 4;
             mfxU8* ptr = 0;
             ptr = TS_MIN( TS_MIN(s.Data.R, s.Data.G), s.Data.B );
-            ptr = ptr + s.Info.CropX + s.Info.CropY * pitch;
+            ptr = ptr + cropX + s.Info.CropY * pitch;
 
             for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++)
             {
@@ -1027,14 +1043,12 @@ mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
             break;
         }
         case MFX_FOURCC_YUY2:
-        case MFX_FOURCC_AYUV:
-        case MFX_FOURCC_P010:
-        case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
         {
             g_tsLog << "ERROR: CRC calculation is not impelemented\n";
             return MFX_ERR_ABORTED;
         }
+
         default:
             return MFX_ERR_UNSUPPORTED;
     }

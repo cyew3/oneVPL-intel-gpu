@@ -350,7 +350,7 @@
     <ClCompile Include="src\gmock\test_suites\fei_encode_ref_list_ctrl.cpp" />
     <ClCompile Include="src\gmock\test_suites\get_plugin.cpp" />
     <ClCompile Include="src\gmock\test_suites\gpu_hang_transcoding.cpp" />
-    <ClCompile Include="src\gmock\test_suites\hevc10d_shift.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevcd_shift.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_bs_data_flag.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevcd_frametype.cpp" />

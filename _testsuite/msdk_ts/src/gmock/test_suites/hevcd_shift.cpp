@@ -16,7 +16,8 @@
 namespace hevc10d_shift
 {
 
-class TestSuite : tsVideoDecoder
+class TestSuite
+    : public tsVideoDecoder
 {
 
 public:
@@ -24,7 +25,7 @@ public:
     TestSuite() : tsVideoDecoder(MFX_CODEC_HEVC){}
     ~TestSuite() { }
 
-    int RunTest(unsigned int id);
+    int RunTest(unsigned int id, char const* sname, unsigned crc0, unsigned crc1);
     static const unsigned int n_cases;
 
 private:
@@ -98,65 +99,30 @@ const TestSuite::tc_struct TestSuite::test_case[] =
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
-class CRC32 : public tsSurfaceProcessor
+class CRC32
+    : public tsSurfaceCRC32
 {
 
 private:
 
-    mfxU16 shift;
-    mfxU32 crc32[2];
-
-    static int const ZERO_SHIFT_CRC = 0x87053A0C;
-    static int const ONE_SHIFT_CRC  = 0x0DEF5FD5;
+    mfxU32 reference;
 
 public:
 
-    CRC32(mfxU16 shift)
-        : shift(shift)
-    {
-        crc32[0] = ZERO_SHIFT_CRC;
-        crc32[1] = ONE_SHIFT_CRC;
-    };
-    ~CRC32() {};
-
-    mfxU32 calc_crc32(mfxFrameSurface1& s)
-    {
-        mfxU32 w = s.Info.CropW;
-        mfxU32 h = s.Info.CropH;
-
-        Ipp32u const nbytes = w*h*2 + w*h/2 + w*h/2;
-        if (!nbytes)
-        {
-            g_tsLog << "ERROR: cannot calculate CRC32, input frame has zero dimensions\n";
-            return 0;
-        }
-
-        std::vector<Ipp8u> frame(nbytes);
-        IppiSize sz = { mfxI32(w * 2), mfxI32(h) };
-        ippiCopy_8u_C1R(s.Data.Y, s.Data.Pitch, &frame[0], w*2, sz);
-
-        sz.height /= 2;
-        ippiCopy_8u_C1R(s.Data.UV, s.Data.Pitch, &frame[0] + w*h*2, w*2, sz);
-
-        Ipp32u crc = 0;
-        IppStatus sts = ippsCRC32_8u(&frame[0], nbytes, &crc);
-        if (sts != ippStsNoErr)
-        {
-            g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
-            return 0;
-        }
-
-        return crc;
-    }
+    CRC32(mfxU32 crc)
+        : reference(crc)
+    {};
 
     mfxStatus ProcessSurface(mfxFrameSurface1& s)
     {
         g_tsLog << "Checking CRC...\n";
 
-        mfxU32 const crc = calc_crc32(s);
-        if (crc != crc32[shift])
+        tsSurfaceCRC32::ProcessSurface(s);
+
+        mfxU32 const crc = GetCRC();
+        if (crc != reference)
         {
-            g_tsLog << "ERROR: reference CRC (" << crc32[shift]
+            g_tsLog << "ERROR: reference CRC (" << reference
                     << ") != test CRC (" << crc << ")\n";
             return MFX_ERR_NOT_FOUND;
         }
@@ -197,11 +163,11 @@ mfxStatus TestSuite::DecodeFrameAsync(mfxSession session, mfxBitstream *bs, mfxF
         tsVideoDecoder::DecodeFrameAsync(session, bs, surface_work, surface_out, syncp);
 }
 
-int TestSuite::RunTest(unsigned int id)
+
+int TestSuite::RunTest(unsigned int id, char const* sname, unsigned crc0, unsigned crc1)
 {
     TS_START;
-    const char* sname = g_tsStreamPool.Get("conformance/hevc/10bit/DBLK_A_MAIN10_VIXS_3.bit");
-    g_tsStreamPool.Reg();
+
     tsBitstreamReader reader(sname, 1000000);
     m_bs_processor = &reader;
     tc = test_case[id];
@@ -246,7 +212,7 @@ int TestSuite::RunTest(unsigned int id)
 
     if (m_initialized)
     {
-        CRC32 check_crc(tc.shift);
+        CRC32 check_crc(tc.shift ? crc1 : crc0);
         m_surf_processor = &check_crc;
 
         DecodeFrames(1);
@@ -256,5 +222,121 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(hevc10d_shift);
+template <unsigned fourcc>
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, fourcc>);
+
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
+{
+    unsigned constexpr ZERO_SHIFT_CRC = 0x87053A0C;
+    unsigned constexpr ONE_SHIFT_CRC  = 0x0DEF5FD5;
+
+    return std::make_tuple(
+        "conformance/hevc/10bit/DBLK_A_MAIN10_VIXS_3.bit",
+        ZERO_SHIFT_CRC,
+        ONE_SHIFT_CRC
+    );
+}
+
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
+{
+    unsigned constexpr ZERO_SHIFT_CRC = 0xE06C857B;
+    unsigned constexpr ONE_SHIFT_CRC  = 0xFE97129C;
+
+    return std::make_tuple(
+        "conformance/hevc/10bit/GENERAL_10b_422_RExt_Sony_1.bit",
+        ZERO_SHIFT_CRC,
+        ONE_SHIFT_CRC
+    );
+}
+
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P016>)
+{
+    unsigned constexpr ZERO_SHIFT_CRC = 0xABD92322;
+    unsigned constexpr ONE_SHIFT_CRC  = 0x94F61388;
+
+    return std::make_tuple(
+        "conformance/hevc/12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit",
+        ZERO_SHIFT_CRC,
+        ONE_SHIFT_CRC
+    );
+}
+
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
+{
+    unsigned constexpr ZERO_SHIFT_CRC = 0x613A8120;
+    unsigned constexpr ONE_SHIFT_CRC  = 0xB03BB3DE;
+
+    return std::make_tuple(
+        "conformance/hevc/12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit",
+        ZERO_SHIFT_CRC,
+        ONE_SHIFT_CRC
+    );
+}
+
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y416>)
+{
+    unsigned constexpr ZERO_SHIFT_CRC = 0xDFEAA2A1;
+    unsigned constexpr ONE_SHIFT_CRC  = 0x7C429C44;
+
+    return std::make_tuple(
+        "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_2.bit",
+        ZERO_SHIFT_CRC,
+        ONE_SHIFT_CRC
+    );
+}
+
+template <unsigned fourcc, unsigned profile>
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int id, std::integral_constant<unsigned, fourcc>, std::integral_constant<unsigned, profile>)
+{ return query_param(id, std::integral_constant<unsigned, fourcc>{}); }
+
+#if !defined(OPEN_SOURCE)
+std::tuple<char const*, unsigned, unsigned>
+query_param(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
+{
+    unsigned constexpr ZERO_SHIFT_CRC = 0xADD776A7;
+    unsigned constexpr ONE_SHIFT_CRC  = 0x2159B29D;
+
+    return std::make_tuple(
+        "conformance/hevc/self_coded/sbe_scc420_10bit_1920x1080.h265",
+        ZERO_SHIFT_CRC,
+        ONE_SHIFT_CRC
+    );
+}
+#endif
+
+template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
+struct TestSuiteEx
+    : public TestSuite
+{
+    static
+    int RunTest(unsigned int id)
+    {
+        auto const& p =
+            query_param(id, std::integral_constant<unsigned, fourcc>{}, std::integral_constant<unsigned, profile>{});
+
+        char const* sname = g_tsStreamPool.Get(std::get<0>(p));
+        g_tsStreamPool.Reg();
+
+        TestSuite suite;
+        return suite.RunTest(id, sname, std::get<1>(p), std::get<2>(p));
+    }
+};
+
+TS_REG_TEST_SUITE(hevc10d_shift,            TestSuiteEx<MFX_FOURCC_P010>::RunTest, TestSuiteEx<MFX_FOURCC_P010>::n_cases);
+TS_REG_TEST_SUITE(hevcd_10b_422_y210_shift, TestSuiteEx<MFX_FOURCC_Y210>::RunTest, TestSuiteEx<MFX_FOURCC_Y210>::n_cases);
+
+TS_REG_TEST_SUITE(hevcd_12b_420_p016_shift, TestSuiteEx<MFX_FOURCC_P016>::RunTest, TestSuiteEx<MFX_FOURCC_P016>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_422_y216_shift, TestSuiteEx<MFX_FOURCC_Y216>::RunTest, TestSuiteEx<MFX_FOURCC_Y216>::n_cases);
+TS_REG_TEST_SUITE(hevcd_12b_444_y416_shift, TestSuiteEx<MFX_FOURCC_Y416>::RunTest, TestSuiteEx<MFX_FOURCC_Y416>::n_cases);
+
+#if !defined(OPEN_SOURCE)
+TS_REG_TEST_SUITE(hevcd_10b_420_p010_scc_shift, (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::RunTest), (TestSuiteEx<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases));
+#endif
 }
