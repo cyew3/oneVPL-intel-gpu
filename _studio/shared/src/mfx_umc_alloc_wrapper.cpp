@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -710,7 +710,17 @@ mfxStatus mfx_UMC_FrameAllocator::SetCurrentMFXSurface(mfxFrameSurface1 *surf, b
     if ((surf->Info.BitDepthChroma ? surf->Info.BitDepthChroma : 8) != (m_surface_info.BitDepthChroma ? m_surface_info.BitDepthChroma : 8))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (surf->Info.FourCC == MFX_FOURCC_P010 || surf->Info.FourCC == MFX_FOURCC_P210)
+    if (   surf->Info.FourCC == MFX_FOURCC_P010
+        || surf->Info.FourCC == MFX_FOURCC_P210
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        || surf->Info.FourCC == MFX_FOURCC_Y210
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        || surf->Info.FourCC == MFX_FOURCC_P016
+        || surf->Info.FourCC == MFX_FOURCC_Y216
+        || surf->Info.FourCC == MFX_FOURCC_Y416
+#endif
+        )
     {
         if (m_isSWDecode)
         {

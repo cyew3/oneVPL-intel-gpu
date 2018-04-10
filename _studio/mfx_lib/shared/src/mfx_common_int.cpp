@@ -289,9 +289,18 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
         break;
     }
 
-    if (codecId != MFX_CODEC_HEVC && 
-       (info->FourCC == MFX_FOURCC_P010 ||
-        info->FourCC == MFX_FOURCC_P210))
+    if (codecId != MFX_CODEC_HEVC && (
+           info->FourCC == MFX_FOURCC_P010
+        || info->FourCC == MFX_FOURCC_P210
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        || info->FourCC == MFX_FOURCC_Y210
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        || info->FourCC == MFX_FOURCC_P016
+        || info->FourCC == MFX_FOURCC_Y216
+        || info->FourCC == MFX_FOURCC_Y416
+#endif
+        ))
     {
         if (info->Shift != (isHW ? 1 : 0))
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -382,8 +391,17 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
     if (!in->IOPattern)
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    if (in->mfx.CodecId == MFX_CODEC_HEVC &&
-       (in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210))
+    if (   in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+        || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
+        || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+        || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
+        || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+#endif
+       )
     {
         if (type == MFX_HW_UNKNOWN)
         {
