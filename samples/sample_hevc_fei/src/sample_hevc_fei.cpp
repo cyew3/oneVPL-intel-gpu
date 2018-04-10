@@ -139,6 +139,9 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-ForceCtuSplit]          - force splitting CTU into CU at least once\n"));
     msdk_printf(MSDK_STRING("   [-NumFramePartitions num] - number of partitions in frame that encoder processes concurrently (1, 2, 4, 8 or 16)\n"));
 
+    msdk_printf(MSDK_STRING("Force Flags: \n"));
+    msdk_printf(MSDK_STRING("   [-FastIntraMode] - force encoder to skip HEVC-specific intra modes (use AVC modes only)\n"));
+
     msdk_printf(MSDK_STRING("Motion Search: \n"));
     msdk_printf(MSDK_STRING("   [-SearchWindow value] - specifies one of the predefined search path and window size. In range [1,5] (5 is default).\n"));
     msdk_printf(MSDK_STRING("                           If zero value specified: -RefWidth / RefHeight, -LenSP are required\n"));
@@ -410,6 +413,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
         {
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.NumFramePartitions), "NumFramePartitions", isParseInvalid)
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-FastIntraMode")))
+        {
+            params.encodeCtrl.FastIntraMode = 1;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-tff")))
         {
