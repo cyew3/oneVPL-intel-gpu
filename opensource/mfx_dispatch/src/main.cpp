@@ -837,11 +837,28 @@ mfxStatus MFXAudioUSER_UnLoad(mfxSession session, const mfxPluginUID *uid)
 #include <windows.h>
 #include "intel_api_factory.h"
 
+static mfxModuleHandle hModule;
+
 // for the UWP_PROCTABLE purposes implementation of MFXinitEx is calling
 // InitializeInstance() implemented in intel_uwp-api.dll
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
-    HRESULT hr = InitialiseMediaSession((HANDLE*)session, &par, nullptr);
+    HRESULT hr = S_OK;
+    msdk_disp_char IntelGFXAPIdllName[MFX_MAX_DLL_PATH] = { 0 };
+    mfx_get_default_intel_gfx_api_dll_name(IntelGFXAPIdllName, sizeof(IntelGFXAPIdllName) / sizeof(IntelGFXAPIdllName[0]));
+    hModule = MFX::mfx_dll_load(IntelGFXAPIdllName);
+    if (!hModule)
+    {
+        DISPATCHER_LOG_ERROR("Can't load intel_gfx_api\n");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    mfxFunctionPointer pFunc = (mfxFunctionPointer)mfx_dll_get_addr(hModule, "InitialiseMediaSession");
+    if (!pFunc)
+    {
+        DISPATCHER_LOG_ERROR("Can't find required API function: InitialiseMediaSession\n");
+        return MFX_ERR_UNSUPPORTED;
+    }
+    hr = (*(HRESULT(MFX_CDECL *) (HANDLE*, LPVOID, LPVOID)) pFunc) ((HANDLE*)session, &par, nullptr);
     return (hr == S_OK) ? mfxStatus::MFX_ERR_NONE : (mfxStatus)hr;
 }
 
@@ -853,7 +870,20 @@ mfxStatus MFXClose(mfxSession session)
         return MFX_ERR_INVALID_HANDLE;
     }
 
-    HRESULT hr = DisposeMediaSession(HANDLE(session));
+    HRESULT hr = S_OK;
+    if (hModule)
+    {
+        mfxFunctionPointer pFunc = (mfxFunctionPointer)mfx_dll_get_addr(hModule, "DisposeMediaSession");
+        if (!pFunc)
+        {
+            DISPATCHER_LOG_ERROR("Can't find required API function: DisposeMediaSession\n");
+            return MFX_ERR_INVALID_HANDLE;
+        }
+        hr = (*(HRESULT(MFX_CDECL *) (HANDLE)) pFunc) ((HANDLE)session);
+    }
+    else
+        return MFX_ERR_INVALID_HANDLE;
+
     session = (mfxSession)NULL;
     return (hr == S_OK) ? MFX_ERR_NONE : mfxStatus(hr);
 }

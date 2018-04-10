@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -31,12 +31,13 @@ File Name: mfx_win_reg_key.h
 #if !defined(__MFX_WIN_REG_KEY_H)
 #define __MFX_WIN_REG_KEY_H
 
-#if defined(_WIN32) || defined(_WIN64)
+#if (defined(_WIN32) || defined(_WIN64))
 
 #include <windows.h>
 #include "mfxplugin.h"
 #include "mfx_dispatcher_log.h"
 
+#if !defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER)
 namespace MFX {
 
 template<class T> struct RegKey{};
@@ -110,7 +111,8 @@ inline bool QueryKey<bool>(WinRegKey & key, const wchar_t *pValueName, bool &dat
 
 
 } // namespace MFX
+#endif //!defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER)
 
-#endif // #if defined(_WIN32) || defined(_WIN64)
+#endif // #if (defined(_WIN32) || defined(_WIN64))
 
 #endif // __MFX_WIN_REG_KEY_H

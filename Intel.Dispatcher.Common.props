@@ -20,6 +20,9 @@
   <PropertyGroup Condition="'$(ProjectName)'=='libmfx_uwp' and ('$(Configuration)'=='Release' or '$(Configuration)'=='release' or '$(Configuration)'=='Release_Intel' or '$(Configuration)'=='Release_MD')">
     <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(ProjectName)'=='libmfx_uwp' and '$(Configuration)'=='Release_DFP'">
+    <TargetName>$(ProjectName)_dfp</TargetName>
+  </PropertyGroup>
   <Target Name="MediaSdkRootCheck" BeforeTargets="Build">
     <Warning Text="Unable to find MEDIASDK_ROOT environment variable. Build may fail due to missing IPP libraries." Condition="!Exists('$(MEDIASDK_ROOT)')" />
   </Target>
