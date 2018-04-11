@@ -148,8 +148,9 @@ typedef struct {
     mfxU16    PerCtuInput;
     mfxU16    ForceCtuSplit;
     mfxU16    NumFramePartitions;
+    mfxU16    FastIntraMode;
 
-    mfxU16    reserved0[108];
+    mfxU16    reserved0[107];
 } mfxExtFeiHevcEncFrameCtrl;
 ```
 
