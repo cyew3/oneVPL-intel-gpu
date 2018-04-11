@@ -26,6 +26,7 @@ using namespace MfxHwH264Encode;
 D3DXCommonEncoder::D3DXCommonEncoder()
     :pSheduler(NULL)
     ,m_bSingleThreadMode(false)
+    ,m_timeoutForTDR(0)
 {
 }
 
@@ -46,6 +47,9 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *core)
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
     {
         m_bSingleThreadMode = true;
+
+        eMFXHWType platform = core->GetHWType();
+        m_timeoutForTDR = (platform >= MFX_HW_LKF) ? MFX_H264ENC_HW_TASK_TIMEOUT_SIM : MFX_H264ENC_HW_TASK_TIMEOUT;
     }
 
     return MFX_ERR_NONE;
@@ -56,6 +60,7 @@ mfxStatus D3DXCommonEncoder::Destroy()
 {
     if (pSheduler != NULL)
     {
+        m_timeoutForTDR = 0;
         m_bSingleThreadMode = false;
         pSheduler->Release();
         pSheduler = NULL;
@@ -134,7 +139,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(DdiTask & task, mfxU32 fieldId)
         mfxU32 curTime = vm_time_get_current_time();
         if (sts == MFX_WRN_DEVICE_BUSY && m_bSingleThreadMode)
         {
-            if (task.CheckForTDRHang(curTime, MFX_H264ENC_HW_TASK_TIMEOUT))
+            if (task.CheckForTDRHang(curTime, m_timeoutForTDR))
                 return MFX_ERR_GPU_HANG;
             else
                 return MFX_WRN_DEVICE_BUSY;

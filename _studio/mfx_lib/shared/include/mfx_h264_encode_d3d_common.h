@@ -55,6 +55,7 @@ namespace MfxHwH264Encode
 
         MFXIScheduler2 *pSheduler;
         bool m_bSingleThreadMode;
+        mfxU32 m_timeoutForTDR;
 
     private:
         D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation

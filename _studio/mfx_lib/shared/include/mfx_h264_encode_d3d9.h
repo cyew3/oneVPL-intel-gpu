@@ -304,7 +304,6 @@ namespace MfxHwH264Encode
         mfxU8                m_numSkipFrames;
         mfxU32               m_sizeSkipFrames;
         mfxU32               m_skipMode;
-        mfxU32               m_timeoutForTDR;
 
         std::vector<ENCODE_RECT> m_dirtyRects;
         std::vector<MOVE_RECT>   m_movingRects;

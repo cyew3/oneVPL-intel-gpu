@@ -40,6 +40,7 @@
 #define bIntRateControlLA(RCMethod) ((RCMethod == MFX_RATECONTROL_LA)||(RCMethod == MFX_RATECONTROL_LA_ICQ)||(RCMethod == MFX_RATECONTROL_LA_HRD))
 
 #define MFX_H264ENC_HW_TASK_TIMEOUT 2000
+#define MFX_H264ENC_HW_TASK_TIMEOUT_SIM 600000
 
 #define MFX_ARRAY_SIZE(ARR) (sizeof(ARR)/sizeof(ARR[0]))
 const int MFX_MAX_DIRTY_RECT_COUNT = MFX_ARRAY_SIZE(mfxExtDirtyRect::Rect);

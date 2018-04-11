@@ -55,7 +55,6 @@ D3D11Encoder::D3D11Encoder()
 , m_caps()
 , m_capsQuery()
 , m_capsGet()
-, m_timeoutForTDR(0)
 #if defined(MFX_ENABLE_MFE)
 , m_StreamInfo()
 , m_pMFEAdapter(NULL)
@@ -92,14 +91,6 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
         width,
         height,
         NULL); // no encryption
-
-
-    MFX_SCHEDULER_PARAM schedule_Param;
-    mfxStatus paramsts = m_core->GetSession()->m_pScheduler->GetParam(&schedule_Param);
-    if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
-    {
-        m_timeoutForTDR = MFX_H264ENC_HW_TASK_TIMEOUT;
-    }
 
     return sts;
 
