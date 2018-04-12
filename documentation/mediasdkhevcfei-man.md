@@ -175,6 +175,7 @@ This extension buffer specifies frame level control for ENCODE. It is used durin
 `PerCtuInput` | If this value is not equal to zero, then CTU level control is enabled and [mfxExtFeiHevcEncCtuCtrl](#mfxExtFeiHevcEncCtuCtrl) structure should be attached to the `mfxEncodeCtrl` structure at runtime.
 `ForceCtuSplit` | If this value is not equal to zero, then each Inter CTU in frame is split at least once in order to avoid 32x32 Inter PUs. Does not affect CUs of non-Inter modes. This is performance/quality trade-off flag, setting it improves performance but reduces quality.
 `NumFramePartitions` | This value specifies number of partitions in frame that encoder processes concurrently. Valid numbers are {1, 2, 4, 8, 16}. This is performance/quality trade-off parameter. The smaller the number of partitions the better quality, the worse performance.
+`FastIntraMode` | If this value is set to 1, then HEVC-specific Intra prediction modes are disabled and only AVC Intra modes are used. This is performance/quality trade-off flag, setting it improves performance but reduces quality.
 
 
 **Change History**
