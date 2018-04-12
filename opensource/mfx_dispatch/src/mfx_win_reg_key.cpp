@@ -27,9 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 File Name: mfx_win_reg_key.cpp
 
 \* ****************************************************************************** */
-
-#if (defined(_WIN32) || defined(_WIN64)) && !defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER)
-
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(MEDIASDK_DFP_LOADER)
 #include "mfx_win_reg_key.h"
 #include "mfx_dispatcher_log.h"
 
@@ -225,4 +223,4 @@ bool WinRegKey::QueryInfo(LPDWORD lpcSubkeys)
 
 } // namespace MFX
 
-#endif // #if (defined(_WIN32) || defined(_WIN64)) && !defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER)
+#endif // #if (defined(_WIN32) || defined(_WIN64)) && !defined(MEDIASDK_DFP_LOADER)

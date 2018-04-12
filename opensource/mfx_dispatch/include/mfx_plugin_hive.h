@@ -116,7 +116,11 @@ namespace MFX {
     class MFXDefaultPlugins : public MFXPluginStorageBase
     {
     public:
+#if !defined(MEDIASDK_DFP_LOADER)
         MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType);
+#else
+        MFXDefaultPlugins(mfxVersion currentAPIVersion, int implType);
+#endif
     private:
     };
 

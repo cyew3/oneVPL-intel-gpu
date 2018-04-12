@@ -30,6 +30,8 @@ File Name: intel_api_factory.h
 
 #pragma once
 
+#if defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER)
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -41,3 +43,5 @@ HRESULT APIENTRY DisposeMediaSession(_In_ const HANDLE handle);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#endif /* defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER) */

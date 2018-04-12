@@ -28,6 +28,11 @@ File Name: main.cpp
 
 \* ****************************************************************************** */
 
+#ifdef _WIN32
+#include <Windows.h>
+#include <stringapiset.h>
+#endif
+
 #include <new>
 #include <memory>
 
@@ -218,8 +223,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
     // there iterators are used only if the caller specified implicit type like AUTO
     mfxU32 curImplIdx, maxImplIdx;
-    // particular implementation value
-    mfxIMPL curImpl;
     // implementation method masked from the input parameter
     // special case for audio library
     const mfxIMPL implMethod = (par.Implementation & MFX_IMPL_AUDIO) ? (sizeof(implTypesRange) / sizeof(implTypesRange[0]) - 1) : (par.Implementation & (MFX_IMPL_VIA_ANY - 1));
@@ -262,6 +265,9 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     DISPATCHER_LOG_INFO((("Required API version is %u.%u\n"), requiredVersion.Major, requiredVersion.Minor));
 
     // Load HW library or RT from system location
+#if !defined(MEDIASDK_DFP_LOADER)
+    // particular implementation value
+    mfxIMPL curImpl;
     curImplIdx = implTypesRange[implMethod].minIndex;
     maxImplIdx = implTypesRange[implMethod].maxIndex;
     do
@@ -335,6 +341,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         } while ((MFX_ERR_NONE != mfxRes) && (MFX::MFX_STORAGE_ID_LAST >= currentStorage));
 
     } while ((MFX_ERR_NONE != mfxRes) && (++curImplIdx <= maxImplIdx));
+#endif //#if !defined(MEDIASDK_DFP_LOADER)
 
 
     curImplIdx = implTypesRange[implMethod].minIndex;
@@ -506,7 +513,11 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
             for (; it != et; ++it)
             {
                 // Registering default plugins set
+#if !defined(MEDIASDK_DFP_LOADER)
                 MFX::MFXDefaultPlugins defaultPugins(apiVerActual, *it, (*it)->implType);
+#else
+                MFX::MFXDefaultPlugins defaultPugins(apiVerActual, (*it)->implType);
+#endif
                 hive.insert(hive.end(), defaultPugins.begin(), defaultPugins.end());
 
                 if ((*it)->storageID != MFX::MFX_UNKNOWN_KEY)
@@ -837,13 +848,17 @@ mfxStatus MFXAudioUSER_UnLoad(mfxSession session, const mfxPluginUID *uid)
 #include <windows.h>
 #include "intel_api_factory.h"
 
+#ifdef MEDIASDK_DFP_LOADER
 static mfxModuleHandle hModule;
+#endif
 
 // for the UWP_PROCTABLE purposes implementation of MFXinitEx is calling
 // InitializeInstance() implemented in intel_uwp-api.dll
 mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 {
     HRESULT hr = S_OK;
+
+#if defined(MEDIASDK_DFP_LOADER)
     msdk_disp_char IntelGFXAPIdllName[MFX_MAX_DLL_PATH] = { 0 };
     mfx_get_default_intel_gfx_api_dll_name(IntelGFXAPIdllName, sizeof(IntelGFXAPIdllName) / sizeof(IntelGFXAPIdllName[0]));
     hModule = MFX::mfx_dll_load(IntelGFXAPIdllName);
@@ -859,6 +874,10 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         return MFX_ERR_UNSUPPORTED;
     }
     hr = (*(HRESULT(MFX_CDECL *) (HANDLE*, LPVOID, LPVOID)) pFunc) ((HANDLE*)session, &par, nullptr);
+#else
+    hr = InitialiseMediaSession((HANDLE*)session, &par, nullptr);
+#endif
+
     return (hr == S_OK) ? mfxStatus::MFX_ERR_NONE : (mfxStatus)hr;
 }
 
@@ -871,6 +890,8 @@ mfxStatus MFXClose(mfxSession session)
     }
 
     HRESULT hr = S_OK;
+
+#if defined(MEDIASDK_DFP_LOADER)
     if (hModule)
     {
         mfxFunctionPointer pFunc = (mfxFunctionPointer)mfx_dll_get_addr(hModule, "DisposeMediaSession");
@@ -883,6 +904,9 @@ mfxStatus MFXClose(mfxSession session)
     }
     else
         return MFX_ERR_INVALID_HANDLE;
+#else
+    hr = DisposeMediaSession(HANDLE(session));
+#endif
 
     session = (mfxSession)NULL;
     return (hr == S_OK) ? MFX_ERR_NONE : mfxStatus(hr);

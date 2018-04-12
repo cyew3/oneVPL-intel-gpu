@@ -81,6 +81,7 @@
     <Keyword>Win32Proj</Keyword>
     <ProjectName>libmfx_uwp</ProjectName>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(MINIDDK_VERSION)'!=''">$(MINIDDK_VERSION)</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)WinSDKTargetPlatfrom.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -94,7 +95,7 @@
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -104,7 +105,7 @@
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|x64'" Label="Configuration">
     <WholeProgramOptimization>false</WholeProgramOptimization>

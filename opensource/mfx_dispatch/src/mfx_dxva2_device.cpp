@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -118,7 +118,11 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 #endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
 
     // load specified library
+#if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+#else
+    m_hModule = LoadPackagedLibrary(pModuleName, 0);
+#endif
 
 #if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     // set the previous error mode
@@ -325,89 +329,96 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
     // release the object before initialization
     Close();
 
+    IDXGIFactory1 *pFactory = NULL;
+    IDXGIAdapter1 *pAdapter = NULL;
+    DXGI_ADAPTER_DESC1 desc = { 0 };
+    mfxU32 curAdapter = 0;
+    mfxU32 maxAdapters = 0;
+    HRESULT hRes = E_FAIL;
+
+    DXGICreateFactoryFunc pFunc = NULL;
+
+#ifndef MEDIASDK_DFP_LOADER
     // load up the library if it is not loaded
     if (NULL == m_hModule)
     {
         LoadDLLModule(L"dxgi.dll");
     }
 
+
     if (m_hModule)
     {
-        DXGICreateFactoryFunc pFunc = NULL;
-        IDXGIFactory1 *pFactory = NULL;
-        IDXGIAdapter1 *pAdapter = NULL;
-        DXGI_ADAPTER_DESC1 desc = { 0 };
-        mfxU32 curAdapter = 0;
-        mfxU32 maxAdapters = 0;
-        HRESULT hRes = E_FAIL;
-
         // load address of procedure to create DXGI 1.1 factory
-        pFunc = (DXGICreateFactoryFunc) GetProcAddress(m_hModule, "CreateDXGIFactory1");
-
-        if (NULL == pFunc)
-        {
-            return false;
-        }
-
-        // create the factory
-#if _MSC_VER >= 1400
-        hRes = pFunc(__uuidof(IDXGIFactory1), (void**) (&pFactory));
-#else
-        hRes = pFunc(IID_IDXGIFactory1, (void**) (&pFactory));
-#endif
-        if (FAILED(hRes))
-        {
-            return false;
-        }
-        m_pDXGIFactory1 = pFactory;
-
-        // get the number of adapters
-        curAdapter = 0;
-        maxAdapters = 0;
-        do
-        {
-            // get the required adapted
-            hRes = pFactory->EnumAdapters1(curAdapter, &pAdapter);
-            if (FAILED(hRes))
-            {
-                break;
-            }
-
-            // if it is the required adapter, save the interface
-            if (curAdapter == adapterNum)
-            {
-                m_pDXGIAdapter1 = pAdapter;
-            }
-            else
-            {
-                pAdapter->Release();
-            }
-
-            // get the next adapter
-            curAdapter += 1;
-
-        } while (SUCCEEDED(hRes));
-        maxAdapters = curAdapter;
-
-        // there is no required adapter
-        if (adapterNum >= maxAdapters)
-        {
-            return false;
-        }
-        pAdapter = (IDXGIAdapter1 *) m_pDXGIAdapter1;
-
-        // get the adapter's parameters
-        hRes = pAdapter->GetDesc1(&desc);
-        if (FAILED(hRes))
-        {
-            return false;
-        }
-
-        // save the parameters
-        m_vendorID = desc.VendorId;
-        m_deviceID = desc.DeviceId;
-        *((LUID *) &m_luid) = desc.AdapterLuid;
+        pFunc = (DXGICreateFactoryFunc)GetProcAddress(m_hModule, "CreateDXGIFactory1");
     }
+#else
+    pFunc = &CreateDXGIFactory1;
+#endif
+
+    if (NULL == pFunc)
+    {
+        return false;
+    }
+
+    // create the factory
+#if _MSC_VER >= 1400
+    hRes = pFunc(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+#else
+    hRes = pFunc(IID_IDXGIFactory1, (void**)(&pFactory));
+#endif
+
+    if (FAILED(hRes))
+    {
+        return false;
+    }
+    m_pDXGIFactory1 = pFactory;
+
+    // get the number of adapters
+    curAdapter = 0;
+    maxAdapters = 0;
+    do
+    {
+        // get the required adapted
+        hRes = pFactory->EnumAdapters1(curAdapter, &pAdapter);
+        if (FAILED(hRes))
+        {
+            break;
+        }
+
+        // if it is the required adapter, save the interface
+        if (curAdapter == adapterNum)
+        {
+            m_pDXGIAdapter1 = pAdapter;
+        }
+        else
+        {
+            pAdapter->Release();
+        }
+
+        // get the next adapter
+        curAdapter += 1;
+
+    } while (SUCCEEDED(hRes));
+    maxAdapters = curAdapter;
+
+    // there is no required adapter
+    if (adapterNum >= maxAdapters)
+    {
+        return false;
+    }
+    pAdapter = (IDXGIAdapter1 *) m_pDXGIAdapter1;
+
+    // get the adapter's parameters
+    hRes = pAdapter->GetDesc1(&desc);
+    if (FAILED(hRes))
+    {
+        return false;
+    }
+
+    // save the parameters
+    m_vendorID = desc.VendorId;
+    m_deviceID = desc.DeviceId;
+    *((LUID *) &m_luid) = desc.AdapterLuid;
 
     return true;
 
@@ -454,6 +465,7 @@ bool DXVA2Device::InitD3D9(const mfxU32 adapterNum)
     {
         return false;
     }
+
 
     m_numAdapters = d3d9Device.GetAdapterCount();
 

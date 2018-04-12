@@ -5,6 +5,7 @@
   <Import Project=".\Intel.Dispatcher.Common.props"/>
   <PropertyGroup>
     <OutDir>$(MfxBuildDir)..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir Condition="$(Configuration.Contains('DFP'))">$(MfxBuildDir)..\build\win_uwp_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
