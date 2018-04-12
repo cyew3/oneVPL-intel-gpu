@@ -133,6 +133,7 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
     MSDK_CHECK_POINTER(m_pmfxSession, MFX_ERR_NOT_INITIALIZED);
 
     mfxStatus sts  = MFX_ERR_NONE;
+    bool bGpuHang = false;
 
     // non-null sync point indicates that task is in execution
     if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
@@ -140,8 +141,9 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
         sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, MSDK_WAIT_INTERVAL);
         if (sts == MFX_ERR_GPU_HANG)
         {
-            msdk_printf(MSDK_STRING("GPU hang happened\n"));
+            bGpuHang = true;
             sts = MFX_ERR_NONE;
+            msdk_printf(MSDK_STRING("GPU hang happened\n"));
         }
         MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
 
@@ -172,6 +174,12 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
             {
                 // find out if the error occurred in a VPP task to perform recovery procedure if applicable
                 sts = m_pmfxSession->SyncOperation(*m_pTasks[m_nTaskBufferStart].DependentVppTasks.begin(), 0);
+                if (sts == MFX_ERR_GPU_HANG)
+                {
+                    bGpuHang = true;
+                    sts = MFX_ERR_NONE;
+                    msdk_printf(MSDK_STRING("GPU hang happened\n"));
+                }
 
                 if (MFX_ERR_NONE == sts)
                 {
@@ -186,14 +194,13 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
             }
         }
 
-        return sts;
     }
     else
     {
         sts = MFX_ERR_NOT_FOUND; // no tasks left in task buffer
     }
     m_statOverall.StopTimeMeasurement();
-    return sts;
+    return bGpuHang ? MFX_ERR_GPU_HANG : sts;
 }
 
 mfxU32 CEncTaskPool::GetFreeTaskIndex()
@@ -1698,6 +1705,11 @@ mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
     if (MFX_ERR_NOT_FOUND == sts)
     {
         sts = m_TaskPool.SynchronizeFirstTask();
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            m_bInsertIDR = true;
+            sts = MFX_ERR_NONE;
+        }
         MSDK_CHECK_STATUS(sts, "m_TaskPool.SynchronizeFirstTask failed");
 
         // try again
@@ -2047,6 +2059,11 @@ mfxStatus CEncodingPipeline::Run()
     while (MFX_ERR_NONE == sts)
     {
         sts = m_TaskPool.SynchronizeFirstTask();
+        if (sts == MFX_ERR_GPU_HANG)
+        {
+            m_bInsertIDR = true;
+            sts = MFX_ERR_NONE;
+        }
     }
 
     // MFX_ERR_NOT_FOUND is the correct status to exit the loop with
