@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -179,9 +179,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             { {0, 3, {{0, false}, {22, true}, {17, true}}}, {1, 2, {{1, false}, {2, false}}}, {7, 3, {{3, true}, {4, true}, {5, true}}}, {9, 1, {{2, false}}} }},
     {/*04*/ MFX_ERR_NONE,
             { {0, 2, {{0, false}, {1, false}}}, {1, 2, {{1, true}, {2, true}}}, {9, 1, {{2, true}}} }},
-    // driver doesn't support sum_payload_size for frame > 256 (current limitation), so this case will be FAILED now.
-    //{/*05*/ MFX_ERR_NONE,
-    //        { {0, 4, {{0, false}, {1, false}, {1, false}, {5, false}}}, {1, 2, {{1, false}, {2, false}}} , {9, 5, {{0, false}, {47, false}, {2, false}, {45, false}, {132, false}}} }}
+    {/*05*/ MFX_ERR_NONE,
+            { {0, 4, {{0, false}, {1, false}, {1, false}, {5, false}}}, {1, 2, {{1, false}, {2, false}}} , {9, 5, {{0, false}, {47, false}, {2, false}, {45, false}, {132, false}}} }}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
