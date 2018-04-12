@@ -1499,9 +1499,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
         //we use 8u copy, so we need to increase ROI to handle 16 bit samples
         roi.width *= 4;
-        if (pSrc->Info.Shift == pDst->Info.Shift)
-            sts = FastCopy::Copy(pDst->Data.Y, dstPitch, pSrc->Data.Y, srcPitch, roi, copyFlag);
-        else
+#if defined(_WIN32) || defined(_WIN64)
+        if (pSrc->Info.Shift != pDst->Info.Shift)
         {
             mfxU8 lshift = 0;
             mfxU8 rshift = 0;
@@ -1512,6 +1511,9 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
             sts = FastCopy::CopyAndShift((mfxU16*)(pDst->Data.Y), dstPitch, (mfxU16 *)pSrc->Data.Y, srcPitch, roi, lshift, rshift, copyFlag);
         }
+        else
+#endif
+            sts = FastCopy::Copy(pDst->Data.Y, dstPitch, pSrc->Data.Y, srcPitch, roi, copyFlag);
 
         MFX_CHECK_STS(sts);
         break;
@@ -1537,9 +1539,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
         //we use 8u copy, so we need to increase ROI to handle 16 bit samples
         roi.width *= 8;
-        if (pSrc->Info.Shift == pDst->Info.Shift)
-            sts = FastCopy::Copy((mfxU8*)pDst->Data.U16, dstPitch, (mfxU8*)pSrc->Data.U16, srcPitch, roi, copyFlag);
-        else
+#if defined(_WIN32) || defined(_WIN64)
+        if (pSrc->Info.Shift != pDst->Info.Shift)
         {
             mfxU8 lshift = 0;
             mfxU8 rshift = 0;
@@ -1550,6 +1551,9 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
             sts = FastCopy::CopyAndShift(pDst->Data.U16, dstPitch, pSrc->Data.U16, srcPitch, roi, lshift, rshift, copyFlag);
         }
+        else
+#endif
+            sts = FastCopy::Copy((mfxU8*)pDst->Data.U16, dstPitch, (mfxU8*)pSrc->Data.U16, srcPitch, roi, copyFlag);
 
         MFX_CHECK_STS(sts);
         break;
