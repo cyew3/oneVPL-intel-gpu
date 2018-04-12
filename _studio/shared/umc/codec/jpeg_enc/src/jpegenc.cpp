@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -401,10 +401,10 @@ JERRCODE CJPEGEncoder::SetParams(
     }
     else
     {
-      if(m_src.nChannels == 3 && color != m_src.color && m_src.sampling != 444)
+      if(m_src.nChannels == 3 && color != m_src.color && m_src.sampling != JS_444)
         return JPEG_ERR_PARAMS;
 
-      if(m_src.nChannels == 4 && color != m_src.color && m_src.sampling != 444)
+      if(m_src.nChannels == 4 && color != m_src.color && m_src.sampling != JS_444)
         return JPEG_ERR_PARAMS;
     }
   }

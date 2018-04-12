@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -502,7 +502,7 @@ void DecodeTransformInfo(VC1Context* pContext)
         }
         else
         {
-            if (!pContext->m_pCurrMB->mbType == VC1_MB_INTRA)
+            if (pContext->m_pCurrMB->mbType != VC1_MB_INTRA)
             {
                 for (i=0;i<VC1_NUM_OF_BLOCKS;i++)
                 {

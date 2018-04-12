@@ -614,9 +614,9 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftGPUtoCPU(CmSurface2D* pSurface,
                                     const UINT widthStride,
                                     const UINT heightStride,
                                     mfxU32 format,
-                                    const UINT option,
+                                    const UINT,
                                     int bitshift,
-                                    CmEvent* & pEvent)
+                                    CmEvent* &)
 {
     INT             hr = CM_SUCCESS;
     UINT            stride_in_bytes = widthStride;
@@ -1168,9 +1168,9 @@ mfxStatus CmCopyWrapper::EnqueueCopyShiftCPUtoGPU(CmSurface2D* pSurface,
     const UINT widthStride,
     const UINT heightStride,
     mfxU32 format,
-    int bitshift,
-    const UINT option,
-    CmEvent* & pEvent)
+    int,
+    const UINT,
+    CmEvent* &)
 {
     INT             hr = CM_SUCCESS;
     UINT            stride_in_bytes = widthStride;
@@ -2791,7 +2791,7 @@ mfxStatus CmCopyWrapper::Release(void)
 
 } // mfxStatus CmCopyWrapper::Release(void)
 
-CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32 width, mfxU32 height, bool isSecondMode,
+CmSurface2D * CmCopyWrapper::CreateCmSurface2D(void *pSrc, mfxU32, mfxU32, bool,
                                                std::map<mfxHDLPair, CmSurface2D *> & tableCmRelations,
                                                std::map<CmSurface2D *, SurfaceIndex *> & tableCmIndex)
 {

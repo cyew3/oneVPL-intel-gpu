@@ -3861,7 +3861,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra16x16SelectRD)(
         uSmallestSAD = uSAD;
         Best16x16Type = PRED16x16_VERT;
     }else{
-        uSmallestSAD = ((Ipp64u)(MAX_SAD<<8));
+        uSmallestSAD = ((Ipp64u)MAX_SAD)<<8;
     }
 
     // Initialize uHorizPred with prediction from left
@@ -4100,7 +4100,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD)(
         chromaNC = cur_mb.MacroblockCoeffsInfo->chromaNC;
         Best8x8Type = PRED8x8_VERT;
     }else{
-        uSmallestSAD = (Ipp64u)MAX_SAD<<8;
+        uSmallestSAD = ((Ipp64u)MAX_SAD)<<8;
     }
 
     // Initialize uHorizPred with prediction from left
@@ -4492,7 +4492,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_IntraSelectChromaRD_NV12)(
         chromaNC = cur_mb.MacroblockCoeffsInfo->chromaNC;
         Best8x8Type = PRED8x8_VERT;
     }else{
-        uSmallestSAD = (Ipp64u)MAX_SAD<<8;
+        uSmallestSAD = ((Ipp64u)MAX_SAD)<<8;
     }
 
     // Initialize uHorizPred with prediction from left

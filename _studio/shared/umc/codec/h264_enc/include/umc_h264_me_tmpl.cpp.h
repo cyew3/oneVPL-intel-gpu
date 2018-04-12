@@ -400,7 +400,7 @@ static H264EncoderFrameType* H264ENC_MAKE_NAME(FindDirectRefIdxMBAFF)(
         RefIndexL0 = -1;
     }
 
-    if ((RefIndexL0 == -1))
+    if (RefIndexL0 == -1)
         return 0;
 
     //RefIndexL0<<=back_scale_idx; // should not do it because we have field RefPicList

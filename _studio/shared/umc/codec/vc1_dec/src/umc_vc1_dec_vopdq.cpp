@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -343,7 +343,7 @@ void GetMQUANT(VC1Context* pContext)
 
     }//m_DQBILevel==0
 
-    if ((MQUANT == picLayerHeader->m_AltPQuant))
+    if (MQUANT == picLayerHeader->m_AltPQuant)
         HALFQP=0;
 
     pContext->CurrDC->DCStepSize = GetDCStepSize(MQUANT);
