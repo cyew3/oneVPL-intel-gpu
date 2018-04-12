@@ -282,7 +282,7 @@ CTranscodingPipeline::CTranscodingPipeline():
     m_bUseOverlay = false;
     m_bForceStop = false;
     m_bIsInterOrJoined = false;
-    m_nRobustFlag = 0;
+    m_bRobustFlag = false;
     m_nRotationAngle = 0;
 } //CTranscodingPipeline::CTranscodingPipeline()
 
@@ -668,6 +668,7 @@ mfxStatus CTranscodingPipeline::DecodeOneFrame(ExtendedSurface *pExtSurface)
     if( MFX_ERR_NONE == sts && isHEVCSW)
     {
         sts = m_pmfxSession->SyncOperation(pExtSurface->Syncp, MSDK_WAIT_INTERVAL);
+        HandlePossibleGpuHang(sts);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
     }
     return sts;
@@ -714,6 +715,7 @@ mfxStatus CTranscodingPipeline::DecodeLastFrame(ExtendedSurface *pExtSurface)
     if( MFX_ERR_NONE == sts && isHEVCSW)
     {
         sts = m_pmfxSession->SyncOperation(pExtSurface->Syncp,  MSDK_WAIT_INTERVAL);
+        HandlePossibleGpuHang(sts);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
     }
 
@@ -1136,6 +1138,7 @@ mfxStatus CTranscodingPipeline::Decode()
         {
             MFX_ITT_TASK("SyncOperation");
             sts = m_pmfxSession->SyncOperation(PreEncExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+            HandlePossibleGpuHang(sts);
             PreEncExtSurface.Syncp = NULL;
             MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
         }
@@ -1187,6 +1190,7 @@ mfxStatus CTranscodingPipeline::Decode()
             if(frontSurface.Syncp)
             {
                 sts = m_pmfxSession->SyncOperation(frontSurface.Syncp, MSDK_WAIT_INTERVAL);
+                HandlePossibleGpuHang(sts);
                 MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
                 frontSurface.Syncp=NULL;
             }
@@ -1267,6 +1271,7 @@ mfxStatus CTranscodingPipeline::Encode()
                 {
                     MFX_ITT_TASK("SyncOperation");
                     sts = m_pParentPipeline->m_pmfxSession->SyncOperation(DecExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                    HandlePossibleGpuHang(sts);
                     MSDK_CHECK_STATUS(sts, "m_pParentPipeline->m_pmfxSession->SyncOperation failed");
                 }
             }
@@ -1344,6 +1349,7 @@ mfxStatus CTranscodingPipeline::Encode()
             {
                 // Sync to ensure VPP is completed to avoid flicker
                 sts = m_pmfxSession->SyncOperation(VppExtSurface.Syncp, MSDK_WAIT_INTERVAL);
+                HandlePossibleGpuHang(sts);
                 MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
                 /* in case if enabled dumping into file for after VPP composition */
@@ -1996,6 +2002,7 @@ mfxStatus CTranscodingPipeline::PutBS()
     if(pBitstreamEx->Syncp)
     {
         sts = m_pmfxSession->SyncOperation(pBitstreamEx->Syncp, MSDK_WAIT_INTERVAL);
+        HandlePossibleGpuHang(sts);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
     }
 
@@ -2050,6 +2057,7 @@ mfxStatus CTranscodingPipeline::Surface2BS(ExtendedSurface* pSurf,mfxBitstream* 
     if(pSurf->Syncp)
     {
         sts = m_pmfxSession->SyncOperation(pSurf->Syncp, MSDK_WAIT_INTERVAL);
+        HandlePossibleGpuHang(sts);
         MSDK_CHECK_STATUS(sts, "m_pmfxSession->SyncOperation failed");
         pSurf->Syncp=0;
 
@@ -3514,7 +3522,7 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
     m_FrameNumberPreference = pParams->FrameNumberPreference;
     m_numEncoders = 0;
     m_bUseOverlay = pParams->DecodeId == MFX_CODEC_RGB4 ? true : false;
-    m_nRobustFlag = pParams->nRobustFlag;
+    m_bRobustFlag = pParams->bRobustFlag;
     m_nRotationAngle = pParams->nRotationAngle;
     m_sGenericPluginPath = pParams->strVPPPluginDLLPath;
     m_decoderPluginParams = pParams->decoderPluginParams;
@@ -4006,6 +4014,16 @@ void CTranscodingPipeline::SetNumFramesForReset(mfxU32 nFrames)
     m_NumFramesForReset = nFrames;
 }
 
+void CTranscodingPipeline::HandlePossibleGpuHang(mfxStatus & sts)
+{
+    if (sts == MFX_ERR_GPU_HANG && !m_bRobustFlag)
+    {
+        msdk_printf(MSDK_STRING("GPU hang happened\n"));
+        sts = MFX_ERR_NONE;
+        m_bInsertIDR = true;
+    }
+}
+
 mfxStatus CTranscodingPipeline::SetAllocatorAndHandleIfRequired()
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -4074,7 +4092,7 @@ mfxStatus CTranscodingPipeline::LoadGenericPlugin()
 
 size_t CTranscodingPipeline::GetRobustFlag()
 {
-    return m_nRobustFlag;
+    return m_bRobustFlag;
 }
 
 void CTranscodingPipeline::Close()
@@ -4143,20 +4161,6 @@ mfxStatus CTranscodingPipeline::Reset()
         isDecoderPlugin = m_pUserDecoderPlugin.get() ? true : false,
         isEncoderPlugin = m_pUserEncoderPlugin.get() ? true : false,
         isPreEncPlugin = m_pUserEncPlugin.get() ? true : false;
-
-    if (m_nRobustFlag == ROBUST_SOFT)
-    {
-        if (isEnc)
-        {
-            m_bInsertIDR = true;
-
-            m_BSPool.clear();
-            m_pBSStore->ReleaseAll();
-            m_pBSStore->FlushAll();
-        }
-
-        return MFX_ERR_NONE;
-    }
 
     // Close components being used
     if (isDec)

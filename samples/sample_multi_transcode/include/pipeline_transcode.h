@@ -179,11 +179,6 @@ namespace TranscodingSample
         EXTBRC_IMPLICIT
     };
 
-    enum RobustMode {
-        ROBUST_FULL = 1, // Reset all the components, devices, buffers, etc.
-        ROBUST_SOFT = 2  // Simply start transcoding again, just with insertion of IDR
-    };
-
     struct __sInputParams
     {
         // session parameters
@@ -193,7 +188,7 @@ namespace TranscodingSample
         mfxIMPL libType;  // Type of used mediaSDK library
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
         mfxU16 nThreadsNum; // number of internal session threads number
-        size_t nRobustFlag;   // Robust transcoding mode. Allows auto-recovery after hardware errors
+        bool bRobustFlag;   // Robust transcoding mode. Allows auto-recovery after hardware errors
 
         mfxU32 EncodeId; // type of output coded video
         mfxU32 DecodeId; // type of input coded video
@@ -696,6 +691,8 @@ namespace TranscodingSample
         mfxU32 GetNumFramesForReset();
         void   SetNumFramesForReset(mfxU32 nFrames);
 
+        void   HandlePossibleGpuHang(mfxStatus& sts);
+
         mfxStatus   SetAllocatorAndHandleIfRequired();
         mfxStatus   LoadGenericPlugin();
 
@@ -837,7 +834,7 @@ namespace TranscodingSample
         mfxU32          m_NumFramesForReset;
         MSDKMutex       m_mReset;
         MSDKMutex       m_mStopSession;
-        size_t          m_nRobustFlag;
+        bool            m_bRobustFlag;
 
         bool isHEVCSW;
 

@@ -696,11 +696,11 @@ mfxStatus Launcher::VerifyCrossSessionsOptions()
         }
 
         // All sessions have to know if robust mode enabled
-        if (m_InputParamsArray[i].nRobustFlag)
+        if (m_InputParamsArray[i].bRobustFlag)
         {
             for (mfxU32 j = 0; j < m_InputParamsArray.size(); j++)
             {
-                m_InputParamsArray[j].nRobustFlag = m_InputParamsArray[i].nRobustFlag;
+                m_InputParamsArray[j].bRobustFlag = m_InputParamsArray[i].bRobustFlag;
             }
         }
 
