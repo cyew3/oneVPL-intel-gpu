@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -14,30 +14,34 @@
 
 #include "mfx_h265_optimization.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 namespace MFX_HEVC_PP
 {
 
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
 // ML: OPT: TODO: Make sure compiler recognizes saturation idiom for vectorization
-template <typename T> 
-static inline T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8) 
-{ 
+template <typename T>
+static inline T H265_FORCEINLINE ClipY(T Value, int c_bitDepth = 8)
+{
     Value = (Value < 0) ? 0 : Value;
     const int c_Mask = ((1 << c_bitDepth) - 1);
     Value = (Value >= c_Mask) ? c_Mask : Value;
     return ( Value );
 }
 
-template <typename T> 
-static inline T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8) 
-{ 
+template <typename T>
+static inline T H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8)
+{
     Value = (Value < 0) ? 0 : Value;
     const int c_Mask = ((1 << c_bitDepth) - 1);
     Value = (Value >= c_Mask) ? c_Mask : Value;
     return ( Value );
 }
+
+#ifdef MAKE_NAME
+    #undef MAKE_NAME
+#endif
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO)
     #define MAKE_NAME( func ) func ## _px
@@ -108,6 +112,6 @@ void MAKE_NAME(h265_CopyWeightedBidi_S16U8)(Ipp16s* pSrc0, Ipp16s* pSrcUV0, Ipp1
 
 } // end namespace MFX_HEVC_PP
 
-#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+#endif // #if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #endif // #if defined (MFX_ENABLE_H265_VIDEO_ENCODE) || defined(MFX_ENABLE_H265_VIDEO_DECODE)
 /* EOF */

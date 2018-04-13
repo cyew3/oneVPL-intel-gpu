@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -965,8 +965,6 @@ mfxStatus VideoDECODEMPEG2::CheckProtectionSettings(mfxVideoParam *input, mfxVid
 mfxStatus VideoDECODEMPEG2::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoDECODEMPEG2::Query");
-    // touch unreferenced parameter
-    core = core;
 
     MFX_CHECK_NULL_PTR1(out);
     mfxStatus res = MFX_ERR_NONE;

@@ -77,9 +77,10 @@ VideoDECODEVP9::VideoDECODEVP9(VideoCORE *core, mfxStatus *sts)
     ,m_core(core)
     ,m_isInit(false)
     ,m_is_opaque_memory(false)
-    ,m_platform(MFX_PLATFORM_SOFTWARE)
     ,m_num_output_frames(0)
     ,m_in_framerate(0)
+    ,m_platform(MFX_PLATFORM_SOFTWARE)
+
 {
     memset(&m_bs.Data, 0, sizeof(m_bs.Data));
 
@@ -774,7 +775,8 @@ mfxStatus VideoDECODEVP9::ReadFrameInfo(mfxU8 *pData, mfxU32 size, VP9BaseFrameI
 
 static mfxStatus VP9CompleteProc(void *, void *p_param, mfxStatus )
 {
-    delete p_param;
+    free(p_param);
+
     return MFX_ERR_NONE;
 }
 

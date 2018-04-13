@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -456,10 +456,10 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( Ipp8u* pSrc, int srcPi
                                                           IppiSize size)
 {
     const int srcPrecision = 8;//16;
-    const int minClip  = (-1<< (5 + srcPrecision - 8));
+    const int minClip  = (-(1<< (5 + srcPrecision - 8)));
     const int maxClip  = (1<< (5 + srcPrecision - 8)) - 1;
-    const int maxVal   = (1 << srcPrecision)- 1;
-    const int minSharp = (-1<<(srcPrecision + 3));
+    const int maxVal   = (1<< srcPrecision)- 1;
+    const int minSharp = (-(1<<(srcPrecision + 3)));
     const int maxSharp = (1<<(srcPrecision + 3)) - 1;
 
     int filter = 0;

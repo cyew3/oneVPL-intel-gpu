@@ -2297,7 +2297,7 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
         PredPel[2*width+1] = t2;
         PredPel[4*width+0] = t3;
     }
-    
+
     /* width always = 32 (see spec) */
     void MAKE_NAME(h265_FilterPredictPels_Bilinear_8u) (
         Ipp8u* pSrcDst,
@@ -2318,7 +2318,7 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
         p0 = pSrcDst;
         if (topLeft == 128 && topRight == 128 && bottomLeft == 128) {
             /* fast path: set 128 consecutive pixels to 128 */
-            xmm0 = _mm_set1_epi8(128);
+            xmm0 = _mm_set1_epi8(0x80);
             _mm_storeu_si128((__m128i *)(p0 +   0), xmm0);
             _mm_storeu_si128((__m128i *)(p0 +  16), xmm0);
             _mm_storeu_si128((__m128i *)(p0 +  32), xmm0);
@@ -2328,7 +2328,7 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
             _mm_storeu_si128((__m128i *)(p0 +  96), xmm0);
             _mm_storeu_si128((__m128i *)(p0 + 112), xmm0);
         } else {
-            /* calculate 8 at a time with successive addition 
+            /* calculate 8 at a time with successive addition
              * p[x] = ( ((64-x)*TL + x*TR + 32) >> 6 ) = ( ((64*TL + 32) + x*(TR - TL)) >> 6 )
              * similar for p[x+64]
              */
@@ -2338,7 +2338,7 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
             xmm2 = _mm_set1_epi16(topRight - topLeft);
             xmm3 = _mm_set1_epi16(bottomLeft - topLeft);
             xmm4 = _mm_setr_epi16(0, 1, 2, 3, 4, 5, 6, 7);
-            
+
             xmm6 = _mm_slli_epi16(xmm2, 3);         /* 8*(TR-TL) */
             xmm7 = _mm_slli_epi16(xmm3, 3);         /* 8*(BL-TL) */
 
@@ -2371,7 +2371,7 @@ static inline void h265_PredictIntra_Ang_NoTranspose_Kernel(
             pSrcDst[64] = topRight;
         }
     }
-    
+
     /* assume PredPel buffer size is at least (4*width + 16) bytes to allow 16-byte loads (see calling code)
      * only the data in range [0, 4*width] is actually used
      * supported widths = 4, 8, 16, 32 (but should not require 4 - see spec)

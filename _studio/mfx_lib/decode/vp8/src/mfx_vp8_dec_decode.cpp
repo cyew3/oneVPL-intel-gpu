@@ -1035,12 +1035,8 @@ bool VideoDECODEVP8::IsSameVideoParam(mfxVideoParam *p_new_par, mfxVideoParam *p
 
 } // bool VideoDECODEVP8::IsSameVideoParam(mfxVideoParam *p_new_par, mfxVideoParam *p_old_par)
 
-mfxStatus VideoDECODEVP8::DecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 *p_surface_out)
+mfxStatus VideoDECODEVP8::DecodeFrame(mfxBitstream *, mfxFrameSurface1 *, mfxFrameSurface1 *)
 {
-    p_bs = p_bs;
-    p_surface_work = p_surface_work;
-    p_surface_out = p_surface_out;
-
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoDECODEVP8::DecodeFrame(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 *p_surface_out)
