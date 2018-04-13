@@ -70,11 +70,10 @@
 #if !defined (MFX_RT)
 VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session)
 {
+    (void)session;
+
     VideoDECODE *pDECODE = (VideoDECODE *) 0;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-
-    // touch unreferenced parameter
-    session = session;
 
     // create a codec instance
     switch (CodecId)

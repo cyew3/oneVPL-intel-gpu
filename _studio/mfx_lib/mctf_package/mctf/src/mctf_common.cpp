@@ -1,3 +1,4 @@
+
 //
 // INTEL CORPORATION PROPRIETARY INFORMATION
 //
@@ -286,7 +287,7 @@ mfxF64 CMC::CatchTime(int indexInit, int indexEnd, const char* message, int prin
 void CMC::CatchEndTime(mfxI32 processed_frames) {
     TimeStop();
 //    CatchTime("Total process time:", 1);
-    processed_frames = processed_frames;
+    (void)processed_frames;
 }
 
 mfxStatus CMC::MCTF_GET_FRAME(CmSurface2D* outFrame) {
@@ -879,7 +880,7 @@ mfxStatus CMC::MCTF_UpdateANDApplyRTParams(mfxU8 srcNum)
 #ifdef MCTF_UPDATE_RT_FRAME_ORDER_BASED
         m_RTParams = QfIn[srcNum].mfxMctfControl;
 #else
-        srcNum = srcNum;
+        (void)srcNum;
 #endif
         if (MCTF_CONFIGURATION::MCTF_MAN_NCA_NBA == ConfigMode)
         {
@@ -918,7 +919,6 @@ mfxStatus CMC::MCTF_UpdateBitrateInfo(mfxU32 BitsPerPexelx100k)
     }
     else
     {
-        BitsPerPexelx100k = BitsPerPexelx100k;
         // if any other mode, update the bitrate does not have any effect;
         // let notify a caller about this; 
         // however, its not critical as MCTF can operate further

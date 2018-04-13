@@ -26,11 +26,10 @@
 #if !defined (MFX_RT)
 VideoVPP *CreateVPPSpecificClass(mfxU32 reserved, VideoCORE *core)
 {
+    (void)reserved;
+
     VideoVPP *pVPP = (VideoVPP *) 0;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-
-    // touch unreferenced parameter
-    reserved = reserved;
 
 #ifdef MFX_ENABLE_VPP
     pVPP = new VideoVPPMain(core, &mfxRes);
@@ -246,13 +245,12 @@ static
 mfxStatus MFXVideoVPPLegacyRoutine(void *pState, void *pParam,
                                    mfxU32 threadNumber, mfxU32 callNumber)
 {
+    (void)callNumber;
+
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_API);
     VideoVPP *pVPP = (VideoVPP *) pState;
     MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
     mfxStatus mfxRes;
-
-    // touch unreferenced parameter(s)
-    callNumber = callNumber;
 
     // check error(s)
     if ((NULL == pState) ||

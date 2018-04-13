@@ -138,9 +138,8 @@ mfxStatus MFXDisjoinSession(mfxSession session)
 
 mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
 {
-    // touch unreferenced parameters
-    session = session;
-    clone = clone;
+    (void)session;
+    (void)clone;
 
     // this function is implemented at the dispatcher's level.
     // there is nothing to do inside the llibrary.

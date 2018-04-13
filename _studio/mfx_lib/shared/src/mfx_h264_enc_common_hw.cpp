@@ -10031,8 +10031,6 @@ mfxU32 HeaderPacker::WriteSlice(
     mfxU32            firstMbInSlice,
     mfxU32            numMbInSlice)
 {
-    numMbInSlice = numMbInSlice;
-
     mfxU32 sliceType    = ConvertMfxFrameType2SliceType(task.m_type[fieldId]) % 5;
     mfxU32 refPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_REF);
     mfxU32 idrPicFlag   = !!(task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
@@ -10243,6 +10241,8 @@ mfxU32 HeaderPacker::WriteSlice(
         }
     }
 #endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
+    (void)numMbInSlice;
+
     return obs.GetNumBits();
 }
 

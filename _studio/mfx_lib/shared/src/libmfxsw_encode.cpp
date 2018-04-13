@@ -88,12 +88,13 @@ VideoENCODE* CreateUnsupported(VideoCORE *, mfxStatus *res)
 #if !defined (MFX_RT)
 VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session, mfxVideoParam *par)
 {
+#if !defined(MFX_VA) || \
+    (!defined(MFX_ENABLE_H264_VIDEO_ENCODE) && !defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) && !defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE))
+    (void)session;
+#endif
+
     VideoENCODE *pENCODE = (VideoENCODE *) 0;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-
-    // touch unreferenced parameter
-    session = session;
-    par = par;
 
     // create a codec instance
     switch (CodecId)
@@ -112,6 +113,8 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
             if(par && (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
                 pENCODE = new MFXVideoENCODEMVC(core, &mfxRes);
             else
+#else // MFX_ENABLE_MVC_VIDEO_ENCODE
+            (void)par;
 #endif // MFX_ENABLE_MVC_VIDEO_ENCODE
                 pENCODE = new MFXVideoENCODEH264(core, &mfxRes);
         }
@@ -123,6 +126,8 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         if(par && (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
             pENCODE = new MFXVideoENCODEMVC(core, &mfxRes);
         else
+#else // MFX_ENABLE_MVC_VIDEO_ENCODE
+        (void)par;
 #endif // MFX_ENABLE_MVC_VIDEO_ENCODE
             pENCODE = new MFXVideoENCODEH264(core, &mfxRes);
 #endif //MFX_VA
@@ -661,13 +666,12 @@ static
 mfxStatus MFXVideoENCODELegacyRoutine(void *pState, void *pParam,
                                       mfxU32 threadNumber, mfxU32 callNumber)
 {
+    (void)callNumber;
+
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "EncodeFrame");
     VideoENCODE *pENCODE = (VideoENCODE *) pState;
     MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
     mfxStatus mfxRes;
-
-    // touch unreferenced parameter(s)
-    callNumber = callNumber;
 
     // check error(s)
     if ((NULL == pState) ||

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfxvideo.h>
@@ -362,11 +362,10 @@ static
 mfxStatus MFXVideoENCLegacyRoutineExt(void *pState, void *pParam,
                                    mfxU32 threadNumber, mfxU32 callNumber)
 {
+    (void)callNumber;
+
     VideoENC_Ext * pENC = (VideoENC_Ext  *) pState;
     MFX_THREAD_TASK_PARAMETERS *pTaskParam = (MFX_THREAD_TASK_PARAMETERS *) pParam;
-
-    // touch unreferenced parameter(s)
-    callNumber = callNumber;
 
     // check error(s)
     if ((NULL == pState) ||

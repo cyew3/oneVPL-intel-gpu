@@ -1893,6 +1893,8 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
     MFX_CHECK_WITH_ASSERT((mfxU32)numAttribs < static_cast<mfxU32>(maxNumAttribs), MFX_ERR_UNDEFINED_BEHAVIOR);
 
+// VAConfigAttribInputTiling defined as -1 while attrs[i].type (type VAConfigAttribType) has values ranged from 0 to 38
+/*
     if (entrypoint == targetEntrypoint)
     {
         for(mfxI32 i=0; i<numAttribs; i++)
@@ -1901,6 +1903,7 @@ mfxStatus VAAPIEncoder::QueryInputTilingSupport(mfxVideoParam const & par, mfxU3
                 inputTiling = attrs[i].value;
         }
     }
+*/
 
     vaDestroyConfig(m_vaDisplay, config);
 
