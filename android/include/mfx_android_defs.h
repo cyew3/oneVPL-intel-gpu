@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
 
 *********************************************************************************/
 
@@ -34,6 +34,8 @@ Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
   #define MFX_EMULATE_SSSE3
 
 #elif (MFX_ANDROID_PLATFORM == baytrail) || (MFX_ANDROID_PLATFORM == bigcore)
+
+#define PRE_SI_GEN 9
 
 #ifdef MFX_VA
 
