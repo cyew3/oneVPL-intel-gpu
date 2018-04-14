@@ -524,6 +524,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     for (mfxU32 i = 0; i < m_reconQueue.size(); i ++)
         resourceList[RES_ID_REF + i] = (ID3D11Resource*)m_reconQueue[i].first;
 
+#if defined(MFX_ENABLE_MFE)
+    if (m_pMfeAdapter != NULL)
+    {
+        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS, m_StreamInfo, 1);
+    }
+#endif
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA,          m_sps,      1);
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA,          m_pps,      1);
     {
@@ -538,12 +544,6 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_SLICEDATA,        m_slice[0], m_slice.size());
     ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_BITSTREAMDATA,    RES_ID_BS,  1);
 
-#if defined(MFX_ENABLE_MFE)
-    if (m_pMfeAdapter != NULL)
-    {
-        ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_MULTISTREAMS, m_StreamInfo, 1);
-    }
-#endif
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
     if (task.m_bCUQPMap)
@@ -753,7 +753,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 #if defined(MFX_ENABLE_MFE)
         if (m_pMfeAdapter != NULL)
         {
-            mfxU32 timeout = task.m_mfeTimeToWait;
+            //for pre-si set to 1 hour
+            mfxU32 timeout = 3600000000;// task.m_mfeTimeToWait;
             mfxStatus sts = m_pMfeAdapter->Submit(m_StreamInfo, (task.m_flushMfe ? 0 : timeout), false);
             if (sts != MFX_ERR_NONE)
                 return sts;

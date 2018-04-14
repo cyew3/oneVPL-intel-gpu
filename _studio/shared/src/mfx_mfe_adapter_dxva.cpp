@@ -201,6 +201,9 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     HRESULT hr = S_OK;
     bool isFound = false;
     GUID profileGuid;
+#ifdef DEBUG
+    printf("\n\nCheck MFE guid supported\n\n");
+#endif
     for (UINT indxProfile = 0; indxProfile < profileCount; indxProfile++)
     {
         hr = m_pVideoDevice->GetVideoDecoderProfile(indxProfile, &profileGuid);
@@ -215,6 +218,9 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
 
     if (!isFound)
     {
+#ifdef DEBUG
+        printf("\n\nMFE guid not found\n\n");
+#endif
         return MFX_ERR_UNSUPPORTED;
     }
 
@@ -225,13 +231,18 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
 
     video_config.ConfigDecoderSpecific = ENCODE_ENC_PAK;
     video_config.guidConfigBitstreamEncryption = DXVA_NoEncrypt;
-
+#ifdef DEBUG
+    printf("\n\nTry Create MFE device\n\n");
+#endif
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateMFEDevice");
         hr = m_pVideoDevice->CreateVideoDecoder(&video_desc, &video_config, &m_pMfeContext);
 
         if (hr != S_OK)
         {
+#ifdef DEBUG
+            printf("\n\nFailed to create MFE device\n\n");
+#endif
             return MFX_ERR_DEVICE_FAILED;
         }
     }
@@ -268,6 +279,9 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
         return MFX_ERR_UNDEFINED_BEHAVIOR;//something went wrong and we got non zero StreamID from encoder;
     }
     info.StreamId = (int)m_streams_pool.size();
+#ifdef DEBUG
+    printf("\n\nadded stream id %d to stream pool\n\n", info.StreamId);
+#endif
     for (iter = m_streams_pool.begin(); iter != m_streams_pool.end(); iter++)
     {
         //if we get into mfxU32 max - fail now(assume we never get so big amount of streams reallocation in one process session)
