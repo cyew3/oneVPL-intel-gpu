@@ -5230,7 +5230,7 @@ This structure specifies configurations for decoding, encoding and transcoding p
 `NumRefFrame`           | Number of reference frames; if `NumRefFrame = 0`, this parameter is not specified.
 `EncodedOrder`          | If not zero, `EncodedOrder` specifies that **ENCODE** takes the input surfaces in the encoded order and uses explicit frame type control. Application still must provide `GopRefDist` and [mfxExtCodingOption2](#mfxExtCodingOption2)`::BRefType` so SDK can pack headers and build reference lists correctly.
 `NumThread`             | Deprecated; Used to represent the number of threads the underlying implementation can use on the host processor. Always set this parameter to zero.
-`DecodedOrder`          | Deprecated; Used to instruct the decoder to decoded output in the decoded order. Always set this parameter to zero.
+`DecodedOrder`          | For AVC and HEVC, used to instruct the decoder to return output frames in the decoded order. Deprecated and must be zero for all other decoders.<br><br>When enabled, correctness of [mfxFrameData](#mfxFrameData)`::TimeStamp` and `FrameOrder` for output surface is not guaranteed, the application should ignore them.
 `ExtendedPicStruct`     | Instructs **DECODE** to output extended picture structure values for additional display attributes. See the [PicStruct](#PicStruct) description for details.
 `TimeStampCalc`         | Time stamp calculation method; see the [TimeStampCalc](#TimeStampCalc) description for details.
 `SliceGroupsPresent`    | Nonzero value indicates that slice groups are present in the bitstream. Only AVC decoder uses this field.
