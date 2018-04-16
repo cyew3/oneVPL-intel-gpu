@@ -7410,7 +7410,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION` | This extended buffer defines control parameters for the **VPP** frame rate conversion algorithm. See the [mfxExtVPPFrameRateConversion](#mfxExtVPPFrameRateConversion) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for video processing initialization.
 `MFX_EXTBUFF_VPP_IMAGE_STABILIZATION` | This extended buffer defines control parameters for the **VPP** image stabilization filter algorithm. See the [mfxExtVPPImageStab](#mfxExtVPPImageStab) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for video processing initialization.
 `MFX_EXTBUFF_VPP_PICSTRUCT_DETECTION` | Deprecated.
-`MFX_EXTBUFF_VPP_PROCAMP` | The extended buffer defines control parameters for the **VPP** ProcAmp filter algorithm. See the [mfxExtVPPProcAmp](#mfxExtVPPProcAmp) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for video processing initialization.
+`MFX_EXTBUFF_VPP_PROCAMP` | The extended buffer defines control parameters for the **VPP** ProcAmp filter algorithm. See the [mfxExtVPPProcAmp](#mfxExtVPPProcAmp) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for video processing initialization or to the [mfxFrameData](#mfxFrameData) structure in the [mfxFrameSurface1](#mfxFrameSurface) structure of output surface for per-frame processing configuration.
 `MFX_EXTBUFF_VPP_SCENE_CHANGE` | Deprecated.
 `MFX_EXTBUFF_VPP_FIELD_PROCESSING` | The extended buffer defines control parameters for the **VPP** field-processing algorithm. See the [mfxExtVPPFieldProcessing](#mfxExtVPPFieldProcessing) structure for details. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for video processing initialization or to the [mfxFrameData](#mfxFrameData) structure during runtime.
 `MFX_EXTBUFF_MBQP` | This extended buffer defines per-macroblock QP. See the [mfxExtMBQP](#mfxExtMBQP) structure for details. The application can attach this buffer to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure for per-frame encoding configuration.
@@ -7481,7 +7481,7 @@ SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING
 
 SDK API 1.26 adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_EXTBUFF_VP9_TEMPORAL_LAYERS`, `MFX_EXTBUFF_VPP_MCTF`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY`.
+SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY` and `MFX_EXTBUFF_VPP_PROCAMP` use for per-frame processing configuration.
 
 See additional change history in the structure definitions.
 
