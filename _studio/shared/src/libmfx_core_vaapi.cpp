@@ -863,7 +863,7 @@ VAAPIVideoCORE::DoFastCopyWrapper(
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoCORE::DoFastCopyWrapper");
     mfxStatus sts;
 
-    mfxHDL srcHandle, dstHandle;
+    mfxHDLPair srcHandle = {}, dstHandle = {};
     mfxMemId srcMemId, dstMemId;
 
     mfxFrameSurface1 srcTempSurface, dstTempSurface;
@@ -900,10 +900,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetExternalFrameHDL(srcMemId, &srcHandle);
+            sts = GetExternalFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = srcHandle;
+            srcTempSurface.Data.MemId = &srcHandle;
         }
     }
     else if (srcMemType & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -925,10 +925,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (srcMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetFrameHDL(srcMemId, &srcHandle);
+            sts = GetFrameHDL(srcMemId, (mfxHDL *)&srcHandle);
             MFX_CHECK_STS(sts);
 
-            srcTempSurface.Data.MemId = srcHandle;
+            srcTempSurface.Data.MemId = &srcHandle;
         }
     }
 
@@ -951,10 +951,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetExternalFrameHDL(dstMemId, &dstHandle);
+            sts = GetExternalFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = dstHandle;
+            dstTempSurface.Data.MemId = &dstHandle;
         }
     }
     else if (dstMemType & MFX_MEMTYPE_INTERNAL_FRAME)
@@ -976,10 +976,10 @@ VAAPIVideoCORE::DoFastCopyWrapper(
         }
         else if (dstMemType & MFX_MEMTYPE_DXVA2_DECODER_TARGET)
         {
-            sts = GetFrameHDL(dstMemId, &dstHandle);
+            sts = GetFrameHDL(dstMemId, (mfxHDL *)&dstHandle);
             MFX_CHECK_STS(sts);
 
-            dstTempSurface.Data.MemId = dstHandle;
+            dstTempSurface.Data.MemId = &dstHandle;
         }
     }
 
@@ -1070,8 +1070,8 @@ VAAPIVideoCORE::DoFastCopyExtended(
         {
             MFX_CHECK(m_Display, MFX_ERR_NOT_INITIALIZED);
 
-            VASurfaceID *va_surf_src = (VASurfaceID*)(pSrc->Data.MemId);
-            VASurfaceID *va_surf_dst = (VASurfaceID*)(pDst->Data.MemId);
+            VASurfaceID *va_surf_src = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
+            VASurfaceID *va_surf_dst = (VASurfaceID*)(((mfxHDLPair *)pDst->Data.MemId)->first);
             MFX_CHECK(va_surf_src != va_surf_dst, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             VAImage va_img_src = {};
@@ -1108,7 +1108,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             }
             else
             {
-                VASurfaceID *va_surface = (VASurfaceID*)(pSrc->Data.MemId);
+                VASurfaceID *va_surface = (VASurfaceID*)(((mfxHDLPair *)pSrc->Data.MemId)->first);
                 VAImage va_image;
                 VAStatus va_sts;
                 void *pBits = NULL;
@@ -1182,7 +1182,7 @@ VAAPIVideoCORE::DoFastCopyExtended(
             MFX_CHECK(srcPitch < 0x8000 || pSrc->Info.FourCC == MFX_FOURCC_RGB4 || pSrc->Info.FourCC == MFX_FOURCC_YUY2, MFX_ERR_UNDEFINED_BEHAVIOR);
 
             VAStatus va_sts = VA_STATUS_SUCCESS;
-            VASurfaceID *va_surface = (VASurfaceID*)(size_t)pDst->Data.MemId;
+            VASurfaceID *va_surface = (VASurfaceID*)(size_t)((mfxHDLPair *)pDst->Data.MemId)->first;
             VAImage va_image;
             void *pBits = NULL;
 
