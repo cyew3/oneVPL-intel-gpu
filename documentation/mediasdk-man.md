@@ -3568,7 +3568,9 @@ typedef struct {
 
     mfxU16      TransformSkip;             /* tri-state option */
 
-    mfxU16      reserved4[3];
+    mfxU16      TargetChromaFormatPlus1;
+    mfxU16      TargetBitDepthLuma;
+    mfxU16      TargetBitDepthChroma;
 
     mfxU16      BRCPanicMode;              /* tri-state option */
     mfxU16      LowDelayBRC;               /* tri-state option */
@@ -3642,6 +3644,9 @@ The application can attach this extended buffer to the [mfxVideoParam](#mfxVideo
 `EncodedUnitsInfo` | Turn this option ON to make encoded units info available in [mfxExtEncodedUnitsInfo](#mfxExtEncodedUnitsInfo).
 `EnableNalUnitType` | If this option is turned ON, then HEVC encoder uses NAL unit type provided by application in [mfxEncodeCtrl](#mfxEncodeCtrl)**::MfxNalUnitType** field. <br><br>This parameter is valid only during initialization.<br><br>Not all codecs and SDK implementations support this value. Use [Query](#MFXVideoENCODE_Query) function to check if this feature is supported.
 `ExtBrcAdaptiveLTR` | Turn OFF to prevent Adaptive marking of Long Term Reference Frames when using [ExtBRC](#External_Bit_Rate_Control). When ON and using [ExtBRC](#External_Bit_Rate_Control), encoders will mark, modify, or remove LTR frames based on encoding parameters and content properties. The application must set each input frame's [mfxFrameData](#mfxFrameData)**::FrameOrder** for correct operation of LTR.
+`TargetChromaFormatPlus1` | Minus 1 specifies target encoding chroma format (see [ChromaFormatIdc](#ChromaFormatIdc) enumerator). May differ from source one. `TargetChromaFormatPlus1 = 0` mean default target chroma format which is equal to source ([mfxVideoParam::](#mfxVideoParam)[mfx::](#mfxInfoMFX)[FrameInfo::](#mfxFrameInfo)`ChromaFormat + 1`), except RGB4 source format.<br>In case of RGB4 source format default target chroma format is 4:2:0 (instead of 4:4:4) for the purpose of backward compatibility.
+`TargetBitDepthLuma` | Target encoding bit-depth for luma samples. May differ from source one. `0` mean default target bit-depth which is equal to source ([mfxVideoParam::](#mfxVideoParam)[mfx::](#mfxInfoMFX)[FrameInfo::](#mfxFrameInfo)`BitDepthLuma`).
+`TargetBitDepthChroma` | Target encoding bit-depth for chroma samples. May differ from source one. `0` mean default target bit-depthwhich is equal to source ([mfxVideoParam::](#mfxVideoParam)[mfx::](#mfxInfoMFX)[FrameInfo::](#mfxFrameInfo)`BitDepthChroma`).
 
 
 **Change History**
@@ -3671,6 +3676,8 @@ The SDK API 1.25 adds `EncodedUnitsInfo` field.
 The SDK API 1.25 adds `EnableNalUnitType` field.
 
 The SDK API 1.26 adds `TransformSkip`, `ExtBrcAdaptiveLTR` fields.
+
+The SDK API **TBD** adds `TargetChromaFormatPlus1`, `TargetBitDepthLuma` and `TargetBitDepthChroma` fields.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -4910,6 +4917,22 @@ The SDK API 1.16 adds `AllocId` field.
 **Definition**
 
 ```C
+typedef struct
+{
+    mfxU32 U : 10;
+    mfxU32 Y : 10;
+    mfxU32 V : 10;
+    mfxU32 A :  2;
+} mfxY410;
+
+typedef struct
+{
+    mfxU32 B : 10;
+    mfxU32 G : 10;
+    mfxU32 R : 10;
+    mfxU32 A :  2;
+} mfxA2RGB10;
+
 typedef struct {
     union {
         mfxExtBuffer **ExtParam;
@@ -4932,6 +4955,7 @@ typedef struct {
     /* color planes */
     union {
         mfxU8   *Y;
+        mfxU16  *Y16;
         mfxU8   *R;
     };
     union {
@@ -4941,12 +4965,16 @@ typedef struct {
         mfxU8   *CrCb;          /* for CrCb merged formats */
         mfxU8   *Cb;
         mfxU8   *U;
+        mfxU16  *U16;
         mfxU8   *G;
+        mfxY410 *Y410;          /* for Y410 format (merged AVYU) */
     };
     union {
         mfxU8   *Cr;
         mfxU8   *V;
+        mfxU16  *V16;
         mfxU8   *B;
+        mfxA2RGB10 *A2RGB10;    /* for A2RGB10 format (merged ARGB) */
     };
     mfxU8       *A;
     mfxMemId    MemId;
@@ -4970,7 +4998,7 @@ The `mfxFrameData` structure describes frame buffer pointers.
 `PitchHigh, PitchLow` | Distance in bytes between the start of two consecutive rows in a frame.
 <a id='FrameOrder'>`FrameOrder`</a> | Current frame counter for the top field of the current frame; an invalid value of `MFX_FRAMEORDER_UNKNOWN` indicates that SDK functions that generate the frame output do not use this frame.
 `Locked` | Counter flag for the application; if Locked is greater than zero then the application locks the frame or field pair. Do not move, alter or delete the frame.
-`Y, U, V, A;`,<br>`R, G, B, A;`,<br>`Y, Cr, Cb, A;`,<br>`Y, CbCr;`,<br>`Y, CrCb;`,<br>`Y, UV;`,<br>`Y, VU;` | Data pointers to corresponding color channels. The frame buffer pointers must be 16-byte aligned. The application has to specify pointers to all color channels even for packed formats. For example, for YUY2 format the application has to specify Y, U and V pointers. For RGB32 – R, G, B and A pointers.
+`Y, U, V, A;`,<br>`R, G, B, A;`,<br>`Y, Cr, Cb, A;`,<br>`Y, CbCr;`,<br>`Y, CrCb;`,<br>`Y, UV;`,<br>`Y, VU;`<br>`Y16, U16, V16;`<br>`A2RGB10;`<br>`Y410;`| Data pointers to corresponding color channels. The frame buffer pointers must be 16-byte aligned. The application has to specify pointers to all color channels even for packed formats. For example, for YUY2 format the application has to specify Y, U and V pointers. For RGB32 – R, G, B and A pointers.
 `MemId` | Memory ID of the data buffers; if any of the preceding data pointers is non-zero then the SDK ignores `MemId`.
 `DataFlag` | Additional flags to indicate frame data properties. See the [FrameDataFlag](#FrameDataFlag) enumerator for details.
 `Corrupted` | Some part of the frame or field pair is corrupted. See the [Corruption](#Corruption) enumerator for details.
@@ -4989,6 +5017,10 @@ SDK 1.8 replaced `Pitch` by `PitchHigh` and `PitchLow` fields.
 SDK API 1.11 added `NumExtParam` and `ExtParam` fields.
 
 SDK API 1.19 added `MemType` field.
+
+SDK API 1.25 added `A2RGB10` field.
+
+SDK API **TBD** added `Y410` field.
 
 ## <a id='mfxFrameInfo'>mfxFrameInfo</a>
 
