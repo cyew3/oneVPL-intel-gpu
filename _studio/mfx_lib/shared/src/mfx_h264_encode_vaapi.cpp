@@ -1646,7 +1646,8 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
         mfxStatus sts = m_mfe->Create(mfeParam, m_vaDisplay);
         MFX_CHECK_STS(sts);
         //progressive to be changed for particular 2 field cases
-        sts = m_mfe->Join(m_vaContextEncode,par.mfx.FrameInfo.PicStruct!=MFX_PICSTRUCT_PROGRESSIVE);
+        vm_tick timeout = (((mfxU64)par.mfx.FrameInfo.FrameRateExtD)*1000000/par.mfx.FrameInfo.FrameRateExtN)/((par.mfx.FrameInfo.PicStruct!=MFX_PICSTRUCT_PROGRESSIVE)?2:1);
+        sts = m_mfe->Join(m_vaContextEncode, timeout); //replace with proper control value to be managed in one place.
         MFX_CHECK_STS(sts);
     }
 #endif
