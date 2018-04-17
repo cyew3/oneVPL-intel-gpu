@@ -268,6 +268,7 @@
     <ClInclude Include="h265\include\mfx_h265_encode_hw_bs.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d11.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d9.h" />
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d_common.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_ddi.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_ddi_trace.h" />
     <ClInclude Include="h265\include\mfx_h265_encode_hw_set.h" />
@@ -288,6 +289,7 @@
     <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d11.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d9.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d_common.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi_trace.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp" />
