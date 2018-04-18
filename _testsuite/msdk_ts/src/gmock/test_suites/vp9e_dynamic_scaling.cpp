@@ -1446,12 +1446,16 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxU32 m_testId;
         mfxU8 m_dpbSlotsForPrevFrame;
         mfxU8 m_numFrame;
+        mfxU32 m_maxWidth;
+        mfxU32 m_maxHeight;
     public:
         BitstreamChecker(
             std::vector<Iteration*>* pIterations,
             std::map<mfxU32, mfxFrameSurface1*>* pSurfaces,
             mfxU32 testType,
-            mfxU32 testId)
+            mfxU32 testId,
+            mfxU32 maxWidth=0,
+            mfxU32 maxHeight=0)
             : tsVideoDecoder(MFX_CODEC_VP9)
             , m_pIterations(pIterations)
             , m_pInputSurfaces(pSurfaces)
@@ -1459,6 +1463,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             , m_testId(testId)
             , m_dpbSlotsForPrevFrame(0)
             , m_numFrame(0)
+            , m_maxWidth(maxWidth)
+            , m_maxHeight(maxHeight)
         {}
         ~BitstreamChecker() {}
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
@@ -1621,6 +1627,15 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
                 mfxStatus decode_header_status = DecodeHeader();
 
+                // init the decoder with max width and height from the 1st encoding iteration to skip
+                //  surfaces re-allocation on upscale
+                if (m_maxWidth && m_maxHeight)
+                {
+                    m_pPar->mfx.FrameInfo.Width = m_maxWidth;
+                    m_pPar->mfx.FrameInfo.Height = m_maxHeight;
+                    g_tsLog << "INFO: Init decoder with width=" << m_maxWidth << " height=" << m_maxHeight << "\n";
+                }
+
                 mfxStatus init_status = Init();
                 m_par_set = true;
                 if (init_status >= 0)
@@ -1703,22 +1718,22 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             m_pInputSurfaces->erase(m_numFrame);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
 
-            g_tsLog << "INFO: frame[" << m_numFrame << "]: PSNR-Y=" << psnrY << " PSNR-U="
-                << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength << "\n";
+            g_tsLog << "INFO: frame[" << (mfxU32)m_numFrame << "]: PSNR_Y=" << psnrY << " PSNR_U="
+                << psnrU << " PSNR_V=" << psnrV << " size=" << bs.DataLength << "\n";
 
             if (psnrY < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << m_numFrame << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR_Y of frame " << (mfxU32)m_numFrame << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
             if (psnrU < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-U of frame " << m_numFrame << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR_U of frame " << (mfxU32)m_numFrame << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
             if (psnrV < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR-V of frame " << m_numFrame << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                ADD_FAILURE() << "ERROR: PSNR_V of frame " << (mfxU32)m_numFrame << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
                 throw tsFAIL;
             }
         }
@@ -1870,6 +1885,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         std::map<mfxU32, mfxFrameSurface1*>* pInputSurfaces = totalFramesToEncode ?
             &inputSurfaces : 0;
 
+        mfxU32 max_width = 0;
+        mfxU32 max_height = 0;
+
         for (mfxU8 idx = 0; idx < numIterations; idx++)
         {
             const mfxVideoParam& defaults = (idx == 0) ? *m_pPar : iterations[idx - 1]->m_param[CHECK];
@@ -1880,6 +1898,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 fourcc, tc.type,
                 iterationStart,
                 inputStreams);
+
+            if (idx == 0)
+            {
+                max_width = pIter->m_param->mfx.FrameInfo.Width;
+                max_height = pIter->m_param->mfx.FrameInfo.Height;
+            }
 
             iterationStart += pIter->m_numFramesToEncode;
             iterations.push_back(pIter);
@@ -1900,7 +1924,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
 
         // prepare bitstream checker
-        BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id);
+        BitstreamChecker bs(&iterations, pInputSurfaces, tc.type, id, max_width, max_height);
         m_bs_processor = &bs;
 
         Init();
@@ -1992,4 +2016,3 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_8b_444_ayuv_dynamic_scaling, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases_ayuv);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_10b_444_y410_dynamic_scaling, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases_y410);
 }
-
