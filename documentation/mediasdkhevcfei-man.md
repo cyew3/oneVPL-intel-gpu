@@ -172,7 +172,7 @@ This extension buffer specifies frame level control for ENCODE. It is used durin
 `SubPelMode` | This value specifies sub pixel precision for motion estimation.<br><br> 0x00 - integer motion estimation<br> 0x01 - half-pixel motion estimation<br> 0x03 - quarter-pixel motion estimation<br>
 `AdaptiveSearch` | If set, adaptive search is enabled.
 `MVPredictor` | If this value is not equal to zero, then usage of MV predictors is enabled and the application should attach [mfxExtFeiHevcEncMVPredictors](#mfxExtFeiHevcEncMVPredictors) structure to the `mfxEncodeCtrl` structure at runtime. This value also specifies predictor block size: <br><br> 0x00 - MVPs are disabled; <br> 0x01 - MVPs are enabled for 16x16 block; <br> 0x02 - MVPs are enabled for 32x32 block; <br> 0x07 - MVPs are enabled, block size is defined by `BlockSize` variable in [mfxFeiHevcEncMVPredictors](#mfxExtFeiHevcEncMVPredictors) structure.
-`PerCuQp` | If this value is not equal to zero, then CU level QPs are used during encoding and [mfxExtFeiHevcEncQP](#mfxExtFeiHevcEncQP) structure should be attached to the `mfxEncodeCtrl` structure at runtime.
+`PerCuQp` | If this value is not equal to zero, then CU level QPs are used during encoding and [mfxExtFeiHevcEncQP](#mfxExtFeiHevcEncQP) structure should be attached to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure at runtime. The combination of [PerCUQp](#PerCUQp) enabled and [mfxExtFeiHevcRepackCtrl](#mfxExtFeiHevcRepackCtrl) or [mfxExtFeiHevcRepackStat](#mfxExtFeiHevcRepackStat) attached is not allowed.
 `PerCtuInput` | If this value is not equal to zero, then CTU level control is enabled and [mfxExtFeiHevcEncCtuCtrl](#mfxExtFeiHevcEncCtuCtrl) structure should be attached to the `mfxEncodeCtrl` structure at runtime.
 `ForceCtuSplit` | If this value is set to 1, then each Inter CTU in frame is split at least once in order to avoid 32x32 Inter PUs. Does not affect CUs of non-Inter modes. This is performance/quality trade-off flag, setting it improves performance but reduces quality. Valid values are {0, 1}.
 `NumFramePartitions` | This value specifies number of partitions in frame that encoder processes concurrently. Valid numbers are {1, 2, 4, 8, 16}. This is performance/quality trade-off parameter. The smaller the number of partitions the better quality, the worse performance.
@@ -379,3 +379,63 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 **Change History**
 
 This structure is available since SDK API 1.25
+
+
+## <a id='mfxExtFeiHevcRepackCtrl'>mfxExtFeiHevcRepackCtrl</a>
+
+**Definition**
+
+```
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU32      MaxFrameSize;
+    mfxU32      NumPasses;
+    mfxU16      reserved[8];
+    mfxU8       DeltaQP[8];
+} mfxExtFeiRepackCtrl;
+```
+
+**Description**
+
+This extension buffer specifies repack control parameters for ENCODE usage model. It is used during runtime and should be attached to the **mfxEncodeCtrl** structure. The combination of [PerCUQp](#PerCUQp) in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) enabled and this one attached is not allowed.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_HEVCFEI_REPACK_CTRL**.
+`MaxFrameSize` | Maximum frame size in bytes. If encoded picture size is greater than this value, then QP is increased by specified amount and picture repacked with higher QP.<br><br>If this value is zero, then whole extension buffer is ignored.
+`NumPasses` | Number of repack attempts. Zero value is not allowed. It should be equal to the number of QP deltas specified in **DeltaQP** array.<br><br>Actual number of packing can vary from 1, in the case of first attempt producing picture size lower than threshold, to **NumPasses + 1**. One initial attempt plus **NumPasses** attempts with higher QPs.
+`DeltaQP` | QP increment for each pass. First pass uses QP specified by **mfxInfoMFX** structure, then second pass uses **OriginalQP + DeltaQP[0]**, then **OriginalQP + DeltaQP[0] + DeltaQP[1]** for the third, and so on.<br><br>Maximum number of QP deltas is 8.<br><br>It is application responsibility to guard against QP overflow.
+
+**Change History**
+
+This structure is available since SDK API 1.25.
+
+
+## <a id='mfxExtFeiHevcRepackStat'>mfxExtFeiHevcRepackStat</a>
+
+**Definition**
+
+```
+typedef struct {
+    mfxExtBuffer    Header;
+    mfxU32          NumPasses;
+    mfxU16          reserved[58];
+} mfxExtFeiRepackStat;
+```
+
+**Description**
+
+This extension buffer holds output number of actual repack passes for ENCODE usage model. It is used during runtime and should be attached to the **mfxBitstream** structure. The combination of [PerCUQp](#PerCUQp) in [mfxExtFeiHevcEncFrameCtrl](#mfxExtFeiHevcEncFrameCtrl) enabled and this one attached is not allowed.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Buffer ID, must be **MFX_EXTBUFF_HEVCFEI_REPACK_STAT**.
+`NumPasses` | Number of pass(es) of the packing process that has (have) been actually conducted for ENCODE usage model for each frame. It equals to 1 plus repack round number, whose range is [1, 9].
+
+**Change History**
+
+This structure is available since SDK API 1.25.
