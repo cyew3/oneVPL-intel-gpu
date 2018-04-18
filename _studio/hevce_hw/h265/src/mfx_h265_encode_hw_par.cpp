@@ -1290,9 +1290,19 @@ void InheritDefaultValues(
 
     for (int i = 0; i < 8; i++)
     {
-        InheritOption(extOpt3Init->NumRefActiveP[i], extOpt3Reset->NumRefActiveP[i]);
-        InheritOption(extOpt3Init->NumRefActiveBL0[i], extOpt3Reset->NumRefActiveBL0[i]);
-        InheritOption(extOpt3Init->NumRefActiveBL1[i], extOpt3Reset->NumRefActiveBL1[i]);
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+        if (parInit.mfx.TargetUsage != parReset.mfx.TargetUsage)
+        {  // NumActiveRefs depends on TU
+            extOpt3Reset->NumRefActiveP[i] = Min<mfxU16>(extOpt3Init->NumRefActiveP[i], GetMaxNumRef(parReset, true));
+            extOpt3Reset->NumRefActiveBL0[i] = Min<mfxU16>(extOpt3Init->NumRefActiveBL0[i], GetMaxNumRef(parReset, true));
+            extOpt3Reset->NumRefActiveBL1[i] = Min<mfxU16>(extOpt3Init->NumRefActiveBL1[i], GetMaxNumRef(parReset, false));
+        }  else
+#endif
+        {
+            InheritOption(extOpt3Init->NumRefActiveP[i], extOpt3Reset->NumRefActiveP[i]);
+            InheritOption(extOpt3Init->NumRefActiveBL0[i], extOpt3Reset->NumRefActiveBL0[i]);
+            InheritOption(extOpt3Init->NumRefActiveBL1[i], extOpt3Reset->NumRefActiveBL1[i]);
+        }
     }
 
     mfxExtVideoSignalInfo const*  extOptVSIInit  = &parInit.m_ext.VSI;
@@ -1308,9 +1318,20 @@ void InheritDefaultValues(
     mfxExtCodingOptionDDI const* extOptDDIInit = &parInit.m_ext.DDI;
     mfxExtCodingOptionDDI      * extOptDDIReset = &parReset.m_ext.DDI;
     InheritOption(extOptDDIInit->LCUSize, extOptDDIReset->LCUSize);
-    InheritOption(extOptDDIInit->NumActiveRefP, extOptDDIReset->NumActiveRefP);
-    InheritOption(extOptDDIInit->NumActiveRefBL0, extOptDDIReset->NumActiveRefBL0);
-    InheritOption(extOptDDIInit->NumActiveRefBL1, extOptDDIReset->NumActiveRefBL1);
+#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+    if (parInit.mfx.TargetUsage != parReset.mfx.TargetUsage)
+    {   // NumActiveRefs depends on TU
+        extOptDDIReset->NumActiveRefP = Min<mfxU16>(extOptDDIInit->NumActiveRefP, GetMaxNumRef(parReset, true));
+        extOptDDIReset->NumActiveRefBL0 = Min<mfxU16>(extOptDDIInit->NumActiveRefBL0, GetMaxNumRef(parReset, true));
+        extOptDDIReset->NumActiveRefBL1 = Min<mfxU16>(extOptDDIInit->NumActiveRefBL1, GetMaxNumRef(parReset, false));
+    }  else
+#endif
+    {
+        InheritOption(extOptDDIInit->NumActiveRefP, extOptDDIReset->NumActiveRefP);
+        InheritOption(extOptDDIInit->NumActiveRefBL0, extOptDDIReset->NumActiveRefBL0);
+        InheritOption(extOptDDIInit->NumActiveRefBL1, extOptDDIReset->NumActiveRefBL1);
+    }
+
     // not inherited:
     // InheritOption(parInit.mfx.FrameInfo.PicStruct,      parReset.mfx.FrameInfo.PicStruct);
     // InheritOption(parInit.IOPattern,                    parReset.IOPattern);

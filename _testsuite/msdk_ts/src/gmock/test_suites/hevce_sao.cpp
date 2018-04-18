@@ -316,17 +316,7 @@ namespace hevce_sao
         else if (unsupported && (hp.SampleAdaptiveOffset & (MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)))
             g_tsStatus.expect(MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
 
-        if (tc.TUReset > tc.TUInit) // NumRefFrame can depend on new TU
-            g_tsStatus.disable_next_check();
-
         enc.Reset();
-
-        if (tc.TUReset > tc.TUInit)
-            if ((g_tsStatus.get() != MFX_ERR_NONE) &&
-                (g_tsStatus.get() != MFX_WRN_INCOMPATIBLE_VIDEO_PARAM))
-            {
-                g_tsStatus.check(); TS_CHECK_MFX;
-            }
 
         if (idrRequired && ro.StartNewSequence == MFX_CODINGOPTION_OFF)
         {
