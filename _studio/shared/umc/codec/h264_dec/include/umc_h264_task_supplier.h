@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -590,6 +590,7 @@ protected:
     virtual void OnFullFrame(H264DecoderFrame * pFrame);
     virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame) = 0;
 
+    void DPBSanitize(H264DecoderFrame * pDPBHead, const H264DecoderFrame * pFrame);
     void DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field);
 
     virtual void AddFakeReferenceFrame(H264Slice * pSlice);

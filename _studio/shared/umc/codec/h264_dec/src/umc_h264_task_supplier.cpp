@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -3675,6 +3675,15 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
             ViewItem &view = GetView(m_currentView);
             view.pCurFrame = setOfSlices->m_frame;
 
+
+            if (lastSlice->GetSeqParam()->gaps_in_frame_num_value_allowed_flag != 1)
+            {
+                // Check if DPB has ST frames with frame_num duplicating frame_num of new slice_type
+                // If so, unmark such frames as ST
+                H264DecoderFrame * pHead = view.GetDPBList(0)->head();
+                DPBSanitize(pHead, view.pCurFrame);
+            }
+
             const H264SliceHeader *sliceHeader = lastSlice->GetSliceHeader();
             Ipp32u field_index = setOfSlices->m_frame->GetNumberByParity(sliceHeader->bottom_field_flag);
             if (!setOfSlices->m_frame->GetAU(field_index)->GetSliceCount())
@@ -4028,6 +4037,19 @@ void TaskSupplier::AddSliceToFrame(H264DecoderFrame *pFrame, H264Slice *pSlice)
     pSlice->SetSliceNumber(iSliceNumber);
     pSlice->m_pCurrentFrame = pFrame;
     au_info->AddSlice(pSlice);
+}
+
+void TaskSupplier::DPBSanitize(H264DecoderFrame * pDPBHead, const H264DecoderFrame * pFrame)
+{
+    for (H264DecoderFrame *pFrm = pDPBHead; pFrm; pFrm = pFrm->future())
+    {
+        if ((pFrm != pFrame) &&
+            (pFrm->FrameNum() == pFrame->FrameNum()) &&
+             pFrm->isShortTermRef())
+        {
+            AddItemAndRun(pFrm, pFrm, UNSET_REFERENCE | FULL_FRAME | SHORT_TERM);
+        }
+    }
 }
 
 void TaskSupplier::DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field)
