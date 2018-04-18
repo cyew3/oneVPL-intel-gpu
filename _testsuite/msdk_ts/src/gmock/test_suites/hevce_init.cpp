@@ -669,10 +669,19 @@ namespace hevce_init
                     (tc.sub_type == MFX_EXTBUFF_VIDEO_SIGNAL_INFO))
                     sts = MFX_ERR_NONE;
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_PARAM)
-                    if ((((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->GeneralConstraintFlags != 0) &&  (g_tsHWtype >= MFX_HW_ICL))
+                {
+                    if ((((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->GeneralConstraintFlags != 0) && (g_tsHWtype >= MFX_HW_ICL))
                         sts = MFX_ERR_NONE;
+                    // encoder aligns PicWidthInLumaSamples and PicHeightInLumaSamples to next multiple of 16 for platforms older CNL
+                    // and aligns to next multiple of 8 for CNL and newer
+                    else if ((((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicWidthInLumaSamples % 16) || (((mfxExtHEVCParam *)(m_pPar->ExtParam[0]))->PicHeightInLumaSamples % 16))
+                    {
+                        if ((g_tsHWtype < MFX_HW_CNL) && (tc.sts == MFX_ERR_NONE))
+                            sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                    }
                     else
                         sts = tc.sts;
+                }
                 else if (tc.sub_type == MFX_EXTBUFF_HEVC_REGION)
                     sts = MFX_ERR_INVALID_VIDEO_PARAM;
                 else if (tc.sub_type == NONE)
@@ -680,6 +689,7 @@ namespace hevce_init
                 else
                     if (tc.sts != MFX_ERR_NONE)
                         sts = MFX_ERR_INVALID_VIDEO_PARAM;
+
 
                 // encoder aligns PicWidthInLumaSamples and PicHeightInLumaSamples to next multiple of 16 (if necessary),
                 //   but libva returns VA_STATUS_ERROR_RESOLUTION_NOT_SUPPORTED for resolutions < 32x32
