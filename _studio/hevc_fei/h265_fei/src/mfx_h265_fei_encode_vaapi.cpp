@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -105,6 +105,7 @@ namespace MfxHwH265FeiEncode
             vaFeiFrameControl->per_ctb_input                      = EncFrameCtrl->PerCtuInput;
             vaFeiFrameControl->force_lcu_split                    = EncFrameCtrl->ForceCtuSplit;
             vaFeiFrameControl->num_concurrent_enc_frame_partition = EncFrameCtrl->NumFramePartitions;
+            vaFeiFrameControl->fast_intra_mode                    = EncFrameCtrl->FastIntraMode;
 
             // Input buffers
             mfxExtFeiHevcEncMVPredictors* mvp = reinterpret_cast<mfxExtFeiHevcEncMVPredictors*>(GetBufById(task.m_ctrl, MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED));
