@@ -276,8 +276,8 @@ mfxStatus CheckFrameInfoCodecs(mfxFrameInfo  *info, mfxU32 codecId, bool isHW)
     case MFX_CODEC_VP9:
         if (info->ChromaFormat != MFX_CHROMAFORMAT_YUV420
             && info->ChromaFormat != MFX_CHROMAFORMAT_YUV400
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             && info->ChromaFormat != MFX_CHROMAFORMAT_YUV422
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             && info->ChromaFormat != MFX_CHROMAFORMAT_YUV444
 #endif //PRE_SI_TARGET_PLATFORM_GEN11
             )
