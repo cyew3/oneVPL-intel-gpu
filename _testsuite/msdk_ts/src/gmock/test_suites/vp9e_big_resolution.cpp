@@ -410,6 +410,9 @@ namespace vp9e_big_resolution
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
 
+        // this is to reduce usage of sys memory
+        m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
+
         BitstreamChecker bs_checker(m_par, &inputSurfaces);
         m_bs_processor = &bs_checker;
 
