@@ -31,7 +31,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define DCL_USE_DEPRECATED_OPENCL_1_1_APIS
 #include <CL/cl.h>
 #include <CL/opencl.h>
-#include <CL/va_ext.h>
+#include <CL/cl_va_api_media_sharing_intel.h>
 
 #include "opencl_filter.h"
 
