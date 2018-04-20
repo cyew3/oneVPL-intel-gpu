@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_HEVC_DDI_H
 #define __UMC_HEVC_DDI_H
 
-#define DDI_VERSION 949
+#define DDI_VERSION 954
 
 #pragma warning(disable: 4201)
 
@@ -400,7 +400,11 @@ typedef struct _DXVA_Intel_Qmatrix_HEVC
 #if DDI_VERSION >= 944
 typedef struct _SUBSET_HEVC
 {
+#if DDI_VERSION >= 954
+    UINT    entry_point_offset_minus1[440];
+#else
     UINT    entry_point_offset_minus1[540];
+#endif
 } SUBSET_HEVC;
 
 #define D3DDDIFMT_INTEL_HEVC_SUBSET           12

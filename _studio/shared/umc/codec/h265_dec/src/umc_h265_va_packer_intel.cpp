@@ -32,8 +32,6 @@
     #endif
 #endif
 
-#include <numeric>
-
 using namespace UMC;
 
 namespace UMC_HEVC_DECODER
@@ -511,9 +509,33 @@ namespace UMC_HEVC_DECODER
 #endif
     }
 
+    inline
+    Ipp32u GetEntryPointOffsetStep(H265Slice const* slice)
+    {
+        H265PicParamSet const* pps = slice->GetPicParam();
+        VM_ASSERT(pps);
+
+        if (!pps->tiles_enabled_flag || !pps->entropy_coding_sync_enabled_flag)
+            return 1;
+
+        H265SliceHeader const* sh = slice->GetSliceHeader();
+        VM_ASSERT(sh);
+
+        //[m_TileIdx] has size of WidthInLCU * HeightInLCU + 1
+        //value of [SliceHeader :: slice_segment_address] is checked during bitstream parsing
+        VM_ASSERT(sh->slice_segment_address < pps->m_TileIdx.size());
+        Ipp32u const tile = pps->m_TileIdx[sh->slice_segment_address];
+
+        Ipp32u const row = tile / pps->num_tile_columns;
+        if (!(row < pps->row_height.size()))
+            throw h265_exception(UMC_ERR_FAILED);
+
+        return pps->row_height[row];
+    }
+
     template <typename T>
     inline
-    void PackSliceHeaderCommon(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, T* header)
+    void PackSliceHeaderCommon(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, T* header, bool last_slice)
     {
         VM_ASSERT(pSlice);
         VM_ASSERT(pp);
@@ -565,7 +587,7 @@ namespace UMC_HEVC_DECODER
 
 
         // LongSliceFlags
-        //        header->LongSliceFlags.fields.LastSliceOfPic = isLastSlice;
+        header->LongSliceFlags.fields.LastSliceOfPic = last_slice;
         header->LongSliceFlags.fields.dependent_slice_segment_flag = (UINT)sh->dependent_slice_segment_flag;   // dependent_slices_enabled_flag
         header->LongSliceFlags.fields.slice_type = (UINT)sh->slice_type;
         header->LongSliceFlags.fields.color_plane_id = 0; // field is left for future expansion
@@ -595,41 +617,48 @@ namespace UMC_HEVC_DECODER
 
         header->five_minus_max_num_merge_cand = (UCHAR)(5 - sh->max_num_merge_cand);
 
-        //WPP/tiles
-        header->num_entry_point_offsets = static_cast<USHORT>(sh->num_entry_point_offsets);
-        if (header->num_entry_point_offsets)
+#if defined(MFX_ENABLE_HEVCD_SUBSET)
+        if (!pp->PicShortFormatFlags.fields.tiles_enabled_flag)
+            return;
+
+        if (!sh->num_entry_point_offsets)
+            return;
+
+        H265DecoderFrame* frame = pSlice->GetCurrentFrame();
+        if (!frame)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        H265DecoderFrameInfo* fi = frame->GetAU();
+        if (!fi)
+            throw h265_exception(UMC_ERR_FAILED);
+
+        Ipp32u offset = 0;
+        Ipp32u const count = fi->GetSliceCount();
+        for (Ipp32u i = 0; i < count; ++i)
         {
-            H265DecoderFrame* frame = pSlice->GetCurrentFrame();
-            if (!frame)
-                throw h265_exception(UMC_ERR_FAILED);
+            H265Slice const* slice = fi->GetSlice(i);
+            VM_ASSERT(slice);
 
-            H265DecoderFrameInfo* fi = frame->GetAU();
-            if (!fi)
-                throw h265_exception(UMC_ERR_FAILED);
+            if (slice == pSlice)
+                break;
 
-            Ipp32u offset = 0;
-            Ipp32u const count = fi->GetSliceCount();
-            for (Ipp32u i = 0; i < count; ++i)
-            {
-                H265Slice const* slice = fi->GetSlice(i);
-                VM_ASSERT(slice);
+            H265SliceHeader const* h = slice->GetSliceHeader();
+            VM_ASSERT(h);
 
-                if (slice == pSlice)
-                    break;
-
-                H265SliceHeader const* h = slice->GetSliceHeader();
-                VM_ASSERT(h);
-                offset += h->num_entry_point_offsets;
-            }
-
-            header->EntryOffsetToSubsetArray = static_cast<USHORT>(offset);
+            Ipp32u const step = GetEntryPointOffsetStep(slice);
+            offset += h->num_entry_point_offsets / step;
         }
+
+        header->EntryOffsetToSubsetArray = static_cast<USHORT>(offset);
+        header->num_entry_point_offsets =
+            static_cast<USHORT>(sh->num_entry_point_offsets / GetEntryPointOffsetStep(pSlice));
+#endif
     }
 
     inline
-    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Long* header)
+    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_Long* header, bool last_slice)
     {
-        PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
+        PackSliceHeaderCommon(pSlice, pp, prefix_size, header, last_slice);
 
         H265SliceHeader const* sh = pSlice->GetSliceHeader();
         VM_ASSERT(sh);
@@ -669,9 +698,9 @@ namespace UMC_HEVC_DECODER
 
 #if DDI_VERSION >= 943
     inline
-    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_EXT_Long* header)
+    void PackSliceHeader(H265Slice const* pSlice, DXVA_Intel_PicParams_HEVC const* pp, size_t prefix_size, DXVA_Intel_Slice_HEVC_EXT_Long* header, bool last_slice)
     {
-        PackSliceHeaderCommon(pSlice, pp, prefix_size, header);
+        PackSliceHeaderCommon(pSlice, pp, prefix_size, header, last_slice);
 
         H265SliceHeader const* sh = pSlice->GetSliceHeader();
         VM_ASSERT(sh);
@@ -748,7 +777,7 @@ namespace UMC_HEVC_DECODER
             {
                 DXVA_Intel_Slice_HEVC_Long* header = 0;
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
-                PackSliceHeader(pSlice, pp, prefix_size, header);
+                PackSliceHeader(pSlice, pp, prefix_size, header, isLastSlice);
             }
 #else
             if (   (m_va->m_Profile & VA_PROFILE_REXT)
@@ -759,13 +788,13 @@ namespace UMC_HEVC_DECODER
             {
                 DXVA_Intel_Slice_HEVC_EXT_Long* header = 0;
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_EXT_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
-                PackSliceHeader(pSlice, pp, prefix_size, header);
+                PackSliceHeader(pSlice, pp, prefix_size, header, isLastSlice);
             }
             else
             {
                 DXVA_Intel_Slice_HEVC_Long* header = 0;
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
-                PackSliceHeader(pSlice, pp, prefix_size, header);
+                PackSliceHeader(pSlice, pp, prefix_size, header, isLastSlice);
             }
 #endif
         }
@@ -790,12 +819,12 @@ namespace UMC_HEVC_DECODER
 
     void PackerDXVA2intel::PackSubsets(H265DecoderFrame const* frame)
     {
-#if defined(MFX_ENABLE_HEVCD_WPP)
+#if defined(MFX_ENABLE_HEVCD_SUBSET)
         if (m_va->m_HWPlatform < MFX_HW_TGL_LP)
             return;
 
         UMCVACompBuffer *compBuf;
-        DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
+        auto pp = reinterpret_cast<DXVA_Intel_PicParams_HEVC const*>(m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf));
         if (!pp)
             throw h265_exception(UMC_ERR_FAILED);
 
@@ -826,15 +855,22 @@ namespace UMC_HEVC_DECODER
             VM_ASSERT(sh);
             VM_ASSERT(sh->num_entry_point_offsets + 1 == slice->getTileLocationCount());
 
-            auto location = offset;
-            std::accumulate(slice->m_tileByteLocation + 1, slice->m_tileByteLocation + slice->getTileLocationCount(), slice->m_tileByteLocation[0],
-                [&location](Ipp32u position, Ipp32u entry)
-                { return *location++ = entry - (position  + 1); }
-            );
-
-            offset += sh->num_entry_point_offsets;
+#if DDI_VERSION < 954
+            Ipp32u const step = 1;
+#else
+            Ipp32u const step = GetEntryPointOffsetStep(slice);
+#endif
+            //'m_tileByteLocation' contains absolute offsets, but we have to pass relative ones just as they are in a bitstream
+            //NOTE: send only entry points for tiles
+            auto position = slice->m_tileByteLocation[0];
+            for (Ipp32u j = step; j < slice->getTileLocationCount(); j += step)
+            {
+                Ipp32u const entry = slice->m_tileByteLocation[j];
+                *offset++ = entry - (position  + 1);
+                position  = entry;
+            }
         }
-#endif //MFX_ENABLE_HEVCD_WPP
+#endif //MFX_ENABLE_HEVCD_SUBSET
     }
 }
 

@@ -84,7 +84,7 @@ namespace UMC_HEVC_DECODER
                 PackQmatrix(pSlice);
             }
 
-            if (pPicParamSet->tiles_enabled_flag || pPicParamSet->entropy_coding_sync_enabled_flag)
+            if (pPicParamSet->tiles_enabled_flag)
             {
                 PackSubsets(frame);
             }
