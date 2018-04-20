@@ -1,4 +1,4 @@
-// Copyright (c) 2015-2018 Intel Corporation
+// Copyright (c) 2015-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -143,14 +143,12 @@ static mfxStatus SetROI(
         roi_Param->max_delta_qp = 51;
         roi_Param->min_delta_qp = -51;
 
-#if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
         roi_Param->roi_flags.bits.roi_value_is_qp_delta = 0;
 #if MFX_VERSION > 1021
         if (task.m_roiMode == MFX_ROI_MODE_QP_DELTA) {
             roi_Param->roi_flags.bits.roi_value_is_qp_delta = 1;
         }
 #endif // MFX_VERSION > 1021
-#endif // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT)
     }
 
     vaSts = vaUnmapBuffer(vaDisplay, roiParam_id);

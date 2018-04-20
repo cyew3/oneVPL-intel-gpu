@@ -1043,8 +1043,6 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
             invalid++;
     }
 
-    //// TODO: remove below macro conditional statement when ROI related caps will be correctly set up by the driver
-#if !defined(LINUX_TARGET_PLATFORM_BXTMIN) && !defined(LINUX_TARGET_PLATFORM_BXT) && !defined(LINUX_TARGET_PLATFORM_CFL)
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP) {
         invalid += (caps.ROIDeltaQPSupport == 0);
     }
@@ -1064,7 +1062,6 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
             invalid++;
 #endif // MFX_VERSION > 1021
     }
-#endif  // LINUX_TARGET_PLATFORM_BXTMIN
 
     mfxU16 maxNumOfRoi = ( bROIViaMBQP ) ? MAX_NUM_ROI : caps.MaxNumOfROI;
 
