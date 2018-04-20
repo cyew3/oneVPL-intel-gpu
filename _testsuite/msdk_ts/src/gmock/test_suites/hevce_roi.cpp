@@ -16,11 +16,7 @@ File Name: hevce_roi.cpp
 
 #define MEDIASDK_API_MAXIMUM_SUPPORTED_REGIONS (256)
 
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined (LINUX_TARGET_PLATFORM_CFL)
 #define HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS (8)
-#else
-#define HEVCE_ROI_MAXIMUM_SUPPORTED_REGIONS (3)
-#endif // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
 
 #define TBD_ON_RUNTIME (0xffff)
 #define HEVCE_ROI_MAXIMUM_ABS_QP_VALUE (51)
@@ -141,7 +137,6 @@ namespace hevce_roi
         // checking Query with one region with not aligned coordinates [quantity, top, left, right, bottom, qp-alter]
         {/*18*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, CHECK_QUERY, NOT_ALIGNED_ROI, 0, 1, 10, 20, 30, 40, 1 },
 
-#if defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_CFL)
 #if MFX_VERSION > 1021
         // one correct delta QP based region in CBR
         {/*19*/ MFX_ERR_NONE, NONE, NONE, MFX_ROI_MODE_QP_DELTA, 1, 32, 32, 64, 64, 20,
@@ -304,7 +299,6 @@ namespace hevce_roi
         }
         },
 #endif // #if  MFX_VERSION > 1021
-#endif  // defined(LINUX_TARGET_PLATFORM_BXT) || defined (LINUX_TARGET_PLATFORM_BXTMIN)
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_case) / sizeof(tc_struct);
