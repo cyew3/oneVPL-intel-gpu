@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -30,7 +30,6 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
         || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3
-        || id == MFX_EXTBUFF_DDI // TODO: remove when IVFHeader will be added to API or disabled by default
         || id == MFX_EXTBUFF_VP9_SEGMENTATION
         || id == MFX_EXTBUFF_VP9_TEMPORAL_LAYERS
         || id == MFX_EXTBUFF_ENCODER_RESET_OPTION;
@@ -405,7 +404,7 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
     INHERIT_DEFAULTS(mfxExtCodingOptionDDI, false);
 }
 
-#define CLEAN_OUT_UNSUPPORTED_PARAMETERS(type)  \
+#define CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(type)  \
 {                                               \
     type& tmpBuf = GetExtBufferRef(tmp);        \
     type& inBuf = GetExtBufferRef(par);         \
@@ -417,7 +416,7 @@ void InheritDefaults(VP9MfxVideoParam& defaultsDst, VP9MfxVideoParam const & def
 }
 
 
-mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
+mfxStatus CleanOutNonconfigurableParameters(VP9MfxVideoParam &par)
 {
     VP9MfxVideoParam tmp = par;
     mfxStatus sts = SetOrCopySupportedParams(&par.mfx, &tmp.mfx);
@@ -427,11 +426,11 @@ mfxStatus CleanOutUnsupportedParameters(VP9MfxVideoParam &par)
         sts = MFX_ERR_UNSUPPORTED;
     }
 
-    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtVP9Param);
-    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtCodingOption2);
-    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtCodingOption3);
-    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtVP9Segmentation);
-    CLEAN_OUT_UNSUPPORTED_PARAMETERS(mfxExtVP9TemporalLayers);
+    CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtVP9Param);
+    CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtCodingOption2);
+    CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtCodingOption3);
+    CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtVP9Segmentation);
+    CLEAN_OUT_NONCONFIGURABLE_PARAMETERS(mfxExtVP9TemporalLayers);
 
     return sts;
 }
@@ -921,10 +920,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-    if (MFX_ERR_UNSUPPORTED == CleanOutUnsupportedParameters(par))
-    {
-        unsupported = true;
-    }
+    // clean out non-configurable params but do not return any errors on that (ignore mode)
+    /*mfxStatus err = */CleanOutNonconfigurableParameters(par);
 
     if (par.IOPattern &&
         par.IOPattern != MFX_IOPATTERN_IN_VIDEO_MEMORY &&
