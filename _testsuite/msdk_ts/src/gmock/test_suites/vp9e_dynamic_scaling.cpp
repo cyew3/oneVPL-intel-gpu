@@ -36,6 +36,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 #define HEIGHT(x) MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, x
 #define FRAME_WIDTH(x) MFX_EXT_VP9PARAM, &tsStruct::mfxExtVP9Param.FrameWidth, x
 #define FRAME_HEIGHT(x) MFX_EXT_VP9PARAM, &tsStruct::mfxExtVP9Param.FrameHeight, x
+#define CROPW(x) MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW, x
+#define CROPH(x) MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, x
 #define SET_RESOLUTION(w, h) WIDTH(w), HEIGHT(h), FRAME_WIDTH(w), FRAME_HEIGHT(h)
 
 #define IVF_SEQ_HEADER_SIZE_BYTES 32
@@ -1109,6 +1111,42 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 1, WIDTH(1920), HEIGHT(1088), FRAME_WIDTH(1920), FRAME_HEIGHT(1080) },
             },
         },
+
+        //below cases use CropW/CropH
+        {/*103*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE,
+        {
+            { ITER_LENGTH, WIDTH(704), HEIGHT(576), CROPW(704), CROPH(480) },
+            { ITER_LENGTH, WIDTH(352), HEIGHT(288), CROPW(352), CROPH(240) },
+            { ITER_LENGTH, WIDTH(176), HEIGHT(144), CROPW(176), CROPH(120) },
+            { ITER_LENGTH, WIDTH(704), HEIGHT(576), CROPW(704), CROPH(480) }
+        },
+        },
+        {/*104*/ MFX_ERR_NONE, VBR | TU4 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED,
+        {
+            { ITER_LENGTH, WIDTH(352), HEIGHT(288), CROPW(352 - 30), CROPH(288 - 30) },
+            { ITER_LENGTH, WIDTH(176), HEIGHT(144), CROPW(176 - 10), CROPH(144 - 10) },
+            { ITER_LENGTH, WIDTH(352), HEIGHT(288), CROPW(352 - 30), CROPH(288 - 30) }
+        },
+        },
+        {/*105*/ MFX_ERR_NONE, CQP | TU7 | NOT_EQUAL_TO_SURF_SIZE | NOT_ALIGNED | CHANGE_OF_ASPECT_RATIO,
+        {
+            { ITER_LENGTH, WIDTH(704), HEIGHT(576), CROPW(704 - 40), CROPH(576) },
+            { ITER_LENGTH, WIDTH(352), HEIGHT(288), CROPW(352 - 8), CROPH(288) },
+            { ITER_LENGTH, WIDTH(704), HEIGHT(576), CROPW(704 - 40), CROPH(576 - 40) }
+        },
+        },
+        {/*106*/ MFX_ERR_NONE, CQP | TU7 | REAL_LIFE,
+        {
+            { ITER_LENGTH, MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50,
+            MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50,
+            WIDTH(1920), HEIGHT(1088), CROPW(1920), CROPH(1088) },
+            { ITER_LENGTH, WIDTH(1440), HEIGHT(816), CROPW(1440), CROPH(816) },
+            { ITER_LENGTH, WIDTH(1280), HEIGHT(720), CROPW(1280), CROPH(720) },
+            { ITER_LENGTH, WIDTH(960), HEIGHT(544), CROPW(960), CROPH(544) },
+            { ITER_LENGTH, WIDTH(640), HEIGHT(368), CROPW(640), CROPH(368) },
+            { ITER_LENGTH, WIDTH(1920), HEIGHT(1088), CROPW(1920), CROPH(1088) },
+        },
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_cases) / sizeof(tc_struct);
@@ -1533,14 +1571,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         const Iteration& iter = **curIter;
         const mfxExtVP9Param& extParToCheck = iter.m_extParam[CHECK];
 
-        mfxU32 expectedWidth = extParToCheck.FrameWidth;
+        mfxU32 expectedWidth = extParToCheck.FrameWidth ? extParToCheck.FrameWidth : iter.m_param->mfx.FrameInfo.CropW;
         if (hdr.uh.width != expectedWidth)
         {
             ADD_FAILURE() << "ERROR: frame_width_minus_1 in uncompressed header of frame " << m_numFrame << " is incorrect: " << hdr.uh.width - 1
                 << ", expected " << expectedWidth - 1; throw tsFAIL;
         }
 
-        mfxU32 expectedHeight = extParToCheck.FrameHeight;
+        mfxU32 expectedHeight = extParToCheck.FrameHeight ? extParToCheck.FrameHeight : iter.m_param->mfx.FrameInfo.CropH;
         if (hdr.uh.height != expectedHeight)
         {
             ADD_FAILURE() << "ERROR: frame_height_minus_1 in uncompressed header of frame " << m_numFrame << " is incorrect: " << hdr.uh.height - 1
@@ -1962,9 +2000,6 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
             *m_pPar = iterations[idx]->m_param[SET];
             m_filler = iterations[idx]->m_pRawReader;
-
-            m_pPar->mfx.FrameInfo.CropW = m_pPar->mfx.FrameInfo.Width;
-            m_pPar->mfx.FrameInfo.CropH = m_pPar->mfx.FrameInfo.Height;
 
             mfxStatus sts = Reset();
             if (tc.type & KEY_FRAME)
