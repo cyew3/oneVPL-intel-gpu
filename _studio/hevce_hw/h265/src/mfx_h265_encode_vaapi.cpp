@@ -729,9 +729,10 @@ void VAAPIEncoder::FillSps(
     sps.general_profile_idc = par.m_sps.general.profile_idc;
     sps.general_level_idc   = par.m_sps.general.level_idc;
     sps.general_tier_flag   = par.m_sps.general.tier_flag;
-    sps.intra_period        = par.mfx.GopPicSize;
-    sps.intra_idr_period    = par.mfx.GopPicSize*par.mfx.IdrInterval;
-    sps.ip_period           = mfxU8(par.mfx.GopRefDist);
+    mfxU8 nPicturesPerFrame = par.isField() ? 2 : 1;
+    sps.intra_period        = par.mfx.GopPicSize * nPicturesPerFrame;
+    sps.intra_idr_period    = par.mfx.GopPicSize * par.mfx.IdrInterval * nPicturesPerFrame;
+    sps.ip_period           = mfxU8(par.mfx.GopRefDist * nPicturesPerFrame);
 
     if (   par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
         && par.mfx.RateControlMethod != MFX_RATECONTROL_ICQ
