@@ -47,6 +47,15 @@ set _Name=mediasdkhevcfei-man
 set _Title=SDK Developer Reference for HEVC FEI
 call :CONVERT
 
+set _PDF_BODY_OPT=
+set _Name=internal-dev
+set _Title=Media SDK Internal Development Document
+::use simplified format - no header pages, no footers, no TOC (pdf-embeded one is enough) 
+echo Converting "%_Title%"(%_Name%)...
+pandoc --from=markdown_github -t html5 --columns 9999 -i %_Name%.md -o body.html --css=styles/intel_css_styles_4pdf.css
+wkhtmltopdf -B 14mm -T 14mm --title "%_Title%" body.html %_PDF_BODY_OPT% PDF/%_Name%.pdf
+del body.html
+
 goto :CLEANUP
 
 :CONVERT
