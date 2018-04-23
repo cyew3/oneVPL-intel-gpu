@@ -8658,7 +8658,7 @@ The following table summarizes how to specify the configuration parameters durin
  | `NumExtParam` | O | - | O | - | O | -
 [mfxInfoMFX](#mfxInfoMFX) |  |  |  |  |  |  |
  | `CodecId` | M | - | M | - | - | -
- | `CodecProfile` | O | - | O | - | - | -
+ | `CodecProfile` | O | - | O/M[\*](#appendix_A_profile_note) | - | - | -
  | `CodecLevel` | O | - | O | - | - | -
  | `NumThread` | O | - | O | - | - | -
  | `TargetUsage` | O | - | - | - | - | -
@@ -8698,6 +8698,8 @@ The following table summarizes how to specify the configuration parameters durin
 | R    | Reserved
 | O    | Optional
 | /U   | Updated at output
+
+<a id='appendix_A_profile_note'>\*</a>**Note:** `CodecProfile` is mandated for HEVC REXT and SCC profiles and optional for other cases. If application doesn't explicitly set `CodecProfile` during initialization, HEVC decoder will use profile up to Main10.
 
 
 ## Appendix B: Multiple-Segment Encoding
