@@ -202,6 +202,7 @@ namespace TranscodingSample
         mfxU16 nTargetUsage;
         mfxF64 dDecoderFrameRateOverride;
         mfxF64 dEncoderFrameRateOverride;
+        mfxU16 EncoderPicstructOverride;
         mfxF64 dVPPOutFramerate;
         mfxU16 nBitRate;
         mfxU16 nBitRateMultiplier;

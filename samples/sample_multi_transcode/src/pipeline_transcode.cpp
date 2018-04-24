@@ -2463,6 +2463,11 @@ mfxStatus CTranscodingPipeline::InitEncMfxParams(sInputParams *pInParams)
         ConvertFrameRate(pInParams->dVPPOutFramerate, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtN, &m_mfxEncParams.mfx.FrameInfo.FrameRateExtD);
     }
 
+    if (pInParams->EncoderPicstructOverride)
+    {
+        m_mfxEncParams.mfx.FrameInfo.PicStruct = pInParams->EncoderPicstructOverride;
+    }
+
     MSDK_CHECK_ERROR(m_mfxEncParams.mfx.FrameInfo.FrameRateExtN * m_mfxEncParams.mfx.FrameInfo.FrameRateExtD,
         0, MFX_ERR_INVALID_VIDEO_PARAM);
 

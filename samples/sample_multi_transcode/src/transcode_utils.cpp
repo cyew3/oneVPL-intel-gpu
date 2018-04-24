@@ -211,7 +211,8 @@ void TranscodingSample::PrintHelp()
     msdk_printf(MSDK_STRING("                Forces decoder output framerate to be set to provided value (overwriting actual framerate from decoder)\n"));
     msdk_printf(MSDK_STRING("  -override_encoder_framerate <framerate> \n"));
     msdk_printf(MSDK_STRING("                Overwrites framerate of stream going into encoder input with provided value (this option does not enable FRC, it just ovewrites framerate value)\n"));
-
+    msdk_printf(MSDK_STRING("  -override_encoder_picstruct <picstruct> \n"));
+    msdk_printf(MSDK_STRING("                Overwrites encoder picstruct with specific value"));
     msdk_printf(MSDK_STRING("  -u <usage>    Target usage. Valid for H.265, H.264, MPEG2 and MVC encoders. Expected values:\n"));
     msdk_printf(MSDK_STRING("                veryslow(quality), slower, slow, medium(balanced), fast, faster, veryfast(speed)\n"));
     msdk_printf(MSDK_STRING("  -q <quality>  Quality parameter for JPEG encoder; in range [1,100], 100 is the best quality\n"));
@@ -1849,7 +1850,7 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             i++;
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dDecoderFrameRateOverride))
             {
-                PrintError(MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
+                PrintError(MSDK_STRING("Framerate \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }
@@ -1859,7 +1860,17 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             i++;
             if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.dEncoderFrameRateOverride))
             {
-                PrintError(MSDK_STRING("-n \"%s\" is invalid"), argv[i]);
+                PrintError(MSDK_STRING("Framerate \"%s\" is invalid"), argv[i]);
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-override_encoder_picstruct")))
+        {
+            VAL_CHECK(i + 1 == argc, i, argv[i]);
+            i++;
+            if (MFX_ERR_NONE != msdk_opt_read(argv[i], InputParams.EncoderPicstructOverride))
+            {
+                PrintError(MSDK_STRING("Picstruct \"%s\" is invalid"), argv[i]);
                 return MFX_ERR_UNSUPPORTED;
             }
         }
