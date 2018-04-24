@@ -1544,6 +1544,41 @@ mfxU32 GetRawBytes(mfxU16 w, mfxU16 h, mfxU16 ChromaFormat, mfxU16 BitDepth)
 
 #endif
 
+mfxStatus CheckInputParam(mfxVideoParam *inPar, mfxVideoParam *outPar)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxU8 invalid = 0;
+
+    if (inPar->mfx.CodecId != MFX_CODEC_HEVC)
+        invalid++;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+    if (CheckOption(inPar->mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420,
+                                                       (mfxU16)MFX_CHROMAFORMAT_YUV422,
+                                                       (mfxU16)MFX_CHROMAFORMAT_YUV444))
+#else
+    if (CheckOption(inPar->mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420))
+#endif
+        invalid++;
+
+    if (invalid)
+        return (outPar) ? MFX_ERR_UNSUPPORTED : MFX_ERR_INVALID_VIDEO_PARAM;
+
+    if (outPar) // Query
+    {
+        // matching ExtBuffers
+        sts = ExtBuffer::CheckBuffers(*inPar, *outPar);
+        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
+            sts = MFX_ERR_UNSUPPORTED;
+    }
+    else
+    {
+        sts = ExtBuffer::CheckBuffers(*inPar);
+    }
+
+    return sts;
+}
+
 mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, bool bInit = false)
 {
 #if 0

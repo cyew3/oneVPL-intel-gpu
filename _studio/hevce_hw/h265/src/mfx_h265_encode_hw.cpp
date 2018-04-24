@@ -18,16 +18,11 @@
 namespace MfxHwH265Encode
 {
 
+mfxStatus CheckInputParam(mfxVideoParam *inPar, mfxVideoParam *outPar = NULL);
 mfxStatus CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit = false);
 void      SetDefaults    (MfxVideoParam & par, ENCODE_CAPS_HEVC const & hwCaps);
 void      InheritDefaultValues(MfxVideoParam const & parInit, MfxVideoParam &  parReset);
 bool      CheckTriStateOption(mfxU16 & opt);
-
-
-
-
-
-
 
 inline mfxStatus GetWorstSts(mfxStatus sts1, mfxStatus sts2)
 {
@@ -242,7 +237,9 @@ mfxStatus LoadSPSPPS(MfxVideoParam& par, mfxExtCodingOptionSPSPPS* pSPSPPS)
     }
     return sts;
 }
+
 #define printCaps(arg) printf("Caps: %s %d\n", #arg, m_caps.arg);
+
 mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "VideoENCODEH265::InitImpl");
@@ -253,7 +250,7 @@ mfxStatus MFXVideoENCODEH265_HW::InitImpl(mfxVideoParam *par)
     if (m_core.GetCoreParam(&coreParams))
        return  MFX_ERR_UNSUPPORTED;
 
-    sts = ExtBuffer::CheckBuffers(*par);
+    sts = CheckInputParam(par);
     MFX_CHECK_STS(sts);
 
     mfxPlatform platform;
@@ -529,7 +526,8 @@ mfxStatus MFXVideoENCODEH265_HW::QueryIOSurf(mfxCoreInterface *core, mfxVideoPar
     mfxStatus sts = MFX_ERR_NONE;
     MFX_CHECK_NULL_PTR2(par, request);
 
-    MFX_CHECK(par->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
+    sts = CheckInputParam(par);
+    MFX_CHECK_STS(sts);
 
     MFXCoreInterface _core = *core;
 
@@ -540,9 +538,6 @@ mfxStatus MFXVideoENCODEH265_HW::QueryIOSurf(mfxCoreInterface *core, mfxVideoPar
     MfxVideoParam tmp(*par, platform);
 
     ENCODE_CAPS_HEVC caps = {};
-
-    sts = ExtBuffer::CheckBuffers(*par);
-    MFX_CHECK_STS(sts);
 
     switch (par->IOPattern & MFX_IOPATTERN_IN_MASK)
     {
@@ -631,6 +626,9 @@ mfxStatus MFXVideoENCODEH265_HW::Query(mfxCoreInterface *core, mfxVideoParam *in
     }
     else
     {
+        sts = CheckInputParam(in, out);
+        MFX_CHECK_STS(sts);
+
         mfxPlatform platform;
         MFXCoreInterface _core = *core;
         sts = _core.QueryPlatform(&platform);
@@ -641,18 +639,8 @@ mfxStatus MFXVideoENCODEH265_HW::Query(mfxCoreInterface *core, mfxVideoParam *in
         ENCODE_CAPS_HEVC caps = {};
         mfxExtEncoderCapability * enc_cap = ExtBuffer::Get(*in);
 
-        if (enc_cap!=0)
-        {
+        if (enc_cap)
             return MFX_ERR_UNSUPPORTED;
-        }
-
-        MFX_CHECK(in->mfx.CodecId == MFX_CODEC_HEVC, MFX_ERR_UNSUPPORTED);
-
-        // matching ExtBuffers
-        sts = ExtBuffer::CheckBuffers(*in, *out);
-        if (sts == MFX_ERR_INVALID_VIDEO_PARAM)
-            sts = MFX_ERR_UNSUPPORTED;
-        MFX_CHECK_STS(sts);
 
         mfxStatus lpsts = SetLowpowerDefault(tmp);
 
@@ -768,7 +756,6 @@ mfxStatus   MFXVideoENCODEH265_HW::WaitingForAsyncTasks(bool bResetTasks)
     return sts;
 }
 
-
 mfxStatus MFXVideoENCODEH265_HW::CheckVideoParam(MfxVideoParam & par, ENCODE_CAPS_HEVC const & caps, bool bInit /*= false*/)
 {
     mfxStatus sts = ExtraCheckVideoParam(par, caps, bInit);
@@ -784,7 +771,7 @@ mfxStatus  MFXVideoENCODEH265_HW::Reset(mfxVideoParam *par)
 
     MFX_CHECK(m_bInit, MFX_ERR_NOT_INITIALIZED);
 
-    sts = ExtBuffer::CheckBuffers(*par);
+    sts = CheckInputParam(par);
     MFX_CHECK_STS(sts);
 
     mfxPlatform platform;
@@ -1101,6 +1088,7 @@ mfxStatus MFXVideoENCODEH265_HW::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrame
 
     return sts;
 }
+
 mfxStatus MFXVideoENCODEH265_HW::PrepareTask(Task& input_task)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1487,6 +1475,7 @@ mfxStatus MFXVideoENCODEH265_HW::FreeResources(mfxThreadTask /*thread_task*/, mf
 {
     return MFX_ERR_NONE;
 }
+
 mfxStatus MFXVideoENCODEH265_HW::FreeTask(Task &task)
 {
     if (task.m_midBs)
@@ -1569,6 +1558,7 @@ mfxStatus MFXVideoENCODEH265_HW::FreeTask(Task &task)
 
     return MFX_ERR_NONE;
 }
+
 mfxStatus MFXVideoENCODEH265_HW::WaitForQueringTask(Task& task)
 {
    mfxStatus sts = m_ddi->QueryStatus(task);
