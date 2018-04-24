@@ -405,6 +405,158 @@ typedef enum tagENCODE_FUNC
 // Decode Extension Functions for DXVA11 Encode
 #define ENCODE_QUERY_ACCEL_CAPS_ID 0x110
 
+#define Clip3(_min, _max, _x) BS_MIN(BS_MAX(_min, _x), _max)
+
+#if defined(_WIN32) || defined(_WIN64)
+mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
+{
+    typedef std::map<mfxU16, const GUID> TableGuid;
+
+    static TableGuid DXVA2_Intel_Encode_HEVC_Main_8 = {
+        { MFX_CHROMAFORMAT_YUV420, { 0x28566328, 0xf041, 0x4466, { 0x8b, 0x14, 0x8f, 0x58, 0x31, 0xe7, 0x8f, 0x8b } } },
+        { MFX_CHROMAFORMAT_YUV422, { 0x056a6e36, 0xf3a8, 0x4d00, { 0x96, 0x63, 0x7e, 0x94, 0x30, 0x35, 0x8b, 0xf9 } } },
+        { MFX_CHROMAFORMAT_YUV444, { 0x5415a68c, 0x231e, 0x46f4, { 0x87, 0x8b, 0x5e, 0x9a, 0x22, 0xe9, 0x67, 0xe9 } } },
+    };
+    static TableGuid DXVA2_Intel_Encode_HEVC_Main_10 = {
+        { MFX_CHROMAFORMAT_YUV420, { 0x6b4a94db, 0x54fe, 0x4ae1, { 0x9b, 0xe4, 0x7a, 0x7d, 0xad, 0x00, 0x46, 0x00 } } },
+        { MFX_CHROMAFORMAT_YUV422, { 0xe139b5ca, 0x47b2, 0x40e1, { 0xaf, 0x1c, 0xad, 0x71, 0xa6, 0x7a, 0x18, 0x36 } } },
+        { MFX_CHROMAFORMAT_YUV422, { 0x161be912, 0x44c2, 0x49c0, { 0xb6, 0x1e, 0xd9, 0x46, 0x85, 0x2b, 0x32, 0xa1 } } },
+    };
+    static TableGuid DXVA2_Intel_Encode_HEVC_Main_12 = {
+        { MFX_CHROMAFORMAT_YUV420, { 0xd6d6bc4f, 0xd51a, 0x4712, { 0x97, 0xe8, 0x75, 0x9, 0x17, 0xc8, 0x60, 0xfd } } },
+        { MFX_CHROMAFORMAT_YUV422, { 0x7fef652d, 0x3233, 0x44df, { 0xac, 0xf7, 0xec, 0xfb, 0x58, 0x4d, 0xab, 0x35 } } },
+        { MFX_CHROMAFORMAT_YUV444, { 0xf8fa34b7, 0x93f5, 0x45a4, { 0xbf, 0xc0, 0x38, 0x17, 0xce, 0xe6, 0xbb, 0x93 } } },
+    };
+    static TableGuid DXVA2_Intel_LowpowerEncode_HEVC_Main_8 = {
+        { MFX_CHROMAFORMAT_YUV420, { 0xb8b28e0c, 0xecab, 0x4217, { 0x8c, 0x82, 0xea, 0xaa, 0x97, 0x55, 0xaa, 0xf0 } } },
+        { MFX_CHROMAFORMAT_YUV422, { 0xcee393ab, 0x1030, 0x4f7b, { 0x8d, 0xbc, 0x55, 0x62, 0x9c, 0x72, 0xf1, 0x7e } } },
+        { MFX_CHROMAFORMAT_YUV444, { 0x87b2ae39, 0xc9a5, 0x4c53, { 0x86, 0xb8, 0xa5, 0x2d, 0x7e, 0xdb, 0xa4, 0x88 } } },
+    };
+    static TableGuid DXVA2_Intel_LowpowerEncode_HEVC_Main_10 = {
+        { MFX_CHROMAFORMAT_YUV420, { 0x8732ecfd, 0x9747, 0x4897,{ 0xb4, 0x2a, 0xe5, 0x34, 0xf9, 0xff, 0x2b, 0x7a } } },
+        { MFX_CHROMAFORMAT_YUV422, { 0x580da148, 0xe4bf, 0x49b1,{ 0x94, 0x3b, 0x42, 0x14, 0xab, 0x05, 0xa6, 0xff } } },
+        { MFX_CHROMAFORMAT_YUV444, { 0x10e19ac8, 0xbf39, 0x4443,{ 0xbe, 0xc3, 0x1b, 0x0c, 0xbf, 0xe4, 0xc7, 0xaa } } },
+    };
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    static TableGuid DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_8 = {
+        { MFX_CHROMAFORMAT_YUV420,{ 0x2dec00c7, 0x21ee, 0x4bf8,{ 0x8f, 0x0e, 0x77, 0x3f, 0x11, 0xf1, 0x26, 0xa2 } } },
+        { MFX_CHROMAFORMAT_YUV444,{ 0xa33fd0ec, 0xa9d3, 0x4c21,{ 0x92, 0x76, 0xc2, 0x41, 0xcc, 0x90, 0xf6, 0xc7 } } },
+    };
+    static TableGuid DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_10 = {
+        { MFX_CHROMAFORMAT_YUV420,{ 0xc35153a0, 0x23c0, 0x4a81,{ 0xb3, 0xbb, 0x6a, 0x13, 0x26, 0xf2, 0xb7, 0x6b } } },
+        { MFX_CHROMAFORMAT_YUV444,{ 0x310e59d2, 0x7ea4, 0x47bb,{ 0xb3, 0x19, 0x50, 0x0e, 0x78, 0x85, 0x53, 0x36 } } },
+    };
+#endif
+
+    static TableGuid DXVA2_Intel_LowpowerEncode_VP9_Profile = {
+        { MFX_PROFILE_VP9_0,{ 0x9b31316b, 0xf204, 0x455d,{ 0x8a, 0x8c, 0x93, 0x45, 0xdc, 0xa7, 0x7c, 0x1 } } },  ///Profile 0
+        { MFX_PROFILE_VP9_1,{ 0x277de9c5, 0xed83, 0x48dd,{ 0xab, 0x8f, 0xac, 0x2d, 0x24, 0xb2, 0x29, 0x43 } } }, ///Profile 1
+        { MFX_PROFILE_VP9_2,{ 0xacef8bc,  0x285f, 0x415d,{ 0xab, 0x22, 0x7b, 0xf2, 0x52, 0x7a, 0x3d, 0x2e } } }, ///Profile 2 (10 bit)
+        { MFX_PROFILE_VP9_3,{ 0x353aca91, 0xd945, 0x4c13,{ 0xae, 0x7e, 0x46, 0x90, 0x60, 0xfa, 0xc8, 0xd8 } } }, ///Profile 3 (10 bit)
+    };
+
+    mfxExtCodingOption3* CO3 = GetExtBufferPtr(m_par);
+    switch (m_par.mfx.CodecId)
+    {
+    case MFX_CODEC_HEVC:
+
+        mfxU16 chromaFormat;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+        chromaFormat = Clip3(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, CO3->TargetChromaFormatPlus1 - 1);
+        if (g_tsHWtype < MFX_HW_ICL)
+            chromaFormat = MFX_CHROMAFORMAT_YUV420;
+
+        if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC && chromaFormat == MFX_CHROMAFORMAT_YUV422)
+            chromaFormat = MFX_CHROMAFORMAT_YUV420;
+#else
+        chromaFormat = MFX_CHROMAFORMAT_YUV420;
+#endif
+
+        if (g_tsConfig.lowpower != MFX_CODINGOPTION_ON) ///Lowpower = OFF
+        {
+            guid = DXVA2_Intel_Encode_HEVC_Main_8[chromaFormat]; /// Default 8 bit
+            if (g_tsHWtype < MFX_HW_KBL)
+                break;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || CO3->TargetBitDepthLuma == 10)
+            {
+                guid = DXVA2_Intel_Encode_HEVC_Main_10[chromaFormat];
+            }
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+            if (CO3->TargetBitDepthLuma == 12)
+            {
+                guid = DXVA2_Intel_Encode_HEVC_Main_12[chromaFormat];
+            }
+#endif
+#else
+            if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || m_par.mfx.FrameInfo.BitDepthLuma == 10 || m_par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            {
+                guid = DXVA2_Intel_Encode_HEVC_Main_10[chromaFormat];
+            }
+#endif
+            break;
+        }
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        else if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
+        {
+            guid = DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_8[chromaFormat]; /// Default 8 bit
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || CO3->TargetBitDepthLuma == 10)
+            {
+                guid = DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_10[chromaFormat];
+            }
+#else
+            if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || m_par.mfx.FrameInfo.BitDepthLuma == 10 || m_par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            {
+                guid = DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_10[chromaFormat];
+            }
+#endif
+            break;
+        }
+#endif
+        else ///Lowpower = ON
+        {
+            guid = DXVA2_Intel_LowpowerEncode_HEVC_Main_8[chromaFormat]; /// Default 8 bit
+            if (g_tsHWtype < MFX_HW_KBL)
+                break;
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+            if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || CO3->TargetBitDepthLuma == 10)
+            {
+                guid = DXVA2_Intel_LowpowerEncode_HEVC_Main_10[chromaFormat];
+            }
+#else
+            if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || m_par.mfx.FrameInfo.BitDepthLuma == 10 || m_par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+            {
+                guid = DXVA2_Intel_LowpowerEncode_HEVC_Main_10[chromaFormat];
+            }
+#endif
+            break;
+        }
+    case MFX_CODEC_VP9:
+        if (g_tsConfig.lowpower != MFX_CODINGOPTION_ON)
+            return MFX_ERR_UNSUPPORTED;
+        else
+        {
+            try
+            {
+                guid = DXVA2_Intel_LowpowerEncode_VP9_Profile.at(m_par.mfx.CodecProfile);
+            }
+            catch (std::out_of_range)
+            {
+                guid = DXVA2_Intel_LowpowerEncode_VP9_Profile[MFX_PROFILE_VP9_0]; ///Default profile
+            }
+        }
+        break;
+    default:
+        return MFX_ERR_UNSUPPORTED;
+    }
+    return MFX_ERR_NONE;
+}
+#endif
+
 mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
 {
     TRACE_FUNC2(GetCaps, pCaps, pCapsSize);
@@ -412,29 +564,31 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
     mfxHDL hdl;
     mfxU32 count = 0;
     mfxStatus sts = MFX_ERR_UNSUPPORTED;
-
+ 
 #if defined(_WIN32) || defined(_WIN64)
-
-    static const GUID DXVA2_Intel_Encode_HEVC_Main = { 0x28566328, 0xf041, 0x4466,{ 0x8b, 0x14, 0x8f, 0x58, 0x31, 0xe7, 0x8f, 0x8b } };
-    static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main = { 0xb8b28e0c, 0xecab, 0x4217,{ 0x8c, 0x82, 0xea, 0xaa, 0x97, 0x55, 0xaa, 0xf0 } };
-    static const GUID DXVA_NoEncrypt = { 0x1b81beD0, 0xa0c7, 0x11d3,{ 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
+    static const GUID DXVA_NoEncrypt = { 0x1b81beD0, 0xa0c7, 0x11d3, { 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
 
     HRESULT hr;
-    GUID guid;
-    if ((0 == memcmp(m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)))) {
-        if (g_tsConfig.lowpower & MFX_CODINGOPTION_ON)
-            guid = DXVA2_Intel_LowpowerEncode_HEVC_Main;
-        else
-            guid = DXVA2_Intel_Encode_HEVC_Main;
-    }
-    else {
+    const mfxPluginUID * pluginId;
+
+    if (m_par.mfx.CodecId == MFX_CODEC_HEVC)
+        pluginId = &MFX_PLUGINID_HEVCE_HW;
+    else if (m_par.mfx.CodecId == MFX_CODEC_VP9)
+        pluginId = &MFX_PLUGINID_VP9E_HW;
+    else
+        return MFX_ERR_UNSUPPORTED;
+
+    if ((0 != memcmp(m_uid->Data, pluginId->Data, sizeof(pluginId->Data)))) {
         if (pCapsSize) {
             memset(pCaps, 0, *pCapsSize);
             pCapsSize[0] = 0;
         }
-
         return MFX_ERR_UNSUPPORTED;
     }
+
+    GUID guid;
+    sts = GetGuid(guid);
+    MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
 
     if (!m_is_handle_set && g_tsImpl != MFX_IMPL_SOFTWARE)
     {

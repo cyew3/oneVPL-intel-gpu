@@ -14,6 +14,10 @@
 #include "ts_surface.h"
 #include <memory>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include "guiddef.h"
+#endif
+
 enum {
     GMOCK_FOURCC_P012 = MFX_MAKEFOURCC('P', '0', '1', '2'),
     GMOCK_FOURCC_Y212 = MFX_MAKEFOURCC('Y', '2', '1', '2'),
@@ -85,6 +89,9 @@ public:
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
 
+#if defined(_WIN32) || defined(_WIN64)
+    mfxStatus GetGuid(GUID &guid);
+#endif
     mfxStatus GetCaps(void *pCaps, mfxU32 *pCapsSize);
 
     mfxStatus Close();
@@ -220,3 +227,43 @@ typedef struct tagENCODE_CAPS_HEVC
     mfxU16   MaxNumOfDirtyRect;
     mfxU16   MaxNumOfMoveRect;
 } ENCODE_CAPS_HEVC;
+
+typedef struct tagENCODE_CAPS_VP9
+{
+    union {
+        struct {
+            mfxU32    CodingLimitSet : 1;
+            mfxU32    Color420Only : 1;
+            mfxU32    ForcedSegmentationSupport : 1;
+            mfxU32    FrameLevelRateCtrl : 1;
+            mfxU32    BRCReset : 1;
+            mfxU32    AutoSegmentationSupport : 1;
+            mfxU32    TemporalLayerRateCtrl : 3;
+            mfxU32    DynamicScaling : 1;
+            mfxU32    TileSupport : 1;
+            mfxU32    NumScalablePipesMinus1 : 3;
+            mfxU32    YUV422ReconSupport : 1;
+            mfxU32    YUV444ReconSupport : 1;
+            mfxU32    MaxEncodedBitDepth : 2;
+            mfxU32    UserMaxFrameSizeSupport : 1;
+            mfxU32    SegmentFeatureSupport : 4;
+            mfxU32    DirtyRectSupport : 1;
+            mfxU32    MoveRectSupport : 1;
+            mfxU32    : 7;
+        };
+        mfxU32    CodingLimits;
+    };
+    union {
+        struct {
+            mfxU8    EncodeFunc : 1;  // Enc+Pak
+            mfxU8    HybridPakFunc : 1;  // Hybrid Pak function
+            mfxU8    EncFunc : 1;  // Enc only function
+            mfxU8    : 5;
+        };
+        mfxU8    CodingFunction;
+    };
+    mfxU32    MaxPicWidth;
+    mfxU32    MaxPicHeight;
+    mfxU16    MaxNumOfDirtyRect;
+    mfxU16    MaxNumOfMoveRect;
+} ENCODE_CAPS_VP9;
