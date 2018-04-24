@@ -38,7 +38,8 @@ class MFEDXVAEncoder
         sts(_sts),
         interlace(fields),
         fieldNum(0),
-        isSubmitted(false)
+        isSubmitted(false),
+        feedbackSize(0)
         {
         };
         inline void reset()
@@ -76,8 +77,7 @@ public:
 
     mfxStatus Join(mfxExtMultiFrameParam const & par,
                    ENCODE_MULTISTREAM_INFO &info,
-                   bool doubleField,
-                   int feedbackSize);
+                   bool doubleField);
     mfxStatus Disjoin(ENCODE_MULTISTREAM_INFO info);
     mfxStatus Destroy();
     //MSFT runtime restrict multiple contexts per device
@@ -86,6 +86,7 @@ public:
     mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
     //returns pointer to particular caps with only read access, NULL if caps not set.
     CAPS GetCaps(MFE_CODEC codecId);
+    mfxStatus Register(ENCODE_MULTISTREAM_INFO info, int feedbackSize);
 //placeholder
 #ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
     ENCODE_CAPS_AV1 GetCaps() { return m_pAv1CAPS; };

@@ -168,7 +168,7 @@ mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
     {
         mfxExtMultiFrameParam const & mfeParam = GetExtBufferRef(par);
         m_StreamInfo.CodecId = DDI_CODEC_AVC;
-        mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE,(mfxU32)m_feedbackUpdate.size());
+        mfxStatus sts = m_pMFEAdapter->Join(mfeParam, m_StreamInfo, par.mfx.FrameInfo.PicStruct != MFX_PICSTRUCT_PROGRESSIVE);
         return sts;
     }
 #endif
@@ -381,6 +381,14 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
         // reserved space for feedback reports
         m_feedbackUpdate.resize( response.NumFrameActual );
         m_feedbackCached.Reset( response.NumFrameActual );
+#if defined(MFX_ENABLE_MFE)
+        if (m_pMFEAdapter != NULL)
+        {
+            mfxStatus sts = m_pMFEAdapter->Register(m_StreamInfo, (mfxU32)m_feedbackUpdate.size());
+            if(sts != MFX_ERR_NONE)
+                return sts;
+        }
+#endif
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
