@@ -186,8 +186,8 @@ namespace vp9e_init
         {/*26 Incorrect denominator for frame rate*/ MFX_ERR_INVALID_VIDEO_PARAM, FRAME_RATE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtD, 0 } },
         {/*27 Empty ext_buffer*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
 
-        //encoded order [currently feature is not supoorted]
-        {/*28*/ MFX_ERR_INVALID_VIDEO_PARAM, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
+        //encoded order [currently the feature is not supported and treated as non-configurable]
+        {/*28*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
 
         //native
         {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },

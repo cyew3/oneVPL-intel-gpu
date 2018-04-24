@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -64,7 +64,8 @@ namespace vp9e_get_video_param
             DEFAULTS_BRC,
             SPSPPS_EXTBUF,
             AFTER_ENCODING_CHECK,
-            AFTER_RESET_CHECK
+            AFTER_RESET_CHECK,
+            NONCONFIGURABLE_PARAM
         };
 
         static const tc_struct test_case[];
@@ -125,9 +126,13 @@ namespace vp9e_get_video_param
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 0 },
         }
         },
-        {/*11 Check this specific extbuf because it is mentioned in the doc*/ MFX_ERR_UNSUPPORTED, SPSPPS_EXTBUF },
+        {/*11 Check usupported ext-buf*/ MFX_ERR_UNSUPPORTED, SPSPPS_EXTBUF },
         {/*12 Check the same params return after encoding*/ MFX_ERR_NONE, AFTER_ENCODING_CHECK },
         {/*13 Check the params are updated after reset*/ MFX_ERR_NONE, AFTER_RESET_CHECK },
+
+        {/*14 Check that a non-configurable param is silently ignored*/ MFX_ERR_NONE, NONCONFIGURABLE_PARAM,
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumSlice, 2 },
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -359,12 +364,20 @@ namespace vp9e_get_video_param
                 mfxStatus after_encoding_status = GetVideoParam(m_session, &par_after_encoding);
                 g_tsStatus.check(after_encoding_status);
 
-                if (memcmp(&requested_par, &par_after_encoding, sizeof(mfxVideoParam)) != 0)
+                int cmp_result = memcmp(&requested_par, &par_after_encoding, sizeof(mfxVideoParam));
+                if (tc.type != NONCONFIGURABLE_PARAM && cmp_result != 0)
                 {
                     TS_TRACE(requested_par);
                     TS_TRACE(par_after_encoding);
 
-                    ADD_FAILURE() << "Requested params after encoding expected to be the same as before, but they are not"; throw tsFAIL;
+                    ADD_FAILURE() << "GetVideoParam() returned the different struct as provided on Init() that is not expected for this case"; throw tsFAIL;
+                }
+                else if (tc.type == NONCONFIGURABLE_PARAM && cmp_result == 0)
+                {
+                    TS_TRACE(requested_par);
+                    TS_TRACE(par_after_encoding);
+
+                    ADD_FAILURE() << "Unsupported param provided on Init(), but GetVideoParam() returned the same struct (expected cleaning out of the param)"; throw tsFAIL;
                 }
 
                 if (tc.type == AFTER_RESET_CHECK)

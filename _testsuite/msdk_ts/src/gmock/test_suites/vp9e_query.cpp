@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -72,7 +72,8 @@ private:
         XW,
         WH,
         PROTECTED,
-        INVALID
+        INVALID,
+        NONCONFIGURABLE_PARAM,
     };
 
     static const tc_struct test_case[];
@@ -256,7 +257,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*70*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 0xffff } },
     {/*71*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 } },
     {/*72*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0xffff } },
-    {/*73*/ MFX_ERR_UNSUPPORTED, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
+    {/*73 non-configurable param (silent ignore expected)*/ MFX_ERR_NONE, NONCONFIGURABLE_PARAM, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopOptFlag, 2 } },
 
     //Protection (currently unsupported)
     {/*74*/ MFX_ERR_UNSUPPORTED, PROTECTED, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_PAVP } },
@@ -321,6 +322,11 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     },
     {/*105 check default state for IVF-headers [=enabled]*/ MFX_ERR_NONE, NONE, NONE,
         { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_UNKNOWN }
+    },
+
+    // Check error on unsupportd ext-buf
+    {/*106 */ MFX_ERR_UNSUPPORTED, NONE, NONE,
+        { MFX_PAR, &tsStruct::mfxExtHEVCTiles.NumTileRows, 2 }
     }
 };
 
@@ -388,7 +394,21 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
 
     SETPARS(m_par, MFX_PAR);
 
-    *m_pParOut = m_par;
+    tsExtBufType<mfxVideoParam> m_par_out;
+    m_par_out.mfx.CodecId = m_par.mfx.CodecId;
+    m_pParOut = &m_par_out;
+
+    if (m_par.NumExtParam)
+    {
+        for (mfxU8 i = 0; i < m_par.NumExtParam; i++)
+        {
+            mfxExtBuffer *pInBuf = m_par.ExtParam[i];
+            if (pInBuf)
+            {
+                m_par_out.AddExtBuffer(pInBuf->BufferId, m_par.ExtParam[i]->BufferSz);
+            }
+        }
+    }
 
     if (!GetAllocator())
     {
@@ -513,9 +533,52 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
             m_pPar->mfx.TargetUsage = 7;
         }
 
-        if (0 != memcmp(m_pPar, m_pParOut, sizeof(mfxVideoParam)))
+        // Struct compare stage
         {
-            ADD_FAILURE() << "ERROR: Query() returned MFX_ERR_NONE, but In and Out structs are different"; throw tsFAIL;
+            mfxVideoParam cmp_copy_in = *m_pPar;
+            mfxVideoParam cmp_copy_out = *m_pParOut;
+
+            // ExtParam ptr is zeroed for temp structs because it is always different and breaks byte-to-byte compare
+            if (cmp_copy_in.ExtParam)
+                cmp_copy_in.ExtParam = nullptr;
+            if (cmp_copy_out.ExtParam)
+                cmp_copy_out.ExtParam = nullptr;
+
+            int cmp_result = memcmp(&cmp_copy_in, &cmp_copy_out, sizeof(mfxVideoParam));
+
+            int cmp_result_ext_buf = 0;
+            for (mfxU8 i = 0; i < m_par.NumExtParam; i++)
+            {
+                mfxExtBuffer *pInBuf = m_par.ExtParam[i];
+                tsExtBufType<mfxVideoParam> m_temp_par = m_par;
+                void *buf_ptr_par = m_temp_par.GetExtBuffer(pInBuf->BufferId);
+                tsExtBufType<mfxVideoParam> m_temp_par_out = m_par_out;
+                void *buf_ptr_par_out = m_temp_par_out.GetExtBuffer(pInBuf->BufferId);
+
+                if (buf_ptr_par && !buf_ptr_par_out)
+                {
+                    ADD_FAILURE() << "ERROR: Query() one of the ext_buffers presents in In but not found in Out"; throw tsFAIL;
+                }
+
+                cmp_result_ext_buf = memcmp(buf_ptr_par, buf_ptr_par_out, m_par.ExtParam[i]->BufferSz);
+                if (cmp_result_ext_buf)
+                {
+                    break;
+                }
+            }
+
+            if (!tc.type == NONCONFIGURABLE_PARAM && (cmp_result != 0 || cmp_result_ext_buf != 0))
+            {
+                TS_TRACE(*m_pPar);
+                TS_TRACE(*m_pParOut);
+                ADD_FAILURE() << "ERROR: In and Out structs are different (expected be the same for this case)"; throw tsFAIL;
+            }
+            else if (tc.type == NONCONFIGURABLE_PARAM && cmp_result == 0)
+            {
+                TS_TRACE(*m_pPar);
+                TS_TRACE(*m_pParOut);
+                ADD_FAILURE() << "ERROR: Query() unsupported param provided, but In and Out structs are the same (expected cleaning out the param)"; throw tsFAIL;
+            }
         }
     }
 
