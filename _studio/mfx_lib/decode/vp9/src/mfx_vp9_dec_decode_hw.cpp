@@ -438,8 +438,16 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
     MFX_CHECK_NULL_PTR1(p_out);
 
     eMFXHWType type = p_core->GetHWType();
+    mfxVideoParam *p_check_hw_par = p_in;
 
-    if (!CheckHardwareSupport(p_core, p_in))
+    mfxVideoParam check_hw_par = {};
+    if (p_in == NULL)
+    {
+        check_hw_par.mfx.CodecId = MFX_CODEC_VP9;
+        p_check_hw_par = &check_hw_par;
+    }
+
+    if (!CheckHardwareSupport(p_core, p_check_hw_par))
         return MFX_ERR_UNSUPPORTED;
 
     mfxStatus status = MFX_VPX_Utility::Query(p_core, p_in, p_out, MFX_CODEC_VP9, type);
