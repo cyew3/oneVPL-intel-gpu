@@ -28,7 +28,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*
 Description:
-This test suite checks what Levels are supported by HEVC FEI and HEVC legacy Encoders.
+This test suite checks that Main profile and all its levels are supported by HEVC FEI and HEVC legacy encoders.
 
 In HEVC Standard there are 13 Levels:  1, 2, 2.1, 3, 3.1, 4, 4.1, 5, 5.1, 5.2, 6, 6.1, 6.2
 First 26 positive test cases are intended to test those 13 Levels.
@@ -43,6 +43,7 @@ Algorithm:
 - load Hevc FEI/legacy plugin
 - Init
 - EncodeFrames
+- Check the output stream level and profile
 */
 
 #include "ts_encoder.h"
@@ -52,12 +53,12 @@ Algorithm:
 
 #include <fstream>
 
-namespace hevce_levels_support {
+namespace hevce_levels_profile_support {
 
 // In case you need to verify the output manually, define the MANUAL_DEBUG_MODE macro. The output files are:
-// hevce_levels_support.h265 stores encoded bitstream,
-// hevce_levels_support1.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the first 13 test cases,
-// hevce_levels_support2.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the next 13 test cases.
+// hevce_levels_profile_support.h265 stores encoded bitstream,
+// hevce_levels_profile_support1.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the first 13 test cases,
+// hevce_levels_profile_support2.log stores video parameters which are set in TestSuite::SetParsPositiveTC() for the next 13 test cases.
 //#define MANUAL_DEBUG_MODE
 
 // A structure to store constraints values for one Level
@@ -111,7 +112,7 @@ public:
     , tsParserHEVC()
     , tsBitstreamProcessor()
 #ifdef MANUAL_DEBUG_MODE
-    , m_tsBsWriter("hevce_levels_support.h265")
+    , m_tsBsWriter("hevce_levels_profile_support.h265")
 #endif
     {
         m_bs_processor = this;
@@ -128,6 +129,8 @@ public:
         }
     }
 
+    mfxU16 CodecProfile_exp;
+    mfxU16 CodecLevel_exp;
     mfxI32 RunTest(mfxU16 id);
 
 private:
@@ -170,6 +173,9 @@ private:
         m_par.mfx.CodecLevel   = LevelParam.Level;      // for Main tier, CodecLevel values are: 10, 20, 21, 30, 31, 40, 41, 50, 51, 52, 60, 61, 62
         m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN; // only the case of Main tier is tested in this version of test suite
 
+        CodecLevel_exp = LevelParam.Level;
+        CodecProfile_exp = MFX_PROFILE_HEVC_MAIN;
+
         // Due to driver issue, NumSlice is limited to MaxNumSlice (see definition above).
         // Otherwise MFXVideoENCODE_Init will fail with MFX_WRN_INCOMPATIBLE_VIDEO_PARAM status.
         m_par.mfx.NumSlice = std::min((mfxU16)LevelParam.MaxSSPP, MaxNumSlice);
@@ -181,9 +187,9 @@ private:
         #ifdef MANUAL_DEBUG_MODE
             std::ofstream stream;
             if (maxWidthFlag)
-                stream.open("hevce_levels_support1.log", std::ios::app);
+                stream.open("hevce_levels_profile_support1.log", std::ios::app);
             else
-                stream.open("hevce_levels_support2.log", std::ios::app);
+                stream.open("hevce_levels_profile_support2.log", std::ios::app);
         #else
             std::ostream &stream = g_tsLog;
         #endif
@@ -222,11 +228,16 @@ private:
             {
                 if (au.nalu[i] && au.nalu[i]->nal_unit_type == SPS_NUT)
                 {
-                    g_tsLog << "======== Input Level: " << (m_par.mfx.CodecLevel & 0xFF) << "\n";
+                    g_tsLog << "======== Input Level: " << (CodecLevel_exp & 0xFF) << "\n";
                     // Values of the NAL unit Level stored in header are defined as ( (m_par.mfx.CodecLevel & 0xFF) * 3 ):
                     // 30, 60, 63, 90, 93, 120, 123, 150, 153, 156, 180, 183, 186
                     g_tsLog << "======== Output Level:  " << (au.nalu[i]->sps->ptl.general.level_idc/3) << "\n";
-                    EXPECT_EQ(au.nalu[i]->sps->ptl.general.level_idc/3 , (m_par.mfx.CodecLevel & 0xFF ) ) << "ERROR: Level value is not as expected\n";
+                    EXPECT_EQ(au.nalu[i]->sps->ptl.general.level_idc/3 , (CodecLevel_exp & 0xFF ) ) << "ERROR: Level value is not as expected\n";
+
+                    g_tsLog << "======== Input Profile: " << (CodecProfile_exp) << "\n";
+                    g_tsLog << "======== Output Profile:  " << (mfxU16)(au.nalu[i]->sps->ptl.general.profile_idc) << "\n";
+                    EXPECT_EQ(au.nalu[i]->sps->ptl.general.profile_idc , (CodecProfile_exp) ) << "ERROR: Profile value is not as expected\n";
+
                 }
             }
         }
@@ -260,11 +271,11 @@ mfxI32 TestSuite<PluginID>::RunTest(mfxU16 id)
 }
 
 #define TestSuite TestSuite<MSDK_PLUGIN_TYPE_FEI>
-TS_REG_TEST_SUITE_CLASS(hevce_fei_levels_support);
+TS_REG_TEST_SUITE_CLASS(hevce_fei_levels_profile_support);
 #undef TestSuite
 
 #define TestSuite TestSuite<MSDK_PLUGIN_TYPE_NONE>
-TS_REG_TEST_SUITE_CLASS(hevce_levels_support);
+TS_REG_TEST_SUITE_CLASS(hevce_levels_profile_support);
 #undef TestSuite
 
-} // end of namespace hevce_levels_support
+} // end of namespace hevce_levels_profile_support
