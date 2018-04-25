@@ -78,7 +78,6 @@ private:
         RUNTIME_SURF
     };
 
-    void AllocOpaque();
     void ReadStream();
 
     int RunTest(const tc_struct& tc);
@@ -372,13 +371,14 @@ int TestSuite::RunTest(const tc_struct& tc)
         }
     }
 
+    AllocSurfaces();
     if(FAILED_INIT == tc.mode)
         g_tsStatus.disable_next_check();
     if(NOT_INITIALIZED != tc.mode)
         Init();
 
     tsStruct::SetPars(m_par, tc, AFTER_INIT);
-    AllocSurfaces();
+
 
     if(CLOSED_DECODER == tc.mode)
     {
@@ -446,14 +446,6 @@ int TestSuite::RunTest(const tc_struct& tc)
 
     TS_END;
     return 0;
-}
-
-void TestSuite::AllocOpaque()
-{
-    if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
-    {
-        AllocOpaqueSurfaces();
-    }
 }
 
 void TestSuite::ReadStream()

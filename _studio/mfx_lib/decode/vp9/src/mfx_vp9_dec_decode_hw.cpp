@@ -798,6 +798,10 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
 
         // work with the native (original) surface
         surface_work = GetOriginalSurface(surface_work);
+        if (surface_work == NULL)
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
     }
 
     sts = CheckFrameInfoCodecs(&surface_work->Info, MFX_CODEC_VP9, true);
