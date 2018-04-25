@@ -307,10 +307,8 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
         break;
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_KBL:
-#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case PLATFORM_INTEL_GLK:
     case PLATFORM_INTEL_CFL:
-#endif
         res = m_device->LoadProgram((void *)genx_scd_skl, sizeof(genx_scd_skl), m_program, "nojitter");
         break;
     case PLATFORM_INTEL_BXT:
