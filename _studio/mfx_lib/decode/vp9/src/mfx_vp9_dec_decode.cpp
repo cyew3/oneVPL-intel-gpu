@@ -1242,9 +1242,13 @@ mfxStatus FillVideoParam(VideoCORE* core, UMC_VP9_DECODER::VP9DecoderFrame const
         case  8:
             params->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             if (MFX_CHROMAFORMAT_YUV444 == params->mfx.FrameInfo.ChromaFormat)
+            {
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+            }
             else if (MFX_CHROMAFORMAT_YUV422 == params->mfx.FrameInfo.ChromaFormat)
+            {
                 params->mfx.FrameInfo.FourCC = MFX_FOURCC_YUY2;
+            }
             params->mfx.FrameInfo.BitDepthLuma   = 8;
             params->mfx.FrameInfo.BitDepthChroma = 8;
             params->mfx.FrameInfo.Shift = 0;
