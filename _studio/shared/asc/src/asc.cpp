@@ -739,6 +739,8 @@ ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 Pi
     {
         m_dataIn->layer = new ASCImDetails;
         m_videoData = new ASCVidSample *[ASCVIDEOSTATSBUF];
+        for(mfxU8 i = 0; i < ASCVIDEOSTATSBUF; i++)
+            m_videoData[i] = nullptr;
         m_support = new ASCVidRead;
     }
     catch (...)
