@@ -3838,6 +3838,12 @@ mfxStatus CTranscodingPipeline::Init(sInputParams *pParams,
 #endif //MFX_VERSION >= 1022
     }
 
+    // Dumping components configuration if required
+    if (m_strMfxParamsDumpFile.size())
+    {
+        CParametersDumper::DumpLibraryConfiguration(m_strMfxParamsDumpFile, m_pmfxDEC.get(), m_pmfxVPP.get(), m_pmfxENC.get(), &m_mfxDecParams, &m_mfxVppParams, &m_mfxEncParams);
+    }
+
     m_bIsInit = true;
 
     return sts;
@@ -3911,12 +3917,6 @@ mfxStatus CTranscodingPipeline::CompleteInit()
             MSDK_IGNORE_MFX_STS(sts, MFX_WRN_PARTIAL_ACCELERATION);
         }
         MSDK_CHECK_STATUS(sts, "m_pmfxENC->Init failed");
-    }
-
-    // Dumping components configuration if required
-    if (m_strMfxParamsDumpFile.size())
-    {
-        CParametersDumper::DumpLibraryConfiguration(m_strMfxParamsDumpFile, m_pmfxDEC.get(), m_pmfxVPP.get(), m_pmfxENC.get(), &m_mfxDecParams, &m_mfxVppParams, &m_mfxEncParams);
     }
 
     m_bIsInit = true;
