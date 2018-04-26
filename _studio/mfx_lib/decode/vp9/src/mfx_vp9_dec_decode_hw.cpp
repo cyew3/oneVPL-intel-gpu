@@ -443,6 +443,13 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 {
     MFX_CHECK_NULL_PTR1(p_out);
 
+    mfxVideoParam localIn = {};
+    if (p_in == p_out)
+    {
+        MFX_INTERNAL_CPY(&localIn, p_in, sizeof(mfxVideoParam));
+        p_in = &localIn;
+    }
+
     eMFXHWType type = p_core->GetHWType();
     mfxVideoParam *p_check_hw_par = p_in;
 
