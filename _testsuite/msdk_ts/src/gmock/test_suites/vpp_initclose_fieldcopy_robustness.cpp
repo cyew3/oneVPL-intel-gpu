@@ -18,8 +18,8 @@
     Test implements 2 stages:
     1) Init VPP with CM implemented filter, Process frames, Close VPP
     2) Init VPP with MediaSDK filter, Process frames, Close VPP
-    The order of accomplishment of stages depends on test_case.
-    Expected that switching between VPP filters won't lead to crash
+    The order of accomplishment of stages depends on the test case.
+    Expected that switching between VPP filters won't lead to a crash.
 */
 
 namespace vpp_initclose_fieldcopy_robustness
@@ -166,6 +166,6 @@ int TestSuite::RunTest(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS(vpp_fieldcopy_robustness);
+TS_REG_TEST_SUITE_CLASS(vpp_initclose_fieldcopy_robustness);
 
 }
