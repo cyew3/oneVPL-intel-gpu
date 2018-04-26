@@ -394,6 +394,12 @@ static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
         return false;
     }
 
+    if (newPar->mfx.FrameInfo.BitDepthLuma != oldPar->mfx.FrameInfo.BitDepthLuma ||
+        newPar->mfx.FrameInfo.BitDepthChroma != oldPar->mfx.FrameInfo.BitDepthChroma)
+    {
+        return false;
+    }
+
     if (newPar->Protected != oldPar->Protected)
     {
         return false;
