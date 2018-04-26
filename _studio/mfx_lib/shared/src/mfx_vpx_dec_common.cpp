@@ -232,23 +232,15 @@ namespace MFX_VPX_Utility
                 p_out->mfx.FrameInfo.FrameRateExtD = p_in->mfx.FrameInfo.FrameRateExtD;
             }
 
-            if ((p_in->mfx.FrameInfo.AspectRatioW || p_in->mfx.FrameInfo.AspectRatioH) &&
-                (!p_in->mfx.FrameInfo.AspectRatioW || !p_in->mfx.FrameInfo.AspectRatioH))
+            if ((p_in->mfx.FrameInfo.AspectRatioW == 0 && p_in->mfx.FrameInfo.AspectRatioH == 0) ||
+                (p_in->mfx.FrameInfo.AspectRatioW != 0 && p_in->mfx.FrameInfo.AspectRatioH != 0))
             {
-                sts = MFX_ERR_UNSUPPORTED;
+                p_out->mfx.FrameInfo.AspectRatioW = p_in->mfx.FrameInfo.AspectRatioW;
+                p_out->mfx.FrameInfo.AspectRatioH = p_in->mfx.FrameInfo.AspectRatioH;
             }
             else
             {
-                if ((p_in->mfx.FrameInfo.AspectRatioW && p_in->mfx.FrameInfo.AspectRatioW != 1) ||
-                    (p_in->mfx.FrameInfo.AspectRatioH && p_in->mfx.FrameInfo.AspectRatioH != 1))
-                {
-                    sts = MFX_ERR_UNSUPPORTED;
-                }
-                else
-                {
-                    p_out->mfx.FrameInfo.AspectRatioW = p_in->mfx.FrameInfo.AspectRatioW;
-                    p_out->mfx.FrameInfo.AspectRatioH = p_in->mfx.FrameInfo.AspectRatioH;
-                }
+                sts = MFX_ERR_UNSUPPORTED;
             }
 
             switch (p_in->mfx.FrameInfo.PicStruct)
@@ -357,12 +349,8 @@ namespace MFX_VPX_Utility
         if (p_in->mfx.FrameInfo.Height % 16 || p_in->mfx.FrameInfo.Width % 16)
             return false;
 
-        // both zero or not zero
-        if ((p_in->mfx.FrameInfo.AspectRatioW || p_in->mfx.FrameInfo.AspectRatioH) && !(p_in->mfx.FrameInfo.AspectRatioW && p_in->mfx.FrameInfo.AspectRatioH))
-            return false;
-        
-        if ((p_in->mfx.FrameInfo.AspectRatioW && p_in->mfx.FrameInfo.AspectRatioW != 1) ||
-            (p_in->mfx.FrameInfo.AspectRatioH && p_in->mfx.FrameInfo.AspectRatioH != 1))
+        if ((p_in->mfx.FrameInfo.AspectRatioW != 0 && p_in->mfx.FrameInfo.AspectRatioH == 0) ||
+            (p_in->mfx.FrameInfo.AspectRatioW == 0 && p_in->mfx.FrameInfo.AspectRatioH != 0))
             return false;
 
         switch (p_in->mfx.FrameInfo.PicStruct)
