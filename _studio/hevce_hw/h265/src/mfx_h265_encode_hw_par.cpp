@@ -1638,22 +1638,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif
     );
 
-    if (IsOn(par.mfx.LowPower)) {   // 422 is not supported on VDENC
-        if (   (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_Y210)
-            || (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_P210)
-            || (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_YUY2)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-            || (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_Y216)
-#endif
-            )
+    if (IsOn(par.mfx.LowPower)) {   // 422 target is not supported on VDENC
+        if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422))
         invalid++;
-    } else {   // 444 is not POR on VME
-        if (   (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_Y410)
-            || (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_AYUV)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-            || (par.mfx.FrameInfo.FourCC == (mfxU32)MFX_FOURCC_Y416)
-#endif
-            )
+    } else {   // 444 target is not POR on VME
+        if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV444))
         invalid++;
     }
 
@@ -1825,6 +1814,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         invalid += CheckOption(par.mfx.FrameInfo.FourCC
             , (mfxU32)MFX_FOURCC_AYUV
             , (mfxU32)MFX_FOURCC_Y410
+            , (mfxU32)MFX_FOURCC_RGB4
             , (mfxU32)MFX_FOURCC_A2RGB10);
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
@@ -1839,7 +1829,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     {   //In: 422x8, 422x10, 444x8, 444x10
         invalid += CheckOption(par.mfx.FrameInfo.FourCC
             , (mfxU32)MFX_FOURCC_YUY2, (mfxU32)MFX_FOURCC_Y210, (mfxU32)MFX_FOURCC_P210
-            , (mfxU32)MFX_FOURCC_AYUV, (mfxU32)MFX_FOURCC_Y410, (mfxU32)MFX_FOURCC_A2RGB10);
+            , (mfxU32)MFX_FOURCC_AYUV, (mfxU32)MFX_FOURCC_Y410
+            , (mfxU32)MFX_FOURCC_RGB4, (mfxU32)MFX_FOURCC_A2RGB10);
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
     {   //In: 420x10, 422x10, 444x10

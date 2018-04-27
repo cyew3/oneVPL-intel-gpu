@@ -972,7 +972,8 @@ void FillPpsBuffer(
 #endif // MFX_ENABLE_HEVCE_ROI
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    pps.DisplayFormatSwizzle = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10);
+    pps.DisplayFormatSwizzle = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10) ||
+                               (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 }
 
