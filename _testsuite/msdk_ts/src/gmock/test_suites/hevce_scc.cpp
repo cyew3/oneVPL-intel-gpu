@@ -221,7 +221,7 @@ namespace hevce_scc
     }
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_scc, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
-    //TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_scc, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
-    //TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_scc, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
-    //TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_scc, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_scc, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_444_ayuv_scc, RunTest_Subtype<MFX_FOURCC_AYUV>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_444_y410_scc, RunTest_Subtype<MFX_FOURCC_Y410>, n_cases);
 }
