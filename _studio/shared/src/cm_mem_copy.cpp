@@ -1691,7 +1691,7 @@ mfxStatus CmCopyWrapper::EnqueueCopyNV12GPUtoCPU(   CmSurface2D* pSurface,
     UINT            stride_in_dwords        = 0;
     UINT            height_stride_in_rows   = heightStride;
     UINT            AddedShiftLeftOffset    = 0;
-    UINT            byte_per_pixel           = (format==MFX_FOURCC_P010 
+    UINT            byte_per_pixel           = (format==MFX_FOURCC_P010
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
         || format == MFX_FOURCC_P016
 #endif
@@ -2608,8 +2608,11 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
 #else
     m_timeout = CM_MAX_TIMEOUT_MS;
 #endif
-    if(hwtype >= MFX_HW_SCL)
-        InitializeSwapKernels(hwtype);
+    if(hwtype >= MFX_HW_BDW)
+    {
+        mfxStatus mfxSts = InitializeSwapKernels(hwtype);
+        MFX_CHECK_STS(mfxSts);
+    }
     cmSts = m_pCmDevice->CreateQueue(m_pCmQueue);
     CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
     m_tableCmRelations2.clear();
