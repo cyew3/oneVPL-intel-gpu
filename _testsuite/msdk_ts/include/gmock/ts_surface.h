@@ -552,6 +552,22 @@ public:
     mfxStatus ProcessSurface(mfxFrameSurface1& s);
 };
 
+// Break circular dependencies ts_surface_provider.h already includes
+// ts_surface.h so use forward class declaration to declare the pointer
+class tsSurfaceProvider;
+
+// The processor compares surfaces with reference frames
+class tsSurfaceComparator : public tsSurfaceProcessor
+{
+private:
+    mfxU32 frame_index;
+    std::unique_ptr<tsSurfaceProvider> ref_source;
+public:
+    tsSurfaceComparator(std::unique_ptr<tsSurfaceProvider> &&source);
+    ~tsSurfaceComparator();
+    mfxStatus ProcessSurface(mfxFrameSurface1& s);
+};
+
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id);
 mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id);
 

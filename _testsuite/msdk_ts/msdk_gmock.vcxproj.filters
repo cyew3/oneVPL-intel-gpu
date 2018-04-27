@@ -108,6 +108,7 @@
     <ClInclude Include="include\gmock\ts_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\gmock\ts_surface_provider.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\test_sample_allocator.cpp">
@@ -1075,6 +1076,9 @@
     </ClCompile>
     <ClCompile Include="src\gmock\test_suites\hevce_caps.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\ts_surface_provider.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

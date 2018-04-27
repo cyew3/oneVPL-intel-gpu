@@ -9,6 +9,7 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 \* ****************************************************************************** */
 
 #include "ts_surface.h"
+#include "ts_surface_provider.h"
 #include "math.h"
 
 tsFrame::tsFrame(mfxFrameSurface1 s)
@@ -1221,3 +1222,45 @@ bool operator == (const mfxFrameSurface1& s1, const mfxFrameSurface1& s2)
 }
 
 bool operator != (const mfxFrameSurface1& s1, const mfxFrameSurface1& s2){return !(s1==s2);}
+
+tsSurfaceComparator::tsSurfaceComparator(std::unique_ptr<tsSurfaceProvider> &&source)
+    : tsSurfaceProcessor()
+    , frame_index(0)
+    , ref_source(std::move(source))
+{
+}
+
+tsSurfaceComparator::~tsSurfaceComparator()
+{
+}
+
+mfxStatus tsSurfaceComparator::ProcessSurface(mfxFrameSurface1& s)
+{
+    mfxFrameSurface1* ref_surf = ref_source->NextSurface();
+    EXPECT_NE_THROW(nullptr, ref_surf, "ERROR: failed to decode next frame by a verification decoder instance\n");
+
+    //compare frames
+    EXPECT_EQ(ref_surf->Info.CropH, s.Info.CropH);
+    EXPECT_EQ(ref_surf->Info.CropW, s.Info.CropW);
+    EXPECT_EQ(ref_surf->Info.AspectRatioH, s.Info.AspectRatioH);
+    EXPECT_EQ(ref_surf->Info.AspectRatioW, s.Info.AspectRatioW);
+    EXPECT_EQ(ref_surf->Info.FourCC, s.Info.FourCC);
+
+    /* https://jira01.devtools.intel.com/browse/MQ-507 */
+
+    tsSurfaceCRC32 refCRC32;
+    mfxStatus sts = refCRC32.ProcessSurface(*ref_surf);
+    EXPECT_EQ(sts, MFX_ERR_NONE);
+
+    tsSurfaceCRC32 curCRC32;
+    sts = curCRC32.ProcessSurface(s);
+    EXPECT_EQ(sts, MFX_ERR_NONE);
+
+    bool sameSurfaces = (refCRC32.GetCRC() == curCRC32.GetCRC());
+
+    EXPECT_TRUE(sameSurfaces)
+        << "ERROR: Frame decoded by resolution-changed session is not b2b with frame decoded by verification session!!!\nFrame #" << frame_index << "\n";
+
+    frame_index++;
+    return MFX_ERR_NONE;
+}

@@ -49,6 +49,7 @@ list(APPEND sources
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_streams.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_struct.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_surface_provider.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_trace.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_vpp.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/src/gmock/ts_preenc.cpp

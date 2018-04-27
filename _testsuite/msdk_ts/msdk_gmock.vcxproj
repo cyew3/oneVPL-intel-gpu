@@ -218,6 +218,7 @@
     <ClInclude Include="include\gmock\ts_struct.h" />
     <ClInclude Include="include\gmock\ts_struct_decl.h" />
     <ClInclude Include="include\gmock\ts_surface.h" />
+    <ClInclude Include="include\gmock\ts_surface_provider.h" />
     <ClInclude Include="include\gmock\ts_trace.h" />
     <ClInclude Include="include\gmock\ts_transcoder.h" />
     <ClInclude Include="include\gmock\ts_typedef.h" />
@@ -536,6 +537,7 @@
     <ClCompile Include="src\gmock\ts_streams.cpp" />
     <ClCompile Include="src\gmock\ts_struct.cpp" />
     <ClCompile Include="src\gmock\ts_surface.cpp" />
+    <ClCompile Include="src\gmock\ts_surface_provider.cpp" />
     <ClCompile Include="src\gmock\ts_trace.cpp" />
     <ClCompile Include="src\gmock\ts_transcoder.cpp" />
     <ClCompile Include="src\gmock\ts_utils.cpp" />
