@@ -129,6 +129,17 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
         MFX_CHECK(GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL), MFX_ERR_INVALID_VIDEO_PARAM);
     }
 
+    // Check for mfxExtFeiHevcRepackCtrl
+
+    mfxExtFeiHevcRepackCtrl* repackctrl = reinterpret_cast<mfxExtFeiHevcRepackCtrl*>(
+        GetBufById(ctrl, MFX_EXTBUFF_HEVCFEI_REPACK_CTRL));
+
+    if (repackctrl)
+    {
+        MFX_CHECK(!EncFrameCtrl->PerCuQp, MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(repackctrl->NumPasses <= 8, MFX_ERR_INVALID_VIDEO_PARAM);
+    }
+
     return MFX_ERR_NONE;
 }
 

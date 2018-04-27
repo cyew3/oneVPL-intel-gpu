@@ -64,6 +64,8 @@ struct sInputParams
     msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  mvpInFile[MSDK_MAX_FILENAME_LEN];
     msdk_char  refctrlInFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char  repackctrlFile[MSDK_MAX_FILENAME_LEN];
+    msdk_char  repackstatFile[MSDK_MAX_FILENAME_LEN];
 
     bool bENCODE;
     bool bPREENC;
@@ -132,6 +134,8 @@ struct sInputParams
         MSDK_ZERO_MEMORY(mvoutFile);
         MSDK_ZERO_MEMORY(mvpInFile);
         MSDK_ZERO_MEMORY(refctrlInFile);
+        MSDK_ZERO_MEMORY(repackctrlFile);
+        MSDK_ZERO_MEMORY(repackstatFile);
 
         MSDK_ZERO_MEMORY(preencCtrl);
         preencCtrl.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
@@ -219,6 +223,12 @@ template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncCtuCtrl>{
 };
 template<>struct mfx_ext_buffer_id<mfxExtHEVCRefLists>{
     enum {id = MFX_EXTBUFF_HEVC_REFLISTS};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcRepackCtrl>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_REPACK_CTRL};
+};
+template<>struct mfx_ext_buffer_id<mfxExtFeiHevcRepackStat>{
+    enum {id = MFX_EXTBUFF_HEVCFEI_REPACK_STAT};
 };
 
 struct CmpExtBufById

@@ -66,7 +66,7 @@ namespace MfxHwH265FeiEncode
     protected:
         virtual mfxStatus PreSubmitExtraStage(MfxHwH265Encode::Task const & task) override;
 
-        virtual mfxStatus PostQueryExtraStage() override;
+        virtual mfxStatus PostQueryExtraStage(MfxHwH265Encode::Task const & task, mfxU32 codedStatus) override;
 
         virtual VAEntrypoint GetVAEntryPoint(MfxHwH265Encode::MfxVideoParam const &) override
         {
