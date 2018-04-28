@@ -118,6 +118,9 @@ int TestSuite::RunTest(const tc_struct (&tcs)[max_num_ctrl])
     g_tsStreamPool.Reg();
     m_use_memid = true;
 
+    int old_width = 1;
+    int old_height = 1;
+
     for (auto& tc : tcs) 
     {
         if(0 == tc.stream)
@@ -131,6 +134,12 @@ int TestSuite::RunTest(const tc_struct (&tcs)[max_num_ctrl])
 
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.CropH = 0;
         m_par.mfx.FrameInfo.AspectRatioH = m_par.mfx.FrameInfo.AspectRatioW = 0;
+
+        bool sameResolution = (old_width == m_par.mfx.FrameInfo.Width) &&
+            (old_height == m_par.mfx.FrameInfo.Height);
+        EXPECT_FALSE(sameResolution) << "Two consequential streams have the same resolution";
+        old_width = m_par.mfx.FrameInfo.Width;
+        old_height = m_par.mfx.FrameInfo.Height;
 
         if(m_initialized)
         {
