@@ -205,9 +205,7 @@ typedef struct tagENCODE_CAPS_HEVC
     union {
         struct {
             mfxU32    SliceLevelReportSupport : 1;
-            mfxU32    CTULevelReportSupport : 1;
-            mfxU32    SearchWindow64Support : 1;
-            mfxU32    reserved : 2;
+            mfxU32    MaxNumOfTileColumnsMinus1 : 4;
             mfxU32    IntraRefreshBlockUnitSize : 2;
             mfxU32    LCUSizeSupported : 3;
             mfxU32    MaxNumDeltaQP : 4;
@@ -216,16 +214,13 @@ typedef struct tagENCODE_CAPS_HEVC
             mfxU32    FrameSizeToleranceSupport : 1;
             mfxU32    HWCounterAutoIncrementSupport : 2;
             mfxU32    ROIDeltaQPSupport : 1;
-            mfxU32    MaxNumOfTileColumnsMinus1 : 5;
-            mfxU32 : 7; // For future expansion
+            mfxU32 : 12; // For future expansion
         };
         mfxU32    CodingLimits2;
     };
 
     mfxU8    MaxNum_WeightedPredL0;
     mfxU8    MaxNum_WeightedPredL1;
-    mfxU16   MaxNumOfDirtyRect;
-    mfxU16   MaxNumOfMoveRect;
 } ENCODE_CAPS_HEVC;
 
 typedef struct tagENCODE_CAPS_VP9
