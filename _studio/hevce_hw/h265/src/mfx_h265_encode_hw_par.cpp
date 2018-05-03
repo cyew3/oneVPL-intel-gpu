@@ -1993,13 +1993,27 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
     else
     {
-        mfxU16 nLcuCol = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
-        mfxU16 nLcuRow = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize);
+        mfxU32 minTileWidth = MIN_TILE_SIZE_WIDTH;
+        mfxU32 minTileHeight = MIN_TILE_SIZE_HEIGHT;
 
-        changed += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, nLcuCol);
-        changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, nLcuRow);
+        // min 2x2 lcu is supported on VDEnc
+        if (caps.NumScalablePipesMinus1 > 0 && IsOn(par.mfx.LowPower))
+            minTileHeight *= 2;
 
-        MaxTileColumns = (mfxU16)caps.NumScalablePipesMinus1 + 1;
+        mfxU16 nCol = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, minTileWidth);
+        mfxU16 nRow = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, minTileHeight);
+
+        changed += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, nCol);
+        changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, nRow);
+
+        if (caps.NumScalablePipesMinus1 > 0) {
+            MaxTileColumns = (mfxU16)caps.NumScalablePipesMinus1 + 1;
+        }
+        else if (par.m_platform.CodeName == MFX_PLATFORM_ICELAKE && IsOn(par.mfx.LowPower) && par.m_ext.HEVCTiles.NumTileColumns > 1 && par.m_ext.HEVCTiles.NumTileRows > 1) {
+            // for ICL VDEnc only 1xN or Nx1 configurations are allowed for single pipe
+            // we ignore "Rows" condition
+            changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, 1);
+        }
     }
 
     invalid += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, MaxTileColumns);

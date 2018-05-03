@@ -1095,5 +1095,8 @@
     <ClCompile Include="src\gmock\test_suites\hevce_lowdelay_brc.cpp">
       <Filter>Source Files\test_suites\hevce</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_tiles.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
