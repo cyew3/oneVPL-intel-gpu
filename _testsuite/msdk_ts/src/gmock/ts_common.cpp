@@ -316,6 +316,8 @@ void MFXVideoTest::SetUp()
                 g_tsHWtype = MFX_HW_ICL;
             else if (platform.find("lkf") != std::string::npos)
                 g_tsHWtype = MFX_HW_LKF;
+            else if (platform.find("jsl") != std::string::npos)
+                g_tsHWtype = MFX_HW_JSL;
             else if(platform.find("tgl") != std::string::npos)
                 g_tsHWtype = MFX_HW_TGL;
             else

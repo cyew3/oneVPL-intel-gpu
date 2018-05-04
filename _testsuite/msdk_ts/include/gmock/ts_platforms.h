@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -41,6 +41,7 @@ enum HWType
     MFX_HW_ICL       = 0xd00000,
 
     MFX_HW_LKF       = MFX_HW_ICL + 10,
+    MFX_HW_JSL       = MFX_HW_LKF + 1,
 
     MFX_HW_TGL       = 0xe00000,
 };
