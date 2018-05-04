@@ -11,94 +11,83 @@
 #include "ts_struct.h"
 #include "ts_surface_provider.h"
 
-#define TEST_NAME vp9d_chroma_subsampl_change
+#define TEST_NAME vp9d_chroma_change
 
 namespace TEST_NAME
 {
 
-
 class TestSuite : tsVideoDecoder
 {
 public:
+    static const unsigned int n_cases = 6;
+    static const mfxU32 fourCC_list[n_cases];
+
     TestSuite() : tsVideoDecoder(MFX_CODEC_VP9){}
     ~TestSuite() { }
-    static const size_t n_cases_8b;
-    static const size_t n_cases_10b;
 
-    template<mfxU16 bit_depth>
-    int RunTest_BitDepth(const size_t id);
-
+    template<mfxU32 target_fourCC>
+    int RunTest_Chroma(const unsigned int id);
 private:
-    static const mfxU32 max_num_ctrl     = 3;
-
-    struct tc_struct
-    {
-        const char* stream;
-        mfxU32 n_frames;
-        mfxStatus sts;
-    };
-    int RunTest(const tc_struct (&tcs)[max_num_ctrl]);
-
-    static const tc_struct test_case_8b[][max_num_ctrl];
-    static const tc_struct test_case_10b[][max_num_ctrl];
 };
 
-#define MAKE_TEST_TABLE(CHROMA, L, L_N, M, M_N, S, S_N)                                                                    \
-const TestSuite::tc_struct TestSuite::test_case_##CHROMA[][max_num_ctrl] =                                                 \
-{                                                                                                                          \
-    {/* 0*/ {M, 0  },  {S, 0  },                                 {}                                       },               \
-    {/* 1*/ {S, 0  },  {M, 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}, {}                                       },               \
-    {/* 2*/ {M, M_N},  {S, S_N},                                 {}                                       },               \
-    {/* 3*/ {M, 0  },  {S, 0  },                                 {L, 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM} },               \
-    {/* 4*/ {L, 0  },  {M, 0  },                                 {S, 0  }                                 },               \
-    {/* 5*/ {L, L_N},  {M, M_N},                                 {S, S_N}                                 },               \
-    {/* 6*/ {L, 0  },  {S, 0  },                                 {M, 0  }                                 },               \
-    {/* 7*/ {L, L_N},  {S, S_N},                                 {M, M_N}                                 },               \
-    {/* 8*/ {L, L_N},  {M, M_N},                                 {L, L_N}                                 },               \
-};                                                                                                                         \
-const size_t TestSuite::n_cases_##CHROMA = sizeof(TestSuite::test_case_##CHROMA)/sizeof(TestSuite::tc_struct[max_num_ctrl]);
+const mfxU32 TestSuite::fourCC_list[TestSuite::n_cases] = {
+    MFX_FOURCC_NV12,
+    MFX_FOURCC_AYUV,
+    MFX_FOURCC_P010,
+    MFX_FOURCC_Y410,
+    MFX_FOURCC_P016,
+    MFX_FOURCC_Y416
+};
 
-MAKE_TEST_TABLE(8b, "conformance/vp9/SBE/8bit/Syntax_VP9_432x240_001_intra_basic_1.3.vp9", 10,
-                    "conformance/vp9/SBE/8bit_444/Syntax_VP9_FC2p1ss444_432x240_001_intra_basic_1.4.vp9", 10,
-                    "conformance/vp9/SBE/8bit/Syntax_VP9_432x240_001_intra_basic_1.3.vp9", 10)
-
-MAKE_TEST_TABLE(10b, "conformance/vp9/SBE/10bit/Syntax_VP9_FC2p2b10_432x240_001_intra_basic_1.3.vp9", 10,
-                     "conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_001_intra_basic_1.4.vp9", 10,
-                     "conformance/vp9/SBE/10bit/Syntax_VP9_FC2p2b10_432x240_001_intra_basic_1.3.vp9", 10)
-
-#undef MAKE_TEST_TABLE
-
-template<mfxU16 bit_depth>
-int TestSuite::RunTest_BitDepth(const size_t id)
-{
-    switch (bit_depth)
-    {
-        case 8:  return RunTest(test_case_8b[id]);
-        case 10: return RunTest(test_case_10b[id]);
-        default: assert(!"Wrong/unsupported format requested!"); break;
+static std::string GetStreamByFourCC(mfxU32 fourCC) {
+    switch (fourCC) {
+    case MFX_FOURCC_NV12:
+        return "conformance/vp9/SBE/8bit/Syntax_VP9_432x240_001_intra_basic_1.3.vp9";
+    case MFX_FOURCC_AYUV:
+        return "conformance/vp9/SBE/8bit_444/Syntax_VP9_FC2p1ss444_432x240_001_intra_basic_1.4.vp9";
+    case MFX_FOURCC_P010:
+        return "conformance/vp9/SBE/10bit/Syntax_VP9_FC2p2b10_432x240_001_intra_basic_1.3.vp9";
+    case MFX_FOURCC_Y410:
+        return "conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_001_intra_basic_1.4.vp9";
+    case MFX_FOURCC_P016:
+        return "conformance/vp9/google/vp92-2-20-12bit-yuv420.ivf";
+    case MFX_FOURCC_Y416:
+        return "conformance/vp9/google/vp93-2-20-12bit-yuv444.ivf";
+    default :
+        return "";
     }
-    throw tsFAIL;
 }
 
-int TestSuite::RunTest(const tc_struct (&tcs)[max_num_ctrl])
+template<mfxU32 target_fourCC>
+int TestSuite::RunTest_Chroma(const unsigned int id)
 {
+    mfxU32 n_frames = 2;
+    mfxU32 test_fourCC = fourCC_list[id];
+    if (target_fourCC == test_fourCC)
+    {
+        return 0;
+    }
+    mfxU32 tested_fourCC[2] = { target_fourCC, test_fourCC };
+
     TS_START;
-    for (auto& tc : tcs)
-        g_tsStreamPool.Get( tc.stream ? tc.stream : std::string(), "");
+    for (auto& fourCC : tested_fourCC)
+    {
+        g_tsStreamPool.Get(GetStreamByFourCC(fourCC));
+    }
 
     g_tsStreamPool.Reg();
     m_use_memid = true;
 
     mfxU32 old_fourcc = 0;
 
-    for (auto& tc : tcs) 
+    for (auto& fourCC : tested_fourCC)
     {
-        if(0 == tc.stream)
-            break;
+        std::string stream = GetStreamByFourCC(fourCC);
+        g_tsLog << "target FourCC " << target_fourCC << " switch to " << fourCC <<"\n";
 
-        g_tsLog << "New stream: " << tc.stream << "\n";
+        g_tsLog << "New stream: " << stream << "\n";
 
-        tsBitstreamReaderIVF r(g_tsStreamPool.Get(tc.stream), 100000);
+        tsBitstreamReaderIVF r(g_tsStreamPool.Get(stream), 100000);
         m_bs_processor = &r;
         
         m_bitstream.DataLength = 0;
@@ -138,13 +127,13 @@ int TestSuite::RunTest(const tc_struct (&tcs)[max_num_ctrl])
             SetPar4_DecodeFrameAsync();
         }
 
-        if (tc.n_frames)
+        if (n_frames)
         {
-            std::unique_ptr<tsSurfaceProvider> ref_decoder = tsSurfaceProvider::CreateIvfVP9Decoder(g_tsStreamPool.Get(tc.stream));
+            std::unique_ptr<tsSurfaceProvider> ref_decoder = tsSurfaceProvider::CreateIvfVP9Decoder(g_tsStreamPool.Get(stream));
             tsSurfaceComparator v(std::move(ref_decoder));
             m_surf_processor = &v;
 
-            DecodeFrames(tc.n_frames);
+            DecodeFrames(n_frames);
         }
     }
 
@@ -152,8 +141,12 @@ int TestSuite::RunTest(const tc_struct (&tcs)[max_num_ctrl])
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_444_chroma_subsampl_change, RunTest_BitDepth<8>, n_cases_8b);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_444_chroma_subsampl_change, RunTest_BitDepth<10>, n_cases_10b);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_nv12_chroma_change,  RunTest_Chroma<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_ayuv_chroma_change,  RunTest_Chroma<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_p010_chroma_change, RunTest_Chroma<MFX_FOURCC_P010>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_y410_chroma_change, RunTest_Chroma<MFX_FOURCC_Y410>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_chroma_change, RunTest_Chroma<MFX_FOURCC_P016>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_chroma_change, RunTest_Chroma<MFX_FOURCC_Y416>, n_cases);
 
 #undef TEST_NAME
 
