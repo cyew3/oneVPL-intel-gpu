@@ -1089,5 +1089,8 @@
     <ClCompile Include="src\gmock\test_suites\hevce_scc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_ref_list1_checks.cpp">
+      <Filter>Source Files\test_suites\hevce</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
