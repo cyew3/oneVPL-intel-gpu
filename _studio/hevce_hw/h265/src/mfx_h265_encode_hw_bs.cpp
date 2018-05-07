@@ -2998,7 +2998,7 @@ void HeaderPacker::GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
             sizeInBytes = 0;
         }
 
-        if (!buf || prefixPL.empty())
+        if (!buf || (prefixPL.empty() && !(task.m_insertHeaders & INSERT_DCVSEI) && !(task.m_insertHeaders & INSERT_LLISEI)))
             goto exit;
 
         buf += sizeInBytes;
