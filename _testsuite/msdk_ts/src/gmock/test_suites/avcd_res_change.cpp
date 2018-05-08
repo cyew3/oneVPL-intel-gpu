@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -15,24 +15,6 @@ Copyright(c) 2015-2016 Intel Corporation. All Rights Reserved.
 
 namespace TEST_NAME
 {
-
-#define EXPECT_NE_THROW(expected, actual, message)  \
-do {                                                \
-    if(expected == actual)                          \
-    {                                               \
-        EXPECT_NE(expected, actual) << message;     \
-        throw tsFAIL;                               \
-    }                                               \
-} while (0,0)
-
-#define EXPECT_EQ_THROW(expected, actual, message)  \
-do {                                                \
-    if(expected != actual)                          \
-    {                                               \
-        EXPECT_EQ(expected, actual) << message;     \
-        throw tsFAIL;                               \
-    }                                               \
-} while (0,0)
 
 class TestSuite : tsVideoDecoder
 {

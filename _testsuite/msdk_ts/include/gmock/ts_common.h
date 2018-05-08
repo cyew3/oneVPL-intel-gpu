@@ -176,6 +176,24 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
     }                                                                                                           \
 }
 
+#define EXPECT_NE_THROW(expected, actual, message)  \
+do {                                                \
+    if(expected == actual)                          \
+    {                                               \
+        EXPECT_NE(expected, actual) << message;     \
+        throw tsFAIL;                               \
+    }                                               \
+} while (0,0)
+
+#define EXPECT_EQ_THROW(expected, actual, message)  \
+do {                                                \
+    if(expected != actual)                          \
+    {                                               \
+        EXPECT_EQ(expected, actual) << message;     \
+        throw tsFAIL;                               \
+    }                                               \
+} while (0,0)
+
 std::string ENV(const char* name, const char* def);
 
 void set_brc_params(tsExtBufType<mfxVideoParam>* p);
