@@ -257,6 +257,7 @@
     <ClCompile Include="src\gmock\test_suites\avce_nalu_size.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_sps_frame_crop_offset.cpp" />
     <ClCompile Include="src\gmock\test_suites\encoders_extbrc.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_caps.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_default_lowpower.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_default_ref_lists.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_lcu.cpp" />
