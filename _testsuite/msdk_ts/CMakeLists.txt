@@ -12,6 +12,7 @@ include_directories (
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/gmock/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/include
   ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/gmock/test_suites
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${MSDK_TSUITE_ROOT}/mfx_serializer/include
 )

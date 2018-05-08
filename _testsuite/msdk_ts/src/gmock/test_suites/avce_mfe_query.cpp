@@ -29,51 +29,10 @@ Algorithm:
 */
 
 #include "ts_encoder.h"
+#include "avce_mfe.h"
 
-namespace
+namespace avce_mfe
 {
-
-typedef struct
-{
-    mfxSession      session;
-    mfxVideoParam*  pPar;
-}InitPar;
-
-enum QueryMode
-{
-    NullIn = 0,
-    InOut  = 1,
-};
-
-enum COpt {
-    COptNone           = 0,
-    COptMAD            = 1 << 0,
-    COptIntRefType     = 1 << 1,
-    COptMBQP           = 1 << 2,
-    COptDisableSkipMap = 1 << 3,
-
-    COpt2All = COptMAD | COptIntRefType,
-    COpt3All = COptMBQP | COptDisableSkipMap,
-};
-
-typedef struct
-{
-    mfxU32    func;
-    mfxStatus sts;
-
-    mfxU16    width;
-    mfxU16    height;
-    mfxU16    cropW;
-    mfxU16    cropH;
-
-    mfxU16    numSlice;
-    mfxU16    cOpt;
-
-    mfxU16    inMFMode;
-    mfxU16    inMaxNumFrames;
-    mfxU16    expMFMode;
-    mfxU16    expMaxNumFrames;
-} tc_struct;
 
 tc_struct test_case[] =
 {
@@ -542,6 +501,8 @@ tc_struct test_case[] =
                 MFX_MF_AUTO, /*expMaxNumFrames*/3},
 };
 
+size_t test_case_num = sizeof(test_case) / sizeof(tc_struct);
+
 void set_params(tsVideoEncoder& enc, tc_struct& tc,
         tsExtBufType<mfxVideoParam>& pout)
 {
@@ -615,7 +576,6 @@ int test(unsigned int id)
 
     enc.MFXInit();
 
-    InitPar par = {enc.m_session, &enc.m_par};
     mfxStatus sts = MFX_ERR_NONE;
 
     tsExtBufType<mfxVideoParam> pout;
@@ -645,6 +605,6 @@ int test(unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE(avce_mfe_query, test, sizeof(test_case)/sizeof(tc_struct));
+TS_REG_TEST_SUITE(avce_mfe_query, test, test_case_num);
 
 };
