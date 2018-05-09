@@ -16,6 +16,7 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../enc_hw/mpeg2/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../pak/mpeg2/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/include )
 foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
 endforeach( )
@@ -38,6 +39,18 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     ${prefix}/mfx_mpeg2_encode_vaapi.cpp
     )
 endforeach()
+
+list( APPEND sources.plus
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/export.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw_brc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw_bs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw_ddi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw_ddi_trace.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw_par.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_hw_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_vaapi.cpp
+    )
 
 set( LIBS "" )
   list( APPEND LIBS

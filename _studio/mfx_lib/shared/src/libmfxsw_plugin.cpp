@@ -164,7 +164,8 @@ const mfxPluginUID NativePlugins[] =
 {
     MFX_PLUGINID_HEVCD_HW,
     MFX_PLUGINID_VP8D_HW,
-    MFX_PLUGINID_VP9D_HW
+    MFX_PLUGINID_VP9D_HW,
+    MFX_PLUGINID_HEVCE_HW
 };
 
 mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,

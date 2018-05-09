@@ -5,12 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
-#include "mfx_h265_encode_hw.h"
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(AS_HEVCE_PLUGIN)
+#include "mfx_h265_encode_plugin_hw.h"
 #include "plugin_version_linux.h"
 
 #if defined(_WIN32)

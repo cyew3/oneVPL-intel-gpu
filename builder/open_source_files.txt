@@ -29,6 +29,7 @@ _studio/hevce_hw/h265/include/mfx_h265_encode_hw_ddi.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw_ddi_trace.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw_set.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_hw_utils.h
+_studio/hevce_hw/h265/include/mfx_h265_encode_plugin_hw.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_vaapi.h
 _studio/hevce_hw/h265/include/plugin_version_linux.h
 _studio/hevce_hw/h265/src/export.cpp

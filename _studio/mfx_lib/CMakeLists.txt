@@ -30,6 +30,8 @@ foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../shared/asc/include )
 endforeach( )
 
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/include )
+
 # =============================================================================
 
 set( sources "" )

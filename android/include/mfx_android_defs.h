@@ -67,6 +67,8 @@ Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
         #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
         #define LOWPOWERENCODE_AVC
 
+        #define MFX_ENABLE_H265_VIDEO_ENCODE
+
         #define MFX_ENABLE_MJPEG_VIDEO_DECODE
         #define MFX_ENABLE_MJPEG_VIDEO_DECODE_HW
 

@@ -11,7 +11,7 @@
 #include "mfx_hevc_dec_plugin.h"
 #include "mfx_vp8_dec_plugin.h"
 #include "mfx_vp9_dec_plugin.h"
-#include "mfx_h265_encode_hw.h"
+#include "mfx_h265_encode_plugin_hw.h"
 #if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 #include "mfx_vp9_encode_hw.h"
 #endif // PRE_SI_TARGET_PLATFORM_GEN10

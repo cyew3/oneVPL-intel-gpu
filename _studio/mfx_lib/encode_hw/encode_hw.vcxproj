@@ -299,6 +299,16 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_brc.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_bs.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d11.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d9.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d_common.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_ddi.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_ddi_trace.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_par.cpp" />
+    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_utils.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_cm.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_hw.cpp" />
     <ClCompile Include="h264\src\mfx_h264_encode_hw_utils.cpp" />
@@ -319,6 +329,16 @@
     <ClCompile Include="svc\src\mfx_svc_encode_simulcast_over_avc.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_brc.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_bs.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_d3d11.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_d3d9.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_d3d_common.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_ddi.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_ddi_trace.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_set.h" />
+    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_utils.h" />
     <ClInclude Include="h264\include\mfx_h264_encode_cm.h" />
     <ClInclude Include="h264\include\mfx_h264_encode_cm_defs.h" />
     <ClInclude Include="h264\include\mfx_h264_encode_hw.h" />

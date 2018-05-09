@@ -1,0 +1,162 @@
+//
+// INTEL CORPORATION PROPRIETARY INFORMATION
+//
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2018 Intel Corporation. All Rights Reserved.
+//
+
+#pragma once
+
+#include "mfx_common.h"
+#if defined(AS_HEVCE_PLUGIN)
+
+#include "mfxplugin++.h"
+
+namespace MfxHwH265Encode
+{
+
+static const mfxPluginUID  MFX_PLUGINID_HEVCE_HW = { { 0x6f, 0xad, 0xc7, 0x91, 0xa0, 0xc2, 0xeb, 0x47, 0x9a, 0xb6, 0xdc, 0xd5, 0xea, 0x9d, 0xa3, 0x47 } };
+
+class Plugin : public MFXEncoderPlugin
+{
+public:
+    static MFXEncoderPlugin* Create()
+    {
+        return new Plugin(false);
+    }
+    static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
+    {
+        if (!mfxPlg)
+        {
+            return MFX_ERR_NULL_PTR;
+        }
+        if (memcmp(&guid, &MFX_PLUGINID_HEVCE_HW, sizeof(mfxPluginUID)))
+        {
+            return MFX_ERR_NOT_FOUND;
+        }
+
+        Plugin* tmp_pplg = nullptr;
+
+        try
+        {
+            tmp_pplg = new Plugin(false);
+        }
+        catch (std::bad_alloc&)
+        {
+            return MFX_ERR_MEMORY_ALLOC;
+        }
+        catch (...)
+        {
+            return MFX_ERR_UNKNOWN;
+        }
+
+        *mfxPlg = tmp_pplg->m_adapter;
+        tmp_pplg->m_createdByDispatcher = true;
+
+        return MFX_ERR_NONE;
+    }
+    virtual mfxStatus PluginInit(mfxCoreInterface * /*core*/)
+    {
+        MFX_TRACE_INIT();
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::PluginInit");
+        return MFX_ERR_NONE;
+    }
+    virtual mfxStatus PluginClose()
+    {
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "Plugin::PluginClose");
+            if (m_createdByDispatcher)
+                Release();
+        }
+
+        MFX_TRACE_CLOSE();
+
+        return MFX_ERR_NONE;
+    }
+    virtual mfxStatus GetPluginParam(mfxPluginParam *par)
+    {
+        MFX_CHECK_NULL_PTR1(par);
+
+        par->PluginUID = MFX_PLUGINID_HEVCE_HW;
+        par->PluginVersion = 1;
+        par->ThreadPolicy = MFX_THREADPOLICY_SERIAL;
+        par->MaxThreadNum = 1;
+        par->APIVersion.Major = MFX_VERSION_MAJOR;
+        par->APIVersion.Minor = MFX_VERSION_MINOR;
+        par->Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
+        par->CodecId = MFX_CODEC_HEVC;
+
+        return MFX_ERR_NONE;
+    }
+    virtual mfxStatus Execute(mfxThreadTask /*task*/, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    virtual mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    virtual mfxStatus Init(mfxVideoParam * /*par*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    virtual mfxStatus QueryIOSurf(mfxVideoParam * /*par*/, mfxFrameAllocRequest * /*in*/, mfxFrameAllocRequest * /*out*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    virtual mfxStatus Query(mfxVideoParam * /*in*/, mfxVideoParam * /*out*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    virtual mfxStatus Reset(mfxVideoParam * /*par*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+    virtual mfxStatus GetVideoParam(mfxVideoParam * /*par*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl * /*ctrl*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/, mfxThreadTask * /*task*/)
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    virtual mfxU32 GetPluginType()
+    {
+        return MFX_PLUGINTYPE_VIDEO_ENCODE;
+    }
+
+    virtual void Release()
+    {
+        delete this;
+    }
+
+    virtual mfxStatus Close()
+    {
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
+    virtual mfxStatus SetAuxParams(void*, int)
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+protected:
+    explicit Plugin(bool CreateByDispatcher)
+        : m_createdByDispatcher(CreateByDispatcher)
+        , m_adapter(this)
+    {}
+
+    virtual ~Plugin()
+    {}
+
+    bool m_createdByDispatcher;
+    MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
+};
+} //MfxHwH265Encode
+
+#endif//defined(AS_HEVCE_PLUGIN)
