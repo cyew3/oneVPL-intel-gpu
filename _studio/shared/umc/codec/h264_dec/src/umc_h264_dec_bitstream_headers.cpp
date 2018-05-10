@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -2035,9 +2035,9 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
                 // Get reorder idc,pic_num pairs until idc==3
                 for (;;)
                 {
-                  reordering_of_pic_nums_idc = (Ipp8u)GetVLCElement(false);
-                  if (reordering_of_pic_nums_idc > 5)
-                    return UMC_ERR_INVALID_STREAM;
+                    reordering_of_pic_nums_idc = (Ipp8u)GetVLCElement(false);
+                    if (reordering_of_pic_nums_idc > 5)
+                        return UMC_ERR_INVALID_STREAM;
 
                     if (reordering_of_pic_nums_idc == 3)
                         break;
@@ -2051,7 +2051,7 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
                                                 (Ipp8u)reordering_of_pic_nums_idc;
                     pReorderInfo_L0->reorder_value[reorder_idx]  =
                                                         GetVLCElement(false);
-                  if (reordering_of_pic_nums_idc != 2)
+                    if (reordering_of_pic_nums_idc != 2)
                         // abs_diff_pic_num is coded minus 1
                         pReorderInfo_L0->reorder_value[reorder_idx]++;
                     reorder_idx++;

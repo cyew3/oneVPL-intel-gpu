@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -180,7 +180,7 @@ static int HuffmanInitAlloc(Ipp32s rl, const Ipp32s* pSrcTable, Ipp32s** ppDstSp
                         if (rl == 0) table[code + j + 1] = (value1 << 8) | (commLen - i);
                         else      table[code + j + 1] = ((Ipp16s)value2 << 16) | ((Ipp8u)value1 << 8) | (commLen - i);
 
-                        break;
+                    break;
                 }
                 else
                 {

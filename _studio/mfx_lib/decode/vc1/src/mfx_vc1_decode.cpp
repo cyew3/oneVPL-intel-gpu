@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -143,7 +143,7 @@ MFXVideoDECODEVC1::~MFXVideoDECODEVC1(void)
 }
 mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 {
-    // already init 
+    // already init
     if (m_bIsDecInit)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -180,7 +180,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
     m_bIsBuffering = (disp_queue_size > 0)?IsBufferMode(m_pCore, par):false;
     m_par = *par;
     m_Initpar = *par;
-    
+
     m_par.mfx.NumThread = 0;
 
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_par);
@@ -217,7 +217,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 
     // frames allocation
 
-    // SW platform and system external 
+    // SW platform and system external
     if (m_isSWPlatform && (IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY))
     {
         // no need to alloc surfaces - direct working with external
@@ -243,9 +243,9 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 
         if (MapOpaq && !Polar)
         {
-            MFXSts = m_pCore->AllocFrames(&request, 
-                                          &m_response, 
-                                          pOpqAlloc->Out.Surfaces, 
+            MFXSts = m_pCore->AllocFrames(&request,
+                                          &m_response,
+                                          pOpqAlloc->Out.Surfaces,
                                           pOpqAlloc->Out.NumSurface);
         }
         else
@@ -274,7 +274,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 #endif
 
         // External allocator already was set
-        MFXSts = MFX_ERR_NONE; // there are no errors 
+        MFXSts = MFX_ERR_NONE; // there are no errors
 
         if ((IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY && !m_isSWPlatform)||
             (IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY && m_isSWPlatform)||
@@ -282,7 +282,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
         {
             umcSts = m_pFrameAlloc->InitMfx(0, m_pCore, &m_par, &request, &m_response, false, m_isSWPlatform);
         }
-        else 
+        else
         {
             m_pFrameAlloc->SetExternalFramesResponse(&m_response);
             umcSts = m_pFrameAlloc->InitMfx(0, m_pCore, &m_par, &request, &m_response, true, m_isSWPlatform);
@@ -304,7 +304,7 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
 
     ConvertMfxToCodecParams(&m_par);
     m_VideoParams->lpMemoryAllocator = &m_MemoryAllocator;
-    if (par->mfx.FrameInfo.Width*par->mfx.FrameInfo.Height)
+    if (par->mfx.FrameInfo.Width && par->mfx.FrameInfo.Height)
     {
         m_BufSize = par->mfx.FrameInfo.Width*par->mfx.FrameInfo.Height*2;
         // Set surface number for decoding. HW requires
@@ -405,7 +405,7 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
     m_pStCodes->offsets    = (Ipp32u*)((Ipp8u*)m_pStCodes + sizeof(UMC::MediaDataEx::_MediaDataEx));
     m_pStCodes->values     = (Ipp32u*)((Ipp8u*)m_pStCodes->offsets + START_CODE_NUMBER*sizeof( Ipp32u));
     // UMC decoder reset
-    
+
     m_par = *par;
     bool isNeedChangeVideoParamWarning = IsNeedChangeVideoParam(&m_par);
 
@@ -414,7 +414,7 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
     else
         m_par.mfx.NumThread = m_pCore->GetAutoAsyncDepth();
 
-    
+
     ConvertMfxToCodecParams(par);
     m_VideoParams->lpMemoryAllocator = &m_MemoryAllocator;
 
@@ -476,11 +476,11 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
     mfxStatus       MFXSts = MFX_ERR_NONE;
 
     m_ext_dur = 0;
-    
+
     if (m_pVC1VideoDecoder.get())
     {
         m_pVC1VideoDecoder->Close();
-        // Free decoder 
+        // Free decoder
         m_pVC1VideoDecoder.reset(0);
     }
     if (m_frame_constructor)
@@ -510,13 +510,13 @@ mfxStatus MFXVideoDECODEVC1::Close(void)
     {
         if (m_response.mids)
             m_pCore->FreeFrames(&m_response);
-        
+
         if (m_response_op.mids)
             m_pCore->FreeFrames(&m_response_op);
     }
     memset(&m_response, 0, sizeof(m_response));
     memset(&m_response_op, 0, sizeof(m_response_op));
-    
+
     m_qMemID.clear();
     m_qSyncMemID.clear();
     m_qTS.clear();
@@ -591,14 +591,14 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
         return MFX_ERR_NULL_PTR;
 
     mfxStatus       MFXSts = MFX_ERR_NONE;
- 
+
     memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_par.mfx, sizeof(mfxInfoMFX));
 
     par->Protected = m_par.Protected;
     par->IOPattern = m_par.IOPattern;
     par->AsyncDepth = m_par.AsyncDepth;
 
-    
+
     mfxExtVideoSignalInfo * videoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     if (videoSignal)
     {
@@ -609,7 +609,7 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
     {
         if (pSPS->SPSBufSize < m_RawSeq.size())
             return MFX_ERR_NOT_ENOUGH_BUFFER;
-        
+
         memcpy_s(pSPS->SPSBuffer, m_RawSeq.size(), &m_RawSeq[0], m_RawSeq.size());
         pSPS->SPSBufSize = (mfxU16)m_RawSeq.size();
 
@@ -666,7 +666,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         {
             return MFX_ERR_MORE_DATA;
         }
-    }    
+    }
 
 
     if ((!surface_work)||(!surface_disp))
@@ -692,7 +692,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     }
 #endif
     }
-    
+
     // not enough descriptors in queue for the next frame
     if (!m_pVC1VideoDecoder->m_pStore->IsReadyDS() && m_bIsNeedToProcFrame)
         return MFX_WRN_DEVICE_BUSY;
@@ -707,7 +707,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     }
     else
     {
-        if (surface_work->Data.Y || 
+        if (surface_work->Data.Y ||
             surface_work->Data.U ||
             surface_work->Data.V ||
             surface_work->Data.MemId)
@@ -719,7 +719,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     //out last frame
     if (!bs)
     {
-       
+
         // remain bytes processing if advanced profile
         if (m_SaveBytesSize)
         {
@@ -729,7 +729,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
         }
         else if (!m_bIsNeedToProcFrame)
         {
-            // Range map processing 
+            // Range map processing
             return  SelfDecodeFrame(surface_work, surface_disp, bs);
         }
         else
@@ -744,10 +744,10 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
     // construct frame functionality
     if (m_bIsNeedToProcFrame)
     {
-        while((bs->DataLength > 4  ||  
-              (bs == &m_sbs && bs->DataLength) || 
+        while((bs->DataLength > 4  ||
+              (bs == &m_sbs && bs->DataLength) ||
               (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME && bs->DataLength)||
-              (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME && m_FrameConstrData.GetDataSize() && (bs->DataLength==0)))  && 
+              (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME && m_FrameConstrData.GetDataSize() && (bs->DataLength==0)))  &&
                MFXSts == MFX_ERR_MORE_DATA )
         {
             if (m_bIsNeedToProcFrame)
@@ -778,7 +778,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
                 return ReturnLastFrame(surface_work, surface_disp);
         }
     }
-    else    // Range map processing 
+    else    // Range map processing
         MFXSts = SelfDecodeFrame(surface_work, surface_disp, bs);
 
     return MFXSts;
@@ -789,7 +789,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
     mfxStatus MFXSts = MFX_ERR_NONE;
     Status IntUMCStatus = UMC_OK;
 
-    if (!(m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height))
+    if (0 == (m_par.mfx.FrameInfo.Width*m_par.mfx.FrameInfo.Height))
     {
         MFXSts = MFXVC1DecCommon::ParseSeqHeader(bs, &m_par, 0, 0);
         MFX_CHECK_STS(MFXSts);
@@ -816,7 +816,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
             m_FrameSize += temp_size;
             m_FrameSize +=4;
             m_bIsInit = true;
-            
+
             m_RawSeq.resize(m_FrameSize);
             memcpy_s(&m_RawSeq[0], m_FrameSize, bs->Data, m_FrameSize);
         }
@@ -898,7 +898,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
             // SH should be whole in bs
             {
                 mfxU32 start_code = *((mfxU32*)(m_FrameConstrData.GetBufferPointer()));
-                if ((0x0F010000 == start_code)&&(m_FrameConstrData.GetDataSize() > 3) && (bs->DataFlag != MFX_BITSTREAM_COMPLETE_FRAME)) 
+                if ((0x0F010000 == start_code)&&(m_FrameConstrData.GetDataSize() > 3) && (bs->DataFlag != MFX_BITSTREAM_COMPLETE_FRAME))
                 {
                      return (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA)?MFX_ERR_MORE_DATA:MFX_ERR_NOT_ENOUGH_BUFFER;
                 }
@@ -915,7 +915,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                         memcpy_s((Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(), bs->DataLength, bs->Data + bs->DataOffset, bs->DataLength);
                         m_sbs.TimeStamp = bs->TimeStamp;
                     }
-                    m_SaveBytesSize = 0;    
+                    m_SaveBytesSize = 0;
                     m_FrameConstrData.SetDataSize(m_FrameConstrData.GetDataSize() + bs->DataLength);
                     bs->DataOffset = bs->DataOffset+bs->DataLength;
                     ReadDataSize = bs->DataOffset;
@@ -933,7 +933,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                     else // internal error
                         return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
-                
+
                 return MFX_ERR_MORE_DATA;
             }
             return MFX_ERR_NOT_ENOUGH_BUFFER;
@@ -945,7 +945,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
 {
     mfxStatus  MFXSts;
     Status     IntUMCStatus;
-    
+
     m_bTakeBufferedFrame = true;
 
     MFXSts = ConvertMfxPlaneToMediaData(surface_work);
@@ -970,7 +970,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
     else  // mean that we need one more surface for range map
     {
         m_bIsNeedToProcFrame  = true;
-        // only set one more surface 
+        // only set one more surface
         MFX_CHECK_UMC_STS(m_pVC1VideoDecoder->SetRMSurface());
         PrepareMediaIn();
 
@@ -1003,7 +1003,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
             else
                 return MFX_ERR_MORE_DATA;
         }
-        
+
 
         return IsDisplayFrameReady(surface_disp);
     }
@@ -1013,7 +1013,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         (m_InternMediaDataOut.GetFrameType() == NONE_PICTURE)) // SH, EH processing
     {
         PrepareMediaIn();
-        
+
         // moving pointers if SH
         // otherwise m_SHSize is 0
         bs->DataLength -= m_SHSize;
@@ -1026,7 +1026,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
              (IntUMCStatus == UMC::UMC_ERR_NOT_ENOUGH_DATA))
     {
         // Updated parameters with weq header data
-        if (! (m_par.mfx.FrameInfo.FrameRateExtD * m_par.mfx.FrameInfo.FrameRateExtN))
+        if (0 == (m_par.mfx.FrameInfo.FrameRateExtD * m_par.mfx.FrameInfo.FrameRateExtN))
         {
             // new frame rate parameters
             mfxU32 frCode;
@@ -1051,14 +1051,14 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         }
         if (!m_par.mfx.FrameInfo.AspectRatioH)
         {
-            // new aspect ratio parameters 
+            // new aspect ratio parameters
             if (m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioH)
                 m_par.mfx.FrameInfo.AspectRatioH = (mfxU16)m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioH;
         }
-        
+
         if (!m_par.mfx.FrameInfo.AspectRatioW)
         {
-            // new aspect ratio parameters 
+            // new aspect ratio parameters
             if (m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioW)
                 m_par.mfx.FrameInfo.AspectRatioW = (mfxU16)m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioW;
         }
@@ -1081,10 +1081,10 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
             }
             m_qBSTS.pop_front();
             m_qTS.push_back(td);
- 
+
 #ifndef VC1_SKIPPED_DISABLE
             // if we faced with skipped frame - let coping it
-            if (!m_isSWPlatform && 
+            if (!m_isSWPlatform &&
                 m_InternMediaDataOut.GetFrameType() == D_PICTURE &&
                 m_bIsSamePolar)
             {
@@ -1113,7 +1113,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
 
         UMC::FrameMemID memID = GetDispMemID();
 
-        // if decode order return surface immediately 
+        // if decode order return surface immediately
         if (m_bIsDecodeOrder)
             IntUMCStatus = UMC::UMC_OK;
 
@@ -1138,12 +1138,12 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
         {
             *surface_disp = 0;
         }
-        
-        if (IntUMCStatus == UMC::UMC_OK && *surface_disp) 
+
+        if (IntUMCStatus == UMC::UMC_OK && *surface_disp)
         {
             return IsDisplayFrameReady(surface_disp);
         }
-        else 
+        else
         {
             if (bs && bs->DataLength > 4)
                 return MFX_ERR_MORE_SURFACE;
@@ -1174,7 +1174,7 @@ mfxStatus MFXVideoDECODEVC1::SelfDecodeFrame(mfxFrameSurface1 *surface_work, mfx
                                 (mfxU16)frCode);
 
         }
-        // new aspect ratio parameters 
+        // new aspect ratio parameters
         if (m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioH)
             m_par.mfx.FrameInfo.AspectRatioH = (mfxU16)m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioH;
         if (m_pVC1VideoDecoder->m_pContext->m_seqLayerHeader.AspectRatioW)
@@ -1244,7 +1244,7 @@ mfxStatus MFXVideoDECODEVC1::ReturnLastFrame(mfxFrameSurface1 *surface_work, mfx
 
         return MFX_ERR_NONE;
     }
-    else 
+    else
     {
         *surface_disp = 0;
         memID = m_qMemID.back();
@@ -1331,7 +1331,7 @@ mfxStatus MFXVideoDECODEVC1::PostProcessFrameHW(mfxFrameSurface1 *surface_work, 
         if (m_BufOffset > 0)
             m_BufOffset--;
     }
-      
+
     return MFX_ERR_NONE;
 }
 
@@ -1393,7 +1393,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeHeader(VideoCORE *, mfxBitstream *bs, mfxVide
 
     mfxStatus MFXSts  = CheckBitstream(bs);
     MFX_CHECK_STS(MFXSts);
-    
+
     mfxExtVideoSignalInfo *pVideoSignal = (mfxExtVideoSignalInfo *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_VIDEO_SIGNAL_INFO);
     mfxExtCodingOptionSPSPPS *pSPS = (mfxExtCodingOptionSPSPPS *)GetExtendedBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_CODING_OPTION_SPSPPS);
 
@@ -1402,9 +1402,9 @@ mfxStatus MFXVideoDECODEVC1::DecodeHeader(VideoCORE *, mfxBitstream *bs, mfxVide
     if(MFXSts == MFX_ERR_NOT_INITIALIZED) return MFX_ERR_MORE_DATA;
     if((MFXSts == MFX_ERR_MORE_DATA) && (bs->DataFlag & MFX_BITSTREAM_COMPLETE_FRAME || bs->DataFlag & MFX_BITSTREAM_EOS))
         MFXSts = MFX_ERR_NONE;
-    
+
     MFX_CHECK_STS(MFXSts);
-    
+
     memcpy_s(&(par->mfx.FrameInfo), sizeof(temp.mfx.FrameInfo), &temp.mfx.FrameInfo, sizeof(temp.mfx.FrameInfo));
 
     par->mfx.CodecProfile = temp.mfx.CodecProfile;
@@ -1431,7 +1431,7 @@ mfxStatus MFXVideoDECODEVC1::SetSkipMode(mfxSkipMode mode)
         break;
     default:
         {
-#if !defined OPEN_SOURCE    
+#if !defined OPEN_SOURCE
            // disable deblocking
             speed_shift = (Ipp32s)mode;
             if (0x22 == speed_shift)
@@ -1463,7 +1463,7 @@ mfxStatus MFXVideoDECODEVC1::GetPayload( mfxU64 *ts, mfxPayload *payload )
     if (!ts || !payload)
         return MFX_ERR_NULL_PTR;
 
-    return MFX_ERR_NONE; 
+    return MFX_ERR_NONE;
 }
 
 mfxStatus MFXVideoDECODEVC1::ConvertMfxToCodecParams(mfxVideoParam *par)
@@ -1477,7 +1477,7 @@ mfxStatus MFXVideoDECODEVC1::ConvertMfxToCodecParams(mfxVideoParam *par)
         m_pCore->GetVA((mfxHDL*)&init->pVideoAccelerator, MFX_MEMTYPE_FROM_DECODE);
         init->info.clip_info.height = par->mfx.FrameInfo.Height;
         init->info.clip_info.width = par->mfx.FrameInfo.Width;
-        
+
         init->numThreads = (0 != par->mfx.NumThread)?par->mfx.NumThread:m_pCore->GetNumWorkingThreads();
         init->numThreads += disp_queue_size;
 
@@ -1559,7 +1559,7 @@ mfxStatus MFXVideoDECODEVC1::ConvertMfxPlaneToMediaData(mfxFrameSurface1 *surfac
 
 mfxStatus MFXVideoDECODEVC1::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    mfxStatus sts = SetAllocRequestExternal(core, par, request); 
+    mfxStatus sts = SetAllocRequestExternal(core, par, request);
     MFX_CHECK_STS(sts);
 
     if (!(par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
@@ -1578,8 +1578,8 @@ mfxStatus MFXVideoDECODEVC1::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mf
     {
         sts = MFX_WRN_PARTIAL_ACCELERATION;
     }
-    
-    return sts; 
+
+    return sts;
 }
 mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
@@ -1592,7 +1592,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoPa
     request->Info.FourCC = MFX_FOURCC_NV12;
 
     bool isSWplatform = true;
-    
+
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType() && IsHWSupported(core, par))
         isSWplatform = false;
 
@@ -1605,7 +1605,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoPa
         request->Type = MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
         return MFX_ERR_NONE;
     }
-    
+
     if (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY && !isSWplatform) // external Sys memory, hw platform
     {
         CalculateFramesNumber(request, par, IsBufferMode(core, par));
@@ -1642,13 +1642,13 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestExternal(VideoCORE *core, mfxVideoPa
     if (MFX_PLATFORM_HARDWARE == core->GetPlatformType() && IsHWSupported(core, par))
         isSWplatform = false;
 
-    
+
     if (par->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
     {
         if (isSWplatform)
             CalculateFramesNumber(request, par, IsBufferMode(core, par));
         else
-            request->NumFrameSuggested = request->NumFrameMin = (par->AsyncDepth > 0)?2*par->AsyncDepth:2*MFX_AUTO_ASYNC_DEPTH_VALUE; 
+            request->NumFrameSuggested = request->NumFrameMin = (par->AsyncDepth > 0)?2*par->AsyncDepth:2*MFX_AUTO_ASYNC_DEPTH_VALUE;
 
         request->Type = MFX_MEMTYPE_EXTERNAL_FRAME | MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_FROM_DECODE;
     }
@@ -1670,7 +1670,7 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestExternal(VideoCORE *core, mfxVideoPa
             request->Type = MFX_MEMTYPE_OPAQUE_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_DECODE;
 
     }
-    
+
     return MFX_ERR_NONE;
 }
 
@@ -1711,7 +1711,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     mfxStatus sts = CheckFrameInfo(&in->mfx.FrameInfo);
     MFX_CHECK_STS(sts);
 
-    if ((in->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) != 
+    if ((in->IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) !=
         (m_Initpar.IOPattern & (MFX_IOPATTERN_OUT_OPAQUE_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_VIDEO_MEMORY)) )
     {
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -1719,7 +1719,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
 
     if (in->mfx.CodecProfile != m_Initpar.mfx.CodecProfile)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
-    
+
     if (in->AsyncDepth != m_Initpar.AsyncDepth)
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
@@ -1731,7 +1731,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     if (m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc * opaqueNew = (mfxExtOpaqueSurfaceAlloc *)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
-        
+
         if (opaqueNew)
         {
             if (opaqueNew->In.Type != m_AlloExtBuffer.In.Type)
@@ -1765,7 +1765,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
     return MFX_ERR_NONE;
 
 }
-mfxStatus MFXVideoDECODEVC1::GetDecodeStat(mfxDecodeStat *stat) 
+mfxStatus MFXVideoDECODEVC1::GetDecodeStat(mfxDecodeStat *stat)
 {
     if (!m_bIsDecInit)
         return MFX_ERR_NOT_INITIALIZED;
@@ -1777,7 +1777,7 @@ mfxStatus MFXVideoDECODEVC1::GetDecodeStat(mfxDecodeStat *stat)
     stat->NumSkippedFrame = 0;
     mfxU32 NumShiftFrames = (1 == m_pVC1VideoDecoder->m_iThreadDecoderNum) ? 1 : m_pVC1VideoDecoder->m_iThreadDecoderNum - 1;
     stat->NumFrame = (mfxU32)((m_pVC1VideoDecoder->m_lFrameCount > m_pVC1VideoDecoder->m_iMaxFramesInProcessing) ? (m_pVC1VideoDecoder->m_lFrameCount - NumShiftFrames) : m_pVC1VideoDecoder->m_lFrameCount);
-    return MFX_ERR_NONE; 
+    return MFX_ERR_NONE;
 }
 FrameMemID MFXVideoDECODEVC1::GetDispMemID()
 {
@@ -1796,7 +1796,7 @@ bool MFXVideoDECODEVC1::IsHWSupported(VideoCORE *pCore, mfxVideoParam *par)
     return true;
 }
 
-mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par, 
+mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
                                                 mfxFrameAllocRequest *request,
                                                 mfxExtOpaqueSurfaceAlloc **pOpaqAlloc,
                                                 bool &Mapping,
@@ -1815,7 +1815,7 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
         m_AlloExtBuffer = **pOpaqAlloc;
         if (request->NumFrameMin > (*pOpaqAlloc)->Out.NumSurface)
             return MFX_ERR_INVALID_VIDEO_PARAM;
-      
+
         {
             Mapping = true;
 
@@ -1842,17 +1842,17 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
                     mfxFrameAllocRequest trequest = *request;
                     trequest.Type =  (mfxU16)(*pOpaqAlloc)->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
-                    sts = m_pCore->AllocFrames(&trequest, 
+                    sts = m_pCore->AllocFrames(&trequest,
                                                &m_response_op,
-                                               (*pOpaqAlloc)->Out.Surfaces, 
+                                               (*pOpaqAlloc)->Out.Surfaces,
                                                (*pOpaqAlloc)->Out.NumSurface);
 
-                    if (MFX_ERR_NONE != sts && 
+                    if (MFX_ERR_NONE != sts &&
                         MFX_ERR_UNSUPPORTED != sts) // unsupported means that current Core couldn;t allocate the surfaces
                         return sts;
                 }
             }
-            else 
+            else
             {
                 if (!m_isSWPlatform) // HW platform
                 {
@@ -1868,12 +1868,12 @@ mfxStatus MFXVideoDECODEVC1::UpdateAllocRequest(mfxVideoParam *par,
                     mfxFrameAllocRequest trequest = *request;
                     trequest.Type =  (mfxU16)(*pOpaqAlloc)->Out.Type;
                     trequest.NumFrameMin = trequest.NumFrameSuggested = (mfxU16)(*pOpaqAlloc)->Out.NumSurface;
-                    sts = m_pCore->AllocFrames(&trequest, 
+                    sts = m_pCore->AllocFrames(&trequest,
                                                &m_response_op,
-                                               (*pOpaqAlloc)->Out.Surfaces, 
+                                               (*pOpaqAlloc)->Out.Surfaces,
                                                (*pOpaqAlloc)->Out.NumSurface);
 
-                    if (MFX_ERR_NONE != sts && 
+                    if (MFX_ERR_NONE != sts &&
                         MFX_ERR_UNSUPPORTED != sts) // unsupported means that current Core couldn;t allocate the surfaces
                         return sts;
                 }
@@ -1891,14 +1891,14 @@ void   MFXVideoDECODEVC1::FillMFXDataOutputSurface(mfxFrameSurface1 *surface)
     {
          m_qTS.front().pts += m_ext_dur;
     }
-    
+
     if (m_bIsDecodeOrder)
     {
         surface->Data.FrameOrder = 0xFFFFFFFF;
         SetFrameOrder(m_pFrameAlloc.get(), &m_par, false, m_qTS.front(), m_bIsSamePolar);
         if (m_pVC1VideoDecoder->m_frameOrder > 0)
             m_qTS.pop_front();
-    } 
+    }
     else
     {
         surface->Data.FrameOrder = m_pVC1VideoDecoder->m_frameOrder++;
@@ -1923,7 +1923,7 @@ mfxStatus   MFXVideoDECODEVC1::FillOutputSurface(mfxFrameSurface1 *surface, UMC:
         sts = FillOutputSurface(int_surface);
     else
         return FillOutputSurface(surface);
-    
+
     if (memID >= 0)
     {
         int_surface = m_pFrameAlloc->GetInternalSurface(memID);
@@ -1948,7 +1948,7 @@ mfxStatus   MFXVideoDECODEVC1::FillOutputSurface(mfxFrameSurface1 *surface)
     {
         surface->Info.AspectRatioH = 1;
     }
-    
+
     if (0 == surface->Info.AspectRatioW)
     {
         surface->Info.AspectRatioW = 1;
@@ -1962,7 +1962,7 @@ mfxStatus   MFXVideoDECODEVC1::FillOutputSurface(mfxFrameSurface1 *surface)
         surface->Info.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
         if (m_par.mfx.ExtendedPicStruct)
         {
-            // Define repeat frames according to spec Annex I  
+            // Define repeat frames according to spec Annex I
             if (0x1 == m_pVC1VideoDecoder->m_pStore->GetLastDS()->m_pContext->m_picLayerHeader->RPTFRM)
                 surface->Info.PicStruct |= MFX_PICSTRUCT_FRAME_DOUBLING;
             else if (0x2 == m_pVC1VideoDecoder->m_pStore->GetLastDS()->m_pContext->m_picLayerHeader->RPTFRM)
@@ -1971,7 +1971,7 @@ mfxStatus   MFXVideoDECODEVC1::FillOutputSurface(mfxFrameSurface1 *surface)
     }
     else
     {
-        // Define display fields ordering according to spec Annex I  
+        // Define display fields ordering according to spec Annex I
         if (m_pVC1VideoDecoder->m_pStore->GetLastDS()->m_pContext->m_seqLayerHeader.PULLDOWN)
         {
             if (m_pVC1VideoDecoder->m_pStore->GetLastDS()->m_pContext->m_picLayerHeader->TFF)
@@ -2030,7 +2030,7 @@ mfxStatus MFXVideoDECODEVC1::IsDisplayFrameReady(mfxFrameSurface1 **surface_disp
 
         MFXSts = m_pCore->IncreaseReference(&(GetOriginalSurface(*surface_disp)->Data));
         MFX_CHECK_STS(MFXSts);
-        
+
         if (m_bTakeBufferedFrame)
         {
             m_DisplayList.push_back(*surface_disp);
@@ -2061,18 +2061,18 @@ bool MFXVideoDECODEVC1::IsBufferMode(VideoCORE *pCore, mfxVideoParam *par)
 {
     pCore; par;
 #if defined(MFX_VA_LINUX)
-    if ((IsHWSupported(pCore, par) && 
+    if ((IsHWSupported(pCore, par) &&
         (MFX_PLATFORM_HARDWARE == pCore->GetPlatformType())&&
         (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)&&
         !par->mfx.DecodedOrder &&
         1 != par->AsyncDepth))
         return true;
     else
-#endif          
+#endif
         return false;
 }
-mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work, 
-                                       mfxFrameSurface1 *surface_disp, 
+mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
+                                       mfxFrameSurface1 *surface_disp,
                                        mfxU32 threadNumber,
                                        mfxU32 taskID)
 {
@@ -2084,7 +2084,7 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
 #ifdef ALLOW_SW_VC1_FALLBACK
     // for SW we need to process task
     // for HW just process ready frame
-    if (m_isSWPlatform) 
+    if (m_isSWPlatform)
     {
         Status umcRes = m_pVC1VideoDecoder->RunThread(threadNumber);  // threadNumber can be more than real number of m_pdecoder!!!!
 
@@ -2141,7 +2141,7 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
         }
 
         UMC::AutomaticUMCMutex guard(m_guard);
-        
+
         // for HW only sequence processing
         if (m_WaitedTask != taskID)
             return MFX_TASK_NEED_CONTINUE;
@@ -2176,7 +2176,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
                                               MFX_ENTRY_POINT *pEntryPoint)
 {
     UMC::AutomaticUMCMutex guard(m_guard);
-    // To be checked 
+    // To be checked
 
     mfxStatus mfxSts = DecodeFrameCheck(bs, surface_work, surface_out);
     if (MFX_ERR_NONE == mfxSts ||
@@ -2187,7 +2187,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs,
         pAsyncSurface->surface_out = GetOriginalSurface(*surface_out);
         pAsyncSurface->taskID = m_CurrentTask++;
         pAsyncSurface->isFrameSkipped = false;
-  
+
         pEntryPoint->pRoutine = &VC1DECODERoutine;
         pEntryPoint->pCompleteProc = &VC1CompleteProc;
         pEntryPoint->pState = this;
@@ -2211,7 +2211,7 @@ mfxStatus  MFXVideoDECODEVC1::ProcessSkippedFrame()
 {
     mfxStatus sts = MFX_ERR_NONE;
     mfxU16 MemType;
-        
+
     mfxFrameSurface1 *origSurface;
     mfxFrameSurface1 *surface_out;
     mfxFrameSurface1 tSurface;
@@ -2220,7 +2220,7 @@ mfxStatus  MFXVideoDECODEVC1::ProcessSkippedFrame()
     {
         MemType = MFX_MEMTYPE_SYSTEM_MEMORY|MFX_MEMTYPE_EXTERNAL_FRAME;
     }
-    else 
+    else
     {
         MemType = MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_EXTERNAL_FRAME;
     }
@@ -2233,7 +2233,7 @@ mfxStatus  MFXVideoDECODEVC1::ProcessSkippedFrame()
     }
     else
         return sts;
-    
+
     if (displayMemID > -1)
     {
         surface_out = m_pFrameAlloc->GetSurface(displayMemID, &tSurface, &m_par);
@@ -2269,11 +2269,11 @@ mfxStatus MFXVideoDECODEVC1::GetStatusReport()
     mfxI32 i = 0;
 
     UMC::VC1FrameDescriptor *pCurrDescriptor = m_pVC1VideoDecoder->m_pStore->GetFirstDS();
-    
+
     if (!pCurrDescriptor)
         return MFX_ERR_NONE;
 
-    // get statuses from HW for several frames only if there are no ready 
+    // get statuses from HW for several frames only if there are no ready
     while (NeedToGetStatus(pCurrDescriptor))
     {
         //TDR handling.
@@ -2439,9 +2439,9 @@ mfxStatus __CDECL VC1DECODERoutine(void *pState, void *pParam, mfxU32 threadNumb
     MFXVideoDECODEVC1 *pMFXVC1Decoder = (MFXVideoDECODEVC1 *)pState;
     MFXVideoDECODEVC1::AsyncSurface *pAsyncSurface = (MFXVideoDECODEVC1::AsyncSurface *)pParam;
 
-    TaskSts = pMFXVC1Decoder->RunThread(pAsyncSurface->surface_work, 
-                                        pAsyncSurface->surface_out, 
-                                        threadNumber, 
+    TaskSts = pMFXVC1Decoder->RunThread(pAsyncSurface->surface_work,
+                                        pAsyncSurface->surface_out,
+                                        threadNumber,
                                         pAsyncSurface->taskID);
     return TaskSts;
 }

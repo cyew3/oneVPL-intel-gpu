@@ -2672,51 +2672,51 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
         return MFX_ERR_DEVICE_FAILED;
 
 #if defined(MFX_VA)
-        switch (hwtype)
-        {
+    switch (hwtype)
+    {
 #if !(defined(AS_VPP_PLUGIN) || defined(UNIFIED_PLUGIN) || defined(AS_H265FEI_PLUGIN) || defined(AS_H264LA_PLUGIN))
-        case MFX_HW_BDW:
-        case MFX_HW_CHT:
-            cmSts = m_pCmDevice->LoadProgram((void*)cht_copy_kernel_genx,sizeof(cht_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
+    case MFX_HW_BDW:
+    case MFX_HW_CHT:
+        cmSts = m_pCmDevice->LoadProgram((void*)cht_copy_kernel_genx,sizeof(cht_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
 #endif
-        case MFX_HW_SCL:
-        case MFX_HW_APL:
-        case MFX_HW_KBL:
+    case MFX_HW_SCL:
+    case MFX_HW_APL:
+    case MFX_HW_KBL:
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
-        case MFX_HW_GLK:
-        case MFX_HW_CFL:
+    case MFX_HW_GLK:
+    case MFX_HW_CFL:
 #endif
-            cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
+        cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-        case MFX_HW_CNL:
-            cmSts = m_pCmDevice->LoadProgram((void*)cnl_copy_kernel_genx,sizeof(cnl_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
+    case MFX_HW_CNL:
+        cmSts = m_pCmDevice->LoadProgram((void*)cnl_copy_kernel_genx,sizeof(cnl_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
 #endif  // PRE_SI_TARGET_PLATFORM_GEN10
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        case MFX_HW_ICL:
-        case MFX_HW_LKF:
-        case MFX_HW_JSL:
-            cmSts = m_pCmDevice->LoadProgram((void*)icl_copy_kernel_genx,sizeof(icl_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
-        case MFX_HW_ICL_LP:
-            cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
+    case MFX_HW_ICL:
+    case MFX_HW_LKF:
+    case MFX_HW_JSL:
+        cmSts = m_pCmDevice->LoadProgram((void*)icl_copy_kernel_genx,sizeof(icl_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
+    case MFX_HW_ICL_LP:
+        cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
 #endif  // PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-        case MFX_HW_TGL_HP:
-            cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
-        case MFX_HW_TGL_LP:
-            cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
-            break;
+    case MFX_HW_TGL_HP:
+        cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
+    case MFX_HW_TGL_LP:
+        cmSts = m_pCmDevice->LoadProgram((void*)tgllp_copy_kernel_genx,sizeof(tgllp_copy_kernel_genx),m_pCmProgram,"nojitter");
+        break;
 #endif  // PRE_SI_TARGET_PLATFORM_GEN12
-        default:
-            cmSts = CM_FAILURE;
-            break;
-        }
-        CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
+    default:
+        cmSts = CM_FAILURE;
+        break;
+    }
+    CHECK_CM_STATUS(cmSts, MFX_ERR_DEVICE_FAILED);
 #endif
 
     return MFX_ERR_NONE;

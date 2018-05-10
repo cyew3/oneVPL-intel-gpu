@@ -1548,8 +1548,8 @@ void POCDecoder::DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_nu
         m_PicOrderCnt = uAbsFrameNum*2;
         if (sliceHeader->nal_ref_idc == false)
             m_PicOrderCnt--;
-            m_TopFieldPOC = m_PicOrderCnt;
-            m_BottomFieldPOC = m_PicOrderCnt;
+        m_TopFieldPOC = m_PicOrderCnt;
+        m_BottomFieldPOC = m_PicOrderCnt;
 
     }    // pic_order_cnt type 2
 

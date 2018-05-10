@@ -1088,7 +1088,7 @@ void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
     Ipp32u code;
     VideoContext* video = Video[task_num][0];
     Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
-    Ipp8u q_matrix[4][64];
+    Ipp8u q_matrix[4][64] = {};
 
     GET_TO9BITS(video->bs, 4 ,code)
     GET_1BIT(video->bs,load_intra_quantizer_matrix)
