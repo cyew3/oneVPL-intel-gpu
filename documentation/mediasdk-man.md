@@ -6102,6 +6102,42 @@ When [mfxExtCodingOption3](#mfxExtCodingOption3)`::WeightedPred` was set to [exp
 
 This structure is available since SDK API 1.16.
 
+
+## <a id='mfxExtAVCRoundingOffset'>mfxExtAVCRoundingOffset</a>
+
+**Definition**
+
+```
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16       EnableRoundingIntra;       // tri-state option
+    mfxU16       RoundingOffsetIntra;       // valid value [0,7]
+    mfxU16       EnableRoundingInter;       // tri-state option
+    mfxU16       RoundingOffsetInter;       // valid value [0,7]
+
+    mfxU16       reserved[24];
+} mfxExtAVCRoundingOffset;
+```
+
+**Description**
+
+This structure is used by the SDK encoders to set rounding offset parameters for quantization. It is per-frame based encoding control, and can be attached to some frames and skipped for others. When the extension buffer is set the application can attach it to the [mfxEncodeCtrl](#mfxEncodeCtrl) during runtime.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_AVC_ROUNDING_OFFSET](#ExtendedBufferID).
+`EnableRoundingIntra` | Enable rounding offset for intra blocks. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`RoundingOffsetIntra` | Intra rounding offset. Value shall be in the range of 0 to 7, inclusive.
+`EnableRoundingInter` | Enable rounding offset for inter blocks. See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
+`RoundingOffsetInter` | Inter rounding offset. Value shall be in the range of 0 to 7, inclusive.
+
+**Change History**
+
+This structure is available since SDK API 1.27.
+
 ## <a id='mfxExtDirtyRect'>mfxExtDirtyRect</a>
 
 **Definition**
@@ -7425,6 +7461,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_HEVC_REGION_SLICE` | This extended buffer instructs HEVC encoder to encode only one region. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for HEVC encoding initialization.
 `MFX_EXTBUFF_THREADS_PARAM` | See the [mfxExtThreadsParam](#mfxExtThreadsParam) structure for details.
 `MFX_EXTBUFF_PRED_WEIGHT_TABLE` | See the [mfxExtPredWeightTable](#mfxExtPredWeightTable) structure for details.
+`MFX_EXTBUFF_AVC_ROUNDING_OFFSET` | See the [mfxExtAVCRoundingOffset](#mfxExtAVCRoundingOffset) structure for details.
 `MFX_EXTBUFF_DIRTY_RECTANGLES` | See the [mfxExtDitrtyRect](#mfxExtDirtyRect) structure for details.
 `MFX_EXTBUFF_MOVING_RECTANGLES` | See the [mfxExtMoveRect](#mfxExtMoveRect) structure for details.
 `MFX_EXTBUFF_CODING_OPTION_VPS` | See the [mfxExtCodingOptionVPS](#mfxExtCodingOptionVPS) structure for details.
@@ -7480,6 +7517,8 @@ SDK API 1.24 adds `MFX_EXTBUFF_BRC`.
 SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME`, `MFX_EXTBUFF_MULTI_FRAME_PARAM`, `MFX_EXTBUFF_MULTI_FRAME_CONTROL`, `MFX_EXTBUFF_ENCODED_UNITS_INFO` and `MFX_EXTBUFF_DECODE_ERROR_REPORT`.
 
 SDK API 1.26 adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_EXTBUFF_VP9_TEMPORAL_LAYERS`, `MFX_EXTBUFF_VPP_MCTF`.
+
+SDK API 1.27 adds `MFX_EXTBUFF_AVC_ROUNDING_OFFSET`.
 
 SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY` and `MFX_EXTBUFF_VPP_PROCAMP` use for per-frame processing configuration.
 
