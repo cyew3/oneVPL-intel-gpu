@@ -29,6 +29,11 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "base_allocator.h"
 #include "vaapi_utils.h"
 
+enum
+{
+    VA_BUF_P8 = MFX_MAKEFOURCC('B','U','F','8')
+};
+
 // VAAPI Allocator internal Mem ID
 struct vaapiMemId
 {
