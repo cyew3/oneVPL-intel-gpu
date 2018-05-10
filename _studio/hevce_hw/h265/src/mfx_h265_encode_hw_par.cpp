@@ -1001,7 +1001,6 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
     {
         if (caps.ROIDeltaQPSupport == 0)
             bROIViaMBQP = true;
-
     }
     else
     {
@@ -1016,7 +1015,7 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
     }
 #endif  // LINUX_TARGET_PLATFORM_BXTMIN
 
-    mfxU16 maxNumOfRoi = (caps.MaxNumOfROI <= MAX_NUM_ROI  && (!bROIViaMBQP)) ? caps.MaxNumOfROI : MAX_NUM_ROI;
+    mfxU16 maxNumOfRoi = ( bROIViaMBQP ) ? MAX_NUM_ROI : caps.MaxNumOfROI;
 
     changed += CheckMax(ROI->NumROI, maxNumOfRoi);
 
