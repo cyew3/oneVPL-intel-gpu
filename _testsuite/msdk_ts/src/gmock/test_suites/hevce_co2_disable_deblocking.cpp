@@ -77,7 +77,10 @@ private:
         EVERY_OTHER  = 1 << 2,
 
         RESET_ON  = 1 << 3,
-        RESET_OFF = 1 << 4
+        RESET_OFF = 1 << 4,
+
+        HUGE_SIZE_4K = 1 << 5,
+        HUGE_SIZE_8K = 1 << 6
     };
 
     static const tc_struct test_case[];
@@ -143,6 +146,16 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     /*13*/{MFX_ERR_NONE, RESET_ON|EVERY_OTHER, {}},
     /*14*/{MFX_ERR_NONE, RESET_OFF, {}},
     /*15*/{MFX_ERR_NONE, RESET_OFF|RUNTIME_ONLY, {}},
+    /*16*/{ MFX_ERR_NONE, QUERY | HUGE_SIZE_4K,{
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 } } },
+    /*17*/{ MFX_ERR_NONE, QUERY | HUGE_SIZE_8K,{
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
+        { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } } }
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -250,6 +263,12 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
             g_tsLog << "\n\nWARNING: 4:2:2 formats are NOT supported on VDENC!\n\n\n";
             throw tsSKIP;
         }
+        if ((g_tsHWtype < MFX_HW_CNL)
+            && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: Platform less CNL are NOT supported on VDENC!\n\n\n";
+            throw tsSKIP;
+        }
         if ((fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == GMOCK_FOURCC_Y412)
             && (g_tsConfig.lowpower != MFX_CODINGOPTION_ON))
         {
@@ -350,7 +369,10 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         Load();
     }
 
-    g_tsStatus.expect(tc.sts);
+    if (tc.mode & HUGE_SIZE_8K && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower == MFX_CODINGOPTION_OFF) )
+        g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+    else
+        g_tsStatus.expect(tc.sts);
 
     if (tc.mode & QUERY)
     {
@@ -367,7 +389,8 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         }
         m_max = 2;
         m_cur = 0;
-        EncodeFrames(2);
+        if ( !(tc.mode & (HUGE_SIZE_4K | HUGE_SIZE_8K) && (g_tsConfig.sim)) )
+            EncodeFrames(2);
 
         if (tc.mode & RESET_ON)
         {
