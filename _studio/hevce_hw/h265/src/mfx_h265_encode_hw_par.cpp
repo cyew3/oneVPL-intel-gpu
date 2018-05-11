@@ -2403,8 +2403,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (CheckRangeDflt(par.m_ext.VSI.ColourPrimaries,         0, 255, 2)) changed +=1;
     if (CheckRangeDflt(par.m_ext.VSI.TransferCharacteristics, 0, 255, 2)) changed +=1;
     if (CheckRangeDflt(par.m_ext.VSI.MatrixCoefficients,      0, 255, 2)) changed +=1;
-    if (CheckOption(par.m_ext.VSI.VideoFullRange, 0))                     changed +=1;
-    if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0))           changed +=1;
+    if (CheckOption(par.m_ext.VSI.VideoFullRange, 0, 1))                  changed +=1;
+    if (CheckOption(par.m_ext.VSI.ColourDescriptionPresent, 0, 1))        changed +=1;
 
 #if defined(LINUX32) || defined(LINUX64)
     changed += CheckOption(CO3.GPB, (mfxU16)MFX_CODINGOPTION_UNKNOWN, (mfxU16)MFX_CODINGOPTION_ON, (mfxU16)MFX_CODINGOPTION_OFF);
@@ -2697,7 +2697,6 @@ void SetDefaults(
 
     mfxExtCodingOption2& CO2 = par.m_ext.CO2;
     mfxExtCodingOption3& CO3 = par.m_ext.CO3;
-
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     // CheckVideoParam is always called before SetDefaults
@@ -3190,7 +3189,6 @@ void SetDefaults(
     if (!CO3.EncodedUnitsInfo)
         CO3.EncodedUnitsInfo = MFX_CODINGOPTION_OFF;
 #endif
-
 }
 
 } //namespace MfxHwH265Encode
