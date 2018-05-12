@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -2591,9 +2591,11 @@ void GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, I
     Ipp32s pelX = col * par.MaxCUSize;
     Ipp32s pelY = row * par.MaxCUSize;
 
+    Ipp32f dLambda = sliceLambda * 256.f;
+    Ipp32f logdLambda = log(dLambda);
     //TODO: replace by template call here
     // complex ops in Enqueue frame can cause severe threading eff loss -NG
-    for (Ipp32s depth = 0; depth < 4; depth++) {
+    for (Ipp32s depth = 0; depth < par.MaxCuDQPDepth+1; depth++) {
         Ipp32s log2BlkSize = par.Log2MaxCUSize - depth;
         Ipp32s pitchRsCs = frame->m_stats[0]->m_pitchRsCs4 >> (log2BlkSize-2);
         Ipp32s width = IPP_MIN(64, frame->m_origin->width-pelX);
@@ -2620,15 +2622,14 @@ void GetCalqDeltaQp(Frame* frame, const H265VideoParam & par, Ipp32s ctb_addr, I
                     }
                 }
 
-                Ipp32f dLambda = sliceLambda * 256.f;
                 Ipp32s gopSize = frame->m_biFramesInMiniGop + 1; // in fact m_biFramesInMiniGop==0 at this point
                 Ipp32f QP = 0.f;
                 if (16 == gopSize)
-                    QP = LQ_M16[picClass][rscsClass]*log( dLambda ) + LQ_K16[picClass][rscsClass];
+                    QP = LQ_M16[picClass][rscsClass]* logdLambda + LQ_K16[picClass][rscsClass];
                 else if(8 == gopSize)
-                    QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
+                    QP = LQ_M[picClass][rscsClass]* logdLambda + LQ_K[picClass][rscsClass];
                 else // default case could be modified !!!
-                    QP = LQ_M[picClass][rscsClass]*log( dLambda ) + LQ_K[picClass][rscsClass];
+                    QP = LQ_M[picClass][rscsClass]* logdLambda + LQ_K[picClass][rscsClass];
                 QP -= sliceQpY;
 
                 Ipp32s calq = (QP>=0.0)?int(QP+0.5):int(QP-0.5);
@@ -2675,7 +2676,7 @@ void H265Enc::ApplyDeltaQp(Frame* frame, const H265VideoParam & par, Ipp8u useBr
 
     // assign PAQ deltaQp
     if (par.DeltaQpMode&AMT_DQP_PAQ) {// no pure CALQ 
-        for (Ipp32s depth = 0; depth < 4; depth++) {
+        for (Ipp32s depth = 0; depth < par.MaxCuDQPDepth+1; depth++) {
             for (size_t blk = 0; blk < frame->m_stats[0]->qp_mask[depth].size(); blk++) {
                 Ipp32s deltaQp = frame->m_stats[0]->qp_mask[depth][blk];
                 Ipp32s lcuQp = frame->m_lcuQps[depth][blk] + deltaQp;
@@ -2754,7 +2755,7 @@ void H265Enc::ApplyDeltaQpOnRoi(Frame* frame, const H265VideoParam & par, Ipp8u 
             Ipp32s pelX = col * par.MaxCUSize;
             Ipp32s pelY = row * par.MaxCUSize;
 
-            for (Ipp32s depth = 1; depth < 4; depth++) {
+            for (Ipp32s depth = 1; depth < par.MaxCuDQPDepth + 1; depth++) {
                 Ipp32s log2BlkSize = par.Log2MaxCUSize - depth;
                 Ipp32s width = IPP_MIN(64, frame->m_origin->width-pelX);
                 Ipp32s height = IPP_MIN(64, frame->m_origin->height-pelY);

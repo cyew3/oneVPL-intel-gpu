@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -209,6 +209,9 @@ namespace H265Enc {
         Ipp32u  initDelay;
         Ipp32u  MaxFrameSizeInBits;
         Ipp16u  RepackForMaxFrameSize;
+        Ipp16u  AutoScaleToCoresUsingTiles;
+        Ipp16u  MaxTaskChainEnc;
+        Ipp16u  MaxTaskChainInloop;
 
         Ipp16u  AspectRatioW;
         Ipp16u  AspectRatioH;

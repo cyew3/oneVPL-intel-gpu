@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010 - 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010 - 2018 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_serializer.cpp
 
@@ -357,6 +357,9 @@ void MFXStructureRef <mfxExtCodingOptionHEVC>::ConstructValues() const
     SERIALIZE_INT(SplitThresholdMultiplier);
     SERIALIZE_INT(EnableCmBiref);
     SERIALIZE_INT(RepackForMaxFrameSize);
+    SERIALIZE_INT(AutoScaleToCoresUsingTiles);
+    SERIALIZE_INT(MaxTaskChainEnc);
+    SERIALIZE_INT(MaxTaskChainInloop);
 }
 
 void MFXStructureRef <mfxExtHEVCTiles>::ConstructValues() const

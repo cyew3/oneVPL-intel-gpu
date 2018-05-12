@@ -537,6 +537,9 @@ namespace {
 #else
             ext->RepackForMaxFrameSize = 0;
 #endif
+            ext->AutoScaleToCoresUsingTiles = 1;
+            ext->MaxTaskChainEnc = 1;
+            ext->MaxTaskChainInloop = 1;
         }
 
         if (mfxExtCodingOption *ext = GetExtBuffer(*out)) {
@@ -634,7 +637,7 @@ namespace {
 #endif
             ext->ScenarioInfo = 0;
             ext->ContentInfo = 0;
-            ext->PRefType = 0;
+            ext->PRefType = 1;
             ext->FadeDetection = 0;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
             ext->DeblockingAlphaTcOffset = 0;
@@ -862,6 +865,9 @@ namespace {
             wrnIncompatible = !CheckSet(optHevc->IntraAngModesBnonRef, CodecLimits::SUP_INTRA_ANG_MODE);
 
             wrnIncompatible = !CheckTriState(optHevc->RepackForMaxFrameSize);
+            wrnIncompatible = !CheckTriState(optHevc->AutoScaleToCoresUsingTiles);
+            wrnIncompatible = !CheckMax(optHevc->MaxTaskChainEnc, MAX_TASK_CHAIN);
+            wrnIncompatible = !CheckMax(optHevc->MaxTaskChainInloop, MAX_TASK_CHAIN);
         }
 
         if (opt) {
@@ -1144,8 +1150,14 @@ namespace {
         if (mfx.NumSlice > 1 && optHevc && optHevc->FramesInParallel > 1) // either multi-slice or frame-threading
             optHevc->FramesInParallel = 1, wrnIncompatible = true;
 
+#if !defined(FRAME_PARALLEL_TILES)
         if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1) // either multi-tile or frame-threading
             optHevc->FramesInParallel = 1, wrnIncompatible = true;
+#else
+        if (tiles && (tiles->NumTileRows > 1 || tiles->NumTileColumns > 1) && optHevc && optHevc->FramesInParallel > 1 
+            && (optHevc->Deblocking == OFF || optHevc->DeblockBorders == OFF || optHevc->EnableCm == ON)) // either multi-tile frame-threading only w postproc
+            optHevc->FramesInParallel = 1, wrnIncompatible = true;
+#endif
 
         if (optHevc && optHevc->EnableCm == ON && optHevc->FramesInParallel > 8) // no more than 8 parallel frames in gacc
             optHevc->FramesInParallel = 8, wrnIncompatible = true;
@@ -1231,6 +1243,7 @@ namespace {
         mfxExtCodingOption3 &opt3 = GetExtBuffer(par);
         mfxExtHEVCRegion &region = GetExtBuffer(par);
         mfxExtEncoderROI &roi = GetExtBuffer(par);
+        bool setTilesByThreads = true;
 
         if (hevcParam.PicWidthInLumaSamples == 0)
             hevcParam.PicWidthInLumaSamples = fi.Width;
@@ -1261,10 +1274,17 @@ namespace {
             fi.CropH = hevcParam.PicHeightInLumaSamples;
         if (fi.PicStruct == 0)
             fi.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-        if (tiles.NumTileRows == 0)
+
+        if (tiles.NumTileRows == 0) 
             tiles.NumTileRows = 1;
+        else 
+            setTilesByThreads = false;
+
         if (tiles.NumTileColumns == 0)
             tiles.NumTileColumns = 1;
+        else
+            setTilesByThreads = false;
+
         if (optHevc.ForceNumThread == 0)
             optHevc.ForceNumThread = mfx.NumThread ? mfx.NumThread : (Ipp16u)vm_sys_info_get_cpu_num();
         if (mfx.NumThread == 0)
@@ -1275,7 +1295,7 @@ namespace {
             mfx.GopRefDist = mfx.GopPicSize ? MIN(mfx.GopPicSize, 8) : 8;
 
         const mfxExtCodingOptionHEVC &defaultOptHevc = (optHevc.EnableCm == OFF ? tab_defaultOptHevcSw : tab_defaultOptHevcGacc)[mfx.TargetUsage];
-        const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
+        //const Ipp32s numTile = tiles.NumTileRows * tiles.NumTileColumns;
 
         if (optHevc.NumRefLayers == 0)
             optHevc.NumRefLayers = defaultOptHevc.NumRefLayers;
@@ -1286,8 +1306,17 @@ namespace {
             ? (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameLowDelaySw : tab_defaultNumRefFrameLowDelayGacc)
             : (optHevc.EnableCm == OFF ? tab_defaultNumRefFrameSw : tab_defaultNumRefFrameGacc)) [mfx.TargetUsage];
 
+        if (optHevc.AutoScaleToCoresUsingTiles == 0)
+            optHevc.AutoScaleToCoresUsingTiles = (fi.FourCC == P010 || fi.FourCC == P210) ? OFF : defaultOptHevc.AutoScaleToCoresUsingTiles;
+
         if (optHevc.FramesInParallel == 0) {
-            if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || numTile > 1)
+#if !defined(FRAME_PARALLEL_TILES)
+            if (par.AsyncDepth == 1 || mfx.NumSlice > 1 || (tiles.NumTileRows * tiles.NumTileColumns) > 1)
+#else
+            if (par.AsyncDepth == 1 || mfx.NumSlice > 1 
+                || ((tiles.NumTileRows * tiles.NumTileColumns) > 1 
+                    && (optHevc.Deblocking == OFF || optHevc.DeblockBorders == OFF || optHevc.EnableCm == ON)))
+#endif
                 optHevc.FramesInParallel = (fi.PicStruct == TFF || fi.PicStruct == BFF) ? 2 : 1; // at least 2 for Interlace
             else if (par.AsyncDepth == 2 && mfx.GopRefDist == 1 && mfx.NumThread >= 4)
                 optHevc.FramesInParallel = (fi.PicStruct == TFF || fi.PicStruct == BFF) ? 4 : 2; // special case (low delay and some frames in parallel)
@@ -1302,16 +1331,42 @@ namespace {
                 else                          optHevc.FramesInParallel = 1;
 
                 Ipp32s size = defaultOptHevc.Log2MaxCUSize;
-                Ipp32f wppEff = MIN((mfx.FrameInfo.Height + (1 << size) - 1) >> size,
-                                    (mfx.FrameInfo.Width  + (1 << size) - 1) >> (size + 1) ) / 2.75f;
+                Ipp32s wppCols = (mfx.FrameInfo.Width + (1 << size) - 1) >> (size + 1);
+                Ipp32s wppRows = (mfx.FrameInfo.Height + (1 << size) - 1) >> size;
+                Ipp32f wppMax = MIN(wppRows, wppCols);
+                Ipp32f wppEff = wppMax / 2.75f;
                 Ipp32f frameMult = MAX(1.0f, MIN((Ipp32f)mfx.NumThread / (Ipp32f)wppEff, 4.0f));
                 if (mfx.NumThread >= 4)
                     optHevc.FramesInParallel = (Ipp16u)MIN((optHevc.FramesInParallel * frameMult + 0.5f), 16);
+#if defined(FRAME_PARALLEL_TILES)
+                if (optHevc.AutoScaleToCoresUsingTiles != OFF && setTilesByThreads && optHevc.WPP == 0 && optHevc.FramesInParallel==16)
+                {
+                    Ipp32f refFramesInParallelWpp = MIN((Ipp32f)optHevc.FramesInParallel/(Ipp32f)mfx.GopRefDist, (Ipp32f)MAX(0,(wppRows-2))/ (Ipp32f)(wppCols+1));
+                    Ipp32f gopsInParallelWpp = refFramesInParallelWpp+1;
+                    Ipp32s gopFramesInParallelWpp = MIN((Ipp32f)optHevc.FramesInParallel - refFramesInParallelWpp, gopsInParallelWpp * (Ipp32f)(mfx.GopRefDist - 1));
+                    Ipp32f owfEff = MAX(wppEff, wppMax * refFramesInParallelWpp) + gopFramesInParallelWpp;
+                    Ipp32s maxNumTileCols = (Ipp32s)mfx.FrameInfo.Width / (Ipp32s)CodecLimits::MIN_TILE_WIDTH;
+                    if (owfEff < mfx.NumThread && maxNumTileCols>1)
+                    {
+                        Ipp32f framesInParallelTiles = (Ipp32f)(wppRows - 3)/3;
+                        Ipp32s numRefMax = MIN(framesInParallelTiles, optHevc.FramesInParallel / (Ipp32f)mfx.GopRefDist);
+                        Ipp32s numResources = mfx.NumThread - (optHevc.FramesInParallel - numRefMax);
+                        Ipp32s numTiles = (numResources + numRefMax -1) / numRefMax;
+                        Ipp32s NumTileColumns = IPP_MIN(maxNumTileCols, numTiles);
+                        Ipp32s NumTileRows = IPP_MIN(IPP_MAX(2, (numTiles + NumTileColumns -1) / NumTileColumns), 3); // rows don't help much
+                        Ipp32f tileEff = numRefMax*NumTileColumns*2 + (optHevc.FramesInParallel - numRefMax);
+                        if (NumTileRows*NumTileColumns >= numTiles || framesInParallelTiles*numTiles > owfEff) {
+                            tiles.NumTileColumns = NumTileColumns;
+                            tiles.NumTileRows = NumTileRows;
+                        }
+                    }
+                }
+#endif
             }
         }
 
         if (optHevc.WPP == 0)
-            optHevc.WPP = Ipp16u((numTile > 1 || mfx.NumThread == 1) ? OFF : ON);
+            optHevc.WPP = Ipp16u(((tiles.NumTileRows * tiles.NumTileColumns) > 1 || mfx.NumThread == 1) ? OFF : ON);
 
         if (mfx.NumRefFrame == 0) {
             Ipp16u level = mfx.CodecLevel ? mfx.CodecLevel : MFX_LEVEL_HEVC_62;
@@ -1581,6 +1636,20 @@ namespace {
             optHevc.SAOChroma = defaultOptHevc.SAOChroma;
         if (optHevc.RepackForMaxFrameSize == 0)
             optHevc.RepackForMaxFrameSize = defaultOptHevc.RepackForMaxFrameSize;
+        if (optHevc.MaxTaskChainEnc == 0) {
+            if (tiles.NumTileColumns > 7)
+                optHevc.MaxTaskChainEnc = 4;
+            else if (tiles.NumTileColumns > 5)
+                optHevc.MaxTaskChainEnc = 2;
+            else
+                optHevc.MaxTaskChainEnc = defaultOptHevc.MaxTaskChainEnc;
+        }
+        if (optHevc.MaxTaskChainInloop == 0) {
+            if (tiles.NumTileColumns > 5)
+                optHevc.MaxTaskChainInloop = 4;
+            else
+                optHevc.MaxTaskChainInloop = defaultOptHevc.MaxTaskChainInloop;
+        }
     }
 
     mfxStatus CheckIoPattern(MFXCoreInterface1 &core, const mfxVideoParam &param)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -43,6 +43,13 @@
 #include "mfxla.h"
 #include "mfx_ext_buffers.h"
 #include "mfxbrc.h"
+
+#define FRAME_PARALLEL_TILES
+#define TASK_REFACTOR_HUB_RECURSIVE
+#ifdef TASK_REFACTOR_HUB_RECURSIVE
+#define TASK_CHAIN
+#endif
+#define MAX_TASK_CHAIN 8
 
 #define LOW_COMPLX_PAQ
 #define AMT_NEW_ICRA_SW
@@ -494,6 +501,7 @@ typedef enum {
 class H265Encoder;
 class H265FrameEncoder;
 class Lookahead;
+
 
 #define MAX_NUM_DEPENDENCIES 16
 //#define DEBUG_NTM

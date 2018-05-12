@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -310,6 +310,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_HEVC_OPTION(SplitThresholdMultiplier, OPT_UINT_16,    "0-10-default: multipler = SplitThresholdMultiplier / 10.0"),
         HANDLE_HEVC_OPTION(EnableCmBiref,            OPT_UINT_16,    "default is ON for TU1-5 and OFF for TU6-7"),
         HANDLE_HEVC_OPTION(RepackForMaxFrameSize,    OPT_TRI_STATE,  "Repack for Max Frame Size violations (default is ON)"),
+        HANDLE_HEVC_OPTION(AutoScaleToCoresUsingTiles, OPT_TRI_STATE,  "Automaticaly Scale to available Cores using Tiles if needed"),
+        HANDLE_HEVC_OPTION(MaxTaskChainEnc,          OPT_UINT_16,    "Max Task Chain in LCU for Multi-threading Efficiency"),
+        HANDLE_HEVC_OPTION(MaxTaskChainInloop,       OPT_UINT_16,    "Max Task Chain in LCU for Multi-threading Efficiency"),
 
         HANDLE_HEVC_TILES(NumTileColumns,            OPT_UINT_16,    "number of tile columns (1 - default)"),
         HANDLE_HEVC_TILES(NumTileRows,               OPT_UINT_16,    "number of tile rows (1 - default)"),

@@ -254,7 +254,10 @@ typedef struct {
     mfxU16      SplitThresholdMultiplier; //0-10-default: multipler = SplitThresholdMultiplier / 10.0
     mfxU16      EnableCmBiref;      // 0-default 1-enables Interpolation and GpuBiref
     mfxU16      RepackForMaxFrameSize;
-    mfxU16      reserved[34];       // 256 bytes total} mfxExtCodingOptionHEVC;
+    mfxU16      AutoScaleToCoresUsingTiles; // Automatically Scale to detected cores using tiles if needed.
+    mfxU16      MaxTaskChainEnc;
+    mfxU16      MaxTaskChainInloop;
+    mfxU16      reserved[31];       // 256 bytes total} mfxExtCodingOptionHEVC;
 } mfxExtCodingOptionHEVC;
 
 #ifdef MFX_EXTBUFF_FORCE_PRIVATE_DDI_ENABLE

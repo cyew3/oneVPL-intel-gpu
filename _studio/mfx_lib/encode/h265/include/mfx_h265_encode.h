@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -255,6 +255,7 @@ namespace H265Enc {
         // ------ threading
         static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
         static mfxStatus TaskCompleteProc(void *pState, void *pParam, mfxStatus taskRes);
+        static void ProcessTaskDependencies(void *pState, ThreadingTask *task, ThreadingTask **taskNext, Ipp32s& distBest, int TaskFramePriority);
 
         void PrepareToEncodeNewTask(H265EncodeTaskInputParams *inputParam); // accept frame and find frame for lookahead
         void PrepareToEncode(H265EncodeTaskInputParams *inputParam); // build dependency graph for all parallel frames

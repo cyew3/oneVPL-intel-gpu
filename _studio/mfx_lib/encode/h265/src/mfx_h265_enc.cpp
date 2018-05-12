@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -2732,6 +2732,7 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
 
     Ipp32u pp_by_row = m_videoParam.m_framesInParallel > 1 && !m_videoParam.enableCmFlag &&
                        m_videoParam.NumTiles == 1 && m_videoParam.NumSlices == 1;
+
     m_frame->m_numFinishedThreadingTasks = 0;
     m_frame->m_numThreadingTasks = pp_by_row ? (m_videoParam.PicWidthInCtbs + 1) * (endRow - startRow) : 
         m_videoParam.PicWidthInCtbs * (endRow - startRow) * 2;
@@ -2811,8 +2812,13 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
             bool isTaskStored = false;
 
             // FRAME THREADING & PP
+#if defined(FRAME_PARALLEL_TILES)
+            if (m_videoParam.m_framesInParallel > 1 && (ctb_col == 0 || ctb_col == regionCtbColFirst) && !m_videoParam.enableCmFlag)
+#else
             if (m_videoParam.m_framesInParallel > 1 && ctb_col == 0 && !m_videoParam.enableCmFlag)
+#endif
             {
+
                 Ipp32u refRowLag = m_videoParam.m_lagBehindRefRows;
                 H265Slice* slice = &m_frame->m_slices[0];
 
@@ -2826,7 +2832,12 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                         Ipp32u refRow = ctb_row + refRowLag;
                         if (refRow > endRow && ctb_row == regionCtbRowFirst && ctb_col == regionCtbColFirst)
                             refRow = endRow;
+
+#if defined(FRAME_PARALLEL_TILES)
+                        assert(m_videoParam.NumTiles == 1 || (ref->m_doPostProc && m_videoParam.deblockBordersFlag));
+#endif
                         if (refRow <= endRow && ref->m_codedRow < (Ipp32s)refRow) {
+
                             Ipp32u refCtbAddr = refRow * m_videoParam.PicWidthInCtbs - 1;
                             ThreadingTask *task_ref = ref->m_threadingTasks + m_numTasksPerCu * refCtbAddr;
 
@@ -2838,7 +2849,11 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                                 m_topEnc.m_ttRootTasks.push_back(task_enc);
                                 isTaskStored = true;
                             }
+#if !defined(FRAME_PARALLEL_TILES)
                             AddTaskDependencyThreaded(task_enc, task_ref); // ENCODE_CTU(poc, N, 0) <- PP_CTU(refpoc, N+lag, widthInCtu-1)
+#else
+                            AddTaskDependencyThreaded(task_enc, task_ref, &m_topEnc.m_ttHubPool); // ENCODE_CTU(poc, N, 0) <- PP_CTU(refpoc, N+lag, widthInCtu-1)
+#endif
                         }
                     }
                 }
@@ -2917,8 +2932,15 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                             AddTaskDependency(task_pp, task_pp - (m_videoParam.PicWidthInCtbs - (regionCtbColLast - regionCtbColFirst)) * m_numTasksPerCu);
                     }
                 }
-                if(m_frame->m_doPostProc && pp_by_row && ctb_row > regionCtbRowFirst && ctb_col == regionCtbColLast)
-                    AddTaskDependency(task_pp, task_pp - (m_videoParam.PicWidthInCtbs) * m_numTasksPerCu);
+#if !defined(FRAME_PARALLEL_TILES)
+                if(m_frame->m_doPostProc && pp_by_row && ctb_row > regionCtbRowFirst && ctb_col == regionCtbColLast)    //!! Seems wrong !!
+#else
+                if (m_frame->m_doPostProc && pp_by_row && ctb_row > 0 && ctb_col == m_videoParam.PicWidthInCtbs - 1)
+#endif
+                {
+                    assert(m_videoParam.NumSlices == 1);
+                    AddTaskDependency(task_pp, task_pp - m_videoParam.PicWidthInCtbs * m_numTasksPerCu);
+                }
             }
 
 
@@ -2951,7 +2973,11 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
 
 
             // possible to make less dependencies here but need to add extra checks
+#if !defined(FRAME_PARALLEL_TILES)
             if (m_frame->m_doPostProc && (!pp_by_row || ctb_col == regionCtbColLast)) {
+#else
+            if (m_frame->m_doPostProc && !pp_by_row) {
+#endif
                 AddTaskDependency(task_pp, task_enc);
 
                 if (ctb_row < regionCtbRowLast && ctb_col < regionCtbColLast)
@@ -2963,10 +2989,25 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
                 if (ctb_col < regionCtbColLast)
                     AddTaskDependency(task_pp, task_enc + m_numTasksPerCu);
             }
+#if defined(FRAME_PARALLEL_TILES)
+            else if (m_frame->m_doPostProc && pp_by_row && ctb_col == m_videoParam.PicWidthInCtbs - 1)
+            {
+                AddTaskDependency(task_pp, task_enc);
+
+                if (ctb_row < m_videoParam.PicHeightInCtbs - 1)
+                    AddTaskDependency(task_pp, task_enc + m_videoParam.PicWidthInCtbs * m_numTasksPerCu);
+
+            }
+#endif
 
 
             // HERE regionCtbRowLast & regionCtbColLast could be changed!!!!
+#if !defined(FRAME_PARALLEL_TILES)
             if (ctb_row == regionCtbRowLast && ctb_col == regionCtbColLast) {
+#else
+            if (((!m_frame->m_doPostProc || !m_videoParam.deblockBordersFlag) && ctb_row == regionCtbRowLast && ctb_col == regionCtbColLast)
+                || (ctb_row == m_videoParam.PicHeightInCtbs - 1 && ctb_col == m_videoParam.PicWidthInCtbs - 1)) {
+#endif
                 AddTaskDependency(&m_frame->m_ttEncComplete, m_frame->m_doPostProc ? task_pp : task_enc);
 
                 if (m_videoParam.enableCmFlag && !m_videoParam.enableCmPostProc && frame->m_isRef)
