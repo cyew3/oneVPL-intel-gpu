@@ -18,13 +18,19 @@ MFX_PIPELINE_INCLUDES += \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/demuxer/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/test_suite/spy_test_component/include \
     $(MFX_HOME)/mdp_msdk-lib/_testsuite/shared/include \
-    $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
+    $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api \
+    $(TOP)/frameworks/native/libs/nativewindow/include
 
 MFX_PLAYER_INCLUDES += \
     $(MFX_INCLUDES_INTERNAL) \
     $(MFX_INCLUDES_LIBVA) \
     $(MFX_HOME)/mdp_msdk-lib/_testsuite/shared/include \
-    $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
+    $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api \
+    $(TOP)/frameworks/native/libs/nativewindow/include
+
+ifeq ($(BOARD_USES_GRALLOC1),true)
+    MFX_PIPELINE_INCLUDES += $(INTEL_MINIGBM)/cros_gralloc
+endif
 
 # =============================================================================
 
@@ -43,7 +49,20 @@ LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
+LOCAL_HEADER_LIBRARIES := \
+    libmfx_headers \
+    libgui_headers \
+    libui_headers \
+    libhardware_headers \
+    libnativebase_headers \
+    gl_headers
+
+LOCAL_STATIC_LIBRARIES := \
+    android.hidl.token@1.0-utils \
+    android.hardware.graphics.bufferqueue@1.0 \
+    android.hardware.graphics.common@1.1 \
+    libmath \
+    libarect
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline
@@ -69,7 +88,20 @@ LOCAL_CFLAGS := \
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
+LOCAL_HEADER_LIBRARIES := \
+    libmfx_headers \
+    libgui_headers \
+    libui_headers \
+    libhardware_headers \
+    libnativebase_headers \
+    gl_headers
+
+LOCAL_STATIC_LIBRARIES := \
+    android.hidl.token@1.0-utils \
+    android.hardware.graphics.bufferqueue@1.0 \
+    android.hardware.graphics.common@1.1 \
+    libmath \
+    libarect
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline_lucas
@@ -113,7 +145,7 @@ LOCAL_STATIC_LIBRARIES := \
     libipps_l \
     libippcore_l
 
-LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android libgui libui libutils
 
 LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
@@ -162,7 +194,7 @@ LOCAL_STATIC_LIBRARIES := \
     libipps_l \
     libippcore_l
 
-LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android libgui libui libutils
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_player_pipeline

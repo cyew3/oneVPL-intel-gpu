@@ -103,7 +103,7 @@ LOCAL_STATIC_LIBRARIES := \
     libipps_l \
     libippcore_l
 
-LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android libgui libui libutils
 
 LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
@@ -153,7 +153,7 @@ LOCAL_STATIC_LIBRARIES := \
     libipps_l \
     libippcore_l
 
-LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android libgui libui libutils
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_transcoder_pipeline
