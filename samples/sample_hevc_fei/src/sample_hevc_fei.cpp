@@ -92,6 +92,11 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("                          Also forces Encoded Order\n"));
 
     msdk_printf(MSDK_STRING("\n"));
+    msdk_printf(MSDK_STRING("BRC (optional): \n"));
+    msdk_printf(MSDK_STRING("   [-ExtBRC] - enables external BRC\n"));
+    msdk_printf(MSDK_STRING("   [-b kbps] - target bitrate (in Kbits per second)\n"));
+
+    msdk_printf(MSDK_STRING("\n"));
     msdk_printf(MSDK_STRING("VPP settings (optional): \n"));
     msdk_printf(MSDK_STRING("   [-dstw width]     - destination picture width, invokes VPP resizing\n"));
     msdk_printf(MSDK_STRING("   [-dsth height]    - destination picture height, invokes VPP resizing\n"));
@@ -487,6 +492,15 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU32 nArgNum, sInputParams& 
             CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
             PARSE_CHECK(msdk_opt_read(strInput[++i], params.encodeCtrl.SearchPath), "SearchPath", isParseInvalid);
         }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ExtBRC")))
+        {
+            params.bExtBRC = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-b")))
+        {
+            CHECK_NEXT_VAL(i + 1 >= nArgNum, strInput[i], strInput[0]);
+            PARSE_CHECK(msdk_opt_read(strInput[++i], params.TargetKbps), "Bitrate", isParseInvalid);
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-DisableQPOffset")))
         {
             params.bDisableQPOffset = true;
@@ -545,6 +559,11 @@ mfxStatus CheckOptions(const sInputParams& params, const msdk_char* appName)
     {
         PrintHelp(appName, "-w -h is not specified");
         return MFX_ERR_UNSUPPORTED;
+    }
+    if (params.QP && params.bExtBRC)
+    {
+        PrintHelp(appName, "Invalid bitrate control (QP + ExtBRC is unsupported)");
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     if (params.QP > 51)
     {
@@ -732,6 +751,18 @@ void AdjustOptions(sInputParams& params)
     {
         msdk_printf(MSDK_STRING("WARNING: Encoded order is enabled by force in repackctrl.\n"));
         params.bEncodedOrder = true;
+    }
+
+    if (!params.bExtBRC && params.TargetKbps)
+    {
+        msdk_printf(MSDK_STRING("WARNING: Target bitrate is ignored as external BRC is disabled\n"));
+        params.TargetKbps = 0;
+    }
+
+    if (!params.bExtBRC && !params.QP)
+    {
+        msdk_printf(MSDK_STRING("WARNING: QP is not specified. Adjust to 26 (default)\n"));
+        params.QP = 26;
     }
 }
 

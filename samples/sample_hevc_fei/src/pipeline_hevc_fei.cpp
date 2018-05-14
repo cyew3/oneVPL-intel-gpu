@@ -455,15 +455,11 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
     pars.mfx.CodecId = MFX_CODEC_HEVC;
 
     // default settings
-    pars.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
     pars.mfx.TargetUsage       = 0;
-    pars.mfx.TargetKbps        = 0;
     pars.AsyncDepth            = 1; // inherited limitation from AVC FEI
     pars.IOPattern             = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
     // user defined settings
-    pars.mfx.QPI = pars.mfx.QPP = pars.mfx.QPB = user_pars.QP;
-
     pars.mfx.CodecLevel   = user_pars.CodecLevel;
     pars.mfx.CodecProfile = user_pars.CodecProfile;
     pars.mfx.GopRefDist   = user_pars.nRefDist;
@@ -484,6 +480,22 @@ MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFr
 
     // configure B-pyramid settings
     pCO2->BRefType = user_pars.BRefType;
+
+    if (user_pars.bExtBRC) {
+        // This is for explicit extbrc only. In case of implicit (built-into-library) version - we don't need this extension buffer
+        mfxExtBRC* pBrc = pars.AddExtBuffer<mfxExtBRC>();
+        if (!pBrc) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtBRC");
+
+        pCO2->ExtBRC = (mfxU16)MFX_CODINGOPTION_ON;
+
+        pars.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
+        pars.mfx.TargetKbps = user_pars.TargetKbps;
+    }
+    else
+    {
+        pars.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+        pars.mfx.QPI = pars.mfx.QPP = pars.mfx.QPB = user_pars.QP;
+    }
 
     mfxExtCodingOption3* pCO3 = pars.AddExtBuffer<mfxExtCodingOption3>();
     if (!pCO3) throw mfxError(MFX_ERR_NOT_INITIALIZED, "Failed to attach mfxExtCodingOption3");
