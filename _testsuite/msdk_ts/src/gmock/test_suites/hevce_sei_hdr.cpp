@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -76,6 +76,16 @@ namespace hevce_sei_hdr
                 mfxU16 MaxContentLightLevel;
                 mfxU16 MaxPicAverageLightLevel;
             } contentLightLevelInfo;
+            struct f_pair
+            {
+                mfxU32 ext_type;
+                const  tsStruct::Field* f;
+                mfxI32 v;
+            } set_par[MAX_NPARS];
+        };
+        enum
+        {
+            MFX_PAR
         };
         static const tc_struct test_case[];
     };
@@ -201,20 +211,66 @@ namespace hevce_sei_hdr
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE,                     INIT | STATIC, { MFX_PAYLOAD_OFF, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*01*/ MFX_ERR_NONE,                     INIT | STATIC,{ MFX_PAYLOAD_IDR, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*02*/ MFX_ERR_NONE,                     INIT, { MFX_PAYLOAD_OFF, 50001, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*03*/ MFX_ERR_NONE, INIT | STATIC, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 300, 400, 65535, 100 }, { MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*04*/ MFX_ERR_NONE, INIT | STATIC, { MFX_PAYLOAD_OFF, 1, 0, 2, 200, 3, 300, 4, 400, 200, 200 },{ MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*05*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_IDR, 100, 150 } },
-        {/*06*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*07*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART, { MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*08*/ MFX_ERR_NONE, INIT | DYNAMIC_ALL,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*09*/ MFX_ERR_NONE, INIT | RESET | STATIC, { MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*10*/ MFX_ERR_NONE, INIT | RESET | STATIC, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 } },
-        {/*11*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 } },
-        {/*12*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 } },
-        {/*13*/ MFX_ERR_NONE, INIT | RESET | STATIC, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 2, 1 },{ MFX_PAYLOAD_IDR, 100, 150 } },
+        {/*00*/ MFX_ERR_NONE,                     INIT | STATIC, { MFX_PAYLOAD_OFF, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*01*/ MFX_ERR_NONE,                     INIT | STATIC,{ MFX_PAYLOAD_IDR, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*02*/ MFX_ERR_NONE,                     INIT, { MFX_PAYLOAD_OFF, 50001, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*03*/ MFX_ERR_NONE, INIT | STATIC, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 300, 400, 65535, 100 }, { MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*04*/ MFX_ERR_NONE, INIT | STATIC, { MFX_PAYLOAD_OFF, 1, 0, 2, 200, 3, 300, 4, 400, 200, 200 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*05*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*06*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*07*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART, { MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 }, { MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*08*/ MFX_ERR_NONE, INIT | DYNAMIC_ALL,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*09*/ MFX_ERR_NONE, INIT | RESET | STATIC, { MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*10*/ MFX_ERR_NONE, INIT | RESET | STATIC, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*11*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*12*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*13*/ MFX_ERR_NONE, INIT | RESET | STATIC, { MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 2, 1 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP } },
+        {/*14*/ MFX_ERR_NONE, INIT | STATIC,{ MFX_PAYLOAD_IDR, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*15*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*16*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*17*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
+        {/*18*/ MFX_ERR_NONE, INIT | STATIC,{ MFX_PAYLOAD_IDR, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*19*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*20*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*21*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR } },
+        {/*22*/ MFX_ERR_NONE, INIT | STATIC,{ MFX_PAYLOAD_IDR, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*23*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*24*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*25*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ } },
+        {/*26*/ MFX_ERR_NONE, INIT | STATIC,{ MFX_PAYLOAD_IDR, 50000, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
+        {/*27*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_IDR, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_IDR, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
+        {/*28*/ MFX_ERR_NONE, INIT | RESET | STATIC | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
+        {/*29*/ MFX_ERR_NONE, INIT | DYNAMIC_PART,{ MFX_PAYLOAD_OFF, 1, 100, 2, 200, 3, 300, 4, 400, 200, 100 },{ MFX_PAYLOAD_OFF, 100, 150 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_QVBR } },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -225,6 +281,7 @@ namespace hevce_sei_hdr
         const tc_struct& tc = test_case[id];
         m_par.AsyncDepth = 1;
         m_par.mfx.GopRefDist = 1;
+        SETPARS(m_par, MFX_PAR);
         set_brc_params(&m_par);
 #ifdef SEI_DEBUG
         std::string name = "debug" + std::to_string(id);
@@ -266,8 +323,18 @@ namespace hevce_sei_hdr
 
         g_tsStatus.expect(tc.sts);
         mfxStatus checkSts = MFX_ERR_NONE;
+
         if (tc.type & INIT)
+        {
+            if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR && g_tsHWtype < MFX_HW_ICL)
+            {
+                g_tsStatus.expect(MFX_ERR_INVALID_VIDEO_PARAM);
+                g_tsLog << "WARNING: QVBR is unsupported on platforms older than ICL\n";
+                checkSts = Init();
+                return 0;
+            }
             checkSts = Init();
+        }
 
         if (checkSts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM) {
             g_tsStatus.expect(tc.sts);
