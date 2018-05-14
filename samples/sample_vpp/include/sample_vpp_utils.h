@@ -175,7 +175,7 @@ struct sInputParams
     mfxU16   asyncNum;
     mfxU32   vaType;
 
-    std::vector<mfxU16                   > rotate;
+    std::vector<mfxU16> rotate;
 
     bool     bScaling;
     mfxU16   scalingMode;
