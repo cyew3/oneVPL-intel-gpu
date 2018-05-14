@@ -59,6 +59,8 @@ namespace hevce_frame_qp
         {
             MFX_PAR = 1,
             RESET,
+            HUGE_SIZE_4K,
+            HUGE_SIZE_8K
         };
 
         static const tc_struct test_case[];
@@ -117,6 +119,20 @@ namespace hevce_frame_qp
         {/*00*/ MFX_ERR_NONE, MFX_PAR, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1}},
         {/*02*/ MFX_ERR_NONE, MFX_PAR, {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 15}},
         {/*03*/ MFX_ERR_NONE, RESET,   {MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 15}},
+        {/*04*/ MFX_ERR_NONE, HUGE_SIZE_4K,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 } }
+        },
+        {/*05*/ MFX_ERR_NONE, HUGE_SIZE_8K,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize,  1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 } }
+        }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(tc_struct);
@@ -163,6 +179,12 @@ namespace hevce_frame_qp
                 && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
             {
                 g_tsLog << "\n\nWARNING: 4:2:2 formats are NOT supported on VDENC!\n\n\n";
+                throw tsSKIP;
+            }
+            if ((g_tsHWtype < MFX_HW_CNL)
+                && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+            {
+                g_tsLog << "\n\nWARNING: Platform less CNL are NOT supported on VDENC!\n\n\n";
                 throw tsSKIP;
             }
             if ((fourcc_id == MFX_FOURCC_AYUV || fourcc_id == MFX_FOURCC_Y410 || fourcc_id == GMOCK_FOURCC_Y412)
@@ -259,9 +281,18 @@ namespace hevce_frame_qp
         m_par.AsyncDepth = 1;
         framesToEncode = (g_tsConfig.sim) ? 2 : 5;
 
+        if (g_tsHWtype <= MFX_HW_CNL && g_tsConfig.lowpower == MFX_CODINGOPTION_OFF && tc.mode == HUGE_SIZE_8K)
+        {
+            g_tsLog << "\n\nWARNING: 8k resolution is not supported on platform less ICL without VDENC!\n\n\n";
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            Query();
+            throw tsSKIP;
+        }
+
         Init();
 
-        EncodeFrames(framesToEncode);
+        if ( !( (tc.mode == HUGE_SIZE_4K || tc.mode == HUGE_SIZE_8K) && (g_tsConfig.sim) ) )
+            EncodeFrames(framesToEncode);
 
         if (tc.mode == RESET)
         {
