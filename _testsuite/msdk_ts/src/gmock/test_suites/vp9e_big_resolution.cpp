@@ -301,12 +301,26 @@ namespace vp9e_big_resolution
         mfxFrameSurface1* pSurf = tsSurfaceProcessor::ProcessSurface(ps, pfa);
         if (m_pInputSurfaces)
         {
+            bool useAllocator = pfa && !pSurf->Data.Y;
+
+            if (useAllocator)
+            {
+                TRACE_FUNC3(mfxFrameAllocator::Lock, pfa->pthis, pSurf->Data.MemId, &(pSurf->Data));
+                g_tsStatus.check(pfa->Lock(pfa->pthis, pSurf->Data.MemId, &(pSurf->Data)));
+            }
+
             mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
             msdk_atomic_inc16(&pStorageSurf->Data.Locked);
             tsFrame in = tsFrame(*pSurf);
             tsFrame store = tsFrame(*pStorageSurf);
             store = in;
             (*m_pInputSurfaces)[m_frameOrder] = pStorageSurf;
+
+            if (useAllocator)
+            {
+                TRACE_FUNC3(mfxFrameAllocator::Unlock, pfa->pthis, pSurf->Data.MemId, &(pSurf->Data));
+                g_tsStatus.check(pfa->Unlock(pfa->pthis, pSurf->Data.MemId, &(pSurf->Data)));
+            }
         }
         m_frameOrder++;
 
