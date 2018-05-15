@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -86,7 +86,7 @@ namespace UMC_AV1_DECODER
         AV1DecoderFrame* FindFrameByDispID(Ipp32u);
         AV1DecoderFrame* GetFrameToDisplay();
 
-        virtual UMC::Status RunDecoding() = 0;
+        virtual UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) = 0;
 
     protected:
 
@@ -112,7 +112,7 @@ namespace UMC_AV1_DECODER
 
         std::unique_ptr<SequenceHeader> sequence_header;
         DPBType                         dpb;     // store of decoded frames
-        std::deque<AV1DecoderFrame*>    queue;
+        //std::deque<AV1DecoderFrame*>    queue;
 
         Ipp32u                          counter;
         AV1DecoderParams                params;

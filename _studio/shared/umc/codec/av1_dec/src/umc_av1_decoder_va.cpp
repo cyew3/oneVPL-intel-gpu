@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -50,19 +50,8 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
-    UMC::Status AV1DecoderVA::RunDecoding()
+    UMC::Status AV1DecoderVA::CompleteFrame(AV1DecoderFrame* frame)
     {
-        AV1DecoderFrame* frame;
-        {
-            std::unique_lock<std::mutex> l(guard);
-            if (queue.empty())
-                return UMC::UMC_OK;
-
-            frame = queue.front();
-            queue.pop_front();
-        }
-
-        VM_ASSERT(frame);
         if (!frame)
             return UMC::UMC_ERR_FAILED;;
 

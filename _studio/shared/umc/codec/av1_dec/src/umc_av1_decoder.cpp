@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -183,10 +183,12 @@ namespace UMC_AV1_DECODER
         frame->UpdateReferenceList();
         prev_frame = frame;
 
-        std::unique_lock<std::mutex> l(guard);
-        queue.push_back(frame);
+        UMC::Status umcRes = CompleteFrame(frame);
 
-        return UMC::UMC_OK;
+        //std::unique_lock<std::mutex> l(guard);
+        //queue.push_back(frame);
+
+        return umcRes;
     }
 
     AV1DecoderFrame* AV1Decoder::FindFrameByMemID(UMC::FrameMemID id)

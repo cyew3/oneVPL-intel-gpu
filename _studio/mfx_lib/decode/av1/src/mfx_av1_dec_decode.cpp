@@ -436,20 +436,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEAV1::ExecuteFrame(mfxThreadTask task, mfxU32, mfxU32)
-{
-    MFX_CHECK_NULL_PTR1(task);
-
-    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
-
-    UMC::Status sts = m_decoder->RunDecoding();
-
-    return sts == UMC::UMC_WRN_INFO_NOT_READY ?
-        MFX_TASK_WORKING : ConvertStatusUmc2Mfx(sts);
-}
-
-mfxStatus VideoDECODEAV1::CompleteFrame(mfxThreadTask task, mfxStatus)
+mfxStatus VideoDECODEAV1::CompleteFrame(mfxThreadTask task)
 {
     MFX_CHECK_NULL_PTR1(task);
 
@@ -652,7 +639,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     return sts;
 }
 
-mfxStatus VideoDECODEAV1::DecodeRoutine(void* state, void* param, mfxU32 uid_p, mfxU32 uid_a)
+mfxStatus VideoDECODEAV1::DecodeRoutine(void* state, void* param, mfxU32, mfxU32)
 {
     auto decoder = reinterpret_cast<VideoDECODEAV1*>(state);
     if (!decoder)
@@ -663,30 +650,17 @@ mfxStatus VideoDECODEAV1::DecodeRoutine(void* state, void* param, mfxU32 uid_p, 
     if (!task)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    mfxStatus sts;
-    return
-        sts = decoder->ExecuteFrame(task, uid_p, uid_a);
+    mfxStatus sts = decoder->CompleteFrame(task);
+    return sts;
 }
 
-mfxStatus VideoDECODEAV1::CompleteProc(void* state, void* param, mfxStatus sts)
+mfxStatus VideoDECODEAV1::CompleteProc(void*, void* param, mfxStatus)
 {
-    auto decoder = reinterpret_cast<VideoDECODEAV1*>(state);
-    if (!decoder)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-     mfxThreadTask task =
-        reinterpret_cast<TaskInfo*>(param);
-    if (!task)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-
-    sts = decoder->CompleteFrame(task, sts);
-    MFX_CHECK_STS(sts);
-
     auto info =
-        reinterpret_cast<TaskInfo*>(task);
+        reinterpret_cast<TaskInfo*>(param);
     delete info;
 
-    return sts;
+    return MFX_ERR_NONE;
 }
 
 inline

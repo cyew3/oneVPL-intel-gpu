@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -61,14 +61,13 @@ public:
     mfxStatus GetPayload(mfxU64* time_stamp, mfxPayload*);
 
     mfxStatus SubmitFrame(mfxBitstream*, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, mfxThreadTask*);
-    mfxStatus ExecuteFrame(mfxThreadTask, mfxU32, mfxU32);
-    mfxStatus CompleteFrame(mfxThreadTask, mfxStatus);
+    mfxStatus CompleteFrame(mfxThreadTask);
 
 private:
 
     static mfxStatus FillVideoParam(VideoCORE*, UMC::VideoDecoderParams const*, mfxVideoParam*);
     static mfxStatus DecodeRoutine(void* state, void* param, mfxU32, mfxU32);
-    static mfxStatus CompleteProc(void* state, void* param, mfxStatus);
+    static mfxStatus CompleteProc(void*, void* param, mfxStatus);
 
     mfxStatus SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out);
 
