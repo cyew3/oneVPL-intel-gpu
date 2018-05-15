@@ -4415,7 +4415,10 @@ mfxStatus CTranscodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
     // if encoder provided us information about buffer size
     if (0 != par.mfx.BufferSizeInKB)
     {
-        new_size = par.mfx.BufferSizeInKB * 1000;
+        //--- If value calculated basing on par.mfx.BufferSizeInKB is too low, just double the buffer size
+        new_size = par.mfx.BufferSizeInKB * 1000u > pBS->MaxLength ? 
+            par.mfx.BufferSizeInKB * 1000u : 
+            pBS->MaxLength*2;
     }
     else
     {
