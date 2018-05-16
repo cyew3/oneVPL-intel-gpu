@@ -6,8 +6,6 @@ agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
 Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
-File Name: .h
-
 \* ****************************************************************************** */
 
 #include "mfx_pipeline_defs.h"
@@ -22,6 +20,7 @@ File Name: .h
 #include "mfx_ext_buffers.h"
 #include "mfx_screen_render.h"
 #include "mfx_vaapi_render.h"
+#include "mfx_render_android.h"
 #include "mfx_d3d9_device.h"
 #include "mfx_d3d11_device.h"
 #include "mfx_vaapi_device.h"
@@ -2151,6 +2150,27 @@ mfxStatus MFXDecPipeline::CreateRender()
             break;
         }
 #endif
+#if defined(ANDROID)
+    case MFX_SCREEN_RENDER:
+        {
+            if (m_components[eDEC].m_bufType == MFX_BUF_HW || m_components[eREN].m_bufType == MFX_BUF_HW  || m_inParams.bCreateD3D)
+            {
+                MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("Android screen render is supported only on system memory\n")));
+            }
+
+            try
+            {
+                m_pRender = new ScreenRenderAndroid(m_components[eREN].m_pSession, &sts, m_pHWDevice);
+            }
+            catch (std::exception& e)
+            {
+                MFX_TRACE_ERR((VM_STRING("Android screen render initialization failed\n")));
+                MFX_DELETE(m_pRender);
+            }
+
+            break;
+        }
+#endif // defined(ANDROID)
     case MFX_METRIC_CHECK_RENDER:
         {
             MFXMetricComparatorRender *pRender;
