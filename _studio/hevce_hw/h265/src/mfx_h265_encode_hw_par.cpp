@@ -2250,7 +2250,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CBR && 
         par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && 
-        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM)
+        par.mfx.RateControlMethod != MFX_RATECONTROL_VCM &&
+        par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR)
     {
        changed += CheckOption(par.m_ext.CO.VuiNalHrdParameters, (mfxU32)MFX_CODINGOPTION_OFF, 0);
        changed += CheckOption(par.m_ext.CO.NalHrdConformance,  (mfxU32)MFX_CODINGOPTION_OFF, 0);
