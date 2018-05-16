@@ -97,6 +97,8 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
                    && EncFrameCtrl->RefHeight % 4 == 0
                    && EncFrameCtrl->RefWidth  <= ((frameType & MFX_FRAMETYPE_B) ? 32 : 64)
                    && EncFrameCtrl->RefHeight <= ((frameType & MFX_FRAMETYPE_B) ? 32 : 64)
+                   && EncFrameCtrl->RefWidth  >= 20
+                   && EncFrameCtrl->RefHeight >= 20
                    && EncFrameCtrl->RefWidth * EncFrameCtrl->RefHeight <= 2048,
                       // For B frames actual limit is RefWidth*RefHeight <= 1024.
                       // Is is already guranteed by limit of 32 pxls for RefWidth and RefHeight in case of B frame
