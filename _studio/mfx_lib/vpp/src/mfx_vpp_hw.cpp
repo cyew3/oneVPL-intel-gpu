@@ -1878,7 +1878,7 @@ VideoVPPHW::VideoVPPHW(IOMode mode, VideoCORE *core)
     m_config.m_bMode30i60pEnable = false;
     m_config.m_bWeave = false;
     m_config.m_extConfig.mode  = FRC_DISABLED;
-    m_config.m_bPassThroughEnable = false;
+    m_config.m_bCopyPassThroughEnable = false;
     m_config.m_surfCount[VPP_IN]   = 1;
     m_config.m_surfCount[VPP_OUT]  = 1;
     m_config.m_IOPattern = 0;
@@ -2926,7 +2926,7 @@ mfxStatus VideoVPPHW::Close()
     m_config.m_extConfig.mode  = FRC_DISABLED;
     m_config.m_bMode30i60pEnable  = false;
     m_config.m_bRefFrameEnable = false;
-    m_config.m_bPassThroughEnable = false;
+    m_config.m_bCopyPassThroughEnable = false;
     m_config.m_surfCount[VPP_IN]  = 1;
     m_config.m_surfCount[VPP_OUT] = 1;
 
@@ -3165,8 +3165,8 @@ mfxStatus VideoVPPHW::VppFrameCheck(
         // submit task
         SyncTaskSubmission(pTask);
 
-        if (false == m_config.m_bPassThroughEnable ||
-            (true == m_config.m_bPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
+        if (false == m_config.m_bCopyPassThroughEnable ||
+            (true == m_config.m_bCopyPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
         {
             // configure entry point
             pEntryPoint[0].pRoutine = VideoVPPHW::QueryTaskRoutine;
@@ -3180,8 +3180,8 @@ mfxStatus VideoVPPHW::VppFrameCheck(
     }
     else
     {
-        if (false == m_config.m_bPassThroughEnable ||
-            (true == m_config.m_bPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
+        if (false == m_config.m_bCopyPassThroughEnable ||
+            (true == m_config.m_bCopyPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
         {
             // configure entry point
             pEntryPoint[1].pRoutine = VideoVPPHW::QueryTaskRoutine;
@@ -3816,7 +3816,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 #ifdef MFX_ENABLE_MCTF
     if (pTask->outputForApp.pSurf)
     {
-        if (true == m_config.m_bPassThroughEnable &&
+        if (true == m_config.m_bCopyPassThroughEnable &&
             false == IsRoiDifferent(pTask->input.pSurf, pTask->outputForApp.pSurf))
         {
             sts = CopyPassThrough(pTask->input.pSurf, pTask->outputForApp.pSurf);
@@ -3833,7 +3833,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 #else
-    if (true == m_config.m_bPassThroughEnable &&
+    if (true == m_config.m_bCopyPassThroughEnable &&
         false == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf))
     {
         sts = CopyPassThrough(pTask->input.pSurf, pTask->output.pSurf);
@@ -6280,21 +6280,21 @@ mfxStatus ConfigureExecuteParams(
     if ( (0 == memcmp(&videoParam.vpp.In, &videoParam.vpp.Out, sizeof(mfxFrameInfo))) &&
          executeParams.IsDoNothing() )
     {
-        config.m_bPassThroughEnable = true;
+        config.m_bCopyPassThroughEnable = true;
     }
     else
     {
-        config.m_bPassThroughEnable = false;// after Reset() parameters may be changed,
+        config.m_bCopyPassThroughEnable = false;// after Reset() parameters may be changed,
                                             // flag should be disabled
     }
-#endif//m_bPassThroughEnable == false for another OS
+#endif//m_bCopyPassThroughEnable == false for another OS
 
     if (inDNRatio == outDNRatio && !executeParams.bVarianceEnable && !executeParams.bComposite &&
             !(config.m_extConfig.mode == IS_REFERENCES) )
     {
         // work around
         config.m_extConfig.mode  = FRC_DISABLED;
-        //config.m_bPassThroughEnable = false;
+        //config.m_bCopyPassThroughEnable = false;
     }
 
     if (true == executeParams.bComposite && 0 == executeParams.dstRects.size()) // composition was enabled via DO USE
