@@ -165,7 +165,7 @@ This extension buffer specifies frame level control for ENCODE. It is used durin
 `Header.BufferId` | Buffer ID, must be `MFX_EXTBUFF_HEVCFEI_ENC_CTRL`.
 `SearchPath` | This value specifies search path.<br><br> 0x00 - default; <br> 0x01 - diamond search;<br> 0x02 - exhaustive, aka full search.
 `LenSP` | This value defines number of search units in search path. If adaptive search is enabled it starts after this number has been reached. Valid range [1,63].
-`RefWidth, RefHeight` | These values specify width and height of search region in pixels. They should be multiple of 4. Maximum allowed region is 64x32 for one direction and 32x32 for bidirectional search.
+`RefWidth, RefHeight` | These values specify width and height of search region in pixels. They should be multiple of 4. Minimum allowed region is 20x20. Maximum allowed is 64x32 for one direction and 32x32 for bidirectional search.
 `SearchWindow` | This value specifies one of the predefined search path and window size.<br><br> 0x00 - not use predefined search window;<br> 0x01 - Tiny – 4 SUs 24x24 window diamond search;<br> 0x02 - Small – 9 SUs 28x28 window diamond search;<br> 0x03 - Diamond – 16 SUs 48x40 window diamond search;<br> 0x04 - Large Diamond – 32 SUs 48x40 window diamond search;<br> 0x05 - Exhaustive – 48 SUs 48x40 window full search.
 `NumMvPredictors[2]` | Number of L0/L1 MV predictors provided by the application. Up to four predictors are supported.
 `MultiPred[2]` | If this value is equal to zero, then no internal MV predictors will be used. Set it to 1 to enable additional (spatial) MV predictors from neighbor CUs. Note, that disabling internal MV predictors can severely degrade video quality.
