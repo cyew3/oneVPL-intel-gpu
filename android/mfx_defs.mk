@@ -16,7 +16,7 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 MFX_CFLAGS := -DANDROID
 
 # Android version preference:
-ifneq ($(filter 9.% P ,$(PLATFORM_VERSION)),)
+ifneq ($(filter 9 9.% P ,$(PLATFORM_VERSION)),)
   MFX_ANDROID_VERSION:= MFX_P
 endif
 ifneq ($(filter 8.% O ,$(PLATFORM_VERSION)),)
@@ -91,7 +91,7 @@ MFX_C_INCLUDES := \
   $(MFX_HOME)/mdp_msdk-lib/android/include
 
 # Setting usual imported headers
-ifneq ($(filter MFX_O_MR1,$(MFX_ANDROID_VERSION)),)
+ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)
   MFX_HEADER_LIBRARIES := \
     libutils_headers
 endif
