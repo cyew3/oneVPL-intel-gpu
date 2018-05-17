@@ -132,6 +132,11 @@ public:
 
     mfxStatus WaitingForAsyncTasks(bool bResetTasks);
 
+    bool IsInitialized()
+    {
+        return m_bInit;
+    }
+
     void ZeroParams()
     {
         m_frameOrder = 0;
@@ -282,7 +287,7 @@ public:
         if (m_pImpl.get())
             return MFXVideoENCODEH265_HW::Execute((reinterpret_cast<void*>(m_pImpl.get())), task, uid_p, uid_a);
         else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            return MFX_ERR_NOT_INITIALIZED;
     }
     virtual mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/)
     {
@@ -292,6 +297,8 @@ public:
     virtual mfxStatus Init(mfxVideoParam *par)
     {
         mfxStatus sts;
+        if (m_pImpl.get() && (m_pImpl->IsInitialized()))
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         m_pImpl.reset(new MFXVideoENCODEH265_HW(&m_core, &sts));
         MFX_CHECK_STS(sts);
         return m_pImpl->Init(par);
@@ -309,14 +316,14 @@ public:
         if (m_pImpl.get())
             return m_pImpl->Reset(par);
         else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            return MFX_ERR_NOT_INITIALIZED;
     }
     virtual mfxStatus GetVideoParam(mfxVideoParam *par)
     {
         if (m_pImpl.get())
             return m_pImpl->GetVideoParam(par);
         else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            return MFX_ERR_NOT_INITIALIZED;
     }
 
     virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
@@ -324,7 +331,7 @@ public:
         if (m_pImpl.get())
             return m_pImpl->EncodeFrameSubmit(ctrl, surface, bs, task);
         else
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
+            return MFX_ERR_NOT_INITIALIZED;
     }
 
     virtual mfxU32 GetPluginType()
