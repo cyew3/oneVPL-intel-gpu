@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{93FE9D83-9FEA-44EF-AF57-BA855DB83A63}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\sample_common\include;$(ProjectDir)\..\..\..\mdp_msdk-api\include;</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\abr_brc.cpp" />
+    <ClCompile Include="src\cmd_processor.cpp" />
+    <ClCompile Include="src\dso\avc2_cabac.cpp" />
+    <ClCompile Include="src\dso\avc2_cavlc.cpp" />
+    <ClCompile Include="src\dso\avc2_dec.cpp" />
+    <ClCompile Include="src\dso\avc2_headers.cpp" />
+    <ClCompile Include="src\dso\avc2_parser.cpp" />
+    <ClCompile Include="src\dso\avc2_sd_cabac.cpp" />
+    <ClCompile Include="src\dso\avc2_sd_cavlc.cpp" />
+    <ClCompile Include="src\dso\bs_reader2.cpp" />
+    <ClCompile Include="src\dso\bs_thread.cpp" />
+    <ClCompile Include="src\dso\dll_main.cpp" />
+    <ClCompile Include="src\dso\h264_cabac_tables.cpp" />
+    <ClCompile Include="src\dso\h264_cavlc_tables.cpp" />
+    <ClCompile Include="src\dso\hevc2_cabac.cpp" />
+    <ClCompile Include="src\dso\hevc2_dec.cpp" />
+    <ClCompile Include="src\dso\hevc2_headers.cpp" />
+    <ClCompile Include="src\dso\hevc2_parser.cpp" />
+    <ClCompile Include="src\dso\hevc2_ssdata.cpp" />
+    <ClCompile Include="src\dso\hevc2_trace.cpp" />
+    <ClCompile Include="src\dso\hevc_cabac_tables.cpp" />
+    <ClCompile Include="src\fei_buffer_allocator.cpp" />
+    <ClCompile Include="src\fei_utils.cpp" />
+    <ClCompile Include="src\hevc_fei_encode.cpp" />
+    <ClCompile Include="src\hevc_sw_dso.cpp" />
+    <ClCompile Include="src\pipeline_hevc_fei.cpp" />
+    <ClCompile Include="src\sample_hevc_fei_abr.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\abr_brc.h" />
+    <ClInclude Include="include\buffer_pool.h" />
+    <ClInclude Include="include\cmd_processor.h" />
+    <ClInclude Include="include\dso\avc2_entropy.h" />
+    <ClInclude Include="include\dso\avc2_info.h" />
+    <ClInclude Include="include\dso\avc2_parser.h" />
+    <ClInclude Include="include\dso\avc2_struct.h" />
+    <ClInclude Include="include\dso\bs_def.h" />
+    <ClInclude Include="include\dso\bs_mem+.h" />
+    <ClInclude Include="include\dso\bs_parser++.h" />
+    <ClInclude Include="include\dso\bs_parser.h" />
+    <ClInclude Include="include\dso\bs_reader.h" />
+    <ClInclude Include="include\dso\bs_reader2.h" />
+    <ClInclude Include="include\dso\bs_thread.h" />
+    <ClInclude Include="include\dso\h264_cabac.h" />
+    <ClInclude Include="include\dso\h264_cabac_tables.h" />
+    <ClInclude Include="include\dso\h264_cavlc_tables.h" />
+    <ClInclude Include="include\dso\h264_struct.h" />
+    <ClInclude Include="include\dso\hevc2_parser.h" />
+    <ClInclude Include="include\dso\hevc2_struct.h" />
+    <ClInclude Include="include\dso\hevc2_trace.h" />
+    <ClInclude Include="include\dso\hevc_cabac.h" />
+    <ClInclude Include="include\dso\hevc_struct.h" />
+    <ClInclude Include="include\fei_buffer_allocator.h" />
+    <ClInclude Include="include\fei_utils.h" />
+    <ClInclude Include="include\hevc_fei_encode.h" />
+    <ClInclude Include="include\hevc_sw_dso.h" />
+    <ClInclude Include="include\pipeline_hevc_fei.h" />
+    <ClInclude Include="include\sample_hevc_fei_defs.h" />
+    <ClInclude Include="include\task.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

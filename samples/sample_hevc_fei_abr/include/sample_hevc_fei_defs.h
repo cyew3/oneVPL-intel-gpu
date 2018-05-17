@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,13 +20,15 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #ifndef __SAMPLE_HEVC_FEI_DEFS_H__
 #define __SAMPLE_HEVC_FEI_DEFS_H__
 
+#include <algorithm>
 #include <assert.h>
-#include "sample_defs.h"
+
 #include "mfxvideo.h"
 #include "mfxvideo++.h"
 #include "mfxfei.h"
 #include "mfxfeihevc.h"
-#include <algorithm>
+
+#include "sample_defs.h"
 
 #define CHECK_STS_AND_RETURN(X, MSG, RET) {if ((X) < MFX_ERR_NONE) {MSDK_PRINT_RET_MSG(X, MSG); return RET;}}
 
@@ -34,24 +36,47 @@ struct SourceFrameInfo
 {
     msdk_char  strSrcFile[MSDK_MAX_FILENAME_LEN];
     mfxU32     DecodeId;       // type of input coded video
-    mfxU32     ColorFormat;
-    mfxU16     nPicStruct;
-    mfxU16     nWidth;         // source picture width
-    mfxU16     nHeight;        // source picture height
-    mfxF64     dFrameRate;
-    bool       fieldSplitting; // VPP field splitting
+
+    bool       bDSO;
+    msdk_char  strDsoFile[MSDK_MAX_FILENAME_LEN];
+    bool       forceToIntra;
+    bool       forceToInter;
+
+    mfxU16 DSOMVPBlockSize;
 
     SourceFrameInfo()
         : DecodeId(0)
-        , ColorFormat(MFX_FOURCC_I420)
-        , nPicStruct(MFX_PICSTRUCT_PROGRESSIVE)
-        , nWidth(0)
-        , nHeight(0)
-        , dFrameRate(30.0)
-        , fieldSplitting(false)
+        , bDSO(false)
+        , forceToIntra(false)
+        , forceToInter(false)
+        , DSOMVPBlockSize(7)
     {
         MSDK_ZERO_MEMORY(strSrcFile);
+        MSDK_ZERO_MEMORY(strDsoFile);
     }
+};
+
+enum BRC_TYPE
+{
+    NONE      = 0,
+    LOOKAHEAD = 1,
+    MSDKSW    = 2
+};
+
+struct sBrcParams
+{
+    BRC_TYPE eBrcType     = NONE; // bitrate control type
+    mfxU16 TargetKbps     = 0;    // valid if VBR set on
+    mfxU16 LookAheadDepth = 0;    // valid if VBR set on
+
+    msdk_char strYUVFile[MSDK_MAX_FILENAME_LEN] = {0}; // YUV file for MSE calculation
+};
+
+enum PipelineMode
+{
+    Full = 0,
+    Producer, // decode/DSO
+    Consumer,
 };
 
 struct sInputParams
@@ -60,15 +85,7 @@ struct sInputParams
 
     msdk_char  strDstFile[MSDK_MAX_FILENAME_LEN];
 
-    msdk_char  mbstatoutFile[MSDK_MAX_FILENAME_LEN];
-    msdk_char  mvoutFile[MSDK_MAX_FILENAME_LEN];
-    msdk_char  mvpInFile[MSDK_MAX_FILENAME_LEN];
-
-    bool bENCODE;
-    bool bPREENC;
     bool bEncodedOrder;        // use EncodeOrderControl for external reordering
-    bool bFormattedMVout;      // use internal format for dumping MVP
-    bool bFormattedMVPin;      // use internal format for reading MVP
     mfxU8  QP;
     mfxU16 dstWidth;           // destination picture width
     mfxU16 dstHeight;          // destination picture height
@@ -85,18 +102,21 @@ struct sInputParams
     mfxU16 NumRefActiveP;      // maximal number of references for P frames
     mfxU16 NumRefActiveBL0;    // maximal number of backward references for B frames
     mfxU16 NumRefActiveBL1;    // maximal number of forward references for B frames
-    mfxU16 preencDSfactor;     // downsample input before passing to preenc (2/4/8x are supported)
     mfxU16 PicTimingSEI;       // picture timing SEI
+    bool   bDisableQPOffset;   // disable qp offset per pyramid layer
+    bool   drawMVP;
+    mfxU16 fastIntraModeOnI;
+    mfxU16 fastIntraModeOnP;
+    mfxU16 fastIntraModeOnB;
 
-    mfxExtFeiPreEncCtrl         preencCtrl;
+    PipelineMode pipeMode;
+
+    sBrcParams sBRCparams;
+
     mfxExtFeiHevcEncFrameCtrl   encodeCtrl;
 
     sInputParams()
-        : bENCODE(false)
-        , bPREENC(false)
-        , bEncodedOrder(false)
-        , bFormattedMVout(false)
-        , bFormattedMVPin(false)
+        : bEncodedOrder(true)
         , QP(26)
         , dstWidth(0)
         , dstHeight(0)
@@ -113,45 +133,27 @@ struct sInputParams
         , NumRefActiveP(3)
         , NumRefActiveBL0(3)
         , NumRefActiveBL1(1)
-        , preencDSfactor(1)            // no downsampling
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
+        , bDisableQPOffset(false)
+        , drawMVP(false)
+        , fastIntraModeOnI(0)
+        , fastIntraModeOnP(0)
+        , fastIntraModeOnB(0)
+        , pipeMode(Full)
+        , sBRCparams()
     {
         MSDK_ZERO_MEMORY(strDstFile);
-        MSDK_ZERO_MEMORY(mbstatoutFile);
-        MSDK_ZERO_MEMORY(mvoutFile);
-        MSDK_ZERO_MEMORY(mvpInFile);
-
-        MSDK_ZERO_MEMORY(preencCtrl);
-        preencCtrl.Header.BufferId = MFX_EXTBUFF_FEI_PREENC_CTRL;
-        preencCtrl.Header.BufferSz = sizeof(mfxExtFeiPreEncCtrl);
-
-        preencCtrl.PictureType = MFX_PICTYPE_FRAME;
-        preencCtrl.RefPictureType[0] = preencCtrl.RefPictureType[1] = preencCtrl.PictureType;
-        preencCtrl.DownsampleInput = MFX_CODINGOPTION_ON;
-        // PreENC works only in encoded order, so all references would be already downsampled
-        preencCtrl.DownsampleReference[0] = preencCtrl.DownsampleReference[1] = MFX_CODINGOPTION_OFF;
-        preencCtrl.DisableMVOutput         = 1;
-        preencCtrl.DisableStatisticsOutput = 1;
-        preencCtrl.SearchWindow   = 5;     // 48x40 (48 SUs)
-        preencCtrl.SubMBPartMask  = 0x00;  // all enabled
-        preencCtrl.SubPelMode     = 0x03;  // quarter-pixel
-        preencCtrl.IntraSAD       = 0x02;  // Haar transform
-        preencCtrl.InterSAD       = 0x02;  // Haar transform
-        preencCtrl.IntraPartMask  = 0x00;  // all enabled
 
         MSDK_ZERO_MEMORY(encodeCtrl);
         encodeCtrl.Header.BufferId = MFX_EXTBUFF_HEVCFEI_ENC_CTRL;
         encodeCtrl.Header.BufferSz = sizeof(mfxExtFeiHevcEncFrameCtrl);
         encodeCtrl.SubPelMode         = 3; // quarter-pixel motion estimation
         encodeCtrl.SearchWindow       = 5; // 48 SUs 48x40 window full search
-        // TODO: return default of NumFramePartitions to 4
-        encodeCtrl.NumFramePartitions = 1; // number of partitions in frame that encoder processes concurrently
+        encodeCtrl.NumFramePartitions = 4; // number of partitions in frame that encoder processes concurrently
         // enable internal L0/L1 predictors: 1 - spatial predictors
         encodeCtrl.MultiPred[0] = encodeCtrl.MultiPred[1] = 1;
-        // set incorrect value for MVPs block size to adjust it in cmd line parser if user doesn't specify value
-        encodeCtrl.MVPredictor = 0xffff;
+        encodeCtrl.MVPredictor = 7;
     }
-
 };
 
 /**********************************************************************************/
@@ -182,15 +184,6 @@ template<class T> inline T Clip3(T min, T max, T x) { return std::min(std::max(m
 
 template<>struct mfx_ext_buffer_id<mfxExtFeiParam> {
     enum { id = MFX_EXTBUFF_FEI_PARAM };
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncCtrl> {
-    enum { id = MFX_EXTBUFF_FEI_PREENC_CTRL };
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMV>{
-    enum {id = MFX_EXTBUFF_FEI_PREENC_MV};
-};
-template<>struct mfx_ext_buffer_id<mfxExtFeiPreEncMBStat>{
-    enum {id = MFX_EXTBUFF_FEI_PREENC_MB};
 };
 template<>struct mfx_ext_buffer_id<mfxExtFeiHevcEncFrameCtrl>{
     enum {id = MFX_EXTBUFF_HEVCFEI_ENC_CTRL};
@@ -404,111 +397,7 @@ private:
 };
 
 typedef ExtBufWrapper<mfxVideoParam> MfxVideoParamsWrapper;
-
 typedef ExtBufWrapper<mfxEncodeCtrl> mfxEncodeCtrlWrap;
-
-typedef ExtBufWrapper<mfxENCInput>   mfxENCInputWrap;
-
-typedef ExtBufWrapper<mfxENCOutput>  mfxENCOutputWrap;
-
-/**********************************************************************************/
-
-enum
-{
-    MAX_DPB_SIZE = 15,
-    IDX_INVALID = 0xFF,
-};
-
-enum
-{
-    TASK_DPB_ACTIVE = 0, // available during task execution (modified dpb[BEFORE] )
-    TASK_DPB_AFTER,      // after task execution (ACTIVE + curTask if ref)
-    TASK_DPB_BEFORE,     // after previous task execution (prevTask dpb[AFTER])
-    TASK_DPB_NUM
-};
-
-template<typename T>
-struct ExtBufferWithCounter: public T
-{
-    ExtBufferWithCounter() : T()
-    , m_locked(0)
-    {}
-
-    mfxU16  m_locked;
-};
-
-typedef ExtBufferWithCounter<mfxExtFeiPreEncMV>     mfxExtFeiPreEncMVExtended;
-typedef ExtBufferWithCounter<mfxExtFeiPreEncMBStat> mfxExtFeiPreEncMBStatExtended;
-
-struct RefIdxPair
-{
-    mfxU8 RefL0;
-    mfxU8 RefL1;
-};
-
-struct PreENCOutput
-{
-    mfxExtFeiPreEncMVExtended     * m_mv;
-    mfxExtFeiPreEncMBStatExtended * m_mb;
-    RefIdxPair m_activeRefIdxPair;
-};
-
-struct HevcDpbFrame
-{
-    mfxI32   m_poc;
-    mfxU32   m_fo;    // FrameOrder
-    mfxU32   m_eo;    // Encoded order
-    mfxU32   m_bpo;   // Bpyramid order
-    mfxU32   m_level; // Pyramid level
-    mfxU8    m_tid;
-    bool     m_ltr;   // is "long-term"
-    bool     m_ldb;   // is "low-delay B"
-    bool     m_secondField;
-    bool     m_bottomField;
-    mfxU8    m_codingType;
-    mfxU8    m_idxRec;
-
-    mfxFrameSurface1 *  m_surf;     // full resolution input surface
-    mfxFrameSurface1 ** m_ds_surf;  // pointer to input dowsampled surface, used in preenc
-
-    void Reset()
-    {
-        Fill(*this, 0);
-    }
-};
-
-typedef HevcDpbFrame HevcDpbArray[MAX_DPB_SIZE];
-
-struct HevcTask : HevcDpbFrame
-{
-    mfxU16       m_frameType;
-    mfxU8        m_refPicList[2][MAX_DPB_SIZE];
-    mfxU8        m_numRefActive[2]; // L0 and L1 lists
-    mfxU8        m_shNUT;           // NALU type
-    mfxI32       m_lastIPoc;
-    mfxI32       m_lastRAP;
-    HevcDpbArray m_dpb[TASK_DPB_NUM];
-    std::list<PreENCOutput> m_preEncOutput;
-
-
-    void Reset()
-    {
-        HevcDpbFrame::Reset();
-        m_frameType = 0;
-        Fill(m_refPicList, 0);
-        Fill(m_numRefActive, 0);
-        m_lastIPoc = 0;
-        Fill(m_dpb[TASK_DPB_ACTIVE], 0);
-        Fill(m_dpb[TASK_DPB_AFTER],  0);
-        Fill(m_dpb[TASK_DPB_BEFORE], 0);
-        m_preEncOutput.clear();
-    }
-};
-
-inline bool operator ==(HevcTask const & l, HevcTask const & r)
-{
-    return l.m_poc == r.m_poc;
-}
 
 /**********************************************************************************/
 
@@ -517,7 +406,5 @@ inline mfxU32 align(const mfxU32 val, const mfxU32 alignment)
     STATIC_ASSERT(!(val == 0) && !(val & (val - 1)), is_power_of_2);
     return (val + alignment - 1) & ~(alignment - 1);
 }
-
-
 
 #endif // #define __SAMPLE_HEVC_FEI_DEFS_H__

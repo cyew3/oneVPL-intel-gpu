@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,55 +17,71 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "cmd_processor.h"
-#include "pipeline_hevc_fei.h"
+#include <hevc2_parser.h>
 
-#if defined(_WIN32) || defined(_WIN64)
-int _tmain(int argc, msdk_char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
-{
-    sInputParams userParams;    // parameters from command line
+extern "C" {
 
-    mfxStatus sts = MFX_ERR_NONE;
-
-    try
-    {
-        CmdProcessor m_parser;
-        sts = m_parser.ParseCmdLine(argc, argv);
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        std::vector<sInputParams> inputParamsArray;
-        while(m_parser.GetNextSessionParams(userParams))
-        {
-            inputParamsArray.push_back(userParams);
-        }
-        CFeiTranscodingPipeline pipeline(inputParamsArray);
-
-        sts = pipeline.Init();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        pipeline.PrintInfo();
-
-        sts = pipeline.Execute();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-    }
-    catch(mfxError& ex)
-    {
-        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
-        return ex.GetStatus();
-    }
-    catch(std::exception& ex)
-    {
-        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    catch(...)
-    {
-        msdk_printf("\nUnexpected exception!!\n");
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    return 0;
+BSErr __STDCALL BS_HEVC2_Init(BS_HEVC2::HDL& hdl, Bs32u mode){
+    hdl = NULL;
+    hdl = new BS_HEVC2::Parser(mode);
+    if (hdl)
+        return BS_ERR_NONE;
+    return BS_ERR_UNKNOWN;
 }
+
+BSErr __STDCALL BS_HEVC2_OpenFile(BS_HEVC2::HDL hdl, const char* file){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    return hdl->open(file);
+}
+
+BSErr __STDCALL BS_HEVC2_SetBuffer(BS_HEVC2::HDL hdl, byte* buf, Bs32u buf_size){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    hdl->set_buffer(buf, buf_size);
+    return BS_ERR_NONE;
+}
+
+BSErr __STDCALL BS_HEVC2_ParseNextAU(BS_HEVC2::HDL hdl, BS_HEVC2::NALU*& header){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    return hdl->parse_next_au(header);
+}
+
+BSErr __STDCALL BS_HEVC2_Close(BS_HEVC2::HDL hdl){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    delete (hdl);
+    hdl = NULL;
+    return BS_ERR_NONE;
+}
+
+BSErr __STDCALL BS_HEVC2_SetTraceLevel(BS_HEVC2::HDL hdl, Bs32u level){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    hdl->set_trace_level(level);
+    return BS_ERR_NONE;
+}
+
+BSErr __STDCALL BS_HEVC2_Lock(BS_HEVC2::HDL hdl, void* p){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    return hdl->Lock(p);
+}
+
+BSErr __STDCALL BS_HEVC2_Unlock(BS_HEVC2::HDL hdl, void* p){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    return hdl->Unlock(p);
+}
+
+BSErr __STDCALL BS_HEVC2_GetOffset(BS_HEVC2::HDL hdl, Bs64u& offset){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    offset = hdl->get_cur_pos();
+    return BS_ERR_NONE;
+}
+
+BSErr __STDCALL BS_HEVC2_Sync(BS_HEVC2::HDL hdl, BS_HEVC2::NALU* slice){
+    if (!hdl) return BS_ERR_BAD_HANDLE;
+    return hdl->sync(slice);
+}
+
+Bs16u __STDCALL BS_HEVC2_GetAsyncDepth(BS_HEVC2::HDL hdl){
+    if (!hdl) return 0;
+    return hdl->get_async_depth();
+}
+
+} // extern "C"

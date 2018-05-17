@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2016-2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -16,8 +16,6 @@ This sample was distributed or derived from the Intel's Media Samples package.
 The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
-
-#if defined(LIBVA_SUPPORT)
 
 #include "fei_buffer_allocator.h"
 
@@ -95,4 +93,20 @@ void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer,
     va_height = buffer.Height;
 }
 
-#endif // #if defined(LIBVA_SUPPORT)
+template<>
+void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncCtuCtrl& buffer,
+        const BufferAllocRequest& request,
+        mfxU32& va_pitch,
+        mfxU32& va_height)
+{
+
+    // The driver expects a 1D buffer with the number of elements equal
+    // to the total number of CTUs in the frame
+    buffer.Pitch = align(request.Width, CTU_SIZE32) / CTU_SIZE32;
+    buffer.Height = align(request.Height, CTU_SIZE32) / CTU_SIZE32;
+
+    // buffer has 1D representation in driver, so vaCreateBuffer expects
+    // va_height is 1 and va_pitch is total size of buffer->Data array
+    va_pitch = sizeof(buffer.Data[0]) * buffer.Pitch * buffer.Height;
+    va_height = 1;
+}

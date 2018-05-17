@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -20,58 +20,35 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "fei_utils.h"
 #include "hevc_fei_encode.h"
 
-FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapper& encode_pars,
-        const mfxExtFeiHevcEncFrameCtrl& def_ctrl, const msdk_char* dst_output,
-        const msdk_char* mvpInFile, PredictorsRepaking* repacker)
+FEI_Encode::FEI_Encode(MFXVideoSession* session, MfxVideoParamsWrapper& par,
+        const mfxExtFeiHevcEncFrameCtrl& ctrl, const msdk_char* outFile,
+        const sBrcParams& brc_params, mfxU16 fastIntraModeOnI,
+        mfxU16 fastIntraModeOnP, mfxU16 fastIntraModeOnB)
     : m_pmfxSession(session)
     , m_mfxENCODE(*m_pmfxSession)
-    , m_buf_allocator(hdl, encode_pars.mfx.FrameInfo.Width, encode_pars.mfx.FrameInfo.Height)
-    , m_videoParams(encode_pars)
+    , m_videoParams(par)
     , m_syncPoint(0)
-    , m_dstFileName(dst_output)
-    , m_defFrameCtrl(def_ctrl)
+    , m_dstFileName(outFile)
+    , m_defFrameCtrl(ctrl)
+    , m_pBRC(CreateBRC(brc_params, m_videoParams))
+    , m_FastIntraModeOnI(fastIntraModeOnI)
+    , m_FastIntraModeOnP(fastIntraModeOnP)
+    , m_FastIntraModeOnB(fastIntraModeOnB)
 {
-    if (0 != msdk_strlen(mvpInFile))
-    {
-        m_pFile_MVP_in.reset(new FileHandler(mvpInFile, MSDK_STRING("rb")));
-    }
-
     m_encodeCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
-    m_encodeCtrl.QP = m_videoParams.mfx.QPI;
-    MSDK_ZERO_MEMORY(m_bitstream);
 
-    m_repacker.reset(repacker);
+    m_working_queue.Start();
+
+    MSDK_ZERO_MEMORY(m_bitstream);
 }
 
 FEI_Encode::~FEI_Encode()
 {
+    m_working_queue.Stop();
+
     m_mfxENCODE.Close();
     m_pmfxSession = NULL;
     WipeMfxBitstream(&m_bitstream);
-
-    try
-    {
-        mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
-        if (pMVP)
-        {
-            m_buf_allocator.Free(pMVP);
-        }
-
-        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
-        if (pQP)
-        {
-            m_buf_allocator.Free(pQP);
-        }
-    }
-    catch(mfxError& ex)
-    {
-        msdk_printf("Exception raised in FEI Encode destructor sts = %d, msg = %s\n", ex.GetStatus(), ex.GetMessage().c_str());
-    }
-    catch(...)
-    {
-        msdk_printf("Exception raised in FEI Encode destructor\n");
-    }
-
 }
 
 mfxStatus FEI_Encode::PreInit()
@@ -92,63 +69,11 @@ mfxStatus FEI_Encode::PreInit()
     mfxExtHEVCRefLists* pRefLists = m_encodeCtrl.AddExtBuffer<mfxExtHEVCRefLists>();
     MSDK_CHECK_POINTER(pRefLists, MFX_ERR_NOT_INITIALIZED);
 
-    // allocate ext buffer for input MV predictors required for Encode.
-    if (m_repacker.get() || m_pFile_MVP_in.get())
-    {
-        mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncMVPredictors>();
-        MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
-        pMVP->VaBufferID = VA_INVALID_ID;
-    }
+    mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncMVPredictors>();
+    MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
 
-    // TODO: add condition when buffer is required
-#if 0
-    {
-        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncQP>();
-        MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
-        pQP->VaBufferID = VA_INVALID_ID;
-    }
-#endif
-
-    sts = ResetExtBuffers(m_videoParams);
-    MSDK_CHECK_STATUS(sts, "FEI Encode ResetExtBuffers failed");
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus FEI_Encode::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
-{
-
-    BufferAllocRequest request;
-    MSDK_ZERO_MEMORY(request);
-
-    request.Width = videoParams.mfx.FrameInfo.CropW;
-    request.Height = videoParams.mfx.FrameInfo.CropH;
-    try
-    {
-        mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
-        if (pMVP)
-        {
-            m_buf_allocator.Free(pMVP);
-
-            m_buf_allocator.Alloc(pMVP, request);
-        }
-
-        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
-        if (pQP)
-        {
-            m_buf_allocator.Free(pQP);
-
-            m_buf_allocator.Alloc(pQP, request);
-        }
-    }
-    catch (mfxError& ex)
-    {
-        MSDK_CHECK_STATUS(ex.GetStatus(), ex.GetMessage());
-    }
-    catch(...)
-    {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
+    mfxExtFeiHevcEncCtuCtrl* pCtuCtrl = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncCtuCtrl>();
+    MSDK_CHECK_POINTER(pCtuCtrl, MFX_ERR_NOT_INITIALIZED);
 
     return MFX_ERR_NONE;
 }
@@ -201,17 +126,23 @@ mfxStatus FEI_Encode::Reset(mfxVideoParam& par)
     return sts;
 }
 
-// in encoded order
-mfxStatus FEI_Encode::EncodeFrame(HevcTask* task)
+mfxStatus FEI_Encode::DoWork(std::shared_ptr<HevcTaskDSO> & task)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
     mfxFrameSurface1* pSurf = NULL;
-    if (task)
+    if (task.get())
     {
         sts = SetCtrlParams(*task);
         MSDK_CHECK_STATUS(sts, "FEI Encode::SetCtrlParams failed");
         pSurf = task->m_surf;
+
+        // Set up BRC frame QP
+        if (m_pBRC.get())
+        {
+            m_pBRC->PreEnc(*task /*task->m_statData*/);
+            m_encodeCtrl.QP = m_pBRC->GetQP();
+        }
     }
 
     sts = EncodeFrame(pSurf);
@@ -261,34 +192,28 @@ mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
     {
         MSDK_IGNORE_MFX_STS(sts, MFX_ERR_MORE_DATA);
     }
+    msdk_printf(MSDK_STRING("."));
 
     return sts;
 }
 
-void FillHEVCRefLists(const HevcTask& task, mfxExtHEVCRefLists & refLists)
+void FillHEVCRefLists(const HevcTaskDSO& task, mfxExtHEVCRefLists & refLists)
 {
-    const mfxU8 (&RPL)[2][MAX_DPB_SIZE] = task.m_refPicList;
-    const HevcDpbArray & DPB = task.m_dpb[TASK_DPB_ACTIVE];
-
-    refLists.NumRefIdxL0Active = task.m_numRefActive[0];
-    refLists.NumRefIdxL1Active = task.m_numRefActive[1];
+    refLists.NumRefIdxL0Active = task.m_refListActive[0].size();
+    refLists.NumRefIdxL1Active = task.m_refListActive[1].size();
 
     for (mfxU32 direction = 0; direction < 2; ++direction)
     {
         mfxExtHEVCRefLists::mfxRefPic (&refPicList)[32] = (direction == 0) ? refLists.RefPicList0 : refLists.RefPicList1;
-        for (mfxU32 i = 0; i < MAX_DPB_SIZE; ++i)
+        for (mfxU32 i = 0; i < task.m_refListActive[direction].size(); ++i)
         {
-            const mfxU8 & idx = RPL[direction][i];
-            if (idx < MAX_DPB_SIZE)
-            {
-                refPicList[i].FrameOrder = DPB[idx].m_fo;
-                refPicList[i].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
-            }
+            refPicList[i].FrameOrder = task.m_refListActive[direction][i];
+            refPicList[i].PicStruct  = MFX_PICSTRUCT_UNKNOWN;
         }
     }
 }
 
-mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
+mfxStatus FEI_Encode::SetCtrlParams(const HevcTaskDSO& task)
 {
     m_encodeCtrl.FrameType = task.m_frameType;
 
@@ -297,70 +222,54 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
 
     FillHEVCRefLists(task, *pRefLists);
 
-    // Get Frame Control buffer
-    mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncFrameCtrl>();
+    mfxExtFeiHevcEncFrameCtrl* ctrl = m_encodeCtrl;
     MSDK_CHECK_POINTER(ctrl, MFX_ERR_NOT_INITIALIZED);
 
-    if (m_repacker.get() || m_pFile_MVP_in.get())
-    {
-        // 0 - no predictors (for I-frames),
-        // 1 - enabled per 16x16 block,
-        // 2 - enabled per 32x32 block (default for repacker),
-        // 7 - inherit size of block from buffers CTU setting (default for external file with predictors)
-        ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : m_defFrameCtrl.MVPredictor;
+    // 0 - no predictors (for I-frames),
+    // 1 - enabled per 16x16 block,
+    // 2 - enabled per 32x32 block (default for repacker),
+    // 7 - inherit size of block from buffers CTU setting (default for external file with predictors)
+    ctrl->MVPredictor = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : m_defFrameCtrl.MVPredictor;
 
+    if (ctrl->MVPredictor)
+    {
         mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
         MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
-        AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(m_buf_allocator, *pMVP);
 
-        ctrl->NumMvPredictors[0] = 0;
-        ctrl->NumMvPredictors[1] = 0;
-
-        if (m_repacker.get())
-        {
-            mfxStatus sts = m_repacker->RepackPredictors(task, *pMVP, ctrl->NumMvPredictors);
-            MSDK_CHECK_STATUS(sts, "FEI Encode::RepackPredictors failed");
-        }
-        else
-        {
-            mfxStatus sts = m_pFile_MVP_in->Read(pMVP->Data, pMVP->Pitch * pMVP->Height * sizeof(pMVP->Data[0]), 1);
-            MSDK_CHECK_STATUS(sts, "FEI Encode. Read MV predictors failed");
-
-            if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_P)
-            {
-                ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0];
-            }
-            else if (m_encodeCtrl.FrameType & MFX_FRAMETYPE_B)
-            {
-                ctrl->NumMvPredictors[0] = m_defFrameCtrl.NumMvPredictors[0];
-                ctrl->NumMvPredictors[1] = m_defFrameCtrl.NumMvPredictors[1];
-            }
-        }
+        *pMVP = *task.m_mvp; // shallow copy
     }
 
-    // TODO: add condition when buffer is required
-#if 0
+    ctrl->NumMvPredictors[0] = task.m_nMvPredictors[0];
+    ctrl->NumMvPredictors[1] = task.m_nMvPredictors[1];
+
+    switch (m_encodeCtrl.FrameType  & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B))
     {
-        ctrl->PerCuQp = 1;
+    case MFX_FRAMETYPE_I:
+        ctrl->FastIntraMode = m_FastIntraModeOnI;
+        break;
+    case MFX_FRAMETYPE_P:
+        ctrl->FastIntraMode = m_FastIntraModeOnP;
+        break;
+    case MFX_FRAMETYPE_B:
+        ctrl->FastIntraMode = task.m_isGPBFrame ? m_FastIntraModeOnP : m_FastIntraModeOnB;
+        break;
+    default:
+        throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Invalid m_encodeCtrl.FrameType");
+        break;
+    }
 
-        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
-        MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
-        AutoBufferLocker<mfxExtFeiHevcEncQP> lock(m_buf_allocator, *pQP);
+    if (task.m_ctuCtrl.get())
+    {
+        ctrl->PerCtuInput = (m_encodeCtrl.FrameType & MFX_FRAMETYPE_I) ? 0 : m_defFrameCtrl.PerCtuInput;
 
-        // Fill per block QP
-        mfxU32 w_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
-        mfxU32 h_ctu = (m_videoParams.mfx.FrameInfo.CropH + 31) / 32;
-        if (w_ctu > pQP->Pitch || h_ctu > pQP->Height)
-            MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "FEI Encode: wrong QP buffer size");
-        for (mfxU32 i = 0; i < h_ctu; i++)
+        if (ctrl->PerCtuInput)
         {
-            for (mfxU32 j = 0; j < w_ctu; j++)
-            {
-                pQP->Data[i*pQP->Pitch + j] = i % 51 + 1;
-            }
+            mfxExtFeiHevcEncCtuCtrl* pCtuCtrl = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncCtuCtrl>();
+            MSDK_CHECK_POINTER(pCtuCtrl, MFX_ERR_NOT_INITIALIZED);
+
+            *pCtuCtrl = *task.m_ctuCtrl; // shallow copy
         }
     }
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -372,7 +281,16 @@ mfxStatus FEI_Encode::SyncOperation()
     sts = m_pmfxSession->SyncOperation(m_syncPoint, MSDK_WAIT_INTERVAL);
     MSDK_CHECK_STATUS(sts, "FEI Encode: SyncOperation failed");
 
-    sts = m_FileWriter.WriteNextFrame(&m_bitstream);
+    mfxExtFeiHevcEncMVPredictors* pMVP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncMVPredictors>();
+    MSDK_CHECK_POINTER(pMVP, MFX_ERR_NOT_INITIALIZED);
+
+    // Update BRC with coded segment size
+    if (m_pBRC.get())
+    {
+        m_pBRC->Report(m_bitstream.DataLength);
+    }
+
+    sts = m_FileWriter.WriteNextFrame(&m_bitstream, false);
     MSDK_CHECK_STATUS(sts, "FEI Encode: WriteNextFrame failed");
 
     return sts;
@@ -390,4 +308,75 @@ mfxStatus FEI_Encode::AllocateSufficientBuffer()
     MSDK_CHECK_STATUS_SAFE(sts, "ExtendMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
 
     return sts;
+}
+
+mfxStatus MVPOverlay::Init()
+{
+    mfxStatus sts = m_pBase->Init();
+    MSDK_CHECK_STATUS(sts, "m_pBase->Init failed");
+
+    m_yuvWriter.Init(m_yuvName.c_str(), 1);
+    MSDK_CHECK_STATUS(sts, "FileWriter Init failed");
+
+    MfxVideoParamsWrapper par = m_pBase->GetVideoParam();
+    m_width  = par.mfx.FrameInfo.Width;
+    m_height = par.mfx.FrameInfo.Height;
+    sts = m_surface.Alloc(par.mfx.FrameInfo.FourCC, m_width, m_height);
+    MSDK_CHECK_STATUS(sts, "m_surface.Alloc failed");
+
+    return sts;
+}
+
+mfxStatus MVPOverlay::SubmitFrame(std::shared_ptr<HevcTaskDSO> & task)
+{
+    if (task.get() && task->m_surf)
+    {
+        mfxFrameSurface1 & s = *task->m_surf;
+        mfxStatus sts = m_allocator->Lock(m_allocator->pthis, s.Data.MemId, &s.Data);
+        MSDK_CHECK_STATUS(sts, "m_allocator->Lock failed");
+
+        sts = CopySurface(m_surface, s);
+        MSDK_CHECK_STATUS(sts, "CopySurface failed");
+
+        sts = m_allocator->Unlock(m_allocator->pthis, s.Data.MemId, &s.Data);
+        MSDK_CHECK_STATUS(sts, "m_allocator->Unlock failed");
+
+        if (task->m_mvp.get())
+        {
+            mfxExtFeiHevcEncMVPredictors & mvp = *task->m_mvp.get();
+            AutoBufferLocker<mfxExtFeiHevcEncMVPredictors> lock(*m_buffAlloc.get(), mvp);
+
+            for (mfxU32 tileIdx = 0; tileIdx < mvp.Pitch * mvp.Height; ++tileIdx)
+            {
+                mfxFeiHevcEncMVPredictors & block = mvp.Data[tileIdx];
+                if (block.BlockSize)
+                {
+                    mfxU32 rasterScanIdx = (tileIdx & 1) + (((tileIdx & 3) >> 1 ) * mvp.Pitch) +
+                                            (((tileIdx % (2 * mvp.Pitch)) >> 2 ) << 1) +
+                                             ((tileIdx / (2 * mvp.Pitch)) * 2 * mvp.Pitch);
+
+                    mfxU32 x = (rasterScanIdx % mvp.Pitch) << 4; // left top point
+                    mfxU32 y = (rasterScanIdx / mvp.Pitch) << 4;
+
+                    x += 8; // center
+                    y += 8;
+
+                    for (mfxU32 i = 0; i < 4; ++i)
+                    {
+                        // ">> 2" below since MVs are in q-pixels
+                        if (block.RefIdx[i].RefL0 != 0xf)
+                            DrawLine(x, y, block.MV[i][0].x >> 2, block.MV[i][0].y >> 2, m_surface.Data.Y, m_width, m_height, 0);   // L0 - black
+
+                        if (block.RefIdx[i].RefL1 != 0xf)
+                            DrawLine(x, y, block.MV[i][1].x >> 2, block.MV[i][1].y >> 2, m_surface.Data.Y, m_width, m_height, 200); // L1 - white
+                    }
+                }
+            }
+        }
+
+        sts = m_yuvWriter.WriteNextFrame(&m_surface);
+        MSDK_CHECK_STATUS(sts, "WriteNextFrame failed");
+    }
+
+    return m_pBase->SubmitFrame(task);
 }

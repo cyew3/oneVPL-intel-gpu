@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,55 +17,18 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "cmd_processor.h"
-#include "pipeline_hevc_fei.h"
+#pragma once
+#include "bs_def.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-int _tmain(int argc, msdk_char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
-{
-    sInputParams userParams;    // parameters from command line
+extern const Bs8u  rangeTabLPS[64][4];
+extern const Bs8u  transIdxLPS[64];
+extern const Bs8u  transIdxMPS[64];
 
-    mfxStatus sts = MFX_ERR_NONE;
+extern const Bs8s CtxInitTable_0_10_x1[11][2];
+extern const Bs8s CtxInitTable_11_59_x3[49][3][2];
+extern const Bs8s CtxInitTable_60_69_x1[10][2];
+extern const Bs8s CtxInitTable_70_275_x4[206][4][2];
+extern const Bs8s CtxInitTable_277_1023_x4[747][4][2];
 
-    try
-    {
-        CmdProcessor m_parser;
-        sts = m_parser.ParseCmdLine(argc, argv);
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        std::vector<sInputParams> inputParamsArray;
-        while(m_parser.GetNextSessionParams(userParams))
-        {
-            inputParamsArray.push_back(userParams);
-        }
-        CFeiTranscodingPipeline pipeline(inputParamsArray);
-
-        sts = pipeline.Init();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        pipeline.PrintInfo();
-
-        sts = pipeline.Execute();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-    }
-    catch(mfxError& ex)
-    {
-        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
-        return ex.GetStatus();
-    }
-    catch(std::exception& ex)
-    {
-        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    catch(...)
-    {
-        msdk_printf("\nUnexpected exception!!\n");
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    return 0;
-}
+extern const Bs8u ctxIdxBlockCatOffset[4][14];
+extern const Bs8u ctxIdxIncScf8x8[64][3];

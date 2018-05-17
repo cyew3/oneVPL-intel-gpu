@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,55 +17,53 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "cmd_processor.h"
-#include "pipeline_hevc_fei.h"
+#include "fei_worker.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-int _tmain(int argc, msdk_char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
+void Worker::Start()
 {
-    sInputParams userParams;    // parameters from command line
+    m_working_thread = std::thread(std::bind(&Worker::Process, this));
+}
 
-    mfxStatus sts = MFX_ERR_NONE;
-
-    try
+void Worker::Stop()
+{
     {
-        CmdProcessor m_parser;
-        sts = m_parser.ParseCmdLine(argc, argv);
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+        std::lock_guard<std::mutex> lock(m_mutex);
 
-        std::vector<sInputParams> inputParamsArray;
-        while(m_parser.GetNextSessionParams(userParams))
+        m_data.push(ThreadTask()); // nullptr command is a stop thread command
+        m_condition.notify_one();
+    }
+    {
+        // mutexed code section not to have exceptions in join
+        // if already joined in another thread or not started
+        std::lock_guard<std::mutex> lock(m_shutdown_mutex);
+        if(m_working_thread.joinable())
         {
-            inputParamsArray.push_back(userParams);
+            m_working_thread.join();
         }
-        CFeiTranscodingPipeline pipeline(inputParamsArray);
-
-        sts = pipeline.Init();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        pipeline.PrintInfo();
-
-        sts = pipeline.Execute();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
     }
-    catch(mfxError& ex)
+}
+
+void Worker::WaitingPop(ThreadTask* command)
+{
+    std::unique_lock<std::mutex> lock(m_mutex);
+    m_condition.wait(lock, [this] { return !m_data.empty(); });
+    *command = m_data.front();
+    m_data.pop();
+}
+
+void Worker::Process()
+{
+    ThreadTask cmd;
+    for(;;)
     {
-        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
-        return ex.GetStatus();
+        WaitingPop(&cmd);
+        if(cmd == nullptr)
+        {
+            break;
+        }
+        else
+        {
+            cmd();
+        }
     }
-    catch(std::exception& ex)
-    {
-        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    catch(...)
-    {
-        msdk_printf("\nUnexpected exception!!\n");
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    return 0;
 }

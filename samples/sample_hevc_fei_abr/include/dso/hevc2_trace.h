@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,55 +17,47 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "cmd_processor.h"
-#include "pipeline_hevc_fei.h"
+#pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-int _tmain(int argc, msdk_char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
+#include "hevc2_struct.h"
+
+namespace BS_HEVC2
 {
-    sInputParams userParams;    // parameters from command line
 
-    mfxStatus sts = MFX_ERR_NONE;
+extern const char NaluTraceMap[64][16];
+extern const char PicTypeTraceMap[3][4];
+extern const char ChromaFormatTraceMap[4][12];
+extern const char VideoFormatTraceMap[6][12];
+extern const char PicStructTraceMap[13][12];
+extern const char ScanTypeTraceMap[4][12];
+extern const char SliceTypeTraceMap[4][2];
+extern const char PredModeTraceMap[3][6];
+extern const char PartModeTraceMap[8][12];
+extern const char IntraPredModeTraceMap[35][9];
+extern const char SAOTypeTraceMap[3][5];
+extern const char EOClassTraceMap[4][5];
 
-    try
-    {
-        CmdProcessor m_parser;
-        sts = m_parser.ParseCmdLine(argc, argv);
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+struct ProfileTraceMap
+{
+    static const char map[11][12];
+    const char* operator[] (unsigned int i);
+};
 
-        std::vector<sInputParams> inputParamsArray;
-        while(m_parser.GetNextSessionParams(userParams))
-        {
-            inputParamsArray.push_back(userParams);
-        }
-        CFeiTranscodingPipeline pipeline(inputParamsArray);
+struct ARIdcTraceMap
+{
+    static const char map[19][16];
+    const char* operator[] (unsigned int i);
+};
 
-        sts = pipeline.Init();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+struct SEITypeTraceMap
+{
+    const char* operator[] (unsigned int i);
+};
 
-        pipeline.PrintInfo();
+struct RPLTraceMap
+{
+    char m_buf[80];
+    const char* operator[] (const RefPic& r);
+};
 
-        sts = pipeline.Execute();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-    }
-    catch(mfxError& ex)
-    {
-        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
-        return ex.GetStatus();
-    }
-    catch(std::exception& ex)
-    {
-        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    catch(...)
-    {
-        msdk_printf("\nUnexpected exception!!\n");
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    return 0;
 }

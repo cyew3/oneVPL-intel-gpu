@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,55 +17,57 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "cmd_processor.h"
-#include "pipeline_hevc_fei.h"
+#pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-int _tmain(int argc, msdk_char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
+#include <functional>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+#include "sample_utils.h"
+
+class Worker
 {
-    sInputParams userParams;    // parameters from command line
+public:
+    Worker() = default;
 
-    mfxStatus sts = MFX_ERR_NONE;
+public:
+    void Start();
 
-    try
-    {
-        CmdProcessor m_parser;
-        sts = m_parser.ParseCmdLine(argc, argv);
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+    void Stop();
 
-        std::vector<sInputParams> inputParamsArray;
-        while(m_parser.GetNextSessionParams(userParams))
-        {
-            inputParamsArray.push_back(userParams);
-        }
-        CFeiTranscodingPipeline pipeline(inputParamsArray);
+    template<class Task>
+    void Push(Task&& task);
 
-        sts = pipeline.Init();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
+private:
+    typedef std::function<void()> ThreadTask;
 
-        pipeline.PrintInfo();
+    void WaitingPop(ThreadTask* command);
 
-        sts = pipeline.Execute();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-    }
-    catch(mfxError& ex)
-    {
-        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
-        return ex.GetStatus();
-    }
-    catch(std::exception& ex)
-    {
-        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    catch(...)
-    {
-        msdk_printf("\nUnexpected exception!!\n");
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
+    void Process();
 
-    return 0;
+private:
+    std::mutex m_mutex; // push/pop protection
+    std::queue<ThreadTask> m_data;
+    std::condition_variable m_condition; // event from push to processor
+    std::thread m_working_thread;
+    std::mutex m_shutdown_mutex;
+
+private:
+    DISALLOW_COPY_AND_ASSIGN(Worker);
+};
+
+template<class Task>
+void Worker::Push(Task&& task)
+{
+    // incoming task could be a lambda move assignable, but not copy assignable
+    // such lambdas aren't convertible to std::function stored in our queue
+    // so we create copy assignable lambda - it captures shared_ptr to incoming task
+
+    ThreadTask cmd = [shared_task = std::make_shared<Task>(std::move(task))] () { (*shared_task)(); }; // just call task
+
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_data.push(cmd);
+    m_condition.notify_one();
 }

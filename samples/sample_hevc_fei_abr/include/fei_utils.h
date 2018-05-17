@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "sample_utils.h"
 #include "base_allocator.h"
 #include "sample_hevc_fei_defs.h"
+#include "fei_buffer_allocator.h"
 
 class SurfacesPool
 {
@@ -58,6 +59,7 @@ private:
 
 /**********************************************************************************/
 
+class HevcTaskDSO;
 class IYUVSource
 {
 public:
@@ -68,11 +70,18 @@ public:
         MSDK_ZERO_MEMORY(m_frameInfo);
     }
 
+    IYUVSource(IYUVSource const&) = delete;
+    IYUVSource& operator=(IYUVSource const&) = delete;
+
     virtual ~IYUVSource() {}
 
     virtual void SetSurfacePool(SurfacesPool* sp)
     {
         m_pOutSurfPool = sp;
+    }
+    virtual mfxStatus SetBufferAllocator(std::shared_ptr<FeiBufferAllocator> bufferAlloc)
+    {
+        return MFX_ERR_UNSUPPORTED;
     }
     virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request) = 0;
     virtual mfxStatus PreInit() = 0;
@@ -81,45 +90,12 @@ public:
 
     virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info) = 0;
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf) = 0;
+    virtual mfxStatus GetFrame(HevcTaskDSO & task)  { return MFX_ERR_UNSUPPORTED;}
 
 protected:
     SourceFrameInfo m_inPars;
     mfxFrameInfo    m_frameInfo;
     SurfacesPool*   m_pOutSurfPool;
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(IYUVSource);
-};
-
-// reader of raw frames
-class YUVReader : public IYUVSource
-{
-public:
-    YUVReader(const SourceFrameInfo& inPars, SurfacesPool* sp)
-        : IYUVSource(inPars, sp)
-        , m_srcColorFormat(inPars.ColorFormat)
-    {
-    }
-
-    virtual ~YUVReader();
-
-    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
-    virtual mfxStatus PreInit();
-    virtual mfxStatus Init();
-    virtual void      Close();
-
-    virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
-    virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
-
-protected:
-    mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
-
-protected:
-    CSmplYUVReader   m_FileReader;
-    mfxU32           m_srcColorFormat;
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(YUVReader);
 };
 
 class Decoder : public IYUVSource
@@ -155,56 +131,13 @@ protected:
     mfxBitstream                   m_Bitstream;
 
     MFXVideoSession*               m_session;
-    std::auto_ptr<MFXVideoDECODE>  m_DEC;
+    std::unique_ptr<MFXVideoDECODE>  m_DEC;
     MfxVideoParamsWrapper          m_par;
 
     mfxSyncPoint                   m_LastSyncp;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(Decoder);
-};
-
-class FieldSplitter : public IYUVSource
-{
-public:
-    FieldSplitter(IYUVSource * pTarget, const SourceFrameInfo& inPars, SurfacesPool* sp, MFXVideoSession* parentSession)
-        : IYUVSource(inPars, sp)
-        , m_pTarget(pTarget)
-        , m_parentSession(parentSession)
-        , m_pInSurface(NULL)
-        , m_LastSyncp(0)
-    {
-    }
-    virtual ~FieldSplitter()
-    {
-        m_pTarget.reset();
-    }
-    virtual mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
-    virtual mfxStatus PreInit();
-    virtual mfxStatus Init();
-    virtual void      Close();
-
-    virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
-    virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
-
-protected:
-    mfxStatus VPPOneFrame(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1** pSurfaceOut);
-
-protected:
-    std::auto_ptr<IYUVSource>   m_pTarget;
-    MFXVideoSession *           m_parentSession;
-
-    SurfacesPool                m_InSurfacePool;
-
-    MFXVideoSession             m_session;
-    std::auto_ptr<MFXVideoVPP>  m_VPP;
-    MfxVideoParamsWrapper       m_par;
-
-    mfxFrameSurface1 *          m_pInSurface;
-    mfxSyncPoint                m_LastSyncp;
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(FieldSplitter);
 };
 
 /**********************************************************************************/
@@ -302,8 +235,8 @@ public:
 
 private:
     MFXVideoSession  m_session;
-    std::auto_ptr<MFXPlugin>        m_plugin;
-    std::auto_ptr<MFXVideoENCODE>   m_encode;
+    std::unique_ptr<MFXPlugin>        m_plugin;
+    std::unique_ptr<MFXVideoENCODE>   m_encode;
 
 private:
     DISALLOW_COPY_AND_ASSIGN(HEVCEncodeParamsChecker);
@@ -311,51 +244,11 @@ private:
 
 /**********************************************************************************/
 
-template<typename T>
-T* AcquireResource(std::vector<T> & pool)
-{
-    T * freeBuffer = NULL;
-    for (size_t i = 0; i < pool.size(); i++)
-    {
-        if (pool[i].m_locked == 0)
-        {
-            freeBuffer = &pool[i];
-            msdk_atomic_inc16((volatile mfxU16*)&pool[i].m_locked);
-            break;
-        }
-    }
-    return freeBuffer;
-}
+void DrawPixel(mfxI32 x, mfxI32 y, mfxU8 *pPic, mfxI32 nPicWidth, mfxI32 nPicHeight, mfxU8 u8Pixel);
+void DrawLine(mfxI32 x0, mfxI32 y0, mfxI32 dx, mfxI32 dy, mfxU8 *pPic, mfxI32 nPicWidth, mfxI32 nPicHeight, mfxU8 u8Pixel);
 
 /**********************************************************************************/
 
-class MFX_VPP
-{
-public:
-    MFX_VPP(MFXVideoSession* session, MfxVideoParamsWrapper& vpp_pars, SurfacesPool* sp);
-    ~MFX_VPP();
-
-    mfxStatus Init();
-    mfxStatus Reset(mfxVideoParam& par);
-
-    mfxStatus QueryIOSurf(mfxFrameAllocRequest* request);
-
-    mfxStatus PreInit();
-    mfxFrameInfo GetOutFrameInfo();
-
-    mfxStatus ProcessFrame(mfxFrameSurface1* pInSurf, mfxFrameSurface1* & pOutSurf);
-
-private:
-    mfxStatus Query();
-
-    MFXVideoSession*    m_pmfxSession; // pointer to MFX session shared by external interface
-
-    MFXVideoVPP             m_mfxVPP;
-    SurfacesPool*           m_pOutSurfPool;
-    MfxVideoParamsWrapper   m_videoParams; // reflects current state VPP parameters
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(MFX_VPP);
-};
+mfxStatus CopySurface(mfxFrameSurface1 & dst, const mfxFrameSurface1 & src);
 
 #endif // #define __FEI_UTILS_H__

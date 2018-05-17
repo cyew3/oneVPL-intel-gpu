@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2016-2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -22,8 +22,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "mfxfeihevc.h"
 #include "sample_hevc_fei_defs.h"
-
-#if defined(LIBVA_SUPPORT)
 
 #include <va/va.h>
 #include "vaapi_utils.h"
@@ -119,6 +117,8 @@ private:
             return VAEncQPBufferType;
         case MFX_EXTBUFF_HEVCFEI_ENC_MV_PRED:
             return VAEncFEIMVPredictorBufferType;
+        case MFX_EXTBUFF_HEVCFEI_ENC_CTU_CTRL:
+            return VAEncFEIMBControlBufferType;
 #endif
         default:
             throw mfxError(MFX_ERR_UNSUPPORTED, "Unsupported buffer type");
@@ -166,8 +166,6 @@ void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncMVPredictors& buf
 template<>
 void FeiBufferAllocator::CalcBufferPitchHeight(mfxExtFeiHevcEncQP& buffer, const BufferAllocRequest& request,
                                                  mfxU32& va_pitch, mfxU32& va_height);
-
-#endif //#if defined(LIBVA_SUPPORT)
 
 // T is external buffer structure
 template<typename T>

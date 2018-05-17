@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -27,15 +27,77 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "vaapi_device.h"
 #include "fei_utils.h"
 #include "hevc_fei_encode.h"
-#include "hevc_fei_preenc.h"
-#include "ref_list_manager.h"
 
-/* This class implements a FEI pipeline */
-class CEncodingPipeline
+class EncoderContext
 {
 public:
-    CEncodingPipeline(sInputParams& userInput);
-    ~CEncodingPipeline();
+    EncoderContext(){}
+    ~EncoderContext(){}
+
+    mfxStatus PreInit(MFXFrameAllocator * mfxAllocator,
+                      mfxHDL hdl,
+                      std::shared_ptr<FeiBufferAllocator> bufferAllocator,
+                      const sInputParams & params,
+                      const mfxFrameInfo & inFrameInfo);
+
+    mfxStatus Query()
+    {
+        return m_encoder->Query();
+    }
+    mfxStatus Init()
+    {
+        return m_encoder->Init();
+    }
+    mfxStatus Reset(mfxVideoParam& par)
+    {
+        return m_encoder->Reset(par);
+    }
+    mfxStatus PreInit()
+    {
+        return m_encoder->PreInit();
+    }
+    void UpdateBRCStat(FrameStatData& stat)
+    {
+        return m_encoder->UpdateBRCStat(stat);
+    }
+    MfxVideoParamsWrapper GetVideoParam()
+    {
+        return m_encoder->GetVideoParam();
+    }
+    mfxStatus QueryIOSurf(mfxFrameAllocRequest* request)
+    {
+        return m_encoder->QueryIOSurf(request);
+    }
+    mfxStatus SubmitFrame(std::shared_ptr<HevcTaskDSO> & task)
+    {
+        return m_encoder->SubmitFrame(task);
+    }
+
+    // Function generates common mfxVideoParam ENCODE
+    // from user cmd line parameters and frame info from upstream component in pipeline.
+    MfxVideoParamsWrapper GetEncodeParams(const sInputParams& userParam, const mfxFrameInfo& info);
+    mfxStatus CreateEncoder(const sInputParams & params, const mfxFrameInfo & info);
+
+private:
+    mfxHDL                     m_hdl = nullptr;
+    MFXVideoSession            m_mfxSession;
+
+    MFXFrameAllocator *        m_MFXAllocator = nullptr;
+    std::shared_ptr<FeiBufferAllocator> m_bufferAllocator;
+
+    std::unique_ptr<MFXPlugin> m_pHEVCePlugin;
+
+    std::unique_ptr<IEncoder>  m_encoder;
+};
+
+/**********************************************************************************/
+
+/* This class implements a FEI pipeline */
+class CFeiTranscodingPipeline
+{
+public:
+    CFeiTranscodingPipeline(const std::vector<sInputParams> & inputParamsArray);
+    ~CFeiTranscodingPipeline();
 
     mfxStatus Init();
     mfxStatus Execute();
@@ -44,45 +106,54 @@ public:
     void PrintInfo();
 
 private:
-    const sInputParams m_inParams; /* collection of user parameters, adjusted in parsing and
-                                      shouldn't be modified during processing to not lose
-                                      initial settings */
+    const std::vector<sInputParams>          m_inParamsArray;  /* collection of user parameters, adjusted in parsing and
+                                                                shouldn't be modified during processing to not lose
+                                                                initial settings */
 
-    mfxIMPL                                m_impl;
-    std::auto_ptr<CHWDevice>               m_pHWdev;
+    mfxIMPL                                  m_impl;
+    std::unique_ptr<CHWDevice>               m_pHWdev;
 
-    std::auto_ptr<mfxAllocatorParams>      m_pMFXAllocatorParams;
-    std::auto_ptr<MFXFrameAllocator>       m_pMFXAllocator;
+    std::unique_ptr<MFXFrameAllocator>       m_pMFXAllocator;
+    SurfacesPool                             m_EncSurfPool;
 
-    MFXVideoSession                        m_mfxSession;
-    std::auto_ptr<MFXPlugin>               m_pDecoderPlugin;
-    std::auto_ptr<MFXPlugin>               m_pHEVCePlugin;
+    std::shared_ptr<FeiBufferAllocator>      m_bufferAllocator;
+    std::shared_ptr<MVPPool>                 m_mvpPool;
+    std::shared_ptr<CTUCtrlPool>             m_ctuCtrlPool;
 
-    SurfacesPool                           m_EncSurfPool;
+    MFXVideoSession                          m_mfxSession;
 
-    std::auto_ptr<IYUVSource>              m_pYUVSource; // source of raw YUV data for encoder (e.g. YUV file reader, decoder, etc)
-    std::auto_ptr<EncodeOrderControl>      m_pOrderCtrl;
-    std::auto_ptr<IPreENC>                 m_pFEI_PreENC;
-    std::auto_ptr<FEI_Encode>              m_pFEI_Encode;
+    std::unique_ptr<MFXPlugin>               m_pDecoderPlugin;
+    std::unique_ptr<MFXPlugin>               m_pHEVCePlugin;
 
-    std::auto_ptr<HEVCEncodeParamsChecker> m_pParamChecker;
+    std::unique_ptr<IYUVSource>              m_source;
+    std::unique_ptr<IYUVSource>              m_dso;
+    std::list<std::unique_ptr<EncoderContext>> m_encoders;
 
-    mfxU32                                 m_processedFrames;
+    std::unique_ptr<HEVCEncodeParamsChecker> m_pParamChecker;
+
+    mfxU32                                   m_FramesToProcess;
+    mfxU32                                   m_processedFrames;
+
+    // Look Ahead queue
+    std::unique_ptr<LA_queue>                m_la_queue;
 
 private:
-    mfxStatus LoadFEIPlugin();
-    mfxStatus CreateAllocator();
     mfxStatus CreateHWDevice();
-    mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
-    mfxStatus AllocFrames();
+
     mfxStatus InitComponents();
-    mfxStatus DrainBufferedFrames();
 
     IYUVSource* CreateYUVSource();
-    IPreENC*    CreatePreENC(mfxFrameInfo& in_fi);
-    FEI_Encode* CreateEncode(mfxFrameInfo& in_fi);
+    IEncoder*   CreateEncode(mfxFrameInfo& in_fi);
 
-    DISALLOW_COPY_AND_ASSIGN(CEncodingPipeline);
+    mfxStatus CreateAllocator();
+    mfxStatus AllocFrames();
+
+    mfxStatus CreateBufferAllocator(mfxU32 w, mfxU32 h);
+    mfxStatus AllocBuffers();
+
+    mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
+
+    DISALLOW_COPY_AND_ASSIGN(CFeiTranscodingPipeline);
 };
 
 MfxVideoParamsWrapper GetEncodeParams(const sInputParams& user_pars, const mfxFrameInfo& in_fi);

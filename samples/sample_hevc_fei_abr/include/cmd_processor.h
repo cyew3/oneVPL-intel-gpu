@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,55 +17,28 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#include "cmd_processor.h"
-#include "pipeline_hevc_fei.h"
+#pragma once
+#include "sample_utils.h"
+#include "sample_hevc_fei_defs.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-int _tmain(int argc, msdk_char *argv[])
-#else
-int main(int argc, char *argv[])
-#endif
+class CmdProcessor
 {
-    sInputParams userParams;    // parameters from command line
+public:
+    CmdProcessor()
+    {}
+    ~CmdProcessor()
+    {}
+    mfxStatus ParseCmdLine(mfxU32 argc, msdk_char *argv[]);
+    bool GetNextSessionParams(sInputParams &InputParams);
 
-    mfxStatus sts = MFX_ERR_NONE;
+protected:
+    mfxStatus ParseParFile(FILE* file);
+    mfxStatus TokenizeLine(msdk_char *pLine, mfxU32 length);
+    mfxStatus ParseParamsForOneSession(mfxU32 argc, msdk_char* argv[]);
+    DISALLOW_COPY_AND_ASSIGN(CmdProcessor);
 
-    try
-    {
-        CmdProcessor m_parser;
-        sts = m_parser.ParseCmdLine(argc, argv);
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        std::vector<sInputParams> inputParamsArray;
-        while(m_parser.GetNextSessionParams(userParams))
-        {
-            inputParamsArray.push_back(userParams);
-        }
-        CFeiTranscodingPipeline pipeline(inputParamsArray);
-
-        sts = pipeline.Init();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-
-        pipeline.PrintInfo();
-
-        sts = pipeline.Execute();
-        MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
-    }
-    catch(mfxError& ex)
-    {
-        msdk_printf("\n%s!\n", ex.GetMessage().c_str());
-        return ex.GetStatus();
-    }
-    catch(std::exception& ex)
-    {
-        msdk_printf("\nUnexpected exception!! %s\n", ex.what());
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    catch(...)
-    {
-        msdk_printf("\nUnexpected exception!!\n");
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-
-    return 0;
-}
+protected:
+    mfxU32                                       m_SessionParamId = 0;
+    std::vector<sInputParams>                    m_SessionArray;
+    msdk_char*                                   m_parName = 0;
+};

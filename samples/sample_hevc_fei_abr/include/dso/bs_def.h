@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -17,48 +17,56 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#ifndef __FEI_PREDICTORS_REPACKING_H__
-#define __FEI_PREDICTORS_REPACKING_H__
+#ifndef __BS_DEF_H
+#define __BS_DEF_H
 
-#include "sample_hevc_fei_defs.h"
-#include "mfxfeihevc.h"
+//#undef __BS_TRACE__
+//#define  __BS_TRACE__
 
-class PredictorsRepaking
-{
-public:
-    PredictorsRepaking();
-    ~PredictorsRepaking() {}
+typedef unsigned char    byte;
+typedef unsigned char    Bs8u;
+typedef unsigned short   Bs16u;
+typedef unsigned int     Bs32u;
 
-    mfxStatus Init(const mfxVideoParam& videoParams, mfxU8 preencDSstrength = 1);
-    mfxStatus RepackPredictors(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
+typedef signed char      Bs8s;
+typedef signed short     Bs16s;
+typedef signed int       Bs32s;
 
-    enum
-    {
-        PERFORMANCE = 0,
-        QUALITY     = 1
-    };
+#ifdef __GNUC__
+ typedef unsigned long long Bs64u;
+ typedef signed long long   Bs64s;
+#else
+ typedef unsigned __int64 Bs64u;
+ typedef signed __int64   Bs64s;
+#endif
+ 
+ #if defined( _WIN32 ) || defined ( _WIN64 )
+  #define __STDCALL  __stdcall
+  #define __CDECL    __cdecl
+  #define __INT64    __int64
+  #define __UINT64    unsigned __int64
+#else
+  #define __STDCALL
+  #define __CDECL
+  #define __INT64    long long
+  #define __UINT64    unsigned long long
+#endif
 
-    inline void SetPerfomanceRepackingMode() { m_repakingMode = PERFORMANCE; }
-    inline void SetQualityRepackingMode() { m_repakingMode = QUALITY; }
+typedef enum {
+    BS_ERR_NONE                 =  0,
+    BS_ERR_UNKNOWN              = -1,
+    BS_ERR_WRONG_UNITS_ORDER    = -2,
+    BS_ERR_MORE_DATA            = -3,
+    BS_ERR_INVALID_PARAMS       = -4,
+    BS_ERR_MEM_ALLOC            = -5,
+    BS_ERR_NOT_IMPLEMENTED      = -6,
+    BS_ERR_NOT_ENOUGH_BUFFER    = -7,
+    BS_ERR_BAD_HANDLE           = -8,
+    BS_ERR_INCOMPLETE_DATA      = -9
+} BSErr;
 
-private:
-    const mfxU8  m_max_fei_enc_mvp_num;// maximum number of predictors for encoder
-    //variables
-    mfxU8  m_repakingMode;       // repaking type: PERFORMANCE or QUALITY
-    mfxU16 m_width;              // input surface width
-    mfxU16 m_height;             // input surface height
-    mfxU8  m_downsample_power2;  // power of 2 for down-sampling: 0..3
-    mfxU16 m_widthCU_ds;         // width in CU (16x16) of ds surface
-    mfxU16 m_heightCU_ds;        // height in CU (16x16) of ds surface
-    mfxU16 m_widthCU_enc;        // width in CU (16x16) for encoder
-    mfxU16 m_heightCU_enc;       // height in CU (16x16) for encoder
+#define BS_MIN(x, y) ( ((x) < (y)) ? (x) : (y) )
+#define BS_MAX(x, y) ( ((x) > (y)) ? (x) : (y) )
+#define BS_ABS(x)    ( ((x) > 0) ? (x) : (-(x)) )
 
-    //functions
-    mfxStatus RepackPredictorsPerformance(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
-    mfxStatus RepackPredictorsQuality(const HevcTask& eTask, mfxExtFeiHevcEncMVPredictors& mvp, mfxU16 nMvPredictors[2]);
-    mfxU8 ConvertDSratioPower2(mfxU8 DSfactor);
-
-    DISALLOW_COPY_AND_ASSIGN(PredictorsRepaking);
-};
-
-#endif // #define __FEI_PREDICTORS_REPACKING_H__
+#endif //__BS_DEF_H
