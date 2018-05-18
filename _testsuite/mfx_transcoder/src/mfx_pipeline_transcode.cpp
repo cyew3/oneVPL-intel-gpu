@@ -2034,6 +2034,18 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
     }
 #endif
 
+    // set enc:shift if it is not set explicitly
+    if (m_components[eREN].m_params.mfx.FrameInfo.Shift == (mfxU16)-1)
+    {
+        if ((m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) ||
+            (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216) ||
+            (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416) ||
+            (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P016))
+            m_components[eREN].m_params.mfx.FrameInfo.Shift = 1;
+        else
+            m_components[eREN].m_params.mfx.FrameInfo.Shift = 0;
+    }
+
     return MFX_ERR_NONE;
 }
 

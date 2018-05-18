@@ -72,6 +72,8 @@ public:
           m_Session = pFactory->CreateVideoSession(&dsc);
           m_pSession = m_Session.get();
           m_params.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+          if (!m_ShortName.compare(tstring(VM_STRING("enc"))))
+              m_params.mfx.FrameInfo.Shift = (mfxU16) -1;    // not set
           m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
           m_bAdaptivePlayback = false;
       }
