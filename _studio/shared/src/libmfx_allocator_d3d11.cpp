@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_VA)
@@ -240,7 +240,8 @@ mfxStatus mfxDefaultAllocatorD3D11::AllocFramesHW(mfxHDL pthis, mfxFrameAllocReq
 
         if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == Desc.Format) ||
              (DXGI_FORMAT_B8G8R8A8_UNORM == Desc.Format) ||
-             (DXGI_FORMAT_R8G8B8A8_UNORM == Desc.Format) )
+             (DXGI_FORMAT_R8G8B8A8_UNORM == Desc.Format) ||
+             (DXGI_FORMAT_R10G10B10A2_UNORM == Desc.Format) )
         {
             Desc.BindFlags = D3D11_BIND_RENDER_TARGET;
             if (Desc.ArraySize > 2)
