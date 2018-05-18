@@ -618,8 +618,8 @@ mfxStatus CmdProcessor::ParseCmdLine(mfxU32 argc, msdk_char *argv[])
 
     if (1 == argc)
     {
-       msdk_printf(MSDK_STRING("Too few parameters\n"));
-       return MFX_ERR_UNSUPPORTED;
+        PrintHelp(MSDK_STRING("Too few parameters\n"));
+        return MFX_ERR_MORE_DATA;
     }
 
     --argc;
@@ -639,7 +639,7 @@ mfxStatus CmdProcessor::ParseCmdLine(mfxU32 argc, msdk_char *argv[])
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("-?")) )
         {
             PrintHelp(NULL);
-            return MFX_WRN_OUT_OF_RANGE;
+            return MFX_ERR_ABORTED;
         }
         else if (0 == msdk_strcmp(argv[0], MSDK_STRING("--")))
         {
