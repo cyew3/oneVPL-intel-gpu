@@ -201,7 +201,7 @@ private:
             throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Failed to calculate MSE: task.m_surf is null");
 
         mfxU32 planeYsize = task.m_surf->Info.CropW * task.m_surf->Info.CropH;
-        mfxU32 NthFramePlaneYshift = task.m_statData.DisplayOrder*(planeYsize + (((task.m_surf->Info.CropW + 1) >> 1)*((task.m_surf->Info.CropH + 1) >> 1) << 1));
+        mfxU64 NthFramePlaneYshift = mfxU64(task.m_statData.DisplayOrder)*(planeYsize + (((task.m_surf->Info.CropW + 1) >> 1)*((task.m_surf->Info.CropH + 1) >> 1) << 1));
 
         if (fseek(m_fpYUV, NthFramePlaneYshift, SEEK_SET))
             throw mfxError(MFX_ERR_UNDEFINED_BEHAVIOR, "Failed to calculate MSE: failed to fseek to current frame in YUV file");

@@ -77,7 +77,7 @@ protected:
 private:
     bool m_bCalcBRCStat = false;
 
-    mfxI32 m_DisplayOrderSinceLastIDR = 0, m_previousPOC = 0;
+    mfxI32 m_DisplayOrderSinceLastIDR = 0, m_previousMaxDisplayOrder = -1;
 
     DISALLOW_COPY_AND_ASSIGN(HevcSwDso);
 };

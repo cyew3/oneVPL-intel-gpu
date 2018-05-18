@@ -212,7 +212,7 @@ void calcQsteps_IB(std::vector<FrameStatData> &statData, mfxU32 start_index = 0)
             if (norm > 0.0)
             {
                 // mfxF64 qstep_propagated = pow(q, 1./norm) / BRC3_INTRA_QSTEP_FACTOR;
-                mfxF64 qstep_propagated = exp(logq / norm) / BRC3_INTRA_QSTEP_FACTOR;
+                mfxF64 qstep_propagated = std::exp(logq / norm) / BRC3_INTRA_QSTEP_FACTOR;
 
                 if (norm >= 1.0)
                     qstep = qstep_propagated;
@@ -224,8 +224,8 @@ void calcQsteps_IB(std::vector<FrameStatData> &statData, mfxU32 start_index = 0)
         }
         else // P-frame
         {
-            logq = (logq + log(qstep))*statData[i].propagation;
-            norm = (norm + 1.0       )*statData[i].propagation;
+            logq = (logq + std::log(qstep))*statData[i].propagation;
+            norm = (norm + 1.0)*statData[i].propagation;
         }
 
         // Update qpstep of B-frames

@@ -24,7 +24,11 @@ using namespace BS_HEVC2;
 
 mfxStatus HevcSwDso::Init()
 {
+    m_DisplayOrderSinceLastIDR =  0;
+    m_previousMaxDisplayOrder  = -1;
+
     BSErr bsSts = m_parser.open(m_inPars.strDsoFile);
+
     if (bsSts != BS_ERR_NONE)
     {
         msdk_printf(MSDK_STRING("\nCan not open %s\n"), m_inPars.strDsoFile);
@@ -45,7 +49,7 @@ mfxStatus HevcSwDso::Init()
                              );
             }
 
-            list.push_back(std::move(buffer));
+            list.emplace_back(std::move(buffer));
         }
     }
     return MFX_ERR_NONE;
@@ -54,6 +58,13 @@ mfxStatus HevcSwDso::Init()
 mfxStatus HevcSwDso::GetFrame(HevcTaskDSO & task)
 {
     BSErr bs_sts = m_parser.parse_next_unit();
+
+    if (bs_sts != BS_ERR_NONE)
+    {
+        msdk_printf(MSDK_STRING("\nERROR : HevcSwDso::GetFrame : m_parser.parse_next_unit failed with code %d\n"), bs_sts);
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    }
+
     auto * hdr = (BS_HEVC2::NALU*) m_parser.get_header();
 
     FillFrameTask(hdr, task);
@@ -110,7 +121,7 @@ void HevcSwDso::FillFrameTask(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
         {
             task.m_frameType |= MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
 
-            m_DisplayOrderSinceLastIDR = m_previousPOC;
+            m_DisplayOrderSinceLastIDR = m_previousMaxDisplayOrder + 1;
         }
         if (pNALU->nal_unit_type >= NALU_TYPE::BLA_W_LP && pNALU->nal_unit_type <= NALU_TYPE::CRA_NUT) // other IRAP -> REF
         {
@@ -122,9 +133,9 @@ void HevcSwDso::FillFrameTask(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
         task.m_frameType |= (slice.type == SLICE_TYPE::I) ? MFX_FRAMETYPE_I :
                                 ((slice.type == SLICE_TYPE::P) ? MFX_FRAMETYPE_P : MFX_FRAMETYPE_B);
 
-        task.m_statData.poc = task.m_frameOrder = slice.POC;
+        task.m_statData.poc = slice.POC;
 
-        m_previousPOC = std::max(m_previousPOC + 1, slice.POC);
+        m_previousMaxDisplayOrder = std::max(m_previousMaxDisplayOrder, m_DisplayOrderSinceLastIDR + slice.POC);
 
         for (mfxU32 i = 0; i < slice.strps.NumDeltaPocs; i++)
             task.m_dpb.push_back(slice.DPB[i].POC);
@@ -141,10 +152,9 @@ void HevcSwDso::FillFrameTask(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
         break;
     }
 
-    task.m_surf->Data.FrameOrder = task.m_frameOrder;
-    task.m_statData.DisplayOrder = m_DisplayOrderSinceLastIDR + task.m_statData.poc;
+    task.m_surf->Data.FrameOrder = task.m_frameOrder = task.m_statData.DisplayOrder = m_DisplayOrderSinceLastIDR + task.m_statData.poc;
 
-    task.m_statData.frame_type  = task.m_frameType;
+    task.m_statData.frame_type   = task.m_frameType;
 
     // Detect GPB frames
     if ((task.m_frameType & MFX_FRAMETYPE_B) &&
@@ -193,7 +203,7 @@ void HevcSwDso::FillFrameTask(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
 
     if (n_cu_total)
     {
-        task.m_statData.share_intra = n_cu_intra / n_cu_total;
+        task.m_statData.share_intra = mfxF64(n_cu_intra) / n_cu_total;
     }
 }
 
