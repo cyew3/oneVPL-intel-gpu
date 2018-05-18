@@ -615,13 +615,19 @@ mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void * /*pp_param*/, mfxU32 
     VideoDECODEVP8_HW::VP8DECODERoutineData& data = *(VideoDECODEVP8_HW::VP8DECODERoutineData*)p_state;
     VideoDECODEVP8_HW& decoder = *data.decoder;
 
-#ifdef MFX_VA_LINUX
+#if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_VP8D)
+
+#ifndef MFX_VA_LINUX
+    if (decoder.m_p_video_accelerator->IsGPUSyncEventEnable())
+#endif
+    {
     UMC::Status status = decoder.m_p_video_accelerator->SyncTask(data.memId);
     if (status != UMC::UMC_OK)
     {
         mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
         decoder.SetCriticalErrorOccured(CriticalErrorStatus);
         return CriticalErrorStatus;
+    }
     }
 #endif
 
@@ -820,7 +826,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
     PackHeaders(&m_bs);
 
-    if (m_p_video_accelerator->BeginFrame(memId) == UMC::UMC_OK)
+    if (m_p_video_accelerator->BeginFrame(memId, 0) == UMC::UMC_OK)
     {
         m_p_video_accelerator->Execute();
         m_p_video_accelerator->EndFrame();
