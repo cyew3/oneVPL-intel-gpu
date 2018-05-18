@@ -46,7 +46,7 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
     case MFX_FOURCC_P8:
-        return VA_BUF_P8;
+        return VA_FOURCC_P208;
 
     default:
         assert(!"unsupported fourcc");
@@ -150,7 +150,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_YUY2 != va_fourcc) &&
                        (VA_FOURCC_UYVY != va_fourcc) &&
                        (VA_FOURCC_ARGB != va_fourcc) &&
-                       (VA_BUF_P8 != va_fourcc)))
+                       (VA_FOURCC_P208 != va_fourcc)))
     {
         msdk_printf(MSDK_STRING("VAAPI Allocator: invalid fourcc is provided (%#X), exitting\n"),va_fourcc);
         return MFX_ERR_MEMORY_ALLOC;
@@ -169,7 +169,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     }
     if (MFX_ERR_NONE == mfx_res)
     {
-        if( VA_BUF_P8 != va_fourcc )
+        if( VA_FOURCC_P208 != va_fourcc )
         {
             unsigned int format;
 
@@ -188,8 +188,8 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             else if (fourcc == MFX_FOURCC_VP8_MBDATA)
             {
                 // special configuration for MB data surf allocation for VP8 hybrid encoder is required
-                attrib.value.value.i = VA_BUF_P8;
-                format               = VA_BUF_P8;
+                attrib.value.value.i = VA_FOURCC_P208;
+                format               = VA_FOURCC_P208;
             }
             else if (va_fourcc == VA_FOURCC_NV12)
             {
@@ -301,7 +301,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
     {
         response->mids = NULL;
         response->NumFrameActual = 0;
-        if (VA_BUF_P8 != va_fourcc
+        if (VA_FOURCC_P208 != va_fourcc
             || fourcc == MFX_FOURCC_VP8_MBDATA )
         {
             if (bCreateSrfSucceeded)
@@ -457,7 +457,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
-        case VA_BUF_P8:
+        case VA_FOURCC_P208:
                 if (mfx_fourcc == MFX_FOURCC_NV12)
                 {
                     ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
