@@ -27,7 +27,7 @@ typedef mfxStatus(*t_Calc_RaCa_pic)(mfxU8 *pPicY, mfxI32 width, mfxI32 height, m
 
 class ASCimageData {
 public:
-    ASC_API ASCimageData();
+    ASCimageData();
     ASCYUV Image;
     ASCMVector
         *pInteger;
@@ -45,9 +45,9 @@ public:
         *Rs,
         *RsCs,
         *SAD;
-    ASC_API mfxStatus InitFrame(ASCImDetails *pDetails);
-    ASC_API mfxStatus InitAuxFrame(ASCImDetails *pDetails);
-    ASC_API void Close();
+    mfxStatus InitFrame(ASCImDetails *pDetails);
+    mfxStatus InitAuxFrame(ASCImDetails *pDetails);
+    void Close();
 };
 
 typedef struct ASCvideoBuffer {
@@ -88,7 +88,7 @@ typedef struct ASCextended_storage {
 
 class ASC {
 public:
-    ASC_API ASC();
+    ASC();
 private:
     CmDevice
         *m_device;
@@ -226,70 +226,70 @@ private:
     void Reset_ASCCmDevice();
     void Set_ASCCmDevice();
     bool Query_ASCCmDevice();
-    ASC_API mfxStatus SetInterlaceMode(ASCFTS interlaceMode);
+    mfxStatus SetInterlaceMode(ASCFTS interlaceMode);
 public:
-    ASC_API mfxStatus Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice);
-    ASC_API void Close();
-    ASC_API bool IsASCinitialized();
+    mfxStatus Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice);
+    void Close();
+    bool IsASCinitialized();
 
-    ASC_API mfxStatus AssignResources(mfxU8 position, mfxU8 *pixelData);
-    ASC_API mfxStatus AssignResources(mfxU8 position, CmSurface2DUP *inputFrame, mfxU8 *pixelData);
-    ASC_API mfxStatus SwapResources(mfxU8 position, CmSurface2DUP **inputFrame, mfxU8 **pixelData);
+    mfxStatus AssignResources(mfxU8 position, mfxU8 *pixelData);
+    mfxStatus AssignResources(mfxU8 position, CmSurface2DUP *inputFrame, mfxU8 *pixelData);
+    mfxStatus SwapResources(mfxU8 position, CmSurface2DUP **inputFrame, mfxU8 **pixelData);
 
-    ASC_API void SetControlLevel(mfxU8 level);
-    ASC_API mfxStatus SetGoPSize(mfxU32 GoPSize);
-    ASC_API void ResetGoPSize();
+    void SetControlLevel(mfxU8 level);
+    mfxStatus SetGoPSize(mfxU32 GoPSize);
+    void ResetGoPSize();
 
     inline void SetParityTFF() { SetInterlaceMode(ASCtopfieldfirst_frame); }
     inline void SetParityBFF() { SetInterlaceMode(ASCbotfieldFirst_frame); }
     inline void SetProgressiveOp() { SetInterlaceMode(ASCprogressive_frame); }
 
-    ASC_API mfxStatus QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask);
-    ASC_API mfxStatus QueueFrameProgressive(mfxHDL surface, CmEvent **taskEvent, CmTask **subSamplingTask);
+    mfxStatus QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask);
+    mfxStatus QueueFrameProgressive(mfxHDL surface, CmEvent **taskEvent, CmTask **subSamplingTask);
 
-    ASC_API mfxStatus QueueFrameProgressive(mfxHDL surface);
-    ASC_API mfxStatus QueueFrameInterlaced(mfxHDL surface);
+    mfxStatus QueueFrameProgressive(mfxHDL surface);
+    mfxStatus QueueFrameInterlaced(mfxHDL surface);
 
-    ASC_API mfxStatus QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSamplingEv, CmTask *subSamplingTask);
-    ASC_API mfxStatus QueueFrameProgressive(SurfaceIndex* idxSurf);
-    ASC_API mfxStatus QueueFrameInterlaced(SurfaceIndex* idxSurf);
+    mfxStatus QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSamplingEv, CmTask *subSamplingTask);
+    mfxStatus QueueFrameProgressive(SurfaceIndex* idxSurf);
+    mfxStatus QueueFrameInterlaced(SurfaceIndex* idxSurf);
 
-    ASC_API bool Query_resize_Event();
-    ASC_API mfxStatus ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingTask, CmSurface2DUP **inputFrame, mfxU8 **pixelData);
-    ASC_API mfxStatus ProcessQueuedFrame();
+    bool Query_resize_Event();
+    mfxStatus ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingTask, CmSurface2DUP **inputFrame, mfxU8 **pixelData);
+    mfxStatus ProcessQueuedFrame();
 
-    ASC_API mfxStatus PutFrameProgressive(mfxHDL surface);
-    ASC_API mfxStatus PutFrameInterlaced(mfxHDL surface);
+    mfxStatus PutFrameProgressive(mfxHDL surface);
+    mfxStatus PutFrameInterlaced(mfxHDL surface);
 
-    ASC_API mfxStatus PutFrameProgressive(SurfaceIndex* idxSurf);
-    ASC_API mfxStatus PutFrameInterlaced(SurfaceIndex* idxSurf);
+    mfxStatus PutFrameProgressive(SurfaceIndex* idxSurf);
+    mfxStatus PutFrameInterlaced(SurfaceIndex* idxSurf);
 
-    ASC_API mfxStatus PutFrameProgressive(mfxU8 *frame, mfxI32 Pitch);
-    ASC_API mfxStatus PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch);
+    mfxStatus PutFrameProgressive(mfxU8 *frame, mfxI32 Pitch);
+    mfxStatus PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch);
 
-    ASC_API bool   Get_Last_frame_Data();
-    ASC_API mfxU16 Get_asc_subsampling_width();
-    ASC_API mfxU16 Get_asc_subsampling_height();
-    ASC_API mfxU32 Get_starting_frame_number();
-    ASC_API mfxU32 Get_frame_number();
-    ASC_API mfxU32 Get_frame_shot_Decision();
-    ASC_API mfxU32 Get_frame_last_in_scene();
-    ASC_API bool   Get_GoPcorrected_frame_shot_Decision();
-    ASC_API mfxI32 Get_frame_Spatial_complexity();
-    ASC_API mfxI32 Get_frame_Temporal_complexity();
-    ASC_API mfxU32 Get_PDist_advice();
-    ASC_API bool   Get_LTR_advice();
-    ASC_API bool   Get_RepeatedFrame_advice();
-    ASC_API mfxStatus get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint);
+    bool   Get_Last_frame_Data();
+    mfxU16 Get_asc_subsampling_width();
+    mfxU16 Get_asc_subsampling_height();
+    mfxU32 Get_starting_frame_number();
+    mfxU32 Get_frame_number();
+    mfxU32 Get_frame_shot_Decision();
+    mfxU32 Get_frame_last_in_scene();
+    bool   Get_GoPcorrected_frame_shot_Decision();
+    mfxI32 Get_frame_Spatial_complexity();
+    mfxI32 Get_frame_Temporal_complexity();
+    mfxU32 Get_PDist_advice();
+    bool   Get_LTR_advice();
+    bool   Get_RepeatedFrame_advice();
+    mfxStatus get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint);
 
-    ASC_API mfxStatus calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs);
-    ASC_API mfxStatus calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs);
+    mfxStatus calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs);
+    mfxStatus calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs);
 
-    ASC_API bool Check_last_frame_processed(mfxU32 frameOrder);
-    ASC_API void Reset_last_frame_processed();
+    bool Check_last_frame_processed(mfxU32 frameOrder);
+    void Reset_last_frame_processed();
 
-    ASC_API static mfxI32 Get_CpuFeature_AVX2();
-    ASC_API static mfxI32 Get_CpuFeature_SSE41();
+    static mfxI32 Get_CpuFeature_AVX2();
+    static mfxI32 Get_CpuFeature_SSE41();
 };
 };
 

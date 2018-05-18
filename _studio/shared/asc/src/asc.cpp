@@ -48,7 +48,7 @@ static mfxI8
 static mfxU32 lmt_sc2[NumSC] = { 112, 255, 512, 1536, 4096, 6144, 10752, 16384, 23040, UINT_MAX };
 static mfxU32 lmt_tsc2[NumTSC] = { 24, 48, 72, 96, 128, 160, 192, 224, 256, UINT_MAX };
 
-ASC_API ASCimageData::ASCimageData() {
+ASCimageData::ASCimageData() {
     Image.data = nullptr;
     Image.Y = nullptr;
     Image.U = nullptr;
@@ -195,7 +195,7 @@ void ASCimageData::Close() {
     Image.V = nullptr;
 }
 
-ASC_API ASC::ASC()
+ASC::ASC()
 {
     m_device = nullptr;
     m_queue  = nullptr;
@@ -386,7 +386,7 @@ mfxStatus ASC::CreateCmKernels() {
     return MFX_ERR_NONE;
 }
 
-ASC_API mfxStatus ASC::SetInterlaceMode(ASCFTS interlaceMode) {
+mfxStatus ASC::SetInterlaceMode(ASCFTS interlaceMode) {
     if (interlaceMode > ASCbotfieldFirst_frame) {
         ASC_PRINTF("\nError: Interlace Mode invalid, valid values are: 1 (progressive), 2 (TFF), 3 (BFF)\n");
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -693,7 +693,7 @@ mfxStatus ASC::SetDimensions(mfxI32 Width, mfxI32 Height, mfxI32 Pitch) {
 #define ASC_CPU_DISP_INIT_AVX2_SSE4_C       ASC_CPU_DISP_INIT_SSE4_C
 #define ASC_CPU_DISP_INIT_AVX2_C            ASC_CPU_DISP_INIT_C
 #endif
-ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice)
+mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice)
 {
     mfxStatus sts = MFX_ERR_NONE;
     INT res;
@@ -797,11 +797,11 @@ ASC_API mfxStatus ASC::Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 Pi
     return sts;
 }
 
-ASC_API bool ASC::IsASCinitialized(){
+bool ASC::IsASCinitialized(){
     return m_ASCinitialized;
 }
 
-ASC_API void ASC::SetControlLevel(mfxU8 level) {
+void ASC::SetControlLevel(mfxU8 level) {
     if(level >= RF_DECISION_LEVEL) {
         ASC_PRINTF("\nWarning: Control level too high, shot change detection disabled! (%i)\n", level);
         ASC_PRINTF("Control levels 0 to %i, smaller value means more sensitive detection\n", RF_DECISION_LEVEL);
@@ -809,7 +809,7 @@ ASC_API void ASC::SetControlLevel(mfxU8 level) {
     m_support->control = level;
 }
 
-ASC_API mfxStatus ASC::SetGoPSize(mfxU32 GoPSize) {
+mfxStatus ASC::SetGoPSize(mfxU32 GoPSize) {
     if (GoPSize > Double_HEVC_Gop) {
         ASC_PRINTF("\nError: GoPSize is too big! (%i)\n", GoPSize);
         return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -828,11 +828,11 @@ ASC_API mfxStatus ASC::SetGoPSize(mfxU32 GoPSize) {
     return MFX_ERR_NONE;
 }
 
-ASC_API void ASC::ResetGoPSize() {
+void ASC::ResetGoPSize() {
     SetGoPSize(Immediate_GoP);
 }
 
-ASC_API void ASC::Close() {
+void ASC::Close() {
     if(m_videoData != nullptr) {
         VidSample_dispose();
         delete[] m_videoData;
@@ -1389,11 +1389,11 @@ void ASC::AscFrameAnalysis() {
     GeneralBufferRotation();
 }
 
-ASC_API bool ASC::Query_resize_Event() {
+bool ASC::Query_resize_Event() {
     return (m_subSamplingEv != nullptr);
 }
 
-ASC_API mfxStatus ASC::ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingTask, CmSurface2DUP **inputFrame, mfxU8 **pixelData)
+mfxStatus ASC::ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingTask, CmSurface2DUP **inputFrame, mfxU8 **pixelData)
 {
     pixelData; inputFrame;
     if (!m_ASCinitialized)
@@ -1419,7 +1419,7 @@ ASC_API mfxStatus ASC::ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subS
     return MFX_ERR_NONE;
 }
 
-ASC_API mfxStatus ASC::ProcessQueuedFrame()
+mfxStatus ASC::ProcessQueuedFrame()
 {
     return ProcessQueuedFrame(&m_subSamplingEv, &m_task, nullptr, nullptr);
 }
@@ -1528,45 +1528,45 @@ mfxStatus ASC::RunFrame(mfxU8 *frame, mfxU32 parity) {
     return MFX_ERR_NONE;
 }
 
-ASC_API mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf) {
+mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf) {
     mfxStatus sts = QueueFrame(idxSurf, ASCTopField);
     return sts;
 }
 
-ASC_API mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSamplingEv, CmTask *subSamplingTask) {
+mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSamplingEv, CmTask *subSamplingTask) {
     mfxStatus sts = QueueFrame(idxSurf, &subSamplingEv, &subSamplingTask, ASCTopField);
     return sts;
 }
 
-ASC_API mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
+mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
 {
     mfxStatus sts = QueueFrame(surface, idxTo, subSamplingEv, subSamplingTask, ASCTopField);
     return sts;
 }
 
-ASC_API mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, CmEvent **subSamplingEv, CmTask **subSamplingTask) {
+mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, CmEvent **subSamplingEv, CmTask **subSamplingTask) {
     mfxStatus sts = QueueFrame(surface, subSamplingEv, subSamplingTask, ASCTopField);
     return sts;
 }
 
-ASC_API mfxStatus ASC::QueueFrameProgressive(mfxHDL surface) {
+mfxStatus ASC::QueueFrameProgressive(mfxHDL surface) {
     mfxStatus sts = QueueFrame(surface, ASCTopField);
     return sts;
 }
 
-ASC_API mfxStatus ASC::PutFrameProgressive(SurfaceIndex* idxSurf) {
+mfxStatus ASC::PutFrameProgressive(SurfaceIndex* idxSurf) {
     mfxStatus sts = RunFrame(idxSurf, ASCTopField);
     m_dataReady = (sts == MFX_ERR_NONE);
     return sts;
 }
 
-ASC_API mfxStatus ASC::PutFrameProgressive(mfxHDL surface) {
+mfxStatus ASC::PutFrameProgressive(mfxHDL surface) {
     mfxStatus sts = RunFrame(surface, ASCTopField);
     m_dataReady = (sts == MFX_ERR_NONE);
     return sts;
 }
 
-ASC_API mfxStatus ASC::PutFrameProgressive(mfxU8 *frame, mfxI32 Pitch) {
+mfxStatus ASC::PutFrameProgressive(mfxU8 *frame, mfxI32 Pitch) {
     mfxStatus sts;
     if (Pitch > 0) {
         sts = SetPitch(Pitch);
@@ -1579,7 +1579,7 @@ ASC_API mfxStatus ASC::PutFrameProgressive(mfxU8 *frame, mfxI32 Pitch) {
     return sts;
 }
 
-ASC_API mfxStatus ASC::PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch) {
+mfxStatus ASC::PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch) {
     mfxStatus sts;
 
     if (Pitch > 0) {
@@ -1593,27 +1593,27 @@ ASC_API mfxStatus ASC::PutFrameInterlaced(mfxU8 *frame, mfxI32 Pitch) {
     return sts;
 }
 
-ASC_API mfxStatus ASC::QueueFrameInterlaced(SurfaceIndex* idxSurf) {
+mfxStatus ASC::QueueFrameInterlaced(SurfaceIndex* idxSurf) {
     mfxStatus sts = QueueFrame(idxSurf, m_dataIn->currentField);
     m_dataReady = (sts == MFX_ERR_NONE);
     SetNextField();
     return sts;
 }
 
-ASC_API mfxStatus ASC::PutFrameInterlaced(SurfaceIndex* idxSurf) {
+mfxStatus ASC::PutFrameInterlaced(SurfaceIndex* idxSurf) {
     mfxStatus sts = RunFrame(idxSurf, m_dataIn->currentField);
     m_dataReady = (sts == MFX_ERR_NONE);
     SetNextField();
     return sts;
 }
 
-ASC_API mfxStatus ASC::QueueFrameInterlaced(mfxHDL surface) {
+mfxStatus ASC::QueueFrameInterlaced(mfxHDL surface) {
     mfxStatus sts = QueueFrame(surface, m_dataIn->currentField);
     SetNextField();
     return sts;
 }
 
-ASC_API mfxStatus ASC::PutFrameInterlaced(mfxHDL surface) {
+mfxStatus ASC::PutFrameInterlaced(mfxHDL surface) {
     mfxStatus sts = RunFrame(surface, m_dataIn->currentField);
     m_dataReady = (sts == MFX_ERR_NONE);
     SetNextField();
@@ -1621,13 +1621,13 @@ ASC_API mfxStatus ASC::PutFrameInterlaced(mfxHDL surface) {
 }
 
 
-ASC_API mfxStatus ASC::calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs) {
+mfxStatus ASC::calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs) {
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
     return Calc_RaCa_pic(pSrc, width, height, pitch, RsCs);
 }
 
-ASC_API mfxStatus ASC::calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs) {
+mfxStatus ASC::calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs) {
     if (!Query_ASCCmDevice())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
@@ -1720,7 +1720,7 @@ mfxStatus ASC::CopyFrameSurface(mfxHDL frameHDL) {
     return sts;
 }
 
-ASC_API bool ASC::Get_Last_frame_Data() {
+bool ASC::Get_Last_frame_Data() {
     if(m_dataReady)
         GeneralBufferRotation();
     else
@@ -1728,76 +1728,76 @@ ASC_API bool ASC::Get_Last_frame_Data() {
     return(m_dataReady);
 }
 
-ASC_API mfxU16 ASC::Get_asc_subsampling_width()
+mfxU16 ASC::Get_asc_subsampling_width()
 {
     return mfxU16(subWidth);
 }
 
-ASC_API mfxU16 ASC::Get_asc_subsampling_height()
+mfxU16 ASC::Get_asc_subsampling_height()
 {
     return mfxU16(subHeight);
 }
 
-ASC_API mfxU32 ASC::Get_starting_frame_number() {
+mfxU32 ASC::Get_starting_frame_number() {
     return m_dataIn->starting_frame;
 }
 
-ASC_API mfxU32 ASC::Get_frame_number() {
+mfxU32 ASC::Get_frame_number() {
     if(m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->frameNum;
     else
         return 0;
 }
 
-ASC_API mfxU32 ASC::Get_frame_shot_Decision() {
+mfxU32 ASC::Get_frame_shot_Decision() {
     if(m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->Schg;
     else
         return 0;
 }
 
-ASC_API mfxU32 ASC::Get_frame_last_in_scene() {
+mfxU32 ASC::Get_frame_last_in_scene() {
     if(m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->lastFrameInShot;
     else
         return 0;
 }
 
-ASC_API bool ASC::Get_GoPcorrected_frame_shot_Decision() {
+bool ASC::Get_GoPcorrected_frame_shot_Decision() {
     if(m_dataReady)
         return (m_support->detectedSch > 0);
     else
         return 0;
 }
-ASC_API mfxI32 ASC::Get_frame_Spatial_complexity() {
+mfxI32 ASC::Get_frame_Spatial_complexity() {
     if(m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->SCindex;
     else
         return 0;
 }
 
-ASC_API mfxI32 ASC::Get_frame_Temporal_complexity() {
+mfxI32 ASC::Get_frame_Temporal_complexity() {
     if(m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->TSCindex;
     else
         return 0;
 }
 
-ASC_API mfxU32 ASC::Get_PDist_advice() {
+mfxU32 ASC::Get_PDist_advice() {
     if (m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->pdist;
     else
         return NULL;
 }
 
-ASC_API bool ASC::Get_LTR_advice() {
+bool ASC::Get_LTR_advice() {
     if (m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->ltr_flag;
     else
         return NULL;
 }
 
-ASC_API bool ASC::Get_RepeatedFrame_advice() {
+bool ASC::Get_RepeatedFrame_advice() {
     if (m_dataReady)
         return m_support->logic[ASCprevious_frame_data]->repeatedFrame;
     else
@@ -1811,14 +1811,14 @@ ASC_API bool ASC::Get_RepeatedFrame_advice() {
 * \return  ASC_LTR_DEC& to flag stop(false)/continue(true) or force (2)
 *          LTR operation
 */
-ASC_API mfxStatus ASC::get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint) {
+mfxStatus ASC::get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint) {
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
     scd_LTR_hint = Continue_LTR_Mode(50, 5);
     return MFX_ERR_NONE;
 }
 
-ASC_API bool ASC::Check_last_frame_processed(mfxU32 frameOrder) {
+bool ASC::Check_last_frame_processed(mfxU32 frameOrder) {
     if (m_support->frameOrder <= frameOrder && (m_support->frameOrder == frameOrder && frameOrder > 0))
         return 0;
     else
@@ -1826,14 +1826,14 @@ ASC_API bool ASC::Check_last_frame_processed(mfxU32 frameOrder) {
     return 1;
 }
 
-ASC_API void ASC::Reset_last_frame_processed() {
+void ASC::Reset_last_frame_processed() {
     m_support->frameOrder = 0;
 }
 
-ASC_API mfxI32 ASC::Get_CpuFeature_AVX2() {
+mfxI32 ASC::Get_CpuFeature_AVX2() {
     return CpuFeature_AVX2();
 }
-ASC_API mfxI32 ASC::Get_CpuFeature_SSE41() {
+mfxI32 ASC::Get_CpuFeature_SSE41() {
     return CpuFeature_SSE41();
 }
 

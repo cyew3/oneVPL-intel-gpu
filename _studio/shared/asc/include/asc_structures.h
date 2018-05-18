@@ -28,14 +28,6 @@
 #include "mfxdefs.h"
 #include "cmrt_cross_platform.h"
 
-#if defined(_WIN32) || defined(_WIN64)
-    #define ASC_API      __declspec(dllexport)
-    #define ASC_API_FUNC __declspec(dllexport)
-#else // linux
-    #define ASC_API_FUNC //__attribute__((visibility("default")))
-    #define ASC_API      //__attribute__((visibility("default")))
-#endif //defined(_WIN32) || defined(_WIN64)
-
 typedef mfxU8*             pmfxU8;
 typedef mfxI8*             pmfxI8;
 typedef mfxU16*            pmfxU16;
