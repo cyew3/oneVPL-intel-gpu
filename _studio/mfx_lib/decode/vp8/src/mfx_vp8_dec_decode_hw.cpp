@@ -8,7 +8,16 @@
 // Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
+#if defined(_MSC_VER) //MSVC compiler issue: complains about 'std::copy' with parameters that may be unsafe
+#pragma warning(push)
+#pragma warning(disable:4996)
+#endif
+
 #include <algorithm> /* for std::find on Linux/Android */
+
+#if defined(_MSC_VER)
+#pragma warning(pop)
+#endif
 
 #include "mfx_common.h"
 
