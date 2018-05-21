@@ -144,7 +144,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.Height, 0, RUNTIME_SURF} },
     {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 100, RUNTIME_SURF} },
 
-    {/*31*/ MFX_ERR_LOCK_MEMORY, 0, 1, { {&tsStruct::mfxFrameSurface1.Data.Y, 0, RUNTIME_SURF}, 
+    {/*31*/ MFX_ERR_UNDEFINED_BEHAVIOR, 0, 1, { {&tsStruct::mfxFrameSurface1.Data.Y, 0, RUNTIME_SURF}, 
                                          {&tsStruct::mfxFrameSurface1.Data.U, 0, RUNTIME_SURF}, 
                                          {&tsStruct::mfxFrameSurface1.Data.A, 0, RUNTIME_SURF}, 
                                          {&tsStruct::mfxFrameSurface1.Data.MemId, 0, RUNTIME_SURF}, 
