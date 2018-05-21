@@ -1,4 +1,4 @@
-/* ****************************************************************************** *\
+﻿/* ****************************************************************************** *\
 
 INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
@@ -11,41 +11,41 @@ Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 #include "ts_encoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
-
-//#define DEBUG_STREAM "hevce_lcu.265"
+//#define DEBUG_STREAM
 
 namespace hevce_lcu
 {
     using namespace BS_HEVC2;
-/*
+
     class BitstreamChecker : public tsBitstreamProcessor, public tsParserHEVC2
     {
     public:
-        mfxU16  m_saoInit;
-        mfxU16  m_slicesWithSAO;
-        const mfxU16* m_saoRT;
+        mfxU16 log2_min_luma_coding_block_size_minus3;
+        mfxU16 log2_diff_max_min_luma_coding_block_size;
+        mfxU16 MinCbLog2SizeY;
+        mfxU16 CtbLog2SizeY;
+        mfxU16 CtbSizeY;
+        mfxU16 TrueLCUSize;
 #ifdef DEBUG_STREAM
         tsBitstreamWriter m_bsw;
 #endif
         BitstreamChecker()
             : tsParserHEVC2(PARSE_SSD)
 #ifdef DEBUG_STREAM
-            , m_bsw(DEBUG_STREAM)
+            , m_bsw("hevce_lcu.265")
 #endif
         {
             set_trace_level(0);
-            m_slicesWithSAO = 0;
         }
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
-
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
         mfxU32 checked = 0;
 
         if (bs.Data)
             SetBuffer0(bs);
-
+        mfxStatus sts = MFX_ERR_NONE;
 #ifdef DEBUG_STREAM
         m_bsw.ProcessBitstream(bs, nFrames);
 #endif
@@ -56,127 +56,37 @@ namespace hevce_lcu
 
             for (auto pNALU = &hdr; pNALU; pNALU = pNALU->next)
             {
-                if (!IsHEVCSlice(pNALU->nal_unit_type))
+                if (SPS_NUT != pNALU->nal_unit_type)
                     continue;
 
-                auto& slice = *pNALU->slice;
-                mfxU16 saoRT = (m_saoRT[slice.POC] && m_saoInit != MFX_SAO_DISABLE) ? m_saoRT[slice.POC] : m_saoInit;
-
-                TS_TRACE(slice.POC);
-                TS_TRACE(!!slice.sps->sample_adaptive_offset_enabled_flag);
-                TS_TRACE(!!slice.sao_luma_flag);
-                TS_TRACE(!!slice.sao_chroma_flag);
-
-                EXPECT_EQ(m_saoInit != MFX_SAO_DISABLE, !!slice.sps->sample_adaptive_offset_enabled_flag);
-
-                if (saoRT != MFX_SAO_UNKNOWN)
+                if (!pNALU->sps)
                 {
-                    EXPECT_EQ(!!(saoRT & MFX_SAO_ENABLE_LUMA), !!slice.sao_luma_flag);
-                    EXPECT_EQ(!!(saoRT & MFX_SAO_ENABLE_CHROMA), !!slice.sao_chroma_flag);
-                }
-                
-                if (!slice.sao_luma_flag && !slice.sao_chroma_flag)
-                    continue;
-
-                m_slicesWithSAO++;
-
-                mfxF64 AppliedSAOPercent[3] = {};
-                mfxF64 nLCU = 0;
-
-                for (auto pCTU = slice.ctu; pCTU; pCTU = pCTU->Next)
-                {
-                    AppliedSAOPercent[0] += (pCTU->sao[0].type_idx != SAO_TYPE::NOT_APPLIED);
-                    AppliedSAOPercent[1] += (pCTU->sao[1].type_idx != SAO_TYPE::NOT_APPLIED);
-                    AppliedSAOPercent[2] += (pCTU->sao[2].type_idx != SAO_TYPE::NOT_APPLIED);
-                    nLCU++;
+                    g_tsLog << "\n\nERROR:Failed to get the values of pNALU->sps\n\n";
+                    throw tsFAIL;
                 }
 
-                AppliedSAOPercent[0] /= nLCU;
-                AppliedSAOPercent[1] /= nLCU;
-                AppliedSAOPercent[2] /= nLCU;
-                AppliedSAOPercent[0] *= 100;
-                AppliedSAOPercent[1] *= 100;
-                AppliedSAOPercent[2] *= 100;
+                auto& sps = *pNALU->sps;
+                MinCbLog2SizeY = sps.log2_min_luma_coding_block_size_minus3 + 3;
+                CtbLog2SizeY = MinCbLog2SizeY + sps.log2_diff_max_min_luma_coding_block_size;
+                CtbSizeY = 1 << CtbLog2SizeY;
 
-                TS_TRACE(nLCU);
-                TS_TRACE(AppliedSAOPercent[0]);
-                TS_TRACE(AppliedSAOPercent[1]);
-                TS_TRACE(AppliedSAOPercent[2]);
-
-                if (slice.sao_luma_flag)
+                if (TrueLCUSize != CtbSizeY)
                 {
-                    EXPECT_GT(AppliedSAOPercent[0], 20);
-                }
-                else
-                {
-                    EXPECT_EQ(0, AppliedSAOPercent[0]);
+                    g_tsLog << "\n\nERROR:LCUSize at initialization does not coincide with the value at encoding\n\n";
+                    throw tsFAIL;
                 }
 
-                if (slice.sao_chroma_flag)
-                {
-                    EXPECT_GT(AppliedSAOPercent[1], 10);
-                    EXPECT_GT(AppliedSAOPercent[2], 10);
-                }
-                else
-                {
-                    EXPECT_EQ(0, AppliedSAOPercent[1]);
-                    EXPECT_EQ(0, AppliedSAOPercent[2]);
-                }
             }
         }
 
         bs.DataLength = 0;
-
-        BreakOnFailure();
-
         return MFX_ERR_NONE;
-    }
-
-    class SProc : public tsSurfaceProcessor
-    {
-    public:
-        tsSurfaceProcessor& m_reader;
-        tsVideoEncoder& m_enc;
-        const TestCase& m_tc;
-
-        SProc(tsSurfaceProcessor& r, const TestCase& tc, tsVideoEncoder& enc)
-            : m_reader(r)
-            , m_enc(enc)
-            , m_tc(tc)
-        {
-            m_max = m_reader.m_max;
-        }
-
-        mfxStatus ProcessSurface(mfxFrameSurface1& s)
-        {
-            return m_reader.ProcessSurface(s);
-        }
     };
 
-
-    bool isUnsupported(tsExtBufType<mfxVideoParam>& par)
-    {
-        mfxExtCodingOption2* CO2 = par;
-        mfxExtCodingOption3* CO3 = par;
-
-        return (g_tsHWtype < MFX_HW_CNL)
-            //|| LCUSize == 16
-            || par.mfx.TargetUsage == 7
-            || (CO3 && CO3->WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT)
-            || (CO3 && CO3->WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT)
-            || (   (g_tsHWtype == MFX_HW_CNL)
-                && (   (CO3 && CO3->TargetBitDepthLuma == 10)
-                    || (par.mfx.LowPower == 16 && CO2 && CO2->MaxSliceSize)))
-            ;
-    }
-
-    const mfxU32 nFrames = 1;
-*/
-
-/*
+    /*
 
     Description:
-    This suite tests AVC encoder\n
+    This suite tests HEVC encoder\n
 
     Algorithm:
     - Initializing MSDK lib
@@ -200,265 +110,336 @@ namespace hevce_lcu
 
     */
 
-        enum
-        {
-            MFX_PAR = 0,
-            RESET_PAR = 1,
-            QUERY_EXP = 2,
-            INIT_EXP = 3,
-            RESET_EXP = 4,
-            ENC_EXP = 5,
-        };
+    enum
+    {
+        MFX_PAR = 0,
+        RESET_PAR = 1,
+        QUERY_EXP = 2,
+        INIT_EXP = 3,
+        RESET_EXP = 4,
+        ENC_EXP = 5,
+        INIT_EXP_SW = 6,
+        RESET_EXP_SW = 7,
+        QUERY_EXP_SW = 8,
+    };
 
-        enum Actions
-        {
-            DoNothing = 0,
-            SetDefault = -1,
-            SetMinSupported = -2,
-            SetMaxSupported = -3,
-        };
+    enum Actions
+    {
+        DoNothing = 0,
+        SetDefault = -1,
+        SetMinSupported = -2,
+        SetMaxSupported = -3,
+    };
 
-        enum TYPE
-        {
-            QUERY = 1,
-            INIT = 2,
-            RESET = 4,
-            ENC = 8,
-            NEED_TWO_LCU_SUPPORTED = 16,
-        };
+    enum TYPE
+    {
+        QUERY = 1,
+        INIT = 2,
+        RESET = 4,
+        ENC = 8,
+        NEED_TWO_LCU_SUPPORTED = 16,
+    };
 
-        struct tc_struct {
-            mfxU32 type;
-            //! Expected Query() status
-            mfxStatus q_sts;
-            //! Expected Init() status
-            mfxStatus i_sts;
-            //! Expected Reset() status
-            mfxStatus r_sts;
-            //! Expected EncodeFrames() status
-            mfxStatus enc_sts;
-            //! \brief Structure contains params for some fields of encoder
-            struct f_pair {
-                //! Number of the params set (if there is more than one in a test case)
-                mfxU32 ext_type;
-                //! Field name
-                const tsStruct::Field* f;
-                //! Field value
-                mfxI32 v;
-            }set_par[MAX_NPARS];
-        };
+    struct tc_struct {
+        mfxU32 type;
+        //! Expected Query() status
+        mfxStatus q_sts;
+        //! Expected Init() status
+        mfxStatus i_sts;
+        //! Expected Reset() status
+        mfxStatus r_sts;
+        //! Expected EncodeFrames() status
+        mfxStatus enc_sts;
+        //! Expected Query() status with SW plugin
+        mfxStatus q_sw_sts;
+        //! Expected Init() status with SW plugin
+        mfxStatus i_sw_sts;
+        //! Expected Reset() status with SW plugin
+        mfxStatus r_sw_sts;
+        //! Expected EncodeFrames() status with SW plugin
+        mfxStatus enc_sw_sts;
+        //! \brief Structure contains params for some fields of encoder
+        struct f_pair {
+            //! Number of the params set (if there is more than one in a test case)
+            mfxU32 ext_type;
+            //! Field name
+            const tsStruct::Field* f;
+            //! Field value
+            mfxI32 v;
+        }set_par[MAX_NPARS];
+    };
 
-        tc_struct test_case[] =
+    tc_struct test_case[] =
+    {
+        // VALID PARAMS. Use default value
+        {/*00*/ QUERY | INIT | RESET | ENC, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
         {
-            // VALID PARAMS. Use default value
-            {/*00*/ QUERY | INIT | RESET, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
-            {
             { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
             { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
             { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetDefault }, //  Depends on HW....
+            { ENC_EXP, &tsStruct::mfxExtHEVCParam.LCUSize },
             { RESET_PAR,  &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
-            { RESET_EXP,  &tsStruct::mfxExtHEVCParam.LCUSize, SetDefault } //  Depends on HW....
-            } },
+            { RESET_EXP,  &tsStruct::mfxExtHEVCParam.LCUSize, SetDefault }, //  Depends on HW....
+            { INIT_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+            { RESET_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
 
-            // INVALID PARAMS #2
-            {/*01*/ QUERY | INIT , MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNKNOWN, MFX_ERR_UNKNOWN,
-            {
-            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 4 },
+        // INVALID PARAMS #1
+        {/*01*/ QUERY | INIT , MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNKNOWN, MFX_ERR_UNKNOWN, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 7 },
             { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
-            }},
+            { QUERY_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
 
-            // INVALID PARAMS #3
-            {/*02*/ QUERY | INIT , MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNKNOWN, MFX_ERR_UNKNOWN,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 0xFFFF },
-                { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
-            } },
-
-            // INVALID PARAMS #3
-            {/*03*/ QUERY | INIT , MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNKNOWN, MFX_ERR_UNKNOWN,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 256 },// Unsupported
-                { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
-            } },
-
-            // VALID PARAMS. Min supported
-            {/*04*/ QUERY | INIT | RESET | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported },
-                { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, // not changed
-                { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, //  not changed
-            } },
-
-            // VALID PARAMS. Max supported --  really duplicates test #0
-            {/*05*/ QUERY | INIT | RESET | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported },
-                { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, // not changed
-                { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, //  not changed
-            } },
-
-            // RESET FAIL PARAMS. can't change param
-            {/*06*/ INIT | RESET | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported },
-                { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, //  not changed
-                { RESET_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, // can't be changed
-            } },
-
-            // RESET FAIL PARAMS. can't change param
-            {/*07*/ INIT | RESET | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported },
-                { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, //  not changed
-                { RESET_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, // can't be changed
-            } },
-
-            // RESET FAIL PARAMS. invalid value
-            {/*08*/ INIT | RESET , MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE,
-            {
-                { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported },
-                { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, //  not changed
-                { RESET_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 0xFFFF }, // can't be changed
-            } },
-        };
-        
-        mfxI32 GetMinLCU(mfxU32 LCUSizeSupported)
+        // INVALID PARAMS #2
+        {/*02*/ QUERY | INIT , MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNKNOWN, MFX_ERR_UNKNOWN, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
         {
-            if (LCUSizeSupported & 0b001)
-                return 16;
-            else if (LCUSizeSupported & 0b010)
-                return 32;
-            else if (LCUSizeSupported & 0b100)
-                return 64;
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 0xFFFF },
+            { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
 
-            g_tsLog << "\n\nERROR: Unexpected value in CAPS.LCUSizeSupported\n\n";
-            throw tsFAIL;
+        // INVALID PARAMS #3
+        {/*03*/ QUERY | INIT , MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_UNKNOWN, MFX_ERR_UNKNOWN, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 256 },// Unsupported
+            { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
 
+        // VALID PARAMS. Min supported
+        {/*04*/ QUERY | INIT | ENC | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported },
+            { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, // not changed
+            { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, //  not changed
+            { ENC_EXP, &tsStruct::mfxExtHEVCParam.LCUSize },
+            { INIT_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
+
+
+        // VALID PARAMS. Max supported --  really duplicates test #0
+        {/*05*/ QUERY | INIT | ENC | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported },
+            { QUERY_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, // not changed
+            { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, //  not changed
+            { ENC_EXP, &tsStruct::mfxExtHEVCParam.LCUSize },
+            { INIT_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+            { QUERY_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
+
+        // RESET FAIL PARAMS. can't change param
+        {/*06*/ INIT | RESET | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported },
+            { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, //  not changed
+            { RESET_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, // can't be changed
+            { ENC_EXP, &tsStruct::mfxExtHEVCParam.LCUSize },
+            { INIT_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
+
+        // RESET FAIL PARAMS. can't change param
+        {/*07*/ INIT | RESET | ENC | NEED_TWO_LCU_SUPPORTED, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported },
+            { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, //  not changed
+            { RESET_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMinSupported }, // can't be changed
+            { ENC_EXP, &tsStruct::mfxExtHEVCParam.LCUSize },
+            { INIT_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0 },
+        } },
+
+        // RESET FAIL PARAMS. invalid value
+        {/*08*/ INIT | RESET , MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE,
+        {
+            { MFX_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported },
+            { INIT_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetMaxSupported }, //  not changed
+            { RESET_PAR, &tsStruct::mfxExtHEVCParam.LCUSize, 0xFFFF }, // can't be changed
+            { RESET_EXP, &tsStruct::mfxExtHEVCParam.LCUSize, SetDefault },
+            { RESET_EXP_SW, &tsStruct::mfxExtHEVCParam.LCUSize, 0xFFFF },
+        } },
+    };
+
+    class SProc : public tsSurfaceProcessor
+    {
+    public:
+        tsSurfaceProcessor& m_reader;
+        tsVideoEncoder& m_enc;
+        const tc_struct& m_tc;
+
+        SProc(tsSurfaceProcessor& r, const tc_struct& tc, tsVideoEncoder& enc)
+            : m_reader(r)
+            , m_enc(enc)
+            , m_tc(tc)
+        {
+            m_max = m_reader.m_max;
         }
 
-        mfxI32 GetMaxLCU(mfxU32 LCUSizeSupported)
+        mfxStatus ProcessSurface(mfxFrameSurface1& s)
         {
-            if (LCUSizeSupported & 0b100)
-                return 64;
-            else if (LCUSizeSupported & 0b010)
-                return 32;
-            else if (LCUSizeSupported & 0b001)
-                return 16;
-
-            g_tsLog << "\n\nERROR: Unexpected value in CAPS.LCUSizeSupported\n\n";
-            throw tsFAIL;
-
+            auto& ctrl = *m_enc.m_ctrl_next.New();
+            mfxExtHEVCParam& hp = ctrl;
+            hp = (mfxExtHEVCParam&)m_enc.m_par;
+            return m_reader.ProcessSurface(s);
         }
+    };
 
-        mfxI32 GetDefaultLCU(mfxU32 LCUSizeSupported)
-        {
-            return GetMaxLCU(LCUSizeSupported);
-        }
+    mfxI32 GetMinLCU(mfxU32 LCUSizeSupported)
+    {
+        if (LCUSizeSupported & 0b001)
+            return 16;
+        else if (LCUSizeSupported & 0b010)
+            return 32;
+        else if (LCUSizeSupported & 0b100)
+            return 64;
 
-        void PrepareTestCase(tc_struct& tc, const ENCODE_CAPS_HEVC& caps)
+        g_tsLog << "\n\nERROR: Unexpected value in CAPS.LCUSizeSupported\n\n";
+        throw tsFAIL;
+
+    }
+
+    mfxI32 GetMaxLCU(mfxU32 LCUSizeSupported)
+    {
+        if (LCUSizeSupported & 0b100)
+            return 64;
+        else if (LCUSizeSupported & 0b010)
+            return 32;
+        else if (LCUSizeSupported & 0b001)
+            return 16;
+
+        g_tsLog << "\n\nERROR: Unexpected value in CAPS.LCUSizeSupported\n\n";
+        throw tsFAIL;
+
+    }
+
+    mfxI32 GetDefaultLCU(mfxU32 LCUSizeSupported)
+    {
+        return GetMaxLCU(LCUSizeSupported);
+    }
+
+    void PrepareTestCase(tc_struct& tc, const ENCODE_CAPS_HEVC& caps)
+    {
+        for (mfxU32 i = 0; i < MAX_NPARS; i++)
         {
-            for(mfxU32 i = 0; i < MAX_NPARS; i++)                                                                           
+            switch (tc.set_par[i].v)
             {
-                switch (tc.set_par[i].v)
-                {
-                case SetDefault:
-                    tc.set_par[i].v = GetDefaultLCU(caps.LCUSizeSupported);
-                    break;
-                case SetMinSupported:
-                    tc.set_par[i].v = GetMinLCU(caps.LCUSizeSupported);
-                    break;
-                case SetMaxSupported:
-                    tc.set_par[i].v = GetMaxLCU(caps.LCUSizeSupported);
-                    break;
-                default:
-                    // do nothing
-                    break;
-                }
+            case SetDefault:
+                tc.set_par[i].v = GetDefaultLCU(caps.LCUSizeSupported);
+                break;
+            case SetMinSupported:
+                tc.set_par[i].v = GetMinLCU(caps.LCUSizeSupported);
+                break;
+            case SetMaxSupported:
+                tc.set_par[i].v = GetMaxLCU(caps.LCUSizeSupported);
+                break;
+            default:
+                // do nothing
+                break;
             }
-
-            if ((tc.type & NEED_TWO_LCU_SUPPORTED) && GetMinLCU(caps.LCUSizeSupported) == GetMaxLCU(caps.LCUSizeSupported))
-            {
-                g_tsLog << "\n\nWRN: Test Skipped only one LCU size supported\n\n";
-                throw tsSKIP;
-            }
-
         }
 
-        const unsigned int n_cases = sizeof(test_case) / sizeof(test_case[0]);
+        if ((tc.type & NEED_TWO_LCU_SUPPORTED) && GetMinLCU(caps.LCUSizeSupported) == GetMaxLCU(caps.LCUSizeSupported))
+        {
+            g_tsLog << "\n\nWRN: Test Skipped only one LCU size supported\n\n";
+            throw tsSKIP;
+        }
 
-        int test(unsigned int id, tsVideoEncoder& enc, const char* stream) {
-            auto& tc = test_case[id];
-            
-            enc.MFXInit();
-            enc.Load();
+    }
 
-            ENCODE_CAPS_HEVC caps = {};
-            mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+    const unsigned int n_cases = sizeof(test_case) / sizeof(test_case[0]);
+    const mfxU32 nFrames = 30;
+    int test(unsigned int id, tsVideoEncoder& enc, const char* stream) {
 
-            g_tsStatus.expect(MFX_ERR_NONE);
-            g_tsStatus.check(enc.GetCaps(&caps, &capSize));
+        auto& tc = test_case[id];
+        mfxExtHEVCParam& hp = enc.m_par;
+        BitstreamChecker checker;
+        tsRawReader reader(stream, enc.m_par.mfx.FrameInfo, nFrames);
+        SProc sproc(reader, tc, enc);
+        reader.m_disable_shift_hack = true; // w/a stupid hack in tsRawReader for P010
+        enc.m_filler = &sproc;
+        enc.MFXInit();
+        enc.Load();
+        ENCODE_CAPS_HEVC caps = {};
+        mfxU32 capSize = sizeof(ENCODE_CAPS_HEVC);
+        g_tsStatus.expect(0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED);
+        g_tsStatus.check(enc.GetCaps(&caps, &capSize));
 
-            if (g_tsHWtype < MFX_HW_CNL)
-            {
-                caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
-            }
+        if (g_tsHWtype < MFX_HW_CNL)
+        {
+            caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
+        }
 
-            //m_par = initParams();
-            PrepareTestCase(tc, caps);
-
-            
-            if (tc.type & QUERY)
-            {
-                tsExtBufType<mfxVideoParam> out_par;
-                SETPARS(enc.m_par, MFX_PAR);
-                out_par = enc.m_par;
-                enc.m_pParOut = &out_par;
-                g_tsStatus.expect(tc.q_sts);
-                enc.Query();
+        //m_par = initParams();
+        PrepareTestCase(tc, caps);
+        if (tc.type & QUERY)
+        {
+            tsExtBufType<mfxVideoParam> out_par;
+            SETPARS(enc.m_par, MFX_PAR);
+            out_par = enc.m_par;
+            enc.m_pParOut = &out_par;
+            g_tsStatus.expect(0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? tc.q_sts : tc.q_sw_sts);
+            enc.Query();
+            if (0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data))) //In the case of SW, the exbuffer is not used and does not change. COMPAREPARS does not make sense.
                 EXPECT_TRUE(COMPAREPARS(out_par, QUERY_EXP)) << "Error! Parameters mismatch.";
-            }
-
-            if (tc.type & INIT)
-            {
-                tsExtBufType<mfxVideoParam> out_par;
-                SETPARS(&enc.m_par, MFX_PAR);
-                out_par = enc.m_par;
-                enc.m_pParOut = &out_par;
-                g_tsStatus.expect(tc.i_sts);
-                enc.Init();
-                if (tc.i_sts >= MFX_ERR_NONE)
-                {
-                    g_tsStatus.expect(MFX_ERR_NONE);
-                    enc.GetVideoParam(enc.m_session, &out_par);
-                    EXPECT_TRUE(COMPAREPARS(out_par, INIT_EXP)) << "Error! Parameters mismatch.";
-                }
-            }
-
-            if (tc.type & ENC)
-            {
-                g_tsStatus.expect(tc.enc_sts);
-                enc.EncodeFrames(1);
-            }
-
-            if (tc.type & RESET)
-            {
-                tsExtBufType<mfxVideoParam> out_par;
-                SETPARS(&enc.m_par, RESET_PAR);
-                out_par = enc.m_par;
-                enc.m_pParOut = &out_par;
-                g_tsStatus.expect(tc.r_sts);
-                enc.Reset();
-                if (tc.r_sts >= MFX_ERR_NONE)
-                {
-                    g_tsStatus.expect(MFX_ERR_NONE);
-                    enc.GetVideoParam(enc.m_session, &out_par);
-                    EXPECT_TRUE(COMPAREPARS(out_par, RESET_EXP)) << "Error! Parameters mismatch.";
-                }
-            }
-
-            return 0;
         }
 
+        if (tc.type & INIT)
+        {
+            tsExtBufType<mfxVideoParam> out_par;
+            SETPARS(&enc.m_par, MFX_PAR);
+            out_par = enc.m_par;
+            enc.m_pParOut = &out_par;
+            g_tsStatus.expect(0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? tc.i_sts : tc.i_sw_sts);
+            enc.Init();
+            if ((0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? tc.i_sts : tc.i_sw_sts) >= MFX_ERR_NONE)
+            {
+                g_tsStatus.expect(MFX_ERR_NONE);
+                enc.GetVideoParam(enc.m_session, &out_par);
+                EXPECT_TRUE(COMPAREPARS(out_par, 0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? INIT_EXP : INIT_EXP_SW)) << "Error! Parameters mismatch.";
+
+                if (tc.type & ENC)
+                {
+                    checker.TrueLCUSize = hp.LCUSize;
+                    if (!checker.TrueLCUSize)
+                    {
+                        checker.TrueLCUSize = 0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? GetDefaultLCU(caps.LCUSizeSupported) : 64;
+                    }
+                    enc.m_bs_processor = &checker;
+                    g_tsStatus.expect(0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? tc.enc_sts : tc.enc_sw_sts);
+                    enc.EncodeFrames(nFrames);
+                }
+            }
+        }
+
+        if (tc.type & RESET)
+        {
+            tsExtBufType<mfxVideoParam> out_par;
+            SETPARS(&enc.m_par, RESET_PAR);
+            out_par = enc.m_par;
+            enc.m_pParOut = &out_par;
+            g_tsStatus.expect(0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? tc.r_sts : tc.r_sw_sts);
+            enc.Reset();
+            if (tc.r_sw_sts >= MFX_ERR_NONE)
+            {
+                g_tsStatus.expect(MFX_ERR_NONE);
+                enc.GetVideoParam(enc.m_session, &out_par);
+                EXPECT_TRUE(COMPAREPARS(out_par, 0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? RESET_EXP : RESET_EXP_SW)) << "Error! Parameters mismatch.";
+                //g_tsStatus.check(enc.DrainEncodedBitstream());
+                if (tc.type & ENC)
+                {
+                    checker.TrueLCUSize = hp.LCUSize;
+                    if (!checker.TrueLCUSize)
+                    {
+                        checker.TrueLCUSize = (0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? GetDefaultLCU(caps.LCUSizeSupported) : 64);
+                    }
+                    enc.m_bs_processor = &checker;
+                    g_tsStatus.expect(0 == memcmp(enc.m_uid->Data, MFX_PLUGINID_HEVCE_HW.Data, sizeof(MFX_PLUGINID_HEVCE_HW.Data)) ? tc.enc_sts : tc.enc_sw_sts);
+                    enc.EncodeFrames(nFrames);
+                }
+            }
+        }
+
+        return 0;
+    }
 
     int testNV12(unsigned int id)
     {
