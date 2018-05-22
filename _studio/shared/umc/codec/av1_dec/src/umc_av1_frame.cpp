@@ -40,6 +40,8 @@ namespace UMC_AV1_DECODER
         displayed = false;
         outputted = false;
         decoded   = false;
+        decoding_started = false;
+        decoding_completed = false;
         data->Close();
 
         y_dc_delta_q = uv_dc_delta_q = uv_ac_delta_q = 0;
@@ -107,11 +109,6 @@ namespace UMC_AV1_DECODER
 
     bool AV1DecoderFrame::Empty() const
     { return !data->m_locked; }
-
-    bool AV1DecoderFrame::DecodingCompleted() const
-    {
-        return displayed && outputted;
-    }
 
     bool AV1DecoderFrame::Decoded() const
     {

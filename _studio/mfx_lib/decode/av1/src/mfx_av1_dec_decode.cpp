@@ -436,25 +436,10 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEAV1::CompleteFrame(mfxThreadTask task)
+mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderFrame* frame)
 {
-    MFX_CHECK_NULL_PTR1(task);
-
-    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
-    MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
-
-    auto info =
-        reinterpret_cast<TaskInfo*>(task);
-
-    mfxFrameSurface1* surface_out = info->surface_out;
     MFX_CHECK(surface_out, MFX_ERR_UNDEFINED_BEHAVIOR);
-
-    UMC::FrameMemID id = m_allocator->FindSurface(surface_out, m_opaque);
-    UMC_AV1_DECODER::AV1DecoderFrame* frame =
-        m_decoder->FindFrameByMemID(id);
-
-    if (!frame)
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     surface_out->Data.Corrupted = 0;
     Ipp32s const error = frame->GetError();
@@ -491,6 +476,7 @@ mfxStatus VideoDECODEAV1::CompleteFrame(mfxThreadTask task)
             surface_out->Data.Corrupted |= MFX_CORRUPTION_ABSENT_BOTTOM_FIELD;
     }
 
+    UMC::FrameMemID id = frame->GetFrameData()->GetFrameMID();
     mfxStatus sts = m_allocator->PrepareToOutput(surface_out, id, &m_video_par, m_opaque);
 #ifdef MFX_VA
     frame->Displayed(true);
@@ -499,6 +485,44 @@ mfxStatus VideoDECODEAV1::CompleteFrame(mfxThreadTask task)
 #endif
 
     return sts;
+}
+
+mfxStatus VideoDECODEAV1::QueryFrame(mfxThreadTask task)
+{
+    MFX_CHECK_NULL_PTR1(task);
+
+    MFX_CHECK(m_core, MFX_ERR_UNDEFINED_BEHAVIOR);
+    MFX_CHECK(m_decoder, MFX_ERR_NOT_INITIALIZED);
+
+    auto info =
+        reinterpret_cast<TaskInfo*>(task);
+
+    mfxFrameSurface1* surface_out = info->surface_out;
+    MFX_CHECK(surface_out, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    UMC::FrameMemID id = m_allocator->FindSurface(surface_out, m_opaque);
+    UMC_AV1_DECODER::AV1DecoderFrame* frame =
+        m_decoder->FindFrameByMemID(id);
+
+    MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
+
+    if (!frame->DecodingStarted())
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    if (!frame->DecodingCompleted())
+    {
+        m_decoder->QueryFrames();
+    }
+
+    if (frame->DecodingCompleted())
+    {
+        mfxStatus sts = DecodeFrame(surface_out, frame);
+        MFX_CHECK_STS(sts);
+
+        return MFX_TASK_DONE;
+    }
+    else
+        return MFX_TASK_WORKING;
 }
 
 mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out)
@@ -650,7 +674,7 @@ mfxStatus VideoDECODEAV1::DecodeRoutine(void* state, void* param, mfxU32, mfxU32
     if (!task)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-    mfxStatus sts = decoder->CompleteFrame(task);
+    mfxStatus sts = decoder->QueryFrame(task);
     return sts;
 }
 

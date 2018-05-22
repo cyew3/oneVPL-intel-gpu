@@ -511,6 +511,15 @@ typedef struct _DXVA_Intel_Tile_Group_AV1_Short
 } DXVA_Intel_Tile_Group_AV1_Short, *LPDXVA_Intel_Tile_Group_AV1_Short;
 #endif
 
+typedef struct _DXVA_Intel_Status_AV1 {
+    USHORT                    StatusReportFeedbackNumber;
+    DXVA_PicEntry_AV1         current_picture;
+    UCHAR                     bBufType;
+    UCHAR                     bStatus;
+    UCHAR                     bReserved8Bits;
+    USHORT                    wNumMbsAffected;
+} DXVA_Intel_Status_AV1, *LPDXVA_Intel_Status_AV1;
+
 //quantization matrix data buffer
 typedef struct _THREE_QM_FACTORS
 {

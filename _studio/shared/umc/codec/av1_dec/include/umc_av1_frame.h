@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -63,7 +63,6 @@ namespace UMC_AV1_DECODER
         { return header; }
 
         bool Empty() const;
-        bool DecodingCompleted() const;
         bool Decoded() const;
 
         bool Displayed() const
@@ -75,6 +74,16 @@ namespace UMC_AV1_DECODER
         { return outputted; }
         void Outputted(bool o)
         { outputted = o; }
+
+        bool DecodingStarted() const
+        { return decoding_started; }
+        void StartDecoding()
+        { decoding_started = true; }
+
+        bool DecodingCompleted() const
+        { return decoding_completed; }
+        void CompleteDecoding()
+        { decoding_completed = true; }
 
         UMC::FrameData* GetFrameData()
         { return data.get(); }
@@ -107,6 +116,9 @@ namespace UMC_AV1_DECODER
                                                      // respective mfxFrameSurface prepared for output to application
         bool                              decoded;   // set in [application thread] to signal that frame is completed and respective reference counter decremented
                                                      // after it frame still may remain in [AV1Decoder::dpb], but only as reference
+
+        bool                              decoding_started;   // set in [application thread] right after frame submission to the driver
+        bool                              decoding_completed; // set in [scheduler thread] after getting driver status report for the frame
 
 
         std::unique_ptr<UMC::FrameData>   data;

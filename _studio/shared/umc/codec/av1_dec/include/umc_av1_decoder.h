@@ -49,6 +49,29 @@ namespace UMC_AV1_DECODER
         Ipp32u               async_depth;
     };
 
+    class ReportItem // adopted from HEVC/AVC decoders
+    {
+    public:
+        Ipp32u  m_index;
+        Ipp8u   m_status;
+
+        ReportItem(Ipp32u index, Ipp8u status)
+            : m_index(index)
+            , m_status(status)
+        {
+        }
+
+        bool operator == (const ReportItem & item)
+        {
+            return (item.m_index == m_index);
+        }
+
+        bool operator != (const ReportItem & item)
+        {
+            return (item.m_index != m_index);
+        }
+    };
+
     class AV1Decoder
         : public UMC::VideoDecoder
     {
@@ -86,7 +109,7 @@ namespace UMC_AV1_DECODER
         AV1DecoderFrame* FindFrameByDispID(Ipp32u);
         AV1DecoderFrame* GetFrameToDisplay();
 
-        virtual UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) = 0;
+        virtual bool QueryFrames() = 0;
 
     protected:
 
@@ -98,6 +121,7 @@ namespace UMC_AV1_DECODER
 
         virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) = 0;
         virtual void CompleteDecodedFrames();
+        virtual UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) = 0;
 
     private:
 
@@ -112,7 +136,6 @@ namespace UMC_AV1_DECODER
 
         std::unique_ptr<SequenceHeader> sequence_header;
         DPBType                         dpb;     // store of decoded frames
-        //std::deque<AV1DecoderFrame*>    queue;
 
         Ipp32u                          counter;
         AV1DecoderParams                params;

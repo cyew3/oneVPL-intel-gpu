@@ -30,11 +30,15 @@ namespace UMC_AV1_DECODER
         AV1DecoderVA();
 
         UMC::Status SetParams(UMC::BaseCodecParams*) override;
-        UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) override;
+        bool QueryFrames() override;
 
     private:
 
         void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) override;
+        UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) override;
+
+    private:
+        std::vector<ReportItem> reports;
     };
 }
 

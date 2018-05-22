@@ -31,6 +31,8 @@ namespace UMC_AV1_DECODER
     class AV1DecoderFrame;
 }
 
+using UMC_AV1_DECODER::AV1DecoderFrame;
+
 class VideoDECODEAV1
     : public VideoDECODE
 {
@@ -61,7 +63,7 @@ public:
     mfxStatus GetPayload(mfxU64* time_stamp, mfxPayload*);
 
     mfxStatus SubmitFrame(mfxBitstream*, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, mfxThreadTask*);
-    mfxStatus CompleteFrame(mfxThreadTask);
+    mfxStatus QueryFrame(mfxThreadTask);
 
 private:
 
@@ -71,8 +73,8 @@ private:
 
     mfxStatus SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out);
 
-    UMC_AV1_DECODER::AV1DecoderFrame* GetFrameToDisplay();
-    void FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, UMC_AV1_DECODER::AV1DecoderFrame*);
+    AV1DecoderFrame* GetFrameToDisplay();
+    void FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, AV1DecoderFrame*);
 
     mfxFrameSurface1* GetOriginalSurface(mfxFrameSurface1* surface)
     {
@@ -81,6 +83,8 @@ private:
         return m_opaque ?
             m_core->GetNativeSurface(surface) : surface;
     }
+
+    mfxStatus DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderFrame* pFrame);
 
 private:
 

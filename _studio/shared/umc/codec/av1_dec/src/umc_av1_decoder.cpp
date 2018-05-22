@@ -185,8 +185,7 @@ namespace UMC_AV1_DECODER
 
         UMC::Status umcRes = CompleteFrame(frame);
 
-        //std::unique_lock<std::mutex> l(guard);
-        //queue.push_back(frame);
+        frame->StartDecoding();
 
         return umcRes;
     }
@@ -299,7 +298,7 @@ namespace UMC_AV1_DECODER
         std::for_each(dpb.begin(), dpb.end(),
             [](AV1DecoderFrame* frame)
             {
-            if (frame->DecodingCompleted() && !frame->Decoded())
+            if (frame->Outputted() && frame->Displayed() && !frame->Decoded())
                 frame->OnDecodingCompleted();
             }
         );
