@@ -218,7 +218,7 @@ namespace vpp_mctf_reset
                 { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
                 { RESET, &tsStruct::mfxExtVppMctf.MVPrecision,           MFX_MVPRECISION_INTEGER },
             },
-            {}, 4, { MFX_HW_BDW, MFX_HW_SKL, MFX_HW_KBL, MFX_HW_CNL}
+            {}, 11, { MFX_HW_BDW, MFX_HW_SKL, MFX_HW_APL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_CNL, MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL, MFX_HW_TGL}
         },
 #endif
     };

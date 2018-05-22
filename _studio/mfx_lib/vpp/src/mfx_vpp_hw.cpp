@@ -2615,10 +2615,12 @@ mfxStatus VideoVPPHW::QueryCaps(VideoCORE* core, MfxHwVideoProcessing::mfxVppCap
 
 #ifdef MFX_ENABLE_MCTF
     eMFXHWType  hwType = core->GetHWType();
-    if (hwType != MFX_HW_BDW &&
-        hwType != MFX_HW_SCL &&
-        hwType != MFX_HW_KBL &&
-        hwType != MFX_HW_CNL)
+    if (hwType < MFX_HW_BDW || 
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+        hwType > MFX_HW_TGL_HP)
+#else
+        hwType > MFX_HW_CNL)
+#endif
         caps.uMCTF = 0;
     else
     {

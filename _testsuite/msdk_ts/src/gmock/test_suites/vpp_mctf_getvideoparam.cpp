@@ -252,7 +252,7 @@ namespace vpp_mctf_getvideoparam
 
             3,{ MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_MCTF, MFX_EXTBUFF_VPP_DETAIL },
             // platforms that support MCTF
-            4, { MFX_HW_BDW, MFX_HW_SKL, MFX_HW_KBL, MFX_HW_CNL }
+            11, { MFX_HW_BDW, MFX_HW_SKL, MFX_HW_APL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_CNL, MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL, MFX_HW_TGL }
         },
 
         {/*10*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
