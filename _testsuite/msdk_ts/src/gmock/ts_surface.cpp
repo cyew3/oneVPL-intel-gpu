@@ -877,7 +877,7 @@ tsSurfaceWriter::~tsSurfaceWriter()
     }
 }
 
-mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
+static mfxStatus ProcessSurfaceRowByRow(mfxFrameSurface1& s, std::function<size_t(void const*, size_t, size_t)> processRow)
 {
     mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
     size_t count = s.Info.CropW;
@@ -886,14 +886,14 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
     {
         for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
         {
-            if (fwrite(s.Data.Y + pitch * i + s.Info.CropX, 1, count, m_file)
+            if (processRow(s.Data.Y + pitch * i + s.Info.CropX, 1, count)
                 != count)
                 return MFX_ERR_UNKNOWN;
         }
 
         for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
         {
-            if (fwrite(s.Data.UV + pitch * i + s.Info.CropX, 1, count, m_file)
+            if (processRow(s.Data.UV + pitch * i + s.Info.CropX, 1, count)
                 != count)
                 return MFX_ERR_UNKNOWN;
         }
@@ -907,7 +907,7 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 
         for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++)
         {
-            if (fwrite(ptr + i * pitch, 1, count, m_file) != count)
+            if (processRow(ptr + i * pitch, 1, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
@@ -918,7 +918,7 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
-            if (fwrite(s.Data.Y + pitch * i + cropX, 1, count, m_file) != count)
+            if (processRow(s.Data.Y + pitch * i + cropX, 1, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
@@ -929,27 +929,27 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
-            if (fwrite(s.Data.V + pitch * i + cropX, 1, count, m_file) != count)
+            if (processRow(s.Data.V + pitch * i + cropX, 1, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
-    else if (s.Info.FourCC == MFX_FOURCC_P010)
+    else if ((s.Info.FourCC == MFX_FOURCC_P010) || (s.Info.FourCC == MFX_FOURCC_P016))
     {
         mfxU16 cropX = s.Info.CropX * 2;
 
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
-            if (fwrite(s.Data.Y + pitch * i + cropX, 2, count, m_file) != count)
+            if (processRow(s.Data.Y + pitch * i + cropX, 2, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
 
         for (mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i++)
         {
-            if (fwrite(s.Data.UV + pitch * i + cropX, 2, count, m_file) != count)
+            if (processRow(s.Data.UV + pitch * i + cropX, 2, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
-    else if (s.Info.FourCC == MFX_FOURCC_Y210)
+    else if ((s.Info.FourCC == MFX_FOURCC_Y210) || (s.Info.FourCC == MFX_FOURCC_Y216))
     {
         mfxU16 cropX = ((s.Info.CropX >> 1) << 2);
         count *= 2;
@@ -957,18 +957,18 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
 
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
-            if (fwrite(s.Data.Y16 + pitch * i + cropX, 2, count, m_file) != count)
+            if (processRow(s.Data.Y16 + pitch * i + cropX, 2, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
-    else if (s.Info.FourCC == MFX_FOURCC_Y410)
+    else if ((s.Info.FourCC == MFX_FOURCC_Y410) || (s.Info.FourCC == MFX_FOURCC_Y416))
     {
         mfxU16 cropX = s.Info.CropX;
         pitch /= 4; //bytes to dwords
 
         for (mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i++)
         {
-            if (fwrite(s.Data.Y410 + pitch * i + cropX, 4, count, m_file) != count)
+            if (processRow(s.Data.Y410 + pitch * i + cropX, 4, count) != count)
                 return MFX_ERR_UNKNOWN;
         }
     }
@@ -980,81 +980,23 @@ mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
     return MFX_ERR_NONE;
 }
 
+mfxStatus tsSurfaceWriter::ProcessSurface(mfxFrameSurface1& s)
+{
+    auto writeRowToFile = [this](void const*data, size_t elementSize, size_t elementCount) {
+        return fwrite(data, elementSize, elementCount, m_file);
+    };
+
+    return ProcessSurfaceRowByRow(s, writeRowToFile);
+}
 
 mfxStatus tsSurfaceCRC32::ProcessSurface(mfxFrameSurface1& s)
 {
-    mfxU32 pitch = (s.Data.PitchHigh << 16) + s.Data.PitchLow;
-    size_t count = s.Info.CropW;
+    auto clacRowCRC = [this](void const*data, size_t elementSize, size_t elementCount) {
+        IppStatus sts = ippsCRC32_8u((const Ipp8u *)data, (int)(elementSize * elementCount), &m_crc);
+        return ((sts == ippStsNoErr) ? elementCount : size_t(0));
+    };
 
-    mfxU32 cropX = s.Info.CropX;
-
-    switch (s.Info.FourCC) {
-        case MFX_FOURCC_P010:
-        case MFX_FOURCC_P016:
-            cropX *= 2;
-            count *= 2;
-
-        case MFX_FOURCC_NV12:
-        {
-            for(mfxU16 i = s.Info.CropY; i < (s.Info.CropH + s.Info.CropY); i ++)
-            {
-                IppStatus sts = ippsCRC32_8u(s.Data.Y + pitch * i + cropX, (mfxU32)count, &m_crc);
-                if (sts != ippStsNoErr)
-                {
-                    g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
-                    return MFX_ERR_ABORTED;
-                }
-            }
-            for(mfxU16 i = (s.Info.CropY / 2); i < ((s.Info.CropH + s.Info.CropY) / 2); i ++)
-            {
-                IppStatus sts = ippsCRC32_8u(s.Data.UV + pitch * i + cropX, (mfxU32)count, &m_crc);
-                if (sts != ippStsNoErr)
-                {
-                    g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
-                    return MFX_ERR_ABORTED;
-                }
-            }
-            break;
-        }
-
-        case MFX_FOURCC_Y416:
-            cropX *= 2;
-            count *= 2;
-        case MFX_FOURCC_Y210:
-        case MFX_FOURCC_Y216:
-            cropX *= 4;
-
-        case MFX_FOURCC_RGB4:
-        case MFX_FOURCC_AYUV:
-        {
-            count *= 4;
-            mfxU8* ptr = 0;
-            ptr = TS_MIN( TS_MIN(s.Data.R, s.Data.G), s.Data.B );
-            ptr = ptr + cropX + s.Info.CropY * pitch;
-
-            for(mfxU32 i = s.Info.CropY; i < s.Info.CropH; i++)
-            {
-                IppStatus sts = ippsCRC32_8u(ptr + i * pitch, (mfxU32)count, &m_crc);
-                if (sts != ippStsNoErr)
-                {
-                    g_tsLog << "ERROR: cannot calculate CRC32 IppStatus=" << sts << "\n";
-                    return MFX_ERR_ABORTED;
-                }
-            }
-            break;
-        }
-        case MFX_FOURCC_YUY2:
-        case MFX_FOURCC_Y410:
-        {
-            g_tsLog << "ERROR: CRC calculation is not impelemented\n";
-            return MFX_ERR_ABORTED;
-        }
-
-        default:
-            return MFX_ERR_UNSUPPORTED;
-    }
-
-    return MFX_ERR_NONE;
+    return ProcessSurfaceRowByRow(s, clacRowCRC);
 }
 
 mfxF64 PSNR(tsFrame& ref, tsFrame& src, mfxU32 id)
