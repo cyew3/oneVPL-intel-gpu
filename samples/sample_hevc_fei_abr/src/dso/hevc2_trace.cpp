@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "hevc2_trace.h"
 #include "hevc2_struct.h"
@@ -95,37 +96,37 @@ const char* SEITypeTraceMap::operator[] (unsigned int i)
 {
     switch (i)
     {
-    case BUFFERING_PERIOD                    : return "BUFFERING_PERIOD";
-    case PICTURE_TIMING                      : return "PICTURE_TIMING";
-    case PAN_SCAN_RECT                       : return "PAN_SCAN_RECT";
-    case FILLER_PAYLOAD                      : return "FILLER_PAYLOAD";
-    case USER_DATA_REGISTERED_ITU_T_T35      : return "USER_DATA_REGISTERED_ITU_T_T35";
-    case USER_DATA_UNREGISTERED              : return "USER_DATA_UNREGISTERED";
-    case RECOVERY_POINT                      : return "RECOVERY_POINT";
-    case SCENE_INFO                          : return "SCENE_INFO";
-    case FULL_FRAME_SNAPSHOT                 : return "FULL_FRAME_SNAPSHOT";
-    case PROGRESSIVE_REFINEMENT_SEGMENT_START: return "PROGRESSIVE_REFINEMENT_SEGMENT_START";
-    case PROGRESSIVE_REFINEMENT_SEGMENT_END  : return "PROGRESSIVE_REFINEMENT_SEGMENT_END";
-    case FILM_GRAIN_CHARACTERISTICS          : return "FILM_GRAIN_CHARACTERISTICS";
-    case POST_FILTER_HINT                    : return "POST_FILTER_HINT";
-    case TONE_MAPPING_INFO                   : return "TONE_MAPPING_INFO";
-    case FRAME_PACKING                       : return "FRAME_PACKING";
-    case DISPLAY_ORIENTATION                 : return "DISPLAY_ORIENTATION";
-    case SOP_DESCRIPTION                     : return "SOP_DESCRIPTION";
-    case ACTIVE_PARAMETER_SETS               : return "ACTIVE_PARAMETER_SETS";
-    case DECODING_UNIT_INFO                  : return "DECODING_UNIT_INFO";
-    case TEMPORAL_LEVEL0_INDEX               : return "TEMPORAL_LEVEL0_INDEX";
-    case DECODED_PICTURE_HASH                : return "DECODED_PICTURE_HASH";
-    case SCALABLE_NESTING                    : return "SCALABLE_NESTING";
-    case REGION_REFRESH_INFO                 : return "REGION_REFRESH_INFO";
-    case NO_DISPLAY                          : return "NO_DISPLAY";
-    case TIME_CODE                           : return "TIME_CODE";
-    case MASTERING_DISPLAY_COLOUR_VOLUME     : return "MASTERING_DISPLAY_COLOUR_VOLUME";
-    case SEGM_RECT_FRAME_PACKING             : return "SEGM_RECT_FRAME_PACKING";
-    case TEMP_MOTION_CONSTRAINED_TILE_SETS   : return "TEMP_MOTION_CONSTRAINED_TILE_SETS";
-    case CHROMA_RESAMPLING_FILTER_HINT       : return "CHROMA_RESAMPLING_FILTER_HINT";
-    case KNEE_FUNCTION_INFO                  : return "KNEE_FUNCTION_INFO";
-    case COLOUR_REMAPPING_INFO               : return "COLOUR_REMAPPING_INFO";
+    case SEI_BUFFERING_PERIOD                    : return "SEI_BUFFERING_PERIOD";
+    case SEI_PICTURE_TIMING                      : return "SEI_PICTURE_TIMING";
+    case SEI_PAN_SCAN_RECT                       : return "SEI_PAN_SCAN_RECT";
+    case SEI_FILLER_PAYLOAD                      : return "SEI_FILLER_PAYLOAD";
+    case SEI_USER_DATA_REGISTERED_ITU_T_T35      : return "SEI_USER_DATA_REGISTERED_ITU_T_T35";
+    case SEI_USER_DATA_UNREGISTERED              : return "SEI_USER_DATA_UNREGISTERED";
+    case SEI_RECOVERY_POINT                      : return "SEI_RECOVERY_POINT";
+    case SEI_SCENE_INFO                          : return "SEI_SCENE_INFO";
+    case SEI_FULL_FRAME_SNAPSHOT                 : return "SEI_FULL_FRAME_SNAPSHOT";
+    case SEI_PROGRESSIVE_REFINEMENT_SEGMENT_START: return "SEI_PROGRESSIVE_REFINEMENT_SEGMENT_START";
+    case SEI_PROGRESSIVE_REFINEMENT_SEGMENT_END  : return "SEI_PROGRESSIVE_REFINEMENT_SEGMENT_END";
+    case SEI_FILM_GRAIN_CHARACTERISTICS          : return "SEI_FILM_GRAIN_CHARACTERISTICS";
+    case SEI_POST_FILTER_HINT                    : return "SEI_POST_FILTER_HINT";
+    case SEI_TONE_MAPPING_INFO                   : return "SEI_TONE_MAPPING_INFO";
+    case SEI_FRAME_PACKING                       : return "SEI_FRAME_PACKING";
+    case SEI_DISPLAY_ORIENTATION                 : return "SEI_DISPLAY_ORIENTATION";
+    case SEI_SOP_DESCRIPTION                     : return "SEI_SOP_DESCRIPTION";
+    case SEI_ACTIVE_PARAMETER_SETS               : return "SEI_ACTIVE_PARAMETER_SETS";
+    case SEI_DECODING_UNIT_INFO                  : return "SEI_DECODING_UNIT_INFO";
+    case SEI_TEMPORAL_LEVEL0_INDEX               : return "SEI_TEMPORAL_LEVEL0_INDEX";
+    case SEI_DECODED_PICTURE_HASH                : return "SEI_DECODED_PICTURE_HASH";
+    case SEI_SCALABLE_NESTING                    : return "SEI_SCALABLE_NESTING";
+    case SEI_REGION_REFRESH_INFO                 : return "SEI_REGION_REFRESH_INFO";
+    case SEI_NO_DISPLAY                          : return "SEI_NO_DISPLAY";
+    case SEI_TIME_CODE                           : return "SEI_TIME_CODE";
+    case SEI_MASTERING_DISPLAY_COLOUR_VOLUME     : return "SEI_MASTERING_DISPLAY_COLOUR_VOLUME";
+    case SEI_SEGM_RECT_FRAME_PACKING             : return "SEI_SEGM_RECT_FRAME_PACKING";
+    case SEI_TEMP_MOTION_CONSTRAINED_TILE_SETS   : return "SEI_TEMP_MOTION_CONSTRAINED_TILE_SETS";
+    case SEI_CHROMA_RESAMPLING_FILTER_HINT       : return "SEI_CHROMA_RESAMPLING_FILTER_HINT";
+    case SEI_KNEE_FUNCTION_INFO                  : return "SEI_KNEE_FUNCTION_INFO";
+    case SEI_COLOUR_REMAPPING_INFO               : return "SEI_COLOUR_REMAPPING_INFO";
     default                                  : return "Unknown";
     }
 }
@@ -164,7 +165,7 @@ const char PredModeTraceMap[3][6] =
     "INTER", "INTRA", "SKIP"
 };
 
-const char PartModeTraceMap[8][12] = 
+const char PartModeTraceMap[8][12] =
 {
     "PART_2Nx2N",
     "PART_2NxN",
@@ -176,7 +177,7 @@ const char PartModeTraceMap[8][12] =
     "PART_nRx2N"
 };
 
-const char IntraPredModeTraceMap[35][9] = 
+const char IntraPredModeTraceMap[35][9] =
 {
     "Planar", "DC",
     "225\xF8", "230.625\xF8", "236.25\xF8", "241.875\xF8", "247.5\xF8", "253.125\xF8", "258.75\xF8", "264.375\xF8",
@@ -186,12 +187,12 @@ const char IntraPredModeTraceMap[35][9] =
      "45\xF8"
 };
 
-const char SAOTypeTraceMap[3][5] = 
+const char SAOTypeTraceMap[3][5] =
 {
     "N/A", "Band", "Edge"
 };
 
-const char EOClassTraceMap[4][5] = 
+const char EOClassTraceMap[4][5] =
 {
     "0\xF8", "90\xF8", "135\xF8", "45\xF8"
 };

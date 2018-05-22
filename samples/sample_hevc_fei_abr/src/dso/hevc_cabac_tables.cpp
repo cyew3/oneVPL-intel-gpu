@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "hevc_cabac.h"
 
@@ -194,71 +195,11 @@ const Bs8s HEVC_CABAC::CtxIncTbl[num_SE_full][6] = {
 /*PCM_FLAG                     */ { TERMINATE,    ERROR,    ERROR,    ERROR,    ERROR,    ERROR },
 };
 
-const Bs8u rangeTabLps[64][4] = {
-    { 128, 176, 208, 240 },
-    { 128, 167, 197, 227 },
-    { 128, 158, 187, 216 },
-    { 123, 150, 178, 205 },
-    { 116, 142, 169, 195 },
-    { 111, 135, 160, 185 },
-    { 105, 128, 152, 175 },
-    { 100, 122, 144, 166 },
-    {  95, 116, 137, 158 },
-    {  90, 110, 130, 150 },
-    {  85, 104, 123, 142 },
-    {  81,  99, 117, 135 },
-    {  77,  94, 111, 128 },
-    {  73,  89, 105, 122 },
-    {  69,  85, 100, 116 },
-    {  66,  80,  95, 110 },
-    {  62,  76,  90, 104 },
-    {  59,  72,  86,  99 },
-    {  56,  69,  81,  94 },
-    {  53,  65,  77,  89 },
-    {  51,  62,  73,  85 },
-    {  48,  59,  69,  80 },
-    {  46,  56,  66,  76 },
-    {  43,  53,  63,  72 },
-    {  41,  50,  59,  69 },
-    {  39,  48,  56,  65 },
-    {  37,  45,  54,  62 },
-    {  35,  43,  51,  59 },
-    {  33,  41,  48,  56 },
-    {  32,  39,  46,  53 },
-    {  30,  37,  43,  50 },
-    {  29,  35,  41,  48 },
-    {  27,  33,  39,  45 },
-    {  26,  31,  37,  43 },
-    {  24,  30,  35,  41 },
-    {  23,  28,  33,  39 },
-    {  22,  27,  32,  37 },
-    {  21,  26,  30,  35 },
-    {  20,  24,  29,  33 },
-    {  19,  23,  27,  31 },
-    {  18,  22,  26,  30 },
-    {  17,  21,  25,  28 },
-    {  16,  20,  23,  27 },
-    {  15,  19,  22,  25 },
-    {  14,  18,  21,  24 },
-    {  14,  17,  20,  23 },
-    {  13,  16,  19,  22 },
-    {  12,  15,  18,  21 },
-    {  12,  14,  17,  20 },
-    {  11,  14,  16,  19 },
-    {  11,  13,  15,  18 },
-    {  10,  12,  15,  17 },
-    {  10,  12,  14,  16 },
-    {   9,  11,  13,  15 },
-    {   9,  11,  12,  14 },
-    {   8,  10,  12,  14 },
-    {   8,   9,  11,  13 },
-    {   7,   9,  11,  12 },
-    {   7,   9,  10,  12 },
-    {   7,   8,  10,  11 },
-    {   6,   8,   9,  11 },
-    {   6,   7,   9,  10 },
-    {   6,   7,   8,   9 },
-    {   2,   2,   2,   2 }
+const Bs8u rangeTabLpsT[4][64] = {
+    {  128, 128, 128, 123, 116, 111, 105, 100,  95,  90,  85,  81,  77,  73,  69,  66,  62,  59,  56,  53,  51,  48,  46,  43,  41,  39,  37,  35,  33,  32,  30,  29,  27,  26,  24,  23,  22,  21,  20,  19,  18,  17,  16,  15,  14,  14,  13,  12,  12,  11,  11,  10,  10,   9,   9,   8,   8,   7,   7,   7,   6,   6,   6,   2},
+    {  176, 167, 158, 150, 142, 135, 128, 122, 116, 110, 104,  99,  94,  89,  85,  80,  76,  72,  69,  65,  62,  59,  56,  53,  50,  48,  45,  43,  41,  39,  37,  35,  33,  31,  30,  28,  27,  26,  24,  23,  22,  21,  20,  19,  18,  17,  16,  15,  14,  14,  13,  12,  12,  11,  11,  10,   9,   9,   9,   8,   8,   7,   7,   2},
+    {  208, 197, 187, 178, 169, 160, 152, 144, 137, 130, 123, 117, 111, 105, 100,  95,  90,  86,  81,  77,  73,  69,  66,  63,  59,  56,  54,  51,  48,  46,  43,  41,  39,  37,  35,  33,  32,  30,  29,  27,  26,  25,  23,  22,  21,  20,  19,  18,  17,  16,  15,  15,  14,  13,  12,  12,  11,  11,  10,  10,   9,   9,   8,   2},
+    {  240, 227, 216, 205, 195, 185, 175, 166, 158, 150, 142, 135, 128, 122, 116, 110, 104,  99,  94,  89,  85,  80,  76,  72,  69,  65,  62,  59,  56,  53,  50,  48,  45,  43,  41,  39,  37,  35,  33,  31,  30,  28,  27,  25,  24,  23,  22,  21,  20,  19,  18,  17,  16,  15,  14,  14,  13,  12,  12,  11,  11,  10,   9,   2},
 };
 
 const Bs8u transIdxLps[64] = {

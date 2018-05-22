@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "hevc2_parser.h"
 #include "hevc2_trace.h"
@@ -377,7 +378,8 @@ Bs32u Parser::parseEXT(Bs8u*& ExtData)
     BS2_SET(Bs32u(data.size() * 8 - O % 8), ExtBits);
 
     ExtData = alloc<Bs8u>(0, (Bs32u)data.size());
-    memcpy(ExtData, &data[0], data.size());
+
+    memcpy(ExtData, data.data(), data.size());
 
     if (ExtBits > 32 * 8)
     {
@@ -421,7 +423,7 @@ inline const Bs8u* DSL(Bs32u sizeId, Bs32u matrixId)
 
 void Parser::parseSLD(QM& qm)
 {
-    Bs8u list[64];
+    Bs8u list[64] = {};
     Bs16u dim[] = { 1, 4, 4 };
 
     for (Bs32u sizeId = 0; sizeId < 4; sizeId++)
@@ -1077,8 +1079,8 @@ void Parser::parsePPS(PPS& pps)
                 pps.cr_qp_offset_list[i] = se();
             }
 
-            BS2_TRACE_ARR(pps.cb_qp_offset_list, Bs32u(pps.chroma_qp_offset_list_len_minus1 + 1), 0);
-            BS2_TRACE_ARR(pps.cr_qp_offset_list, Bs32u(pps.chroma_qp_offset_list_len_minus1 + 1), 0);
+            BS2_TRACE_ARR(pps.cb_qp_offset_list, pps.chroma_qp_offset_list_len_minus1 + 1, 0);
+            BS2_TRACE_ARR(pps.cr_qp_offset_list, pps.chroma_qp_offset_list_len_minus1 + 1, 0);
         }
 
         BS2_SET(ue(), pps.log2_sao_offset_scale_luma);
@@ -1161,6 +1163,8 @@ void Parser::parsePPS(PPS& pps)
 
 void Parser::parseMLE(PPS& pps)
 {
+    (void)pps;
+
     Bs32s pps_infer_scaling_list_flag
         , num_ref_loc_offsets
         , tmp
@@ -1285,6 +1289,8 @@ void Parser::parseMLE(PPS& pps)
 
 void Parser::parse3DE(PPS& pps)
 {
+    (void)pps;
+
     Bs32s tmp, i, j, k
         , pps_depth_layers_minus1
         , depthMaxValue
@@ -1355,7 +1361,7 @@ void Parser::parseSEIPL(APS_SEI& aps)
 
     aps.active_seq_parameter_set_id = alloc<Bs8u>(&aps, aps.num_sps_ids_minus1 + 1);
 
-    BS2_SET_ARR(ue(), aps.active_seq_parameter_set_id, Bs32u(aps.num_sps_ids_minus1 + 1), 0);
+    BS2_SET_ARR(ue(), aps.active_seq_parameter_set_id, aps.num_sps_ids_minus1 + 1, 0);
 
     if (!m_vps[aps.active_video_parameter_set_id])
         throw NoActiveSet();
@@ -1367,7 +1373,7 @@ void Parser::parseSEIPL(APS_SEI& aps)
     for (Bs32u i = vps.base_layer_internal_flag; i <= vps.max_layers_minus1; i++)
         aps.layer_sps_idx[i] = ue();
 
-    BS2_TRACE_ARR(aps.layer_sps_idx, Bs32u(vps.max_layers_minus1 + 1), 0);
+    BS2_TRACE_ARR(aps.layer_sps_idx, vps.max_layers_minus1 + 1, 0);
 
     m_activeSPS = m_sps[aps.layer_sps_idx[0]];
 }
@@ -1403,7 +1409,7 @@ void Parser::parseSEIPL(BP_SEI& bp)
     {
         bp.nal = alloc<BP_SEI::CPB>(&bp, hrd.sl[0].cpb_cnt_minus1 + 1);
 
-        for (Bs32u i = 0; i < Bs32u(hrd.sl[0].cpb_cnt_minus1 + 1); i++)
+        for (Bs32u i = 0; i < (Bs32u)hrd.sl[0].cpb_cnt_minus1 + 1; i++)
         {
             BS2_SET(u(hrd.initial_cpb_removal_delay_length_minus1 + 1),
                 bp.nal[i].initial_cpb_removal_delay);
@@ -1425,7 +1431,7 @@ void Parser::parseSEIPL(BP_SEI& bp)
     {
         bp.vcl = alloc<BP_SEI::CPB>(&bp, hrd.sl[0].cpb_cnt_minus1 + 1);
 
-        for (Bs32u i = 0; i < Bs32u(hrd.sl[0].cpb_cnt_minus1 + 1); i++)
+        for (Bs32u i = 0; i < (Bs32u)hrd.sl[0].cpb_cnt_minus1 + 1; i++)
         {
             BS2_SET(u(hrd.initial_cpb_removal_delay_length_minus1 + 1),
                 bp.vcl[i].initial_cpb_removal_delay);
@@ -1448,7 +1454,7 @@ void Parser::parseSEIPL(BP_SEI& bp)
         Bs32u o = (8 - GetBitOffset());
         Bs32u B = u(o);
 
-        if (B != (1U << o))
+        if (B != (1 << o))
             BS2_SET((B >> (o - 1)), bp.use_alt_cpb_params_flag);
     }
     catch (EndOfBuffer)
@@ -1549,22 +1555,22 @@ void Parser::parseSEIPL(SEI& sei)
     {
         switch (sei.payloadType)
         {
-        case ACTIVE_PARAMETER_SETS:
+        case SEI_ACTIVE_PARAMETER_SETS:
             if (!sei.aps)
                 sei.aps = alloc<APS_SEI>(&sei);
             parseSEIPL(*sei.aps);
             break;
-        case BUFFERING_PERIOD:
+        case SEI_BUFFERING_PERIOD:
             if (!sei.bp)
                 sei.bp = alloc<BP_SEI>(&sei);
             parseSEIPL(*sei.bp);
             break;
-        case PICTURE_TIMING:
+        case SEI_PICTURE_TIMING:
             if (!sei.pt)
                 sei.pt = alloc<PT_SEI>(&sei);
             parseSEIPL(*sei.pt);
             break;
-        case RECOVERY_POINT:
+        case SEI_RECOVERY_POINT:
             if (!sei.rp)
                 sei.rp = alloc<RP_SEI>(&sei);
             parseSEIPL(*sei.rp);
@@ -1832,15 +1838,15 @@ l_after_dpb:
         else
             slice.collocated_from_l0_flag = 1;
 
-        if ((slice.collocated_from_l0_flag == 1 && slice.num_ref_idx_l0_active > 1) ||
-            (slice.collocated_from_l0_flag == 0 && slice.num_ref_idx_l1_active > 1))
+        if (    (slice.collocated_from_l0_flag && slice.num_ref_idx_l0_active > 1)
+            || (!slice.collocated_from_l0_flag && slice.num_ref_idx_l1_active > 1))
             BS2_SET(ue(), slice.collocated_ref_idx);
     }
 
 #define Clip3(_min, _max, _x) std::min(std::max(_min, _x), _max)
 
-    if ((pps.weighted_pred_flag && slice.type == SLICE_TYPE::P) ||
-        (pps.weighted_bipred_flag && slice.type == SLICE_TYPE::B))
+    if (   (pps.weighted_pred_flag && slice.type == SLICE_TYPE::P)
+        || (pps.weighted_bipred_flag && slice.type == SLICE_TYPE::B))
     {
         Bs16s WpOffsetHalfRangeC = 1 << (sps.high_precision_offsets_enabled_flag ? (sps.bit_depth_chroma_minus8 + 8 - 1) : 7);
         Bs16u dim[] = {1, 16, 3, 2};
@@ -2001,6 +2007,7 @@ l_ep_offsets:
         if (slice.ExtBits)
         {
             slice.ExtData = alloc<Bs8u>(&slice, slice.ExtBits / 8);
+
             BS2_SET_ARR_F(u8(), slice.ExtData, slice.ExtBits / 8, 16, "%02X ");
         }
     }
@@ -2079,15 +2086,30 @@ void Parser::parseRBSP(NALU& nalu)
 
             BS2_TRACE(slice.POC, slice.POC);
 
-#pragma warning(disable:4474) //ignore raw value in printf() params in BS2_SET_ARR_M(), print only mapped one
+//ignore raw value in printf() params in BS2_SET_ARR_M(), print only mapped one
+#if defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wformat-extra-args"
+#elif defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wformat-extra-args"
+#else
+  #pragma warning(disable:4474)
+#endif
             BS2_SET_ARR_M(slice.DPB[_i], slice.DPB,
-                Bs32u(slice.strps.NumDeltaPocs + slice.num_long_term_sps + slice.num_long_term_pics), 1, "%s ", RPLTraceMap());
+                slice.strps.NumDeltaPocs + slice.num_long_term_sps + slice.num_long_term_pics, 1, "%s ", RPLTraceMap());
 
             if (slice.num_ref_idx_l0_active)
                 BS2_SET_ARR_M(slice.L0[_i], slice.L0, slice.num_ref_idx_l0_active, 1, "%s ", RPLTraceMap());
             if (slice.num_ref_idx_l1_active)
                 BS2_SET_ARR_M(slice.L1[_i], slice.L1, slice.num_ref_idx_l1_active, 1, "%s ", RPLTraceMap());
-#pragma warning(default:4474)
+#if defined(__GNUC__)
+  #pragma GCC diagnostic pop
+#elif defined(__clang__)
+  #pragma clang diagnostic pop
+#else
+  #pragma warning(default:4474)
+#endif
 
             TLEnd();
         }

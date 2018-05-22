@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #ifndef __HEVC_STRUCT_H
 #define __HEVC_STRUCT_H
@@ -253,7 +254,7 @@ struct HRD{
     Bs8u  nal_hrd_parameters_present_flag : 1;
     Bs8u  vcl_hrd_parameters_present_flag : 1;
     Bs8u  sub_pic_hrd_params_present_flag : 1;
-    
+
     Bs8u  tick_divisor_minus2;
     Bs16u du_cpb_removal_delay_increment_length_minus1 : 5;
     Bs16u sub_pic_cpb_params_in_pic_timing_sei_flag    : 1;
@@ -371,7 +372,7 @@ struct VUI{
     Bs8u  chroma_loc_info_present_flag        : 1;
     Bs8u  chroma_sample_loc_type_top_field    : 3;
     Bs8u  chroma_sample_loc_type_bottom_field : 3;
-    
+
     Bs8u  neutral_chroma_indication_flag : 1;
     Bs8u  field_seq_flag                 : 1;
     Bs8u  frame_field_info_present_flag  : 1;
@@ -469,7 +470,7 @@ struct SPS{
 
     Bs8u  scaling_list_enabled_flag      : 1;
     Bs8u  scaling_list_data_present_flag : 1;
-    
+
     Bs8u  amp_enabled_flag                    : 1;
     Bs8u  sample_adaptive_offset_enabled_flag : 1;
 
@@ -500,6 +501,41 @@ struct SPS{
     VUI vui;
     SpsRangeExtension range_extension;
     SpsSccExtension   scc_extension;
+};
+
+struct PpsRangeExtension{
+    Bs32u  log2_max_transform_skip_block_size_minus2;
+    Bs8u   cross_component_prediction_enabled_flag;
+
+    Bs8u   chroma_qp_offset_list_enabled_flag;
+    Bs8u   diff_cu_chroma_qp_offset_depth;
+
+    Bs32u  chroma_qp_offset_list_len_minus1;
+    Bs32u* cb_qp_offset_list;
+    Bs32u* cr_qp_offset_list;
+
+    Bs32u  log2_sao_offset_scale_luma;
+    Bs32u  log2_sao_offset_scale_chroma;
+};
+
+struct PpsSccExtension{
+    Bs8u   pps_curr_pic_ref_enabled_flag;
+    Bs8u   residual_adaptive_colour_transform_enabled_flag;
+
+    Bs8u   pps_slice_act_qp_offsets_present_flag;
+    Bs32u  pps_act_y_qp_offset_plus5;
+    Bs32u  pps_act_cb_qp_offset_plus5;
+    Bs32u  pps_act_cr_qp_offset_plus3;
+
+    Bs8u   pps_palette_predictor_initializer_present_flag;
+
+    Bs32u  pps_num_palette_predictor_initializer;
+
+    Bs8u   monochrome_palette_flag;
+    Bs32u  luma_bit_depth_entry_minus8;
+    Bs32u  chroma_bit_depth_entry_minus8;
+
+    Bs32u* paletteInitializers;
 };
 
 struct PPS{
@@ -544,7 +580,8 @@ struct PPS{
     Bs8u  scaling_list_data_present_flag          : 1;
     Bs8u  lists_modification_present_flag         : 1;
     Bs8u  extension_flag                          : 1;
-    Bs8u  extension_data_flag                     : 1;
+    Bs8u  range_extension_flag                    : 1;
+    Bs8u  pps_scc_extension_flag                  : 1;
 
     Bs8s  beta_offset_div2 : 4;
     Bs8s  tc_offset_div2   : 4;
@@ -552,6 +589,9 @@ struct PPS{
     ScalingListData* sld;
 
     Bs16u log2_parallel_merge_level_minus2;
+
+    PpsRangeExtension range_extension;
+    PpsSccExtension   scc_extension;
 };
 
 struct BufferingPeriod{
@@ -585,7 +625,7 @@ struct PicTiming{
 
     Bs32u *num_nalus_in_du_minus1;
     Bs32u *du_cpb_removal_delay_increment_minus1;
-    
+
     //////////////////////////
     VUI* vui;
 };
@@ -685,7 +725,7 @@ struct Residual{
     Bs8u last_sig_coeff_y_prefix;
     Bs8u last_sig_coeff_x_suffix;
     Bs8u last_sig_coeff_y_suffix;
-    
+
     //rest data skipped for now
     //Bs16u coded_sub_block_flags;
 };
@@ -786,6 +826,7 @@ struct Slice{
 
     Bs8u  collocated_ref_idx            : 4;
     Bs8u  five_minus_max_num_merge_cand : 3;
+    Bs8u  use_integer_mv_flag           : 1;
 
     Bs8u  num_ref_idx_l0_active_minus1 : 4;
     Bs8u  num_ref_idx_l1_active_minus1 : 4;
@@ -797,6 +838,11 @@ struct Slice{
     Bs16s slice_cb_qp_offset : 5;
     Bs16s slice_cr_qp_offset : 5;
 
+    Bs16s act_y_qp_offset    : 5;
+    Bs16s act_cb_qp_offset   : 5;
+    Bs16s act_cr_qp_offset   : 5;
+
+    Bs8u  cu_chroma_qp_offset_enabled_flag       : 1;
     Bs8u  deblocking_filter_override_flag        : 1;
     Bs8u  deblocking_filter_disabled_flag        : 1;
     Bs8u  loop_filter_across_slices_enabled_flag : 1;

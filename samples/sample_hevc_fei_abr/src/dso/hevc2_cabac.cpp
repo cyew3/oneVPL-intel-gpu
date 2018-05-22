@@ -1,25 +1,27 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "hevc2_parser.h"
 
 using namespace BS_HEVC2;
+using namespace BsReader2;
 
 #define Clip3(_min, _max, _x) BS_MIN(BS_MAX(_min, _x), _max)
 
@@ -162,11 +164,29 @@ bool CABAC::SplitCuFlag(Bs16s x0, Bs16s y0)
 
     if (availableL || availableA)
     {
-        CU* c0 = GetCU(x0, y0);
+      CU* c0 = GetCU(x0, y0);
+      if (!c0)
+          throw InvalidSyntax();
+
+      CU* c1 = nullptr;
+      if (availableL)
+      {
+          c1 = GetCU(x0 - 1, y0);
+          if (!c1)
+              throw InvalidSyntax();
+      }
+
+      CU* c2 = nullptr;
+      if (availableA)
+      {
+          c2 = GetCU(x0, y0 - 1);
+          if (!c2)
+              throw InvalidSyntax();
+      }
 
         ctxInc =
-              (availableL && (GetCU(x0 - 1, y0)->log2CbSize < c0->log2CbSize))
-            + (availableA && (GetCU(x0, y0 - 1)->log2CbSize < c0->log2CbSize));
+              (availableL && (c1->log2CbSize < c0->log2CbSize))
+            + (availableA && (c2->log2CbSize < c0->log2CbSize));
     }
 
     return DD(BS_HEVC::SPLIT_CU_FLAG, ctxInc);
@@ -179,9 +199,25 @@ bool CABAC::CuSkipFlag(Bs16s x0, Bs16s y0)
     bool availableL = AvailableZs(x0, y0, x0 - 1, y0);
     bool availableA = AvailableZs(x0, y0, x0, y0 - 1);
 
+    CU* c1 = nullptr;
+    if (availableL)
+    {
+        c1 = GetCU(x0 - 1, y0);
+        if (!c1)
+            throw InvalidSyntax();
+    }
+
+    CU* c2 = nullptr;
+    if (availableA)
+    {
+        c2 = GetCU(x0, y0 - 1);
+        if (!c2)
+            throw InvalidSyntax();
+    }
+
     Bs16u ctxInc =
-          (availableL && (GetCU(x0 - 1, y0)->PredMode == MODE_SKIP))
-        + (availableA && (GetCU(x0, y0 - 1)->PredMode == MODE_SKIP));
+          (availableL && (c1->PredMode == MODE_SKIP))
+        + (availableA && (c2->PredMode == MODE_SKIP));
 
     return DD(BS_HEVC::CU_SKIP_FLAG, ctxInc);
 }
@@ -217,7 +253,7 @@ Bs8u CABAC::PartMode(bool intra, Bs16u log2CbSize)
         return b ? PART_2NxN : PART_Nx2N;
 
     bool v = b;
-    
+
     b = DD(BS_HEVC::PART_MODE, 3);
 
     if (b)
@@ -575,7 +611,7 @@ bool CABAC::CoeffAbsLevelGreater1Flag(Bs16u cIdx, Bs16u i)
         greater1Ctx = 1;
     }
     else
-    {   
+    {
         if (greater1Ctx > 0)
         {
             if (lastGreater1Flag)
@@ -596,7 +632,7 @@ bool CABAC::CoeffAbsLevelGreater1Flag(Bs16u cIdx, Bs16u i)
     return lastGreater1Flag;
 }
 
-Bs32u CABAC::CoeffAbsLevelRemaining(Bs16u i, Bs16u baseLevel, Bs16u cIdx, Bs16u x0, Bs16u y0)
+Bs32u CABAC::CoeffAbsLevelRemaining(Bs16u i, Bs16u baseLevel, Bs16u cIdx, CU& cu, TU& tu)
 {
     //9.3.3.10 current sub-block scan index i, baseLevel
     //bypass bypass bypass bypass bypass bypass
@@ -604,14 +640,11 @@ Bs32u CABAC::CoeffAbsLevelRemaining(Bs16u i, Bs16u baseLevel, Bs16u cIdx, Bs16u 
     auto& pps = *m_cSlice->pps;
     auto& cAbsLevel  = cLastAbsLevel;
     auto& cRiceParam = cLastRiceParam;
-    Bs16u initRiceValue, sbType = 0xffff;
+    Bs16u initRiceValue, sbType;
     Bs32u b = 0, cMax, k, v0, v1;
 
     if (sps.persistent_rice_adaptation_enabled_flag)
     {
-        auto& cu = *GetCU(x0, y0);
-        auto& tu = *GetTU(cu, x0, y0);
-
         if (   (tu.transform_skip_flag & (1 << cIdx)) == 0
             && cu.transquant_bypass_flag == 0)
         {
@@ -773,7 +806,7 @@ Bs16u CABAC::NumPaletteIndices(Bs16u MaxPaletteIndex)
 
     if (prefixVal == 4)
         return EGkBypass(cRiceParam + 1) + cMax + 1;
-    
+
     BinCount += cRiceParam;
 
     while (cRiceParam--)

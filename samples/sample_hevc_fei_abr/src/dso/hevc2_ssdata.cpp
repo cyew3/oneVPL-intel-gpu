@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "hevc2_parser.h"
 #include "hevc2_trace.h"
@@ -44,12 +45,12 @@ bool SDParser::more_rbsp_data()
     if (!NextBytes(b, 5))
         return !TrailingBits(true);
 
-    if ((b[0] == 0 && b[1] == 0 && b[2] == 1) ||
-        (b[0] == 0 && b[1] == 0 && b[2] == 0 && b[3] == 1))
+    if (   (b[0] == 0 && b[1] == 0 && b[2] == 1)
+        || (b[0] == 0 && b[1] == 0 && b[2] == 0 && b[3] == 1))
         return false;
 
-    if ((b[1] == 0 && b[2] == 0 && b[3] == 1) ||
-        (b[1] == 0 && b[2] == 0 && b[3] == 0 && b[4] == 1))
+    if (   (b[1] == 0 && b[2] == 0 && b[3] == 1)
+        || (b[1] == 0 && b[2] == 0 && b[3] == 0 && b[4] == 1))
         return !TrailingBits(true);
 
     return true;
@@ -561,12 +562,22 @@ void SDParser::parseCU(CU& cu)
         if (!availableA || ctbAddrA != CtbAddrInTs)
             qPY_A = qPY_PREV;
         else
-            qPY_A = GetCU(xQg - 1, yQg)->QpY;
+        {
+            CU* pCU = GetCU(xQg - 1, yQg);
+            if (!pCU)
+                throw InvalidSyntax();
+            qPY_A = pCU->QpY;
+        }
 
         if (!availableB || ctbAddrB != CtbAddrInTs)
             qPY_B = qPY_PREV;
         else
-            qPY_B = GetCU(xQg, yQg - 1)->QpY;
+        {
+            CU* pCU = GetCU(xQg, yQg - 1);
+            if (!pCU)
+                throw InvalidSyntax();
+            qPY_B = pCU->QpY;
+        }
 
         qPY_PREV = ((qPY_A + qPY_B + 1) >> 1); // qPY_PREV = qPY_PRED
     }
@@ -739,6 +750,9 @@ void SDParser::parseCU(CU& cu)
                     else
                     {
                         CU* cuX = GetCU(xPb - !c, yPb - c);
+
+                        if (!cuX)
+                            throw InvalidSyntax();
 
                         if (cuX->PredMode != MODE_INTRA || cuX->pcm_flag )
                             candIntraPredModeX[c] = 1;
@@ -1236,7 +1250,7 @@ void SDParser::parseCQPO(CU& cu)
 void SDParser::parseTU(CU& cu, TU& tu, TU& tuBase, Bs16u blkIdx)
 {
     TLAuto tl(*this, TRACE_TU);
-    Bs16u log2TrafoSizeC = BS_MAX(2u, Bs32u(tu.log2TrafoSize - (ChromaArrayType == 3 ? 0 : 1)));
+    Bs16u log2TrafoSizeC = BS_MAX(2u, tu.log2TrafoSize - (ChromaArrayType == 3 ? 0 : 1));
     auto& sps = *m_cSlice->sps;
     auto& pps = *m_cSlice->pps;
     auto& slice = *m_cSlice;
@@ -1375,7 +1389,7 @@ void SDParser::parseResidual(CU& cu, TU& tu, Bs16u x0, Bs16u y0, Bs16u log2Trafo
         ;
     Bs32s LastSignificantCoeffX
         , LastSignificantCoeffY
-        , predModeIntra = 0xffffffff
+        , predModeIntra = -1
         , xS
         , yS
         , xC
@@ -1641,7 +1655,7 @@ void SDParser::parseResidual(CU& cu, TU& tu, Bs16u x0, Bs16u y0, Bs16u log2Trafo
 
             if (baseLevel == ((numSigCoeff < 8) ? ((n == lastGreater1ScanPos) ? 3 : 2) : 1))
             {
-                BS2_SET(CoeffAbsLevelRemaining(i, baseLevel, cIdx, x0, y0), coeff_abs_level_remaining);
+                BS2_SET(CoeffAbsLevelRemaining(i, baseLevel, cIdx, cu, tu), coeff_abs_level_remaining);
             }
 
             if (TLTest(TRACE_COEF))
@@ -1740,7 +1754,7 @@ void SDParser::parsePC(CU& cu)
         , palette_transpose_flag = 0
         , log2BlockSize = cu.log2CbSize
         , nCbS = (1 << cu.log2CbSize)
-        , xC, yC, xcPrev = 0xffff, ycPrev = 0xffff, xR, yR
+        , xC, yC, xcPrev, ycPrev, xR, yR
         //, x0 = cu.x
         //, y0 = cu.y
         , PaletteRun
@@ -1831,6 +1845,7 @@ void SDParser::parsePC(CU& cu)
 
     remainingNumIndices = num_palette_indices;
     PaletteScanPos = 0;
+    CurrPaletteIndex = 0;
 
     switch (log2BlockSize)
     {
@@ -1854,6 +1869,7 @@ void SDParser::parsePC(CU& cu)
 
         PaletteRun = nCbS * nCbS - PaletteScanPos - 1;
         CopyAboveIndicesFlag[xC][yC] = 0;
+
         if (MaxPaletteIndex > 0)
         {
             if (PaletteScanPos >= nCbS && CopyAboveIndicesFlag[xcPrev][ycPrev] == 0)

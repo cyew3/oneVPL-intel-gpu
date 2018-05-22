@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #ifndef __HEVC_CABAC_H
 #define __HEVC_CABAC_H
@@ -77,20 +78,20 @@ enum SE{
     , num_SE
     , END_OF_SLICE_SEGMENT_FLAG = num_SE
     , END_OF_SUB_STREAM_ONE_BIT
-    , SAO_OFFSET_ABS     
-    , SAO_OFFSET_SIGN    
-    , SAO_BAND_POSITION  
-    , SAO_EO_CLASS_LUMA  
+    , SAO_OFFSET_ABS
+    , SAO_OFFSET_SIGN
+    , SAO_BAND_POSITION
+    , SAO_EO_CLASS_LUMA
     , SAO_EO_CLASS_CHROMA = SAO_EO_CLASS_LUMA
-    , MPM_IDX                 
+    , MPM_IDX
     , REM_INTRA_LUMA_PRED_MODE
     , ABS_MVD_MINUS2
-    , MVD_SIGN_FLAG 
+    , MVD_SIGN_FLAG
     , CU_QP_DELTA_SIGN_FLAG
     , LAST_SIG_COEFF_X_SUFFIX
     , LAST_SIG_COEFF_Y_SUFFIX
     , COEFF_ABS_LEVEL_REMAINING
-    , COEFF_SIGN_FLAG          
+    , COEFF_SIGN_FLAG
     , PCM_FLAG
     , num_SE_full
 };
@@ -107,8 +108,8 @@ enum PART_MODE{
     , PART_2NxN
     , PART_Nx2N
     , PART_NxN
-    , PART_2NxnU 
-    , PART_2NxnD 
+    , PART_2NxnU
+    , PART_2NxnD
     , PART_nLx2N
     , PART_nRx2N
     , num_PART_MODE
@@ -199,12 +200,10 @@ struct SDecCtx{
     std::vector<std::vector<Bs8s> > vIntraPredModeY;
 };
 
-//#define HEVC_CABAC_STATE_TRACE "cabac_state.log" //Debug
-
-const Bs16u CtxTblSize = 185; 
+const Bs16u CtxTblSize = 185;
 extern const Bs8u CtxInitTbl[3][CtxTblSize];
 extern const Bs8u CtxOffset[num_SE + 1];
-extern const Bs8u rangeTabLps[64][4];
+extern const Bs8u rangeTabLpsT[4][64];
 extern const Bs8u transIdxLps[64];
 extern const Bs8u transIdxMps[64];
 
@@ -223,7 +222,7 @@ public:
     inline void PCMEnd  () { init_ade(); };
 
     inline void ResetLog() {
-#ifdef HEVC_CABAC_STATE_TRACE 
+#ifdef HEVC_CABAC_STATE_TRACE
         if(m_cnt > 0x40000){
             char name[256];
             sprintf(name, "%s%d", HEVC_CABAC_STATE_TRACE, ++m_n);
@@ -239,7 +238,7 @@ private:
     Bs16u m_lastGreater1Ctx;
     Bs16u m_ctxSet;
     SDecCtx* m_pCtx;
-    
+
     inline Bs16u idxStart(Bs16u se) { return CtxOffset[se];}
     inline Bs16u idxEnd  (Bs16u se) { return CtxOffset[se+1];}
 
@@ -262,12 +261,12 @@ private:
         static const Bs16u capacity = 32;
         static const Bs32u ff = 0xFFFFFFFF;
 
-        Bin(Bs32u value, Bs8u size) : 
+        Bin(Bs32u value, Bs8u size) :
             n(size)
           , b(value & ( ff >> (capacity-size))) {
         }
-        bool operator () (const Bin &bin) const { 
-            return (bin.n == n && bin.b.to_ulong() == b.to_ulong()); 
+        bool operator () (const Bin &bin) const {
+            return (bin.n == n && bin.b.to_ulong() == b.to_ulong());
         }
         void  put (Bs32u bits, Bs8u num = 1) {
             if(!num) return;
@@ -275,8 +274,8 @@ private:
             b |= std::bitset<capacity>(bits & ( ff >> (capacity-num)));
             n += num;
         }
-        Bs32u get() { 
-            return b.to_ulong(); 
+        Bs32u get() {
+            return b.to_ulong();
         }
 
         Bs8u n;
@@ -332,9 +331,11 @@ private:
     }
 
     inline void trace(Bs8u b = 7) {
-#ifdef HEVC_CABAC_STATE_TRACE 
-        fprintf(flog, "Count: %d \tValue: %d \tRange: %d \tBin: %d\n", m_cnt++, ivlOffset, ivlCurrRange, b); 
+#ifdef HEVC_CABAC_STATE_TRACE
+        fprintf(flog, "Count: %d \tValue: %d \tRange: %d \tBin: %d\n", m_cnt++, ivlOffset, ivlCurrRange, b);
         fflush(flog);
+#else
+        (void)b;
 #endif //HEVC_CABAC_STATE_TRACE
     };
 
@@ -343,7 +344,7 @@ private:
     Bs32u m_n;
     FILE* flog;
 #endif //HEVC_CABAC_STATE_TRACE
-    
+
 };
 }// namespace BS_HEVC;
 

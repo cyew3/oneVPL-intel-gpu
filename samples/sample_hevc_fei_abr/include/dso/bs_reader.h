@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #ifndef __BS_READER_H
 #define __BS_READER_H
@@ -24,15 +25,16 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include <stdio.h>
 #include <stdlib.h>
 #include <bs_def.h>
+#include <new>
 
 #define BS_BUF_SIZE 2048
-#if defined(__APPLE__) || defined(LINUX32) || defined(LINUX64)
+#if defined(__APPLE__) || defined(LINUX32) || defined(LINUX64) || defined(ANDROID)
     #define BS_FILE_MODE 0 /* no fteelo64 on OSX */
 #else
     #define BS_FILE_MODE 1
 #endif
 
-#if (BS_FILE_MODE == 1) 
+#if (BS_FILE_MODE == 1)
   #define BS_FADDR_TYPE Bs64u
   #define BS_FOFFSET_TYPE Bs64s
   #define BS_TRACE_FORMAT "0x%016I64X[%i]: %s = %i\n"
@@ -72,12 +74,12 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #ifdef __BS_TRACE__
   #define BS_TRACE( val, comment ) { \
-  if(trace_flag) {printf( BS_TRACE_FORMAT, file_pos+offset, bit, #comment, (val) ); fflush(stdout);}\
+  if(trace_flag) {printf( BS_TRACE_FORMAT, file_pos+offset, bit, #comment, (int)(val) ); fflush(stdout);}\
     else (val); \
     if(last_err) return last_err; \
   }
   #define BS_SET( val, var ) { \
-  if(trace_flag){ printf( BS_TRACE_FORMAT, file_pos+offset, bit, #var, (var) = (val) ); fflush(stdout);} \
+  if(trace_flag){ printf( BS_TRACE_FORMAT, file_pos+offset, bit, #var, (int)((var) = (val)) ); fflush(stdout);} \
     else (var) = (val); \
     if(last_err) return last_err; \
   }
@@ -89,7 +91,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
     if(trace_flag) printf( BS_TRACE_FORMAT, file_pos+offset, bit, #var, ((tmp_buf)>>(32-(n))) ); \
     tmp_buf <<= n;\
   }
-  #define BS_TROX( x, b ) if(trace_flag) printf(BS_TRACE_OFFSET_FORMAT, (x), (b)); 
+  #define BS_TROX( x, b ) if(trace_flag) printf(BS_TRACE_OFFSET_FORMAT, (unsigned int)(x), (b));
   #define BS_TRO if(trace_flag) printf(BS_TRACE_OFFSET_FORMAT,file_pos+offset, bit);
   #define BS_SETM( val, var, map ) {\
     if(trace_flag) {BS_TRO; (var) = (val); printf("%s = %s (%d)\n", #var, map[var], var);}\
@@ -115,7 +117,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
   #define BS_SET( val, var )        { (var) = (val); if(last_err) return last_err; }
   #define BS_GET_BITS( n, var )     { (var) = (tmp_buf)>>(32-(n)); tmp_buf <<= (n);}
   #define BS_TRACE_BITS( n, var )   { tmp_buf <<= (n); }
-  #define BS_TROX( x, b )           { (x); (b); }; 
+  #define BS_TROX( x, b )           { (x); (b); };
   #define BS_TRO                    {}
   #define BS_SETM( val, var, map )  BS_SET( val, var )
   #define BS_TRACE_ARR(name, el, sz)for(Bs32u _idx = 0; _idx < (Bs32u)(sz); _idx++ ) { (el); }
@@ -142,9 +144,9 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 class BS_Reader{
 public:
-    BS_Reader(){ 
+    BS_Reader(){
         last_err  = BS_ERR_NONE;
-        bs        = NULL; 
+        bs        = NULL;
         buf_size  = 0;
         file_pos  = 0;
         offset    = 0;
@@ -157,19 +159,19 @@ public:
         trace_level = 0xFFFFFFFF;
     }
 
-    virtual ~BS_Reader(){ 
-        if( bs && buf ) free( buf ); 
-        close(); 
+    virtual ~BS_Reader(){
+        if( bs && buf ) free( buf );
+        close();
         if( ignore_bytes ) free(ignore_bytes);
     }
 
     BSErr open( const char* file_name );
     void  set_buffer( byte* buf, Bs32u buf_size );
-    
+
     inline BSErr   get_last_err(){ return last_err; };
     inline BS_FADDR_TYPE   get_cur_pos() { return file_pos+offset; };
-    inline BSErr   close(){ 
-        last_err = (bs) ? ( BS_FCLOSE(bs) ? BS_ERR_UNKNOWN : BS_ERR_NONE ) : BS_ERR_NONE; 
+    inline BSErr   close(){
+        last_err = (bs) ? ( BS_FCLOSE(bs) ? BS_ERR_UNKNOWN : BS_ERR_NONE ) : BS_ERR_NONE;
         if(!last_err) bs = 0;
         return last_err;
     };
@@ -188,7 +190,7 @@ protected:
 
     inline void trace_on(Bs32u level) {trace_flag = !!(trace_level & level);};
     inline void trace_off() {trace_flag = (trace_level == 0xFFFFFFFF);};
-    
+
     Bs32u  ue_v();
     Bs32s  se_v();
     Bs32u  read_bits( Bs32u nBits /*1..32*/ );
@@ -204,15 +206,15 @@ protected:
     BSErr   shift_forward( Bs32u nBytes );
     BSErr   shift_back( Bs32u nBytes );
 
-    inline BSErr shift_forward64(Bs64u nBytes){ 
+    inline BSErr shift_forward64(Bs64u nBytes){
         while(nBytes){
             Bs32u n = (Bs32u)BS_MIN(nBytes,0xFFFFFFFF);
             shift_forward(n);BSCE;
             nBytes -= n;
-        } 
+        }
         return last_err;
     };
-    
+
     inline bool byte_aligned()           { return bit ? false : true; };
     inline void skip_byte()              { shift_forward(1); };
     inline void set_first_ignored_byte() { next_ignored_byte = &ignore_bytes[0]; };
@@ -234,7 +236,7 @@ private:
     BS_FADDR_TYPE* ignore_bytes;
     BS_FADDR_TYPE* next_ignored_byte;
     Bs32u  ignore_bytes_cnt;
-    
+
     BSErr read_more_data();
 
 };

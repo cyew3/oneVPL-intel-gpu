@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #pragma once
 
@@ -60,7 +61,7 @@ enum TRACE_LEVEL
     TRACE_COEF      = 0x10000000,
     TRACE_SIZE      = 0x40000000,
     TRACE_OFFSET    = 0x80000000,
-    TRACE_DEFAULT = 
+    TRACE_DEFAULT =
           TRACE_NUH
         | TRACE_AUD
         | TRACE_VPS
@@ -176,37 +177,37 @@ enum VIDEO_FORMAT
 
 enum SEI_TYPE
 {
-    BUFFERING_PERIOD                     = 0,
-    PICTURE_TIMING                       = 1,
-    PAN_SCAN_RECT                        = 2,
-    FILLER_PAYLOAD                       = 3,
-    USER_DATA_REGISTERED_ITU_T_T35       = 4,
-    USER_DATA_UNREGISTERED               = 5,
-    RECOVERY_POINT                       = 6,
-    SCENE_INFO                           = 9,
-    FULL_FRAME_SNAPSHOT                  = 15,
-    PROGRESSIVE_REFINEMENT_SEGMENT_START = 16,
-    PROGRESSIVE_REFINEMENT_SEGMENT_END   = 17,
-    FILM_GRAIN_CHARACTERISTICS           = 19,
-    POST_FILTER_HINT                     = 22,
-    TONE_MAPPING_INFO                    = 23,
-    FRAME_PACKING                        = 45,
-    DISPLAY_ORIENTATION                  = 47,
-    SOP_DESCRIPTION                      = 128,
-    ACTIVE_PARAMETER_SETS                = 129,
-    DECODING_UNIT_INFO                   = 130,
-    TEMPORAL_LEVEL0_INDEX                = 131,
-    DECODED_PICTURE_HASH                 = 132,
-    SCALABLE_NESTING                     = 133,
-    REGION_REFRESH_INFO                  = 134,
-    NO_DISPLAY                           = 135,
-    TIME_CODE                            = 136,
-    MASTERING_DISPLAY_COLOUR_VOLUME      = 137,
-    SEGM_RECT_FRAME_PACKING              = 138,
-    TEMP_MOTION_CONSTRAINED_TILE_SETS    = 139,
-    CHROMA_RESAMPLING_FILTER_HINT        = 140,
-    KNEE_FUNCTION_INFO                   = 141,
-    COLOUR_REMAPPING_INFO                = 142,
+    SEI_BUFFERING_PERIOD                     = 0,
+    SEI_PICTURE_TIMING                       = 1,
+    SEI_PAN_SCAN_RECT                        = 2,
+    SEI_FILLER_PAYLOAD                       = 3,
+    SEI_USER_DATA_REGISTERED_ITU_T_T35       = 4,
+    SEI_USER_DATA_UNREGISTERED               = 5,
+    SEI_RECOVERY_POINT                       = 6,
+    SEI_SCENE_INFO                           = 9,
+    SEI_FULL_FRAME_SNAPSHOT                  = 15,
+    SEI_PROGRESSIVE_REFINEMENT_SEGMENT_START = 16,
+    SEI_PROGRESSIVE_REFINEMENT_SEGMENT_END   = 17,
+    SEI_FILM_GRAIN_CHARACTERISTICS           = 19,
+    SEI_POST_FILTER_HINT                     = 22,
+    SEI_TONE_MAPPING_INFO                    = 23,
+    SEI_FRAME_PACKING                        = 45,
+    SEI_DISPLAY_ORIENTATION                  = 47,
+    SEI_SOP_DESCRIPTION                      = 128,
+    SEI_ACTIVE_PARAMETER_SETS                = 129,
+    SEI_DECODING_UNIT_INFO                   = 130,
+    SEI_TEMPORAL_LEVEL0_INDEX                = 131,
+    SEI_DECODED_PICTURE_HASH                 = 132,
+    SEI_SCALABLE_NESTING                     = 133,
+    SEI_REGION_REFRESH_INFO                  = 134,
+    SEI_NO_DISPLAY                           = 135,
+    SEI_TIME_CODE                            = 136,
+    SEI_MASTERING_DISPLAY_COLOUR_VOLUME      = 137,
+    SEI_SEGM_RECT_FRAME_PACKING              = 138,
+    SEI_TEMP_MOTION_CONSTRAINED_TILE_SETS    = 139,
+    SEI_CHROMA_RESAMPLING_FILTER_HINT        = 140,
+    SEI_KNEE_FUNCTION_INFO                   = 141,
+    SEI_COLOUR_REMAPPING_INFO                = 142,
 };
 
 enum PIC_STRUCT
@@ -735,7 +736,7 @@ struct PT_SEI
 
     Bs32u *num_nalus_in_du_minus1;
     Bs32u *du_cpb_removal_delay_increment_minus1;
-    
+
     VUI* vui;
 };
 
@@ -753,7 +754,7 @@ struct SEI
 
     Bs8u* rawData;
 
-    union 
+    union
     {
         APS_SEI *aps;
         BP_SEI  *bp;
@@ -781,7 +782,7 @@ struct PU
     Bs16u y;
     Bs16u w : 8;
     Bs16u h : 8;
-    
+
     Bs16u merge_idx      : 3;
     Bs16u merge_flag     : 1;
     Bs16u inter_pred_idc : 2;
@@ -860,7 +861,7 @@ struct CTU
 {
     Bs16u CtbAddrInRs;
     Bs16u CtbAddrInTs;
-    
+
     Bs16u end_of_slice_segment_flag :  1;
     Bs16u sao_merge_left_flag       :  1;
     Bs16u sao_merge_up_flag         :  1;
@@ -941,7 +942,7 @@ struct Slice
     Bs16u  *DeltaPocMsbCycleLt;
     PWT    *pwt; //[list][entry][Y, Cb, Cr][Weight, Offset]
     Bs32u  *entry_point_offset_minus1;
-    
+
     RefPic *DPB;
     RefPic *L0;
     RefPic *L1;

@@ -1,21 +1,22 @@
-/******************************************************************************\
-Copyright (c) 2018, Intel Corporation
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
-\**********************************************************************************/
+// Copyright (c) 2018 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "hevc2_parser.h"
 
@@ -607,9 +608,9 @@ void Info::decodeRPL(NALU& nalu)
         }
     }
 
-    for (Bs32u i = 0; i < Bs32u(slice.num_long_term_sps + slice.num_long_term_pics); i++)
+    for (Bs32u i = 0; i < (Bs32u)(slice.num_long_term_sps + slice.num_long_term_pics); i++)
     {
-        RefPic ref = {1, };
+        RefPic ref = {1, 0, 0, 0};
 
         ref.POC = slice.poc_lsb_lt[i];
 
@@ -770,7 +771,14 @@ bool Info::AvailablePb(Bs16s xCb, Bs16s yCb, Bs16u nCbS, Bs16s xPb, Bs16s yPb,
     if (!sameCb)
     {
         if (AvailableZs(xPb, yPb, xNbY, yNbY))
-            return (GetCU(xNbY, yNbY)->PredMode != MODE_INTRA);
+        {
+            CU* p = GetCU(xNbY, yNbY);
+
+            if (!p)
+                throw InvalidSyntax();
+
+            return (p->PredMode != MODE_INTRA);
+        }
         return false;
     }
 
@@ -781,7 +789,12 @@ bool Info::AvailablePb(Bs16s xCb, Bs16s yCb, Bs16u nCbS, Bs16s xPb, Bs16s yPb,
         && (xCb + nPbW) > xNbY)
         return false;
 
-    return (GetCU(xNbY, yNbY)->PredMode != MODE_INTRA);
+    CU* p = GetCU(xNbY, yNbY);
+
+    if (!p)
+        throw InvalidSyntax();
+
+    return (p->PredMode != MODE_INTRA);
 }
 
 CU* GetUnit(CU& cu, Bs16s x, Bs16s y)
@@ -914,7 +927,7 @@ void Info::decodeMvLX(CU& cu, PU&pu, Bs16u partIdx)
     bool  predFlagLX[MaxCand][2] = {};
     Bs16s mvLX[MaxCand][2][2] = {};
     Bs16s refIdxLX[MaxCand][2];
-    Bs16u mergeCandList[MaxCand];
+    Bs16u mergeCandList[MaxCand] = {};
     Bs16u numCurrMergeCand = 0
         , numOrigMergeCand = 0
         , MaxNumMergeCand;
@@ -1288,7 +1301,11 @@ void Info::decodeMvLX(CU& cu, PU&pu, Bs16u X, Bs32s (&mvdLX)[2], Bs16u partIdx)
                 if (!availableA[k] || availableFlagLXA)
                     continue;
 
-                PU& puA = *GetPU(xNbA[k], yNbA[k]);
+                PU* p = GetPU(xNbA[k], yNbA[k]);
+                if (!p)
+                    throw InvalidSyntax();
+                PU& puA = *p;
+
                 Bs16u refIdxAX = ( X ? puA.ref_idx_l1 : puA.ref_idx_l0);
                 Bs16u refIdxAY = (!X ? puA.ref_idx_l1 : puA.ref_idx_l0);
 
@@ -1313,7 +1330,11 @@ void Info::decodeMvLX(CU& cu, PU&pu, Bs16u X, Bs32s (&mvdLX)[2], Bs16u partIdx)
                 if (!availableA[k] || availableFlagLXA)
                     continue;
 
-                PU& puA = *GetPU(xNbA[k], yNbA[k]);
+                PU* p = GetPU(xNbA[k], yNbA[k]);
+                if (!p)
+                    throw InvalidSyntax();
+                PU& puA = *p;
+
                 Bs16u refIdxAX = ( X ? puA.ref_idx_l1 : puA.ref_idx_l0);
                 Bs16u refIdxAY = (!X ? puA.ref_idx_l1 : puA.ref_idx_l0);
 
@@ -1358,7 +1379,11 @@ void Info::decodeMvLX(CU& cu, PU&pu, Bs16u X, Bs32s (&mvdLX)[2], Bs16u partIdx)
                 if (!availableB[k] || availableFlagLXB)
                     continue;
 
-                PU& puB = *GetPU(xNbB[k], yNbB[k]);
+                PU* p = GetPU(xNbB[k], yNbB[k]);
+                if (!p)
+                    throw InvalidSyntax();
+                PU& puB = *p;
+
                 Bs16u refIdxBX = ( X ? puB.ref_idx_l1 : puB.ref_idx_l0);
                 Bs16u refIdxBY = (!X ? puB.ref_idx_l1 : puB.ref_idx_l0);
 
@@ -1394,7 +1419,11 @@ void Info::decodeMvLX(CU& cu, PU&pu, Bs16u X, Bs32s (&mvdLX)[2], Bs16u partIdx)
                     if (!availableB[k] || availableFlagLXB)
                         continue;
 
-                    PU& puB = *GetPU(xNbB[k], yNbB[k]);
+                    PU* p = GetPU(xNbB[k], yNbB[k]);
+                    if (!p)
+                        throw InvalidSyntax();
+                    PU& puB = *p;
+
                     Bs16u refIdxBX = ( X ? puB.ref_idx_l1 : puB.ref_idx_l0);
                     Bs16u refIdxBY = (!X ? puB.ref_idx_l1 : puB.ref_idx_l0);
 
