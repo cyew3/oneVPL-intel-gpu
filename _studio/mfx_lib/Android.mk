@@ -308,10 +308,6 @@ ifeq ($(MFX_IMPL_HW), true)
 
   LOCAL_SHARED_LIBRARIES := libva libdl
 
-  ifeq ($(MFX_NDK),true)
-    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-  endif
-
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfxhw32
   LOCAL_MODULE_TARGET_ARCH := x86
@@ -342,10 +338,6 @@ ifeq ($(MFX_IMPL_HW), true)
   LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
 
   LOCAL_SHARED_LIBRARIES := libva libdl
-
-  ifeq ($(MFX_NDK),true)
-    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-  endif
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfxhw64
@@ -378,10 +370,6 @@ ifeq ($(MFX_IMPL_SW), true)
 
   LOCAL_SHARED_LIBRARIES := libdl
 
-  ifeq ($(MFX_NDK),true)
-    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-  endif
-
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfxsw32
   LOCAL_MODULE_TARGET_ARCH := x86
@@ -412,10 +400,6 @@ ifeq ($(MFX_IMPL_SW), true)
   LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_SW)
 
   LOCAL_SHARED_LIBRARIES := libdl
-
-  ifeq ($(MFX_NDK),true)
-    LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-  endif
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfxsw64

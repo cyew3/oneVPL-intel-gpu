@@ -77,6 +77,14 @@ MFX_CFLAGS += \
   -DMFX_FILE_VERSION=\"`echo $(MFX_VERSION) | cut -f 1 -d.``date +.%-y.%-m.%-d`\" \
   -DMFX_PRODUCT_VERSION=\"$(MFX_VERSION)\"
 
+#  Security
+MFX_CFLAGS += \
+  -fstack-protector \
+  -fPIE -fPIC -pie \
+  -O2 -D_FORTIFY_SOURCE=2 \
+  -Wformat -Wformat-security \
+  -fexceptions -frtti
+
 # LibVA support.
 MFX_CFLAGS_LIBVA := -DLIBVA_SUPPORT -DLIBVA_ANDROID_SUPPORT
 
@@ -101,13 +109,6 @@ MFX_LDFLAGS := \
   -z noexecstack \
   -z relro -z now
 
-#  Security
-MFX_CFLAGS += \
-  -fstack-protector \
-  -fPIE -fPIC -pie \
-  -O2 -D_FORTIFY_SOURCE=2 \
-  -Wformat -Wformat-security
-
 # Setting vendor
 LOCAL_MODULE_OWNER := intel
 
@@ -118,9 +119,6 @@ LOCAL_PROPRIETARY_MODULE := true
 
 # Android OS specifics
 include $(MFX_HOME)/mdp_msdk-lib/android/build/mfx_android_os.mk
-
-# STL support definitions
-include $(MFX_HOME)/mdp_msdk-lib/android/build/mfx_stl.mk
 
 # Definitions specific to Media SDK internal things (do not apply for samples)
 include $(MFX_HOME)/mdp_msdk-lib/android/build/mfx_defs_internal.mk

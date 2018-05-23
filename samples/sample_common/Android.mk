@@ -10,13 +10,11 @@ LOCAL_SRC_FILES := $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp
 
 LOCAL_C_INCLUDES += \
     $(MFX_C_INCLUDES) \
-    $(MFX_C_INCLUDES_LIBVA) \
-    $(MFX_C_INCLUDES_STL)
+    $(MFX_C_INCLUDES_LIBVA)
 
 LOCAL_CFLAGS += \
     $(MFX_CFLAGS) \
-    $(MFX_CFLAGS_LIBVA) \
-    $(MFX_CFLAGS_STL)
+    $(MFX_CFLAGS_LIBVA)
 
 LOCAL_HEADER_LIBRARIES := \
     $(MFX_HEADER_LIBRARIES)

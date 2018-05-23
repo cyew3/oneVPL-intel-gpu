@@ -51,10 +51,6 @@ LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS)
 
 LOCAL_SHARED_LIBRARIES := libva
 
-ifeq ($(MFX_NDK),true)
-  LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-endif
-
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_MODULE := libmfx_hevce_hw32
@@ -85,10 +81,6 @@ LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES)
 LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS)
 
 LOCAL_SHARED_LIBRARIES := libva
-
-ifeq ($(MFX_NDK),true)
-  LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-endif
 
 LOCAL_MODULE_TAGS := optional
 

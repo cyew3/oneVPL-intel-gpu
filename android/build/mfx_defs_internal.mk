@@ -10,8 +10,7 @@
 #   MFX_CFLAGS_LUCAS - flags needed to build MFX Lucas targets
 
 MFX_CFLAGS_INTERNAL := \
-    $(MFX_CFLAGS) \
-    $(MFX_CFLAGS_STL)
+    $(MFX_CFLAGS)
 
 ifeq ($(TARGET_BOARD_PLATFORM), clovertrail)
     MFX_CFLAGS_INTERNAL += -mssse3
@@ -79,7 +78,6 @@ MFX_CFLAGS_LUCAS := -DLUCAS_DLL
 
 MFX_C_INCLUDES_INTERNAL :=  \
     $(MFX_C_INCLUDES) \
-    $(MFX_C_INCLUDES_STL) \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/core/umc/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/core/vm/include \

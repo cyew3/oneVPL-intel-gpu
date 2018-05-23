@@ -61,10 +61,6 @@ ifeq ($(MFX_IMPL_HW), true)
 
     LOCAL_SHARED_LIBRARIES := libdl libva libva-android
 
-    ifeq ($(MFX_NDK),true)
-       LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-    endif
-
     LOCAL_MULTILIB := both
     LOCAL_MODULE_TAGS := optional
     LOCAL_MODULE := test_thread_safety_hw
@@ -100,10 +96,6 @@ ifeq ($(MFX_IMPL_SW), true)
         libmfx_trace_sw
 
     LOCAL_SHARED_LIBRARIES := libdl libva libva-android
-
-    ifeq ($(MFX_NDK),true)
-       LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-    endif
 
     LOCAL_MULTILIB := both
     LOCAL_MODULE_TAGS := optional

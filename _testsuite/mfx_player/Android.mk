@@ -115,10 +115,6 @@ LOCAL_STATIC_LIBRARIES += \
 
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
 
-ifeq ($(MFX_NDK),true)
-   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-endif
-
 LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_player
@@ -167,10 +163,6 @@ LOCAL_STATIC_LIBRARIES += \
     libippcore_l
 
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
-
-ifeq ($(MFX_NDK),true)
-   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-endif
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_player_pipeline
