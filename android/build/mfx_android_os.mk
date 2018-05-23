@@ -22,7 +22,7 @@ MFX_C_INCLUDES_OMX := \
   frameworks/native/include/media/hardware
 
 # libpavp.h, no need for N+
-ifneq ($(filter MFX_JB MFX_KK MFX_LD MFX_MM ,$(MFX_ANDROID_VERSION)),)
+ifneq ($(filter MFX_LD MFX_MM ,$(MFX_ANDROID_VERSION)),)
 
   UFO_ENABLE_GEN ?= gen7
 

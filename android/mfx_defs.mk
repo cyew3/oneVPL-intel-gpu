@@ -35,12 +35,6 @@ endif
 ifneq ($(filter 5.% L ,$(PLATFORM_VERSION)),)
   MFX_ANDROID_VERSION:= MFX_LD
 endif
-ifneq ($(filter 4.4 4.4.4 ,$(PLATFORM_VERSION)),)
-  MFX_ANDROID_VERSION:= MFX_KK
-endif
-ifneq ($(filter 4.2.2 4.3 ,$(PLATFORM_VERSION)),)
-  MFX_ANDROID_VERSION:= MFX_JB
-endif
 
 ifdef RESOURCES_LIMIT
   MFX_CFLAGS += \
