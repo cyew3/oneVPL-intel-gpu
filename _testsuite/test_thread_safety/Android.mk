@@ -3,6 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
+
 THREAD_SAFETY_C_INCLUDES := \
     $(MFX_C_INCLUDES_INTERNAL) \
     $(MFX_HOME)/mdp_msdk-lib/_testsuite/test_thread_safety/include \
@@ -15,7 +16,6 @@ THREAD_SAFETY_C_INCLUDES := \
     $(MFX_HOME)/mdp_msdk-lib/_testsuite/shared/include \
     $(MFX_HOME)/mdp_msdk-lib/samples/sample_common/include \
     $(MFX_HOME)/mdp_msdk-lib/samples/sample_spl_mux/dispatcher/include
-
 
 THREAD_SAFETY_STATIC_LIBRARIES := \
     libmfx \
@@ -36,9 +36,9 @@ THREAD_SAFETY_STATIC_LIBRARIES := \
     libippcore_l
 
 # =============================================================================
+
 ifeq ($(MFX_IMPL_HW), true)
     include $(CLEAR_VARS)
-
     include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
     LOCAL_SRC_FILES := $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp)))
@@ -74,7 +74,6 @@ endif # ifeq ($(MFX_IMPL_HW), true)
 
 ifeq ($(MFX_IMPL_SW), true)
     include $(CLEAR_VARS)
-
     include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
     LOCAL_SRC_FILES := $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp)))

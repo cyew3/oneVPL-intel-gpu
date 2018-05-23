@@ -3,7 +3,7 @@ LOCAL_PATH:= $(call my-dir)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # Setting subdirectories to march thru
-MFX_LOCAL_DIRS = \
+MFX_LOCAL_DIRS := \
     aac_common \
     asf_spl \
     avi_spl \
@@ -23,7 +23,7 @@ MFX_LOCAL_DIRS = \
     vp8_dec \
     jpeg_common
 
-MFX_LOCAL_DIRS_IMPL = \
+MFX_LOCAL_DIRS_IMPL := \
     color_space_converter \
     mpeg2_dec \
     h265_dec \
@@ -32,15 +32,15 @@ MFX_LOCAL_DIRS_IMPL = \
     jpeg_dec \
     vp9_dec
 
-MFX_LOCAL_SRC_FILES = \
+MFX_LOCAL_SRC_FILES := \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_SRC_FILES_IMPL = \
+MFX_LOCAL_SRC_FILES_IMPL := \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_C_INCLUDES = \
+MFX_LOCAL_C_INCLUDES := \
   $(foreach dir, $(MFX_LOCAL_DIRS) $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
 
 # =============================================================================

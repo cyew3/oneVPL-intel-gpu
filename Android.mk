@@ -7,14 +7,6 @@ ifeq ($(BOARD_HAVE_MEDIASDK_SRC),true)
   MFX_IPP_OPT_LEVEL_32 := p8
   MFX_IPP_OPT_LEVEL_64 := y8
 
-  # Setting version information for the binaries
-  ifeq ($(MFX_VERSION),)
-    MFX_VERSION = "6.0.010"
-  endif
-
-  # Placement of IPP and other stuff to build Media SDK:
-  MEDIASDK_ROOT:= $(MFX_HOME)
-
   # Recursively call sub-folder Android.mk
   include $(call all-subdir-makefiles)
 endif

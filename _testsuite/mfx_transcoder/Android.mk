@@ -4,7 +4,7 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
-MFX_TRANSODER_CFLAGS += \
+MFX_TRANSODER_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL) \
     $(MFX_CFLAGS_LIBVA)
 
@@ -20,7 +20,8 @@ MFX_TRANSODER_INCLUDES += \
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(filter-out src/mfx_transcoder.cpp, \
+LOCAL_SRC_FILES := \
+    $(filter-out src/mfx_transcoder.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
 LOCAL_CFLAGS := $(MFX_TRANSODER_CFLAGS)
@@ -41,7 +42,8 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(filter-out src/mfx_transcoder.cpp, \
+LOCAL_SRC_FILES := \
+    $(filter-out src/mfx_transcoder.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
 LOCAL_CFLAGS := \
@@ -64,8 +66,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(addprefix src/, \
-    mfx_transcoder.cpp)
+LOCAL_SRC_FILES := $(addprefix src/, mfx_transcoder.cpp)
 
 LOCAL_CFLAGS := $(MFX_TRANSODER_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
@@ -77,7 +78,7 @@ LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
-LOCAL_STATIC_LIBRARIES += \
+LOCAL_STATIC_LIBRARIES := \
     libmfx \
     libmfx_trans_pipeline \
     libmfx_pipeline \
@@ -112,8 +113,7 @@ include $(BUILD_EXECUTABLE)
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(addprefix src/, \
-    mfx_transcoder.cpp)
+LOCAL_SRC_FILES := $(addprefix src/, mfx_transcoder.cpp)
 
 LOCAL_CFLAGS := \
     $(MFX_TRANSODER_CFLAGS) \
@@ -127,7 +127,7 @@ LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
-LOCAL_STATIC_LIBRARIES += \
+LOCAL_STATIC_LIBRARIES := \
     libmfx \
     libmfx_trans_pipeline_lucas \
     libmfx_pipeline_lucas \

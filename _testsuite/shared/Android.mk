@@ -4,7 +4,7 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
-MFX_SHARED_FILES = $(addprefix src/, \
+MFX_SHARED_FILES := $(addprefix src/, \
     cc_utils.cpp \
     memory_allocator.cpp \
     mfx_io_utils.cpp \

@@ -43,8 +43,7 @@ LOCAL_C_INCLUDES := \
     $(MFX_C_INCLUDES) \
     $(MFX_HOME)/mdp_msdk-contrib/yaml-cpp/include
 
-LOCAL_CFLAGS := \
-    $(MFX_CFLAGS)
+LOCAL_CFLAGS := $(MFX_CFLAGS)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_serializer

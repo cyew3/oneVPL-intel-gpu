@@ -7,8 +7,7 @@
 #   MFX_C_INCLUDES_C2 - include paths to C2 headers (all needed for plug-ins)
 #   MFX_HEADER_LIBRARIES_OMX - import OMX headers
 
-MFX_C_INCLUDES_LIBVA := \
-  $(TARGET_OUT_HEADERS)/libva
+MFX_C_INCLUDES_LIBVA := $(TARGET_OUT_HEADERS)/libva
 
 ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)
   MFX_C_INCLUDES_LIBVA += \
@@ -48,6 +47,5 @@ ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)
 endif
 
 ifneq ($(filter MFX_P,$(MFX_ANDROID_VERSION)),)
-  MFX_HEADER_LIBRARIES_OMX += \
-    libbase_headers
+  MFX_HEADER_LIBRARIES_OMX += libbase_headers
 endif

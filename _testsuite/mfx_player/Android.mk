@@ -4,7 +4,7 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # =============================================================================
 
-MFX_PIPELINE_CFLAGS += \
+MFX_PIPELINE_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL) \
     $(MFX_CFLAGS_LIBVA) \
     -Wno-date-time
@@ -31,7 +31,8 @@ MFX_PLAYER_INCLUDES += \
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(filter-out src/mfx_player.cpp, \
+LOCAL_SRC_FILES := \
+    $(filter-out src/mfx_player.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
 LOCAL_C_INCLUDES := $(MFX_PIPELINE_INCLUDES)
@@ -42,8 +43,7 @@ LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_HEADER_LIBRARIES := \
-    $(MFX_HEADER_LIBRARIES)
+LOCAL_HEADER_LIBRARIES := $(MFX_HEADER_LIBRARIES)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline
@@ -55,7 +55,8 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(filter-out src/mfx_player.cpp, \
+LOCAL_SRC_FILES := \
+    $(filter-out src/mfx_player.cpp, \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
 LOCAL_C_INCLUDES := $(MFX_PIPELINE_INCLUDES)
@@ -68,8 +69,7 @@ LOCAL_CFLAGS := \
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_HEADER_LIBRARIES := \
-    $(MFX_HEADER_LIBRARIES)
+LOCAL_HEADER_LIBRARIES := $(MFX_HEADER_LIBRARIES)
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline_lucas
@@ -81,8 +81,7 @@ include $(BUILD_STATIC_LIBRARY)
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(addprefix src/, \
-    mfx_player.cpp)
+LOCAL_SRC_FILES := $(addprefix src/, mfx_player.cpp)
 
 LOCAL_C_INCLUDES := $(MFX_PLAYER_INCLUDES)
 LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
@@ -94,7 +93,7 @@ LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
-LOCAL_STATIC_LIBRARIES += \
+LOCAL_STATIC_LIBRARIES := \
     libmfx \
     libmfx_pipeline \
     libshared_utils \
@@ -128,8 +127,7 @@ include $(BUILD_EXECUTABLE)
 include $(CLEAR_VARS)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 
-LOCAL_SRC_FILES := $(addprefix src/, \
-    mfx_player.cpp)
+LOCAL_SRC_FILES := $(addprefix src/, mfx_player.cpp)
 
 LOCAL_C_INCLUDES := $(MFX_PLAYER_INCLUDES)
 LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
@@ -143,7 +141,7 @@ LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
-LOCAL_STATIC_LIBRARIES += \
+LOCAL_STATIC_LIBRARIES := \
     libmfx \
     libmfx_pipeline_lucas \
     libshared_utils_lucas \

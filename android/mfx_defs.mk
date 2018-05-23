@@ -3,10 +3,10 @@
 #
 # Defined variables:
 #   MFX_CFLAGS - common flags for all targets
+#   MFX_CFLAGS_LIBVA - LibVA support flags (to build apps with or without LibVA support)
 #   MFX_C_INCLUDES - common include paths for all targets
 #   MFX_HEADER_LIBRARIES - common imported headers for all targets
 #   MFX_LDFLAGS - common link flags for all targets
-#   MFX_CFLAGS_LIBVA - LibVA support flags (to build apps with or without LibVA support)
 
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
@@ -49,7 +49,7 @@ endif
 MFX_CFLAGS += \
   -DMFX_ANDROID_VERSION=$(MFX_ANDROID_VERSION) \
   -DMFX_ANDROID_PLATFORM=$(MFX_ANDROID_PLATFORM) \
-  -include $(MFX_HOME)/mdp_msdk-lib/android/include/mfx_config.h
+  -include mfx_config.h
 
 ifeq ($(MFX_OMX_PAVP),true)
   MFX_CFLAGS += \

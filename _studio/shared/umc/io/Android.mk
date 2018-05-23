@@ -3,24 +3,24 @@ LOCAL_PATH:= $(call my-dir)
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
 
 # Setting subdirectories to march thru
-MFX_LOCAL_DIRS_IMPL = \
+MFX_LOCAL_DIRS_IMPL := \
     media_buffers \
     umc_io
 
-MFX_LOCAL_DIRS_HW = \
+MFX_LOCAL_DIRS_HW := \
     umc_va
 
-MFX_LOCAL_SRC_FILES_IMPL = \
+MFX_LOCAL_SRC_FILES_IMPL := \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_SRC_FILES_HW = \
+MFX_LOCAL_SRC_FILES_HW := \
   $(MFX_LOCAL_SRC_FILES_IMPL) \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_C_INCLUDES = \
+MFX_LOCAL_C_INCLUDES := \
   $(foreach dir, $(MFX_LOCAL_DIRS_IMPL), $(wildcard $(LOCAL_PATH)/$(dir)/include))
 
-MFX_LOCAL_C_INCLUDES_HW = \
+MFX_LOCAL_C_INCLUDES_HW := \
   $(MFX_LOCAL_C_INCLUDES) \
   $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/$(dir)/include))
 
