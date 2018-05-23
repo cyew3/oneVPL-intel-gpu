@@ -41,9 +41,6 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
 {
     vm_cond_set_invalid(&m_mfe_wait);
     vm_mutex_set_invalid(&m_mfe_guard);
-    vm_mutex_set_invalid(&m_mfe_status_guard);
-    m_feedbackUpdate.clear();
-    m_cachedFeedback.clear();
     m_contexts.reserve(MAX_FRAMES_TO_COMBINE);
     m_streams.reserve(MAX_FRAMES_TO_COMBINE);
 }
@@ -301,30 +298,6 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
     return MFX_ERR_NONE;
 }
 
-
-mfxStatus MFEDXVAEncoder::Register(ENCODE_MULTISTREAM_INFO info, int feedbackSize)
-{
-    vm_mutex_lock(&m_mfe_guard);
-    std::map<mfxU32, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
-    if (iter == m_streamsMap.end())
-    {
-        vm_mutex_unlock(&m_mfe_guard);
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    //add status report structures into comon feedback base
-    if (iter->second->feedbackSize == 0)
-    {
-        iter->second->feedbackSize = feedbackSize;
-        for (int i = 0; i < feedbackSize; i++)
-        {
-            ENCODE_QUERY_STATUS_PARAMS params = { 0 };
-            m_feedbackUpdate.push_back(params);
-        }
-    }
-    vm_mutex_unlock(&m_mfe_guard);
-    return MFX_ERR_NONE;
-}
-
 mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Disjoin");
@@ -389,12 +362,6 @@ mfxStatus MFEDXVAEncoder::Destroy()
     m_pMfeContext = NULL;
     vm_mutex_unlock(&m_mfe_guard);
 
-    vm_mutex_lock(&m_mfe_status_guard);
-    m_feedbackUpdate.clear();
-    m_cachedFeedback.clear();
-    vm_mutex_unlock(&m_mfe_status_guard);
-
-    vm_mutex_destroy(&m_mfe_status_guard);
     vm_mutex_destroy(&m_mfe_guard);
     vm_cond_destroy(&m_mfe_wait);
 
@@ -570,108 +537,6 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
     }
     vm_mutex_unlock(&m_mfe_guard);
     return res;
-}
-
-mfxStatus MFEDXVAEncoder::GetStatusReport(ENCODE_MULTISTREAM_INFO info, mfxU32 feedbackId, ENCODE_QUERY_STATUS_PARAMS* report, mfxU32 reportSize)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::GetStatusReport");
-    //first search for stream if it exists and proper amount of entries allocated
-    vm_mutex_lock(&m_mfe_guard);
-    std::map<mfxU32, StreamsIter_t>::iterator stream = m_streamsMap.find(info.StreamId);
-    if (stream == m_streamsMap.end() || stream->second->feedbackSize < reportSize)
-    {
-        vm_mutex_unlock(&m_mfe_guard);
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
-    }
-    //retrive buffered feedbacks for completed tasks from earlier requests if exist
-    ENCODE_QUERY_STATUS_PARAMS* frameFeedback = report;
-    bool feedbackFound = false;
-    for (std::list<ENCODE_QUERY_STATUS_PARAMS>::iterator feedback = m_cachedFeedback.begin();
-        feedback != m_cachedFeedback.end(); feedback++)
-    {
-        if (feedback->StreamId == info.StreamId)
-        {
-            if (frameFeedback >= report + reportSize)
-            {
-                vm_mutex_unlock(&m_mfe_guard);
-                return MFX_ERR_DEVICE_FAILED;
-            }
-            memcpy_s(frameFeedback, sizeof(ENCODE_QUERY_STATUS_PARAMS), &(*feedback), sizeof(ENCODE_QUERY_STATUS_PARAMS));
-            frameFeedback++;
-            m_cachedFeedback.erase(feedback);
-            feedbackFound = frameFeedback->StatusReportFeedbackNumber == feedbackId;
-        }
-    }
-    //if required feedback not found, but we have free space in report - try to gather from driver
-    //if out of report return an error
-    if (frameFeedback < report + reportSize && !feedbackFound)
-    {
-        ENCODE_QUERY_STATUS_PARAMS_DESCR feedbackDescr;
-        feedbackDescr.SizeOfStatusParamStruct = sizeof(ENCODE_QUERY_STATUS_PARAMS);
-        feedbackDescr.StatusParamType = QUERY_STATUS_PARAM_FRAME;
-        try
-        {
-
-            D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-
-            decoderExtParams.Function = ENCODE_QUERY_STATUS_ID;
-            decoderExtParams.pPrivateInputData = &feedbackDescr;
-            decoderExtParams.PrivateInputDataSize = sizeof(feedbackDescr);
-            decoderExtParams.pPrivateOutputData = &m_feedbackUpdate[0];
-            decoderExtParams.PrivateOutputDataSize = mfxU32(m_feedbackUpdate.size() * sizeof(ENCODE_QUERY_STATUS_PARAMS));
-            decoderExtParams.ResourceCount = 0;
-            decoderExtParams.ppResourceList = 0;
-            HRESULT hRes = 0;
-            {
-                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ENCODE_QUERY_STATUS_ID");
-                hRes = DecoderExtension(m_pVideoContext, m_pMfeContext, decoderExtParams);
-            }
-
-            MFX_CHECK(hRes != D3DERR_WASSTILLDRAWING, MFX_WRN_DEVICE_BUSY);
-            MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
-        }
-        catch (...)
-        {
-            vm_mutex_unlock(&m_mfe_guard);
-            return MFX_ERR_DEVICE_FAILED;
-        }
-
-        for (std::vector<ENCODE_QUERY_STATUS_PARAMS>::iterator feedback = m_feedbackUpdate.begin();
-            feedback != m_feedbackUpdate.end(); feedback++)
-        {
-            if (feedback->StreamId == info.StreamId)
-            {
-                //put current captured feedbacks directly into report if exist
-                if (frameFeedback >= report + reportSize)
-                {
-                    vm_mutex_unlock(&m_mfe_guard);
-                    return MFX_ERR_DEVICE_FAILED;
-                }
-                memcpy_s(frameFeedback, sizeof(ENCODE_QUERY_STATUS_PARAMS), &(*feedback), sizeof(ENCODE_QUERY_STATUS_PARAMS));
-                frameFeedback++;
-            }
-            else
-            {
-                //put all other streams ready or failed tasks into cache
-                if (feedback->bStatus != ENCODE_NOTAVAILABLE && feedback->bStatus != ENCODE_NOTREADY)
-                    m_cachedFeedback.push_back(*feedback);
-            }
-        }
-    }
-    else if(!feedbackFound)
-    {
-        vm_mutex_unlock(&m_mfe_guard);
-        return MFX_ERR_DEVICE_FAILED;
-    }
-    //fill zero rest of report
-    while (frameFeedback < report + reportSize)
-    {
-        memset(frameFeedback, 0, sizeof(ENCODE_QUERY_STATUS_PARAMS));
-        frameFeedback++;
-    }
-
-    vm_mutex_unlock(&m_mfe_guard);
-    return MFX_ERR_NONE;
 }
 
 #endif //MFX_VA_WIN && MFX_ENABLE_MFE

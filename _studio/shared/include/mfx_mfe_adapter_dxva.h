@@ -86,12 +86,10 @@ public:
     mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
     //returns pointer to particular caps with only read access, NULL if caps not set.
     CAPS GetCaps(MFE_CODEC codecId);
-    mfxStatus Register(ENCODE_MULTISTREAM_INFO info, int feedbackSize);
 //placeholder
 #ifdef MFX_ENABLE_AV1_VIDEO_ENCODE
     ENCODE_CAPS_AV1 GetCaps() { return m_pAv1CAPS; };
 #endif
-    mfxStatus GetStatusReport(ENCODE_MULTISTREAM_INFO info, mfxU32 feedbackId, ENCODE_QUERY_STATUS_PARAMS* feedback, mfxU32 reportSize);
     virtual void AddRef();
     virtual void Release();
 
@@ -100,7 +98,6 @@ private:
 
     vm_cond     m_mfe_wait;
     vm_mutex    m_mfe_guard;
-    vm_mutex    m_mfe_status_guard;
 
     ID3D11VideoDevice*  m_pVideoDevice;
     ID3D11VideoContext* m_pVideoContext;
@@ -143,9 +140,6 @@ private:
     std::vector<StreamsIter_t> m_streams;
     // store iterators to particular items
     std::map<mfxU32, StreamsIter_t> m_streamsMap;
-    //status report caches
-    std::vector<ENCODE_QUERY_STATUS_PARAMS> m_feedbackUpdate;
-    std::list<ENCODE_QUERY_STATUS_PARAMS> m_cachedFeedback;
     //time frequency for conversion to us/ms
     vm_tick m_time_frequency;
 

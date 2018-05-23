@@ -150,7 +150,8 @@ typedef struct tagENCODE_QUERY_STATUS_PARAMS_DESCR
 {
     UINT StatusParamType;
     UINT SizeOfStatusParamStruct;
-    UINT reserved[2];
+    UINT StreamID;
+    UINT reserved;
 } ENCODE_QUERY_STATUS_PARAMS_DESCR;
 
 // new encode query status interface (starting from DDI 0.915)

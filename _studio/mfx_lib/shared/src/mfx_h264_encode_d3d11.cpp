@@ -381,14 +381,6 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMAT 
         // reserved space for feedback reports
         m_feedbackUpdate.resize( response.NumFrameActual );
         m_feedbackCached.Reset( response.NumFrameActual );
-#if defined(MFX_ENABLE_MFE)
-        if (m_pMFEAdapter != NULL)
-        {
-            mfxStatus sts = m_pMFEAdapter->Register(m_StreamInfo, (mfxU32)m_feedbackUpdate.size());
-            if(sts != MFX_ERR_NONE)
-                return sts;
-        }
-#endif
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
@@ -831,11 +823,8 @@ mfxStatus D3D11Encoder::QueryStatusAsync(
 #if defined(MFX_ENABLE_MFE)
         if (m_pMFEAdapter != NULL)
         {
-            mfxStatus sts = m_pMFEAdapter->GetStatusReport(m_StreamInfo, task.m_statusReportNumber[fieldId], &m_feedbackUpdate[0], (mfxU32)m_feedbackUpdate.size());
-            if (sts != MFX_ERR_NONE)
-                return sts;
+            feedbackDescr.StreamID = m_StreamInfo.StreamId;
         }
-        else
 #endif
         {
             try

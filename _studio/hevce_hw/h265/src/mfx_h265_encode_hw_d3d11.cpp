@@ -270,7 +270,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
     if (m_pMfeAdapter != NULL)
     {
         m_StreamInfo.CodecId = DDI_CODEC_HEVC;
-        m_pMfeAdapter->Join(par.m_ext.mfeParam, m_StreamInfo, false, (int)m_feedbackPool.size());
+        m_pMfeAdapter->Join(par.m_ext.mfeParam, m_StreamInfo, false);
     }
 #endif
     FillSpsBuffer(par, m_caps, m_sps);
@@ -797,7 +797,9 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
 
         feedbackDescr.StatusParamType = m_pps.bEnableSliceLevelReport ? QUERY_STATUS_PARAM_SLICE : QUERY_STATUS_PARAM_FRAME;
         feedbackDescr.SizeOfStatusParamStruct = (feedbackDescr.StatusParamType == QUERY_STATUS_PARAM_SLICE) ? sizeof(ENCODE_QUERY_STATUS_SLICE_PARAMS) : sizeof(ENCODE_QUERY_STATUS_PARAMS);
-
+#if defined(MFX_ENABLE_MFE)
+        feedbackDescr.StreamID = m_StreamInfo.StreamId;
+#endif
         for (;;)
         {
             HRESULT hr;
