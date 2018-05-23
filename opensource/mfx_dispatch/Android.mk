@@ -23,13 +23,9 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_plugin_cfg_parser.cpp \
     mfx_load_plugin.cpp)
 
-LOCAL_C_INCLUDES += \
-    $(MFX_C_INCLUDES) \
-    $(MFX_C_INCLUDES_STL)
-LOCAL_CFLAGS := \
-    $(MFX_CFLAGS_INTERNAL) \
-    $(MFX_CFLAGS) \
-    $(MFX_CFLAGS_STL)
+LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
+
+LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
 LOCAL_CFLAGS_32 := \
     $(MFX_CFLAGS_INTERNAL_32) \
     -DMFX_MODULES_DIR=\"/system/lib\"
@@ -64,14 +60,13 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_plugin_cfg_parser.cpp \
     mfx_load_plugin.cpp)
 
-LOCAL_C_INCLUDES += \
-    $(MFX_C_INCLUDES) \
-    $(MFX_C_INCLUDES_STL)
+LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
+
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL) \
-    $(MFX_CFLAGS) \
-    $(MFX_CFLAGS_STL) \
-    -DMFX_DISPATCHER -DMFX_DISPATCHER_LOG -DDXVA2DEVICE_LOG
+    -DMFX_DISPATCHER \
+    -DMFX_DISPATCHER_LOG \
+    -DDXVA2DEVICE_LOG
 LOCAL_CFLAGS_32 := \
     $(MFX_CFLAGS_INTERNAL_32) \
     -DMFX_MODULES_DIR=\"/system/lib\"

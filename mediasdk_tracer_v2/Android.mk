@@ -12,24 +12,17 @@ LOCAL_SRC_FILES := \
   $(addprefix tracer/, $(notdir $(wildcard $(LOCAL_PATH)/tracer/*.cpp))) \
   $(addprefix wrappers/, $(notdir $(wildcard $(LOCAL_PATH)/wrappers/*.cpp)))
 
-LOCAL_C_INCLUDES += \
-    $(MFX_C_INCLUDES) \
-    $(MFX_C_INCLUDES_STL)
+LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
 
-LOCAL_CFLAGS += \
+LOCAL_CFLAGS := \
     $(MFX_CFLAGS) \
-    $(MFX_CFLAGS_STL) \
     -Wno-unknown-pragmas
 
-LOCAL_LDFLAGS += \
+LOCAL_LDFLAGS := \
     $(MFX_LDFLAGS)
    -Wl,--version-script=$(LOCAL_PATH)/libmfx.map
 
 LOCAL_SHARED_LIBRARIES := libdl liblog
-
-ifeq ($(MFX_NDK),true)
-   LOCAL_SHARED_LIBRARIES += libstlport-mfx libgabi++-mfx
-endif
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx-tracer
