@@ -107,6 +107,8 @@ void PrintHelp(const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("   [-ForceToIntra] - force CUs to be coded as intra using DSO information\n"));
     msdk_printf(MSDK_STRING("   [-ForceToInter] - force CUs to be coded as inter using DSO information\n"));
     msdk_printf(MSDK_STRING("   [-DrawMVP] - creates output YUV file with MVP overlay\n"));
+    msdk_printf(MSDK_STRING("   [-DumpMVP] - dumps final per-frame MVP structures with DSO data as binary files with filenames\n"));
+    msdk_printf(MSDK_STRING("                'MVPdump_encorder_frame_%%(frame_number_in_encoded_order).bin' (frame numbering starts with 1)\n"));
 
     msdk_printf(MSDK_STRING("\n"));
 }
@@ -585,6 +587,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char* argv[])
         else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-DrawMVP")))
         {
             params.drawMVP = true;
+        }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-DumpMVP")))
+        {
+            params.dumpMVP = true;
         }
         else
         {

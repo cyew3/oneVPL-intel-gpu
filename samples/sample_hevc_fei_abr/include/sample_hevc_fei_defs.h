@@ -105,6 +105,7 @@ struct sInputParams
     mfxU16 PicTimingSEI;       // picture timing SEI
     bool   bDisableQPOffset;   // disable qp offset per pyramid layer
     bool   drawMVP;
+    bool   dumpMVP;
     mfxU16 fastIntraModeOnI;
     mfxU16 fastIntraModeOnP;
     mfxU16 fastIntraModeOnB;
@@ -136,6 +137,7 @@ struct sInputParams
         , PicTimingSEI(MFX_CODINGOPTION_OFF)
         , bDisableQPOffset(false)
         , drawMVP(false)
+        , dumpMVP(false)
         , fastIntraModeOnI(0)
         , fastIntraModeOnP(0)
         , fastIntraModeOnB(0)
