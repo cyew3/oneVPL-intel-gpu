@@ -23,7 +23,7 @@ public:
 
     static const unsigned int n_cases;
 
-    int run(unsigned int id, const char* sname);
+    int run(unsigned int id, unsigned int fourcc, const char* sname);
 
 private:
 
@@ -163,31 +163,25 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
     {/*17*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
-            {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.PitchHigh, {0x8000}}
-        }
-    },
-    {/*18*/ MFX_ERR_UNDEFINED_BEHAVIOR,
-        {
-            {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {0}}
         }
     },
-    {/*19*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
-    {/*20*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
-    {/*21*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*18*/ MFX_ERR_NONE, {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}}},
+    {/*19*/ MFX_ERR_NONE, {INIT|MEMID, 0, {1}}},
+    {/*20*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_OPAQUE_MEMORY}},
             {SURF_WORK, &tsStruct::mfxFrameSurface1.Data.Y, {1}}
         }
     },
-    {/*22*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*21*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
             {INIT|MEMID, 0, { 1 }}
         }
     },
-    {/*23*/ MFX_ERR_UNDEFINED_BEHAVIOR,
+    {/*22*/ MFX_ERR_UNDEFINED_BEHAVIOR,
         {
             {INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_SYSTEM_MEMORY}},
             {INIT|ALLOCATOR, 0, {frame_allocator::ALLOC_MAX, frame_allocator::MIN_PITCH_LOCK}},
@@ -198,7 +192,7 @@ const DecodeSuite::tc_struct DecodeSuite::test_case[] =
 const unsigned int DecodeSuite::n_cases = sizeof(DecodeSuite::test_case)/sizeof(DecodeSuite::tc_struct);
 const unsigned int MAX_FRAMES = 30;
 
-int DecodeSuite::run(unsigned int id, const char* sname)
+int DecodeSuite::run(unsigned int id, unsigned int fourcc, const char* sname)
 {
     TS_START;
 
@@ -224,6 +218,9 @@ int DecodeSuite::run(unsigned int id, const char* sname)
     apply_par(tc, INIT);
 
     Init();
+
+    EXPECT_TRUE(m_pPar->mfx.FrameInfo.FourCC == fourcc)
+        << "Stream fourcc should be the same as test one";
 
     SetPar4_DecodeFrameAsync();
     m_session = tsSession::m_session;
@@ -267,25 +264,25 @@ char const* query_stream(unsigned int, std::integral_constant<unsigned, fourcc>)
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>)
 { return "conformance/hevc/itu/RPS_B_qualcomm_5.bit"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_YUY2>)
-{ return "conformance/hevc/422format/inter_422_8.bin"; }
+{ return "forBehaviorTest/dif_resol/hevc/422format/Kimono1_704x576_24_422_8.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
-{ return "conformance/hevc/10bit/GENERAL_8b_444_RExt_Sony_1.bit"; }
+{ return "forBehaviorTest/dif_resol/hevc/444format/Kimono1_704x576_24_444_8.265"; }
 
 /* 10 bit */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
 { return "conformance/hevc/10bit/WP_A_MAIN10_Toshiba_3.bit"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y210>)
-{ return "conformance/hevc/10bit/Main_422_10_A_RExt_Sony_2.bin"; }
+{ return "conformance/hevc/10bit/GENERAL_10b_422_RExt_Sony_1.bit"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>)
 { return "conformance/hevc/10bit/GENERAL_10b_444_RExt_Sony_1.bit"; }
 
 /* 12 bit */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P016>)
-{ return "conformance/hevc/12bit/420format/GENERAL_12b_420_RExt_Sony_1.bit"; }
+{ return "forBehaviorTest/dif_resol/hevc/420format_12bit/Kimono1_704x576_24_420_12.265 "; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y216>)
-{ return "conformance/hevc/12bit/422format/GENERAL_12b_422_RExt_Sony_1.bit"; }
+{ return "forBehaviorTest/dif_resol/hevc/422format_12bit/Kimono1_704x576_24_422_12.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y416>)
-{ return "conformance/hevc/12bit/444format/GENERAL_12b_444_RExt_Sony_1.bit"; }
+{ return "forBehaviorTest/dif_resol/hevc/444format_12bit/Kimono1_704x576_24_444_12.265"; }
 
 template <unsigned fourcc, unsigned profile>
 char const* query_stream(unsigned int id, std::integral_constant<unsigned, fourcc>, std::integral_constant<unsigned, profile>)
@@ -294,13 +291,13 @@ char const* query_stream(unsigned int id, std::integral_constant<unsigned, fourc
 #if !defined(OPEN_SOURCE)
 /* SCC */
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-{ return "conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc"; }
+{ return "forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-{ return "conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc"; }
+{ return "forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-{ return "conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc"; }
+{ return "forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265"; }
 char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-{ return "conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc"; }
+{ return "forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265"; }
 #endif
 
 template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
@@ -315,7 +312,7 @@ struct TestSuite
         g_tsStreamPool.Reg();
 
         DecodeSuite suite;
-        return suite.run(id, sname);
+        return suite.run(id, fourcc, sname);
     }
 };
 

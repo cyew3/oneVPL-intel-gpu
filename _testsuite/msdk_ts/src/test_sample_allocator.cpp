@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2013-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -170,7 +170,7 @@ mfxStatus frame_allocator::AllocFrame(mfxHDL pthis, mfxFrameAllocRequest *reques
 
 mfxStatus frame_allocator::alloc_frame_nocheck(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
-    mfxFrameAllocRequest int_request = *request;
+    int_request = *request;
     bool zero_alloc = false;
 
     if (allocator_type == FAKE)
@@ -265,7 +265,16 @@ mfxStatus frame_allocator::LockFrame(mfxHDL pthis, mfxMemId mid, mfxFrameData *p
 
     mfxRes = instance->lock_frame_nocheck(mid, ptr);
     if (0 != (instance->lock_mode & ZERO_LUMA_LOCK))
-        ptr->Y = NULL;
+    {
+        switch (instance->int_request.Info.FourCC)
+        {
+            case MFX_FOURCC_Y410:
+                ptr->Y410 = NULL;
+                break;
+
+            default: ptr->Y = NULL;
+        };
+    }
     else if (0 != (instance->lock_mode & LARGE_PITCH_LOCK))
     {
         ptr->Pitch = 0x8000;
