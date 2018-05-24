@@ -13,7 +13,7 @@ MFX_LOCAL_SRC_FILES := $(addprefix h265/src/, \
     mfx_h265_encode_hw_utils.cpp \
     mfx_h265_encode_vaapi.cpp)
 
-MFX_LOCAL_C_INCLUDES := \
+MFX_LOCAL_INCLUDES := \
     $(LOCAL_PATH)/h265/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/brc/include
 
@@ -36,9 +36,9 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES)
 
 LOCAL_C_INCLUDES := \
-    $(MFX_LOCAL_C_INCLUDES) \
-    $(MFX_C_INCLUDES_INTERNAL_HW)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
+    $(MFX_LOCAL_INCLUDES) \
+    $(MFX_INCLUDES_INTERNAL_HW)
+LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL_HW) \
@@ -67,9 +67,9 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES)
 
 LOCAL_C_INCLUDES := \
-    $(MFX_LOCAL_C_INCLUDES) \
-    $(MFX_C_INCLUDES_INTERNAL_HW)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+    $(MFX_LOCAL_INCLUDES) \
+    $(MFX_INCLUDES_INTERNAL_HW)
+LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL_HW) \

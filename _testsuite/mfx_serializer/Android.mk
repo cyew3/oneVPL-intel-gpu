@@ -40,7 +40,7 @@ LOCAL_SRC_FILES += \
     $(YAML_CPP_ROOT)/src/tag.cpp
 
 LOCAL_C_INCLUDES := \
-    $(MFX_C_INCLUDES) \
+    $(MFX_INCLUDES) \
     $(MFX_HOME)/mdp_msdk-contrib/yaml-cpp/include
 
 LOCAL_CFLAGS := $(MFX_CFLAGS)

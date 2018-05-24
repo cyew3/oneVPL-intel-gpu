@@ -12,7 +12,7 @@ MFX_LOCAL_SRC_FILES := \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.c))) \
   $(patsubst $(LOCAL_PATH)/%, %, $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/src/*.cpp)))
 
-MFX_LOCAL_C_INCLUDES := \
+MFX_LOCAL_INCLUDES := \
   $(foreach dir, $(MFX_LOCAL_DIRS), $(wildcard $(LOCAL_PATH)/$(dir)/include))
 
 # =============================================================================
@@ -23,10 +23,10 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(MFX_LOCAL_SRC_FILES)
 
 LOCAL_C_INCLUDES := \
-  $(MFX_LOCAL_C_INCLUDES) \
-  $(MFX_C_INCLUDES_INTERNAL)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+  $(MFX_LOCAL_INCLUDES) \
+  $(MFX_INCLUDES_INTERNAL)
+LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)

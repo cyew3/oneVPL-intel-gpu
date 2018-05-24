@@ -6,8 +6,8 @@
 #   MFX_CFLAGS_INTERNAL - all flags needed to build MFX targets
 #   MFX_CFLAGS_INTERNAL_HW - all flags needed to build MFX HW targets
 #   MFX_CFLAGS_LUCAS - flags needed to build MFX Lucas targets
-#   MFX_C_INCLUDES_INTERNAL - all include paths needed to build MFX targets
-#   MFX_C_INCLUDES_INTERNAL_HW - all include paths needed to build MFX HW targets
+#   MFX_INCLUDES_INTERNAL - all include paths needed to build MFX targets
+#   MFX_INCLUDES_INTERNAL_HW - all include paths needed to build MFX HW targets
 
 MFX_CFLAGS_INTERNAL := $(MFX_CFLAGS)
 
@@ -75,8 +75,8 @@ MFX_CFLAGS_INTERNAL_HW := \
 
 MFX_CFLAGS_LUCAS := -DLUCAS_DLL
 
-MFX_C_INCLUDES_INTERNAL :=  \
-    $(MFX_C_INCLUDES) \
+MFX_INCLUDES_INTERNAL :=  \
+    $(MFX_INCLUDES) \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/core/umc/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/core/vm/include \
@@ -93,14 +93,14 @@ MFX_C_INCLUDES_INTERNAL :=  \
     $(MDF_ROOT)/compiler/include \
     $(MDF_ROOT)/compiler/include/cm
 
-MFX_C_INCLUDES_INTERNAL_32 :=  \
+MFX_INCLUDES_INTERNAL_32 :=  \
     $(MFX_HOME)/mdp_msdk-contrib/libvpx/android/x86 \
     $(IPP_ROOT_32)/include
 
-MFX_C_INCLUDES_INTERNAL_64 :=  \
+MFX_INCLUDES_INTERNAL_64 :=  \
     $(MFX_HOME)/mdp_msdk-contrib/libvpx/android/x86_64 \
     $(IPP_ROOT_64)/include
 
-MFX_C_INCLUDES_INTERNAL_HW := \
-    $(MFX_C_INCLUDES_INTERNAL) \
-    $(MFX_C_INCLUDES_LIBVA)
+MFX_INCLUDES_INTERNAL_HW := \
+    $(MFX_INCLUDES_INTERNAL) \
+    $(MFX_INCLUDES_LIBVA)

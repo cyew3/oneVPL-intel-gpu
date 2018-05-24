@@ -10,8 +10,8 @@ LOCAL_SRC_FILES := \
     $(addprefix src/vm/, $(notdir $(wildcard $(LOCAL_PATH)/src/vm/*.cpp)))
 
 LOCAL_C_INCLUDES := \
-    $(MFX_C_INCLUDES) \
-    $(MFX_C_INCLUDES_LIBVA)
+    $(MFX_INCLUDES) \
+    $(MFX_INCLUDES_LIBVA)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS) \

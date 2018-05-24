@@ -10,8 +10,8 @@ MFX_PIPELINE_CFLAGS := \
     -Wno-date-time
 
 MFX_PIPELINE_INCLUDES += \
-    $(MFX_C_INCLUDES_INTERNAL) \
-    $(MFX_C_INCLUDES_LIBVA) \
+    $(MFX_INCLUDES_INTERNAL) \
+    $(MFX_INCLUDES_LIBVA) \
     $(MFX_HOME)/mdp_msdk-api/opensource/mfx_dispatch/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/spl_common/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/avi_spl/include \
@@ -21,8 +21,8 @@ MFX_PIPELINE_INCLUDES += \
     $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
 
 MFX_PLAYER_INCLUDES += \
-    $(MFX_C_INCLUDES_INTERNAL) \
-    $(MFX_C_INCLUDES_LIBVA) \
+    $(MFX_INCLUDES_INTERNAL) \
+    $(MFX_INCLUDES_LIBVA) \
     $(MFX_HOME)/mdp_msdk-lib/_testsuite/shared/include \
     $(MFX_HOME)/mdp_msdk-lib/samples/deprecated/sample_spl_mux/api
 
@@ -36,8 +36,8 @@ LOCAL_SRC_FILES := \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
 LOCAL_C_INCLUDES := $(MFX_PIPELINE_INCLUDES)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
@@ -58,8 +58,8 @@ LOCAL_SRC_FILES := \
     $(addprefix src/, $(notdir $(wildcard $(LOCAL_PATH)/src/*.cpp))))
 
 LOCAL_C_INCLUDES := $(MFX_PIPELINE_INCLUDES)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := \
     $(MFX_PIPELINE_CFLAGS) \
@@ -80,8 +80,8 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(addprefix src/, mfx_player.cpp)
 
 LOCAL_C_INCLUDES := $(MFX_PLAYER_INCLUDES)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
@@ -126,8 +126,8 @@ include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
 LOCAL_SRC_FILES := $(addprefix src/, mfx_player.cpp)
 
 LOCAL_C_INCLUDES := $(MFX_PLAYER_INCLUDES)
-LOCAL_C_INCLUDES_32 := $(MFX_C_INCLUDES_INTERNAL_32)
-LOCAL_C_INCLUDES_64 := $(MFX_C_INCLUDES_INTERNAL_64)
+LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
+LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
 LOCAL_CFLAGS := \
     $(MFX_PIPELINE_CFLAGS) \
