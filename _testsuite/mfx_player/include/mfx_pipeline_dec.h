@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -76,6 +76,7 @@ struct sCommandlineParams
   mfxU64         nLimitInputBs;
   mfxI32         nSeed;
   mfxU16         nInputBitdepth;
+  bool           bNoVpp;    // don't enable VPP component (ERROR is returned if VPP is necessary)
   bool           bVppScaling;
   mfxU16         uVppScalingMode;
   bool           bVppChromaSiting;
@@ -320,6 +321,7 @@ struct sCommandlineParams
       InputPicstruct  = NOT_ASSIGNED_VALUE;
       OutputPicstruct = NOT_ASSIGNED_VALUE;
 
+      bNoVpp = false;
       bVppScaling = false;
       uVppScalingMode = MFX_SCALING_MODE_DEFAULT;
 

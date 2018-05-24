@@ -1074,6 +1074,11 @@ mfxStatus MFXDecPipeline::CreateVPP()
     ENABLE_VPP(m_inParams.nImageStab);
     ENABLE_VPP(m_inParams.bExtVppApi);
 
+    if (m_inParams.bUseVPP && m_inParams.bNoVpp)
+    {
+        PrintInfo(VM_STRING("Vpp.PROHIBITED"), VM_STRING("\"-novpp\" is detected in command line")); \
+        return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+    }
 
     if (m_inParams.bUseVPP)
     {
@@ -4972,6 +4977,10 @@ mfxStatus MFXDecPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI32 argc, 
                 MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->G1, argv[3]);
                 MFX_PARSE_DOUBLE(m_extExtCamWhiteBalance->R,  argv[4]);
                 argv+=4;
+            }
+            else if (m_OptProc.Check(argv[0], VM_STRING("-novpp"), VM_STRING("use of VPP component is prohibited"), OPT_UNDEFINED))
+            {
+                m_inParams.bNoVpp = true;
             }
             else if (m_OptProc.Check(argv[0], VM_STRING("-vpp_scaling_mode"), VM_STRING("specify scaling mode for VPP resize"), OPT_INT_32))
             {
