@@ -19,7 +19,6 @@ LOCAL_CFLAGS := \
 
 LOCAL_STATIC_LIBRARIES := libsample_common libmfx
 LOCAL_SHARED_LIBRARIES := libdl libva libva-android
-LOCAL_HEADER_LIBRARIES := $(MFX_HEADER_LIBRARIES)
 
 LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
