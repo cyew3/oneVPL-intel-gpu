@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2003-2011 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -67,6 +67,7 @@ extern FILE *f;
 
 #define logi(x) fprintf(f, #x " = %d\n", (int)x);
 #define logui(x) fprintf(f, #x " = %u\n", x);
+#define logp(x) fprintf(f, #x " = %p\n", (void*)x);
 #define logi_flush(x) fprintf(f, #x " = %d\n", (int)x); fflush(f)
 #define flush   fflush(f)
 
