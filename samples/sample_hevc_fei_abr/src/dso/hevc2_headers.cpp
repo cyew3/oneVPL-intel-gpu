@@ -1454,7 +1454,7 @@ void Parser::parseSEIPL(BP_SEI& bp)
         Bs32u o = (8 - GetBitOffset());
         Bs32u B = u(o);
 
-        if (B != (1 << o))
+        if (B != (1u << o))
             BS2_SET((B >> (o - 1)), bp.use_alt_cpb_params_flag);
     }
     catch (EndOfBuffer)

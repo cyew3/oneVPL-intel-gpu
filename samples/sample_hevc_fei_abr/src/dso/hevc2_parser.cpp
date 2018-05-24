@@ -942,7 +942,7 @@ Bs32u Parser::ParseSSDSubmit(SDThread*& pSDT, NALU* AU)
 
             sdpar.Slice->NumBytesInRbsp = SplitTiles[TGId].NumBytesInRbsp + sdpar.HeaderSize;
             sdpar.Slice->slice->slice_segment_address = SplitTiles[TGId].AddrInRs;
-            sdpar.Slice->slice->Split = (TGId + 1) < SplitTiles.size();
+            sdpar.Slice->slice->Split = (TGId + 1u) < SplitTiles.size();
             sdpar.NumCtb = SplitTiles[TGId].NumCtb;
 
             if (!sdpar.Slice->slice->Split)

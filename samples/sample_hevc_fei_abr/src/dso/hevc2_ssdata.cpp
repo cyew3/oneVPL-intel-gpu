@@ -1250,7 +1250,7 @@ void SDParser::parseCQPO(CU& cu)
 void SDParser::parseTU(CU& cu, TU& tu, TU& tuBase, Bs16u blkIdx)
 {
     TLAuto tl(*this, TRACE_TU);
-    Bs16u log2TrafoSizeC = BS_MAX(2u, tu.log2TrafoSize - (ChromaArrayType == 3 ? 0 : 1));
+    Bs16u log2TrafoSizeC = BS_MAX(2, tu.log2TrafoSize - (ChromaArrayType == 3 ? 0 : 1));
     auto& sps = *m_cSlice->sps;
     auto& pps = *m_cSlice->pps;
     auto& slice = *m_cSlice;

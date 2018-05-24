@@ -21,6 +21,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "buffer_pool.h"
 #include <queue>
+#include <cmath>
 
 #define DEBUG_OUTPUT
 
