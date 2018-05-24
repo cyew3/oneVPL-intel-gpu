@@ -23,7 +23,7 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_plugin_cfg_parser.cpp \
     mfx_load_plugin.cpp)
 
-LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
+LOCAL_C_INCLUDES := $(MFX_INCLUDES)
 
 LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
 LOCAL_CFLAGS_32 := \
@@ -60,7 +60,7 @@ LOCAL_SRC_FILES := $(addprefix src/, \
     mfx_plugin_cfg_parser.cpp \
     mfx_load_plugin.cpp)
 
-LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
+LOCAL_C_INCLUDES := $(MFX_INCLUDES)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS_INTERNAL) \

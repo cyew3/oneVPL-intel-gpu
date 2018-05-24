@@ -12,7 +12,7 @@ LOCAL_SRC_FILES := \
   $(addprefix tracer/, $(notdir $(wildcard $(LOCAL_PATH)/tracer/*.cpp))) \
   $(addprefix wrappers/, $(notdir $(wildcard $(LOCAL_PATH)/wrappers/*.cpp)))
 
-LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
+LOCAL_C_INCLUDES := $(MFX_INCLUDES)
 
 LOCAL_CFLAGS := \
     $(MFX_CFLAGS) \
