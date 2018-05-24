@@ -28,10 +28,10 @@ LOCAL_C_INCLUDES := $(MFX_C_INCLUDES)
 LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
 LOCAL_CFLAGS_32 := \
     $(MFX_CFLAGS_INTERNAL_32) \
-    -DMFX_MODULES_DIR=\"/system/lib\"
+    -DMFX_MODULES_DIR=\"/system/vendor/lib\"
 LOCAL_CFLAGS_64 := \
     $(MFX_CFLAGS_INTERNAL_64) \
-    -DMFX_MODULES_DIR=\"/system/lib64\"
+    -DMFX_MODULES_DIR=\"/system/vendor/lib64\"
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx
@@ -69,10 +69,10 @@ LOCAL_CFLAGS := \
     -DDXVA2DEVICE_LOG
 LOCAL_CFLAGS_32 := \
     $(MFX_CFLAGS_INTERNAL_32) \
-    -DMFX_MODULES_DIR=\"/system/lib\"
+    -DMFX_MODULES_DIR=\"/system/vendor/lib\"
 LOCAL_CFLAGS_64 := \
     $(MFX_CFLAGS_INTERNAL_64) \
-    -DMFX_MODULES_DIR=\"/system/lib64\"
+    -DMFX_MODULES_DIR=\"/system/vendor/lib64\"
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libdispatch_trace
