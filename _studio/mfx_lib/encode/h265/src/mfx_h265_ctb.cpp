@@ -5724,6 +5724,7 @@ void H265CU<PixType>::MeCu(Ipp32s absPartIdx, Ipp8u depth)
 
     // check skip/merge 2Nx2N
     GetMergeCand(absPartIdx, PART_SIZE_2Nx2N, 0, cuWidthInMinTU, m_mergeCand);
+
     m_skipCandBest = -1;
     bool bestIsSkip = false;
 #ifdef AMT_NEW_ICRA
@@ -6275,15 +6276,20 @@ Ipp16s H265CU<PixType>::MeIntSeed(const H265MEInfo *meInfo, const AmvpInfo *amvp
                 }
             }
         }
-    } 
+    }
 
     if(refIdx) {
         Ipp32s zeroPocDiff = m_currFrame->m_refPicList[list].m_deltaPoc[0];
         Ipp32s currPocDiff = m_currFrame->m_refPicList[list].m_deltaPoc[refIdx];
         Ipp32s scale = GetDistScaleFactor(currPocDiff, zeroPocDiff);
         H265MV mvProj = mvRefBest0;
-        mvProj.mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvx + 127 + (scale * mvProj.mvx < 0)) >> 8);
-        mvProj.mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvy + 127 + (scale * mvProj.mvy < 0)) >> 8);
+
+        if (m_currFrame->m_refPicList[list].m_isLongTermRef[0] == 0 && m_currFrame->m_refPicList[list].m_isLongTermRef[refIdx] == 0 && scale != 4096)  // AMT_LTR
+        {
+            mvProj.mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvx + 127 + (scale * mvProj.mvx < 0)) >> 8);
+            mvProj.mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvy + 127 + (scale * mvProj.mvy < 0)) >> 8);
+        }
+
         ClipMV_NR(mvProj);
         bool checkProj = true;
         H265MV mvSeedInt = mvProj;
@@ -6311,7 +6317,7 @@ Ipp16s H265CU<PixType>::MeIntSeed(const H265MEInfo *meInfo, const AmvpInfo *amvp
                 }
             }
         }
-    } 
+    }
 
     if(list) {
         Ipp32s zeroPocDiff = m_currFrame->m_refPicList[0].m_deltaPoc[0];
@@ -6319,11 +6325,14 @@ Ipp16s H265CU<PixType>::MeIntSeed(const H265MEInfo *meInfo, const AmvpInfo *amvp
         Ipp32s scale = GetDistScaleFactor(currPocDiff, zeroPocDiff);
         H265MV mvProj = mvRefBest00;
 
-        mvProj.mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvx + 127 + (scale * mvProj.mvx < 0)) >> 8);
-        mvProj.mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvy + 127 + (scale * mvProj.mvy < 0)) >> 8);
+        if (m_currFrame->m_refPicList[list].m_isLongTermRef[0] == 0 && m_currFrame->m_refPicList[list].m_isLongTermRef[refIdx] == 0 && scale != 4096)  // AMT_LTR
+        {
+            mvProj.mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvx + 127 + (scale * mvProj.mvx < 0)) >> 8);
+            mvProj.mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvProj.mvy + 127 + (scale * mvProj.mvy < 0)) >> 8);
+        }
+
         ClipMV_NR(mvProj);
         bool checkProj = true;
-        
         H265MV mvSeedInt = mvProj;
         if ((mvProj.mvx | mvProj.mvy) & 3) {
             mvSeedInt.mvx = (mvProj.mvx + 1) & ~3;
@@ -9336,16 +9345,15 @@ Ipp32s H265CU<PixType>::MePuGacc(H265MEInfo *meInfos, Ipp32s partIdx)
             }
         }
     }
-    
     Ipp32s useHadamard = (m_par->hadamardMe >= 2);
     const Ipp8s idx0 = refIdxBest[0];
     const Ipp8s idx1 = refIdxBest[1];
 
     refIdxBestB[0] = refIdxBest[0];
     refIdxBestB[1] = refIdxBest[1];
-
-    if(m_cslice->slice_type == B_SLICE && refIdxBestB[1] == refIdxBestB[0]
-        && m_par->BiPyramidLayers > 1 && m_currFrame->m_pyramidLayer == 0 && m_par->NumRefLayers > 2) 
+    //// AMT_LTR: GPB Frame L0 refidx & L1 refidx do not point to the same refs in case of LTR
+    if(m_cslice->slice_type == B_SLICE && m_currFrame->m_mapListRefUnique[1][refIdxBestB[1]] == m_currFrame->m_mapListRefUnique[0][refIdxBestB[0]]
+        && m_par->BiPyramidLayers > 1 && m_currFrame->m_pyramidLayer == 0 && m_par->NumRefLayers > 2)
     {
         Ipp32s numRefIdx = m_cslice->num_ref_idx[0];
         for (Ipp8s i = 0; i < numRefIdx; i++) {
@@ -10393,6 +10401,8 @@ bool H265CU<PixType>::AddMvpCand(AmvpInfo *info, H265CUData *data, Ipp32s blockZ
                 Ipp32s neibRefTb = refPicList[listIdx].m_deltaPoc[data[blockZScanIdx].refIdx[listIdx]];
                 Ipp8u isNeibRefLongTerm = refPicList[listIdx].m_isLongTermRef[data[blockZScanIdx].refIdx[listIdx]];
 
+                if (isCurrRefLongTerm == isNeibRefLongTerm)    // AMT_LTR
+                {
                 H265MV cMvPred, rcMv;
 
                 cMvPred = data[blockZScanIdx].mv[listIdx];
@@ -10415,6 +10425,7 @@ bool H265CU<PixType>::AddMvpCand(AmvpInfo *info, H265CUData *data, Ipp32s blockZ
                 info->mvCand[info->numCand] = rcMv;
                 info->numCand++;
                 return true;
+                }  // if (isCurrRefLongTerm == isNeibRefLongTerm)
             }
 
             listIdx = 1 - listIdx;
@@ -10731,8 +10742,11 @@ template <typename PixType>
 void H265CU<PixType>::GetMergeCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx,
                                    Ipp32s cuSize, MergePredInfo *mergeInfo)
 {
-    if (m_par->partModes == 1 && m_par->log2ParallelMergeLevel == 2)
-        return GetMergeCandFast(topLeftCUBlockZScanIdx, cuSize, mergeInfo);
+    if (!m_par->enableLTR)
+    {
+        if (m_par->partModes == 1 && m_par->log2ParallelMergeLevel == 2)
+            return GetMergeCandFast(topLeftCUBlockZScanIdx, cuSize, mergeInfo);
+    }
 
     mergeInfo->numCand = 0;
     if (m_par->log2ParallelMergeLevel > 2 && m_data[topLeftCUBlockZScanIdx].size == 8) {
@@ -10885,6 +10899,15 @@ void H265CU<PixType>::GetMergeCand(Ipp32s topLeftCUBlockZScanIdx, Ipp32s partMod
                 puhInterDirNeighbours[mergeInfo->numCand] |= 2;
                 mergeInfo->mvCand[2 * mergeInfo->numCand + 1] = mvCol;
                 mergeInfo->refIdx[2 * mergeInfo->numCand + 1] = 0;
+            }
+            else {
+                //////////////////////////////////////////////////////////////////////////
+                // AMT_LTR Colocated Is Longterm, Curr is Not Long Term for List 1, ref 0
+                // availableFlagL1Col is 0 When Adaptive ON/OFF LTR.
+                //////////////////////////////////////////////////////////////////////////
+                mergeInfo->mvCand[2 * mergeInfo->numCand + 1].mvx = 0;
+                mergeInfo->mvCand[2 * mergeInfo->numCand + 1].mvy = 0;
+                mergeInfo->refIdx[2 * mergeInfo->numCand + 1] = -1;
             }
         }
         if (abCandIsInter[mergeInfo->numCand])
@@ -11207,8 +11230,14 @@ bool H265CU<PixType>::GetColMv(const H265CUData *currPb, Ipp32s listIdxCurr, Ipp
     }
     else {
         Ipp32s scale = GetDistScaleFactor(currPocDiff, colPocDiff);
-        mvLxCol->mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvCol.mvx + 127 + (scale * mvCol.mvx < 0)) >> 8);
-        mvLxCol->mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvCol.mvy + 127 + (scale * mvCol.mvy < 0)) >> 8);
+
+        if (scale == 4096) {  // AMT_LTR
+            *mvLxCol = mvCol;
+        }
+        else {
+            mvLxCol->mvx = (Ipp16s)Saturate(-32768, 32767, (scale * mvCol.mvx + 127 + (scale * mvCol.mvx < 0)) >> 8);
+            mvLxCol->mvy = (Ipp16s)Saturate(-32768, 32767, (scale * mvCol.mvy + 127 + (scale * mvCol.mvy < 0)) >> 8);
+        }
     }
 
     return true; // availableFlagLXCol=1
@@ -11469,8 +11498,10 @@ DESCRIPTION: collects MV predictors.
 template <typename PixType>
 void H265CU<PixType>::GetAmvpCand(Ipp32s topLeftBlockZScanIdx, Ipp32s partMode, Ipp32s partIdx, AmvpInfo amvpInfo[2 * MAX_NUM_REF_IDX])
 {
+  if (!m_par->enableLTR) {
     if (m_par->partModes == 1)
         return GetAmvpCandFast(topLeftBlockZScanIdx, amvpInfo);
+  }
 
     Ipp32s cuSizeInMinTu = m_data[topLeftBlockZScanIdx].size >> m_par->QuadtreeTULog2MinSize;
     Ipp32s numRefLists = 1 + (m_cslice->slice_type == B_SLICE);

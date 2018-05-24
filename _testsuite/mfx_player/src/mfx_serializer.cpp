@@ -213,7 +213,8 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(TargetChromaFormatPlus1);
     SERIALIZE_INT(TargetBitDepthLuma);
     SERIALIZE_INT(TargetBitDepthChroma);
-    
+    SERIALIZE_INT(ExtBrcAdaptiveLTR);
+
     if (m_pStruct->TargetChromaFormatPlus1)
         m_values_map[VM_STRING("TargetChromaFormatPlus1")] = GetMFXChromaString(m_pStruct->TargetChromaFormatPlus1 - 1) + VM_STRING(" + 1");
     SERIALIZE_INT(BRCPanicMode);

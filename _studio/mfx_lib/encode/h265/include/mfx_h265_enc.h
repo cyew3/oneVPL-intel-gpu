@@ -270,6 +270,7 @@ namespace H265Enc {
 
         bool   bCalcIEFs;
 
+        Ipp8u  enableLTR;  // AMT_LTR
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
         FILE *fp_cu;
         FILE *fp_tu;

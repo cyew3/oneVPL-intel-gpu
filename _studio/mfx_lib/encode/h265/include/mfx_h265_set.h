@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -73,6 +73,22 @@ namespace H265Enc {
         Ipp8u  num_positive_pics;
         Ipp32s delta_poc[MAX_DPB_SIZE];             // negative + positive
         Ipp8u  used_by_curr_pic_flag[MAX_DPB_SIZE]; // negative + positive
+    };
+
+    // AMT_LTR
+    struct H265LongTermRefPicSetSps
+    {
+        Ipp32s lt_ref_pic_poc_lsb;
+        Ipp8u  used_by_curr_pic_lt_flag;
+    };
+    struct H265LongTermRefPicSet
+    {
+        Ipp32s lt_idx_sps;
+        Ipp8u  used_by_curr_pic_lt_flag;
+        Ipp32s poc_lsb_ltr;
+        Ipp32s poc_msb_ltr;
+        Ipp8u  delta_poc_msb_present_flag;
+        Ipp32s delta_poc_msb_cycle_lt;
     };
 
     struct H265SeqParameterSet
@@ -155,6 +171,10 @@ namespace H265Enc {
         Ipp8u  sps_extension_flag;
         // derived params
         Ipp32u PicSizeInCtbsY;
+        // AMT_LTR
+        Ipp32s num_long_term_ref_pics_sps;
+        H265LongTermRefPicSetSps m_LtRpsSps[16];
+        Ipp8u enableLTR;
     } ;
 
     struct H265PicParameterSet
@@ -246,6 +266,11 @@ namespace H265Enc {
         Ipp8u  chroma_log2_weight_denom;           // chroma weighting denominator
         Ipp32u list_entry[2][MAX_NUM_ACTIVE_REFS];
         Ipp8u  ref_pic_list_modification_flag[2];
+        // AMT_LTR
+        Ipp32u num_long_term_sps;
+        H265LongTermRefPicSet *pLtRps;
+        RefPicListsModification *pListModif;
+        H265ShortTermRefPicSet *pStRps;
     };
 
     struct H265Slice : public H265SliceHeader

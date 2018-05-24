@@ -369,6 +369,8 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         mMinQp = -1;
     }
 
+    mDynamicInit = 0;  // AMT_LTR
+
     mPicType = MFX_FRAMETYPE_I;
     mSceneNum = 0;
     mMiniGopFrames.clear();
@@ -1546,6 +1548,116 @@ Ipp64f H265BRC::GetMinQForMaxFrameSize(Ipp32u maxFrameSizeInBits, H265VideoParam
 #endif
 }
 
+
+// AMT_LTR
+
+const mfxF64 COEFF_INTRA[2] = { -0.114758, -0.411153 };
+void get_coeff_intra(mfxF64 *pCoeff) {
+    pCoeff[0] = COEFF_INTRA[0];
+    pCoeff[1] = COEFF_INTRA[1];
+}
+
+#define PWR_SC 0.61
+#define MIN_SC 1.0
+#define MAX_SC 64.0
+
+mfxF64 getScaledIntraBits(mfxF64 targetBits, mfxF64 rawSize, mfxF64 SC0) {
+    mfxF64 SC = SC0;
+    if (SC < MIN_SC)  SC = MIN_SC;
+    if (SC > MAX_SC)  SC = MAX_SC;
+    SC = pow((mfxF64)SC, PWR_SC);
+    mfxF64 dBits = log((targetBits / rawSize) / SC);
+
+    return dBits;
+}
+
+mfxI32 estimate_qp_intra(mfxI32 targetBits, mfxI32 rawSize, mfxF64 sc)
+{
+    mfxF64 dBits = getScaledIntraBits(targetBits, rawSize, sc);
+    mfxF64 coeffIntra[2];
+    get_coeff_intra(coeffIntra);
+
+    mfxF64 qpNew = (dBits - coeffIntra[1]) / coeffIntra[0];
+    mfxI32 qp = (mfxI32)(qpNew + 0.5);
+
+    return qp;
+}
+
+mfxI32 compute_new_qp_intra(mfxI32 targetBits, mfxI32 rawSize, mfxF64 sc, mfxI32 iBits, mfxF64 icmplx, mfxI32 iqp) {
+    mfxF64 qp_hat = estimate_qp_intra(iBits, rawSize, icmplx);
+    mfxF64 dQp = iqp - qp_hat;
+    if (dQp < (-6.0))  dQp = -6.0;
+    if (dQp > 6.0)     dQp = 6.0;
+
+    mfxF64 qp_pred = estimate_qp_intra(targetBits, rawSize, sc);
+    mfxF64 qpNew = qp_pred + dQp;
+    mfxI32 qp = (mfxI32)(qpNew + 0.5);
+    if (qp < 4)  qp = 4;
+    if (qp > 50) qp = 50;
+
+    return qp;
+}
+
+Ipp32u getRawFrameSizeInPel(Ipp32s width, Ipp32s height, Ipp16u chromaFormat) {
+    Ipp32u rawFrameSizeInPel = width * height;
+
+    if(chromaFormat == MFX_CHROMAFORMAT_YUV420)
+        rawFrameSizeInPel += rawFrameSizeInPel >> 1;
+    else if (chromaFormat == MFX_CHROMAFORMAT_YUV422)
+        rawFrameSizeInPel += rawFrameSizeInPel;
+    else if (chromaFormat == MFX_CHROMAFORMAT_YUV444)
+        rawFrameSizeInPel += rawFrameSizeInPel << 1;
+
+    return rawFrameSizeInPel;
+}
+
+Ipp32s estimateNewIntraQP(Ipp32s GopRefDist, Ipp32s ltrConfidenceLevel, Ipp32s minDQP, Ipp32s QP0)
+{
+    if (minDQP >= 0)
+        return QP0;
+
+    Ipp32s qp = QP0;
+    Ipp32s dqp = 0;
+
+    if (ltrConfidenceLevel > 0)
+    {
+        if (GopRefDist == 1) {
+            if (minDQP < (-6))
+                minDQP = -6;
+            if (minDQP < 0) {
+                if (ltrConfidenceLevel < 2) {
+                    dqp -= 2;
+                }
+                else if (ltrConfidenceLevel < 3) {
+                    dqp -= 5;
+                }
+                else {
+                    dqp -= 6;
+                }
+                if (dqp < minDQP)
+                    dqp = minDQP;
+            }
+        }
+        else if (GopRefDist == 8) {
+            if (minDQP < (-4))
+                minDQP = -4;
+            if (minDQP < 0) {
+                if (ltrConfidenceLevel < 2) {
+                    dqp -= 2;
+                }
+                else {
+                    dqp -= 4;
+                }
+                if (dqp < minDQP)
+                    dqp = minDQP;
+            }
+        }
+    }
+
+    qp = QP0 + dqp;
+    return qp;
+}
+
 Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
 {
     Frame *frame;
@@ -1553,7 +1665,6 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
     Ipp32s qp;
 
     if (video->AnalyzeCmplx) {
-
         if (!frames || numFrames <= 0) {
             if (mQstepBase > 0)
                 return Qstep2QP(mQstepBase, mQuantOffset) - mQuantOffset;
@@ -1826,7 +1937,6 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                 Ipp32s targ;
 
                 brc_fprintf("dev %d %d %d %d \n", (int)estdev, forecastBits, (int)targetBits, len*(int)mHRD.inputBitsPerFrame);
-
                 Ipp64f qf1 = 0;
                 Ipp32s laLim = IPP_MIN(mPredBufFulness * 3 >> 2, (Ipp32s)mHRD.bufSize * 3 >> 3);
                 if (forecastBits - (len - 1)*(Ipp32s)mHRD.inputBitsPerFrame > laLim) {
@@ -1903,6 +2013,7 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                     qp = qpn;
 
                 brc_fprintf("\n %d %d %.3f %.3f ", forecastBits, qp, mQstepBase, qf);
+
                 break;
             }
 
@@ -1918,11 +2029,43 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
             } else
                 BRC_CLIP(qp, qp0 - 2, qp);
 
+            if (video->enableLTR ) {
+                Ipp32s QP0 = qp;
+
+                mfxI32 qpMin = 1;
+
+                Ipp32s mRawFrameSizeInPixs = getRawFrameSizeInPel(mParams.width, mParams.height, mParams.chromaFormat);
+                mfxU16 type = (frames[0]->m_picCodeType & MFX_FRAMETYPE_IDR) ? MFX_FRAMETYPE_IDR : ((frames[0]->m_picCodeType & MFX_FRAMETYPE_I) ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
+
+                if (!mDynamicInit) {
+                    mDynamicInit = 1;
+                }
+                else if (type == MFX_FRAMETYPE_I && frames[0]->m_ltrConfidenceLevel > 0) {
+                    qpMin = qp;
+                    if (frames[0]->m_RsCs > 10.0 && LastICmplx > 1.0 && LastIQpAct && LastIFrameSize) {
+                        mfxF64 sc = frames[0]->m_SC;
+                        mfxF64 targetFrameSize = 0;
+                        mfxF64 frac = (video->GopRefDist == 1) ? 0.25 : 0.30;
+                        mfxI64 bufLow = mHRD.bufSize * frac;
+                        targetFrameSize = mHRD.bufFullness - bufLow;
+                        if (targetFrameSize > mMaxFrameSizeInBitsI)
+                            targetFrameSize = mMaxFrameSizeInBitsI;
+                        qpMin = compute_new_qp_intra(targetFrameSize, mRawFrameSizeInPixs, sc, LastIFrameSize, LastICmplx, LastIQpAct);
+                    }
+
+                    minQ = QP2Qstep(qpMin, 0);
+
+                    Ipp32s minDQP = qpMin - qp;
+                    qp = estimateNewIntraQP(video->GopRefDist, frames[0]->m_ltrConfidenceLevel, minDQP, QP0);
+
+                    QP0 = (Ipp32s)Qstep2QP(minQ, mQuantOffset);
+                }
+            }  //if (video->enableLTR)
+
             qp = IPP_MAX(qp, Qstep2QP(minQ, mQuantOffset));
 
             BRC_CLIP(qp, mMinQp, mQuantMax);
             mMinQp = mQuantMin;
-           
             UpdateMiniGopData(frames[0], qp);
 
             Ipp32s predbits_new = PredictFrameSize(video, frames, qp, &refFrameData);
@@ -2084,6 +2227,48 @@ Ipp32s H265BRC::GetQP(H265VideoParam *video, Frame *frames[], Ipp32s numFrames)
                 }
             }
             brc_fprintf("%d %.3f %.3f %d \n", frames[0]->m_encOrder, q, qf, qp);
+
+            if (video->enableLTR) {
+                Ipp32s QP0 = qp;
+
+                mfxI32 qpMin = 1;
+
+                Ipp32s mRawFrameSizeInPixs = getRawFrameSizeInPel(mParams.width, mParams.height, mParams.chromaFormat);
+                mfxU16 type = (frames[0]->m_picCodeType & MFX_FRAMETYPE_IDR) ? MFX_FRAMETYPE_IDR : ((frames[0]->m_picCodeType & MFX_FRAMETYPE_I) ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
+
+                if (!mDynamicInit) {
+                    mDynamicInit = 1;
+                }
+                else if (type == MFX_FRAMETYPE_I && frames[0]->m_ltrConfidenceLevel > 0) {
+                    qpMin = qp;
+                    if (frames[0]->m_RsCs > 10.0 && LastICmplx > 1.0 && LastIQpAct && LastIFrameSize) {
+                        mfxF64 sc = frames[0]->m_SC;
+                        mfxF64 targetFrameSize = 0;
+                        mfxF64 frac = (video->GopRefDist == 1) ? 0.25 : 0.30;
+                        if (mRCMode == MFX_RATECONTROL_CBR && video->hrdPresentFlag) {
+                            mfxI64 bufLow = mHRD.bufSize * frac;
+                            targetFrameSize = mHRD.bufFullness - bufLow;
+                            if (targetFrameSize > mMaxFrameSizeInBitsI)
+                                targetFrameSize = mMaxFrameSizeInBitsI;
+                            qpMin = compute_new_qp_intra(targetFrameSize, mRawFrameSizeInPixs, sc, LastIFrameSize, LastICmplx, LastIQpAct);
+                        }
+                   }
+
+                    Ipp32s minDQP = -1;
+                    qpMin = qp + minDQP;
+                    minQ = QP2Qstep(qpMin, 0);
+
+                    minDQP = qpMin - qp;
+                    qp = estimateNewIntraQP(video->GopRefDist, frames[0]->m_ltrConfidenceLevel, minDQP, QP0);
+                    if (qp > (QP0 - 1))
+                        qp = QP0 - 1;
+
+                    if(qp < qpMin)
+                        minQ = QP2Qstep(qp, 0);
+
+                    QP0 = (Ipp32s)Qstep2QP(minQ, mQuantOffset);
+                }
+            }  //if (video->enableLTR)
 
             BRC_CLIP(qp, mQuantMin, mQuantMax);
 
@@ -2288,6 +2473,13 @@ mfxBRCStatus H265BRC::PostPackFrame(H265VideoParam *video, Ipp8s sliceQpY, Frame
         brc_fprintf("\n ---- ---- SIZE: %d layer %d Act %d Max %d Q %lf\n", pFrame->m_encOrder, layer, totalFrameBits, (int)((mMaxFrameSizeInBits) ? mMaxFrameSizeInBits : video->MaxFrameSizeInBits), qstep);
     }
 #endif
+
+    // AMT_LTR
+    if (picType == MFX_FRAMETYPE_I) {
+        LastIFrameSize = totalFrameBits;
+        LastICmplx = pFrame->m_SC;
+        LastIQpAct = pFrame->m_sliceQpY;
+    }
 
     if (video && video->AnalyzeCmplx) {
 

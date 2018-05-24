@@ -2079,6 +2079,7 @@ bool MetricIsGreater(const StatItem &l, const StatItem &r) { return (l.met > r.m
 //        fclose(fp);
 //    }
 //}
+
 // ========================================================
 void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
 {
@@ -2147,6 +2148,11 @@ void Lookahead::AnalyzeSceneCut_AndUpdateState_Atul(Frame* in)
         frame->m_isIdrPic = false;
         frame->m_picCodeType = MFX_FRAMETYPE_I;
         //frame->m_poc = 0;
+
+        if(m_videoParam.enableLTR) {
+            frame->m_isIdrPic = 1;
+            frame->m_poc = 0;
+        }
 
         if (m_videoParam.PGopPicSize > 1) {
             //const Ipp8u PGOP_LAYERS[PGOP_PIC_SIZE] = { 0, 2, 1, 2 };
@@ -2297,6 +2303,9 @@ void H265Enc::AverageRsCs(Frame *in, H265VideoParam& videoParam)
     stat->m_frameCs = std::accumulate(stat->m_cs[4], stat->m_cs[4] + stat->m_rcscSize[4], 0);
     stat->m_frameRs = std::accumulate(stat->m_rs[4], stat->m_rs[4] + stat->m_rcscSize[4], 0);
 
+    Ipp64f cs = stat->m_frameCs;  // Added for _ALTR
+    Ipp64f rs = stat->m_frameRs;
+
     Ipp32s hblocks  = (Ipp32s)data->height / BLOCK_SIZE;
     Ipp32s wblocks  = (Ipp32s)data->width / BLOCK_SIZE;
     stat->m_frameCs /= hblocks * wblocks;
@@ -2324,6 +2333,31 @@ void H265Enc::AverageRsCs(Frame *in, H265VideoParam& videoParam)
     }
     else {
         in->m_stats[0]->TSC = std::accumulate(in->m_stats[0]->m_interSad.begin(), in->m_stats[0]->m_interSad.end(), 0);
+    }
+
+//    if (videoParam.enableLTR)
+    {
+        in->m_RsCs = in->m_stats[0]->SC;
+        Ipp64f dSize = 1.0 / (Ipp64f)frameSize;
+        rs *= dSize;
+        cs *= dSize;
+        Ipp64f rscs = sqrt(rs * rs + cs * cs);
+        in->m_SC = rscs;
+        if (in->m_frameOrder < 1)
+        {
+            in->m_TC = 0;
+        }
+        else
+        {
+            in->m_TC = in->m_stats[0]->TSC * dSize * 64.0;
+            if (in->m_TC < 0.1)
+                in->m_TC = 0.0;
+        }
+
+        if (in->m_SC > 0.1)
+            in->m_TcScRatio = sqrt(in->m_TC / in->m_SC);
+        else
+            in->m_TcScRatio = 0.0;
     }
 }
 
@@ -2438,6 +2472,9 @@ Lookahead::Lookahead(H265Encoder & enc)
     , m_enc(enc)
     , m_pendingSceneCut(0)
 {
+    m_avgTcScRatio = 0;
+    m_countTcScRatio = 0;
+    m_sumTcScRatio = 0;
     m_bufferingPaq = 0;
 
     if (m_videoParam.DeltaQpMode & AMT_DQP_PAQ)
@@ -3159,6 +3196,8 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 
     case TT_PREENC_END:
         {
+            Ipp8u frameCmplxAvail = 0;   // Added for _ALTR
+
             if (in) {
                 for (Ipp32s fieldNum = 0; fieldNum < fieldCount; fieldNum++) {
                     Frame *curr = in[fieldNum];
@@ -3211,6 +3250,9 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                 // PSY HROI tightly coupled to AnalyzeCmplx, not independent owner
                 if (m_videoParam.DeltaQpMode & ~AMT_DQP_PSY_HROI) {
                     AverageRsCs(in[fieldNum], m_videoParam);
+
+                    frameCmplxAvail = 1;     // AMT_LTR
+
                     if ((m_videoParam.DeltaQpMode & ~AMT_DQP_PSY_HROI) == AMT_DQP_CAQ) {
                         // CAQ only Mode 
                         if (in[fieldNum]) in[fieldNum]->m_lookaheadRefCounter--;
@@ -3233,6 +3275,43 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                 setCtb_SegMap_Cmplx(in[0], &m_videoParam);
             }
 #endif
+
+            if (m_videoParam.enableLTR) {
+                // check SC and TSC of frame is available
+                if (!frameCmplxAvail) {
+                    AverageRsCs(in[0], m_videoParam);
+                }
+
+                if (in[0]->m_frameOrder < 1) {
+                    in[0]->m_TC = 0;
+                    m_sumTcScRatio = 0;
+                    m_countTcScRatio = 0;
+                    m_avgTcScRatio = 0;
+                }
+
+                if (in[0]->m_SC > 0.1 && in[0]->m_TC > 0.1) {
+                    in[0]->m_TcScRatio = sqrt(in[0]->m_TC / in[0]->m_SC);
+                    m_countTcScRatio++;
+
+                    Ipp32s N = m_videoParam.GopRefDist;
+                    if (N < 8) N = 8;
+
+                    if (m_countTcScRatio >= N) {
+                        // moving average
+                        m_avgTcScRatio = m_avgTcScRatio + (in[0]->m_TcScRatio - m_avgTcScRatio) / (Ipp64f)(N + 1);
+                        m_countTcScRatio = N;
+                    }
+                    else {
+                        m_sumTcScRatio += in[0]->m_TcScRatio;
+                        m_avgTcScRatio = m_sumTcScRatio / (Ipp64f)m_countTcScRatio;
+                    }
+                }
+                else {
+                    in[0]->m_TcScRatio = 0.0;
+                }
+
+                in[0]->m_avgTcScRatio = m_avgTcScRatio;
+            }
 
             break;
         }

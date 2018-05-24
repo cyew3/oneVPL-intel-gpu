@@ -644,6 +644,7 @@ namespace {
             ext->DeblockingBetaOffset = 0;
 #endif
             ext->GPB = 1;
+            ext->ExtBrcAdaptiveLTR = 1;
         }
 
         if (mfxExtEncoderROI *ext = GetExtBuffer(*out)) {
@@ -884,6 +885,7 @@ namespace {
 
         if (opt3) {
             wrnIncompatible = !CheckTriState(opt3->GPB);
+            wrnIncompatible = !CheckTriState(opt3->ExtBrcAdaptiveLTR);
         }
 
         // check combinations

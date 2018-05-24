@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -48,15 +48,15 @@ namespace {
             H265Bs_PutBits(bs, profileLevel.general_non_packed_constraint_flag, 1);
             H265Bs_PutBits(bs, profileLevel.general_frame_only_constraint_flag, 1);
             if (profileLevel.general_profile_idc == 4 || profileLevel.general_profile_compatibility_flag[4]) {
-	            H265Bs_PutBits(bs, profileLevel.general_max_12bit_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_max_10bit_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_max_8bit_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_max_422chroma_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_max_420chroma_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_max_monochrome_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_intra_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_one_picture_only_constraint_flag, 1);
-	            H265Bs_PutBits(bs, profileLevel.general_lower_bit_rate_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_max_12bit_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_max_10bit_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_max_8bit_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_max_422chroma_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_max_420chroma_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_max_monochrome_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_intra_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_one_picture_only_constraint_flag, 1);
+                H265Bs_PutBits(bs, profileLevel.general_lower_bit_rate_constraint_flag, 1);
                 H265Bs_PutBits(bs, 0, 13); // reserved
                 H265Bs_PutBits(bs, 0, 22); // reserved
             } else {
@@ -139,12 +139,61 @@ namespace {
                 H265Bs_PutBits(bs, sh.slice_pic_order_cnt_lsb, sps.log2_max_pic_order_cnt_lsb);
                 H265Bs_PutBit(bs, sh.short_term_ref_pic_set_sps_flag);
                 if (!sh.short_term_ref_pic_set_sps_flag) {
-                    PutShortTermRefPicSet(bs, sps, sh.m_shortRefPicSet, sps.num_short_term_ref_pic_sets);
+                    if (!sps.enableLTR) {
+                        PutShortTermRefPicSet(bs, sps, sh.m_shortRefPicSet, sps.num_short_term_ref_pic_sets);
+                    }
+                    else
+                    {
+                        Ipp8u inter_ref_pic_set_prediction_flag = 0;
+                        if (sps.num_short_term_ref_pic_sets > 0) {
+                            H265Bs_PutBit(bs, inter_ref_pic_set_prediction_flag);
+                        }
+
+                        if (inter_ref_pic_set_prediction_flag) {
+                            VM_ASSERT(0);
+                        }
+                        else
+                        {
+                            H265Bs_PutVLCCode(bs, sh.pStRps->num_negative_pics);
+                            H265Bs_PutVLCCode(bs, sh.pStRps->num_positive_pics);
+                            for (Ipp32s i = 0; i < (sh.pStRps->num_negative_pics + sh.pStRps->num_positive_pics); i++) {
+                                H265Bs_PutVLCCode(bs, sh.pStRps->delta_poc[i] - 1);
+                                H265Bs_PutBit(bs, sh.pStRps->used_by_curr_pic_flag[i]);
+                            }
+                        }
+                    }
                 } else if (sps.num_short_term_ref_pic_sets > 1) {
                     Ipp32s len = H265_CeilLog2(sps.num_short_term_ref_pic_sets);
                     H265Bs_PutBits(bs, sh.short_term_ref_pic_set_idx, len);
                 }
                 if (sps.long_term_ref_pics_present_flag) {
+                    if (sps.num_long_term_ref_pics_sps > 0){
+                        H265Bs_PutVLCCode(bs, sh.num_long_term_sps);
+                    }
+                    H265Bs_PutVLCCode(bs, sh.num_long_term_pics);
+
+                    Ipp32s prevDeltaMSB = 0;
+                    Ipp32s prevLSB = 0;
+                    for (Ipp32u i = 0; i < (sh.num_long_term_sps + sh.num_long_term_pics); i++) {
+                        if (i < sh.num_long_term_sps ) {
+                            if (sps.num_long_term_ref_pics_sps > 1) {
+                                Ipp32s len = H265_CeilLog2(sps.num_long_term_ref_pics_sps);
+                                H265Bs_PutBits(bs, sh.pLtRps[i].lt_idx_sps, len);
+                            }
+                        }
+                        else {
+                            H265Bs_PutBits(bs, sh.pLtRps[i].poc_lsb_ltr, sps.log2_max_pic_order_cnt_lsb);
+                            H265Bs_PutBit (bs, sh.pLtRps[i].used_by_curr_pic_lt_flag);
+                        }
+
+                        H265Bs_PutBit(bs, sh.pLtRps[i].delta_poc_msb_present_flag);
+                        if (sh.pLtRps[i].delta_poc_msb_present_flag)
+                        {
+                            H265Bs_PutVLCCode(bs, sh.pLtRps[i].delta_poc_msb_cycle_lt);
+                        }
+                    }
+
+/*
                     VM_ASSERT(0);
                     //H265Bs_PutVLCCode(bs, sh.num_long_term_pics);
                     //for (i = 0; i < sh.num_long_term_pics; i++) {
@@ -154,11 +203,12 @@ namespace {
                     //        H265Bs_PutVLCCode(bs, sh.delta_poc_msb_cycle_lt[i]);
                     //    H265Bs_PutBit(bs, sh.used_by_curr_pic_lt_flag[i]);
                     //}
+*/
                 }
                 if (sps.sps_temporal_mvp_enabled_flag)
                     H265Bs_PutBit(bs, sh.slice_temporal_mvp_enabled_flag);
             }
-            if (sps.sample_adaptive_offset_enabled_flag) {
+            if(sps.sample_adaptive_offset_enabled_flag) {
                 H265Bs_PutBit(bs, sh.slice_sao_luma_flag);
                 H265Bs_PutBit(bs, sh.slice_sao_chroma_flag);
             }
@@ -169,14 +219,39 @@ namespace {
                     if (sh.slice_type == B_SLICE)
                         H265Bs_PutVLCCode(bs, sh.num_ref_idx[1] - 1);
                 }
-                if (pps.lists_modification_present_flag && sh.CeilLog2NumPocTotalCurr > 0) {
-                    for (Ipp32s list = 0; list <= (sh.slice_type == B_SLICE); list++) {
-                        H265Bs_PutBit(bs, sh.ref_pic_list_modification_flag[list]);
-                        if (sh.ref_pic_list_modification_flag[list])
-                            for (Ipp32s i = 0; i < sh.num_ref_idx[list]; i++)
-                                H265Bs_PutBits(bs, sh.list_entry[list][i], sh.CeilLog2NumPocTotalCurr);
+
+                if (sps.enableLTR)
+                {
+                    if (pps.lists_modification_present_flag && sh.CeilLog2NumPocTotalCurr > 0) {
+                        H265Bs_PutBit(bs, sh.pListModif->refPicListModificationFlag[0]);
+                        if (sh.pListModif->refPicListModificationFlag[0]) {
+                            for (Ipp32s i = 0; i < sh.num_ref_idx[0]; i++) {
+                                H265Bs_PutBits(bs, sh.pListModif->listEntry[0][i], sh.pListModif->numBitsListEntry[0]);
+                            }
+                        }
+
+                        if (sh.slice_type == B_SLICE) {
+                            H265Bs_PutBit(bs, sh.pListModif->refPicListModificationFlag[1]);
+                            if (sh.pListModif->refPicListModificationFlag[1]) {
+                                for (Ipp32s i = 0; i < sh.num_ref_idx[1]; i++) {
+                                    H265Bs_PutBits(bs, sh.pListModif->listEntry[1][i], sh.pListModif->numBitsListEntry[1]);
+                                }
+                            }
+                        }
                     }
                 }
+                else
+                {
+                    if (pps.lists_modification_present_flag && sh.CeilLog2NumPocTotalCurr > 0) {
+                        for (Ipp32s list = 0; list <= (sh.slice_type == B_SLICE); list++) {
+                            H265Bs_PutBit(bs, sh.ref_pic_list_modification_flag[list]);
+                            if (sh.ref_pic_list_modification_flag[list])
+                                for (Ipp32s i = 0; i < sh.num_ref_idx[list]; i++)
+                                    H265Bs_PutBits(bs, sh.list_entry[list][i], sh.CeilLog2NumPocTotalCurr);
+                        }
+                    }
+                }
+
                 if (sh.slice_type == B_SLICE)
                     H265Bs_PutBit(bs, sh.mvd_l1_zero_flag);
                 if (pps.cabac_init_present_flag)
@@ -419,10 +494,16 @@ void H265Enc::PutSPS(H265BsReal *bs, const H265SeqParameterSet &sps, const H265P
         PutShortTermRefPicSet(bs, sps, sps.m_shortRefPicSet[i], i);
     H265Bs_PutBit(bs, sps.long_term_ref_pics_present_flag);
     if (sps.long_term_ref_pics_present_flag) {
-        VM_ASSERT(0);
+//      VM_ASSERT(0);
+        H265Bs_PutVLCCode(bs, sps.num_long_term_ref_pics_sps);
+        for (i = 0; i < sps.num_long_term_ref_pics_sps; i++) {
+            H265Bs_PutBits(bs, sps.m_LtRpsSps[i].lt_ref_pic_poc_lsb, sps.log2_max_pic_order_cnt_lsb);
+            H265Bs_PutBit (bs, sps.m_LtRpsSps[i].used_by_curr_pic_lt_flag);
+        }
     }
     H265Bs_PutBit(bs, sps.sps_temporal_mvp_enabled_flag);
     H265Bs_PutBit(bs, sps.strong_intra_smoothing_enabled_flag);
+
 
     H265Bs_PutBit(bs, sps.vui_parameters_present_flag);
     if (sps.vui_parameters_present_flag) {

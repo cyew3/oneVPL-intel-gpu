@@ -308,6 +308,8 @@ void H265Encoder::SetSPS()
     m_sps.sps_max_dec_pic_buffering[0] = m_vps.vps_max_dec_pic_buffering[0];
     m_sps.sps_max_latency_increase[0] = m_vps.vps_max_latency_increase[0];
 
+    InitLongTermRefPicSet();   // AMT_LTR
+
     // VUI
     m_sps.vui_parameters_present_flag = pars.vuiParametersPresentFlag;
     if (m_sps.vui_parameters_present_flag) {
@@ -496,6 +498,27 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
     slice->short_term_ref_pic_set_sps_flag = 1;
     slice->short_term_ref_pic_set_idx = frame->m_RPSIndex;
 
+    if (m_videoParam.enableLTR)
+    {
+        slice->pListModif = &frame->m_listModif;
+        slice->pStRps = &frame->m_shortRefPicSet[0];
+        slice->short_term_ref_pic_set_sps_flag = frame->short_term_ref_pic_set_sps_flag;
+        slice->short_term_ref_pic_set_idx = frame->short_term_ref_pic_set_idx;
+        slice->pLtRps = &frame->m_longRefPicSet[0];
+        slice->num_long_term_sps = frame->num_long_term_sps;
+        slice->num_long_term_pics = frame->num_long_term_pics;
+
+        if (slice->slice_type == I_SLICE) {
+            slice->num_long_term_sps = 0;
+            slice->num_long_term_pics = 0;
+            slice->num_ref_idx[0] = 0;
+            slice->num_ref_idx[1] = 0;
+            slice->pListModif->refPicListModificationFlag[0] = slice->pListModif->refPicListModificationFlag[1] = 0;
+            slice->pStRps->num_negative_pics = slice->pStRps->num_positive_pics = 0;
+        }
+    }
+    Ipp32s num_long_term_pics = frame->num_long_term_sps + frame->num_long_term_pics;
+
     slice->slice_num = curr_slice;
 
     slice->five_minus_max_num_merge_cand = 5 - MAX_NUM_MERGE_CANDS;
@@ -521,6 +544,8 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
     }
 
     slice->CeilLog2NumPocTotalCurr = frame->m_ceilLog2NumPocTotalCurr;
+  if (!m_videoParam.enableLTR)
+  {
     for (Ipp32s l = 0; l < 2; l++) {
         slice->ref_pic_list_modification_flag[l] = frame->m_refPicList[l].m_listModFlag;
         if (frame->m_refPicList[l].m_listModFlag) {
@@ -528,6 +553,7 @@ void H265Encoder::SetSlice(H265Slice *slice, Ipp32u curr_slice, Frame *frame)
                 slice->list_entry[l][r] = frame->m_refPicList[l].m_listMod[r];
         }
     }
+  }
 }
 
 namespace H265Enc {
@@ -1203,6 +1229,26 @@ void H265Encoder::InitShortTermRefPicSet()
 
     Ipp32u numShortTermRefPicSets = 0;
 
+    m_sps.enableLTR = m_videoParam.enableLTR;
+
+    if (m_videoParam.enableLTR)
+    {
+        if (gopRefDist == 1) {
+            Ipp8u numNegPics[4] = { 1, 2, 3, 4};
+            m_sps.num_short_term_ref_pic_sets = 4;
+            for (Ipp32s i = 0; i < 4; i++) {
+                m_sps.m_shortRefPicSet[i].inter_ref_pic_set_prediction_flag = 0;
+                m_sps.m_shortRefPicSet[i].num_negative_pics = numNegPics[i];
+                m_sps.m_shortRefPicSet[i].num_positive_pics = 0;
+                for (Ipp8u j = 0; j < numNegPics[i]; j++) {
+                    m_sps.m_shortRefPicSet[i].delta_poc[j] = 1;
+                    m_sps.m_shortRefPicSet[i].used_by_curr_pic_flag[j] = 1;
+                }
+            }
+            return;
+        }
+    }
+
     if (m_videoParam.BiPyramidLayers > 1 && gopRefDist > 1) {
         if (!(gopRefDist ==  4 && maxRefP[0] == 2 && maxRefB[0] == 1 && maxRefB[1] == 1) &&
             !(gopRefDist ==  8 && maxRefP[0] == 4 && maxRefB[0] == 2 && maxRefB[1] == 2) &&
@@ -1274,6 +1320,51 @@ void H265Encoder::InitShortTermRefPicSet()
     }
 
     m_sps.num_short_term_ref_pic_sets = (Ipp8u)numShortTermRefPicSets;
+}
+
+// AMT_LTR
+Ipp32s computeLSB(Ipp32s poc, Ipp32s pocLsbMax)
+{
+    if (poc >= 0) {
+        return (poc % pocLsbMax);
+    }
+    else {
+        return  ((pocLsbMax - ((-poc) % pocLsbMax)) % pocLsbMax);
+    }
+}
+
+void setDeltaPocMsbCycleLtr(Ipp32s pocCurr, Ipp32s pocLtr, Ipp32s pocLsbMax, Ipp8u &deltaPocMsbPresentFlag, Ipp32s &deltaPocMsbCycleLtr)
+{
+    Ipp32s pocLsbLtr = computeLSB(pocLtr, pocLsbMax);
+    Ipp32s pocMsbLtr = pocLtr - pocLsbLtr;
+    Ipp32s pocLsbCurr = computeLSB(pocCurr, pocLsbMax);
+    Ipp32s pocMsbCurr = pocCurr - pocLsbCurr;
+    Ipp32s deltaPocMsbLtr = pocMsbCurr - pocMsbLtr;
+
+    deltaPocMsbCycleLtr = (pocMsbCurr - pocMsbLtr) / pocLsbMax;
+//    if (deltaPocMsbCycleLtr < 0) printf("ERROR: POC of LTR is greater than current pic\n");
+    deltaPocMsbPresentFlag = (pocLsbLtr == pocLtr) ? 0 : 1;  // (pocMsbLtr > 0) ? 1 : 0;
+}
+
+void H265Encoder::InitLongTermRefPicSet()
+{
+    m_sps.long_term_ref_pics_present_flag = m_videoParam.enableLTR ? 1 : 0;
+
+    m_sps.num_long_term_ref_pics_sps = 1;
+    m_sps.m_LtRpsSps[0].lt_ref_pic_poc_lsb = 0;
+    m_sps.m_LtRpsSps[0].used_by_curr_pic_lt_flag = 1;
+
+    m_currLtrStatus = m_videoParam.enableLTR ? 1 : 0;
+}
+
+Ipp32s getMatchingLtrIdxFromRpsSet(H265LongTermRefPicSetSps *longRefPicSet, Ipp32s N, Ipp32s pocLsbLtr, Ipp8u usedFlag )
+{
+    for (Ipp32s i = 0; i < N; i++) {
+        if (longRefPicSet[i].lt_ref_pic_poc_lsb == pocLsbLtr  && longRefPicSet[i].used_by_curr_pic_lt_flag == usedFlag)
+            return i;
+    }
+
+    return -1;
 }
 
 DispatchSaoApplyFilter::DispatchSaoApplyFilter()
@@ -1743,6 +1834,170 @@ Ipp32s CountUniqueRefs(const RefPicList refLists[2]) {
     return numUniqRefs;
 }
 
+// AMT_LTR
+void swapRefPicListData(RefPicList *pRefPicList, Ipp32s idx1, Ipp32s idx2)
+{
+    Frame *pFrame = pRefPicList->m_refFrames[idx1];
+                    pRefPicList->m_refFrames[idx1] = pRefPicList->m_refFrames[idx2];
+                    pRefPicList->m_refFrames[idx2] = pFrame;
+    Ipp8s deltaPoc = pRefPicList->m_deltaPoc[idx1];
+                    pRefPicList->m_deltaPoc[idx1] = pRefPicList->m_deltaPoc[idx2];
+                    pRefPicList->m_deltaPoc[idx2] = deltaPoc;
+    Ipp8u isLongTermRef = pRefPicList->m_isLongTermRef[idx1];
+                    pRefPicList->m_isLongTermRef[idx1] = pRefPicList->m_isLongTermRef[idx2];
+                    pRefPicList->m_isLongTermRef[idx2] = isLongTermRef;
+}
+
+// reduce one frame from frameList which has biggest pyramidLayer (keep picture order in the list)
+Ipp8u reduceRefPicList(Frame **frameList, Ipp32s &numRef)
+{
+    if (numRef <= 1 )
+        return 0;
+
+    Ipp32s N0 = numRef;
+    for (Ipp32s k = 1; k < N0; k++)
+    {
+        Ipp32s layer = frameList[k]->m_pyramidLayer;
+        if (layer > 1) //  && frameList[i]->m_pyramidLayer < biPyramidLayersSize)
+        {
+            // shift the frames being followed
+            for (Ipp32s i = k + 1; i < numRef; i++)
+            {
+                frameList[i - 1] = frameList[i];
+            }
+
+            numRef--;
+        }
+    }
+
+    return 1;
+}
+
+
+// reduce one frame from frameList which has biggest pyramidLayer (keep picture order in the list)
+Ipp8u reduceRefPicList(Frame **frameList, Ipp32s &numRef, Ipp32s maxNumRef)
+{
+    if (numRef <= 1 || numRef <= maxNumRef)
+        return 0;
+
+//    while (numRef > maxNumRef)
+    for (Ipp32s k = numRef - 1; k > 0; k--)
+    {
+        if (numRef <= maxNumRef)
+            break;
+
+        Ipp32s layer = frameList[k]->m_pyramidLayer;
+        if (layer > 0) //  && frameList[i]->m_pyramidLayer < biPyramidLayersSize)
+        {
+            // set the conditions for selected frame
+            //    frameList[frameIdx]->m_isRef = 0;
+            //    frameList[frameIdx]->m_isShortTermRef = 0;
+
+            // shift the frames being followed
+            for (Ipp32s i = k + 1; i < numRef; i++)
+            {
+                frameList[i - 1] = frameList[i];
+            }
+
+            numRef--;
+        }
+    }
+
+    if (numRef > maxNumRef)
+        numRef = maxNumRef;
+
+    return 1;
+}
+
+Frame* reduce_ref_frame(Frame **frameList, Ipp32s &numRef)
+{
+    Frame *pRef = 0;
+
+    // check condition to reduce
+    if (numRef <= 1 )
+        return pRef;
+
+    for (Ipp32s k = numRef - 1; k > 0; k--)
+    {
+        Ipp32s layer = frameList[k]->m_pyramidLayer;
+        if (layer > 1) //  && frameList[i]->m_pyramidLayer < biPyramidLayersSize)
+        {
+            pRef = frameList[k];
+            // shift the frames being followed
+            for (Ipp32s i = k + 1; i < numRef; i++)
+            {
+                frameList[i - 1] = frameList[i];
+            }
+
+            numRef--;
+            break;
+        }
+    }
+
+    return pRef;
+}
+
+void initRefPicListModification(RefPicListsModification &listModif, Ipp32s numTotalRefPicsUsed)
+{
+    for (Ipp32s listIdx = 0; listIdx < 2; listIdx++) {
+        listModif.numBitsListEntry[listIdx] = H265_CeilLog2(numTotalRefPicsUsed);
+        listModif.refPicListModificationFlag[listIdx] = 0;
+        for (Ipp32s i = 0; i < numTotalRefPicsUsed; i++) {
+            listModif.listEntry[listIdx][i] = i;
+        }
+    }
+}
+
+void setRefPicListModification(Frame *currFrame, Ipp32s numTotalRefPicsUsed, Ipp32s numLongtermPics, Ipp32s gopRefDist, Ipp8u isSliceB)
+{
+    RefPicListsModification *pListModif = &currFrame->m_listModif;
+    Ipp32s ltrIdx = numTotalRefPicsUsed - 1;
+
+    // modify refPicList
+    if (gopRefDist == 1)
+    {
+        if (isSliceB)
+        {
+            pListModif->refPicListModificationFlag[1] = 1;
+            Ipp32s k1 = 0;
+            for (Ipp32s i = ltrIdx; i > k1; i--)
+            {
+                swapRefPicListData(&(currFrame->m_refPicList[1]), i - 1, i);
+                pListModif->listEntry[1][i] = pListModif->listEntry[1][i - 1];
+            }
+            pListModif->listEntry[1][k1] = ltrIdx;
+        }
+        else
+        {
+            pListModif->refPicListModificationFlag[0] = 1;
+            Ipp32s k0 = 1;
+            for (Ipp32s i = ltrIdx; i > k0; i--)
+            {
+                swapRefPicListData(&(currFrame->m_refPicList[0]), i - 1, i);
+                pListModif->listEntry[0][i] = pListModif->listEntry[0][i - 1];
+            }
+            pListModif->listEntry[0][k0] = ltrIdx;
+        }
+    }
+    else if (gopRefDist == 8)
+    {
+        if (numLongtermPics)
+        {
+            if (currFrame->m_picCodeType == MFX_FRAMETYPE_P)
+            {
+                pListModif->refPicListModificationFlag[1] = 1;
+                Ipp32s k1 = 0;
+                for (Ipp32s i = ltrIdx; i > k1; i--)
+                {
+                    swapRefPicListData(&(currFrame->m_refPicList[1]), i-1, i);
+                    pListModif->listEntry[1][i] = pListModif->listEntry[1][i-1];
+                }
+                pListModif->listEntry[1][k1] = ltrIdx;
+            }
+        }
+    }
+}
+
 void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
 {
     Frame *currFrame = in;
@@ -1756,12 +2011,100 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
     Ipp32s numStAfter = 0;
 
     // constuct initial reference lists
+    Ipp32s num_long_term_pics = 0;
+    currFrame->m_pLtrFrame = NULL;
+
+    // setup delta pocs and long-term flags
+    memset(currFrame->m_refPicList[0].m_isLongTermRef, 0, sizeof(currFrame->m_refPicList[0].m_isLongTermRef));
+    memset(currFrame->m_refPicList[1].m_isLongTermRef, 0, sizeof(currFrame->m_refPicList[1].m_isLongTermRef));
+
+    currFrame->m_refPicList[0].m_refFramesCount = 0;
+    currFrame->m_refPicList[1].m_refFramesCount = 0;
+    currFrame->m_dpbSize = 0;
+
+    if (m_videoParam.enableLTR)
+    {
+        if (currFrame->m_frameOrder < 1)
+            currFrame->m_ltrConfidenceLevel = 1;
+
+        if (m_videoParam.GopRefDist < 2 ) {
+            if (currFrame->m_avgTcScRatio > 6.0)
+                currFrame->m_ltrConfidenceLevel = 0;
+            else if (currFrame->m_avgTcScRatio > 5.0)
+                currFrame->m_ltrConfidenceLevel = 1;
+            else if (currFrame->m_avgTcScRatio > 4.0)
+                currFrame->m_ltrConfidenceLevel = 2;
+            else
+                currFrame->m_ltrConfidenceLevel = 3;
+        }
+        else if (m_videoParam.GopRefDist == 8) {
+            if (currFrame->m_avgTcScRatio > 17)
+                currFrame->m_ltrConfidenceLevel = 0;
+            else if (currFrame->m_avgTcScRatio > 14)
+                currFrame->m_ltrConfidenceLevel = 1;
+            else if (currFrame->m_avgTcScRatio > 11)
+                currFrame->m_ltrConfidenceLevel = 2;
+            else
+                currFrame->m_ltrConfidenceLevel = 3;
+        }
+
+        if (currFrame->m_frameOrder == 0)
+            m_currLtrStatus = 1;
+
+        // IDR
+        if (currFrame->m_isIdrPic)
+            return;
+
+        // set one unique LTR frame
+        Ipp32s pocLtrStart = (m_videoParam.GopRefDist == 1) ? 2 : m_videoParam.GopRefDist;
+
+        Ipp32s isLtrOK = currFrame->m_ltrConfidenceLevel ? 1 : 0;
+        if (currFrame->m_picCodeType == MFX_FRAMETYPE_I)
+           m_currLtrStatus = isLtrOK;
+
+        if (currPoc > pocLtrStart && m_currLtrStatus) {
+            if (currFrame->m_picCodeType != MFX_FRAMETYPE_I) {
+                Ipp32s frameOrderLTR = -1;
+                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
+                    Frame *ref = (*i);
+                    if (currFrame->m_frameOrder > currFrame->m_frameOrderOfLastIntraInEncOrder &&
+                        ref->m_frameOrder < currFrame->m_frameOrderOfLastIntraInEncOrder)
+                        continue; // trailing pictures can't predict from leading pictures
+
+                    Ipp8u ltrCond = (ref->m_picCodeType == MFX_FRAMETYPE_I || ref->m_isIdrPic) ? 1 : 0;
+                    if (ref->m_poc >= currFrame->m_poc)  ltrCond = 0;
+                    if (ltrCond) {
+                        if (num_long_term_pics == 0) {
+                            frameOrderLTR = ref->m_frameOrder;
+                            currFrame->m_pLtrFrame = ref;
+                            num_long_term_pics = 1;
+                        }
+                        else
+                        {
+                            if (ref->m_frameOrder > frameOrderLTR) {
+                                frameOrderLTR = ref->m_frameOrder;
+                                currFrame->m_pLtrFrame = ref;
+                                num_long_term_pics = 1;
+                            }
+                        }
+                    }
+               }
+            }
+        }
+    }  // if (m_videoParam.enableLTR)
+
+    // constuct initial reference lists
+    numStBefore = numStAfter = 0;
     in->m_dpbSize = 0;
     for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
         Frame *ref = (*i);
         if (currFrame->m_frameOrder > currFrame->m_frameOrderOfLastIntraInEncOrder &&
             ref->m_frameOrder < currFrame->m_frameOrderOfLastIntraInEncOrder)
             continue; // trailing pictures can't predict from leading pictures
+        if (currFrame->m_pLtrFrame) {
+            if (ref == currFrame->m_pLtrFrame)  // AMT_LTR
+                continue;
+        }
 
         in->m_dpb[in->m_dpbSize++] = ref;
         if (ref->m_poc < currFrame->m_poc)
@@ -1772,13 +2115,30 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
     std::sort(list0, list0 + numStBefore, PocIsGreater);
     std::sort(list1, list1 + numStAfter,  PocIsLess);
 
+    const Ipp32s MAX_UNIQ_REFS = 4;
+
+    if (m_videoParam.enableLTR)
+    {
+        if (m_videoParam.GopRefDist == 1) {
+            Ipp32s maxNumStBefore = m_videoParam.MaxDecPicBuffering - 1;
+            maxNumStBefore -= num_long_term_pics;
+            if (numStBefore > maxNumStBefore) {
+                for (Ipp32s i = 0; i < maxNumStBefore; i++) {
+                    currFrame->m_dpb[i] = list0[i];
+                }
+                numStBefore = maxNumStBefore;
+                currFrame->m_dpbSize = numStBefore;
+            }
+        }
+    }
+
     // merge lists
-    small_memcpy(list0 + numStBefore, list1, sizeof(*list0) * numStAfter);
+    small_memcpy(list0 + numStBefore, list1, sizeof(*list1) * numStAfter);
     small_memcpy(list1 + numStAfter,  list0, sizeof(*list0) * numStBefore);
 
     // setup delta pocs and long-term flags
-    memset(currFrame->m_refPicList[0].m_isLongTermRef, 0, sizeof(currFrame->m_refPicList[0].m_isLongTermRef));
-    memset(currFrame->m_refPicList[1].m_isLongTermRef, 0, sizeof(currFrame->m_refPicList[1].m_isLongTermRef));
+//    memset(currFrame->m_refPicList[0].m_isLongTermRef, 0, sizeof(currFrame->m_refPicList[0].m_isLongTermRef));
+//    memset(currFrame->m_refPicList[1].m_isLongTermRef, 0, sizeof(currFrame->m_refPicList[1].m_isLongTermRef));
     for (Ipp32s i = 0; i < numStBefore + numStAfter; i++) {
         dpoc0[i] = Ipp8s(currPoc - list0[i]->m_poc);
         dpoc1[i] = Ipp8s(currPoc - list1[i]->m_poc);
@@ -1806,12 +2166,11 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
             currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
         } else
         {
-        currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
-        currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
+            currFrame->m_refPicList[0].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[0]);
+            currFrame->m_refPicList[1].m_refFramesCount = IPP_MIN(numStBefore + numStAfter, m_videoParam.MaxRefIdxB[1]);
         }
     }
 
-    const Ipp32s MAX_UNIQ_REFS = 4;
     Ipp32s numUniqRefs = CountUniqueRefs(currFrame->m_refPicList);
     while (numUniqRefs > MAX_UNIQ_REFS) {
         (currFrame->m_refPicList[0].m_refFramesCount > currFrame->m_refPicList[1].m_refFramesCount)
@@ -1827,11 +2186,14 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
     rps->num_negative_pics = numStBefore;
     rps->num_positive_pics = numStAfter;
     Ipp32s deltaPocPred = 0;
+    Ipp32s numShortTermPicsUsed = 0;
     for (Ipp32s i = 0; i < numStBefore; i++) {
         rps->delta_poc[i] = dpoc0[i] - deltaPocPred;
         //rps->used_by_curr_pic_flag[i] = i < numL0 || i < IPP_MAX(0, numL1 - numStAfter);
         rps->used_by_curr_pic_flag[i] = (currFrame->m_picCodeType != MFX_FRAMETYPE_I); // mimic current behavior
         deltaPocPred = dpoc0[i];
+        if (rps->used_by_curr_pic_flag[i])
+            numShortTermPicsUsed++;
     }
     deltaPocPred = 0;
     for (Ipp32s i = 0; i < numStAfter; i++) {
@@ -1839,15 +2201,101 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
         //rps->used_by_curr_pic_flag[numStBefore + i] = i < numL1 || i < IPP_MAX(0, numL0 - numStBefore);
         rps->used_by_curr_pic_flag[numStBefore + i] = (currFrame->m_picCodeType != MFX_FRAMETYPE_I);
         deltaPocPred = dpoc1[i];
+        if(rps->used_by_curr_pic_flag[numStBefore + i])
+            numShortTermPicsUsed++;
     }
+    Ipp32s numTotalRefPicsUsed = numShortTermPicsUsed + num_long_term_pics;
 
-    currFrame->m_numPocTotalCurr = std::accumulate(rps->used_by_curr_pic_flag, rps->used_by_curr_pic_flag + numStBefore + numStAfter, 0);
+//    currFrame->m_numPocTotalCurr = std::accumulate(rps->used_by_curr_pic_flag, rps->used_by_curr_pic_flag + numStBefore + numStAfter, 0);
+    currFrame->m_numPocTotalCurr = numTotalRefPicsUsed;
     currFrame->m_ceilLog2NumPocTotalCurr = H265_CeilLog2(currFrame->m_numPocTotalCurr);
+
+    initRefPicListModification(currFrame->m_listModif, numTotalRefPicsUsed);
 
     ModifyRefList(m_videoParam, *currFrame, 0);
     ModifyRefList(m_videoParam, *currFrame, 1);
-}
 
+    if (m_videoParam.enableLTR)
+    {
+        for (Ipp32s listIdx = 0; listIdx < 2; listIdx++) {
+            currFrame->m_listModif.refPicListModificationFlag[listIdx] = currFrame->m_refPicList[listIdx].m_listModFlag;
+            for (Ipp32s i = 0; i < numShortTermPicsUsed; i++) {
+                currFrame->m_listModif.listEntry[listIdx][i] = currFrame->m_refPicList[listIdx].m_listMod[i];
+            }
+        }
+
+        currFrame->num_long_term_sps = 0;
+        currFrame->num_long_term_pics = 0;
+
+        if (num_long_term_pics) {
+            // Add LTR to refPicList
+            Ipp32s numSTR = numStBefore + numStAfter;
+            numTotalRefPicsUsed = numSTR + num_long_term_pics;
+
+            // DPB
+            in->m_dpbSize = numSTR;
+            in->m_dpb[in->m_dpbSize++] = currFrame->m_pLtrFrame;
+
+            // long-term reference pictures set
+            H265LongTermRefPicSet *pLtRps = &currFrame->m_longRefPicSet[0];
+
+            // set LTR bit writing
+            Ipp32s pocLsbMax = 1 << m_sps.log2_max_pic_order_cnt_lsb;
+            Ipp32s pocLtr = currFrame->m_pLtrFrame->m_poc;
+            Ipp32s pocLsbLtr = computeLSB(pocLtr, pocLsbMax);;
+            Ipp32s pocMsbLtr = pocLtr - pocLsbLtr;
+
+            Ipp8u  deltaPocMsbPresentFlag = 0;
+            Ipp32s deltaPocMsbCycleLtr = 0;
+
+            if (pocMsbLtr > 0) {
+                Ipp32s pocLsbCurr = computeLSB(currFrame->m_poc, pocLsbMax);
+                Ipp32s pocMsbCurr = currFrame->m_poc - pocLsbCurr;
+
+                deltaPocMsbCycleLtr = (pocMsbCurr - pocMsbLtr) / pocLsbMax;
+                deltaPocMsbPresentFlag = 1;
+            }
+
+            pLtRps->used_by_curr_pic_lt_flag = 1;
+            pLtRps->delta_poc_msb_present_flag = deltaPocMsbPresentFlag;
+            pLtRps->delta_poc_msb_cycle_lt = deltaPocMsbCycleLtr;
+
+            pLtRps->poc_lsb_ltr = pocLsbLtr;
+            pLtRps->poc_msb_ltr = pocMsbLtr;
+
+            pLtRps->lt_idx_sps = 0;
+            pLtRps->delta_poc_msb_present_flag = 0;
+
+            Ipp32s setIdx = getMatchingLtrIdxFromRpsSet(m_sps.m_LtRpsSps, m_sps.num_long_term_ref_pics_sps, pocLsbLtr, pLtRps->used_by_curr_pic_lt_flag);
+            if (setIdx >= 0) {
+                pLtRps->lt_idx_sps = setIdx;
+                currFrame->num_long_term_sps = 1;
+                currFrame->num_long_term_pics = 0;
+            }
+            else {
+                pLtRps->lt_idx_sps = -1;
+                currFrame->num_long_term_sps = 0;
+                currFrame->num_long_term_pics = 1;
+            }
+
+            // modify refPicList for LTR
+            Ipp32s ltrIdx = numTotalRefPicsUsed - 1;
+            Ipp32s deltaPocLtr = currFrame->m_poc - currFrame->m_pLtrFrame->m_poc;
+            for (Ipp32s listIdx = 0; listIdx < 2; listIdx++) {
+                currFrame->m_refPicList[listIdx].m_refFrames[ltrIdx] = currFrame->m_pLtrFrame;
+                currFrame->m_refPicList[listIdx].m_deltaPoc[ltrIdx] = (Ipp8s)deltaPocLtr;
+                currFrame->m_refPicList[listIdx].m_isLongTermRef[ltrIdx] = 1;
+            }
+
+            Ipp32s LtrOK = currFrame->m_ltrConfidenceLevel ? 1 : 0;
+
+            if (m_currLtrStatus && LtrOK) {
+                Ipp8u isSliceB = (currFrame->m_picCodeType == MFX_FRAMETYPE_P && m_videoParam.GeneralizedPB || currFrame->m_picCodeType == MFX_FRAMETYPE_B) ? 1 : 0;
+                setRefPicListModification(currFrame, numTotalRefPicsUsed, num_long_term_pics, m_videoParam.GopRefDist, isSliceB);
+            }
+        }
+    }  //if (m_videoParam.enableLTR)
+}
 
 Ipp8u SameRps(const H265ShortTermRefPicSet *rps1, const H265ShortTermRefPicSet *rps2)
 {
@@ -1898,9 +2346,44 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
     currFrame->m_isRef = currFrame->m_isShortTermRef | currFrame->m_isLongTermRef;
 
     // create reference lists and RPS syntax
-    H265ShortTermRefPicSet rps = {0};
-    CreateRefPicList(currFrame, &rps);
-    Ipp32s useSpsRps = SameRps(m_sps.m_shortRefPicSet + currFrame->m_RPSIndex, &rps);
+    H265ShortTermRefPicSet *pRPS = &currFrame->m_shortRefPicSet[0];
+    H265ShortTermRefPicSet rps = { 0 };
+    Ipp32s useSpsRps = 0;
+    if (m_videoParam.enableLTR) {
+        if (currFrame->m_picCodeType == MFX_FRAMETYPE_I)
+            currFrame->m_isIdrPic = 1;   // to avoid CRA
+
+        CreateRefPicList(currFrame, pRPS);
+
+        pRPS->inter_ref_pic_set_prediction_flag = 0;
+        currFrame->short_term_ref_pic_set_sps_flag = 0;
+        currFrame->short_term_ref_pic_set_idx = 0;
+        for (Ipp8u i = 0; i < m_sps.num_short_term_ref_pic_sets; i++) {
+            useSpsRps = 1;
+            // check number of refs
+            if (m_sps.m_shortRefPicSet[i].num_negative_pics != pRPS->num_negative_pics || m_sps.m_shortRefPicSet[i].num_positive_pics != pRPS->num_positive_pics)
+                useSpsRps = 0;
+            if (useSpsRps) {
+                // check delta pocs and "used" flags
+                for (Ipp32s j = 0; j < (m_sps.m_shortRefPicSet[i].num_negative_pics + m_sps.m_shortRefPicSet[i].num_positive_pics); j++) {
+                    if (m_sps.m_shortRefPicSet[i].delta_poc[j] != pRPS->delta_poc[j]) {
+                        useSpsRps = 0;
+                        break;
+                    }
+                }
+            }
+
+            if (useSpsRps) {
+                currFrame->short_term_ref_pic_set_sps_flag = 1;
+                currFrame->short_term_ref_pic_set_idx = i;
+                break;
+            }
+        }
+    }
+   else {
+   CreateRefPicList(currFrame, &rps);
+   useSpsRps = SameRps(m_sps.m_shortRefPicSet + currFrame->m_RPSIndex, &rps);
+    }
 
     // setup map list1->list0, used during Motion Estimation
     Frame **list0 = currFrame->m_refPicList[0].m_refFrames;
@@ -1955,11 +2438,14 @@ void H265Encoder::ConfigureEncodeFrame(Frame* frame)
         SetSlice(currSlices + i, i, currFrame);
         sliceRowStart += sliceHeight;
 
+      if (!m_videoParam.enableLTR) {
         currSlices[i].short_term_ref_pic_set_sps_flag = useSpsRps;
         if (currSlices[i].short_term_ref_pic_set_sps_flag)
             currSlices[i].short_term_ref_pic_set_idx = currFrame->m_RPSIndex;
         else
             currSlices[i].m_shortRefPicSet = rps;
+      }
+
         if(m_sps.sample_adaptive_offset_enabled_flag &&
             (currSlices[i].slice_sao_luma_flag || currSlices[i].slice_sao_chroma_flag))
             doSao = true;
@@ -2021,6 +2507,7 @@ void H265Encoder::UpdateDpb(Frame *currTask)
         bool found = std::find(currFrame->m_dpb, currFrame->m_dpb + currFrame->m_dpbSize, *i)
             != currFrame->m_dpb + currFrame->m_dpbSize;
         FrameIter toRemove = i++;
+
         if (!found) {
             (*toRemove)->Release();
             m_actualDpb.erase(toRemove);
@@ -2044,41 +2531,56 @@ void H265Encoder::UpdateDpb(Frame *currTask)
             // B frames with or without pyramid
             // search for oldest refs from previous minigop
             Ipp32s currMiniGop = currFrame->m_miniGopCount;
-            for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
+            for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
+                if (currFrame->m_pLtrFrame && (*i) == currFrame->m_pLtrFrame)   // AMT_LTR
+                    continue;
                 if ((*i)->m_miniGopCount < currMiniGop)
                     if (toRemove == m_actualDpb.end() || (*toRemove)->m_poc > (*i)->m_poc)
                         toRemove = i;
+            }
             if (toRemove == m_actualDpb.end()) {
                 // if nothing found
                 // search for oldest B frame in current minigop
-                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
+                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
+                    if (currFrame->m_pLtrFrame && (*i) == currFrame->m_pLtrFrame)   // AMT_LTR
+                        continue;
                     if ((*i)->m_picCodeType == MFX_FRAMETYPE_B &&
                         (*i)->m_miniGopCount == currMiniGop)
                         if (toRemove == m_actualDpb.end() || (*toRemove)->m_poc > (*i)->m_poc)
                             toRemove = i;
+                }
             }
             if (toRemove == m_actualDpb.end()) {
                 // if nothing found
                 // search for any oldest ref in current minigop
-                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
+                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
+                    if (currFrame->m_pLtrFrame && (*i) == currFrame->m_pLtrFrame)   // AMT_LTR
+                        continue;
                     if ((*i)->m_miniGopCount == currMiniGop)
                         if (toRemove == m_actualDpb.end() || (*toRemove)->m_poc > (*i)->m_poc)
                             toRemove = i;
+                }
             }
         }
         else {
             // P frames with or without pyramid
             // search for oldest non-anchor ref
-            for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
+            for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
+                if (currFrame->m_pLtrFrame && (*i) == currFrame->m_pLtrFrame)   // AMT_LTR
+                    continue;
                 if ((*i)->m_pyramidLayer > 0)
                     if (toRemove == m_actualDpb.end() || (*toRemove)->m_poc > (*i)->m_poc)
                         toRemove = i;
+            }
             if (toRemove == m_actualDpb.end()) {
                 // if nothing found
                 // search for any oldest ref
-                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i)
+                for (FrameIter i = m_actualDpb.begin(); i != m_actualDpb.end(); ++i) {
+                    if (currFrame->m_pLtrFrame && (*i) == currFrame->m_pLtrFrame)   // AMT_LTR
+                        continue;
                     if (toRemove == m_actualDpb.end() || (*toRemove)->m_poc > (*i)->m_poc)
                         toRemove = i;
+                }
             }
         }
 

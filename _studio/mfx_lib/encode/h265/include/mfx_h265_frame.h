@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -389,6 +389,21 @@ namespace H265Enc {
         std::vector<H265Slice> m_roiSlice;
 
         H265ShortTermRefPicSet m_shortRefPicSet[66];
+
+        // AMT_LTR
+        RefPicListsModification m_listModif;
+        Ipp8u  short_term_ref_pic_set_sps_flag;
+        Ipp32s short_term_ref_pic_set_idx;
+        Ipp32u num_long_term_sps;
+        Ipp32u num_long_term_pics;
+        H265LongTermRefPicSet m_longRefPicSet[16];
+        Ipp64f m_RsCs;
+        Ipp64f m_SC;
+        Ipp64f m_TC;
+        Ipp64f m_TcScRatio;
+        Ipp32s m_ltrConfidenceLevel;
+        Ipp64f m_avgTcScRatio;
+        Frame *m_pLtrFrame;
 
         // for (frame) threading
         volatile Ipp32s m_codedRow; // sync info in case of frame threading

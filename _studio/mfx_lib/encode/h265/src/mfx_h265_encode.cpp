@@ -320,6 +320,7 @@ static void TaskLogDump()
         intParam.InterMinDepthSTC = (Ipp8u)optHevc.InterMinDepthSTC - 1;
         intParam.MotionPartitionDepth = (Ipp8u)optHevc.MotionPartitionDepth - 1;
         intParam.MaxDecPicBuffering = MAX(numRefFrame, intParam.BiPyramidLayers);
+
         if (fi.PicStruct != PROGR)
             intParam.MaxDecPicBuffering *= 2;
         intParam.MaxRefIdxP[0] = numRefFrame;
@@ -685,6 +686,42 @@ static void TaskLogDump()
             intParam.bCalcIEFs = true;
 #endif
 
+        // AMT_LTR
+        Ipp32u frSizeLimit = 15 * intParam.targetBitrate * intParam.FrameRateExtD / intParam.FrameRateExtN;   // target avg FrameSize
+        Ipp8u maxFrameSizeIsSmallFlag = (intParam.MaxFrameSizeInBits > 0 && intParam.MaxFrameSizeInBits < frSizeLimit) ? 1 : 0;
+        Ipp8u refDistSupported = (intParam.GopRefDist == 1 || intParam.GopRefDist == 8) ? 1 : 0;
+
+        Ipp8u enableLTR = (opt3.ExtBrcAdaptiveLTR == MFX_CODINGOPTION_ON) ? 1 : 0;
+
+        if (enableLTR)
+        {
+            if (intParam.GopPicSize == 1)     enableLTR = 0;
+            else if (intParam.bitDepthLuma != 8)    enableLTR = 0;
+            else if (intParam.picStruct != PROGR)  enableLTR = 0;
+            else if (intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420)  enableLTR = 0;
+            else if (mfx.RateControlMethod != CBR && mfx.RateControlMethod != VBR)  enableLTR = 0;
+            else if (maxFrameSizeIsSmallFlag)  enableLTR = 0;
+            else if (!refDistSupported)  enableLTR = 0;
+            else if (intParam.IdrInterval > 1)  enableLTR = 0;
+        }
+
+        intParam.enableLTR = enableLTR;
+        if (enableLTR) {
+            intParam.IdrInterval = 1;
+
+            intParam.MaxRefIdxP[0]++;
+            intParam.MaxRefIdxP[1]++;
+
+            intParam.MaxRefIdxB[0]++;
+            intParam.MaxRefIdxB[1]++;
+
+            intParam.MaxDecPicBuffering += 1;
+            if (intParam.GopRefDist >= 8 && intParam.MaxDecPicBuffering < 5)
+                intParam.MaxDecPicBuffering = 5;
+            if (intParam.GopRefDist == 1 && intParam.MaxDecPicBuffering < 4)
+                intParam.MaxDecPicBuffering = 4;
+        }
+
 #if defined(DUMP_COSTS_CU) || defined (DUMP_COSTS_TU)
         char fname[100];
         intParam.fp_cu = intParam.fp_tu = NULL;
@@ -912,6 +949,7 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     m_useVideoOpaq = false;
     m_isOpaque = false;
     m_sceneOrder = 0;
+    m_currLtrStatus = 0;    // AMT LTR
     m_inputTaskInProgress = 0;
 
     m_pauseFeiThread = 0;

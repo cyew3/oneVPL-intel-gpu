@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
@@ -363,6 +363,11 @@ public:
         mMinQstepICmplxEP = 0;
         mMinQstepPCmplxEP = 0;
 #endif
+        // AMT LTR
+        mDynamicInit = 0;
+        LastICmplx = 0;
+        LastIQpAct = 0;
+        LastIFrameSize = 0;
     }
     virtual ~H265BRC()
     {
@@ -401,7 +406,6 @@ public:
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     bool IsVMEBRC()  {return false;}
-
 
 protected:
     mfxBRC_Params mParams;
@@ -505,6 +509,12 @@ protected:
 
     Ipp32s mMinQp;
     Ipp32s mMaxQp;
+
+    // AMT_LTR
+    Ipp8u  mDynamicInit;
+    Ipp64f LastICmplx;
+    Ipp32s LastIQpAct;
+    Ipp32s LastIFrameSize;
 };
 
 struct PreAnalysisExtBuffers {

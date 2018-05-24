@@ -480,6 +480,13 @@ struct RefPicList
     Ipp8s m_listMod[MAX_NUM_ACTIVE_REFS];
 };
 
+// AMT_LTR
+struct RefPicListsModification
+{
+    Ipp8u  refPicListModificationFlag[2];
+    Ipp32u listEntry[2][MAX_NUM_ACTIVE_REFS];
+    Ipp32u numBitsListEntry[2];
+};
 
 typedef enum {
     TT_INIT_NEW_FRAME,

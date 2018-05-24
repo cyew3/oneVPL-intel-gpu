@@ -138,6 +138,9 @@ namespace H265Enc {
         Ipp32s m_lastEncOrder;
         Ipp32s m_sceneOrder;                        // in display order each frame belongs something scene (if sceneCut enabled)
 
+        // AMT LTR
+        Ipp32u m_currLtrStatus;
+
         // threading
         volatile Ipp32u   m_doStage;
         volatile Ipp32u   m_threadCount;
@@ -251,6 +254,9 @@ namespace H265Enc {
         void InitShortTermRefPicSet();
         void UpdateDpb(Frame *currTask);
         void CleanGlobalDpb();
+
+        // AMT LTR
+        void InitLongTermRefPicSet();
 
         // ------ threading
         static mfxStatus TaskRoutine(void *pState, void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
