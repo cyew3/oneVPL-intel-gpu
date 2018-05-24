@@ -116,6 +116,12 @@ int TestSuite::RunTest_Chroma(const unsigned int id)
                 g_tsLog << "Reset is unavailable, performing decoder Close()-Init() (without session close)\n";
 
                 Close();
+                // Don't use the surfaces on next decode cycle
+                // they maybe wrong type, shape, taste
+                FreeSurfaces();
+                // On next decode cycle call QueryIOSurf again
+                // don't use previous cached request
+                m_request.NumFrameMin = 0;
                 SetPar4_DecodeFrameAsync();
             }
 
