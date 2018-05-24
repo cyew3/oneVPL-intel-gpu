@@ -5,7 +5,7 @@
 #   MFX_CFLAGS - common flags for all targets
 #   MFX_CFLAGS_LIBVA - LibVA support flags (to build apps with or without LibVA support)
 #   MFX_INCLUDES - common include paths for all targets
-#   MFX_HEADER_LIBRARIES - common imported headers for all targets
+#   MFX_INCLUDES_LIBVA - include paths to LibVA headers
 #   MFX_LDFLAGS - common link flags for all targets
 
 include $(MFX_HOME)/mdp_msdk-lib/android/mfx_env.mk
@@ -36,11 +36,6 @@ ifneq ($(filter 5.% L ,$(PLATFORM_VERSION)),)
   MFX_ANDROID_VERSION:= MFX_LD
 endif
 
-ifdef RESOURCES_LIMIT
-  MFX_CFLAGS += \
-    -DMFX_RESOURCES_LIMIT=$(RESOURCES_LIMIT)
-endif
-
 ifeq ($(MFX_ANDROID_PLATFORM),)
   MFX_ANDROID_PLATFORM:=$(TARGET_BOARD_PLATFORM)
 endif
@@ -50,17 +45,6 @@ MFX_CFLAGS += \
   -DMFX_ANDROID_VERSION=$(MFX_ANDROID_VERSION) \
   -DMFX_ANDROID_PLATFORM=$(MFX_ANDROID_PLATFORM) \
   -include mfx_config.h
-
-ifeq ($(MFX_OMX_PAVP),true)
-  MFX_CFLAGS += \
-    -DMFX_OMX_PAVP
-endif
-
-ifeq ($(BOARD_USES_GRALLOC1),true)
-  MFX_CFLAGS += \
-    -DMFX_OMX_USE_GRALLOC_1 \
-    -DMFX_C2_USE_GRALLOC_1
-endif
 
 # Setting version information for the binaries
 ifeq ($(MFX_VERSION),)
@@ -92,11 +76,7 @@ MFX_INCLUDES := \
   $(MFX_HOME)/mdp_msdk-api/include \
   $(MFX_HOME)/mdp_msdk-lib/android/include
 
-# Setting usual imported headers
-ifneq ($(filter MFX_O_MR1 MFX_P,$(MFX_ANDROID_VERSION)),)
-  MFX_HEADER_LIBRARIES := \
-    libutils_headers
-endif
+MFX_INCLUDES_LIBVA := $(TARGET_OUT_HEADERS)/libva
 
 # Setting usual link flags
 MFX_LDFLAGS := \
@@ -111,8 +91,5 @@ LOCAL_PROPRIETARY_MODULE := true
 
 # =============================================================================
 
-# Android OS specifics
-include $(MFX_HOME)/mdp_msdk-lib/android/build/mfx_android_os.mk
-
 # Definitions specific to Media SDK internal things (do not apply for samples)
-include $(MFX_HOME)/mdp_msdk-lib/android/build/mfx_defs_internal.mk
+include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs_internal.mk
