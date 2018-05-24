@@ -209,12 +209,18 @@ void HevcSwDso::FillFrameTask(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
 
 void PU2MVP(const PU & pu, mfxFeiHevcEncMVPredictors & mvpBlock, mfxU8 idx)
 {
-    mvpBlock.RefIdx[idx].RefL0 = pu.ref_idx_l0;
-    mvpBlock.RefIdx[idx].RefL1 = pu.ref_idx_l1;
-    mvpBlock.MV[idx][0].x = pu.MvLX[0][0];
-    mvpBlock.MV[idx][0].y = pu.MvLX[0][1];
-    mvpBlock.MV[idx][1].x = pu.MvLX[1][0];
-    mvpBlock.MV[idx][1].y = pu.MvLX[1][1];
+    if (PRED_L0 == pu.inter_pred_idc || PRED_BI == pu.inter_pred_idc)
+    {
+        mvpBlock.RefIdx[idx].RefL0 = pu.ref_idx_l0;
+        mvpBlock.MV[idx][0].x = pu.MvLX[0][0];
+        mvpBlock.MV[idx][0].y = pu.MvLX[0][1];
+    }
+    if (PRED_L1 == pu.inter_pred_idc || PRED_BI == pu.inter_pred_idc)
+    {
+        mvpBlock.RefIdx[idx].RefL1 = pu.ref_idx_l1;
+        mvpBlock.MV[idx][1].x = pu.MvLX[1][0];
+        mvpBlock.MV[idx][1].y = pu.MvLX[1][1];
+    }
 }
 
 bool isIntersecting(const PU& pu, mfxU32 x, mfxU32 y, mfxU32 w, mfxU32 h)
