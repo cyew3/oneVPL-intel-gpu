@@ -410,4 +410,8 @@
 #endif
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+    #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+#endif
+
 #endif // _MFX_CONFIG_H_
