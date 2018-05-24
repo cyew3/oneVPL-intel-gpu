@@ -3038,7 +3038,10 @@ mfxStatus CMC::MCTF_DO_FILTERING()
         {
             MCTF_UpdateANDApplyRTParams(1);
             if (QfIn[0].scene_idx != QfIn[1].scene_idx)
+            {
                 res = MCTF_RUN_AMCTF();
+                RotateBuffer();
+            }
             else
                 res = (this->*(pMCTF_func))();
             MctfState = AMCTF_READY;
