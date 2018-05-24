@@ -37,11 +37,11 @@ public:
 
     void Stop();
 
-    template<class Task>
-    void Push(Task&& task);
+    typedef std::function<void()> ThreadTask;
+
+    void Push(ThreadTask task);
 
 private:
-    typedef std::function<void()> ThreadTask;
 
     void WaitingPop(ThreadTask* command);
 
@@ -58,16 +58,3 @@ private:
     DISALLOW_COPY_AND_ASSIGN(Worker);
 };
 
-template<class Task>
-void Worker::Push(Task&& task)
-{
-    // incoming task could be a lambda move assignable, but not copy assignable
-    // such lambdas aren't convertible to std::function stored in our queue
-    // so we create copy assignable lambda - it captures shared_ptr to incoming task
-
-    ThreadTask cmd = [shared_task = std::make_shared<Task>(std::move(task))] () { (*shared_task)(); }; // just call task
-
-    std::lock_guard<std::mutex> lock(m_mutex);
-    m_data.push(cmd);
-    m_condition.notify_one();
-}
