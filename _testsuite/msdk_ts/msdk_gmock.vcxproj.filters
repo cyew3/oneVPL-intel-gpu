@@ -669,9 +669,6 @@
     <ClCompile Include="src\gmock\test_suites\vp9d_res_change.cpp">
       <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
-    <ClCompile Include="src\gmock\test_suites\vp9d_bit_depth_change.cpp">
-      <Filter>Source Files\test_suites\vp9d</Filter>
-    </ClCompile>
     <ClCompile Include="src\gmock\test_suites\vp9d_chroma_subsampl_change.cpp">
       <Filter>Source Files\test_suites\vp9d</Filter>
     </ClCompile>
@@ -1087,6 +1084,9 @@
       <Filter>Source Files\test_suites\hevcd</Filter>
     </ClCompile>
     <ClCompile Include="src\gmock\ts_surface_provider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gmock\test_suites\hevce_scc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
