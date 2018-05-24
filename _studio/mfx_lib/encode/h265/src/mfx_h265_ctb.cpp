@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -6854,12 +6854,6 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
     Ipp32s bestmvCostHalf = *mvCost;
     H265MV bestmvHalf = *mv;
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[3], memPitch, w, h)>> costShift;
-    CompareFastCosts(costFast, bestFastCost, 3, 1, bestHalf, bestmvCostHalf, bestmvHalf);
-
-    costFast = costFunc(src, pitchSrc, tmpSubMem[7],     memPitch, w, h)>> costShift;
-    CompareFastCosts(costFast, bestFastCost, 7, 1, bestHalf, bestmvCostHalf, bestmvHalf);
-
     // interpolate vertical halfpels
     Ipp16s *predBufHi02;
     PixType *predBuf02;
@@ -6877,8 +6871,14 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
     costFast = costFunc(src, pitchSrc, tmpSubMem[1],             memPitch, w, h)>> costShift;
     CompareFastCosts(costFast, bestFastCost, 1, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
+    costFast = costFunc(src, pitchSrc, tmpSubMem[3], memPitch, w, h) >> costShift;
+    CompareFastCosts(costFast, bestFastCost, 3, 1, bestHalf, bestmvCostHalf, bestmvHalf);
+
     costFast = costFunc(src, pitchSrc, tmpSubMem[5],  memPitch, w, h)>> costShift;
     CompareFastCosts(costFast, bestFastCost, 5, 1, bestHalf, bestmvCostHalf, bestmvHalf);
+
+    costFast = costFunc(src, pitchSrc, tmpSubMem[7], memPitch, w, h) >> costShift;
+    CompareFastCosts(costFast, bestFastCost, 7, 1, bestHalf, bestmvCostHalf, bestmvHalf);
 
     H265MV mvBest = *mv;
     Ipp32s costBest = *cost;
@@ -6968,9 +6968,6 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
         tmpSubMem[1] = predBuf2q1+(hpely - 1 >> 2) * memPitch;
     }
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[1], memPitch, w, h) >> costShift;                                                               // sad[0][1/3]
-    CompareFastCosts(costFast, bestFastCost, 1, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
-
     // interpolate vertical qpels
     if (dx == 0) // best halfpel is intpel or ver-halfpel [0,1/3] (0,0) (w,h)
     {
@@ -6995,9 +6992,7 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
         h265_InterpLumaPack(predBufHi2q5, memPitch, predBuf2q5, memPitch, w, h+2, bitDepth);                                                          // predBuf[2][1/3]
         tmpSubMem[5] = predBuf2q5+ (hpely + 1 >> 2) * memPitch;
     }
-    
-    costFast = costFunc(src, pitchSrc, tmpSubMem[5], memPitch, w, h) >> costShift;
-    CompareFastCosts(costFast, bestFastCost, 5, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
+
 
     // intermediate horizontal quater-pels (left of best half-pel) [1/3,0] (0,-4) (w,h+8)
     Ipp16s *predBufHiq07;
@@ -7027,9 +7022,6 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
         tmpSubMem[7] = predBufq27+ (hpely >> 2) * memPitch;
     }
 
-    costFast = costFunc(src, pitchSrc, tmpSubMem[7], memPitch, w, h) >> costShift;
-    CompareFastCosts(costFast, bestFastCost, 7, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
-
     Ipp16s *predBufHiq03;
     PixType *predBufq03;
     // intermediate horizontal quater-pels (right of best half-pel) [1/3,0] (0,-4) (w,h+8)
@@ -7058,8 +7050,17 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
         tmpSubMem[3] = predBufq23+ (hpely >> 2) * memPitch;
     }
 
+    costFast = costFunc(src, pitchSrc, tmpSubMem[1], memPitch, w, h) >> costShift;                                                               // sad[0][1/3]
+    CompareFastCosts(costFast, bestFastCost, 1, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
+
     costFast = costFunc(src, pitchSrc, tmpSubMem[3], memPitch, w, h) >> costShift;
     CompareFastCosts(costFast, bestFastCost, 3, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
+
+    costFast = costFunc(src, pitchSrc, tmpSubMem[5], memPitch, w, h) >> costShift;
+    CompareFastCosts(costFast, bestFastCost, 5, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
+
+    costFast = costFunc(src, pitchSrc, tmpSubMem[7], memPitch, w, h) >> costShift;
+    CompareFastCosts(costFast, bestFastCost, 7, 0, bestQuarterDia, bestQuarterDiaMvCost, bestmvQuarter);
 
     MemHadGetBuf(size, bestmvQuarter.mvx&3, bestmvQuarter.mvy&3, refIdxMem, &bestmvQuarter, satd8);
     bestFastCost = tuHadSave(src, pitchSrc, tmpSubMem[bestQuarterDia], memPitch, w, h, satd8, satdPitch) >> costShift;                                       // Had
@@ -7091,21 +7092,6 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
             CompareFastCosts(costFast, bestFastCost, 0, 0, bestQuarter, bestQuarterDiaMvCost, bestmvQuarter);
         }
 
-        if(bestQuarterDia==7 || bestQuarterDia==5)
-        {
-            Ipp16s *predBufHiqq6;
-            PixType *predBufqq6;
-            tmv.mvx = mvCenter.mvx - 1;
-            tmv.mvy = mv->mvy + dy + 1;
-            MemSubpelGetBufSetMv(size, &tmv, refIdxMem, predBufqq6, predBufHiqq6);
-            InterpVer(tmpHor1, memPitch, predBufHiqq6, memPitch, dy + 1, w, h+2, 6, 0, bitDepth, preAvgTmpBuf);                                          // hpx-1/4 hpy+1/4  predBufHi[1/3][1/3]
-            h265_InterpLumaPack(predBufHiqq6, memPitch, predBufqq6, memPitch, w, h+2, bitDepth);                                           // predBuf[1/3][1/3]
-
-            tmpSubMem[6] = predBufqq6+ (hpely + 1 >> 2) * memPitch;
-            costFast = costFunc(src, pitchSrc, tmpSubMem[6], memPitch, w, h) >> costShift;       // sad[1/3][1/3]
-            CompareFastCosts(costFast, bestFastCost, 6, 0, bestQuarter, bestQuarterDiaMvCost, bestmvQuarter);
-        }
-
         if(bestQuarterDia==1 || bestQuarterDia==3)
         {
             Ipp16s *predBufHiqq2;
@@ -7120,6 +7106,21 @@ void H265CU<PixType>::MemSubPelBatchedFastBoxDiaOrth(const H265MEInfo *meInfo, c
             tmpSubMem[2] = predBufqq2+ (hpely - 1 >> 2) * memPitch;
             costFast = costFunc(src, pitchSrc, tmpSubMem[2], memPitch, w, h) >> costShift;                                              // sad[1/3][1/3]
             CompareFastCosts(costFast, bestFastCost, 2, 0, bestQuarter, bestQuarterDiaMvCost, bestmvQuarter);
+        }
+
+        if (bestQuarterDia == 7 || bestQuarterDia == 5)
+        {
+            Ipp16s *predBufHiqq6;
+            PixType *predBufqq6;
+            tmv.mvx = mvCenter.mvx - 1;
+            tmv.mvy = mv->mvy + dy + 1;
+            MemSubpelGetBufSetMv(size, &tmv, refIdxMem, predBufqq6, predBufHiqq6);
+            InterpVer(tmpHor1, memPitch, predBufHiqq6, memPitch, dy + 1, w, h + 2, 6, 0, bitDepth, preAvgTmpBuf);                                          // hpx-1/4 hpy+1/4  predBufHi[1/3][1/3]
+            h265_InterpLumaPack(predBufHiqq6, memPitch, predBufqq6, memPitch, w, h + 2, bitDepth);                                           // predBuf[1/3][1/3]
+
+            tmpSubMem[6] = predBufqq6 + (hpely + 1 >> 2) * memPitch;
+            costFast = costFunc(src, pitchSrc, tmpSubMem[6], memPitch, w, h) >> costShift;       // sad[1/3][1/3]
+            CompareFastCosts(costFast, bestFastCost, 6, 0, bestQuarter, bestQuarterDiaMvCost, bestmvQuarter);
         }
 
         if(bestQuarterDia==3 || bestQuarterDia==5)
@@ -7700,13 +7701,20 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const AmvpInfo *predInf
     Ipp32s costBestSAD = *cost;
     Ipp32s mvCostBest = *mvCost;
 
-    static Ipp32s endPos[5] = {5, 9, 5, 2, 2};  // based on index
+    static Ipp32s endPos[5] = {5, 9, 5, 3, 3};  // based on index
     Ipp16s pattern_index[2][2];    // meStep, iter
     Ipp32s iterNum[2] = {1, 1};
 
 
     Ipp32s size = BSR(meInfo->width|meInfo->height) - 3; assert(meInfo->width <= (8 << size) && meInfo->height <= (8 << size));
     Ipp32s hadFoundSize = size;
+
+#ifdef MEMOIZE_SUBPEL_TEST
+    H265MV mvtemp = *mv;
+    Ipp32s costtemp = *cost;
+    Ipp32s mvCosttemp = *mvCost;
+    bool TestMemSubPelBatchedFastBoxDiaOrth = false;
+#endif
 
     // select subMe pattern
     switch (m_par->patternSubPel)
@@ -7745,9 +7753,19 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const AmvpInfo *predInf
             pattern_index[1][1] = 2;
             if(m_par->hadamardMe == 2) {
                 if(meInfo->width == meInfo->height && (meInfo->width == m_par->MaxCUSize || MemHadFirst(size, meInfo, refIdxMem))) {
+#ifdef MEMOIZE_SUBPEL_TEST
+                    MemSubPelBatchedFastBoxDiaOrth(meInfo, predInfo, ref, &mvtemp, &costtemp, &mvCosttemp, refIdxMem, size);
+                    TestMemSubPelBatchedFastBoxDiaOrth = true;
+#else
                     return MemSubPelBatchedFastBoxDiaOrth(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
+#endif
                 } else if(!MemSubpelInRange(size, meInfo, refIdxMem, mv) && meInfo->width == meInfo->height) {
+#ifdef MEMOIZE_SUBPEL_TEST
+                    MemSubPelBatchedFastBoxDiaOrth(meInfo, predInfo, ref, &mvtemp, &costtemp, &mvCosttemp, refIdxMem, size);
+                    TestMemSubPelBatchedFastBoxDiaOrth = true;
+#else
                     return MemSubPelBatchedFastBoxDiaOrth(meInfo, predInfo, ref, mv, cost, mvCost, refIdxMem, size);
+#endif
                 }
             }
             break;
@@ -7856,7 +7874,9 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const AmvpInfo *predInf
                 mvCostBest = mvCostBestQuarter;
                 mvBest = mvBestQuarter;
             }
-            if(mvBestQuarter==mvCenter) break;
+            //if(mvBestQuarter==mvCenter) 
+            else
+                break;
             mvCenter = mvBest;
             costBestQuarter = COST_MAX;
             mvCostBestQuarter = 0;
@@ -7864,8 +7884,15 @@ void H265CU<PixType>::MeSubPel(const H265MEInfo *meInfo, const AmvpInfo *predInf
             if(bestQPos==1 || bestQPos==3) pattern_index[0][1] = 3;
             else                           pattern_index[0][1] = 4;
         }
-    } else
-
+#ifdef MEMOIZE_SUBPEL_TEST
+        if (TestMemSubPelBatchedFastBoxDiaOrth) {
+            assert(costBest == costtemp);
+            assert(mvCostBest == mvCosttemp);
+            assert(mvBest == mvtemp);
+        }
+#endif
+    }
+    else
     {
         while (meStep >= 0) {
             H265MV bestMv = mvCenter;

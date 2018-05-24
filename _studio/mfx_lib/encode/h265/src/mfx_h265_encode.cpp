@@ -418,7 +418,10 @@ static void TaskLogDump()
         if(intParam.chromaFormatIdc != MFX_CHROMAFORMAT_YUV420) {
             intParam.DeltaQpMode = intParam.DeltaQpMode&~AMT_DQP_HROI;
         }
-        if(intParam.bitDepthLuma != 8 || fi.PicStruct != PROGR) {
+        if(intParam.bitDepthLuma != 8) {
+            intParam.DeltaQpMode = intParam.DeltaQpMode&~AMT_DQP_HROI;
+        }
+        if (fi.PicStruct != PROGR) {
             intParam.DeltaQpMode = intParam.DeltaQpMode&~AMT_DQP_PSY_HROI;
         }
 #endif

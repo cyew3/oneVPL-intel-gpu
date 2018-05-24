@@ -1195,9 +1195,10 @@ namespace {
             wrnIncompatible = !CheckEq(mfx.NumThread, optHevc->ForceNumThread);
 
         if (optHevc && optHevc->DeltaQpMode) {
-            if (fi.FourCC == P010 || fi.FourCC == P210) { // only CAQ alllowed for 10 bits
-                if ((optHevc->DeltaQpMode - 1) & (AMT_DQP_CAL | AMT_DQP_PAQ))
-                    optHevc->DeltaQpMode = 1 + ((optHevc->DeltaQpMode - 1) & AMT_DQP_CAQ), wrnIncompatible = true;
+            if (fi.FourCC == P010 || fi.FourCC == P210) { // only CAQ, PAQ or Psy alllowed for 10 bits
+                if ((optHevc->DeltaQpMode - 1) & (AMT_DQP_CAL | AMT_DQP_HROI)) {
+                    optHevc->DeltaQpMode = 1 + ((optHevc->DeltaQpMode - 1) & (AMT_DQP_CAQ|AMT_DQP_PAQ|AMT_DQP_PSY)), wrnIncompatible = true;
+                }
             }
             if (optHevc->BPyramid == OFF || mfx.GopRefDist == 1) // no CALQ, no PAQ, no PSY, no HROI if Bpyramid disabled
                 wrnIncompatible = !CheckMaxSat(optHevc->DeltaQpMode, 1);
@@ -1566,7 +1567,7 @@ namespace {
                 optHevc.DeltaQpMode = defaultOptHevc.DeltaQpMode;
             }
             if (optHevc.DeltaQpMode > 2 && (fi.FourCC == P010 || fi.FourCC == P210))
-                optHevc.DeltaQpMode = 2; // CAQ only
+                optHevc.DeltaQpMode = 1 + ((optHevc.DeltaQpMode - 1) & (AMT_DQP_CAQ | AMT_DQP_PAQ | AMT_DQP_PSY)); // CAQ, PAQ, PSY only
             if (mfx.GopRefDist == 1 || optHevc.BPyramid == OFF)
                 optHevc.DeltaQpMode = 1; // off
             if (roi.NumROI)

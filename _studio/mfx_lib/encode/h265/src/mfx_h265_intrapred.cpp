@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1071,9 +1071,9 @@ bool H265CU<PixType>::tryIntraRD(Ipp32s absPartIdx, Ipp32s depth, IntraLumaMode 
         PixType *pred = m_predIntraAll + mode * widthCu * widthCu;
         Ipp32f dc=0;
         if (mode < 2 || mode >= 18 || m_cuIntraAngMode == INTRA_ANG_MODE_GRADIENT && mode == 10)
-            dc = h265_DiffDc(pSrc, m_pitchSrcLuma, pred, widthCu, widthCu);
+            dc = h265_DiffDc(pSrc, m_pitchSrcLuma, pred, widthCu, widthCu) / (1 << m_par->bitDepthLumaShift);
         else
-            dc = h265_DiffDc(m_srcTr, widthCu, pred, widthCu, widthCu);
+            dc = h265_DiffDc(m_srcTr, widthCu, pred, widthCu, widthCu) / (1 << m_par->bitDepthLumaShift);
         dc *= h265_reci_1to116[(widthCu>>2)-1] * h265_reci_1to116[(widthCu>>2)-1] * (1.0f / 16);
         dc=fabsf(dc);
         IntraHad = modes[ic].satd;

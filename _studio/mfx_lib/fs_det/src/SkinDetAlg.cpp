@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
  * 
@@ -1202,6 +1202,27 @@ static void BlockSum_8x8_slice_C(BYTE *pSrc, BYTE *pDst, int width, int height, 
     }
 }
 
+static void BlockSum_8x8_slice_16s_C(WORD *pSrc, BYTE *pDst, int width, int height, int pitch, uint slice_offset_fr, int slice_nlines_fr, BYTE bitDepthLumaShift)
+{
+    FS_UNREFERENCED_PARAMETER(height);
+
+    for (int y = 0; y < slice_nlines_fr; y += 8) {
+        for (int x = 0; x < width; x += 8) {
+
+            WORD *ps = pSrc + slice_offset_fr + (y * pitch) + x;
+            uint sum = 0;
+
+            for (int i = 0; i < 8; i++) {
+                for (int j = 0; j < 8; j++) {
+                    sum += ps[i * pitch + j];
+                }
+            }
+            sum = (sum + 32) >> (6+bitDepthLumaShift);
+            *pDst++ = (BYTE)sum;
+        }
+    }
+}
+
 static void BlockSum_8x8_slice_SSE4(BYTE *pSrc, BYTE *pDst, int width, int height, int pitch, uint slice_offset_fr, int slice_nlines_fr)
 {
     FS_UNREFERENCED_PARAMETER(height);
@@ -1950,6 +1971,11 @@ static void BlockSum_8x8_slice(BYTE *pSrc, BYTE *pDst, int width, int height, in
     (*f)(pSrc, pDst, width, height, pitch, slice_offset_fr, slice_nlines_fr);
 }
 
+static void BlockSum_8x8_slice_16s(WORD *pSrc, BYTE *pDst, int width, int height, int pitch, uint slice_offset_fr, int slice_nlines_fr, BYTE bitDepthLumaShift)
+{
+    BlockSum_8x8_slice_16s_C(pSrc, pDst, width, height, pitch, slice_offset_fr, slice_nlines_fr, bitDepthLumaShift);
+}
+
 static uint SAD_8x8fast_slice(BYTE *pSrc, BYTE *pRef, BYTE *pDst, int width, int height, int pitch, uint slice_offset_fr, int slice_nlines_fr)
 {
     t_SAD_8x8_slice f = g_FS_OPT_AVX2 ? SAD_8x8fast_slice_AVX2 : (g_FS_OPT_SSE4 ? SAD_8x8fast_slice_SSE4 : SAD_8x8fast_slice_C);
@@ -2003,6 +2029,12 @@ void SubsampleNV12_slice(BYTE* pYSrc, BYTE* pUVSrc, BYTE* pDst, int width, int h
 void SubsampleLuma_slice(BYTE* pYSrc, BYTE* pDst, int width, int height, int pitch, int blksz, SliceInfoNv12 *si, int sliceId) {
     FS_UNREFERENCED_PARAMETER(blksz);
     BlockSum_8x8_slice(pYSrc, pDst + si->blockOffset[sliceId], width, height, pitch, si->sampleOffset[sliceId], si->numSampleRows[sliceId]);
+}
+
+//subsample NV12 from pixel to block accuracy (slice-based)
+void SubsampleLuma_slice_16s(WORD* pYSrc, BYTE* pDst, int width, int height, int pitch, int blksz, SliceInfoNv12 *si, int sliceId, BYTE bitDepthLumaShift) {
+    FS_UNREFERENCED_PARAMETER(blksz);
+    BlockSum_8x8_slice_16s(pYSrc, pDst + si->blockOffset[sliceId], width, height, pitch, si->sampleOffset[sliceId], si->numSampleRows[sliceId], bitDepthLumaShift);
 }
 
 
@@ -3170,5 +3202,11 @@ void AvgLuma_slice(BYTE *pYSrc, BYTE *pLuma, int w, int h, int p, SliceInfoNv12 
 {
     //subsample pixel-accurate frame to block-accurate
     SubsampleLuma_slice(pYSrc, pLuma, w, h, p, BLOCKSIZE, si, sliceId);
+}
+
+void AvgLuma_slice_16s(WORD *pYSrc, BYTE *pLuma, int w, int h, int p, SliceInfoNv12 *si, int sliceId, BYTE bitDepthLumaShift)
+{
+    //subsample pixel-accurate frame to block-accurate
+    SubsampleLuma_slice_16s(pYSrc, pLuma, w, h, p, BLOCKSIZE, si, sliceId, bitDepthLumaShift);
 }
 

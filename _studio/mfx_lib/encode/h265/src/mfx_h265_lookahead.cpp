@@ -682,7 +682,7 @@ void MeSubPelBatchedBox(const H265MEInfo *meInfo,
 
     Ipp32s patternSubPel = SUBPEL_BOX;
     Ipp32s bitDepthLuma = sizeof(PixType) == 1 ? 8 : 10;
-    Ipp32s bitDepthLumaShift = bitDepthLuma - 8;
+    Ipp32s bitDepthLumaShift = 0; // bitDepthLuma - 8; // Lookahead costs not shifted till end
     Ipp32s hadamardMe = 0;
 
     VM_ASSERT(patternSubPel == SUBPEL_BOX);
@@ -1390,9 +1390,9 @@ void H265Enc::DetermineQpMap_IFrame(FrameIter curr, FrameIter end, H265VideoPara
                         Rs2/=(blkW4*blkH4);
                         Cs2/=(blkW4*blkH4);
                         Ipp32f SC = sqrt(Rs2 + Cs2);
-                        Ipp32f tsc_RTML = 0.6f*sqrt(SC);
+                        Ipp32f tsc_RTML = 0.6f*sqrt(SC / (1 << (inFrame->m_bitDepthLuma - 8)))*(1 << (inFrame->m_bitDepthLuma - 8));
 #ifdef LOW_COMPLX_PAQ
-                        if (lowRes) tsc_RTML = 0.66f*sqrt(SC);
+                        if (lowRes) tsc_RTML *= 1.1f;
 #endif
                         Ipp32f tsc_RTMG= IPP_MIN(2*tsc_RTML, SC/1.414f);
                         Ipp32f tsc_RTS = IPP_MIN(3*tsc_RTML, SC/1.414f);
@@ -1578,9 +1578,9 @@ void H265Enc::DetermineQpMap_PFrame(FrameIter begin, FrameIter curr, FrameIter e
                         Rs2/=(blkW4*blkH4);
                         Cs2/=(blkW4*blkH4);
                         Ipp32f SC = sqrt(Rs2 + Cs2);
-                        Ipp32f tsc_RTML = 0.6f*sqrt(SC);
+                        Ipp32f tsc_RTML = 0.6f*sqrt(SC / (1 << (inFrame->m_bitDepthLuma - 8)))*(1 << (inFrame->m_bitDepthLuma - 8));
 #ifdef LOW_COMPLX_PAQ
-                        if(lowRes) tsc_RTML = 0.66f*sqrt(SC);
+                        if (lowRes) tsc_RTML *= 1.1f;
 #endif
                         Ipp32f tsc_RTMG= IPP_MIN(2*tsc_RTML, SC/1.414f);
                         Ipp32f tsc_RTS = IPP_MIN(3*tsc_RTML, SC/1.414f);
@@ -2736,11 +2736,11 @@ void H265Enc::ApplyDeltaQpOnRoi(Frame* frame, const H265VideoParam & par, Ipp8u 
 
     // assign CALQ deltaQp
     if (par.DeltaQpMode&AMT_DQP_CAQ) {
-        Ipp32f baseQP = frame->m_sliceQpY;
-        Ipp32f sliceLambda =  frame->m_roiSlice[baseQP].rd_lambda_slice;
+        Ipp32f baseQPIndx = frame->m_sliceQpY + (frame->m_bitDepthLuma - 8) * 6;
+        Ipp32f sliceLambda =  frame->m_roiSlice[baseQPIndx].rd_lambda_slice;
         for (Ipp32s ctb_addr = 0; ctb_addr < numCtb; ctb_addr++) {
 
-            int calq = GetCalqDeltaQpLCU(frame, par, ctb_addr, sliceLambda, baseQP);
+            int calq = GetCalqDeltaQpLCU(frame, par, ctb_addr, sliceLambda, frame->m_sliceQpY);
             
             // Save CAQ dQp for ModeDecision Thresholds
             frame->m_lcuQpOffs[0][ctb_addr] =  calq;
@@ -2879,7 +2879,7 @@ static void setCtb_SegMap_Cmplx(Frame *frame, H265VideoParam *par)
                 stc += cmplx;
             }
         }
-
+        stc /= (1 << par->bitDepthLumaShift);
         //stc /= ctbSizeCmplx;
         stc /= (hC*wC);  // ?? not needed
 
@@ -3028,7 +3028,7 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
                         FS_ProcessMode1_Slice_main (m_enc.m_faceSkinDet, region_row);
                 } else if(m_videoParam.DeltaQpMode & AMT_DQP_PSY) {
                     if(region_row <  (Ipp32u) FS_get_NumSlice(m_enc.m_faceSkinDet))
-                        FS_Luma_Slice_main (m_enc.m_faceSkinDet, region_row);
+                        FS_Luma_Slice_main (m_enc.m_faceSkinDet, region_row, in[0]->m_bitDepthLuma);
                 }
             }
 #endif
@@ -3225,7 +3225,7 @@ mfxStatus Lookahead::Execute(ThreadingTask& task)
 #ifdef AMT_HROI_PSY_AQ
             if(m_videoParam.DeltaQpMode & AMT_DQP_PSY_HROI) {
                 if((m_videoParam.DeltaQpMode & AMT_DQP_HROI) == 0) {
-                    FS_Luma_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size());
+                    FS_Luma_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size(), in[0]->m_bitDepthLuma);
                 } else {
                     FS_ProcessMode1_Slice_end (m_enc.m_faceSkinDet, &(in[0]->m_stats[0]->roi_map_8x8[0]), &(in[0]->m_stats[0]->lum_avg_8x8[0]), in[0]->m_stats[0]->lum_avg_8x8.size());
                 }

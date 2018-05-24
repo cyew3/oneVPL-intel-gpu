@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 /********************************************************************************
  * 
@@ -46,8 +46,8 @@ void FS_ProcessMode1_Slice_main (FS *fs, int sliceId);
 void FS_ProcessMode1_Slice_end  (FS *fs, unsigned char *pOutY, unsigned char *pOutLum, int outSize);
 
 void FS_Luma_Slice_start(FS *fs, FrameBuffElement *in);
-void FS_Luma_Slice_main(FS *fs, int sliceId);
-void FS_Luma_Slice_end(FS *fs, unsigned char *pOutLum, int outSize);
+void FS_Luma_Slice_main(FS *fs, int sliceId, unsigned char bitDepthLuma);
+void FS_Luma_Slice_end(FS *fs, unsigned char *pOutLum, int outSize, unsigned char bitDepthLuma);
 
 void FS_Free(FSP *fsp);
 

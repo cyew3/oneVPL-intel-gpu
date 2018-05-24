@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -246,7 +246,8 @@ mfxStatus H265BRC::Init(const mfxVideoParam *params,  H265VideoParam &video, Ipp
         } 
 #ifdef LOW_COMPLX_PAQ
         else if ((video.DeltaQpMode&AMT_DQP_PAQ) && video.FullresMetrics == 1 
-            && mParams.bitDepthLuma == 8 && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
+            //&& mParams.bitDepthLuma == 8 // now 10bit
+            && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
             // Dynamic Safe Init/Scene change
             mMaxFrameSizeInBitsI = (BRC_MAX_LOAN_LENGTH * BRC_LOAN_RATIO * 2.0f + 1.5f) * mBitsDesiredFrame;
         }
@@ -528,7 +529,8 @@ mfxStatus H265BRC::Reset(mfxVideoParam *params, H265VideoParam &video, Ipp32s en
     }
 #ifdef LOW_COMPLX_PAQ
     else if ((video.DeltaQpMode&AMT_DQP_PAQ) && video.FullresMetrics == 1
-        && mParams.bitDepthLuma == 8 && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
+        //&& mParams.bitDepthLuma == 8 // now 10bit
+        && params->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE && mRCMode != MFX_RATECONTROL_AVBR) {
         // Dynamic Safe Init/Scene change
         mMaxFrameSizeInBitsI = (BRC_MAX_LOAN_LENGTH * BRC_LOAN_RATIO * 2.0f + 1.5f) * mBitsDesiredFrame;
     }

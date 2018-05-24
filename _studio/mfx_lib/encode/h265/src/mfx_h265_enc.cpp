@@ -674,6 +674,7 @@ namespace H265Enc {
 
         Ipp32s bn = stats->roi_pic.numCtbRoi[0];
         Ipp32s fn = stats->roi_pic.numCtbRoi[1] + stats->roi_pic.numCtbRoi[2];
+        Ipp32s bnnz = 0;
 
         Ipp32s fni = 0;
         Ipp32s numAct = 0;
@@ -702,6 +703,7 @@ namespace H265Enc {
                     for(Ipp32s k = 0; k < 2; k++) {
                         for(Ipp32s l = 0; l < 2; l++) {
                             Ipp32f blkRsCs = stats->m_rs[idxRsCs][(i*2+k)*pitchRsCsQ+j*2+l] + stats->m_cs[idxRsCs][(i*2+k)*pitchRsCsQ+2*j+l];
+                            blkRsCs /= (1 << (par->bitDepthLumaShift * 2));
                             minblkRsCs = IPP_MIN(blkRsCs, minblkRsCs);
                             ctbRsCs += blkRsCs;
                         }
@@ -744,7 +746,7 @@ namespace H265Enc {
             qrange=(qrange+1)/2;
         }
         
-        if (useBrc && fn == 0) qrange = ((par->enableCmFlag) ? IPP_MIN(qrange, 2) : 1);  // Till we solve MT Slowdown problem (Psy now auto on for BRC)
+        if (useBrc && fn == 0) qrange = ((par->enableCmFlag && par->bitDepthLuma == 8) ? IPP_MIN(qrange, 2) : 1);  // Till we solve MT Slowdown & 10 bit loss (Psy now auto on for BRC)
         
         // VSM (Visual Sensitivity Map)
         Ipp32f mult = pow(2.0f, (Ipp32f)qrange/6.0f);
@@ -866,12 +868,17 @@ namespace H265Enc {
         Ipp32f fcmplx = 1.0;
         Ipp32f tcmplx = 1.0;
         Ipp32f bcmplxd = 1.0;
+        Ipp32f bcmplxnnz = 1.0;
         for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
             for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
                 if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel < 1) {
                     sumQpb += ctbStats[i*par->PicWidthInCtbs+j].dqp;
                     bcmplx += ctbStats[i*par->PicWidthInCtbs+j].complexity;
                     bcmplxd += (ctbStats[i*par->PicWidthInCtbs+j].complexity*dB[ctbStats[i*par->PicWidthInCtbs+j].dqp]);
+                    if (ctbStats[i*par->PicWidthInCtbs + j].dqp > 0) {
+                        bcmplxnnz += ctbStats[i*par->PicWidthInCtbs + j].complexity;
+                        bnnz++;
+                    }
                 } else {
                     sumQpf += ctbStats[i*par->PicWidthInCtbs+j].dqp;
                     fcmplx += ctbStats[i*par->PicWidthInCtbs+j].complexity;
@@ -882,7 +889,8 @@ namespace H265Enc {
         
         // Balance
         if(fn != 0) {
-            Ipp32f dqpb_act = sumQpb/bn;
+            Ipp32f dqpb_act = bn ? sumQpb / bn : 0;
+            Ipp32f dqpb_nnz = bnnz ? sumQpb / bnnz : 0;
             Ipp32f dqpf_act = sumQpf/fn;
             // compute
             Ipp32f fcmplxd = tcmplx - bcmplxd;
@@ -933,35 +941,74 @@ namespace H265Enc {
                     fOff = ((dqpf<dqpf_act)?1:-1);
                     if(fOff!=fOff1) iter=14;
                 }
-                // BG
-                if((dqpf_act - dqpf) > 0.01 && (num_changed == 0 || iter==14)) {
-                    // compute
-                    bcmplxd = tcmplx - fcmplxd;
-                    Ipp32f dqb = bcmplxd/bcmplx;
-                    Ipp32f dqpb = (log(dqb) / l2f) * -6.0f;
+                if (par->bitDepthLumaShift == 0) {
+                    // BG 8bit Simple
+                    if ((dqpf_act - dqpf) > 0.01 && (num_changed == 0 || iter == 14)) {
+                        // compute
+                        bcmplxd = tcmplx - fcmplxd;
+                        Ipp32f dqb = bcmplxd / bcmplx;
+                        Ipp32f dqpb = (log(dqb) / l2f) * -6.0f;
 
-                    iter = 0;
-                    num_changed= 1;
+                        iter = 0;
+                        num_changed = 1;
 
-                    while((dqpb_act - dqpb) > 0 && num_changed != 0 & iter<14) {
-                        sumQpb = 0.0;
-                        num_changed = 0;
-                        for(Ipp32s i = 0; i < (int) par->PicHeightInCtbs; i++) {
-                            for(Ipp32s j = 0; j < (int) par->PicWidthInCtbs; j++) {
-                                if(ctbStats[i*par->PicWidthInCtbs+j].roiLevel < 1) {
-                                    Ipp32s dqpo = ctbStats[i*par->PicWidthInCtbs+j].dqp;
-                                    Ipp32s dqp =  dqpo - 1;
-                                    dqp = IPP_MAX(minBq, dqp);
-                                    ctbStats[i*par->PicWidthInCtbs+j].dqp = dqp;
-                                    sumQpb += dqp;
-                                    if(dqp != dqpo) num_changed++;
+                        while ((dqpb_act - dqpb) > 0 && num_changed != 0 & iter < 14) {
+                            sumQpb = 0.0;
+                            num_changed = 0;
+                            for (Ipp32s i = 0; i < (int)par->PicHeightInCtbs; i++) {
+                                for (Ipp32s j = 0; j < (int)par->PicWidthInCtbs; j++) {
+                                    if (ctbStats[i*par->PicWidthInCtbs + j].roiLevel < 1) {
+                                        Ipp32s dqpo = ctbStats[i*par->PicWidthInCtbs + j].dqp;
+                                        Ipp32s dqp = dqpo - 1;
+                                        dqp = IPP_MAX(minBq, dqp);
+                                        ctbStats[i*par->PicWidthInCtbs + j].dqp = dqp;
+                                        sumQpb += dqp;
+                                        if (dqp != dqpo) num_changed++;
+                                    }
                                 }
                             }
+                            iter++;
+                            dqpb_act = sumQpb / bn;
                         }
-                        iter++;
-                        dqpb_act = sumQpb/bn;
                     }
-                } // BG
+                } else {
+                    // BG 10bit complex
+                    if ((dqpf_act - dqpf) > 0.01 && (num_changed == 0 || iter == 14)) {
+                        // compute
+                        Ipp32f bcmplxd1 = fcmplxd - fcmplx;
+                        Ipp32f dqb = (bcmplxnnz - bcmplxd1) / bcmplxnnz;
+                        Ipp32f dqpb = (log(dqb) / l2f) * -6.0f;
+
+                        iter = 0;
+                        num_changed = 1;
+                        Ipp32s bOff = 1;
+                        while (bnnz && (dqpb_nnz - dqpb) > 0 && num_changed != 0 & iter < 14) {
+                            Ipp32f sumQpbLast = sumQpb;
+                            sumQpb = 0.0;
+                            num_changed = 0;
+                            for (Ipp32s i = 0; i < (int)par->PicHeightInCtbs; i++) {
+                                for (Ipp32s j = 0; j < (int)par->PicWidthInCtbs; j++) {
+                                    if (ctbStats[i*par->PicWidthInCtbs + j].roiLevel < 1) {
+                                        Ipp32s dqpo = ctbStats[i*par->PicWidthInCtbs + j].dqp;
+                                        Ipp32s dqp = dqpo - bOff;
+                                        dqp = IPP_MAX(minBq, dqp);
+                                        Ipp32f dqpd = dqp - dqpo;
+                                        ctbStats[i*par->PicWidthInCtbs + j].dqp = dqp;
+                                        sumQpb += dqp;
+                                        if (dqp != dqpo) num_changed++;
+                                        // Run Time Exit
+                                        sumQpbLast += dqpd;
+                                        Ipp32f dqpb_run = sumQpbLast / bnnz;
+                                        if (dqpb_run - dqpb < 0)
+                                            bOff = 0;
+                                    }
+                                }
+                            }
+                            iter++;
+                            dqpb_nnz = sumQpb / bnnz;
+                        }
+                    }
+                }
             }
         } // Balance
     }
