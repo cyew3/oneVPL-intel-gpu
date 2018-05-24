@@ -126,7 +126,7 @@ int TestSuite::RunTest(const tc_struct (&tcs)[max_num_ctrl])
         if(0 == tc.stream)
             break;
 
-        tsBitstreamReaderIVF r(g_tsStreamPool.Get(tc.stream), 100000);
+        tsBitstreamReaderIVF r(g_tsStreamPool.Get(tc.stream), 1024 * 1024);
         m_bs_processor = &r;
         
         m_bitstream.DataLength = 0;

@@ -19,7 +19,7 @@ private:
     tsVideoDecoder    decoder;
 public:
     tsIvfVP9FileDecoder(const char* fname, mfxU32 codec)
-        : reader(fname, 100000)
+        : reader(fname, 1024 * 1024)
         , decoder(MFX_CODEC_VP9)
     {
         decoder.m_bs_processor = &reader;
