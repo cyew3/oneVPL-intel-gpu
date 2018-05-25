@@ -29,9 +29,10 @@ namespace MfxHwH265Encode
 GUID GetGUID(MfxVideoParam const & par)
 {
     GUID guid = DXVA2_Intel_Encode_HEVC_Main;
-    mfxU16 bdId = 0, cfId = 0;
 
 #ifndef OPEN_SOURCE
+    mfxU16 bdId = 0, cfId = 0;
+
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.m_ext.CO3.TargetBitDepthLuma == 10)
         bdId = 1;
