@@ -44,6 +44,64 @@
 #include "mfx_vpp_interface.h"
 #endif
 
+// helper struct, it is helper for conversion from between [linux/android GUIDs] and [VAProfile + VAEntryPoint]
+// linux/android GUIDs is defined in _studio/shared/include/mfxvideo++int.h
+//
+// GUID.Data4 is unused in current implementation, but struct stores it for correct GUID comparison
+// Original mapping between GUID and VAProfile:
+// {00000000 - 0000-0000  - 0000-000000000000}
+// VAProfile |VAEntryPoint|       UNUSED
+struct VaGuidMapper
+{
+    // VAEntrypoint and VAProfile is libVA enum
+    VAProfile m_profile;
+    VAEntrypoint m_entrypoint;
+    unsigned char  m_Data4[8] = {};
+
+    VaGuidMapper(VAProfile profile, VAEntrypoint entrypoint) :
+        m_profile    (profile),
+        m_entrypoint (entrypoint)
+    {}
+
+    VaGuidMapper(int profile, int entrypoint) :
+        m_profile    (static_cast<VAProfile>    (profile)),
+        m_entrypoint (static_cast<VAEntrypoint> (entrypoint))
+    {}
+
+    // VaGuidMapper unpacking GUIDs
+    VaGuidMapper(GUID guid)
+    {
+        m_profile    = static_cast<VAProfile>    (guid.Data1);
+        m_entrypoint = static_cast<VAEntrypoint> ((guid.Data2 << 16) + guid.Data3);
+
+        //check to correct copy string
+        static_assert( sizeof(guid.Data4) == sizeof(m_Data4),
+            "Error! Can't store guid.Data4 in m_Data4.");
+        static_assert( sizeof(*guid.Data4) == sizeof(*m_Data4),
+            "Error! Can't store guid.Data4 in m_Data4.");
+
+        std::copy(guid.Data4, guid.Data4 + 7, m_Data4);
+    }
+
+    operator GUID() const
+    {
+        // paking enum VAProfile and VAEntrypoint to Data1 and Data2 and Data3
+        GUID res = { (unsigned long)  m_profile,
+                     (unsigned short) (m_entrypoint >> 16),
+                     (unsigned short) (m_entrypoint & 0xffff),
+                     { m_Data4[0], m_Data4[1], m_Data4[2], m_Data4[3],
+                     m_Data4[4], m_Data4[5], m_Data4[6], m_Data4[7] }};
+
+        // check size of Data1 and Data2 and Data3 for enum VAProfile and VAEntrypoint packing
+        static_assert( sizeof(res.Data1) >= sizeof(VAProfile),
+            "Error! Can't store data profile in guid.data1 (unsigned long).");
+        static_assert((sizeof(res.Data2) + sizeof(res.Data3)) >= sizeof(VAEntrypoint),
+            "Error! Can't store data entrypoint in guid.data2 (unsigned short) and guid.data3 (unsigned short).");
+
+        return res;
+    }
+};
+
 class CmCopyWrapper;
 
 // disable the "conditional expression is constant" warning

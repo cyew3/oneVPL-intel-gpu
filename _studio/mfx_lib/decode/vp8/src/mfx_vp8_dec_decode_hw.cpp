@@ -30,6 +30,7 @@
 #endif
 
 #include "mfx_common.h"
+#include "mfxvideo++int.h"
 
 #if defined(MFX_ENABLE_VP8_VIDEO_DECODE_HW) && (defined(MFX_VA_WIN) || defined(MFX_VA))
 
@@ -38,6 +39,7 @@
 #include "mfx_vp8_dec_decode_hw.h"
 #include "mfx_enc_common.h"
 #include "mfx_vpx_dec_common.h"
+#include "libmfx_core_vaapi.h"
 
 #include "umc_va_base.h"
 #include "umc_va_dxva2.h"
@@ -101,24 +103,13 @@ VideoDECODEVP8_HW::~VideoDECODEVP8_HW()
 
 bool VideoDECODEVP8_HW::CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 {
-
-    #ifdef MFX_VA_WIN
+    // IsGuidSupported checks p_video_param for nullptr
+    MFX_CHECK(p_core, false);
 
     if (p_core->IsGuidSupported(sDXVA_Intel_ModeVP8_VLD, p_video_param) != MFX_ERR_NONE)
     {
         return false;
     }
-
-    #elif defined(MFX_VA_LINUX)
-
-    // GUID is not used on Linux
-    if (p_core->IsGuidSupported(GUID(), p_video_param) != MFX_ERR_NONE)
-    {
-        return false;
-    }
-
-    // todo : VA API alternative ?
-    #endif
 
     return true;
 

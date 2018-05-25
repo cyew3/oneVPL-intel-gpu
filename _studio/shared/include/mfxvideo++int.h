@@ -65,9 +65,60 @@ static inline int operator==(const GUID & guidOne, const GUID & guidOther)
     return !memcmp(&guidOne, &guidOther, sizeof(GUID));
 }
 
+
 #define GUID_TYPE_DEFINED
 #endif
 
+#if defined(MFX_VA_LINUX) //define guid for linux/android
+#include "va/va.h"
+
+// Helper struct VaGuidMapper is placed _studio/shared/include/libmfx_core_vaapi.h for use linux/android GUIDs
+// Pack VAEntrypoint and VAProfile into GUID data structure
+#define DEFINE_GUID_VA(name, profile, entrypoint) \
+    static const GUID name = { profile, entrypoint >> 16, entrypoint & 0xffff, {} }
+
+/* H.264/AVC Enc */
+DEFINE_GUID_VA(DXVA2_Intel_Encode_AVC ,                      VAProfileH264High,      VAEntrypointEncSlice);
+DEFINE_GUID_VA(DXVA2_INTEL_LOWPOWERENCODE_AVC,               VAProfileH264High,      VAEntrypointEncSliceLP);
+
+/* H.264/AVC VLD */
+DEFINE_GUID_VA(sDXVA_ModeH264_VLD_Multiview_NoFGT,           VAProfileH264MultiviewHigh,       VAEntrypointVLD);
+DEFINE_GUID_VA(sDXVA_ModeH264_VLD_Stereo_NoFGT,              VAProfileH264StereoHigh,          VAEntrypointVLD);
+DEFINE_GUID_VA(sDXVA2_ModeH264_VLD_NoFGT,                    VAProfileH264High,                VAEntrypointVLD);
+DEFINE_GUID_VA(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,  VAProfileH264StereoHigh,          VAEntrypointVLD);
+
+#if defined (UMC_ENABLE_H264_VIDEO_DECODER)
+#if defined (MFX_VA)
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+DEFINE_GUID_VA(DXVA_Intel_Decode_Elementary_Stream_AVC,      VAProfileH264High,                VAEntrypointVLD);
+#endif
+#endif
+#endif
+
+/* H.265 VLD */
+DEFINE_GUID_VA(DXVA_ModeHEVC_VLD_Main,                       VAProfileHEVCMain,      VAEntrypointVLD);
+
+/* VP9 */
+DEFINE_GUID_VA(DXVA_Intel_ModeVP9_Profile0_VLD,              VAProfileVP9Profile0,   VAEntrypointVLD);
+DEFINE_GUID_VA(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD,       VAProfileVP9Profile1,   VAEntrypointVLD);
+DEFINE_GUID_VA(DXVA_Intel_ModeVP9_Profile2_10bit_VLD,        VAProfileVP9Profile2,   VAEntrypointVLD);
+DEFINE_GUID_VA(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD, VAProfileVP9Profile3,   VAEntrypointVLD);
+
+/* VP8 */
+DEFINE_GUID_VA(sDXVA_Intel_ModeVP8_VLD,                      VAProfileVP8Version0_3, VAEntrypointVLD);
+DEFINE_GUID_VA(DXVA2_Intel_Encode_VP8,                       VAProfileVP8Version0_3, VAEntrypointEncSlice);
+
+/* VC1 */
+DEFINE_GUID_VA(sDXVA2_Intel_ModeVC1_D_Super,                 VAProfileVC1Advanced,   VAEntrypointVLD);
+
+/* JPEG */
+DEFINE_GUID_VA(sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT,          VAProfileJPEGBaseline,  VAEntrypointVLD);
+
+/* MPEG2 */
+DEFINE_GUID_VA(sDXVA2_ModeMPEG2_VLD,                         VAProfileMPEG2Main,     VAEntrypointVLD);
+DEFINE_GUID_VA(DXVA2_Intel_Encode_MPEG2,                     VAProfileMPEG2Main,     VAEntrypointEncSlice);
+
+#else //if defined(MFX_VA_LINUX)
 #ifndef OPEN_SOURCE
 
 static const GUID DXVA2_Intel_Encode_SVC =
@@ -141,6 +192,7 @@ static const GUID sDXVA2_Intel_IVB_ModeJPEG_VLD_NoFGT =
 static const GUID sDXVA2_Intel_ModeVC1_D_Super =
 { 0xE07EC519, 0xE651, 0x4cd6,{ 0xAC, 0x84, 0x13, 0x70, 0xCC, 0xEE, 0xC8, 0x51 } };
 
+#endif
 #endif
 
 namespace UMC

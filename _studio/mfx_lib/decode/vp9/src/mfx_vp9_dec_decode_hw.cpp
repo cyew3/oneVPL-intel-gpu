@@ -47,9 +47,13 @@ using namespace UMC_VP9_DECODER;
 
 static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar);
 
+// function checks hardware support with IsGuidSupported function and GUIDs
 inline
 bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 {
+    MFX_CHECK(p_core, false);
+    MFX_CHECK(p_video_param, false);
+
 #ifdef MFX_VA_WIN
     if (p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile0_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
@@ -68,17 +72,37 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
     {
         return false;
     }
-    // todo : VA API alternative ?
 #else
-    (void)p_core;
-#endif // MFX_VA_WIN
+GUID guid;
 
-#ifdef ANDROID
-    if (p_video_param->mfx.FrameInfo.Width > 4096 || p_video_param->mfx.FrameInfo.Height > 4096)
+    switch(p_video_param->mfx.CodecProfile)
     {
-        return false;
+    case(MFX_PROFILE_VP9_0):
+    {
+        guid = DXVA_Intel_ModeVP9_Profile0_VLD;
+        break;
     }
-#endif
+    case(MFX_PROFILE_VP9_1):
+    {
+        guid = DXVA_Intel_ModeVP9_Profile1_YUV444_VLD;
+        break;
+    }
+    case(MFX_PROFILE_VP9_2):
+    {
+        guid = DXVA_Intel_ModeVP9_Profile2_10bit_VLD;
+        break;
+    }
+    case(MFX_PROFILE_VP9_3):
+    {
+        guid = DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD;
+        break;
+    }
+    default: return false;
+    }
+
+    mfxStatus mfxSts = p_core->IsGuidSupported(guid, p_video_param);
+    MFX_CHECK(mfxSts == MFX_ERR_NONE, false);
+#endif // MFX_VA_WIN
 
     return true;
 }
