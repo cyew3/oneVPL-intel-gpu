@@ -868,7 +868,7 @@ namespace UMC_AV1_DECODER
 
         if (VP9_FRAME_TYPE::KEY_FRAME == fh->frameType)
         {
-#if UMC_AV1_DECODER_REV == 0
+#if UMC_AV1_DECODER_REV < 2510
             if (!av1_sync_code(this))
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 #endif
@@ -928,9 +928,7 @@ namespace UMC_AV1_DECODER
 
             if (fh->intraOnly)
             {
-#if UMC_AV1_DECODER_REV >= 2510
-                fh->allowScreenContentTools = GetBit();
-
+#if UMC_AV1_DECODER_REV < 2510
                 if (!av1_sync_code(this))
                     throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 #endif
