@@ -698,8 +698,9 @@ void FillSpsBuffer(
     sps.general_level_idc   = par.m_sps.general.level_idc;
     sps.general_tier_flag   = par.m_sps.general.tier_flag;
 
-    sps.GopPicSize          = par.mfx.GopPicSize;
-    sps.GopRefDist          = mfxU8(par.mfx.GopRefDist);
+    mfxU8 nPicturesPerFrame = par.isField() ? 2 : 1;
+    sps.GopPicSize          = par.mfx.GopPicSize * nPicturesPerFrame;
+    sps.GopRefDist          = mfxU8(par.mfx.GopRefDist) * nPicturesPerFrame;
     sps.GopOptFlag          = mfxU8(par.mfx.GopOptFlag);
 
     sps.TargetUsage         = mfxU8(par.mfx.TargetUsage);
@@ -745,7 +746,7 @@ void FillSpsBuffer(
     sps.MBBRC            = IsOn(par.m_ext.CO2.MBBRC);
 
     //WA:  Parallel BRC is switched on in sync & async mode (quality drop in noParallelBRC in driver)
-    sps.ParallelBRC = (par.mfx.GopRefDist > 1) && (par.mfx.GopRefDist <= 8) && par.isBPyramid() && !IsOn(par.mfx.LowPower);
+    sps.ParallelBRC = (sps.GopRefDist > 1) && (sps.GopRefDist <= 8) && par.isBPyramid() && !IsOn(par.mfx.LowPower);
 
     if (par.m_ext.CO2.MaxSliceSize)
         sps.SliceSizeControl = 1;
