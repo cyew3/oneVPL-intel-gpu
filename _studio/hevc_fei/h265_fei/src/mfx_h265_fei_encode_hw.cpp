@@ -68,10 +68,10 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
+    MFX_CHECK(EncFrameCtrl->AdaptiveSearch <= 1,  MFX_ERR_INVALID_VIDEO_PARAM);
     if (EncFrameCtrl->SearchWindow)
     {
-        MFX_CHECK(EncFrameCtrl->AdaptiveSearch == 0
-               && EncFrameCtrl->LenSP          == 0
+        MFX_CHECK(EncFrameCtrl->LenSP          == 0
                && EncFrameCtrl->SearchPath     == 0
                && EncFrameCtrl->RefWidth       == 0
                && EncFrameCtrl->RefHeight      == 0, MFX_ERR_INVALID_VIDEO_PARAM);
@@ -80,7 +80,6 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
     }
     else
     {
-        MFX_CHECK(EncFrameCtrl->AdaptiveSearch <= 1,  MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(EncFrameCtrl->SearchPath     <= 2,  MFX_ERR_INVALID_VIDEO_PARAM);
         MFX_CHECK(EncFrameCtrl->LenSP          >= 1 &&
                   EncFrameCtrl->LenSP          <= 63, MFX_ERR_INVALID_VIDEO_PARAM);
