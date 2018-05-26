@@ -350,7 +350,7 @@ namespace hevce_init
         //encoded order
         {/*58*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
         //native
-        {/*59*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
+        {/*59*/ MFX_ERR_NONE, NOT_LOAD_PLUGIN, NONE, {} },
         //call query
         {/*60*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
         //API mfxExtHEVCParam, for HW plugin only
