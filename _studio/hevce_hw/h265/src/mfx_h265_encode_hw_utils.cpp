@@ -662,6 +662,9 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
     bROIViaMBQP      = par.bROIViaMBQP;
     bMBQPInput       = par.bMBQPInput;
     RAPIntra         = par.RAPIntra;
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+    WiDi             = par.WiDi;
+#endif
     SetTL(par.m_ext.AVCTL);
 
 }
