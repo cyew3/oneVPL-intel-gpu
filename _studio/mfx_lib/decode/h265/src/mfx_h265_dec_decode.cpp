@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_h265_dec_decode.h"
@@ -1337,12 +1337,18 @@ void VideoDECODEH265::FillOutputSurface(mfxFrameSurface1 **surf_out, mfxFrameSur
     case 0:
         surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV400;
         break;
+    case 1:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+        break;
     case 2:
         surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
         break;
-    default:
-        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+    case 3:
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
         break;
+    default:
+        VM_ASSERT(!"Unknown chroma format");
+        surface_out->Info.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
     }
 
     surface_out->Info.PicStruct =
