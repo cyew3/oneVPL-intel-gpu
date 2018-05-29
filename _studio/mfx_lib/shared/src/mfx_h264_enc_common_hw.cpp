@@ -4867,7 +4867,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         mfeParam.MFMode = MFX_MF_DEFAULT;
         changed = true;
     }
-
     /*explicitly force defualt number of frames, higher number will cause performance degradation
     multi-slice can be supported only through slice map control for MFE
     Adding any of Mad/MBQP/NonSkipMap/ForceIntraMap causing additional surfaces for kernel, leading to surface state cache size overhead*/
@@ -4880,7 +4879,17 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         mfeParam.MaxNumFrames = numFrames;
         changed = true;
     }
-    if (mfeParam.MaxNumFrames && mfeParam.MFMode < MFX_MF_AUTO)
+    if (extOpt2->IntRefType && mfeParam.MaxNumFrames != 1)
+    {
+        mfeParam.MaxNumFrames = 1;
+        changed = true;
+    }
+    if (mfeParam.MaxNumFrames != 1 && mfeParam.MFMode == MFX_MF_DISABLED)
+    {
+        mfeParam.MaxNumFrames = 1;
+        changed = true;
+    }
+    if (mfeParam.MaxNumFrames > 1 && mfeParam.MFMode == MFX_MF_DEFAULT)
     {
         mfeParam.MFMode = MFX_MF_AUTO;
         changed = true;
