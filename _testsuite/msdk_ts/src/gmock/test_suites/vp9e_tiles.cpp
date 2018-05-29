@@ -1625,6 +1625,12 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             {
                 g_tsStatus.check(sts);
             }
+            else if (sts < 0)
+            {
+                // if Init() is not checked by the case fail only on critical issues
+                g_tsStatus.expect(MFX_ERR_NONE);
+                g_tsStatus.check(sts);
+            }
             m_initialized = sts >= MFX_ERR_NONE;
         }
 
@@ -1699,8 +1705,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             m_filler = 0;
         }
 
-        return 0;
         TS_END;
+        return 0;
     }
 
     TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9e_tiles, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases_nv12);
