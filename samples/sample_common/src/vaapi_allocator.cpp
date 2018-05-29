@@ -45,8 +45,6 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
-    case MFX_FOURCC_P8:
-        return VA_FOURCC_P208;
 
     default:
         assert(!"unsupported fourcc");
@@ -328,20 +326,16 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
     vaapiMemId *vaapi_mids = NULL;
     VASurfaceID* surfaces = NULL;
     mfxU32 i = 0;
-    bool isBitstreamMemory=false;
 
     if (!response) return MFX_ERR_NULL_PTR;
 
     if (response->mids)
     {
         vaapi_mids = (vaapiMemId*)(response->mids[0]);
-        mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mids->m_fourcc);
-        isBitstreamMemory = (MFX_FOURCC_P8 == mfx_fourcc)?true:false;
         surfaces = vaapi_mids->m_surface;
         for (i = 0; i < response->NumFrameActual; ++i)
         {
-            if (MFX_FOURCC_P8 == vaapi_mids[i].m_fourcc) m_libva->vaDestroyBuffer(m_dpy, surfaces[i]);
-            else if (vaapi_mids[i].m_sys_buffer) free(vaapi_mids[i].m_sys_buffer);
+            if (vaapi_mids[i].m_sys_buffer) free(vaapi_mids[i].m_sys_buffer);
             if (m_export_mode != vaapiAllocatorParams::DONOT_EXPORT) {
                 if (m_exporter && vaapi_mids[i].m_custom) {
                     m_exporter->release(&vaapi_mids[i], vaapi_mids[i].m_custom);
@@ -356,7 +350,6 @@ mfxStatus vaapiFrameAllocator::ReleaseResponse(mfxFrameAllocResponse *response)
         free(response->mids);
         response->mids = NULL;
 
-        if (!isBitstreamMemory) m_libva->vaDestroySurfaces(m_dpy, surfaces, response->NumFrameActual);
         free(surfaces);
     }
     response->NumFrameActual = 0;
@@ -375,102 +368,75 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mid->m_fourcc);
 
-    if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
-    {
-        VACodedBufferSegment *coded_buffer_segment;
-        if (vaapi_mid->m_fourcc == MFX_FOURCC_VP8_SEGMAP)
-            va_res =  m_libva->vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&pBuffer));
-        else
-        va_res =  m_libva->vaMapBuffer(m_dpy, *(vaapi_mid->m_surface), (void **)(&coded_buffer_segment));
-        mfx_res = va_to_mfx_status(va_res);
-        if (MFX_ERR_NONE == mfx_res)
-        {
-            if (vaapi_mid->m_fourcc == MFX_FOURCC_VP8_SEGMAP)
-                ptr->Y = pBuffer;
-            else
-                ptr->Y = (mfxU8*)coded_buffer_segment->buf;
+    va_res = m_libva->vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
+    mfx_res = va_to_mfx_status(va_res);
 
-        }
+    if (MFX_ERR_NONE == mfx_res)
+    {
+        va_res = m_libva->vaMapBuffer(m_dpy, vaapi_mid->m_image.buf, (void **) &pBuffer);
+        mfx_res = va_to_mfx_status(va_res);
     }
-    else   // Image processing
+    if (MFX_ERR_NONE == mfx_res)
     {
-        va_res = m_libva->vaDeriveImage(m_dpy, *(vaapi_mid->m_surface), &(vaapi_mid->m_image));
-        mfx_res = va_to_mfx_status(va_res);
-
-        if (MFX_ERR_NONE == mfx_res)
+        switch (vaapi_mid->m_image.format.fourcc)
         {
-            va_res = m_libva->vaMapBuffer(m_dpy, vaapi_mid->m_image.buf, (void **) &pBuffer);
-            mfx_res = va_to_mfx_status(va_res);
-        }
-        if (MFX_ERR_NONE == mfx_res)
-        {
-            switch (vaapi_mid->m_image.format.fourcc)
+        case VA_FOURCC_NV12:
+            if (mfx_fourcc == MFX_FOURCC_NV12)
             {
-            case VA_FOURCC_NV12:
-                if (mfx_fourcc == MFX_FOURCC_NV12)
-                {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
-                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
-                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
-                    ptr->V = ptr->U + 1;
-                }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
-            case VA_FOURCC_YV12:
-                if (mfx_fourcc == MFX_FOURCC_YV12)
-                {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
-                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
-                    ptr->V = pBuffer + vaapi_mid->m_image.offsets[1];
-                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[2];
-                }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
-            case VA_FOURCC_YUY2:
-                if (mfx_fourcc == MFX_FOURCC_YUY2)
-                {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
-                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
-                    ptr->U = ptr->Y + 1;
-                    ptr->V = ptr->Y + 3;
-                }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
-            case VA_FOURCC_UYVY:
-                if (mfx_fourcc == MFX_FOURCC_UYVY)
-                {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
-                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[0];
-                    ptr->Y = ptr->U + 1;
-                    ptr->V = ptr->U + 2;
-                }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
-            case VA_FOURCC_ARGB:
-                if (mfx_fourcc == MFX_FOURCC_RGB4)
-                {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
-                    ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
-                    ptr->G = ptr->B + 1;
-                    ptr->R = ptr->B + 2;
-                    ptr->A = ptr->B + 3;
-                }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
-        case VA_FOURCC_P208:
-                if (mfx_fourcc == MFX_FOURCC_NV12)
-                {
-                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
-                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
-                }
-                else mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
-            default:
-                mfx_res = MFX_ERR_LOCK_MEMORY;
-                break;
+                ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
+                ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
+                ptr->V = ptr->U + 1;
             }
+            else mfx_res = MFX_ERR_LOCK_MEMORY;
+            break;
+        case VA_FOURCC_YV12:
+            if (mfx_fourcc == MFX_FOURCC_YV12)
+            {
+                ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
+                ptr->V = pBuffer + vaapi_mid->m_image.offsets[1];
+                ptr->U = pBuffer + vaapi_mid->m_image.offsets[2];
+            }
+            else mfx_res = MFX_ERR_LOCK_MEMORY;
+            break;
+        case VA_FOURCC_YUY2:
+            if (mfx_fourcc == MFX_FOURCC_YUY2)
+            {
+                ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
+                ptr->U = ptr->Y + 1;
+                ptr->V = ptr->Y + 3;
+            }
+            else mfx_res = MFX_ERR_LOCK_MEMORY;
+            break;
+        case VA_FOURCC_UYVY:
+            if (mfx_fourcc == MFX_FOURCC_UYVY)
+            {
+                ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                ptr->U = pBuffer + vaapi_mid->m_image.offsets[0];
+                ptr->Y = ptr->U + 1;
+                ptr->V = ptr->U + 2;
+            }
+            else mfx_res = MFX_ERR_LOCK_MEMORY;
+            break;
+        case VA_FOURCC_ARGB:
+            if (mfx_fourcc == MFX_FOURCC_RGB4)
+            {
+                ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
+                ptr->G = ptr->B + 1;
+                ptr->R = ptr->B + 2;
+                ptr->A = ptr->B + 3;
+            }
+            else mfx_res = MFX_ERR_LOCK_MEMORY;
+            break;
+        default:
+            mfx_res = MFX_ERR_LOCK_MEMORY;
+            break;
         }
     }
+
     return mfx_res;
 }
 
@@ -480,26 +446,18 @@ mfxStatus vaapiFrameAllocator::UnlockFrame(mfxMemId mid, mfxFrameData *ptr)
 
     if (!vaapi_mid || !(vaapi_mid->m_surface)) return MFX_ERR_INVALID_HANDLE;
 
-    mfxU32 mfx_fourcc = ConvertVP8FourccToMfxFourcc(vaapi_mid->m_fourcc);
+    m_libva->vaUnmapBuffer(m_dpy, vaapi_mid->m_image.buf);
+    m_libva->vaDestroyImage(m_dpy, vaapi_mid->m_image.image_id);
 
-    if (MFX_FOURCC_P8 == mfx_fourcc)   // bitstream processing
+    if (NULL != ptr)
     {
-        m_libva->vaUnmapBuffer(m_dpy, *(vaapi_mid->m_surface));
+        ptr->Pitch = 0;
+        ptr->Y     = NULL;
+        ptr->U     = NULL;
+        ptr->V     = NULL;
+        ptr->A     = NULL;
     }
-    else  // Image processing
-    {
-        m_libva->vaUnmapBuffer(m_dpy, vaapi_mid->m_image.buf);
-        m_libva->vaDestroyImage(m_dpy, vaapi_mid->m_image.image_id);
 
-        if (NULL != ptr)
-        {
-            ptr->Pitch = 0;
-            ptr->Y     = NULL;
-            ptr->U     = NULL;
-            ptr->V     = NULL;
-            ptr->A     = NULL;
-        }
-    }
     return MFX_ERR_NONE;
 }
 
