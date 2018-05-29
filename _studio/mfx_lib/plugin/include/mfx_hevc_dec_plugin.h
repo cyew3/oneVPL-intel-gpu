@@ -30,7 +30,7 @@ public:
 #ifndef MFX_VA
 protected:
 
-    friend class MFXStubDecoderPlugin;
+    friend struct MFXStubDecoderPlugin;
 
     MFXHEVCDecoderPlugin(bool CreateByDispatcher);
 

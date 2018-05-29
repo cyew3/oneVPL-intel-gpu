@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- jpeg_common.vcxproj specific settings -->
+  <PropertyGroup Label="jpeg_common settings">
+    <MfxUsingSettings>jpeg_common;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\jpeg_common\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxSoftwareOnly)'!='true'">MFX_VA;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of jpeg_common.vcxproj specific settings -->
+</Project>

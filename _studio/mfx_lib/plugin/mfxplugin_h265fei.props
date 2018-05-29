@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfxplugin_h265fei.vcxproj specific settings -->
+  <PropertyGroup Label="mfxplugin_h265fei settings">
+    <MfxConfigurationType Label="mfxplugin_h265fei settings">DynamicLibrary</MfxConfigurationType>
+    <MfxOutDir Label="mfxplugin_h265fei settings">$(MfxRootOutDir)\bin\87e0e80207375240852515cf4a5edde6\</MfxOutDir>
+    <MfxUsingSettings>mfxplugin_h265fei;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    </MfxIncludes>
+    <MfxDefinitions>AS_H265FEI_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;LIBMFXHW_EXPORTS;</MfxDefinitions>
+    <MfxLibraries>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;D3d9.lib;d3d11.lib;dxva2.lib;dxgi.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIppLibraryDir);</MfxLibraryDir>
+    <MfxPostBuildEvent>copy "$(SolutionDir)87e0e80207375240852515cf4a5edde6\plugin.cfg" "$(OutDir)plugin.cfg" /y</MfxPostBuildEvent>
+  </PropertyGroup>
+<!-- End of mfxplugin_h265fei.vcxproj specific settings -->
+</Project>

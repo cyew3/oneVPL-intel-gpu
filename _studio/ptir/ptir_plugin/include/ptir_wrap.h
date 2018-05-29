@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_PTIR_WRAP_INCLUDED__)
@@ -16,7 +16,7 @@
 #include "ptir_vpp_utils.h"
 #include <umc_mutex.h>
 extern "C" {
-#include "../pa/api.h"
+#include "api.h"
 #if defined(LINUX32) || defined (LINUX64)
 
 //Undefine since cm linux include files are defining it itself which cause compilation errors
@@ -27,7 +27,7 @@ extern "C" {
     #undef BYTE
 #endif
 }
-#include "../pacm/pacm.h"
+#include "pacm.h"
 //#include "cmrt_cross_platform.h"
 
 typedef void * AbstractSurface;

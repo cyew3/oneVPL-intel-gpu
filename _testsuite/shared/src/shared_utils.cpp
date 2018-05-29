@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 #include <math.h>
 #include <memory.h>
@@ -281,7 +281,7 @@ mfxStatus ParseInputString(vm_char* strInput[], int nArgNum, sInputParams* pPara
 mfxStatus PrintCurrentParams(sInputParams* pParams)
 {
     char* p = (char*)&pParams->videoType;
-    vm_char tp[5] = {p[0], p[1], p[2], p[3], 0};
+    vm_char tp[5] = {static_cast<vm_char>(p[0]), static_cast<vm_char>(p[1]), static_cast<vm_char>(p[2]), static_cast<vm_char>(p[3]), 0};
     vm_string_printf(VM_STRING("videoType       = %s\n"), tp);
     vm_string_printf(VM_STRING("Width           = %d\n"), pParams->nWidth);
     vm_string_printf(VM_STRING("Height          = %d\n"), pParams->nHeight);

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- vm.vcxproj specific settings -->
+  <PropertyGroup Label="vm settings">
+    <MfxUsingSettings>vm;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    </MfxIncludes>
+    <MfxDefinitions>_WIN32_WINNT=0x0601;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+    <MfxInlineFunctionExpansion>AnySuitable</MfxInlineFunctionExpansion>
+    <MfxIntrinsicFunctions>true</MfxIntrinsicFunctions>
+    <MfxFavorSizeOrSpeed>Speed</MfxFavorSizeOrSpeed>
+    <MfxFunctionLevelLinking>true</MfxFunctionLevelLinking>
+  </PropertyGroup>
+<!-- End of vm.vcxproj specific settings -->
+</Project>

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -74,10 +74,13 @@ unpack_coupling_channel_element(sCoupling_channel_element * p_data, Ipp8u** pp_b
   p_data->gain_element_sign = get_bits(pp_bs, p_offset,1);
   p_data->gain_element_scale = get_bits(pp_bs, p_offset,2);
 
+#pragma warning(push)
+#pragma warning(disable:4996)
   res = ippsNoiselessDecode_AAC(pp_bs, p_offset, &aac_main_header,
                                 p_sf, p_spectrum, p_sf_cb, p_tns_coef, &ch_info,
                                 0/*windows sequence*/,0/*max_sfb*/,0/*common_win*/,
                                 0,audio_object_type);
+#pragma warning(pop)
 
 //  dec_individual_channel_stream(&p_data->stream,pBS,0,0,aydioObjectType);
 

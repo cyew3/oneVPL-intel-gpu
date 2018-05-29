@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- vp9_dec_hw.vcxproj specific settings -->
+  <PropertyGroup Label="vp9_dec_hw settings">
+    <MfxUsingSettings>vp9_dec_hw;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\vp9_dec\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    </MfxIncludes>
+    <MfxDefinitions>AS_VP9D_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of vp9_dec_hw.vcxproj specific settings -->
+</Project>

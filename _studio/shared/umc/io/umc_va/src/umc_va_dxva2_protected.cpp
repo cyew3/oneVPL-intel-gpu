@@ -5,12 +5,8 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
-
-#ifdef _DEBUG
-#define VM_DEBUG
-#endif
 
 #include "umc_va_base.h"
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- me.vcxproj specific settings -->
+  <PropertyGroup Label="me settings">
+    <MfxUsingSettings>me;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of me.vcxproj specific settings -->
+</Project>

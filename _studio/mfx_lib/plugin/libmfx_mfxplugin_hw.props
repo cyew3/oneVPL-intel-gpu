@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- libmfx_mfxplugin_hw.vcxproj specific settings -->
+  <PropertyGroup Label="libmfx_mfxplugin_hw settings">
+    <MfxUsingSettings>libmfx_mfxplugin_hw;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\camera_pipe\include;
+    $(MSDK_STUDIO_ROOT)\camera_pipe\genx\src;
+    $(MSDK_STUDIO_ROOT)\camera_pipe\genx\include;
+    $(MSDK_STUDIO_ROOT)\vp9e_hw\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\fei\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\field_copy\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_D3D11_ENABLED;LIBMFXSW_EXPORTS;AS_CAMERA_PLUGIN;AS_HEVCE_PLUGIN;AS_VP9E_PLUGIN;MFX_VA;MFX_VA_WIN;UNIFIED_PLUGIN;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of libmfx_mfxplugin_hw.vcxproj specific settings -->
+</Project>

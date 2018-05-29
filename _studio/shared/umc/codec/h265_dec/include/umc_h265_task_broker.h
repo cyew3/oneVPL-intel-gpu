@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -252,9 +252,10 @@ private:
     bool GetResources(H265Task *pTask);
     // Deallocate decoding context if necessary
     void FreeResources(H265Task *pTask);
-
+/*
     // Update access units list finishing completed frames
     void CompleteFrame();
+*/
 };
 
 #endif // MFX_VA

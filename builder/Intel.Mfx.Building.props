@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- NOTICE -->
+<!-- Please, place PropertyGroup definitions in Intel.Mfx.Default.props -->
+<!-- NOTICE -->
+  <PropertyGroup>
+    <MfxBuildingIncluded>true</MfxBuildingIncluded>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+   <BuildLog>
+      <Path>$(IntDir)$(TargetName).build.log</Path>
+   </BuildLog>
+   <ClCompile>
+      <ExceptionHandling>$(MfxExceptionHandling)</ExceptionHandling>
+      <WarningLevel>$(MfxWarningLevel)</WarningLevel>
+      <TreatWarningAsError>$(MfxTreatWarningAsError)</TreatWarningAsError>
+      <DebugInformationFormat>$(MfxDebugInformationFormat)</DebugInformationFormat>
+      <SDLCheck>$(MfxSDLCheck)</SDLCheck>
+      <MultiProcessorCompilation>$(MfxMultiProcessorCompilation)</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>$(MfxGenerateDebugInformation)</GenerateDebugInformation>
+      <SubSystem>$(MfxSubSystem)</SubSystem>
+      <OptimizeReferences>$(MfxOptimizeReferences)</OptimizeReferences>
+      <EnableCOMDATFolding>$(MfxEnableCOMDATFolding)</EnableCOMDATFolding>
+    </Link>
+  </ItemDefinitionGroup>
+  
+<!-- Globals -->
+  <ItemDefinitionGroup>
+    <Link>
+      <ProgramDatabaseFile>$(MfxProgramDatabaseFile)</ProgramDatabaseFile>
+      <ImportLibrary>$(MfxImportLibrary)$(MfxTargetName).lib</ImportLibrary>
+      <ShowProgress>LinkVerbose</ShowProgress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+  </ItemDefinitionGroup>
+<!-- End of Globals -->
+
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Command Condition="'$(MfxPreBuildEvent)'!=''">$(MfxPreBuildEvent)</Command>
+    </PreBuildEvent>
+    <PostBuildEvent>
+      <Command Condition="'$(MfxPostBuildEvent)'!=''">$(MfxPostBuildEvent)</Command>
+    </PostBuildEvent>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MfxIncludes);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(MfxDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion Condition="'$(MfxInlineFunctionExpansion)'!=''">$(MfxInlineFunctionExpansion)</InlineFunctionExpansion>
+      <IntrinsicFunctions Condition="'$(MfxIntrinsicFunctions)'!=''">$(MfxIntrinsicFunctions)</IntrinsicFunctions>
+      <FavorSizeOrSpeed Condition="'$(MfxFavorSizeOrSpeed)'!=''">$(MfxFavorSizeOrSpeed)</FavorSizeOrSpeed>
+      <FloatingPointModel Condition="'$(MfxFloatingPointModel)'!=''">$(MfxFloatingPointModel)</FloatingPointModel>
+      <EnableEnhancedInstructionSet Condition="'$(MfxEnableEnhancedInstructionSet)'!=''">$(MfxEnableEnhancedInstructionSet)</EnableEnhancedInstructionSet>
+      <FloatingPointExceptions Condition="'$(MfxFloatingPointExceptions)'!=''">$(MfxFloatingPointExceptions)</FloatingPointExceptions>
+      <InterproceduralOptimization Condition="'$(MfxInterproceduralOptimization)'!=''">$(MfxInterproceduralOptimization)</InterproceduralOptimization>
+      <DisableSpecificWarnings Condition="'$(MfxDisableSpecificWarnings)'!=''">$(MfxDisableSpecificWarnings)</DisableSpecificWarnings>
+      <FunctionLevelLinking Condition="'$(MfxFunctionLevelLinking)'!=''">$(MfxFunctionLevelLinking)</FunctionLevelLinking>
+      <RuntimeLibrary Condition="'$(MfxRuntimeLibrary)'!=''">$(MfxRuntimeLibrary)</RuntimeLibrary>
+    </ClCompile>
+    <Link Condition="'$(IsTHM)'=='true'">
+      <AdditionalDependencies>$(MfxLibraries);onecore.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxLibraryDir);%(AdditionalLibraryDirectories);</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile Condition="'$(MfxModuleDefinitionFile)'!=''">$(MfxModuleDefinitionFile)</ModuleDefinitionFile>
+    </Link>
+    <Link Condition="'$(IsUWP)'=='true'">
+      <AdditionalDependencies>$(MfxLibraries);windowsapp.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxLibraryDir);%(AdditionalLibraryDirectories);</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile Condition="'$(MfxModuleDefinitionFile)'!=''">$(MfxModuleDefinitionFile)</ModuleDefinitionFile>
+    </Link>
+    <Link Condition="'$(IsTHM)'!='true' and '$(IsUWP)'!='true'">
+      <AdditionalDependencies>$(MfxLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MfxLibraryDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile Condition="'$(MfxModuleDefinitionFile)'!=''">$(MfxModuleDefinitionFile)</ModuleDefinitionFile>
+    </Link>
+    <Link Condition="'$(MfxConfigurationType)'=='Application'">
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+
+</Project>

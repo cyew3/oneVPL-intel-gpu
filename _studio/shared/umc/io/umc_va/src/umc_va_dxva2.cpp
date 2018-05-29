@@ -8,10 +8,6 @@
 // Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
-#ifdef _DEBUG
-#define VM_DEBUG
-#endif
-
 #include "umc_va_base.h"
 
 #ifdef UMC_VA_DXVA

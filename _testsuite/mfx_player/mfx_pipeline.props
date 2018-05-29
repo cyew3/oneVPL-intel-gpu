@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfx_pipeline.vcxproj specific settings -->
+  <PropertyGroup Label="mfx_pipeline settings">
+    <MfxUsingSettings>mfx_pipeline;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppGoldIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_API_ROOT)\opensource\mfx_dispatch\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_player\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_pavp;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\dxva2_dump\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\shared\include;
+    $(MSDK_STUDIO_ROOT)\..\pavp\include;
+    $(MSDK_STUDIO_ROOT)\..\pavp\samples\pavp_sample_common;
+    $(MSDK_STUDIO_ROOT)\..\pavp\samples\win8ui_video\win8ui_video_lib;
+    $(MSDK_STUDIO_ROOT)\..\pavp\samples\pavp_video\pavp_video_lib;
+    $(MSDK_STUDIO_ROOT)\..\samples\deprecated\sample_spl_mux\api;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_dec\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\avi_spl\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\spl_common\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\demuxer\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_io\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\test_suite\spy_test_component\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\test_suite\spy_test_componentio\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\optimization_icl\dispatcher\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_VA;PSAPI_VERSION=1;</MfxDefinitions>
+    <MfxDefinitions Condition="$(Configuration.Contains('Lucas_DLL'))">LUCAS_DLL;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+  </PropertyGroup>
+<!-- End of mfx_pipeline.vcxproj specific settings -->
+</Project>

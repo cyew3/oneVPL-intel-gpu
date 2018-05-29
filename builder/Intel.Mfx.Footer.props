@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MfxFooterIncluded>true</MfxFooterIncluded>
+  </PropertyGroup>
+  <Target Name="DisplayMessages" BeforeTargets="Build">
+    <Error Text="$(ProjectName): Unable to find Intel C++ Compiler, project cannot be built." Condition="!Exists('$(MfxIntelPath)') And '$(MfxPlatformToolset)'=='$(MfxIntelPlatfromToolset)'" />
+    <Message Importance="High" Text="$(ProjectName): Unable to find Intel C++ Compiler, some project cannot be built." Condition="!Exists('$(MfxIntelPath)')" />
+    <Message Importance="High" Text="$(ProjectName): Solution $(SolutionName), Software Mode: $(MfxSoftwareOnly)" />
+    <Message Importance="High" Text="$(ProjectName): Using props $(MfxPropsDir)" />
+    <Message Importance="High" Text="$(ProjectName): Using settings = $(MfxUsingSettings)" />
+    <Message Importance="High" Text="$(ProjectName): Using configuration = $(Configuration), $(ConfigurationType)" />
+    <Message Importance="High" Text="$(ProjectName): THM configuration detected" Condition="'$(IsTHM)'=='true'" />
+    <Message Importance="High" Text="$(ProjectName): ITT enabled" Condition="'$(IsITT)'=='true'" />
+    <Message Importance="High" Text="$(ProjectName): Debug configuration detected" Condition="'$(IntelDebugConf)'=='true'" />
+    <Message Importance="High" Text="$(ProjectName): Using platform = $(Platform)" />
+    <Message Importance="High" Text="$(ProjectName): Using toolset = $(PlatformToolset)" />
+    <Message Importance="High" Text="$(ProjectName): Using Windows Target Platform Version = $(WindowsTargetPlatformVersion)" />
+    <Message Importance="High" Text="$(ProjectName): Output = $(OutDir)$(TargetName)" />
+    <Error Text="$(ProjectName): Unable to find MEDIASDK_ROOT environment variable." Condition ="!Exists('$(MEDIASDK_ROOT)')"/>
+    <Error Text="$(ProjectName): Unable to find IPP libraries." Condition ="!Exists('$(MfxIppLibraryDir)')"/>
+    <Error Text="$(ProjectName): Unable to find ITT libraries." Condition ="'$(UseITT)'=='true' and !Exists('$(MfxIttLibraryDir)')"/>
+  </Target>
+</Project>

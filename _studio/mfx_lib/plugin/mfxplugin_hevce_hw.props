@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfxplugin_hevce_hw.vcxproj specific settings -->
+  <PropertyGroup Label="mfxplugin_hevce_hw settings">
+    <MfxConfigurationType Label="mfxplugin_hevce_hw settings">DynamicLibrary</MfxConfigurationType>
+    <MfxRootOutDir Condition="'$(UseIntelToolset)'=='true'">$(MfxBuildDir)win_$(Platform)\</MfxRootOutDir>
+    <MfxOutDir Label="mfxplugin_hevce_hw settings">$(MfxRootOutDir)\bin\e5400a06c74d41f5b12d430bbaa23d0b\</MfxOutDir>
+    <MfxUsingSettings>mfxplugin_hevce_hw;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode\h265\include;
+    </MfxIncludes>
+    <MfxDefinitions>AS_HEVCE_PLUGIN;MFX_VA;ENABLE_CM;</MfxDefinitions>
+    <MfxLibraries>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIntelLibraryDir);$(MfxIppLibraryDir);</MfxLibraryDir>
+    <MfxPostBuildEvent>copy "$(SolutionDir)e5400a06c74d41f5b12d430bbaa23d0b\plugin.cfg" "$(MfxRootOutDir)\bin\e5400a06c74d41f5b12d430bbaa23d0b\plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)e5400a06c74d41f5b12d430bbaa23d0b\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\e5400a06c74d41f5b12d430bbaa23d0b\plugin.cfg" /y</MfxPostBuildEvent>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_hevce_gacc</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of mfxplugin_hevce_hw.vcxproj specific settings -->
+</Project>

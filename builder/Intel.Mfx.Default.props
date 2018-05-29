@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+<!-- Don't use here ItemDefinitionGroup, it might be overwritten!
+     Use Intel.Mfx.Building.props instead                                              -->
+<!-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
+
+  <PropertyGroup>
+    <MfxDefaultIncluded>true</MfxDefaultIncluded>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(UseITT)'=='true'">
+    <MfxIncludes>$(MfxIttIncludeDir);$(MfxIncludes)</MfxIncludes>
+    <MfxDefinitions>$(MfxDefinitions);MFX_TRACE_ENABLE_ITT;</MfxDefinitions>
+    <MfxLibraries>libittnotify.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraryDir>$(MfxIttLibraryDir);$(MfxLibraryDir)</MfxLibraryDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <MfxOutDir Condition="'$(MfxConfigurationType)'=='StaticLibrary' and '$(MfxOutDir)'==''">$(MfxRootOutDir)lib\</MfxOutDir>
+    <MfxOutDir Condition="'$(MfxOutDir)'==''">$(MfxRootOutDir)bin\</MfxOutDir>
+    <MfxOutDir>$([MSBuild]::MakeRelative('Z:\',$(MfxOutDir)))</MfxOutDir>
+    <MfxIntDir Condition="'$(MfxIntDir)'==''">$(MfxRootOutDir)objs\$(Configuration)\$(ProjectName)\</MfxIntDir>
+    <MfxIntDir>$([MSBuild]::MakeRelative('Z:\',$(MfxIntDir)))</MfxIntDir>
+    <MfxRuntimeLibrary Condition="'$(IntelDebugConf)'=='true' and '$(MfxRuntimeLibrary)'=='MultiThreaded'">MultiThreadedDebug</MfxRuntimeLibrary>
+    <MfxRuntimeLibrary Condition="'$(IntelDebugConf)'=='true' and '$(MfxRuntimeLibrary)'=='MultiThreadedDLL'">MultiThreadedDebugDLL</MfxRuntimeLibrary>
+    <MfxDefinitions Condition="'$(Platform)'=='Win32'">WIN32;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(Platform)'=='x64'">WIN64;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxConfigurationType)'=='StaticLibrary'">_LIB;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxConfigurationType)'=='DynamicLibrary'">_WINDLL;_USRDLL;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxConfigurationType)'=='Application'">_CONSOLE;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(IntelDebugConf)'!='true'">NDEBUG;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(IntelDebugConf)'=='true'">_DEBUG;VM_DEBUG;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(IsTHM)'=='true'">WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;$(MfxDefinitions)</MfxDefinitions>
+	<MfxDefinitions Condition="'$(MfxSoftwareOnly)'=='true'">MFX_NO_VA;$(MfxDefinitions)</MfxDefinitions>
+    <!-- Destination file name -->
+    <MfxTargetName Condition="'$(IntelDebugConf)'=='true' and '$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)_d</MfxTargetName>
+    <MfxTargetName Condition="'$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)</MfxTargetName>
+    <MfxTargetName Condition="'$(IsTHM)'=='true' And '$(MfxConfigurationType)'=='StaticLibrary'">$(MfxTargetName)_thm</MfxTargetName>
+    <MfxTargetName Condition="'$(MfxSoftwareOnly)'=='true' And '$(MfxConfigurationType)'=='StaticLibrary'">$(MfxTargetName)_sw</MfxTargetName>
+    <MfxProgramDatabaseFile Condition="'$(MfxProgramDatabaseFile)'==''">$(MfxOutDir)$(MfxTargetName).pdb</MfxProgramDatabaseFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Configuration">
+    <OutDir>$(MfxOutDir)</OutDir>
+    <IntDir>$(MfxIntDir)</IntDir>
+    <TargetName>$(MfxTargetName)</TargetName>
+    <LinkIncremental>$(MfxLinkIncremental)</LinkIncremental>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <WindowsTargetPlatformVersion>$(MfxWindowsTargetPlatformVersion)</WindowsTargetPlatformVersion>
+    <WholeProgramOptimization>$(MfxWholeProgramOptimization)</WholeProgramOptimization>
+    <GenerateManifest>$(MfxGenerateManifest)</GenerateManifest>
+    <UseDebugLibraries>$(MfxUseDebugLibraries)</UseDebugLibraries>
+    <ConfigurationType>$(MfxConfigurationType)</ConfigurationType>
+    <CharacterSet>$(MfxCharacterSet)</CharacterSet>
+  </PropertyGroup>
+</Project>

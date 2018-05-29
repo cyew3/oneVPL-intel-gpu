@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- libmfxsw.vcxproj specific settings -->
+  <PropertyGroup Label="libmfxsw settings">
+    <MfxConfigurationType Label="libmfxsw settings">DynamicLibrary</MfxConfigurationType>
+    <MfxUsingSettings>libmfxsw;$(MfxUsedSettings)</MfxUsingSettings>
+    <!-- TODO: separate by components -->
+    <MfxIncludes>
+    <!-- IPP -->$(MfxIppIncludeDir);
+    <!-- MediaSDK API -->$(MSDK_API_ROOT)\include;
+    <!-- UMC Code -->$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    <!-- UMC VM Classes -->$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    <!-- UMC VA --> $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;
+    <!-- UMC VC1 -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_dec\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\vc1_common\include;
+    <!-- UMC Bitrate Control -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;
+    <!-- UMC Color Space Converter -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;
+    <!-- UMC jpeg -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\jpeg_enc\include;
+    <!-- UMC MPEG2 -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_enc\include;$(MSDK_STUDIO_ROOT)\shared\umc\codec\mpeg2_dec\include;
+    <!-- UMC h264 -->$(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;
+    <!-- UMC VP9 --> $(MSDK_STUDIO_ROOT)\shared\umc\codec\vp9_dec\include;
+    <!-- MediaSDK Common -->$(MSDK_STUDIO_ROOT)\shared\include;$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    <!-- MDF API -->$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    <!-- Copy Kernels -->$(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
+    <!-- MediaSDK Scheduler -->$(MSDK_STUDIO_ROOT)\mfx_lib\scheduler\include;
+    <!-- FEI -->$(MSDK_STUDIO_ROOT)\mfx_lib\fei\include;
+    <!-- VPP -->$(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
+    <!-- ASC -->$(MSDK_STUDIO_ROOT)\shared\asc\include;
+    <!-- MediaSDK MJPEG -->$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mjpeg\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\mjpeg\include;
+    <!-- MediaSDK MPEG2 -->$(MSDK_STUDIO_ROOT)\mfx_lib\pak\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\decode\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\enc\mpeg2\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\enc_hw\mpeg2\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\mpeg2\include;
+    <!-- MediaSDK VC1 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vc1\include;
+    <!-- MediaSDK h264 --> $(MSDK_STUDIO_ROOT)\mfx_lib\decode\h264\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\h264\include;
+    <!-- MediaSDK mjpeg -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\mjpeg\include;
+    <!-- MediaSDK VP8 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp8\include;
+    <!-- MediaSDK VP9 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp9\include;
+    </MfxIncludes>
+    <MfxDefinitions>_WINDOWS;LIBMFXSW_EXPORTS;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <!-- DirectX libraries -->
+    <MfxLibraries>dxva2.lib;D3D11.lib;DXGI.lib;d3d9.lib;</MfxLibraries>
+    <!-- IPP libraries -->
+    <MfxLibraries Condition="'$(Platform)'=='Win32'">ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='x64'">ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;$(MfxLibraries)</MfxLibraries>
+    <!-- Other libraries -->
+    <MfxLibraries>version.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
+    <MfxModuleDefinitionFile>libmfx.def</MfxModuleDefinitionFile>
+  </PropertyGroup>
+<!-- End of libmfxsw.vcxproj specific settings -->
+</Project>

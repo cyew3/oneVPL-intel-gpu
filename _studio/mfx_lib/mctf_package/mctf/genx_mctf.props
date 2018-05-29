@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- genx_mctf.vcxproj specific settings -->
+  <PropertyGroup Label="genx_mctf settings">
+    <MfxUsingSettings>genx_mctf;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\shared\asc\include;
+    </MfxIncludes>
+    <MfxDefinitions>_CRT_SECURE_NO_WARNINGS;_SCL_SECURE_NO_WARNINGS;MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions Condition="'$(Configuration)'=='Debug_HSW_Emu'">CM_VME_GEN7_5;CMRT_EMU;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+    <!--MfxPreBuildEvent Condition="'$(Platform)'=='x64'">rem $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\build_mctf_kernels.cmd</MfxPreBuildEvent>
+    <MfxPreBuildEvent Condition="'$(Platform)'=='Win32'">rem $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\build_mctf_kernels_32.cmd</MfxPreBuildEvent-->
+    <MfxInlineFunctionExpansion>AnySuitable</MfxInlineFunctionExpansion>
+    <MfxIntrinsicFunctions>true</MfxIntrinsicFunctions>
+    <MfxFavorSizeOrSpeed>Speed</MfxFavorSizeOrSpeed>
+    <MfxFloatingPointModel>Precise</MfxFloatingPointModel>
+  </PropertyGroup>
+<!-- End of genx_mctf.vcxproj specific settings -->
+</Project>

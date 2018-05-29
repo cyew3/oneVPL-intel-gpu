@@ -417,10 +417,15 @@ namespace UMC_HEVC_DECODER
     void FillPaletteEntries(DXVA_Intel_PicParams_HEVC_SCC* pPicParam, Ipp8u numComps, Ipp32u const* entries, Ipp32u count)
     {
         VM_ASSERT(!(count > 128));
+        VM_ASSERT(!(numComps > 3));
 
         pPicParam->PredictorPaletteSize = static_cast<UCHAR>(count);
         for (Ipp8u i = 0; i < numComps; ++i, entries += count)
-            std::copy(entries, entries + count, pPicParam->PredictorPaletteEntries[i]);
+        {
+            for (Ipp8u j = 0; j < count; ++j)
+                pPicParam->PredictorPaletteEntries[i][j] = static_cast<USHORT>(*(entries + j));
+        }
+//            std::copy(entries, entries + count, pPicParam->PredictorPaletteEntries[i]);
     }
 
     inline
@@ -850,10 +855,11 @@ namespace UMC_HEVC_DECODER
             H265Slice const* slice = fi->GetSlice(i);
             if (!slice)
                 throw h265_exception(UMC_ERR_FAILED);
-
+#ifdef VM_DEBUG
             H265SliceHeader const* sh = slice->GetSliceHeader();
             VM_ASSERT(sh);
             VM_ASSERT(sh->num_entry_point_offsets + 1 == slice->getTileLocationCount());
+#endif
 
 #if DDI_VERSION < 954
             Ipp32u const step = 1;

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- pacm_cmd.vcxproj specific settings -->
+  <PropertyGroup Label="pacm_cmd settings">
+    <MfxUsingSettings>pacm_cmd;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MfxMDFIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\ptir\pa;
+    $(MSDK_STUDIO_ROOT)\ptir\pacm\kernels;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+  </PropertyGroup>
+<!-- End of pacm_cmd.vcxproj specific settings -->
+</Project>

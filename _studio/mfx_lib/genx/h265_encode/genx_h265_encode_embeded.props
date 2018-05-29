@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- genx_h265_encode_embeded.vcxproj specific settings -->
+  <PropertyGroup Label="genx_h265_encode_embeded settings">
+    <MfxUsingSettings>genx_h265_encode_embeded;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>$(MSDK_STUDIO_ROOT)\mfx_lib\genx\h265_encode\include;</MfxIncludes>
+    <MfxDefinitions>MFX_VA;ENABLE_CM;CM_GEN7_5;USE_HSW_VME;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions Condition="'$(Configuration)'=='Debug_HSW_Emu'">CMRT_EMU;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of genx_h264_encode_embeded.vcxproj specific settings -->
+</Project>

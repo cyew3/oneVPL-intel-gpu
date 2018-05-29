@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfxplugin_hevcd.vcxproj specific settings -->
+  <PropertyGroup Label="mfxplugin_hevcd settings">
+    <MfxConfigurationType Label="mfxplugin_hevcd settings">DynamicLibrary</MfxConfigurationType>
+    <MfxRootOutDir Condition="'$(UseIntelToolset)'=='true'">$(MfxBuildDir)win_$(Platform)\</MfxRootOutDir>
+    <MfxOutDir Label="mfxplugin_hevcd settings">$(MfxRootOutDir)\bin\15dd936825ad475ea34e35f3f54217a6\</MfxOutDir>
+    <MfxUsingSettings>mfxplugin_hevcd;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_D3D11_ENABLED;LIBMFXSW_EXPORTS;AS_HEVCD_PLUGIN;</MfxDefinitions>
+    <MfxLibraries>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIntelLibraryDir);$(MfxIppLibraryDir);</MfxLibraryDir>
+    <MfxPostBuildEvent>copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin.cfg" "$(MfxRootOutDir)\bin\15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)15dd936825ad475ea34e35f3f54217a6\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\15dd936825ad475ea34e35f3f54217a6\plugin.cfg" /y</MfxPostBuildEvent>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_hevcd_sw</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of mfxplugin_hevcd.vcxproj specific settings -->
+</Project>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfx_transcoder.vcxproj specific settings -->
+  <PropertyGroup Label="mfx_transcoder settings">
+    <!-- Producing .dll libraries and .exe -->
+    <MfxConfigurationType Label="mfx_transcoder settings">Application</MfxConfigurationType>
+    <MfxConfigurationType Label="mfx_transcoder settings" Condition="$(Configuration.Contains('Lucas_DLL'))">DynamicLibrary</MfxConfigurationType>
+    <MfxUsingSettings>mfx_transcoder;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppGoldIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_transcoder\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_player\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_pavp;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\shared\include;
+    $(MSDK_STUDIO_ROOT)\..\pavp\include;
+    $(MSDK_STUDIO_ROOT)\..\pavp\samples\pavp_sample_common;
+    $(MSDK_STUDIO_ROOT)\..\pavp\samples\win8ui_video\win8ui_video_lib;
+    $(MSDK_STUDIO_ROOT)\..\pavp\samples\pavp_video\pavp_video_lib;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\io\media_buffers\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\shared\mfx_trace\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_VA;PSAPI_VERSION=1;</MfxDefinitions>
+    <MfxDefinitions Condition="$(Configuration.Contains('Lucas_DLL'))">LUCAS_DLL;$(MfxDefinitions)</MfxDefinitions>
+    <MfxLibraries>winmm.lib;psapi.lib;ippcoremt.lib;ippccmt.lib;ippimt.lib;ippsmt.lib;ippvcmt.lib;ippjmt.lib; ippcvmt.lib;winmm.lib;psapi.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIppGoldLibraryDir)</MfxLibraryDir>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+	<MfxTargetName>$(ProjectName)</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of mfx_transcoder.vcxproj specific settings -->
+</Project>

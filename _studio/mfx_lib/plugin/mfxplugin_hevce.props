@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfxplugin_hevce.vcxproj specific settings -->
+  <PropertyGroup Label="mfxplugin_hevce settings">
+    <MfxConfigurationType Label="mfxplugin_hevce settings">DynamicLibrary</MfxConfigurationType>
+    <MfxRootOutDir Condition="'$(UseIntelToolset)'=='true'">$(MfxBuildDir)win_$(Platform)\</MfxRootOutDir>
+    <MfxOutDir Label="mfxplugin_hevce settings">$(MfxRootOutDir)\bin\2fca99749fdb49aeb121a5b63ef568f7\</MfxOutDir>
+    <MfxUsingSettings>mfxplugin_hevce;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\encode\h265\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_D3D11_ENABLED;LIBMFXSW_EXPORTS;AS_HEVCE_PLUGIN;</MfxDefinitions>
+    <MfxLibraries>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIntelLibraryDir);$(MfxIppLibraryDir);</MfxLibraryDir>
+    <MfxPostBuildEvent>copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" "$(MfxRootOutDir)\bin\2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)2fca99749fdb49aeb121a5b63ef568f7\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\2fca99749fdb49aeb121a5b63ef568f7\plugin.cfg" /y</MfxPostBuildEvent>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_hevce_sw</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of mfxplugin_hevce.vcxproj specific settings -->
+</Project>

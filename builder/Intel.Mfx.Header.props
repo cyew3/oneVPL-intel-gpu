@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Here is default settings, please if you need exclude something - do it after -->
+  <PropertyGroup>
+    <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\build\</MfxBuildDir>
+    <MSDK_STUDIO_ROOT>$(MSBuildThisFileDirectory)..\_studio</MSDK_STUDIO_ROOT>
+    <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-api</MSDK_API_ROOT>
+    <MSDK_MFX_BUILD_DIR>$(MSBuildThisFileDirectory)..\..\build</MSDK_MFX_BUILD_DIR>
+    <MfxPropsDir Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props')">$(SolutionDir)</MfxPropsDir>
+    <MfxPropsDir Condition="!Exists('$(MfxPropsDir)') And Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props')">$(MEDIASDK_LIB_ROOT)\builder</MfxPropsDir>
+    <MfxPropsDir Condition="!Exists('$(MfxPropsDir)') And Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props')">$(MSBuildThisFileDirectory)..\..\builder</MfxPropsDir>
+<!-- Making human-readable absolute path -->
+    <MfxBuildDir>$([MSBuild]::MakeRelative('Z:\', $(MfxBuildDir)))</MfxBuildDir>
+    <MSDK_STUDIO_ROOT>$([MSBuild]::MakeRelative('Z:\', $(MSDK_STUDIO_ROOT)))</MSDK_STUDIO_ROOT>
+    <MSDK_API_ROOT>$([MSBuild]::MakeRelative('Z:\', $(MSDK_API_ROOT)))</MSDK_API_ROOT>
+    <MSDK_MFX_BUILD_DIR>$([MSBuild]::MakeRelative('Z:\', $(MSDK_MFX_BUILD_DIR)))</MSDK_MFX_BUILD_DIR>
+<!-- End of Making human-readable absolute path -->
+    
+<!-- COMPILER SETTINGS --> 
+    <MfxWindowsTargetPlatformVersion>10.0.17134.0</MfxWindowsTargetPlatformVersion>
+    <MfxPlatformToolset>v140</MfxPlatformToolset>
+    <MfxIntelPlatformToolset>Intel C++ Compiler 17.0</MfxIntelPlatformToolset>
+    <MfxIntelPath>$(ICInstallDir)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICInstallDir)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICPP_COMPILER17)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\</MfxIntelPath>
+<!-- End of COMPILER SETTINGS -->
+
+    <MfxWholeProgramOptimization>true</MfxWholeProgramOptimization>
+    <MfxGenerateManifest>false</MfxGenerateManifest>
+    <MfxCharacterSet>Unicode</MfxCharacterSet>
+<!-- By default destination file should be .lib -->
+    <MfxConfigurationType>StaticLibrary</MfxConfigurationType>
+<!-- Compiler/Linker specific settings -->
+    <MfxExceptionHandling>Async</MfxExceptionHandling>
+    <MfxWarningLevel>Level4</MfxWarningLevel>
+    <MfxTreatWarningAsError>true</MfxTreatWarningAsError>
+    <MfxDebugInformationFormat>ProgramDatabase</MfxDebugInformationFormat>
+    <MfxSDLCheck>true</MfxSDLCheck>
+    <MfxMultiProcessorCompilation>true</MfxMultiProcessorCompilation>
+    <MfxGenerateDebugInformation>true</MfxGenerateDebugInformation>
+    <MfxSubSystem>Windows</MfxSubSystem>
+    <MfxOptimizeReferences>true</MfxOptimizeReferences>
+    <MfxEnableCOMDATFolding>true</MfxEnableCOMDATFolding>
+    <MfxRuntimeLibrary>MultiThreaded</MfxRuntimeLibrary>
+<!-- For work with software library -->
+    <MfxSoftwareOnly>false</MfxSoftwareOnly>
+    <MfxSoftwareOnly Condition="$(SolutionName.Contains('mfxsw'))">true</MfxSoftwareOnly>
+	<MfxHeaderIncluded>true</MfxHeaderIncluded>
+  </PropertyGroup>
+<!-- To use ITT Traces set UseITT to true -->
+  <PropertyGroup>
+    <TraceIttPropsImported>true</TraceIttPropsImported>
+    <UseITT>false</UseITT>
+  </PropertyGroup>
+  <!-- End of default settings, please if you need exclude something - do it in Intel.Mfx.Targets.props -->
+
+  <!-- List of Available configurations, possible to redefine for each solution by setting
+  MfxNoDefaultConfiguration to true before including this file -->
+  <ItemGroup Label="ProjectConfigurations" Condition="'$(MfxNoDefaultConfigurations)'!='true'">
+    <ProjectConfiguration Include="Debug_Intel|Win32">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Intel|x64">
+      <Configuration>Debug_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_HSW_Emu|Win32">
+      <Configuration>Debug_HSW_Emu</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_HSW_Emu|x64">
+      <Configuration>Debug_HSW_Emu</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_THM|Win32">
+      <Configuration>Debug_THM</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_THM|x64">
+      <Configuration>Debug_THM</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|Win32">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_Intel|x64">
+      <Configuration>Release_Intel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_THM|Win32">
+      <Configuration>Release_THM</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_THM|x64">
+      <Configuration>Release_THM</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <!-- End of List of Available configurations -->
+
+  <!--PropertyGroup Condition="'$(Configuration)'=='Debug' Or '$(Configuration)'=='Debug_THM' Or '$(Configuration)'=='Debug_HSW_Emu' Or '$(Configuration)'=='Debug_Intel'"-->
+  <PropertyGroup Condition="$(Configuration.Contains('Debug')) Or $(Configuration.Contains('debug'))">
+    <IntelDebugConf>true</IntelDebugConf>
+  </PropertyGroup>
+  <!--PropertyGroup Condition="'$(Configuration)'=='Release_THM' Or '$(Configuration)'=='Debug_THM'"-->
+  <PropertyGroup Condition="$(Configuration.Contains('THM'))">
+    <IsTHM>true</IsTHM>
+  </PropertyGroup>
+  <!--PropertyGroup Condition="'$(Configuration)'=='Release_Intel' Or '$(Configuration)'=='Debug_Intel'"-->
+  <PropertyGroup Condition="$(Configuration.Contains('Intel'))">
+    <UseIntelToolset>true</UseIntelToolset>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(IntelDebugConf)'=='true'">
+    <MfxWholeProgramOptimization>false</MfxWholeProgramOptimization>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Platform)'=='Win32'">
+    <MfxPlatformArchitecture>32</MfxPlatformArchitecture>
+    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\include</MfxIppIncludeDir>
+    <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\lib</MfxIppLibraryDir>
+    <MfxIppGoldIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</MfxIppGoldIncludeDir>
+    <MfxIppGoldLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</MfxIppGoldLibraryDir>
+    <MfxIttIncludeDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\include</MfxIttIncludeDir>
+    <MfxIttLibraryDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\lib32</MfxIttLibraryDir>
+    <MfxIntelIncludeDir>$(MfxIntelPath)\compiler\include\</MfxIntelIncludeDir>
+    <MfxIntelLibraryDir>$(MfxIntelPath)\compiler\lib\ia32_win\</MfxIntelLibraryDir>
+    <MfxMDFIncludeDir>$(MEDIASDK_ROOT)\cmrt\compiler\include\</MfxMDFIncludeDir>
+    <MfxMDFLibraryDir>$(MEDIASDK_ROOT)\cmrt\compiler\lib\x86\</MfxMDFLibraryDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <MfxPlatformArchitecture>64</MfxPlatformArchitecture>
+    <MfxIppIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\em64t\include</MfxIppIncludeDir>
+    <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\em64t\lib</MfxIppLibraryDir>
+    <MfxIppGoldIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</MfxIppGoldIncludeDir>
+    <MfxIppGoldLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</MfxIppGoldLibraryDir>
+    <MfxIttIncludeDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\include</MfxIttIncludeDir>
+    <MfxIttLibraryDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\lib64</MfxIttLibraryDir>
+    <MfxIntelIncludeDir>$(MfxIntelPath)\compiler\include\</MfxIntelIncludeDir>
+    <MfxIntelLibraryDir>$(MfxIntelPath)\compiler\lib\intel64_win\</MfxIntelLibraryDir>
+    <MfxMDFIncludeDir>$(MEDIASDK_ROOT)\cmrt\compiler\include\</MfxMDFIncludeDir>
+    <MfxMDFLibraryDir>$(MEDIASDK_ROOT)\cmrt\compiler\lib\x64\</MfxMDFLibraryDir>
+  </PropertyGroup>
+<!-- Calculated default settings -->
+  <PropertyGroup>
+    <!-- Destination folder -->
+    <MfxRootOutDir>$(MfxBuildDir)win_$(Platform)\</MfxRootOutDir>
+    <MfxRootOutDir Condition="'$(IsTHM)'=='true'">$(MfxBuildDir)win_thm$(MfxPlatformArchitecture)\</MfxRootOutDir>
+    <MfxRootOutDir Condition="'$(UseIntelToolset)'=='true'">$(MfxBuildDir)win_intel$(MfxPlatformArchitecture)\</MfxRootOutDir>
+    <MfxUseDebugLibraries Condition="'$(IntelDebugConf)'=='true'">true</MfxUseDebugLibraries>
+    <!-- Other settings -->
+    <MfxLinkIncremental>true</MfxLinkIncremental>
+    <MfxLinkIncremental Condition="'$(IntelDebugConf)'!='true'">false</MfxLinkIncremental>
+    <MfxImportLibrary>$(MfxRootOutDir)lib\</MfxImportLibrary>
+    <MfxImportLibrary>$([MSBuild]::MakeRelative('Z:\', $(MfxImportLibrary)))</MfxImportLibrary>
+    <MfxPlatformToolset Condition="'$(UseIntelToolset)'=='true'">$(MfxIntelPlatformToolset)</MfxPlatformToolset>
+  </PropertyGroup>
+<!-- End of Calculated default settings -->
+</Project>

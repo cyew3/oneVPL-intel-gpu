@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- screen_capture_plugin.vcxproj specific settings -->
+  <PropertyGroup Label="screen_capture_plugin settings">
+    <MfxConfigurationType>DynamicLibrary</MfxConfigurationType>
+    <MfxOutDir>$(MfxRootOutDir)\bin\22d62c07e672408fbb4cc20ed7a053e4\</MfxOutDir>
+    <MfxUsingSettings>screen_capture_plugin;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\screen_capture\include;
+    $(MSDK_STUDIO_ROOT)\screen_capture\ditry_rect_genx;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
+    </MfxIncludes>
+    <MfxDefinitions>AS_VPP_PLUGIN;</MfxDefinitions>
+    <MfxLibraries>d3d11.lib;dxgi.lib;dxva2.lib;d3d9.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
+    <MfxPostBuildEvent>copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" "$(MfxRootOutDir)\bin\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</MfxPostBuildEvent>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_screen_capture</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of screen_capture_plugin.vcxproj specific settings -->
+</Project>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- vpp_hw.vcxproj specific settings -->
+  <PropertyGroup Label="vpp_hw settings">
+    <MfxUsingSettings>vpp_hw;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\color_space_converter\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\codec\scene_analyzer\include;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\field_copy\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\mctf_package\mctf\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\genx\mctf\include;
+    $(MSDK_STUDIO_ROOT)\shared\asc\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxLibraries></MfxLibraries>
+    <MfxLibraryDir></MfxLibraryDir>
+  </PropertyGroup>
+<!-- End of vpp_hw.vcxproj specific settings -->
+</Project>

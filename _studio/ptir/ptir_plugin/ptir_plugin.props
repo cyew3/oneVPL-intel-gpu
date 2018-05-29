@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- ptir_plugin.vcxproj specific settings -->
+  <PropertyGroup Label="ptir_plugin settings">
+    <MfxConfigurationType>DynamicLibrary</MfxConfigurationType>
+    <MfxOutDir>$(MfxRootOutDir)\bin\e744753acd74402e89a2ee0635496179\</MfxOutDir>
+    <MfxUsingSettings>ptir_plugin;$(MfxUsedSettings)</MfxUsingSettings>
+    <MfxIncludes>
+    $(MfxIppIncludeDir);
+    $(MfxMDFIncludeDir);
+    $(MSDK_API_ROOT)\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    $(MSDK_STUDIO_ROOT)\ptir\ptir_plugin\include;
+    $(MSDK_STUDIO_ROOT)\ptir\pa;
+    $(MSDK_STUDIO_ROOT)\ptir\pacm;
+    $(MSDK_STUDIO_ROOT)\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    </MfxIncludes>
+    <MfxDefinitions>MFX_VA;MFX_VA_WIN;PTIR_PLUGIN_EXPORTS;</MfxDefinitions>
+    <MfxLibraries>ippcoremt.lib;ippccmt.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;</MfxLibraries>
+    <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
+    <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+    <MfxPostBuildEvent>copy "$(SolutionDir)e744753acd74402e89a2ee0635496179\plugin.cfg" "$(MfxRootOutDir)\bin\e744753acd74402e89a2ee0635496179\plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)e744753acd74402e89a2ee0635496179\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\e744753acd74402e89a2ee0635496179\plugin.cfg" /y</MfxPostBuildEvent>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_ptir_hw</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of ptir_plugin.vcxproj specific settings -->
+</Project>
+<!-- ptir_plugin.vcxproj -->
+<!-- {C4CD82AC-5EAE-4D81-BD36-4C36766B0C98} -->
+
+

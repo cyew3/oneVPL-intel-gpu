@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1349,7 +1349,7 @@ void TaskBrokerTwoThread_H265::Release()
 
     TaskBrokerSingleThread_H265::Release();
 }
-
+/*
 // Update access units list finishing completed frames
 void TaskBrokerTwoThread_H265::CompleteFrame()
 {
@@ -1359,7 +1359,7 @@ void TaskBrokerTwoThread_H265::CompleteFrame()
     DEBUG_PRINT((VM_STRING("frame completed - poc - %d\n"), m_FirstAU->m_pFrame->m_PicOrderCnt));
     SwitchCurrentAU();
 }
-
+*/
 // Try to find a new task and initialize a task object for it
 bool TaskBrokerTwoThread_H265::GetNextTaskInternal(H265Task *pTask)
 {

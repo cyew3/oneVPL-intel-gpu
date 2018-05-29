@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<!-- mfxplugin_hw.vcxproj specific settings -->
+  <PropertyGroup Label="mfxplugin_hw settings">
+    <MfxConfigurationType>DynamicLibrary</MfxConfigurationType>
+    <MfxUsingSettings>mfxplugin_hw;$(MfxUsedSettings)</MfxUsingSettings>
+    <!-- TODO: separate by components -->
+    <MfxIncludes>
+    <!-- IPP -->$(MfxIppIncludeDir);
+    <!-- MediaSDK API -->$(MSDK_API_ROOT)\include;
+    <!-- UMC Code -->$(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+    <!-- UMC VM Classes -->$(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;$(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+    <!-- Shared -->$(MSDK_STUDIO_ROOT)\shared\include;
+    <!-- UMC VA --> $(MSDK_STUDIO_ROOT)\shared\umc\io\umc_va\include;
+    <!-- Shared -->$(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+    <!-- MDF -->$(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+    <!-- Plugin -->$(MSDK_STUDIO_ROOT)\mfx_lib\plugin\include;
+    <!-- h265 -->$(MSDK_STUDIO_ROOT)\hevce_hw\h265\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode\h265\include;
+    <!-- vp9e -->$(MSDK_STUDIO_ROOT)\vp9e_hw\include;
+    <!-- camera -->$(MSDK_STUDIO_ROOT)\camera_pipe\include;$(MSDK_STUDIO_ROOT)\camera_pipe\genx\src;
+    <!-- Copy Kernels -->$(MSDK_STUDIO_ROOT)\mfx_lib\genx\copy_kernels\include;
+    </MfxIncludes>
+    <MfxDefinitions>_WINDOWS;_USRDLL;LIBMFXSW_EXPORTS;MFX_VA;MFX_D3D11_ENABLED;AS_CAMERA_PLUGIN;AS_HEVCD_PLUGIN;AS_HEVCE_DP_PLUGIN;AS_HEVCE_PLUGIN;AS_VP8D_PLUGIN;AS_VP9D_PLUGIN;AS_VP9E_PLUGIN;UNIFIED_PLUGIN;</MfxDefinitions>
+    <!-- DirectX libraries -->
+    <MfxLibraries>dxva2.lib;D3D11.lib;DXGI.lib;d3d9.lib;</MfxLibraries>
+    <!-- IPP libraries -->
+    <MfxLibraries Condition="'$(Platform)'=='Win32'">ippcoremt.lib;ipps_s_p8.lib;ippvc_s_p8.lib;ippi_s_p8.lib;ippcc_s_p8.lib;ippcv_s_p8.lib;ippj_s_p8.lib;ippmsdk_s_p8.lib;$(MfxLibraries)</MfxLibraries>
+    <MfxLibraries Condition="'$(Platform)'=='x64'">ippcoremt.lib;ipps_s_y8.lib;ippvc_s_y8.lib;ippi_s_y8.lib;ippcc_s_y8.lib;ippcv_s_y8.lib;ippj_s_y8.lib;ippmsdk_s_y8.lib;$(MfxLibraries)</MfxLibraries>
+    <!-- Other libraries -->
+    <MfxLibraries>version.lib;$(MfxLibraries)</MfxLibraries>
+    <!-- It is not used! -->
+    <!--MfxModuleDefinitionFile>libmfx.def</MfxModuleDefinitionFile-->
+    <MfxLibraryDir>$(MfxIppLibraryDir);$(MfxIntelLibraryDir)</MfxLibraryDir>
+    <GaccAsDefaultPlugin Condition="'$(Platform)'=='x64'">true</GaccAsDefaultPlugin>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_hw</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+  </PropertyGroup>
+<!-- End of mfxplugin_hw.vcxproj specific settings -->
+</Project>
