@@ -23,7 +23,7 @@ namespace vp9e_multiref
     #define IVF_PIC_HEADER_SIZE_BYTES (12)
     #define MAX_IVF_HEADER_SIZE IVF_SEQ_HEADER_SIZE_BYTES + IVF_PIC_HEADER_SIZE_BYTES
 
-    #define PSNR_THRESHOLD (35)
+    #define PSNR_THRESHOLD (34.8)
 
     enum
     {
