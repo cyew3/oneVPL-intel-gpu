@@ -34,9 +34,10 @@ namespace vp9e_big_resolution
 
     enum
     {
-        CHECK_4K,
-        CHECK_8K,
-        CHECK_16K
+        CHECK_4Kx4K,
+        CHECK_8Kx8K,
+        CHECK_16Kx4K,
+        CHECK_16Kx16K
     };
 
     struct tc_struct
@@ -74,24 +75,33 @@ namespace vp9e_big_resolution
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/ MFX_ERR_NONE, CHECK_4K,
+        {/*00*/ MFX_ERR_NONE, CHECK_4Kx4K,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_4K_SIZE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_4K_SIZE },
             }
         },
 
-        {/*01*/ MFX_ERR_NONE, CHECK_8K,
+        {/*01*/ MFX_ERR_NONE, CHECK_8Kx8K,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_8K_SIZE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_8K_SIZE },
             }
         },
 
-        {/*02*/ MFX_ERR_NONE, CHECK_16K,
+        {/*02 currenlty maximim supported size for typical encoding*/ MFX_ERR_NONE, CHECK_16Kx4K,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_16K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_4K_SIZE },
+            }
+        },
+
+        {/*03 for 16Kx16K only I-frames (still pictures) currently supported*/ MFX_ERR_NONE, CHECK_16Kx16K,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_16K_SIZE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_16K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 0 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 }
             }
         },
     };
@@ -121,137 +131,135 @@ namespace vp9e_big_resolution
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        mfxU32 checked = 0;
+        nFrames;
 
         SetBuffer(bs);
+
+        // parse uncompressed header and check values
+        tsParserVP9::UnitType& hdr = ParseOrDie();
         /*
         // Dump stream to file
         const int encoded_size = bs.DataLength;
-        static FILE *fp_vp9 = fopen("vp9e_encoded.vp9", "wb");
+        std::string fname = "encoded_" + std::to_string(hdr.uh.width) + "x" + std::to_string(hdr.uh.height) + "_" + std::to_string(hdr.uh.profile) + ".vp9";
+        static FILE *fp_vp9 = fopen(fname.c_str(), "wb");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fflush(fp_vp9);
         */
-
-        while (checked++ < nFrames)
+        // do the decoder initialisation on the first encoded frame
+        if (m_DecodedFramesCount == 0 && !m_DecoderInited)
         {
-            tsParserVP9::UnitType& hdr = ParseOrDie();
+            const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
+            m_pBitstream->Data = bs.Data + headers_shift;
+            m_pBitstream->DataOffset = 0;
+            m_pBitstream->DataLength = bs.DataLength - headers_shift;
+            m_pBitstream->MaxLength = bs.MaxLength;
 
-            // do the decoder initialisation on the first encoded frame
-            if (m_DecodedFramesCount == 0 && !m_DecoderInited)
+            m_pPar->AsyncDepth = 1;
+
+            mfxStatus decode_header_status = DecodeHeader();
+
+            mfxStatus init_status = Init();
+            m_par_set = true;
+            if (init_status >= 0)
             {
-                const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
-                m_pBitstream->Data = bs.Data + headers_shift;
-                m_pBitstream->DataOffset = 0;
-                m_pBitstream->DataLength = bs.DataLength - headers_shift;
-                m_pBitstream->MaxLength = bs.MaxLength;
-
-                m_pPar->AsyncDepth = 1;
-
-                mfxStatus decode_header_status = DecodeHeader();
-
-                mfxStatus init_status = Init();
-                m_par_set = true;
-                if (init_status >= 0)
+                if (m_default && !m_request.NumFrameMin)
                 {
-                    if (m_default && !m_request.NumFrameMin)
-                    {
-                        QueryIOSurf();
-                    }
+                    QueryIOSurf();
+                }
 
-                    mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
-                    if (alloc_status >= 0)
-                    {
-                        m_DecoderInited = true;
-                    }
-                    else
-                    {
-                        g_tsLog << "ERROR: Could not allocate surfaces for the decoder, status " << alloc_status;
-                        throw tsFAIL;
-                    }
+                mfxStatus alloc_status = tsSurfacePool::AllocSurfaces(m_request, !m_use_memid);
+                if (alloc_status >= 0)
+                {
+                    m_DecoderInited = true;
                 }
                 else
                 {
-                    g_tsLog << "ERROR: Could not inilialize the decoder, Init() returned " << init_status;
+                    g_tsLog << "ERROR: Could not allocate surfaces for the decoder, status " << alloc_status;
                     throw tsFAIL;
                 }
             }
-
-            if (m_DecoderInited)
+            else
             {
-                const mfxU32 ivfSize = hdr.FrameOrder == 0 ? MAX_IVF_HEADER_SIZE : IVF_PIC_HEADER_SIZE_BYTES;
+                g_tsLog << "ERROR: Could not inilialize the decoder, Init() returned " << init_status;
+                throw tsFAIL;
+            }
+        }
 
-                m_pBitstream->Data = bs.Data + ivfSize;
-                m_pBitstream->DataOffset = 0;
-                m_pBitstream->DataLength = bs.DataLength - ivfSize;
-                m_pBitstream->MaxLength = bs.MaxLength;
+        if (m_DecoderInited)
+        {
+            const mfxU32 ivfSize = hdr.FrameOrder == 0 ? MAX_IVF_HEADER_SIZE : IVF_PIC_HEADER_SIZE_BYTES;
 
-                mfxStatus sts = MFX_ERR_NONE;
-                do
-                {
-                    sts = DecodeFrameAsync();
-                } while (sts == MFX_WRN_DEVICE_BUSY);
+            m_pBitstream->Data = bs.Data + ivfSize;
+            m_pBitstream->DataOffset = 0;
+            m_pBitstream->DataLength = bs.DataLength - ivfSize;
+            m_pBitstream->MaxLength = bs.MaxLength;
 
-                if (sts < 0)
-                {
-                    g_tsLog << "ERROR: DecodeFrameAsync for frame " << hdr.FrameOrder << " failed with status: " << sts;
-                    throw tsFAIL;
-                }
+            mfxStatus sts = MFX_ERR_NONE;
+            do
+            {
+                sts = DecodeFrameAsync();
+            } while (sts == MFX_WRN_DEVICE_BUSY);
 
-                sts = SyncOperation();
-                if (sts < 0)
-                {
-                    g_tsLog << "ERROR: SyncOperation for frame " << hdr.FrameOrder << " failed with status: " << sts;
-                    throw tsFAIL;
-                }
-
-                // check that respective source frame is stored
-                if (m_pInputSurfaces->find(hdr.FrameOrder) == m_pInputSurfaces->end())
-                {
-                    return MFX_ERR_UNDEFINED_BEHAVIOR;
-                }
-
-                mfxU32 w = m_pPar->mfx.FrameInfo.Width;
-                mfxU32 h = m_pPar->mfx.FrameInfo.Height;
-
-                mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
-                tsFrame src = tsFrame(*pInputSurface);
-                tsFrame res = tsFrame(*m_pSurf);
-                src.m_info.CropX = src.m_info.CropY = res.m_info.CropX = res.m_info.CropY = 0;
-                src.m_info.CropW = res.m_info.CropW = w;
-                src.m_info.CropH = res.m_info.CropH = h;
-
-                const mfxF64 psnrY = PSNR(src, res, 0);
-                const mfxF64 psnrU = PSNR(src, res, 1);
-                const mfxF64 psnrV = PSNR(src, res, 2);
-                msdk_atomic_dec16(&pInputSurface->Data.Locked);
-                m_pInputSurfaces->erase(hdr.FrameOrder);
-                const mfxF64 minPsnr = PSNR_THRESHOLD;
-
-                g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
-                    << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength <<"\n";
-
-                if (psnrY < minPsnr)
-                {
-                    ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
-                    throw tsFAIL;
-                }
-                if (psnrU < minPsnr)
-                {
-                    ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
-                    throw tsFAIL;
-                }
-                if (psnrV < minPsnr)
-                {
-                    ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
-                    throw tsFAIL;
-                }
+            if (sts < 0)
+            {
+                g_tsLog << "ERROR: DecodeFrameAsync for frame " << hdr.FrameOrder << " failed with status: " << sts;
+                throw tsFAIL;
             }
 
-            m_AllFramesSize += bs.DataLength;
-            bs.DataLength = bs.DataOffset = 0;
+            sts = SyncOperation();
+            if (sts < 0)
+            {
+                g_tsLog << "ERROR: SyncOperation for frame " << hdr.FrameOrder << " failed with status: " << sts;
+                throw tsFAIL;
+            }
 
-            m_DecodedFramesCount++;
+            // check that respective source frame is stored
+            if (m_pInputSurfaces->find(hdr.FrameOrder) == m_pInputSurfaces->end())
+            {
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+
+            mfxU32 w = m_pPar->mfx.FrameInfo.Width;
+            mfxU32 h = m_pPar->mfx.FrameInfo.Height;
+
+            mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[hdr.FrameOrder];
+            tsFrame src = tsFrame(*pInputSurface);
+            tsFrame res = tsFrame(*m_pSurf);
+            src.m_info.CropX = src.m_info.CropY = res.m_info.CropX = res.m_info.CropY = 0;
+            src.m_info.CropW = res.m_info.CropW = w;
+            src.m_info.CropH = res.m_info.CropH = h;
+
+            const mfxF64 psnrY = PSNR(src, res, 0);
+            const mfxF64 psnrU = PSNR(src, res, 1);
+            const mfxF64 psnrV = PSNR(src, res, 2);
+            msdk_atomic_dec16(&pInputSurface->Data.Locked);
+            m_pInputSurfaces->erase(hdr.FrameOrder);
+            const mfxF64 minPsnr = PSNR_THRESHOLD;
+
+            g_tsLog << "INFO: frame[" << hdr.FrameOrder << "]: PSNR-Y=" << psnrY << " PSNR-U="
+                << psnrU << " PSNR-V=" << psnrV << " size=" << bs.DataLength <<"\n";
+
+            if (psnrY < minPsnr)
+            {
+                ADD_FAILURE() << "ERROR: PSNR-Y of frame " << hdr.FrameOrder << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
+                throw tsFAIL;
+            }
+            if (psnrU < minPsnr)
+            {
+                ADD_FAILURE() << "ERROR: PSNR-U of frame " << hdr.FrameOrder << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
+                throw tsFAIL;
+            }
+            if (psnrV < minPsnr)
+            {
+                ADD_FAILURE() << "ERROR: PSNR-V of frame " << hdr.FrameOrder << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                throw tsFAIL;
+            }
         }
+
+        m_AllFramesSize += bs.DataLength;
+        bs.DataLength = bs.DataOffset = 0;
+
+        m_DecodedFramesCount++;
 
         bs.DataLength = 0;
 
@@ -338,12 +346,12 @@ namespace vp9e_big_resolution
     {
         TS_START;
 
-        if (g_tsHWtype < MFX_HW_TGL && tc.type == CHECK_16K)
+        if (g_tsHWtype < MFX_HW_TGL && (tc.type == CHECK_16Kx16K || tc.type == CHECK_16Kx4K))
         {
             g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
             throw tsSKIP;
         }
-        else if (g_tsHWtype < MFX_HW_ICL && tc.type == CHECK_8K)
+        else if (g_tsHWtype < MFX_HW_ICL && tc.type == CHECK_8Kx8K)
         {
             g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
             throw tsSKIP;
@@ -367,11 +375,13 @@ namespace vp9e_big_resolution
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-            if (tc.type == CHECK_4K)
+            if (tc.type == CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_nv12.yuv"));
-            else if (tc.type == CHECK_8K)
+            else if (tc.type == CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_nv12.yuv"));
-            else if (tc.type == CHECK_16K)
+            else if (tc.type == CHECK_16Kx4K)
+                stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_nv12.yuv"));
+            else if (tc.type == CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_nv12.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_P010)
@@ -380,11 +390,13 @@ namespace vp9e_big_resolution
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-            if (tc.type == CHECK_4K)
+            if (tc.type == CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_p010_shifted.yuv"));
-            else if (tc.type == CHECK_8K)
+            else if (tc.type == CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_p010_shifted.yuv"));
-            else if (tc.type == CHECK_16K)
+            else if (tc.type == CHECK_16Kx4K)
+                stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_p010_shifted.yuv"));
+            else if (tc.type == CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_p010_shifted.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_AYUV)
@@ -392,11 +404,13 @@ namespace vp9e_big_resolution
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-            if (tc.type == CHECK_4K)
+            if (tc.type == CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_ayuv.yuv"));
-            else if (tc.type == CHECK_8K)
+            else if (tc.type == CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_ayuv.yuv"));
-            else if (tc.type == CHECK_16K)
+            else if (tc.type == CHECK_16Kx4K)
+                stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_ayuv.yuv"));
+            else if (tc.type == CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_ayuv.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_Y410)
@@ -404,11 +418,13 @@ namespace vp9e_big_resolution
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-            if (tc.type == CHECK_4K)
+            if (tc.type == CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_y410.yuv"));
-            else if (tc.type == CHECK_8K)
+            else if (tc.type == CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_y410.yuv"));
-            else if (tc.type == CHECK_16K)
+            else if (tc.type == CHECK_16Kx4K)
+                stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_y410.yuv"));
+            else if (tc.type == CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_y410.yuv"));
         }
         else
