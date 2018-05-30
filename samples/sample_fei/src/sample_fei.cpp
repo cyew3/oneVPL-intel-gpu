@@ -1412,7 +1412,7 @@ int main(int argc, char *argv[])
     }
     msdk_printf(MSDK_STRING("\nProcessing finished after %.2f sec \n"), MSDK_GET_TIME(msdk_time_get_tick(), startTime, frequency));
     pipe_threads.clear();
-    for(std::vector<CEncodingPipeline*>::iterator pPipeline = pipelines.begin(); pPipeline != pipelines.end(); pPipeline++)
+    for(std::vector<CEncodingPipeline*>::reverse_iterator pPipeline = pipelines.rbegin(); pPipeline != pipelines.rend(); pPipeline++)
     {
         (*pPipeline)->Close();
         delete *pPipeline;
