@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -866,6 +866,8 @@ Ipp32s MPEG2VideoDecoderBase::GetDisplayIndex()
     if(frame_buffer.ret_array[frame_buffer.ret_array_curr] != -1)
     {
       frame_buffer.retrieve     = frame_buffer.ret_array[frame_buffer.ret_array_curr];
+      if (frame_buffer.retrieve >= DPB_SIZE)
+          frame_buffer.retrieve -= DPB_SIZE;
       frame_buffer.ret_array[frame_buffer.ret_array_curr] = -1;
       frame_buffer.ret_array_curr++;
       if(frame_buffer.ret_array_curr >= DPB_SIZE)
