@@ -91,8 +91,8 @@ namespace hevcd_decode_order
     TS_REG_TEST_SUITE( hevcd_8b_444_ayuv_decode_order, test<MFX_FOURCC_AYUV>, 1);
 
     TS_REG_TEST_SUITE(hevcd_10b_420_p010_decode_order, test<MFX_FOURCC_P010>, 1);
-    TS_REG_TEST_SUITE(hevcd_10b_422_Y210_decode_order, test<MFX_FOURCC_Y210>, 1);
-    TS_REG_TEST_SUITE(hevcd_10b_444_Y410_decode_order, test<MFX_FOURCC_Y410>, 1);
+    TS_REG_TEST_SUITE(hevcd_10b_422_y210_decode_order, test<MFX_FOURCC_Y210>, 1);
+    TS_REG_TEST_SUITE(hevcd_10b_444_y410_decode_order, test<MFX_FOURCC_Y410>, 1);
 
     TS_REG_TEST_SUITE(hevcd_12b_420_p016_decode_order, test<MFX_FOURCC_P016>, 1);
     TS_REG_TEST_SUITE(hevcd_12b_422_y216_decode_order, test<MFX_FOURCC_Y216>, 1);
