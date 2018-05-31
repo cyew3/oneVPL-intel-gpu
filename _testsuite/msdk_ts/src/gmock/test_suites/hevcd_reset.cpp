@@ -435,16 +435,17 @@ unsigned int const TestSuiteExt<MFX_FOURCC_Y416>::n_cases = TestSuite::n_cases +
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc", ""},
+    {/* 0*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265", ""},
     {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
     {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc", ""},
+    {/* 1*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc", "<TODO>"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265", "forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265"}},
+    {/* 3*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265", "forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
@@ -453,16 +454,17 @@ unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_HEVC_SCC>::n_cases 
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc", ""},
+    {/* 0*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265", ""},
     {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
     {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc", ""},
+    {/* 1*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc", "<TODO>"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265", "forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265"}},
+    {/* 3*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265", "forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
@@ -471,16 +473,17 @@ unsigned int const TestSuiteExt<MFX_FOURCC_AYUV, MFX_PROFILE_HEVC_SCC>::n_cases 
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc", ""},
+    {/* 0*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265", ""},
     {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
     {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc", ""},
+    {/* 1*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc", "<TODO>"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265", "forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265"}},
+    {/* 3*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265", "forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
@@ -489,16 +492,17 @@ unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_HEVC_SCC>::n_cases 
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc", ""},
+    {/* 0*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265", ""},
     {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
     {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc", ""},
+    {/* 1*/ MFX_ERR_NONE, {"forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc", "<TODO>"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265", "forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265"}},
+    {/* 3*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265", "forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_Y410, MFX_PROFILE_HEVC_SCC>::test_cases) / sizeof(TestSuite::tc_struct);
