@@ -189,6 +189,7 @@ namespace TranscodingSample
         bool   bIsPerf;   // special performance mode. Use pre-allocated bitstreams, output
         mfxU16 nThreadsNum; // number of internal session threads number
         bool bRobustFlag;   // Robust transcoding mode. Allows auto-recovery after hardware errors
+        bool bSoftRobustFlag;
 
         mfxU32 EncodeId; // type of output coded video
         mfxU32 DecodeId; // type of input coded video
@@ -842,6 +843,7 @@ namespace TranscodingSample
         MSDKMutex       m_mReset;
         MSDKMutex       m_mStopSession;
         bool            m_bRobustFlag;
+        bool            m_bSoftGpuHangRecovery;
 
         bool isHEVCSW;
 
