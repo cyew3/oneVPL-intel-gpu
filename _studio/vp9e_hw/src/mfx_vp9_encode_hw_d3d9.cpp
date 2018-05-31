@@ -340,7 +340,6 @@ mfxStatus FillSegmentMap(Task const & task,
     mfxFrameInfo const & dstFi = task.m_pSegmentMap->pSurface->Info;
     mfxU32 dstW = dstFi.Width;
     mfxU32 dstH = dstFi.Height;
-    mfxU32 dstPitch = segMap.Pitch;
 
     mfxCoreParam corePar = {};
     m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &corePar);
@@ -358,16 +357,14 @@ mfxStatus FillSegmentMap(Task const & task,
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-
     // for now application seg map is accepted in 32x32 and 64x64 blocks
     // and driver seg map is always in 16x16 blocks
     // need to map one to another
-
     for (mfxU32 i = 0; i < dstH; i++)
     {
         for (mfxU32 j = 0; j < dstW; j++)
         {
-            segMap.Y[i * dstPitch + j] = seg.SegmentId[(i / ratio) * srcW + j / ratio];
+            segMap.Y[i * dstW + j] = seg.SegmentId[(i / ratio) * srcW + j / ratio];
         }
     }
 
