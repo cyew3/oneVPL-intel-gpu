@@ -30,6 +30,7 @@ bool IsExtBufferSupportedInInit(mfxU32 id)
         || id == MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION
         || id == MFX_EXTBUFF_CODING_OPTION2
         || id == MFX_EXTBUFF_CODING_OPTION3
+        || id == MFX_EXTBUFF_DDI // RefreshFrameContext is used by driver
         || id == MFX_EXTBUFF_VP9_SEGMENTATION
         || id == MFX_EXTBUFF_VP9_TEMPORAL_LAYERS
         || id == MFX_EXTBUFF_ENCODER_RESET_OPTION;
