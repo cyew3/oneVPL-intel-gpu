@@ -794,16 +794,16 @@ void tsRawReader::Init(mfxFrameInfo fi)
         break;
     case MFX_FOURCC_RGB4:
         m_data.R     = m_buf;
-        m_data.G     = m_data.R + fsz;
-        m_data.B     = m_data.G + fsz;
-        m_data.A     = m_data.B + fsz;
+        m_data.G     = m_data.R + 1;
+        m_data.B     = m_data.G + 1;
+        m_data.A     = m_data.B + 1;
         pitch        = fi.Width;
         break;
     case MFX_FOURCC_BGR4:
         m_data.B     = m_buf;
-        m_data.G     = m_data.B + fsz;
-        m_data.R     = m_data.G + fsz;
-        m_data.A     = m_data.R + fsz;
+        m_data.G     = m_data.B + 1;
+        m_data.R     = m_data.G + 1;
+        m_data.A     = m_data.R + 1;
         pitch        = fi.Width;
         break;
     case MFX_FOURCC_R16:
