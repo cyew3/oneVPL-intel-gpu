@@ -5110,6 +5110,28 @@ mfxStatus MFXVideoENCODEH264::Query(mfxVideoParam *par_in, mfxVideoParam *par_ou
         }
         else out->mfx.TargetUsage = in->mfx.TargetUsage;
 
+        // Align with HW impl
+        if (in->mfx.GopRefDist == 0)
+        {
+            if (in->mfx.CodecProfile == MFX_PROFILE_AVC_BASELINE ||
+                in->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_HIGH ||
+                in->mfx.CodecProfile == MFX_PROFILE_AVC_CONSTRAINED_BASELINE)
+            {
+                in->mfx.GopRefDist = 1;
+            }
+            else
+            {
+                in->mfx.GopRefDist = 3;
+                if (in->mfx.GopPicSize > 0 && in->mfx.GopPicSize <= in->mfx.GopRefDist)
+                    in->mfx.GopRefDist = in->mfx.GopPicSize;
+            }
+        }
+
+        if (in->mfx.GopPicSize == 0)
+        {
+            in->mfx.GopPicSize = mfxU16(256);
+        }
+
         if (!svcinfo_in) { // SVC takes from svcinfo_in
             if( in->mfx.GopPicSize < 0 ) {
                 out->mfx.GopPicSize = 0;
