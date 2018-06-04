@@ -11,7 +11,7 @@
 #include "ts_struct.h"
 #include "ts_surface_provider.h"
 
-#define TEST_NAME vp9d_chroma_change
+#define TEST_NAME vp9d_format_change
 
 namespace TEST_NAME
 {
@@ -147,12 +147,12 @@ int TestSuite::RunTest_Chroma(const unsigned int id)
     return 0;
 }
 
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_nv12_chroma_change,  RunTest_Chroma<MFX_FOURCC_NV12>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_ayuv_chroma_change,  RunTest_Chroma<MFX_FOURCC_AYUV>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_p010_chroma_change, RunTest_Chroma<MFX_FOURCC_P010>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_y410_chroma_change, RunTest_Chroma<MFX_FOURCC_Y410>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_chroma_change, RunTest_Chroma<MFX_FOURCC_P016>, n_cases);
-TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_chroma_change, RunTest_Chroma<MFX_FOURCC_Y416>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_420_nv12_format_change,  RunTest_Chroma<MFX_FOURCC_NV12>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_8b_444_ayuv_format_change,  RunTest_Chroma<MFX_FOURCC_AYUV>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_420_p010_format_change, RunTest_Chroma<MFX_FOURCC_P010>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_10b_444_y410_format_change, RunTest_Chroma<MFX_FOURCC_Y410>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_420_p016_format_change, RunTest_Chroma<MFX_FOURCC_P016>, n_cases);
+TS_REG_TEST_SUITE_CLASS_ROUTINE(vp9d_12b_444_y416_format_change, RunTest_Chroma<MFX_FOURCC_Y416>, n_cases);
 
 #undef TEST_NAME
 

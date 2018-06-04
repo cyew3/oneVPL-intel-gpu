@@ -443,7 +443,7 @@
     <ClCompile Include="src\gmock\test_suites\vc1d_bs_dataflag.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1d_res_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vc1_sethandle_16.cpp" />
-    <ClCompile Include="src\gmock\test_suites\vp9d_chroma_subsampl_change.cpp" />
+    <ClCompile Include="src\gmock\test_suites\vp9d_format_change.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_close.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_decode_frame_async.cpp" />
     <ClCompile Include="src\gmock\test_suites\vp9d_get_payload.cpp" />
