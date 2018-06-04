@@ -12,6 +12,7 @@ File Name: vp9e_init.cpp
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "mfx_ext_buffers.h"
 
 namespace vp9e_init
 {
@@ -72,7 +73,8 @@ namespace vp9e_init
             RATE_CONTROL,
             NOT_LOAD_PLUGIN,
             CALL_QUERY,
-            MEMORY_TYPE
+            MEMORY_TYPE,
+            PRIVATE_DDI
         };
 
         static const tc_struct test_case[];
@@ -251,6 +253,7 @@ namespace vp9e_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF },
             }
         },
+        {/*42 Check RefreshFrameContext option*/ MFX_ERR_NONE, EXT_BUFF, PRIVATE_DDI }
 
         /* Check this on Post-Si (on Pre-Si long hanging)
         {MFX_ERR_MEMORY_ALLOC, NONE, NONE,
@@ -324,6 +327,22 @@ namespace vp9e_init
 
         SETPARS(m_pPar, MFX_PAR);
 
+        tsExtBufType<mfxVideoParam> m_par_out;
+        m_par_out.mfx.CodecId = m_par.mfx.CodecId;
+        m_pParOut = &m_par_out;
+
+        if (m_par.NumExtParam)
+        {
+            for (mfxU8 i = 0; i < m_par.NumExtParam; i++)
+            {
+                mfxExtBuffer *pInBuf = m_par.ExtParam[i];
+                if (pInBuf)
+                {
+                    m_par_out.AddExtBuffer(pInBuf->BufferId, m_par.ExtParam[i]->BufferSz);
+                }
+            }
+        }
+
         InitAndSetAllocator();
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
@@ -361,6 +380,14 @@ namespace vp9e_init
             else
                 if (tc.sts != MFX_ERR_NONE)
                     sts = MFX_ERR_UNSUPPORTED;
+        }
+
+        if (tc.sub_type == PRIVATE_DDI)
+        {
+            m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+            m_par_out.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+            mfxExtCodingOptionDDI* m_extDDI = (mfxExtCodingOptionDDI*)m_par.GetExtBuffer(MFX_EXTBUFF_DDI);
+            m_extDDI->RefreshFrameContext = MFX_CODINGOPTION_ON;
         }
 
         if (m_pPar->IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)

@@ -10,6 +10,7 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 #include "ts_encoder.h"
 #include "ts_struct.h"
+#include "mfx_ext_buffers.h"
 
 namespace vp9e_query
 {
@@ -74,6 +75,7 @@ private:
         PROTECTED,
         INVALID,
         NONCONFIGURABLE_PARAM,
+        PRIVATE_DDI
     };
 
     static const tc_struct test_case[];
@@ -327,7 +329,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     // Check error on unsupportd ext-buf
     {/*106 */ MFX_ERR_UNSUPPORTED, NONE, NONE,
         { MFX_PAR, &tsStruct::mfxExtHEVCTiles.NumTileRows, 2 }
-    }
+    },
+
+    //Check RefreshFrameContext option
+    {/*107 */ MFX_ERR_NONE, EXT_BUFF, PRIVATE_DDI }
+
+
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -485,6 +492,14 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
         else
             if (tc.sts != MFX_ERR_NONE)
                 sts = MFX_ERR_UNSUPPORTED;
+    }
+
+    if (tc.sub_type == PRIVATE_DDI)
+    {
+        m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+        m_par_out.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+        mfxExtCodingOptionDDI* m_extDDI = (mfxExtCodingOptionDDI*)m_par.GetExtBuffer(MFX_EXTBUFF_DDI);
+        m_extDDI->RefreshFrameContext = MFX_CODINGOPTION_ON;
     }
 
     if (tc.type == IN_PAR_NULL)
