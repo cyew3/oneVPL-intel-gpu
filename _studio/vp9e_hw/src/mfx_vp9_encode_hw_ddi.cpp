@@ -8,6 +8,7 @@
 // Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
+#include <climits>
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_ddi.h"
 

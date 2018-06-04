@@ -11,8 +11,12 @@
 #pragma once
 
 #include "mfx_common.h"
+#if defined MFX_VA_LINUX
+#include "mfx_h264_encode_struct_vaapi.h"
+#endif
 #include "encoding_ddi.h"
 #include "mfx_vp9_encode_hw_utils.h"
+#include "mfx_platform_defs.h"
 
 namespace MfxHwVP9Encode
 {

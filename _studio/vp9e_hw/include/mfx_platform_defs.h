@@ -5,13 +5,16 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_PLATFORM_DEFS_H__
 #define __MFX_PLATFORM_DEFS_H__
 
-#if !(defined (_WIN32) || !defined (_WIN64))
+#if !(defined (_WIN32) || defined (_WIN64))
+
+static const GUID GUID_NULL =
+{ 0x00000000, 0x0000, 0x0000,{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
 
 typedef int D3DFORMAT;
 

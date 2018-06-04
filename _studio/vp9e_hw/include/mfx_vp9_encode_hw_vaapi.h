@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -21,32 +21,17 @@ namespace MfxHwVP9Encode
 
 #define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \
 do {                                               \
-    if ( vaBufferId != VA_INVALID_ID)              \
+    if (vaBufferId != VA_INVALID_ID)               \
     {                                              \
         vaDestroyBuffer(vaDisplay, vaBufferId);    \
         vaBufferId = VA_INVALID_ID;                \
     }                                              \
 } while (0)
 
-#define D3DDDIFMT_INTELENCODE_BITSTREAMDATA     (D3DDDIFORMAT)164
-#define D3DDDIFMT_INTELENCODE_MBDATA            (D3DDDIFORMAT)165
-#define D3DDDIFMT_INTELENCODE_SEGMENTMAP        (D3DDDIFORMAT)178
-#define D3DDDIFMT_INTELENCODE_COEFFPROB         (D3DDDIFORMAT)179
-#define D3DDDIFMT_INTELENCODE_MBCOEFF           (D3DDDIFORMAT)184 // create new data format for VP9 hybrid coefficients
-
     enum {
         MFX_FOURCC_VP9_NV12    = MFX_MAKEFOURCC('V','P','8','N'),
-        MFX_FOURCC_VP9_MBCOEFF = MFX_MAKEFOURCC('V','P','8','M'),
         MFX_FOURCC_VP9_SEGMAP  = MFX_MAKEFOURCC('V','P','8','S'),
     };
-
-    /* Convert MediaSDK into DDI */
-
-    void FillSpsBuffer(mfxVideoParam const & par,
-        VAEncSequenceParameterBufferVP9 & sps);
-
-    mfxStatus FillPpsBuffer(Task const &task, mfxVideoParam const & par,
-        VAEncPictureParameterBufferVP9 & pps);
 
     typedef struct
     {
@@ -55,6 +40,17 @@ do {                                               \
         mfxU32 idxBs;
 
     } ExtVASurface;
+
+    /* Convert MediaSDK into DDI */
+
+    void FillSpsBuffer(mfxVideoParam const & par,
+        VAEncSequenceParameterBufferVP9 & sps);
+
+    mfxStatus FillPpsBuffer(Task const & task,
+        mfxVideoParam const & par,
+        VAEncPictureParameterBufferVP9 & pps,
+        std::vector<ExtVASurface> const & reconQueue,
+        BitOffsets const &offsets);
 
     class VAAPIEncoder : public DriverEncoder
     {
@@ -73,11 +69,11 @@ do {                                               \
 
         virtual
         mfxStatus CreateAccelerationService(
-            mfxVideoParam const & par);
+            VP9MfxVideoParam const & par);
 
         virtual
         mfxStatus Reset(
-            mfxVideoParam const & par);
+            VP9MfxVideoParam const & par);
 
         // empty  for Lin
         virtual
@@ -95,7 +91,7 @@ do {                                               \
         virtual
         mfxStatus Execute(
             Task const &task,
-            mfxHDL surface);
+            mfxHDLPair pair);
 
         // recomendation from HW
         virtual
@@ -108,6 +104,10 @@ do {                                               \
         virtual
         mfxStatus QueryEncodeCaps(
             ENCODE_CAPS_VP9& caps);
+
+        virtual
+        mfxStatus QueryPlatform(
+            mfxPlatform& platform);
 
         virtual
         mfxStatus QueryStatus(
@@ -123,8 +123,8 @@ do {                                               \
         VAAPIEncoder(const VAAPIEncoder&); // no implementation
         VAAPIEncoder& operator=(const VAAPIEncoder&); // no implementation
 
-        mfxCoreInterface * m_pmfxCore;
-        VP9MfxParam    m_video;
+        mfxCoreInterface*  m_pmfxCore;
+        VP9MfxVideoParam    m_video;
 
         // encoder specific. can be encapsulated by auxDevice class
         VADisplay    m_vaDisplay;
@@ -132,44 +132,43 @@ do {                                               \
         VAConfigID   m_vaConfig;
 
         // encode params (extended structures)
-        VAEncSequenceParameterBufferVP9        m_sps;
-        VAEncPictureParameterBufferVP9         m_pps;
-        VAEncMbCoeffDataBufferVP9              m_coeffBuf;
-        VAEncMiscParameterVP9SegmentMapParams  m_segPar;
-        VAEncMiscParameterVP9CpuPakFrameUpdate m_frmUpdate;
-        VAEncMiscParameterFrameRate            m_frameRate;
-        VAProbabilityDataBufferVP9             m_probUpdate;
+        VAEncSequenceParameterBufferVP9             m_sps;
+        VAEncPictureParameterBufferVP9              m_pps;
+        VAEncMiscParameterTypeVP9PerSegmantParam    m_segPar;
+        VAEncMiscParameterRateControl               m_vaBrcPar;
+        VAEncMiscParameterFrameRate                 m_vaFrameRate;
+
+        VP9SeqLevelParam                            m_seqParam;
 
         // encode buffer to send vaRender()
         VABufferID m_spsBufferId;
         VABufferID m_ppsBufferId;
-        VABufferID m_coeffBufBufferId;
         VABufferID m_segMapBufferId;
         VABufferID m_segParBufferId;
-        VABufferID m_frmUpdateBufferId;
         VABufferID m_frameRateBufferId;
         VABufferID m_rateCtrlBufferId;
         VABufferID m_hrdBufferId;
-        VABufferID m_probUpdateBufferId;
         VABufferID m_qualityLevelBufferId;
+        VABufferID m_packedHeaderParameterBufferId;
+        VABufferID m_packedHeaderDataBufferId;
 
         std::vector<ExtVASurface> m_feedbackCache;
-        std::vector<ExtVASurface> m_mbDataQueue;
-        std::vector<ExtVASurface> m_mbCoeffQueue;
         std::vector<ExtVASurface> m_reconQueue;
         std::vector<ExtVASurface> m_segMapQueue;
+        std::vector<ExtVASurface> m_bsQueue;
 
-        std::vector<mfxU8> m_seg_id;
+        std::vector<mfxU8> m_frameHeaderBuf;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 11; // sps, pps, coeff buffer, seg_map, per segment par, frame update data, frame rate, rate ctrl, hrd, probability update, quality level
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 10; // sps, pps, bitstream, uncomp header, segment map, per-segment parameters, frame rate, rate ctrl, hrd, quality level
 
         mfxU32 m_width;
         mfxU32 m_height;
+        bool m_isBrcResetRequired;
+
         ENCODE_CAPS_VP9 m_caps;
+        mfxPlatform m_platform;
+
         UMC::Mutex                      m_guard;
-        VAEncMiscParameterRateControl m_vaBrcPar;
-        VAEncMiscParameterFrameRate   m_vaFrameRate;
-        bool                          m_isBrcResetRequired;
     };
 #endif // (MFX_VA_LINUX)
 } // MfxHwVP9Encode

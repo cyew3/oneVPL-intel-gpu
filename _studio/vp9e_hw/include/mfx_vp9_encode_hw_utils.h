@@ -418,11 +418,6 @@ private:
     mfxU32          m_newNum;
 };
 
-template <typename T> ActualExtBufferExtractor GetActualExtBufferRef(VP9MfxVideoParam const & basicPar, T const & newPar)
-{
-    return ActualExtBufferExtractor(basicPar.ExtParam, basicPar.NumExtParam, newPar.ExtParam, newPar.NumExtParam);
-}
-
 // remove first entry of extended buffer
 template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 {
@@ -574,6 +569,11 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxExtVP9Segmentation       m_extSeg;
         mfxExtVP9TemporalLayers     m_extTempLayers;
     };
+
+    template <typename T> ActualExtBufferExtractor GetActualExtBufferRef(VP9MfxVideoParam const & basicPar, T const & newPar)
+    {
+        return  ActualExtBufferExtractor(basicPar.ExtParam, basicPar.NumExtParam, newPar.ExtParam, newPar.NumExtParam);
+    }
 
     class Task;
     mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
