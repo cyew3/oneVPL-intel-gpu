@@ -27,10 +27,20 @@ public:
     H265FeiEncode_HW(mfxCoreInterface *core, mfxStatus *status)
         :MFXVideoENCODEH265_HW(core, status)
     {}
+
     virtual ~H265FeiEncode_HW()
     {
         Close();
     }
+
+    virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT)
+    {
+        core;
+        type;
+
+        return new VAAPIh265FeiEncoder;
+    }
+
     virtual mfxStatus Reset(mfxVideoParam *par)
     {
         // waiting for submitted in driver tasks
@@ -92,7 +102,7 @@ public:
             return MFX_ERR_NOT_FOUND;
         }
 
-        H265FeiEncodePlugin* tmp_pplg = 0;
+        H265FeiEncodePlugin* tmp_pplg = nullptr;
 
         try
         {
@@ -104,7 +114,6 @@ public:
         }
         catch(...)
         {
-            delete tmp_pplg;
             return MFX_ERR_UNKNOWN;
         }
 
@@ -201,7 +210,13 @@ protected:
     explicit H265FeiEncodePlugin(bool CreateByDispatcher);
     virtual ~H265FeiEncodePlugin();
 
-    virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT);
+    virtual MfxHwH265Encode::DriverEncoder* CreateHWh265Encoder(MFXCoreInterface* core, MfxHwH265Encode::ENCODER_TYPE type = MfxHwH265Encode::ENCODER_DEFAULT)
+    {
+        if (m_pImpl.get())
+            return m_pImpl->CreateHWh265Encoder(core, type);
+        else
+            return nullptr;
+    }
 
     virtual mfxStatus ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs)
     {
