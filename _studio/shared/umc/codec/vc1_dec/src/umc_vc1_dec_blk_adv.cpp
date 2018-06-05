@@ -80,11 +80,11 @@ IppStatus _own_ippiReconstructIntraNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp
 IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType)
 {
     IppiSize  DstSizeNZ[4];
-    static IppiSize QuantSize[8] = {
-                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK, 0},
-                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK, 0},
-                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK/2, 0},
-                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK/2, 0}
+    static IppiSize QuantSize[4] = {
+                                    { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK },
+                                    { VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK },
+                                    { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK/2 },
+                                    { VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK/2 }
                                   };
 
     //quantization and transformation
@@ -195,11 +195,11 @@ IppStatus _own_ippiReconstructInterUniform_VC1_16s_C1IR    (Ipp16s* pSrcDst, Ipp
 IppStatus _own_ippiReconstructInterNonuniform_VC1_16s_C1IR (Ipp16s* pSrcDst, Ipp32s srcDstStep, Ipp32s doubleQuant,Ipp32u BlkType)
 {
     IppiSize  DstSizeNZ[4];
-    static IppiSize QuantSize[8] = {
-                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK, 0},
-                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK, 0},
-                                    { VC1_PIXEL_IN_BLOCK, 0},   { VC1_PIXEL_IN_BLOCK/2, 0},
-                                    { VC1_PIXEL_IN_BLOCK/2, 0}, { VC1_PIXEL_IN_BLOCK/2, 0}
+    static IppiSize QuantSize[4] = {
+                                    { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK },
+                                    { VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK },
+                                    { VC1_PIXEL_IN_BLOCK,   VC1_PIXEL_IN_BLOCK/2 },
+                                    { VC1_PIXEL_IN_BLOCK/2, VC1_PIXEL_IN_BLOCK/2 }
                                   };
 
     //quantization and transformation
