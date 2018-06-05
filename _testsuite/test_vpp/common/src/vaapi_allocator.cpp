@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2015 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -34,6 +34,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_ABGR;
     case MFX_FOURCC_P8:
         return VA_FOURCC_P208;
+    case MFX_FOURCC_P010:
+        return VA_FOURCC_P010;
 
     default:
         assert(!"unsupported fourcc");
@@ -318,6 +320,16 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->G = ptr->R + 1;
                     ptr->B = ptr->R + 2;
                     ptr->A = ptr->R + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+            case VA_FOURCC_P010:
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_P010)
+                {
+                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->Y = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->U = pBuffer + vaapi_mid->m_image.offsets[1];
+                    ptr->V = ptr->U + 2;
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
