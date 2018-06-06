@@ -548,9 +548,9 @@ mfxStatus D3D11FrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
         else
             desc.BindFlags = D3D11_BIND_DECODER;
 
-        if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) && (DXGI_FORMAT_YUY2 == desc.Format) ||
-             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) ||
-             (DXGI_FORMAT_R8G8B8A8_UNORM == desc.Format) ||
+        if ( (MFX_MEMTYPE_FROM_VPPIN & request->Type) &&
+             (DXGI_FORMAT_B8G8R8A8_UNORM == desc.Format) || //RGB should also work with D3D11_BIND_DECODER
+             (DXGI_FORMAT_R8G8B8A8_UNORM == desc.Format) || //but now driver fails. Remove once it fixed.
              (DXGI_FORMAT_R10G10B10A2_UNORM == desc.Format) )
         {
             desc.BindFlags = D3D11_BIND_RENDER_TARGET;
