@@ -122,6 +122,9 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
   list( APPEND plugin_common_sources
     ${prefix}/genx_cht_copy_isa.cpp
     ${prefix}/genx_skl_copy_isa.cpp
+    ${prefix}/genx_cnl_copy_isa.cpp
+    ${prefix}/genx_icl_copy_isa.cpp
+    ${prefix}/genx_icllp_copy_isa.cpp
   )
 endforeach()
 
@@ -465,6 +468,12 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/h264_encode/src )
     ${prefix}/genx_hsw_simple_me_proto.cpp
     ${prefix}/genx_hsw_histogram_isa.cpp
     ${prefix}/genx_skl_histogram_isa.cpp
+    ${prefix}/genx_cnl_simple_me_isa.cpp
+    ${prefix}/genx_cnl_histogram_isa.cpp
+    ${prefix}/genx_icl_simple_me_isa.cpp
+    ${prefix}/genx_icl_histogram_isa.cpp
+    ${prefix}/genx_icllp_simple_me_isa.cpp
+    ${prefix}/genx_icllp_histogram_isa.cpp
   )
 endforeach()
 

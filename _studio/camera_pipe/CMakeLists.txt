@@ -49,6 +49,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/plugi
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_hsw_camerapipe_isa.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_bdw_camerapipe_isa.cpp )
 list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_skl_camerapipe_isa.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/genx/src/genx_cnl_camerapipe_isa.cpp )
 foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
 
   list( APPEND sources
@@ -97,6 +98,9 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
   list( APPEND sources
     ${prefix}/genx_cht_copy_isa.cpp
     ${prefix}/genx_skl_copy_isa.cpp
+    ${prefix}/genx_cnl_copy_isa.cpp
+    ${prefix}/genx_icl_copy_isa.cpp
+    ${prefix}/genx_icllp_copy_isa.cpp
   )
 endforeach()
 

@@ -10,13 +10,13 @@ set( sources.plus "" )
 list( APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_skl_copy_isa.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_cht_copy_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_cnl_copy_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_icl_copy_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_icllp_copy_isa.cpp
 )
 
 if( __TARGET_PLATFORM STREQUAL "ATS")
 list( APPEND sources
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_cnl_copy_isa.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_icl_copy_isa.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_icllp_copy_isa.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_tgl_copy_isa.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_tgllp_copy_isa.cpp
 )
