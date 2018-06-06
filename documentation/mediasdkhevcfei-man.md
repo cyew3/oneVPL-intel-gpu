@@ -181,7 +181,7 @@ This extension buffer specifies frame level control for ENCODE. It is used durin
 
 **Change History**
 
-This structure is available since SDK API 1.25
+This structure is available since SDK API 1.27
 
 
 
@@ -273,7 +273,7 @@ White indicates that this 16x16 block uses values from left-upper block inside t
 
 **Change History**
 
-This structure is available since SDK API 1.25
+This structure is available since SDK API 1.27
 
 
 
@@ -331,7 +331,7 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 
 **Change History**
 
-This structure is available since SDK API 1.25
+This structure is available since SDK API 1.27
 
 
 
@@ -378,7 +378,7 @@ This structure is used during runtime and should be attached to the `mfxEncodeCt
 
 **Change History**
 
-This structure is available since SDK API 1.25
+This structure is available since SDK API 1.27
 
 
 ## <a id='mfxExtFeiHevcRepackCtrl'>mfxExtFeiHevcRepackCtrl</a>
@@ -410,7 +410,7 @@ This extension buffer specifies repack control parameters for ENCODE usage model
 
 **Change History**
 
-This structure is available since SDK API 1.25.
+This structure is available since SDK API 1.27.
 
 
 ## <a id='mfxExtFeiHevcRepackStat'>mfxExtFeiHevcRepackStat</a>
@@ -438,4 +438,4 @@ This extension buffer holds output number of actual repack passes for ENCODE usa
 
 **Change History**
 
-This structure is available since SDK API 1.25.
+This structure is available since SDK API 1.27.
