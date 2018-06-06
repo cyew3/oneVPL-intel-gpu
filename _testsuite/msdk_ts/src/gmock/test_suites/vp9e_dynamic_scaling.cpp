@@ -1508,13 +1508,14 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
 
-    /*void  DumpCodedFrame(const mfxBitstream& bs, mfxU32 testId)
+    /*void DumpCodedFrame(const mfxBitstream& bs, mfxU32 testId, mfxU32 profile)
     {
         // Dump stream to file
         const int encoded_size = bs.DataLength;
-        char fileName[100];
-        sprintf(fileName, "vp9e_encoded_ds_%d.vp9", testId);
-        FILE *fp_vp9 = fopen(fileName, "ab");
+
+        std::string fileName = "encoded_pr" + std::to_string(profile) + "_" + std::to_string(testId) + ".vp9";
+
+        FILE *fp_vp9 = fopen(fileName.c_str(), "ab");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fclose(fp_vp9);
     }*/
@@ -1557,14 +1558,152 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         }
     }
 
+    mfxU32 ARTIFACT_DETECTOR(tsFrame& ref, tsFrame& src, mfxU32 id)
+    {
+        mfxF64 size = ref.m_info.CropW * ref.m_info.CropH;
+        mfxI32 diff = 0;
+        mfxU32 artifacts_1edge = 0;
+        mfxU32 artifacts_2edges = 0;
+        mfxU32 chroma_step = 1;
+        mfxU32 maxw = TS_MIN(ref.m_info.CropW, src.m_info.CropW);
+        mfxU32 maxh = TS_MIN(ref.m_info.CropH, src.m_info.CropH);
+        mfxU16 bd0 = id ? TS_MAX(8, ref.m_info.BitDepthChroma) : TS_MAX(8, ref.m_info.BitDepthLuma);
+        mfxU16 bd1 = id ? TS_MAX(8, src.m_info.BitDepthChroma) : TS_MAX(8, src.m_info.BitDepthLuma);
+        mfxF64 max = (1 << bd0) - 1;
+
+        if (bd0 != bd1)
+            g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+
+        if (0 != id)
+        {
+            if (ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
+                || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
+            {
+                g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+                return 0;
+            }
+            if (ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
+                && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+            {
+                chroma_step = 2;
+                size /= 4;
+            }
+        }
+
+#define COUNT_ARTIFATCS(COMPONENT, STEP, THRESHOLD) \
+        for(mfxU32 y = 0; y < maxh; y += STEP) \
+        { \
+            for(mfxU32 x = 0; x < maxw; x += STEP) \
+            { \
+                int atype = 0; \
+                int v = ref.COMPONENT(x + src.m_info.CropX, y + src.m_info.CropY); \
+                int v1 = src.COMPONENT(x + src.m_info.CropX, y + src.m_info.CropY); \
+                int v2 = 0; \
+                int aresult = abs(v1 - v); \
+                if (aresult > THRESHOLD) \
+                { \
+                    mfxU32 artifact_found = 0; \
+                    if (x) \
+                    { \
+                        v2 = src.COMPONENT((x - STEP) + src.m_info.CropX, y + src.m_info.CropY); \
+                        if(abs(v1 - v2) > THRESHOLD) \
+                        { \
+                            artifact_found++; \
+                            atype = 1; \
+                            /*printf("ARTIFACT T1 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                        } \
+                    } \
+                    if (y) \
+                    { \
+                        v2 = src.COMPONENT(x + src.m_info.CropX, (y - STEP) + src.m_info.CropY); \
+                        if (abs(v1 - v2) > THRESHOLD) \
+                        { \
+                            artifact_found++; \
+                            atype = 2; \
+                            /*printf("ARTIFACT T2 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                        } \
+                    } \
+                    if (x < (maxw - 1)) \
+                    { \
+                        v2 = src.COMPONENT((x + STEP) + src.m_info.CropX, y + src.m_info.CropY); \
+                        if (abs(v1 - v2) > THRESHOLD) \
+                        { \
+                            artifact_found++; \
+                            atype = 3; \
+                            /*printf("ARTIFACT T3 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                        } \
+                    } \
+                    if (y < (maxh)) \
+                    { \
+                        v2 = src.COMPONENT(x + src.m_info.CropX, (y + STEP) + src.m_info.CropY); \
+                        if (abs(v1 - v2) > THRESHOLD) \
+                        { \
+                            artifact_found++; \
+                            atype = 4; \
+                            /*printf("ARTIFACT T4 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                        } \
+                    } \
+                    if(artifact_found > 1) \
+                    { \
+                        artifacts_2edges++; \
+                    } \
+                    else if(artifact_found > 0) \
+                    { \
+                        artifacts_1edge++; \
+                    } \
+                } \
+            } \
+        }
+
+/*threshold for pixels difference, 8bit*/
+#define DIFF_THRESHOLD (40)
+
+        if (ref.isYUV() && src.isYUV())
+        {
+            switch (id)
+            {
+                case 0:  COUNT_ARTIFATCS(Y, 1, DIFF_THRESHOLD); break;
+                case 1:  COUNT_ARTIFATCS(U, chroma_step, DIFF_THRESHOLD); break;
+                case 2:  COUNT_ARTIFATCS(V, chroma_step, DIFF_THRESHOLD); break;
+                default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
+            }
+        }
+        else if (ref.isYUV16() && src.isYUV16())
+        {
+            switch (id)
+            {
+                case 0:  COUNT_ARTIFATCS(Y16, 1, DIFF_THRESHOLD*4 /*for 10 bits just x4 of 8bit value*/); break;
+                case 1:  COUNT_ARTIFATCS(U16, chroma_step, DIFF_THRESHOLD*4); break;
+                case 2:  COUNT_ARTIFATCS(V16, chroma_step, DIFF_THRESHOLD*4); break;
+                default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
+            }
+        }
+        else
+            g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+
+        if (artifacts_2edges > 5 /*threshold for pixels that differ much from 2 neighbors*/)
+        {
+            return (artifacts_2edges * artifacts_2edges);
+        }
+        else if (artifacts_1edge > (20 / chroma_step) /*threshold for pixels that differ much from 1 neighbor*/)
+        {
+            return artifacts_1edge;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
     {
-        //DumpCodedFrame(bs, m_testId);
-
         SetBuffer(bs);
 
         // parse uncompressed header and check values
         tsParserVP9::UnitType& hdr = ParseOrDie();
+
+        //DumpCodedFrame(bs, m_testId, hdr.uh.profile);
+
         std::vector<Iteration*>::iterator curIter =
             std::find_if(m_pIterations->begin(), m_pIterations->end(), FindIterByFrameIdx(m_numFrame));
 
@@ -1649,7 +1788,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         m_dpbSlotsForPrevFrame = hdr.uh.refresh_frame_flags;
 
-        // decode frame and calculate PSNR for Y plane
+        // decode frame and check quality
         if (m_pInputSurfaces)
         {
             // do the decoder initialization on the first encoded frame
@@ -1727,7 +1866,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 throw tsFAIL;
             }
 
-            // frame is decoded correctly - let's calculate and check PSNR for Y plane
+            // frame is decoded correctly - let's calculate and check quality metrics
 
             // check that respective source frame is stored
             if (m_pInputSurfaces->find(m_numFrame) == m_pInputSurfaces->end())
@@ -1752,26 +1891,70 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             const mfxF64 psnrY = PSNR(src, res, 0);
             const mfxF64 psnrU = PSNR(src, res, 1);
             const mfxF64 psnrV = PSNR(src, res, 2);
+
+            const mfxF64 ssimY = SSIM(src, res, 0);
+            const mfxF64 ssimU = SSIM(src, res, 1);
+            const mfxF64 ssimV = SSIM(src, res, 2);
+
+            const mfxU32 artY = ARTIFACT_DETECTOR(src, res, 0);
+            const mfxU32 artU = ARTIFACT_DETECTOR(src, res, 1);
+            const mfxU32 artV = ARTIFACT_DETECTOR(src, res, 2);
+
             msdk_atomic_dec16(&pInputSurface->Data.Locked);
             m_pInputSurfaces->erase(m_numFrame);
             const mfxF64 minPsnr = GetMinPSNR(iter.m_param[CHECK]);
 
-            g_tsLog << "INFO: frame[" << (mfxU32)m_numFrame << "]: PSNR_Y=" << psnrY << " PSNR_U="
-                << psnrU << " PSNR_V=" << psnrV << " size=" << bs.DataLength << "\n";
+            g_tsLog << "INFO: QUALITY report for frame #" << (mfxU32)m_numFrame << " of size " << bs.DataLength << " bytes:\n";
+
+            g_tsLog << "INFO: <PSNR> frame[" << (mfxU32)m_numFrame << "]: PSNR_Y=" << psnrY << " PSNR_U="
+                << psnrU << " PSNR_V=" << psnrV << "\n";
+
+            g_tsLog << "INFO: <SSIM> frame[" << (mfxU32)m_numFrame << "]: SSIM_Y=" << ssimY << " SSIM_U="
+                << ssimU << " SSIM_V=" << ssimV << "\n";
+
+            g_tsLog << "INFO: <ARTIFACTS> frame[" << (mfxU32)m_numFrame << "]: ARTIFACTS_Y=" << artY << " ARTIFACTS_U="
+                << artU << " ARTIFACTS_V=" << artV << "\n";
+
+            bool quality_issue = false;
 
             if (psnrY < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR_Y of frame " << (mfxU32)m_numFrame << " is equal to " << psnrY << " and lower than threshold: " << minPsnr;
-                throw tsFAIL;
+                g_tsLog << "ERROR: PSNR_Y of frame " << (mfxU32)m_numFrame << " is " << psnrY
+                    << " that is lower than the threshold " << minPsnr << "\n";
+                quality_issue = true;
             }
             if (psnrU < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR_U of frame " << (mfxU32)m_numFrame << " is equal to " << psnrU << " and lower than threshold: " << minPsnr;
-                throw tsFAIL;
+                g_tsLog << "ERROR: PSNR_U of frame " << (mfxU32)m_numFrame << " is  " << psnrU
+                    << " that is lower than the threshold " << minPsnr << "\n";
+                quality_issue = true;
             }
             if (psnrV < minPsnr)
             {
-                ADD_FAILURE() << "ERROR: PSNR_V of frame " << (mfxU32)m_numFrame << " is equal to " << psnrV << " and lower than threshold: " << minPsnr;
+                g_tsLog << "ERROR: PSNR_V of frame " << (mfxU32)m_numFrame << " is " << psnrV
+                    << " that is lower than the threshold " << minPsnr << "\n";
+                quality_issue = true;
+            }
+
+            if (artY)
+            {
+                g_tsLog << "ERROR: Detected " << (mfxU32)artY << " artifacts in Y-plane \n";
+                quality_issue = true;
+            }
+            if (artU)
+            {
+                g_tsLog << "ERROR: Detected " << (mfxU32)artU << " artifacts in U-plane \n";
+                quality_issue = true;
+            }
+            if (artV)
+            {
+                g_tsLog << "ERROR: Detected " << (mfxU32)artV << " artifacts in V-plane \n";
+                quality_issue = true;
+            }
+
+            if (quality_issue)
+            {
+                ADD_FAILURE() << "QUALITY ISSUE DETECTED! Check the encoded stream to learn what is wrong with the frame #" << (mfxU32)m_numFrame;
                 throw tsFAIL;
             }
         }

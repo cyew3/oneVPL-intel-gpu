@@ -1124,23 +1124,23 @@ mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id)
         }                                                                                     \
     }
 
+    if (0 != id)
+    {
+        if (ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
+            || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
+        {
+            g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+            return 0;
+        }
+        if (ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
+            && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
+        {
+            chroma_step = 2;
+        }
+    }
+
     if(ref.isYUV() && src.isYUV())
     {
-        if( 0 != id )
-        {
-            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400
-                || src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV400)
-            {
-                g_tsStatus.check(MFX_ERR_UNSUPPORTED);
-                return 0;
-            }
-            if(    ref.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420
-                && src.m_info.ChromaFormat == MFX_CHROMAFORMAT_YUV420)
-            {
-                chroma_step = 2;
-            }
-        }
-
         switch(id)
         {
         case 0:  GET_DIST(Y, 1); break;
@@ -1149,7 +1149,19 @@ mfxF64 SSIM(tsFrame& ref, tsFrame& src, mfxU32 id)
         default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
         }
 
-    } else g_tsStatus.check(MFX_ERR_UNSUPPORTED);
+    }
+    else if (ref.isYUV16() && src.isYUV16())
+    {
+        switch (id)
+        {
+        case 0:  GET_DIST(Y16, 1); break;
+        case 1:  GET_DIST(U16, chroma_step); break;
+        case 2:  GET_DIST(V16, chroma_step); break;
+        default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
+        }
+    }
+    else
+        g_tsStatus.check(MFX_ERR_UNSUPPORTED);
 
 
     return (dist / win_cnt);
