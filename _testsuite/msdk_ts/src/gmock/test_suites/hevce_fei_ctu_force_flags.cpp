@@ -32,6 +32,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_parser.h"
 #include "fei_buffer_allocator.h"
 
+#include <random>
+
 namespace hevce_fei_ctu_force_flags
 {
 

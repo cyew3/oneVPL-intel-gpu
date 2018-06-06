@@ -30,6 +30,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_struct.h"
 #include "ts_parser.h"
 
+#include <random>
+
 /*!
 
 Description:

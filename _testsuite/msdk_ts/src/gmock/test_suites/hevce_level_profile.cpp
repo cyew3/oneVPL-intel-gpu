@@ -12,6 +12,8 @@ Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 
+#include <cmath>
+
 namespace hevce_level_profile
 {
 

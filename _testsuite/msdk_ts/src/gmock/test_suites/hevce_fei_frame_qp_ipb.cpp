@@ -11,6 +11,8 @@
 #include "ts_struct.h"
 #include "ts_fei_warning.h"
 
+#include <random>
+
 /*
 Description:
 Test verifies that HEVC FEI encode correctly supports CQP bitrate control.

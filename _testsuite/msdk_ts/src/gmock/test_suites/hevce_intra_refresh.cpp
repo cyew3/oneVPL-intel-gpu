@@ -38,6 +38,7 @@ Algorithm:
 #include "ts_struct.h"
 #include "ts_parser.h"
 
+#include <cmath>
 
 /*! \brief Main test name space */
 namespace hevce_intra_refresh{

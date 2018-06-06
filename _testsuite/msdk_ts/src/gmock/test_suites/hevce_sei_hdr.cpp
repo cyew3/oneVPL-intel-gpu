@@ -11,6 +11,8 @@ Copyright(c) 2015-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 
+#include <cmath>
+
 namespace hevce_sei_hdr
 {
     using namespace BS_HEVC;

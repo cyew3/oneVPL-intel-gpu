@@ -330,7 +330,7 @@ mfxStatus TestSuite::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
 
 bool TestSuite::Check4x4InterPredBlocksThreshold()
 {
-    mfxU32 difference = abs(m_InterPred4x4BlocksNumActual
+    mfxU32 difference = abs(mfxI64(m_InterPred4x4BlocksNumActual)
         - m_InterPred4x4BlocksNumRef);
 
     std::cout << " ; Difference in percent: "

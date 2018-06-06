@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2017-2018 Intel Corporation. All Rights Reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -31,6 +31,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ts_fei_warning.h"
 #include "ts_parser.h"
 #include "fei_buffer_allocator.h"
+
+#include <random>
 
 namespace hevce_fei_ctuqp
 {
