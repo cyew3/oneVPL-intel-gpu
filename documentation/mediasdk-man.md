@@ -3677,7 +3677,7 @@ The SDK API 1.25 adds `EnableNalUnitType` field.
 
 The SDK API 1.26 adds `TransformSkip`, `ExtBrcAdaptiveLTR` fields.
 
-The SDK API **TBD** adds `TargetChromaFormatPlus1`, `TargetBitDepthLuma` and `TargetBitDepthChroma` fields.
+The SDK API 1.27 adds `TargetChromaFormatPlus1`, `TargetBitDepthLuma` and `TargetBitDepthChroma` fields.
 
 ## <a id='mfxExtCodingOptionSPSPPS'>mfxExtCodingOptionSPSPPS</a>
 
@@ -5020,7 +5020,7 @@ SDK API 1.19 added `MemType` field.
 
 SDK API 1.25 added `A2RGB10` field.
 
-SDK API **TBD** added `Y410` field.
+SDK API 1.27 added `Y410` field.
 
 ## <a id='mfxFrameInfo'>mfxFrameInfo</a>
 
@@ -8402,7 +8402,9 @@ SDK API 1.22 adds `MFX_PLATFORM_APOLLOLAKE`, and `MFX_PLATFORM_KABYLAKE`.
 
 SDK API 1.25 adds `MFX_PLATFORM_GEMINILAKE`, `MFX_PLATFORM_COFFEELAKE` and `MFX_PLATFORM_CANNONLAKE`.
 
-SDK API **TBD** adds `MFX_PLATFORM_ICELAKE`, `MFX_PLATFORM_LAKEFIELD`, `MFX_PLATFORM_JASPERLAKE` and `MFX_PLATFORM_TIGERLAKE`.
+SDK API 1.27 adds `MFX_PLATFORM_ICELAKE`.
+
+SDK API **TBD** adds `MFX_PLATFORM_LAKEFIELD`, `MFX_PLATFORM_JASPERLAKE` and `MFX_PLATFORM_TIGERLAKE`.
 
 ## <a id='PayloadCtrlFlags'>PayloadCtrlFlags</a>
 
