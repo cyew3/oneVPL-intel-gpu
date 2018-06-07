@@ -1313,22 +1313,20 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9DecoderFrame
 
 mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(mfxU8 refreshFrameFlags, VP9DecoderFrame & info)
 {
-    mfxI32 ref_index = 0;
-    mfxU8 r_mask = 0;
-
-    /* For case of update ref frames at NOT Key Frame */
-    for (int i = 0; i < NUM_REF_FRAMES; ++i)
+    for (mfxI32 ref_index = 0; ref_index < NUM_REF_FRAMES; ++ref_index)
     {
-        if (info.ref_frame_map[i] == (UMC::FrameMemID)-1)
-        {
-            r_mask |= 1;
-            r_mask <<= 1;
-        }
-    }
+        mfxU8 mask = refreshFrameFlags & (1 << ref_index);
+        if ((mask != 0) // we should update the reference according to the bitstream data
 
-    for (mfxU8 mask = refreshFrameFlags | r_mask; mask; mask >>= 1)
-    {
-        if (mask & 1)
+            // The next condition is for decoder robustness.
+            // After the first keyframe is decoded this frame occupies all ref slots
+            // its mask is 011111111 and the condition "minus one" never hits.
+            // But if the first frame is Inter-frame encoded in the intra-only mode
+            // then we can receive "minus one" ref_frame_map item.
+            // The decoder never should touch these references.
+            // But if the stream is broken then decode may touch not initialized reference
+            // So to prevent crash let's put something as the reference frame.
+            || (info.ref_frame_map[ref_index] == (UMC::FrameMemID)-1))
         {
             const UMC::FrameMemID oldMid = info.ref_frame_map[ref_index];
             if (oldMid >= 0)
@@ -1345,7 +1343,6 @@ mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(mfxU8 refreshFrameFlags, VP9Decoder
             if (m_FrameAllocator->IncreaseReference(info.currFrame) != UMC::UMC_OK)
                 return MFX_ERR_UNKNOWN;
         }
-        ++ref_index;
     }
 
     return MFX_ERR_NONE;

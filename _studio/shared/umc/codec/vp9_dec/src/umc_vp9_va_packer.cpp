@@ -352,7 +352,11 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
         {
             UCHAR const r_idx = 
                 (UCHAR)info->ref_frame_map[i];
-            VM_ASSERT((r_idx & 0x7f) == r_idx);
+            // r_idx can be 255 which means no referense
+            // this awkward situation happens when the first frame is inter frame
+            // encoded in intra only mode, there are no reference frames for that frame
+            // but it still can be decoded
+            VM_ASSERT((r_idx == UCHAR_MAX) || (r_idx & 0x7f) == r_idx);
 
             pp->ref_frame_map[i].bPicEntry = r_idx;
             pp->ref_frame_coded_width[i]  = info->sizesOfRefFrame[i].width;
