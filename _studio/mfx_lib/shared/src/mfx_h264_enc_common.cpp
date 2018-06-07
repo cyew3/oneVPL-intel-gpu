@@ -1,4 +1,4 @@
-//
+﻿//
 // INTEL CORPORATION PROPRIETARY INFORMATION
 //
 // This software is supplied under the terms of a license agreement or
@@ -1459,7 +1459,8 @@ mfxStatus ConvertVideoParamBack_H264enc(mfxVideoInternalParam *parMFX, const UMC
 
     // for const QP return QPI, QPP, QPB
     if (enc->m_info.rate_controls.method == H264_RCM_QUANT) {
-        parMFX->calcParam.BufferSizeInKB = (mfxU32)((enc->m_info.info.clip_info.width * enc->m_info.info.clip_info.height * 4 + 999) / 1000);
+        // Assure that application will get enough size for bitstream buffer allocation
+        parMFX->calcParam.BufferSizeInKB = (mfxU32)((enc->requiredBsBufferSize + 999)/1000);
         parMFX->GetCalcParams(parMFX);
         parMFX->mfx.QPI = enc->m_info.rate_controls.quantI;
         parMFX->mfx.QPP = enc->m_info.rate_controls.quantP;
