@@ -81,17 +81,16 @@ public:
 
     virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 ** /*reordered_surface*/, mfxEncodeInternalParams * /*pInternalParams*/, MFX_ENTRY_POINT *pEntryPoint)
     {
-        mfxStatus mfxRes;
         mfxThreadTask userParam;
 
-        mfxRes = EncodeFrameSubmit(ctrl, surface, bs, &userParam);
+        mfxStatus mfxRes = EncodeFrameSubmit(ctrl, surface, bs, &userParam);
         if (mfxRes >= MFX_ERR_NONE || mfxRes == MFX_ERR_MORE_DATA_SUBMIT_TASK)
         {
-            pEntryPoint->pState = this;
-            pEntryPoint->pRoutine = Execute;
-            pEntryPoint->pCompleteProc = FreeResources;
+            pEntryPoint->pState             = this;
+            pEntryPoint->pRoutine           = Execute;
+            pEntryPoint->pCompleteProc      = FreeResources;
             pEntryPoint->requiredNumThreads = 1;
-            pEntryPoint->pParam = userParam;
+            pEntryPoint->pParam             = userParam;
         }
 
         return mfxRes;
@@ -136,10 +135,10 @@ public:
 
     void ZeroParams()
     {
-        m_frameOrder = 0;
-        m_lastIDR = 0;
+        m_frameOrder     = 0;
+        m_lastIDR        = 0;
         m_baseLayerOrder = 0;
-        m_numBuffered = 0;
+        m_numBuffered    = 0;
     }
 protected:
     mfxStatus InitImpl(mfxVideoParam *par);
@@ -164,10 +163,8 @@ protected:
         return MFX_ERR_NONE;
     }
 
-    virtual void ExtraTaskPreparation(Task& task)
+    virtual void ExtraTaskPreparation(Task& /*task*/)
     {
-        task;
-
         return;
     }
 
@@ -175,7 +172,7 @@ protected:
     mfxStatus FreeTask(Task& task);
     mfxStatus WaitForQueringTask(Task& task);
 
-    std::auto_ptr<DriverEncoder>    m_ddi;
+    std::unique_ptr<DriverEncoder>  m_ddi;
     MFXCoreInterface                m_core;
     MfxVideoParam                   m_vpar;
     ENCODE_CAPS_HEVC                m_caps;

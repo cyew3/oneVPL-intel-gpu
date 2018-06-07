@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -26,7 +26,7 @@ namespace MfxHwH265FeiEncode
     template <typename T> mfxExtBuffer* GetBufById(T & par, mfxU32 id)
     {
         if (par.NumExtParam && !par.ExtParam)
-            return NULL;
+            return nullptr;
 
         for (mfxU16 i = 0; i < par.NumExtParam; ++i)
         {
@@ -36,12 +36,12 @@ namespace MfxHwH265FeiEncode
             }
         }
 
-        return NULL;
+        return nullptr;
     }
 
     template <typename T> mfxExtBuffer* GetBufById(T * par, mfxU32 id)
     {
-        return par ? GetBufById(*par, id) : NULL;
+        return par ? GetBufById(*par, id) : nullptr;
     }
 
     enum VA_BUFFER_STORAGE_ID
@@ -64,18 +64,18 @@ namespace MfxHwH265FeiEncode
         }
 
     protected:
-        virtual mfxStatus PreSubmitExtraStage(MfxHwH265Encode::Task const & task);
+        virtual mfxStatus PreSubmitExtraStage(MfxHwH265Encode::Task const & task) override;
 
-        virtual mfxStatus PostQueryExtraStage();
+        virtual mfxStatus PostQueryExtraStage() override;
 
-        virtual VAEntrypoint GetVAEntryPoint()
+        virtual VAEntrypoint GetVAEntryPoint() override
         {
             return VAEntrypointFEI;
         }
 
-        virtual mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib);
+        virtual mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib) override;
 
-        virtual mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib);
+        virtual mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib) override;
     };
 }
 
