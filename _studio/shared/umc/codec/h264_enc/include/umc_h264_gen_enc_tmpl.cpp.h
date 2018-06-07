@@ -1755,7 +1755,7 @@ Status H264ENC_MAKE_NAME(H264CoreEncoder_Init)(
         if (!core_enc->m_Slices_MBT[i].m_pbitstream)
             return UMC_ERR_ALLOC;
         if(core_enc->m_info.entropy_coding_mode == 0)
-            status = H264ENC_MAKE_NAME(H264BsReal_Create)((H264BsRealType*)core_enc->m_Slices_MBT[i].m_pbitstream, core_enc->m_pAllocEncoderInst[numOfSliceEncs / 2] + ((numOfSliceEncs == 1) ? bsSize : 0) + i * (bsSize / core_enc->m_info.numThreads), bsSize / core_enc->m_info.numThreads, core_enc->m_info.chroma_format_idc, status);
+            status = H264ENC_MAKE_NAME(H264BsReal_Create)((H264BsRealType*)core_enc->m_Slices_MBT[i].m_pbitstream, core_enc->m_pAllocEncoderInst[numOfSliceEncs / 2] + ((numOfSliceEncs % 2) ? bsSize : 0) + i * (bsSize / core_enc->m_info.numThreads), bsSize / core_enc->m_info.numThreads, core_enc->m_info.chroma_format_idc, status);
         else
             status = H264ENC_MAKE_NAME(H264BsReal_Create)((H264BsRealType*)core_enc->m_Slices_MBT[i].m_pbitstream, 0, 0, core_enc->m_info.chroma_format_idc, status); // the buffer itself won't be used
         if (status != UMC_OK)
