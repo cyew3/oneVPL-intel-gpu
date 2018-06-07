@@ -208,7 +208,7 @@ std::string DumpContext::dump(const std::string structName, const mfxExtCodingOp
 #if (MFX_VERSION >= 1026)
     DUMP_FIELD(TransformSkip);
 #endif
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1027)
     DUMP_FIELD(TargetChromaFormatPlus1);   /* Minus 1 specifies target encoding chroma format (see ColorFormat enum). May differ from input one. */
     DUMP_FIELD(TargetBitDepthLuma);        /* Target encoding bit depth for luma samples. May differ from input one. */
     DUMP_FIELD(TargetBitDepthChroma);      /* Target encoding bit depth for chroma samples. May differ from input one. */
@@ -321,7 +321,7 @@ std::string DumpContext::dump(const std::string structName, const mfxFrameData &
         str += structName + ".Cb=" + ToHexFormatString(frameData.Cb) + "\n";
         str += structName + ".U=" + ToHexFormatString(frameData.U) + "\n";
         str += structName + ".G=" + ToHexFormatString(frameData.G) + "\n";
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1027)
         str += structName + ".Y410=" + ToHexFormatString(frameData.Y410) + "\n";
 #endif
         str += structName + ".Cr=" + ToHexFormatString(frameData.Cr) + "\n";
