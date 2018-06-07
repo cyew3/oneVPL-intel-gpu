@@ -991,13 +991,12 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs,
                 }
             }
 
-            if (!frame && m_pH265VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true) && !m_globalTask)
+            if (!frame)
             {
-                m_globalTask = true;
-            }
-            else
-            {
-                return MFX_WRN_DEVICE_BUSY;
+                if (m_pH265VideoDecoder->GetTaskBroker()->IsEnoughForStartDecoding(true) && !m_globalTask)
+                    m_globalTask = true;
+                else
+                    return MFX_WRN_DEVICE_BUSY;
             }
         }
 
