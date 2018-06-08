@@ -153,13 +153,13 @@ namespace hevcd_close
 #if !defined(OPEN_SOURCE)
     /* SCC */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-    { return "conformance/hevc/scc/scc-main/020_main_palette_all_lf.hevc"; }
+    { return "forBehaviorTest/dif_resol/hevc/420format_scc/Kimono1_704x576_24_420_scc_8.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-    { return "conformance/hevc/scc/scc-main10/020_main10_palette_all_lf.hevc"; }
+    { return "forBehaviorTest/dif_resol/hevc/420format_10bit_scc/Kimono1_704x576_24_scc_420_10.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-    { return "conformance/hevc/scc/scc-main444/020_main444_palette_all_lf.hevc"; }
+    { return "forBehaviorTest/dif_resol/hevc/444format_scc/Kimono1_704x576_24_scc_444_8.265"; }
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_Y410>, std::integral_constant<unsigned, MFX_PROFILE_HEVC_SCC>)
-    { return "conformance/hevc/scc/scc-main444_10/020_main444_10_palette_all_lf.hevc"; }
+    { return "forBehaviorTest/dif_resol/hevc/444format_10bit_scc/Kimono1_704x576_24_scc_444_10.265"; }
 #endif
 
     template <unsigned fourcc, unsigned profile = MFX_PROFILE_UNKNOWN>
