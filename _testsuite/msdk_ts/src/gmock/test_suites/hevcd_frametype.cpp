@@ -230,7 +230,7 @@ TestSuite::tc_struct const& query_case(unsigned int id, std::integral_constant<u
 {
     static TestSuite::tc_struct const cases[] =
     {
-        MFX_ERR_NONE, "forBehaviorTest/picturetype/sbe_main10_448x256.h265 ",
+        MFX_ERR_NONE, "forBehaviorTest/picturetype/sbe_main10_448x256.h265",
         14,
         {
             /*  0*/ MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_I | MFX_FRAMETYPE_REF,
