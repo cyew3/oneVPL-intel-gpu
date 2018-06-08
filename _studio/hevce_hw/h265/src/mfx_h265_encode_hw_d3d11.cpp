@@ -141,6 +141,12 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
                 hr = m_vdevice->GetVideoDecoderConfigCount(&desc, &count);
             }
             MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+
+            // GetVideoDecoderConfigCount may return OK but the number of decoder configurations
+            // that the driver supports for a specified video description = 0.
+            // If we ignore this fact CreateVideoDecoder call will crash with an exception.
+            if (!count)
+                return MFX_ERR_INVALID_VIDEO_PARAM;
         }
 
         // [3] CreateVideoDecoder
