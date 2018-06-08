@@ -1819,7 +1819,6 @@ UMC::Status TaskSupplier_H265::AddOneFrame(UMC::MediaData * pSource)
                         if (umsRes == UMC::UMC_NTF_NEW_RESOLUTION ||
                             (nut == NAL_UT_SPS && umsRes == UMC::UMC_ERR_INVALID_STREAM))
                         {
-
                             Ipp32s nalIndex = pMediaDataEx->index;
                             Ipp32s size = pMediaDataEx->offsets[nalIndex + 1] - pMediaDataEx->offsets[nalIndex];
 
@@ -2189,9 +2188,16 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
             pSlice->CopyFromBaseSlice(pLastFrameSlice);
         }
 
-        // if the slices belong to different AUs,
+        // Accord. to ITU-T H.265 7.4.2.4 Any SPS/PPS w/ id equal to active one
+        // shall have the same content, unless it follows the last VCL NAL of the coded picture
+        // and precedes the first VCL NAL unit of another coded picture
+        // if the slices belong to different AUs or SPS/PPS was changed,
         // close the current AU and start new one.
-        if (!IsPictureTheSame(firstSlice, pSlice))
+        bool changed =
+            m_Headers.m_SeqParams.GetHeader(pSlice->GetSeqParam()->GetID())->m_changed ||
+            m_Headers.m_PicParams.GetHeader(pSlice->GetPicParam()->GetID())->m_changed ||
+            !IsPictureTheSame(firstSlice, pSlice);
+        if (changed)
         {
             CompleteFrame(view.pCurFrame);
             OnFullFrame(view.pCurFrame);
@@ -2204,6 +2210,10 @@ UMC::Status TaskSupplier_H265::AddSlice(H265Slice * pSlice, bool )
     // try to allocate a new frame.
     else
     {
+        // clear change flags when get first VCL NAL
+        m_Headers.m_SeqParams.GetHeader(pSlice->GetSeqParam()->GetID())->m_changed = false;
+        m_Headers.m_PicParams.GetHeader(pSlice->GetPicParam()->GetID())->m_changed = false;
+
         // allocate a new frame, initialize it with slice's parameters.
         pFrame = AllocateNewFrame(pSlice);
         if (!pFrame)

@@ -933,6 +933,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 {
     H265ScalingList     m_scalingList;
     std::vector<Ipp32u> m_paletteInitializers;
+    bool                m_changed;
 
     H265SeqParamSet()
         : HeapObject()
@@ -973,6 +974,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
         conf_win_bottom_offset = 0;
 
         m_scalingList.destroy();
+        m_changed = false;
     }
 
     int SubWidthC() const
@@ -1128,6 +1130,7 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     H265ScalingList       m_scalingList;
     std::vector<TileInfo> tilesInfo;
     std::vector<Ipp32u>   m_paletteInitializers;
+    bool                  m_changed;
 
     H265PicParamSet()
         : H265PicParamSetBase()
@@ -1154,6 +1157,8 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 
         loop_filter_across_tiles_enabled_flag = true;
         pps_loop_filter_across_slices_enabled_flag = true;
+
+        m_changed = false;
     }
 
     ~H265PicParamSet()
