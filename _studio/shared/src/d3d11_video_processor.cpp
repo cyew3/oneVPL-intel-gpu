@@ -2849,7 +2849,7 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
         }
     }
     if (outInfo->FourCC == MFX_FOURCC_P010 ||
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
         outInfo->FourCC == MFX_FOURCC_Y210 ||
         outInfo->FourCC == MFX_FOURCC_Y410 ||
 #endif // PRE_SI_TARGET_PLATFORM_GEN11

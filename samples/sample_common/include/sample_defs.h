@@ -31,11 +31,10 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #define _MSDK_API (MFX_VERSION_MAJOR*256+MFX_VERSION_MINOR)
 #define MSDK_API(M,MM) (M*256+MM)
 
-//---MCTF, extended interface
-// the condition below must be changed to MFX_VERSION >= 1026 after API is promoted to 1.26
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1026)
 #define ENABLE_MCTF
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
+//---MCTF, extended interface
 #define ENABLE_MCTF_EXT
 enum {MCTF_BITRATE_MULTIPLIER = 100000};
 #endif

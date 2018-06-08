@@ -2714,7 +2714,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
     if ( fabs(inFrameRateCur / outFrameRateCur - inFrameRate / outFrameRate) > std::numeric_limits<mfxF64>::epsilon() )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // Frame Rate ratio check
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
     eMFXPlatform platform = m_pCore->GetPlatformType();
     if (platform == MFX_PLATFORM_HARDWARE)
     {
@@ -5251,7 +5251,7 @@ mfxStatus ConfigureExecuteParams(
         def_back_color = make_def_back_color_yuv(8);
     }
     else if(videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410 ||
 #endif // PRE_SI_TARGET_PLATFORM_GEN11
@@ -5852,7 +5852,7 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.iBackgroundColor = make_back_color_yuv(8, extComp->Y, extComp->U, extComp->V);
                         }
                         if (targetFourCC == MFX_FOURCC_P010 ||
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
                             targetFourCC == MFX_FOURCC_Y210 ||
                             targetFourCC == MFX_FOURCC_Y410 ||
 #endif // PRE_SI_TARGET_PLATFORM_GEN11

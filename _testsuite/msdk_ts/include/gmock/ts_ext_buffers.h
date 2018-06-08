@@ -32,7 +32,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <algorithm>
 
-#if MFX_VERSION >= MFX_VERSION_NEXT && defined(LIBVA_SUPPORT)
+#if (MFX_VERSION >= 1027) && defined(LIBVA_SUPPORT)
 #include <va/va.h>
 #include "mfxfeihevc.h"
 #endif
@@ -140,7 +140,7 @@ public:
                 memset(&eb, 0, size);
                 eb.BufferId = id;
                 eb.BufferSz = size;
-#if MFX_VERSION >= MFX_VERSION_NEXT && defined(LIBVA_SUPPORT)
+#if (MFX_VERSION >= 1027) && defined(LIBVA_SUPPORT)
                 // HEVC FEI buffers uses direct exposure. 0 is correct libva buffer id, so id should be explicitly set to invalid
                 switch (eb.BufferId)
                 {
