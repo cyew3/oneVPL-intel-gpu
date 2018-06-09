@@ -787,6 +787,10 @@ mfxStatus  MFXVideoENCODEH265_HW::Reset(mfxVideoParam *par)
     mfxExtEncoderResetOption * pResetOpt = ExtBuffer::Get(*par);
     mfxExtCodingOptionSPSPPS* pSPSPPS = ExtBuffer::Get(*par);
 
+    // Preventing usage of garbage in parNew.m_pps if pSPSPPS->PPSBuffer isn't attched
+    if (pSPSPPS && pSPSPPS->SPSBuffer && pSPSPPS->PPSBuffer == NULL)
+        Copy(parNew.m_pps, m_vpar.m_pps);
+
     sts = LoadSPSPPS(parNew, pSPSPPS);
     MFX_CHECK_STS(sts);
 
