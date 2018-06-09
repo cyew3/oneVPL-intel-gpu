@@ -600,7 +600,7 @@ mfxStatus MFXVideoUSER_GetPlugin(mfxSession session, mfxU32 type, mfxPlugin *par
 
 **Description**
 
-The function returns registered/loaded plug-in.
+The function returns registered/loaded plug-in. This function intended to be used only with user-implemented plug-ins and may return `MFX_ERR_UNDEFINED_BEHAVIOR` when used to obtain one of SDK "native" plug-ins (IDs for those are listed in `mfxplugin.h`).
 
 **Return Status**
 
