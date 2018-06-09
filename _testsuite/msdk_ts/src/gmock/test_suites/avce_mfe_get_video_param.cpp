@@ -63,6 +63,12 @@ int test_get_video_param(unsigned int id)
             tc.expMaxNumFrames = 1;
         }
     }
+    if ((tc.inMFMode == MFX_MF_DEFAULT || tc.inMFMode > MFX_MF_MANUAL) &&
+            tc.expMaxNumFrames == 1)
+    {
+        tc.expMFMode = MFX_MF_AUTO;
+
+    }
     if (tc.cOpt & COptMAD) {
         tc.sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }

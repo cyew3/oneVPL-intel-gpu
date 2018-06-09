@@ -561,8 +561,8 @@ void set_params(tsVideoEncoder& enc, tc_struct& tc,
                 tc.sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             }
 
-            if (tc.inMFMode == MFX_MF_DISABLED) {
-                tc.expMFMode == MFX_MF_DISABLED;
+            if (tc.inMFMode == MFX_MF_DEFAULT || tc.inMFMode > MFX_MF_MANUAL ) {
+                tc.expMFMode = MFX_MF_DEFAULT;
             }
         }
     }
