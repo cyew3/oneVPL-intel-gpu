@@ -1403,7 +1403,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
 #endif
-#if defined(_WIN32) || defined(_WIN64)
+
         if (pSrc->Info.Shift != pDst->Info.Shift)
         {
             mfxU8 lshift = 0;
@@ -1424,7 +1424,6 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
             MFX_CHECK_STS(sts);
         }
         else
-#endif
         {
             roi.width <<= 1;
 
