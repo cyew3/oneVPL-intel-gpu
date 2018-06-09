@@ -121,7 +121,7 @@ namespace UMC_AV1_DECODER
     bool AV1DecoderVA::QueryFrames()
     {
         std::unique_lock<std::mutex> l(guard); // bad ideo to work under mutex for blocking sync
-                                               // TODO: figure out solution for blocking sync.
+                                               // TODO: [Global] figure out solution for blocking sync.
 
         // form frame queue in decoded order
         DPBType decode_queue;

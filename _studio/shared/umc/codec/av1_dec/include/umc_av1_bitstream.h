@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -28,8 +28,11 @@ namespace UMC_AV1_DECODER
     {
     public:
 
+#if UMC_AV1_DECODER_REV >= 5000
+        void ReadOBUHeader(OBUInfo*);
+#endif
         void GetSequenceHeader(SequenceHeader*);
-        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader*);
+        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader*, FrameHeader const*  prev_fh = 0);
         void GetFrameHeaderFull(FrameHeader*, SequenceHeader const*, FrameHeader const*);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
@@ -42,7 +45,7 @@ namespace UMC_AV1_DECODER
     protected:
 
         void GetFrameSizeWithRefs(FrameHeader*);
-#if UMC_AV1_DECODER_REV >= 251
+#if UMC_AV1_DECODER_REV >= 2510
         Ipp8u ReadSuperFrameIndex(Ipp32u sizes[8]);
 #endif
     };

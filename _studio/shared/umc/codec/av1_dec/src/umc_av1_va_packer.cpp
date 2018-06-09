@@ -175,7 +175,7 @@ namespace UMC_AV1_DECODER
 #if UMC_AV1_DECODER_REV >= 2520
         // SB size info was present in DDI since ver. 0.11
         // but appeared in bitstream syntax only in rev. 0.25.2
-        picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128x128) ? 1 : 0;
+        picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128X128) ? 1 : 0;
 #endif
         picParam->frame_interp_filter = (UCHAR)info.interpFilter;
         picParam->dwFormatAndPictureInfoFlags.fields.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
@@ -291,8 +291,8 @@ namespace UMC_AV1_DECODER
         picParam->uv_ac_delta_q = (CHAR)info.uv_ac_delta_q;
 #endif
 
-        memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: implement proper setting
-        memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: implement proper setting
+        memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
+        memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
 
 #if AV1D_DDI_VERSION >= 11
         picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
@@ -368,7 +368,7 @@ namespace UMC_AV1_DECODER
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
         picParam->log2_tile_cols = (UCHAR)info.log2TileColumns;
 #if AV1D_DDI_VERSION >= 11
-        // TODO: add proper calculation of tile_rows/tile_cols during read of uncompressed header
+        // TODO: [Global] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (USHORT)info.tileCols;
         picParam->tile_rows = (USHORT)info.tileRows;
 #endif
@@ -554,8 +554,8 @@ namespace UMC_AV1_DECODER
         picParam->u_ac_delta_q = (int8_t)info.uv_ac_delta_q;
         picParam->v_ac_delta_q = (int8_t)info.uv_ac_delta_q;
 
-        memset(&picParam->seg_info.feature_data, 0, sizeof(picParam->seg_info.feature_data)); // TODO: implement proper setting
-        memset(&picParam->seg_info.feature_mask, 0, sizeof(picParam->seg_info.feature_mask)); // TODO: implement proper setting
+        memset(&picParam->seg_info.feature_data, 0, sizeof(picParam->seg_info.feature_data)); // TODO: [Global] implement proper setting
+        memset(&picParam->seg_info.feature_mask, 0, sizeof(picParam->seg_info.feature_mask)); // TODO: [Global] implement proper setting
 
         picParam->cdef_pri_damping = (uint8_t)info.cdefPriDamping;
         picParam->cdef_sec_damping = (uint8_t)info.cdefSecDamping;
@@ -583,7 +583,7 @@ namespace UMC_AV1_DECODER
 
         picParam->log2_tile_rows = (uint8_t)info.log2TileRows;
         picParam->log2_tile_cols = (uint8_t)info.log2TileColumns;
-        // TODO: add proper calculation of tile_rows/tile_cols during read of uncompressed header
+        // TODO: [Global] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (uint16_t)info.tileCols;
         picParam->tile_rows = (uint16_t)info.tileRows;
 

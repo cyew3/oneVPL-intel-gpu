@@ -51,27 +51,166 @@ namespace UMC_AV1_DECODER
         return profile;
     }
 
+#if UMC_AV1_DECODER_REV >= 5000
     inline
-    void av1_bitdepth_colorspace_sampling(AV1Bitstream* bs, FrameHeader* fh)
+    void av1_timing_info(AV1Bitstream* bs, SequenceHeader* sh)
+    {
+        sh->timing_info_present = bs->GetBit();  // timing info present flag
+
+        if (sh->timing_info_present)
+        {
+            // not implemented so far
+            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
+        }
+    }
+
+    static void av1_bitdepth_colorspace_sampling(AV1Bitstream* bs, SequenceHeader* sh)
+    {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+
+        sh->bit_depth = bs->GetBit() ? 10 : 8;
+        if (sh->profile >= 2 && sh->bit_depth != 8)
+            sh->bit_depth = bs->GetBit() ? 12 : 10;
+
+        sh->use_highbitdepth = sh->bit_depth > 8;
+
+        sh->monochrome = sh->profile != 1 ? bs->GetBit() : 0;
+
+        Ipp32u color_description_present_flag = bs->GetBit();
+        if (color_description_present_flag)
+        {
+            sh->color_primaries = bs->GetBits(8);
+            sh->transfer_characteristics = bs->GetBits(8);
+            sh->matrix_coefficients = bs->GetBits(8);
+        }
+        else
+        {
+            sh->color_primaries = AOM_CICP_CP_UNSPECIFIED;
+            sh->transfer_characteristics = AOM_CICP_TC_UNSPECIFIED;
+            sh->matrix_coefficients = AOM_CICP_MC_UNSPECIFIED;
+        }
+
+        if (sh->monochrome)
+        {
+            sh->color_range = AOM_CR_FULL_RANGE;
+            sh->subsampling_y = sh->subsampling_x = 1;
+            sh->chroma_sample_position = AOM_CSP_UNKNOWN;
+            sh->separate_uv_delta_q = 0;
+            return;
+        }
+
+        if (sh->color_primaries == AOM_CICP_CP_BT_709 &&
+            sh->transfer_characteristics == AOM_CICP_TC_SRGB &&
+            sh->matrix_coefficients == AOM_CICP_MC_IDENTITY)
+        {
+            sh->subsampling_y = sh->subsampling_x = 0;
+            if (!(sh->profile == 1 || (sh->profile == 2 && sh->bit_depth == 12)))
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+        }
+        else
+        {
+            // [16,235] (including xvycc) vs [0,255] range
+            sh->color_range = bs->GetBit();
+            if (sh->profile == 0) // 420 only
+                sh->subsampling_x = sh->subsampling_y = 1;
+            else if (sh->profile == 1) // 444 only
+                sh->subsampling_x = sh->subsampling_y = 0;
+            else if (sh->profile == 2)
+            {
+                if (sh->bit_depth == 12)
+                {
+                    sh->subsampling_x = bs->GetBit();
+                    if (sh->subsampling_x == 0)
+                        sh->subsampling_y = 0;  // 444
+                    else
+                        sh->subsampling_y = bs->GetBit();  // 422 or 420
+                }
+                else
+                {
+                    // 422
+                    sh->subsampling_x = 1;
+                    sh->subsampling_y = 0;
+                }
+            }
+            if (sh->subsampling_x == 1 && sh->subsampling_y == 1)
+                sh->chroma_sample_position = bs->GetBits(2);
+        }
+
+        sh->separate_uv_delta_q = bs->GetBit();
+
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
+    }
+#else // UMC_AV1_DECODER_REV >= 5000
+    static void av1_bitdepth_colorspace_sampling(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         GetBitDepthAndColorSpace(bs, fh);
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
-    inline
-    void av1_get_frame_size(AV1Bitstream* bs, FrameHeader* fh)
+#if UMC_AV1_DECODER_REV >= 5000
+    static void av1_setup_superres(AV1Bitstream* bs, FrameHeader* fh)
     {
-        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
-        GetFrameSize(bs, fh);
-        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
+        fh->superresUpscaledWidth = fh->width;
+        fh->superresUpscaledHeight = fh->height;
+        Ipp32u& denom = fh->superresScaleDenominator;
+        if (bs->GetBit())
+        {
+            denom = bs->GetBits(SUPERRES_SCALE_BITS);
+            denom += SUPERRES_SCALE_DENOMINATOR_MIN;
+            if (denom != SCALE_NUMERATOR)
+                fh->width = (fh->width * SCALE_NUMERATOR + denom / 2) / (denom);
+        }
+        else
+            fh->superresScaleDenominator = SCALE_NUMERATOR;
     }
+#endif
 
     inline
     void av1_get_render_size(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+#if UMC_AV1_DECODER_REV >= 5000
+        fh->displayWidth = fh->superresUpscaledWidth;
+        fh->displayHeight = fh->superresUpscaledHeight;
+
+        if (bs->GetBit())
+        {
+            fh->displayWidth = bs->GetBits(16) + 1;
+            fh->displayHeight = bs->GetBits(16) + 1;
+        }
+#else // UMC_AV1_DECODER_REV >= 5000
         GetDisplaySize(bs, fh);
+#endif // UMC_AV1_DECODER_REV >= 5000
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
+    }
+
+    inline
+    void av1_get_frame_size(AV1Bitstream* bs, FrameHeader* fh, SequenceHeader const * sh = 0)
+    {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->frameSizeOverrideFlag)
+        {
+            fh->width = bs->GetBits(16) + 1;
+            fh->height = bs->GetBits(16) + 1;
+            if (fh->width > sh->max_frame_width || fh->height > sh->max_frame_height)
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+        }
+        else
+        {
+            fh->width = sh->max_frame_width;
+            fh->height = sh->max_frame_height;
+        }
+
+        av1_setup_superres(bs, fh);
+        av1_get_render_size(bs, fh);
+
+#else // UMC_AV1_DECODER_REV >= 5000
+        sh;
+        GetFrameSize(bs, fh);
+#endif // UMC_AV1_DECODER_REV >= 5000
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
@@ -80,7 +219,7 @@ namespace UMC_AV1_DECODER
     void av1_get_sb_size(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
-        fh->sbSize = bs->GetBit() ? BLOCK_128x128 : BLOCK_64X64;
+        fh->sbSize = bs->GetBit() ? BLOCK_128X128 : BLOCK_64X64;
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 #endif
@@ -90,13 +229,20 @@ namespace UMC_AV1_DECODER
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
 #if UMC_AV1_DECODER_REV >= 2520
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->allowIntraBC && NO_FILTER_FOR_IBC)
+            return;
+#endif
         fh->lf.filterLevel[0] = bs->GetBits(6);
         fh->lf.filterLevel[1] = bs->GetBits(6);
-        if (fh->lf.filterLevel[0] || fh->lf.filterLevel[1])
-        {
-            fh->lf.filterLevelU = bs->GetBits(6);
-            fh->lf.filterLevelV = bs->GetBits(6);
-        }
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->numPlanes > 1)
+#endif
+            if (fh->lf.filterLevel[0] || fh->lf.filterLevel[1])
+            {
+                fh->lf.filterLevelU = bs->GetBits(6);
+                fh->lf.filterLevelV = bs->GetBits(6);
+            }
 #else
         fh->lf.filterLevel = bs->GetBits(6);
 #endif
@@ -152,26 +298,53 @@ namespace UMC_AV1_DECODER
             fh->cdefUVStrength[i] = bs->GetBits(7);
         }
 #else
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->allowIntraBC && NO_FILTER_FOR_IBC)
+            return;
+#endif
         fh->cdefPriDamping = fh->cdefSecDamping = bs->GetBits(2) + 3;
         fh->cdefBits = bs->GetBits(2);
         mfxU32 nbCdefStrengths = 1 << fh->cdefBits;
         for (Ipp8u i = 0; i < nbCdefStrengths; i++) {
-            fh->cdefStrength[i] = bs->GetBits(7);
-            fh->cdefUVStrength[i] = fh->subsamplingX == fh->subsamplingY ?
-                bs->GetBits(7) : 0;
+            fh->cdefStrength[i] = bs->GetBits(CDEF_STRENGTH_BITS);
+            fh->cdefUVStrength[i] =
+#if UMC_AV1_DECODER_REV >= 5000
+                fh->numPlanes > 1 ?
+#else
+                fh->subsamplingX == fh->subsamplingY ?
+#endif
+                bs->GetBits(CDEF_STRENGTH_BITS) : 0;
         }
 #endif
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
+#if UMC_AV1_DECODER_REV >= 5000
+    inline
+    Ipp8u av1_num_planes(SequenceHeader const * sh)
+    {
+        return sh->monochrome ? 1 : MAX_MB_PLANE;
+    }
+#endif
+
 #if UMC_AV1_DECODER_REV >= 2520
     inline
+#if UMC_AV1_DECODER_REV >= 5000
+    void av1_decode_restoration_mode(AV1Bitstream* bs, SequenceHeader const* sh, FrameHeader* fh)
+#else
     void av1_decode_restoration_mode(AV1Bitstream* bs, FrameHeader* fh)
+#endif
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         bool allNone = true;;
         bool chromaNone = true;
-        Ipp8u numPlanes = MAX_MB_PLANE;
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->allowIntraBC && NO_FILTER_FOR_IBC)
+            return;
+        Ipp32u numPlanes = fh->numPlanes;
+#else
+        Ipp32u numPlanes = MAX_MB_PLANE;
+#endif
         for (Ipp8u p = 0; p < numPlanes; ++p)
         {
             RestorationInfo* rsi = &fh->rstInfo[p];
@@ -191,27 +364,47 @@ namespace UMC_AV1_DECODER
                     chromaNone = false;
             }
         }
+
+#if UMC_AV1_DECODER_REV >= 5000
+        const Ipp32s size = sh->sb_size == BLOCK_128X128 ? 128 : 64;
+#else
+        const Ipp32s size = RESTORATION_TILESIZE_MAX >> 2;
+#endif
+
         if (!allNone)
         {
-            const Ipp32s qsize = RESTORATION_TILESIZE_MAX >> 2;
             for (Ipp8u p = 0; p < numPlanes; ++p)
-                fh->rstInfo[p].restorationUnitSize = qsize;
+                fh->rstInfo[p].restorationUnitSize = size;
 
             RestorationInfo* rsi = &fh->rstInfo[0];
-            rsi->restorationUnitSize <<= bs->GetBit();
-            if (rsi->restorationUnitSize != qsize) {
+#if UMC_AV1_DECODER_REV >= 5000
+            if (size == 64)
+#endif
+                rsi->restorationUnitSize <<= bs->GetBit();
+#if UMC_AV1_DECODER_REV >= 5000
+            if (rsi->restorationUnitSize > 64) {
+#else
+            if (rsi->restorationUnitSize != size) {
+#endif
                 rsi->restorationUnitSize <<= bs->GetBit();
             }
         }
         else
         {
-            const Ipp32s size = RESTORATION_TILESIZE_MAX;
             for (Ipp8u p = 0; p < numPlanes; ++p)
-                fh->rstInfo[p].restorationUnitSize = size;
+#if UMC_AV1_DECODER_REV >= 5000
+                fh->rstInfo[p].restorationUnitSize = RESTORATION_UNITSIZE_MAX;
+#else
+                fh->rstInfo[p].restorationUnitSize = RESTORATION_TILESIZE_MAX;
+#endif
         }
 
         if (numPlanes > 1) {
+#if UMC_AV1_DECODER_REV >= 5000
+            int s = IPP_MIN(sh->subsampling_x, sh->subsampling_y);
+#else
             int s = IPP_MIN(fh->subsamplingX, fh->subsamplingY);
+#endif
             if (s && !chromaNone) {
                 fh->rstInfo[1].restorationUnitSize =
                     fh->rstInfo[0].restorationUnitSize >> (bs->GetBit() * s);
@@ -224,7 +417,7 @@ namespace UMC_AV1_DECODER
                 fh->rstInfo[1].restorationUnitSize;
         }
 
-        fh->lrUnitShift = static_cast<Ipp32u>(log(fh->rstInfo[0].restorationUnitSize / (RESTORATION_TILESIZE_MAX >> 2)) / log(2));
+        fh->lrUnitShift = static_cast<Ipp32u>(log(fh->rstInfo[0].restorationUnitSize / size) / log(2));
         fh->lrUVShift = static_cast<Ipp32u>(log(fh->rstInfo[0].restorationUnitSize / fh->rstInfo[1].restorationUnitSize) / log(2));
 
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
@@ -238,8 +431,33 @@ namespace UMC_AV1_DECODER
         if (allLosless)
             fh->txMode = ONLY_4X4;
         else
+#if UMC_AV1_DECODER_REV >= 5000
+            fh->txMode = bs->GetBit() ? TX_MODE_SELECT : TX_MODE_LARGEST;
+#else
             fh->txMode = bs->GetBit() ? TX_MODE_SELECT : (TX_MODE)bs->GetBits(2);
+#endif
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
+    }
+
+    inline
+    bool av1_is_compound_reference_allowed(FrameHeader const* fh)
+    {
+#if UMC_AV1_DECODER_REV == 0
+        for (Ipp8u i = 1; i < INTER_REFS; ++i)
+        {
+            if (fh->refFrameSignBias[i - 1] != fh->refFrameSignBias[i])
+                return true;
+        }
+
+        return false;
+#elif UMC_AV1_DECODER_REV < 5000
+        return !IsFrameIntraOnly(fh);
+#else
+        // TODO: [Rev0.5] implement proper check of compound availability
+        fh;
+        static int frame_cnt = 0;
+        return frame_cnt++ > 1;
+#endif
     }
 
     inline
@@ -247,20 +465,15 @@ namespace UMC_AV1_DECODER
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         fh->referenceMode = SINGLE_REFERENCE;
-        bool compoundRefAllowed = false;
-#if UMC_AV1_DECODER_REV == 0
-        for (Ipp8u i = 1; i < INTER_REFS; ++i)
-        {
-            if (fh->refFrameSignBias[i - 1] != fh->refFrameSignBias[i])
-                compoundRefAllowed = true;
-        }
-#else
-        compoundRefAllowed = !IsFrameIntraOnly(fh);
-#endif
-        if (compoundRefAllowed)
+
+        if (av1_is_compound_reference_allowed(fh))
         {
             fh->referenceMode = bs->GetBit() ? REFERENCE_MODE_SELECT :
+#if UMC_AV1_DECODER_REV >= 5000
+                SINGLE_REFERENCE;
+#else
                 bs->GetBit() ? COMPOUND_REFERENCE : SINGLE_REFERENCE;
+#endif
         }
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
@@ -270,7 +483,11 @@ namespace UMC_AV1_DECODER
     void av1_read_compound_tools(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+#if UMC_AV1_DECODER_REV >= 5000
+        if (!IsFrameIntraOnly(fh))
+#else
         if (!IsFrameIntraOnly(fh) && fh->referenceMode != COMPOUND_REFERENCE)
+#endif
         {
             fh->allowInterIntraCompound = bs->GetBit();
         }
@@ -300,7 +517,11 @@ namespace UMC_AV1_DECODER
     }
 
     inline
+#if UMC_AV1_DECODER_REV >= 5000
+    void av1_setup_quantization(AV1Bitstream* bs, SequenceHeader const * sh, FrameHeader* fh)
+#else //  UMC_AV1_DECODER_REV >= 5000
     void av1_setup_quantization(AV1Bitstream* bs, FrameHeader* fh)
+#endif //  UMC_AV1_DECODER_REV >= 5000
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         fh->baseQIndex = bs->GetBits(UMC_VP9_DECODER::QINDEX_BITS);
@@ -308,10 +529,33 @@ namespace UMC_AV1_DECODER
         fh->y_dc_delta_q = av1_read_q_delta(bs);
 
 #if UMC_AV1_DECODER_REV >= 2520
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->numPlanes > 1)
+        {
+            Ipp32s diffUVDelta = 0;
+            if (sh->separate_uv_delta_q)
+                diffUVDelta = bs->GetBit();
+
+            fh->u_dc_delta_q = av1_read_q_delta(bs);
+            fh->u_ac_delta_q = av1_read_q_delta(bs);
+
+            if (diffUVDelta)
+            {
+                fh->v_dc_delta_q = av1_read_q_delta(bs);
+                fh->v_ac_delta_q = av1_read_q_delta(bs);
+            }
+            else
+            {
+                fh->v_dc_delta_q = fh->u_dc_delta_q;
+                fh->v_ac_delta_q = fh->u_ac_delta_q;
+            }
+        }
+#else // UMC_AV1_DECODER_REV >= 5000
         fh->u_dc_delta_q = av1_read_q_delta(bs);
         fh->u_ac_delta_q = av1_read_q_delta(bs);
         fh->v_dc_delta_q = fh->u_dc_delta_q;
         fh->v_ac_delta_q = fh->u_ac_delta_q;
+#endif // UMC_AV1_DECODER_REV >= 5000
 
         fh->lossless = (0 == fh->baseQIndex &&
             0 == fh->y_dc_delta_q &&
@@ -332,8 +576,18 @@ namespace UMC_AV1_DECODER
 #if UMC_AV1_DECODER_REV >= 2510
         fh->useQMatrix = bs->GetBit();
         if (fh->useQMatrix) {
+#if UMC_AV1_DECODER_REV >= 5000
+            fh->qmY = bs->GetBits(QM_LEVEL_BITS);
+            fh->qmU = bs->GetBits(QM_LEVEL_BITS);
+
+            if (!sh->separate_uv_delta_q)
+                fh->qmV = fh->qmV;
+            else
+                fh->qmV = bs->GetBits(QM_LEVEL_BITS);
+#else // UMC_AV1_DECODER_REV >= 5000
             fh->minQMLevel = bs->GetBits(QM_LEVEL_BITS);
             fh->maxQMLevel = bs->GetBits(QM_LEVEL_BITS);
+#endif // UMC_AV1_DECODER_REV >= 5000
         }
 #endif
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
@@ -370,25 +624,37 @@ namespace UMC_AV1_DECODER
 
                 ClearAllSegFeatures(fh->segmentation);
 
-                Ipp32s data = 0;
-                mfxU32 nBits = 0;
                 for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
                 {
                     for (Ipp8u j = 0; j < SEG_LVL_MAX; ++j)
                     {
-                        data = 0;
+                        Ipp32s data = 0;
                         if (bs->GetBit()) // feature_enabled
                         {
                             if (j == SEG_LVL_ALT_Q)
                                 segmentQuantizerActive = true;
                             EnableSegFeature(fh->segmentation, i, (SEG_LVL_FEATURES)j);
 
-                            nBits = UMC_VP9_DECODER::GetUnsignedBits(SEG_FEATURE_DATA_MAX[j]);
+                            const Ipp32u nBits = UMC_VP9_DECODER::GetUnsignedBits(SEG_FEATURE_DATA_MAX[j]);
+                            const Ipp32u isSigned = IsSegFeatureSigned((SEG_LVL_FEATURES)j);
+#if UMC_AV1_DECODER_REV >= 5000
+                            const Ipp32s dataMax = SEG_FEATURE_DATA_MAX[j];
+                            const Ipp32s dataMin = -dataMax;
+
+                            if (isSigned)
+                                data = read_inv_signed_literal(bs, nBits);
+                            else
+                                data = bs->GetBits(nBits);
+
+                            data = UMC_VP9_DECODER::clamp(data, dataMin, dataMax);
+
+#else // UMC_AV1_DECODER_REV >= 5000
                             data = bs->GetBits(nBits);
                             data = data > SEG_FEATURE_DATA_MAX[j] ? SEG_FEATURE_DATA_MAX[j] : data;
 
-                            if (IsSegFeatureSigned((SEG_LVL_FEATURES)j))
+                            if (isSigned)
                                 data = bs->GetBit() ? -data : data;
+#endif // UMC_AV1_DECODER_REV >= 5000
                         }
 
                         SetSegData(fh->segmentation, i, (SEG_LVL_FEATURES)j, data);
@@ -454,10 +720,46 @@ namespace UMC_AV1_DECODER
     }
 #endif
 
+#if UMC_AV1_DECODER_REV >= 5000
+    inline
+    Ipp32s read_uniform(AV1Bitstream* bs, Ipp32u n)
+    {
+        const Ipp32u l = UMC_VP9_DECODER::GetUnsignedBits(n);
+        const Ipp32u m = (1 << l) - n;
+        const Ipp32u v = bs->GetBits(l - 1);
+        if (v < m)
+            return v;
+        else
+            return (v << 1) - m + bs->GetBits(1);
+    }
+
+    static void read_tile_info_max_tile(AV1Bitstream* bs, FrameHeader* fh)
+    {
+        fh->uniformTileSpacingFlag = bs->GetBit();
+
+        // TODO: [Rev0.5] implement proper read of tile columns
+        if (fh->uniformTileSpacingFlag)
+            bs->GetBit();
+
+        // TODO: [Rev0.5] implement proper read of tile rows
+        if (fh->uniformTileSpacingFlag)
+            bs->GetBit();
+    }
+#endif // UMC_AV1_DECODER_REV >= 5000
+
     inline
     void av1_read_tile_info(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+#if UMC_AV1_DECODER_REV >= 5000
+        const bool largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
+        if (largeScaleTile)
+        {
+            // TODO: [Rev0.5] add support of large scale tile
+            return;
+        }
+        read_tile_info_max_tile(bs, fh);
+#else // UMC_AV1_DECODER_REV >= 5000
         const Ipp32u alignedWidth = ALIGN_POWER_OF_TWO(fh->width, MI_SIZE_LOG2);
         int minLog2TileColumns, maxLog2TileColumns, maxOnes;
         const Ipp32u miCols = alignedWidth >> MI_SIZE_LOG2;
@@ -481,6 +783,22 @@ namespace UMC_AV1_DECODER
         fh->tileRows = get_num_tiles(miRows, fh->log2TileRows);
 #endif
 
+#endif // UMC_AV1_DECODER_REV >= 5000
+
+#if UMC_AV1_DECODER_REV >= 5000
+        if (fh->tileCols > 1)
+            fh->loopFilterAcrossTilesVEnabled = bs->GetBit();
+        else
+            fh->loopFilterAcrossTilesVEnabled = 1;
+
+        if (fh->tileRows > 1)
+            fh->loopFilterAcrossTilesHEnabled = bs->GetBit();
+        else
+            fh->loopFilterAcrossTilesHEnabled = 1;
+
+        if (fh->tileCols * fh->tileRows > 1)
+            fh->tileSizeBytes = bs->GetBits(2) + 1;
+#else
 #if UMC_AV1_DECODER_REV >= 2520
         if (fh->tileCols * fh->tileRows > 1)
 #endif
@@ -495,6 +813,8 @@ namespace UMC_AV1_DECODER
         const mfxU32 numBits = fh->log2TileRows + fh->log2TileColumns;
         bs->GetBits(numBits); // tg_start
         bs->GetBits(numBits); // tg_size
+#endif
+
 
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
@@ -705,6 +1025,124 @@ namespace UMC_AV1_DECODER
     }
 #endif
 
+#if UMC_AV1_DECODER_REV >= 5000
+    void av1_read_film_grain_params(FilmGrain* params, AV1Bitstream* bs, SequenceHeader const * sh, FrameHeader const* fh)
+    {
+        params->apply_grain = bs->GetBit();
+        if (!params->apply_grain) {
+            memset(params, 0, sizeof(*params));
+            return;
+        }
+
+        params->random_seed = bs->GetBits(16);
+        if (fh->frameType == INTER_FRAME)
+            params->update_parameters = bs->GetBit();
+        else
+            params->update_parameters = 1;
+
+        if (!params->update_parameters)
+        {
+            // inherit parameters from a previous reference frame
+            // TODO: [Rev0.5] implement proper film grain param inheritance
+            return;
+        }
+
+        // Scaling functions parameters
+        params->num_y_points = bs->GetBits(4);  // max 14
+        if (params->num_y_points > 14)
+            throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        for (int i = 0; i < params->num_y_points; i++)
+        {
+            params->scaling_points_y[i][0] = bs->GetBits(8);
+            if (i && params->scaling_points_y[i - 1][0] >= params->scaling_points_y[i][0])
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+            params->scaling_points_y[i][1] = bs->GetBits(8);
+        }
+
+        if (!sh->monochrome)
+            params->chroma_scaling_from_luma = bs->GetBit();
+
+        if (sh->monochrome || params->chroma_scaling_from_luma)
+        {
+            params->num_cb_points = 0;
+            params->num_cr_points = 0;
+        }
+        else
+        {
+            params->num_cb_points = bs->GetBits(4);  // max 10
+            if (params->num_cb_points > 10)
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            for (int i = 0; i < params->num_cb_points; i++)
+            {
+                params->scaling_points_cb[i][0] = bs->GetBits(8);
+                if (i &&
+                    params->scaling_points_cb[i - 1][0] >= params->scaling_points_cb[i][0])
+                    throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+                params->scaling_points_cb[i][1] = bs->GetBits(8);
+            }
+
+            params->num_cr_points = bs->GetBits(4);  // max 10
+            if (params->num_cr_points > 10)
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+            for (int i = 0; i < params->num_cr_points; i++)
+            {
+                params->scaling_points_cr[i][0] = bs->GetBits(8);
+                if (i &&
+                    params->scaling_points_cr[i - 1][0] >= params->scaling_points_cr[i][0])
+                        throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+                params->scaling_points_cr[i][1] = bs->GetBits(8);
+            }
+        }
+
+        params->scaling_shift = bs->GetBits(2) + 8;  // 8 + value
+
+        // AR coefficients
+        // Only sent if the corresponsing scaling function has
+        // more than 0 points
+
+        params->ar_coeff_lag = bs->GetBits(2);
+
+        int num_pos_luma = 2 * params->ar_coeff_lag * (params->ar_coeff_lag + 1);
+        int num_pos_chroma = num_pos_luma;
+        if (params->num_y_points > 0) ++num_pos_chroma;
+
+        if (params->num_y_points)
+            for (int i = 0; i < num_pos_luma; i++)
+                params->ar_coeffs_y[i] = bs->GetBits(8) - 128;
+
+        if (params->num_cb_points || params->chroma_scaling_from_luma)
+            for (int i = 0; i < num_pos_chroma; i++)
+                params->ar_coeffs_cb[i] = bs->GetBits(8) - 128;
+
+        if (params->num_cr_points || params->chroma_scaling_from_luma)
+            for (int i = 0; i < num_pos_chroma; i++)
+                params->ar_coeffs_cr[i] = bs->GetBits(8) - 128;
+
+        params->ar_coeff_shift = bs->GetBits(2) + 6;  // 6 + value
+
+        params->grain_scale_shift = bs->GetBits(2);
+
+        if (params->num_cb_points) {
+            params->cb_mult = bs->GetBits(8);
+            params->cb_luma_mult = bs->GetBits(8);
+            params->cb_offset = bs->GetBits(9);
+        }
+
+        if (params->num_cr_points) {
+            params->cr_mult = bs->GetBits(8);
+            params->cr_luma_mult = bs->GetBits(8);
+            params->cr_offset = bs->GetBits(9);
+        }
+
+        params->overlap_flag = bs->GetBit();
+
+        params->clip_to_restricted_range = bs->GetBit();
+    }
+#endif
+
 #if UMC_AV1_DECODER_REV >= 2510
     Ipp8u AV1Bitstream::ReadSuperFrameIndex(Ipp32u sizes[8])
     {
@@ -749,27 +1187,154 @@ namespace UMC_AV1_DECODER
     }
 #endif
 
+#if UMC_AV1_DECODER_REV >= 5000
+
+    inline
+    size_t av1_read_leb128(AV1Bitstream* bs)
+    {
+        size_t value = 0;
+        for (size_t i = 0; i < MAX_LEB128_SIZE; ++i)
+        {
+            const Ipp8u cur_byte = static_cast<Ipp8u>(bs->GetBits(8));
+            const Ipp8u decoded_byte = cur_byte & LEB128_BYTE_MASK;
+            value |= ((Ipp64u)decoded_byte) << (i * 7);
+            if ((cur_byte & ~LEB128_BYTE_MASK) == 0)
+                return value;
+        }
+
+        throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+    }
+
+    inline
+    void av1_read_obu_size(AV1Bitstream* bs, size_t* const size, size_t* const length)
+    {
+        size_t start = bs->BytesDecoded();
+        *size = av1_read_leb128(bs);
+        *length = bs->BytesDecoded() - start;
+    }
+
+    OBUHeader av1_read_obu_header(AV1Bitstream* bs)
+    {
+        bs->GetBit(); // first bit is obu_forbidden_bit (0) - hello and thanks to Dima G. :)
+
+        OBUHeader header;
+
+        header.type = (AV1_OBU_TYPE)bs->GetBits(4);
+        bs->GetBits(2);  // reserved
+
+        if (bs->GetBits(1)) // if has extension
+        {
+            header.temporalLayerId = bs->GetBits(3);
+            header.enhancementLayerId = bs->GetBits(2);
+            bs->GetBits(3);  // reserved
+        }
+
+        return header;
+    }
+
+    void AV1Bitstream::ReadOBUHeader(OBUInfo* info)
+    {
+        av1_read_obu_size(this, &info->size, &info->sizeFieldLength);
+        info->header = av1_read_obu_header(this);
+    }
+#endif
+
     void AV1Bitstream::GetSequenceHeader(SequenceHeader* sh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
+
+#if UMC_AV1_DECODER_REV >= 5000
+        sh->profile = av1_profile(this);
+        GetBits(4); // level
+
+        Ipp32u elayers_cnt = GetBits(2);
+        for (Ipp32u i = 1; i <= elayers_cnt; i++)
+            GetBits(4); // level for each enhancement layer
+
+        sh->num_bits_width = GetBits(4) + 1;
+        sh->num_bits_height = GetBits(4) + 1;
+
+        sh->max_frame_width = GetBits(sh->num_bits_width) + 1;
+        sh->max_frame_height = GetBits(sh->num_bits_height) + 1;
+#endif // UMC_AV1_DECODER_REV >= 5000
+
 #if UMC_AV1_DECODER_REV >= 2510
         sh->frame_id_numbers_present_flag = GetBit();
         if (sh->frame_id_numbers_present_flag) {
 #if UMC_AV1_DECODER_REV >= 2520
             sh->delta_frame_id_length = GetBits(4) + 2;
             sh->frame_id_length = GetBits(3) + sh->delta_frame_id_length + 1;
-#else
+#else // UMC_AV1_DECODER_REV >= 2520
             sh->frame_id_length_minus7 = GetBits(4);
             sh->delta_frame_id_length_minus2 = GetBits(4);
-#endif
+#endif // UMC_AV1_DECODER_REV >= 2520
         }
-#else
+#else // UMC_AV1_DECODER_REV >= 2510
         /* Placeholder for actually reading from the bitstream */
         sh->frame_id_numbers_present_flag = FRAME_ID_NUMBERS_PRESENT_FLAG;
         sh->frame_id_length_minus7 = FRAME_ID_LENGTH_MINUS7;
         sh->delta_frame_id_length_minus2 = DELTA_FRAME_ID_LENGTH_MINUS2;
-#endif
+#endif // UMC_AV1_DECODER_REV >= 2510
+
+#if UMC_AV1_DECODER_REV >= 5000
+
+        sh->sb_size = GetBit() ? BLOCK_128X128 : BLOCK_64X64;
+        sh->enable_dual_filter = GetBit();
+        sh->enable_order_hint = GetBit();
+
+        sh->enable_jnt_comp =
+            sh->enable_order_hint ? GetBit() : 0;
+
+        if (GetBit())
+            sh->force_screen_content_tools = 2;
+        else
+            sh->force_screen_content_tools = GetBit();
+
+        if (sh->force_screen_content_tools > 0)
+        {
+            if (GetBit())
+                sh->force_integer_mv = 2;
+            else
+                sh->force_integer_mv = GetBit();
+        }
+        else
+            sh->force_integer_mv = 2;
+
+        sh->order_hint_bits_minus1 =
+            sh->enable_order_hint ? GetBits(3) : -1;
+
+        av1_bitdepth_colorspace_sampling(this, sh);
+
+        av1_timing_info(this, sh);
+
+        sh->film_grain_param_present = GetBit();
+#endif // UMC_AV1_DECODER_REV >= 5000
+
         AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
+    }
+
+    inline
+    bool FrameMightUsePrevFrameMVs(FrameHeader const* fh)
+    {
+#if UMC_AV1_DECODER_REV >= 5000
+        const bool largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
+        return !IsFrameResilent(fh) && !largeScaleTile;
+#else
+        return !IsFrameResilent(fh);
+#endif
+    }
+
+    inline
+    bool FrameCanUsePrevFrameMVs(FrameHeader const* fh, FrameHeader const* prev_fh = 0)
+    {
+        return (FrameMightUsePrevFrameMVs(fh) &&
+            prev_fh &&
+#if UMC_AV1_DECODER_REV < 5000
+            prev_fh->showFrame &&
+#endif
+            !prev_fh->intraOnly &&
+            fh->width == prev_fh->width &&
+            fh->height == prev_fh->height);
     }
 
     void AV1Bitstream::GetFrameSizeWithRefs(FrameHeader* fh)
@@ -783,6 +1348,10 @@ namespace UMC_AV1_DECODER
                 bFound = true;
                 fh->width = fh->sizesOfRefFrame[fh->activeRefIdx[i]].width;
                 fh->height = fh->sizesOfRefFrame[fh->activeRefIdx[i]].height;
+                // TODO: [Rev0.5] add getting of displayWidth/displayHeight
+#if UMC_AV1_DECODER_REV >= 5000
+                av1_setup_superres(this, fh);
+#endif
                 break;
             }
         }
@@ -791,18 +1360,24 @@ namespace UMC_AV1_DECODER
         {
             fh->width = GetBits(16) + 1;
             fh->height = GetBits(16) + 1;
-
+#if UMC_AV1_DECODER_REV >= 5000
+            av1_setup_superres(this, fh);
+#endif
             av1_get_render_size(this, fh);
         }
         AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }
 
-    void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader* sh)
+    void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader* sh, FrameHeader const* prev_fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
 
+        prev_fh;
+
         if (!fh || !sh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
+#if UMC_AV1_DECODER_REV < 5000
 
 #if UMC_AV1_DECODER_REV >= 2510
         Ipp32u sizes[8];
@@ -816,6 +1391,7 @@ namespace UMC_AV1_DECODER
         fh->profile = av1_profile(this);
         if (fh->profile >= 4)
             throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+#endif // UMC_AV1_DECODER_REV < 5000
 
         fh->show_existing_frame = GetBit();
         if (fh->show_existing_frame)
@@ -838,6 +1414,29 @@ namespace UMC_AV1_DECODER
             return;
         }
 
+#if UMC_AV1_DECODER_REV >= 5000
+        fh->frameType = static_cast<FRAME_TYPE>(GetBits(2));
+        fh->showFrame = GetBit();
+        fh->intraOnly = fh->frameType == INTRA_ONLY_FRAME;
+        fh->errorResilientMode = GetBit();
+        fh->enableIntraEdgeFilter = GetBit();
+        fh->allowFilterIntra = GetBit();
+        fh->disableCdfUpdate = GetBit();
+        if (sh->force_screen_content_tools == 2)
+            fh->allowScreenContentTools = GetBit();
+        else
+            fh->allowScreenContentTools = sh->force_screen_content_tools;
+
+        if (fh->allowScreenContentTools)
+        {
+            if (sh->force_integer_mv == 2)
+                fh->curFrameForceIntegerMV = GetBit();
+            else
+                fh->curFrameForceIntegerMV = sh->force_integer_mv;
+        }
+        else
+            fh->curFrameForceIntegerMV = 0;
+#else // UMC_AV1_DECODER_REV >= 5000
         fh->frameType = static_cast<VP9_FRAME_TYPE>(GetBit());
         fh->showFrame = GetBit();
 #if UMC_AV1_DECODER_REV > 0
@@ -855,6 +1454,8 @@ namespace UMC_AV1_DECODER
         }
 #endif
 
+#endif // UMC_AV1_DECODER_REV >= 5000
+
 
         if (sh->frame_id_numbers_present_flag)
         {
@@ -866,6 +1467,12 @@ namespace UMC_AV1_DECODER
             fh->display_frame_id = GetBits(frame_id_len);
         }
 
+#if UMC_AV1_DECODER_REV >= 5000
+        fh->frameSizeOverrideFlag = GetBits(1);
+        fh->frameOffset = GetBits(sh->order_hint_bits_minus1 + 1);
+        fh->currentVideoFrame = fh->frameOffset;
+#endif
+
         if (VP9_FRAME_TYPE::KEY_FRAME == fh->frameType)
         {
 #if UMC_AV1_DECODER_REV < 2510
@@ -873,35 +1480,56 @@ namespace UMC_AV1_DECODER
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 #endif
 
+#if UMC_AV1_DECODER_REV >= 5000
+            if (!fh->showFrame)
+                fh->refreshFrameFlags = static_cast<Ipp8u>(GetBits(NUM_REF_FRAMES));
+            else
+                fh->refreshFrameFlags = (1 << NUM_REF_FRAMES) - 1;
+#else
             av1_bitdepth_colorspace_sampling(this, fh);
-
             fh->refreshFrameFlags = (1 << NUM_REF_FRAMES) - 1;
+#endif
 
             for (Ipp8u i = 0; i < INTER_REFS; ++i)
             {
                 fh->activeRefIdx[i] = 0;
             }
 
+#if UMC_AV1_DECODER_REV >= 5000
+            av1_get_frame_size(this, fh, sh);
+#else // UMC_AV1_DECODER_REV >= 5000
             av1_get_frame_size(this, fh);
 #if UMC_AV1_DECODER_REV >= 2520
             av1_get_sb_size(this, fh);
 #endif
+#endif // UMC_AV1_DECODER_REV >= 5000
 
+#if UMC_AV1_DECODER_REV >= 5000
+            if (fh->allowScreenContentTools &&
+                (fh->width == fh->superresUpscaledWidth || !NO_FILTER_FOR_IBC))
+                fh->allowIntraBC = GetBit();
+#else
             fh->allowScreenContentTools = GetBit();
+#endif
         }
         else
         {
 #if UMC_AV1_DECODER_REV == 0
             fh->intraOnly = fh->showFrame ? 0 : GetBit();
-#else
+#else // UMC_AV1_DECODER_REV == 0
+
+#if UMC_AV1_DECODER_REV < 5000
             if (fh->intraOnly)
                 fh->allowScreenContentTools = GetBit();
+#endif
 
             if (IsFrameResilent(fh))
             {
                 fh->usePrevMVs = 0;
             }
-#endif
+#endif // UMC_AV1_DECODER_REV == 0
+
+#if UMC_AV1_DECODER_REV < 5000
             if (fh->errorResilientMode)
                 fh->resetFrameContext = RESET_FRAME_CONTEXT_ALL;
             else
@@ -925,6 +1553,7 @@ namespace UMC_AV1_DECODER
                     }
                 }
             }
+#endif // UMC_AV1_DECODER_REV < 5000
 
             if (fh->intraOnly)
             {
@@ -933,20 +1562,61 @@ namespace UMC_AV1_DECODER
                     throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 #endif
 
+#if UMC_AV1_DECODER_REV < 5000
                 av1_bitdepth_colorspace_sampling(this, fh);
+#endif
 
                 fh->refreshFrameFlags = (Ipp8u)GetBits(NUM_REF_FRAMES);
-                GetFrameSize(this, fh);
+#if UMC_AV1_DECODER_REV >= 5000
+                av1_get_frame_size(this, fh, sh);
+#else // UMC_AV1_DECODER_REV >= 5000
+                av1_get_frame_size(this, fh);
+#if UMC_AV1_DECODER_REV >= 2520
+                av1_get_sb_size(this, fh);
+#endif
+#endif // UMC_AV1_DECODER_REV >= 5000
+
+#if UMC_AV1_DECODER_REV >= 5000
+                if (fh->allowScreenContentTools &&
+                    (fh->width == fh->superresUpscaledWidth || !NO_FILTER_FOR_IBC))
+                    fh->allowIntraBC = GetBit();
+#endif
             }
             else
             {
                 fh->refreshFrameFlags = (Ipp8u)GetBits(NUM_REF_FRAMES);
 
+#if UMC_AV1_DECODER_REV >= 5000
+                if (!fh->errorResilientMode && sh->enable_order_hint)
+                    fh->frameRefsShortSignalling = GetBit();
+
+                if (fh->frameRefsShortSignalling)
+                {
+                    const Ipp32u lstRef = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
+                    const Ipp32u gldRef = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
+
+                    fh->activeRefIdx[0] = lstRef;
+                    fh->activeRefIdx[1] = gldRef;
+
+                    // call av1_set_frame_refs(lstRef, gldRef) can be skipped for now because it doesn't read bitstream
+                    // TODO: [Rev0.5] implement av1_set_frame_refs(lstRef, gldRef) later
+                }
+#endif
+
+
                 for (Ipp8u i = 0; i < INTER_REFS; ++i)
                 {
+#if UMC_AV1_DECODER_REV >= 5000
+                    if (!fh->frameRefsShortSignalling)
+                    {
+                        Ipp32s const ref = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
+                        fh->activeRefIdx[i] = ref;
+                    }
+#else
                     Ipp32s const ref = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
                     fh->activeRefIdx[i] = ref;
                     fh->refFrameSignBias[i] = GetBit();
+#endif // UMC_AV1_DECODER_REV >= 5000
 
                     if (sh->frame_id_numbers_present_flag)
                     {
@@ -960,18 +1630,50 @@ namespace UMC_AV1_DECODER
                     }
                 }
 
+#if UMC_AV1_DECODER_REV >= 5000
+                if (fh->errorResilientMode && fh->frameSizeOverrideFlag)
+                    GetFrameSizeWithRefs(fh);
+                else
+                    av1_get_frame_size(this, fh, sh);
+
+                if (fh->curFrameForceIntegerMV)
+                    fh->allowHighPrecisionMv = 0;
+                else
+                    fh->allowHighPrecisionMv = GetBit();
+#else // UMC_AV1_DECODER_REV >= 5000
                 GetFrameSizeWithRefs(fh);
 
                 fh->allowHighPrecisionMv = GetBit();
+#endif // UMC_AV1_DECODER_REV >= 5000
 
                 fh->interpFilter = GetBit() ? SWITCHABLE : (INTERP_FILTER)GetBits(LOG2_SWITCHABLE_FILTERS);
+#if UMC_AV1_DECODER_REV >= 5000
+                fh->switchableMotionMode = GetBit();
+#endif
 
-#if UMC_AV1_DECODER_REV >= 2510
-                if (!IsFrameResilent(fh))
-                {
+#if UMC_AV1_DECODER_REV > 0
+
+                // read temp mv signaling
+#if UMC_AV1_DECODER_REV == 1000
+                if (!fh->errorResilientMode)
                     fh->usePrevMVs = GetBit();
+#elif UMC_AV1_DECODER_REV < 2520
+                if (FrameMightUsePrevFrameMVs(fh))
+                    fh->usePrevMVs = GetBit();
+#else
+
+#if UMC_AV1_DECODER_REV >= 5000
+                if (FrameMightUsePrevFrameMVs(fh) && sh->enable_order_hint)
+#else
+                if (FrameMightUsePrevFrameMVs(fh))
+#endif
+                {
+                    const Ipp32u useRefFrameMVs = GetBit();
+                    fh->usePrevMVs = useRefFrameMVs && FrameCanUsePrevFrameMVs(fh, prev_fh);
                 }
 #endif
+
+#endif // UMC_AV1_DECODER_REV > 0
             }
         }
 
@@ -1004,8 +1706,7 @@ namespace UMC_AV1_DECODER
             qIndexAllZero = (fh->baseQIndex == 0);
         }
 
-        return qIndexAllZero && fh->y_dc_delta_q == 0 &&
-            fh->uv_ac_delta_q == 0 && fh->uv_dc_delta_q == 0;
+        return qIndexAllZero && fh->lossless;
     }
 
     inline void InheritFromKeyFrame(FrameHeader* fh, FrameHeader const* prev_fh)
@@ -1039,6 +1740,19 @@ namespace UMC_AV1_DECODER
         if (!fh->width || !fh->height)
             throw av1_exception(UMC::UMC_ERR_FAILED);
 
+#if UMC_AV1_DECODER_REV >= 5000
+        const bool largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
+        if (!(fh->errorResilientMode || largeScaleTile))
+        {
+            fh->refreshFrameContext = GetBit()
+                ? REFRESH_FRAME_CONTEXT_DISABLED
+                : REFRESH_FRAME_CONTEXT_BACKWARD;
+        }
+        else
+        {
+            fh->refreshFrameContext = REFRESH_FRAME_CONTEXT_DISABLED;
+        }
+#else // UMC_AV1_DECODER_REV >= 5000
         if (!fh->errorResilientMode)
         {
             fh->refreshFrameContext = GetBit()
@@ -1049,10 +1763,19 @@ namespace UMC_AV1_DECODER
         {
             fh->refreshFrameContext = REFRESH_FRAME_CONTEXT_FORWARD;
         }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
+#if UMC_AV1_DECODER_REV >= 5000
+        if (!IsFrameResilent(fh))
+        {
+            fh->primaryRefFrame = GetBits(PRIMARY_REF_BITS);
+            // TODO: [Rev0.5] add check for correct primaryRefFrame here
+        }
+#else
         // This flag will be overridden by the call to vp9_setup_past_independence
         // below, forcing the use of context 0 for those frame types.
         fh->frameContextIdx = GetBits(FRAME_CONTEXTS_LOG2);
+#endif // UMC_AV1_DECODER_REV >= 5000
 
         if (IsFrameResilent(fh))
         {
@@ -1068,20 +1791,27 @@ namespace UMC_AV1_DECODER
             InheritFromPrevFrame(fh, prev_fh);
         }
 
+#if UMC_AV1_DECODER_REV < 5000
         av1_setup_loop_filter(this, fh);
+#endif
 
 #if UMC_AV1_DECODER_REV == 0
         av1_read_cdef(this, fh);
 #endif
 
+#if UMC_AV1_DECODER_REV >= 5000
+        fh->numPlanes = av1_num_planes(sh);
+        av1_setup_quantization(this, sh, fh);
+#else
         av1_setup_quantization(this, fh);
+#endif
 
 #if UMC_AV1_DECODER_REV >= 2520
         av1_setup_segmentation(this, fh);
-        bool deltaQAllowed = 1;
+        const bool deltaQAllowed = 1;
 #else
-        bool segmentQuantizerActive = av1_setup_segmentation(this, fh);
-        bool deltaQAllowed = !segmentQuantizerActive;
+        const bool segmentQuantizerActive = av1_setup_segmentation(this, fh);
+        const bool deltaQAllowed = !segmentQuantizerActive;
 #endif
 
         fh->deltaQRes = 1;
@@ -1092,7 +1822,10 @@ namespace UMC_AV1_DECODER
         if (fh->deltaQPresentFlag)
         {
             fh->deltaQRes = 1 << GetBits(2);
-            fh->deltaLFPresentFlag = GetBit();
+#if UMC_AV1_DECODER_REV >= 5000
+            if (!fh->allowIntraBC || !NO_FILTER_FOR_IBC)
+#endif
+                fh->deltaLFPresentFlag = GetBit();
 
             if (fh->deltaLFPresentFlag)
             {
@@ -1107,16 +1840,37 @@ namespace UMC_AV1_DECODER
 
 #if UMC_AV1_DECODER_REV >= 2510
         if (allLosless == false)
-            av1_read_cdef(this, fh);
+        {
+#if UMC_AV1_DECODER_REV >= 5000
+            av1_setup_loop_filter(this, fh);
 #endif
 
-#if UMC_AV1_DECODER_REV >= 2520
+            av1_read_cdef(this, fh);
+
+#if UMC_AV1_DECODER_REV >= 5000
+            av1_decode_restoration_mode(this, sh, fh);
+#endif
+        }
+#endif
+
+#if UMC_AV1_DECODER_REV >= 2520 && UMC_AV1_DECODER_REV < 5000
         av1_decode_restoration_mode(this, fh);
 #endif
 
         av1_read_tx_mode(this, fh, allLosless);
 
+        // TODO: [Rev0.5] implement proper check for compound availability inside av1_read_frame_reference_mode
         av1_read_frame_reference_mode(this, fh);
+
+#if UMC_AV1_DECODER_REV >= 5000
+        // TODO: [Rev0.5] implement proper calculation of isSkipModeAllowed
+        const bool isSkipModeAllowed = sh->enable_order_hint &&
+            !fh->errorResilientMode &&
+            !IsFrameIntraOnly(fh) &&
+            fh->referenceMode != SINGLE_REFERENCE;
+
+        fh->skipModeFlag = isSkipModeAllowed ? GetBit() : 0;
+#endif // UMC_AV1_DECODER_REV >= 5000
 
 #if UMC_AV1_DECODER_REV >= 2510
         av1_read_compound_tools(this, fh);
@@ -1149,7 +1903,22 @@ namespace UMC_AV1_DECODER
         prev_fh;
 #endif
 
+#if UMC_AV1_DECODER_REV >= 5000
+        fh->showableFrame = fh->showFrame ? 0 : GetBit();
+        if (fh->showFrame || fh->showableFrame)
+        {
+            // read_film_grain()
+            if (sh->film_grain_param_present)
+                av1_read_film_grain_params(&fh->filmGrainParams, this, sh, fh);
+            else
+                memset(&fh->filmGrainParams, 0, sizeof(fh->filmGrainParams));
+
+            fh->filmGrainParams.bit_depth = fh->bit_depth;
+        }
+#endif // UMC_AV1_DECODER_REV >= 5000
+
         av1_read_tile_info(this, fh);
+
 
 #if UMC_AV1_DECODER_REV == 0
         fh->firstPartitionSize = GetBits(16);
@@ -1158,10 +1927,10 @@ namespace UMC_AV1_DECODER
 #endif
 
         fh->frameHeaderLength = Ipp32u(BitsDecoded() / 8 + (BitsDecoded() % 8 > 0));
-        fh->frameDataSize = m_maxBsSize; // TODO: check if m_maxBsSize can represent more than one frame and fix the code respectively if it can
+        fh->frameDataSize = m_maxBsSize; // TODO: [Global] check if m_maxBsSize can represent more than one frame and fix the code respectively if it can
 
         // code below isn't used so far. Need to refactor it based on new filter_level syntax/semantics in AV1 uncompressed header.
-        // TODO: modify and uncomment code below once driver will have support of multiple filter levels.
+        // TODO: [Global] modify and uncomment code below once driver will have support of multiple filter levels.
         /*
         if (fh->lf.filterLevel)
         {

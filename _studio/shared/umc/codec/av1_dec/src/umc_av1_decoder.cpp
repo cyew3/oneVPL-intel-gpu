@@ -24,7 +24,11 @@ namespace UMC_AV1_DECODER
 {
     AV1Decoder::AV1Decoder()
         : allocator(nullptr)
+#if UMC_AV1_DECODER_REV >= 5000
+        , sequence_header(nullptr)
+#else
         , sequence_header(new SequenceHeader{})
+#endif
         , counter(0)
         , prev_frame(nullptr)
     {
@@ -41,14 +45,77 @@ namespace UMC_AV1_DECODER
         );
     }
 
+#if UMC_AV1_DECODER_REV >= 5000
+    inline bool CheckOBUType(AV1_OBU_TYPE type)
+    {
+        switch (type)
+        {
+        case OBU_TEMPORAL_DELIMITER:
+        case OBU_SEQUENCE_HEADER:
+        case OBU_FRAME_HEADER:
+        case OBU_FRAME:
+        case OBU_TILE_GROUP:
+        case OBU_METADATA:
+        case OBU_PADDING:
+            return true;
+        default:
+            return false;
+        }
+    }
+#endif // UMC_AV1_DECODER_REV >= 5000
+
     UMC::Status AV1Decoder::DecodeHeader(UMC::MediaData* in, UMC::VideoDecoderParams* par)
     {
         if (!in)
             return UMC::UMC_ERR_NULL_PTR;
 
+#if UMC_AV1_DECODER_REV >= 5000
+        bool gotSeqHeader = false;
+
+        SequenceHeader sh = {};
+        FrameHeader fh = {};
+
+        while (in->GetDataSize() >= MINIMAL_DATA_SIZE)
+        {
+            try
+            {
+                const auto src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
+                AV1Bitstream bs(src, Ipp32u(in->GetDataSize()));
+
+                OBUInfo info;
+                bs.ReadOBUHeader(&info);
+                VM_ASSERT(CheckOBUType(info.header.type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+                size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
+
+                switch (info.header.type)
+                {
+                case OBU_SEQUENCE_HEADER:
+                    bs.GetSequenceHeader(&sh);
+                    gotSeqHeader = true; // activate seq header
+                    break;
+                case OBU_FRAME_HEADER:
+                case OBU_FRAME:
+                    if (!gotSeqHeader)
+                        break; // bypass frame header if there is no active seq header
+                    bs.GetFrameHeaderPart1(&fh, &sh);
+                    in->MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
+
+                    if (FillVideoParam(sh, fh, par) == UMC::UMC_OK)
+                        return UMC::UMC_OK;
+
+                    break;
+                }
+
+                in->MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
+            }
+            catch (av1_exception const& e)
+            {
+                return e.GetStatus();
+            }
+        }
+#else
         auto src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
         AV1Bitstream bs(src, Ipp32u(in->GetDataSize()));
-
         while (in->GetDataSize() >= MINIMAL_DATA_SIZE)
         {
             try
@@ -57,7 +124,6 @@ namespace UMC_AV1_DECODER
 #if UMC_AV1_DECODER_REV == 0
                 bs.GetSequenceHeader(&sh);
 #endif
-
                 FrameHeader fh = {};
                 bs.GetFrameHeaderPart1(&fh, &sh);
                 in->MoveDataPointer(fh.frameHeaderLength);
@@ -72,6 +138,7 @@ namespace UMC_AV1_DECODER
                     return sts;
             }
         }
+#endif
 
         return UMC::UMC_ERR_NOT_ENOUGH_DATA;
     }
@@ -154,21 +221,74 @@ namespace UMC_AV1_DECODER
 
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
-        Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
-        Ipp32u const size = Ipp32u(in->GetDataSize());
-        if (size < MINIMAL_DATA_SIZE)
-            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-
         DPBType updated_refs;
         if (prev_frame)
             updated_refs = DPBUpdate(prev_frame);
 
+        FrameHeader fh = {};
+        Ipp32u const size = Ipp32u(in->GetDataSize());
+
+#if UMC_AV1_DECODER_REV >= 5000
+        bool gotFrameHeader = false;
+        bool gotFrameData = false;
+
+        UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
+
+        while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && !gotFrameData)
+        {
+            const auto src = reinterpret_cast<Ipp8u*>(tmp.GetDataPointer());
+            AV1Bitstream bs(src, Ipp32u(tmp.GetDataSize()));
+
+            OBUInfo info;
+            bs.ReadOBUHeader(&info);
+            VM_ASSERT(CheckOBUType(info.header.type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+            size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
+
+            if (tmp.GetDataSize() < OBUTotalSize)
+                return UMC::UMC_ERR_NOT_ENOUGH_DATA; // not enough data in the buffer to hold full OBU unit
+
+            switch (info.header.type)
+            {
+            case OBU_SEQUENCE_HEADER:
+                sequence_header.reset(new SequenceHeader);
+                bs.GetSequenceHeader(sequence_header.get());
+                break;
+            case OBU_FRAME_HEADER:
+            case OBU_FRAME:
+                if (!sequence_header.get())
+                    break; // bypass frame header if there is no active seq header
+                FillRefFrameSizes(&fh, &updated_refs);
+                bs.GetFrameHeaderPart1(&fh, sequence_header.get());
+                bs.GetFrameHeaderFull(&fh, sequence_header.get(), &(prev_frame->GetFrameHeader()));
+                gotFrameHeader = true;
+                if (info.header.type == OBU_FRAME)
+                    gotFrameData = true;
+                break;
+            case OBU_TILE_GROUP:
+                // TODO: [Rev0.5] parse tile group header here
+                // TODO: [Rev0.5] add support of multiple tile groups
+                if (gotFrameHeader) // bypass tile group if there is no respective frame header (no per-tile submission so far)
+                    gotFrameData = true;
+                break;
+            }
+
+            tmp.MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
+        }
+
+        if (!gotFrameData)
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA; // no frame OBU or incomplete frame OBU (no per-tile submission so far)
+
+#else // UMC_AV1_DECODER_REV >= 5000
+        Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
+        if (size < MINIMAL_DATA_SIZE)
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+
         AV1Bitstream bs(src, size);
 
-        FrameHeader fh = {};
         FillRefFrameSizes(&fh, &updated_refs);
         bs.GetFrameHeaderPart1(&fh, sequence_header.get());
         bs.GetFrameHeaderFull(&fh, sequence_header.get(), &(prev_frame->GetFrameHeader()));
+#endif // UMC_AV1_DECODER_REV >= 5000
 
         AV1DecoderFrame* frame = GetFrameBuffer(fh);
         if (!frame)
@@ -229,6 +349,58 @@ namespace UMC_AV1_DECODER
             frame->GetFrameHeader().showFrame ? frame : nullptr;
     }
 
+#if UMC_AV1_DECODER_REV >= 5000
+    UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, FrameHeader const& fh, UMC::VideoDecoderParams* par)
+    {
+        VM_ASSERT(par);
+
+        par->info.stream_type = UMC::AV1_VIDEO;
+        par->info.profile = sh.profile;
+
+        par->info.clip_info = { Ipp32s(fh.width), Ipp32s(fh.height) };
+        par->info.disp_clip_info = par->info.clip_info;
+
+        if (!sh.subsampling_x && !sh.subsampling_y)
+            par->info.color_format = UMC::YUV444;
+        else if (sh.subsampling_x && !sh.subsampling_y)
+            par->info.color_format = UMC::YUY2;
+        else if (sh.subsampling_x && sh.subsampling_y)
+            par->info.color_format = UMC::NV12;
+
+        if (sh.bit_depth == 10)
+        {
+            switch (par->info.color_format)
+            {
+            case UMC::NV12:   par->info.color_format = UMC::P010; break;
+            case UMC::YUY2:   par->info.color_format = UMC::Y210; break;
+            case UMC::YUV444: par->info.color_format = UMC::Y410; break;
+
+            default:
+                VM_ASSERT(!"Unknown subsampling");
+                return UMC::UMC_ERR_UNSUPPORTED;
+            }
+        }
+        else if (sh.bit_depth == 12)
+        {
+            switch (par->info.color_format)
+            {
+            case UMC::NV12:   par->info.color_format = UMC::P016; break;
+            case UMC::YUY2:   par->info.color_format = UMC::Y216; break;
+            case UMC::YUV444: par->info.color_format = UMC::Y416; break;
+
+            default:
+                VM_ASSERT(!"Unknown subsampling");
+                return UMC::UMC_ERR_UNSUPPORTED;
+            }
+        }
+
+        par->info.interlace_type = UMC::PROGRESSIVE;
+        par->info.aspect_ratio_width = par->info.aspect_ratio_height = 1;
+
+        par->lFlags = 0;
+        return UMC::UMC_OK;
+    }
+#else
     UMC::Status AV1Decoder::FillVideoParam(FrameHeader const& fh, UMC::VideoDecoderParams* par)
     {
         VM_ASSERT(par);
@@ -279,6 +451,7 @@ namespace UMC_AV1_DECODER
         par->lFlags = 0;
         return UMC::UMC_OK;
     }
+#endif
 
     void AV1Decoder::SetDPBSize(Ipp32u size)
     {
