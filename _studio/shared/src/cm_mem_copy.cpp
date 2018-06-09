@@ -2689,11 +2689,9 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
 #endif
         cmSts = m_pCmDevice->LoadProgram((void*)skl_copy_kernel_genx,sizeof(skl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     case MFX_HW_CNL:
         cmSts = m_pCmDevice->LoadProgram((void*)cnl_copy_kernel_genx,sizeof(cnl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
-#endif  // PRE_SI_TARGET_PLATFORM_GEN10
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_HW_ICL:
     case MFX_HW_LKF:

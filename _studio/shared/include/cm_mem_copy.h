@@ -16,9 +16,7 @@
 #include "ippi.h"
 #if defined(MFX_VA)
 #include "skl_copy_kernel_genx_isa.h"
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
 #include "cnl_copy_kernel_genx_isa.h"
-#endif  // PRE_SI_TARGET_PLATFORM_GEN10
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #include "icl_copy_kernel_genx_isa.h"
 #include "icllp_copy_kernel_genx_isa.h"

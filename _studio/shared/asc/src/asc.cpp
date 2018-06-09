@@ -314,11 +314,9 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     case PLATFORM_INTEL_BXT:
         res = m_device->LoadProgram((void *)genx_scd_bxt, sizeof(genx_scd_bxt), m_program, "nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     case PLATFORM_INTEL_CNL:
         res = m_device->LoadProgram((void *)genx_scd_cnl, sizeof(genx_scd_cnl), m_program, "nojitter");
         break;
-#endif
     default:
         res = CM_NOT_IMPLEMENTED;
 }
