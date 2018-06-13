@@ -13,8 +13,7 @@ elseif( Darwin )
   set (PKG_XERCES_FOUND false)
 endif ()
 
-# if( PKG_XERCES_FOUND )
-if( FALSE )
+if( PKG_XERCES_FOUND )
   link_directories ( ${CMAKE_CURRENT_SOURCE_DIR}/xerces/lib )
 
   list(APPEND sources
