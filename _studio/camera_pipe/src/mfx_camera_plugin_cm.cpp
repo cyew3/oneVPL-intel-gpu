@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 //#include "ipps.h"
@@ -25,9 +25,7 @@
 #include "mfx_camera_plugin.h"
 #include "genx_bdw_camerapipe_isa.h"
 #include "genx_skl_camerapipe_isa.h"
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
 #include "genx_cnl_camerapipe_isa.h"
-#endif
 
 namespace
 {
@@ -422,7 +420,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
     CmEvent  *e = NULL;
     SurfaceIndex *pInputSurfaceIndex;
     //bool  firstTile = false;
-    mfxU32 out_pitch = pParam->surf_out->Data.PitchLow + ((mfxU32)pParam->surf_out->Data.PitchHigh << 16); 
+    mfxU32 out_pitch = pParam->surf_out->Data.PitchLow + ((mfxU32)pParam->surf_out->Data.PitchHigh << 16);
     for ( mfxU16 tileIDVert  = pParam->FrameSizeExtra.tileNumVer; tileIDVert  > 0 ; tileIDVert--) // Going over vertical tiles
     {
     for ( mfxU16 tileIDHor = 0; tileIDHor < pParam->FrameSizeExtra.tileNumHor;  tileIDHor++) // Goint over horizontal tiles
@@ -430,7 +428,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
         // Calculate offsets for tiles
         int in_shift  =  (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 2 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * pParam->surf_in->Data.Pitch;
         int out_shift;
-        if (pParam->surf_out->Info.FourCC == MFX_FOURCC_RGB4) 
+        if (pParam->surf_out->Info.FourCC == MFX_FOURCC_RGB4)
             out_shift = (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 4 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * out_pitch;
         else
             out_shift = (tileIDVert-1) * pParam->FrameSizeExtra.frameWidth * 8 + pParam->FrameSizeExtra.tileOffsets[tileIDHor].TileOffset * out_pitch;
@@ -507,7 +505,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
                 return MFX_ERR_ABORTED;
             }
 
-            if ( m_vignette_4x4 ) 
+            if ( m_vignette_4x4 )
             {
                 m_vignette_4x4->GetIndex(Mask4x4Index);
             }
@@ -743,7 +741,7 @@ mfxStatus CMCameraProcessor::CreateEnqueueTasks(AsyncParams *pParam)
 
         if ( pParam->Caps.bVignetteCorrection )
         {
-             mfxU8 *ptr = (mfxU8 *)pParam->VignetteParams.pCmCorrectionMap + 
+             mfxU8 *ptr = (mfxU8 *)pParam->VignetteParams.pCmCorrectionMap +
                            pParam->VignetteParams.CmStride * tileIDHor * ( pParam->VignetteParams.Height/pParam->FrameSizeExtra.tileNumHor);
              m_cmCtx->EnqueueCopyCPUToGPU(m_vignette_4x4,
                                           ptr,
@@ -870,7 +868,7 @@ mfxStatus CMCameraProcessor::Reset(mfxVideoParam *par, CameraParams *pipeParams)
             m_gammaCorrectSurfG = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
         if (!m_gammaCorrectSurfB)
             m_gammaCorrectSurfB = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
-        
+
         if (!m_gammaPointSurf)
             m_gammaPointSurf = CreateSurface(m_cmDevice, 32, 4, CM_SURFACE_FORMAT_A8);
 
@@ -2728,10 +2726,8 @@ void CmContext::Setup(
     // Temporary fix for cases when stream resolution is > 8K and output format is ARGB16 (CM FALLBACK is used)
     else if(m_platform >= MFX_HW_SCL && m_platform < MFX_HW_CNL)
         m_program = ReadProgram(m_device, genx_skl_camerapipe, SizeOf(genx_skl_camerapipe));
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
     else if(m_platform == MFX_HW_CNL)
         m_program = ReadProgram(m_device, genx_cnl_camerapipe, SizeOf(genx_cnl_camerapipe));
-#endif
 #endif
 
     // Valid for HSW/BDW
