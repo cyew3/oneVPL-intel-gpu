@@ -43,7 +43,7 @@ D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
     , m_pMfeAdapter(NULL)
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT 
+    , DDITracer(std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT>::value ? ENCODER_REXT
 #if defined(MFX_ENABLE_HEVCE_SCC)
         : std::is_same<DDI_SPS, ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC>::value ? ENCODER_SCC
 #endif
@@ -510,7 +510,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 
     executeParams.pCompressedBuffers = &m_cbd[0];
     Zero(m_cbd);
-    
+
     if (!m_sps.bResetBRC)
         m_sps.bResetBRC = task.m_resetBRC;
 
@@ -633,13 +633,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
         {
             pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
                 ,!!(m_pps.MaxSliceSizeInBytes)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
                 , &m_slice[i].SliceSAOFlagBitOffset
                 , &m_slice[i].BitLengthSliceHeaderStartingPortion
                 , &m_slice[i].SliceHeaderByteOffset
                 , &m_slice[i].PredWeightTableBitOffset
                 , &m_slice[i].PredWeightTableBitLength
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
             ); assert(pPH);
             ADD_CBD(D3D11_DDI_VIDEO_ENCODER_BUFFER_PACKEDSLICEDATA, *pPH, 1);
         }

@@ -53,7 +53,7 @@ GUID GetGUID(MfxVideoParam const & par)
 #endif
     if (par.m_platform.CodeName && par.m_platform.CodeName < MFX_PLATFORM_KABYLAKE)
         bdId = 0;
-    
+
     mfxU16 cFamily = IsOn(par.mfx.LowPower);
 
 #if defined(MFX_ENABLE_HEVCE_SCC)
@@ -154,7 +154,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     caps.MaxEncodedBitDepth = 2;
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1025)
     mfxPlatform pltfm;
     sts = core->QueryPlatform(&pltfm);
     MFX_CHECK_STS(sts);
@@ -222,7 +222,7 @@ mfxStatus CheckHeaders(
         && par.m_sps.separate_colour_plane_flag == 0
         && par.m_sps.pcm_enabled_flag == 0);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1025)
     if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
         MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 1);
@@ -274,7 +274,7 @@ mfxStatus CheckHeaders(
 #else
     MFX_CHECK_COND(
         !(  caps.BitDepth8Only == 1 // 8 bit only
-            && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0))); // not 8 bit 
+            && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0))); // not 8 bit
 
     MFX_CHECK_COND(
         !(  caps.BitDepth8Only == 0 // 10 or 8 bit only
@@ -448,14 +448,14 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core
     MFX_CHECK(CUQPFrameInfo.AspectRatioW && CUQPFrameInfo.AspectRatioH, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     mfxU32 drBlkW  = CUQPFrameInfo.AspectRatioW;  // block size of driver
-    mfxU32 drBlkH  = CUQPFrameInfo.AspectRatioH;  // block size of driver       
+    mfxU32 drBlkH  = CUQPFrameInfo.AspectRatioH;  // block size of driver
     mfxU16 inBlkSize = 16;                            //mbqp->BlockSize ? mbqp->BlockSize : 16;  //input block size
 
     mfxU32 pitch_MBQP = (par.mfx.FrameInfo.Width  + inBlkSize - 1)/ inBlkSize;
 
     if (mbqp && mbqp->NumQPAlloc)
     {
-        if ((mbqp->NumQPAlloc *  inBlkSize *  inBlkSize) < 
+        if ((mbqp->NumQPAlloc *  inBlkSize *  inBlkSize) <
             (drBlkW  *  drBlkH  *  CUQPFrameInfo.Width  *  CUQPFrameInfo.Height))
         {
             task.m_bCUQPMap = false;
@@ -469,7 +469,7 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core
             for (mfxU32 j = 0; j < CUQPFrameInfo.Width; j++)
                     lock.Y[i * lock.Pitch + j] = mbqp->QP[i*drBlkH/inBlkSize * pitch_MBQP + j*drBlkW/inBlkSize];
 
-    } 
+    }
 #ifdef MFX_ENABLE_HEVCE_ROI
     else if (roi)
     {
@@ -498,7 +498,7 @@ mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core
     }
 #endif
     return mfxSts;
-    
+
 }
 #endif
 
@@ -725,7 +725,7 @@ void FillSpsBuffer(
         sps.MinBitRate      = 0;
         sps.TargetBitRate   = par.TargetKbps;
         sps.MaxBitRate      = par.MaxKbps;
-    }   
+    }
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR)
     {
@@ -857,12 +857,15 @@ void FillSpsBuffer(
         }
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
-    if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+#if (MFX_VERSION >= 1025)
+    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
-        sps.QpAdjustment = IsOn(par.m_ext.DDI.QpAdjust) ? 1 : 0;
+        if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
+        {
+            sps.QpAdjustment = IsOn(par.m_ext.DDI.QpAdjust) ? 1 : 0;
+        }
     }
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#endif //(MFX_VERSION >= 1025)
 
 }
 
@@ -919,7 +922,7 @@ void FillPpsBuffer(
     pps.num_ref_idx_l0_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l0_default_active_minus1;
     pps.num_ref_idx_l1_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l1_default_active_minus1;
 
- 
+
 
     pps.LcuMaxBitsizeAllowed       = 0;
     pps.bUseRawPicForRef           = 0;
@@ -950,9 +953,9 @@ void FillPpsBuffer(
     if (pps.NumROI)
     {
 #if MFX_VERSION > 1021
-        bool priorityToDQPpar = (par.m_ext.ROI.ROIMode == MFX_ROI_MODE_PRIORITY) && par.isSWBRC(); //priority must be converted into dqp 
+        bool priorityToDQPpar = (par.m_ext.ROI.ROIMode == MFX_ROI_MODE_PRIORITY) && par.isSWBRC(); //priority must be converted into dqp
 #else
-        bool priorityToDQPpar = par.isSWBRC();  //priority is by default. must be converted in dqp. 
+        bool priorityToDQPpar = par.isSWBRC();  //priority is by default. must be converted in dqp.
 #endif
 
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
@@ -1026,7 +1029,7 @@ void FillPpsBuffer(
             pps.ROI[i].Roi.Bottom = (mfxU16)(task.m_roi[i].Bottom / blkSize) - 1;
             pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(task.m_bPriorityToDQPpar ? (-1)*task.m_roi[i].Priority: task.m_roi[i].Priority);
         }
-        
+
         pps.MaxDeltaQp = 51;    // is used for BRC only
         pps.MinDeltaQp = -51;
     }

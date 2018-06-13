@@ -122,13 +122,12 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid), &m_caps, sizeof(m_caps));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
-    
     m_guid      = guid;
     m_width     = width;
     m_height    = height;
     m_auxDevice = auxDevice;
 #endif
-    
+
     Trace(m_guid, 0);
     Trace(m_caps, 0);
 
@@ -425,7 +424,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
 #if defined(MFX_SKIP_FRAME_SUPPORT)
         if (skipMode.NeedSkipSliceGen())
         {
-            // pack skip slice 
+            // pack skip slice
             pPH = PackSkippedSlice(task, i, &m_slice[i].SliceQpDeltaBitOffset); assert(pPH);
             ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);
             if (!skipMode.NeedDriverCall())
@@ -461,13 +460,11 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
         {
             pPH = PackSliceHeader(task, i, &m_slice[i].SliceQpDeltaBitOffset
                 ,!!(m_pps.MaxSliceSizeInBytes)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
                 , &m_slice[i].SliceSAOFlagBitOffset
                 , &m_slice[i].BitLengthSliceHeaderStartingPortion
                 , &m_slice[i].SliceHeaderByteOffset
                 , &m_slice[i].PredWeightTableBitOffset
                 , &m_slice[i].PredWeightTableBitLength
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
             );
             assert(pPH);
             ADD_CBD(D3DDDIFMT_INTELENCODE_PACKEDSLICEDATA, *pPH, 1);

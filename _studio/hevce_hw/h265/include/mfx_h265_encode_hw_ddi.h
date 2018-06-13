@@ -47,12 +47,10 @@ static const GUID DXVA2_Intel_Encode_HEVC_Main =
 static const GUID DXVA2_Intel_Encode_HEVC_Main10 =
 { 0x6b4a94db, 0x54fe, 0x4ae1, { 0x9b, 0xe4, 0x7a, 0x7d, 0xad, 0x00, 0x46, 0x00 } };
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main =
 { 0xb8b28e0c, 0xecab, 0x4217, { 0x8c, 0x82, 0xea, 0xaa, 0x97, 0x55, 0xaa, 0xf0 } };
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main10 =
 { 0x8732ecfd, 0x9747, 0x4897, { 0xb4, 0x2a, 0xe5, 0x34, 0xf9, 0xff, 0x2b, 0x7a } };
-#endif  //PRE_SI_TARGET_PLATFORM_GEN10
 
 #ifdef PRE_SI_TARGET_PLATFORM_GEN11
 static const GUID DXVA2_Intel_Encode_HEVC_Main422 =
@@ -84,7 +82,7 @@ static const GUID DXVA2_Intel_Encode_HEVC_Main444_12 =
 // GUIDs from DDI for HEVC Encoder spec 0.991
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main =
 { 0x2dec00c7, 0x21ee, 0x4bf8, { 0x8f, 0x0e, 0x77, 0x3f, 0x11, 0xf1, 0x26, 0xa2 } };
-static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10 = 
+static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main10 =
 { 0xc35153a0, 0x23c0, 0x4a81, { 0xb3, 0xbb, 0x6a, 0x13, 0x26, 0xf2, 0xb7, 0x6b} };
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444 =
 { 0xa33fd0ec, 0xa9d3, 0x4c21, { 0x92, 0x76, 0xc2, 0x41, 0xcc, 0x90, 0xf6, 0xc7} };
@@ -127,31 +125,30 @@ const GUID GuidTable[3][3][3] =
         }
     },
     // LowPower = ON, SCC = OFF
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     {
         // BitDepthLuma = 8
         {
             /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main,
-    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444
-    #endif
+#endif
         },
         // BitDepthLuma = 10
         {
             /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main10,
-    #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
-    #endif
+#endif
         },
         // BitDepthLuma = 12
         {
-    #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    #endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+ #endif
         }
     },
-    #if defined(MFX_ENABLE_HEVCE_SCC)
+#if defined(MFX_ENABLE_HEVCE_SCC)
     // LowPower = ON, SCC = ON
     {
         // BitDepthLuma = 8
@@ -171,7 +168,6 @@ const GUID GuidTable[3][3][3] =
         {
         }
     }
-    #endif
 #endif
 };
 #endif

@@ -1383,7 +1383,7 @@ void MfxVideoParam::SyncHeadersToMfxParam()
         m_ext.HEVCTiles.NumTileRows = m_pps.num_tile_rows_minus1 + 1;
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1026)
     m_ext.CO3.TransformSkip = (m_pps.transform_skip_enabled_flag ? (mfxU16)MFX_CODINGOPTION_ON : (mfxU16)MFX_CODINGOPTION_OFF);
 #endif
 }
@@ -1478,14 +1478,14 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.max_transform_hierarchy_depth_inter      = 2;
     m_sps.max_transform_hierarchy_depth_intra      = 2;
     m_sps.scaling_list_enabled_flag                = 0;
-#ifdef PRE_SI_TARGET_PLATFORM_GEN10
+#if (MFX_VERSION >= 1025)
     if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
         m_sps.amp_enabled_flag = 1; // only 1
         m_sps.sample_adaptive_offset_enabled_flag = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
     }
     else
-#endif  //PRE_SI_TARGET_PLATFORM_GEN10
+#endif  //(MFX_VERSION >= 1025)
     { // SKL/KBL
         m_sps.amp_enabled_flag = 0;
         m_sps.sample_adaptive_offset_enabled_flag = 0;
@@ -1813,7 +1813,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.init_qp_minus26                       = 0;
     m_pps.constrained_intra_pred_flag           = 0;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1025)
     if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
         m_pps.transform_skip_enabled_flag = IsOn(m_ext.CO3.TransformSkip);
     else
@@ -1828,10 +1828,8 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     if (m_ext.ROI.NumROI)
         m_pps.cu_qp_delta_enabled_flag = 1;
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
     if (IsOn(mfx.LowPower))
         m_pps.cu_qp_delta_enabled_flag = 1;
-#endif
 
 #ifndef MFX_CLOSED_PLATFORMS_DISABLE
     if ((m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE))
@@ -2233,7 +2231,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
 
     if (m_sps.sample_adaptive_offset_enabled_flag)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1026)
         mfxExtHEVCParam* rtHEVCParam = ExtBuffer::Get(task.m_ctrl);
         mfxU16 FrameSAO = (rtHEVCParam && rtHEVCParam->SampleAdaptiveOffset) ? rtHEVCParam->SampleAdaptiveOffset : m_ext.HEVCParam.SampleAdaptiveOffset;
 
@@ -3565,7 +3563,7 @@ void ConfigureTask(
         task.m_qpY -= 6 * par.m_sps.bit_depth_luma_minus8;
 
         if (task.m_qpY < 0 && (IsOn(par.mfx.LowPower) || (par.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1025)
             && par.m_platform.CodeName <= MFX_PLATFORM_CANNONLAKE
 #endif
             )))

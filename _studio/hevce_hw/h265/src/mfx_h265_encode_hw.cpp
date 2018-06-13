@@ -176,7 +176,7 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
 {
     mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_ERR_NONE : MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1025)
     if (par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE
         && par.mfx.TargetUsage >= MFX_TARGETUSAGE_6
         && par.mfx.GopRefDist < 2
@@ -185,7 +185,7 @@ mfxStatus SetLowpowerDefault(MfxVideoParam& par)
         par.mfx.LowPower = MFX_CODINGOPTION_ON;
         return sts;
     }
-#endif
+#endif // MFX_VERSION >= 1025
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (par.m_platform.CodeName == MFX_PLATFORM_LAKEFIELD
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
@@ -1215,7 +1215,7 @@ mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid
             if (m_brc)
             {
                if (IsOn(m_vpar.mfx.LowPower) || (m_vpar.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1025)
                    && m_vpar.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
 #endif
                    ))

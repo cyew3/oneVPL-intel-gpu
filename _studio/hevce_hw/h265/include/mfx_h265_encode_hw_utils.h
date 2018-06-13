@@ -551,9 +551,7 @@ namespace ExtBuffer
         _CopyPar1(GeneralConstraintFlags);
 #endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #if (MFX_VERSION >= 1026)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
         _CopyPar1(SampleAdaptiveOffset);
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN10)
         _CopyPar1(LCUSize);
 #endif
     }
@@ -608,7 +606,7 @@ namespace ExtBuffer
         _CopyStruct1(NumRefActiveBL1);
         _CopyStruct1(QVBRQuality);
         _CopyPar1(EnableMBQP);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN10)
+#if (MFX_VERSION >= 1026)
         _CopyPar1(TransformSkip);
 #endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
@@ -1034,8 +1032,8 @@ public:
             task->m_frameType |= MFX_FRAMETYPE_REF;
         task->m_level = m_level;
     }
-    bool isCorrespondSecondField(Task const* task) 
-    { 
+    bool isCorrespondSecondField(Task const* task)
+    {
         if (m_poc + 1 != task->m_poc || !task->m_secondField || !m_bFirstField)
             return false;
         return true;
@@ -1059,7 +1057,7 @@ public:
     void  SkipTask  (Task* task);
     Task* GetNewTask();
     mfxStatus PutTasksForRecode(Task* pTask);
-    void SaveFieldInfo(Task* task) 
+    void SaveFieldInfo(Task* task)
     {
         if (m_bFieldMode)   this->m_lastFieldInfo.SaveInfo(task);
     };
