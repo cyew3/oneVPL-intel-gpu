@@ -122,6 +122,7 @@
     <ClCompile Include="src\dso\hevc_cabac_tables.cpp" />
     <ClCompile Include="src\fei_buffer_allocator.cpp" />
     <ClCompile Include="src\fei_utils.cpp" />
+    <ClCompile Include="src\fei_worker.cpp" />
     <ClCompile Include="src\hevc_fei_encode.cpp" />
     <ClCompile Include="src\hevc_sw_dso.cpp" />
     <ClCompile Include="src\pipeline_hevc_fei.cpp" />

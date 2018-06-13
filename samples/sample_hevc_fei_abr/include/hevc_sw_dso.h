@@ -35,7 +35,7 @@ public:
               bool dump_mvp = false)
         : IYUVSource(inPars, sp)
         , m_inPars(inPars)
-        , m_parser(BS_HEVC2::PARSE_SSD)
+        , m_parser(BS_HEVC2::PARSE_SSD_TC)
         , m_mvpPool(mvpPool)
         , m_ctuCtrlPool(ctuCtrlPool)
         , m_bCalcBRCStat(calc_BRC_stat)
