@@ -314,8 +314,8 @@ int TestSuite::RunTest_fourcc(const unsigned int id)
     m_par.mfx.FrameInfo.FourCC = fourcc;
     set_chromaformat_mfx(&m_par);
 
-    m_par.mfx.FrameInfo.Width = bsDesc.w;
-    m_par.mfx.FrameInfo.Height = bsDesc.h;
+    m_par.mfx.FrameInfo.CropW = bsDesc.w;
+    m_par.mfx.FrameInfo.CropH = bsDesc.h;
 
     switch (fourcc)
     {
