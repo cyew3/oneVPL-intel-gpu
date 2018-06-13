@@ -16,8 +16,6 @@
 #include "encoding_ddi.h"
 #include "mfx_vp9_encode_hw_ddi.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-
 namespace MfxHwVP9Encode
 {
 #if defined (MFX_VA_WIN)
@@ -377,5 +375,3 @@ private:
 } // MfxHwVP9Encode
 
 #endif // (_WIN32) || (_WIN64)
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

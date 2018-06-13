@@ -12,8 +12,6 @@
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_par.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-
 #if defined (_WIN32) || defined (_WIN64)
 
 namespace MfxHwVP9Encode
@@ -952,5 +950,3 @@ void PrintDdiToLogOnce(ENCODE_CAPS_VP9 const &caps)
 } // MfxHwVP9Encode
 
 #endif // (_WIN32) || (_WIN64)
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

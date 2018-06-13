@@ -21,8 +21,6 @@
 #include "mfx_enc_common.h"
 #include "assert.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-
 //#define VP9_LOGGING
 #ifdef VP9_LOGGING
 #define VP9_LOG(string, ...) printf(string, ##__VA_ARGS__); fflush(0);
@@ -983,5 +981,3 @@ inline bool Clamp(T & opt, I min, I max)
 
     return true;
 }
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

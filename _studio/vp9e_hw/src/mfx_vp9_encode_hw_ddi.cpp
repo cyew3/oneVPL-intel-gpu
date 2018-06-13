@@ -5,13 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_ddi.h"
-
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 namespace MfxHwVP9Encode
 {
@@ -419,5 +417,3 @@ namespace MfxHwVP9Encode
         return (totalBitsWritten + 7) / 8;
     }
 } // MfxHwVP9Encode
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

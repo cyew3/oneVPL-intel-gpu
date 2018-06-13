@@ -14,8 +14,6 @@
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_d3d11.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-
 namespace MfxHwVP9Encode
 {
 
@@ -55,7 +53,7 @@ D3D11Encoder::D3D11Encoder()
     , m_sps()
     , m_pps()
     , m_seg()
-    , m_infoQueried(false)    
+    , m_infoQueried(false)
     , m_descForFrameHeader()
     , m_seqParam()
     , m_width(0)
@@ -651,5 +649,3 @@ mfxStatus D3D11Encoder::Destroy()
 } // MfxHwVP9Encode
 
 #endif // (_WIN32) || (_WIN64)
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

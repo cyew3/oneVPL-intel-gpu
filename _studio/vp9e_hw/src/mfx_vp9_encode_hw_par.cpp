@@ -19,8 +19,6 @@
 #include "mfx_common_int.h"
 #include "mfx_ext_buffers.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-
 namespace MfxHwVP9Encode
 {
 
@@ -1945,5 +1943,3 @@ mfxStatus CheckBitstream(
     return checkSts;
 }
 } //namespace MfxHwVP9Encode
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

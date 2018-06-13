@@ -12,8 +12,6 @@
 #include <map>
 #include "mfx_vp9_encode_hw_utils.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-
 namespace MfxHwVP9Encode
 {
 
@@ -820,5 +818,3 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 }
 
 } // MfxHwVP9Encode
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -14,8 +14,6 @@
 #include "mfx_ext_buffers.h"
 #include "mfx_vp9_encode_hw_ddi.h"
 #include "mfxvp9.h"
-
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 
 namespace MfxHwVP9Encode
 {
@@ -54,5 +52,3 @@ void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par);
 
 bool CheckAndFixQIndexDelta(mfxI16& qIndexDelta, mfxU16 qIndex);
 } // MfxHwVP9Encode
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

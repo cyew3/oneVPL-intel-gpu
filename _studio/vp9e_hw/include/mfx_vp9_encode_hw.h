@@ -21,7 +21,6 @@
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_ddi.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 namespace MfxHwVP9Encode
 {
 
@@ -146,5 +145,3 @@ protected:
 };
 
 } // MfxHwVP9Encode
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

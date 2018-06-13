@@ -17,7 +17,6 @@
 #include "ipps.h"
 #include "fast_copy.h"
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 namespace MfxHwVP9Encode
 {
 
@@ -1141,5 +1140,3 @@ mfxStatus Plugin::UpdateBitstream(
 
 
 } // MfxHwVP9Encode
-
-#endif // PRE_SI_TARGET_PLATFORM_GEN10

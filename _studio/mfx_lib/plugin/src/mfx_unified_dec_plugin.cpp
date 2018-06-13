@@ -12,9 +12,7 @@
 #include "mfx_vp8_dec_plugin.h"
 #include "mfx_vp9_dec_plugin.h"
 #include "mfx_h265_encode_plugin_hw.h"
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
 #include "mfx_vp9_encode_hw.h"
-#endif // PRE_SI_TARGET_PLATFORM_GEN10
 #include "mfx_camera_plugin.h"
 #if defined (WIN64)
 #include "mfx_hevc_enc_plugin.h"
@@ -34,10 +32,8 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
         return MFXVP9DecoderPlugin::CreateByDispatcher(uid, plugin);
     else if(std::memcmp(uid.Data, MfxHwH265Encode::MFX_PLUGINID_HEVCE_HW.Data, sizeof(uid.Data)) == 0)
         return MfxHwH265Encode::Plugin::CreateByDispatcher(uid, plugin);
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
     else if(std::memcmp(uid.Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(uid.Data)) == 0)
         return MfxHwVP9Encode::Plugin::CreateByDispatcher(uid, plugin);
-#endif // PRE_SI_TARGET_PLATFORM_GEN10
     else if(std::memcmp(uid.Data, MFXCamera_Plugin::g_Camera_PluginGuid.Data, sizeof(uid.Data)) == 0)
         return MFXCamera_Plugin::CreateByDispatcher(uid, plugin);
 #if defined (WIN64) && defined(AS_HEVCE_PLUGIN)
