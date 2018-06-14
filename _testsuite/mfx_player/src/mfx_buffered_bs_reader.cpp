@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2010-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -230,11 +230,15 @@ mfxStatus BufferedBitstreamReader::ReadNextFrame(mfxBitstream2 &bs)
         //dont trace warning if not in frame mode
         if (m_pTarget->isFrameModeEnabled() && 0 == m_CurrFrameOffset && nShouldCopy && nShouldCopy < m_BufferedFrames[m_CurrFrame].DataLength)
         {
-            PipelineTraceForce((VM_STRING("WARNING: [BufferedBitstreamReader]: cannot copy whole frame, frame_size=%u, buffer_size=%u\n")
+            bs.DataOffset = 0;
+            nCanWrite = bs.MaxLength - bs.DataLength - bs.DataOffset;
+            nShouldCopy = IPP_MIN(nCanWrite, m_BufferedFrames[m_CurrFrame].DataLength);
+            PipelineTraceForce((VM_STRING("WARNING: [BufferedBitstreamReader]: cannot copy whole frame, frame_size=%u, remaining buffer_size=%u (out of %u maximum)\n")
                 , m_BufferedFrames[m_CurrFrame].DataLength
-                , nCanWrite));
+                , nCanWrite
+                , bs.MaxLength));
         }
-        
+
         nBytesRead = (mfxU32)copyFromInternalBuf(bs.Data + bs.DataLength + bs.DataOffset, nShouldCopy);
 
         //end of stream - no trace required
