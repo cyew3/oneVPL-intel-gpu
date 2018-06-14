@@ -72,7 +72,7 @@ public:
     // Check if frame should be skipped to decrease decoding delays
     bool IsShouldSkipFrame(H265DecoderFrame * pFrame);
     // Set decoding skip frame mode
-    void ChangeVideoDecodingSpeed(Ipp32s& num);
+    virtual mfxStatus ChangeVideoDecodingSpeed(Ipp32s& num);
     void Reset();
 
     struct SkipInfo

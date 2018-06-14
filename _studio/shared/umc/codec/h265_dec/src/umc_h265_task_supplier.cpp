@@ -309,7 +309,7 @@ bool Skipping_H265::IsShouldSkipFrame(H265DecoderFrame * )
 }
 
 // Set decoding skip frame mode
-void Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
+mfxStatus Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
 {
     m_VideoDecodingSpeed += num;
 
@@ -323,6 +323,8 @@ void Skipping_H265::ChangeVideoDecodingSpeed(Ipp32s & num)
     Ipp32s deblocking_off = m_PermanentTurnOffDeblocking;
     if (deblocking_off == 3)
         m_PermanentTurnOffDeblocking = 3;
+
+    return MFX_ERR_NONE;
 }
 
 // Get current skip mode state

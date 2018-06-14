@@ -1562,7 +1562,9 @@ mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
         return MFX_ERR_NOT_INITIALIZED;
 
     Ipp32s test_num = 0;
-    m_pH265VideoDecoder->ChangeVideoDecodingSpeed(test_num);
+    mfxStatus sts = m_pH265VideoDecoder->ChangeVideoDecodingSpeed(test_num);
+    if (sts != MFX_ERR_NONE)
+        return sts;
 
     Ipp32s num = 0;
 

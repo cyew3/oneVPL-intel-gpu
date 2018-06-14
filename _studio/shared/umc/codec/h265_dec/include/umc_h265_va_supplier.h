@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -42,6 +42,8 @@ public:
     virtual void Reset();
 
     virtual void CreateTaskBroker();
+
+    mfxStatus ChangeVideoDecodingSpeed(Ipp32s& num) { num; return MFX_ERR_UNSUPPORTED; }
 
     void SetBufferedFramesNumber(Ipp32u buffered);
 
