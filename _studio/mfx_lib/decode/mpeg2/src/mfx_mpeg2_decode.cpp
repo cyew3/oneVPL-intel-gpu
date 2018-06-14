@@ -2444,6 +2444,8 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
             if (eEXT == ptr[3])
             {
                 sts = AppendBitstream(*out, curr, (mfxU32)(ptr - curr));
+                if (sts == MFX_ERR_NOT_ENOUGH_BUFFER)
+                    MoveBitstreamData(*in, (mfxU32)(ptr - curr)); // huge frame - skip it
                 MFX_CHECK_STS(sts);
                 curr = ptr;
             }
