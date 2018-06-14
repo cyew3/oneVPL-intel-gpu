@@ -102,6 +102,7 @@ set( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
 list( APPEND plugin_common_sources
   ${prefix}/genx_cht_copy_isa.cpp
   ${prefix}/genx_skl_copy_isa.cpp
+  ${prefix}/genx_cnl_copy_isa.cpp
 )
 
 ###############################################################################
@@ -249,9 +250,11 @@ if( DEFINED H264LA_ENCODER_GUID )
     ${prefix}/genx_hsw_simple_me_isa.cpp
     ${prefix}/genx_bdw_simple_me_isa.cpp
     ${prefix}/genx_skl_simple_me_isa.cpp
+    ${prefix}/genx_cnl_simple_me_isa.cpp
     ${prefix}/genx_hsw_simple_me_proto.cpp
     ${prefix}/genx_hsw_histogram_isa.cpp
     ${prefix}/genx_skl_histogram_isa.cpp
+    ${prefix}/genx_cnl_histogram_isa.cpp
   )
   list( APPEND sources
     ${MSDK_STUDIO_ROOT}/shared/umc/codec/brc/src/umc_video_brc.cpp
