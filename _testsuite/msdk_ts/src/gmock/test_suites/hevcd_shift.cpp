@@ -180,23 +180,32 @@ int TestSuite::RunTest(unsigned int id, char const* sname, unsigned crc0, unsign
     Load();
     SETPARS(m_pPar, MFXPAR);
 
-    if ((!m_pVAHandle) && (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
+    if (m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
     {
-        mfxHDL hdl;
-        mfxHandleType type;
-        if (!GetAllocator())
+        if (m_pVAHandle)
         {
-            UseDefaultAllocator(
-                (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
-                || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-                );
+            SetAllocator(m_pVAHandle, true);
+            m_pFrameAllocator = GetAllocator();
+            SetFrameAllocator();
         }
-        m_pFrameAllocator = GetAllocator();
-        SetFrameAllocator();
-        m_pVAHandle = m_pFrameAllocator;
-        m_pVAHandle->get_hdl(type, hdl);
-        SetHandle(m_session, type, hdl);
-        m_is_handle_set = (g_tsStatus.get() >= 0);
+        else
+        {
+            mfxHDL hdl;
+            mfxHandleType type;
+            if (!GetAllocator())
+            {
+                UseDefaultAllocator(
+                    (m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
+                    || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
+                    );
+            }
+            m_pFrameAllocator = GetAllocator();
+            SetFrameAllocator();
+            m_pVAHandle = m_pFrameAllocator;
+            m_pVAHandle->get_hdl(type, hdl);
+            SetHandle(m_session, type, hdl);
+            m_is_handle_set = (g_tsStatus.get() >= 0);
+        }
     }// must be called before DecodeHeader()
 
     DecodeHeader();
