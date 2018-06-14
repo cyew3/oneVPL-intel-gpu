@@ -161,6 +161,30 @@ mfxStatus tsSession::MFXInitEx(mfxInitParam par, mfxSession* session)
 {
     TRACE_FUNC2(mfxInitParam, par, session);
     g_tsStatus.check( ::MFXInitEx(par, session) );
+    TS_TRACE(par);
+
+    m_initialized = (g_tsStatus.get() >= 0);
+
+#if (defined(LINUX32) || defined(LINUX64))
+    // SetHandle on Linux is always required for HW
+    if (m_initialized && g_tsImpl != MFX_IMPL_SOFTWARE)
+    {
+        mfxHDL hdl;
+        mfxHandleType type;
+        if (!m_pVAHandle)
+        {
+            m_pVAHandle = new frame_allocator(
+                    frame_allocator::HARDWARE,
+                    frame_allocator::ALLOC_MAX,
+                    frame_allocator::ENABLE_ALL,
+                    frame_allocator::ALLOC_EMPTY);
+        }
+        m_pVAHandle->get_hdl(type, hdl);
+        SetHandle(m_session, type, hdl);
+        m_is_handle_set = (g_tsStatus.get() >= 0);
+    }
+#endif
+
     return g_tsStatus.get();
 }
 
