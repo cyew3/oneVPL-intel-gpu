@@ -103,9 +103,11 @@ namespace hevce_intra_refresh{
     };
 
     //!\brief Main test class
-    class TestSuite:public tsVideoEncoder ,public tsBitstreamProcessor, public tsParserHEVC2
-#ifdef DEBUG_STREAM
-        , public tsBitstreamWriter
+    class TestSuite:public tsVideoEncoder , public tsParserHEVC2
+#ifndef DEBUG_STREAM
+    , public tsBitstreamProcessor
+#else
+    , public tsBitstreamWriter
 #endif
     {
     private:
