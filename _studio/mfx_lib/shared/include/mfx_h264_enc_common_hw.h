@@ -840,6 +840,7 @@ namespace MfxHwH264Encode
         bool                setExtAlloc,
         eMFXHWType          platform = MFX_HW_UNKNOWN,
         eMFXVAType          vaType = MFX_HW_NO,
+        eMFXGTConfig        config = MFX_GT_UNKNOWN,
         bool                bInit = false);
 
     mfxStatus CheckVideoParamFEI(
@@ -849,7 +850,8 @@ namespace MfxHwH264Encode
         MfxVideoParam &     par,
         ENCODE_CAPS const & hwCaps,
         eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO);
+        eMFXVAType          vaType = MFX_HW_NO,
+        eMFXGTConfig        config = MFX_GT_UNKNOWN);
 
     mfxStatus CheckVideoParamMvcQueryLike(MfxVideoParam &     par);
 
@@ -862,7 +864,8 @@ namespace MfxHwH264Encode
         ENCODE_CAPS const & hwCaps,
         bool                setExtAlloc,
         eMFXHWType          platform = MFX_HW_UNKNOWN,
-        eMFXVAType          vaType = MFX_HW_NO);
+        eMFXVAType          vaType = MFX_HW_NO,
+        eMFXGTConfig        config = MFX_GT_UNKNOWN);
 
     void InheritDefaultValues(
         MfxVideoParam const & parInit,

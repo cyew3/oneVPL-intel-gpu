@@ -74,6 +74,15 @@ enum eMFXHWType
 #endif
 };
 
+enum eMFXGTConfig
+{
+    MFX_GT_UNKNOWN = 0,
+    MFX_GT1     = 1,
+    MFX_GT2     = 2,
+    MFX_GT3     = 3,
+    MFX_GT4     = 4
+};
+
 // mfxU8 CodecProfile, CodecLevel
 // They are the same numbers as used in specific codec standards.
 enum {
