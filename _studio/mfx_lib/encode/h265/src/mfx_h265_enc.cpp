@@ -2248,13 +2248,11 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
             Ipp8u  deltaPocMsbPresentFlag = 0;
             Ipp32s deltaPocMsbCycleLtr = 0;
 
-            if (pocMsbLtr > 0) {
-                Ipp32s pocLsbCurr = computeLSB(currFrame->m_poc, pocLsbMax);
-                Ipp32s pocMsbCurr = currFrame->m_poc - pocLsbCurr;
+            Ipp32s pocLsbCurr = computeLSB(currFrame->m_poc, pocLsbMax);
+            Ipp32s pocMsbCurr = currFrame->m_poc - pocLsbCurr;
 
-                deltaPocMsbCycleLtr = (pocMsbCurr - pocMsbLtr) / pocLsbMax;
-                deltaPocMsbPresentFlag = 1;
-            }
+            deltaPocMsbCycleLtr = (pocMsbCurr - pocMsbLtr) / pocLsbMax;
+            if(deltaPocMsbCycleLtr) deltaPocMsbPresentFlag = 1;
 
             pLtRps->used_by_curr_pic_lt_flag = 1;
             pLtRps->delta_poc_msb_present_flag = deltaPocMsbPresentFlag;
@@ -2264,7 +2262,6 @@ void H265Encoder::CreateRefPicList(Frame *in, H265ShortTermRefPicSet *rps)
             pLtRps->poc_msb_ltr = pocMsbLtr;
 
             pLtRps->lt_idx_sps = 0;
-            pLtRps->delta_poc_msb_present_flag = 0;
 
             Ipp32s setIdx = getMatchingLtrIdxFromRpsSet(m_sps.m_LtRpsSps, m_sps.num_long_term_ref_pics_sps, pocLsbLtr, pLtRps->used_by_curr_pic_lt_flag);
             if (setIdx >= 0) {
