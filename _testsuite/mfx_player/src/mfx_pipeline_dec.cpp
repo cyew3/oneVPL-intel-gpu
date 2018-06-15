@@ -1537,6 +1537,8 @@ mfxStatus MFXDecPipeline::DecodeHeader()
         }
 
         MFX_CHECK_STS(m_pSpl->ReadNextFrame(m_bitstreamBuf));
+        if (m_bitstreamBuf.DataFlag & MFX_BITSTREAM_EOS)
+            return MFX_ERR_MORE_DATA;
     }
 
     //handling of default values
