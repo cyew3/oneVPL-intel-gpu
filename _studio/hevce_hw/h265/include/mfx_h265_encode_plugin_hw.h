@@ -25,7 +25,7 @@ class Plugin : public MFXEncoderPlugin
 public:
     static MFXEncoderPlugin* Create()
     {
-        return new Plugin(false);
+        return GetInstance();
     }
     static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
     {
@@ -42,7 +42,7 @@ public:
 
         try
         {
-            tmp_pplg = new Plugin(false);
+            tmp_pplg = GetInstance();
         }
         catch (std::bad_alloc&)
         {
@@ -133,7 +133,7 @@ public:
 
     virtual void Release()
     {
-        delete this;
+        return;
     }
 
     virtual mfxStatus Close()
@@ -153,6 +153,12 @@ protected:
 
     virtual ~Plugin()
     {}
+
+    static Plugin* GetInstance()
+    {
+        static Plugin instance(false);
+        return &instance;
+    }
 
     bool m_createdByDispatcher;
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
