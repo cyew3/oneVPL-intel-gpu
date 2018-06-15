@@ -785,3 +785,23 @@ typedef struct mfxCoreInterface {
     mfxHDL reserved4[4];
 } mfxCoreInterface;
 ```
+
+# Plug-ins
+
+## Native HW plug-ins (no more)
+
+In order to avoid constant extension of plug-in API with features that doesn't have any value for user-implemented plug-ins (only for MSDK HW "native" ones) and to simplify implementation, it was decided that all components having close HW dependencies and released as a part of driver package - only together with MSDK HW library, must be implemented not as a plug-ins (neither unified nor standalone) but as a native components of this MSDK library.
+
+Existing plug-ins of such type must be back-ported into MSDK HW library.
+
+### Backward compatibility mechanism
+
+In order to keep backward compatibility for back-ported components (ex plug-ins), next changes was introduced:
+- For fixed(hardcoded) plug-in UIDs function `MFXVideoUSER_Register` return `MFX_ERR_NONE` but doesn't register anything in session.
+- Functional code removed from ex plug-ins libraries and replaced with minimal identification part for `MFXVideoUSER_Load` (which is implemented in dispatcher and includes plug-in lib search/load, some verification of plug-in identification info followed by `MFXVideoUSER_Register` call).
+- Register()/Load() call with corresponding UID is not required anymore but also doesn't cause any errors.
+
+Side-effects:
+- For back-ported native plug-ins (identified by fixed UIDs) MSDK HW library will use only implementation from this library - it doesn't matter which impl application will(potentially) try to Register/Load. **THIS IS INTENDED BEHAVIOR.**
+- Unregister()/UnLoad() will return `MFX_ERR_NONE` even if specified plug-in wasn't registered/loaded. This is minor behavior change which shouldn't affect application in any way.
+- `MFXVideoUSER_GetPlugin` will return `MFX_ERR_UNDEFINED_BEHAVIOR` for back-ported native plug-ins, doesn't matter was corresponding Register/Load function called or not. This change shouldn't affect user application in any way since GetPlugin function is intended for usage with user-implemented plug-ins only. Reflected in documentation.
