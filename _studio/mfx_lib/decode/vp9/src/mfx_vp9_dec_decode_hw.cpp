@@ -1345,6 +1345,60 @@ mfxStatus VideoDECODEVP9_HW::UpdateRefFrames(mfxU8 refreshFrameFlags, VP9Decoder
     return MFX_ERR_NONE;
 }
 
+#ifdef UMC_VA_DXVA
+
+UCHAR VideoDECODEVP9_HW::GetDXVAIndex(UMC::FrameMemID memId)
+{
+    return (m_idToIndexMap.find(memId) != m_idToIndexMap.end()) ? m_idToIndexMap[memId] : UCHAR_MAX;
+}
+
+void VideoDECODEVP9_HW::UpdateDXVAIndices(const UMC::FrameMemID currFrame, const UMC::FrameMemID refs[], int refsSize)
+{
+    // Use DXVA indices in range [0; refsSize]
+    // refsSize slots for different reference frames [0; refsSize-1]
+    // plus one slot for current frame
+    std::set<UCHAR> freeSlots;
+    for (int i = 0; i <= refsSize; i += 1)
+    {
+        freeSlots.insert((UCHAR)i);
+    }
+
+    std::map<UMC::FrameMemID, UCHAR> newMap;
+    // propagate previously assigned indices to the new state
+    for (mfxU8 idx = 0; idx < refsSize; idx += 1)
+    {
+        UMC::FrameMemID memId = refs[idx];
+        if (memId != (UMC::FrameMemID) - 1)
+        {
+            UCHAR prevIndex = GetDXVAIndex(memId);
+            newMap[memId] = prevIndex;
+            freeSlots.erase(prevIndex);
+        }
+    }
+
+    // assigne the first free index to the current frame
+    newMap[currFrame] = *freeSlots.begin();
+
+    m_idToIndexMap = newMap;
+}
+
+VP9DecoderFrame VideoDECODEVP9_HW::MemIdToDXVAIndices(VP9DecoderFrame const & info)
+{
+    VP9DecoderFrame dxvaInfo = info;
+    UpdateDXVAIndices(dxvaInfo.currFrame, dxvaInfo.ref_frame_map, NUM_REF_FRAMES);
+
+    if (dxvaInfo.frameType != KEY_FRAME)
+    {
+        for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+        {
+            dxvaInfo.ref_frame_map[ref] = GetDXVAIndex(dxvaInfo.ref_frame_map[ref]);
+        }
+    }
+    dxvaInfo.currFrame = GetDXVAIndex(dxvaInfo.currFrame);
+    return dxvaInfo;
+}
+#endif
+
 mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9DecoderFrame const & info)
 {
     if ((NULL == bs) || (NULL == bs->Data))
@@ -1363,7 +1417,11 @@ mfxStatus VideoDECODEVP9_HW::PackHeaders(mfxBitstream *bs, VP9DecoderFrame const
     try
     {
         m_Packer->BeginFrame();
-        m_Packer->PackAU(&vp9bs, &info);
+        VP9DecoderFrame packerInfo = info;
+#ifdef UMC_VA_DXVA
+        packerInfo = MemIdToDXVAIndices(info);
+#endif
+        m_Packer->PackAU(&vp9bs, &packerInfo);
         m_Packer->EndFrame(); 
     }
     catch (vp9_exception const&)
