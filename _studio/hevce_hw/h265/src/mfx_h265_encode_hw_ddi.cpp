@@ -165,6 +165,11 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
         caps.BlockSize = 0b10; // 32x32
     }
 
+    if (pltfm.CodeName < MFX_PLATFORM_ICELAKE)
+        caps.NegativeQPSupport = 0;
+    else
+        caps.NegativeQPSupport = 1; // driver should set it for Gen11+ VME only
+
 #if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
     if (pltfm.CodeName >= MFX_PLATFORM_ICELAKE)
     {
@@ -188,6 +193,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
     caps.BlockSize = 2; // 32x32
     (void)core;
 #endif
+
     return sts;
 }
 

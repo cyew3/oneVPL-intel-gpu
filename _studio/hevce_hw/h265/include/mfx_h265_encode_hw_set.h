@@ -449,7 +449,7 @@ struct PPS
     mfxU16 slice_segment_header_extension_present_flag : 1;
 
     mfxU32 diff_cu_qp_delta_depth;
-    mfxI16 init_qp_minus26 : 6;
+    mfxI32 init_qp_minus26;
     mfxI16 cb_qp_offset : 6;
     mfxI16 cr_qp_offset : 6;
 

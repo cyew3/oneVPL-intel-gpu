@@ -76,7 +76,11 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    FrameSizeToleranceSupport       : 1;
             UINT    HWCounterAutoIncrementSupport   : 2;
             UINT    ROIDeltaQPSupport               : 1;
-            UINT                                    : 12; // For future expansion
+            UINT    NumScalablePipesMinus1          : 5;
+            UINT    NegativeQPSupport               : 1;
+            UINT    RandomAccessSupport             : 1;
+            UINT    TileBasedEncodingSupport        : 1;
+            UINT                                    : 4; // For future expansion
         };
         UINT    CodingLimits2;
     };

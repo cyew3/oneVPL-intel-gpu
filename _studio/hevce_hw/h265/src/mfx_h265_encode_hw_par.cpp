@@ -1799,8 +1799,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (CO3.TargetBitDepthLuma > 8)
     {
         maxQP += 6 * (CO3.TargetBitDepthLuma - 8);
-
-        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+        // negative QP for CQP VME only;
+        // remove "IsOn(par.mfx.LowPower)" when caps.NegativeQPSupport is correctly set in driver
+        if ((caps.NegativeQPSupport == 0) || IsOn(par.mfx.LowPower) || (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP))
             minQP += 6 * (CO3.TargetBitDepthLuma - 8);
     }
 

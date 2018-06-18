@@ -171,6 +171,7 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", TileSupport             );
     TRACE("%d", SkipFrame               );
     TRACE("%d", MbQpDataSupport         );
+    TRACE("%d", NegativeQPSupport       );
     TRACE("%d", SliceLevelWeightedPred  );
     TRACE("%d", LumaWeightedPred        );
     TRACE("%d", ChromaWeightedPred      );
@@ -196,6 +197,7 @@ DECL_START(ENCODE_CAPS_HEVC)
 
     TRACE("%d", SliceLevelReportSupport      );
     TRACE("%d", MaxNumOfTileColumnsMinus1    );
+    TRACE("%d", NumScalablePipesMinus1       );
     TRACE("%d", IntraRefreshBlockUnitSize    );
     TRACE("%d", LCUSizeSupported             );
     TRACE("%d", MaxNumDeltaQP                );
@@ -203,6 +205,8 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", MoveRectSupport              );
     TRACE("%d", FrameSizeToleranceSupport    );
     TRACE("%d", HWCounterAutoIncrementSupport);
+    TRACE("%d", RandomAccessSupport          );
+    TRACE("%d", TileBasedEncodingSupport     );
 
     TRACE("%d", MaxNum_WeightedPredL0);
     TRACE("%d", MaxNum_WeightedPredL1);
