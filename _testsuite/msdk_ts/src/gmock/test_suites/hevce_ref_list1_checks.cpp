@@ -392,6 +392,7 @@ namespace hevce_ref_list1_checks
             g_tsLog << "ERROR: invalid fourcc_id parameter: " << fourcc_id << "\n";
             return 0;
         }
+        g_tsStreamPool.Reg();
 
         g_tsStatus.expect(tc.sts);
 
@@ -428,7 +429,7 @@ namespace hevce_ref_list1_checks
         tsSurfaceProcessor *reader;
         reader = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
         m_filler = reader;
- 
+
         Query();
 
         Init();
