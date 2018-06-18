@@ -18,6 +18,10 @@ Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 namespace vp9e_dynamic_scaling
 {
 
+//#define DUMP_ENCODED_STREAM 1
+//#define DUMP_DECODED_FRAMES 1
+//#define ENABLE_ARTIFACTS_LOG 1
+
 #define SETPARSITER(p, type)                                                                                                                                                            \
 for(mfxU32 i = 0; i < MAX_NPARS; i++)                                                                                                                                                       \
 {                                                                                                                                                                                           \
@@ -1508,34 +1512,91 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
     };
 
-    /*void DumpCodedFrame(const mfxBitstream& bs, mfxU32 testId, mfxU32 profile)
+#ifdef DUMP_ENCODED_STREAM
+    void DumpCodedFrame(const mfxBitstream& bs, mfxU32 testId, mfxU32 profile)
     {
-        // Dump stream to file
+        // Dump stream to a file
         const int encoded_size = bs.DataLength;
 
-        std::string fileName = "encoded_pr" + std::to_string(profile) + "_" + std::to_string(testId) + ".vp9";
+        std::string fileName = "encoded_profile" + std::to_string(profile) + "_" + std::to_string(testId) + ".vp9";
 
         FILE *fp_vp9 = fopen(fileName.c_str(), "ab");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fclose(fp_vp9);
-    }*/
-
-    /*void DumpDecodedFrame(mfxU8* pY, mfxU8* pUV, mfxU32 w, mfxU32 h, mfxU32 pitch)
+    }
+#endif
+#ifdef DUMP_DECODED_FRAMES
+    void DumpDecodedFrame(mfxU8* pY, mfxU8* pUV, mfxU8* pV, mfxU32 w, mfxU32 h, mfxU32 pitch, mfxU32 testId, mfxU32 profile)
     {
-        // Dump decoded frame to file
-        static FILE *fp_yuv = fopen("vp9e_decoded_ds.yuv", "wb");
-        for (mfxU32 i = 0; i < h; i ++)
+        // Dump decoded frame to a file
+        static FILE *fp_yuv = nullptr;
+        static int DumpDecodedFrame_frame_count = 0;
+
+        if (profile == 0)
         {
-            fwrite(pY, w, 1, fp_yuv);
-            pY += pitch;
+            std::string fileName = "decoded_I420_case" + std::to_string(testId) + "_frame" + std::to_string(DumpDecodedFrame_frame_count++)
+                + "_" + std::to_string(w) + "x" + std::to_string(h) + ".yuv";
+            fp_yuv = fopen(fileName.c_str(), "wb");
+
+            for (mfxU32 i = 0; i < h; i++)
+            {
+                fwrite(pY, w, 1, fp_yuv);
+                pY += pitch;
+            }
+            for (mfxU32 i = 0; i < h / 2; i++)
+            {
+                fwrite(pUV, w, 1, fp_yuv);
+                pUV += pitch;
+            }
         }
-        for (mfxU32 i = 0; i < h / 2; i++)
+        else if (profile == 1)
         {
-            fwrite(pUV, w, 1, fp_yuv);
-            pUV += pitch;
+            std::string fileName = "decoded_AYUV_case" + std::to_string(testId) + "_frame" + std::to_string(DumpDecodedFrame_frame_count++)
+                + "_" + std::to_string(w) + "x" + std::to_string(h) + ".yuv";
+            fp_yuv = fopen(fileName.c_str(), "wb");
+
+            for (mfxU32 i = 0; i < h; i++)
+            {
+                fwrite(pV, w*4, 1, fp_yuv);
+                pV += pitch;
+            }
         }
-        fflush(fp_yuv);
-    }*/
+        else if (profile == 2)
+        {
+            std::string fileName = "decoded_P010_case" + std::to_string(testId) + "_frame" + std::to_string(DumpDecodedFrame_frame_count++)
+                + "_" + std::to_string(w) + "x" + std::to_string(h) + ".yuv";
+            fp_yuv = fopen(fileName.c_str(), "wb");
+
+            for (mfxU32 i = 0; i < h; i++)
+            {
+                fwrite(pY, w*2, 1, fp_yuv);
+                pY += pitch;
+            }
+            for (mfxU32 i = 0; i < h / 2; i++)
+            {
+                fwrite(pUV, w*2, 1, fp_yuv);
+                pUV += pitch;
+            }
+        }
+        else if (profile == 3)
+        {
+            std::string fileName = "decoded_Y410_case" + std::to_string(testId) + "_frame" + std::to_string(DumpDecodedFrame_frame_count++)
+                + "_" + std::to_string(w) + "x" + std::to_string(h) + ".yuv";
+            fp_yuv = fopen(fileName.c_str(), "wb");
+
+            for (mfxU32 i = 0; i < h; i++)
+            {
+                fwrite(pUV, w*4, 1, fp_yuv);
+                pUV += pitch;
+            }
+        }
+
+        if (fp_yuv)
+        {
+            fclose(fp_yuv);
+        }
+    }
+#endif
 
     mfxF64 GetMinPSNR(const mfxVideoParam& par)
     {
@@ -1590,7 +1651,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             }
         }
 
-#define COUNT_ARTIFATCS(COMPONENT, STEP, THRESHOLD) \
+#define COUNT_ARTIFATCS(COMPONENT, STEP, THRESHOLD, LOG) \
         for(mfxU32 y = 0; y < maxh; y += STEP) \
         { \
             for(mfxU32 x = 0; x < maxw; x += STEP) \
@@ -1610,7 +1671,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                         { \
                             artifact_found++; \
                             atype = 1; \
-                            /*printf("ARTIFACT T1 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                            if(LOG) printf("ARTIFACT T1 [%dx%d-%d] VALUE=%d diff_EXT=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0); \
                         } \
                     } \
                     if (y) \
@@ -1620,7 +1681,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                         { \
                             artifact_found++; \
                             atype = 2; \
-                            /*printf("ARTIFACT T2 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                            if(LOG) printf("ARTIFACT T2 [%dx%d-%d] VALUE=%d diff_EXT=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0); \
                         } \
                     } \
                     if (x < (maxw - 1)) \
@@ -1630,7 +1691,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                         { \
                             artifact_found++; \
                             atype = 3; \
-                            /*printf("ARTIFACT T3 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                            if(LOG) printf("ARTIFACT T3 [%dx%d-%d] VALUE=%d diff_EXT=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0); \
                         } \
                     } \
                     if (y < (maxh)) \
@@ -1640,7 +1701,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                         { \
                             artifact_found++; \
                             atype = 4; \
-                            /*printf("ARTIFACT T4 [%dx%d-%d] diff_EXT=%d v=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0);*/ \
+                            if(LOG) printf("ARTIFACT T4 [%dx%d-%d] VALUE=%d diff_EXT=%d diff_INT=%d TR=%d \n", x, y, id, v1, aresult, abs(v1 - v2), THRESHOLD); fflush(0); \
                         } \
                     } \
                     if(artifact_found > 1) \
@@ -1658,13 +1719,18 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 /*threshold for pixels difference, 8bit*/
 #define DIFF_THRESHOLD (40)
 
+        bool enable_log = false;
+#ifdef ENABLE_ARTIFACTS_LOG
+        enable_log = true;
+#endif
+
         if (ref.isYUV() && src.isYUV())
         {
             switch (id)
             {
-                case 0:  COUNT_ARTIFATCS(Y, 1, DIFF_THRESHOLD); break;
-                case 1:  COUNT_ARTIFATCS(U, chroma_step, DIFF_THRESHOLD); break;
-                case 2:  COUNT_ARTIFATCS(V, chroma_step, DIFF_THRESHOLD); break;
+                case 0:  COUNT_ARTIFATCS(Y, 1, DIFF_THRESHOLD, enable_log); break;
+                case 1:  COUNT_ARTIFATCS(U, chroma_step, DIFF_THRESHOLD, enable_log); break;
+                case 2:  COUNT_ARTIFATCS(V, chroma_step, DIFF_THRESHOLD, enable_log); break;
                 default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
             }
         }
@@ -1672,9 +1738,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             switch (id)
             {
-                case 0:  COUNT_ARTIFATCS(Y16, 1, DIFF_THRESHOLD*4 /*for 10 bits just x4 of 8bit value*/); break;
-                case 1:  COUNT_ARTIFATCS(U16, chroma_step, DIFF_THRESHOLD*4); break;
-                case 2:  COUNT_ARTIFATCS(V16, chroma_step, DIFF_THRESHOLD*4); break;
+                /*for REXT x2 of the basic threshold*/
+                case 0:  COUNT_ARTIFATCS(Y16, 1, DIFF_THRESHOLD*2, enable_log); break;
+                case 1:  COUNT_ARTIFATCS(U16, chroma_step, DIFF_THRESHOLD*2, enable_log); break;
+                case 2:  COUNT_ARTIFATCS(V16, chroma_step, DIFF_THRESHOLD*2, enable_log); break;
                 default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
             }
         }
@@ -1683,7 +1750,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         if (artifacts_2edges > 5 /*threshold for pixels that differ much from 2 neighbors*/)
         {
-            return (artifacts_2edges * artifacts_2edges);
+            return (artifacts_2edges * 2);
         }
         else if (artifacts_1edge > (20 / chroma_step) /*threshold for pixels that differ much from 1 neighbor*/)
         {
@@ -1701,8 +1768,9 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         // parse uncompressed header and check values
         tsParserVP9::UnitType& hdr = ParseOrDie();
-
-        //DumpCodedFrame(bs, m_testId, hdr.uh.profile);
+#ifdef DUMP_ENCODED_STREAM
+        DumpCodedFrame(bs, m_testId, hdr.uh.profile);
+#endif
 
         std::vector<Iteration*>::iterator curIter =
             std::find_if(m_pIterations->begin(), m_pIterations->end(), FindIterByFrameIdx(m_numFrame));
@@ -1878,8 +1946,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 iter.m_extParam[CHECK].FrameWidth : iter.m_param[CHECK].mfx.FrameInfo.Width;
             mfxU32 h = iter.m_extParam[CHECK].FrameHeight ?
                 iter.m_extParam[CHECK].FrameHeight : iter.m_param[CHECK].mfx.FrameInfo.Height;
-            //mfxU32 pitch = (m_pSurf->Data.PitchHigh << 16) + m_pSurf->Data.PitchLow;
-            //DumpDecodedFrame(m_pSurf->Data.Y, m_pSurf->Data.UV, w, h, pitch);
+#ifdef DUMP_DECODED_FRAMES
+            mfxU32 pitch = (m_pSurf->Data.PitchHigh << 16) + m_pSurf->Data.PitchLow;
+            DumpDecodedFrame(m_pSurf->Data.Y, m_pSurf->Data.UV, m_pSurf->Data.V, w, h, pitch, m_testId, hdr.uh.profile);
+#endif
 
             mfxFrameSurface1* pInputSurface = (*m_pInputSurfaces)[m_numFrame];
             tsFrame src = tsFrame(*pInputSurface);
@@ -1936,20 +2006,26 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 quality_issue = true;
             }
 
-            if (artY)
+            if (!quality_issue)
             {
-                g_tsLog << "ERROR: Detected " << (mfxU32)artY << " artifacts in Y-plane \n";
-                quality_issue = true;
-            }
-            if (artU)
-            {
-                g_tsLog << "ERROR: Detected " << (mfxU32)artU << " artifacts in U-plane \n";
-                quality_issue = true;
-            }
-            if (artV)
-            {
-                g_tsLog << "ERROR: Detected " << (mfxU32)artV << " artifacts in V-plane \n";
-                quality_issue = true;
+                if (artY)
+                {
+                    g_tsLog << "ERROR: Detected " << (mfxU32)artY << " artifacts in Y-plane of "
+                        << (mfxU32)m_numFrame << " frame\n";
+                    quality_issue = true;
+                }
+                if (artU)
+                {
+                    g_tsLog << "ERROR: Detected " << (mfxU32)artU << " artifacts in U-plane of "
+                        << (mfxU32)m_numFrame << " frame\n";
+                    quality_issue = true;
+                }
+                if (artV)
+                {
+                    g_tsLog << "ERROR: Detected " << (mfxU32)artV << " artifacts in V-plane of "
+                        << (mfxU32)m_numFrame << " frame\n";
+                    quality_issue = true;
+                }
             }
 
             if (quality_issue)
@@ -2046,11 +2122,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/salesman_704x576_50.yuv"));
             inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/salesman_1408X1152_50.yuv"));
             inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/salesman_2816x2304_50.yuv"));
-            inputStreams.emplace(Resolution(640, 368), g_tsStreamPool.Get("forBehaviorTest/park_scene_640x368_30_content_640x360.yuv"));
-            inputStreams.emplace(Resolution(960, 544), g_tsStreamPool.Get("forBehaviorTest/park_scene_960x544_30_content_960x540.yuv"));
-            inputStreams.emplace(Resolution(1280, 720), g_tsStreamPool.Get("forBehaviorTest/park_scene_1280x720_30.yuv"));
-            inputStreams.emplace(Resolution(1440, 816), g_tsStreamPool.Get("forBehaviorTest/park_scene_1440x816_30_content_1440x810.yuv"));
-            inputStreams.emplace(Resolution(1920, 1088), g_tsStreamPool.Get("forBehaviorTest/park_scene_1920x1088_30_content_1920x1080.yuv"));
+            inputStreams.emplace(Resolution(640, 368), g_tsStreamPool.Get("forBehaviorTest/Kimono1_640x368_30_content_640x360.yuv"));
+            inputStreams.emplace(Resolution(960, 544), g_tsStreamPool.Get("forBehaviorTest/Kimono1_960x544_30_content_960x540.yuv"));
+            inputStreams.emplace(Resolution(1280, 720), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1280x720_30.yuv"));
+            inputStreams.emplace(Resolution(1440, 816), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1440x816_30_content_1440x810.yuv"));
+            inputStreams.emplace(Resolution(1920, 1088), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1920x1088_30_content_1920x1080.yuv"));
         }
         else if (fourcc == MFX_FOURCC_AYUV)
         {
