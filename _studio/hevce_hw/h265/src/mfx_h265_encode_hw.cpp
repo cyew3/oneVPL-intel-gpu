@@ -1214,11 +1214,11 @@ mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid
             }
             if (m_brc)
             {
-               if (IsOn(m_vpar.mfx.LowPower) || m_vpar.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
+               if (IsOn(m_vpar.mfx.LowPower) || (m_vpar.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
 #if defined(PRE_SI_TARGET_PLATFORM_GEN10)
                    && m_vpar.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
 #endif
-                   )
+                   ))
                    taskForExecute->m_qpY = (mfxI8)Clip3( 0, 51, m_brc->GetQP(m_vpar, *taskForExecute));  //driver limitation
                else
                    taskForExecute->m_qpY = (mfxI8)Clip3( -6 * m_vpar.m_sps.bit_depth_luma_minus8, 51, m_brc->GetQP(m_vpar, *taskForExecute));
