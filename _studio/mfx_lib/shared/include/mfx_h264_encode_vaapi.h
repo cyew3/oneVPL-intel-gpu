@@ -75,6 +75,13 @@ mfxStatus SetFrameRate(
     VAContextID  vaContextEncode,
     VABufferID & frameRateBuf_id);
 
+#if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
+mfxStatus SetRoundingOffset(
+    VADisplay    vaDisplay,
+    VAContextID  vaContextEncode,
+    mfxExtAVCRoundingOffset const & roundingOffset,
+    VABufferID & roundingOffsetBuf_id);
+#endif
 
 namespace MfxHwH264Encode
 {
@@ -228,6 +235,9 @@ namespace MfxHwH264Encode
         VABufferID m_rirId;                     // VAEncMiscParameterRIR
         VABufferID m_qualityParamsId;           // VAEncMiscParameterEncQuality
         VABufferID m_miscParameterSkipBufferId; // VAEncMiscParameterSkipFrame
+#if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
+        VABufferID m_roundingOffsetId;          // VAEncMiscParameterCustomRoundingControl
+#endif
         VABufferID m_roiBufferId;
         VABufferID m_ppsBufferId;
         VABufferID m_mbqpBufferId;
@@ -281,7 +291,7 @@ namespace MfxHwH264Encode
 
         std::vector<VAEncROI> m_arrayVAEncROI;
 
-        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 27 + 5; //added FEI buffers
+        static const mfxU32 MAX_CONFIG_BUFFERS_COUNT = 28 + 5; //added FEI buffers
 
         UMC::Mutex m_guard;
         HeaderPacker m_headerPacker;

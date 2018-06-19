@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 //#include "mfx_common.h"
@@ -290,6 +290,7 @@ typedef struct tagENCODE_CAPS
 
     union {
         struct {
+            UINT    RoundingOffset          : 1;
             UINT    SkipFrame               : 1;
             UINT    MbQpDataSupport         : 1;
             UINT    SliceLevelWeightedPred  : 1;
@@ -300,7 +301,7 @@ typedef struct tagENCODE_CAPS
             UINT    HMEOffsetSupport        : 1;
             UINT    DirtyRectSupport        : 1;
             UINT    MoveRectSupport         : 1;
-            UINT                            : 22;
+            UINT                            : 21;
         };
         UINT      CodingLimits2;
     };

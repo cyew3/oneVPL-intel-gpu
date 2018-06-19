@@ -1569,6 +1569,9 @@ bool MfxHwH264Encode::IsRunTimeOnlyExtBuffer(mfxU32 id)
 {
     return
            id == MFX_EXTBUFF_AVC_REFLIST_CTRL
+#if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
+        || id == MFX_EXTBUFF_AVC_ROUNDING_OFFSET
+#endif
 #if defined (MFX_EXTBUFF_GPU_HANG_ENABLE)
         || id == MFX_EXTBUFF_GPU_HANG
 #endif
@@ -1599,6 +1602,9 @@ bool MfxHwH264Encode::IsRunTimeExtBufferIdSupported(MfxVideoParam const & video,
     return
           (id == MFX_EXTBUFF_AVC_REFLIST_CTRL
         || id == MFX_EXTBUFF_AVC_REFLISTS
+#if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
+        || id == MFX_EXTBUFF_AVC_ROUNDING_OFFSET
+#endif
         || id == MFX_EXTBUFF_ENCODED_FRAME_INFO
         || id == MFX_EXTBUFF_PICTURE_TIMING_SEI
         || id == MFX_EXTBUFF_CODING_OPTION2
@@ -1673,7 +1679,11 @@ bool MfxHwH264Encode::IsRunTimeExtBufferPairAllowed(MfxVideoParam const & video,
     (void)video;
 #endif
 
-    return (id == MFX_EXTBUFF_AVC_REFLISTS)
+    return (id == MFX_EXTBUFF_AVC_REFLISTS
+#if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
+            || id == MFX_EXTBUFF_AVC_ROUNDING_OFFSET
+#endif
+           )
 #if defined (MFX_ENABLE_H264_VIDEO_FEI_ENCPAK)
            || (isFeiENCPAK &&
                 (  id == MFX_EXTBUFF_FEI_SLICE
@@ -6760,6 +6770,34 @@ mfxStatus MfxHwH264Encode::CheckRunTimeExtBuffers(
         if (sts != MFX_ERR_NONE)
             checkSts = sts;
     }
+
+#if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
+    for (mfxU16 fieldId = 0; fieldId < NumFields; fieldId++)
+    {
+        mfxExtAVCRoundingOffset* extRoundingOffset =
+                reinterpret_cast<mfxExtAVCRoundingOffset*>(MfxHwH264Encode::GetExtBuffer(ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_AVC_ROUNDING_OFFSET, fieldId));
+        if (extRoundingOffset)
+        {
+            if (IsOn(extRoundingOffset->EnableRoundingIntra))
+            {
+                if (extRoundingOffset->RoundingOffsetIntra > 7)
+                {
+                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                    extRoundingOffset->RoundingOffsetIntra = extRoundingOffset->RoundingOffsetIntra % 7;
+                }
+            }
+
+            if (IsOn(extRoundingOffset->EnableRoundingInter))
+            {
+                if (extRoundingOffset->RoundingOffsetInter > 7)
+                {
+                    checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
+                    extRoundingOffset->RoundingOffsetInter = extRoundingOffset->RoundingOffsetInter % 7;
+                }
+            }
+        }
+    }
+#endif
 
     mfxExtAVCRefListCtrl const * extRefListCtrl = GetExtBuffer(*ctrl);
     if (extRefListCtrl && video.calcParam.numTemporalLayer > 0 && video.calcParam.tempScalabilityMode == 0)
