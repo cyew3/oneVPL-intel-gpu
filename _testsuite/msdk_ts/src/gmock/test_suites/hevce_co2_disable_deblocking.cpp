@@ -369,7 +369,7 @@ int TestSuite::RunTest(tc_struct tc, unsigned int fourcc_id)
         Load();
     }
 
-    if (tc.mode & HUGE_SIZE_8K && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower == MFX_CODINGOPTION_OFF) )
+    if (tc.mode & HUGE_SIZE_8K && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower != MFX_CODINGOPTION_ON) )
         g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
     else
         g_tsStatus.expect(tc.sts);

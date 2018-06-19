@@ -281,7 +281,7 @@ namespace hevce_frame_qp
         m_par.AsyncDepth = 1;
         framesToEncode = (g_tsConfig.sim) ? 2 : 5;
 
-        if (g_tsHWtype <= MFX_HW_CNL && g_tsConfig.lowpower == MFX_CODINGOPTION_OFF && tc.mode == HUGE_SIZE_8K)
+        if (g_tsHWtype <= MFX_HW_CNL && g_tsConfig.lowpower != MFX_CODINGOPTION_ON && tc.mode == HUGE_SIZE_8K)
         {
             g_tsLog << "\n\nWARNING: 8k resolution is not supported on platform less ICL without VDENC!\n\n\n";
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
