@@ -2305,12 +2305,10 @@ mfxStatus  VideoVPPHW::Init(
             case MFX_HW_CNL:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen10,sizeof(genx_fcopy_gen10),m_pCmProgram,"nojitter");
                 break;
-        #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             case MFX_HW_ICL:
             case MFX_HW_ICL_LP:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen11,sizeof(genx_fcopy_gen11),m_pCmProgram,"nojitter");
                 break;
-        #endif  // PRE_SI_TARGET_PLATFORM_GEN11
         #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
             case MFX_HW_TGL_HP:
             case MFX_HW_TGL_LP:
@@ -2712,7 +2710,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
     if ( fabs(inFrameRateCur / outFrameRateCur - inFrameRate / outFrameRate) > std::numeric_limits<mfxF64>::epsilon() )
         return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM; // Frame Rate ratio check
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     eMFXPlatform platform = m_pCore->GetPlatformType();
     if (platform == MFX_PLATFORM_HARDWARE)
     {
@@ -2735,7 +2733,7 @@ mfxStatus VideoVPPHW::Reset(mfxVideoParam *par)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
     }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 
     if (m_params.vpp.In.FourCC  != par->vpp.In.FourCC ||
         m_params.vpp.Out.FourCC != par->vpp.Out.FourCC)
@@ -4887,7 +4885,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
 
     /* 6. BitDepthLuma and BitDepthChroma should be configured for p010 format */
     if (MFX_FOURCC_P010 == par->vpp.In.FourCC
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
         || par->vpp.In.FourCC == MFX_FOURCC_Y210
         || par->vpp.In.FourCC == MFX_FOURCC_Y410
 #endif
@@ -4906,7 +4904,7 @@ mfxStatus ValidateParams(mfxVideoParam *par, mfxVppCaps *caps, VideoCORE *core, 
     }
 
     if (MFX_FOURCC_P010 == par->vpp.Out.FourCC
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
         || par->vpp.Out.FourCC == MFX_FOURCC_Y210
         || par->vpp.Out.FourCC == MFX_FOURCC_Y410
 #endif
@@ -5249,10 +5247,10 @@ mfxStatus ConfigureExecuteParams(
         def_back_color = make_def_back_color_yuv(8);
     }
     else if(videoParam.vpp.Out.FourCC == MFX_FOURCC_P010 ||
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
             videoParam.vpp.Out.FourCC == MFX_FOURCC_Y410 ||
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
             videoParam.vpp.Out.FourCC == MFX_FOURCC_P210)
     {
         def_back_color = make_def_back_color_yuv(10);
@@ -5850,10 +5848,10 @@ mfxStatus ConfigureExecuteParams(
                             executeParams.iBackgroundColor = make_back_color_yuv(8, extComp->Y, extComp->U, extComp->V);
                         }
                         if (targetFourCC == MFX_FOURCC_P010 ||
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
                             targetFourCC == MFX_FOURCC_Y210 ||
                             targetFourCC == MFX_FOURCC_Y410 ||
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
                             targetFourCC == MFX_FOURCC_P210)
                         {
                             executeParams.iBackgroundColor = make_back_color_yuv(10, extComp->Y, extComp->U, extComp->V);

@@ -1651,13 +1651,13 @@ mfxStatus CheckFrameInfo(mfxFrameInfo* info, mfxU32 request, eMFXHWType platform
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_AYUV:
             break;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
             if (platform < MFX_HW_ICL)
                 return MFX_ERR_INVALID_VIDEO_PARAM;
             break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
@@ -2525,10 +2525,10 @@ mfxStatus CheckLimitationsSW(
 #endif
 
     if (param.vpp.In.FourCC == MFX_FOURCC_AYUV
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
         || param.vpp.In.FourCC == MFX_FOURCC_Y210
         || param.vpp.In.FourCC == MFX_FOURCC_Y410
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         || param.vpp.In.FourCC == MFX_FOURCC_P016
         || param.vpp.In.FourCC == MFX_FOURCC_Y216
@@ -2544,10 +2544,10 @@ mfxStatus CheckLimitationsSW(
         }
     }
     if (param.vpp.Out.FourCC == MFX_FOURCC_AYUV
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
         || param.vpp.Out.FourCC == MFX_FOURCC_Y210
         || param.vpp.Out.FourCC == MFX_FOURCC_Y410
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
         || param.vpp.In.FourCC == MFX_FOURCC_P016
         || param.vpp.In.FourCC == MFX_FOURCC_Y216
