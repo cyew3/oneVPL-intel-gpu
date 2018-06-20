@@ -210,7 +210,8 @@ list( APPEND LIBS
   h264_preenc
   h264_enc
   h264_pak
-  ${ITT_LIBS}
+  mfx_trace
+  ${ITT_LIBRARIES}
   pthread
   dl
 )

@@ -47,6 +47,8 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
   option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" OFF )
 endif()
 
+option( ENABLE_ITT "Build targets with ITT instrumentation support (requires VTune)?" OFF )
+
 # -DBUILD_ALL will enable all the build targets unless user did not
 # -explicitly
 # switched some targets OFF, i.e. configuring in the following way is
@@ -65,6 +67,7 @@ include( ${BUILDER_ROOT}/FindGlobals.cmake )
 include( ${BUILDER_ROOT}/FindMFX.cmake )
 include( ${BUILDER_ROOT}/FindPackages.cmake )
 include( ${BUILDER_ROOT}/FindInternals.cmake )
+include( ${BUILDER_ROOT}/FindITT.cmake )
 include( ${BUILDER_ROOT}/FindTrace.cmake )
 include( ${BUILDER_ROOT}/ConfTargets.cmake )
 
@@ -129,6 +132,7 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
   message("  ENABLE_X11_DRI3                         : ${ENABLE_X11_DRI3}")
   message("  ENABLE_WAYLAND                          : ${ENABLE_WAYLAND}")
 endif()
+message("  ENABLE_ITT                              : ${ENABLE_ITT}")
 message("  BUILD_RUNTIME                           : ${BUILD_RUNTIME}")
 message("  BUILD_DISPATCHER                        : ${BUILD_DISPATCHER}")
 message("  BUILD_TESTS                             : ${BUILD_TESTS}")

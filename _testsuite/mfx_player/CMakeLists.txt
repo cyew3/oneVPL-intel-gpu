@@ -45,7 +45,8 @@ list( APPEND LIBS
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     mfx
     sample_spl_mux_dispatcher
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
@@ -66,7 +67,8 @@ list( APPEND LIBS
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     mfx
     sample_spl_mux_dispatcher
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l

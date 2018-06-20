@@ -60,12 +60,7 @@ if(__ITT OR ENABLE_ITT)
         set( ITT_CFLAGS "-I${VTUNE_INCLUDE} -DITT_SUPPORT" )
         set( ITT_LIBRARY_DIRS "${VTUNE_LIBRARY_PATH}" )
 
-        set( ITT_LIBS "" )
-        list( APPEND ITT_LIBS
-          mfx_trace
-          ittnotify
-          dl
-        )
+        set( ITT_LIBRARIES "ittnotify" )
       endif()
     endif()
   else()

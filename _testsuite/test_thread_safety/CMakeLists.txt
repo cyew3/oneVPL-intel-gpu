@@ -22,7 +22,8 @@ list( APPEND LIBS
     vm
     vm_plus
     sample_spl_mux_dispatcher
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippvc_l ippcc_l ippdc_l ippi_l ipps_l ippcp_l ippcore_l
     pthread dl
 )

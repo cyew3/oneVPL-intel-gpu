@@ -22,7 +22,8 @@ set( LIBS "" )
 list( APPEND LIBS
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippcore_l
     pthread dl
     mfx_common_hw

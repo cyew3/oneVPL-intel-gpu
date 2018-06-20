@@ -143,7 +143,8 @@ endforeach()
     vm
     vm_plus
     genx
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     pthread
     dl
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

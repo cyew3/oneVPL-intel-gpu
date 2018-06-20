@@ -224,7 +224,8 @@ foreach( variant ${hevcd_variants} )
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl )
@@ -341,7 +342,8 @@ foreach( variant ${hevce_variants} )
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
@@ -475,7 +477,8 @@ foreach( variant ${av1e_variants} )
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippmsdk_l ippdc_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
@@ -622,7 +625,8 @@ foreach( variant hw )
     vm_plus
     genx
     asc
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
@@ -713,7 +717,8 @@ if( ENABLE_HEVC_FEI )
       umc
       vm
       vm_plus
-      ${ITT_LIBS}
+      mfx_trace
+      ${ITT_LIBRARIES}
       ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
       pthread
       dl
@@ -832,7 +837,8 @@ foreach( variant
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
@@ -943,7 +949,8 @@ foreach( variant
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippcc_l ippi_l ippcore_l
     pthread
     dl

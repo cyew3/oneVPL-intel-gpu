@@ -150,7 +150,8 @@ foreach( variant
     h264_preenc
     h264_enc
     h264_pak
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
     pthread
     dl
@@ -262,7 +263,8 @@ list( APPEND LIBS
   vm_plus
   ${GENX_LIB}
   mfx_common_hw
-  ${ITT_LIBS}
+  mfx_trace
+  ${ITT_LIBRARIES}
   ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   pthread
   dl )
@@ -345,7 +347,8 @@ foreach( variant sw )
     umc
     vm
     vm_plus
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     ippcc_l ippdc_l ippac_l ippi_l ipps_l ippcore_l
     pthread
     dl

@@ -173,7 +173,8 @@ if( DEFINED H264LA_ENCODER_GUID )
     vm_plus
     genx
     asc
-    ${ITT_LIBS}
+    mfx_trace
+    ${ITT_LIBRARIES}
     pthread
     dl
   )
