@@ -82,6 +82,7 @@ __genx_fcopy_gen7_5__
 __genx_fcopy_gen8__
 __genx_fcopy_gen9__
 __genx_fcopy_gen10__
+__genx_fcopy_gen11__
 __genx_bdw_simple_me__
 __genx_hsw_histogram__
 __genx_hsw_simple_me__
@@ -89,8 +90,14 @@ __genx_skl_histogram__
 __genx_skl_simple_me__
 __genx_cnl_histogram__
 __genx_cnl_simple_me__
+__genx_icl_histogram__
+__genx_icl_simple_me__
+__genx_icllp_histogram__
+__genx_icllp_simple_me__
 __skl_copy_kernel_genx__
 __cnl_copy_kernel_genx__
+__icl_copy_kernel_genx__
+__icllp_copy_kernel_genx__
 __cht_copy_kernel_genx__
 __MFX_STUB_DEC_PLUGIN_INCLUDED__
 __MFX_H264LA_PLUGIN_INCLUDED__
