@@ -29,7 +29,8 @@ MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
     , m_nFrames(0)
     , m_pOutlineFileName(vm_string_strlen(outlineInput) ? outlineInput : NULL)
 {
-    if (m_pOutlineFileName != NULL)
+    //Set up width and height from outline file if this information not found in stream info
+    if ((m_pOutlineFileName != NULL) && (!frameParam.mfx.FrameInfo.Width) && (!frameParam.mfx.FrameInfo.Height))
         GetInfoFromOutline(&frameParam);
     mfxFrameInfo &info = m_vParam.mfx.FrameInfo;
     mfxFrameInfo &infoIn = frameParam.mfx.FrameInfo;
