@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -18,7 +18,10 @@ namespace hevce_lowlatency
     enum TYPE {
         QUERY = 0x1,
         INIT = 0x2,
-        ENCODE = 0x4
+        ENCODE = 0x4,
+
+        HUGE_SIZE_4K = 0x8,
+        HUGE_SIZE_8K = 0x10,
     };
 
     struct tc_struct {
@@ -123,6 +126,26 @@ namespace hevce_lowlatency
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
             { MFX_PAR, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON }
         } },
+
+        {/*09*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE | HUGE_SIZE_4K,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 }
+        } },
+
+        {/*10*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE | HUGE_SIZE_8K,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 }
+        } }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -143,28 +166,46 @@ namespace hevce_lowlatency
             }
         }
 
+        if ((g_tsHWtype < MFX_HW_CNL) && (g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
+        {
+            g_tsLog << "\n\nWARNING: Platform less CNL are NOT supported on VDENC!\n\n\n";
+            throw tsSKIP;
+        }
+
         mfxStatus sts = MFX_ERR_NONE;
 
         MFXInit();
         set_brc_params(&m_par);
         Load();
 
+        bool unsupportedCase = (tc.type & HUGE_SIZE_8K) && (g_tsHWtype <= MFX_HW_CNL && m_par.mfx.LowPower != MFX_CODINGOPTION_ON);
+
         if (tc.type & QUERY) {
             SETPARS(m_par, MFX_PAR);
-            g_tsStatus.expect(tc.sts.query);
+
+            if (unsupportedCase)
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            else
+                g_tsStatus.expect(tc.sts.query);
+
             Query();
+
+            if (unsupportedCase)
+                throw tsSKIP;
         }
 
         if (tc.type & INIT) {
             SETPARS(m_par, MFX_PAR);
             g_tsStatus.expect(tc.sts.init);
             sts = Init();
-            }
+        }
 
         if (tc.type & ENCODE) {
-            SETPARS(m_par, MFX_PAR);
-            g_tsStatus.expect(tc.sts.encode);
-            EncodeFrames(50);
+            if (!(tc.type & (HUGE_SIZE_4K | HUGE_SIZE_8K) && (g_tsConfig.sim))) {
+                SETPARS(m_par, MFX_PAR);
+                g_tsStatus.expect(tc.sts.encode);
+                EncodeFrames(50);
+            }
         }
 
         if (m_initialized) {
