@@ -32,7 +32,7 @@ namespace hevce_scc
 
     const streamDesc streams[] = {
         { 480, 256, "SCC-YUV/scc_480x256_250_nv12.yuv", MFX_FOURCC_NV12, MFX_CHROMAFORMAT_YUV420, 0,  8 },
-        { 480, 256, "SCC-YUV/scc_480x256_250_p010.yuv", MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420, 0, 10 },
+        { 480, 256, "SCC-YUV/scc_480x256_250_p010.yuv", MFX_FOURCC_P010, MFX_CHROMAFORMAT_YUV420, 1, 10 },
         { 480, 256, "SCC-YUV/scc_480x256_250_ayuv.yuv", MFX_FOURCC_AYUV, MFX_CHROMAFORMAT_YUV444, 0,  8 },
         { 480, 256, "SCC-YUV/scc_480x256_250_y410.yuv", MFX_FOURCC_Y410, MFX_CHROMAFORMAT_YUV444, 0, 10 },
     };
@@ -192,7 +192,10 @@ namespace hevce_scc
         const char* stream = g_tsStreamPool.Get(sd.name);
         g_tsStreamPool.Reg();
 
-        m_filler = new tsRawReader(stream, m_pPar->mfx.FrameInfo);
+        tsRawReader reader(stream, m_pPar->mfx.FrameInfo);
+        reader.m_disable_shift_hack = true;
+
+        m_filler = &reader;
 
         if (tc.type & QUERY) {
             SETPARS(m_par, MFX_PAR);

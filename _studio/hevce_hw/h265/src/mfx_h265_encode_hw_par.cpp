@@ -1777,6 +1777,9 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         invalid += CheckOption(par.mfx.CodecProfile
             , (mfxU16)MFX_PROFILE_HEVC_MAIN10
             , (mfxU16)MFX_PROFILE_HEVC_REXT
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            , (mfxU16)MFX_PROFILE_HEVC_SCC
+#endif
             , 0
             );
         break;
@@ -3164,8 +3167,11 @@ void SetDefaults(
     }
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (    par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT
-        && !par.m_ext.HEVCParam.GeneralConstraintFlags)
+    if (   (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT && !par.m_ext.HEVCParam.GeneralConstraintFlags)
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        || (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC && !par.m_ext.HEVCParam.GeneralConstraintFlags)
+#endif
+        )
     {
         mfxU64& constr = par.m_ext.HEVCParam.GeneralConstraintFlags;
 
