@@ -98,6 +98,11 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(ProjectDir)\include;$(ProjectDir)\..\sample_common\include;$(ProjectDir)\..\..\..\msdk\mdp_msdk-api\include</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\abr_brc.cpp" />
     <ClCompile Include="src\cmd_processor.cpp" />
@@ -154,6 +159,7 @@
     <ClInclude Include="include\dso\hevc_struct.h" />
     <ClInclude Include="include\fei_buffer_allocator.h" />
     <ClInclude Include="include\fei_utils.h" />
+    <ClInclude Include="include\fei_worker.h" />
     <ClInclude Include="include\hevc_fei_encode.h" />
     <ClInclude Include="include\hevc_sw_dso.h" />
     <ClInclude Include="include\pipeline_hevc_fei.h" />
