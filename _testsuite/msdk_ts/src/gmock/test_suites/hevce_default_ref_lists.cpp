@@ -50,6 +50,9 @@ namespace hevce_default_ref_lists
     {
         LOWPOWER     = 0x01,
         NOT_LOWPOWER = 0x02,
+
+        HUGE_SIZE_4K = 0x04,
+        HUGE_SIZE_8K = 0x08
     };
 
     char FrameTypeToChar(mfxU32 type)
@@ -1007,6 +1010,46 @@ namespace hevce_default_ref_lists
                  { MFX_PAR,  &mfx_GopRefDist,  1 },
                  { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF }},
                  600 },
+        {/*29*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_4K,
+                {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 }},
+                 1 },
+        {/*30*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_8K,
+                {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_OFF },
+                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
+                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
+                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
+                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 }},
+                 1 },
+        {/*31*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_4K,
+                {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  4096 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 2160 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  4096 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  2160 }},
+                 1 },
+        {/*32*/ LOWPOWER | NOT_LOWPOWER | HUGE_SIZE_8K,
+                {{ MFX_PAR,  &mfx_PicStruct,   MFX_PICSTRUCT_PROGRESSIVE },
+                 { MFX_PAR,  &mfx_GopPicSize,  0 },
+                 { MFX_PAR,  &mfx_GopRefDist,  0 },
+                 { EXT_COD2, &mfx_BRefType,    MFX_B_REF_PYRAMID },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,  8192 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropW,  8192 },
+                 { MFX_PAR,  &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH,  4096 }},
+                 1 }
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);
@@ -1028,7 +1071,7 @@ namespace hevce_default_ref_lists
             allowedType |= NOT_LOWPOWER;
         }
 
-        if (!(tc.type & allowedType))
+        if (!(tc.type & allowedType) || (g_tsHWtype < MFX_HW_CNL && g_tsConfig.lowpower == MFX_CODINGOPTION_ON))
         {
             g_tsLog << "[WARNING] SKIPPING TEST-CASE #" << id << ": NOT ALLOWED TEST TYPE\n";
             return 0;
@@ -1045,12 +1088,22 @@ namespace hevce_default_ref_lists
         m_max = tc.nFrames;
         m_par.AsyncDepth = 1;
 
+        if (g_tsHWtype <= MFX_HW_CNL && g_tsConfig.lowpower != MFX_CODINGOPTION_ON && (tc.type & HUGE_SIZE_8K))
+        {
+            MFXInit();
+            Load();
+            g_tsLog << "\n\nWARNING: 8k resolution is not supported on platform less ICL without VDENC!\n\n\n";
+            g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            Query();
+            throw tsSKIP;
+        }
+
         Init();
         GetVideoParam();
 
+        if ( !(tc.type & (HUGE_SIZE_4K | HUGE_SIZE_8K) && (g_tsConfig.sim)) )
+            EncodeFrames(tc.nFrames);
 
-
-        EncodeFrames(tc.nFrames);
         TS_END;
         return 0;
     }
