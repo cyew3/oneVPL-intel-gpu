@@ -36,6 +36,10 @@ Algorithm:
 #include <cpuid.h>
 #endif
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <intrin.h>
+#endif
+
 
 /*! \brief Main test name space */
 namespace vpp_mctf_qery_extbuf

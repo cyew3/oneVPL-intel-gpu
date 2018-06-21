@@ -47,52 +47,52 @@
     <ClCompile Include="src\debug_output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\base_allocator.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\avc_bitstream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_allocator.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\avc_nal_spl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d11_device.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\avc_spl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_allocator.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\base_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\d3d_device.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sample_utils.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\d3d11_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\sysmem_allocator.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\atomic.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\d3d_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\shared_object.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\sample_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\sysmem_allocator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread_linux.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\vm\atomic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\thread_windows.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\vm\shared_object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\avc_bitstream.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\avc_nal_spl.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread_linux.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\avc_spl.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\vm\thread_windows.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\mdp_msdk-samples\samples\sample_common\src\vm\time.cpp">
+    <ClCompile Include="..\..\samples\sample_common\src\vm\time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

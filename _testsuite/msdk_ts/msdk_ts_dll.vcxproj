@@ -23,30 +23,30 @@
     <ProjectGuid>{44BAA917-9DA7-4BA8-A3BC-2A76285E3F2F}</ProjectGuid>
     <RootNamespace>msdk_ts_dll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -102,7 +102,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -130,7 +130,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -154,7 +154,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\ia32\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio\shared\include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio\shared\include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -182,7 +182,7 @@
       <TargetEnvironment>X64</TargetEnvironment>
     </Midl>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp80gold\windows\em64t\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PerlDir)lib\core\;../../samples/sample_common/include;../../samples/sample_common/include/vm;../../../mdp_msdk-contrib/igfx_s3dcontrol/external/include;$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include;./include;$(MSDK_API_ROOT)/include;../../../mdp_msdk-lib/_studio/shared/include;../../../mdp_msdk-lib/_studio/shared/umc/core/vm/include;../../../mdp_msdk-val-tools/bs_parser/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;MSDK_TS_DLL_EXPORTS;USE_SAMPLE_ALLOCATOR;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -242,16 +242,14 @@
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(MSDK_API_ROOT)\opensource\mfx_dispatch\mfx_dispatch_trace_lib_vs2012.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm_vs2012.vcxproj">
-      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser_vs2012.vcxproj">
+    <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">
       <Project>{d08d664e-7245-40f7-9b55-3440ef95f2f7}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\..\_studio\shared\umc\core\vm\vm.vcxproj">
+      <Project>{d41d3178-5c65-4868-bdb1-42c44643274e}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

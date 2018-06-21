@@ -15,15 +15,10 @@
     <PerlLib>@(PerlLibs)</PerlLib>
   </PropertyGroup>
   <PropertyGroup>
-    <WindowsSdk8Path Condition="Exists('$(MINIDDK_ROOT)')">$(MINIDDK_ROOT)</WindowsSdk8Path>
-    <WindowsSdk8Path Condition="!Exists('$(MINIDDK_ROOT)')">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1@InstallationFolder)"</WindowsSdk8Path>
     <OutDir>$(MfxBuildDir)win_$(Platform)\lib\</OutDir>
     <IntDir>$(MfxBuildDir)win_$(Platform)\objs\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(WindowsSdk8Path)\Include\um;$(WindowsSdk8Path)\Include\shared;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <Target Name="Win8SdkCheck" BeforeTargets="Build">
-    <Error Text=" Unable to find Windows SDK 8.1 by both MINIDDK_ROOT and registry lookup. Please check if it installed correctly or reinstall it from http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx."
-       Condition ="!Exists('$(WindowsSdk8Path)')" />
   </Target>
   <Target Name="PerlPresenseCheck">
     <Error Text=" Unable to find installed Perl that is relevant to target bitness (Win32||x64) by registry lookup.
@@ -31,12 +26,6 @@
            For more info please goto http://wiki.ith.intel.com/display/MediaSDK/Debugging+behavior+tests"
        Condition ="!Exists('$(PerlDir)')" />
   </Target>
-  <PropertyGroup Condition="'$(Platform)'=='Win32'">
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x86;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <LibraryPath>$(WindowsSdk8Path)\Lib\win8\um\x64;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
   <ItemDefinitionGroup />
   <ItemGroup />
 </Project>

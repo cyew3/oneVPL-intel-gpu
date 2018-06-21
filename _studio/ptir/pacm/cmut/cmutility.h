@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 1985-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 1985-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -178,7 +178,11 @@ public:
 // If we're in an environment that doesn't define _THROW0 then provide a default definition
 // (probably any non-windows)
 #ifndef _THROW0
+#if _MSC_VER < 1914
 #define _THROW0 throw()
+#else
+#define _THROW0 throw
+#endif
 #endif
 
 class cm_bad_alloc : public std::exception {

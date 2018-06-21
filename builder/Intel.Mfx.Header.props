@@ -18,11 +18,11 @@
     
 <!-- COMPILER SETTINGS --> 
     <MfxWindowsTargetPlatformVersion>10.0.17134.0</MfxWindowsTargetPlatformVersion>
-    <MfxPlatformToolset>v140</MfxPlatformToolset>
-    <MfxIntelPlatformToolset>Intel C++ Compiler 17.0</MfxIntelPlatformToolset>
+    <MfxPlatformToolset>v141</MfxPlatformToolset>
+    <MfxIntelPlatformToolset>Intel C++ Compiler 18.0</MfxIntelPlatformToolset>
     <MfxIntelPath>$(ICInstallDir)</MfxIntelPath>
     <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICInstallDir)</MfxIntelPath>
-    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICPP_COMPILER17)</MfxIntelPath>
+    <MfxIntelPath Condition="'$(MfxIntelPath)'==''">$(ICPP_COMPILER18)</MfxIntelPath>
     <MfxIntelPath Condition="'$(MfxIntelPath)'==''">C:\Program Files (x86)\IntelSWTools\compilers_and_libraries\</MfxIntelPath>
 <!-- End of COMPILER SETTINGS -->
 
