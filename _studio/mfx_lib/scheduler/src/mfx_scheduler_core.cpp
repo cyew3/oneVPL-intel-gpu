@@ -94,7 +94,7 @@ mfxSchedulerCore::~mfxSchedulerCore(void)
 
 bool mfxSchedulerCore::SetScheduling(std::thread& handle)
 {
-    handle;
+    (void)handle;
 #if !defined(_WIN32) && !defined(_WIN64)
     if (m_param.params.SchedulingType || m_param.params.Priority) {
         if (handle.joinable()) {
@@ -334,10 +334,9 @@ void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
     }
 }
 
-void mfxSchedulerCore::WakeUpNumThreads(mfxU32 numThreadsToWakeUp,
+void mfxSchedulerCore::WakeUpNumThreads(mfxU32 /*numThreadsToWakeUp*/,
                                         const mfxU32 curThreadNum)
 {
-    numThreadsToWakeUp;
     WakeUpThreads(curThreadNum);
 }
 
