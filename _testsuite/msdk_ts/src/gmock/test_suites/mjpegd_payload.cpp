@@ -179,7 +179,7 @@ namespace mjpegd_payload
         {
             if (m_curr_frame >= m_nframes)
             {
-                msdk_atomic_inc16(&s.Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&s.Data.Locked);
                 m_eos = true;
                 return MFX_ERR_NONE;
             }

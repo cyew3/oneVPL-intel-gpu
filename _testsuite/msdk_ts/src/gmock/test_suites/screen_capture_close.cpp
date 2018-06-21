@@ -86,7 +86,7 @@ int TestSuite::RunTest(unsigned int id)
     for(std::map<mfxSyncPoint,mfxFrameSurface1*>::iterator it = m_surf_out.begin(); it != m_surf_out.end(); ++it)
     {
         if ((*it).second->Data.Locked)
-            msdk_atomic_dec16(&(*it).second->Data.Locked); // access surface and decrease locked counter
+            msdk_atomic_dec16((volatile mfxU16*)(&(*it).second->Data.Locked)); // access surface and decrease locked counter
     }
 
     ///////////////////////////////////////////////////////////////////////////

@@ -237,7 +237,7 @@ void TestSuite::DecodeFramesNoSync()
     //free surfaces locked by test
     for(std::map<mfxSyncPoint,mfxFrameSurface1*>::iterator it = m_surf_out.begin(); it != m_surf_out.end(); ++it)
     {
-        msdk_atomic_dec16(&(*it).second->Data.Locked);
+        msdk_atomic_dec16((volatile mfxU16*)(&(*it).second->Data.Locked));
     }
 }
 

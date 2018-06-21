@@ -306,7 +306,7 @@ int TestSuite::RunTest(unsigned int id)
             m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
             if(m_pSurfOut)
             {
-                msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&m_pSurfOut->Data.Locked);
             }
         }
         if (m_pBitstream && (res == MFX_ERR_MORE_SURFACE || res == MFX_ERR_NONE))
@@ -330,7 +330,7 @@ int TestSuite::RunTest(unsigned int id)
                         m_surf_out.insert( std::make_pair(*m_pSyncPoint, m_pSurfOut) );
                         if(m_pSurfOut)
                         {
-                            msdk_atomic_inc16(&m_pSurfOut->Data.Locked);
+                            msdk_atomic_inc16((volatile mfxU16*)&m_pSurfOut->Data.Locked);
                         }
                     }
                 }

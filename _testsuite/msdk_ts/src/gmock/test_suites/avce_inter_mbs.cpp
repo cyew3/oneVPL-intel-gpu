@@ -175,7 +175,7 @@ public:
 
             if (f.surf)
             {
-                msdk_atomic_inc16(&f.surf->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&f.surf->Data.Locked);
                 f.surf->Data.FrameOrder = m_cur++;
                 f.type = GetFrameType(m_par, f.surf->Data.FrameOrder, m_isBPyramid);
                 m_queue.push_back(f);
@@ -193,13 +193,13 @@ public:
 
                     if (m_dpb.size() > m_par.mfx.NumRefFrame)
                     {
-                        msdk_atomic_dec16(&m_dpb.begin()->surf->Data.Locked);
+                        msdk_atomic_dec16((volatile mfxU16*)&m_dpb.begin()->surf->Data.Locked);
                         m_dpb.erase(m_dpb.begin());
                     }
                 }
                 else
                 {
-                    msdk_atomic_dec16(&f.surf->Data.Locked);
+                    msdk_atomic_dec16((volatile mfxU16*)&f.surf->Data.Locked);
                 }
 
                 m_queue.erase(it);

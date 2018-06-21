@@ -101,7 +101,7 @@ mfxFrameSurface1* GetSurface(tsVideoDecoder *dec, bool syncSurfaceFromDecoder)
     if(pS && pS->Data.Locked)
     {
 
-        msdk_atomic_dec16(&pS->Data.Locked);
+        msdk_atomic_dec16((volatile mfxU16*)&pS->Data.Locked);
     }
 
     return pS;

@@ -273,7 +273,7 @@ int TestSuite::RunTest(unsigned int id)
     /*** Starting preenc ***/
     for (int i =0; i < FRAME_TO_ENCODE; i++) {
         p_PreENCInput[i]->InSurface = &surfacesPool[i];
-        msdk_atomic_inc16(&p_PreENCInput[i]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[i]->InSurface->Data.Locked);
         FEIPreEncCtrl[i].RefFrame[0] = (i == 0) ? NULL : p_PreENCInput[i - 1]->InSurface;
         FEIPreEncCtrl[i].RefFrame[1] = NULL;
         p_PreENCInput[i]->NumFrameL0 = (i == 0) ? 0 : 1;

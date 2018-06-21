@@ -232,7 +232,7 @@ namespace vp9e_big_resolution
             const mfxF64 psnrY = PSNR(src, res, 0);
             const mfxF64 psnrU = PSNR(src, res, 1);
             const mfxF64 psnrV = PSNR(src, res, 2);
-            msdk_atomic_dec16(&pInputSurface->Data.Locked);
+            msdk_atomic_dec16((volatile mfxU16*)&pInputSurface->Data.Locked);
             m_pInputSurfaces->erase(hdr.FrameOrder);
             const mfxF64 minPsnr = PSNR_THRESHOLD;
 
@@ -318,7 +318,7 @@ namespace vp9e_big_resolution
             }
 
             mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
-            msdk_atomic_inc16(&pStorageSurf->Data.Locked);
+            msdk_atomic_inc16((volatile mfxU16*)&pStorageSurf->Data.Locked);
             tsFrame in = tsFrame(*pSurf);
             tsFrame store = tsFrame(*pStorageSurf);
             store = in;

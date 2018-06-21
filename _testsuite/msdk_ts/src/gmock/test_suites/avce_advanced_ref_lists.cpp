@@ -400,7 +400,7 @@ bool isOlder(Frame& i, Frame& j)
 
             if (f.surf)
             {
-                msdk_atomic_inc16(&f.surf->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&f.surf->Data.Locked);
                 f.surf->Data.FrameOrder = m_c++;
                 f.type = GetFrameType(m_par, f.surf->Data.FrameOrder, m_isBPyramid);
                 m_queue.push_back(f);
@@ -418,15 +418,15 @@ bool isOlder(Frame& i, Frame& j)
 
                     if (m_dpb.size() > m_par.mfx.NumRefFrame)
                     {
-                        FrameIterator toRemove = m_isBPyramid ? 
+                        FrameIterator toRemove = m_isBPyramid ?
                             std::min_element(m_dpb.begin(), m_dpb.end(), isOlder) : m_dpb.begin();
-                        msdk_atomic_dec16(&toRemove->surf->Data.Locked);
+                        msdk_atomic_dec16((volatile mfxU16*)&toRemove->surf->Data.Locked);
                         m_dpb.erase(toRemove);
                     }
                 }
                 else
                 {
-                    msdk_atomic_dec16(&f.surf->Data.Locked);
+                    msdk_atomic_dec16((volatile mfxU16*)&f.surf->Data.Locked);
                 }
 
                 m_queue.erase(it);

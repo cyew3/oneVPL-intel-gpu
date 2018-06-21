@@ -451,10 +451,10 @@ int TestSuite::RunTest(unsigned int id)
 
         /*** Step2. Call ProcessFrameAsync for S0, DownsampleInput is true; ***/
         g_tsLog << "step2. Call ProcessFrameAsync for S0, DownsampleInput is true;\n";
-        
+
         IndexPreencCall =0;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[0];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = NULL;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -470,7 +470,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "step3. Call ProcessFrameAsync for S0 and S1, DownsampleInput is true;\n";
         IndexPreencCall++;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[1];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = p_PreENCInput[S0Index]->InSurface;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -487,7 +487,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "step4. Call ProcessFrameAsync for S0 and S2, DownsampleInput is true;\n";
         IndexPreencCall++;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[2];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = p_PreENCInput[S0Index]->InSurface;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -504,7 +504,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "step5. Call ProcessFrameAsync for S0 and S1, DownsampleInput is false;\n";
         IndexPreencCall++;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[1];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_OFF;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = p_PreENCInput[S0Index]->InSurface;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -536,7 +536,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "step7. Call ProcessFrameAsync for S0 and S1, DownsampleInput is false;\n";
         IndexPreencCall++;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[1];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_OFF;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = p_PreENCInput[S0Index]->InSurface;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -563,7 +563,7 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "step8. Call ProcessFrameAsync for S0 and S1, DownsampleInput is true;\n";
         IndexPreencCall++;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[1];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = p_PreENCInput[S0Index]->InSurface;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -614,7 +614,7 @@ int TestSuite::RunTest(unsigned int id)
         {
             //set the run order
             mfxU16 idxRun = tc.mode & DS_CTRL_REF_FRAME_1_ORG ? i : 1-i;
-            if (idxRun == 0) 
+            if (idxRun == 0)
             {
                 /*** Run 1 ***/
                 g_tsLog << "Stage 1:\n";
@@ -622,7 +622,7 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsLog << "step2. Call preenc with S0, downsampleInput = true, no refs.\n";
                 IndexPreencCall = 0;
                 p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[0];
-                msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
                 FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = NULL;
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -637,7 +637,7 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsLog << "step3. Call preenc with S1, downsampleInput = true, no refs\n";
                 IndexPreencCall++;
                 p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[1];
-                msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
                 FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = NULL;
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = NULL;
@@ -652,7 +652,7 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsLog << "Step4. Call preenc with S2 downsampleInput = true, S0 and S1 are references, downsampleReferences = {false, false}; \n";
                 IndexPreencCall++;
                 p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[2];
-                msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
                 FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = &surfacesPool[0];
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = &surfacesPool[1];
@@ -666,8 +666,8 @@ int TestSuite::RunTest(unsigned int id)
                 sts = SyncOperation();
                 out_mv_st1 = &out_mvs[IndexPreencCall];
                 out_mbStat_st1 = &out_mbStat[IndexPreencCall];
-            } 
-            else if (idxRun == 1) 
+            }
+            else if (idxRun == 1)
             {
                 /*** Run 2 ***/
                 g_tsLog << "Stage 2:\n";
@@ -675,7 +675,7 @@ int TestSuite::RunTest(unsigned int id)
                 g_tsLog << "Step5. Call preenc with S3, downsampleInput = true, S4 and S5 are references, downsampleReferences = {true, true};\n";
                 IndexPreencCall = 5;
                 p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[5];
-                msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
                 FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = &surfacesPool[3];
                 FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = &surfacesPool[4];
@@ -718,16 +718,16 @@ int TestSuite::RunTest(unsigned int id)
         g_tsLog << "Step2. Call preenc with S2 downsampleInput = true, S0 and S1 are references. \n";
         if (tc.mode & DS_CTRL_REF_FRAME_2_ON)
         {
-             g_tsLog << " downsampleReferences = {true, true}; \n";        
+             g_tsLog << " downsampleReferences = {true, true}; \n";
         }
         else
         {
-            g_tsLog << " downsampleReferences = {false, false}; \n";        
+            g_tsLog << " downsampleReferences = {false, false}; \n";
         }
 
         IndexPreencCall = 2;
         p_PreENCInput[IndexPreencCall]->InSurface = &surfacesPool[2];
-        msdk_atomic_inc16(&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
+        msdk_atomic_inc16((volatile mfxU16*)&p_PreENCInput[IndexPreencCall]->InSurface->Data.Locked);
         FEIPreEncCtrl[IndexPreencCall].DownsampleInput = MFX_CODINGOPTION_ON;
         FEIPreEncCtrl[IndexPreencCall].RefFrame[0] = &surfacesPool[0];
         FEIPreEncCtrl[IndexPreencCall].RefFrame[1] = &surfacesPool[1];

@@ -359,7 +359,7 @@ namespace vp9e_multiref
             if (m_cur <= m_RepeatCount)
             {
                 mfxFrameSurface1* pStorageSurf = surfaceStorage.GetSurface();
-                msdk_atomic_inc16(&pStorageSurf->Data.Locked);
+                msdk_atomic_inc16((volatile mfxU16*)&pStorageSurf->Data.Locked);
 
                 mfxStatus result = tsRawReader::ProcessSurface(*pStorageSurf);
                 m_cur--;
