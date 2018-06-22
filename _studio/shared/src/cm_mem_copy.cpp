@@ -120,7 +120,7 @@ bool CmCopyWrapper::isSinglePlainFormat(mfxU32 format)
     case MFX_FOURCC_AYUV_RGB4:
     case MFX_FOURCC_UYVY:
     case MFX_FOURCC_YUY2:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
 #endif
@@ -162,7 +162,7 @@ int CmCopyWrapper::getSizePerPixel(mfxU32 format)
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:
     case MFX_FOURCC_AYUV_RGB4:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
     case MFX_FOURCC_Y210:
 #endif
@@ -193,7 +193,7 @@ bool CmCopyWrapper::isNeedShift(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc)
     switch (pDst->Info.FourCC)
     {
     case MFX_FOURCC_P010:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
@@ -2644,11 +2644,8 @@ mfxStatus CmCopyWrapper::Initialize(eMFXHWType hwtype)
     if (m_HWType == MFX_HW_UNKNOWN)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     m_timeout = m_HWType >= MFX_HW_ICL ? CM_MAX_TIMEOUT_SIM : CM_MAX_TIMEOUT_MS;
-#else
-    m_timeout = CM_MAX_TIMEOUT_MS;
-#endif
+
     if(hwtype >= MFX_HW_BDW)
     {
         mfxStatus mfxSts = InitializeSwapKernels(hwtype);
@@ -2692,16 +2689,16 @@ mfxStatus CmCopyWrapper::InitializeSwapKernels(eMFXHWType hwtype)
     case MFX_HW_CNL:
         cmSts = m_pCmDevice->LoadProgram((void*)cnl_copy_kernel_genx,sizeof(cnl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case MFX_HW_ICL:
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_LKF:
     case MFX_HW_JSL:
+#endif
         cmSts = m_pCmDevice->LoadProgram((void*)icl_copy_kernel_genx,sizeof(icl_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
     case MFX_HW_ICL_LP:
         cmSts = m_pCmDevice->LoadProgram((void*)icllp_copy_kernel_genx,sizeof(icllp_copy_kernel_genx),m_pCmProgram,"nojitter");
         break;
-#endif  // PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case MFX_HW_TGL_HP:
         cmSts = m_pCmDevice->LoadProgram((void*)tgl_copy_kernel_genx,sizeof(tgl_copy_kernel_genx),m_pCmProgram,"nojitter");

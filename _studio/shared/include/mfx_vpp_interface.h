@@ -79,7 +79,7 @@ namespace MfxHwVideoProcessing
         MFX_FOURCC_AYUV      ,
         MFX_FOURCC_AYUV_RGB4 ,
         MFX_FOURCC_UYVY
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
         , MFX_FOURCC_Y210
         , MFX_FOURCC_Y410
 #endif

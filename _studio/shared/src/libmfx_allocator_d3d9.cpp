@@ -30,10 +30,10 @@
 #define D3DFMT_YUV444   (D3DFORMAT)MAKEFOURCC('4','4','4','P')
 #define D3DFMT_AYUV     (D3DFORMAT)MFX_FOURCC_AYUV
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
 #define D3DFMT_Y410     (D3DFORMAT)MFX_FOURCC_Y410
 #define D3DFMT_Y210     (D3DFORMAT)MFX_FOURCC_Y210
-#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#endif
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
 #define D3DFMT_P016     (D3DFORMAT)MFX_FOURCC_P016
@@ -73,10 +73,10 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_P010:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
-#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#endif
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
@@ -301,7 +301,7 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->R = ptr->G = ptr->B = ptr->A = (mfxU8 *)LockedRect.pBits;
         break;
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     case D3DFMT_Y210:
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case D3DFMT_Y216:
@@ -320,7 +320,7 @@ mfxStatus mfxDefaultAllocatorD3D9::SetFrameData(const D3DSURFACE_DESC &desc, con
         ptr->V = 0;
         ptr->A = 0;
         break;
-#endif //#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#endif
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case D3DFMT_Y416:

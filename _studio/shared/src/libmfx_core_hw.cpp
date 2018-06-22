@@ -86,7 +86,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         case MFX_FOURCC_P010:
             profile |= VA_PROFILE_10;
             break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_UYVY:
             profile |= VA_PROFILE_422;
@@ -100,7 +100,7 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
         case MFX_FOURCC_Y410:
             profile |= VA_PROFILE_10 | VA_PROFILE_444;
             break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_FOURCC_P016:
             profile |= VA_PROFILE_12;
@@ -136,14 +136,14 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
             case MFX_FOURCC_AYUV:
                 profile |= VA_PROFILE_444;
                 break;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
             case MFX_FOURCC_Y210:
                 profile |= VA_PROFILE_10 | VA_PROFILE_422;
                 break;
             case MFX_FOURCC_Y410:
                 profile |= VA_PROFILE_10 | VA_PROFILE_444;
                 break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
             case MFX_FOURCC_P016:
                 profile |= VA_PROFILE_12;
@@ -165,10 +165,10 @@ mfxU32 ChooseProfile(mfxVideoParam * param, eMFXHWType )
                 profile |= VA_PROFILE_SCC;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
             if (profile_idc == MFX_PROFILE_HEVC_REXT)
                 profile |= VA_PROFILE_REXT;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
         }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)

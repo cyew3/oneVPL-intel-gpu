@@ -231,7 +231,7 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         nbytes = Pitch*Height2 + Pitch*Height2 + Pitch*Height2 + Pitch*Height2;
         break;
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
@@ -244,7 +244,7 @@ mfxStatus mfxDefaultAllocator::AllocFrames(mfxHDL pthis, mfxFrameAllocRequest *r
         Pitch=ALIGN32(request->Info.Width*4);
         nbytes=Pitch*Height2;
         break;
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
@@ -399,7 +399,7 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->Y = ptr->V + 2;
         ptr->A = ptr->V + 3;
         break;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
@@ -417,7 +417,7 @@ mfxStatus mfxDefaultAllocator::LockFrame(mfxHDL pthis, mfxHDL mid, mfxFrameData 
         ptr->Y = ptr->U = ptr->V = ptr->A = 0;
         ptr->Y410 = (mfxY410*)sptr;
         break;
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:

@@ -896,14 +896,18 @@ mfxStatus CommonCORE::QueryPlatform(mfxPlatform* platform)
     case MFX_HW_CFL    : platform->CodeName = MFX_PLATFORM_COFFEELAKE;  break;
     case MFX_HW_CNL    : platform->CodeName = MFX_PLATFORM_CANNONLAKE;  break;
 #endif
-#if !defined(MFX_CLOSED_PLATFORMS_DISABLE) && (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_CNX_G  :
+#endif //MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_ICL    :
     case MFX_HW_ICL_LP : platform->CodeName = MFX_PLATFORM_ICELAKE;     break;
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     case MFX_HW_LKF    : platform->CodeName = MFX_PLATFORM_LAKEFIELD;   break;
     case MFX_HW_JSL    : platform->CodeName = MFX_PLATFORM_JASPERLAKE;  break;
     case MFX_HW_TGL_LP :
     case MFX_HW_TGL_HP : platform->CodeName = MFX_PLATFORM_TIGERLAKE;   break;
+#endif //MFX_CLOSED_PLATFORMS_DISABLE
 #endif
     default:             platform->CodeName = MFX_PLATFORM_UNKNOWN;     break;
     }
@@ -1495,7 +1499,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
         break;
 
 #ifndef OPEN_SOURCE
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
@@ -1537,7 +1541,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
             MFX_CHECK_STS(sts);
         }
         break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:

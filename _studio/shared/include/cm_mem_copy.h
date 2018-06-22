@@ -17,10 +17,8 @@
 #if defined(MFX_VA)
 #include "skl_copy_kernel_genx_isa.h"
 #include "cnl_copy_kernel_genx_isa.h"
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #include "icl_copy_kernel_genx_isa.h"
 #include "icllp_copy_kernel_genx_isa.h"
-#endif  // PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
 #include "tgl_copy_kernel_genx_isa.h"
 #include "tgllp_copy_kernel_genx_isa.h"
