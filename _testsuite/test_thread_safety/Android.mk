@@ -59,7 +59,7 @@ ifeq ($(MFX_IMPL_HW), true)
         libumc_core_merged \
         libmfx_trace_hw
 
-    LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+    LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
 
     LOCAL_MULTILIB := both
     LOCAL_MODULE_TAGS := optional
@@ -94,7 +94,7 @@ ifeq ($(MFX_IMPL_SW), true)
         libumc_core_merged \
         libmfx_trace_sw
 
-    LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+    LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
 
     LOCAL_MULTILIB := both
     LOCAL_MODULE_TAGS := optional

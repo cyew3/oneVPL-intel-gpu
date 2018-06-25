@@ -43,6 +43,8 @@ LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
+LOCAL_HEADER_LIBRARIES := liblog_headers
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline
 
@@ -66,6 +68,8 @@ LOCAL_CFLAGS := \
     $(MFX_CFLAGS_LUCAS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+
+LOCAL_HEADER_LIBRARIES := liblog_headers
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline_lucas
@@ -108,7 +112,7 @@ LOCAL_STATIC_LIBRARIES := \
     libipps_l \
     libippcore_l
 
-LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
 
 LOCAL_MULTILIB := both
 LOCAL_MODULE_TAGS := optional
@@ -156,7 +160,7 @@ LOCAL_STATIC_LIBRARIES := \
     libipps_l \
     libippcore_l
 
-LOCAL_SHARED_LIBRARIES := libdl libva libva-android
+LOCAL_SHARED_LIBRARIES := libdl libva libva-android liblog
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := mfx_player_pipeline
