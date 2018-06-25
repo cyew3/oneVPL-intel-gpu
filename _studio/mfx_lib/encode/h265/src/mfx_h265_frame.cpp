@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -676,6 +676,20 @@ namespace H265Enc {
 
         m_userSeiMessages.resize(0);
         m_userSeiMessagesData.resize(0);
+
+        memset(&m_listModif, 0, sizeof(m_listModif));
+        short_term_ref_pic_set_sps_flag = 0;
+        short_term_ref_pic_set_idx = 0;
+        num_long_term_sps = 0;
+        num_long_term_pics = 0;
+        memset(m_longRefPicSet, 0, sizeof(m_longRefPicSet));
+        m_RsCs = 0.0;
+        m_SC = 0.0;
+        m_TC = 0.0;
+        m_TcScRatio = 0.0;
+        m_ltrConfidenceLevel = 0;
+        m_avgTcScRatio = 0.0;
+        m_pLtrFrame = 0;
 
         m_ttEncComplete.InitEncComplete(this, 0);
         m_ttInitNewFrame.InitNewFrame(this, (mfxFrameSurface1 *)NULL, 0);
