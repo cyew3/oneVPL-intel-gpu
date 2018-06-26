@@ -173,6 +173,8 @@ struct sInputParams
     bool shouldUseShiftedP010Enc;
     bool shouldUseShiftedP010VPP;
 
+    bool bSingleTexture;
+
 #if (MFX_VERSION >= 1027)
     msdk_char *RoundingOffsetFile;
 #endif
@@ -417,6 +419,7 @@ protected:
     bool   m_bTimeOutExceed;
 
     bool   m_bIsFieldSplitting;
+    bool   m_bSingleTexture;
 
     mfxEncodeCtrl m_encCtrl;
 

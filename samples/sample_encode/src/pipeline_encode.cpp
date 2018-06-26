@@ -965,7 +965,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
             D3D11AllocatorParams *pd3dAllocParams = new D3D11AllocatorParams;
             MSDK_CHECK_POINTER(pd3dAllocParams, MFX_ERR_MEMORY_ALLOC);
             pd3dAllocParams->pDevice = reinterpret_cast<ID3D11Device *>(hdl);
-
+            pd3dAllocParams->bUseSingleTexture = m_bSingleTexture;
             m_pmfxAllocatorParams = pd3dAllocParams;
         }
         else
@@ -1103,6 +1103,7 @@ CEncodingPipeline::CEncodingPipeline()
     m_bFileWriterReset = false;
 
     m_bSoftRobustFlag = false;
+    m_bSingleTexture = false;
 
     m_MVCflags = MVC_DISABLED;
     m_nNumView = 0;
@@ -1273,6 +1274,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     initPar.Version.Minor = 0;
 
     initPar.GPUCopy = pParams->gpuCopy;
+    m_bSingleTexture = pParams->bSingleTexture;
 
     // Init session
     if (pParams->bUseHWLib) {

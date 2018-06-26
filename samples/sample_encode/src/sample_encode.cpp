@@ -161,6 +161,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11] - work with d3d11 surfaces\n"));
+    msdk_printf(MSDK_STRING("   [-single_texture_d3d11 ] - single texture mode for d3d11 allocator \n"));
     msdk_printf(MSDK_STRING("Example: %s h264|h265|mpeg2|jpeg -i InputYUVFile -o OutputEncodedFile -w width -h height -d3d -hw \n"), strAppName);
     msdk_printf(MSDK_STRING("Example for MVC: %s mvc -i InputYUVFile_1 -i InputYUVFile_2 -o OutputEncodedFile -w width -h height \n"), strAppName);
 #endif
@@ -365,6 +366,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-cbr")))
         {
             pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-single_texture_d3d11")))
+        {
+            pParams->bSingleTexture = true;
         }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-qvbr")))
         {
