@@ -201,6 +201,9 @@ void ASCimageData::Close() {
 }
 
 ASC::ASC()
+    : ltr_check_history()
+    , m_tableCmRelations2()
+    , m_tableCmIndex2()
 {
     m_device = nullptr;
     m_queue  = nullptr;
