@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-<!-- mfx_trans_pipeline.vcxproj specific settings -->
-  <PropertyGroup Label="mfx_trans_pipeline settings">
-    <MfxUsingSettings>mfx_trans_pipeline;$(MfxUsedSettings)</MfxUsingSettings>
+<!-- test_thread_safety.vcxproj specific settings -->
+  <PropertyGroup Label="test_thread_safety settings">
+    <MfxConfigurationType Label="test_thread_safety settings">Application</MfxConfigurationType>
+    <MfxUsingSettings>test_thread_safety;$(MfxUsedSettings)</MfxUsingSettings>
     <MfxIncludes>
     $(MfxIppGoldIncludeDir);
     $(MSDK_API_ROOT)\include;
-    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_transcoder\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\test_thread_safety\include;
     $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_player\include;
+    $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_transcoder\include;
     $(MSDK_STUDIO_ROOT)\..\_testsuite\mfx_pavp;
     $(MSDK_STUDIO_ROOT)\..\_testsuite\shared\include;
     $(MSDK_STUDIO_ROOT)\..\pavp\include;
@@ -23,13 +25,11 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;PSAPI_VERSION=1;</MfxDefinitions>
-    <MfxDefinitions Condition="$(Configuration.Contains('Lucas_DLL'))">LUCAS_DLL;$(MfxDefinitions)</MfxDefinitions>
     <MfxLibraries>winmm.lib;psapi.lib;ippcoremt.lib;ippccmt.lib;ippimt.lib;ippsmt.lib;ippvcmt.lib;ippjmt.lib; ippcvmt.lib;winmm.lib;psapi.lib;bcrypt.lib;ippcoremt.lib;ippccmt.lib;ippcpmt.lib;ippdcmt.lib;ippmsdkmt.lib;ippimt.lib;ippsmt.lib;ippsrmt.lib;ippvcmt.lib;ippjmt.lib;ippcvmt.lib;</MfxLibraries>
     <MfxLibraryDir>$(MfxIppGoldLibraryDir)</MfxLibraryDir>
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
-	<MfxTargetName>$(ProjectName)$(PlatformArchitecture)</MfxTargetName>
+	<MfxTargetName>$(ProjectName)</MfxTargetName>
 	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
-    <MfxTargetName Condition="$(Configuration.Contains('Lucas_DLL'))">$(MfxTargetName)_lucas</MfxTargetName>
   </PropertyGroup>
-<!-- End of mfx_trans_pipeline.vcxproj specific settings -->
+<!-- End of test_thread_safety.vcxproj specific settings -->
 </Project>

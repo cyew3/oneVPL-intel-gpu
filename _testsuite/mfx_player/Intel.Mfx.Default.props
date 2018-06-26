@@ -3,7 +3,4 @@
 
   <Import Project="$(SolutionDir)\..\..\builder\Intel.Mfx.Default.props" />
 
-  <PropertyGroup>
-      <MfxTargetName Condition="$(Configuration.Contains('Lucas_DLL'))">$(MfxTargetName)_lucas</MfxTargetName>
-  </PropertyGroup>
 </Project>

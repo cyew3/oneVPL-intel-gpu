@@ -18,7 +18,10 @@
     <MfxDefinitions>AS_H265FEI_PLUGIN;MFX_VA;MFX_D3D11_ENABLED;LIBMFXHW_EXPORTS;</MfxDefinitions>
     <MfxLibraries>ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;D3d9.lib;d3d11.lib;dxva2.lib;dxgi.lib;</MfxLibraries>
     <MfxLibraryDir>$(MfxIppLibraryDir);</MfxLibraryDir>
-    <MfxPostBuildEvent>copy "$(SolutionDir)87e0e80207375240852515cf4a5edde6\plugin.cfg" "$(OutDir)plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent>copy "$(SolutionDir)87e0e80207375240852515cf4a5edde6\plugin.cfg" "$(MfxRootOutDir)\bin\87e0e80207375240852515cf4a5edde6\plugin.cfg" /y</MfxPostBuildEvent>
+    <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)87e0e80207375240852515cf4a5edde6\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\87e0e80207375240852515cf4a5edde6\plugin.cfg" /y</MfxPostBuildEvent>
+	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_h265fei_hw</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
   </PropertyGroup>
 <!-- End of mfxplugin_h265fei.vcxproj specific settings -->
 </Project>

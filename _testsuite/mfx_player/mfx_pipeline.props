@@ -36,6 +36,9 @@
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
+	<MfxTargetName>$(ProjectName)$(PlatformArchitecture)</MfxTargetName>
+	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+    <MfxTargetName Condition="$(Configuration.Contains('Lucas_DLL'))">$(MfxTargetName)_lucas</MfxTargetName>
   </PropertyGroup>
 <!-- End of mfx_pipeline.vcxproj specific settings -->
 </Project>

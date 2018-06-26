@@ -30,6 +30,7 @@
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
 	<MfxTargetName>$(ProjectName)</MfxTargetName>
 	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+    <MfxTargetName Condition="$(Configuration.Contains('Lucas_DLL'))">$(MfxTargetName)_lucas</MfxTargetName>
   </PropertyGroup>
 <!-- End of mfx_player.vcxproj specific settings -->
 </Project>

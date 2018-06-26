@@ -1,7 +1,7 @@
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(Mfx)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
-  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(Mfx)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
-  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(Mfx)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props') and '$(MfxHeaderIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props" />
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4041A665-2623-43CA-88D4-7D516875F864}</ProjectGuid>
     <RootNamespace>camera_pipe_plugin</RootNamespace>
@@ -10,16 +10,16 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="$(MSBuildThisFileDirectory)screen_capture_plugin.props" />
-  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Default.props') and '$(Mfx)'==''" Project="$(SolutionDir)\Intel.Mfx.Default.props" />
-  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(Mfx)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
-  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Default.props') and '$(Mfx)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Default.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Default.props') and '$(MfxDefaultIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Default.props" />
   <PropertyGroup Label="Configuration">
     <PlatformToolset>$(MfxPlatformToolset)</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(Mfx)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
-  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(Mfx)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
-  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props') and '$(Mfx)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
     <ClInclude Include="..\mfx_lib\vpp\include\mfx_color_space_conversion_vpp.h" />
     <ClInclude Include="..\shared\include\mfx_utils.h" />
@@ -77,7 +77,7 @@
     <ResourceCompile Include="screen_capture.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(Mfx)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
-  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(Mfx)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />
-  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Footer.props') and '$(Mfx)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(SolutionDir)\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(SolutionDir)\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Footer.props" />
+  <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Footer.props') and '$(MfxFooterIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Footer.props" />
 </Project>

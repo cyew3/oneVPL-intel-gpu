@@ -10,15 +10,15 @@ function CopyAttributes
 function AddSmartImport($name)
 {
     $node = $new.CreateElement("Import")
-    $node.SetAttribute("Condition", "Exists('`$(SolutionDir)\Intel.Mfx.$name.props') and '`$(Mfx$nameIncluded)'==''")
+    $node.SetAttribute("Condition", "Exists('`$(SolutionDir)\Intel.Mfx.$name.props') and '`$(Mfx$($name)Included)'==''")
     $node.SetAttribute("Project", "`$(SolutionDir)\Intel.Mfx.$name.props")
     $new.Project.AppendChild($node)
     $node = $new.CreateElement("Import")
-    $node.SetAttribute("Condition", "Exists('`$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.$name.props') and '`$(Mfx$nameIncluded)'==''")
+    $node.SetAttribute("Condition", "Exists('`$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.$name.props') and '`$(Mfx$($name)Included)'==''")
     $node.SetAttribute("Project", "`$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.$name.props")
     $new.Project.AppendChild($node)
     $node = $new.CreateElement("Import")
-    $node.SetAttribute("Condition", "Exists('`$(MSBuildThisFileDirectory)$relPath\Intel.Mfx.$name.props') and '`$(Mfx$nameIncluded)'==''")
+    $node.SetAttribute("Condition", "Exists('`$(MSBuildThisFileDirectory)$relPath\Intel.Mfx.$name.props') and '`$(Mfx$($name)Included)'==''")
     $node.SetAttribute("Project", "`$(MSBuildThisFileDirectory)$relPath\Intel.Mfx.$name.props")
     $new.Project.AppendChild($node)
 }

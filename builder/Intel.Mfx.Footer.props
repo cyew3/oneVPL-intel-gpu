@@ -12,6 +12,7 @@
     <Message Importance="High" Text="$(ProjectName): Using configuration = $(Configuration), $(ConfigurationType)" />
     <Message Importance="High" Text="$(ProjectName): THM configuration detected" Condition="'$(IsTHM)'=='true'" />
     <Message Importance="High" Text="$(ProjectName): ITT enabled" Condition="'$(IsITT)'=='true'" />
+    <Message Importance="High" Text="$(ProjectName): LUCAS configuration detected" Condition="$(Configuration.Contains('Lucas_DLL'))" />
     <Message Importance="High" Text="$(ProjectName): Debug configuration detected" Condition="'$(IntelDebugConf)'=='true'" />
     <Message Importance="High" Text="$(ProjectName): Using platform = $(Platform)" />
     <Message Importance="High" Text="$(ProjectName): Using toolset = $(PlatformToolset)" />
