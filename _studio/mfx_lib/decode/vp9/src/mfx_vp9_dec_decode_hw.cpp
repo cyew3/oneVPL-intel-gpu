@@ -452,9 +452,10 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
 {
     MFX_CHECK_NULL_PTR1(p_out);
 
-    mfxVideoParam localIn = {};
+    mfxVideoParam localIn{};
     if (p_in == p_out)
     {
+        MFX_CHECK_NULL_PTR1(p_in);
         MFX_INTERNAL_CPY(&localIn, p_in, sizeof(mfxVideoParam));
         p_in = &localIn;
     }
@@ -462,7 +463,7 @@ mfxStatus VideoDECODEVP9_HW::Query(VideoCORE *p_core, mfxVideoParam *p_in, mfxVi
     eMFXHWType type = p_core->GetHWType();
     mfxVideoParam *p_check_hw_par = p_in;
 
-    mfxVideoParam check_hw_par = {};
+    mfxVideoParam check_hw_par{};
     if (p_in == NULL)
     {
         check_hw_par.mfx.CodecId = MFX_CODEC_VP9;
