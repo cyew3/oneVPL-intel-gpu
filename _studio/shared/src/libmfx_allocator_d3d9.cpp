@@ -69,7 +69,7 @@ mfxStatus mfxDefaultAllocatorD3D9::AllocFramesHW(mfxHDL pthis, mfxFrameAllocRequ
     case MFX_FOURCC_YUV422H:
     case MFX_FOURCC_YUV422V:
     case MFX_FOURCC_YUV444:
-    case MFX_FOURCC_RGBP:
+    case MFX_FOURCC_RGBP24:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:

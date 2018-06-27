@@ -890,9 +890,9 @@ mfxStatus FastCompositingDDI::ConvertExecute2BltParams( mfxExecuteParams *pExecu
             pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV422H ||
             pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV422V ||
             pRefSurf->frameInfo.FourCC == MFX_FOURCC_YUV444 ||
-            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP) &&
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP24) &&
             pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_RGB4 ||
-            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP &&
+            pRefSurf->frameInfo.FourCC == MFX_FOURCC_RGBP24 &&
            (pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_NV12 || 
             pExecuteParams->targetSurface.frameInfo.FourCC == MFX_FOURCC_YUY2))
         {
