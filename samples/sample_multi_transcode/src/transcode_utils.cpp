@@ -189,6 +189,8 @@ void TranscodingSample::PrintHelp()
 
     msdk_printf(MSDK_STRING("  -ext_allocator    Force usage of external allocators\n"));
     msdk_printf(MSDK_STRING("  -sys          Force usage of external system allocator\n"));
+    msdk_printf(MSDK_STRING("  -vpp::sys     Set vpp output to system memory\n"));
+    msdk_printf(MSDK_STRING("  -vpp::vid     Set vpp output to video memory\n"));
     msdk_printf(MSDK_STRING("  -fps <frames per second>\n"));
     msdk_printf(MSDK_STRING("                Transcoding frame rate limit\n"));
     msdk_printf(MSDK_STRING("  -pe           Set encoding plugin for this particular session.\n"));
