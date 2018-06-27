@@ -173,6 +173,7 @@ private:
     VPPHWResMng                          m_vpp_hw_resmng;
     #endif
     eMFXHWType                           m_HWType;
+    eMFXGTConfig                         m_GTConfig;
     // Ordinal number of adapter to work
     const mfxU32                         m_adapterNum;
     ComPtrCore<ID3D11VideoDecoder>       m_comptr;

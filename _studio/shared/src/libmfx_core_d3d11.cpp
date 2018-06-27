@@ -37,6 +37,7 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
     ,   m_bUseExtAllocForHWFrames(false)
     ,   m_adapterNum(adapterNum)
     ,   m_HWType(MFX_HW_UNKNOWN)
+    ,   m_GTConfig(MFX_GT_UNKNOWN)
     ,   m_bCmCopy(false)
     ,   m_bCmCopySwap(false)
     ,   m_bCmCopyAllowed(true)
@@ -581,6 +582,10 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
             m_pid3d11Adapter.reset(new D3D11Adapter(this));
         }
         return (void*)m_pid3d11Adapter.get();
+    }
+    else if (MFXICORE_GT_CONFIG_GUID == guid)
+    {
+        return (void*)&m_GTConfig;
     }
     else if (MFXIHWCAPS_GUID == guid)
     {

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -259,6 +259,7 @@ private:
     s_ptr<mfxDefaultAllocatorD3D9::mfxWideHWFrameAllocator, true> m_pcHWAlloc;
 
     eMFXHWType                           m_HWType;
+    eMFXGTConfig                         m_GTConfig;
 
     IDirect3DSurface9 *m_pSystemMemorySurface;
 

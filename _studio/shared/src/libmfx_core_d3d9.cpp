@@ -277,6 +277,7 @@ D3D9VideoCORE::D3D9VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAva
 , m_adapterNum(adapterNum)
 , m_pSystemMemorySurface(0)
 , m_HWType(MFX_HW_UNKNOWN)
+, m_GTConfig(MFX_GT_UNKNOWN)
 , m_bCmCopy(false)
 , m_bCmCopySwap(false)
 , m_bCmCopyAllowed(true)
@@ -1153,6 +1154,10 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     else if ((MFXICORED3D_GUID == guid))
     {
         return (void*) m_pAdapter.get();
+    }
+    else if (MFXICORE_GT_CONFIG_GUID == guid)
+    {
+        return (void*)&m_GTConfig;
     }
     else if (MFXIHWCAPS_GUID == guid)
     {
