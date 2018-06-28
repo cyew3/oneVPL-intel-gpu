@@ -629,6 +629,7 @@ namespace ExtBuffer
 #if (MFX_VERSION >= 1025)
         _CopyPar1(EnableNalUnitType);
 #endif
+        _CopyPar1(LowDelayBRC);
     }
 
     inline void  CopySupportedParams(mfxExtCodingOptionDDI& buf_dst, mfxExtCodingOptionDDI& buf_src)

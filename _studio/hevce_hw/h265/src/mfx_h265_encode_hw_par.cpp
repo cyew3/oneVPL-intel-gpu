@@ -1926,6 +1926,26 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     }
 #endif
 
+    if (CO3.LowDelayBRC == MFX_CODINGOPTION_ON) {
+        if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_VCM) {
+            CO3.LowDelayBRC = MFX_CODINGOPTION_OFF;
+            changed++;
+        }
+        else {
+            if (CO3.WinBRCMaxAvgKbps || CO3.WinBRCSize) {
+                CO3.WinBRCMaxAvgKbps = 0;
+                CO3.WinBRCSize = 0;
+                changed++;
+            }
+
+            if (par.mfx.GopRefDist != 0 && par.mfx.GopRefDist != 1) {
+                par.mfx.GopRefDist = 1;
+                changed++;
+            }
+        }
+    }
+
     changed +=  par.CheckExtBufferParam();
 
     if (par.mfx.CodecLevel !=0 && par.mfx.CodecLevel != MFX_LEVEL_HEVC_1 && LevelIdx(par.mfx.CodecLevel) == 0)
@@ -2396,7 +2416,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed +=1;
     }
 #ifdef MAX_HEVC_FRAME_SIZE_SUPPORT
-    if (((caps.UserMaxFrameSizeSupport == 0 && !par.isSWBRC()) || (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR)) && par.m_ext.CO2.MaxFrameSize)
+    if (caps.UserMaxFrameSizeSupport == 0 && !par.isSWBRC() && par.m_ext.CO2.MaxFrameSize)
 #else
     if (par.m_ext.CO2.MaxFrameSize)
 #endif
@@ -2960,6 +2980,25 @@ void SetDefaults(
             par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
+    }
+
+    if (CO3.LowDelayBRC == MFX_CODINGOPTION_UNKNOWN)
+        CO3.LowDelayBRC = MFX_CODINGOPTION_OFF;
+
+    if (CO3.LowDelayBRC == MFX_CODINGOPTION_ON && !CO2.MaxFrameSize && par.mfx.FrameInfo.FrameRateExtN && par.mfx.FrameInfo.FrameRateExtD) {
+
+        mfxF64 frameRate = mfxF64(par.mfx.FrameInfo.FrameRateExtN) / par.mfx.FrameInfo.FrameRateExtD;
+        mfxU32 avgFrameSizeInBytes = mfxU32(par.TargetKbps * 1000 / frameRate / 8);
+
+        if (par.MaxKbps)
+            avgFrameSizeInBytes = mfxU32(par.MaxKbps * 1000 / frameRate / 8);
+
+        if (!CO3.MaxFrameSizeP)
+            CO3.MaxFrameSizeP = avgFrameSizeInBytes;
+        if (!CO3.MaxFrameSizeI)
+            CO3.MaxFrameSizeI = 2 * CO3.MaxFrameSizeP;
+
+        CO2.MaxFrameSize = CO3.MaxFrameSizeI;
     }
 
     {

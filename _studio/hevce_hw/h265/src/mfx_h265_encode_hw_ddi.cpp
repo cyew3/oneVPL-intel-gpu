@@ -594,6 +594,16 @@ mfxStatus FeedbackStorage::Remove(mfxU32 feedbackNumber)
     return MFX_ERR_UNDEFINED_BEHAVIOR;
 }
 
+ENCODE_FRAME_SIZE_TOLERANCE ConvertLowDelayBRCMfx2Ddi(mfxU16 type)
+{
+    switch (type) {
+    case MFX_CODINGOPTION_ON:
+        return eFrameSizeTolerance_ExtremelyLow;
+    default:
+        return eFrameSizeTolerance_Normal;
+    }
+}
+
 void FillSliceBuffer(
     MfxVideoParam const & par,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const & /*sps*/,
@@ -758,6 +768,8 @@ void FillSpsBuffer(
         sps.SliceSizeControl = 1;
 
     sps.UserMaxFrameSize = par.m_ext.CO2.MaxFrameSize;
+
+    sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(par.m_ext.CO3.LowDelayBRC);
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality;
