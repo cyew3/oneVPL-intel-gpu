@@ -1342,7 +1342,7 @@ mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWTy
     mfxStatus sts = CheckTriStateOption(par.mfx.LowPower) == false ? MFX_WRN_INCOMPATIBLE_VIDEO_PARAM : MFX_ERR_NONE;
     (void)platfrom; // fix wrn for non Gen11 build
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
     if (platfrom == MFX_HW_LKF
         && par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
     {
@@ -1350,6 +1350,7 @@ mfxStatus MfxHwH264Encode::SetLowPowerDefault(MfxVideoParam& par, const eMFXHWTy
         return sts;
     }
 #endif
+
     if (par.mfx.LowPower == MFX_CODINGOPTION_UNKNOWN)
         par.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
@@ -2569,7 +2570,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
         par.mfx.RateControlMethod = 0;
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (platform > MFX_HW_ICL_LP)
     {
         if (bRateControlLA(par.mfx.RateControlMethod))
@@ -2590,7 +2590,6 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt3->FadeDetection = MFX_CODINGOPTION_OFF;
         }
     }
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     if (bRateControlLA(par.mfx.RateControlMethod) && IsOn(extOpt->CAVLC))
     {

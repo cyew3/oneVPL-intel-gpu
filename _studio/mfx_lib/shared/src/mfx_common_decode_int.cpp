@@ -142,14 +142,14 @@ void ConvertMFXParamsToUMC(mfxVideoParam const* par, UMC::VideoStreamInfo *umcVi
     case MFX_FOURCC_P210:
         umcVideoParams->color_format = UMC::P210;
         break;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         umcVideoParams->color_format = UMC::Y210;
         break;
     case MFX_FOURCC_Y410:
         umcVideoParams->color_format = UMC::Y410;
         break;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
         umcVideoParams->color_format = UMC::Y216;
@@ -227,10 +227,10 @@ mfxU32 ConvertUMCColorFormatToFOURCC(UMC::ColorFormat format)
         case UMC::YV12:    return MFX_FOURCC_YV12;
         case UMC::P010:    return MFX_FOURCC_P010;
         case UMC::P210:    return MFX_FOURCC_P210;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11) && (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= 1027)
         case UMC::Y210:    return MFX_FOURCC_Y210;
         case UMC::Y410:    return MFX_FOURCC_Y410;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined (PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
         case UMC::P016:    return MFX_FOURCC_P016;
         case UMC::Y216:    return MFX_FOURCC_Y216;
@@ -350,16 +350,14 @@ mfxU16 FourCcBitDepth(mfxU32 fourCC)
     {
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_NV16:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
     case MFX_FOURCC_YUY2:
     case MFX_FOURCC_AYUV:
-#endif
         bitDepth = 8;
         break;
 
     case MFX_FOURCC_P010:
     case MFX_FOURCC_P210:
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
 #endif

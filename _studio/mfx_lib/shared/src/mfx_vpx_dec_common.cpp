@@ -106,14 +106,14 @@ namespace MFX_VPX_Utility
             {
             case MFX_FOURCC_NV12:
             case MFX_FOURCC_P010:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
             case MFX_FOURCC_AYUV:
             case MFX_FOURCC_Y410:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
             case MFX_FOURCC_P016:
             case MFX_FOURCC_Y416:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
                 p_out->mfx.FrameInfo.FourCC = p_in->mfx.FrameInfo.FourCC;
                 break;
             default:
@@ -124,9 +124,7 @@ namespace MFX_VPX_Utility
             switch (p_in->mfx.FrameInfo.ChromaFormat)
             {
             case MFX_CHROMAFORMAT_YUV420:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             case MFX_CHROMAFORMAT_YUV444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
                 p_out->mfx.FrameInfo.ChromaFormat = p_in->mfx.FrameInfo.ChromaFormat;
                 break;
             default:
@@ -140,15 +138,15 @@ namespace MFX_VPX_Utility
             {
                 if ((   p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
                   //|| (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P016 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-#endif //PRE_SI_TARGET_PLATFORM_GEN1
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
                     )
                 {
                     p_out->mfx.FrameInfo.FourCC = 0;
@@ -163,10 +161,7 @@ namespace MFX_VPX_Utility
             p_out->mfx.FrameInfo.BitDepthChroma = p_in->mfx.FrameInfo.BitDepthChroma;
 
             if ((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-                || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-                ) &&
+                || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV) &&
                ((p_in->mfx.FrameInfo.BitDepthLuma   != 0 && p_in->mfx.FrameInfo.BitDepthLuma   != 8) ||
                 (p_in->mfx.FrameInfo.BitDepthChroma != 0 && p_in->mfx.FrameInfo.BitDepthChroma != 8) ||
                     p_in->mfx.FrameInfo.Shift))
@@ -177,9 +172,9 @@ namespace MFX_VPX_Utility
                 sts = MFX_ERR_UNSUPPORTED;
             }
             if ((  p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
                 || p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
                 ) &&
                 ((p_in->mfx.FrameInfo.BitDepthLuma != 0 && p_in->mfx.FrameInfo.BitDepthLuma != 10) ||
                  (p_in->mfx.FrameInfo.BitDepthChroma != 0 && p_in->mfx.FrameInfo.BitDepthChroma != 10)))
@@ -411,15 +406,15 @@ namespace MFX_VPX_Utility
             {
                 if (   p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV12
                     && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
                     && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV
                     //&& p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210
                     && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
                     && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_P016
                     && p_in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y416
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
                 )
                 return false;
             }
@@ -427,10 +422,8 @@ namespace MFX_VPX_Utility
             switch (p_in->mfx.FrameInfo.ChromaFormat)
             {
             case MFX_CHROMAFORMAT_YUV420:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             case MFX_CHROMAFORMAT_YUV422:
             case MFX_CHROMAFORMAT_YUV444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
                 break;
 
             default:
@@ -441,11 +434,11 @@ namespace MFX_VPX_Utility
             {
                 if ((p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420)
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
                     //|| (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422)
                     || (p_in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 && p_in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444)
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
                     )
                     return false;
             }
@@ -467,10 +460,8 @@ namespace MFX_VPX_Utility
         {
             p_request->Type = MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_FROM_DECODE;
 #ifdef MFX_VA_WIN
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             if (MFX_FOURCC_AYUV != p_request->Info.FourCC)
                 p_request->Type |= MFX_MEMTYPE_SHARED_RESOURCE;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #endif
         }
         else if (p_params->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY)
