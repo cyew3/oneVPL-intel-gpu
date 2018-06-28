@@ -130,13 +130,13 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->V = ptr->Y + 3;
         ptr->Pitch = 2 * Width2;
         break;
-#if defined (MFX_ENABLE_FOURCC_RGB565)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_RGB565:
         ptr->G = ptr->B;
         ptr->R = ptr->B;
         ptr->Pitch = 2 * Width2;
         break;
-#endif // MFX_ENABLE_FOURCC_RGB565
+#endif
     case MFX_FOURCC_RGB3:
         ptr->G = ptr->B + 1;
         ptr->R = ptr->B + 2;
@@ -265,11 +265,11 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     case MFX_FOURCC_NV16:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
-#if defined (MFX_ENABLE_FOURCC_RGB565)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_RGB565:
         nbytes = 2*Width2*Height2;
         break;
-#endif // MFX_ENABLE_FOURCC_RGB565
+#endif
     case MFX_FOURCC_RGB3:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;

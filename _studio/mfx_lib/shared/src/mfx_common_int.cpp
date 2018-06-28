@@ -619,7 +619,9 @@ mfxStatus CheckFramePointers(mfxFrameInfo const& info, mfxFrameData const& data)
         case MFX_FOURCC_Y216:        MFX_CHECK(data.Y16 && data.U16 && data.V16, MFX_ERR_UNDEFINED_BEHAVIOR); break;
         case MFX_FOURCC_Y416:        MFX_CHECK(data.Y16 && data.U16 && data.V16 && data.A , MFX_ERR_UNDEFINED_BEHAVIOR); break;
 #endif
-
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+        case MFX_FOURCC_RGB565:      MFX_CHECK(data.R && data.G && data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
+#endif // MFX_ENABLE_FOURCC_RGB565
         case MFX_FOURCC_RGB3:        MFX_CHECK(data.R && data.G && data.B, MFX_ERR_UNDEFINED_BEHAVIOR); break;
 
         case MFX_FOURCC_AYUV:
@@ -1064,7 +1066,9 @@ mfxU32 GetMinPitch(mfxU32 fourcc, mfxU16 width)
         case MFX_FOURCC_NV12:
         case MFX_FOURCC_YV12:
         case MFX_FOURCC_NV16:        return width * 1;
-
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+        case MFX_FOURCC_RGB565:      return width * 2;
+#endif // MFX_ENABLE_FOURCC_RGB565
 #if defined  (MFX_D3D11_ENABLED)
         case MFX_FOURCC_R16_BGGR:
         case MFX_FOURCC_R16_RGGB:
@@ -1116,7 +1120,9 @@ mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const& data)
         case MFX_FOURCC_BGR4:
         case MFX_FOURCC_ARGB16:
         case MFX_FOURCC_ABGR16:      return IPP_MIN(IPP_MIN(data.R, data.G), data.B); break;
-
+#if defined (MFX_ENABLE_FOURCC_RGB565)
+        case MFX_FOURCC_RGB565:      return data.R; break;
+#endif // MFX_ENABLE_FOURCC_RGB565
 #if defined  (MFX_D3D11_ENABLED)
         case MFX_FOURCC_R16_BGGR:
         case MFX_FOURCC_R16_RGGB:

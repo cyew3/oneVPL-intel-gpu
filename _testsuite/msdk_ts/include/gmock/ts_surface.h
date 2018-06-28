@@ -96,6 +96,7 @@ public:
     virtual bool isYUV() { return false; }
     virtual bool isYUV16() { return false; }
     virtual bool isRGB() { return false; }
+    virtual bool isRGB565() { return false; }
 
     virtual bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo) { return false; }
 };
@@ -383,6 +384,28 @@ public:
     bool Copy(tsFrameAbstract const & src, mfxFrameInfo const & srcInfo, mfxFrameInfo const & dstInfo);
 };
 
+class tsFrameRGB565 : public tsFrameAbstract
+{
+private:
+    mfxU32 m_pitch;
+    mfxU8* m_rgb565;
+    tsSampleImpl<mfxU8, mfxU16> m_sample_impl;
+    tsSample<mfxU8> m_sample;
+public:
+    tsFrameRGB565(mfxFrameData d)
+        : m_pitch( mfxU32(d.PitchHigh << 16) + d.PitchLow)
+        , m_rgb565(d.R)
+        , m_sample(&m_sample_impl)
+    {}
+
+    virtual ~tsFrameRGB565() {}
+
+    inline bool isRGB565() { return true; }
+    inline tsSample<mfxU8>& R(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_rgb565[h * m_pitch + w * 2], 0x001F, 0); return m_sample; }
+    inline tsSample<mfxU8>& G(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_rgb565[h * m_pitch + w * 2], 0x07E0, 5); return m_sample; }
+    inline tsSample<mfxU8>& B(mfxU32 w, mfxU32 h) { m_sample_impl.Set(&m_rgb565[h * m_pitch + w * 2], 0xF800, 11); return m_sample; }
+};
+
 class tsFrameRGB4 : public tsFrameAbstract
 {
 private:
@@ -457,6 +480,7 @@ public:
     inline bool isYUV() {return m_pFrame->isYUV(); };
     inline bool isYUV16() {return m_pFrame->isYUV16(); };
     inline bool isRGB() {return m_pFrame->isRGB(); };
+    inline bool isRGB565() {return m_pFrame->isRGB565(); };
 };
 
 

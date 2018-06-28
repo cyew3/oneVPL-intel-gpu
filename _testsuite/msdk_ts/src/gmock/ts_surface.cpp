@@ -34,6 +34,9 @@ tsFrame::tsFrame(mfxFrameSurface1 s)
     case MFX_FOURCC_Y410: m_pFrame = new tsFrameY410(s.Data); break;
     case MFX_FOURCC_Y416: m_pFrame = new tsFrameY416(s.Data); break;    // currently 12b only
     case MFX_FOURCC_BGR4: std::swap(s.Data.B, s.Data.R);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    case MFX_FOURCC_RGB565: m_pFrame = new tsFrameRGB565(s.Data); break;
+#endif
     case MFX_FOURCC_RGB4: m_pFrame = new tsFrameRGB4(s.Data); break;
     case MFX_FOURCC_R16:  m_pFrame = new tsFrameR16(s.Data); break;
         break;
@@ -672,6 +675,18 @@ mfxStatus tsNoiseFiller::ProcessSurface(mfxFrameSurface1& s)
                 d.G(w,h) = rand() % (1 << 8);
                 d.B(w,h) = rand() % (1 << 8);
                 d.A(w,h) = rand() % (1 << 8);
+            }
+        }
+    }
+    else if(d.isRGB565())
+    {
+        for(mfxU32 h = 0; h < s.Info.Height; h++)
+        {
+            for(mfxU32 w = 0; w < s.Info.Width; w++)
+            {
+                d.R(w,h) = rand() % (1 << 5);
+                d.G(w,h) = rand() % (1 << 6);
+                d.B(w,h) = rand() % (1 << 5);
             }
         }
     }

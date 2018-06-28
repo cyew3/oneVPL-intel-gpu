@@ -456,14 +456,14 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
         },
     },
-#if defined (MFX_ENABLE_FOURCC_RGB565)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     {/*57*/ MFX_ERR_NONE, STANDARD,
         {
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB565},
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YUY2},
         },
     },
-#endif // MFX_ENABLE_FOURCC_RGB565
+#endif
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::test_case[0]);
