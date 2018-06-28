@@ -112,7 +112,6 @@ struct PTL
 
     mfxU32 profile_compatibility_flags;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     union
     {
         mfxU32 rext_constraint_flags_0_31;
@@ -134,7 +133,6 @@ struct PTL
     mfxU32 rext_constraint_flags_32_42  : 11;
     mfxU32 inbld_flag                   :  1;
     mfxU32                              : 20;
-#endif
 };
 
 struct SubLayerOrdering
@@ -401,7 +399,6 @@ struct SPS : LayersInfo
     mfxU8  extension_flag                      : 1;
     mfxU8  extension_data_flag                 : 1;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     mfxU8 range_extension_flag                    : 1;
     mfxU8 transform_skip_rotation_enabled_flag    : 1;
     mfxU8 transform_skip_context_enabled_flag     : 1;
@@ -412,7 +409,6 @@ struct SPS : LayersInfo
     mfxU8 high_precision_offsets_enabled_flag     : 1;
     mfxU8 persistent_rice_adaptation_enabled_flag : 1;
     mfxU8 cabac_bypass_alignment_enabled_flag     : 1;
-#endif // defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
 #if defined(MFX_ENABLE_HEVCE_SCC)
     mfxU8 scc_extension_flag : 1;
@@ -484,7 +480,6 @@ struct PPS
 
     mfxU16 log2_parallel_merge_level_minus2;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     mfxU32 range_extension_flag                      : 1;
     mfxU32 cross_component_prediction_enabled_flag   : 1;
     mfxU32 chroma_qp_offset_list_enabled_flag        : 1;
@@ -496,7 +491,7 @@ struct PPS
     mfxU32                                           : 10;
     mfxI8  cb_qp_offset_list[6];
     mfxI8  cr_qp_offset_list[6];
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
 #if defined(MFX_ENABLE_HEVCE_SCC)
     mfxU8 scc_extension_flag : 1;
     mfxU8 curr_pic_ref_enabled_flag : 1;

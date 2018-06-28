@@ -33,7 +33,7 @@ GUID GetGUID(MfxVideoParam const & par)
 #ifndef OPEN_SOURCE
     mfxU16 bdId = 0, cfId = 0;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.m_ext.CO3.TargetBitDepthLuma == 10)
         bdId = 1;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
@@ -81,20 +81,16 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
         {
 #if defined (MFX_VA_WIN)
         case MFX_IMPL_VIA_D3D9:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             if (type == ENCODER_REXT)
                 return new D3D9EncoderREXT;
-#endif
 #if defined(MFX_ENABLE_HEVCE_SCC)
             if (type == ENCODER_SCC)
                 return new D3D9EncoderSCC;
 #endif
             return new D3D9EncoderDefault;
         case MFX_IMPL_VIA_D3D11:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             if (type == ENCODER_REXT)
                 return new D3D11EncoderREXT;
-#endif
 #if defined(MFX_ENABLE_HEVCE_SCC)
             if (type == ENCODER_SCC)
                 return new D3D11EncoderSCC;
@@ -143,14 +139,12 @@ MFEDXVAEncoder* CreatePlatformMFEEncoder(MFXCoreInterface* core)
 mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
 {
     mfxStatus sts = MFX_ERR_NONE;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (!caps.BitDepth8Only && !caps.MaxEncodedBitDepth)
         caps.MaxEncodedBitDepth = 1;
     if (!caps.Color420Only && !(caps.YUV444ReconSupport || caps.YUV422ReconSupport))
         caps.YUV444ReconSupport = 1;
     if (!caps.Color420Only && !(caps.YUV422ReconSupport))   // VPG: caps are not correct now
         caps.YUV422ReconSupport = 1;
-#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     caps.MaxEncodedBitDepth = 2;
 #endif
@@ -234,11 +228,11 @@ mfxStatus CheckHeaders(
         MFX_CHECK_COND(par.m_sps.sample_adaptive_offset_enabled_flag == 0);
     }
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION < 1027)
     MFX_CHECK_COND(par.m_pps.tiles_enabled_flag == 0);
 #endif
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     MFX_CHECK_COND(
       !(   (!caps.YUV444ReconSupport && (par.m_sps.chroma_format_idc == 3))
         || (!caps.YUV422ReconSupport && (par.m_sps.chroma_format_idc == 2))
@@ -258,7 +252,7 @@ mfxStatus CheckHeaders(
       !(   par.m_sps.pic_width_in_luma_samples > caps.MaxPicWidth
         || par.m_sps.pic_height_in_luma_samples > caps.MaxPicHeight
         || (UINT)(((par.m_pps.num_tile_columns_minus1 + 1) * (par.m_pps.num_tile_rows_minus1 + 1)) > 1) > caps.TileSupport));
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
     MFX_CHECK_COND(
       !(   (caps.MaxEncodedBitDepth == 0 || caps.BitDepth8Only)
         && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0)));
@@ -271,17 +265,7 @@ mfxStatus CheckHeaders(
           || !(par.m_sps.bit_depth_chroma_minus8 == 0
             || par.m_sps.bit_depth_chroma_minus8 == 2
             || par.m_sps.bit_depth_chroma_minus8 == 4))));
-#else
-    MFX_CHECK_COND(
-        !(  caps.BitDepth8Only == 1 // 8 bit only
-            && (par.m_sps.bit_depth_luma_minus8 != 0 || par.m_sps.bit_depth_chroma_minus8 != 0))); // not 8 bit
 
-    MFX_CHECK_COND(
-        !(  caps.BitDepth8Only == 0 // 10 or 8 bit only
-            && (!(par.m_sps.bit_depth_luma_minus8 == 0 || par.m_sps.bit_depth_luma_minus8 == 2)
-                || !(par.m_sps.bit_depth_chroma_minus8 == 0 || par.m_sps.bit_depth_chroma_minus8 == 2))));
-#endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     MFX_CHECK_COND(
       !(   caps.MaxEncodedBitDepth == 2
         && ( !(par.m_sps.bit_depth_luma_minus8 == 0
@@ -301,7 +285,6 @@ mfxStatus CheckHeaders(
             || par.m_sps.bit_depth_chroma_minus8 == 2
             || par.m_sps.bit_depth_chroma_minus8 == 4
             || par.m_sps.bit_depth_chroma_minus8 == 8))));
-#endif
 
     return MFX_ERR_NONE;
 }
@@ -805,7 +788,6 @@ void FillSpsBuffer(
         }
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     switch (par.mfx.FrameInfo.BitDepthLuma)
     {
     case 16: sps.SourceBitDepth = 3; break;
@@ -825,10 +807,6 @@ void FillSpsBuffer(
         assert(par.mfx.FrameInfo.ChromaFormat > MFX_CHROMAFORMAT_YUV400 && par.mfx.FrameInfo.ChromaFormat <= MFX_CHROMAFORMAT_YUV444);
         sps.SourceFormat = par.mfx.FrameInfo.ChromaFormat - 1;
     }
-#else
-    if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-        sps.SourceBitDepth = 1; //10b
-#endif
 
     sps.scaling_list_enable_flag           = par.m_sps.scaling_list_enabled_flag;
     sps.sps_temporal_mvp_enable_flag       = par.m_sps.temporal_mvp_enabled_flag;
@@ -994,10 +972,8 @@ void FillPpsBuffer(
     // pps.NonRectROIDeltaQpList[0..pps.NumDeltaQpForNonRectROI-1] // delta QPs for non-rect ROI
 #endif // MFX_ENABLE_HEVCE_ROI
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     pps.DisplayFormatSwizzle = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10) ||
                                (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4);
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 }
 
 void FillPpsBuffer(
@@ -1101,8 +1077,6 @@ void FillPpsBuffer(
     pps.nal_unit_type = task.m_shNUT;
 }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-
 void FillSliceBuffer(
     MfxVideoParam const & par,
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & /*sps*/,
@@ -1190,7 +1164,6 @@ void FillPpsBuffer(
     pps.log2_sao_offset_scale_chroma                = par.m_pps.log2_sao_offset_scale_chroma;
 }
 
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(MFX_ENABLE_HEVCE_SCC)
 void FillSpsBuffer(
     MfxVideoParam const & par,

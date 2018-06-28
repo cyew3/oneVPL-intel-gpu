@@ -547,9 +547,7 @@ namespace ExtBuffer
     {
         _CopyPar1(PicWidthInLumaSamples);
         _CopyPar1(PicHeightInLumaSamples);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         _CopyPar1(GeneralConstraintFlags);
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #if (MFX_VERSION >= 1026)
         _CopyPar1(SampleAdaptiveOffset);
         _CopyPar1(LCUSize);
@@ -609,7 +607,7 @@ namespace ExtBuffer
 #if (MFX_VERSION >= 1026)
         _CopyPar1(TransformSkip);
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
         _CopyPar1(TargetChromaFormatPlus1);
         _CopyPar1(TargetBitDepthLuma);
         _CopyPar1(TargetBitDepthChroma);
@@ -1101,9 +1099,7 @@ inline bool isDpbEnd(DpbArray const & dpb, mfxU32 idx) { return idx >= MAX_DPB_S
 
 mfxU8 GetFrameType(MfxVideoParam const & video, mfxU32 frameOrder);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 mfxU16 GetMaxBitDepth(mfxU32 FourCC);
-#endif
 
 void ConstructSTRPS(
     DpbArray const & DPB,

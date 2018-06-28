@@ -52,7 +52,6 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main =
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main10 =
 { 0x8732ecfd, 0x9747, 0x4897, { 0xb4, 0x2a, 0xe5, 0x34, 0xf9, 0xff, 0x2b, 0x7a } };
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
 static const GUID DXVA2_Intel_Encode_HEVC_Main422 =
 { 0x056a6e36, 0xf3a8, 0x4d00, { 0x96, 0x63, 0x7e, 0x94, 0x30, 0x35, 0x8b, 0xf9 } };
 static const GUID DXVA2_Intel_Encode_HEVC_Main422_10 =
@@ -69,7 +68,6 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444 =
 { 0x87b2ae39, 0xc9a5, 0x4c53, { 0x86, 0xb8, 0xa5, 0x2d, 0x7e, 0xdb, 0xa4, 0x88 } };
 static const GUID DXVA2_Intel_LowpowerEncode_HEVC_Main444_10 =
 { 0x10e19ac8, 0xbf39, 0x4443, { 0xbe, 0xc3, 0x1b, 0x0c, 0xbf, 0xe4, 0xc7, 0xaa } };
-#endif
 
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
 static const GUID DXVA2_Intel_Encode_HEVC_Main12 =
@@ -102,18 +100,14 @@ const GUID GuidTable[3][3][3] =
         // BitDepthLuma = 8
         {
             /*420*/ DXVA2_Intel_Encode_HEVC_Main,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_Encode_HEVC_Main422,
             /*444*/ DXVA2_Intel_Encode_HEVC_Main444
-#endif
         },
         // BitDepthLuma = 10
         {
             /*420*/ DXVA2_Intel_Encode_HEVC_Main10,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_Encode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_Encode_HEVC_Main444_10
-#endif
         },
         // BitDepthLuma = 12
         {
@@ -129,18 +123,14 @@ const GUID GuidTable[3][3][3] =
         // BitDepthLuma = 8
         {
             /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444
-#endif
         },
         // BitDepthLuma = 10
         {
             /*420*/ DXVA2_Intel_LowpowerEncode_HEVC_Main10,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             /*422*/ DXVA2_Intel_LowpowerEncode_HEVC_Main422_10,
             /*444*/ DXVA2_Intel_LowpowerEncode_HEVC_Main444_10
-#endif
         },
         // BitDepthLuma = 12
         {
@@ -181,9 +171,7 @@ class DriverEncoder;
 typedef enum tagENCODER_TYPE
 {
     ENCODER_DEFAULT = 0
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     , ENCODER_REXT
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 #if defined(MFX_ENABLE_HEVCE_SCC)
     , ENCODER_SCC
 #endif
@@ -379,7 +367,6 @@ void FillSliceBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
 void FillSpsBuffer(
     MfxVideoParam const & par,
@@ -403,7 +390,6 @@ void FillSliceBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC_REXT> & slice);
 
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
 void FillSpsBuffer(

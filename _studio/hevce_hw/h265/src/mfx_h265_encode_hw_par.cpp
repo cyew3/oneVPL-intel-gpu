@@ -123,7 +123,7 @@ mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     mfxExtHEVCParam* pHevcPar = ExtBuffer::Get(par);
     mfxExtCodingOption3* pCO3 = ExtBuffer::Get(par);
 
@@ -499,7 +499,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
     mfxU32 nLCU   = nCol * nRow;
     mfxU32 nSlice = Min(Min<mfxU32>(nLCU, MAX_SLICES), Max<mfxU32>(par.mfx.NumSlice, 1));
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     /*
         A tile must wholly contain all the slices within it. Slices cannot cross tile boundaries.
         If a slice contains more than one tile, it must contain all the tiles in the frame, i.e. there can only be one slice in the frame. (Upto Gen12, Intel HW does not support this scenario.)
@@ -507,7 +507,11 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         Fewer slices than tiles is illegal (e.g. 3 slice, 2x2 tiles)
         More slices than tiles is legal as long as the slices do not cross tile boundaries; the app needs to use the slice segment address and number of LCUs in the slice to define the slices within the tiles.
     */
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (par.m_platform.CodeName < MFX_PLATFORM_TIGERLAKE)
+#else
+    if (par.m_platform.CodeName <= MFX_PLATFORM_ICELAKE)
+#endif
     {
         nSlice = Max(nSlice, nTile);
     }
@@ -516,7 +520,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         if (nTile == 1)
             SliceStructure = 2;
     }
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#endif // MFX_VERSION >= 1027
 
     par.m_slice.resize(0);
     if (par.m_ext.CO2.NumMbPerSlice != 0)
@@ -1273,7 +1277,7 @@ void InheritDefaultValues(
 #if (MFX_VERSION >= 1026)
     InheritOption(extOpt3Init->TransformSkip, extOpt3Reset->TransformSkip);
 #endif
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     InheritOption(extOpt3Init->TargetChromaFormatPlus1, extOpt3Reset->TargetChromaFormatPlus1);
     InheritOption(extOpt3Init->TargetBitDepthLuma,      extOpt3Reset->TargetBitDepthLuma);
     InheritOption(extOpt3Init->TargetBitDepthChroma,    extOpt3Reset->TargetBitDepthChroma);
@@ -1376,13 +1380,13 @@ inline bool isSAOSupported(MfxVideoParam const & par)
         || par.LCUSize == 16
         || (   par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE
             && (
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
                    (par.m_ext.CO3.TargetBitDepthLuma == 10)
 #else
                    (   par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10
                     || par.mfx.FrameInfo.BitDepthLuma == 10
                     || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#endif //(MFX_VERSION >= 1027)
                 || (IsOn(par.mfx.LowPower) && (par.m_ext.CO2.MaxSliceSize != 0))
                )
            )
@@ -1394,8 +1398,6 @@ inline bool isSAOSupported(MfxVideoParam const & par)
 }
 
 #endif //(MFX_VERSION >= 1025)
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
 mfxU16 GetMaxChroma(MfxVideoParam const & par)
 {
@@ -1433,21 +1435,31 @@ mfxU16 GetMaxChroma(MfxVideoParam const & par)
     {
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_P010:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
+#endif
         c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV420);
         break;
 
     case MFX_FOURCC_YUY2:
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
+#endif
     case MFX_FOURCC_P210:
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
+#endif
         c = Min<mfxU16>(c, MFX_CHROMAFORMAT_YUV422);
         break;
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
+#endif
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
+#endif
     default:
         break;
     }
@@ -1467,10 +1479,12 @@ mfxU16 GetMaxBitDepth(mfxU32 FourCC)
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_P010:
     case MFX_FOURCC_P210:
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
     case MFX_FOURCC_Y410:
+#endif
         return 10;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12) && (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
     case MFX_FOURCC_Y216:
     case MFX_FOURCC_Y416:
@@ -1542,8 +1556,6 @@ mfxU32 GetRawBytes(mfxU16 w, mfxU16 h, mfxU16 ChromaFormat, mfxU16 BitDepth)
     return s;
 }
 
-#endif
-
 mfxStatus CheckInputParam(mfxVideoParam *inPar, mfxVideoParam *outPar)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -1552,13 +1564,9 @@ mfxStatus CheckInputParam(mfxVideoParam *inPar, mfxVideoParam *outPar)
     if (inPar->mfx.CodecId != MFX_CODEC_HEVC)
         invalid++;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (CheckOption(inPar->mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420,
                                                        (mfxU16)MFX_CHROMAFORMAT_YUV422,
                                                        (mfxU16)MFX_CHROMAFORMAT_YUV444))
-#else
-    if (CheckOption(inPar->mfx.FrameInfo.ChromaFormat, (mfxU16)MFX_CHROMAFORMAT_YUV420))
-#endif
         invalid++;
 
     if (invalid)
@@ -1651,8 +1659,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (!par.LCUSize)
         par.LCUSize = GetDefaultLCUSize(par, caps); //  that a local copy of actual value;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-
+#if (MFX_VERSION >= 1027)
     mfxU16 maxBitDepth = GetMaxBitDepth(par, caps.MaxEncodedBitDepth);
     mfxU16 maxChroma = GetMaxChroma(par);
 
@@ -1924,7 +1931,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         maxQP += 6 * (BitDepthLuma - 8);
         minQP += 6 * (BitDepthLuma - 8);
     }
-#endif
+#endif //#if (MFX_VERSION >= 1027)
 
     if (CO3.LowDelayBRC == MFX_CODINGOPTION_ON) {
         if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
@@ -1985,7 +1992,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     changed += CheckMin(par.m_ext.HEVCParam.PicWidthInLumaSamples, Align(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.CodedPicAlignment));
     changed += CheckMin(par.m_ext.HEVCParam.PicHeightInLumaSamples, Align(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.CodedPicAlignment));
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION < 1027)
     if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN || par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP)
     {
         invalid += CheckOption(par.mfx.FrameInfo.BitDepthLuma, 8, 0);
@@ -2005,7 +2012,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         MaxTileColumns = 1;
         MaxTileRows    = 1;
     }
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     else
     {
         mfxU16 nLcuCol = (mfxU16)CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
@@ -2016,7 +2022,6 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
         MaxTileColumns = (mfxU16)caps.MaxNumOfTileColumnsMinus1 + 1;
     }
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     invalid += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, MaxTileColumns);
     invalid += CheckMax(par.m_ext.HEVCTiles.NumTileRows, MaxTileRows);
@@ -2177,7 +2182,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckRange(par.mfx.FrameInfo.CropH, 0, par.m_ext.HEVCParam.PicHeightInLumaSamples - par.mfx.FrameInfo.CropY);
     }
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION < 1027)
 #if defined (MFX_VA_WIN)
     //now driver doesn't support proper reporting of supported input formats, currently hardcoded to accept ARGB format.
     //if(!caps.Color420Only)
@@ -2217,7 +2222,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if ((par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010) && isInVideoMem(par))
         changed += CheckMin(par.mfx.FrameInfo.Shift, 1);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     if ((par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) && isInVideoMem(par))
             changed += CheckMin(par.mfx.FrameInfo.Shift, 1);
 #endif
@@ -2278,7 +2283,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (par.BufferSizeInKB != 0)
     {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
         mfxU32 rawBytes = GetRawBytes(
               par.m_ext.HEVCParam.PicWidthInLumaSamples
             , par.m_ext.HEVCParam.PicHeightInLumaSamples
@@ -2687,10 +2692,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif //defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     if (par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
         changed += CheckOption(par.m_ext.HEVCParam.GeneralConstraintFlags, 0);
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#endif // MFX_VERSION >= 1027
 
 #if (MFX_VERSION >= 1025)
     if (par.mfx.EncodedOrder)
@@ -2774,7 +2779,7 @@ void SetDefaults(
         maxDPB = (mfxU16)GetMaxDpbSizeByLevel(par);
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     if (!par.mfx.FrameInfo.FourCC)
         par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
@@ -2848,7 +2853,7 @@ void SetDefaults(
         par.mfx.NumSlice = (mfxU16)par.m_slice.size();
     }
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION < 1027)
     if (!par.mfx.FrameInfo.FourCC)
         par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 #endif
@@ -2874,7 +2879,7 @@ void SetDefaults(
     //if (!par.mfx.FrameInfo.PicStruct)
     //    par.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION < 1027)
     if (!par.mfx.FrameInfo.ChromaFormat)
         par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
 
@@ -3203,7 +3208,7 @@ void SetDefaults(
             CO3.WinBRCMaxAvgKbps = (mfxU16)(par.MaxKbps/par.mfx.BRCParamMultiplier);
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     if (   (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT && !par.m_ext.HEVCParam.GeneralConstraintFlags)
 #if defined(MFX_ENABLE_HEVCE_SCC)
         || (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC && !par.m_ext.HEVCParam.GeneralConstraintFlags)

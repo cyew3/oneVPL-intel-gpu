@@ -773,7 +773,6 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
         sps.general.non_packed_constraint_flag = bs.GetBit();
         sps.general.frame_only_constraint_flag = bs.GetBit();
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (   ((sps.general.profile_idc >= 4) && (sps.general.profile_idc <= 7))
 #if defined(MFX_ENABLE_HEVCE_SCC)
             || (sps.general.profile_idc == 9) || (sps.general.profile_compatibility_flags & (0x1 << 9))
@@ -814,13 +813,6 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
         {
             return MFX_ERR_UNSUPPORTED;
         }
-#else
-        //general_reserved_zero_44bits
-        if (bs.GetBits(24))
-            return MFX_ERR_UNSUPPORTED;
-        if (bs.GetBits(20))
-            return MFX_ERR_UNSUPPORTED;
-#endif
 
         sps.general.level_idc = (mfxU8)bs.GetBits(8);
 
@@ -846,7 +838,6 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
                 sps.sub_layer[i].non_packed_constraint_flag = bs.GetBit();
                 sps.sub_layer[i].frame_only_constraint_flag = bs.GetBit();
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
                 if (   ((sps.sub_layer[i].profile_idc >= 4) && (sps.sub_layer[i].profile_idc <= 7))
 #if defined(MFX_ENABLE_HEVCE_SCC)
                     || (sps.general.profile_idc == 9) || (sps.general.profile_compatibility_flags & (0x1 << 9))
@@ -887,13 +878,6 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
                 {
                     return MFX_ERR_UNSUPPORTED;
                 }
-#else
-                //general_reserved_zero_44bits
-                if (bs.GetBits(24))
-                    return MFX_ERR_UNSUPPORTED;
-                if (bs.GetBits(20))
-                    return MFX_ERR_UNSUPPORTED;
-#endif
             }
 
             if (sps.sub_layer[i].level_present_flag)
@@ -1250,8 +1234,6 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
             }
         }
 
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         sps.extension_flag = bs.GetBit();
 
         if (sps.extension_flag)
@@ -1311,10 +1293,7 @@ mfxStatus HeaderReader::ReadSPS(BitstreamReader& bs, SPS & sps)
             sps.intra_boundary_filtering_disabled_flag = bs.GetBit();
         }
 #endif
-#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        if (bs.GetBit()) //sps.extension_flag
-            return MFX_ERR_UNSUPPORTED;
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+
     }
     catch (std::exception &)
     {
@@ -1406,8 +1385,6 @@ mfxStatus HeaderReader::ReadPPS(BitstreamReader& bs, PPS & pps)
         pps.log2_parallel_merge_level_minus2 = (mfxU16)bs.GetUE();
         pps.slice_segment_header_extension_present_flag = bs.GetBit();
 
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         pps.extension_flag = bs.GetBit();
 
         if (pps.extension_flag)
@@ -1486,10 +1463,6 @@ mfxStatus HeaderReader::ReadPPS(BitstreamReader& bs, PPS & pps)
             }
         }
 #endif
-#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        if (bs.GetBit()) //pps.extension_flag
-            return MFX_ERR_UNSUPPORTED;
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
     }
     catch (std::exception &)
     {
@@ -1570,7 +1543,6 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
     bs.PutBit(ptl.general.interlaced_source_flag);
     bs.PutBit(ptl.general.non_packed_constraint_flag);
     bs.PutBit(ptl.general.frame_only_constraint_flag);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(ptl.general.constraint.max_12bit       );
     bs.PutBit(ptl.general.constraint.max_10bit       );
     bs.PutBit(ptl.general.constraint.max_8bit        );
@@ -1583,10 +1555,6 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
     bs.PutBits(23, 0);
     bs.PutBits(11, 0);
     bs.PutBit(ptl.general.inbld_flag);
-#else
-    bs.PutBits(24, 0); //general_reserved_zero_44bits
-    bs.PutBits(20, 0); //general_reserved_zero_44bits
-#endif
     bs.PutBits(8, ptl.general.level_idc);
 
     for (mfxU32 i = 0; i < max_sub_layers_minus1; i++ )
@@ -1612,7 +1580,6 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
             bs.PutBit(ptl.sub_layer[i].interlaced_source_flag);
             bs.PutBit(ptl.sub_layer[i].non_packed_constraint_flag);
             bs.PutBit(ptl.sub_layer[i].frame_only_constraint_flag);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             bs.PutBit(ptl.general.constraint.max_12bit);
             bs.PutBit(ptl.general.constraint.max_10bit);
             bs.PutBit(ptl.general.constraint.max_8bit);
@@ -1625,10 +1592,6 @@ void HeaderPacker::PackPTL(BitstreamWriter& bs, LayersInfo const & ptl, mfxU16 m
             bs.PutBits(23, 0);
             bs.PutBits(11, 0);
             bs.PutBit(ptl.sub_layer[i].inbld_flag);
-#else
-            bs.PutBits(24, 0); //general_reserved_zero_44bits
-            bs.PutBits(20, 0); //general_reserved_zero_44bits
-#endif
         }
 
         if (ptl.sub_layer[i].level_present_flag)
@@ -1944,7 +1907,6 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
     if (sps.vui_parameters_present_flag)
         PackVUI(bs, sps.vui, sps.max_sub_layers_minus1);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(sps.extension_flag);
 
     if (sps.extension_flag)
@@ -1986,10 +1948,6 @@ void HeaderPacker::PackSPS(BitstreamWriter& bs, SPS const & sps)
         bs.PutBit(0); // Gen12: intra_boundary_filtering_disabled_flag - MBZ
     }
 #endif
-
-#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    bs.PutBit(0); //sps.extension_flag
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     bs.PutTrailingBits();
 }
@@ -2066,7 +2024,6 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
     bs.PutUE(pps.log2_parallel_merge_level_minus2);
     bs.PutBit(pps.slice_segment_header_extension_present_flag);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     bs.PutBit(pps.extension_flag);
 
     if (pps.extension_flag)
@@ -2112,9 +2069,6 @@ void HeaderPacker::PackPPS(BitstreamWriter& bs, PPS const &  pps)
         bs.PutBit(0); // Gen12: pps.palette_predictor_initializer_present_flag - MBZ
     }
 #endif
-#else //defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    bs.PutBit(0); //pps.extension_flag
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
 
     bs.PutTrailingBits();
 }
@@ -2298,12 +2252,7 @@ void HeaderPacker::PackSSH(
                 || (pps.weighted_bipred_flag && slice.type == B))
             {
                 const mfxU16 Y = 0, Cb = 1, Cr = 2, W = 0, O = 1;
-                mfxI16
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-                      WpOffsetHalfRangeC = (1 << (sps.high_precision_offsets_enabled_flag ? (sps.bit_depth_chroma_minus8 + 8 - 1) : 7))
-#else
-                      WpOffsetHalfRangeC = (1 << 7)
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN11)
+                mfxI16 WpOffsetHalfRangeC = (1 << (sps.high_precision_offsets_enabled_flag ? (sps.bit_depth_chroma_minus8 + 8 - 1) : 7))
                     , wY = (1 << slice.luma_log2_weight_denom)
                     , wC = (1 << slice.chroma_log2_weight_denom)
                     , l2WDc = slice.chroma_log2_weight_denom;
