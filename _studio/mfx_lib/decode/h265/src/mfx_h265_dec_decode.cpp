@@ -304,7 +304,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         if (m_platform != MFX_PLATFORM_SOFTWARE)
         {
             if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-    #ifdef PRE_SI_TARGET_PLATFORM_GEN11
+    #if (MFX_VERSION >= 1027)
                 || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
     #endif
     #ifdef PRE_SI_TARGET_PLATFORM_GEN12
@@ -680,7 +680,7 @@ mfxStatus VideoDECODEH265::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
     if (MFX_Utility::GetPlatform_H265(core, par) != MFX_PLATFORM_SOFTWARE)
     {
         if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12

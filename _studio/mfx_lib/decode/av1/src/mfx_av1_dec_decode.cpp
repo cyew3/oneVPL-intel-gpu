@@ -346,7 +346,7 @@ mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVid
     if (MFX_VPX_Utility::GetPlatform(core, par) != MFX_PLATFORM_SOFTWARE)
     {
         if (   par->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
             || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12

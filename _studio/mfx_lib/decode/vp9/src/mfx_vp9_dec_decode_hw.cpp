@@ -43,10 +43,8 @@ bool CheckHardwareSupport(VideoCORE *p_core, mfxVideoParam *p_video_param)
 #ifdef MFX_VA_WIN
     if (p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile0_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile2_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD, p_video_param) != MFX_ERR_NONE &&
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD, p_video_param) != MFX_ERR_NONE &&
         p_core->IsGuidSupported(DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD, p_video_param) != MFX_ERR_NONE &&
