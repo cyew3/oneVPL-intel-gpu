@@ -87,7 +87,6 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
 
 inline GUID GetGuid(VP9MfxVideoParam  par)
 {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     if (par.mfx.CodecProfile == 0)
     {
         SetDefailtsForProfileAndFrameInfo(par);
@@ -120,10 +119,6 @@ inline GUID GetGuid(VP9MfxVideoParam  par)
         return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
             DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; // DXVA2_Intel_Encode_VP9_Profile0;
     }
-#else //PRE_SI_TARGET_PLATFORM_GEN11
-    return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-        DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; // DXVA2_Intel_Encode_VP9_Profile0;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 }
 
 mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
@@ -349,11 +344,11 @@ MFX_CHECK_STS(sts);
 
     // allocate and register surfaces for reconstructed frames
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     SetReconInfo(m_video, request.Info);
-#else //PRE_SI_TARGET_PLATFORM_GEN11
+#else
     request.Info.FourCC = MFX_FOURCC_NV12;
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 
     sts = m_reconFrames.Init(m_pmfxCore, &request);
     MFX_CHECK_STS(sts);
@@ -378,12 +373,14 @@ MFX_CHECK_STS(sts);
     //  with an assumption that in the worst case encoded frame size exceeds the uncompressed size (allowed by VP9 standard)
     mfxU32 max_buffer_size = m_video.mfx.FrameInfo.Width*m_video.mfx.FrameInfo.Height*3;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
+    if (m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= 1027)
+        || m_video.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
+#endif
+        ) {
         // doubling the size of the bitstream buffer if 10-bit format is used
         max_buffer_size *= 2;
     }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
     // increase Width and Height in the request to allocate bigger buffer if estimated maximum size exceeds recommendation of the driver
     if (static_cast<mfxU32>(request.Info.Width * request.Info.Height) < max_buffer_size)

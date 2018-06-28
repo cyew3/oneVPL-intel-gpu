@@ -226,7 +226,7 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &
     param.bitDepth = BITDEPTH_8;
     param.subsamplingX = 1;
     param.subsamplingY = 1;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     mfxExtCodingOption3 opt3 = GetExtBufferRef(video);
     if (MFX_CHROMAFORMAT_YUV444 == (opt3.TargetChromaFormatPlus1 - 1))
     {
@@ -234,7 +234,7 @@ mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &
         param.subsamplingY = 0;
     }
     param.bitDepth = (mfxU8)opt3.TargetBitDepthLuma;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //MFX_VERSION >= 1027
 
     param.colorSpace = UNKNOWN_COLOR_SPACE;
     param.colorRange = 0; // BT.709-6
@@ -317,7 +317,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         // in BRC mode driver may update LF level and mode/ref LF deltas
         frameParam.modeRefDeltaEnabled = 1;
         frameParam.modeRefDeltaUpdate = 1;
-#if defined (PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
         if (platform.CodeName >= MFX_PLATFORM_ICELAKE /*&& par.mfx.CodecProfile > MFX_PROFILE_VP9_0*/)
         {
             // driver writes corrupted uncompressed frame header when mode or ref deltas are written by MSDK
@@ -325,9 +325,9 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
             frameParam.modeRefDeltaEnabled = 0;
             frameParam.modeRefDeltaUpdate = 0;
         }
-#else //PRE_SI_TARGET_PLATFORM_GEN11
+#else //MFX_VERSION >= 1027
         platform;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //MFX_VERSION >= 1027
     }
 
     mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(par);

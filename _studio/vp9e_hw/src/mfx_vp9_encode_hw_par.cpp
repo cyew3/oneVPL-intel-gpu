@@ -177,10 +177,10 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
     SET_OR_COPY_PAR(QIndexDeltaChromaAC);
     SET_OR_COPY_PAR(QIndexDeltaChromaDC);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     SET_OR_COPY_PAR(NumTileRows);
     SET_OR_COPY_PAR(NumTileColumns);
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 }
 
 inline void SetOrCopy(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
@@ -192,11 +192,11 @@ inline void SetOrCopy(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc
 inline void SetOrCopy(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool zeroDst = true)
 {
     pSrc; pDst; zeroDst;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     SET_OR_COPY_PAR(TargetChromaFormatPlus1);
     SET_OR_COPY_PAR(TargetBitDepthLuma);
     SET_OR_COPY_PAR(TargetBitDepthChroma);
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif
 }
 
 inline void SetOrCopy(mfxExtVP9Segmentation *pDst, mfxExtVP9Segmentation const *pSrc = 0, bool zeroDst = true)
@@ -442,7 +442,6 @@ bool IsBrcModeSupported(mfxU16 brc)
         || brc == MFX_RATECONTROL_ICQ;
 }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 bool IsChromaFormatSupported(mfxU16 profile, mfxU16 chromaFormat)
 {
     switch (profile)
@@ -483,7 +482,9 @@ mfxU16 GetChromaFormat(mfxU32 fourcc)
     case MFX_FOURCC_P010:
         return MFX_CHROMAFORMAT_YUV420;
     case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
+#endif
         return MFX_CHROMAFORMAT_YUV444;
     default:
         return 0;
@@ -497,7 +498,9 @@ mfxU16 GetBitDepth(mfxU32 fourcc)
     case MFX_FOURCC_NV12:
     case MFX_FOURCC_AYUV:
         return BITDEPTH_8;
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
+#endif
     case MFX_FOURCC_P010:
         return BITDEPTH_10;
     default:
@@ -529,16 +532,15 @@ bool CheckChromaFormat(mfxU16 format, mfxU32 fourcc)
 
     return true;
 }
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
 
 bool CheckFourcc(mfxU32 fourcc, ENCODE_CAPS_VP9 const &caps)
 {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     return fourcc == MFX_FOURCC_NV12 || (fourcc == MFX_FOURCC_AYUV && caps.YUV444ReconSupport)  // 8 bit
-        || (caps.MaxEncodedBitDepth > 0 && (fourcc == MFX_FOURCC_P010 || (fourcc == MFX_FOURCC_Y410 && caps.YUV444ReconSupport))); // 10 bit
-#else //PRE_SI_TARGET_PLATFORM_GEN11
-    return fourcc == MFX_FOURCC_NV12;
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+        || (caps.MaxEncodedBitDepth > 0 && (fourcc == MFX_FOURCC_P010  // 10 bit
+#if (MFX_VERSION >= 1027)
+            || (fourcc == MFX_FOURCC_Y410 && caps.YUV444ReconSupport)
+#endif
+            )); 
 }
 
 mfxU16 MapTUToSupportedRange(mfxU16 tu)
@@ -998,7 +1000,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     {
         mfxExtCodingOption3& opt3 = GetExtBufferRef(par);
         mfxU32& fourcc         = fi.FourCC;
@@ -1043,9 +1045,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         }
 
         if (fi.Shift != 0
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
             && fourcc != MFX_FOURCC_P010
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
             )
         {
             fi.Shift = 0;
@@ -1099,7 +1099,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
             }
         }
     }
-#else //PRE_SI_TARGET_PLATFORM_GEN11
+#else // MFX_VERSION >= 1027
     if (par.mfx.CodecProfile > MFX_PROFILE_VP9_0)
     {
         par.mfx.CodecProfile = MFX_PROFILE_UNKNOWN;
@@ -1135,7 +1135,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         fi.Shift = 0;
         unsupported = true;
     }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif // MFX_VERSION >= 1027
 
     if (par.mfx.NumThread > 1)
     {
@@ -1397,7 +1397,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         changed = true;
     }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     mfxU16& rows = extPar.NumTileRows;
     mfxU16& cols = extPar.NumTileColumns;
     if (rows * cols  > 1 && caps.TileSupport == 0)
@@ -1463,7 +1463,7 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         rows = 0;
         unsupported = true;
     }
-#endif // PRE_SI_TARGET_PLATFORM_GEN11
+#endif // MFX_VERSION >= MFX_VERSION_NEXT
 
     return GetCheckStatus(changed, unsupported);
 }
@@ -1507,12 +1507,15 @@ inline mfxU32 GetDefaultBufferSize(VP9MfxVideoParam const &par)
     else
     {
         const mfxExtVP9Param& extPar = GetExtBufferRef(par);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) {
+        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 
+#if (MFX_VERSION >= 1027)
+            || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
+#endif
+            ) {
             return (extPar.FrameWidth * extPar.FrameHeight * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
         }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
-        return (extPar.FrameWidth * extPar.FrameHeight * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
+        else 
+            return (extPar.FrameWidth * extPar.FrameHeight * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
     }
 }
 
@@ -1529,7 +1532,7 @@ inline mfxU16 GetMinProfile(mfxU16 depth, mfxU16 format)
         (format > MFX_CHROMAFORMAT_YUV420);
 }
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
 void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par)
 {
     mfxFrameInfo& fi = par.mfx.FrameInfo;
@@ -1545,7 +1548,7 @@ void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par)
 
     SetDefault(par.mfx.CodecProfile, GetMinProfile(opt3.TargetBitDepthLuma, opt3.TargetChromaFormatPlus1 - 1));
 }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //MFX_VERSION >= 1027
 
 #define DEFAULT_GOP_SIZE 0xffff
 #define DEFAULT_FRAME_RATE 30
@@ -1644,14 +1647,14 @@ mfxStatus SetDefaults(
     SetDefault(fi.PicStruct, MFX_PICSTRUCT_PROGRESSIVE);
 
     // profile, chroma format, bit depth
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     SetDefailtsForProfileAndFrameInfo(par);
-#else //PRE_SI_TARGET_PLATFORM_GEN11
+#else // MFX_VERSION >= 1027
     SetDefault(par.mfx.CodecProfile, MFX_PROFILE_VP9_0);
     SetDefault(fi.ChromaFormat, MFX_CHROMAFORMAT_YUV420);
     SetDefault(fi.BitDepthLuma, 8);
     SetDefault(fi.BitDepthChroma, 8);
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif // MFX_VERSION >= 1027
 
     SetDefault(extPar.NumTileColumns, (extPar.FrameWidth + MAX_TILE_WIDTH - 1) / MAX_TILE_WIDTH);
     SetDefault(extPar.NumTileRows, 1);

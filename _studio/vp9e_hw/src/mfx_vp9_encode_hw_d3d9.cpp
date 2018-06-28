@@ -81,13 +81,13 @@ void FillSpsBuffer(
     sps.GopPicSize        = par.mfx.GopPicSize;
     sps.TargetUsage       = (UCHAR)par.mfx.TargetUsage;
     sps.RateControlMethod = MapRateControlMethodToDDI(par.mfx.RateControlMethod);
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     mfxExtCodingOption3 opt3 = GetExtBufferRef(par);
     sps.SeqFlags.fields.SourceBitDepth = MapBitDepthToDDI(par.mfx.FrameInfo.BitDepthLuma);
     sps.SeqFlags.fields.EncodedBitDepth = MapBitDepthToDDI(opt3.TargetBitDepthLuma);
     sps.SeqFlags.fields.SourceFormat = MapChromaFormatToDDI(par.mfx.FrameInfo.ChromaFormat);
     sps.SeqFlags.fields.EncodedFormat = MapChromaFormatToDDI(opt3.TargetChromaFormatPlus1 - 1);
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif // MFX_VERSION >= 1027
 
     sps.SeqFlags.fields.bResetBRC = task.m_resetBrc;
     sps.SeqFlags.fields.MBBRC = 2; // 2 is for MBBRC DISABLED
@@ -495,7 +495,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
     pCore->QueryPlatform(pCore->pthis, &platform);
     caps;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
     if (platform.CodeName >= MFX_PLATFORM_ICELAKE)
     {
         // for now driver supports only 2 pipes for LP and HP configurations, but for HP it reports 4 (actual
@@ -503,7 +503,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
         // TODO: remove this when actual support of 4 pipes is implemented in the driver for HP configuration
         caps.NumScalablePipesMinus1 = 1;
     }
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //MFX_VERSION >= 1027
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     if (platform.CodeName >= MFX_PLATFORM_TIGERLAKE)
