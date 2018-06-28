@@ -20,10 +20,8 @@
 #include "umc_hevc_ddi.h"
 #include "umc_h265_va_packer_dxva.h"
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    #if DDI_VERSION < 943
-        #error "Gen11 should be compiled with DDI_VERSION >= 0.943"
-    #endif
+#if DDI_VERSION < 943
+    #error "Gen11 should be compiled with DDI_VERSION >= 0.943"
 #endif
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
@@ -479,14 +477,6 @@ namespace UMC_HEVC_DECODER
         if (!dpb)
             throw h265_exception(UMC_ERR_FAILED);
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        {
-            DXVA_Intel_PicParams_HEVC* pp = 0;
-            GetPicParamsBuffer(m_va, &pp, sizeof(DXVA_Intel_PicParams_HEVC));
-            PackPicHeader(pCurrentFrame, pSliceInfo, dpb, pp);
-            pp->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
-        }
-#else
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         if (m_va->m_Profile & VA_PROFILE_SCC)
         {
@@ -511,7 +501,6 @@ namespace UMC_HEVC_DECODER
             PackPicHeader(pCurrentFrame, pSliceInfo, dpb, pp);
             pp->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
         }
-#endif
     }
 
     inline
@@ -778,13 +767,6 @@ namespace UMC_HEVC_DECODER
             UMCVACompBuffer *compBuf;
             DXVA_Intel_PicParams_HEVC const* pp = (DXVA_Intel_PicParams_HEVC*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBuf);
 
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
-            {
-                DXVA_Intel_Slice_HEVC_Long* header = 0;
-                GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
-                PackSliceHeader(pSlice, pp, prefix_size, header, isLastSlice);
-            }
-#else
             if (   (m_va->m_Profile & VA_PROFILE_REXT)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
                 || (m_va->m_Profile & VA_PROFILE_SCC)
@@ -801,7 +783,7 @@ namespace UMC_HEVC_DECODER
                 GetSliceVABuffers(m_va, &header, sizeof(DXVA_Intel_Slice_HEVC_Long), &pSliceData, rawDataSize + prefix_size, isLastSlice ? 128 : 0);
                 PackSliceHeader(pSlice, pp, prefix_size, header, isLastSlice);
             }
-#endif
+
         }
 
         // copy slice data to slice data buffer

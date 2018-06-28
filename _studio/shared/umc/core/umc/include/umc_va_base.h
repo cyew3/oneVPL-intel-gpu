@@ -144,9 +144,7 @@ enum VideoAccelerationProfile
 
     //profile amendments
     VA_PROFILE_10               = 0x10000,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     VA_PROFILE_REXT             = 0x20000,
-#endif
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VA_PROFILE_12               = 0x40000,
     VA_PROFILE_SCC              = 0x80000,
@@ -183,12 +181,10 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
 
     H265_10_VLD                 = VA_H265 | VA_VLD | VA_PROFILE_10,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     H265_VLD_422                = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_422,
     H265_VLD_444                = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_444,
     H265_10_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_422,
     H265_10_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_444,
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     H265_12_VLD_420             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12,
@@ -202,12 +198,10 @@ enum VideoAccelerationProfile
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
 
     VP9_10_VLD                  = VA_VP9 | VA_VLD | VA_PROFILE_10,
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     VP9_VLD_422                 = VA_VP9 | VA_VLD | VA_PROFILE_422,
     VP9_VLD_444                 = VA_VP9 | VA_VLD | VA_PROFILE_444,
     VP9_10_VLD_422              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_422,
     VP9_10_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_10 | VA_PROFILE_444,
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     VP9_12_VLD_420              = VA_VP9 | VA_VLD | VA_PROFILE_12,
     VP9_12_VLD_444              = VA_VP9 | VA_VLD | VA_PROFILE_12 | VA_PROFILE_444,

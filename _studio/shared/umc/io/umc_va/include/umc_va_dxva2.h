@@ -62,7 +62,6 @@ DEFINE_GUID(DXVA_Intel_ModeVP9_Profile0_VLD,
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile2_10bit_VLD,
 0x80a3a7bd, 0x89d8, 0x4497, 0xa2, 0xb8, 0x21, 0x26, 0xaf, 0x7e, 0x6e, 0xb8);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 // {68A21C7B-D58F-4e74-9993-E4B8172B19A0}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile1_YUV444_VLD,
 0x68a21c7b, 0xd58f, 0x4e74, 0x99, 0x93, 0xe4, 0xb8, 0x17, 0x2b, 0x19, 0xa0);
@@ -76,7 +75,6 @@ DEFINE_GUID(DXVA_Intel_ModeAV1_VLD,
 // {1D5C4D76-B55A-4430-904C-3383A7AE3B16}
 DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD,
 0x1d5c4d76, 0xb55a, 0x4430, 0x90, 0x4c, 0x33, 0x83, 0xa7, 0xae, 0x3b, 0x16);
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
 DEFINE_GUID_(sDXVA_Intel_ModeH264_VLD_MVC, 0xe296bf50, 0x8808, 0x4ff8, 0x92, 0xd4, 0xf1, 0xee, 0x79, 0x9f, 0xc3, 0x3c);
 
@@ -94,7 +92,6 @@ DEFINE_GUID_(sDXVA_ModeH264_VLD_Stereo_Progressive_NoFGT,         0xd79be8da, 0x
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_MainProfile,  0x8c56eb1e, 0x2b47, 0x466f, 0x8d, 0x33, 0x7d, 0xbc, 0xd6, 0x3f, 0x3d, 0xf2);
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main10Profile, 0x75fc75f7, 0xc589, 0x4a07, 0xa2, 0x5b, 0x72, 0xe0, 0x3b, 0x03, 0x83, 0xb3);
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
 // {E484DCB8-CAC9-4859-99F5-5C0D45069089}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_10Profile,
     0xe484dcb8, 0xcac9, 0x4859, 0x99, 0xf5, 0x5c, 0xd, 0x45, 0x6, 0x90, 0x89);
@@ -102,7 +99,6 @@ DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main422_10Profile,
 // {6A6A81BA-912A-485D-B57F-CCD2D37B8D94}
 DEFINE_GUID(DXVA_Intel_ModeHEVC_VLD_Main444_10Profile,
     0x6a6a81ba, 0x912a, 0x485d, 0xb5, 0x7f, 0xcc, 0xd2, 0xd3, 0x7b, 0x8d, 0x94);
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
 // {8FF8A3AA-C456-4132-B6EF-69D9DD72571D}
@@ -316,12 +312,10 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
     case VP8_VLD:
     case VP9_VLD:
     case VP9_10_VLD:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case VP9_VLD_422:
     case VP9_VLD_444:
     case VP9_10_VLD_422:
     case VP9_10_VLD_444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case VP9_12_VLD_420:
     case VP9_12_VLD_444:
@@ -359,26 +353,23 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
 
     case H265_VLD:
     case H265_10_VLD:
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     case H265_VLD    | VA_PROFILE_REXT:
     case H265_10_VLD | VA_PROFILE_REXT:
     case H265_VLD_422:
     case H265_VLD_444:
     case H265_10_VLD_422:
     case H265_10_VLD_444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case H265_12_VLD_420:
     case H265_12_VLD_422:
     case H265_12_VLD_444:
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
+#endif //PRE_SI_TARGET_PLATFORM_GEN12
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case H265_VLD_SCC:
     case H265_10_VLD_SCC:
     case H265_VLD_444_SCC:
     case H265_10_VLD_444_SCC:
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         if (   (profile_flags & VA_PROFILE_REXT)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
             || (profile_flags & VA_PROFILE_SCC)
@@ -386,7 +377,6 @@ bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
             )
             res = 3 == config->ConfigBitstreamRaw;
         else
-#endif
         if (profile_flags & VA_LONG_SLICE_MODE)
             res = (2 == config->ConfigBitstreamRaw || 3 == config->ConfigBitstreamRaw);
         else if (profile_flags & VA_SHORT_SLICE_MODE)

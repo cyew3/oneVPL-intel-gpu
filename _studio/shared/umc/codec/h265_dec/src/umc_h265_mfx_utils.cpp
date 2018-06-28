@@ -60,20 +60,19 @@ mfxU16 MatchProfile(mfxU32 fourcc)
 
         case MFX_FOURCC_P010: return MFX_PROFILE_HEVC_MAIN10;
 
-        case MFX_FOURCC_NV16: return MFX_PROFILE_HEVC_REXT;
-
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+        case MFX_FOURCC_NV16:
         case MFX_FOURCC_YUY2:
         case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y210:
         case MFX_FOURCC_Y410:
+#endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
         case MFX_FOURCC_P016:
         case MFX_FOURCC_Y216:
         case MFX_FOURCC_Y416:
 #endif
             return MFX_PROFILE_HEVC_REXT;
-#endif
     }
 
     return MFX_PROFILE_UNKNOWN;
@@ -210,11 +209,7 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
 #else
     if (type < MFX_HW_SCL)
         return MFX_PROFILE_HEVC_MAIN;
-    else
-#if !defined(PRE_SI_TARGET_PLATFORM_GEN11)
-        return MFX_PROFILE_HEVC_MAIN10;
-#else
-    if (type < MFX_HW_ICL)
+    else if (type < MFX_HW_ICL)
         return MFX_PROFILE_HEVC_MAIN10;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     else if (type < MFX_HW_TGL_LP)
@@ -225,7 +220,6 @@ mfxU16 QueryMaxProfile(eMFXHWType type)
     else
         return MFX_PROFILE_HEVC_REXT;
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #endif //MFX_VA
 }
 
@@ -238,8 +232,6 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
         !(profile >  MFX_PROFILE_HEVC_REXT) ||
           profile == MFX_PROFILE_HEVC_SCC
     );
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
 #else
     VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
 #endif
@@ -259,7 +251,7 @@ bool CheckChromaFormat(mfxU16 profile, mfxU16 format)
 
 #if !defined(MFX_VA)
         { MFX_PROFILE_HEVC_REXT,   { MFX_CHROMAFORMAT_YUV400, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422,                      -1 } },
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#else
         { MFX_PROFILE_HEVC_REXT,   {                      -1, MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV422, MFX_CHROMAFORMAT_YUV444 } },
 #endif
 
@@ -288,8 +280,6 @@ bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
         !(profile >  MFX_PROFILE_HEVC_REXT) ||
           profile == MFX_PROFILE_HEVC_SCC
     );
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
-    VM_ASSERT(!(profile > MFX_PROFILE_HEVC_REXT));
 #else
     VM_ASSERT(!(profile > MFX_PROFILE_HEVC_MAINSP));
 #endif
@@ -306,7 +296,7 @@ bool CheckBitDepth(mfxU16 profile, mfxU16 bit_depth)
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         { MFX_PROFILE_HEVC_REXT,   8, 12 }, //(12b max for Gen12)
         { MFX_PROFILE_HEVC_SCC,    8, 10 }, //(10b max for Gen12)
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11) || !defined(MFX_VA)
+#else
         { MFX_PROFILE_HEVC_REXT,   8, 10 }, //(10b max for Gen11 & SW mode)
 #endif
     };
@@ -362,20 +352,14 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, MFX_FOURCC_Y216, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, MFX_FOURCC_Y416, 0 }  //444
-#elif defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#else //Gen11-
         {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210,               0, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410,               0, 0 }  //444
-#else //Gen9-
-        {               0,               0,               0, 0 }, //400
-        { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
-        {               0,               0,               0, 0 }, //422
-        {               0,               0,               0, 0 }, //444
 #endif
     };
 
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
     VM_ASSERT(
         (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
          frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
@@ -383,14 +367,6 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
          frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV444) &&
         "Unsupported chroma format, should be validated before"
     );
-#else
-    VM_ASSERT(
-        (frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV400 ||
-         frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV420 ||
-         frameInfo->ChromaFormat == MFX_CHROMAFORMAT_YUV422) &&
-        "Unsupported chroma format, should be validated before"
-    );
-#endif
 
     //align luma depth up to 2 (8-10-12 ...)
     bit_depth = (bit_depth + 2 - 1) & ~(2 - 1);
@@ -878,10 +854,10 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
             // mfxFrameInfo
             if (in->mfx.FrameInfo.FourCC == MFX_FOURCC_NV12 ||
                 in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
-                in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2
-                || in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_YUY2 ||
+                in->mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV
+#if (MFX_VERSION >= 1027)
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
                 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
 #endif
@@ -968,7 +944,7 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
 
         out->mfx.FrameInfo.Shift = in->mfx.FrameInfo.Shift;
         if (   in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
             || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
@@ -1230,9 +1206,9 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_NV16 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_P010 &&
         in->mfx.FrameInfo.FourCC != MFX_FOURCC_P210
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_YUY2
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_AYUV
+#if (MFX_VERSION >= 1027)
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y210
         && in->mfx.FrameInfo.FourCC != MFX_FOURCC_Y410
 #endif
@@ -1263,7 +1239,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
         return false;
 
     if (   in->mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || in->mfx.FrameInfo.FourCC == MFX_FOURCC_P210
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= 1027)
         || in->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
 #endif
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
@@ -1298,11 +1274,8 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
 
     if (in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400 &&
         in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 &&
-        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422
-#ifdef PRE_SI_TARGET_PLATFORM_GEN11
-        && in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444
-#endif
-        )
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422 &&
+        in->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV444 )
         return false;
 
     if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) && !(in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))

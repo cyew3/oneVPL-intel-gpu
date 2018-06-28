@@ -558,12 +558,10 @@ static const GuidProfile guidProfiles[] =
     { VP9_VLD,                                                                  DXVA_Intel_ModeVP9_Profile0_VLD },
     { VP9_VLD | VA_PROFILE_10,                                                  DXVA_Intel_ModeVP9_Profile2_10bit_VLD },
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     //{ VP9_VLD_422,                                                              DXVA_Intel_ModeVP9_Profile1_YUV422_VLD },
     { VP9_VLD_444,                                                              DXVA_Intel_ModeVP9_Profile1_YUV444_VLD },
     //{ VP9_10_VLD_422,                                                           DXVA_Intel_ModeVP9_Profile3_YUV422_10bit_VLD },
     { VP9_10_VLD_444,                                                           DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD },
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     { VP9_12_VLD_420,                                                           DXVA_Intel_ModeVP9_Profile2_YUV420_12bit_VLD },
@@ -591,14 +589,12 @@ static const GuidProfile guidProfiles[] =
     { H265_VLD        | VA_PROFILE_10,                                          DXVA_ModeHEVC_VLD_Main10  }, // MS
     { H265_VLD        | VA_PROFILE_10 | VA_LONG_SLICE_MODE,                     DXVA_Intel_ModeHEVC_VLD_Main10Profile },
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
     { H265_VLD        | VA_PROFILE_REXT | VA_LONG_SLICE_MODE,                   DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_10_VLD     | VA_PROFILE_REXT | VA_LONG_SLICE_MODE,                   DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_VLD_422    | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_VLD_444    | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
     { H265_10_VLD_422 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main422_10Profile },
     { H265_10_VLD_444 | VA_LONG_SLICE_MODE,                                     DXVA_Intel_ModeHEVC_VLD_Main444_10Profile },
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     { H265_12_VLD_420     | VA_LONG_SLICE_MODE,                                 DXVA_Intel_ModeHEVC_VLD_Main12Profile },
@@ -660,12 +656,10 @@ bool GuidProfile::IsIntelCustomGUID(const GUID & guid)
         guid == sDXVA_Intel_ModeH264_VLD_MVC ||
         guid == DXVA_Intel_ModeHEVC_VLD_MainProfile       || guid == DXVA_Intel_ModeHEVC_VLD_Main10Profile ||
         guid == DXVA_Intel_ModeVP9_Profile0_VLD           || guid == DXVA_Intel_ModeVP9_Profile2_10bit_VLD
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
         || guid == DXVA_Intel_ModeHEVC_VLD_Main422_10Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_Main444_10Profile
         || guid == DXVA_Intel_ModeVP9_Profile1_YUV444_VLD
         || guid == DXVA_Intel_ModeVP9_Profile3_YUV444_10bit_VLD
-#endif //PRE_SI_TARGET_PLATFORM_GEN11
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
         || guid == DXVA_Intel_ModeHEVC_VLD_Main12Profile
         || guid == DXVA_Intel_ModeHEVC_VLD_Main422_12Profile
