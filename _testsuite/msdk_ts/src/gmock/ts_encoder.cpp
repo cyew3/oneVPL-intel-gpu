@@ -461,7 +461,7 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
     case MFX_CODEC_HEVC:
 
         mfxU16 chromaFormat;
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
         chromaFormat = Clip3(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, CO3->TargetChromaFormatPlus1 - 1);
         if (g_tsHWtype < MFX_HW_ICL)
             chromaFormat = MFX_CHROMAFORMAT_YUV420;
@@ -478,7 +478,7 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
             if (g_tsHWtype < MFX_HW_KBL)
                 break;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
             if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || CO3->TargetBitDepthLuma == 10)
             {
                 guid = DXVA2_Intel_Encode_HEVC_Main_10[chromaFormat];
@@ -502,7 +502,7 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
         {
             guid = DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_8[chromaFormat]; /// Default 8 bit
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
             if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || CO3->TargetBitDepthLuma == 10)
             {
                 guid = DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main_10[chromaFormat];
@@ -522,7 +522,7 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
             if (g_tsHWtype < MFX_HW_KBL)
                 break;
 
-#if defined(PRE_SI_TARGET_PLATFORM_GEN11)
+#if (MFX_VERSION >= 1027)
             if (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || CO3->TargetBitDepthLuma == 10)
             {
                 guid = DXVA2_Intel_LowpowerEncode_HEVC_Main_10[chromaFormat];
