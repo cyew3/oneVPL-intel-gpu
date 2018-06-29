@@ -197,7 +197,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
             {
                 return MFX_WRN_PARTIAL_ACCELERATION;
             }
-            else if (guid == DXVA2_Intel_Encode_MPEG2 && config.ConfigSpatialResid8 != INTEL_MPEG2_ENCODE_DDI_VERSION)
+            else if (guid == DXVA2_Intel_Encode_MPEG2 && config.ConfigSpatialResid8 != MPEG2_D3D9_DDI_VERSION)
             {
                 return  MFX_WRN_PARTIAL_ACCELERATION;
             }
