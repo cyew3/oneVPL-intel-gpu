@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -148,24 +148,26 @@ using namespace UMC;
         PTR = 0;                        \
     }
 
-#define H264ENC_CALL_NEW_ARR(STS, TYPE, PTR, ITEMS) {   \
-    STS = UMC::UMC_ERR_ALLOC;                           \
-    size_t* _alloc_ptr = (size_t *)H264_Malloc(       \
-        ITEMS * sizeof(H264ENC_MAKE_NAME(TYPE)) + sizeof(size_t));         \
-    PTR = (H264ENC_MAKE_NAME(TYPE) *)(_alloc_ptr + 1);                               \
-    _alloc_ptr[0] = (size_t)ITEMS;                      \
-    if (PTR) {                                          \
-        for (size_t ii = 0; ii < (size_t)ITEMS; ii++) {    \
-            STS = H264ENC_MAKE_NAME(TYPE##_Create)((H264ENC_MAKE_NAME(TYPE) *)PTR + ii);       \
-            if (STS != UMC::UMC_OK) {                   \
-                for (ii++; ii > 0; ii--)                   \
-                    H264ENC_MAKE_NAME(TYPE##_Destroy)((H264ENC_MAKE_NAME(TYPE) *)PTR + ii - 1);    \
-                H264_Free(_alloc_ptr);                   \
-                PTR = 0;                                \
-                break;                                  \
-            }                                           \
-        }                                               \
-    }                                                   \
+#define H264ENC_CALL_NEW_ARR(STS, TYPE, PTR, ITEMS) {                                               \
+    STS = UMC::UMC_ERR_ALLOC;                                                                       \
+    size_t* _alloc_ptr = (size_t *)H264_Malloc(                                                     \
+        ITEMS * sizeof(H264ENC_MAKE_NAME(TYPE)) + sizeof(size_t));                                  \
+    if (_alloc_ptr) {                                                                               \
+        PTR = (H264ENC_MAKE_NAME(TYPE) *)(_alloc_ptr + 1);                                          \
+        _alloc_ptr[0] = (size_t)ITEMS;                                                              \
+        if (PTR) {                                                                                  \
+            for (size_t ii = 0; ii < (size_t)ITEMS; ii++) {                                         \
+                STS = H264ENC_MAKE_NAME(TYPE##_Create)((H264ENC_MAKE_NAME(TYPE) *)PTR + ii);        \
+                if (STS != UMC::UMC_OK) {                                                           \
+                    for (ii++; ii > 0; ii--)                                                        \
+                        H264ENC_MAKE_NAME(TYPE##_Destroy)((H264ENC_MAKE_NAME(TYPE) *)PTR + ii - 1); \
+                    H264_Free(_alloc_ptr);                                                          \
+                    PTR = 0;                                                                        \
+                    break;                                                                          \
+                }                                                                                   \
+            }                                                                                       \
+        }                                                                                           \
+    }                                                                                               \
 }
 
 #define H264ENC_CALL_DELETE_ARR(TYPE, PTR) {        \
