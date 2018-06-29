@@ -192,7 +192,8 @@ mfxStatus SetSkipFrame(
             MFXCoreInterface * core,
             GUID       guid,
             mfxU32     width,
-            mfxU32     height);
+            mfxU32     height,
+            MfxVideoParam const & par);
 
         virtual
         mfxStatus CreateAccelerationService(
@@ -240,10 +241,10 @@ mfxStatus SetSkipFrame(
         }
 
         virtual
-        VAEntrypoint GetVAEntryPoint()
+        VAEntrypoint GetVAEntryPoint(MfxVideoParam const & par)
         {
 #if (MFX_VERSION >= 1025)
-            return (IsOn(m_videoParam.mfx.LowPower) && m_videoParam.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE) ?
+            return (IsOn(par.mfx.LowPower) && par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE) ?
                     VAEntrypointEncSliceLP : VAEntrypointEncSlice;
 #else
             return VAEntrypointEncSlice;

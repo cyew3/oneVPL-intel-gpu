@@ -56,7 +56,8 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     MFXCoreInterface * core,
     GUID        guid,
     mfxU32      width,
-    mfxU32      height)
+    mfxU32      height,
+    MfxVideoParam const &)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
     mfxStatus sts = MFX_ERR_NONE;

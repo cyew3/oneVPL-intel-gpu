@@ -37,7 +37,8 @@ public:
         MFXCoreInterface * core,
         GUID        guid,
         mfxU32      width,
-        mfxU32      height);
+        mfxU32      height,
+        MfxVideoParam const & par);
 
     virtual
     mfxStatus CreateAccelerationService(

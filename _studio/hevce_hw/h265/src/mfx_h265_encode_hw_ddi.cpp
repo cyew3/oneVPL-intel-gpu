@@ -191,14 +191,14 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
     return sts;
 }
 
-mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps)
+mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par)
 {
     std::auto_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH265Encoder(core));
     MFX_CHECK(ddi.get(), MFX_ERR_UNSUPPORTED);
 
-    mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(core, guid, 1920, 1088);
+    mfxStatus sts = ddi.get()->CreateAuxilliaryDevice(core, guid, 1920, 1088, par);
     MFX_CHECK_STS(sts);
 
     sts = ddi.get()->QueryEncodeCaps(caps);

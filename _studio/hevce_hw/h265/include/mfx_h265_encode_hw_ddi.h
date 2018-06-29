@@ -178,7 +178,7 @@ typedef enum tagENCODER_TYPE
 } ENCODER_TYPE;
 
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE type = ENCODER_DEFAULT);
-mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps);
+mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par);
 mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
@@ -201,7 +201,8 @@ public:
                     MFXCoreInterface * core,
                     GUID        guid,
                     mfxU32      width,
-                    mfxU32      height) = 0;
+                    mfxU32      height,
+                    MfxVideoParam const & par) = 0;
 
     virtual
     mfxStatus CreateAccelerationService(

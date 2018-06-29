@@ -68,7 +68,7 @@ namespace MfxHwH265FeiEncode
 
         virtual mfxStatus PostQueryExtraStage() override;
 
-        virtual VAEntrypoint GetVAEntryPoint() override
+        virtual VAEntrypoint GetVAEntryPoint(MfxHwH265Encode::MfxVideoParam const &) override
         {
             return VAEntrypointFEI;
         }

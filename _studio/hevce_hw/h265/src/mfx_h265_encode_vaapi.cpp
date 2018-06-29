@@ -801,7 +801,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     MFXCoreInterface * core,
     GUID /*guid*/,
     mfxU32 width,
-    mfxU32 height)
+    mfxU32 height,
+    MfxVideoParam const & par)
 {
     MFX_CHECK_WITH_ASSERT(core != 0, MFX_ERR_NULL_PTR);
     m_core = core;
@@ -837,8 +838,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
 
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
-                          ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile),
-                          GetVAEntryPoint(),
+                          ConvertProfileTypeMFX2VAAPI(par.mfx.CodecProfile),
+                          GetVAEntryPoint(par),
                           Begin(attrs), attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -863,7 +864,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     if (p.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
-        if(IsOn(m_videoParam.mfx.LowPower)) //CNL + VDENC => LCUSizeSupported = 4
+        if(IsOn(par.mfx.LowPower)) //CNL + VDENC => LCUSizeSupported = 4
         {
             m_caps.LCUSizeSupported = (64 >> 4);
         }
@@ -961,7 +962,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
 
-    VAEntrypoint entryPoint = GetVAEntryPoint();
+    VAEntrypoint entryPoint = GetVAEntryPoint(par);
     bool bEncodeEnable = false;
     for( entrypointsIndx = 0; entrypointsIndx < numEntrypoints; entrypointsIndx++ )
     {

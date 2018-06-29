@@ -61,7 +61,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     MFXCoreInterface * core,
     GUID        guid,
     mfxU32      width,
-    mfxU32      height)
+    mfxU32      height,
+    MfxVideoParam const &)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
     m_core = core;
@@ -234,7 +235,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
         m_widi = par.WiDi;
         m_pavp = (par.Protected == MFX_PROTECTION_PAVP || par.Protected == MFX_PROTECTION_GPUCP_PAVP);
 
-        mfxStatus sts = CreateAuxilliaryDevice(m_core, m_guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height);
+        mfxStatus sts = CreateAuxilliaryDevice(m_core, m_guid, par.mfx.FrameInfo.Width, par.mfx.FrameInfo.Height, par);
         MFX_CHECK_STS(sts);
 
         if (m_pavp)
