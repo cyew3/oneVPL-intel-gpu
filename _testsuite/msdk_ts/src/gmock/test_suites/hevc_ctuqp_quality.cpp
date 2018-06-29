@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2016-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2016-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -49,7 +49,6 @@ namespace hevce_ctuqp_quality
 
 
 #define DEBUG_STREAM 0//"debug.h265"
-#define EXPECTED_BITRATE_DIFFERENCE 1.0 //Percent
 class TestSuite : public tsVideoEncoder, public tsSurfaceProcessor, public tsBitstreamProcessor, public tsParserHEVCAU
 {
 public:
@@ -428,6 +427,10 @@ int TestSuite::RunTest(unsigned int id)
     mfxF64 diff = (mfxF64(abs(bitrate_ctu - bitrate_frame)) / mfxF64(std::max(bitrate_ctu, bitrate_frame) + 1)) * 100; //Percents
     g_tsLog << "First stream Rate = " << bitrate_frame << "\n";
     g_tsLog << "Second stream Rate = " << bitrate_ctu << "\n";
+    g_tsLog << "Diff = " << diff << "\n";
+
+    mfxF64 EXPECTED_BITRATE_DIFFERENCE = qp_value != 51 ? 1.0 : 1.5;
+
     if(diff > EXPECTED_BITRATE_DIFFERENCE)
     {
         g_tsLog << "ERROR: Bitrate difference more threshold\n";
