@@ -276,6 +276,7 @@ typedef struct {
     { 0x5A41, MFX_HW_CNL, MFX_GT2 },//ICNL_3x8_ULX_DEVICE_F0_ID
     { 0x5A49, MFX_HW_CNL, MFX_GT2 },//ICNL_2x8_ULX_DEVICE_F0_ID
     { 0x5A5C, MFX_HW_CNL, MFX_GT2 },//ICNL_4x8_HALO_DEVICE_F0_ID
+#endif
 
     /* ICL */
     { 0x8A50, MFX_HW_ICL, MFX_GT2 },//iICLLPD_GT2_MOB
@@ -287,7 +288,6 @@ typedef struct {
     { 0x8A5B, MFX_HW_ICL, MFX_GT2 },//iICLLPD_GT2
     { 0x8A71, MFX_HW_ICL, MFX_GT1 },//iICLLPD_GT0_P5
     { 0x8A70, MFX_HW_ICL, MFX_GT1 } //iICLD_GT0
-#endif
 };
 
 #define TMP_DEBUG
