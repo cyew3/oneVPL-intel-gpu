@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -68,23 +68,23 @@ void LogFile::WriteLog(const std::string &log)
     if(!_file.is_open())
         _file.open(_file_path.c_str(), std::ios_base::app);
 
+    std::stringstream str_stream;
+    str_stream << log;
+    std::string spase = "";
+    for(;;) {
+        spase = "";
+        std::string logstr;
+        getline(str_stream, logstr);
+        if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
+        std::stringstream pre_out;
+        if(logstr.length() > 2) pre_out << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
+        else pre_out << logstr << "\n";
+        _file << pre_out.str();
+        if(str_stream.eof())
+            break;
+    }
+    _file.flush();
 
-        std::stringstream str_stream;
-        str_stream << log;
-        std::string spase = "";
-        for(;;) {
-            spase = "";
-            std::string logstr;
-            getline(str_stream, logstr);
-            if(log.find("function:") == std::string::npos && log.find(">>") == std::string::npos) spase = "    ";
-            std::stringstream pre_out;
-            if(logstr.length() > 2) pre_out << ThreadInfo::GetThreadId() << " " << Timer::GetTimeStamp() << " " << spase << logstr << std::endl;
-            else pre_out << logstr << "\n";
-            _file << pre_out.str();
-            if(str_stream.eof())
-                break;
-        }
-        _file.flush();
     write_mutex.unlock();
 }
 

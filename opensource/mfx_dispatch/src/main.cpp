@@ -582,12 +582,12 @@ mfxStatus MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 
 {
     mfxStatus sts = MFX_ERR_NONE;
     bool ErrFlag = false;
-    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&pHandle)
+    if (!session)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!uid)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_Load: uid=NULL\n")));
@@ -662,12 +662,12 @@ mfxStatus MFXVideoUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 
 
 mfxStatus MFXVideoUSER_LoadByPath(mfxSession session, const mfxPluginUID *uid, mfxU32 version, const mfxChar *path, mfxU32 len)
 {
-    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&pHandle)
+    if (!session)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_LoadByPath: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!uid)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_LoadByPath: uid=NULL\n")));
@@ -714,12 +714,12 @@ mfxStatus MFXVideoUSER_LoadByPath(mfxSession session, const mfxPluginUID *uid, m
 
 mfxStatus MFXVideoUSER_UnLoad(mfxSession session, const mfxPluginUID *uid)
 {
-    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&rHandle)
+    if (!session)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
+    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
     if (!uid)
     {
         DISPATCHER_LOG_ERROR((("MFXVideoUSER_UnLoad: uid=NULL\n")));
@@ -740,12 +740,12 @@ mfxStatus MFXVideoUSER_UnLoad(mfxSession session, const mfxPluginUID *uid)
 
 mfxStatus MFXAudioUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 version)
 {
-    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&pHandle)
+    if (!session)
     {
         DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
+    MFX_DISP_HANDLE &pHandle = *(MFX_DISP_HANDLE *) session;
     if (!uid)
     {
         DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: uid=NULL\n")));
@@ -802,12 +802,12 @@ mfxStatus MFXAudioUSER_Load(mfxSession session, const mfxPluginUID *uid, mfxU32 
 
 mfxStatus MFXAudioUSER_UnLoad(mfxSession session, const mfxPluginUID *uid)
 {
-    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
-    if (!&rHandle)
+    if (!session)
     {
         DISPATCHER_LOG_ERROR((("MFXAudioUSER_UnLoad: session=NULL\n")));
         return MFX_ERR_NULL_PTR;
     }
+    MFX_DISP_HANDLE &rHandle = *(MFX_DISP_HANDLE *) session;
     if (!uid)
     {
         DISPATCHER_LOG_ERROR((("MFXAudioUSER_Load: uid=NULL\n")));
