@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -1675,8 +1675,8 @@ Status H264ENC_MAKE_NAME_BS(PutSEI_BufferingPeriod)(
             H264ENC_MAKE_NAME_BS(PutBits)(state, buf_period_data.vcl_initial_cpb_removal_delay_offset[SchedSelIdx], initial_cpb_removal_delay_length_minus1 + 1);
         }
 
-        if (H264BsBase_GetBsOffset(&(bs->m_base)) & 0x07)
-            H264BsBase_WriteTrailingBits(&bs->m_base);
+    if (H264BsBase_GetBsOffset(&(bs->m_base)) & 0x07)
+        H264BsBase_WriteTrailingBits(&bs->m_base);
 
     return UMC_OK;
 }

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -318,24 +318,25 @@ void mp3dec_mc_audio_data_l2(MP3Dec_com *state)
       }
     }
 
-    for (i = sblimit; i < 32; i++)
-      for (j = ch_start; j < ch_end; j++)
-        allocation[j][i] = 0;
+  for (i = sblimit; i < 32; i++)
+    for (j = ch_start; j < ch_end; j++)
+      allocation[j][i] = 0;
 
-    for (i = 0; i < sblimit; i++)  {
-      for (j = ch_start; j < ch_end; j++)
-        if (allocation[j][i]) {
-          GET_BITS(m_data, scfsi[j][i], 2, Ipp16s);
-          nbits += 2;
-        } else
-          scfsi[j][i] = 4;
-    }
-
-    for (i = sblimit; i < 32; i++)
-      for (j = ch_start; j < ch_end; j++)
+  for (i = 0; i < sblimit; i++)  {
+    for (j = ch_start; j < ch_end; j++)
+      if (allocation[j][i]) {
+        GET_BITS(m_data, scfsi[j][i], 2, Ipp16s);
+        nbits += 2;
+      } else
         scfsi[j][i] = 4;
+  }
 
-    state->crc_nbits += nbits;
+  for (i = sblimit; i < 32; i++)
+    for (j = ch_start; j < ch_end; j++)
+      scfsi[j][i] = 4;
+
+  state->crc_nbits += nbits;
+
 }
 
 void mp3dec_mc_decode_scale_l2(MP3Dec_com *state)
@@ -356,6 +357,7 @@ void mp3dec_mc_decode_scale_l2(MP3Dec_com *state)
       ippsSet_32s(127, &state->mc_pred_coeff[0][0][0], 48*3);
       for (i = 0; i < 8; i++)
         if (state->mc_prediction[i] == 1)
+        {
           for (px = 0; px < mp3_mc_pred_coef_table[state->mc_pred_mode][state->mc_dyn_cross_mode[i]]; px++)
             if (state->mc_predsi[i][px] != 0) {
               GET_BITS(m_data, state->mc_delay_comp[i][px], 3, Ipp32s);
@@ -367,6 +369,7 @@ void mp3dec_mc_decode_scale_l2(MP3Dec_com *state)
               state->mc_pred_coeff[i][px][0] = 127;
               state->mc_delay_comp[i][px] = 0;
             }
+        }
     }
   }
 

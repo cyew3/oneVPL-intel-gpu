@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -960,7 +960,7 @@ void mp3dec_mc_dematricing(MP3Dec *state)
             (*smpl_rw)[0][j][k] = (*smpl_rw)[0][j][k] - (*smpl_rw)[2][j][k] - (*smpl_rw)[3][j][k];
             (*smpl_rw)[1][j][k] = (*smpl_rw)[1][j][k] - (*smpl_rw)[2][j][k] - (*smpl_rw)[3][j][k];
           }
-          break;
+        break;
 
       case 1:
         if (state_com->mc_header.dematrix_procedure == 2)
@@ -977,7 +977,7 @@ void mp3dec_mc_dematricing(MP3Dec *state)
             (*smpl_rw)[1][j][k] = (*smpl_rw)[1][j][k] - (*smpl_rw)[2][j][k] - (*smpl_rw)[3][j][k];
             (*smpl_rw)[0][j][k] = tmp_sample;
           }
-          break;
+        break;
 
       case 2:
         for (j=0; j<36; j++) {

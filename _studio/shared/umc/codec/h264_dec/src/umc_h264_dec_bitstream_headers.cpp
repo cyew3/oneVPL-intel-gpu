@@ -2072,22 +2072,16 @@ Status H264HeadersBitstream::GetSliceHeaderPart3(
                     reordering_of_pic_nums_idc = 0;
                     for (;;)
                     {
-                    reordering_of_pic_nums_idc = GetVLCElement(false);
-                      if (reordering_of_pic_nums_idc > 5)
-                        return UMC_ERR_INVALID_STREAM;
-
+                        reordering_of_pic_nums_idc = GetVLCElement(false);
+                        if (reordering_of_pic_nums_idc > 5)
+                            return UMC_ERR_INVALID_STREAM;
                         if (reordering_of_pic_nums_idc == 3)
                             break;
-
                         if (reorder_idx >= MAX_NUM_REF_FRAMES)
-                        {
                             return UMC_ERR_INVALID_STREAM;
-                        }
-
                         pReorderInfo_L1->reordering_of_pic_nums_idc[reorder_idx] =
                                                     (Ipp8u)reordering_of_pic_nums_idc;
-                        pReorderInfo_L1->reorder_value[reorder_idx]  =
-                                                            GetVLCElement(false);
+                        pReorderInfo_L1->reorder_value[reorder_idx] = GetVLCElement(false);
                         if (reordering_of_pic_nums_idc != 2)
                             // abs_diff_pic_num is coded minus 1
                             pReorderInfo_L1->reorder_value[reorder_idx]++;

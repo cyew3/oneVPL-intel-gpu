@@ -3462,7 +3462,7 @@ Ipp32u H264ENC_MAKE_NAME(H264CoreEncoder_Intra8x8SelectRD)(
     if( left_avbl ){
         for( i=0; i<8; i++ )
             pred_pels[17+i] = *(pLeftRef+i*uLeftPitch-1);
-            pred_pels_mask |= 0x1fe0000;
+        pred_pels_mask |= 0x1fe0000;
     }
 
     //LEFT_ABOVE

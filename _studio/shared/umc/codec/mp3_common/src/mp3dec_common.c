@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -648,10 +648,10 @@ void mp3dec_mc_params(MP3Dec_com *state)
       state->mc_pred_mode = 5;
     }
 
-    if ( (mc_header->no_of_multi_lingual_ch > 0) &&
-      (mc_header->multi_lingual_layer > 0) ) {
-        mc_header->no_of_multi_lingual_ch = 0;
-      }
+  if ( (mc_header->no_of_multi_lingual_ch > 0) &&
+    (mc_header->multi_lingual_layer > 0) ) {
+      mc_header->no_of_multi_lingual_ch = 0;
+    }
 }
 
 void mp3dec_mc_composite_status_info(MP3Dec_com *state)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1036,7 +1036,6 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
             out->mfx.FrameInfo.CropY = 0;
             isInvalid ++;
         } else
-            out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
             out->mfx.FrameInfo.CropY = in->mfx.FrameInfo.CropY;
 
         out->mfx.FrameInfo.AspectRatioW = in->mfx.FrameInfo.AspectRatioW;

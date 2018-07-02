@@ -1859,12 +1859,11 @@ int MEforGen75::SummarizeFinalOutputSIC( )
         case MODE_INTRA_8X8:
             if(intraWinner)
                 Vout->InterMbType |= (TYPE_INTRA_8X8&0x80); // transform 8x8
-            
-                Vout->IntraPredModes[0] = ((Intra8x8PredMode[0])|(Intra8x8PredMode[0]<<4)|(Intra8x8PredMode[0]<<8)|(Intra8x8PredMode[0]<<12));
-                Vout->IntraPredModes[1] = ((Intra8x8PredMode[1])|(Intra8x8PredMode[1]<<4)|(Intra8x8PredMode[1]<<8)|(Intra8x8PredMode[1]<<12));
-                Vout->IntraPredModes[2] = ((Intra8x8PredMode[2])|(Intra8x8PredMode[2]<<4)|(Intra8x8PredMode[2]<<8)|(Intra8x8PredMode[2]<<12));
-                Vout->IntraPredModes[3] = ((Intra8x8PredMode[3])|(Intra8x8PredMode[3]<<4)|(Intra8x8PredMode[3]<<8)|(Intra8x8PredMode[3]<<12));
-            
+
+            Vout->IntraPredModes[0] = ((Intra8x8PredMode[0])|(Intra8x8PredMode[0]<<4)|(Intra8x8PredMode[0]<<8)|(Intra8x8PredMode[0]<<12));
+            Vout->IntraPredModes[1] = ((Intra8x8PredMode[1])|(Intra8x8PredMode[1]<<4)|(Intra8x8PredMode[1]<<8)|(Intra8x8PredMode[1]<<12));
+            Vout->IntraPredModes[2] = ((Intra8x8PredMode[2])|(Intra8x8PredMode[2]<<4)|(Intra8x8PredMode[2]<<8)|(Intra8x8PredMode[2]<<12));
+            Vout->IntraPredModes[3] = ((Intra8x8PredMode[3])|(Intra8x8PredMode[3]<<4)|(Intra8x8PredMode[3]<<8)|(Intra8x8PredMode[3]<<12));
             break;
         case MODE_INTRA_4X4:
             Vout->IntraPredModes[0] = Intra4x4PredMode[0]|(Intra4x4PredMode[1]<<4)|(Intra4x4PredMode[2]<<8)|(Intra4x4PredMode[3]<<12);
