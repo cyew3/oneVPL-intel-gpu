@@ -861,9 +861,16 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.BitDepth8Only      = 0;
         m_caps.MaxEncodedBitDepth = 1;
     }
-    if ((p.CodeName >= MFX_PLATFORM_CANNONLAKE)&&(m_videoParam.mfx.LowPower))
+    if (p.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
-        m_caps.LCUSizeSupported = (32 >> 4) | (64 >> 4);
+        if(IsOn(m_videoParam.mfx.LowPower)) //CNL + VDENC => LCUSizeSupported = 4
+        {
+            m_caps.LCUSizeSupported = (64 >> 4);
+        }
+        else //CNL + VME => LCUSizeSupported = 6
+        {
+            m_caps.LCUSizeSupported = (32 >> 4) | (64 >> 4);
+        }
     } else
 #endif //MFX_VERSION >= 1022
     {
