@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2015 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -36,15 +36,18 @@ bool Log::useGUI = false;
 Log::Log()
 {
     _log_level = LOG_LEVEL_DEFAULT;
-    _logmap.insert(std::pair<eLogType,ILog*>(LOG_CONSOLE, new LogConsole()));
-    _logmap.insert(std::pair<eLogType,ILog*>(LOG_FILE, new LogFile()));
+
+    _logmap = {
+       std::pair<eLogType,ILog*>(LOG_CONSOLE, new LogConsole())
+      ,std::pair<eLogType,ILog*>(LOG_FILE, new LogFile())
 #if defined(_WIN32) || defined(_WIN64)
-    _logmap.insert(std::pair<eLogType,ILog*>(LOG_ETW, new LogEtwEvents()));
+      ,std::pair<eLogType,ILog*>(LOG_ETW, new LogEtwEvents())
 #elif defined(ANDROID)
-    _logmap.insert(std::pair<eLogType,ILog*>(LOG_LOGCAT, new LogLogcat()));
+      ,std::pair<eLogType,ILog*>(LOG_LOGCAT, new LogLogcat())
 #else
-    _logmap.insert(std::pair<eLogType,ILog*>(LOG_SYSLOG, new LogSyslog()));
+      ,std::pair<eLogType,ILog*>(LOG_SYSLOG, new LogSyslog())
 #endif
+    };
 
     _log = _logmap[LOG_FILE];
 
