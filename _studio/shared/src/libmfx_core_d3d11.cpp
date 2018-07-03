@@ -34,7 +34,9 @@ DEFINE_GUID(DXVADDI_Intel_Decode_PrivateData_Report,
 
 D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAvailable, const mfxSession session)
     :   CommonCORE(numThreadsAvailable, session)
+    ,   m_pid3d11Adapter(nullptr)
     ,   m_bUseExtAllocForHWFrames(false)
+    ,   m_pAccelerator(nullptr)
     ,   m_adapterNum(adapterNum)
     ,   m_HWType(MFX_HW_UNKNOWN)
     ,   m_GTConfig(MFX_GT_UNKNOWN)
@@ -42,6 +44,7 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
     ,   m_bCmCopySwap(false)
     ,   m_bCmCopyAllowed(true)
     ,   m_VideoDecoderConfigCount(0)
+    ,   m_Configs()
 {
 }
 

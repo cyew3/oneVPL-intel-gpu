@@ -453,9 +453,6 @@ mfxStatus GetNativeHandleToRawSurface(
     else
         return (MFX_ERR_UNDEFINED_BEHAVIOR);
 
-    if (nativeHandle == 0)
-        return (MFX_ERR_UNDEFINED_BEHAVIOR);
-
     return sts;
 }
 
@@ -615,6 +612,7 @@ MfxVideoParam::MfxVideoParam()
 }
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
+    : m_slice()
 {
      Copy(m_platform, par.m_platform);
      Construct(par);

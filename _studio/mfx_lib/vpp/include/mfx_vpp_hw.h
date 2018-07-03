@@ -321,6 +321,8 @@ namespace MfxHwVideoProcessing
     public:
 
         ResMngr(void)
+            : m_subTaskQueue()
+            , m_surfQueue()
         {
             m_bOutputReady = false;
             m_bRefFrameEnable = false;
