@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -402,7 +402,8 @@ tsTrace& tsTrace::operator<<(const mfxExtMoveRect& p)
     STRUCT_BODY(mfxExtMoveRect,
         FIELD_S(mfxExtBuffer, Header)
         FIELD_T(mfxU16  , NumRect  )
-        for(mfxU32 i = 0; i < p.NumRect; ++i)
+        // Max supported NumRect = 256
+        for(mfxU32 i = 0; i < (p.NumRect <= 256 ? p.NumRect : 256); ++i)
         {
             FIELD_S(mfxExtMoveRect_Entry, Rect[i])
         }
