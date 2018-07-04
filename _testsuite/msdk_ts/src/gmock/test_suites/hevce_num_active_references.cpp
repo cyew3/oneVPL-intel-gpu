@@ -70,7 +70,8 @@ namespace hevce_num_active_references
 
             m_pPar->mfx.NumRefFrame = 7; // It is a minimum number of reference frames,
                                          // which test needs to have for case with 5 layers of b-pyramid and 3 L0 reference
-
+            m_pPar->mfx.TargetUsage = MFX_TARGETUSAGE_BEST_QUALITY; // Need to set param for correct check
+                                                                    // number of references. Better quality -> wider range of references
             m_reader.reset(new tsRawReader(g_tsStreamPool.Get("/forBehaviorTest/foreman_cif.nv12"),
                 m_pPar->mfx.FrameInfo));
 
