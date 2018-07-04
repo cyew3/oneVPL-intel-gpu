@@ -512,7 +512,7 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     const mfxExtEncoderResetOption * pExtReset = (mfxExtEncoderResetOption*)GetExtBuffer(par->ExtParam, par->NumExtParam, MFX_EXTBUFF_ENCODER_RESET_OPTION);
     if (parBeforeReset.mfx.GopPicSize != parAfterReset.mfx.GopPicSize ||
-        pExtReset && IsOn(pExtReset->StartNewSequence))
+        (pExtReset && IsOn(pExtReset->StartNewSequence)))
     {
         m_frameArrivalOrder = 0;
         m_frameOrderInGop = 0;
@@ -548,12 +548,12 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         const mfxExtVP9Param& extParBefore = GetExtBufferRef(parBeforeReset);
         const mfxExtVP9Param& extParAfter = GetExtBufferRef(parAfterReset);
         MFX_CHECK(m_frameArrivalOrder == 0 ||
-            extParAfter.FrameWidth <= MAX_UPSCALE_RATIO * extParBefore.FrameWidth &&
+            (extParAfter.FrameWidth <= MAX_UPSCALE_RATIO * extParBefore.FrameWidth &&
             extParAfter.FrameHeight <= MAX_UPSCALE_RATIO * extParBefore.FrameHeight &&
             static_cast<mfxF64>(extParAfter.FrameWidth) >=
             static_cast<mfxF64>(extParBefore.FrameWidth) / MAX_DOWNSCALE_RATIO &&
             static_cast<mfxF64>(extParAfter.FrameHeight) >=
-            static_cast<mfxF64>(extParBefore.FrameHeight) / MAX_DOWNSCALE_RATIO,
+            static_cast<mfxF64>(extParBefore.FrameHeight) / MAX_DOWNSCALE_RATIO),
             MFX_ERR_INVALID_VIDEO_PARAM);
 
         // so far dynamic scaling isn't supported together with temporal scalability
@@ -703,7 +703,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             }
 
             m_frameArrivalOrder++;
-            m_taskIdForDriver = (++m_taskIdForDriver) % (MAX_TASK_ID + 1);
+            m_taskIdForDriver = (m_taskIdForDriver + 1) % (MAX_TASK_ID + 1);
         }
 
         // place mfxBitstream to the queue
@@ -882,7 +882,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
 
     // get frame from the driver (if any)
     if (m_submitted.size() == m_video.AsyncDepth || // [AsyncDepth] asynchronous tasks are submitted to driver. It's time to make synchronization.
-        pSurf == 0 && m_submitted.size()) // or we are in "drain state" - need to synchronize all submitted to driver w/o any conditions
+        (pSurf == 0 && m_submitted.size())) // or we are in "drain state" - need to synchronize all submitted to driver w/o any conditions
     {
         Task& frameToGet = m_submitted.front();
 

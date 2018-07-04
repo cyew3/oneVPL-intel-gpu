@@ -225,8 +225,8 @@ namespace MfxHwVP9Encode
 
         for (mfxI8 i = seg.NumSegments - 1; i >= 0; i --)
         {
-            VAEncSegParamVP9 & segva  = segPar.seg_data[i];
-            mfxVP9SegmentParam const & segmfx = seg.Segment[i];
+            VAEncSegParamVP9 & segva  = segPar.seg_data[int(i)];
+            mfxVP9SegmentParam const & segmfx = seg.Segment[int(i)];
 
             mfxI16 qIndexDelta = segmfx.QIndexDelta;
             CheckAndFixQIndexDelta(qIndexDelta, task.m_frameParam.baseQIndex);
@@ -622,7 +622,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
     std::vector<VASurfaceID> reconSurf;
-    for(int i = 0; i < m_reconQueue.size(); i++)
+    for(unsigned int i = 0; i < m_reconQueue.size(); i++)
         reconSurf.push_back(m_reconQueue[i].surface);
 
     // Encoder create

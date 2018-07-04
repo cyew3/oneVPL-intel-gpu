@@ -952,8 +952,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
     }
 
     //VP9 doesn't support CropX, CropY due to absence of syntax in bitstream header
-    if (fi.Width  && (fi.CropW > fi.Width)  ||
-        fi.Height && (fi.CropH > fi.Height) ||
+    if ((fi.Width  && (fi.CropW > fi.Width))  ||
+        (fi.Height && (fi.CropH > fi.Height)) ||
         fi.CropX ||
         fi.CropY)
     {
@@ -1862,8 +1862,8 @@ mfxStatus CheckAndFixCtrl(
             checkSts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         }
 
-        if (pExtParRuntime->FrameWidth && pExtParRuntime->FrameWidth != extParInit.FrameWidth ||
-            pExtParRuntime->FrameHeight && pExtParRuntime->FrameHeight != extParInit.FrameHeight)
+        if ((pExtParRuntime->FrameWidth && pExtParRuntime->FrameWidth != extParInit.FrameWidth) ||
+            (pExtParRuntime->FrameHeight && pExtParRuntime->FrameHeight != extParInit.FrameHeight))
         {
             // if set, runtime values of FrameWidth/FrameHeight should be same as static values
             // we cannot just remove whole mfxExtVP9Param since it has other parameters
@@ -1891,7 +1891,7 @@ mfxStatus CheckAndFixCtrl(
             const mfxExtVP9Param& extPar = GetExtBufferRef(video);
             sts = CheckSegmentationParam(*seg, extPar.FrameWidth, extPar.FrameHeight, caps, ctrl.QP);
             if (sts == MFX_ERR_UNSUPPORTED ||
-                true == AnyMandatorySegMapParam(*seg) && false == AllMandatorySegMapParams(*seg) ||
+                (true == AnyMandatorySegMapParam(*seg) && false == AllMandatorySegMapParams(*seg)) ||
                 IsOn(opt2.MBBRC))
             {
                 // provided segmentation parameters are invalid or lack mandatory information.

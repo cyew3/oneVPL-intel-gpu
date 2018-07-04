@@ -770,10 +770,10 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         mfxExtVP9Param const & extParAfter = GetExtBufferRef(parAfter);
 
         if (parBefore.m_targetKbps != parAfter.m_targetKbps
-            || (brc == MFX_RATECONTROL_VBR) && (parBefore.m_maxKbps != parAfter.m_maxKbps)
+            || ((brc == MFX_RATECONTROL_VBR) && (parBefore.m_maxKbps != parAfter.m_maxKbps))
             || frameRateBefore != frameRateAfter
-            || IsBufferBasedBRC(brc) && (parBefore.m_bufferSizeInKb != parAfter.m_bufferSizeInKb)
-            || (brc == MFX_RATECONTROL_ICQ) && (parBefore.mfx.ICQQuality != parAfter.mfx.ICQQuality)
+            || (IsBufferBasedBRC(brc) && (parBefore.m_bufferSizeInKb != parAfter.m_bufferSizeInKb))
+            || ((brc == MFX_RATECONTROL_ICQ) && (parBefore.mfx.ICQQuality != parAfter.mfx.ICQQuality))
             || extParBefore.FrameWidth != extParAfter.FrameWidth
             || extParBefore.FrameHeight != extParAfter.FrameHeight)
         {

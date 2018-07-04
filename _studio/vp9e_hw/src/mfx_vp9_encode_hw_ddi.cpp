@@ -218,8 +218,8 @@ namespace MfxHwVP9Encode
                 WriteLiteral(localBuf, refreshFamesMask, REF_FRAMES);
                 for (mfxI8 refFrame = LAST_FRAME; refFrame <= ALTREF_FRAME; refFrame ++)
                 {
-                    WriteLiteral(localBuf, framePar.refList[refFrame], REF_FRAMES_LOG2);
-                    WriteBit(localBuf, framePar.refBiases[refFrame]);
+                    WriteLiteral(localBuf, framePar.refList[int(refFrame)], REF_FRAMES_LOG2);
+                    WriteBit(localBuf, framePar.refBiases[int(refFrame)]);
                 }
 
                 // frame size with refs
@@ -290,7 +290,7 @@ namespace MfxHwVP9Encode
                 for (mfxI8 i = 0; i < MAX_REF_LF_DELTAS; i++)
                 {
                     // always write deltas explicitly to allow BRC modify them
-                    const mfxI8 delta = framePar.lfRefDelta[i];
+                    const mfxI8 delta = framePar.lfRefDelta[int(i)];
                     WriteBit(localBuf, 1);
                     WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
                     WriteBit(localBuf, delta < 0);
@@ -300,7 +300,7 @@ namespace MfxHwVP9Encode
                 for (mfxI8 i = 0; i < MAX_MODE_LF_DELTAS; i++)
                 {
                     // always write deltas explicitly to allow BRC modify them
-                    const mfxI8 delta = framePar.lfModeDelta[i];
+                    const mfxI8 delta = framePar.lfModeDelta[int(i)];
                     WriteBit(localBuf, 1);
                     WriteLiteral(localBuf, abs(delta) & 0x3F, 6);
                     WriteBit(localBuf, delta < 0);

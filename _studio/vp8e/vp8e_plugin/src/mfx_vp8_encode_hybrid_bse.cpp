@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -348,14 +348,14 @@ namespace MFX_VP8ENC
                 if((QP[i]!=QP[0]) || (frameParams.LFLevel[i]!=frameParams.LFLevel[0])) {
                     m_ctrl.SegFeatUpdate = 1; break;
                 }
-                if(m_ctrl.SegFeatUpdate) {
-                    m_ctrl.SegFeatMode = 0;
-                    for(i=0;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
-                        m_ctrl.segFeatureData[0][i] = (I8)(QP[i] - QP[0]);
-                    for(i=0;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
-                        m_ctrl.segFeatureData[1][i] = (I8)(frameParams.LFLevel[i] - frameParams.LFLevel[0]);
-                }
-                m_ctrl.MBSegUpdate  = 1;
+            if(m_ctrl.SegFeatUpdate) {
+                m_ctrl.SegFeatMode = 0;
+                for(i=0;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
+                    m_ctrl.segFeatureData[0][i] = (I8)(QP[i] - QP[0]);
+                for(i=0;i<VP8_MAX_NUM_OF_SEGMENTS;i++)
+                    m_ctrl.segFeatureData[1][i] = (I8)(frameParams.LFLevel[i] - frameParams.LFLevel[0]);
+            }
+            m_ctrl.MBSegUpdate  = 1;
         }
 
         m_ctrl.LoopFilterType   = frameParams.LFType;
