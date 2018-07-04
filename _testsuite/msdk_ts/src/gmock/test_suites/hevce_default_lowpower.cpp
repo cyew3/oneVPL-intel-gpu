@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -103,7 +103,7 @@ namespace hevce_default_lowpower
         {
             { MFXPAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_UNKNOWN },
             { QUERY_EXP, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_UNKNOWN },
-            { INIT_EXP, &tsStruct::mfxVideoParam.mfx.LowPower, 33 },
+            { INIT_EXP, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_OFF },
         }
         },
 
@@ -179,6 +179,13 @@ namespace hevce_default_lowpower
         TS_START;
         const tc_struct& tc = test_case[id];
         mfxStatus sts = MFX_ERR_NONE;
+
+        //This test only for VME.
+        if(m_par.mfx.LowPower == MFX_CODINGOPTION_ON && g_tsHWtype >= MFX_HW_SKL)
+        {
+            g_tsLog << "[WARNING] SKIPPING TEST-CASE #" << id << ": NOT ALLOWED TEST TYPE\n";
+            return 0;
+        }
 
         MFXInit();
         m_session = tsSession::m_session;
