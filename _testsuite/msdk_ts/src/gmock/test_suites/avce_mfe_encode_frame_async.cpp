@@ -28,99 +28,11 @@ Algorithm:
 - Repeat encoding process for frames_to_encode times
 */
 
-#include <type_traits>
-#include <iostream>
+#include "avce_mfe_async_encode.h"
 
-#include "ts_encoder.h"
+namespace avce_mfe_async_encode {
 
-namespace
-{
-
-/*!\brief Flush modes */
-enum {
-    FlushModeNone = 0,
-    FlushModeEnc1 = 1,
-    FlushModeEnc2 = 2,
-    FlushModeEnc3 = 3,
-};
-
-/*!\brief Structure of test suite parameters*/
-typedef struct
-{
-    mfxU16 mfMode;       ///< MFE MFMode parameter
-    mfxU16 maxNumFrames; ///< MFE MaxNumFrames parameter
-    mfxU16 asyncDepth;   ///< video parameter AsyncDepth
-    mfxU16 gopRefDist;   ///< video parameter GopRefDist
-    mfxU16 bRefType;     ///< coding option2 parameter BRefType
-    mfxU16 flushMode;    ///< flush mode
-    mfxU16 frameToFlush; ///< frame to flush
-} tc_struct;
-
-class TestSuite
-{
-public:
-    //! \brief A constructor
-    TestSuite();
-
-    //! \brief A destructor
-    ~TestSuite() {}
-
-    //! \brief Main method. Runs test case
-    //! \param id - test case number
-    int RunTest(unsigned int id);
-
-    //! The number of test cases
-    static const unsigned int n_cases;
-
-    //! \brief Set of test cases
-    static const tc_struct test_case[];
-
-private:
-    //! First encoder (parent)
-    tsVideoEncoder m_enc1;
-    //! Second encoder (child)
-    tsVideoEncoder m_enc2;
-    //! Third  encoder (child)
-    tsVideoEncoder m_enc3;
-
-    //! The number of frames to encode
-    static const int frames_to_encode;
-
-    /*! \brief Set video parameters
-     *  \param enc - pointer to encoder
-     *  \tc - test case parameters
-     */
-    void SetParams(tsVideoEncoder& enc, const tc_struct& tc);
-
-    /*! \brief Initialize SDK session
-     *
-     *  Unlike to MFXInit() this function does not set handle for initialized
-     *  session
-     *  \param enc - pointer to encoder
-     */
-    void InitSession(tsVideoEncoder& enc);
-
-    /*! \brief Set handle for the SDK session
-     *  \param enc - pointer to encoder
-     *  \param hdl - handle
-     *  \param hdl_type - handle type
-     */
-    void SetHandle(tsVideoEncoder& enc, mfxHDL &hdl, mfxHandleType &hdl_type);
-
-    //! \brief Initialize encoders
-    //! \tc - test case parameters
-    void Init(const tc_struct& tc);
-
-    //! \brief Wipe bitstreams associated with encoders
-    void WipeBitsreams();
-
-    //! \brief Flush of MFE internal buffer
-    //! \param enc - pointer to encoder
-    void Flush(tsVideoEncoder& enc);
-
-};
-
-const tc_struct TestSuite::test_case[] =
+const tc_struct AsyncEncodeTest::test_case[] =
 {
     {/*00*/ MFX_MF_AUTO, /*maxNumFrames*/0, /*asyncDepth*/1, /*gopRefDist*/3,
             /*bRefType*/0, FlushModeNone, /*frameToFlush*/0},
@@ -277,15 +189,18 @@ const tc_struct TestSuite::test_case[] =
       MFX_B_REF_PYRAMID, FlushModeEnc2, /*frameToFlush*/7},
 };
 
-const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
-const int TestSuite::frames_to_encode = 10;
+const unsigned int AsyncEncodeTest::n_cases = sizeof(AsyncEncodeTest::test_case) / sizeof(AsyncEncodeTest::test_case[0]);
+const int AsyncEncodeTest::frames_to_encode = 10;
 
-TestSuite::TestSuite()
-: m_enc1(MFX_CODEC_AVC), m_enc2(MFX_CODEC_AVC), m_enc3(MFX_CODEC_AVC)
+AsyncEncodeTest::AsyncEncodeTest(bool fei_enabled)
+: m_enc1(MFX_CODEC_AVC),
+  m_enc2(MFX_CODEC_AVC),
+  m_enc3(MFX_CODEC_AVC),
+  m_fei_enabled(fei_enabled)
 {
 }
 
-void TestSuite::SetParams(tsVideoEncoder& enc, const tc_struct& tc)
+void AsyncEncodeTest::SetParams(tsVideoEncoder& enc, const tc_struct& tc)
 {
     enc.m_par.mfx.FrameInfo.Width = enc.m_par.mfx.FrameInfo.CropW = 720;
     enc.m_par.mfx.FrameInfo.Height = enc.m_par.mfx.FrameInfo.CropH = 480;
@@ -307,9 +222,14 @@ void TestSuite::SetParams(tsVideoEncoder& enc, const tc_struct& tc)
         mfxExtCodingOption2& copt2 = enc.m_par;
         copt2.BRefType = tc.bRefType;
     }
+
+    if (m_fei_enabled) {
+        mfxExtFeiParam& fei = enc.m_par;
+        fei.Func = MFX_FEI_FUNCTION_ENCODE;
+    }
 }
 
-void TestSuite::InitSession(tsVideoEncoder& enc)
+void AsyncEncodeTest::InitSession(tsVideoEncoder& enc)
 {
     TRACE_FUNC3(MFXInit, enc.m_impl, enc.m_pVersion, enc.m_pSession);
     g_tsStatus.check(::MFXInit(enc.m_impl, enc.m_pVersion, enc.m_pSession));
@@ -318,14 +238,14 @@ void TestSuite::InitSession(tsVideoEncoder& enc)
     enc.tsSession::m_initialized = (g_tsStatus.get() >= 0);
 }
 
-void TestSuite::SetHandle(tsVideoEncoder& enc, mfxHDL &hdl,
+void AsyncEncodeTest::SetHandle(tsVideoEncoder& enc, mfxHDL &hdl,
         mfxHandleType &hdl_type)
 {
     enc.SetHandle(enc.m_session, hdl_type, hdl);
     enc.m_is_handle_set = (g_tsStatus.get() >= 0);
 }
 
-void TestSuite::Init(const tc_struct& tc)
+void AsyncEncodeTest::Init(const tc_struct& tc)
 {
     // Init parent SDK Session
     m_enc1.MFXInit();
@@ -368,7 +288,7 @@ void TestSuite::Init(const tc_struct& tc)
     m_enc3.AllocBitstream();
 }
 
-void TestSuite::WipeBitsreams()
+void AsyncEncodeTest::WipeBitsreams()
 {
     m_enc1.m_bitstream.DataLength = 0;
     m_enc1.m_bitstream.DataOffset = 0;
@@ -378,14 +298,14 @@ void TestSuite::WipeBitsreams()
     m_enc3.m_bitstream.DataOffset = 0;
 }
 
-void TestSuite::Flush(tsVideoEncoder& enc)
+void AsyncEncodeTest::Flush(tsVideoEncoder& enc)
 {
     mfxExtMultiFrameControl& mfc = enc.m_par;
     mfc.Flush = 1;
     mfc.Timeout = 0;
 }
 
-int TestSuite::RunTest(unsigned int id)
+int AsyncEncodeTest::RunTest(unsigned int id)
 {
     TS_START;
 
@@ -426,7 +346,7 @@ int TestSuite::RunTest(unsigned int id)
             else {
                 // Only MFX_ERR_MORE_DATA or MFX_ERR_NONE status
                 // is expected for all encoders
-                std::cout << "ERROR: EncodeFrameAsync() unexpected status\n";
+                std::cout << "ERROR: AsyncEncodeTest() unexpected status\n";
                 TS_TRACE(sts1);
                 TS_TRACE(sts2);
                 TS_TRACE(sts3);
@@ -457,6 +377,14 @@ int TestSuite::RunTest(unsigned int id)
     TS_END;
     return 0;
 }
+
+class TestSuite : public AsyncEncodeTest {
+public:
+    //! \brief A constructor
+    TestSuite() : AsyncEncodeTest(/*fei_enabled*/false) {};
+    //! \brief A destructor
+    ~TestSuite() {}
+};
 
 TS_REG_TEST_SUITE_CLASS(avce_mfe_encode_frame_async);
 
