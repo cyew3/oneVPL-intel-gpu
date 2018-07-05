@@ -188,7 +188,7 @@ namespace hevce_sei_hdr
             }
         }
         if (m_rtExtParams.size() > 0)
-            EXPECT_EQ(m_rtExtParams.size(), foundSEI) << "Wrong count of SEI \n";
+            EXPECT_EQ(m_rtExtParams.size(), (unsigned int)foundSEI) << "Wrong count of SEI \n";
         else if (m_parExtParams.size() > 0) {
             mfxU16 size = 0;
             for (mfxU16 i = 0; i < m_parExtParams.size(); i++) {

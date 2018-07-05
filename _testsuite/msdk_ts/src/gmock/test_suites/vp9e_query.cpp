@@ -582,13 +582,13 @@ int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
                 }
             }
 
-            if (!tc.type == NONCONFIGURABLE_PARAM && (cmp_result != 0 || cmp_result_ext_buf != 0))
+            if (!tc.type == (bool)NONCONFIGURABLE_PARAM && (cmp_result != 0 || cmp_result_ext_buf != 0))
             {
                 TS_TRACE(*m_pPar);
                 TS_TRACE(*m_pParOut);
                 ADD_FAILURE() << "ERROR: In and Out structs are different (expected be the same for this case)"; throw tsFAIL;
             }
-            else if (tc.type == NONCONFIGURABLE_PARAM && cmp_result == 0)
+            else if (tc.type == (bool)NONCONFIGURABLE_PARAM && cmp_result == 0)
             {
                 TS_TRACE(*m_pPar);
                 TS_TRACE(*m_pParOut);

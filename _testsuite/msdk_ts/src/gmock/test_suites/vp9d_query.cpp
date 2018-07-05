@@ -362,7 +362,7 @@ int TestSuite::RunTest(const tc_struct& tc)
             EXPECT_NE(0, par_out.AsyncDepth);
             EXPECT_NE(0, par_out.mfx.FrameInfo.BitDepthChroma);
             EXPECT_NE(0, par_out.mfx.FrameInfo.BitDepthLuma);
-            EXPECT_NE(0, par_out.mfx.FrameInfo.FourCC);
+            EXPECT_NE(0U, par_out.mfx.FrameInfo.FourCC);
             EXPECT_NE(0, par_out.mfx.FrameInfo.Width);
             EXPECT_NE(0, par_out.mfx.FrameInfo.Height);
             EXPECT_NE(0, par_out.mfx.FrameInfo.ChromaFormat);

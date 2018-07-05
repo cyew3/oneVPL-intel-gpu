@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -226,10 +226,10 @@ namespace hevce_fei_numslice
                     num_ctu_in_slice = s.segment_address - previous_segment_address;
                     g_tsLog << "s = " << sliceCount << ", num_ctu_in_slice = " << num_ctu_in_slice << "\n";
 
-                    EXPECT_LE(num_ctu_in_slice, exp_num_ctu_in_slice + 1)
+                    EXPECT_LE(num_ctu_in_slice, exp_num_ctu_in_slice + 1U)
                         << "ERROR: Num CTU per Slice exceeds expected value.\n";
 
-                    EXPECT_GE(num_ctu_in_slice, exp_num_ctu_in_slice - 1)
+                    EXPECT_GE(num_ctu_in_slice, exp_num_ctu_in_slice - 1U)
                         << "ERROR: Num CU per Slice is lower than expected value.\n";
                     previous_segment_address = s.segment_address;
                 }

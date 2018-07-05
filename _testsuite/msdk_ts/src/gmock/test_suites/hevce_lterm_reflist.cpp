@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -109,7 +109,7 @@ namespace hevce_lterm_reflist
             mfxI32 ltfo = m_RefList.LongTermRefList[i].FrameOrder;
             if (ltfo) //if there is a LTR frame
             {
-                auto isAlreadyRejected = find_if(Frames.begin(), Frames.end(), [&lt = ltfo](const LtrStatus& s) { return s.POC == lt && s.isLTR == false; });
+                auto isAlreadyRejected = find_if(Frames.begin(), Frames.end(), [&ltfo](const LtrStatus& s) { return s.POC == ltfo && s.isLTR == false; });
                 if (isAlreadyRejected == Frames.end()) //which is not rejected
                     Frames.push_back({ ltfo, true }); //push it with marker LTR flag
             }
@@ -145,7 +145,7 @@ namespace hevce_lterm_reflist
                 }
                 else
                 {
-                    EXPECT_EQ(0, sh.num_long_term_pics);
+                    EXPECT_EQ(0U, sh.num_long_term_pics);
                 }
             }
         }

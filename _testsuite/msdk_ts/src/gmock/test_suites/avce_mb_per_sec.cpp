@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 File Name: avce_mb_per_sec.cpp
 \* ****************************************************************************** */
@@ -107,11 +107,11 @@ namespace avce_mb_per_sec{
 
         if (g_tsImpl!=MFX_IMPL_SOFTWARE){
             if (exp == MFX_ERR_NONE){
-                EXPECT_NE(0, m_ec->MBPerSec) << "MBPerSec is not a valid value";
+                EXPECT_NE(0U, m_ec->MBPerSec) << "MBPerSec is not a valid value";
                 EXPECT_NE(0xFFFFFFFF, m_ec->MBPerSec) << "MBPerSec is not a valid value";
             }
             else
-                EXPECT_EQ(0, m_ec->MBPerSec) << "MBPerSec wasn't zeroed";
+                EXPECT_EQ(0U, m_ec->MBPerSec) << "MBPerSec wasn't zeroed";
         }
         TS_END;
         return 0;

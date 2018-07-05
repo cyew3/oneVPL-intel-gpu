@@ -250,7 +250,7 @@ void TestSuite::create_sei_message(mfxPayload* pl, const struct payload_types& p
     if (pt.is_suffix) {
         EXPECT_EQ(pl->CtrlFlags, MFX_PAYLOAD_CTRL_SUFFIX) << "Error while creating SEI message";
     } else {
-        EXPECT_EQ(pl->CtrlFlags, 0) << "Error while creating SEI message";
+        EXPECT_EQ(pl->CtrlFlags, 0U) << "Error while creating SEI message";
     }
 
     pl->BufSize = mfxU16(B + size);
@@ -260,7 +260,7 @@ void TestSuite::create_sei_message(mfxPayload* pl, const struct payload_types& p
     EXPECT_EQ(pl->Data != NULL, 1) << "Error while creating SEI message";
 
     pl->NumBit = pl->BufSize * 8;
-    EXPECT_EQ(pl->NumBit, pl->BufSize * 8) << "Error while creating SEI message";
+    EXPECT_EQ(pl->NumBit, pl->BufSize * 8U) << "Error while creating SEI message";
 
     pl->Type = mfxU16(type);
     EXPECT_EQ(pl->Type, mfxU16(type)) << "Error while creating SEI message";

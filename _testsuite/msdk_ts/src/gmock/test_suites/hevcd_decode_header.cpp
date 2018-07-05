@@ -418,7 +418,7 @@ int TestSuite::RunTest(unsigned int id)
         if ( (m_par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC) && (g_tsHWtype < MFX_HW_TGL) && (g_tsOSFamily == MFX_OS_FAMILY_LINUX) )
         {
             // SCC not supported before Gen12
-            EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
+            EXPECT_EQ(0U, m_par.mfx.FrameInfo.FourCC);
         }
         else
 #endif
@@ -426,7 +426,7 @@ int TestSuite::RunTest(unsigned int id)
             if (m_par.mfx.FrameInfo.ChromaFormat == 0)
             {
                 if (g_tsImpl != MFX_IMPL_SOFTWARE)
-                    EXPECT_EQ(0, m_par.mfx.FrameInfo.FourCC);
+                    EXPECT_EQ(0U, m_par.mfx.FrameInfo.FourCC);
                 else
                 {
                     if (m_par.mfx.FrameInfo.BitDepthLuma == 8)

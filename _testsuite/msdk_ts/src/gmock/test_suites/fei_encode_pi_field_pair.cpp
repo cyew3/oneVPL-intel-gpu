@@ -1,7 +1,7 @@
 
 /******************************************************************************* *\
 
-Copyright (C) 2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2017-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -342,7 +342,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             for (mfxU16 i = 0; i <= s.num_ref_idx_l0_active_minus1; i ++)
             {
                 if (m_tc.element[index].l0RefPoc[i] != -1)
-                    EXPECT_EQ(m_tc.element[index].l0RefPoc[i], (mfxU32)s.RefPicListX[0][i].POC);
+                    EXPECT_EQ((mfxU32)m_tc.element[index].l0RefPoc[i], (mfxU32)s.RefPicListX[0][i].POC);
             }
 
             if ((s.slice_type != 1) && (s.slice_type != 6))
@@ -352,7 +352,7 @@ mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
             for (mfxU16 i = 0; i <= s.num_ref_idx_l1_active_minus1; i ++)
             {
                 if (m_tc.element[index].l1RefPoc[i] != -1)
-                    EXPECT_EQ(m_tc.element[index].l1RefPoc[i], (mfxU32)s.RefPicListX[1][i].POC);
+                    EXPECT_EQ((mfxU32)m_tc.element[index].l1RefPoc[i], (mfxU32)s.RefPicListX[1][i].POC);
             }
 
         }

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -284,20 +284,20 @@ namespace vp9e_cqp
                 }
                 else if(tc.type == USE_EXT_BUFFER)
                 {
-                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC)
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), (int)VP9E_CQP_QIndexDeltaLumaDC)
                         << "FAILED: Global codec-specific params not match (DeltaLumaDC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC)
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), (int)VP9E_CQP_QIndexDeltaChromaAC)
                         << "FAILED: Global codec-specific params not match (DeltaChromaAC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC)
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), (int)VP9E_CQP_QIndexDeltaChromaDC)
                         << "FAILED: Global codec-specific params not match (DeltaChromaDC)";
                 }
                 else if(tc.type == USE_EXT_BUFFER_FRAME)
                 {
-                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaLumaDC+cycle_counter_encoded)
+                    ASSERT_EQ(hdr->uh.quant.y_dc.delta*(hdr->uh.quant.y_dc.sign ? -1 : 1), (int)(VP9E_CQP_QIndexDeltaLumaDC+cycle_counter_encoded))
                         << "FAILED: Codec-specific params for a frame not match (DeltaLumaDC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaAC+cycle_counter_encoded)
+                    ASSERT_EQ(hdr->uh.quant.uv_ac.delta*(hdr->uh.quant.uv_ac.sign ? -1 : 1), (int)(VP9E_CQP_QIndexDeltaChromaAC+cycle_counter_encoded))
                        << "FAILED: Codec-specific params for a frame not match (DeltaChromaAC)";
-                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), VP9E_CQP_QIndexDeltaChromaDC+cycle_counter_encoded)
+                    ASSERT_EQ(hdr->uh.quant.uv_dc.delta*(hdr->uh.quant.uv_dc.sign ? -1 : 1), (int)(VP9E_CQP_QIndexDeltaChromaDC+cycle_counter_encoded))
                         << "FAILED: Codec-specific params for a frame not match (DeltaChromaDC)";
                 }
                 else if (tc.type == CHECK_QP_OVERFLOW)

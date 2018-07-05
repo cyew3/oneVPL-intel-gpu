@@ -350,7 +350,7 @@ namespace vpp_pts_suite
                     mfxExtVPPFrameRateConversion* frc_buf = (mfxExtVPPFrameRateConversion*)m_par.GetExtBuffer(MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION);
                     if(frc_buf != nullptr) {
                         if(frc_buf->Algorithm == MFX_FRCALGM_PRESERVE_TIMESTAMP) {
-                            EXPECT_EQ(pts, MFX_TIMESTAMP_UNKNOWN) << "FAILED: expected TimeStamp = UNKNOWN for inserted frames when FRC Algorithm = PRESERVE_TIMESTAMP\n";
+                            EXPECT_EQ(pts, (mfxU64)MFX_TIMESTAMP_UNKNOWN) << "FAILED: expected TimeStamp = UNKNOWN for inserted frames when FRC Algorithm = PRESERVE_TIMESTAMP\n";
                         }
                         pts_delta = 0;   // PTS of repeated frame should stay invalid
                     }
