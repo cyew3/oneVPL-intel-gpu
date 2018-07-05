@@ -703,10 +703,8 @@ static mfxStatus VP8CompleteProc(void *, void *p_param, mfxStatus )
 
 } // static mfxStatus VP8CompleteProc(void *, void *p_param, mfxStatus )
 
-mfxStatus VideoDECODEVP8::RunThread(void *p_params, mfxU32 thread_number)
+mfxStatus VideoDECODEVP8::RunThread(void * /*p_params*/, mfxU32 /*thread_number*/)
 {
-    p_params; thread_number;
-
     return MFX_TASK_DONE;
 
 } // mfxStatus VideoDECODEVP8::RunThread(void *p_params, mfxU32 thread_number)
@@ -716,8 +714,6 @@ static mfxStatus __CDECL VP8DECODERoutine(void *p_state, void *p_param, mfxU32 /
     mfxStatus mfxSts = MFX_ERR_NONE;
 
     THREAD_TASK_INFO *p_thread_info = (THREAD_TASK_INFO *) p_param;
-
-    p_state;
 
     vpx_codec_ctx_t *p_decoder = (vpx_codec_ctx_t *)p_state;
 
@@ -857,8 +853,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
         m_p_frame_allocator->IncreaseReference(memId);
 
-        UMC::Status umcSts = video_data->Init(p_surface_work->Info.Width, p_surface_work->Info.Height, UMC::YUV420);
-        umcSts;
+        video_data->Init(p_surface_work->Info.Width, p_surface_work->Info.Height, UMC::YUV420);
 
         const UMC::FrameData::PlaneMemoryInfo *p_info;
 
@@ -918,10 +913,8 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
 
 } // mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 *p_surface_work, mfxFrameSurface1 **pp_surface_out, MFX_ENTRY_POINT *p_entry_point)
 
-mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
+mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream * /*bs*/, mfxFrameSurface1 * /*surface_work*/, mfxFrameSurface1 ** /*surface_out*/)
 {
-    bs; surface_work; surface_out;
-
     return MFX_ERR_NONE;
 
 } // mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_out)
@@ -980,10 +973,8 @@ mfxStatus VideoDECODEVP8::GetPayload(mfxU64 *p_ts, mfxPayload *p_payload)
 
 } // mfxStatus VideoDECODEVP8::GetPayload(mfxSession , mfxU64 *p_ts, mfxPayload *p_payload)
 
-mfxStatus VideoDECODEVP8::SetSkipMode(mfxSkipMode mode)
+mfxStatus VideoDECODEVP8::SetSkipMode(mfxSkipMode /*mode*/)
 {
-    mode;
-
     if (false == m_is_initialized)
     {
         return MFX_ERR_NOT_INITIALIZED;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <algorithm> /* for std::find on Linux/Android */
@@ -61,9 +61,9 @@ mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *par)
     return IPP_MIN(par->AsyncDepth, numThread);
 }
 
-inline bool IsNeedToUseHWBuffering(eMFXHWType type)
+inline bool IsNeedToUseHWBuffering(eMFXHWType /*type*/)
 {
-    type;return false;
+    return false;
 }
 
 inline bool IsBigSurfacePoolApplicable(eMFXHWType type)

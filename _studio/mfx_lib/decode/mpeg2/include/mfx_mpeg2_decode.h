@@ -358,8 +358,8 @@ public:
     static mfxStatus CheckProtectionSettings(mfxVideoParam *input, mfxVideoParam *output, VideoCORE *core);
 #endif
 
-    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out)
-        {bs; surface_work; surface_out;return MFX_ERR_NONE;};
+    virtual mfxStatus DecodeFrame(mfxBitstream * /*bs*/, mfxFrameSurface1 * /*surface_work*/, mfxFrameSurface1 * /*surface_out*/)
+        { return MFX_ERR_NONE; };
 
 
     virtual mfxStatus GetDecodeStat(mfxDecodeStat *stat);

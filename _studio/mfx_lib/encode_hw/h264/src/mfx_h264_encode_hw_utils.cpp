@@ -2105,9 +2105,8 @@ namespace
         std::vector<Reconstruct> const & recons,
         mfxExtAVCRefListCtrl const &     ctrl,
         mfxU32                           numActiveRef,
-        mfxU32                           curPicStruct)
+        mfxU32                           /*curPicStruct*/)
     {
-        curPicStruct;
         mfxU8 * begin = refPicList.Begin();
         mfxU8 * end   = refPicList.End();
 
@@ -2832,7 +2831,8 @@ mfxStatus UmcBrc::Init(MfxVideoParam  & video)
 
     UMC::VideoBrcParams umcBrcParams;
     mfxStatus sts = ConvertVideoParam_Brc(&tmpVideo, &umcBrcParams);
-    assert(sts == MFX_ERR_NONE); sts;
+    assert(sts == MFX_ERR_NONE);
+    (void)sts;
 
     umcBrcParams.GOPPicSize = tmpVideo.mfx.GopPicSize;
     umcBrcParams.GOPRefDist = tmpVideo.mfx.GopRefDist;
@@ -2840,7 +2840,8 @@ mfxStatus UmcBrc::Init(MfxVideoParam  & video)
     umcBrcParams.level      = tmpVideo.mfx.CodecLevel;
 
     UMC::Status umcSts = m_impl.Init(&umcBrcParams);
-    assert(umcSts == UMC::UMC_OK); umcSts;
+    assert(umcSts == UMC::UMC_OK);
+    (void)umcSts;
 
     return MFX_ERR_NONE;
 }
@@ -2951,7 +2952,7 @@ namespace
 #endif // _DEBUG
 
 #ifndef brcprintf
-#define brcprintf
+#define brcprintf(...)
 #endif // brcprintf
 
 namespace MfxHwH264EncodeHW
@@ -3283,6 +3284,7 @@ mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "LookAheadBrc2::GetQp");
     brcprintf("\r%4d: do=%4d type=%c Rt=%7.3f-%7.3f curc=%4d numc=%2d ", m_laData[0].encOrder, m_laData[0].poc/2,
         GetFrameTypeLetter(par.FrameType), m_targetRateMin, m_targetRateMax, m_laData[0].interCost / m_totNumMb, mfxU32(m_laData.size()));
+    (void)par;
 
 
     mfxF64 totalEstRate[52] = { 0.0 };
@@ -5090,7 +5092,8 @@ void MfxHwH264Encode::FastCopyBufferVid2Sys(void * dstSys, void const * srcVid, 
 
     IppiSize roi = { bytes, 1 };
     mfxStatus sts = FastCopy::Copy((Ipp8u *)dstSys, bytes, (Ipp8u *)srcVid, bytes, roi, COPY_VIDEO_TO_SYS);
-    assert(sts == MFX_ERR_NONE); sts;
+    assert(sts == MFX_ERR_NONE);
+    (void)sts;
 }
 
 void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstVid, void const * srcSys, mfxI32 bytes)
@@ -5101,10 +5104,12 @@ void MfxHwH264Encode::FastCopyBufferSys2Vid(void * dstVid, void const * srcSys, 
     IppiSize roi = { bytes, 1 };
 #if defined(IPP_NONTEMPORAL_STORE)
     IppStatus sts = ippiCopyManaged_8u_C1R((Ipp8u *)srcSys, bytes, (Ipp8u *)dstVid, bytes, roi, IPP_NONTEMPORAL_STORE);
-    assert(sts == ippStsNoErr); sts;
+    assert(sts == ippStsNoErr);
+    (void)sts;
 #else
     mfxStatus sts = FastCopy::Copy((Ipp8u *)dstVid, bytes, (Ipp8u *)srcSys, bytes, roi, COPY_SYS_TO_VIDEO);
-    assert(sts == MFX_ERR_NONE); sts;
+    assert(sts == MFX_ERR_NONE);
+    (void)sts;
 #endif
 
 
@@ -5320,7 +5325,7 @@ void MfxHwH264Encode::ReadDecRefPicMarking(
     {
         mfxU32 tmp = reader.GetBit();       // adaptive_ref_pic_marking_mode_flag
         assert(tmp == 0 && "adaptive_ref_pic_marking_mode_flag should be 0");
-        tmp;
+        (void)tmp;
     }
 }
 

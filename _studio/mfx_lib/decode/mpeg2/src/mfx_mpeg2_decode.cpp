@@ -692,10 +692,9 @@ mfxStatus VideoDECODEMPEG2::GetPayload( mfxU64 *ts, mfxPayload *payload )
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE *core, mfxBitstream* bs, mfxVideoParam* par)
+mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs, mfxVideoParam *par)
 {
     MFX_CHECK_NULL_PTR3(bs,bs->Data,par);
-    core;
 
     mfxU8* ptr;
     mfxU8* beg = bs->Data + bs->DataOffset;
@@ -2689,7 +2688,6 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
 
 static bool IsStatusReportEnable(VideoCORE * core)
 {
-    core; // touch unreferenced parameter
     UMC::VideoAccelerator *va;
     core->GetVA((mfxHDL*)&va, MFX_MEMTYPE_FROM_DECODE);
 
@@ -2839,7 +2837,6 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetVideoParam(mfxVideoParam *par)
 
 mfxStatus VideoDECODEMPEG2Internal_HW::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count)
 {
-    end_frame;
     m_frame[frame_buffer_num].DataLength = 0;
     m_frame[frame_buffer_num].DataOffset = 0;
     m_frame_in_use[frame_buffer_num] = false;
@@ -2853,10 +2850,8 @@ mfxStatus VideoDECODEMPEG2Internal_HW::RestoreDecoder(Ipp32s frame_buffer_num, U
         m_implUmc->UnLockTask(task_num_to_unlock);
     }
 
-#if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
     if (end_frame)
         m_implUmcHW->pack_w.m_va->EndFrame();
-#endif
 
     if (remove_2frames)
         m_implUmcHW->RestoreDecoderStateAndRemoveLastField();
@@ -3393,8 +3388,6 @@ mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
 
 mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_index, mfxU32 currIdx)
 {
-    current_index; currIdx;
-
 #ifdef MFX_VA_WIN
 
     UMC::Status sts = UMC::UMC_OK;
@@ -3477,7 +3470,9 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_ind
         default:
             break;
     }
-
+#else
+    (void)current_index;
+    (void)currIdx;
 #endif
 
     return MFX_ERR_NONE;
@@ -3486,8 +3481,9 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_ind
 mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC::FrameMemID surface_id)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::GetStatusReport");
-    current_index; surface_id;
+
 #ifdef MFX_VA_WIN
+    (void)surface_id;
     UMC::Status sts = UMC::UMC_OK;
 
     DXVA_Status_VC1 currentTaskStatus = {};

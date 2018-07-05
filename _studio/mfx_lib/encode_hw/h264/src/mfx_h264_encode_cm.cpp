@@ -186,7 +186,8 @@ void CmDevicePtr::Reset(CmDevice * device)
     if (m_device)
     {
         int result = ::DestroyCmDevice(m_device);
-        result; assert(result == CM_SUCCESS);
+        assert(result == CM_SUCCESS);
+        (void)result;
     }
     m_device = device;
 }
@@ -250,7 +251,8 @@ void CmSurface::Reset(CmDevice * device, IDirect3DSurface9 * d3dSurface)
     if (m_device && m_surface)
     {
         int result = m_device->DestroySurface(m_surface);
-        result; assert(result == CM_SUCCESS);
+        assert(result == CM_SUCCESS);
+        (void)result;
     }
 
     m_device  = device;
@@ -264,7 +266,8 @@ void CmSurface::Reset(CmDevice * device, mfxU32 width, mfxU32 height, mfxU32 fou
     if (m_device && m_surface)
     {
         int result = m_device->DestroySurface(m_surface);
-        result; assert(result == CM_SUCCESS);
+        assert(result == CM_SUCCESS);
+        (void)result;
     }
 
     m_device  = device;
@@ -314,7 +317,8 @@ void CmSurfaceVme75::Reset(CmDevice * device, SurfaceIndex * index)
     if (m_device && m_index)
     {
         int result = m_device->DestroyVmeSurfaceG7_5(m_index);
-        result; assert(result == CM_SUCCESS);
+        assert(result == CM_SUCCESS);
+        (void)result;
     }
 
     m_device = device;
@@ -367,7 +371,8 @@ void CmBuf::Reset(CmDevice * device, mfxU32 size)
     if (m_device && m_buffer)
     {
         int result = m_device->DestroySurface(m_buffer);
-        result; assert(result == CM_SUCCESS);
+        assert(result == CM_SUCCESS);
+        (void)result;
     }
 
     m_device = device;

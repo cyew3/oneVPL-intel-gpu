@@ -2059,7 +2059,6 @@ mfxStatus MFXVideoDECODEVC1::IsDisplayFrameReady(mfxFrameSurface1 **surface_disp
 }
 bool MFXVideoDECODEVC1::IsBufferMode(VideoCORE *pCore, mfxVideoParam *par)
 {
-    pCore; par;
 #if defined(MFX_VA_LINUX)
     if ((IsHWSupported(pCore, par) &&
         (MFX_PLATFORM_HARDWARE == pCore->GetPlatformType())&&
@@ -2068,6 +2067,9 @@ bool MFXVideoDECODEVC1::IsBufferMode(VideoCORE *pCore, mfxVideoParam *par)
         1 != par->AsyncDepth))
         return true;
     else
+#else
+    (void)pCore;
+    (void)par;
 #endif
         return false;
 }
@@ -2078,7 +2080,7 @@ mfxStatus MFXVideoDECODEVC1::RunThread(mfxFrameSurface1 *surface_work,
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXVideoDECODEVC1::RunThread");
 
-    threadNumber;
+    (void)threadNumber;
     mfxStatus sts;
 
 #ifdef ALLOW_SW_VC1_FALLBACK

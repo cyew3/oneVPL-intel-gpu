@@ -634,10 +634,8 @@ mfxStatus VideoDECODEVP9::GetPayload(mfxU64 *ts, mfxPayload *payload)
     return MFX_ERR_UNSUPPORTED;
 }
 
-mfxStatus VideoDECODEVP9::SetSkipMode(mfxSkipMode mode)
+mfxStatus VideoDECODEVP9::SetSkipMode(mfxSkipMode /*mode*/)
 {
-    mode;
-
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
@@ -780,10 +778,8 @@ static mfxStatus VP9CompleteProc(void *, void *p_param, mfxStatus )
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEVP9::RunThread(void *p_params, mfxU32 thread_number)
+mfxStatus VideoDECODEVP9::RunThread(void * /*p_params*/, mfxU32 /*thread_number*/)
 {
-    p_params; thread_number;
-
     return MFX_TASK_DONE;
 }
 

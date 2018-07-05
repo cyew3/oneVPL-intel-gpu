@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -85,7 +85,7 @@ public:
     virtual mfxStatus SetSkipMode(mfxSkipMode mode);
     virtual mfxStatus GetPayload(mfxU64 *ts, mfxPayload *payload);
     // to satisfy internal API
-    virtual mfxStatus DecodeFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out){bs, surface_work, surface_out; return MFX_ERR_UNSUPPORTED;};
+    virtual mfxStatus DecodeFrame(mfxBitstream * /*bs*/, mfxFrameSurface1 * /*surface_work*/, mfxFrameSurface1 * /*surface_out*/){ return MFX_ERR_UNSUPPORTED; };
 
     mfxStatus RunThread(mfxFrameSurface1 *surface_work, 
                         mfxFrameSurface1 *surface_disp, 

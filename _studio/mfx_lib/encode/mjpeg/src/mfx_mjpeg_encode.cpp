@@ -1897,9 +1897,8 @@ mfxStatus MFXVideoENCODEMJPEG::GetEncodeStat(mfxEncodeStat *stat)
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams)
+mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams * /*pInternalParams*/)
 {
-    pInternalParams;
     mfxStatus sts = MFX_ERR_NONE;
     UMC::Status umc_sts = UMC::UMC_OK;
 

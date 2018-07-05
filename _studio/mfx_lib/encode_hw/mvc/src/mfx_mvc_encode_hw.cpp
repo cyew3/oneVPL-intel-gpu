@@ -911,8 +911,6 @@ mfxStatus ImplementationMvc::QueryIOSurf(
     mfxVideoParam *        par,
     mfxFrameAllocRequest * request)
 {
-    core;
-
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(
         inPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
@@ -1308,9 +1306,8 @@ mfxStatus ImplementationMvc::GetVideoParam(mfxVideoParam *par)
     return MFX_ERR_NONE;
 }
 
-mfxStatus ImplementationMvc::GetFrameParam(mfxFrameParam *par)
+mfxStatus ImplementationMvc::GetFrameParam(mfxFrameParam * /*par*/)
 {
-    par;
     return MFX_ERR_NONE;
 }
 
@@ -1325,11 +1322,10 @@ mfxStatus ImplementationMvc::EncodeFrameCheck(
     mfxFrameSurface1 *        surface,
     mfxBitstream *            bs,
     mfxFrameSurface1 **       reordered_surface,
-    mfxEncodeInternalParams * internalParams,
+    mfxEncodeInternalParams * /*internalParams*/,
     MFX_ENTRY_POINT *         entryPoints,
     mfxU32 &                  numEntryPoints)
 {
-    internalParams;
     mfxFrameSurface1 * inSurf = surface;
 
     mfxStatus checkSts = CheckEncodeFrameParam(
