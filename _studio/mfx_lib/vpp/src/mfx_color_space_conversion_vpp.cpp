@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -793,13 +793,12 @@ IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                           mfxFrameData* outData, mfxFrameInfo* outInfo)
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
 
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -840,14 +839,13 @@ IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/,
                             mfxFrameData* yv12Data)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
 
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -879,14 +877,13 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/,
                             mfxFrameData* yv12Data)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
 
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -913,14 +910,13 @@ IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                           mfxFrameData* outData, mfxFrameInfo* outInfo,
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/,
                             mfxFrameData* yv12Data)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
 
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1085,7 +1081,7 @@ IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                              mfxFrameData* outData, mfxFrameInfo* outInfo)
+                              mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
@@ -1102,7 +1098,6 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   outPitch >>= 2; // U32 pointer is used for output
   inPitch  >>= 1; // U16 pointer is used for input
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1151,7 +1146,7 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
 
 IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                                          mfxFrameData* outData, mfxFrameInfo* outInfo)
+                                          mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
@@ -1168,7 +1163,6 @@ IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   outPitch >>= 2; // U32 pointer is used for output
   inPitch  >>= 1; // U16 pointer is used for input
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1228,7 +1222,7 @@ ALIGN_DECL(32) static const signed int grTab[8] = { 0x0000d01f, 0x0000d01f, 0x00
 ALIGN_DECL(32) static const signed int gbTab[8] = { 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459, 0x00006459 };
 
 /* assume width = multiple of 8 */
-IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* outInfo)
+IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
     __m128i xmm0, xmm1;
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5;
@@ -1240,7 +1234,6 @@ IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
     mfxI32 i, j, width, height;
 
     VM_ASSERT( (inInfo->Width & 0x07) == 0 );
-    outInfo;
 
     if ((MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct) == 0)
         return ippStsErr;  /* interlaced not supported */
@@ -1332,7 +1325,7 @@ IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
 } // IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 /* assume width = multiple of 8 */
-IppStatus cc_P210_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* outInfo)
+IppStatus cc_P210_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
     __m128i xmm0, xmm1;
     __m256i ymm0, ymm1, ymm2, ymm3, ymm4, ymm5;
@@ -1344,7 +1337,6 @@ IppStatus cc_P210_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
     mfxI32 i, j, width, height;
 
     VM_ASSERT( (inInfo->Width & 0x07) == 0 );
-    outInfo;
 
     if ((MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct) == 0)
         return ippStsErr;  /* interlaced not supported */
@@ -1445,7 +1437,6 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   Ipp32u    shift;
   mfxU8     right_shift;
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1497,13 +1488,12 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_NV12_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                           mfxFrameData* outData, mfxFrameInfo* outInfo)
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
 
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1534,13 +1524,12 @@ IppStatus cc_NV12_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_NV12_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,...)
 
 IppStatus cc_NV16_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                           mfxFrameData* outData, mfxFrameInfo* outInfo)
+                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
   IppiSize  roiSize = {0, 0};
 
   // cropping was removed
-  outInfo;
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1855,7 +1844,7 @@ IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 } // IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo, ... )
 
 IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
-                          mfxFrameData* outData, mfxFrameInfo* outInfo )
+                          mfxFrameData* outData, mfxFrameInfo* /*outInfo*/ )
 {
     IppStatus sts = ippStsNoErr;
     IppiSize  roiSize = {0, 0};
@@ -1890,8 +1879,6 @@ IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                           pDst, dstStep,
                                           roiSize);
     return sts;*/
-
-    outInfo;
 
     VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
     VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);

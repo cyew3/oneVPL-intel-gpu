@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -1654,13 +1654,11 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTGetSize(IppiSize roiSize, mfx
 
 /* ************************************************************************ */
 
-mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTInit(owniDenoiseCASTState* pState, IppiSize roiSize)
+mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTInit(owniDenoiseCASTState* pState, IppiSize /*roiSize*/)
 {
   IppStatus ippSts = ippStsNoErr;
 
   MFX_CHECK_NULL_PTR1( pState );
-
-  roiSize;
 
   ippSts = ippsZero_8u( (mfxU8*)pState,  sizeof(owniDenoiseCASTState) );
   VPP_CHECK_IPP_STS( ippSts );

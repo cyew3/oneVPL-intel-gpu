@@ -248,7 +248,8 @@ mfxStatus VideoVPP_SW::SetCrop(mfxFrameSurface1 *in, mfxFrameSurface1 *out)
 
 mfxStatus VideoVPP_SW::CreatePipeline(mfxFrameInfo* In, mfxFrameInfo* Out)
 {
-    In; Out;
+    (void)In;
+    (void)Out;
 #if !defined(MFX_ENABLE_HW_ONLY_VPP)
     mfxFrameInfo inFrameInfo;
     mfxFrameInfo outFrameInfo;

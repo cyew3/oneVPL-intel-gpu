@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -52,9 +52,8 @@ void MFXVideoVPPGamutCompression::CalculateInternalParams( void )
 } // void MFXVideoVPPGamutCompression::CalculateInternalParams( void )
 
 
-mfxStatus MFXVideoVPPGamutCompression::Query( mfxExtBuffer* pHint )
+mfxStatus MFXVideoVPPGamutCompression::Query( mfxExtBuffer* /*pHint*/ )
 {
-    pHint;
     //if( pHint )
     //{
     //    mfxExtVPPGamutMapping* pGamutParams = (mfxExtVPPGamutMapping*)pHint;    
@@ -117,9 +116,8 @@ MFXVideoVPPGamutCompression::~MFXVideoVPPGamutCompression(void)
 
 } // MFXVideoVPPGamutCompression::~MFXVideoVPPGamutCompression(void)
 
-mfxStatus MFXVideoVPPGamutCompression::SetParam( mfxExtBuffer* pHint )
+mfxStatus MFXVideoVPPGamutCompression::SetParam( mfxExtBuffer* /*pHint*/ )
 {
-    pHint;
     mfxStatus mfxSts = MFX_ERR_NONE;    
 
     //if( pHint )

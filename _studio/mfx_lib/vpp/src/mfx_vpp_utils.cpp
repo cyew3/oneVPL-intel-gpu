@@ -1917,7 +1917,6 @@ bool GetExtParamList(
     mfxU32* pList,
     mfxU32* pLen)
 {
-    pList;
     mfxU32 fIdx = 0;
 
     /* robustness */
@@ -1954,7 +1953,6 @@ bool GetExtParamList(
 
 void GetConfigurableFilterList( mfxVideoParam* par, mfxU32* pList, mfxU32* pLen )
 {
-    pList;
     mfxU32 fIdx = 0;
 
     /* robustness */
@@ -2029,9 +2027,8 @@ size_t GetConfigSize( mfxU32 filterId )
 } // size_t GetConfigSize( mfxU32 filterId )
 
 
-mfxStatus CheckTransferMatrix( mfxU16 transferMatrix )
+mfxStatus CheckTransferMatrix( mfxU16 /*transferMatrix*/ )
 {
-    transferMatrix;
 #if 0
     switch( transferMatrix )
     {

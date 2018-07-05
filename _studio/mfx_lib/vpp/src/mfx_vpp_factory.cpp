@@ -39,7 +39,7 @@ DriverVideoProcessing* MfxHwVideoProcessing::CreateVideoProcessing(VideoCORE* co
 {
     //MFX_CHECK_NULL_PTR1( core );
     //assert( core );
-    core;
+    (void)core;
 
 #if   defined (MFX_VA_WIN) // Windows DirectX9
 

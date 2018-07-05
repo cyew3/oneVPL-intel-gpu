@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -906,10 +906,8 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
     return sts;
 }
 
-IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
+IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 /*picStruct*/ )
 {
-  picStruct;
-
   IppStatus sts     = ippStsNotSupportedModeErr;
   IppiSize  srcSize = {0,  0};
   IppiSize  dstSize = {0, 0};
