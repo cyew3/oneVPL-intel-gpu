@@ -87,6 +87,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_UYVY;
     case MFX_FOURCC_P010:
         return VA_FOURCC_P010;
+    case MFX_FOURCC_AYUV:
+        return VA_FOURCC_AYUV;
 
     default:
         VM_ASSERT(!"unsupported fourcc");
@@ -133,7 +135,8 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                        (VA_FOURCC_UYVY   != va_fourcc) &&
                        (VA_FOURCC_P208   != va_fourcc) &&
                        (VA_FOURCC_P010   != va_fourcc) &&
-                       (VA_FOURCC_R5G6B5 != va_fourcc)))
+                       (VA_FOURCC_R5G6B5 != va_fourcc) &&
+                       (VA_FOURCC_AYUV   != va_fourcc)))
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -471,6 +474,18 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
             ptr->Y = pBuffer + va_image.offsets[0];
             ptr->U = pBuffer + va_image.offsets[1];
             ptr->V = ptr->U + 2;
+        }
+        else mfx_res = MFX_ERR_LOCK_MEMORY;
+        break;
+    case MFX_FOURCC_AYUV:
+        if (mfx_fourcc == MFX_FOURCC_AYUV)
+        {
+            ptr->PitchHigh = (mfxU16)(va_image.pitches[0] / (1 << 16));
+            ptr->PitchLow  = (mfxU16)(va_image.pitches[0] % (1 << 16));
+            ptr->V = pBuffer + va_image.offsets[0];
+            ptr->U = ptr->V + 1;
+            ptr->Y = ptr->V + 2;
+            ptr->A = ptr->V + 3;
         }
         else mfx_res = MFX_ERR_LOCK_MEMORY;
         break;
