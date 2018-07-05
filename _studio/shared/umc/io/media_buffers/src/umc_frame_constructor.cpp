@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2005-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1147,9 +1147,9 @@ bool VideoFrameConstructor::IsFrameStartFound(void)
 
 bool VideoFrameConstructor::IsSampleComplyWithTmPolicy(FCSample &sample, Ipp64f dRate)
 {
-    return ((I_PICTURE == sample.GetFrameType()) || (D_PICTURE == sample.GetFrameType()) ||
-        (P_PICTURE == sample.GetFrameType() && dRate < 4.0 && dRate > -4.0) ||
-        (B_PICTURE == sample.GetFrameType() && dRate < 3.0 && dRate > -3.0));
+    Ipp64f absRate = IPP_ABS(dRate);
+    return (absRate < 3 || B_PICTURE != sample.GetFrameType()) &&
+           (absRate < 4 || P_PICTURE != sample.GetFrameType());
 }
 
 Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
