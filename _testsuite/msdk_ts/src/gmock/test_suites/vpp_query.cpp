@@ -350,6 +350,26 @@ namespace vpp_query
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.PicStruct,   MFX_PICSTRUCT_FIELD_TOP},
         }
         },
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+        {/*40*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB565},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YUY2},
+        },
+        },
+        {/*41*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB565},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_RGB4},
+        },
+        },
+        {/*42*/ STANDART, MFX_ERR_NONE,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB565},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_NV12},
+        },
+        },
+#endif
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);

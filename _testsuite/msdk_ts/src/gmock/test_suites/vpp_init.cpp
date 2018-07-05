@@ -463,6 +463,18 @@ const TestSuite::tc_struct TestSuite::test_case[] =
             {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_YUY2},
         },
     },
+    {/*58*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB565},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_RGB4},
+        },
+    },
+    {/*59*/ MFX_ERR_NONE, STANDARD,
+        {
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC,       MFX_FOURCC_RGB565},
+            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,      MFX_FOURCC_NV12},
+        },
+    },
 #endif
 };
 
