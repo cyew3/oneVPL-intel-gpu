@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -334,7 +334,7 @@ Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
     for (int i = 0; i < n; i++)
     {
         void * ptr = va_arg(args, void *);
-        ptr; // just skip it
+        (void)ptr; // just skip it
 
         int currSize = va_arg(args, int);
         cumulativeSize += currSize;

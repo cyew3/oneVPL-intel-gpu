@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -391,9 +391,9 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
 
     // initialize the scaled picture
     {
-        IppiSize srcDim = {m_picDim.width, m_picDim.height / 2};srcDim;
-        IppiRect srcRoi = {0, 0, srcDim.width, srcDim.width};srcRoi;
-        IppiSize dstDim = GetScaledImageSize(m_picDim);dstDim;
+        IppiSize srcDim = {m_picDim.width, m_picDim.height / 2};
+        IppiRect srcRoi = {0, 0, srcDim.width, srcDim.width};
+        IppiSize dstDim = GetScaledImageSize(m_picDim);
 
         // initialize the scaled image
         umcRes = m_scaledPic.Init(dstDim.width, dstDim.height, GRAY);

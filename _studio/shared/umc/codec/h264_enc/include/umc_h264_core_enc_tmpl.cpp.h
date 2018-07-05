@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if PIXBITS == 8
@@ -2328,7 +2328,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ScanSignificant_CABAC)(
     const Ipp32s* dec_single_scans,
     CabacBlock4x4* cabacData)
 {
-    Ipp8u start_scan, end_scan, j; j;
+    Ipp8u start_scan, end_scan;
     Ipp8u i;
 
     switch(numcoeff)
@@ -2369,7 +2369,7 @@ void H264ENC_MAKE_NAME(H264CoreEncoder_ScanSignificant_CABAC)(
     const Ipp32s* dec_single_scans,
     CabacBlock8x8* cabacData)
 {
-    Ipp8u start_scan, end_scan, j; j;
+    Ipp8u start_scan, end_scan;
     Ipp8u i;
 
     switch(numcoeff)

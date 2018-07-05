@@ -3357,11 +3357,8 @@ JERRCODE CJPEGEncoder::TransformMCURowEX(
 } // CJPEGEncoder::TransformMCURowEX()
 
 
-JERRCODE CJPEGEncoder::TransformMCURowLS(Ipp16s* pMCUBuf, int nMCURow, int thread_id)
+JERRCODE CJPEGEncoder::TransformMCURowLS(Ipp16s* /*pMCUBuf*/, int /*nMCURow*/, int /*thread_id*/)
 {
-    pMCUBuf;
-    nMCURow;
-    thread_id;
 #if 0
   int                    c;
   Ipp16s*                pDst;
@@ -3508,9 +3505,8 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp
 } // CJPEGEncoder::EncodeHuffmanMCURowBL()
 
 
-JERRCODE CJPEGEncoder::EncodeHuffmanMCURowLS(Ipp16s* pMCUBuf)
+JERRCODE CJPEGEncoder::EncodeHuffmanMCURowLS(Ipp16s* /*pMCUBuf*/)
 {
-    pMCUBuf;
 #if 0
   int                    c;
   int                    dstLen;

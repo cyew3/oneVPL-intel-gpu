@@ -268,7 +268,6 @@ Ipp32s StreamParser::GetTrackByPidOrCreateNew(Ipp32s iPid, bool *pIsNew)
         return -1;
 
     *pIsNew = true;
-    m_uiTracks;
     if (!m_pInfo[m_uiTracks])
         m_pInfo[m_uiTracks] = new Mpeg2TrackInfo;
     m_pInfo[m_uiTracks]->m_PID = iPid;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -300,11 +300,11 @@ public:
     UMC::Status GetInfo(UMC::VideoDecoderParams *lpInfo);
 
     // Add a new bitstream data buffer to decoding
-    virtual UMC::Status AddSource(UMC::MediaData * pSource);
+    virtual UMC::Status AddSource(UMC::MediaData *pSource);
 
 #if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     // Add a new Widevine buffer to decoding
-    virtual UMC::Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
+    virtual UMC::Status AddSource(DecryptParametersWrapper * /*pDecryptParams*/) { return MFX_ERR_UNSUPPORTED; }
 #endif
 
     // Chose appropriate processing action for specified NAL unit
@@ -324,7 +324,7 @@ public:
     virtual H265DecoderFrame *GetFrameToDisplayInternal(bool force);
 
     // Retrieve decoded SEI data with SEI_USER_DATA_REGISTERED_TYPE type
-    UMC::Status GetUserData(UMC::MediaData * pUD);
+    UMC::Status GetUserData(UMC::MediaData *pUD);
 
     bool IsShouldSuspendDisplay();
 

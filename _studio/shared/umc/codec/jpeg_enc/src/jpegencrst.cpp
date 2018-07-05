@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,7 +23,7 @@ JERRCODE CJPEGEncoder::WriteRST_T(
   int    next_restart_num,
   int    thread_id)
 {
-    thread_id;
+    (void)thread_id;
   JERRCODE jerr;
 
   TRC0("-> WriteRST");
@@ -193,7 +193,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(Ipp16s* pMCUBuf, int thread_id
   IppiEncodeHuffmanSpec* pACTbl = 0;
   IppStatus              status;
 
-  thread_id;
+  (void)thread_id;
 
 #ifdef _OPENMP
 

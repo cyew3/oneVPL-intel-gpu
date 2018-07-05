@@ -2434,7 +2434,6 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   int need_upsampling;
   CJPEGColorComponent* curr_comp;
   IppStatus status;
-  rowMCU;
 
   // if image format is YCbCr and destination format is NV12 need special upsampling (see below)
   if(JC_YCBCR != m_jpeg_color || JC_NV12 != m_dst.color)

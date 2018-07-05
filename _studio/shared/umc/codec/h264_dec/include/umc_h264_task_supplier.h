@@ -501,10 +501,10 @@ public:
 
     Status GetInfo(VideoDecoderParams *lpInfo);
 
-    virtual Status AddSource(MediaData * pSource);
+    virtual Status AddSource(MediaData *pSource);
 
 #if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    virtual Status AddSource(DecryptParametersWrapper* pDecryptParams) {pDecryptParams; return MFX_ERR_UNSUPPORTED;}
+    virtual Status AddSource(DecryptParametersWrapper * /*pDecryptParams*/) { return MFX_ERR_UNSUPPORTED; }
 #endif
 
 #if (MFX_VERSION >= 1025)
@@ -527,7 +527,7 @@ public:
 
     virtual H264DecoderFrame *GetFrameToDisplayInternal(bool force);
 
-    Status GetUserData(MediaData * pUD);
+    Status GetUserData(MediaData *pUD);
 
     bool IsWantToShowFrame(bool force = false);
 

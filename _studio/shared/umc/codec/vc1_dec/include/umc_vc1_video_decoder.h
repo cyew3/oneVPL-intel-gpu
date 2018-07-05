@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -163,7 +163,7 @@ namespace UMC
         void UnlockSurfaces();
         virtual UMC::FrameMemID GetSkippedIndex(bool isIn = true) = 0;
         FrameMemID GetFrameOrder(bool isLast, bool isSamePolar, Ipp32u & frameOrder);
-        virtual Status RunThread(int threadNumber) { threadNumber; return UMC_OK; }
+        virtual Status RunThread(int /*threadNumber*/) { return UMC_OK; }
 
         UMC::VC1FrameDescriptor* m_pDescrToDisplay;
         mfxU32                   m_frameOrder;

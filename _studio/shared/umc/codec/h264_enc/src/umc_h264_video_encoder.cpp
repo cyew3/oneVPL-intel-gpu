@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -238,9 +238,8 @@ VideoData* H264VideoEncoder::GetReconstructedFrame()
     }
 }
 
-Status H264EncoderParams::ReadParamFile(const vm_char *FileName)
+Status H264EncoderParams::ReadParamFile(const vm_char * /*FileName*/)
 {
-    FileName;
 #if 0 // Klocwork doesn't accept scanf (scanf_s is required)
 #define SSCANF(N, X) if (N != vm_string_sscanf X) { vm_file_close(InputFile); return UMC_ERR_INVALID_STREAM; }
 

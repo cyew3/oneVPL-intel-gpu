@@ -186,9 +186,8 @@ void DecryptParametersWrapper::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_pres
     }
 }
 
-UMC::Status DecryptParametersWrapper::GetVideoParamSet(H265VideoParamSet *pcVPS)
+UMC::Status DecryptParametersWrapper::GetVideoParamSet(H265VideoParamSet * /*pcVPS*/)
 {
-    pcVPS;
     // Currently we do not have VPS from decryption library
     return UMC::UMC_OK;
 }
@@ -1588,9 +1587,8 @@ void DecryptParametersWrapper::parseRefPicSet(ReferencePictureSet* rps)
     }
 }
 
-void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, H265SEIPayLoad *spl)
+void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & /*headers*/, H265SEIPayLoad * /*spl*/)
 {
-    headers;spl;
     //Currently MSDK does not need that
     return;
 }

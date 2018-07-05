@@ -2689,7 +2689,7 @@ void H264ParsingCore::GetInfo(VideoStreamInfo& info)
         info.interlace_type = sh.field_pic_flag ? sh.bottom_field_flag ?
             INTERLEAVED_BOTTOM_FIELD_FIRST : INTERLEAVED_TOP_FIELD_FIRST : PROGRESSIVE;
         info.color_format = ColorFormats[sps.chroma_format_idc];
-        info.bitrate;
+        (void)info.bitrate;
     }
 }
 

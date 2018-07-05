@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -422,7 +422,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
             sMB->ZigzagTable = ZigZagTables_PB_chroma[sMB->ACPRED];
 
             if(IntraFlag & 1)
-                for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+                for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
                 {
                     //all MB intra
                     vc1Res = BLKLayer_Intra_Chroma(pContext, blk_num, 128, sMB->ACPRED);
@@ -433,7 +433,7 @@ VC1Status MBLayer_ProgressivePpicture(VC1Context* pContext)
                     }
                 }
             else
-                for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+                for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
                 {
                     //all MB inter
                     vc1Res = BLKLayer_Inter_Chroma(pContext, blk_num);

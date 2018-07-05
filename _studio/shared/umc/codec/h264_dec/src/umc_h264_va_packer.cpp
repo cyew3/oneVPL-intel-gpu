@@ -75,8 +75,8 @@ Status Packer::QueryStreamOut(H264DecoderFrame* pFrame)
 
 Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
 {
-    va;
-    supplier;
+    (void)va;
+    (void)supplier;
     Packer * packer = 0;
 #if defined(UMC_VA_DXVA)
 #ifndef MFX_PROTECTED_FEATURE_DISABLE

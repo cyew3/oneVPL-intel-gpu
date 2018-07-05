@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -615,7 +615,7 @@ VC1Status MBLayer_ProgressiveBpicture_Adv(VC1Context* pContext)
             //chroma
             sMB->ZigzagTable = AdvZigZagTables_PBProgressive_chroma[sMB->ACPRED];
 
-            for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+            for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
             {
                 vc1Res = BLKLayer_Inter_Chroma_Adv(pContext, blk_num);
                 if(vc1Res != VC1_OK)
@@ -640,7 +640,7 @@ VC1Status MBLayer_ProgressiveBpicture_Adv(VC1Context* pContext)
 
             //chroma
             sMB->ZigzagTable = AdvZigZagTables_PBProgressive_chroma[sMB->ACPRED];
-            for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+            for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
             {
                 vc1Res = BLKLayer_Intra_Chroma_Adv(pContext, blk_num, sMB->ACPRED);
                 if(vc1Res != VC1_OK)
@@ -1250,7 +1250,7 @@ VC1Status MBLayer_Frame_InterlacedBpicture(VC1Context* pContext)
 
         sMB->ZigzagTable = AdvZigZagTables_PBInterlace_chroma[ACPRED];
 
-        for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+        for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
         {
             vc1Res = BLKLayer_Intra_Chroma_Adv(pContext, blk_num,ACPRED);
             if(vc1Res != VC1_OK)
@@ -1312,7 +1312,7 @@ VC1Status MBLayer_Frame_InterlacedBpicture(VC1Context* pContext)
 
             sMB->ZigzagTable = AdvZigZagTables_PBInterlace_chroma[ACPRED];
 
-            for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+            for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
             {
                 vc1Res = BLKLayer_Inter_Chroma_Adv(pContext, blk_num);
                 if(vc1Res != VC1_OK)
@@ -1733,7 +1733,7 @@ VC1Status MBLayer_Field_InterlacedBpicture (VC1Context* pContext)
 
         sMB->ZigzagTable = AdvZigZagTables_PBField_chroma[ACPRED];
 
-       for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+       for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
        {
            //all MB inter
            vc1Res = BLKLayer_Intra_Chroma_Adv(pContext, blk_num, ACPRED);
@@ -1813,7 +1813,7 @@ VC1Status MBLayer_Field_InterlacedBpicture (VC1Context* pContext)
 
         sMB->ZigzagTable = AdvZigZagTables_PBField_chroma[ACPRED];
 
-       for(blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
+       for((void)blk_num; blk_num < VC1_NUM_OF_BLOCKS; blk_num++)
        {
            //all MB inter
            vc1Res = BLKLayer_Inter_Chroma_Adv(pContext, blk_num);

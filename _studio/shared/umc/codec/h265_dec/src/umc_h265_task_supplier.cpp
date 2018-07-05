@@ -2697,7 +2697,7 @@ Ipp32s CalculateDPBSize(Ipp32u profile_idc, Ipp32u &level_idc, Ipp32s width, Ipp
             profile_idc != H265_PROFILE_SCC ? 6 : 7;
 #else
             6;//HW handles second version of current reference (twoVersionsOfCurrDecPicFlag) itself
-        profile_idc;
+        (void)profile_idc;
 #endif
 
         Ipp32u PicSizeInSamplesY = width * height;

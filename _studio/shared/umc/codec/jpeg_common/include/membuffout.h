@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MEMBUFFOUT_H__
@@ -32,7 +32,7 @@ public:
   size_t GetPosition() { return (size_t)m_currpos; }
 
 private:
-  JERRCODE Open(vm_char* name) { name; return JPEG_NOT_IMPLEMENTED; }
+  JERRCODE Open(vm_char* /*name*/) { return JPEG_NOT_IMPLEMENTED; }
 
 protected:
   Ipp8u*  m_buf;

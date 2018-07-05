@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -183,11 +183,12 @@ int get_num_threads(void)
 
 void set_num_threads(int maxThreads)
 {
-  maxThreads;
 #ifdef _OPENMP
-      omp_set_num_threads(maxThreads);
+    omp_set_num_threads(maxThreads);
+#else
+    (void)maxThreads;
 #endif
-  return;
+    return;
 } // set_num_threads()
 
 

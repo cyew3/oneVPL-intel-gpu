@@ -813,7 +813,6 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
                                                      const H264PicParamSet *pps,
                                                      const H264SeqParamSet *sps)
 {
-    pps;
     hdr->frame_num = frame_num;
 
     hdr->bottom_field_flag = 0;
@@ -879,23 +878,16 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
 
 Status DecryptParametersWrapper::GetSliceHeaderPart3(
     H264SliceHeader *hdr,        // slice header read goes here
-    PredWeightTable *pPredWeight_L0, // L0 weight table goes here
-    PredWeightTable *pPredWeight_L1, // L1 weight table goes here
+    PredWeightTable * /*pPredWeight_L0*/, // L0 weight table goes here
+    PredWeightTable * /*pPredWeight_L1*/, // L1 weight table goes here
     RefPicListReorderInfo *pReorderInfo_L0,
     RefPicListReorderInfo *pReorderInfo_L1,
     AdaptiveMarkingInfo *pAdaptiveMarkingInfo,
     AdaptiveMarkingInfo *pBaseAdaptiveMarkingInfo,
     const H264PicParamSet *pps,
-    const H264SeqParamSet *sps,
-    const H264SeqParamSetSVCExtension *spsSvcExt)
+    const H264SeqParamSet * /*sps*/,
+    const H264SeqParamSetSVCExtension * /*spsSvcExt*/)
 {
-    pPredWeight_L0;
-    pPredWeight_L1;
-    pReorderInfo_L0;
-    pReorderInfo_L1;
-    sps;
-    spsSvcExt;
-
     //Ipp8u ref_pic_list_reordering_flag_l0 = 0;
     //Ipp8u ref_pic_list_reordering_flag_l1 = 0;
     //Status ps = UMC_OK;

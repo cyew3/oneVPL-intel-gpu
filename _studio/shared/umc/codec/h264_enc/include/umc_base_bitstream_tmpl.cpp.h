@@ -175,9 +175,8 @@ void H264ENC_MAKE_NAME(H264BsReal_InitializeAEE_CABAC)(
 }
 
 void H264ENC_MAKE_NAME(H264BsFake_InitializeAEE_CABAC)(
-    void* state)
+    void* /*state*/)
 {
-    state;
 }
 
 Ipp32u H264ENC_MAKE_NAME(H264BsReal_GetNotStoredStreamSize_CABAC)(
@@ -347,9 +346,8 @@ void H264ENC_MAKE_NAME(H264BsReal_RestoreCABACState)(
 }
 
 void H264ENC_MAKE_NAME(H264BsReal_ResetBitStream_CABAC)(
-    void* state)
+    void* /*state*/)
 {
-    state;
 }
 
 void H264ENC_MAKE_NAME(H264BsReal_EncodeSingleBin_CABAC)(
