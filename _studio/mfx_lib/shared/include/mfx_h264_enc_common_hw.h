@@ -52,7 +52,11 @@
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
+#ifndef ANDROID
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
+#else
+#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1];
+#endif
 
 // this guid is used to identify that device creation is performed during Query or QueryIOSurf call
 static const GUID MSDK_Private_Guid_Encode_AVC_Query =

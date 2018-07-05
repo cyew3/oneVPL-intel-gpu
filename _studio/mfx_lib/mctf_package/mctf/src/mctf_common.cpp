@@ -69,7 +69,7 @@ void CMC::QueryDefaultParams(mfxExtVppMctf* pBuffer)
 mfxStatus CMC::CheckAndFixParams(mfxExtVppMctf* pBuffer)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    if (!pBuffer) MFX_ERR_NULL_PTR;
+    if (!pBuffer) return MFX_ERR_NULL_PTR;
     if (pBuffer->FilterStrength > 20) {
         pBuffer->FilterStrength = AUTO_FILTER_STRENTH;
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
@@ -255,6 +255,8 @@ void CMC::TimeStop() {
 
 mfxF64 CMC::CatchTime(const char* message, int print)
 {
+    (void)message;
+
     mfxF64
         timeval = 0.0;
 //    timeval = TimeMeasurement(pTimer->tStart, pTimer->tStop, pTimer->tFrequency);
@@ -1892,7 +1894,8 @@ mfxI32 CMC::MCTF_RUN_ME_MC_H(
     char forwardRefDist, char backwardRefDist,
     mfxU8 mcSufIndex) {
 #if !_MRE_
-    idxMRE1, idxMRE2;
+    (void)idxMRE1;
+    (void)idxMRE2;
 #endif
     time = 0;
 

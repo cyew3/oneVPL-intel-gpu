@@ -85,7 +85,8 @@ VideoPAK *CreatePAKSpecificClass(mfxVideoParam *par, mfxU32 codecProfile, VideoC
 
 mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
-    in;
+    (void)in;
+
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(out, MFX_ERR_NULL_PTR);
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2007-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2007-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -323,7 +323,7 @@ namespace MFX
     mfxU64 DXDevice::GetDriverVersion(void) const { return 0; }
     mfxU64 DXDevice::GetLUID(void) const { return 0; }
     mfxU32 DXDevice::GetAdapterCount(void) const { return 0; }
-    void DXDevice::LoadDLLModule(const wchar_t *pModuleName) { pModuleName; return; }
+    void DXDevice::LoadDLLModule(const wchar_t * /*pModuleName*/) { return; }
     
     DXVA2Device::DXVA2Device(void)
         : m_numAdapters(0)
@@ -332,7 +332,7 @@ namespace MFX
         , m_driverVersion(0)
     {}
     DXVA2Device::~DXVA2Device(void) {}
-    bool DXVA2Device::InitDXGI1(const mfxU32 adapterNum) { adapterNum; return true; }
+    bool DXVA2Device::InitDXGI1(const mfxU32 /*adapterNum*/) { return true; }
     mfxU32 DXVA2Device::GetVendorID(void) const {return 0;} 
     mfxU32 DXVA2Device::GetDeviceID(void) const {return 0;}
     mfxU64 DXVA2Device::GetDriverVersion(void) const {return 0;}
@@ -344,7 +344,7 @@ namespace MFX
         , m_pDXGIAdapter1(0)
     {}
     DXGI1Device::~DXGI1Device(void) {}
-    bool DXGI1Device::Init(const mfxU32 adapterNum) { adapterNum; return true; }
+    bool DXGI1Device::Init(const mfxU32 /*adapterNum*/) { return true; }
     void DXGI1Device::Close(void) {}
 };
 #endif // #if defined(MFX_VA_WIN)

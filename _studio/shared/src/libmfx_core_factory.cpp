@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -30,7 +30,7 @@ VideoCORE* FactoryCORE::CreateCORE(eMFXVAType va_type,
                                    mfxU32 numThreadsAvailable, 
                                    mfxSession session)
 {
-    adapterNum;
+    (void)adapterNum;
     switch(va_type)
     {
     case MFX_HW_NO:

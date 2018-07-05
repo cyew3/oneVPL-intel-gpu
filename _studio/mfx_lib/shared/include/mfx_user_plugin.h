@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_USER_PLUGIN_H)
@@ -106,12 +106,10 @@ protected:
             mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl,
             mfxFrameSurface1 *surface,
             mfxBitstream *bs,
-            mfxFrameSurface1 **reordered_surface,
-            mfxEncodeInternalParams *pInternalParams,
+            mfxFrameSurface1 ** /*reordered_surface*/,
+            mfxEncodeInternalParams * /*pInternalParams*/,
             MFX_ENTRY_POINT *pEntryPoint)
         {
-            reordered_surface;
-            pInternalParams;
             return m_plg->EncodeFrameCheck(ctrl, surface, bs, pEntryPoint);
         }
         virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl * /*ctrl*/

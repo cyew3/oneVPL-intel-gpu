@@ -1343,7 +1343,6 @@ mfxFrameSurface1 * mfx_UMC_FrameAllocator_NV12::GetSurface(UMC::FrameMemID index
 
 mfxStatus mfx_UMC_FrameAllocator_NV12::PrepareToOutput(mfxFrameSurface1 *surf_work, UMC::FrameMemID index, const mfxVideoParam * videoPar, bool isOpaq)
 {
-    isOpaq;
     UMC::AutomaticUMCMutex guard(m_guard);
 
     if (!m_frameDataInternal.IsValidMID((mfxU32)index))

@@ -98,7 +98,7 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
         break;
 #endif
 
-    case 0: pCore;
+    case 0: (void)pCore;
     default:
         break;
     }
@@ -172,7 +172,7 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
             break;
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENC && !MFX_VA
 
-        case 0: in;
+        case 0: (void)in;
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }

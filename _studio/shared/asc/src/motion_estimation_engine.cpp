@@ -251,7 +251,7 @@ mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn,
     bool
         foundBetter = false;
 
-    first;
+    (void)first;
 
     objFrame = &scale->Image.Y[offset];
     refFrame = &scaleRef->Image.Y[offset];

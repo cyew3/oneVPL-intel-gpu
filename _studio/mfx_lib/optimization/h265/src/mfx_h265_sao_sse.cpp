@@ -74,7 +74,7 @@ namespace MFX_HEVC_PP
 
     void MAKE_NAME(h265_ProcessSaoCuOrg_Luma_8u)(SAOCU_ORG_PARAMETERS_LIST)
     {
-        pClipTable;
+        (void)pClipTable;
 
         Ipp8u tmpUpBuff1[66];   // startX + 64 + 1
         Ipp8u tmpUpBuff2[66];

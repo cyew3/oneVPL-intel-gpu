@@ -50,6 +50,10 @@
     #define ASC_PRINTF(...)     printf(__VA_ARGS__)
     #define ASC_FPRINTF(...)    fprintf(__VA_ARGS__)
     #define ASC_FFLUSH(x)       fflush(x)
+#elif defined(ANDROID)
+    #define ASC_PRINTF(...)
+    #define ASC_FPRINTF(...)
+    #define ASC_FFLUSH(x)
 #else
     #define ASC_PRINTF(...)     __VA_ARGS__
     #define ASC_FPRINTF(...)    __VA_ARGS__

@@ -1245,7 +1245,7 @@ mfxU32 MfxHwH264Encode::GetMaxBitrateValue(mfxU32 kbps, mfxU32 scale)
 
 mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
 {
-    targetUsage;
+    (void)targetUsage;
     assert(targetUsage >= 1);
     assert(targetUsage <= 7);
     //const mfxU8 CABAC_INIT_IDC_TABLE[] = { 0, 2, 2, 1, 0, 0, 0, 0 };
@@ -2333,7 +2333,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     Bool changed(false);
     Bool warning(false);
 #if !defined(MFX_ENABLE_MFE)
-    config;
+    (void)config;
 #endif
     mfxExtCodingOption *       extOpt       = GetExtBuffer(par);
     mfxExtCodingOptionDDI *    extDdi       = GetExtBuffer(par);
@@ -7552,11 +7552,10 @@ bool SliceDividerBluRay::Next(SliceDividerState & state)
 
 
 SliceDividerOneSlice::SliceDividerOneSlice(
-    mfxU32 numSlice,
+    mfxU32 /*numSlice*/,
     mfxU32 widthInMbs,
     mfxU32 heightInMbs)
 {
-    numSlice;
     m_pfNext              = &SliceDividerOneSlice::Next;
     m_numSlice            = 1;
     m_numMbInRow          = widthInMbs;
@@ -8728,7 +8727,7 @@ mfxU8 MfxHwH264Encode::ReadSpsIdOfPpsHeader(
 {
     InputBitstreamCheckedRange reader(is);
     mfxU8 ppsId = reader.GetUe();
-    ppsId;
+    (void)ppsId;
 
     mfxU8 spsId = reader.GetUe();
     if (spsId > 31)
