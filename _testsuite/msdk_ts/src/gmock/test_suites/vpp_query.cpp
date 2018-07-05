@@ -406,6 +406,15 @@ namespace vpp_query
             (tc.expected_sts == MFX_ERR_NONE))
         {
             g_tsStatus.expect(MFX_WRN_PARTIAL_ACCELERATION);
+
+            if (m_par.vpp.Out.FourCC == MFX_FOURCC_Y210 ||
+                m_par.vpp.Out.FourCC == MFX_FOURCC_Y410 ||
+                m_par.vpp.Out.FourCC == MFX_FOURCC_P016 ||
+                m_par.vpp.Out.FourCC == MFX_FOURCC_Y216 ||
+                m_par.vpp.Out.FourCC == MFX_FOURCC_Y416)
+            {
+                g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+            }
         }
 
         Query(work_ses, m_pPar, m_pParOut);
