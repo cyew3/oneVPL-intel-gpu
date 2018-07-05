@@ -1103,10 +1103,8 @@ mfxStatus VAAPIEncoder::Reset(MfxVideoParam const & par, bool bResetBRC)
     return MFX_ERR_NONE;
 }
 
-mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest& request)
+mfxStatus VAAPIEncoder::QueryCompBufferInfo(D3DDDIFORMAT /*type*/, mfxFrameAllocRequest& request)
 {
-    type;
-
     // request linear buffer
     request.Info.FourCC = MFX_FOURCC_P8;
 
@@ -1162,11 +1160,8 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     return MFX_ERR_NONE;
 }
 
-mfxStatus VAAPIEncoder::Register(mfxMemId memId, D3DDDIFORMAT type)
+mfxStatus VAAPIEncoder::Register(mfxMemId /*memId*/, D3DDDIFORMAT /*type*/)
 {
-    memId;
-    type;
-
     return MFX_ERR_UNSUPPORTED;
 }
 

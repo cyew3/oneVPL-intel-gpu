@@ -61,7 +61,7 @@ public:
 class DDITracer
 {
 public:
-    DDITracer(ENCODER_TYPE type = ENCODER_DEFAULT) { type; };
+    DDITracer(ENCODER_TYPE /*type = ENCODER_DEFAULT*/) {};
     ~DDITracer(){};
     template<class T> inline void Trace(T const &, mfxU32) {};
     template<class T> inline void TraceArray(T const *, mfxU32) {};

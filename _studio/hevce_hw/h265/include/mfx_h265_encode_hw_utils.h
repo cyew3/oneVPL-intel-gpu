@@ -40,7 +40,13 @@
 #define MFX_MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MFX_MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
+
+#ifndef ANDROID
 #define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
+#else
+#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1];
+#endif
+
 #define MFX_SORT_COMMON(_AR, _SZ, _COND)\
     for (mfxU32 _i = 0; _i < (_SZ); _i ++)\
         for (mfxU32 _j = _i; _j < (_SZ); _j ++)\

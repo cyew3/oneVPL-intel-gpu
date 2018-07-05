@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_H265_BRC_HW_H__
@@ -166,11 +166,8 @@ public:
 
     void PreEnc(mfxU32 frameType, std::vector<VmeData *> const & vmeData, mfxU32 encOrder);
 
-    mfxBRCStatus   PostPackFrame(MfxVideoParam &video, Task &task, mfxI32 bitsEncodedFrame, mfxI32 overheadBits, mfxI32 recode = 0)
+    mfxBRCStatus   PostPackFrame(MfxVideoParam & /*video*/, Task &task, mfxI32 bitsEncodedFrame, mfxI32 /*overheadBits*/, mfxI32 /*recode = 0*/)
     {
-        recode;
-        overheadBits;
-        video;
         Report(task.m_frameType, bitsEncodedFrame >> 3, 0, 0, task.m_eo, 0, 0); 
         return MFX_ERR_NONE;    
     }

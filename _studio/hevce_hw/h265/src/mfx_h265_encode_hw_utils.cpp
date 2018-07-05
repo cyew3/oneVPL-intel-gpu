@@ -2318,7 +2318,7 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
             }
         }
 #else
-        caps;
+        (void)caps;
         assert(0 == m_pps.weighted_pred_flag);
         assert(0 == m_pps.weighted_bipred_flag);
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
@@ -3453,7 +3453,7 @@ void ConfigureTask(
     }
 
 #else
-    caps;
+    (void)caps;
 #endif // MFX_ENABLE_HEVCE_ROI
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI
     mfxExtMasteringDisplayColourVolume* rtDisplayColour = ExtBuffer::Get(task.m_ctrl);

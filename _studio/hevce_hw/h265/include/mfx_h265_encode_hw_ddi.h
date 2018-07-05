@@ -244,9 +244,8 @@ public:
 
     // Functions below are used in HEVC FEI encoder
 
-    virtual mfxStatus PreSubmitExtraStage(Task const & task)
+    virtual mfxStatus PreSubmitExtraStage(Task const & /*task*/)
     {
-        task;
         return MFX_ERR_NONE;
     }
 

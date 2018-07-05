@@ -197,7 +197,7 @@ mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 #else
-    platform;
+    (void)platform;
 
     switch (par.mfx.CodecProfile)
     {
@@ -440,7 +440,7 @@ mfxU16 AddTileSlices(
 
         if (f == 0)
         {
-            f;
+            (void)f;
         }
         else if (f > nSlice / 2)
         {
