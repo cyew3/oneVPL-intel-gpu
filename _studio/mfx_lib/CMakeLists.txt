@@ -156,6 +156,7 @@ foreach( variant
   if(${variant} MATCHES hw)
   list( APPEND LIBS
     umc_h265_${variant}
+    umc_vp9_${variant}
     umc_av1_${variant}
   )
   endif()

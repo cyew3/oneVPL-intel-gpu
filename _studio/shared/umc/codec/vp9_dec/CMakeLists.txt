@@ -16,7 +16,7 @@ set( sources "" )
 file( GLOB_RECURSE srcs "src/*.c" "src/*.cpp" )
 list( APPEND sources ${srcs}) 
 
-set( defs "${API_FLAGS} ${WARNING_FLAGS} -DUMC_ENABLE_VP9_VIDEO_DECODER" )
+set( defs "${API_FLAGS} ${WARNING_FLAGS}" )
 make_library( umc_vp9 hw static )
 
 set( defs "" )

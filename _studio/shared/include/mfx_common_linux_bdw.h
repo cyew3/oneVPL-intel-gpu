@@ -20,7 +20,7 @@
 #if defined (MFX_VA)
     #define MFX_ENABLE_H265_VIDEO_DECODE
     #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-    //#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+    #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #define MFX_ENABLE_H265_VIDEO_ENCODE
 #endif
 

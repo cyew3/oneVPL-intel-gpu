@@ -882,7 +882,7 @@ foreach( variant
       ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_va_packer.cpp
     )
 
-    set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
+    set( defs "-DAS_VP9D_PLUGIN -DMFX_VA -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_HW" ${VP9_DECODER_HW_GUID} ${plugin_name} "01" "VP9")
   else()
@@ -897,7 +897,7 @@ foreach( variant
       ${MSDK_STUDIO_ROOT}/shared/umc/codec/vp9_dec/src/umc_vp9_utils.cpp
     )
 
-    set( defs "-DAS_VP9D_PLUGIN -DUMC_ENABLE_VP9_VIDEO_DECODER -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
+    set( defs "-DAS_VP9D_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${vp9_version_defs}")
 
     gen_plugins_cfg("VP9_Decoder_SW" ${VP9_DECODER_SW_GUID} ${plugin_name} "01" "VP9")
   endif()
