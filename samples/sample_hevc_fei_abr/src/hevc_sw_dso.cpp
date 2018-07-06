@@ -226,7 +226,7 @@ void HevcSwDso::FillBRCParams(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
 
     task.m_statData.NPixelsInFrame = task.m_surf->Info.CropW * task.m_surf->Info.CropH;
 
-    mfxU32 n_cu_intra = 0, n_cu_total = 0, cur_cu_size = 0, numNonZeroCoeff = 0;
+    mfxU32 numPixelsIntra = 0, numNonZeroCoeff = 0;
     mfxU64 sumOfSquaredCoeff = 0;
 
     for (auto pNALU = header; pNALU; pNALU = pNALU->next)
@@ -266,17 +266,14 @@ void HevcSwDso::FillBRCParams(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
 
                  CountRefPixels(*cu, task, m_DisplayOrderSinceLastIDR);
 
-                 cur_cu_size = 1 << (cu->log2CbSize << 1);
-
                  if (cu->PredMode == MODE_INTRA)
                  {
-                     n_cu_intra += cur_cu_size;
+                     // Number of pixels in CU is (2^log2CbSize)^2 = 2^(2*log2CbSize)
+                     numPixelsIntra += 1 << (cu->log2CbSize << 1);
                  }
-                 n_cu_total += cur_cu_size;
              }
          }
     }
-
 
     if (m_bEstimateDistortion)
     {
@@ -293,9 +290,9 @@ void HevcSwDso::FillBRCParams(const BS_HEVC2::NALU* header, HevcTaskDSO & task)
         }
     }
 
-    if (n_cu_total)
+    if (task.m_statData.NPixelsInFrame)
     {
-        task.m_statData.ShareIntra = mfxF64(n_cu_intra) / n_cu_total;
+        task.m_statData.ShareIntra = mfxF64(numPixelsIntra) / task.m_statData.NPixelsInFrame;
     }
 
     task.m_statData.FillProp();

@@ -29,11 +29,11 @@ class HevcSwDso : public IYUVSource
 public:
     HevcSwDso(const SourceFrameInfo& inPars,
               SurfacesPool* sp,
-              std::shared_ptr<MVPPool> mvpPool,
-              std::shared_ptr<CTUCtrlPool> ctuCtrlPool,
+              std::shared_ptr<MVPPool> & mvpPool,
+              std::shared_ptr<CTUCtrlPool> & ctuCtrlPool,
               bool calc_BRC_stat = false,
               bool dump_mvp      = false,
-              bool est_mse       = false,
+              bool est_dist      = false,
               DIST_EST_ALGO alg  = NNZ)
         : IYUVSource(inPars, sp)
         , m_inPars(inPars)
@@ -42,7 +42,7 @@ public:
         , m_ctuCtrlPool(ctuCtrlPool)
         , m_bCalcBRCStat(calc_BRC_stat)
         , m_bDumpFinalMVPs(dump_mvp)
-        , m_bEstimateDistortion(est_mse)
+        , m_bEstimateDistortion(est_dist)
         , m_AlgorithmType(alg)
     {
     }

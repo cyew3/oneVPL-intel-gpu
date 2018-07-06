@@ -70,8 +70,8 @@ void PrintHelp(const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("       [-LookBackDepth    value] - depth of look back window for taking into account encoded frames statistics (defult is 100)\n"));
     msdk_printf(MSDK_STRING("       [-AdaptationLength value] - number of frames to calculate adjustment ratio to minimize Algorithms bitrate estimation error (defult is 100)\n"));
     msdk_printf(MSDK_STRING("       [-Algorithm::MSE <file-name>] - use yuv file for MSE calculation (not optimized implementation)\n"));
-    msdk_printf(MSDK_STRING("       [-Algorithm::NNZ]              - use number of non-zero transform coefficients as MSE approximation (default)\n"));
-    msdk_printf(MSDK_STRING("       [-Algorithm::SSC]              - use sum of squared transform coefficients as MSE approximation\n"));
+    msdk_printf(MSDK_STRING("       [-Algorithm::NNZ]             - use number of non-zero transform coefficients as distortion approximation (default)\n"));
+    msdk_printf(MSDK_STRING("       [-Algorithm::SSC]             - use sum of squared transform coefficients as distortion approximation\n"));
     msdk_printf(MSDK_STRING("   [-idr_interval size] - if IdrInterval = 0, then only first I-frame is an IDR-frame\n"));
     msdk_printf(MSDK_STRING("                          if IdrInterval = 1, then every I - frame is an IDR - frame\n"));
     msdk_printf(MSDK_STRING("                          if IdrInterval = 2, then every other I - frame is an IDR - frame, etc (default is 0)\n"));

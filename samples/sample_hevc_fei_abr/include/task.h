@@ -149,7 +149,6 @@ public:
 
         task->m_statData.EncodedOrder = m_submittedTasks;
 
-        // Calc MSE
         if (m_calc_mse_from_file)
         {
             task->m_statData.VisualDistortion = CalcMSE(*task);

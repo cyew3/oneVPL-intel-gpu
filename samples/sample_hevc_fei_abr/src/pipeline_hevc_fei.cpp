@@ -163,7 +163,7 @@ mfxStatus CFeiTranscodingPipeline::Init()
         sts = InitComponents();
         MSDK_CHECK_STATUS(sts, "InitComponents failed");
 
-        // for MSE calculation
+        // We need an allocator to lock surface for MSE calculation
         m_la_queue->SetAllocator(m_pMFXAllocator.get());
     }
     catch (mfxError& ex)

@@ -157,7 +157,6 @@ mfxStatus FEI_Encode::EncodeFrame(mfxFrameSurface1* pSurf)
 
     for (;;)
     {
-
         sts = m_mfxENCODE.EncodeFrameAsync(&m_encodeCtrl, pSurf, &m_bitstream, &m_syncPoint);
         MSDK_CHECK_WRN(sts, "FEI EncodeFrameAsync");
 
