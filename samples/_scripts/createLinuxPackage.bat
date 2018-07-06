@@ -23,6 +23,7 @@ IF "%~4%"=="" (
 	exit /b
 )
 
+erase /S/Q %1\samples\_bin\x64\*
 xcopy /Y ..\..\builder\*.cmake %1\builder\
 erase %1\builder\open_source_symbols_undefine.list
 erase %1\builder\open_source_symbols_define.list
@@ -55,22 +56,8 @@ FOR /f %%f IN ('dir "%1\" /s /b /a-D') DO (dos2unix "%%f")
 xcopy /S /Y ..\*.pdf %1\samples\ /EXCLUDE:exclusions.txt
 xcopy /S /Y ..\*.so %1\samples\ /EXCLUDE:exclusions.txt
 
-xcopy /Y %2\sample_decode %1\samples\_bin\x64\*
-xcopy /Y %2\sample_encode %1\samples\_bin\x64\*
-xcopy /Y %2\sample_h265_gaa %1\samples\_bin\x64\*
-xcopy /Y %2\sample_multi_transcode %1\samples\_bin\x64\*
-xcopy /Y %2\sample_vpp %1\samples\_bin\x64\*
-xcopy /Y %2\sample_fei %1\samples\_bin\x64\*
-xcopy /Y %2\ocl_rotate.cl %1\samples\_bin\x64\*
-xcopy /Y %2\libsample_plugin_opencl.so %1\samples\_bin\x64\*
-xcopy /Y %2\libsample_rotate_plugin.so %1\samples\_bin\x64\*
-
 xcopy /S /Y %3\*.pdf %1\samples\
 move "%1\samples\Media_Samples_Guide.pdf" "%1\Media_Samples_Guide.pdf"
-#xcopy %3\..\..\redist.txt %1\
-#copy /Y "%3\..\..\..\..\release\EULAs\Master EULA for Intel Sw Development Products September 2015.pdf" "%1\Samples EULA.pdf"
-#xcopy %3\..\..\third_party_programs.txt %1\
-#xcopy %3\..\..\site_license_materials.txt %1\
 xcopy /Y %3\..\..\README %1\Samples\*
 
 xcopy /S /Y %4\ocl_motion_estimation\* %1\samples\ocl_motion_estimation\*
@@ -88,8 +75,24 @@ For %%A in ("%filename%") do (
 )
 rem "c:\Program Files\7-Zip\7z.exe" a -ttar -so %Name%.tar %1 | "c:\Program Files\7-Zip\7z.exe" a -tgzip -si %1.tar.gz
 erase %Name%.tar
-..\..\..\mdp_msdk-tools\tar\tar -C %Folder% -cvf %Name%.tar %Name%
+..\..\..\mdp_msdk-tools\tar\tar -C %Folder%  --mode="a+rwX" -cvf %Name%.tar %Name%
+
+rem Copying binaries and setting executable flag
+xcopy /Y %2\sample_decode %1\samples\_bin\x64\*
+xcopy /Y %2\sample_encode %1\samples\_bin\x64\*
+xcopy /Y %2\sample_h265_gaa %1\samples\_bin\x64\*
+xcopy /Y %2\sample_multi_transcode %1\samples\_bin\x64\*
+xcopy /Y %2\sample_vpp %1\samples\_bin\x64\*
+xcopy /Y %2\sample_fei %1\samples\_bin\x64\*
+xcopy /Y %2\ocl_rotate.cl %1\samples\_bin\x64\*
+xcopy /Y %2\libsample_plugin_opencl.so %1\samples\_bin\x64\*
+xcopy /Y %2\libsample_rotate_plugin.so %1\samples\_bin\x64\*
+
+..\..\..\mdp_msdk-tools\tar\tar -C %Folder% -cvf %Name%_a.tar --mode=776 %Name%/samples/_bin/x64
+..\..\..\mdp_msdk-tools\tar\tar -Avf %Name%.tar --mode=776 %Name%_a.tar
+
 "c:\Program Files\7-Zip\7z.exe" a -tgzip %1.tar.gz %Name%.tar
 erase %Name%.tar
+erase %Name%_a.tar
 
 rem echo !!!!!!!! DO NOT FORGET TO COPY OPENCL SAMPLES !!!!!!!!
