@@ -47,7 +47,7 @@ Copyright(c) 2013-2018 Intel Corporation. All Rights Reserved.
       (MFX_ANDROID_PLATFORM == tigerlake) || \
       (MFX_ANDROID_PLATFORM == elkhartlake)
 
-    #define PRE_SI_GEN 9
+    #define PRE_SI_GEN 11
 
     #ifdef MFX_VA
 

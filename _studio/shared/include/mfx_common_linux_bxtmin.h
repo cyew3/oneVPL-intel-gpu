@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_COMMON_LINUX_BXTMIN_H_
 #define _MFX_COMMON_LINUX_BXTMIN_H_
 
-#define PRE_SI_GEN 9
+#define PRE_SI_GEN 11
 
 // Disable HEVC plugins
 #undef AS_HEVCE_PLUGIN

@@ -286,15 +286,15 @@
     #endif
 
 #else // LINUX_TARGET_PLATFORM
-    #if defined(LINUX_TARGET_PLATFORM_CFL)      // PRE_SI_GEN == 9
+    #if defined(LINUX_TARGET_PLATFORM_CFL)      // PRE_SI_GEN == 11
         #include "mfx_common_linux_cfl.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 9
+    #elif defined(LINUX_TARGET_PLATFORM_BXTMIN) // PRE_SI_GEN == 11
         #include "mfx_common_linux_bxtmin.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BXT)    // PRE_SI_GEN == 9
+    #elif defined(LINUX_TARGET_PLATFORM_BXT)    // PRE_SI_GEN == 11
         #include "mfx_common_linux_bxt.h"
     #elif defined(LINUX_TARGET_PLATFORM_BSW)
         #include "mfx_common_linux_bsw.h"
-    #elif defined(LINUX_TARGET_PLATFORM_BDW)    // PRE_SI_GEN == 9
+    #elif defined(LINUX_TARGET_PLATFORM_BDW)    // PRE_SI_GEN == 11
         #include "mfx_common_linux_bdw.h"
     #elif defined(LINUX_TARGET_PLATFORM_ATS)    // PRE_SI_GEN == 12
         #include "mfx_common_linux_ats.h"
@@ -307,30 +307,18 @@
 
 #if defined (PRE_SI_GEN)
     #define ENABLE_PRE_SI_FEATURES
-    #if PRE_SI_GEN == 9
+    #if PRE_SI_GEN == 11
         #ifdef ENABLE_PRE_SI_FEATURES
              #undef ENABLE_PRE_SI_FEATURES
         #endif
-        #ifdef PRE_SI_TARGET_PLATFORM_GEN10
-             #undef PRE_SI_TARGET_PLATFORM_GEN10
+        #ifdef PRE_SI_TARGET_PLATFORM_GEN12
+             #undef PRE_SI_TARGET_PLATFORM_GEN12
         #endif
-        #ifdef PRE_SI_TARGET_PLATFORM_GEN11
-             #undef PRE_SI_TARGET_PLATFORM_GEN11
-        #endif
-    #elif PRE_SI_GEN == 10
-        #define PRE_SI_TARGET_PLATFORM_GEN10
-    #elif PRE_SI_GEN == 11
-        #define PRE_SI_TARGET_PLATFORM_GEN11
-        #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
     #elif PRE_SI_GEN == 12
         #define PRE_SI_TARGET_PLATFORM_GEN12
-        #define PRE_SI_TARGET_PLATFORM_GEN11
-        #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10\Ge11 features are supported on Gen12
     #else
-        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 9, 10, 11 or 12. \
-        \n9:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN10 = off\n\tPRE_SI_TARGET_PLATFORM_GEN11 = off\n\tPRE_SI_TARGET_PLATFORM_GEN12 = off\n \
-        \n10:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN10 = on\n \
-        \n11:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN11 = on\n \
+        #pragma message("ERROR:\nWrong value of PRE_SI_GEN.\nValue should be 11 or 12. \
+        \n11:\n\tENABLE_PRE_SI_FEATURES = off\n\tPRE_SI_TARGET_PLATFORM_GEN12 = off\n \
         \n12:\n\tENABLE_PRE_SI_FEATURES = on\n\tPRE_SI_TARGET_PLATFORM_GEN12 = on\n")
         #error Wrong value of PRE_SI_GEN
     #endif
@@ -341,40 +329,25 @@
 
         //#define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
         #define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
-        //#define PRE_SI_TARGET_PLATFORM_GEN11 // target generation is Gen11 (ICL, CNL-H, CNX-G)
 
         #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
             #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
         #endif // PRE_SI_TARGET_PLATFORM_GEN12P5
 
-        #if defined (PRE_SI_TARGET_PLATFORM_GEN12)
-            #define PRE_SI_TARGET_PLATFORM_GEN11 // assume that all Gen11 features are supported on Gen12
-        #endif // PRE_SI_TARGET_PLATFORM_GEN12
-
-        #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-           #define PRE_SI_TARGET_PLATFORM_GEN10 // assume that all Gen10 features are supported on Gen11
-        #endif // PRE_SI_TARGET_PLATFORM_GEN11
-
-        //#define PRE_SI_TARGET_PLATFORM_GEN10 // target generation is Gen10 (CNL)
-
     #endif // ENABLE_PRE_SI_FEATURES
 #endif
 
-#if defined (PRE_SI_TARGET_PLATFORM_GEN10)
-    #define MFX_ENABLE_HEVCE_ROI
-    #define MFX_ENABLE_HEVCE_DIRTY_RECT
-    #define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
+#define MFX_ENABLE_HEVCE_ROI
+#define MFX_ENABLE_HEVCE_DIRTY_RECT
+#define MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
 
-    #if (MFX_VERSION >= MFX_VERSION_NEXT)
-        #define MFX_ENABLE_HEVCE_UNITS_INFO
-    #endif
-
-    #if defined (PRE_SI_TARGET_PLATFORM_GEN11)
-        #if defined (MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-            #define MFX_ENABLE_HEVCE_FADE_DETECTION
-        #endif // MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
-    #endif // PRE_SI_TARGET_PLATFORM_GEN11
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    #define MFX_ENABLE_HEVCE_UNITS_INFO
 #endif
+
+#if defined (MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
+    #define MFX_ENABLE_HEVCE_FADE_DETECTION
+#endif // MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #define MFX_ENABLE_HEVCD_SUBSET

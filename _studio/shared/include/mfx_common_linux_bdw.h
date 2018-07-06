@@ -12,7 +12,7 @@
 #define _MFX_COMMON_LINUX_BDW_H_
 
 
-#define PRE_SI_GEN 9 // SKL
+#define PRE_SI_GEN 11
 
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE

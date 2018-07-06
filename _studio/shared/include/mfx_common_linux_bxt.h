@@ -11,7 +11,7 @@
 #ifndef _MFX_COMMON_LINUX_BXT_H_
 #define _MFX_COMMON_LINUX_BXT_H_
 
-#define PRE_SI_GEN 9
+#define PRE_SI_GEN 11
 
 // Disable HEVC plugins
 //#undef AS_HEVCE_PLUGIN
