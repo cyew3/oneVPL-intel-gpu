@@ -381,6 +381,7 @@ namespace UMC_AV1_DECODER
         picParam->pic_fields.bits.extra_plane = 0;
 
         picParam->pic_fields.bits.allow_high_precision_mv = info.allowHighPrecisionMv;
+        picParam->pic_fields.bits.sb_size_128x128 = (info.sbSize == BLOCK_128x128) ? 1 : 0;
         picParam->interp_filter = (uint8_t)info.interpFilter;
         picParam->pic_fields.bits.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
         picParam->seg_info.segment_info_fields.bits.enabled = info.segmentation.enabled;;
@@ -450,10 +451,10 @@ namespace UMC_AV1_DECODER
 
         picParam->base_qindex = (int16_t)info.baseQIndex;
         picParam->y_dc_delta_q = (int8_t)info.y_dc_delta_q;
-        picParam->u_dc_delta_q = (int8_t)info.uv_dc_delta_q;
-        picParam->v_dc_delta_q = (int8_t)info.uv_dc_delta_q;
-        picParam->u_ac_delta_q = (int8_t)info.uv_ac_delta_q;
-        picParam->v_ac_delta_q = (int8_t)info.uv_ac_delta_q;
+        picParam->u_dc_delta_q = (int8_t)info.u_dc_delta_q;
+        picParam->v_dc_delta_q = (int8_t)info.v_dc_delta_q;
+        picParam->u_ac_delta_q = (int8_t)info.u_ac_delta_q;
+        picParam->v_ac_delta_q = (int8_t)info.v_ac_delta_q;
 
         memset(&picParam->seg_info.feature_data, 0, sizeof(picParam->seg_info.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->seg_info.feature_mask, 0, sizeof(picParam->seg_info.feature_mask)); // TODO: [Global] implement proper setting
@@ -479,6 +480,12 @@ namespace UMC_AV1_DECODER
         picParam->mode_fields.bits.reduced_tx_set_used = info.reducedTxSetUsed;
         picParam->mode_fields.bits.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
         picParam->mode_fields.bits.allow_screen_content_tools = info.allowScreenContentTools;
+
+        picParam->loop_restoration_fields.bits.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
+        picParam->loop_restoration_fields.bits.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
+        picParam->loop_restoration_fields.bits.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
+        picParam->loop_restoration_fields.bits.lr_unit_shift = info.lrUnitShift;
+        picParam->loop_restoration_fields.bits.lr_uv_shift = info.lrUVShift;
 
         picParam->tile_size_bit_offset = info.tileGroupBitOffset;
 
