@@ -39,10 +39,12 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_P208;
     case MFX_FOURCC_P010:
         return VA_FOURCC_P010;
-    case MFX_FOURCC_AYUV:
-        return VA_FOURCC_AYUV;
+    case MFX_FOURCC_Y210:
+        return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
+    case MFX_FOURCC_AYUV:
+        return VA_FOURCC_AYUV;
 
     default:
         assert(!"unsupported fourcc");
@@ -126,8 +128,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameSurface1 * surf)
                        (VA_FOURCC_ABGR != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc) &&
                        (VA_FOURCC_P010 != va_fourcc) &&
-                       (VA_FOURCC_AYUV != va_fourcc) &&
-                       (VA_FOURCC_Y410 != va_fourcc)))
+                       (VA_FOURCC_YUY2 != va_fourcc) &&
+                       (VA_FOURCC_Y210 != va_fourcc) &&
+                       (VA_FOURCC_Y410 != va_fourcc) &&
+                       (VA_FOURCC_AYUV != va_fourcc) ))
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -212,8 +216,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_ABGR != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc) &&
                        (VA_FOURCC_P010 != va_fourcc) &&
-                       (VA_FOURCC_AYUV != va_fourcc) &&
-                       (VA_FOURCC_Y410 != va_fourcc)))
+                       (VA_FOURCC_YUY2 != va_fourcc) &&
+                       (VA_FOURCC_Y210 != va_fourcc) &&
+                       (VA_FOURCC_Y410 != va_fourcc) &&
+                       (VA_FOURCC_AYUV != va_fourcc) ))
     {
         return MFX_ERR_MEMORY_ALLOC;
     }

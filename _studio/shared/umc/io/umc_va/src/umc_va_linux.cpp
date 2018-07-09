@@ -80,7 +80,13 @@ VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
     case UMC::VA_VLD:
     case UMC::VA_VLD | UMC::VA_PROFILE_444:
     case UMC::VA_VLD | UMC::VA_PROFILE_10:
-    case UMC::VA_VLD | UMC::VA_PROFILE_444 | UMC::VA_PROFILE_10:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT:
+    case UMC::VA_VLD | UMC::VA_PROFILE_444  | UMC::VA_PROFILE_10:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_422:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_444:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10 | UMC::VA_PROFILE_422:
+    case UMC::VA_VLD | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10 | UMC::VA_PROFILE_444:
         va_entrypoint = VAEntrypointVLD;
         break;
     default:
@@ -119,11 +125,14 @@ VAProfile g_H264Profiles[] =
 VAProfile g_H265Profiles[] =
 {
     VAProfileHEVCMain
+    //VAProfileHEVCMain444,
 };
 
 VAProfile g_H26510BitsProfiles[] =
 {
     VAProfileHEVCMain10
+    //VAProfileHEVCMain422_10,
+    //VAProfileHEVCMain444_10,
 };
 
 VAProfile g_VC1Profiles[] =
@@ -175,8 +184,22 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
     case UMC::VA_H265:
         if (profile < UMC_ARRAY_SIZE(g_H265Profiles)) va_profile = g_H265Profiles[profile];
         break;
+    case UMC::VA_H265| UMC::VA_PROFILE_422 | UMC::VA_PROFILE_REXT:
+        va_profile = VAProfileHEVCMain422_10;
+        break;
+    case UMC::VA_H265| UMC::VA_PROFILE_444 | UMC::VA_PROFILE_REXT:
+        va_profile = VAProfileHEVCMain444;
+        break;
     case UMC::VA_H265 | UMC::VA_PROFILE_10:
         if (profile < UMC_ARRAY_SIZE(g_H26510BitsProfiles)) va_profile = g_H26510BitsProfiles[profile];
+        break;
+    case UMC::VA_H265 | UMC::VA_PROFILE_REXT:
+    case UMC::VA_H265 | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10:
+    case UMC::VA_H265 | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_422 | UMC::VA_PROFILE_10:
+        va_profile = VAProfileHEVCMain422_10;
+        break;
+    case UMC::VA_H265| UMC::VA_PROFILE_444 | UMC::VA_PROFILE_REXT | UMC::VA_PROFILE_10:
+        va_profile = VAProfileHEVCMain444_10;
         break;
     case UMC::VA_VC1:
         if (profile < UMC_ARRAY_SIZE(g_VC1Profiles)) va_profile = g_VC1Profiles[profile];
@@ -383,8 +406,15 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             // checking support of some profile
             for (i = 0; (va_profile = get_next_va_profile(m_Profile & (VA_PROFILE | VA_CODEC), i)) != -1; ++i)
             {
-                for (j = 0; j < va_num_profiles; ++j) if (va_profile == va_profiles[j]) break;
-                if (j < va_num_profiles) break;
+                for (j = 0; j < va_num_profiles; ++j)
+                {
+                    if (va_profile == va_profiles[j])
+                        break;
+                }
+                if (j < va_num_profiles)
+                {
+                    break;
+                }
                 else
                 {
                     va_profile = (VAProfile)-1;
@@ -751,8 +781,14 @@ VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, I
                 va_num_elements = size/sizeof(VASliceParameterBufferVP9);
                 break;
             case UMC::VA_H265:
+            case UMC::VA_H265 | UMC::VA_PROFILE_10:
                 va_size         = sizeof(VASliceParameterBufferHEVC);
                 va_num_elements = size/sizeof(VASliceParameterBufferHEVC);
+                if (m_Profile &VA_PROFILE_REXT)
+                {
+                    va_size         = sizeof(VASliceParameterBufferHEVCExtension);
+                    va_num_elements = size/sizeof(VASliceParameterBufferHEVCExtension);
+                }
                 break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
             case UMC::VA_AV1:

@@ -41,9 +41,6 @@ bool IsNeedPartialAcceleration_H265(mfxVideoParam* par, eMFXHWType /*type*/)
         return false;
 
 #if defined(MFX_VA_LINUX)
-    if (par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV420 && par->mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV400)
-        return true;
-
     if (par->mfx.FrameInfo.FourCC == MFX_FOURCC_P210 || par->mfx.FrameInfo.FourCC == MFX_FOURCC_NV16)
         return true;
 #endif
@@ -139,6 +136,7 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
     switch (profile)
     {
         case MFX_PROFILE_HEVC_MAIN:
+        case MFX_PROFILE_HEVC_REXT:
         case MFX_PROFILE_HEVC_MAINSP:
         case MFX_PROFILE_HEVC_MAIN10:
             return true;

@@ -141,8 +141,6 @@ enum VideoAccelerationProfile
 #endif
     VA_PROFILE_422              = 0x0a000,
     VA_PROFILE_444              = 0x0b000,
-
-    //profile amendments
     VA_PROFILE_10               = 0x10000,
     VA_PROFILE_REXT             = 0x20000,
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
@@ -171,6 +169,14 @@ enum VideoAccelerationProfile
     AV1_VLD         = VA_AV1 | VA_VLD,
 #endif // PRE_SI_TARGET_PLATFORM_GEN12
 
+    H265_VLD_REXT               = VA_H265 | VA_VLD | VA_PROFILE_REXT,
+    H265_10_VLD_REXT            = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10,
+    H265_10_VLD                 = VA_H265 | VA_VLD | VA_PROFILE_10,
+    H265_VLD_422                = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_422,
+    H265_VLD_444                = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_444,
+    H265_10_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_422,
+    H265_10_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_444,
+
 #ifndef OPEN_SOURCE
     H264_VLD_MVC                = VA_H264 | VA_VLD | VA_PROFILE_MVC,
     H264_VLD_SVC_BASELINE       = VA_H264 | VA_VLD | VA_PROFILE_SVC_BASELINE,
@@ -179,12 +185,6 @@ enum VideoAccelerationProfile
     H264_VLD_MVC_MULTIVIEW      = VA_H264 | VA_VLD | VA_PROFILE_MVC_MV,
     H264_VLD_MVC_STEREO         = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO,
     H264_VLD_MVC_STEREO_PROG    = VA_H264 | VA_VLD | VA_PROFILE_MVC_STEREO_PROG,
-
-    H265_10_VLD                 = VA_H265 | VA_VLD | VA_PROFILE_10,
-    H265_VLD_422                = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_422,
-    H265_VLD_444                = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_444,
-    H265_10_VLD_422             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_422,
-    H265_10_VLD_444             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_10 | VA_PROFILE_444,
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     H265_12_VLD_420             = VA_H265 | VA_VLD | VA_PROFILE_REXT | VA_PROFILE_12,
