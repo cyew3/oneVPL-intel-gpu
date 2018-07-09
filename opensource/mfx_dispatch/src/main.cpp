@@ -208,7 +208,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         , par.ExternalThreads
         , session));
 
-    mfxStatus mfxRes;
+    mfxStatus mfxRes = MFX_ERR_UNSUPPORTED;
     HandleVector allocatedHandle;
     VectorHandleGuard handleGuard(allocatedHandle);
 
@@ -270,6 +270,13 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         implInterface = implInterfaceOrig;
         do
         {
+            // this storage will be checked below
+            if(currentStorage == MFX::MFX_APP_FOLDER)
+            {
+                currentStorage += 1;
+                continue;
+            }
+
             // initialize the library iterator
             mfxRes = libIterator.Init(implTypes[curImplIdx].implType,
                 implInterface,

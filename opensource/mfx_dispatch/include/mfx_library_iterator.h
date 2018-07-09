@@ -132,8 +132,8 @@ protected:
 
     // Initialize the registry iterator
     mfxStatus InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
-    // Initialize the app folder iterator
-    mfxStatus InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path);
+    // Initialize the app/module folder iterator
+    mfxStatus InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path, const int storageID);
 
 
     eMfxImplType m_implType;                                    // Required library implementation
