@@ -2977,7 +2977,9 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
             task->m_cmCurbe = (CmBuffer *)AcquireResource(m_curbe);
             task->m_vmeData = FindUnusedVmeData(m_vmeDataStorage);
             if ((!task->m_cmRawLa && extOpt2->LookAheadDS > MFX_LOOKAHEAD_DS_OFF) || !task->m_cmMb || !task->m_cmCurbe || !task->m_vmeData)
+            {
                 return Error(MFX_ERR_UNDEFINED_BEHAVIOR);
+            }
 #if USE_AGOP
             if(!(task->m_cmRaw))
 #endif
