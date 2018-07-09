@@ -512,8 +512,8 @@ mfxU16 GetBitDepth(mfxU32 fourcc)
 bool CheckBitDepth(mfxU16 depth, mfxU32 fourcc)
 {
     if (depth != 0 &&
-        (depth != BITDEPTH_8 && depth != BITDEPTH_10
-        || fourcc != 0 && depth != GetBitDepth(fourcc)))
+        ((depth != BITDEPTH_8 && depth != BITDEPTH_10)
+        || (fourcc != 0 && depth != GetBitDepth(fourcc))))
     {
         return false;
     }
@@ -524,8 +524,8 @@ bool CheckBitDepth(mfxU16 depth, mfxU32 fourcc)
 // check chroma format itself and it's compliance with fourcc
 bool CheckChromaFormat(mfxU16 format, mfxU32 fourcc)
 {
-    if (format != MFX_CHROMAFORMAT_YUV420 && format != MFX_CHROMAFORMAT_YUV444
-        || fourcc != 0 && format != GetChromaFormat(fourcc))
+    if ((format != MFX_CHROMAFORMAT_YUV420 && format != MFX_CHROMAFORMAT_YUV444)
+        || (fourcc != 0 && format != GetChromaFormat(fourcc)))
     {
         return false;
     }
@@ -1456,8 +1456,8 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
 
     mfxU16 numPipes = static_cast<mfxU16>(caps.NumScalablePipesMinus1 + 1);
 
-    if (cols > numPipes && rows > 1 ||
-        rows * cols > MAX_NUM_TILES)
+    if ((cols > numPipes && rows > 1) ||
+        (rows * cols > MAX_NUM_TILES))
     {
         cols = 0;
         rows = 0;
