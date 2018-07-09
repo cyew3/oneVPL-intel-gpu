@@ -16,6 +16,15 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #include "guiddef.h"
+#elif LIBVA_SUPPORT
+#include <vaapi_utils.h>
+#include <va/va.h>
+#include <va/va_enc_hevc.h>
+#include <va/va_enc_vp9.h>
+#endif
+
+#ifndef MFX_CHECK
+#define MFX_CHECK(EXPR, ERR)    { if (!(EXPR)) return (ERR); }
 #endif
 
 enum {
@@ -91,6 +100,9 @@ public:
 
 #if defined(_WIN32) || defined(_WIN64)
     mfxStatus GetGuid(GUID &guid);
+#elif LIBVA_SUPPORT
+    mfxStatus IsModeSupported(VADisplay& device, mfxU16 codecProfile, mfxU32 lowpower);
+    mfxStatus GetVACaps(VADisplay& device, void *pCaps, mfxU32 *pCapsSize);
 #endif
     mfxStatus GetCaps(void *pCaps, mfxU32 *pCapsSize);
 

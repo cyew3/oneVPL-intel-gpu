@@ -569,6 +569,348 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
     }
     return MFX_ERR_NONE;
 }
+#elif LIBVA_SUPPORT
+
+VAProfile ConvertProfileMFX2VA(mfxU16 profile, mfxU32 codecId)
+{
+// Implemented for hevc, vp9
+    if (codecId == MFX_CODEC_HEVC)
+    {
+        switch (profile)
+        {
+        case MFX_PROFILE_HEVC_MAIN:
+            return VAProfileHEVCMain;
+        case MFX_PROFILE_HEVC_MAIN10:
+            return VAProfileHEVCMain10;
+        default:
+            return VAProfileHEVCMain;
+        }
+    }
+    else if (codecId == MFX_CODEC_VP9)
+    {
+        switch (profile)
+        {
+        case MFX_PROFILE_VP9_0:
+            return VAProfileVP9Profile0;
+        case MFX_PROFILE_VP9_1:
+            return VAProfileVP9Profile1;
+        case MFX_PROFILE_VP9_2:
+            return VAProfileVP9Profile2;
+        case MFX_PROFILE_VP9_3:
+            return VAProfileVP9Profile3;
+        default:
+            return VAProfileVP9Profile0;
+        }
+    }
+    return VAProfileNone;
+}
+
+mfxStatus tsVideoEncoder::IsModeSupported(VADisplay& device, mfxU16 codecProfile, mfxU32 lowpower)
+{
+    std::vector<VAProfile> profile_list(vaMaxNumProfiles(device), VAProfileNone);
+    mfxI32 num_profiles = 0;
+
+    mfxStatus sts = va_to_mfx_status(
+        vaQueryConfigProfiles(
+            device,
+            profile_list.data(),
+            &num_profiles));
+    MFX_CHECK(sts == MFX_ERR_NONE, sts);
+
+    VAProfile currentProfile = ConvertProfileMFX2VA(codecProfile, m_par.mfx.CodecId);
+    MFX_CHECK(
+        std::find(std::begin(profile_list), std::end(profile_list), currentProfile) != std::end(profile_list),
+        MFX_ERR_UNSUPPORTED);
+
+    std::vector<VAEntrypoint> entrypoint_list(vaMaxNumEntrypoints(device));
+    mfxI32 num_entrypoints = 0;
+
+    sts = va_to_mfx_status(
+        vaQueryConfigEntrypoints(
+            device,
+            currentProfile,
+            entrypoint_list.data(),
+            &num_entrypoints));
+    MFX_CHECK(sts == MFX_ERR_NONE, sts);
+
+    VAEntrypoint currentEntryPoint = lowpower == MFX_CODINGOPTION_ON ? VAEntrypointEncSliceLP : VAEntrypointEncSlice;
+    MFX_CHECK(
+        std::find(std::begin(entrypoint_list), std::end(entrypoint_list), currentEntryPoint) != std::end(entrypoint_list),
+        MFX_ERR_UNSUPPORTED);
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus tsVideoEncoder::GetVACaps(VADisplay& device, void *pCaps, mfxU32 *pCapsSize)
+{
+    mfxStatus sts = MFX_ERR_UNSUPPORTED;
+
+    VAProfile vaProfile = ConvertProfileMFX2VA(m_par.mfx.CodecProfile, m_par.mfx.CodecId);
+
+    if (m_par.mfx.CodecId == MFX_CODEC_HEVC)
+    {
+        ENCODE_CAPS_HEVC* hevc_caps = (ENCODE_CAPS_HEVC*)pCaps;
+        memset(hevc_caps, 0, *pCapsSize);
+
+        hevc_caps->BRCReset = 1;
+
+        std::map<VAConfigAttribType, int> idx_map;
+        VAConfigAttribType attr_types[] = {
+            VAConfigAttribRTFormat,
+            VAConfigAttribRateControl,
+            VAConfigAttribEncQuantization,
+            VAConfigAttribEncIntraRefresh,
+            VAConfigAttribMaxPictureHeight,
+            VAConfigAttribMaxPictureWidth,
+            VAConfigAttribEncParallelRateControl,
+            VAConfigAttribEncMaxRefFrames,
+            VAConfigAttribEncSliceStructure,
+            VAConfigAttribEncROI,
+            VAConfigAttribEncDirtyRect
+        };
+        std::vector<VAConfigAttrib> attrs;
+        attrs.reserve(sizeof(attr_types) / sizeof(attr_types[0]));
+
+        for (size_t i = 0; i < sizeof(attr_types) / sizeof(attr_types[0]); i++) {
+            attrs.push_back({ attr_types[i], 0 });
+            idx_map[attr_types[i]] = i;
+        }
+
+        VAEntrypoint entryPoint = (m_par.mfx.LowPower == MFX_CODINGOPTION_ON) ?
+            VAEntrypointEncSliceLP : VAEntrypointEncSlice;
+
+        sts = va_to_mfx_status(
+            vaGetConfigAttributes(device,
+                vaProfile,
+                entryPoint,
+                attrs.data(),
+                (int)attrs.size()));
+        MFX_CHECK(sts == MFX_ERR_NONE, sts);
+
+        //SKL:
+        hevc_caps->BitDepth8Only = 1;
+        hevc_caps->MaxEncodedBitDepth = 0;
+
+        if (g_tsHWtype >= MFX_HW_KBL)
+        {
+            hevc_caps->BitDepth8Only = 0;
+            hevc_caps->MaxEncodedBitDepth = 1;
+        }
+        if (g_tsHWtype >= MFX_HW_CNL)
+        {
+            if (m_par.mfx.LowPower == MFX_CODINGOPTION_ON)
+            {
+                hevc_caps->LCUSizeSupported = (64 >> 4);
+            }
+            else
+            {
+                hevc_caps->LCUSizeSupported = (32 >> 4) | (64 >> 4);
+            }
+        }
+        else
+        {
+            hevc_caps->LCUSizeSupported = (32 >> 4);
+        }
+
+        hevc_caps->BlockSize = 2;
+
+        hevc_caps->VCMBitRateControl =
+            attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM ? 1 : 0; //Video conference mode
+        hevc_caps->RollingIntraRefresh = 0; /* (attrs[3].value & (~VA_ATTRIB_NOT_SUPPORTED))  ? 1 : 0*/
+        if (attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value != VA_ATTRIB_NOT_SUPPORTED)
+            hevc_caps->UserMaxFrameSizeSupport = attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value;
+        hevc_caps->MBBRCSupport = 1;
+        hevc_caps->MbQpDataSupport = 1;
+        hevc_caps->TUSupport = 73;
+
+
+        if (attrs[idx_map[VAConfigAttribRTFormat]].value == VA_RT_FORMAT_YUV420)
+        {
+            hevc_caps->Color420Only = 1;
+        }
+        else
+        {
+            hevc_caps->YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV422 ? 1 : 0;
+            hevc_caps->YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV444 ? 1 : 0;
+        }
+
+        if (attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != VA_ATTRIB_NOT_SUPPORTED)
+            hevc_caps->MaxPicWidth = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
+
+        if (attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != VA_ATTRIB_NOT_SUPPORTED)
+            hevc_caps->MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
+
+        if (attrs[idx_map[VAConfigAttribEncSliceStructure]].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            switch (attrs[idx_map[VAConfigAttribEncSliceStructure]].value)
+            {
+            case VA_ENC_SLICE_STRUCTURE_POWER_OF_TWO_ROWS:
+                hevc_caps->SliceStructure = 1;
+                break;
+            case VA_ENC_SLICE_STRUCTURE_ARBITRARY_MACROBLOCKS:
+                hevc_caps->SliceStructure = 4;
+                break;
+            case VA_ENC_SLICE_STRUCTURE_EQUAL_ROWS:
+                hevc_caps->SliceStructure = 2;
+                break;
+            case VA_ENC_SLICE_STRUCTURE_ARBITRARY_ROWS:
+                hevc_caps->SliceStructure = 3;
+                break;
+            default:
+                hevc_caps->SliceStructure = 0;
+            }
+        }
+
+        if (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            hevc_caps->MaxNum_Reference0 =
+                attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value & 0xffff;
+            hevc_caps->MaxNum_Reference1 =
+                (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value >> 16) & 0xffff;
+        }
+        else
+        {
+            hevc_caps->MaxNum_Reference0 = 3;
+            hevc_caps->MaxNum_Reference1 = 1;
+        }
+
+        if (attrs[idx_map[VAConfigAttribEncROI]].value != VA_ATTRIB_NOT_SUPPORTED) // VAConfigAttribEncROI
+        {
+            VAConfigAttribValEncROI *VaEncROIValPtr = reinterpret_cast<VAConfigAttribValEncROI *>(&attrs[idx_map[VAConfigAttribEncROI]].value);
+
+            assert(VaEncROIValPtr->bits.num_roi_regions < 32);
+            hevc_caps->MaxNumOfROI = VaEncROIValPtr->bits.num_roi_regions;
+            hevc_caps->ROIBRCPriorityLevelSupport = VaEncROIValPtr->bits.roi_rc_priority_support;
+            hevc_caps->ROIDeltaQPSupport = VaEncROIValPtr->bits.roi_rc_qp_delta_support;
+        }
+        else
+        {
+            hevc_caps->MaxNumOfROI = 0;
+        }
+
+        if (attrs[idx_map[VAConfigAttribEncDirtyRect]].value != VA_ATTRIB_NOT_SUPPORTED &&
+            attrs[idx_map[VAConfigAttribEncDirtyRect]].value != 0)
+        {
+            hevc_caps->DirtyRectSupport = 1;
+            hevc_caps->MaxNumOfDirtyRect = attrs[idx_map[VAConfigAttribEncDirtyRect]].value;
+        }
+
+
+        sts = MFX_ERR_NONE;
+    }
+    else if (m_par.mfx.CodecId == MFX_CODEC_VP9)
+    {
+        ENCODE_CAPS_VP9* vp9e_caps = (ENCODE_CAPS_VP9*)pCaps;
+        memset(vp9e_caps, 0, *pCapsSize);
+
+        std::map<VAConfigAttribType, int> idx_map;
+        VAConfigAttribType attr_types[] = {
+            VAConfigAttribRTFormat,
+            VAConfigAttribEncDirtyRect,
+            VAConfigAttribMaxPictureWidth,
+            VAConfigAttribMaxPictureHeight,
+            VAConfigAttribEncTileSupport,
+            VAConfigAttribEncRateControlExt,
+            VAConfigAttribEncParallelRateControl,
+            VAConfigAttribFrameSizeToleranceSupport,
+            VAConfigAttribProcessingRate,
+            VAConfigAttribEncDynamicScaling,
+        };
+        std::vector<VAConfigAttrib> attrs;
+        attrs.reserve(sizeof(attr_types) / sizeof(attr_types[0]));
+
+        for (size_t i = 0; i < sizeof(attr_types) / sizeof(attr_types[0]); i++) {
+            attrs.push_back({ attr_types[i], 0 });
+            idx_map[attr_types[i]] = i;
+        }
+
+        MFX_CHECK(m_par.mfx.LowPower == MFX_CODINGOPTION_ON, MFX_ERR_UNSUPPORTED);
+        VAEntrypoint entryPoint = VAEntrypointEncSliceLP; // VP9e + lowpower == OFF is not supported
+
+        sts = va_to_mfx_status(
+            vaGetConfigAttributes(device,
+                vaProfile,
+                entryPoint,
+                attrs.data(),
+                (int)attrs.size()));
+        MFX_CHECK(sts == MFX_ERR_NONE, sts);
+
+        vp9e_caps->CodingLimitSet = 1;
+        vp9e_caps->Color420Only = 1; // See DDI
+
+        if (g_tsHWtype >= MFX_HW_ICL)
+        {
+            vp9e_caps->MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit; TO DO: 10bit also must be supported
+            vp9e_caps->NumScalablePipesMinus1 = 1;
+        }
+        if (attrs[idx_map[VAConfigAttribRTFormat]].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            vp9e_caps->YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV422 ? 1 : 0;
+            vp9e_caps->YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV444 ? 1 : 0;
+        }
+
+        if (attrs[idx_map[VAConfigAttribEncDirtyRect]].value != VA_ATTRIB_NOT_SUPPORTED &&
+            attrs[idx_map[VAConfigAttribEncDirtyRect]].value != 0)
+        {
+            vp9e_caps->DirtyRectSupport = 1;
+            vp9e_caps->MaxNumOfDirtyRect = attrs[idx_map[VAConfigAttribEncDirtyRect]].value;
+        }
+
+        if (attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != VA_ATTRIB_NOT_SUPPORTED)
+            vp9e_caps->MaxPicWidth = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
+
+        if (attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != VA_ATTRIB_NOT_SUPPORTED)
+            vp9e_caps->MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
+
+        if (attrs[idx_map[VAConfigAttribEncTileSupport]].value != VA_ATTRIB_NOT_SUPPORTED)
+            vp9e_caps->TileSupport = attrs[idx_map[VAConfigAttribEncTileSupport]].value;
+
+        if (attrs[idx_map[VAConfigAttribEncRateControlExt]].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            VAConfigAttribValEncRateControlExt rateControlConf;
+            rateControlConf.value = attrs[idx_map[VAConfigAttribEncRateControlExt]].value;
+            vp9e_caps->TemporalLayerRateCtrl = rateControlConf.bits.max_num_temporal_layers_minus1;
+        }
+
+        vp9e_caps->ForcedSegmentationSupport = 1;
+        vp9e_caps->AutoSegmentationSupport = 1;
+
+        if (attrs[idx_map[VAConfigAttribEncMacroblockInfo]].value != VA_ATTRIB_NOT_SUPPORTED &&
+            attrs[idx_map[VAConfigAttribEncMacroblockInfo]].value)
+            vp9e_caps->SegmentFeatureSupport &= 0b0001;
+
+        if (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value != VA_ATTRIB_NOT_SUPPORTED &&
+            attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value)
+            vp9e_caps->SegmentFeatureSupport &= 0b0100;
+
+        if (attrs[idx_map[VAConfigAttribEncSkipFrame]].value != VA_ATTRIB_NOT_SUPPORTED &&
+            attrs[idx_map[VAConfigAttribEncSkipFrame]].value)
+            vp9e_caps->SegmentFeatureSupport &= 0b1000;
+
+        if (attrs[idx_map[VAConfigAttribEncDynamicScaling]].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            vp9e_caps->DynamicScaling = attrs[idx_map[VAConfigAttribEncDynamicScaling]].value;
+        }
+
+        if (attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value != VA_ATTRIB_NOT_SUPPORTED)
+            vp9e_caps->UserMaxFrameSizeSupport = attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value;
+
+        if (attrs[idx_map[VAConfigAttribProcessingRate]].value != VA_ATTRIB_NOT_SUPPORTED)
+        {
+            vp9e_caps->FrameLevelRateCtrl = attrs[idx_map[VAConfigAttribProcessingRate]].value == VA_PROCESSING_RATE_ENCODE;
+            vp9e_caps->BRCReset = attrs[idx_map[VAConfigAttribProcessingRate]].value == VA_PROCESSING_RATE_ENCODE;
+        }
+        vp9e_caps->EncodeFunc = 1;
+        vp9e_caps->HybridPakFunc = 1;
+
+        sts = MFX_ERR_NONE;
+    }
+    else
+        sts = MFX_ERR_UNSUPPORTED;
+
+
+    return sts;
+}
 #endif
 
 mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
@@ -578,7 +920,7 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
     mfxHDL hdl;
     mfxU32 count = 0;
     mfxStatus sts = MFX_ERR_UNSUPPORTED;
- 
+
 #if defined(_WIN32) || defined(_WIN64)
     static const GUID DXVA_NoEncrypt = { 0x1b81beD0, 0xa0c7, 0x11d3, { 0xb9, 0x84, 0x00, 0xc0, 0x4f, 0x2e, 0x73, 0xc5 } };
 
@@ -726,13 +1068,19 @@ mfxStatus tsVideoEncoder::GetCaps(void *pCaps, mfxU32 *pCapsSize)
         sts = auxDevice->QueryAccelCaps(&guid, pCaps, pCapsSize);
         MFX_CHECK((sts == MFX_ERR_NONE), MFX_ERR_DEVICE_FAILED);
     }
-#else
-    ENCODE_CAPS_HEVC* hevc_caps = (ENCODE_CAPS_HEVC*)pCaps;
-    hevc_caps->BlockSize = 2;   // 32x32
-    hevc_caps->SliceStructure = 2;  // arbitrary aligned
-    if (g_tsHWtype >= MFX_HW_CNL)
-        hevc_caps->SliceStructure = 4;  // raw aligned
-    sts = MFX_ERR_NONE;
+#elif LIBVA_SUPPORT
+
+    MFX_CHECK(g_tsImpl != MFX_IMPL_SOFTWARE, MFX_ERR_UNSUPPORTED);
+
+    CLibVA* libVa = CreateLibVA();
+
+    VADisplay device = libVa->GetVADisplay();
+
+    MFX_CHECK(IsModeSupported(device, m_par.mfx.CodecProfile, m_par.mfx.LowPower) == MFX_ERR_NONE, MFX_ERR_UNSUPPORTED);
+
+    sts = GetVACaps(device, pCaps, pCapsSize);
+    MFX_CHECK(sts == MFX_ERR_NONE, sts);
+
 #endif
 
     return sts;

@@ -89,6 +89,7 @@ set( LIBS_SUFFIX "" )
 list( APPEND LIBS
   dispatch_trace
   bs_parser
+  umc_va_elk_hw
   dl
   ippi_l ippdc_l ipps_l ippcore_l ippcc_l
   pthread
