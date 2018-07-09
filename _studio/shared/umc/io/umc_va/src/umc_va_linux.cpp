@@ -78,7 +78,9 @@ VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
     switch (umc_entrypoint)
     {
     case UMC::VA_VLD:
+    case UMC::VA_VLD | UMC::VA_PROFILE_444:
     case UMC::VA_VLD | UMC::VA_PROFILE_10:
+    case UMC::VA_VLD | UMC::VA_PROFILE_444 | UMC::VA_PROFILE_10:
         va_entrypoint = VAEntrypointVLD;
         break;
     default:
@@ -136,7 +138,14 @@ VAProfile g_VP8Profiles[] =
 
 VAProfile g_VP9Profiles[] =
 {
-    VAProfileVP9Profile0
+    VAProfileVP9Profile1, // chroma subsampling: 4:2:0, 4:2:2, 4:4:4
+    VAProfileVP9Profile0  // chroma subsampling: 4:2:0
+};
+
+VAProfile g_VP910BitsProfiles[] =
+{
+    VAProfileVP9Profile3, // chroma subsampling: 4:2:0, 4:2:2, 4:4:4
+    VAProfileVP9Profile2  // chroma subsampling: 4:2:0
 };
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
@@ -176,7 +185,12 @@ VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
         if (profile < UMC_ARRAY_SIZE(g_VP8Profiles)) va_profile = g_VP8Profiles[profile];
         break;
     case UMC::VA_VP9:
+    case UMC::VA_VP9 | UMC::VA_PROFILE_444:
         if (profile < UMC_ARRAY_SIZE(g_VP9Profiles)) va_profile = g_VP9Profiles[profile];
+        break;
+    case UMC::VA_VP9 | UMC::VA_PROFILE_10:
+    case UMC::VA_VP9 | UMC::VA_PROFILE_444 | UMC::VA_PROFILE_10:
+        if (profile < UMC_ARRAY_SIZE(g_VP910BitsProfiles)) va_profile = g_VP910BitsProfiles[profile];
         break;
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     case UMC::VA_AV1:

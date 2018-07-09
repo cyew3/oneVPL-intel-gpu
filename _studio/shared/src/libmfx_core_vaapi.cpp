@@ -681,6 +681,18 @@ VAAPIVideoCORE::CreateVA(
         break;
     case MFX_CODEC_VP9:
         profile |= VA_VP9;
+        switch (param->mfx.FrameInfo.FourCC)
+        {
+        case MFX_FOURCC_P010:
+            profile |= VA_PROFILE_10;
+            break;
+        case MFX_FOURCC_AYUV:
+            profile |= VA_PROFILE_444;
+            break;
+        case MFX_FOURCC_Y410:
+            profile |= VA_PROFILE_10 | VA_PROFILE_444;
+            break;
+        }
         break;
     case MFX_CODEC_JPEG:
         profile |= VA_JPEG;
