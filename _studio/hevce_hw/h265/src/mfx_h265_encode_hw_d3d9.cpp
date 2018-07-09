@@ -635,7 +635,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & task
             mfxExtEncodedUnitsInfo* pUnitsInfo = ExtBuffer::Get(*task.m_bs);
             if (pUnitsInfo)
             {
-                mfxU16 *pSize = ((ENCODE_QUERY_STATUS_SLICE_PARAMS*)feedback)->SliceSizes;
+                mfxU16 *pSize = ((ENCODE_QUERY_STATUS_SLICE_PARAMS*)feedback)->pSliceSizes;
                 mfxU16 i = pUnitsInfo->NumUnitsEncoded, j = 0;
 
                 while (i < (pUnitsInfo->NumUnitsAlloc) && (j < feedback->NumberSlices))

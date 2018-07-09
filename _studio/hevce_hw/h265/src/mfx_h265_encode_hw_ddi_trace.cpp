@@ -196,8 +196,10 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", BlockSize);
 
     TRACE("%d", SliceLevelReportSupport      );
-    TRACE("%d", MaxNumOfTileColumnsMinus1    );
-    TRACE("%d", NumScalablePipesMinus1       );
+
+    TRACE("%d", CTULevelReportSupport        );
+    TRACE("%d", SearchWindow64Support        );
+    TRACE("%d", CustomRoundingControl        );
     TRACE("%d", IntraRefreshBlockUnitSize    );
     TRACE("%d", LCUSizeSupported             );
     TRACE("%d", MaxNumDeltaQP                );
@@ -205,12 +207,21 @@ DECL_START(ENCODE_CAPS_HEVC)
     TRACE("%d", MoveRectSupport              );
     TRACE("%d", FrameSizeToleranceSupport    );
     TRACE("%d", HWCounterAutoIncrementSupport);
-    TRACE("%d", RandomAccessSupport          );
+    TRACE("%d", ROIDeltaQPSupport            );
+    TRACE("%d", NumScalablePipesMinus1       );
+    TRACE("%d", NegativeQPSupport            );
     TRACE("%d", TileBasedEncodingSupport     );
-
-    TRACE("%d", MaxNum_WeightedPredL0);
-    TRACE("%d", MaxNum_WeightedPredL1);
-DECL_END
+    TRACE("%d", PartialFrameUpdateSupport    );
+    TRACE("%d", RGBEncodingSupport           );
+    TRACE("%d", LLCStreamingBufferSupport    );
+    TRACE("%d", DDRStreamingBufferSupport    );
+    TRACE("%d", MaxNum_WeightedPredL0         );
+    TRACE("%d", MaxNum_WeightedPredL1         );
+    TRACE("%d", MaxNumOfDirtyRect             );
+    TRACE("%d", MaxNumOfMoveRect              );
+    TRACE("%d", MaxNumOfConcurrentFramesMinus1);
+    TRACE("%d", LLCSizeInMBytes               );
+    DECL_END
 #undef FIELD_FORMAT
 
 #define FIELD_FORMAT "%-38s"
@@ -248,24 +259,32 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", ROIValueInDeltaQP    );
 
     TRACE("%d", BlockQPforNonRectROI);
+    TRACE("%d", EnableTileBasedEncode);
+    TRACE("%d", bAutoMaxPBFrameSizeForSceneChange);
+    TRACE("%d", EnableStreamingBufferLLC);
+    TRACE("%d", EnableStreamingBufferDDR);
 
-    TRACE("%d", UserMaxFrameSize );
+    TRACE("%d", UserMaxIFrameSize );
+    TRACE("%d", UserMaxPBFrameSize);
     //TRACE("%d", AVBRAccuracy     );
     //TRACE("%d", AVBRConvergence  );
     //TRACE("%d", CRFQualityFactor );
 
     TRACE_ARRAY_ROW("%d", NumOfBInGop, 3);
 
-    TRACE("%d", scaling_list_enable_flag           );
-    TRACE("%d", sps_temporal_mvp_enable_flag       );
-    TRACE("%d", strong_intra_smoothing_enable_flag );
-    TRACE("%d", amp_enabled_flag                   );
-    TRACE("%d", SAO_enabled_flag                   );
-    TRACE("%d", pcm_enabled_flag                   );
-    TRACE("%d", pcm_loop_filter_disable_flag       );
-    TRACE("%d", tiles_fixed_structure_flag         );
-    TRACE("%d", chroma_format_idc                  );
-    TRACE("%d", separate_colour_plane_flag         );
+    TRACE("%d", scaling_list_enable_flag);
+    TRACE("%d", sps_temporal_mvp_enable_flag);
+    TRACE("%d", strong_intra_smoothing_enable_flag);
+    TRACE("%d", amp_enabled_flag);
+    TRACE("%d", SAO_enabled_flag);
+    TRACE("%d", pcm_enabled_flag);
+    TRACE("%d", pcm_loop_filter_disable_flag);
+    TRACE("%d", chroma_format_idc);
+    TRACE("%d", separate_colour_plane_flag);
+    TRACE("%d", palette_mode_enabled_flag);
+    TRACE("%d", RGBEncodingEnable);
+    TRACE("%d", PrimaryChannelForRGBEncoding);
+    TRACE("%d", SecondaryChannelForRGBEncoding);
     TRACE("%d", log2_max_coding_block_size_minus3);
     TRACE("%d", log2_min_coding_block_size_minus3);
     TRACE("%d", log2_max_transform_block_size_minus2);
@@ -278,6 +297,16 @@ DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC)
     TRACE("%d", bit_depth_chroma_minus8);
     TRACE("%d", pcm_sample_bit_depth_luma_minus1);
     TRACE("%d", pcm_sample_bit_depth_chroma_minus1);
+
+    TRACE("%d", InputColorSpace);
+    TRACE("%d", ScenarioInfo);
+    TRACE("%d", ContentInfo);
+    TRACE("%d", FrameSizeTolerance);
+
+    TRACE("%d", SlidingWindowSize);
+    TRACE("%d", MaxBitRatePerSlidingWindow);
+    TRACE("%d", MinBitRatePerSlidingWindow);
+
 DECL_END
 #undef FIELD_FORMAT
 
@@ -300,6 +329,7 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE_ARRAY_ROW("%d", RefFramePOCList, 15);
 
     TRACE("%d", CodingType);
+    TRACE("%d", FrameLevel);
     TRACE("%d", NumSlices);
 
     TRACE("%d", tiles_enabled_flag                      );
@@ -325,6 +355,10 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     TRACE("%d", no_output_of_prior_pics_flag            );
     TRACE("%d", bEnableGPUWeightedPrediction            );
     TRACE("%d", DisplayFormatSwizzle                    );
+    TRACE("%d", deblocking_filter_override_enabled_flag );
+    TRACE("%d", pps_deblocking_filter_disabled_flag     );
+    TRACE("%d", bEnableCTULevelReport                   );
+    TRACE("%d", bEnablePartialFrameUpdate               );
 
     TRACE("%d", QpY);
     TRACE("%d", diff_cu_qp_delta_depth);
@@ -362,7 +396,12 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
 
     TRACE("%d", NumDeltaQpForNonRectROI);
     TRACE_ARRAY_ROW("%d", NonRectROIDeltaQpList, 16);
-    
+
+    TRACE("%d", EnableCustomRoudingIntra);
+    TRACE("%d", RoundingOffsetIntra     );
+    TRACE("%d", EnableCustomRoudingInter);
+    TRACE("%d", RoundingOffsetInter     );
+
     TRACE("%d", SkipFrameFlag);
     TRACE("%d", NumSkipFrames);
     TRACE("%d", SizeSkipFrames);
@@ -418,6 +457,17 @@ DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC)
     }
 
     TRACE("%d", InputType);
+    TRACE("%d", pps_curr_pic_ref_enabled_flag);
+
+    TRACE("%d", TileOffsetBufferSizeInByte);
+    if (b.TileOffsetBufferSizeInByte)
+    {
+        for (mfxU32 i = 0; i < b.TileOffsetBufferSizeInByte; i++)
+        {
+            TRACE("%d", pTileOffset[i]);
+        }
+    }
+
 DECL_END
 #undef FIELD_FORMAT
 
@@ -577,9 +627,9 @@ DECL_END
 DECL_START(ENCODE_QUERY_STATUS_SLICE_PARAMS)
     Trace(*((ENCODE_QUERY_STATUS_PARAMS*)&b), 0);
     TRACE("%d", SizeOfSliceSizesBuffer);
-    TRACE("%p", SliceSizes);
-    if (b.SliceSizes) {
-        TRACE_ARRAY_ROW("%d", SliceSizes, b.SizeOfSliceSizesBuffer);
+    TRACE("%p", pSliceSizes);
+    if (b.pSliceSizes) {
+        TRACE_ARRAY_ROW("%d", pSliceSizes, b.SizeOfSliceSizesBuffer);
     }
 DECL_END
 #undef FIELD_FORMAT

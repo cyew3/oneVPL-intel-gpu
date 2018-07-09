@@ -2020,7 +2020,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, nLcuCol);
         changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, nLcuRow);
 
-        MaxTileColumns = (mfxU16)caps.MaxNumOfTileColumnsMinus1 + 1;
+        MaxTileColumns = (mfxU16)caps.NumScalablePipesMinus1 + 1;
     }
 
     invalid += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, MaxTileColumns);

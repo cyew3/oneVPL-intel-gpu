@@ -238,7 +238,7 @@ mfxStatus CheckHeaders(
         || (!caps.YUV422ReconSupport && (par.m_sps.chroma_format_idc == 2))
         || (caps.Color420Only && (par.m_sps.chroma_format_idc != 1))));
 
-    MFX_CHECK_COND(par.m_pps.num_tile_columns_minus1 <= caps.MaxNumOfTileColumnsMinus1);
+    MFX_CHECK_COND(par.m_pps.num_tile_columns_minus1 <= caps.NumScalablePipesMinus1);
 
     if (par.m_pps.tiles_enabled_flag)
     {
@@ -514,8 +514,8 @@ void FeedbackStorage::Reset(mfxU16 cacheSize, ENCODE_QUERY_STATUS_PARAM_TYPE fbT
             ENCODE_QUERY_STATUS_SLICE_PARAMS *pSliceInfoCache = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)&m_buf_cache[i * m_fb_size];
             pSliceInfo->SizeOfSliceSizesBuffer = maxSlices;
             pSliceInfoCache->SizeOfSliceSizesBuffer = maxSlices;
-            pSliceInfo->SliceSizes = &m_ssizes[i * maxSlices];
-            pSliceInfoCache->SliceSizes = &m_ssizes_cache[i * maxSlices];
+            pSliceInfo->pSliceSizes = &m_ssizes[i * maxSlices];
+            pSliceInfoCache->pSliceSizes = &m_ssizes_cache[i * maxSlices];
         }
     }
 }
@@ -560,7 +560,7 @@ inline void FeedbackStorage::CacheFeedback(Feedback *fb_dst, Feedback *fb_src)
     if (m_type == QUERY_STATUS_PARAM_SLICE) {
         ENCODE_QUERY_STATUS_SLICE_PARAMS *pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_dst;
         ENCODE_QUERY_STATUS_SLICE_PARAMS *psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_src;
-        CopyN((mfxU8*)pdst->SliceSizes, (mfxU8*)psrc->SliceSizes, psrc->FrameLevelStatus.NumberSlices * sizeof(mfxU16));
+        CopyN((mfxU8*)pdst->pSliceSizes, (mfxU8*)psrc->pSliceSizes, psrc->FrameLevelStatus.NumberSlices * sizeof(mfxU16));
     }
 }
 
@@ -750,7 +750,8 @@ void FillSpsBuffer(
     if (par.m_ext.CO2.MaxSliceSize)
         sps.SliceSizeControl = 1;
 
-    sps.UserMaxFrameSize = par.m_ext.CO2.MaxFrameSize;
+    sps.UserMaxIFrameSize = par.m_ext.CO2.MaxFrameSize;
+    sps.UserMaxPBFrameSize = par.m_ext.CO2.MaxFrameSize;
 
     sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(par.m_ext.CO3.LowDelayBRC);
 
@@ -816,7 +817,6 @@ void FillSpsBuffer(
     sps.pcm_enabled_flag                   = par.m_sps.pcm_enabled_flag;
     sps.pcm_loop_filter_disable_flag       = 1;//par.m_sps.pcm_loop_filter_disabled_flag;
     sps.chroma_format_idc                  = par.m_sps.chroma_format_idc;
-    sps.tiles_fixed_structure_flag         = par.m_sps.vui.tiles_fixed_structure_flag;
     sps.separate_colour_plane_flag         = par.m_sps.separate_colour_plane_flag;
 
     sps.log2_max_coding_block_size_minus3       = (mfxU8)(par.m_sps.log2_min_luma_coding_block_size_minus3

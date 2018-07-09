@@ -67,7 +67,10 @@ typedef struct tagENCODE_CAPS_HEVC
     union {
         struct {
             UINT    SliceLevelReportSupport         : 1;
-            UINT    MaxNumOfTileColumnsMinus1       : 4;
+            UINT    CTULevelReportSupport           : 1;
+            UINT    SearchWindow64Support           : 1;
+            UINT    CustomRoundingControl           : 1;
+            UINT    ReservedBit1                    : 1;
             UINT    IntraRefreshBlockUnitSize       : 2;
             UINT    LCUSizeSupported                : 3;
             UINT    MaxNumDeltaQP                   : 4;
@@ -78,15 +81,25 @@ typedef struct tagENCODE_CAPS_HEVC
             UINT    ROIDeltaQPSupport               : 1;
             UINT    NumScalablePipesMinus1          : 5;
             UINT    NegativeQPSupport               : 1;
-            UINT    RandomAccessSupport             : 1;
+            UINT    ReservedBit2                    : 1;
             UINT    TileBasedEncodingSupport        : 1;
-            UINT                                    : 4; // For future expansion
+            UINT    PartialFrameUpdateSupport       : 1;
+            UINT    RGBEncodingSupport              : 1;
+            UINT    LLCStreamingBufferSupport       : 1;
+            UINT    DDRStreamingBufferSupport       : 1;
         };
         UINT    CodingLimits2;
     };
-
     UCHAR    MaxNum_WeightedPredL0;
     UCHAR    MaxNum_WeightedPredL1;
+    USHORT   MaxNumOfDirtyRect;
+    USHORT   MaxNumOfMoveRect;
+    USHORT   MaxNumOfConcurrentFramesMinus1;
+    USHORT   LLCSizeInMBytes;
+    USHORT   reserved16bits0;
+    UINT     reserved32bits1;
+    UINT     reserved32bits2;
+    UINT     reserved32bits3;
 } ENCODE_CAPS_HEVC;
 
 #if !defined(OPEN_SOURCE)
@@ -144,26 +157,29 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     {
         struct
         {
-            UINT    bResetBRC               : 1;
-            UINT    GlobalSearch            : 2;
-            UINT    LocalSearch             : 4;
-            UINT    EarlySkip               : 2;
-            UINT    MBBRC                   : 4;
-            UINT    ParallelBRC             : 1;
-            UINT    SliceSizeControl        : 1;
-            UINT    SourceFormat            : 2;
-            UINT    SourceBitDepth          : 2;
-            UINT    QpAdjustment            : 1;
-            UINT    ROIValueInDeltaQP       : 1;
-            UINT    BlockQPforNonRectROI    : 1;
-            UINT    ReservedBits            : 10;
+            UINT    bResetBRC                           : 1;
+            UINT    GlobalSearch                        : 2;
+            UINT    LocalSearch                         : 4;
+            UINT    EarlySkip                           : 2;
+            UINT    MBBRC                               : 4;
+            UINT    ParallelBRC                         : 1;
+            UINT    SliceSizeControl                    : 1;
+            UINT    SourceFormat                        : 2;
+            UINT    SourceBitDepth                      : 2;
+            UINT    QpAdjustment                        : 1;
+            UINT    ROIValueInDeltaQP                   : 1;
+            UINT    BlockQPforNonRectROI                : 1;
+            UINT    EnableTileBasedEncode               : 1;
+            UINT    bAutoMaxPBFrameSizeForSceneChange   : 1;
+            UINT    EnableStreamingBufferLLC            : 1;
+            UINT    EnableStreamingBufferDDR            : 1;
+            UINT                                        : 6;
         };
         UINT    EncodeFlags;
     };
 
-    UINT    UserMaxFrameSize;
-    USHORT  Reserved1;          // AVBRAccuracy;
-    USHORT  Reserved2;          // AVBRConvergence;
+    UINT    UserMaxIFrameSize;
+    UINT    UserMaxPBFrameSize;
     UCHAR   ICQQualityFactor;   // [1..51]
     UINT    NumOfBInGop[3];
 
@@ -178,10 +194,14 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
             UINT    SAO_enabled_flag                    : 1;
             UINT    pcm_enabled_flag                    : 1;
             UINT    pcm_loop_filter_disable_flag        : 1;
-            UINT    tiles_fixed_structure_flag          : 1;
+            UINT    reserved                            : 1;
             UINT    chroma_format_idc                   : 2;
             UINT    separate_colour_plane_flag          : 1;
-            UINT    ReservedBits1                       : 21;
+            UINT    palette_mode_enabled_flag           : 1;
+            UINT    RGBEncodingEnable                   : 1;
+            UINT    PrimaryChannelForRGBEncoding        : 2;
+            UINT    SecondaryChannelForRGBEncoding      : 2;
+            UINT                                        : 15;    // [0]
         };
         UINT    EncodeTools;
     };
@@ -203,6 +223,10 @@ typedef struct tagENCODE_SET_SEQUENCE_PARAMETERS_HEVC
     ENCODE_SCENARIO             ScenarioInfo;
     ENCODE_CONTENT              ContentInfo;
     ENCODE_FRAMESIZE_TOLERANCE  FrameSizeTolerance;
+
+    USHORT  SlidingWindowSize;
+    UINT    MaxBitRatePerSlidingWindow;
+    UINT    MinBitRatePerSlidingWindow;
 } ENCODE_SET_SEQUENCE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
@@ -215,6 +239,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     INT              RefFramePOCList[15];
 
     UCHAR   CodingType;
+    UCHAR   FrameLevel; // [0..3]
     USHORT  NumSlices;
 
     union
@@ -245,7 +270,11 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
             UINT    no_output_of_prior_pics_flag            : 1;    // [0..1]
             UINT    bEnableGPUWeightedPrediction            : 1;    // [0..1]
             UINT    DisplayFormatSwizzle                    : 1;
-            UINT    reservedbits                            : 7;
+            UINT    deblocking_filter_override_enabled_flag : 1;
+            UINT    pps_deblocking_filter_disabled_flag     : 1;
+            UINT    bEnableCTULevelReport                   : 1;    // [0..1]
+            UINT    bEnablePartialFrameUpdate               : 1;
+            UINT                                            : 3;
         };
         UINT    PicFlags;
     };
@@ -271,7 +300,7 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     UCHAR   slice_pic_parameter_set_id; // [0..63]
     UCHAR   nal_unit_type;              // [0..63]
 
-    UINT            MaxSliceSizeInBytes;
+    UINT        MaxSliceSizeInBytes;
 
     UCHAR       NumROI;                     // [0..16]
     ENCODE_ROI  ROI[16];
@@ -279,6 +308,19 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
     CHAR        MinDeltaQp;                 // [-51..51]
     UCHAR       NumDeltaQpForNonRectROI;    // [0..15]
     CHAR        NonRectROIDeltaQpList[16];
+
+    union
+    {
+        struct
+        {
+            UINT    EnableCustomRoudingIntra : 1;
+            UINT    RoundingOffsetIntra      : 7;
+            UINT    EnableCustomRoudingInter : 1;
+            UINT    RoundingOffsetInter      : 7;
+            UINT                             : 16;
+        };
+        UINT    CustomRoundingOffsetsParams;
+    };
 
     // Skip Frames
     UCHAR   SkipFrameFlag;
@@ -303,6 +345,20 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_HEVC
 #else
     ENCODE_INPUT_TYPE   InputType;
 #endif //defined(OPEN_SOURCE)
+
+    union
+    {
+        struct
+        {
+            UINT    pps_curr_pic_ref_enabled_flag : 1;
+            UINT                                  : 31;
+        } ;
+        UINT    ExtensionControlFlags;
+    } ;
+
+    UINT    TileOffsetBufferSizeInByte;
+    UINT    *pTileOffset;
+
 } ENCODE_SET_PICTURE_PARAMETERS_HEVC;
 
 typedef struct tagENCODE_SET_SLICE_HEADER_HEVC
