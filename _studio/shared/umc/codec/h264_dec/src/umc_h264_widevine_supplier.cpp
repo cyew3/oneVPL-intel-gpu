@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -139,8 +139,8 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
         m_PicOrderCnt = uAbsFrameNum*2;
         if (sliceHeader->nal_ref_idc == false)
             m_PicOrderCnt--;
-            m_TopFieldPOC = m_PicOrderCnt;
-            m_BottomFieldPOC = m_PicOrderCnt;
+        m_TopFieldPOC = m_PicOrderCnt;
+        m_BottomFieldPOC = m_PicOrderCnt;
     }
 
     if (sliceHeader->nal_ref_idc)
