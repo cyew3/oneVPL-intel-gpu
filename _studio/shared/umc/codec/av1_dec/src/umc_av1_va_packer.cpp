@@ -579,9 +579,7 @@ namespace UMC_AV1_DECODER
         picParam->mode_fields.bits.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
         picParam->mode_fields.bits.allow_screen_content_tools = info.allowScreenContentTools;
 
-        // Rev 0.25.2 requires passing of tile group info bit offset to the driver
-        // TODO: uncomment when this parameter will be added to va_dec_av1.h
-        //picParam->tg_size_bit_offset = info.tileGroupBitOffset;
+        picParam->tile_size_bit_offset = info.tileGroupBitOffset;
 
         picParam->log2_tile_rows = (uint8_t)info.log2TileRows;
         picParam->log2_tile_cols = (uint8_t)info.log2TileColumns;
