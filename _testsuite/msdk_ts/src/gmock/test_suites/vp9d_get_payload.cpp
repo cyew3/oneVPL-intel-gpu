@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -79,8 +79,14 @@ namespace vp9d_get_payload
         mfxStatus ProcessSurface(mfxFrameSurface1& s)
         {
             mfxU64 ts;
-            mfxPayload payload;
+            mfxPayload payload{};
 
+            g_tsStatus.expect(MFX_ERR_NULL_PTR);
+            GetPayload(&ts, &payload);
+
+            mfxU8 buffer[1024];
+            payload.Data = buffer;
+            payload.BufSize = sizeof(buffer);
             g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
             GetPayload(&ts, &payload);
 
