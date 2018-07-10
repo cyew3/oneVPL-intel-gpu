@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017-2018, Intel Corporation
+Copyright (c) 2017-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -80,13 +80,11 @@ mfxStatus IPreENC::ResetExtBuffers(const MfxVideoParamsWrapper & videoParams)
     m_mbs.resize(nBuffers);
     for (size_t i = 0; i < nBuffers; ++i)
     {
-        MSDK_ZERO_MEMORY(m_mvs[i]);
         m_mvs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MV;
         m_mvs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMV);
         m_mvs[i].MB = new mfxExtFeiPreEncMV::mfxExtFeiPreEncMVMB[nMB];
         m_mvs[i].NumMBAlloc = nMB;
 
-        MSDK_ZERO_MEMORY(m_mbs[i]);
         m_mbs[i].Header.BufferId = MFX_EXTBUFF_FEI_PREENC_MB;
         m_mbs[i].Header.BufferSz = sizeof(mfxExtFeiPreEncMBStat);
         m_mbs[i].MB = new mfxExtFeiPreEncMBStat::mfxExtFeiPreEncMBStatMB[nMB];

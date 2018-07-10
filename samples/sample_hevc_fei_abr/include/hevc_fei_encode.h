@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2018, Intel Corporation
+Copyright (c) 2018-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -155,10 +155,8 @@ private:
 
     struct MfxFrameSurface1Wrap: public mfxFrameSurface1
     {
-        MfxFrameSurface1Wrap()
-        {
-            memset(this, 0, sizeof(mfxFrameSurface1));
-        }
+        MfxFrameSurface1Wrap() : mfxFrameSurface1()
+        {}
         ~MfxFrameSurface1Wrap()
         {}
 
