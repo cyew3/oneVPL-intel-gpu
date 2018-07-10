@@ -36,7 +36,7 @@ public:
 
     mfxStatus PreInit(MFXFrameAllocator * mfxAllocator,
                       mfxHDL hdl,
-                      std::shared_ptr<FeiBufferAllocator> bufferAllocator,
+                      std::shared_ptr<FeiBufferAllocator> & bufferAllocator,
                       const sInputParams & params,
                       const mfxFrameInfo & inFrameInfo);
 
@@ -58,7 +58,7 @@ public:
     }
     void UpdateBRCStat(FrameStatData& stat)
     {
-        return m_encoder->UpdateBRCStat(stat);
+        m_encoder->UpdateBRCStat(stat);
     }
     MfxVideoParamsWrapper GetVideoParam()
     {
