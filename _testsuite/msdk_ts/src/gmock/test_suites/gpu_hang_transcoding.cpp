@@ -277,7 +277,7 @@ int gpu_hang_transcoding_test(mfxU32 decoderCodecId, mfxU32 encoderCodecId, cons
     TS_END;
 }
 
-int mpeg2_to_mpeg2 (unsigned int) { return gpu_hang_transcoding_test(MFX_CODEC_MPEG2, MFX_CODEC_MPEG2, "forBehaviorTest/customer_issues/mpeg2_43-169_trim1.mpg"); }
+int mpeg2_to_mpeg2 (unsigned int) { return gpu_hang_transcoding_test(MFX_CODEC_MPEG2, MFX_CODEC_MPEG2, "conformance/mpeg2/ibm-bw.BITS"); }
 int avc_to_avc     (unsigned int) { return gpu_hang_transcoding_test(MFX_CODEC_AVC  , MFX_CODEC_AVC  , "conformance/h264/bluesky.h264"); }
 
 TS_REG_TEST_SUITE(gpu_hang_transcoding_mpeg2_to_mpeg2, mpeg2_to_mpeg2, 1);
