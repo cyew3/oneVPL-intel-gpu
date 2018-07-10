@@ -32,10 +32,6 @@ namespace UMC_AV1_DECODER
         , counter(0)
         , prev_frame(nullptr)
     {
-#if UMC_AV1_DECODER_REV == 0
-        //TEMP stub
-        AV1Bitstream{}.GetSequenceHeader(sequence_header.get());
-#endif
     }
 
     AV1Decoder::~AV1Decoder()
@@ -121,9 +117,6 @@ namespace UMC_AV1_DECODER
             try
             {
                 SequenceHeader sh = {};
-#if UMC_AV1_DECODER_REV == 0
-                bs.GetSequenceHeader(&sh);
-#endif
                 FrameHeader fh = {};
                 bs.GetFrameHeaderPart1(&fh, &sh);
                 in->MoveDataPointer(fh.frameHeaderLength);

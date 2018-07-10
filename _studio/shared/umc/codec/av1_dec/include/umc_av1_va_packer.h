@@ -87,11 +87,7 @@ public:
 private:
 
     void PackPicParams(DXVA_Intel_PicParams_AV1*, AV1DecoderFrame const*);
-#if AV1D_DDI_VERSION >= 17 || defined(DDI_MIX_FOR_REV_251p5)
     void PackBitstreamControlParams(DXVA_Intel_BitStream_AV1_Short*, AV1DecoderFrame const*);
-#else
-    void PackTileGroupParams(DXVA_Intel_Tile_Group_AV1_Short*, AV1DecoderFrame const*);
-#endif
 };
 
 #endif // UMC_VA_DXVA

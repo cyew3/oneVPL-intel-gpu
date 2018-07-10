@@ -16,7 +16,6 @@
 
 namespace UMC_AV1_DECODER
 {
-#if UMC_AV1_DECODER_REV >= 2520
     void SetSegData(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data)
     {
         VM_ASSERT(seg_data <= SEG_FEATURE_DATA_MAX[featureId]);
@@ -53,7 +52,6 @@ namespace UMC_AV1_DECODER
         info.lf.modeDeltas[0] = 0;
         info.lf.modeDeltas[1] = 0;
     }
-#endif
 }
 
 #endif //UMC_ENABLE_AV1_VIDEO_DECODER

@@ -96,7 +96,6 @@ namespace UMC_AV1_DECODER
         PackPicParams(picParam, info);
 
         UMCVACompBuffer* compBufSeg = NULL;
-#if AV1D_DDI_VERSION >= 17 || defined(DDI_MIX_FOR_REV_251p5)
         DXVA_Intel_BitStream_AV1_Short *bsControlParam = (DXVA_Intel_BitStream_AV1_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufSeg);
         if (!bsControlParam || !compBufSeg || (compBufSeg->GetBufferSize() < sizeof(DXVA_Intel_BitStream_AV1_Short)))
             throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_MEMORY_ALLOC);
@@ -105,16 +104,6 @@ namespace UMC_AV1_DECODER
         memset(bsControlParam, 0, sizeof(DXVA_Intel_BitStream_AV1_Short));
 
         PackBitstreamControlParams(bsControlParam, info);
-#else
-        DXVA_Intel_Tile_Group_AV1_Short *tileGroupParam = (DXVA_Intel_Tile_Group_AV1_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufSeg);
-        if (!tileGroupParam || !compBufSeg || (compBufSeg->GetBufferSize() < sizeof(DXVA_Intel_Tile_Group_AV1_Short)))
-            throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_MEMORY_ALLOC);
-
-        compBufSeg->SetDataSize(sizeof(DXVA_Intel_Tile_Group_AV1_Short));
-        memset(tileGroupParam, 0, sizeof(DXVA_Intel_Tile_Group_AV1_Short));
-
-        PackTileGroupParams(tileGroupParam, info);
-#endif
 
         Ipp8u* data;
         Ipp32u length;
@@ -152,12 +141,8 @@ namespace UMC_AV1_DECODER
     {
         SequenceHeader const& sh = frame->GetSeqHeader();
 
-#if AV1D_DDI_VERSION >= 11
         picParam->dwFormatAndPictureInfoFlags.fields.frame_id_numbers_present_flag = sh.frame_id_numbers_present_flag;
         picParam->dwFormatAndPictureInfoFlags.fields.use_reference_buffer = sh.frame_id_numbers_present_flag;
-#else
-        sh;
-#endif
 
         FrameHeader const& info =
             frame->GetFrameHeader();
@@ -172,19 +157,13 @@ namespace UMC_AV1_DECODER
         picParam->dwFormatAndPictureInfoFlags.fields.extra_plane = 0;
 
         picParam->dwFormatAndPictureInfoFlags.fields.allow_high_precision_mv = info.allowHighPrecisionMv;
-#if UMC_AV1_DECODER_REV >= 2520
-        // SB size info was present in DDI since ver. 0.11
-        // but appeared in bitstream syntax only in rev. 0.25.2
         picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128X128) ? 1 : 0;
-#endif
+
         picParam->frame_interp_filter = (UCHAR)info.interpFilter;
         picParam->dwFormatAndPictureInfoFlags.fields.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
         picParam->stAV1Segments.enabled = info.segmentation.enabled;;
         picParam->stAV1Segments.temporal_update = info.segmentation.temporalUpdate;
         picParam->stAV1Segments.update_map = info.segmentation.updateMap;
-#if AV1D_DDI_VERSION < 17
-        picParam->stAV1Segments.abs_delta = info.segmentation.absDelta;
-#endif
         picParam->stAV1Segments.Reserved4Bits = 0;
 
         for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
@@ -213,54 +192,27 @@ namespace UMC_AV1_DECODER
                 Ipp8u idxInDPB = (Ipp8u)info.activeRefIdx[ref_idx];
                 picParam->ref_frame_idx[ref_idx].bPicEntry = idxInDPB;
                 picParam->ref_frame_sign_bias[ref_idx + 1] = (UCHAR)info.refFrameSignBias[ref_idx];
-#if AV1D_DDI_VERSION < 15
-                picParam->ref_frame_width_minus1[ref_idx] = (USHORT)info.sizesOfRefFrame[idxInDPB].width - 1;
-                picParam->ref_frame_height_minus1[ref_idx] = (USHORT)info.sizesOfRefFrame[idxInDPB].height - 1;
-#endif
             }
-
-#if AV1D_DDI_VERSION < 14
-            picParam->num_ref_idx_active = INTER_REFS; // TODO: implement proper setting. Don't understand how to get number of active refs - need to check code of aomdec.
-#endif
         }
 
         picParam->CurrPic.bPicEntry = (UCHAR)frame->GetMemID();
 
-#if AV1D_DDI_VERSION >= 11 && !defined(DDI_MIX_FOR_REV_251)
         picParam->filter_level[0] = (UCHAR)info.lf.filterLevel[0];
         picParam->filter_level[1] = (UCHAR)info.lf.filterLevel[1];
         picParam->filter_level_u = (UCHAR)info.lf.filterLevelU;
         picParam->filter_level_v = (UCHAR)info.lf.filterLevelV;
-#else
-        // driver still uses single filter level even after switch to DDI 0.11
-        // for Rev 0 we just use DDI 0.08 with single filter_level
-        // for Rev 0.25.1 we mimic driver's behavior
-        picParam->filter_level = (UCHAR)info.lf.filterLevel;
-#endif
+
         picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
         picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
-#if AV1D_DDI_VERSION < 12
-        picParam->compressed_header_size = (USHORT)info.firstPartitionSize;
-
-        for (mfxU8 i = 0; i < UMC_VP9_DECODER::VP9_NUM_OF_SEGMENT_TREE_PROBS; ++i)
-            picParam->mb_segment_tree_probs[i] = info.segmentation.treeProbs[i];
-
-        for (mfxU8 i = 0; i < UMC_VP9_DECODER::VP9_NUM_OF_PREDICTION_PROBS; ++i)
-            picParam->segment_pred_probs[i] = info.segmentation.predProbs[i];
-#endif
 
         picParam->BSBytesInBuffer = info.frameDataSize;
         picParam->StatusReportFeedbackNumber = ++m_report_counter;
 
         picParam->profile = (UCHAR)info.profile;
-#if AV1D_DDI_VERSION >= 18
 #ifdef DDI_HACKS_FOR_REV_252
         picParam->BitDepthMinus8 = (UCHAR)info.bit_depth - 8;
 #else
         picParam->bit_depth = (UCHAR)info.bit_depth;
-#endif
-#else
-        picParam->BitDepthMinus8 = (UCHAR)(info.bit_depth - 8);
 #endif
         picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)info.subsamplingX;
         picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)info.subsamplingY;
@@ -281,73 +233,46 @@ namespace UMC_AV1_DECODER
 
         picParam->base_qindex = (SHORT)info.baseQIndex;
         picParam->y_dc_delta_q = (CHAR)info.y_dc_delta_q;
-#if AV1D_DDI_VERSION >= 17
         picParam->u_dc_delta_q = (CHAR)info.u_dc_delta_q;
         picParam->v_dc_delta_q = (CHAR)info.v_dc_delta_q;
         picParam->u_ac_delta_q = (CHAR)info.u_ac_delta_q;
         picParam->v_ac_delta_q = (CHAR)info.v_ac_delta_q;
-#else
-        picParam->uv_dc_delta_q = (CHAR)info.uv_dc_delta_q;
-        picParam->uv_ac_delta_q = (CHAR)info.uv_ac_delta_q;
-#endif
 
         memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
 
-#if AV1D_DDI_VERSION >= 11
         picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
         picParam->cdef_sec_damping = (UCHAR)info.cdefSecDamping;
         picParam->cdef_bits = (UCHAR)info.cdefBits;
-#else
-        picParam->dwModeControlFlags.fields.dering_damping = info.cdefDeringDamping;
-        picParam->dwModeControlFlags.fields.clpf_damping = info.cdefClpfDamping;
-        picParam->dwModeControlFlags.fields.nb_cdef_strengths = info.nbCdefStrengths;
-#endif
+
         for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
             picParam->cdef_strengths[i] = (UCHAR)info.cdefStrength[i];
             picParam->cdef_uv_strengths[i] = (UCHAR)info.cdefUVStrength[i];
         }
-#if AV1D_DDI_VERSION >= 11
         picParam->dwModeControlFlags.fields.using_qmatrix = info.useQMatrix;
-#endif
-#if UMC_AV1_DECODER_REV >= 2510
-        // min/max QM info was present in DDI since ver. 0.08
-        // but appeared in bitstream syntax only in rev. 0.25.1
         picParam->dwModeControlFlags.fields.min_qmlevel = info.minQMLevel;
         picParam->dwModeControlFlags.fields.max_qmlevel = info.maxQMLevel;
-#endif
         picParam->dwModeControlFlags.fields.delta_q_present_flag = info.deltaQPresentFlag;
         picParam->dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.deltaQRes);
         picParam->dwModeControlFlags.fields.delta_lf_present_flag = info.deltaLFPresentFlag;
         picParam->dwModeControlFlags.fields.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
-#if AV1D_DDI_VERSION >= 16
         picParam->dwModeControlFlags.fields.delta_lf_multi = info.deltaLFMulti;
-#endif
         picParam->dwModeControlFlags.fields.tx_mode = info.txMode;
         picParam->dwModeControlFlags.fields.reference_mode = info.referenceMode;
-#if UMC_AV1_DECODER_REV >= 2510
-        // compound prediction info was present in DDI since ver. 0.11
-        // but appeared in bitstream syntax only in rev 0.25.1
         picParam->dwModeControlFlags.fields.allow_interintra_compound = info.allowInterIntraCompound;
         picParam->dwModeControlFlags.fields.allow_masked_compound = info.allowMaskedCompound;
-#endif
         picParam->dwModeControlFlags.fields.reduced_tx_set_used = info.reducedTxSetUsed;
         picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
         picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allowScreenContentTools;
         picParam->dwModeControlFlags.fields.ReservedField = 0;
 
-#if AV1D_DDI_VERSION >= 11 && UMC_AV1_DECODER_REV >= 2520
-        // loop restoration info was present in DDI since ver. 0.11
-        // but appeared in bitstream syntax only in rev 0.25.2
         picParam->LoopRestorationFlags.fields.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
         picParam->LoopRestorationFlags.fields.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
         picParam->LoopRestorationFlags.fields.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
         picParam->LoopRestorationFlags.fields.lr_unit_shift = info.lrUnitShift;
         picParam->LoopRestorationFlags.fields.lr_uv_shift = info.lrUVShift;
-#endif
 
-#if AV1D_DDI_VERSION >= 16
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
             picParam->gm_type[i] = (UCHAR)info.global_motion[i + 1].wmtype;
@@ -359,23 +284,18 @@ namespace UMC_AV1_DECODER
                 picParam->gm_params[i][j] = info.global_motion[i + 1].wmmat[j];
             }
         }
-#endif
 
-#if AV1D_DDI_VERSION >= 18 || defined(DDI_MIX_FOR_REV_251p5)
         picParam->tg_size_bit_offset = info.tileGroupBitOffset;
-#endif
 
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
         picParam->log2_tile_cols = (UCHAR)info.log2TileColumns;
-#if AV1D_DDI_VERSION >= 11
+
         // TODO: [Global] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (USHORT)info.tileCols;
         picParam->tile_rows = (USHORT)info.tileRows;
-#endif
         picParam->tile_size_bytes = (UCHAR)info.tileSizeBytes;
     }
 
-#if AV1D_DDI_VERSION >= 17 || defined(DDI_MIX_FOR_REV_251p5)
     void PackerIntel::PackBitstreamControlParams(DXVA_Intel_BitStream_AV1_Short* bsControlParam, AV1DecoderFrame const* frame)
     {
         FrameHeader const& info =
@@ -385,25 +305,6 @@ namespace UMC_AV1_DECODER
         bsControlParam->BitStreamBytesInBuffer = info.frameDataSize - info.frameHeaderLength;
         bsControlParam->wBadBSBufferChopping = 0;
     }
-#else
-    void PackerIntel::PackTileGroupParams(DXVA_Intel_Tile_Group_AV1_Short* tileGroupParam, AV1DecoderFrame const* frame)
-    {
-        FrameHeader const& info =
-            frame->GetFrameHeader();
-
-#if AV1D_DDI_VERSION >= 15
-        tileGroupParam->BSOBUDataLocation = info.frameHeaderLength;
-        // hardcode info about tiles for rev 0.25.1
-        tileGroupParam->StartTileIdx = 0;
-        tileGroupParam->EndTileIdx = 0;
-        tileGroupParam->NumTilesInBuffer = 1;
-#else
-        tileGroupParam->BSNALunitDataLocation = info.frameHeaderLength;
-#endif
-        tileGroupParam->TileGroupBytesInBuffer = info.frameDataSize - info.frameHeaderLength;
-        tileGroupParam->wBadTileGroupChopping = 0;
-    }
-#endif
 
 #endif // UMC_VA_DXVA
 

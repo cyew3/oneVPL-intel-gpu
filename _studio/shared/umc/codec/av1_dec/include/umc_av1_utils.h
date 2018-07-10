@@ -25,7 +25,6 @@ namespace UMC_AV1_DECODER
 
     // we stop using UMC_VP9_DECODER namespace starting from Rev 0.25.2
     // because after switch to AV1-specific segmentation stuff there are only few definitions we need to re-use from VP9
-#if UMC_AV1_DECODER_REV >= 2520
     void SetSegData(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data);
 
     inline
@@ -63,10 +62,6 @@ namespace UMC_AV1_DECODER
     }
 
     void SetupPastIndependence(FrameHeader & info);
-
-#else
-    using namespace UMC_VP9_DECODER;
-#endif
 }
 
 #endif //__UMC_AV1_UTILS_H_

@@ -36,18 +36,6 @@ namespace UMC_AV1_DECODER
 
     const Ipp8u MINIMAL_DATA_SIZE = 4;
 
-#if UMC_AV1_DECODER_REV == 0
-    const Ipp8u FRAME_ID_NUMBERS_PRESENT_FLAG = 1;
-    const Ipp8u FRAME_ID_LENGTH_MINUS7        = 8;   // Allows frame id up to 2^15-1
-    const Ipp8u DELTA_FRAME_ID_LENGTH_MINUS2  = 12;  // Allows frame id deltas up to 2^14-1
-
-    const Ipp8u INTER_REFS                    = 6;
-    const Ipp8u TOTAL_REFS                    = 7;
-
-    const Ipp8u LOG2_SWITCHABLE_FILTERS       = 3;
-
-    const Ipp8u CDEF_MAX_STRENGTHS            = 16;
-#else
     const Ipp8u INTER_REFS                    = 7;
     const Ipp8u TOTAL_REFS                    = 8;
 
@@ -63,7 +51,6 @@ namespace UMC_AV1_DECODER
     const Ipp8u CDEF_STRENGTH_BITS            = 7;
 #endif
 
-#if UMC_AV1_DECODER_REV >= 2520
     const Ipp8u  MAX_MB_PLANE                 = 3;
     const Ipp8u MAX_LEB128_SIZE               = 8;
     const Ipp8u LEB128_BYTE_MASK              = 0x7f;
@@ -73,10 +60,6 @@ namespace UMC_AV1_DECODER
     const Ipp16u RESTORATION_UNITSIZE_MAX     = 256;
 #else
     const Ipp16u RESTORATION_TILESIZE_MAX     = 256;
-#endif
-
-#else
-    const Ipp8u MAX_SB_SIZE_LOG2              = 6;
 #endif
 
     const Ipp8u MI_SIZE_LOG2 = 2;
@@ -90,8 +73,6 @@ namespace UMC_AV1_DECODER
     const Ipp8u NO_FILTER_FOR_IBC = 1;
 #endif // UMC_AV1_DECODER_REV >= 5000
 
-
-#endif
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
     const Ipp8u MAX_MODE_LF_DELTAS            = 2;
 
@@ -200,7 +181,6 @@ namespace UMC_AV1_DECODER
     };
 #endif
 
-#if UMC_AV1_DECODER_REV >= 2520
     enum SB_SIZE
     {
         BLOCK_64X64 = 0,
@@ -239,7 +219,6 @@ namespace UMC_AV1_DECODER
         Ipp32u featureMask[VP9_MAX_NUM_OF_SEGMENTS];
 
     };
-#endif
 
     enum {
         RESET_FRAME_CONTEXT_NONE = 0,
@@ -346,24 +325,15 @@ namespace UMC_AV1_DECODER
 #endif // UMC_AV1_DECODER_REV >= 5000
 
         int frame_id_numbers_present_flag;
-#if UMC_AV1_DECODER_REV >= 2520
         int frame_id_length;
         int delta_frame_id_length;
-#else
-        int frame_id_length_minus7;
-        int delta_frame_id_length_minus2;
-#endif
     };
 
     struct Loopfilter
     {
-#if UMC_AV1_DECODER_REV >= 2520
         Ipp32s filterLevel[2];
         Ipp32s filterLevelU;
         Ipp32s filterLevelV;
-#else
-        Ipp32s filterLevel;
-#endif
 
         Ipp32s sharpnessLevel;
         Ipp32s lastSharpnessLevel;
@@ -378,7 +348,6 @@ namespace UMC_AV1_DECODER
         Ipp8s modeDeltas[MAX_MODE_LF_DELTAS];
     };
 
-#if UMC_AV1_DECODER_REV >= 2510
     struct WarpedMotionParams {
         TRANSFORMATION_TYPE wmtype;
         Ipp32s wmmat[8];
@@ -387,9 +356,7 @@ namespace UMC_AV1_DECODER
         Ipp16u gamma;
         Ipp16u delta;
     };
-#endif
 
-#if UMC_AV1_DECODER_REV >= 2520
     enum RestorationType
     {
         RESTORE_NONE,
@@ -405,7 +372,6 @@ namespace UMC_AV1_DECODER
         RestorationType frameRestorationType;
         Ipp32s restorationUnitSize;
     };
-#endif
 
 #if UMC_AV1_DECODER_REV >= 5000
     struct FilmGrain{
@@ -490,23 +456,14 @@ namespace UMC_AV1_DECODER
         Ipp32u deltaLFPresentFlag;
         Ipp32u deltaLFRes;
 
-#if UMC_AV1_DECODER_REV >= 2520
         Ipp32u deltaLFMulti;
-#endif
 
-#if UMC_AV1_DECODER_REV == 0
-        Ipp32u cdefDeringDamping;
-        Ipp32u cdefClpfDamping;
-        Ipp32u nbCdefStrengths;
-#else
         Ipp32u cdefPriDamping;
         Ipp32u cdefSecDamping;
         Ipp32u cdefBits;
-#endif
         Ipp32u cdefStrength[CDEF_MAX_STRENGTHS];
         Ipp32u cdefUVStrength[CDEF_MAX_STRENGTHS];
 
-#if UMC_AV1_DECODER_REV >= 2510
         Ipp32u allowInterIntraCompound;
         Ipp32u allowMaskedCompound;
         Ipp32u globalMotionType;
@@ -519,17 +476,13 @@ namespace UMC_AV1_DECODER
 
         Ipp32u tileCols;
         Ipp32u tileRows;
-#endif
 
         Ipp32u tileSizeBytes;
 
         Loopfilter lf;
 
-#if UMC_AV1_DECODER_REV >= 2515
         Ipp32u tileGroupBitOffset;
-#endif
 
-#if UMC_AV1_DECODER_REV >= 2520
         Ipp32u sbSize;
         RestorationInfo rstInfo[MAX_MB_PLANE];
 
@@ -542,7 +495,6 @@ namespace UMC_AV1_DECODER
 
         Ipp32u lrUnitShift;
         Ipp32u lrUVShift;
-#endif
 
 #if UMC_AV1_DECODER_REV >= 5000
         FRAME_TYPE frameType;
