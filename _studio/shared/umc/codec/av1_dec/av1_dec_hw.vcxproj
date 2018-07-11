@@ -22,6 +22,7 @@
   <Import Condition="Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Building.props" />
   <Import Condition="Exists('$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Building.props') and '$(MfxBuildingIncluded)'==''" Project="$(MSBuildThisFileDirectory)..\..\..\..\..\builder\Intel.Mfx.Building.props" />
   <ItemGroup>
+    <ClInclude Include="include\umc_av1_bitstream_utils.h" />
     <ClInclude Include="include\umc_av1_decoder_va.h" />
     <ClInclude Include="include\umc_av1_dec_defs.h" />
     <ClInclude Include="include\umc_av1_frame.h" />

@@ -76,6 +76,8 @@ namespace UMC_AV1_DECODER
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
     const Ipp8u MAX_MODE_LF_DELTAS            = 2;
 
+    const Ipp8u WARPEDMODEL_PREC_BITS         = 16;
+
 #if UMC_AV1_DECODER_REV >= 5000
     enum AV1_OBU_TYPE
     {
