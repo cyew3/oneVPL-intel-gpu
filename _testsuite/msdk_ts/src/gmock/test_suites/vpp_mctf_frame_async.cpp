@@ -86,13 +86,6 @@ namespace vpp_mctf_frame_async
 
                                         {
                                             { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-// by default: MCTF uses 2ref prediction, which is 1-frame delay
-//#if (MFX_VERSION >= MFX_VERSION_NEXT)
-//                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF},
-//                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-//                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_2REF },
-//                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-//#endif
                                        },
 //                                            0-iter            1-iter             2-iter               3-iter
                                        { MFX_ERR_MORE_DATA, MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
@@ -104,38 +97,8 @@ namespace vpp_mctf_frame_async
                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
                                        },
         },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
         {/* 2*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_2REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_MORE_DATA, MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_NONE,      MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 3*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async
@@ -149,10 +112,6 @@ namespace vpp_mctf_frame_async
 
                                         {
                                             { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_2REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
                                         },
 //                                            0-iter            1-iter             2-iter               3-iter
                                         { MFX_ERR_MORE_DATA, MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
@@ -164,249 +123,8 @@ namespace vpp_mctf_frame_async
                                           MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
                                         },
         },
-
-        {/* 4*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_NONE,      MFX_ERR_NONE,      MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 5*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  false,  true,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_NONE,      MFX_ERR_UNDEFINED_BEHAVIOR,    MFX_ERR_NONE, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 6*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  true,  false,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_NONE,      MFX_ERR_NONE,      MFX_ERR_UNDEFINED_BEHAVIOR, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 7*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_1REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_NONE,      MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 8*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  false,  true,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_1REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_NONE,      MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_UNDEFINED_BEHAVIOR, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 9*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  false,  true,  false,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_1REF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_NONE,      MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_UNDEFINED_BEHAVIOR, MFX_ERR_MORE_DATA, MFX_ERR_UNDEFINED_BEHAVIOR,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 10*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_SPATIAL },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_NONE,      MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-
-        {/* 11*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
-
-                                        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
-                                        1, //async
-                                           //when to set Input nullptr
-                                        {
-                                            false, false, false, false,
-                                            true,  true,  true,  true,
-                                            false,  true,  true,  true,
-                                            true,  true,  true,  true,
-                                        },
-
-                                        {
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 0 },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_OFF },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_SPATIAL },
-                                            { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_INTEGER }
-                                        },
-//                                            0-iter            1-iter             2-iter               3-iter
-                                        { MFX_ERR_NONE,      MFX_ERR_NONE ,     MFX_ERR_NONE,      MFX_ERR_NONE,
-//                                            4-iter            5-iter             6-iter               7-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            8-iter            9-iter             10-iter              11-iter
-                                          MFX_ERR_UNDEFINED_BEHAVIOR, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-//                                            12-iter           13-iter            14-iter              15-iter
-                                          MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA, MFX_ERR_MORE_DATA,
-                                        },
-        },
-#endif
-
-        {/* 12*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
+ 
+        {/* 3*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async
@@ -436,7 +154,7 @@ namespace vpp_mctf_frame_async
                                        },
         },
 
-        {/*13*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
+        {/* 4 */ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async
@@ -466,7 +184,7 @@ namespace vpp_mctf_frame_async
                                        },
         },
 
-        {/*14*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
+        {/*5*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async
@@ -496,7 +214,7 @@ namespace vpp_mctf_frame_async
                                        },
         },
 
-        {/*15*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
+        {/*6*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async
@@ -526,7 +244,7 @@ namespace vpp_mctf_frame_async
                                        },
         },
 
-        {/*16*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
+        {/*7*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async
@@ -556,7 +274,7 @@ namespace vpp_mctf_frame_async
                                        },
         },
 
-        {/*17*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
+        {/*8*/ MFX_ERR_NONE, RUN_MCTF_NORMAL,
 
                                         MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY, // IOPattern
                                         1, //async

@@ -121,21 +121,9 @@ namespace vpp_mctf_reset
         {/*04*/ MFX_ERR_NONE,
             {
                 { INIT, &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { INIT, &tsStruct::mfxExtVppMctf.Overlap,                MFX_CODINGOPTION_ON },
-                { INIT, &tsStruct::mfxExtVppMctf.Deblocking,             MFX_CODINGOPTION_ON },
-                { INIT, &tsStruct::mfxExtVppMctf.TemporalMode,           MFX_MCTF_TEMPORAL_MODE_2REF },
-                { INIT, &tsStruct::mfxExtVppMctf.MVPrecision,            MFX_MVPRECISION_QUARTERPEL },
-#endif
                 { INIT, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_NV12 },
 
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { RESET, &tsStruct::mfxExtVppMctf.Overlap,               MFX_CODINGOPTION_OFF },
-                { RESET, &tsStruct::mfxExtVppMctf.Deblocking,            MFX_CODINGOPTION_ON },
-                { RESET, &tsStruct::mfxExtVppMctf.TemporalMode,          MFX_MCTF_TEMPORAL_MODE_4REF },
-                { RESET, &tsStruct::mfxExtVppMctf.MVPrecision,           MFX_MVPRECISION_INTEGER },
-#endif
+                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        10 },
                 { RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,        MFX_FOURCC_NV12 },
             },
         },
@@ -143,84 +131,13 @@ namespace vpp_mctf_reset
         {/*05*/ MFX_ERR_NONE,
             {
                 { INIT, &tsStruct::mfxExtVppMctf.FilterStrength,        15 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { INIT, &tsStruct::mfxExtVppMctf.Overlap,                MFX_CODINGOPTION_ON },
-                { INIT, &tsStruct::mfxExtVppMctf.Deblocking,             MFX_CODINGOPTION_OFF },
-                { INIT, &tsStruct::mfxExtVppMctf.TemporalMode,           MFX_MCTF_TEMPORAL_MODE_2REF },
-                { INIT, &tsStruct::mfxExtVppMctf.MVPrecision,            MFX_MVPRECISION_INTEGER },
-                { INIT, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k,      0 },
-#endif
                 { INIT, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_NV12 },
 
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { RESET, &tsStruct::mfxExtVppMctf.Overlap,               MFX_CODINGOPTION_ON },
-                { RESET, &tsStruct::mfxExtVppMctf.Deblocking,            MFX_CODINGOPTION_OFF },
-                { RESET, &tsStruct::mfxExtVppMctf.TemporalMode,          MFX_MCTF_TEMPORAL_MODE_4REF },
-                { RESET, &tsStruct::mfxExtVppMctf.MVPrecision,           MFX_MVPRECISION_INTEGER },
-                { RESET, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k,     (12 * 100000) },
-#endif
+                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        4 },
                 { RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,        MFX_FOURCC_NV12 },
             },
         },
 
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        {/*06*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-            {
-                { INIT, &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
-                { INIT, &tsStruct::mfxExtVppMctf.Overlap,                MFX_CODINGOPTION_ON },
-                { INIT, &tsStruct::mfxExtVppMctf.Deblocking,             MFX_CODINGOPTION_OFF },
-                { INIT, &tsStruct::mfxExtVppMctf.TemporalMode,           MFX_MCTF_TEMPORAL_MODE_2REF },
-                { INIT, &tsStruct::mfxExtVppMctf.MVPrecision,            MFX_MVPRECISION_QUARTERPEL },
-                { INIT, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k,      0 },
-                { INIT, &tsStruct::mfxVideoParam.vpp.Out.FourCC,         MFX_FOURCC_NV12 },
-
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
-                { RESET, &tsStruct::mfxExtVppMctf.Overlap,               MFX_CODINGOPTION_OFF },
-                { RESET, &tsStruct::mfxExtVppMctf.Deblocking,            MFX_CODINGOPTION_ON },
-                { RESET, &tsStruct::mfxExtVppMctf.TemporalMode,          MFX_MCTF_TEMPORAL_MODE_4REF },
-                { RESET, &tsStruct::mfxExtVppMctf.MVPrecision,           MFX_MVPRECISION_QUARTERPEL },
-                { RESET, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k,     (12 * 100000 + 1) },
-                { RESET, &tsStruct::mfxVideoParam.vpp.Out.FourCC,       MFX_FOURCC_NV12 },
-            },
-        },
-
-        {/*07*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-            {
-                { INIT,  &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
-                { INIT,  &tsStruct::mfxExtVppMctf.Overlap,                MFX_CODINGOPTION_ON },
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,         0 },
-                { RESET, &tsStruct::mfxExtVppMctf.Overlap,                MFX_CODINGOPTION_ADAPTIVE },
-            },
-        },
-
-        {/*08*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-            {
-                { INIT, &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
-                { INIT, &tsStruct::mfxExtVppMctf.Deblocking,             MFX_CODINGOPTION_ON },
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
-                { RESET, &tsStruct::mfxExtVppMctf.Deblocking,            MFX_CODINGOPTION_ADAPTIVE },
-            },
-        },
-
-        {/*09*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
-            {
-                { INIT, &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
-                { INIT, &tsStruct::mfxExtVppMctf.MVPrecision,            MFX_MVPRECISION_QUARTERPEL },
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
-                { RESET, &tsStruct::mfxExtVppMctf.MVPrecision,           MFX_MVPRECISION_HALFPEL },
-            },
-        },
-        {/*10*/ MFX_ERR_NONE,
-            {
-                { INIT, &tsStruct::mfxExtVppMctf.FilterStrength,        20 },
-                { INIT, &tsStruct::mfxExtVppMctf.MVPrecision,            MFX_MVPRECISION_QUARTERPEL },
-                { RESET, &tsStruct::mfxExtVppMctf.FilterStrength,        0 },
-                { RESET, &tsStruct::mfxExtVppMctf.MVPrecision,           MFX_MVPRECISION_INTEGER },
-            },
-            {}, 11, { MFX_HW_BDW, MFX_HW_SKL, MFX_HW_APL, MFX_HW_KBL, MFX_HW_GLK, MFX_HW_CFL, MFX_HW_CNL, MFX_HW_ICL, MFX_HW_LKF, MFX_HW_JSL, MFX_HW_TGL}
-        },
-#endif
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::tc_struct);

@@ -16,7 +16,7 @@ File Name: vpp_mctf_init.cpp
 
 Description:
 This suite tests VPP - MCTF initialization\n
-<<<<<<< HEAD
+
 1 test case for check unsupported on Windows
 =======
 50 test cases with the following differences:
@@ -29,7 +29,7 @@ Algorithm:
 - Initialize Media SDK lib\n
 - Set frame allocator\n
 - Initialize the VPP operation\n
->>>>>>> [msdk_gmock] To update tests for MCTF
+
 */
 
 #include "ts_vpp.h"
@@ -294,157 +294,9 @@ namespace vpp_mctf_init
                 { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC,   MFX_FOURCC_NV12 },
             },
         },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-        // mctf, overlap param
-        {/*29*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_ON },
-            },
-        },
-
-        {/*30*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_OFF },
-            },
-        },
-
-        {/*31*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_ADAPTIVE },
-            },
-        },
-
-        {/*32*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_ADAPTIVE + 1 },
-            },
-        },
-
-        {/*33*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap,        MFX_CODINGOPTION_UNKNOWN },
-            },
-        },
-
-        // mctf, deblock param
-        {/*34*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_ON },
-            },
-        },
-
-        {/*35*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_OFF },
-            },
-        },
-
-        {/*36*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_ADAPTIVE },
-            },
-        },
-
-        {/*37*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_ADAPTIVE + 1 },
-            },
-        },
-
-        {/*38*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_CODINGOPTION_UNKNOWN },
-            },
-        },
-
-        // mctf, TemporalMode param
-        {/*39*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_SPATIAL },
-            },
-        },
-
-        {/*40*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_1REF },
-            },
-        },
-
-        {/*41*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_2REF },
-            },
-        },
-
-        {/*42*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_4REF },
-            },
-        },
-
-        {/*43*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,        MFX_MCTF_TEMPORAL_MODE_UNKNOWN },
-            },
-        },
-
-        {/*44*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking,        MFX_MCTF_TEMPORAL_MODE_4REF + 1 },
-            },
-        },
-
-        // mctf, MVPrecision param
-        {/*45*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_INTEGER },
-            },
-        },
-
-        {/*46*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_HALFPEL },
-            },
-        },
-
-        {/*47*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_QUARTERPEL },
-            },
-        },
-
-        {/*48*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_UNKNOWN },
-            },
-        },
-
-        {/*49*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        3 },
-            },
-        },
-
-        {/*50*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision,        MFX_MVPRECISION_QUARTERPEL + 1 },
-            },
-        },
 
         // any FRC-like algorithm is bad for MCTF with delays
-        {/*51*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
-
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
-            },
-        },
-
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*52*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_2REF },
                 { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
@@ -455,63 +307,16 @@ namespace vpp_mctf_init
             },
         },
 
-        {/*53*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_1REF },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
-
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
-            },
-        },
-
-        {/*54*/ MFX_ERR_NONE, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_SPATIAL },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtD,    1 },
-
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtN,   60 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FrameRateExtD,    1 },
-            },
-        },
-
         // any FRC-like algorithm is bad for MCTF with delays
-        {/*55*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
-            },
-        },
-
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*56*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+        {/*30*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_2REF },
                 { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
             },
         },
-
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*57*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_1REF },
-                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
-            },
-        },
-
-        // any FRC-like algorithm is bad for MCTF with delays
-        {/*58*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
-            {
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_MCTF_TEMPORAL_MODE_SPATIAL },
-                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },
-            },
-        },
-#endif
 
         // by default, 2-ref case is used; its incompatible with FRC
-        {/*59*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+        {/*31*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.Header, MFX_EXTBUFF_VPP_MCTF },
                 { MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FrameRateExtN,   30 },
@@ -522,7 +327,7 @@ namespace vpp_mctf_init
             },
         },
         // any FRC-like algorithm is bad for MCTF with delays
-        {/*60*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
+        {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, STANDARD,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode,  MFX_EXTBUFF_VPP_MCTF },
                 { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Header,  MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION },

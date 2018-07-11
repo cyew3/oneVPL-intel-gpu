@@ -68,16 +68,8 @@ namespace vpp_mctf_getvideoparam
         {/*00*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 10 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_2REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, 10000 },
-#endif
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_QUARTERPEL },
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
-//                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
                 { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Brightness, 50.0F },
                 { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Contrast, 5.0F },
                 { MFX_PAR, &tsStruct::mfxExtVPPProcAmp.Hue, 100.0F },
@@ -90,13 +82,6 @@ namespace vpp_mctf_getvideoparam
         {/*01*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 22 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_2REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, 10000 },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_QUARTERPEL },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -112,13 +97,6 @@ namespace vpp_mctf_getvideoparam
         {/*02*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 21 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ADAPTIVE },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ADAPTIVE },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, (12 * 100000 + 1) },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_HALFPEL },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -134,13 +112,6 @@ namespace vpp_mctf_getvideoparam
         {/*03*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 20 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, (12 * 100000) },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_QUARTERPEL },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -156,13 +127,6 @@ namespace vpp_mctf_getvideoparam
         {/*04*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 20 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_UNKNOWN },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, (12 * 100000) },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_QUARTERPEL },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -178,13 +142,6 @@ namespace vpp_mctf_getvideoparam
         {/*05*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 20 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_UNKNOWN },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, (12 * 100000) },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_QUARTERPEL },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -200,13 +157,6 @@ namespace vpp_mctf_getvideoparam
         {/*06*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 20 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_UNKNOWN },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, (12 * 100000) },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_QUARTERPEL },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -222,13 +172,6 @@ namespace vpp_mctf_getvideoparam
         {/*07*/ MFX_ERR_NONE, MFX_ERR_NONE, MFX_PAR,
             {
                 { MFX_PAR, &tsStruct::mfxExtVppMctf.FilterStrength, 20 },
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Overlap, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.Deblocking, MFX_CODINGOPTION_ON },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.TemporalMode, MFX_MCTF_TEMPORAL_MODE_4REF },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.BitsPerPixelx100k, (12 * 100000) },
-                { MFX_PAR, &tsStruct::mfxExtVppMctf.MVPrecision, MFX_MVPRECISION_UNKNOWN },
-#endif
                 { MFX_PAR, &tsStruct::mfxExtVPPDenoise.DenoiseFactor, 50 },
                 { MFX_PAR, &tsStruct::mfxExtVPPDetail.DetailFactor, 50 },
 //                { MFX_PAR, &tsStruct::mfxExtVPPFrameRateConversion.Algorithm, MFX_FRCALGM_PRESERVE_TIMESTAMP },
@@ -240,10 +183,13 @@ namespace vpp_mctf_getvideoparam
             },
             0 ,{}
         },
+        //#endif // extended
+
+
 
         {/*08*/ MFX_ERR_NONE, MFX_ERR_NONE, DOUSE,
             {},
-            3 , {   MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_MCTF, MFX_EXTBUFF_VPP_DETAIL } 
+            3 , {   MFX_EXTBUFF_VPP_DENOISE, MFX_EXTBUFF_VPP_MCTF, MFX_EXTBUFF_VPP_DETAIL }
         },
 
         // try to find MCTF filter in the list
@@ -500,17 +446,6 @@ namespace vpp_mctf_getvideoparam
                 else if ((vpp_du->AlgList[i] == MFX_EXTBUFF_VPP_MCTF))
                 {
                     mfxExtVppMctf* pMctf = (mfxExtVppMctf*)par_init.GetExtBuffer(MFX_EXTBUFF_VPP_MCTF);
-                    if (MFX_CODINGOPTION_OFF != pMctf->Overlap)
-                        TS_FAIL_TEST("MCTF DoUse settings for Overlaping is not valid", MFX_ERR_NONE);
-
-                    if (MFX_CODINGOPTION_OFF != pMctf->Deblocking)
-                        TS_FAIL_TEST("MCTF DoUse settings for Deblocking is not valid", MFX_ERR_NONE);
-
-                    if (MFX_MCTF_TEMPORAL_MODE_2REF != pMctf->TemporalMode)
-                        TS_FAIL_TEST("MCTF DoUse settings for TemporalModel is not valid", MFX_ERR_NONE);
-
-                    if (MFX_MVPRECISION_INTEGER != pMctf->MVPrecision)
-                        TS_FAIL_TEST("MCTF DoUse settings for MVPrecision is not valid", MFX_ERR_NONE);
                 }
             }
 
@@ -534,55 +469,6 @@ namespace vpp_mctf_getvideoparam
                     else
                         EXPECT_NE(pBuf_start->FilterStrength, pBuf_init->FilterStrength) << "MCTF ERROR: FilterStrength after Init & GetVideoPram was not changed\n";
                     EXPECT_EQ(pBuf->FilterStrength, pBuf_init->FilterStrength) << "MCTF ERROR: FilterStrength before and after GetVideoPram() is not equal \n";
-                    if (MFX_CODINGOPTION_ON != pBuf_start->Deblocking &&
-                        MFX_CODINGOPTION_OFF != pBuf_start->Deblocking)
-                    {
-                        if (MFX_CODINGOPTION_UNKNOWN != pBuf_start->Deblocking)
-                            EXPECT_NE(pBuf_start->Deblocking, pBuf_init->Deblocking) << "MCTF ERROR: Deblocking after Init & GetVideoPram was changed\n";
-                        else
-                            EXPECT_EQ(pBuf_init->Deblocking, MFX_CODINGOPTION_OFF) << "MCTF ERROR: MFX_CODINGOPTION_UNKNOWN: Deblocking after Init must be MFX_CODINGOPTION_OFF\n";
-                    }
-                    else
-                        EXPECT_EQ(pBuf_start->Deblocking, pBuf_init->Deblocking) << "MCTF ERROR: Deblocking after Init & GetVideoPram was not changed\n";
-                    EXPECT_EQ(pBuf->Deblocking, pBuf_init->Deblocking) << "MCTF ERROR: Deblocking before and after GetVideoPram() is not equal \n";
-
-                    if (MFX_CODINGOPTION_ON != pBuf_start->Overlap &&
-                        MFX_CODINGOPTION_OFF != pBuf_start->Overlap)
-                    {
-                        if (MFX_CODINGOPTION_UNKNOWN != pBuf_start->Deblocking)
-                            EXPECT_NE(pBuf_start->Overlap, pBuf_init->Overlap) << "MCTF ERROR: Overlap after Init & GetVideoPram was changed\n";
-                        else
-                            EXPECT_EQ(pBuf_init->Deblocking, MFX_CODINGOPTION_OFF) << "MCTF ERROR: MFX_CODINGOPTION_UNKNOWN: Overlap after Init must be MFX_CODINGOPTION_OFF\n";
-                    }
-                    else
-                        EXPECT_EQ(pBuf_start->Overlap, pBuf_init->Overlap) << "MCTF ERROR: Overlap after Init & GetVideoPram was not changed\n";
-                    EXPECT_EQ(pBuf->Overlap, pBuf_init->Overlap) << "MCTF ERROR: Overlap before and after GetVideoPram() is not equal \n";
-
-                    if (MFX_MVPRECISION_QUARTERPEL != pBuf_start->MVPrecision &&
-                        MFX_MVPRECISION_INTEGER != pBuf_start->MVPrecision)
-                    {
-                        if (MFX_MVPRECISION_UNKNOWN != pBuf_start->MVPrecision)
-                            EXPECT_NE(pBuf_start->MVPrecision, pBuf_init->MVPrecision) << "MCTF ERROR: MVPrecision after Init & GetVideoPram was changed\n";
-                        else
-                            EXPECT_EQ(pBuf_init->MVPrecision, MFX_MVPRECISION_INTEGER) << "MCTF ERROR: MFX_MVPRECISION_UNKNOWN: MVPrecision after Init must be MFX_MVPRECISION_INTEGER\n";
-                    }
-                    else
-                        EXPECT_EQ(pBuf_start->MVPrecision, pBuf_init->MVPrecision) << "MCTF ERROR: MVPrecision after Init & GetVideoPram was not changed\n";
-                    EXPECT_EQ(pBuf->MVPrecision, pBuf_init->MVPrecision) << "MCTF ERROR: MVPrecision before and after GetVideoPram() is not equal \n";
-
-                    if (MFX_MCTF_TEMPORAL_MODE_4REF != pBuf_start->TemporalMode &&
-                        MFX_MCTF_TEMPORAL_MODE_2REF != pBuf_start->TemporalMode &&
-                        MFX_MCTF_TEMPORAL_MODE_1REF != pBuf_start->TemporalMode &&
-                        MFX_MCTF_TEMPORAL_MODE_SPATIAL != pBuf_start->TemporalMode)
-                    {
-                        if (MFX_MCTF_TEMPORAL_MODE_UNKNOWN != pBuf_start->TemporalMode)
-                            EXPECT_NE(pBuf_start->TemporalMode, pBuf_init->TemporalMode) << "MCTF ERROR: TemporalMode after Init & GetVideoPram was changed\n";
-                        else
-                            EXPECT_EQ(pBuf_init->TemporalMode, MFX_MCTF_TEMPORAL_MODE_2REF) << "MCTF ERROR: MFX_MCTF_TEMPORAL_MODE_UNKNOWN: TemporalMode after Init must be MFX_MCTF_TEMPORAL_MODE_2REF\n";
-                    }
-                    else
-                        EXPECT_EQ(pBuf_start->TemporalMode, pBuf_init->TemporalMode) << "MCTF ERROR: TemporalMode after Init & GetVideoPram was not changed\n";
-                    EXPECT_EQ(pBuf->TemporalMode, pBuf_init->TemporalMode) << "MCTF ERROR: TemporalMode before and after GetVideoPram() is not equal \n";
                 }
                 break;
 
