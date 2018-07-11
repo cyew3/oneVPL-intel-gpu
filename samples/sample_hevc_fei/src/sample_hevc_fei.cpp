@@ -124,7 +124,7 @@ void PrintHelp(const msdk_char *strAppName, const msdk_char *strErrorMessage)
     msdk_printf(MSDK_STRING("References structure: \n"));
     msdk_printf(MSDK_STRING("   [-active_ref_lists_par <file-name>] - par - file for reference lists + reordering. Each line :\n"));
     msdk_printf(MSDK_STRING("                                         <POC> <FrameType> <PicStruct> | 8 <reference POC> in L0 list | then L1 | 16 DPB\n"));
-    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P frames (valid range is [1, 3])\n"));
+    msdk_printf(MSDK_STRING("   [-NumRefActiveP   numRefs] - number of maximum allowed references for P/GPB frames (valid range is [1, 3])\n"));
     msdk_printf(MSDK_STRING("   [-NumRefActiveBL0 numRefs] - number of maximum allowed backward references for B frames (valid range is [1, 3])\n"));
     msdk_printf(MSDK_STRING("   [-NumRefActiveBL1 numRefs] - number of maximum allowed forward references for B frames (only 1 is supported)\n"));
     msdk_printf(MSDK_STRING("   [-gpb:<on,off>]            - make HEVC encoder use regular P-frames (off) or GPB (on) (on by default)\n"));
@@ -738,7 +738,7 @@ void AdjustOptions(sInputParams& params)
     params.nNumSlices       = tune(params.nNumSlices, 0, 1);
     params.nIdrInterval     = tune(params.nIdrInterval, 0, 0xffff);
 
-    if (params.nRefDist < 2)
+    if (params.nRefDist < 2) // avoid impact of NumRefActiveBL0/L1 in gop with P/GPB only
     {
         params.NumRefActiveBL0 = params.NumRefActiveBL1 = 0;
     }
