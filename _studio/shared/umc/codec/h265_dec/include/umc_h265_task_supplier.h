@@ -446,6 +446,7 @@ protected:
 
     // Keep track of which parameter set is in use.
     bool              m_WaitForIDR;
+    bool              m_prevSliceBroken;
 
     Ipp32s m_RA_POC;
     Ipp8u  NoRaslOutputFlag;

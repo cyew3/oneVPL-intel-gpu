@@ -623,7 +623,8 @@ TaskSupplier_H265::TaskSupplier_H265()
     , m_pLastDisplayed(0)
     , m_pMemoryAllocator(0)
     , m_pFrameAllocator(0)
-    , m_WaitForIDR(0)
+    , m_WaitForIDR(false)
+    , m_prevSliceBroken(false)
     , m_RA_POC(0)
     , NoRaslOutputFlag(0)
     , m_IRAPType(NAL_UT_INVALID)
@@ -803,6 +804,7 @@ void TaskSupplier_H265::Close()
     m_decodedOrder      = false;
     m_checkCRAInsideResetProcess = false;
     m_WaitForIDR        = true;
+    m_prevSliceBroken   = false;
     m_maxUIDWhenWasDisplayed = 0;
 
     m_RA_POC = 0;
@@ -865,6 +867,7 @@ void TaskSupplier_H265::Reset()
     m_decodedOrder      = false;
     m_checkCRAInsideResetProcess = false;
     m_WaitForIDR        = true;
+    m_prevSliceBroken   = false;
     m_maxUIDWhenWasDisplayed = 0;
 
     m_RA_POC = 0;
@@ -900,6 +903,7 @@ void TaskSupplier_H265::AfterErrorRestore()
     m_decodedOrder      = false;
     m_checkCRAInsideResetProcess = false;
     m_WaitForIDR        = true;
+    m_prevSliceBroken   = false;
     m_maxUIDWhenWasDisplayed = 0;
     NoRaslOutputFlag = 1;
 
@@ -1944,13 +1948,23 @@ H265Slice *TaskSupplier_H265::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 
     memory_leak_preventing.ClearNotification();
 
-    if (!pSlice->Reset(&m_pocDecoding))
+    bool ready = pSlice->Reset(&m_pocDecoding);
+    if (!ready)
     {
+        m_prevSliceBroken = pSlice->IsError();
         return 0;
     }
 
     H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
     VM_ASSERT(sliceHdr);
+
+    if (m_prevSliceBroken && sliceHdr->dependent_slice_segment_flag)
+    {
+        //Prev. slice contains errors. There is no relayable way to infer parameters for dependent slice
+        return 0;
+    }
+
+    m_prevSliceBroken = false;
 
     if (m_WaitForIDR)
     {
