@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2018 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -1014,13 +1014,13 @@ const TestSuite::tc_struct TestSuite::test_case[] =
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY}}
     },
-    {/*114*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*114*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
            {MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY}}
     },
-    {/*115*/ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, 0, {
+    {/*115*/ MFX_ERR_NONE, MFX_ERR_NONE, 0, {
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.Shift, 1},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.In.FourCC, MFX_FOURCC_Y210},
            {MFX_PAR, &tsStruct::mfxVideoParam.vpp.Out.FourCC, MFX_FOURCC_Y210},
@@ -1089,7 +1089,7 @@ int TestSuite::RunTest(unsigned int id)
             }
         }
 
-        if (g_tsHWtype < MFX_HW_CNL
+        if (g_tsHWtype <= MFX_HW_CNL
             && (m_par.vpp.In.FourCC == MFX_FOURCC_AYUV || m_par.vpp.Out.FourCC == MFX_FOURCC_AYUV
             ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y210
             ||  m_par.vpp.In.FourCC == MFX_FOURCC_Y410 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410))
@@ -1118,6 +1118,11 @@ int TestSuite::RunTest(unsigned int id)
         sts_query = MFX_WRN_PARTIAL_ACCELERATION;
         sts_init  = MFX_WRN_PARTIAL_ACCELERATION;
     }
+
+    if (m_par.vpp.In.FourCC == MFX_FOURCC_Y210 || m_par.vpp.In.FourCC == MFX_FOURCC_Y410)
+        m_par.vpp.In.BitDepthLuma = m_par.vpp.In.BitDepthChroma = 10;
+    if (m_par.vpp.Out.FourCC == MFX_FOURCC_Y210 || m_par.vpp.Out.FourCC == MFX_FOURCC_Y410)
+        m_par.vpp.Out.BitDepthLuma = m_par.vpp.Out.BitDepthChroma = 10;
 
     CreateAllocators();
     SetFrameAllocator();
