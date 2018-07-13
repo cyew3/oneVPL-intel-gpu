@@ -160,8 +160,7 @@ namespace UMC_AV1_DECODER
         picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128X128) ? 1 : 0;
 
         picParam->frame_interp_filter = (UCHAR)info.interpFilter;
-        picParam->dwFormatAndPictureInfoFlags.fields.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
-        picParam->stAV1Segments.enabled = info.segmentation.enabled;;
+        picParam->stAV1Segments.enabled = info.segmentation.enabled;
         picParam->stAV1Segments.temporal_update = info.segmentation.temporalUpdate;
         picParam->stAV1Segments.update_map = info.segmentation.updateMap;
         picParam->stAV1Segments.Reserved4Bits = 0;
@@ -177,7 +176,7 @@ namespace UMC_AV1_DECODER
         picParam->dwFormatAndPictureInfoFlags.fields.refresh_frame_context = info.refreshFrameContext;
         picParam->dwFormatAndPictureInfoFlags.fields.frame_context_idx = info.frameContextIdx;
 
-        if (UMC_VP9_DECODER::KEY_FRAME == info.frameType)
+        if (KEY_FRAME == info.frameType)
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
                 picParam->ref_frame_map[i].bPicEntry = UCHAR_MAX;
@@ -208,14 +207,21 @@ namespace UMC_AV1_DECODER
         picParam->BSBytesInBuffer = info.frameDataSize;
         picParam->StatusReportFeedbackNumber = ++m_report_counter;
 
-        picParam->profile = (UCHAR)info.profile;
-#ifdef DDI_HACKS_FOR_REV_252
-        picParam->BitDepthMinus8 = (UCHAR)info.bit_depth - 8;
+#if UMC_AV1_DECODER_REV >= 5000
+        picParam->profile = (UCHAR)sh.profile;
+        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)sh.subsampling_x;
+        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)sh.subsampling_x;
 #else
-        picParam->bit_depth = (UCHAR)info.bit_depth;
-#endif
+        picParam->profile = (UCHAR)info.profile;
         picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)info.subsamplingX;
         picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)info.subsamplingY;
+#endif
+
+#ifdef DDI_HACKS_FOR_REV_252
+        picParam->BitDepthMinus8 = (UCHAR)info.bitDepth - 8;
+#else
+        picParam->bit_depth = (UCHAR)sh.bit_depth;
+#endif
 
         picParam->wControlInfoFlags.fields.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
         picParam->wControlInfoFlags.fields.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
@@ -232,11 +238,11 @@ namespace UMC_AV1_DECODER
         picParam->wControlInfoFlags.fields.ReservedField = 0;
 
         picParam->base_qindex = (SHORT)info.baseQIndex;
-        picParam->y_dc_delta_q = (CHAR)info.y_dc_delta_q;
-        picParam->u_dc_delta_q = (CHAR)info.u_dc_delta_q;
-        picParam->v_dc_delta_q = (CHAR)info.v_dc_delta_q;
-        picParam->u_ac_delta_q = (CHAR)info.u_ac_delta_q;
-        picParam->v_ac_delta_q = (CHAR)info.v_ac_delta_q;
+        picParam->y_dc_delta_q = (CHAR)info.yDcDeltaQ;
+        picParam->u_dc_delta_q = (CHAR)info.uDcDeltaQ;
+        picParam->v_dc_delta_q = (CHAR)info.vDcDeltaQ;
+        picParam->u_ac_delta_q = (CHAR)info.uAcDeltaQ;
+        picParam->v_ac_delta_q = (CHAR)info.vAcDeltaQ;
 
         memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
@@ -275,13 +281,13 @@ namespace UMC_AV1_DECODER
 
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
-            picParam->gm_type[i] = (UCHAR)info.global_motion[i + 1].wmtype;
+            picParam->gm_type[i] = (UCHAR)info.globalMotion[i + 1].wmtype;
         }
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
             for (auto j = 0; j < 6; j++) // why only 6?
             {
-                picParam->gm_params[i][j] = info.global_motion[i + 1].wmmat[j];
+                picParam->gm_params[i][j] = info.globalMotion[i + 1].wmmat[j];
             }
         }
 
@@ -383,7 +389,6 @@ namespace UMC_AV1_DECODER
         picParam->pic_fields.bits.allow_high_precision_mv = info.allowHighPrecisionMv;
         picParam->pic_fields.bits.sb_size_128x128 = (info.sbSize == BLOCK_128x128) ? 1 : 0;
         picParam->interp_filter = (uint8_t)info.interpFilter;
-        picParam->pic_fields.bits.frame_parallel_decoding_mode = info.frameParallelDecodingMode;
         picParam->seg_info.segment_info_fields.bits.enabled = info.segmentation.enabled;;
         picParam->seg_info.segment_info_fields.bits.temporal_update = info.segmentation.temporalUpdate;
         picParam->seg_info.segment_info_fields.bits.update_map = info.segmentation.updateMap;
@@ -399,7 +404,7 @@ namespace UMC_AV1_DECODER
         picParam->pic_fields.bits.refresh_frame_context = info.refreshFrameContext;
         picParam->pic_fields.bits.frame_context_idx = info.frameContextIdx;
 
-        if (UMC_VP9_DECODER::KEY_FRAME == info.frameType)
+        if (KEY_FRAME == info.frameType)
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
                 picParam->ref_frame_map[i] = VA_INVALID_SURFACE;
@@ -450,11 +455,11 @@ namespace UMC_AV1_DECODER
         picParam->ref_fields.bits.use_prev_frame_mvs = info.usePrevMVs;
 
         picParam->base_qindex = (int16_t)info.baseQIndex;
-        picParam->y_dc_delta_q = (int8_t)info.y_dc_delta_q;
-        picParam->u_dc_delta_q = (int8_t)info.u_dc_delta_q;
-        picParam->v_dc_delta_q = (int8_t)info.v_dc_delta_q;
-        picParam->u_ac_delta_q = (int8_t)info.u_ac_delta_q;
-        picParam->v_ac_delta_q = (int8_t)info.v_ac_delta_q;
+        picParam->y_dc_delta_q = (int8_t)info.yDcDeltaQ;
+        picParam->u_dc_delta_q = (int8_t)info.uDcDeltaQ;
+        picParam->v_dc_delta_q = (int8_t)info.vDcDeltaQ;
+        picParam->u_ac_delta_q = (int8_t)info.uAcDeltaQ;
+        picParam->v_ac_delta_q = (int8_t)info.vAcDeltaQ;
 
         memset(&picParam->seg_info.feature_data, 0, sizeof(picParam->seg_info.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->seg_info.feature_mask, 0, sizeof(picParam->seg_info.feature_mask)); // TODO: [Global] implement proper setting

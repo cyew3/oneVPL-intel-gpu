@@ -17,8 +17,8 @@
 
 #include <stdexcept>
 #include <vector>
+#include "umc_structures.h"
 #include "umc_vp9_dec_defs.h"
-#include "umc_vp9_frame.h"
 
 namespace UMC_AV1_DECODER
 {
@@ -26,7 +26,6 @@ namespace UMC_AV1_DECODER
     typedef std::vector<AV1DecoderFrame*> DPBType;
 
     using UMC_VP9_DECODER::NUM_REF_FRAMES;
-    using UMC_VP9_DECODER::VP9_FRAME_TYPE;
 
     const Ipp8u SYNC_CODE_0 = 0x49;
     const Ipp8u SYNC_CODE_1 = 0x83;
@@ -88,15 +87,6 @@ namespace UMC_AV1_DECODER
         OBU_METADATA = 5,
         OBU_FRAME = 6,
         OBU_PADDING = 15,
-    };
-
-    enum FRAME_TYPE
-    {
-        KEY_FRAME = 0,
-        INTER_FRAME = 1,
-        INTRA_ONLY_FRAME = 2,  // replaces intra-only
-        S_FRAME = 3,
-        FRAME_TYPES,
     };
 
     enum AOM_COLOR_PRIMARIES
@@ -182,6 +172,15 @@ namespace UMC_AV1_DECODER
         AOM_CSP_RESERVED = 3          /**< Reserved value */
     };
 #endif
+
+    enum FRAME_TYPE
+    {
+        KEY_FRAME = 0,
+        INTER_FRAME = 1,
+        INTRA_ONLY_FRAME = 2,  // replaces intra-only
+        S_FRAME = 3,
+        FRAME_TYPES,
+    };
 
     enum SB_SIZE
     {
@@ -428,19 +427,50 @@ namespace UMC_AV1_DECODER
 
         Ipp32u random_seed;
     };
-#endif
+#endif // UMC_AV1_DECODER_REV >= 5000
 
-    namespace vp92av1
-    {
-        struct FrameHeader : public UMC_VP9_DECODER::VP9DecoderFrame
-        {};
-    }
+    struct  SizeOfFrame{
+        Ipp32u width;
+        Ipp32u height;
+    };
 
     struct FrameHeader
-        : vp92av1::FrameHeader
     {
-        Ipp8u  use_reference_buffer;
-        Ipp32u display_frame_id;
+        FRAME_TYPE frameType;
+        Ipp32u intraOnly;
+
+        Ipp32u showFrame;
+        Ipp32u showExistingFrame;
+        Ipp32u frameToShow;
+
+        Ipp32u baseQIndex;
+
+        Ipp32u width;
+        Ipp32u height;
+
+        Ipp32u displayWidth;
+        Ipp32u displayHeight;
+
+        SizeOfFrame sizesOfRefFrame[NUM_REF_FRAMES];
+
+#if UMC_AV1_DECODER_REV < 5000
+        Ipp32u profile;
+        Ipp32u bitDepth;
+        Ipp32u subsamplingX;
+        Ipp32u subsamplingY;
+#endif // UMC_AV1_DECODER_REV < 5000
+
+        Ipp32u lossless;
+        Ipp32u errorResilientMode;
+        Ipp32u allowHighPrecisionMv;
+
+        Ipp32u displayFrameId;
+
+        Ipp8u refreshFrameFlags;
+
+        Ipp32u resetFrameContext;
+        Ipp32u refreshFrameContext;
+        Ipp32u frameContextIdx;
 
         Ipp32u frameIdsRefFrame[NUM_REF_FRAMES];
         Ipp32s activeRefIdx[INTER_REFS];
@@ -474,8 +504,10 @@ namespace UMC_AV1_DECODER
         Ipp32u minQMLevel;
         Ipp32u maxQMLevel;
 
-        WarpedMotionParams global_motion[TOTAL_REFS];
+        WarpedMotionParams globalMotion[TOTAL_REFS];
 
+        Ipp32u log2TileColumns;
+        Ipp32u log2TileRows;
         Ipp32u tileCols;
         Ipp32u tileRows;
 
@@ -490,16 +522,16 @@ namespace UMC_AV1_DECODER
 
         AV1Segmentation segmentation;
 
-        Ipp32s u_dc_delta_q;
-        Ipp32s u_ac_delta_q;
-        Ipp32s v_dc_delta_q;
-        Ipp32s v_ac_delta_q;
+        Ipp32s yDcDeltaQ;
+        Ipp32s uDcDeltaQ;
+        Ipp32s uAcDeltaQ;
+        Ipp32s vDcDeltaQ;
+        Ipp32s vAcDeltaQ;
 
         Ipp32u lrUnitShift;
         Ipp32u lrUVShift;
 
 #if UMC_AV1_DECODER_REV >= 5000
-        FRAME_TYPE frameType;
         Ipp32u enableIntraEdgeFilter;
         Ipp32u allowFilterIntra;
         Ipp32u disableCdfUpdate;
@@ -527,6 +559,9 @@ namespace UMC_AV1_DECODER
         Ipp32u loopFilterAcrossTilesHEnabled;
         Ipp32u uniformTileSpacingFlag;
 #endif
+
+        Ipp32u frameHeaderLength;
+        Ipp32u frameDataSize;
     };
 
 #if UMC_AV1_DECODER_REV >= 5000
@@ -546,7 +581,7 @@ namespace UMC_AV1_DECODER
 
     inline bool IsFrameIntraOnly(FrameHeader const * fh)
     {
-        return (fh->frameType == VP9_FRAME_TYPE::KEY_FRAME || fh->intraOnly);
+        return (fh->frameType == KEY_FRAME || fh->intraOnly);
     }
 
     inline bool IsFrameResilent(FrameHeader const * fh)

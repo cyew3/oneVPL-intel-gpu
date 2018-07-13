@@ -11,7 +11,6 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
-#include "umc_structures.h"
 #include "umc_av1_utils.h"
 
 namespace UMC_AV1_DECODER

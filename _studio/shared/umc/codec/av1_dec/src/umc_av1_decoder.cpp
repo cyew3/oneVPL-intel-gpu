@@ -315,7 +315,7 @@ namespace UMC_AV1_DECODER
     {
         return FindFrame(
             [id](AV1DecoderFrame const* f)
-            { return f->GetFrameHeader().display_frame_id == id; }
+            { return f->GetFrameHeader().displayFrameId == id; }
         );
     }
 
@@ -327,8 +327,8 @@ namespace UMC_AV1_DECODER
             [](AV1DecoderFrame const* f1, AV1DecoderFrame const* f2)
             {
                 FrameHeader const& h1 = f1->GetFrameHeader(); FrameHeader const& h2 = f2->GetFrameHeader();
-                Ipp32u const id1 = h1.showFrame && !f1->Displayed() ? h1.display_frame_id : (std::numeric_limits<Ipp32u>::max)();
-                Ipp32u const id2 = h2.showFrame && !f2->Displayed() ? h2.display_frame_id : (std::numeric_limits<Ipp32u>::max)();
+                Ipp32u const id1 = h1.showFrame && !f1->Displayed() ? h1.displayFrameId : (std::numeric_limits<Ipp32u>::max)();
+                Ipp32u const id2 = h2.showFrame && !f2->Displayed() ? h2.displayFrameId : (std::numeric_limits<Ipp32u>::max)();
 
                 return  id1 < id2;
             }
@@ -411,7 +411,7 @@ namespace UMC_AV1_DECODER
         else if (fh.subsamplingX && fh.subsamplingY)
             par->info.color_format = UMC::NV12;
 
-        if (fh.bit_depth == 10)
+        if (fh.bitDepth == 10)
         {
             switch (par->info.color_format)
             {
@@ -424,7 +424,7 @@ namespace UMC_AV1_DECODER
                     return UMC::UMC_ERR_UNSUPPORTED;
             }
         }
-        else if (fh.bit_depth == 12)
+        else if (fh.bitDepth == 12)
         {
             switch (par->info.color_format)
             {
@@ -500,9 +500,9 @@ namespace UMC_AV1_DECODER
         // increase ref counter when we get empty frame from DPB
         frame->IncrementReference();
 
-        if (fh.show_existing_frame)
+        if (fh.showExistingFrame)
         {
-            AV1DecoderFrame* existing_frame =  FindFrameByDispID(fh.display_frame_id);
+            AV1DecoderFrame* existing_frame =  FindFrameByDispID(fh.displayFrameId);
             if (!existing_frame)
             {
                 VM_ASSERT(!"Existing frame is not found");

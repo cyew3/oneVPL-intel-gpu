@@ -15,6 +15,7 @@
 #define __UMC_AV1_DECODER_H
 
 #include "umc_video_decoder.h"
+#include "umc_frame_allocator.h"
 #include "umc_av1_dec_defs.h"
 
 #include <mutex>

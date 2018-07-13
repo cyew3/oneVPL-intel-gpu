@@ -14,6 +14,7 @@
 #ifndef __UMC_AV1_FRAME_H__
 #define __UMC_AV1_FRAME_H__
 
+#include "umc_frame_allocator.h"
 #include "umc_av1_dec_defs.h"
 #include "mfx_common_decode_int.h"
 
@@ -128,10 +129,6 @@ namespace UMC_AV1_DECODER
 
         SequenceHeader                    seq_header;
         FrameHeader                       header;
-
-        Ipp32s                            y_dc_delta_q;
-        Ipp32s                            uv_dc_delta_q;
-        Ipp32s                            uv_ac_delta_q;
 
         DPBType                           references;
     };

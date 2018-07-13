@@ -31,7 +31,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\vp9_dec\src\umc_vp9_bitstream.cpp" />
-    <ClCompile Include="..\vp9_dec\src\umc_vp9_utils.cpp" />
     <ClCompile Include="src\umc_av1_bitstream.cpp" />
     <ClCompile Include="src\umc_av1_decoder.cpp" />
     <ClCompile Include="src\umc_av1_decoder_va.cpp" />

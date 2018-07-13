@@ -44,15 +44,14 @@ namespace UMC_AV1_DECODER
         decoding_completed = false;
         data->Close();
 
-        y_dc_delta_q = uv_dc_delta_q = uv_ac_delta_q = 0;
-
         memset(&seq_header, 0, sizeof(seq_header));
         memset(&header, 0, sizeof(header));
-        header.display_frame_id = (std::numeric_limits<Ipp32u>::max)();
-        header.currFrame = -1;
-        header.frameCountInBS = 0;
-        header.currFrameInBS = 0;
-        memset(&header.ref_frame_map, -1, sizeof(header.ref_frame_map));
+        header.displayFrameId = (std::numeric_limits<Ipp32u>::max)();
+        // TODO: [Global] Restore work with below fields if required
+        //header.currFrame = -1;
+        //header.frameCountInBS = 0;
+        //header.currFrameInBS = 0;
+        //memset(&header.ref_frame_map, -1, sizeof(header.ref_frame_map));
 
         ResetRefCounter();
         FreeReferenceFrames();
@@ -71,17 +70,6 @@ namespace UMC_AV1_DECODER
         UID = id;
 
         header = *fh;
-
-        if (y_dc_delta_q  != header.y_dc_delta_q  ||
-            uv_dc_delta_q != header.uv_dc_delta_q ||
-            uv_ac_delta_q != header.uv_ac_delta_q)
-        {
-            InitDequantizer(&header);
-
-            y_dc_delta_q  = header.y_dc_delta_q;
-            uv_dc_delta_q = header.uv_dc_delta_q;
-            uv_ac_delta_q = header.uv_ac_delta_q;
-        }
     }
 
     void AV1DecoderFrame::Allocate(UMC::FrameData const* fd)

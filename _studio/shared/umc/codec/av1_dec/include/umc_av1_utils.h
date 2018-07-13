@@ -17,7 +17,6 @@
 #define __UMC_AV1_UTILS_H_
 
 #include "umc_av1_dec_defs.h"
-#include "umc_vp9_utils.h"
 
 namespace UMC_AV1_DECODER
 {
