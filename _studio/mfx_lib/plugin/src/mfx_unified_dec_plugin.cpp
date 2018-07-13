@@ -14,7 +14,7 @@
 #include "mfx_h265_encode_plugin_hw.h"
 #include "mfx_vp9_encode_hw.h"
 #include "mfx_camera_plugin.h"
-#if defined (WIN64)
+#if defined (WIN64) || defined(LINUX64)
 #include "mfx_hevc_enc_plugin.h"
 #endif //WIN64
 
@@ -36,13 +36,13 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin) {
         return MfxHwVP9Encode::Plugin::CreateByDispatcher(uid, plugin);
     else if(std::memcmp(uid.Data, MFXCamera_Plugin::g_Camera_PluginGuid.Data, sizeof(uid.Data)) == 0)
         return MFXCamera_Plugin::CreateByDispatcher(uid, plugin);
-#if defined (WIN64) && defined(AS_HEVCE_PLUGIN)
+#if (defined (WIN64) || defined(LINUX64)) && defined(AS_HEVCE_PLUGIN)
     else if (std::memcmp(uid.Data, MFXHEVCEncoderPlugin::g_HEVCEncoderGuid.Data, sizeof(uid.Data)) == 0)
         return MFXHEVCEncoderPlugin::CreateByDispatcher(uid, plugin);
 #if defined(AS_HEVCE_DP_PLUGIN)
     else if (std::memcmp(uid.Data, MFXHEVCEncoderDPPlugin::g_HEVCEncoderDPGuid.Data, sizeof(uid.Data)) == 0)
         return MFXHEVCEncoderDPPlugin::CreateByDispatcher(uid, plugin);
 #endif
-#endif //#if defined (WIN64) && defined(AS_HEVCE_PLUGIN)
+#endif //#if (defined (WIN64) || defined(LINUX64)) && defined(AS_HEVCE_PLUGIN)
     else return MFX_ERR_NOT_FOUND;
 }

@@ -8,7 +8,7 @@
 // Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
-#if defined(WIN64)
+#if defined(WIN64) || defined(LINUX64)
 #if !defined(__MFX_HEVC_ENC_PLUGIN_INCLUDED__)
 #define __MFX_HEVC_ENC_PLUGIN_INCLUDED__
 
@@ -211,4 +211,4 @@ protected:
 #endif
 
 #endif  // __MFX_HEVC_ENC_PLUGIN_INCLUDED__
-#endif  // WIN64
+#endif  // WIN64 || LINUX64

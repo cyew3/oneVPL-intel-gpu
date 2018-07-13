@@ -8,7 +8,7 @@
 // Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
-#if defined(WIN64)
+#if defined(WIN64) || defined(LINUX64)
 
 #include "mfx_hevc_enc_plugin.h"
 #include "mfx_session.h"
@@ -114,4 +114,4 @@ mfxStatus MFXHEVCEncoderPlugin::GetPluginParam(mfxPluginParam *par)
 
     return MFX_ERR_NONE;
 }
-#endif // WIN64
+#endif // WIN64 || LINUX64
