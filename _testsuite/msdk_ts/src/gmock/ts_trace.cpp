@@ -389,7 +389,8 @@ tsTrace& tsTrace::operator<<(const mfxExtDirtyRect& p)
     STRUCT_BODY(mfxExtDirtyRect,
         FIELD_S(mfxExtBuffer, Header)
         FIELD_T(mfxU16  , NumRect  )
-        for(mfxU32 i = 0; i < p.NumRect; ++i)
+        // Max supported NumRect = 256
+        for (mfxU32 i = 0; i < (p.NumRect <= 256 ? p.NumRect : 256); ++i)
         {
             FIELD_S(mfxExtDirtyRect_Entry, Rect[i])
         }
