@@ -34,6 +34,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_P208;
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
+    case MFX_FOURCC_Y210:
+        return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
 
@@ -105,6 +107,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_ABGR != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc) &&
                        (VA_FOURCC_AYUV != va_fourcc) &&
+                       (VA_FOURCC_Y210 != va_fourcc) &&
                        (VA_FOURCC_Y410 != va_fourcc)))
     {
         return MFX_ERR_MEMORY_ALLOC;
@@ -318,7 +321,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
             case MFX_FOURCC_AYUV:
-                if (mfx_fourcc == MFX_FOURCC_AYUV)
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_AYUV)
                 {
                     ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
                     ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
@@ -329,8 +332,19 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
+            case MFX_FOURCC_Y210:
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_Y210)
+                {
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image[0] % (1 << 16));
+                    ptr->Y16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[0]);
+                    ptr->U16 = ptr->Y16 + 1;
+                    ptr->V16 = ptr->Y16 + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
             case VA_FOURCC_Y410:
-                if (mfx_fourcc == MFX_FOURCC_Y410)
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_Y410)
                 {
                     ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
                     ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));

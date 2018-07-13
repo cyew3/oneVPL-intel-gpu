@@ -618,6 +618,17 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
+            case MFX_FOURCC_Y210:
+                if (mfx_fourcc == MFX_FOURCC_Y210)
+                {
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
+                    ptr->Y16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[0]);
+                    ptr->U16 = ptr->Y16 + 1;
+                    ptr->V16 = ptr->Y16 + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
             case VA_FOURCC_Y410:
                 if (mfx_fourcc == MFX_FOURCC_Y410)
                 {

@@ -60,6 +60,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_P010;
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
+    case MFX_FOURCC_Y210:
+        return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
 
@@ -171,6 +173,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_P010 != va_fourcc) &&
                        (VA_FOURCC_P208 != va_fourcc) &&
                        (VA_FOURCC_AYUV != va_fourcc) &&
+                       (VA_FOURCC_Y210 != va_fourcc) &&
                        (VA_FOURCC_Y410 != va_fourcc)))
     {
         msdk_printf(MSDK_STRING("VAAPI Allocator: invalid fourcc is provided (%#X), exitting\n"),va_fourcc);
@@ -517,6 +520,17 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->U = ptr->V + 1;
                     ptr->Y = ptr->V + 2;
                     ptr->A = ptr->V + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+            case MFX_FOURCC_Y210:
+                if (mfx_fourcc == MFX_FOURCC_Y210)
+                {
+                    ptr->PitchHigh = (mfxU16)(vaapi_mid->m_image.pitches[0] / (1 << 16));
+                    ptr->PitchLow  = (mfxU16)(vaapi_mid->m_image.pitches[0] % (1 << 16));
+                    ptr->Y16 = (mfxU16 *) (pBuffer + vaapi_mid->m_image.offsets[0]);
+                    ptr->U16 = ptr->Y16 + 1;
+                    ptr->V16 = ptr->Y16 + 3;
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
