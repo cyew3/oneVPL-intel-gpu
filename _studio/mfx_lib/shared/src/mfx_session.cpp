@@ -647,15 +647,6 @@ void _mfxSession::Cleanup(void)
         m_plgVPP->PluginClose();
     }
 
-    if (m_pScheduler)
-    {
-        m_pScheduler->Release();
-    }
-    if (m_pSchedulerAllocated)
-    {
-        m_pSchedulerAllocated->Release();
-    }
-
     // release the components the excplicit way.
     // do not relay on default deallocation order,
     // somebody could change it.
@@ -666,6 +657,9 @@ void _mfxSession::Cleanup(void)
     m_pDECODE.reset();
     m_pENCODE.reset();
     m_pCORE.reset();
+
+    // release m_pScheduler and m_pSchedulerAllocated
+    ReleaseScheduler();
 
     //delete m_coreInt.ExternalSurfaceAllocator;
     Clear();
@@ -826,10 +820,10 @@ mfxStatus _mfxSession::ReleaseScheduler(void)
         m_pScheduler->Release();
     
     if(m_pSchedulerAllocated)
-    m_pSchedulerAllocated->Release();
+        m_pSchedulerAllocated->Release();
 
-    m_pScheduler = NULL;
-    m_pSchedulerAllocated = NULL;
+    m_pScheduler = nullptr;
+    m_pSchedulerAllocated = nullptr;
     
     return MFX_ERR_NONE;
 
