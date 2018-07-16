@@ -34,10 +34,12 @@ namespace vp9e_big_resolution
 
     enum
     {
-        CHECK_4Kx4K,
-        CHECK_8Kx8K,
-        CHECK_16Kx4K,
-        CHECK_16Kx16K
+        CHECK_4Kx4K = 0x01,
+        CHECK_8Kx8K = 0x02,
+        CHECK_16Kx256 = 0x04,
+        CHECK_16Kx4K = 0x10,
+        CHECK_16Kx16K = 0x20,
+        DISABLE_DECODER = 0x0100
     };
 
     struct tc_struct
@@ -82,21 +84,50 @@ namespace vp9e_big_resolution
             }
         },
 
-        {/*01*/ MFX_ERR_NONE, CHECK_8Kx8K,
+        {/*01*/ MFX_ERR_NONE, CHECK_4Kx4K | DISABLE_DECODER,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_4K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_4K_SIZE },
+            }
+        },
+
+        {/*02*/ MFX_ERR_NONE, CHECK_8Kx8K,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_8K_SIZE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_8K_SIZE },
             }
         },
 
-        {/*02 currenlty maximim supported size for typical encoding*/ MFX_ERR_NONE, CHECK_16Kx4K,
+        {/*03*/ MFX_ERR_NONE, CHECK_8Kx8K | DISABLE_DECODER,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_8K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_8K_SIZE },
+            }
+        },
+
+        {/*04 the only working connfiguration with 16K on pre-Si*/ MFX_ERR_NONE, CHECK_16Kx256,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_16K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_4K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.CropH, 256 },
+            }
+        },
+
+        {/*05 should work with typical encoding scenario*/ MFX_ERR_NONE, CHECK_16Kx4K | DISABLE_DECODER,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_16K_SIZE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_4K_SIZE },
             }
         },
 
-        {/*03 for 16Kx16K only I-frames (still pictures) currently supported*/ MFX_ERR_NONE, CHECK_16Kx16K,
+        {/*06 should work with typical encoding scenario*/ MFX_ERR_NONE, CHECK_16Kx4K,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_16K_SIZE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_4K_SIZE },
+            }
+        },
+
+        {/*07 for 16Kx16K only I-frames (still pictures) currently supported*/ MFX_ERR_NONE, CHECK_16Kx16K,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Width, VP9E_16K_SIZE },
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Height, VP9E_16K_SIZE },
@@ -112,21 +143,23 @@ namespace vp9e_big_resolution
     {
         mfxVideoParam m_EncoderPar;
     public:
-        BitstreamChecker(const mfxVideoParam& pa, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces);
+        BitstreamChecker(const mfxVideoParam& pa, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool do_decoding = true);
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
         mfxU32 m_AllFramesSize;
         mfxU32 m_DecodedFramesCount;
         bool m_DecoderInited;
         std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
+        bool m_DoDecoding;
     };
 
-    BitstreamChecker::BitstreamChecker(const mfxVideoParam& par, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces)
+    BitstreamChecker::BitstreamChecker(const mfxVideoParam& par, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool do_decoding)
         : tsVideoDecoder(MFX_CODEC_VP9)
         , m_EncoderPar(par)
         , m_AllFramesSize(0)
         , m_DecodedFramesCount(0)
         , m_DecoderInited(false)
         , m_pInputSurfaces(pSurfaces)
+        , m_DoDecoding(do_decoding)
     { }
 
     mfxStatus BitstreamChecker::ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames)
@@ -146,7 +179,7 @@ namespace vp9e_big_resolution
         fflush(fp_vp9);
         */
         // do the decoder initialisation on the first encoded frame
-        if (m_DecodedFramesCount == 0 && !m_DecoderInited)
+        if (m_DoDecoding && m_DecodedFramesCount == 0 && !m_DecoderInited)
         {
             const mfxU32 headers_shift = IVF_PIC_HEADER_SIZE_BYTES + (m_DecodedFramesCount == 0 ? IVF_SEQ_HEADER_SIZE_BYTES : 0);
             m_pBitstream->Data = bs.Data + headers_shift;
@@ -344,15 +377,19 @@ namespace vp9e_big_resolution
 
     int TestSuite::RunTest(const tc_struct& tc, unsigned int fourcc_id)
     {
+        std::string case_description = "TEST CASE IS: ";
+
         TS_START;
 
-        if (g_tsHWtype < MFX_HW_TGL && (tc.type == CHECK_16Kx16K || tc.type == CHECK_16Kx4K))
+        if (g_tsHWtype < MFX_HW_TGL && (tc.type & CHECK_16Kx16K || tc.type & CHECK_16Kx4K))
         {
+            case_description += "[platform < TGL][16K]";
             g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
             throw tsSKIP;
         }
-        else if (g_tsHWtype < MFX_HW_ICL && tc.type == CHECK_8Kx8K)
+        else if (g_tsHWtype < MFX_HW_ICL && tc.type & CHECK_8Kx8K)
         {
+            case_description += "[platform < ICL][8K]";
             g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
             throw tsSKIP;
         }
@@ -372,59 +409,63 @@ namespace vp9e_big_resolution
 
         if (fourcc_id == MFX_FOURCC_NV12)
         {
+            case_description += "[NV12]";
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-            if (tc.type == CHECK_4Kx4K)
+            if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_nv12.yuv"));
-            else if (tc.type == CHECK_8Kx8K)
+            else if (tc.type & CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_nv12.yuv"));
-            else if (tc.type == CHECK_16Kx4K)
+            else if (tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_nv12.yuv"));
-            else if (tc.type == CHECK_16Kx16K)
+            else if (tc.type & CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_nv12.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_P010)
         {
+            case_description += "[P010]";
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_P010;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
             m_par.mfx.FrameInfo.Shift = 1;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-            if (tc.type == CHECK_4Kx4K)
+            if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_p010_shifted.yuv"));
-            else if (tc.type == CHECK_8Kx8K)
+            else if (tc.type & CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_p010_shifted.yuv"));
-            else if (tc.type == CHECK_16Kx4K)
+            else if (tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_p010_shifted.yuv"));
-            else if (tc.type == CHECK_16Kx16K)
+            else if (tc.type & CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_p010_shifted.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_AYUV)
         {
+            case_description += "[AYUV]";
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 8;
-            if (tc.type == CHECK_4Kx4K)
+            if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_ayuv.yuv"));
-            else if (tc.type == CHECK_8Kx8K)
+            else if (tc.type & CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_ayuv.yuv"));
-            else if (tc.type == CHECK_16Kx4K)
+            else if (tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_ayuv.yuv"));
-            else if (tc.type == CHECK_16Kx16K)
+            else if (tc.type & CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_ayuv.yuv"));
         }
         else if (fourcc_id == MFX_FOURCC_Y410)
         {
+            case_description += "[Y410]";
             m_par.mfx.FrameInfo.FourCC = MFX_FOURCC_Y410;
             m_par.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             m_par.mfx.FrameInfo.BitDepthLuma = m_par.mfx.FrameInfo.BitDepthChroma = 10;
-            if (tc.type == CHECK_4Kx4K)
+            if (tc.type & CHECK_4Kx4K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_4096x4096_24_y410.yuv"));
-            else if (tc.type == CHECK_8Kx8K)
+            else if (tc.type & CHECK_8Kx8K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x7680_24_y410.yuv"));
-            else if (tc.type == CHECK_16Kx4K)
+            else if (tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x4096_24_y410.yuv"));
-            else if (tc.type == CHECK_16Kx16K)
+            else if (tc.type & CHECK_16Kx16K)
                 stream = const_cast<char *>(g_tsStreamPool.Get("forBehaviorTest/Kimono1_16384x16384_24_y410.yuv"));
         }
         else
@@ -437,13 +478,21 @@ namespace vp9e_big_resolution
 
         SETPARS(m_par, MFX_PAR);
 
+        // base class sets values for the crops, need to override them
         m_par.mfx.FrameInfo.CropW = m_par.mfx.FrameInfo.Width;
         m_par.mfx.FrameInfo.CropH = m_par.mfx.FrameInfo.Height;
 
-        // this is to reduce usage of sys memory
+        // call SETPARAMS once again to assign crop values if any
+        SETPARS(m_par, MFX_PAR);
+
+        case_description += "[" + std::to_string(m_par.mfx.FrameInfo.CropW) + "x" + std::to_string(m_par.mfx.FrameInfo.CropH) + "]";
+        std::string pipeline_type = tc.type & DISABLE_DECODER ? "ONLY_ENCODE" : "ENCODE+DECODE+PSNR";
+        case_description += "[" + pipeline_type + "]";
+
+        // IN_VIDEO_MEMORY can reduce memory consumption a little
         m_par.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 
-        BitstreamChecker bs_checker(m_par, &inputSurfaces);
+        BitstreamChecker bs_checker(m_par, &inputSurfaces, tc.type & DISABLE_DECODER ? false : true);
         m_bs_processor = &bs_checker;
 
         InitAndSetAllocator();
@@ -497,8 +546,18 @@ namespace vp9e_big_resolution
             //set reader
             if (reader == nullptr)
             {
-                tsRawReader* feeder = new SurfaceFeeder(&inputSurfaces, m_par, stream);
-                m_filler = feeder;
+                if (tc.type & DISABLE_DECODER)
+                {
+                    // use a common stream reader
+                    tsRawReader* feeder = new tsRawReader(stream, m_par.mfx.FrameInfo);
+                    m_filler = feeder;
+                }
+                else
+                {
+                    // use a reader with surface storing to get PSNR later
+                    tsRawReader* feeder = new SurfaceFeeder(&inputSurfaces, m_par, stream);
+                    m_filler = feeder;
+                }
             }
 
             mfxU32 encoded = 0;
@@ -552,7 +611,19 @@ namespace vp9e_big_resolution
             Close();
         }
 
-        TS_END;
+    } catch (tsRes r)
+        {
+            g_tsLog << "\n$$$$$$ " << case_description << " $$$$$$\n\n";
+            if (r == tsSKIP)
+            {
+                g_tsLog << "[  SKIPPED ] test-case was skipped\n";
+                return 0;
+            }
+
+            return r;
+        }
+
+        g_tsLog << "\n$$$$$$ " << case_description << " $$$$$$\n\n";
         return 0;
     }
 
