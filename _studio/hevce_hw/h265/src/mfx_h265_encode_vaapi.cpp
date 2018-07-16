@@ -862,6 +862,12 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         m_caps.BitDepth8Only      = 0;
         m_caps.MaxEncodedBitDepth = 1;
     }
+    if (p.CodeName >= MFX_PLATFORM_ICELAKE)
+    {
+        m_caps.Color420Only = 0;
+        m_caps.YUV422ReconSupport = 1;
+        m_caps.YUV444ReconSupport = 1;
+    }
     if (p.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
         if(IsOn(par.mfx.LowPower)) //CNL + VDENC => LCUSizeSupported = 4
@@ -886,7 +892,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.UserMaxFrameSizeSupport = 1;
     m_caps.MBBRCSupport            = 1;
     m_caps.MbQpDataSupport         = 1;
-    m_caps.Color420Only            = 1; // FIXME in case VAAPI direct YUY2/RGB support added
     m_caps.TUSupport               = 73;
 
 
