@@ -112,6 +112,14 @@ private:
                 else
                     //no way to have persistent pointers here, the only valid value is NULL
                     *base = NULL;
+
+                if (c.type == SURF_WORK &&
+                    m_pPar->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 &&
+                    m_par.IOPattern == MFX_IOPATTERN_OUT_SYSTEM_MEMORY &&
+                    m_pSurf->Data.Y == 0)
+                {
+                    m_pSurf->Data.Y410 = NULL;
+                }
             }
         }
 
