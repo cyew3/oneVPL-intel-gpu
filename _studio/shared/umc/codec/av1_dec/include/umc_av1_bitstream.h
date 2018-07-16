@@ -32,8 +32,12 @@ namespace UMC_AV1_DECODER
         void ReadOBUHeader(OBUInfo*);
 #endif
         void GetSequenceHeader(SequenceHeader*);
-        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader*, FrameHeader const*  prev_fh = 0);
-        void GetFrameHeaderFull(FrameHeader*, SequenceHeader const*, FrameHeader const*);
+#if UMC_AV1_DECODER_REV >= 5000
+        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader const*);
+#else
+        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader*);
+#endif
+        void GetFrameHeaderFull(FrameHeader*, SequenceHeader const*, FrameHeader const*, DPBType const&);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
 
@@ -43,8 +47,6 @@ namespace UMC_AV1_DECODER
         }
 
     protected:
-
-        void GetFrameSizeWithRefs(FrameHeader*);
 #if UMC_AV1_DECODER_REV >= 2510
         Ipp8u ReadSuperFrameIndex(Ipp32u sizes[8]);
 #endif

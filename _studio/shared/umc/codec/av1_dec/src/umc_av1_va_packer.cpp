@@ -188,7 +188,7 @@ namespace UMC_AV1_DECODER
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                Ipp8u idxInDPB = (Ipp8u)info.activeRefIdx[ref_idx];
+                Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
                 picParam->ref_frame_idx[ref_idx].bPicEntry = idxInDPB;
                 picParam->ref_frame_sign_bias[ref_idx + 1] = (UCHAR)info.refFrameSignBias[ref_idx];
             }
@@ -416,7 +416,7 @@ namespace UMC_AV1_DECODER
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                Ipp8u idxInDPB = (Ipp8u)info.activeRefIdx[ref_idx];
+                Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
                 picParam->ref_frame_idx[ref_idx] = idxInDPB;
                 picParam->ref_frame_sign_bias[ref_idx + 1] = (uint8_t)info.refFrameSignBias[ref_idx];
             }

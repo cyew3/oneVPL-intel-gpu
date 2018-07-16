@@ -192,34 +192,19 @@ namespace UMC_AV1_DECODER
         return updatedFrameDPB;
     }
 
-    static void FillRefFrameSizes(FrameHeader* fh, DPBType const* dpb)
-    {
-        if (!dpb)
-            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
-
-        if (dpb->empty())
-            return;
-
-        for (Ipp8u i = 0; i < NUM_REF_FRAMES; ++i)
-        {
-            AV1DecoderFrame const* frame = (*dpb)[i];
-            if (frame)
-            {
-                FrameHeader const& ref_fh = frame->GetFrameHeader();
-                fh->sizesOfRefFrame[i].width = ref_fh.width;
-                fh->sizesOfRefFrame[i].height = ref_fh.height;
-            }
-        }
-    }
-
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
-        DPBType updated_refs;
-        if (prev_frame)
-            updated_refs = DPBUpdate(prev_frame);
 
         FrameHeader fh = {};
         Ipp32u const size = Ipp32u(in->GetDataSize());
+
+        DPBType updated_refs;
+        FrameHeader const* prev_fh = 0;
+        if (prev_frame)
+        {
+            updated_refs = DPBUpdate(prev_frame);
+            prev_fh = &(prev_frame->GetFrameHeader());
+        }
 
 #if UMC_AV1_DECODER_REV >= 5000
         bool gotFrameHeader = false;
@@ -250,9 +235,8 @@ namespace UMC_AV1_DECODER
             case OBU_FRAME:
                 if (!sequence_header.get())
                     break; // bypass frame header if there is no active seq header
-                FillRefFrameSizes(&fh, &updated_refs);
                 bs.GetFrameHeaderPart1(&fh, sequence_header.get());
-                bs.GetFrameHeaderFull(&fh, sequence_header.get(), &(prev_frame->GetFrameHeader()));
+                bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
                 gotFrameHeader = true;
                 if (info.header.type == OBU_FRAME)
                     gotFrameData = true;
@@ -278,9 +262,8 @@ namespace UMC_AV1_DECODER
 
         AV1Bitstream bs(src, size);
 
-        FillRefFrameSizes(&fh, &updated_refs);
         bs.GetFrameHeaderPart1(&fh, sequence_header.get());
-        bs.GetFrameHeaderFull(&fh, sequence_header.get(), &(prev_frame->GetFrameHeader()));
+        bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
 #endif // UMC_AV1_DECODER_REV >= 5000
 
         AV1DecoderFrame* frame = GetFrameBuffer(fh);
@@ -288,6 +271,9 @@ namespace UMC_AV1_DECODER
             return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
 
         frame->SetSeqHeader(*sequence_header.get());
+
+        if (fh.refreshFrameFlags)
+            frame->SetRefValid(true);
 
         frame->AddSource(in);
         in->MoveDataPointer(size);

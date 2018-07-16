@@ -451,8 +451,6 @@ namespace UMC_AV1_DECODER
         Ipp32u displayWidth;
         Ipp32u displayHeight;
 
-        SizeOfFrame sizesOfRefFrame[NUM_REF_FRAMES];
-
 #if UMC_AV1_DECODER_REV < 5000
         Ipp32u profile;
         Ipp32u bitDepth;
@@ -465,6 +463,7 @@ namespace UMC_AV1_DECODER
         Ipp32u allowHighPrecisionMv;
 
         Ipp32u displayFrameId;
+        Ipp32u currentFrameId;
 
         Ipp8u refreshFrameFlags;
 
@@ -473,7 +472,7 @@ namespace UMC_AV1_DECODER
         Ipp32u frameContextIdx;
 
         Ipp32u frameIdsRefFrame[NUM_REF_FRAMES];
-        Ipp32s activeRefIdx[INTER_REFS];
+        Ipp32s refFrameIdx[INTER_REFS];
         Ipp32u refFrameSignBias[INTER_REFS];
         Ipp32u allowScreenContentTools;
         Ipp32u loopFilterAcrossTilesEnabled;
@@ -537,8 +536,7 @@ namespace UMC_AV1_DECODER
         Ipp32u disableCdfUpdate;
         Ipp32u frameSizeOverrideFlag;
         Ipp32u curFrameForceIntegerMV;
-        Ipp32u frameOffset;
-        Ipp32u currentVideoFrame;
+        Ipp32u orderHint;
         Ipp32u superresUpscaledWidth;
         Ipp32u superresUpscaledHeight;
         Ipp32u superresScaleDenominator;

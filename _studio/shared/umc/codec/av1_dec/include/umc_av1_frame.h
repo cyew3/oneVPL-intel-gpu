@@ -98,6 +98,11 @@ namespace UMC_AV1_DECODER
         void UpdateReferenceList();
         void OnDecodingCompleted();
 
+        void SetRefValid(bool valid)
+        { ref_valid = valid; }
+        bool RefValid() const
+        { return ref_valid; };
+
     public:
 
         Ipp32s           UID;
@@ -131,6 +136,8 @@ namespace UMC_AV1_DECODER
         FrameHeader                       header;
 
         DPBType                           references;
+
+        bool                              ref_valid;
     };
 
 } // end namespace UMC_VP9_DECODER

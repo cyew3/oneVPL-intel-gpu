@@ -251,6 +251,39 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
+    inline void av1_get_frame_sizes_with_refs(AV1Bitstream* bs, FrameHeader* fh, DPBType const& frameDpb)
+    {
+        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
+        bool bFound = false;
+        for (Ipp8u i = 0; i < INTER_REFS; ++i)
+        {
+            if (bs->GetBit())
+            {
+                bFound = true;
+                FrameHeader const& refHrd = frameDpb[fh->refFrameIdx[i]]->GetFrameHeader();
+                fh->width = refHrd.width;
+                fh->height = refHrd.height;
+                // TODO: [Rev0.5] add getting of displayWidth/displayHeight
+#if UMC_AV1_DECODER_REV >= 5000
+                av1_setup_superres(bs, fh);
+#endif
+                break;
+            }
+        }
+
+        if (!bFound)
+        {
+            fh->width = bs->GetBits(16) + 1;
+            fh->height = bs->GetBits(16) + 1;
+#if UMC_AV1_DECODER_REV >= 5000
+            av1_setup_superres(bs, fh);
+#endif
+            av1_get_render_size(bs, fh);
+        }
+        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
+    }
+
+
     inline
     void av1_get_sb_size(AV1Bitstream* bs, FrameHeader* fh)
     {
@@ -460,25 +493,37 @@ namespace UMC_AV1_DECODER
     }
 
     inline
-    bool av1_is_compound_reference_allowed(FrameHeader const* fh)
+    bool av1_is_compound_reference_allowed(FrameHeader const* fh, DPBType const& frameDpb)
     {
 #if UMC_AV1_DECODER_REV >= 5000
-        // TODO: [Rev0.5] implement proper check of compound availability
-        fh;
-        static int frame_cnt = 0;
-        return frame_cnt++ > 1;
+        if (IsFrameIntraOnly(fh))
+            return false;
+
+        // Check whether two different reference frames exist.
+        FrameHeader const& refHdr0 = frameDpb[fh->refFrameIdx[0]]->GetFrameHeader();
+        const Ipp32u refOrderHint0 = refHdr0.orderHint;
+
+        for (Ipp32u ref = 1; ref < INTER_REFS; ref++)
+        {
+            FrameHeader const& refHdr1 = frameDpb[fh->refFrameIdx[ref]]->GetFrameHeader();
+            if (refOrderHint0 != refHdr1.orderHint)
+                return true;
+        }
+
+        return false;
 #else
+        frameDpb;
         return !IsFrameIntraOnly(fh);
 #endif
     }
 
     inline
-    void av1_read_frame_reference_mode(AV1Bitstream* bs, FrameHeader* fh)
+    void av1_read_frame_reference_mode(AV1Bitstream* bs, FrameHeader* fh, DPBType const& frameDpb)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
         fh->referenceMode = SINGLE_REFERENCE;
 
-        if (av1_is_compound_reference_allowed(fh))
+        if (av1_is_compound_reference_allowed(fh, frameDpb))
         {
             fh->referenceMode = bs->GetBit() ? REFERENCE_MODE_SELECT :
 #if UMC_AV1_DECODER_REV >= 5000
@@ -508,6 +553,92 @@ namespace UMC_AV1_DECODER
         }
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
+
+#if UMC_AV1_DECODER_REV >= 5000
+    inline Ipp32s av1_get_relative_dist(SequenceHeader const* sh, const Ipp32u a, const Ipp32u b) {
+        if (!sh->enable_order_hint)
+            return 0;
+
+        const Ipp32u bits = sh->order_hint_bits_minus1 + 1;
+
+        Ipp32s diff = a - b;
+        Ipp32s m = 1 << (bits - 1);
+        diff = (diff & (m - 1)) - (diff & m);
+        return diff;
+    }
+
+    static bool av1_is_skip_mode_allowed(FrameHeader const* fh, SequenceHeader const* sh, DPBType const& frameDpb)
+    {
+        if (!sh->enable_order_hint || fh->errorResilientMode ||
+            IsFrameIntraOnly(fh) || fh->referenceMode == SINGLE_REFERENCE)
+            return false;
+
+        const Ipp32s MAX_VALUE = (std::numeric_limits<Ipp32s>::max)();
+        const Ipp32s INVALID_IDX = -1;
+
+        Ipp32s refFrameOffset[2] = { -1, MAX_VALUE };
+        int refIdx[2] = { INVALID_IDX, INVALID_IDX };
+
+        // Identify the nearest forward and backward references.
+        for (Ipp32s i = 0; i < INTER_REFS; ++i)
+        {
+            FrameHeader const& refHdr = frameDpb[fh->refFrameIdx[i]]->GetFrameHeader();
+            const Ipp32u refOrderHint = refHdr.orderHint;
+
+            if (av1_get_relative_dist(sh, refOrderHint, fh->orderHint) < 0)
+            {
+                // Forward reference
+                if (refFrameOffset[0] == -1 ||
+                    av1_get_relative_dist(sh, refOrderHint, refFrameOffset[0]) > 0)
+                {
+                    refFrameOffset[0] = refOrderHint;
+                    refIdx[0] = i;
+                }
+            }
+            else if (av1_get_relative_dist(sh, refOrderHint, fh->orderHint) > 0)
+            {
+                // Backward reference
+                if (refFrameOffset[1] == MAX_VALUE ||
+                    av1_get_relative_dist(sh, refOrderHint, refFrameOffset[1]) < 0)
+                {
+                    refFrameOffset[1] = refOrderHint;
+                    refIdx[1] = i;
+                }
+            }
+        }
+
+        if (refIdx[0] != INVALID_IDX && refIdx[1] != INVALID_IDX)
+        {
+            return true;
+        }
+        else if (refIdx[0] != INVALID_IDX && refIdx[1] == INVALID_IDX)
+        {
+            // == Forward prediction only ==
+            // Identify the second nearest forward reference.
+            refFrameOffset[1] = -1;
+            for (int i = 0; i < INTER_REFS; ++i)
+            {
+                FrameHeader const& refHdr = frameDpb[fh->refFrameIdx[i]]->GetFrameHeader();
+                const Ipp32u refOrderHint = refHdr.orderHint;
+
+                if ((refFrameOffset[0] >= 0 &&
+                    av1_get_relative_dist(sh, refOrderHint, refFrameOffset[0]) < 0) &&
+                    (refFrameOffset[1] < 0 ||
+                        av1_get_relative_dist(sh, refOrderHint, refFrameOffset[1]) > 0))
+                {
+                    // Second closest forward reference
+                    refFrameOffset[1] = refOrderHint;
+                    refIdx[1] = i;
+                }
+            }
+
+            if (refFrameOffset[1] >= 0)
+                return true;
+        }
+
+        return false;
+    }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
     inline
     Ipp32s av1_read_q_delta(AV1Bitstream* bs)
@@ -1183,42 +1314,13 @@ namespace UMC_AV1_DECODER
             fh->height == prev_fh->height);
     }
 
-    void AV1Bitstream::GetFrameSizeWithRefs(FrameHeader* fh)
+#if UMC_AV1_DECODER_REV >= 5000
+    void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader const* sh)
+#else
+    void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader* sh)
+#endif
     {
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
-        bool bFound = false;
-        for (Ipp8u i = 0; i < INTER_REFS; ++i)
-        {
-            if (GetBit())
-            {
-                bFound = true;
-                fh->width = fh->sizesOfRefFrame[fh->activeRefIdx[i]].width;
-                fh->height = fh->sizesOfRefFrame[fh->activeRefIdx[i]].height;
-                // TODO: [Rev0.5] add getting of displayWidth/displayHeight
-#if UMC_AV1_DECODER_REV >= 5000
-                av1_setup_superres(this, fh);
-#endif
-                break;
-            }
-        }
-
-        if (!bFound)
-        {
-            fh->width = GetBits(16) + 1;
-            fh->height = GetBits(16) + 1;
-#if UMC_AV1_DECODER_REV >= 5000
-            av1_setup_superres(this, fh);
-#endif
-            av1_get_render_size(this, fh);
-        }
-        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
-    }
-
-    void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader* sh, FrameHeader const* prev_fh)
-    {
-        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
-
-        prev_fh;
 
         if (!fh || !sh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
@@ -1241,12 +1343,8 @@ namespace UMC_AV1_DECODER
         {
             fh->frameToShow = GetBits(3);
             if (sh->frame_id_numbers_present_flag)
-            {
                 fh->displayFrameId = GetBits(sh->frame_id_length);
-            }
 
-            fh->width = fh->sizesOfRefFrame[fh->frameToShow].width;
-            fh->height = fh->sizesOfRefFrame[fh->frameToShow].height;
             fh->showFrame = 1;
 
             return;
@@ -1293,14 +1391,11 @@ namespace UMC_AV1_DECODER
 
 
         if (sh->frame_id_numbers_present_flag)
-        {
-            fh->displayFrameId = GetBits(sh->frame_id_length);
-        }
+            fh->currentFrameId = GetBits(sh->frame_id_length);
 
 #if UMC_AV1_DECODER_REV >= 5000
         fh->frameSizeOverrideFlag = GetBits(1);
-        fh->frameOffset = GetBits(sh->order_hint_bits_minus1 + 1);
-        fh->currentVideoFrame = fh->frameOffset;
+        fh->orderHint = GetBits(sh->order_hint_bits_minus1 + 1);
 #endif
 
         if (KEY_FRAME == fh->frameType)
@@ -1317,7 +1412,7 @@ namespace UMC_AV1_DECODER
 
             for (Ipp8u i = 0; i < INTER_REFS; ++i)
             {
-                fh->activeRefIdx[i] = 0;
+                fh->refFrameIdx[i] = -1;
             }
 
 #if UMC_AV1_DECODER_REV >= 5000
@@ -1393,81 +1488,6 @@ namespace UMC_AV1_DECODER
                     fh->allowIntraBC = GetBit();
 #endif
             }
-            else
-            {
-                fh->refreshFrameFlags = (Ipp8u)GetBits(NUM_REF_FRAMES);
-
-#if UMC_AV1_DECODER_REV >= 5000
-                if (!fh->errorResilientMode && sh->enable_order_hint)
-                    fh->frameRefsShortSignalling = GetBit();
-
-                if (fh->frameRefsShortSignalling)
-                {
-                    const Ipp32u lstRef = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
-                    const Ipp32u gldRef = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
-
-                    fh->activeRefIdx[0] = lstRef;
-                    fh->activeRefIdx[1] = gldRef;
-
-                    // call av1_set_frame_refs(lstRef, gldRef) can be skipped for now because it doesn't read bitstream
-                    // TODO: [Rev0.5] implement av1_set_frame_refs(lstRef, gldRef) later
-                }
-#endif
-
-
-                for (Ipp8u i = 0; i < INTER_REFS; ++i)
-                {
-#if UMC_AV1_DECODER_REV >= 5000
-                    if (!fh->frameRefsShortSignalling)
-                    {
-                        Ipp32s const ref = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
-                        fh->activeRefIdx[i] = ref;
-                    }
-#else
-                    Ipp32s const ref = GetBits(UMC_VP9_DECODER::REF_FRAMES_LOG2);
-                    fh->activeRefIdx[i] = ref;
-                    fh->refFrameSignBias[i] = GetBit();
-#endif // UMC_AV1_DECODER_REV >= 5000
-
-                    if (sh->frame_id_numbers_present_flag)
-                    {
-                        int delta_frame_id_len = sh->delta_frame_id_length;
-                        GetBits(delta_frame_id_len);
-                        // TODO: add check of ref frame_id here
-                    }
-                }
-
-#if UMC_AV1_DECODER_REV >= 5000
-                if (fh->errorResilientMode && fh->frameSizeOverrideFlag)
-                    GetFrameSizeWithRefs(fh);
-                else
-                    av1_get_frame_size(this, fh, sh);
-
-                if (fh->curFrameForceIntegerMV)
-                    fh->allowHighPrecisionMv = 0;
-                else
-                    fh->allowHighPrecisionMv = GetBit();
-#else // UMC_AV1_DECODER_REV >= 5000
-                GetFrameSizeWithRefs(fh);
-
-                fh->allowHighPrecisionMv = GetBit();
-#endif // UMC_AV1_DECODER_REV >= 5000
-
-                fh->interpFilter = GetBit() ? SWITCHABLE : (INTERP_FILTER)GetBits(LOG2_SWITCHABLE_FILTERS);
-#if UMC_AV1_DECODER_REV >= 5000
-                fh->switchableMotionMode = GetBit();
-#endif
-
-#if UMC_AV1_DECODER_REV >= 5000
-                if (FrameMightUsePrevFrameMVs(fh) && sh->enable_order_hint)
-#else
-                if (FrameMightUsePrevFrameMVs(fh))
-#endif
-                {
-                    const Ipp32u useRefFrameMVs = GetBit();
-                    fh->usePrevMVs = useRefFrameMVs && FrameCanUsePrevFrameMVs(fh, prev_fh);
-                }
-            }
         }
 
         AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
@@ -1523,14 +1543,360 @@ namespace UMC_AV1_DECODER
 
         for (Ipp32u i = 0; i < MAX_MODE_LF_DELTAS; i++)
             fh->lf.modeDeltas[i] = prev_fh->lf.modeDeltas[i];
-
     }
 
-    void AV1Bitstream::GetFrameHeaderFull(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh)
+    inline void GetRefFramesHeaders(std::vector<FrameHeader const*>* headers, DPBType const* dpb)
     {
+        if (!dpb)
+            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
+        if (dpb->empty())
+            return;
+
+        for (Ipp8u i = 0; i < NUM_REF_FRAMES; ++i)
+        {
+            AV1DecoderFrame const* frame = (*dpb)[i];
+            VM_ASSERT(frame);
+            FrameHeader const& ref_fh = frame->GetFrameHeader();
+            headers->push_back(&ref_fh);
+        }
+    }
+
+#if UMC_AV1_DECODER_REV >= 5000
+    struct RefFrameInfo {
+        Ipp32u mapIdx;
+        Ipp32u shiftedOrderHint;
+    };
+
+    inline Ipp32s av1_compare_ref_frame_info(void const* left, void const* right)
+    {
+        RefFrameInfo const* a = (RefFrameInfo*)left;
+        RefFrameInfo const* b = (RefFrameInfo*)right;
+
+        if (a->shiftedOrderHint < b->shiftedOrderHint)
+            return -1;
+
+        if (a->shiftedOrderHint > a->shiftedOrderHint)
+            return 1;
+
+        return (a->mapIdx < b->mapIdx)
+            ? -1
+            : ((a->mapIdx > b->mapIdx) ? 1 : 0);
+    }
+
+    static void av1_set_frame_refs(SequenceHeader const* sh, FrameHeader* fh, DPBType const& frameDpb, Ipp32u last_frame_idx, Ipp32u gold_frame_idx)
+    {
+        const Ipp32u curFrameHint = 1 << sh->order_hint_bits_minus1;
+
+        RefFrameInfo refFrameInfo[NUM_REF_FRAMES]; // RefFrameInfo structure contains
+                                                   // (1) shiftedOrderHint
+                                                   // (2) index in DPB (allows to correct sorting of frames having equal shiftedOrderHint)
+        Ipp32u refFlagList[INTER_REFS] = { 0, 0, 0, 0, 0, 0, 0 };
+
+        for (int i = 0; i < NUM_REF_FRAMES; ++i)
+        {
+            const Ipp32u mapIdx = i;
+
+            refFrameInfo[i].mapIdx = mapIdx;
+
+            FrameHeader const& refHdr = frameDpb[i]->GetFrameHeader();
+            refFrameInfo[i].shiftedOrderHint =
+                curFrameHint + av1_get_relative_dist(sh, refHdr.orderHint, fh->orderHint);
+        }
+
+        const Ipp32u lastOrderHint = refFrameInfo[last_frame_idx].shiftedOrderHint;
+        const Ipp32u goldOrderHint = refFrameInfo[gold_frame_idx].shiftedOrderHint;
+
+        // Confirm both LAST_FRAME and GOLDEN_FRAME are valid forward reference frames
+        if (lastOrderHint >= curFrameHint)
+        {
+            VM_ASSERT("lastOrderHint is not less than curFrameHint!");
+            throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+        }
+
+        if (goldOrderHint >= curFrameHint)
+        {
+            VM_ASSERT("goldOrderHint is not less than curFrameHint!");
+            throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+        }
+
+        // Sort ref frames based on their shiftedOrderHint values.
+        qsort(refFrameInfo, NUM_REF_FRAMES, sizeof(RefFrameInfo),
+            av1_compare_ref_frame_info);
+
+        // Identify forward and backward reference frames.
+        // Forward  reference: ref orderHint < fh->orderHint
+        // Backward reference: ref orderHint >= fh->orderHint
+        Ipp32u fwdStartIdx = 0;
+        Ipp32u fwdEndIdx = NUM_REF_FRAMES - 1;
+
+        for (Ipp32u i = 0; i < NUM_REF_FRAMES; i++)
+        {
+            if (refFrameInfo[i].shiftedOrderHint >= curFrameHint)
+            {
+                fwdEndIdx = i - 1;
+                break;
+            }
+        }
+
+        int bwdStartIdx = fwdEndIdx + 1;
+        int bwdEndIdx = NUM_REF_FRAMES - 1;
+
+        // === Backward Reference Frames ===
+
+        // == ALTREF_FRAME ==
+        if (bwdStartIdx <= bwdEndIdx)
+        {
+            fh->refFrameIdx[ALTREF_FRAME - LAST_FRAME] = refFrameInfo[bwdEndIdx].mapIdx;
+            refFlagList[ALTREF_FRAME - LAST_FRAME] = 1;
+            bwdEndIdx--;
+        }
+
+        // == BWDREF_FRAME ==
+        if (bwdStartIdx <= bwdEndIdx)
+        {
+            fh->refFrameIdx[BWDREF_FRAME - LAST_FRAME] = refFrameInfo[bwdStartIdx].mapIdx;
+            refFlagList[BWDREF_FRAME - LAST_FRAME] = 1;
+            bwdStartIdx++;
+        }
+
+        // == ALTREF2_FRAME ==
+        if (bwdStartIdx <= bwdEndIdx)
+        {
+            fh->refFrameIdx[ALTREF2_FRAME - LAST_FRAME] = refFrameInfo[bwdStartIdx].mapIdx;
+            refFlagList[ALTREF2_FRAME - LAST_FRAME] = 1;
+        }
+
+        // === Forward Reference Frames ===
+
+        for (Ipp32u i = fwdStartIdx; i <= fwdEndIdx; ++i)
+        {
+            // == LAST_FRAME ==
+            if (refFrameInfo[i].mapIdx == last_frame_idx)
+            {
+                fh->refFrameIdx[LAST_FRAME - LAST_FRAME] = refFrameInfo[i].mapIdx;
+                refFlagList[LAST_FRAME - LAST_FRAME] = 1;
+            }
+
+            // == GOLDEN_FRAME ==
+            if (refFrameInfo[i].mapIdx == gold_frame_idx)
+            {
+                fh->refFrameIdx[GOLDEN_FRAME - LAST_FRAME] = refFrameInfo[i].mapIdx;
+                refFlagList[GOLDEN_FRAME - LAST_FRAME] = 1;
+            }
+        }
+
+        VM_ASSERT(refFlagList[LAST_FRAME - LAST_FRAME] == 1 &&
+            refFlagList[GOLDEN_FRAME - LAST_FRAME] == 1);
+
+        // == LAST2_FRAME ==
+        // == LAST3_FRAME ==
+        // == BWDREF_FRAME ==
+        // == ALTREF2_FRAME ==
+        // == ALTREF_FRAME ==
+
+        // Set up the reference frames in the anti-chronological order.
+        static const MV_REFERENCE_FRAME ref_frame_list[INTER_REFS - 2] =
+        { LAST2_FRAME, LAST3_FRAME, BWDREF_FRAME, ALTREF2_FRAME, ALTREF_FRAME };
+
+        Ipp32u refIdx;
+        for (refIdx = 0; refIdx < (INTER_REFS - 2); refIdx++)
+        {
+            const MV_REFERENCE_FRAME refFrame = ref_frame_list[refIdx];
+
+            if (refFlagList[refFrame - LAST_FRAME] == 1) continue;
+
+            while (fwdStartIdx <= fwdEndIdx &&
+                (refFrameInfo[fwdEndIdx].mapIdx == last_frame_idx ||
+                    refFrameInfo[fwdEndIdx].mapIdx == gold_frame_idx))
+            {
+                fwdEndIdx--;
+            }
+            if (fwdStartIdx > fwdEndIdx) break;
+
+            fh->refFrameIdx[refFrame - LAST_FRAME] = refFrameInfo[fwdEndIdx].mapIdx;
+            refFlagList[refFrame - LAST_FRAME] = 1;
+
+            fwdEndIdx--;
+        }
+
+        // Assign all the remaining frame(s), if any, to the earliest reference frame.
+        for (; refIdx < (INTER_REFS - 2); refIdx++)
+        {
+            const MV_REFERENCE_FRAME refFrame = ref_frame_list[refIdx];
+            fh->refFrameIdx[refFrame - LAST_FRAME] = refFrameInfo[fwdStartIdx].mapIdx;
+            refFlagList[refFrame - LAST_FRAME] = 1;
+        }
+
+        for (int i = 0; i < INTER_REFS; i++)
+            VM_ASSERT(refFlagList[i] == 1);
+    }
+#endif // UMC_AV1_DECODER_REV >= 5000
+
+    static void av1_mark_ref_frames(SequenceHeader const* sh, FrameHeader* fh, DPBType const& frameDpb)
+    {
+        const Ipp32u idLen = sh->frame_id_length;
+        const Ipp32u diffLen = sh->delta_frame_id_length;
+        for (Ipp32s i = 0; i < NUM_REF_FRAMES; i++)
+        {
+            FrameHeader const& refHdr = frameDpb[i]->GetFrameHeader();
+            if ((static_cast<Ipp32s>(fh->currentFrameId) - (1 << diffLen)) > 0)
+            {
+                if (refHdr.currentFrameId > fh->currentFrameId ||
+                    refHdr.currentFrameId < fh->currentFrameId - (1 << diffLen))
+                    frameDpb[i]->SetRefValid(false);
+            }
+            else
+            {
+                if (refHdr.currentFrameId > fh->currentFrameId &&
+                    refHdr.currentFrameId < ((1 << idLen) + fh->currentFrameId - (1 << diffLen)))
+                    frameDpb[i]->SetRefValid(false);
+            }
+        }
+    }
+
+    void AV1Bitstream::GetFrameHeaderFull(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh, DPBType const& frameDpb)
+    {
+        using UMC_VP9_DECODER::REF_FRAMES_LOG2;
+
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
         if (!fh || !sh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
+        if (fh->frameType != KEY_FRAME)
+        {
+            VM_ASSERT(prev_fh);
+            VM_ASSERT(frameDpb.size() == NUM_REF_FRAMES);
+            // TODO: [Global] Add handling of case when decoding starts from non key frame and thus frameDpb is empty
+        }
+
+        bool missingRefFrame = false; // TODO: [Global] Use this flag to trigger error resilience actions
+
+        if (fh->showExistingFrame)
+        {
+            FrameHeader const& refHdr = frameDpb[fh->frameToShow]->GetFrameHeader();
+
+            // get frame resolution
+            fh->width  = refHdr.width;
+            fh->height = refHdr.height;
+
+            // check that there is no confilct between display_frame_id and respective frame in DPB
+            if (sh->frame_id_numbers_present_flag &&
+                (fh->displayFrameId != refHdr.currentFrameId ||
+                false == frameDpb[fh->frameToShow]->RefValid()))
+                VM_ASSERT("Frame_to_show is absent in DPB or invalid!");
+                missingRefFrame = true;
+
+            return;
+        }
+        else
+        {
+            // check current_frame_id and DPB frames for validity
+            if (sh->frame_id_numbers_present_flag && KEY_FRAME != fh->frameType)
+            {
+                // check current_frame_id as described in AV1 spec 6.8.2
+                const Ipp32u idLen = sh->frame_id_length;
+                const Ipp32u prevFrameId = prev_fh->currentFrameId;
+                const Ipp32s diffFrameId = fh->currentFrameId > prevFrameId ?
+                    fh->currentFrameId - prevFrameId :
+                    (1 << idLen) + fh->currentFrameId - prevFrameId;
+
+                if (fh->currentFrameId == prevFrameId ||
+                    diffFrameId >= (1 << (idLen - 1)))
+                {
+                    VM_ASSERT("current_frame_id is incompliant to AV1 spec!");
+                    throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+                }
+
+                //  check and mark ref frames as not valid as described in "Reference frame marking process" AV1 spec 5.9.4
+                av1_mark_ref_frames(sh, fh, frameDpb);
+            }
+        }
+
+        if (fh->frameType != KEY_FRAME && fh->intraOnly == 0)
+        {
+            fh->refreshFrameFlags = (Ipp8u)GetBits(NUM_REF_FRAMES);
+
+#if UMC_AV1_DECODER_REV >= 5000
+            if (!fh->errorResilientMode && sh->enable_order_hint)
+                fh->frameRefsShortSignalling = GetBit();
+
+            if (fh->frameRefsShortSignalling)
+            {
+                const Ipp32u last_frame_idx = GetBits(REF_FRAMES_LOG2);
+                const Ipp32u gold_frame_idx = GetBits(REF_FRAMES_LOG2);
+
+                // set last and gold reference frames
+                fh->refFrameIdx[LAST_FRAME - LAST_FRAME]   = last_frame_idx;
+                fh->refFrameIdx[GOLDEN_FRAME - LAST_FRAME] = gold_frame_idx;
+
+                // compute other active references as specified in "Set frame refs process" AV1 spec 7.8
+                av1_set_frame_refs(sh, fh, frameDpb, last_frame_idx, gold_frame_idx);
+            }
+#endif
+
+            for (Ipp8u i = 0; i < INTER_REFS; ++i)
+            {
+#if UMC_AV1_DECODER_REV >= 5000
+                if (!fh->frameRefsShortSignalling)
+                    fh->refFrameIdx[i] = GetBits(REF_FRAMES_LOG2);
+#else
+                fh->refFrameIdx[i] = GetBits(REF_FRAMES_LOG2);
+                fh->refFrameSignBias[i] = GetBit();
+#endif // UMC_AV1_DECODER_REV >= 5000
+
+                if (sh->frame_id_numbers_present_flag)
+                {
+                    const Ipp32s deltaFrameId = GetBits(sh->delta_frame_id_length) + 1;
+
+                    // compute expected reference frame id from delta_frame_id and check that it's equal to one saved in DPB
+                    const Ipp32u idLen = sh->frame_id_length;
+                    const Ipp32u expectedFrameId = ((fh->currentFrameId - deltaFrameId + (1 << idLen))
+                            % (1 << idLen));
+
+                    AV1DecoderFrame const* refFrm = frameDpb[fh->refFrameIdx[i]];
+                    FrameHeader const& refHdr = refFrm->GetFrameHeader();
+
+                    if (expectedFrameId != refHdr.currentFrameId ||
+                        false == refFrm->RefValid())
+                    {
+                        VM_ASSERT("Active reference frame is absent in DPB or invalid!");
+                        missingRefFrame = true;
+                    }
+                }
+            }
+
+#if UMC_AV1_DECODER_REV >= 5000
+            if (fh->errorResilientMode && fh->frameSizeOverrideFlag)
+                av1_get_frame_sizes_with_refs(this, fh, frameDpb);
+            else
+                av1_get_frame_size(this, fh, sh);
+
+            if (fh->curFrameForceIntegerMV)
+                fh->allowHighPrecisionMv = 0;
+            else
+                fh->allowHighPrecisionMv = GetBit();
+#else // UMC_AV1_DECODER_REV >= 5000
+            av1_get_frame_sizes_with_refs(this, fh, frameDpb);
+
+            fh->allowHighPrecisionMv = GetBit();
+#endif // UMC_AV1_DECODER_REV >= 5000
+
+            fh->interpFilter = GetBit() ? SWITCHABLE : (INTERP_FILTER)GetBits(LOG2_SWITCHABLE_FILTERS);
+#if UMC_AV1_DECODER_REV >= 5000
+            fh->switchableMotionMode = GetBit();
+#endif
+
+#if UMC_AV1_DECODER_REV >= 5000
+            if (FrameMightUsePrevFrameMVs(fh) && sh->enable_order_hint)
+#else
+            if (FrameMightUsePrevFrameMVs(fh))
+#endif
+            {
+                const Ipp32u useRefFrameMVs = GetBit();
+                fh->usePrevMVs = useRefFrameMVs && FrameCanUsePrevFrameMVs(fh, prev_fh);
+            }
+        }
 
         if (!fh->width || !fh->height)
             throw av1_exception(UMC::UMC_ERR_FAILED);
@@ -1562,10 +1928,7 @@ namespace UMC_AV1_DECODER
 
 #if UMC_AV1_DECODER_REV >= 5000
         if (!IsFrameResilent(fh))
-        {
             fh->primaryRefFrame = GetBits(PRIMARY_REF_BITS);
-            // TODO: [Rev0.5] add check for correct primaryRefFrame here
-        }
 #else
         // This flag will be overridden by the call to vp9_setup_past_independence
         // below, forcing the use of context 0 for those frame types.
@@ -1642,17 +2005,10 @@ namespace UMC_AV1_DECODER
 
         av1_read_tx_mode(this, fh, allLosless);
 
-        // TODO: [Rev0.5] implement proper check for compound availability inside av1_read_frame_reference_mode
-        av1_read_frame_reference_mode(this, fh);
+        av1_read_frame_reference_mode(this, fh, frameDpb);
 
 #if UMC_AV1_DECODER_REV >= 5000
-        // TODO: [Rev0.5] implement proper calculation of isSkipModeAllowed
-        const bool isSkipModeAllowed = sh->enable_order_hint &&
-            !fh->errorResilientMode &&
-            !IsFrameIntraOnly(fh) &&
-            fh->referenceMode != SINGLE_REFERENCE;
-
-        fh->skipModeFlag = isSkipModeAllowed ? GetBit() : 0;
+        fh->skipModeFlag = av1_is_skip_mode_allowed(fh, sh, frameDpb) ? GetBit() : 0;
 #endif // UMC_AV1_DECODER_REV >= 5000
 
         av1_read_compound_tools(this, fh);

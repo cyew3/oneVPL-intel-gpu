@@ -57,6 +57,8 @@ namespace UMC_AV1_DECODER
         FreeReferenceFrames();
         frame_dpb.clear();
 
+        SetRefValid(false);
+
         UID = -1;
     }
 
@@ -136,7 +138,7 @@ namespace UMC_AV1_DECODER
 
         for (Ipp8u i = 0; i < INTER_REFS; ++i)
         {
-            Ipp32s refIdx = header.activeRefIdx[i];
+            Ipp32s refIdx = header.refFrameIdx[i];
             AddReferenceFrame(frame_dpb[refIdx]);
         }
     }
