@@ -29,7 +29,7 @@ project( mfx )
 
 set( MFX_API_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/../../include )
 
-# While equal to get_mfx_version in samples/builder, this function should remain separate to make this file self-sufficient 
+# While equal to get_mfx_version in samples/builder, this function should remain separate to make this file self-sufficient
 function( get_api_version mfx_version_major mfx_version_minor )
   file(STRINGS ${MFX_API_FOLDER}/mfxdefs.h major REGEX "#define MFX_VERSION_MAJOR")
   file(STRINGS ${MFX_API_FOLDER}/mfxdefs.h minor REGEX "#define MFX_VERSION_MINOR")
@@ -94,7 +94,7 @@ else( )
 
   set(no_warnings "-Wno-unknown-pragmas -Wno-unused")
 
-  set(CMAKE_CXX_FLAGS "-pipe -fPIC")
+  set(CMAKE_CXX_FLAGS "-pipe -fPIC -std=c++11")
   set(CMAKE_CXX_FLAGS_DEBUG   "-O0 -Wall ${no_warnings} -Wformat -Wformat-security -g -D_DEBUG")
   set(CMAKE_CXX_FLAGS_RELEASE "-O2 -D_FORTIFY_SOURCE=2 -fstack-protector -Wall ${no_warnings} -Wformat -Wformat-security  -DNDEBUG")
 
