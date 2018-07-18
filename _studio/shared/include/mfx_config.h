@@ -327,8 +327,8 @@
 
     #if defined (ENABLE_PRE_SI_FEATURES)
 
-        //#define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
-        #define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
+        #define PRE_SI_TARGET_PLATFORM_GEN12P5 // target generation is Gen12p5 (TGL HP)
+        //#define PRE_SI_TARGET_PLATFORM_GEN12 // target generation is Gen12 (TGL LP, LKF)
 
         #if defined (PRE_SI_TARGET_PLATFORM_GEN12P5)
             #define PRE_SI_TARGET_PLATFORM_GEN12 // assume that all Gen12 features are supported on Gen12p5
@@ -353,6 +353,10 @@
     #define MFX_ENABLE_HEVCD_SUBSET
     #define MFX_ENABLE_HEVCE_SCC
 #endif // PRE_SI_TARGET_PLATFORM_GEN12
+
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12P5)
+    #define MFX_ENABLE_AVCE_VDENC_B_FRAMES
+#endif // PRE_SI_TARGET_PLATFORM_GEN12P5
 
 #if !defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #undef MFX_ENABLE_AV1_VIDEO_DECODE
