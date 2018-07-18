@@ -2589,7 +2589,11 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
             extOpt2->MaxSliceSize = 0;
         }
 
-        if (IsOn(extOpt3->FadeDetection))
+        if (IsOn(extOpt3->FadeDetection)
+#ifndef MFX_CLOSED_PLATFORMS_DISABLE
+            && platform != MFX_HW_LKF
+#endif
+            )
         {
             changed = true;
             extOpt3->FadeDetection = MFX_CODINGOPTION_OFF;
