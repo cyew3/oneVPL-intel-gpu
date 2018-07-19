@@ -190,6 +190,22 @@ namespace UMC_AV1_DECODER
 #endif // UMC_AV1_DECODER_REV >= 5000
 
 #if UMC_AV1_DECODER_REV >= 5000
+    inline void av1_set_mi_and_sb_size(FrameHeader* fh, SequenceHeader const* sh)
+    {
+        // set frame width and heignt in MI
+        const Ipp32u alignedWidth = ALIGN_POWER_OF_TWO(fh->width, 3);
+        const int alignedHeight = ALIGN_POWER_OF_TWO(fh->height, 3);
+        fh->miCols = alignedWidth >> MI_SIZE_LOG2;
+        fh->miRows = alignedHeight >> MI_SIZE_LOG2;
+
+        // set frame width and height in SB
+        const Ipp32u mibSizeLog2 = sh->sb_size == BLOCK_64X64 ? 4 : 5;
+        const Ipp32u widthMI = ALIGN_POWER_OF_TWO(fh->miCols, mibSizeLog2);
+        const Ipp32u heightMI = ALIGN_POWER_OF_TWO(fh->miRows, mibSizeLog2);
+        fh->widthSB = widthMI >> mibSizeLog2;
+        fh->heightSB = heightMI >> mibSizeLog2;
+    }
+
     static void av1_setup_superres(AV1Bitstream* bs, FrameHeader* fh)
     {
         fh->superresUpscaledWidth = fh->width;
@@ -205,7 +221,15 @@ namespace UMC_AV1_DECODER
         else
             fh->superresScaleDenominator = SCALE_NUMERATOR;
     }
-#endif
+#else // UMC_AV1_DECODER_REV >= 5000
+    inline
+    void av1_get_sb_size(AV1Bitstream* bs, FrameHeader* fh)
+    {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+        fh->sbSize = bs->GetBit() ? BLOCK_128X128 : BLOCK_64X64;
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
+    }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
     inline
     void av1_get_render_size(AV1Bitstream* bs, FrameHeader* fh)
@@ -246,6 +270,7 @@ namespace UMC_AV1_DECODER
         }
 
         av1_setup_superres(bs, fh);
+        av1_set_mi_and_sb_size(fh, sh);
 #else // UMC_AV1_DECODER_REV >= 5000
         sh;
         fh->width = bs->GetBits(16) + 1;
@@ -288,15 +313,10 @@ namespace UMC_AV1_DECODER
 #endif
             av1_get_render_size(bs, fh);
         }
-        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
-    }
 
-
-    inline
-    void av1_get_sb_size(AV1Bitstream* bs, FrameHeader* fh)
-    {
-        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
-        fh->sbSize = bs->GetBit() ? BLOCK_128X128 : BLOCK_64X64;
+#if UMC_AV1_DECODER_REV >= 5000
+        av1_set_mi_and_sb_size(fh, sh);
+#endif
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
 
@@ -797,27 +817,198 @@ namespace UMC_AV1_DECODER
         return segmentQuantizerActive;
     }
 
-    inline
-    Ipp32u get_num_tiles(Ipp32u mi_frame_size, Ipp32u log2_tile_num) {
-        // Round the frame up to a whole number of max superblocks
-        mi_frame_size = ALIGN_POWER_OF_TWO(mi_frame_size, MAX_MIB_SIZE_LOG2);
+#if UMC_AV1_DECODER_REV >= 5000
 
-        // Divide by the signalled number of tiles, rounding up to the multiple of
-        // the max superblock size. To do this, shift right (and round up) to get the
-        // tile size in max super-blocks and then shift left again to convert it to
-        // mi units.
-        const int shift = log2_tile_num + MAX_MIB_SIZE_LOG2;
-        const int max_sb_tile_size =
-            ALIGN_POWER_OF_TWO(mi_frame_size, shift) >> shift;
-        const int mi_tile_size = max_sb_tile_size << MAX_MIB_SIZE_LOG2;
+    struct TileLimits
+    {
+        Ipp32u maxTileWidthSB;
+        Ipp32u maxTileHeightSB;
+        Ipp32u maxTileAreaInSB;
 
-        // The actual number of tiles is the ceiling of the frame size in mi units
-        // divided by mi_size. This is at most 1 << log2_tile_num but might be
-        // strictly less if max_sb_tile_size got rounded up significantly.
-        return (mi_frame_size + mi_tile_size - 1) / mi_tile_size;
+        Ipp32u maxLog2TileCols;
+        Ipp32u maxLog2TileRows;
+
+        Ipp32u minLog2TileCols;
+        Ipp32u minLog2TileRows;
+
+        Ipp32u minLog2Tiles;
+    };
+
+    inline Ipp32u av1_tile_log2(Ipp32u blockSize, Ipp32u target)
+    {
+        Ipp32u k;
+        for (k = 0; (blockSize << k) < target; k++) {}
+        return k;
     }
 
-#if UMC_AV1_DECODER_REV < 5000
+    inline void av1_get_tile_limits(FrameHeader const* fh, Ipp32u sbSize, TileLimits* limits)
+    {
+        const Ipp32u mibSizeLog2 = sbSize == BLOCK_64X64 ? 4 : 5;
+        const Ipp32u sbSizeLog2 = mibSizeLog2 + MI_SIZE_LOG2;
+
+        limits->maxTileWidthSB = MAX_TILE_WIDTH >> sbSizeLog2;
+        limits->maxTileAreaInSB = MAX_TILE_AREA >> (2 * sbSizeLog2);
+
+        limits->minLog2TileCols = av1_tile_log2(limits->maxTileWidthSB,fh->widthSB);
+        limits->maxLog2TileCols = av1_tile_log2(1, IPP_MIN(fh->widthSB, MAX_TILE_COLS));
+        limits->maxLog2TileRows = av1_tile_log2(1, IPP_MIN(fh->heightSB, MAX_TILE_ROWS));
+        limits->minLog2Tiles = av1_tile_log2(limits->maxTileAreaInSB, fh->widthSB * fh->heightSB);
+        limits->minLog2Tiles = IPP_MAX(limits->minLog2Tiles, limits->minLog2TileCols);
+    }
+
+    static void av1_calculate_tile_cols(FrameHeader* fh, TileLimits* limits)
+    {
+        Ipp32u i;
+
+        if (fh->uniformTileSpacingFlag)
+        {
+            Ipp32u startSB;
+            Ipp32u sizeSB = ALIGN_POWER_OF_TWO(fh->widthSB, fh->log2TileCols);
+            sizeSB >>= fh->log2TileCols;
+            VM_ASSERT(sizeSB > 0);
+            for (i = 0, startSB = 0; startSB < fh->widthSB; i++)
+            {
+                fh->tileColStartSB[i] = startSB;
+                startSB += sizeSB;
+            }
+            fh->tileCols = i;
+            fh->tileColStartSB[i] = fh->widthSB;
+            limits->minLog2TileRows = IPP_MAX(static_cast<Ipp32s>(limits->minLog2Tiles - fh->log2TileCols), 0);
+            limits->maxTileHeightSB = fh->heightSB >> limits->minLog2TileRows;
+        }
+        else
+        {
+            limits->maxTileAreaInSB = (fh->heightSB * fh->widthSB);
+            Ipp32u widestTileSB = 1;
+            fh->log2TileCols = av1_tile_log2(1, fh->tileCols);
+            for (i = 0; i < fh->tileCols; i++)
+            {
+                Ipp32u sizeSB = fh->tileColStartSB[i + 1] - fh->tileColStartSB[i];
+                widestTileSB = IPP_MAX(widestTileSB, sizeSB);
+            }
+            if (limits->minLog2Tiles)
+                limits->maxTileAreaInSB >>= (limits->minLog2Tiles + 1);
+            limits->maxTileHeightSB = IPP_MAX(limits->maxTileAreaInSB / widestTileSB, 1);
+        }
+    }
+
+    static void av1_calculate_tile_rows(FrameHeader* fh)
+    {
+        Ipp32u startSB;
+        Ipp32u sizeSB;
+        Ipp32u i;
+
+        if (fh->uniformTileSpacingFlag)
+        {
+            sizeSB = ALIGN_POWER_OF_TWO(fh->heightSB, fh->log2TileRows);
+            sizeSB >>= fh->log2TileRows;
+            VM_ASSERT(sizeSB > 0);
+            for (i = 0, startSB = 0; startSB < fh->heightSB; i++)
+            {
+                fh->tileRowStartSB[i] = startSB;
+                startSB += sizeSB;
+            }
+            fh->tileRows = i;
+            fh->tileRowStartSB[i] = fh->heightSB;
+        }
+        else
+            fh->log2TileRows = av1_tile_log2(1, fh->tileRows);
+    }
+
+    static void av1_read_tile_info_max_tile(AV1Bitstream* bs, FrameHeader* fh, Ipp32u sbSize)
+    {
+        TileLimits limits = {};
+        av1_get_tile_limits(fh, sbSize, &limits);
+
+        fh->uniformTileSpacingFlag = bs->GetBit();
+
+        // Read tile columns
+        if (fh->uniformTileSpacingFlag)
+        {
+            fh->log2TileCols = limits.minLog2TileCols;
+            while (fh->log2TileCols < limits.maxLog2TileCols)
+            {
+                if (!bs->GetBit())
+                    break;
+                fh->log2TileCols++;
+            }
+        }
+        else
+        {
+            Ipp32u i;
+            Ipp32u startSB;
+            Ipp32u widthSB = fh->widthSB;
+            for (i = 0, startSB = 0; widthSB > 0 && i < MAX_TILE_COLS; i++)
+            {
+                const Ipp32u sizeInSB =
+                    1 + read_uniform(bs, IPP_MIN(widthSB, limits.maxTileWidthSB));
+                fh->tileColStartSB[i] = startSB;
+                startSB += sizeInSB;
+                widthSB -= sizeInSB;
+            }
+            fh->tileCols = i;
+            fh->tileColStartSB[i] = startSB + widthSB;
+        }
+        av1_calculate_tile_cols(fh, &limits);
+
+        // Read tile rows
+        if (fh->uniformTileSpacingFlag)
+        {
+            fh->log2TileRows = limits.minLog2TileRows;
+            while (fh->log2TileRows < limits.maxLog2TileRows)
+            {
+                if (!bs->GetBit())
+                    break;
+                fh->log2TileRows++;
+            }
+        }
+        else
+        {
+            Ipp32u i;
+            Ipp32u startSB;
+            Ipp32u heightSB = fh->heightSB;
+            for (i = 0, startSB = 0; heightSB > 0 && i < MAX_TILE_ROWS; i++)
+            {
+                const Ipp32u sizeSB =
+                    1 + read_uniform(bs, IPP_MIN(heightSB, limits.maxTileHeightSB));
+                fh->tileRowStartSB[i] = startSB;
+                startSB += sizeSB;
+                heightSB -= sizeSB;
+            }
+            fh->tileRows = i;
+            fh->tileRowStartSB[i] = startSB + heightSB;
+        }
+        av1_calculate_tile_rows(fh);
+    }
+
+    inline
+    void av1_read_tile_info(AV1Bitstream* bs, FrameHeader* fh, Ipp32u sbSize)
+    {
+        AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
+        const bool largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
+        if (largeScaleTile)
+        {
+            // TODO: [Rev0.85] add support of large scale tile
+            return;
+        }
+        av1_read_tile_info_max_tile(bs, fh, sbSize);
+
+        if (fh->tileCols > 1)
+            fh->loopFilterAcrossTilesVEnabled = bs->GetBit();
+        else
+            fh->loopFilterAcrossTilesVEnabled = 1;
+
+        if (fh->tileRows > 1)
+            fh->loopFilterAcrossTilesHEnabled = bs->GetBit();
+        else
+            fh->loopFilterAcrossTilesHEnabled = 1;
+
+        if (fh->tileCols * fh->tileRows > 1)
+            fh->tileSizeBytes = bs->GetBits(2) + 1;
+
+        AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
+    }
+#else // UMC_AV1_DECODER_REV >= 5000
     inline
     void av1_get_tile_nbits(const Ipp32s miCols, Ipp32s & minLog2TileCols, Ipp32s & maxLog2TileCols)
     {
@@ -841,36 +1032,33 @@ namespace UMC_AV1_DECODER
         minLog2TileCols = minLog2;
         maxLog2TileCols = maxLog2;
     }
-#endif // UMC_AV1_DECODER_REV < 5000
 
-#if UMC_AV1_DECODER_REV >= 5000
-    static void read_tile_info_max_tile(AV1Bitstream* bs, FrameHeader* fh)
+    inline
+    Ipp32u av1_get_num_tiles(Ipp32u mi_frame_size, Ipp32u log2_tile_num)
     {
-        fh->uniformTileSpacingFlag = bs->GetBit();
+        // Round the frame up to a whole number of max superblocks
+        mi_frame_size = ALIGN_POWER_OF_TWO(mi_frame_size, MAX_MIB_SIZE_LOG2);
 
-        // TODO: [Rev0.5] implement proper read of tile columns
-        if (fh->uniformTileSpacingFlag)
-            bs->GetBit();
+        // Divide by the signalled number of tiles, rounding up to the multiple of
+        // the max superblock size. To do this, shift right (and round up) to get the
+        // tile size in max super-blocks and then shift left again to convert it to
+        // mi units.
+        const int shift = log2_tile_num + MAX_MIB_SIZE_LOG2;
+        const int max_sb_tile_size =
+            ALIGN_POWER_OF_TWO(mi_frame_size, shift) >> shift;
+        const int mi_tile_size = max_sb_tile_size << MAX_MIB_SIZE_LOG2;
 
-        // TODO: [Rev0.5] implement proper read of tile rows
-        if (fh->uniformTileSpacingFlag)
-            bs->GetBit();
+        // The actual number of tiles is the ceiling of the frame size in mi units
+        // divided by mi_size. This is at most 1 << log2_tile_num but might be
+        // strictly less if max_sb_tile_size got rounded up significantly.
+        return (mi_frame_size + mi_tile_size - 1) / mi_tile_size;
     }
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     inline
     void av1_read_tile_info(AV1Bitstream* bs, FrameHeader* fh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
-#if UMC_AV1_DECODER_REV >= 5000
-        const bool largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
-        if (largeScaleTile)
-        {
-            // TODO: [Rev0.5] add support of large scale tile
-            return;
-        }
-        read_tile_info_max_tile(bs, fh);
-#else // UMC_AV1_DECODER_REV >= 5000
+
         const Ipp32u alignedWidth = ALIGN_POWER_OF_TWO(fh->width, MI_SIZE_LOG2);
         int minLog2TileColumns, maxLog2TileColumns, maxOnes;
         const Ipp32u miCols = alignedWidth >> MI_SIZE_LOG2;
@@ -878,34 +1066,19 @@ namespace UMC_AV1_DECODER
         av1_get_tile_nbits(miCols, minLog2TileColumns, maxLog2TileColumns);
 
         maxOnes = maxLog2TileColumns - minLog2TileColumns;
-        fh->log2TileColumns = minLog2TileColumns;
+        fh->log2TileCols = minLog2TileColumns;
         while (maxOnes-- && bs->GetBit())
-            fh->log2TileColumns++;
+            fh->log2TileCols++;
 
         fh->log2TileRows = bs->GetBit();
         if (fh->log2TileRows)
             fh->log2TileRows += bs->GetBit();
 
-        fh->tileCols = get_num_tiles(miCols, fh->log2TileColumns);
+        fh->tileCols = av1_get_num_tiles(miCols, fh->log2TileCols);
         const Ipp32u alignedHeight = ALIGN_POWER_OF_TWO(fh->height, MI_SIZE_LOG2);
         const Ipp32u miRows = alignedHeight >> MI_SIZE_LOG2;
-        fh->tileRows = get_num_tiles(miRows, fh->log2TileRows);
-#endif // UMC_AV1_DECODER_REV >= 5000
+        fh->tileRows = av1_get_num_tiles(miRows, fh->log2TileRows);
 
-#if UMC_AV1_DECODER_REV >= 5000
-        if (fh->tileCols > 1)
-            fh->loopFilterAcrossTilesVEnabled = bs->GetBit();
-        else
-            fh->loopFilterAcrossTilesVEnabled = 1;
-
-        if (fh->tileRows > 1)
-            fh->loopFilterAcrossTilesHEnabled = bs->GetBit();
-        else
-            fh->loopFilterAcrossTilesHEnabled = 1;
-
-        if (fh->tileCols * fh->tileRows > 1)
-            fh->tileSizeBytes = bs->GetBits(2) + 1;
-#else
         if (fh->tileCols * fh->tileRows > 1)
             fh->loopFilterAcrossTilesEnabled = bs->GetBit();
         fh->tileSizeBytes = bs->GetBits(2) + 1;
@@ -913,14 +1086,13 @@ namespace UMC_AV1_DECODER
         fh->tileGroupBitOffset = (mfxU32)bs->BitsDecoded();
 
         // read_tile_group_range()
-        const mfxU32 numBits = fh->log2TileRows + fh->log2TileColumns;
+        const mfxU32 numBits = fh->log2TileRows + fh->log2TileCols;
         bs->GetBits(numBits); // tg_start
         bs->GetBits(numBits); // tg_size
-#endif
-
 
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
     const WarpedMotionParams default_warp_params = {
         IDENTITY,
@@ -2130,11 +2302,10 @@ namespace UMC_AV1_DECODER
 
             fh->filmGrainParams.bit_depth = sh->bit_depth;
         }
-#endif // UMC_AV1_DECODER_REV >= 5000
 
+        av1_read_tile_info(this, fh, sh->sb_size);
+#else
         av1_read_tile_info(this, fh);
-
-#if UMC_AV1_DECODER_REV < 5000
         fh->frameHeaderLength = Ipp32u(BitsDecoded() / 8 + (BitsDecoded() % 8 > 0));
         fh->frameDataSize = m_maxBsSize; // TODO: [Global] check if m_maxBsSize can represent more than one frame and fix the code respectively if it can
 #endif

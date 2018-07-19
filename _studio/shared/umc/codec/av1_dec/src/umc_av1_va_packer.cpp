@@ -407,7 +407,7 @@ namespace UMC_AV1_DECODER
         picParam->tg_size_bit_offset = info.tileGroupBitOffset;
 
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
-        picParam->log2_tile_cols = (UCHAR)info.log2TileColumns;
+        picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
 
         // TODO: [Rev0.5] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (USHORT)info.tileCols;
@@ -635,7 +635,7 @@ namespace UMC_AV1_DECODER
         picParam->tile_size_bit_offset = info.tileGroupBitOffset;
 
         picParam->log2_tile_rows = (uint8_t)info.log2TileRows;
-        picParam->log2_tile_cols = (uint8_t)info.log2TileColumns;
+        picParam->log2_tile_cols = (uint8_t)info.log2TileCols;
         // TODO: [Global] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (uint16_t)info.tileCols;
         picParam->tile_rows = (uint16_t)info.tileRows;

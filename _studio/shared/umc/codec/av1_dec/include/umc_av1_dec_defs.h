@@ -71,6 +71,11 @@ namespace UMC_AV1_DECODER
     const Ipp8u PRIMARY_REF_BITS = 3;
     const Ipp8u PRIMARY_REF_NONE = 7;
     const Ipp8u NO_FILTER_FOR_IBC = 1;
+
+    const Ipp32u MAX_TILE_WIDTH = 4096;        // Max Tile width in pixels
+    const Ipp32u MAX_TILE_AREA  = 4096 * 2304;  // Maximum tile area in pixels
+    const Ipp32u MAX_TILE_ROWS  = 1024;
+    const Ipp32u MAX_TILE_COLS  = 1024;
 #endif // UMC_AV1_DECODER_REV >= 5000
 
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
@@ -506,7 +511,7 @@ namespace UMC_AV1_DECODER
 
         WarpedMotionParams globalMotion[TOTAL_REFS];
 
-        Ipp32u log2TileColumns;
+        Ipp32u log2TileCols;
         Ipp32u log2TileRows;
         Ipp32u tileCols;
         Ipp32u tileRows;
@@ -556,7 +561,16 @@ namespace UMC_AV1_DECODER
 
         Ipp32u loopFilterAcrossTilesVEnabled;
         Ipp32u loopFilterAcrossTilesHEnabled;
+
         Ipp32u uniformTileSpacingFlag;
+
+        Ipp32u tileColStartSB[MAX_TILE_COLS + 1];  // valid for 0 <= i <= tileCols
+        Ipp32u tileRowStartSB[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= tileRows
+
+        Ipp32u miCols;
+        Ipp32u miRows;
+        Ipp32u widthSB;
+        Ipp32u heightSB;
 
         Ipp32u largeScaleTile;
 
