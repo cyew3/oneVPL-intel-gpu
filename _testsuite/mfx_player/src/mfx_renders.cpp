@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -767,26 +767,17 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
             mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
             mfxU8 isHalfWidth  = m_nFourCC == MFX_FOURCC_YUV444_16 ? 0 : 1;
+            if (isHalfWidth)
+                pitch /= 2;
+
             if (!skipChroma)
             {
                 crop_x >>= isHalfWidth;
                 crop_y >>= isHalfHeight;
 
-                mfxU32 height = 0;
-                if (isHalfHeight)
-                    height = m_params.VpxDec16bFormat ? (pInfo->CropH + 1)/2 : pInfo->CropH/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
-                else
-                    height = pInfo->CropH;
-                mfxU32 width = 0;
-                if (isHalfWidth)
-                {
-                    width = m_params.VpxDec16bFormat ? (pInfo->CropW + 1)/2 : pInfo->CropW/2; // For VP9 if resolution is odd, chroma on edges will be dumped, otherwise it is cut
-                    pitch /= 2;
-                }
-                else
-                {
-                    width = pInfo->CropW;
-                }
+                mfxU32 height = isHalfHeight ? ((pInfo->CropH + 1) / 2) : pInfo->CropH;
+                mfxU32 width = isHalfWidth ? ((pInfo->CropW + 1) / 2) : pInfo->CropW;
+
                 m_Current.m_comp = VM_STRING('U');
                 for (i = 0; i < height; i++)
                 {
