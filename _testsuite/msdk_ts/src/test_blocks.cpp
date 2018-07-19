@@ -797,6 +797,7 @@ msdk_ts_BLOCK(b_MFXVideoUSER_UnLoad){
 }
 #endif //#ifdef __MFXPLUGIN_H__
 
+#if !(defined(LINUX32) || defined(LINUX64))
 #ifdef __MFXAUDIO_H__
 // audio core
 msdk_ts_BLOCK(b_MFXInitAudio){
@@ -1122,3 +1123,6 @@ msdk_ts_BLOCK(b_MFXAudioDECODE_DecodeFrameAsync){
 }
 
 #endif //#ifdef __MFXAUDIO_H__
+#endif // #if !(defined(LINUX32) || defined(LINUX64))
+
+

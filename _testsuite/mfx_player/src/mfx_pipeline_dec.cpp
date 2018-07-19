@@ -83,8 +83,10 @@ Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 #include "mfxstructures-int.h"
 
+#if !(defined(LINUX32) || defined(LINUX64))
 #define MFX_DISPATCHER_LOG
 #include "mfx_dispatcher_log.h"
+#endif // #if !(defined(LINUX32) || defined(LINUX64))
 
 #ifdef LUCAS_DLL
 #include "lucas.h"
@@ -900,48 +902,16 @@ mfxStatus MFXDecPipeline::InitInputBs(bool &bExtended)
     return MFX_ERR_NONE;
 }
 
-class DispatcherLoadedLibrary : public IMsgHandler
-{
-    tstring m_libPath;
-public:
-    DispatcherLoadedLibrary()
-    {
-        DispatchLog::get().AttachSink(/*DL_SINK_PRINTF |*/ DL_SINK_IMsgHandler, this);
-    }
-    ~DispatcherLoadedLibrary()
-    {
-        DispatchLog::get().DetachSink(/*DL_SINK_PRINTF |*/ DL_SINK_IMsgHandler, this);
-    }
-
-    virtual void Write(int level, int /*opcode*/, const char * msg, va_list argptr)
-    {
-#if defined(_WIN32) || defined(_WIN64)
-        HMODULE libModule;
-        if (level == DL_LOADED_LIBRARY)
-        {
-            char str[32];
-            vsprintf_s(str, MFX_ARRAY_SIZE(str), msg, argptr);
-            if (1 == sscanf(str, "%p", &libModule))
-            {
-                vm_char libPath [2048];
-                GetModuleFileName(libModule,libPath, MFX_ARRAY_SIZE(libPath));
-                m_libPath = libPath;
-            }
-        }
-#endif
-    }
-    tstring GetPath(){return m_libPath;}
-};
-
 mfxStatus MFXDecPipeline::CreateCore()
 {
     MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_HOTSPOTS);
     //shared access prevention section
     {
         AutoPipelineSynhro d3dAcess(m_externalsync);
-        DispatcherLoadedLibrary lib; // not thread-safe
+#ifdef MFX_DISPATCHER_LOG
         if (m_inParams.bSkipUselessOutput)
             DispatchLog::get().DetachAllSinks();
+#endif // MFX_DISPATCHER_LOG
 
 #if defined(_WIN32) || defined(_WIN64)
         MFX::DXVA2Device dxva2device;
@@ -983,7 +953,6 @@ mfxStatus MFXDecPipeline::CreateCore()
             MFX_CHECK_STS(m_components[eDEC].m_pSession->Init(m_components[eDEC].m_libType, m_components[eDEC].m_pLibVersion, m_inParams.pMFXLibraryPath));
         }
 
-        m_components[eDEC].m_mfxLibPath = lib.GetPath();
     }
 
     MFX_CHECK_STS(m_components[eDEC].m_pSession->QueryIMPL(&m_components[eDEC].m_RealImpl));
@@ -1018,13 +987,11 @@ mfxStatus MFXDecPipeline::CreateCore()
 
     if (m_components[eVPP].m_libType == m_components[eDEC].m_libType)
     {
-        m_components[eVPP].m_mfxLibPath = m_components[eDEC].m_mfxLibPath;
         m_components[eVPP].m_RealImpl   = m_components[eDEC].m_RealImpl;
     }
 
     if (m_components[eREN].m_libType == m_components[eDEC].m_libType)
     {
-        m_components[eREN].m_mfxLibPath = m_components[eDEC].m_mfxLibPath;
         m_components[eREN].m_RealImpl   = m_components[eDEC].m_RealImpl;
     }
 
@@ -1033,8 +1000,6 @@ mfxStatus MFXDecPipeline::CreateCore()
         //creating second session
         MFX_CHECK_STS(pSecondParams->m_pSession->Init(pSecondParams->m_libType, pSecondParams->m_pLibVersion, m_inParams.pMFXLibraryPath));
         MFX_CHECK_STS(pSecondParams->m_pSession->QueryIMPL(&pSecondParams->m_RealImpl));
-
-        pSecondParams->m_mfxLibPath = m_components[eDEC].m_mfxLibPath;
 
         //join second session if necessary
 #if (MFX_VERSION_MAJOR >= 1) && (MFX_VERSION_MINOR >= 1)

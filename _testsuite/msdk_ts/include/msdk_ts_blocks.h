@@ -66,7 +66,7 @@ msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_ProcessFrameAsync);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_Load);
 msdk_ts_DECLARE_BLOCK(b_MFXVideoUSER_UnLoad);
 
-
+#if !(defined(LINUX32) || defined(LINUX64))
 // audio core
 msdk_ts_DECLARE_BLOCK(b_MFXInitAudio);
 msdk_ts_DECLARE_BLOCK(b_MFXCloseAudio);
@@ -93,7 +93,7 @@ msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_Reset);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_Close);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_GetAudioParam);
 msdk_ts_DECLARE_BLOCK(b_MFXAudioDECODE_DecodeFrameAsync);
-
+#endif // #if !(defined(LINUX32) || defined(LINUX64))
 /*tools*/
 //IN : request
 //OUT: surf_pool

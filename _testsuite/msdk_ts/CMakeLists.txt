@@ -94,6 +94,7 @@ list( APPEND LIBS
   bs_parser
   umc_va_elk_hw
   dl
+  mfx
   ippi_l ippdc_l ipps_l ippcore_l ippcc_l
   pthread
   mfx_serializer
@@ -142,6 +143,7 @@ list( APPEND LIBS
   ippvc_l ippcc_l ippi_l ipps_l ippcore_l
   sample_common
   pthread
+  mfx
 )
 
 set( defs "-DMFX_VERSION_USE_LATEST ${WARNING_FLAGS}" )
@@ -223,6 +225,7 @@ list( APPEND LIBS
   pthread
   ippvc_l ippcc_l ippi_l ipps_l ippcore_l
   sample_common
+  mfx
   ${PERL_LIBRARY}
 )
 

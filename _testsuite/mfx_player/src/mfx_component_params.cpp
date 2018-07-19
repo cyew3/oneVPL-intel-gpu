@@ -145,8 +145,6 @@ mfxStatus ComponentParams::PrintInfo()
     PipelineTrace((SerializeWithKey(VM_STRING("  External allocator"), m_bExternalAlloc).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  MFX API version"),version).c_str()));
     PipelineTrace((SerializeWithKey(VM_STRING("  MFXImpl"), m_RealImpl).c_str()));
-
-    PrintDllInfo(VM_STRING("  MediaSDK "), m_mfxLibPath.c_str());
     
     return MFX_ERR_NONE;
 }

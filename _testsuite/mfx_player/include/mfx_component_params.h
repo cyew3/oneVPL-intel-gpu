@@ -138,7 +138,6 @@ public:
     //ComponentParams
     mfx_shared_ptr<IVideoSession>  m_Session;
     IVideoSession                * m_pSession;
-    tstring                        m_mfxLibPath;
 
     //stat params
     mfxU32                         m_uiMaxAsyncReached;
