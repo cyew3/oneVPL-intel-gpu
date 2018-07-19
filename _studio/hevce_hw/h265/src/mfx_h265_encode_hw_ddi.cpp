@@ -302,6 +302,17 @@ mfxU16 CodingTypeToSliceType(mfxU16 ct)
     }
 }
 
+#if defined (MFX_ENABLE_HEVCE_ROI) || defined (MFX_ENABLE_HEVCE_DIRTY_RECT)
+bool SkipRectangle(RectData* rect)
+{
+    mfxU16 changed = 0;
+
+    if (rect->Left >= rect->Right || rect->Top >= rect->Bottom)
+        changed++;
+
+    return changed;
+}
+#endif
 
 DDIHeaderPacker::DDIHeaderPacker()
 {
@@ -950,16 +961,20 @@ void FillPpsBuffer(
 
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
         for (mfxU16 i = 0; i < pps.NumROI; i ++)
-        {   // trimming should be done by driver
-            pps.ROI[i].Roi.Left = (mfxU16)(par.m_ext.ROI.ROI[i].Left / blkSize);
-            pps.ROI[i].Roi.Top = (mfxU16)(par.m_ext.ROI.ROI[i].Top / blkSize);
+        {
+            RectData *rect = (RectData*)(&(par.m_ext.ROI.ROI[i]));
+            if (SkipRectangle(rect))
+                continue;
+            // trimming should be done by driver
+            pps.ROI[i].Roi.Left = (mfxU16)(rect->Left / blkSize);
+            pps.ROI[i].Roi.Top = (mfxU16)(rect->Top / blkSize);
             // Driver expects a rect with the 'close' right bottom edge but
             // MSDK uses the 'open' edge rect, thus the right bottom edge which
             // is decreased by 1 below converts 'open' -> 'close' notation
             // We expect here boundaries are already aligned with the BlockSize
             // and Right > Left and Bottom > Top
-            pps.ROI[i].Roi.Right = (mfxU16)(par.m_ext.ROI.ROI[i].Right / blkSize) - 1;
-            pps.ROI[i].Roi.Bottom = (mfxU16)(par.m_ext.ROI.ROI[i].Bottom / blkSize) - 1;
+            pps.ROI[i].Roi.Right = (mfxU16)(rect->Right / blkSize) - 1;
+            pps.ROI[i].Roi.Bottom = (mfxU16)(rect->Bottom / blkSize) - 1;
             pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(priorityToDQPpar ? (-1)*par.m_ext.ROI.ROI[i].Priority : par.m_ext.ROI.ROI[i].Priority);
         }
         pps.MaxDeltaQp = 51;    // is used for BRC only
@@ -1005,16 +1020,21 @@ void FillPpsBuffer(
     pps.NumROI = (mfxU8)task.m_numRoi;
     if (pps.NumROI) {
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
-        for (mfxU16 i = 0; i < task.m_numRoi; i++) {
-            pps.ROI[i].Roi.Left = (mfxU16)(task.m_roi[i].Left / blkSize);
-            pps.ROI[i].Roi.Top = (mfxU16)(task.m_roi[i].Top / blkSize);
+        for (mfxU16 i = 0; i < pps.NumROI; i++)
+        {
+            RectData *rect = (RectData*)(&(task.m_roi[i]));
+            if (SkipRectangle(rect))
+                continue;
+            // trimming should be done by driver
+            pps.ROI[i].Roi.Left = (mfxU16)(rect->Left / blkSize);
+            pps.ROI[i].Roi.Top = (mfxU16)(rect->Top / blkSize);
             // Driver expects a rect with the 'close' right bottom edge but
             // MSDK uses the 'open' edge rect, thus the right bottom edge which
             // is decreased by 1 below converts 'open' -> 'close' notation
             // We expect here boundaries are already aligned with the BlockSize
             // and Right > Left and Bottom > Top
-            pps.ROI[i].Roi.Right = (mfxU16)(task.m_roi[i].Right / blkSize) - 1;
-            pps.ROI[i].Roi.Bottom = (mfxU16)(task.m_roi[i].Bottom / blkSize) - 1;
+            pps.ROI[i].Roi.Right = (mfxU16)(rect->Right / blkSize) - 1;
+            pps.ROI[i].Roi.Bottom = (mfxU16)(rect->Bottom / blkSize) - 1;
             pps.ROI[i].PriorityLevelOrDQp = (mfxI8)(task.m_bPriorityToDQPpar ? (-1)*task.m_roi[i].Priority: task.m_roi[i].Priority);
         }
 
@@ -1035,15 +1055,18 @@ void FillPpsBuffer(
         dirtyRects.resize(task.m_numDirtyRect);
         mfxU32 blkSize = 1 << (caps.BlockSize + 3);
         for (mfxU16 i = 0; i < task.m_numDirtyRect; i++) {
-            dirtyRects[i].Left = (mfxU16)(task.m_dirtyRect[i].Left / blkSize);
-            dirtyRects[i].Top = (mfxU16)(task.m_dirtyRect[i].Top / blkSize);
+            RectData *rect = (RectData*)(&(task.m_dirtyRect[i]));
+            if (SkipRectangle(rect))
+                continue;
+            dirtyRects[i].Left = (mfxU16)(rect->Left / blkSize);
+            dirtyRects[i].Top = (mfxU16)(rect->Top / blkSize);
             // Driver expects a rect with the 'close' right bottom edge but
             // MSDK uses the 'open' edge rect, thus the right bottom edge which
             // is decreased by 1 below converts 'open' -> 'close' notation
             // We expect here boundaries are already aligned with the BlockSize
             // and Right > Left and Bottom > Top
-            dirtyRects[i].Right = (mfxU16)(task.m_dirtyRect[i].Right / blkSize) - 1;
-            dirtyRects[i].Bottom = (mfxU16)(task.m_dirtyRect[i].Bottom / blkSize) - 1;
+            dirtyRects[i].Right = (mfxU16)(rect->Right / blkSize) - 1;
+            dirtyRects[i].Bottom = (mfxU16)(rect->Bottom / blkSize) - 1;
         }
         pps.pDirtyRect = &(dirtyRects[0]);
     } else {
