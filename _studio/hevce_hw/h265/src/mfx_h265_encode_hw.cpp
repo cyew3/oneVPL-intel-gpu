@@ -55,6 +55,8 @@ mfxU32 GetBsSize(mfxFrameInfo& info)
 mfxU32 GetMinBsSize(MfxVideoParam const & par)
 {
     mfxU32 size = par.mfx.FrameInfo.Width * par.mfx.FrameInfo.Height;
+    if (par.m_ext.HEVCParam.PicHeightInLumaSamples && par.m_ext.HEVCParam.PicWidthInLumaSamples)
+        size = par.m_ext.HEVCParam.PicHeightInLumaSamples * par.m_ext.HEVCParam.PicWidthInLumaSamples;
 
     mfxF64 k = 2.0;
 #if (MFX_VERSION >= 1027)
