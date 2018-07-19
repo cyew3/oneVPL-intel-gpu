@@ -118,11 +118,19 @@ void DXDevice::LoadDLLModule(const wchar_t *pModuleName)
 #endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
 
     // load specified library
+#if !defined(OPEN_SOURCE)
 #if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
 #else
     m_hModule = LoadPackagedLibrary(pModuleName, 0);
 #endif
+#else //!defined(OPEN_SOURCE)
+#if !defined(MEDIASDK_UWP_PROCTABLE)
+    m_hModule = LoadLibraryExW(pModuleName, NULL, 0);
+#else
+    m_hModule = LoadPackagedLibrary(pModuleName, 0);
+#endif
+#endif // !defined(OPEN_SOURCE)
 
 #if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     // set the previous error mode
@@ -338,7 +346,7 @@ bool DXGI1Device::Init(const mfxU32 adapterNum)
 
     DXGICreateFactoryFunc pFunc = NULL;
 
-#ifndef MEDIASDK_DFP_LOADER
+#if !defined(OPEN_SOURCE) && !defined(MEDIASDK_DFP_LOADER)
     // load up the library if it is not loaded
     if (NULL == m_hModule)
     {

@@ -38,6 +38,10 @@ File Name: mfx_library_iterator.cpp
 #include "mfx_dxva2_device.h"
 #include "mfx_load_dll.h"
 
+#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+#include "mfx_dxloader.h"
+#endif
+
 #include <tchar.h>
 #include <windows.h>
 
@@ -169,7 +173,7 @@ void MFXLibraryIterator::Release(void)
     m_SubKeyName[0] = 0;
 
 } // void MFXLibraryIterator::Release(void)
-#if !defined(MEDIASDK_DFP_LOADER)
+#if !defined(OPEN_SOURCE) && !defined(MEDIASDK_DFP_LOADER)
 DECLSPEC_NOINLINE HMODULE GetThisDllModuleHandle()
 {
   HMODULE hDll = HMODULE(-1);
@@ -193,7 +197,7 @@ bool GetImplPath(int storageID, msdk_disp_char* sImplPath)
         hModule = 0;
         break;
 
-#if !defined(MEDIASDK_DFP_LOADER)
+#if !defined(OPEN_SOURCE) && !defined(MEDIASDK_DFP_LOADER)
     case MFX_PATH_MSDK_FOLDER:
         hModule = GetThisDllModuleHandle();
         break;
@@ -240,6 +244,17 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     m_StorageID = storageID;
     m_lastLibIndex = 0;
 
+#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+    if (storageID == MFX_DX_LOADER)
+    {
+        if (MFX_LIB_HARDWARE != implType)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
+        return InitDXInterface(implType, implInterface, adapterNum);
+    }
+#endif
+
 #if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     if (storageID == MFX_CURRENT_USER_KEY || storageID == MFX_LOCAL_MACHINE_KEY)
     {
@@ -256,6 +271,22 @@ mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, mfxIMPL implInterface,
     return InitFolder(implType, implInterface, adapterNum, sCurrentModulePath, storageID);
 
 } // mfxStatus MFXLibraryIterator::Init(eMfxImplType implType, const mfxU32 adapterNum, int storageID)
+
+#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+mfxStatus MFXLibraryIterator::InitDXInterface(eMfxImplType, mfxIMPL, const mfxU32 adapterNum)
+{
+    MfxDxLoader *loader = NULL;
+
+    loader = MfxDxLoader::GetMfxDxLoader();
+    if (!loader)
+        return MFX_ERR_NULL_PTR;
+
+    if (!loader->IsInitialized())
+        return loader->Init(adapterNum);
+
+    return MFX_ERR_NONE;
+} // mfxStatus MFXLibraryIterator::InitDXInterface(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum)
+#endif //!defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
 
 mfxStatus MFXLibraryIterator::InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID)
 {
@@ -359,6 +390,20 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
         return MFX_ERR_NONE;
     }
 
+#ifdef MEDIASDK_DX_LOADER
+    if (m_StorageID == MFX_DX_LOADER)
+    {
+        if (!MfxDxLoader::GetMfxDxLoader()->IsInitialized())
+            return MFX_ERR_NOT_FOUND;
+
+        m_lastLibIndex = 1;
+        // DX Loader provides only HW implementation
+        *pImplType = MFX_LIB_HARDWARE;
+        return MFX_ERR_NONE;
+    }
+#endif
+
+#if !defined(OPEN_SOURCE) && !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_DX_LOADER)
     if (m_StorageID == MFX_PATH_MSDK_FOLDER) {
 
         if (m_lastLibIndex != 0)
@@ -372,6 +417,7 @@ mfxStatus MFXLibraryIterator::SelectDLLVersion(wchar_t *pPath
         //*pImplType = MFX_LIB_HARDWARE;
         return MFX_ERR_NONE;
     }
+#endif // !defined(OPEN_SOURCE) && !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_DX_LOADER)
 
 #if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
     wchar_t libPath[MFX_MAX_DLL_PATH] = L"";

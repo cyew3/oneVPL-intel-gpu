@@ -211,11 +211,19 @@ mfxModuleHandle mfx_dll_load(const msdk_disp_char *pFileName)
 #endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
 
 // load the library's module
+#if !defined(OPEN_SOURCE)
 #if !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
     hModule = LoadLibraryExW(pFileName, NULL, 0);
 #else
     hModule = LoadPackagedLibrary(pFileName, 0);
 #endif
+#else // !defined(OPEN_SOURCE)
+#if !defined(MEDIASDK_UWP_PROCTABLE)
+    hModule = LoadLibraryExW(pFileName, NULL, 0);
+#else
+    hModule = LoadPackagedLibrary(pFileName, 0);
+#endif
+#endif // !defined(OPEN_SOURCE)
 
 #if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
         // set the previous error mode

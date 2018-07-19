@@ -463,7 +463,33 @@ bool MFX::MFXPluginsInFS::ParseKVPair( msdk_disp_char * key, msdk_disp_char* val
     return true;
 }
 #endif //#if defined(MEDIASDK_USE_CFGFILES) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+
+#if !defined(OPEN_SOURCE)
+#define MFX_NO_DEFAULT_PLUGINS
 #if !defined(MEDIASDK_DFP_LOADER)
+#undef MFX_NO_DEFAULT_PLUGINS
+#else
+MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, int implType)
+    : MFXPluginStorageBase(currentAPIVersion)
+{
+    msdk_disp_char libModuleName[MAX_PLUGIN_PATH];
+    mfx_get_default_plugin_name(libModuleName, MAX_PLUGIN_PATH, (eMfxImplType)implType);
+
+    // add single default plugin description
+    PluginDescriptionRecord descriptionRecord;
+    descriptionRecord.APIVersion = currentAPIVersion;
+    descriptionRecord.Default = true;
+
+    msdk_disp_char_cpy_s(descriptionRecord.sPath
+        , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
+
+    push_back(descriptionRecord);
+
+}
+#endif
+#endif
+
+#ifndef MFX_NO_DEFAULT_PLUGINS
 MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP_HANDLE * hdl, int implType)
     : MFXPluginStorageBase(currentAPIVersion)
 {
@@ -504,24 +530,6 @@ MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, MFX_DISP
     {
         TRACE_HIVE_INFO("GetFileAttributesW() unable to locate default plugin dll named %S\n", libModuleName);
     }
-}
-#else//#if !defined(MEDIASDK_DFP_LOADER)
-MFX::MFXDefaultPlugins::MFXDefaultPlugins(mfxVersion currentAPIVersion, int implType)
-    : MFXPluginStorageBase(currentAPIVersion)
-{
-    msdk_disp_char libModuleName[MAX_PLUGIN_PATH];
-    mfx_get_default_plugin_name(libModuleName, MAX_PLUGIN_PATH, (eMfxImplType)implType);
-
-    // add single default plugin description
-    PluginDescriptionRecord descriptionRecord;
-    descriptionRecord.APIVersion = currentAPIVersion;
-    descriptionRecord.Default = true;
-
-    msdk_disp_char_cpy_s(descriptionRecord.sPath
-        , sizeof(descriptionRecord.sPath) / sizeof(*descriptionRecord.sPath), libModuleName);
-
-    push_back(descriptionRecord);
-
 }
 #endif
 

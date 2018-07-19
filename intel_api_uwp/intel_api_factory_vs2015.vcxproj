@@ -41,6 +41,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <ProjectName>intel_gfx_api</ProjectName>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformVersion>$(MINIDDK_VERSION)</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.10240.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
@@ -185,7 +186,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -205,8 +206,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -215,7 +216,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;d3d11.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
@@ -225,7 +226,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -241,8 +242,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|Win32'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <ExceptionHandling>Async</ExceptionHandling>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -250,7 +251,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;d3d11.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
@@ -259,7 +260,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -269,14 +270,13 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalDependencies>onecore.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_DFP|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDLL;_DEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -285,7 +285,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
-      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;d3d11.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
@@ -295,7 +295,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_USE_CFGFILES;MEDIASDK_USE_REGISTRY;MEDIASDK_UWP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
@@ -311,8 +311,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_DFP|x64'">
     <ClCompile>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDLL;NDEBUG;MEDIASDK_DX_LOADER;MEDIASDK_UWP_LOADER;MEDIASDK_DFP_LOADER;WINAPI_FAMILY=WINAPI_FAMILY_SYSTEM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -322,7 +322,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
       <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
       <AdditionalLibraryDirectories>
       </AdditionalLibraryDirectories>
-      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
+      <AdditionalDependencies>WindowsApp.lib;dxgi.lib;d3d11.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
     <PostBuildEvent>
@@ -334,7 +334,8 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_win_reg_key.cpp" />
-    <ClCompile Include="src\intel_api_factory.cpp"/>
+    <ClCompile Include="src\intel_api_factory.cpp" />
+    <ClCompile Include="src\mfx_dxloader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\opensource\mfx_dispatch\src\main.cpp" />
@@ -363,6 +364,7 @@ rmdir /s /q "%tmp_path%"</MfxAppxPacking>
     <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_plugin_hive.h" />
     <ClInclude Include="..\opensource\mfx_dispatch\include\mfx_win_reg_key.h" />
     <ClInclude Include="..\opensource\mfx_dispatch\include\intel_api_factory.h" />
+    <ClInclude Include="include\mfx_dxloader.h" />
     <ClInclude Include="src\resource.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

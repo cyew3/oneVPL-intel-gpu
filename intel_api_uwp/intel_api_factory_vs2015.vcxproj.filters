@@ -19,7 +19,6 @@
     <None Include="src\intel_api.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\pch.cpp" />
     <ClCompile Include="src\intel_api_factory.cpp" />
     <ClCompile Include="..\opensource\mfx_dispatch\src\main.cpp">
       <Filter>dispatcher\src</Filter>
@@ -54,11 +53,11 @@
     <ClCompile Include="..\opensource\mfx_dispatch\src\mfx_win_reg_key.cpp">
       <Filter>dispatcher\src</Filter>
     </ClCompile>
+    <ClCompile Include="src\mfx_dxloader.cpp">
+      <Filter>dispatcher\src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\pch.h" />
-    <ClInclude Include="src\targetver.h" />
-    <ClInclude Include="include\intel_api_factory.h" />
     <ClInclude Include="src\resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
@@ -96,6 +95,10 @@
       <Filter>dispatcher\include</Filter>
     </ClInclude>
     <ClInclude Include="..\opensource\mfx_dispatch\include\mfxaudio_exposed_functions_list.h">
+      <Filter>dispatcher\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\opensource\mfx_dispatch\include\intel_api_factory.h" />
+    <ClInclude Include="include\mfx_dxloader.h">
       <Filter>dispatcher\include</Filter>
     </ClInclude>
   </ItemGroup>

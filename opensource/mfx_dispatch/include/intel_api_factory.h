@@ -30,6 +30,10 @@ File Name: intel_api_factory.h
 
 #pragma once
 
+#ifndef __INTEL_API_FACTORY_H
+#define __INTEL_API_FACTORY_H
+
+#if !defined(OPEN_SOURCE)
 #if defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_ARM_LOADER)
 
 #ifdef __cplusplus
@@ -44,4 +48,23 @@ HRESULT APIENTRY DisposeMediaSession(_In_ const HANDLE handle);
 }
 #endif /* __cplusplus */
 
-#endif /* defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER) */
+#endif // defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_ARM_LOADER)
+#else // !defined(OPEN_SOURCE)
+#if defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_ARM_LOADER)
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
+    HRESULT APIENTRY InitialiseMediaSession(_Out_ HANDLE* handle, _In_ LPVOID lpParam, _Reserved_ LPVOID lpReserved);
+    HRESULT APIENTRY DisposeMediaSession(_In_ const HANDLE handle);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif //defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_ARM_LOADER)
+#endif // !defined(OPEN_SOURCE)
+
+#endif // __INTEL_API_FACTORY_H

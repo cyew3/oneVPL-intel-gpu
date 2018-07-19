@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -43,6 +43,8 @@ File Name: mfx_dispatcher.h
 #define INTEL_VENDOR_ID 0x8086
 
 mfxStatus MFXQueryVersion(mfxSession session, mfxVersion *version);
+
+
 
 enum
 {
@@ -145,7 +147,10 @@ struct MFX_DISP_HANDLE : public _mfxSession
 
     // Load the library's module
     mfxStatus LoadSelectedDLL(const msdk_disp_char *pPath, eMfxImplType implType, mfxIMPL impl, mfxIMPL implInterface, mfxInitParam &par);
-    // Unload the library's module
+#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+    mfxStatus LoadViaDXInterface(eMfxImplType reqImplType, mfxIMPL reqImpl, mfxIMPL reqImplInterface, mfxInitParam &par);
+#endif
+        // Unload the library's module
     mfxStatus UnLoadSelectedDLL(void);
 
     // Close the handle
