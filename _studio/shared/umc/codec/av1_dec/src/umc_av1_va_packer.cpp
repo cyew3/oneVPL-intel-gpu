@@ -95,19 +95,34 @@ namespace UMC_AV1_DECODER
 
         PackPicParams(picParam, info);
 
-        UMCVACompBuffer* compBufSeg = NULL;
-        DXVA_Intel_BitStream_AV1_Short *bsControlParam = (DXVA_Intel_BitStream_AV1_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufSeg);
-        if (!bsControlParam || !compBufSeg || (compBufSeg->GetBufferSize() < sizeof(DXVA_Intel_BitStream_AV1_Short)))
-            throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_MEMORY_ALLOC);
-
-        compBufSeg->SetDataSize(sizeof(DXVA_Intel_BitStream_AV1_Short));
-        memset(bsControlParam, 0, sizeof(DXVA_Intel_BitStream_AV1_Short));
-
-        PackBitstreamControlParams(bsControlParam, info);
-
         Ipp8u* data;
         Ipp32u length;
         bs->GetOrg(&data, &length);
+
+#if AV1D_DDI_VERSION >= 21
+        UMCVACompBuffer* compBufTile = NULL;
+
+        DXVA_Intel_Tile_AV1 *tileControlParam = (DXVA_Intel_Tile_AV1*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufTile);
+        if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < sizeof(DXVA_Intel_Tile_AV1)))
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        compBufTile->SetDataSize(sizeof(DXVA_Intel_Tile_AV1));
+        memset(tileControlParam, 0, sizeof(DXVA_Intel_Tile_AV1));
+
+        PackTileControlParams(tileControlParam, info, length);
+#else
+        UMCVACompBuffer* compBufBsCtrl = NULL;
+
+        DXVA_Intel_BitStream_AV1_Short *bsControlParam = (DXVA_Intel_BitStream_AV1_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufBsCtrl);
+        if (!bsControlParam || !compBufBsCtrl || (compBufBsCtrl->GetBufferSize() < sizeof(DXVA_Intel_BitStream_AV1_Short)))
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        compBufBsCtrl->SetDataSize(sizeof(DXVA_Intel_BitStream_AV1_Short));
+        memset(bsControlParam, 0, sizeof(DXVA_Intel_BitStream_AV1_Short));
+
+        PackBitstreamControlParams(bsControlParam, info);
+#endif
+
         Ipp32u offset = (Ipp32u)bs->BytesDecoded();
         length -= offset;
 
@@ -141,14 +156,71 @@ namespace UMC_AV1_DECODER
     {
         SequenceHeader const& sh = frame->GetSeqHeader();
 
-        picParam->dwFormatAndPictureInfoFlags.fields.frame_id_numbers_present_flag = sh.frame_id_numbers_present_flag;
-        picParam->dwFormatAndPictureInfoFlags.fields.use_reference_buffer = sh.frame_id_numbers_present_flag;
-
         FrameHeader const& info =
             frame->GetFrameHeader();
 
         picParam->frame_width_minus1 = (USHORT)info.width - 1;
         picParam->frame_height_minus1 = (USHORT)info.height - 1;
+
+#if AV1D_DDI_VERSION >= 21
+        // fill seq parameters
+        picParam->profile = (UCHAR)sh.profile;
+
+        auto& ddiSeqParam = picParam->dwSeqInfoFlags.fields;
+
+        ddiSeqParam.still_picture = 0;
+        ddiSeqParam.sb_size_128x128 = (sh.sb_size == BLOCK_128X128) ? 1 : 0;
+        ddiSeqParam.enable_filter_intra = info.allowFilterIntra;
+        ddiSeqParam.enable_intra_edge_filter = info.enableIntraEdgeFilter;
+
+        ddiSeqParam.enable_interintra_compound = info.allowInterIntraCompound;
+        ddiSeqParam.enable_masked_compound = info.allowMaskedCompound;
+
+        ddiSeqParam.enable_dual_filter = sh.enable_dual_filter;
+        ddiSeqParam.enable_order_hint = sh.enable_order_hint;
+        ddiSeqParam.enable_jnt_comp = sh.enable_jnt_comp;
+        ddiSeqParam.enable_cdef = 1;
+        ddiSeqParam.enable_restoration = 1;
+        ddiSeqParam.BitDepthIdx = (sh.bit_depth == 10) ? 1 :
+            (sh.bit_depth == 12) ? 2 : 0;
+        ddiSeqParam.mono_chrome = sh.monochrome;
+        ddiSeqParam.color_range = sh.color_range;
+        ddiSeqParam.subsampling_x = sh.subsampling_x;
+        ddiSeqParam.subsampling_y = sh.subsampling_y;
+        ddiSeqParam.chroma_sample_position = sh.chroma_sample_position;
+        ddiSeqParam.film_grain_params_present = sh.film_grain_param_present;
+#ifdef DDI_HACKS_FOR_REV_5
+        ddiSeqParam.order_hint_bits_minus1 = sh.order_hint_bits_minus1;
+#endif
+
+        // fill pic params
+        auto& ddiPicParam = picParam->dwPicInfoFlags.fields;
+
+        ddiPicParam.frame_type = info.frameType;
+        ddiPicParam.show_frame = info.showFrame;
+        ddiPicParam.showable_frame = info.showableFrame;
+        ddiPicParam.error_resilient_mode = info.errorResilientMode;
+        ddiPicParam.disable_cdf_update = info.disableCdfUpdate;
+        ddiPicParam.allow_screen_content_tools = info.allowScreenContentTools;
+        ddiPicParam.force_integer_mv = info.curFrameForceIntegerMV;
+        ddiPicParam.allow_intrabc = info.allowIntraBC;
+        ddiPicParam.use_superres = (info.superresScaleDenominator == SCALE_NUMERATOR) ? 0 : 1;
+        ddiPicParam.allow_high_precision_mv = info.allowHighPrecisionMv;
+        ddiPicParam.is_motion_mode_switchable = info.switchableMotionMode;
+        ddiPicParam.use_ref_frame_mvs = info.usePrevMVs;
+        ddiPicParam.disable_frame_end_update_cdf = (info.refreshFrameContext == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
+        ddiPicParam.uniform_tile_spacing_flag = info.uniformTileSpacingFlag;
+        ddiPicParam.allow_warped_motion = 0;
+        ddiPicParam.refresh_frame_context = info.refreshFrameContext;
+        ddiPicParam.large_scale_tile = info.largeScaleTile;
+
+        picParam->order_hint = (UCHAR)info.orderHint;
+        picParam->superres_scale_denominator = (UCHAR)info.superresScaleDenominator;
+#else // AV1D_DDI_VERSION >= 21
+        picParam->profile = (UCHAR)info.profile;
+
+        picParam->dwFormatAndPictureInfoFlags.fields.frame_id_numbers_present_flag = sh.frame_id_numbers_present_flag;
+        picParam->dwFormatAndPictureInfoFlags.fields.use_reference_buffer = sh.frame_id_numbers_present_flag;
 
         picParam->dwFormatAndPictureInfoFlags.fields.frame_type = info.frameType;
         picParam->dwFormatAndPictureInfoFlags.fields.show_frame = info.showFrame;
@@ -159,7 +231,16 @@ namespace UMC_AV1_DECODER
         picParam->dwFormatAndPictureInfoFlags.fields.allow_high_precision_mv = info.allowHighPrecisionMv;
         picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128X128) ? 1 : 0;
 
+        picParam->dwFormatAndPictureInfoFlags.fields.reset_frame_context = info.resetFrameContext;
+        picParam->dwFormatAndPictureInfoFlags.fields.refresh_frame_context = info.refreshFrameContext;
+        picParam->dwFormatAndPictureInfoFlags.fields.frame_context_idx = info.frameContextIdx;
+
+        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)info.subsamplingX;
+        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)info.subsamplingY;
+#endif // AV1D_DDI_VERSION >= 21
+
         picParam->frame_interp_filter = (UCHAR)info.interpFilter;
+
         picParam->stAV1Segments.enabled = info.segmentation.enabled;
         picParam->stAV1Segments.temporal_update = info.segmentation.temporalUpdate;
         picParam->stAV1Segments.update_map = info.segmentation.updateMap;
@@ -172,59 +253,72 @@ namespace UMC_AV1_DECODER
                 picParam->stAV1Segments.feature_data[i][j] = (SHORT)info.segmentation.featureData[i][j];
         }
 
-        picParam->dwFormatAndPictureInfoFlags.fields.reset_frame_context = info.resetFrameContext;
-        picParam->dwFormatAndPictureInfoFlags.fields.refresh_frame_context = info.refreshFrameContext;
-        picParam->dwFormatAndPictureInfoFlags.fields.frame_context_idx = info.frameContextIdx;
-
         if (KEY_FRAME == info.frameType)
+        {
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
+#if AV1D_DDI_VERSION >= 21
+                picParam->ref_frame_map[i].wPicEntry = USHRT_MAX;
+#else
                 picParam->ref_frame_map[i].bPicEntry = UCHAR_MAX;
+#endif
             }
+        }
         else
         {
             for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+#if AV1D_DDI_VERSION >= 21
+                picParam->ref_frame_map[ref].wPicEntry = (USHORT)frame->frame_dpb[ref]->GetMemID();
+#else
                 picParam->ref_frame_map[ref].bPicEntry = (UCHAR)frame->frame_dpb[ref]->GetMemID();
+#endif
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
                 Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
+#if AV1D_DDI_VERSION >= 21
+                picParam->ref_frame_idx[ref_idx] = idxInDPB;
+                picParam->ref_order_hint[ref_idx] = (UCHAR)frame->frame_dpb[idxInDPB]->GetFrameHeader().orderHint;
+#else
                 picParam->ref_frame_idx[ref_idx].bPicEntry = idxInDPB;
                 picParam->ref_frame_sign_bias[ref_idx + 1] = (UCHAR)info.refFrameSignBias[ref_idx];
+#endif
             }
         }
 
+#if AV1D_DDI_VERSION >= 21
+        picParam->CurrPic.wPicEntry = (USHORT)frame->GetMemID();
+        picParam->CurrDisplayPic.wPicEntry = (USHORT)frame->GetMemID();
+        picParam->primary_ref_frame = (UCHAR)info.primaryRefFrame;
+#else
         picParam->CurrPic.bPicEntry = (UCHAR)frame->GetMemID();
+#endif
 
         picParam->filter_level[0] = (UCHAR)info.lf.filterLevel[0];
         picParam->filter_level[1] = (UCHAR)info.lf.filterLevel[1];
         picParam->filter_level_u = (UCHAR)info.lf.filterLevelU;
         picParam->filter_level_v = (UCHAR)info.lf.filterLevelV;
 
-        picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
-        picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
-
-        picParam->BSBytesInBuffer = info.frameDataSize;
-        picParam->StatusReportFeedbackNumber = ++m_report_counter;
-
-#if UMC_AV1_DECODER_REV >= 5000
-        picParam->profile = (UCHAR)sh.profile;
-        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)sh.subsampling_x;
-        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)sh.subsampling_x;
+#if AV1D_DDI_VERSION >= 21
+        auto& ddiLFInfoFlags = picParam->cLoopFilterInfoFlags.fields;
+        ddiLFInfoFlags.sharpness_level = (UCHAR)info.lf.sharpnessLevel;
+        ddiLFInfoFlags.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
+        ddiLFInfoFlags.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
 #else
-        picParam->profile = (UCHAR)info.profile;
-        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)info.subsamplingX;
-        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)info.subsamplingY;
+        picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
+        picParam->wControlInfoFlags.fields.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
+        picParam->wControlInfoFlags.fields.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
+        picParam->wControlInfoFlags.fields.use_prev_frame_mvs = info.usePrevMVs;
+
+        picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
+        picParam->BSBytesInBuffer = info.frameDataSize;
 #endif
+
+        picParam->StatusReportFeedbackNumber = ++m_report_counter;
 
 #ifdef DDI_HACKS_FOR_REV_252
         picParam->BitDepthMinus8 = (UCHAR)info.bitDepth - 8;
-#else
-        picParam->bit_depth = (UCHAR)sh.bit_depth;
 #endif
-
-        picParam->wControlInfoFlags.fields.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
-        picParam->wControlInfoFlags.fields.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
         for (Ipp8u i = 0; i < TOTAL_REFS; i++)
         {
             picParam->ref_deltas[i] = info.lf.refDeltas[i];
@@ -233,9 +327,6 @@ namespace UMC_AV1_DECODER
         {
             picParam->mode_deltas[i] = info.lf.modeDeltas[i];
         }
-
-        picParam->wControlInfoFlags.fields.use_prev_frame_mvs = info.usePrevMVs;
-        picParam->wControlInfoFlags.fields.ReservedField = 0;
 
         picParam->base_qindex = (SHORT)info.baseQIndex;
         picParam->y_dc_delta_q = (CHAR)info.yDcDeltaQ;
@@ -247,18 +338,35 @@ namespace UMC_AV1_DECODER
         memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
 
+#if AV1D_DDI_VERSION >= 21
+        picParam->cdef_damping_minus_3 = (UCHAR)(info.cdefPriDamping - 3);
+#else
         picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
         picParam->cdef_sec_damping = (UCHAR)info.cdefSecDamping;
+#endif
         picParam->cdef_bits = (UCHAR)info.cdefBits;
 
         for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            picParam->cdef_strengths[i] = (UCHAR)info.cdefStrength[i];
+            picParam->cdef_y_strengths[i] = (UCHAR)info.cdefStrength[i];
             picParam->cdef_uv_strengths[i] = (UCHAR)info.cdefUVStrength[i];
         }
+
+#if AV1D_DDI_VERSION >= 21
+        auto& ddiQMFlags = picParam->wQMatrixFlags.fields;
+        ddiQMFlags.using_qmatrix = info.useQMatrix;
+        ddiQMFlags.qm_y = info.qmY;
+        ddiQMFlags.qm_u = info.qmU;;
+        ddiQMFlags.qm_v = info.qmV;;
+#else
         picParam->dwModeControlFlags.fields.using_qmatrix = info.useQMatrix;
         picParam->dwModeControlFlags.fields.min_qmlevel = info.minQMLevel;
         picParam->dwModeControlFlags.fields.max_qmlevel = info.maxQMLevel;
+        picParam->dwModeControlFlags.fields.allow_interintra_compound = info.allowInterIntraCompound;
+        picParam->dwModeControlFlags.fields.allow_masked_compound = info.allowMaskedCompound;
+        picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
+        picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allowScreenContentTools;
+#endif
         picParam->dwModeControlFlags.fields.delta_q_present_flag = info.deltaQPresentFlag;
         picParam->dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.deltaQRes);
         picParam->dwModeControlFlags.fields.delta_lf_present_flag = info.deltaLFPresentFlag;
@@ -266,11 +374,7 @@ namespace UMC_AV1_DECODER
         picParam->dwModeControlFlags.fields.delta_lf_multi = info.deltaLFMulti;
         picParam->dwModeControlFlags.fields.tx_mode = info.txMode;
         picParam->dwModeControlFlags.fields.reference_mode = info.referenceMode;
-        picParam->dwModeControlFlags.fields.allow_interintra_compound = info.allowInterIntraCompound;
-        picParam->dwModeControlFlags.fields.allow_masked_compound = info.allowMaskedCompound;
         picParam->dwModeControlFlags.fields.reduced_tx_set_used = info.reducedTxSetUsed;
-        picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
-        picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allowScreenContentTools;
         picParam->dwModeControlFlags.fields.ReservedField = 0;
 
         picParam->LoopRestorationFlags.fields.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
@@ -279,29 +383,64 @@ namespace UMC_AV1_DECODER
         picParam->LoopRestorationFlags.fields.lr_unit_shift = info.lrUnitShift;
         picParam->LoopRestorationFlags.fields.lr_uv_shift = info.lrUVShift;
 
+#if AV1D_DDI_VERSION >= 21
+        for (Ipp8u i = 0; i < INTER_REFS; i++)
+        {
+            picParam->wm[i].wmtype = info.globalMotion[i + 1].wmtype;
+            for (Ipp8u j = 0; j < 8; j++)
+            {
+                picParam->wm[i].wmmat[j] = info.globalMotion[i + 1].wmmat[j];
+                // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
+            }
+        }
+#else // AV1D_DDI_VERSION >= 21
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
             picParam->gm_type[i] = (UCHAR)info.globalMotion[i + 1].wmtype;
-        }
-        for (Ipp8u i = 0; i < INTER_REFS; i++)
-        {
-            for (auto j = 0; j < 6; j++) // why only 6?
+            for (Ipp8u j = 0; j < 6; j++) // why only 6?
             {
                 picParam->gm_params[i][j] = info.globalMotion[i + 1].wmmat[j];
             }
         }
+#endif // AV1D_DDI_VERSION >= 21
 
         picParam->tg_size_bit_offset = info.tileGroupBitOffset;
 
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
         picParam->log2_tile_cols = (UCHAR)info.log2TileColumns;
 
-        // TODO: [Global] add proper calculation of tile_rows/tile_cols during read of uncompressed header
+        // TODO: [Rev0.5] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (USHORT)info.tileCols;
         picParam->tile_rows = (USHORT)info.tileRows;
+#if AV1D_DDI_VERSION >= 21
+        const Ipp32u sbSize = (sh.sb_size == BLOCK_128X128) ? 128 : 64;
+
+        // TODO: [Rev0.5] Add support for multiple tiles
+        picParam->width_in_sbs_minus_1[0] = (USHORT)((info.width + sbSize - 1) / sbSize);
+        picParam->height_in_sbs_minus_1[0] = (USHORT)((info.height + sbSize - 1) / sbSize);
+#else
         picParam->tile_size_bytes = (UCHAR)info.tileSizeBytes;
+#endif
     }
 
+#if AV1D_DDI_VERSION >= 21
+    void PackerIntel::PackTileControlParams(DXVA_Intel_Tile_AV1* tileControlParam, AV1DecoderFrame const* frame, Ipp32u size)
+    {
+        FrameHeader const& info =
+            frame->GetFrameHeader();
+
+        // TODO: [Rev0.5] Add support for multiple tiles
+        tileControlParam->BSTileDataLocation = info.firstTileOffset;
+        tileControlParam->BSTileBytesInBuffer = size - tileControlParam->BSTileDataLocation;
+        tileControlParam->wBadBSBufferChopping = 0;
+        tileControlParam->tile_row = 0;
+        tileControlParam->tile_column = 0;
+        tileControlParam->StartTileIdx = 0;
+        tileControlParam->EndTileIdx = 0;
+        tileControlParam->anchor_frame_idx.Index15Bits = 0;
+        tileControlParam->BSTilePayloadSizeInBytes = size - tileControlParam->BSTileDataLocation;
+    }
+#else
     void PackerIntel::PackBitstreamControlParams(DXVA_Intel_BitStream_AV1_Short* bsControlParam, AV1DecoderFrame const* frame)
     {
         FrameHeader const& info =
@@ -311,6 +450,7 @@ namespace UMC_AV1_DECODER
         bsControlParam->BitStreamBytesInBuffer = info.frameDataSize - info.frameHeaderLength;
         bsControlParam->wBadBSBufferChopping = 0;
     }
+#endif
 
 #endif // UMC_VA_DXVA
 

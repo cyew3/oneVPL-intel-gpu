@@ -1983,8 +1983,8 @@ namespace UMC_AV1_DECODER
             throw av1_exception(UMC::UMC_ERR_FAILED);
 
 #if UMC_AV1_DECODER_REV >= 5000
-        const bool largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
-        if (!(fh->errorResilientMode || largeScaleTile))
+        fh->largeScaleTile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
+        if (!(fh->errorResilientMode || fh->largeScaleTile))
         {
             fh->refreshFrameContext = GetBit()
                 ? REFRESH_FRAME_CONTEXT_DISABLED

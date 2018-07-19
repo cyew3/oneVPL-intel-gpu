@@ -167,7 +167,12 @@ namespace UMC_AV1_DECODER
                         continue;
 
                     bool wasFound = false;
-                    if (pStatusReport[i].current_picture.Index7Bits == frame.GetMemID()) // report for the frame was found in new reports 
+#if AV1D_DDI_VERSION >= 21
+                    const Ipp16u& index = pStatusReport[i].current_picture.Index15Bits;
+#else
+                    const Ipp8u& index = pStatusReport[i].current_picture.Index7Bits;
+#endif
+                    if (index == frame.GetMemID()) // report for the frame was found in new reports
                     {
                         SetError(&frame, pStatusReport[i].bStatus);
                         frame.CompleteDecoding();
@@ -177,10 +182,10 @@ namespace UMC_AV1_DECODER
 
                     if (!wasFound) // new reports don't contain report for current frame
                     {
-                        if (std::find(reports.begin(), reports.end(), ReportItem(pStatusReport[i].current_picture.Index7Bits, 0)) == reports.end()) // discard new reports which duplicate previously cached reports
+                        if (std::find(reports.begin(), reports.end(), ReportItem(index, 0)) == reports.end()) // discard new reports which duplicate previously cached reports
                         {
                             // push unique new reports to status report cache
-                            reports.push_back(ReportItem(pStatusReport[i].current_picture.Index7Bits, pStatusReport[i].bStatus));
+                            reports.push_back(ReportItem(index, pStatusReport[i].bStatus));
                             // if got at least one unique report - stop getting more status reports from the driver
                             wasCompleted = true;
                         }

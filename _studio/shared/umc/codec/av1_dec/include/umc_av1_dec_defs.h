@@ -561,10 +561,10 @@ namespace UMC_AV1_DECODER
         Ipp32u largeScaleTile;
 
         Ipp32u firstTileOffset;
-#endif
-
+#else // UMC_AV1_DECODER_REV >= 5000
         Ipp32u frameHeaderLength;
         Ipp32u frameDataSize;
+#endif // UMC_AV1_DECODER_REV >= 5000
     };
 
 #if UMC_AV1_DECODER_REV >= 5000
