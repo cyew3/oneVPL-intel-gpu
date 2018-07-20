@@ -23,7 +23,7 @@
 #include "umc_mvc_ddi.h"
 #include "umc_hevc_ddi.h"
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 #include "umc_win_event_cache.h"
 #endif
 
@@ -195,7 +195,7 @@ protected:
     UMCVACompBuffer         m_pCompBuffer[MAX_BUFFER_TYPES];
     std::vector<Ipp32s>     m_bufferOrder;
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     struct DdiEvent
     {
         uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID
@@ -250,7 +250,7 @@ protected:
                           DXVA2_ConfigPictureDecode     *pDecoderConfig,
                           int                           cNumberSurfaces);
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     virtual Status RegisterGpuEvent(DdiEvent &ev);
 #endif
 private:

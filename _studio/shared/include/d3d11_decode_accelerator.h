@@ -69,7 +69,7 @@ public:
 
     virtual UMC::Status Close();
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 protected:
     virtual UMC::Status RegisterGpuEvent(DdiEvent &ev);
 #endif

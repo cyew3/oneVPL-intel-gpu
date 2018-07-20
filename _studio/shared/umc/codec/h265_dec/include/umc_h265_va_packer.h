@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -150,6 +150,9 @@ public:
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size) = 0;
     virtual UMC::Status SyncTask(Ipp32s index, void * error) = 0;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    virtual bool IsGPUSyncEventDisable() = 0;
+#endif
 
     virtual void BeginFrame(H265DecoderFrame*) = 0;
     virtual void EndFrame() = 0;

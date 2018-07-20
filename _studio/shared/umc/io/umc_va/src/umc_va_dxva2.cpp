@@ -72,7 +72,7 @@ private:
 
 DXAccelerator::DXAccelerator()
 {
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     m_EventsMap.Init();
 #endif
 }
@@ -93,9 +93,12 @@ Status DXAccelerator::BeginFrame(Ipp32s  index, Ipp32u fieldId)
 {
     (void)fieldId;
     Status sts = BeginFrame(index);
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     if (sts != UMC_OK)
         return sts;
+    if (IsGPUSyncEventDisable())
+        return sts;
+
     DdiEvent ev;
     const uint8_t GPU_COMPONENT_DECODE_ID = 2;
     ev.m_gpuComponentId = GPU_COMPONENT_DECODE_ID; // GPU_COMPONENT_DECODE
@@ -118,7 +121,9 @@ Status DXAccelerator::SyncTask(Ipp32s index, void * error)
 {
     (void)index;
     (void)error;
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    if (IsGPUSyncEventDisable())
+        return UMC_ERR_UNSUPPORTED;
     const Ipp32u timeoutms = 5000; // TIMEOUT FOR DECODE OPERATION
     const size_t MAX_FIELD_SUPPORTED = 2;
 
@@ -475,7 +480,7 @@ Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
     return UMC_OK;
 }
 
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 Status DXVA2Accelerator::RegisterGpuEvent(DdiEvent &ev)
 {
     DXVA2_DecodeExecuteParams executeParams;

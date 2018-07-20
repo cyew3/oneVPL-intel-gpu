@@ -325,6 +325,14 @@ public:
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
 #endif
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    bool IsGPUSyncEventDisable()
+    {
+        VideoAccelerationProfile codec = (VideoAccelerationProfile)(m_Profile & VA_CODEC);
+        VideoAccelerationProfile profile = (VideoAccelerationProfile)(m_Profile & VA_PROFILE);
+        return ((codec == VA_H265 && profile == VA_PROFILE_10) || codec == VA_VP9) && (m_HWPlatform < MFX_HW_APL);
+    }
+#endif
 
     bool IsLongSliceControl() const { return (!m_bH264ShortSlice); };
     bool IsMVCSupport() const {return m_bH264MVCSupport; };

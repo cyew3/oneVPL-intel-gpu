@@ -702,14 +702,18 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
 
 #if defined (MFX_VA_LINUX) || defined (MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE)
 
-    UMC::Status status = decoder.m_va->SyncTask(data.currFrameId);
-    if (status != UMC::UMC_OK)
+#ifndef MFX_VA_LINUX
+    if (!decoder.m_va->IsGPUSyncEventDisable())
+#endif
     {
-        mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
-        decoder.SetCriticalErrorOccured(CriticalErrorStatus);
-        return CriticalErrorStatus;
+        UMC::Status status = decoder.m_va->SyncTask(data.currFrameId);
+        if (status != UMC::UMC_OK)
+        {
+            mfxStatus CriticalErrorStatus = (status == UMC::UMC_ERR_GPU_HANG) ? MFX_ERR_GPU_HANG : MFX_ERR_DEVICE_FAILED;
+            decoder.SetCriticalErrorOccured(CriticalErrorStatus);
+            return CriticalErrorStatus;
+        }
     }
-
 #endif
 
 #if defined(VP9_STATUS_REPORTING_ENABLED) && defined(MFX_VA_WIN) && defined(NTDDI_WIN10_TH2)

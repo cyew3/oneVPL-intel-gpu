@@ -208,13 +208,16 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
     {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
         UMC::Status sts = UMC::UMC_OK;
-        Ipp32s index = au->m_pFrame->GetFrameMID();
-        m_mGuard.Unlock();
+        if (!dxva_sd->GetPacker()->IsGPUSyncEventDisable())
         {
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
-            sts = dxva_sd->GetPacker()->SyncTask(index, NULL);
+            Ipp32s index = au->m_pFrame->GetFrameMID();
+            m_mGuard.Unlock();
+            {
+                MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
+                sts = dxva_sd->GetPacker()->SyncTask(index, NULL);
+            }
+            m_mGuard.Lock();
         }
-        m_mGuard.Lock();
 #endif
 
         for (Ipp32u i = 0; i < m_reports.size(); i++)
