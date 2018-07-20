@@ -186,8 +186,8 @@ typedef struct tagENCODE_CAPS_HEVC
         mfxU32    CodingLimits;
     };
 
-    mfxU32    MaxPicWidth;
-    mfxU32    MaxPicHeight;
+    mfxU32  MaxPicWidth;
+    mfxU32  MaxPicHeight;
     mfxU8   MaxNum_Reference0;
     mfxU8   MaxNum_Reference1;
     mfxU8   MBBRCSupport;
@@ -205,7 +205,10 @@ typedef struct tagENCODE_CAPS_HEVC
     union {
         struct {
             mfxU32    SliceLevelReportSupport : 1;
-            mfxU32    MaxNumOfTileColumnsMinus1 : 4;
+            mfxU32    CTULevelReportSupport : 1;
+            mfxU32    SearchWindow64Support : 1;
+            mfxU32    CustomRoundingControl : 1;
+            mfxU32    ReservedBit1 : 1;
             mfxU32    IntraRefreshBlockUnitSize : 2;
             mfxU32    LCUSizeSupported : 3;
             mfxU32    MaxNumDeltaQP : 4;
@@ -214,13 +217,28 @@ typedef struct tagENCODE_CAPS_HEVC
             mfxU32    FrameSizeToleranceSupport : 1;
             mfxU32    HWCounterAutoIncrementSupport : 2;
             mfxU32    ROIDeltaQPSupport : 1;
-            mfxU32 : 12; // For future expansion
+            mfxU32    NumScalablePipesMinus1 : 5;
+            mfxU32    NegativeQPSupport : 1;
+            mfxU32    ReservedBit2 : 1;
+            mfxU32    TileBasedEncodingSupport : 1;
+            mfxU32    PartialFrameUpdateSupport : 1;
+            mfxU32    RGBEncodingSupport : 1;
+            mfxU32    LLCStreamingBufferSupport : 1;
+            mfxU32    DDRStreamingBufferSupport : 1;
         };
         mfxU32    CodingLimits2;
     };
 
     mfxU8    MaxNum_WeightedPredL0;
     mfxU8    MaxNum_WeightedPredL1;
+    mfxU16   MaxNumOfDirtyRect;
+    mfxU16   MaxNumOfMoveRect;
+    mfxU16   MaxNumOfConcurrentFramesMinus1;
+    mfxU16   LLCSizeInMBytes;
+    mfxU16   reserved16bits0;
+    mfxU32   reserved32bits1;
+    mfxU32   reserved32bits2;
+    mfxU32   reserved32bits3;
 } ENCODE_CAPS_HEVC;
 
 typedef struct tagENCODE_CAPS_VP9
