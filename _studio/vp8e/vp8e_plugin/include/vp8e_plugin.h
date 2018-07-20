@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <stdio.h>
@@ -72,10 +72,6 @@ public:
         *mfxPlg = tmp_pplg->m_adapter->operator mfxPlugin();
         tmp_pplg->m_createdByDispatcher = true;
         return MFX_ERR_NONE;
-    }
-    virtual mfxU32 GetPluginType()
-    {
-        return MFX_PLUGINTYPE_VIDEO_VPP;
     }
     virtual mfxStatus SetAuxParams(void* , int )
     {

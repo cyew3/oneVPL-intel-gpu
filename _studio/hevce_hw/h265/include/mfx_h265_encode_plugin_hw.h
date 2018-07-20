@@ -126,11 +126,6 @@ public:
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
-    virtual mfxU32 GetPluginType()
-    {
-        return MFX_PLUGINTYPE_VIDEO_ENCODE;
-    }
-
     virtual void Release()
     {
         return;

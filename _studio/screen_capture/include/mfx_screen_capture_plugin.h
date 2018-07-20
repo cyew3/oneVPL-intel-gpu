@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_SCREEN_CAPTURE_PLUGIN_H__)
@@ -104,10 +104,6 @@ public:
         delete this;
     }
 
-    virtual mfxU32 GetPluginType()
-    {
-        return MFX_PLUGINTYPE_VIDEO_DECODE;
-    }
     virtual mfxStatus SetAuxParams(void* , int )
     {
         return MFX_ERR_UNSUPPORTED;

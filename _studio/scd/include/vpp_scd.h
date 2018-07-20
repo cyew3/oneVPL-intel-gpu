@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
 //
 #pragma once
 
@@ -82,10 +82,6 @@ public:
     virtual void Release()
     {
         delete this;
-    }
-    virtual mfxU32 GetPluginType()
-    {
-        return MFX_PLUGINTYPE_VIDEO_VPP;
     }
     virtual mfxStatus SetAuxParams(void*, int)
     {
