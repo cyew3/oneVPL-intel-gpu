@@ -169,7 +169,7 @@ namespace hevce_fei_nummbperslice {
         } },
         {/*14*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM,
             { SET_RESOLUTION_720x480,
-            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 300 },
+            { CDO2_PAR, &tsStruct::mfxExtCodingOption2.NumMbPerSlice, 350 },
         } },
 
         // 1280x720
