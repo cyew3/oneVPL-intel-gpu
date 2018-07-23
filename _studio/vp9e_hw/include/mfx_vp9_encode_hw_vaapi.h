@@ -17,6 +17,7 @@
 namespace MfxHwVP9Encode
 {
 #if defined (MFX_VA_LINUX)
+#include <va/va.h>
 #include <va/va_enc_vp9.h>
 
 #define MFX_DESTROY_VABUFFER(vaBufferId, vaDisplay)    \

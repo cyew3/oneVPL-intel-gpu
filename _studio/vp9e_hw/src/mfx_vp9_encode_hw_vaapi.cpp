@@ -482,11 +482,25 @@ VAAPIEncoder::~VAAPIEncoder()
 
 } // VAAPIEncoder::~VAAPIEncoder()
 
+VAProfile ConvertGuidToVAAPIProfile(const GUID& guid)
+{
+    if (guid == MfxHwVP9Encode::DXVA2_Intel_LowpowerEncode_VP9_Profile0)
+        return VAProfileVP9Profile0;
+    if (guid == MfxHwVP9Encode::DXVA2_Intel_LowpowerEncode_VP9_Profile1)
+        return VAProfileVP9Profile1;
+    if (guid == MfxHwVP9Encode::DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile2)
+        return VAProfileVP9Profile2;
+    if (guid == MfxHwVP9Encode::DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3)
+        return VAProfileVP9Profile3;
+    return VAProfileNone; /// Lowpower == OFF is not supported yet.
+}
+
+
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
 mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     mfxCoreInterface* pCore,
-    GUID /*guid*/,
+    GUID guid,
     mfxU32 width,
     mfxU32 height)
 {
@@ -498,49 +512,109 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     mfxStatus mfxSts = pCore->GetHandle(pCore->pthis, MFX_HANDLE_VA_DISPLAY, &m_vaDisplay);
     MFX_CHECK_STS(mfxSts);
 
+    mfxStatus sts = pCore->QueryPlatform(pCore->pthis, &m_platform);
+    MFX_CHECK_STS(sts);
+
     m_width  = width;
     m_height = height;
 
     // set encoder CAPS on our own for now
     memset(&m_caps, 0, sizeof(m_caps));
 
-    //CodingLimits
-    m_caps.CodingLimitSet = 1;
-    m_caps.Color420Only = 1; //TO DO: 444 also must be supported
-    //m_caps.ForcedSegmentationSupport
-    //m_caps.FrameLevelRateControl
-    //m_caps.BRCReset
-    //m_caps.AutoSegmentationSupport
-    m_caps.TemporalLayerRateCtrl = 7; //supported number of temporal layers minus 1
-    //m_caps.DynamicScaling
-    //m_caps.TileSupport
-    //m_caps.NumScalablePipesMinus1
-    //m_caps.YUV422ReconSupport
-    //m_caps.YUV444ReconSupport
-    m_caps.MaxEncodedBitDepth = 0; //0: 8bit, 1: 8 and 10 bit; TO DO: 10bit also must be supported
-    //m_caps.UserMaxFrameSizeSupport
-    /*
-        0b0001 - Seq Qp index delta is supported
-        0b0010 - Seq loop filter level delta is supported
-        0b0100 - reference is supported
-        0b1000 - skip is supported
-    */
-    //m_caps.SegmentFeatureSupport
-    //m_caps.DirtyRectSupport
-    //m_caps.MoveRectSupport
-    //~CodingLimits
+    std::map<VAConfigAttribType, int> idx_map;
+    VAConfigAttribType attr_types[] = {
+        VAConfigAttribRTFormat,
+        VAConfigAttribEncDirtyRect,
+        VAConfigAttribMaxPictureWidth,
+        VAConfigAttribMaxPictureHeight,
+        VAConfigAttribEncTileSupport,
+        VAConfigAttribEncRateControlExt,
+        VAConfigAttribEncParallelRateControl,
+        VAConfigAttribFrameSizeToleranceSupport,
+        VAConfigAttribProcessingRate,
+        VAConfigAttribEncDynamicScaling,
+    };
+    std::vector<VAConfigAttrib> attrs;
 
+    for (size_t i = 0; i < sizeof(attr_types) / sizeof(attr_types[0]); i++) {
+        attrs.push_back({attr_types[i], 0});
+        idx_map[ attr_types[i] ] = i;
+    }
+
+    VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
+                          ConvertGuidToVAAPIProfile(guid),
+                          VAEntrypointEncSliceLP,
+                          attrs.data(), 
+                          (int)attrs.size());
+    MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
+
+    m_caps.CodingLimitSet = 1;
+    m_caps.Color420Only =  1; // See DDI
+
+    if (m_platform.CodeName >= MFX_PLATFORM_ICELAKE)
+    {
+        m_caps.MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit; TO DO: 10bit also must be supported
+        m_caps.NumScalablePipesMinus1 = 1;
+    }
+    if (attrs[idx_map[VAConfigAttribRTFormat]].value != VA_ATTRIB_NOT_SUPPORTED)
+    {
+        m_caps.YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV422 ? 1 : 0;
+        m_caps.YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV444 ? 1 : 0;
+    }
+
+    if (attrs[idx_map[VAConfigAttribEncDirtyRect]].value != VA_ATTRIB_NOT_SUPPORTED &&
+        attrs[idx_map[VAConfigAttribEncDirtyRect]].value != 0)
+    {
+        m_caps.DirtyRectSupport = 1;
+        m_caps.MaxNumOfDirtyRect =attrs[idx_map[VAConfigAttribEncDirtyRect]].value;
+    }
+
+    if (attrs[idx_map[VAConfigAttribMaxPictureWidth]].value != VA_ATTRIB_NOT_SUPPORTED)
+        m_caps.MaxPicWidth = attrs[idx_map[VAConfigAttribMaxPictureWidth]].value;
+
+    if (attrs[idx_map[VAConfigAttribMaxPictureHeight]].value != VA_ATTRIB_NOT_SUPPORTED)
+        m_caps.MaxPicHeight = attrs[idx_map[VAConfigAttribMaxPictureHeight]].value;
+
+    if (attrs[idx_map[VAConfigAttribEncTileSupport]].value != VA_ATTRIB_NOT_SUPPORTED)
+        m_caps.TileSupport = attrs[idx_map[VAConfigAttribEncTileSupport]].value;
+
+    if (attrs[idx_map[VAConfigAttribEncRateControlExt]].value != VA_ATTRIB_NOT_SUPPORTED)
+    {
+        VAConfigAttribValEncRateControlExt rateControlConf;
+        rateControlConf.value = attrs[idx_map[VAConfigAttribEncRateControlExt]].value;
+        m_caps.TemporalLayerRateCtrl = rateControlConf.bits.max_num_temporal_layers_minus1;
+    }
+
+    m_caps.ForcedSegmentationSupport = 1;
+    m_caps.AutoSegmentationSupport = 1;
+
+    if (attrs[idx_map[VAConfigAttribEncMacroblockInfo]].value != VA_ATTRIB_NOT_SUPPORTED &&
+        attrs[idx_map[VAConfigAttribEncMacroblockInfo]].value)
+        m_caps.SegmentFeatureSupport &= 0b0001;
+
+    if (attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value != VA_ATTRIB_NOT_SUPPORTED &&
+        attrs[idx_map[VAConfigAttribEncMaxRefFrames]].value)
+        m_caps.SegmentFeatureSupport &= 0b0100;
+
+    if (attrs[idx_map[VAConfigAttribEncSkipFrame]].value != VA_ATTRIB_NOT_SUPPORTED &&
+        attrs[idx_map[VAConfigAttribEncSkipFrame]].value)
+        m_caps.SegmentFeatureSupport &= 0b1000;
+
+    if (attrs[idx_map[VAConfigAttribEncDynamicScaling]].value != VA_ATTRIB_NOT_SUPPORTED)
+    {
+        m_caps.DynamicScaling = attrs[idx_map[VAConfigAttribEncDynamicScaling]].value;
+    }
+
+    if (attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value != VA_ATTRIB_NOT_SUPPORTED)
+        m_caps.UserMaxFrameSizeSupport  = attrs[idx_map[VAConfigAttribFrameSizeToleranceSupport]].value;
+
+    if (attrs[idx_map[VAConfigAttribProcessingRate]].value != VA_ATTRIB_NOT_SUPPORTED)
+    {
+        m_caps.FrameLevelRateCtrl = attrs[idx_map[VAConfigAttribProcessingRate]].value == VA_PROCESSING_RATE_ENCODE;
+        m_caps.BRCReset = attrs[idx_map[VAConfigAttribProcessingRate]].value == VA_PROCESSING_RATE_ENCODE;
+    }
     m_caps.EncodeFunc = 1;
     m_caps.HybridPakFunc = 1;
-
-    m_caps.MaxPicWidth = 4096;
-    m_caps.MaxPicHeight = 4096;
-
-    //m_caps.MaxNumOfDirtyRect
-    //m_caps.MaxNumOfMoveRect
-
-    mfxStatus sts = pCore->QueryPlatform(pCore->pthis, &m_platform);
-    MFX_CHECK_STS(sts);
 
     VP9_LOG(" \n CreateAuxilliaryDevice return ERR_NONE \n");
     return MFX_ERR_NONE;
