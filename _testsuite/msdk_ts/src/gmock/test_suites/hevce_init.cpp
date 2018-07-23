@@ -231,7 +231,8 @@ namespace hevce_init
         },
         {/*02*/ MFX_ERR_NONE, NONE, NONE,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY }
+               { MFX_PAR, &tsStruct::mfxVideoParam.IOPattern, MFX_IOPATTERN_IN_VIDEO_MEMORY },
+               { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.Shift, 1 } // For the video memory shifts surface
             }
         },
         //null session
