@@ -43,7 +43,6 @@ namespace MfxHwH265Encode
 static const GUID DXVA2_Intel_Encode_HEVC_Main =
 { 0x28566328, 0xf041, 0x4466, { 0x8b, 0x14, 0x8f, 0x58, 0x31, 0xe7, 0x8f, 0x8b } };
 
-#ifndef OPEN_SOURCE
 static const GUID DXVA2_Intel_Encode_HEVC_Main10 =
 { 0x6b4a94db, 0x54fe, 0x4ae1, { 0x9b, 0xe4, 0x7a, 0x7d, 0xad, 0x00, 0x46, 0x00 } };
 
@@ -88,11 +87,8 @@ static const GUID DXVA2_Intel_LowpowerEncode_HEVC_SCC_Main444_10 =
 { 0x310e59d2, 0x7ea4, 0x47bb, { 0xb3, 0x19, 0x50, 0x0e, 0x78, 0x85, 0x53, 0x36} };
 #endif
 
-#endif // #ifndef OPEN_SOURCE
-
 GUID GetGUID(MfxVideoParam const & par);
 
-#ifndef OPEN_SOURCE
 const GUID GuidTable[3][3][3] =
 {
     // LowPower = OFF
@@ -160,7 +156,6 @@ const GUID GuidTable[3][3][3] =
     }
 #endif
 };
-#endif
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
 MFEDXVAEncoder* CreatePlatformMFEEncoder(MFXCoreInterface* core);
 #endif
