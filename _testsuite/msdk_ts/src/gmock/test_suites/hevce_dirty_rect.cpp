@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 File Name: hevce_dirty_rect.cpp
 
@@ -92,7 +92,7 @@ namespace hevce_dirty_rect {
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*00*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT | ENCODE,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, 0),
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, 0)
@@ -104,49 +104,49 @@ namespace hevce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize, BlkSize, BlkSize * 2, BlkSize * 2)
         } },
 
-        {/*02*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*02*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 0, BlkSize), // Right == Left
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 0, BlkSize)
         } },
 
-        {/*03*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*03*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   1920, 0, 0, BlkSize), // Left == Width
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   1920, 0, 0, BlkSize)
         } },
 
-        {/*04*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, 1950, BlkSize), // Right > Width, out of bounds
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0,    0, BlkSize)
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, 1920, BlkSize)
         } },
 
-        {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*05*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize, BlkSize * 2, BlkSize), // Top == Bottom
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize, BlkSize * 2, BlkSize)
         } },
 
-        {/*06*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*06*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 1088, BlkSize, 0), // Top == Height
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 1088, BlkSize, 0)
         } },
 
-        {/*07*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*07*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, 0, BlkSize, 1105), // Bottom > Height, out of bounds
-            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, BlkSize,    0)
+            RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, 0, BlkSize, 1088)
         } },
 
-        {/*08*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*08*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
         QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   BlkSize * 2, 0, BlkSize, BlkSize), // Left > Rigth
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   BlkSize * 2, 0, BlkSize, BlkSize)
         } },
 
-        {/*09*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*09*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
         QUERY | INIT,{
             RECT_PARS(DIRTYRECT,                0, 1,   0, BlkSize * 2, BlkSize, BlkSize), // Top > Bottom
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 0, 1,   0, BlkSize * 2, BlkSize, BlkSize)
@@ -187,7 +187,7 @@ namespace hevce_dirty_rect {
             RECT_PARS(DIRTYRECT_EXPECTED_QUERY, 1, 2,   0, 0, BlkSize * 2, BlkSize * 2),
         } },
 
-        {/*15*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
+        {/*15*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
         QUERY | INIT,{
             { DIRTYRECT, &tsStruct::mfxExtDirtyRect.NumRect, 100 }, // MAX NumRect is 64
             { DIRTYRECT_EXPECTED_QUERY, &tsStruct::mfxExtDirtyRect.NumRect, 64 }
@@ -210,7 +210,7 @@ namespace hevce_dirty_rect {
             return 0;
         }
 
-        if (g_tsImpl == MFX_IMPL_HARDWARE) {
+        if (g_tsImpl & MFX_IMPL_HARDWARE) {
             if (g_tsHWtype < MFX_HW_CNL || m_par.mfx.LowPower != MFX_CODINGOPTION_ON) { //this test is for VDEnc only
                 g_tsLog << "SKIPPED for this platform\n";
                 return 0;

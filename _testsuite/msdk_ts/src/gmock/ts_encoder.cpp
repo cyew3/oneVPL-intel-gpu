@@ -90,6 +90,12 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
             g_tsLog << "WARNING: Unsupported HW Platform!\n";
         }
 
+        if (g_tsConfig.lowpower == MFX_CODINGOPTION_ON && g_tsHWtype < MFX_HW_CNL) {
+            g_tsLog << "\n\nWARNING: Lowpower is supported starting from Gen10!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+
         // skip all HEVCe tests with unsupported fourcc
         mfxU32 fourcc_id = par.mfx.FrameInfo.FourCC;
         if ((fourcc_id == MFX_FOURCC_P010) && (g_tsHWtype < MFX_HW_KBL))
@@ -139,7 +145,7 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
         }
     }
 
-    if (   par.mfx.LowPower == MFX_CODINGOPTION_ON
+    if (   par.mfx.LowPower == MFX_CODINGOPTION_ON && par.mfx.CodecId == MFX_CODEC_AVC
         && par.mfx.RateControlMethod != MFX_RATECONTROL_CQP
         && function != QUERYIOSURF)
     {
@@ -519,6 +525,9 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
 #endif
         else ///Lowpower = ON
         {
+            if (g_tsHWtype < MFX_HW_CNL)
+                return MFX_ERR_UNSUPPORTED;
+
             guid = DXVA2_Intel_LowpowerEncode_HEVC_Main_8[chromaFormat]; /// Default 8 bit
             if (g_tsHWtype < MFX_HW_KBL)
                 break;
@@ -542,6 +551,9 @@ mfxStatus tsVideoEncoder::GetGuid(GUID &guid)
             return MFX_ERR_UNSUPPORTED;
         else
         {
+            if (g_tsHWtype < MFX_HW_CNL)
+                return MFX_ERR_UNSUPPORTED;
+
             try
             {
                 guid = DXVA2_Intel_LowpowerEncode_VP9_Profile.at(m_par.mfx.CodecProfile);
