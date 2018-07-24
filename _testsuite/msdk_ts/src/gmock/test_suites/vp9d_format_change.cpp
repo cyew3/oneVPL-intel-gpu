@@ -70,6 +70,12 @@ int TestSuite::RunTest_Chroma(const unsigned int id)
     mfxU32 tested_fourCC[2] = { target_fourCC, test_fourCC };
 
     TS_START;
+
+    if (g_tsHWtype <= MFX_HW_ICL && (test_fourCC == MFX_FOURCC_P016 || test_fourCC == MFX_FOURCC_Y416)) {
+        g_tsLog << "WARNING: This case is for ICL+ platforms\n";
+        throw tsSKIP;
+    }
+
     for (auto& fourCC : tested_fourCC)
     {
         g_tsStreamPool.Get(GetStreamByFourCC(fourCC));
