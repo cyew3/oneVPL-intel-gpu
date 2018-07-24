@@ -220,7 +220,7 @@ namespace UMC_AV1_DECODER
             OBUInfo info;
             bs.ReadOBUHeader(&info);
             VM_ASSERT(CheckOBUType(info.header.type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
-            size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
+            const size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
 
             if (tmp.GetDataSize() < OBUTotalSize)
                 return UMC::UMC_ERR_NOT_ENOUGH_DATA; // not enough data in the buffer to hold full OBU unit
@@ -246,8 +246,12 @@ namespace UMC_AV1_DECODER
                 // TODO: [Rev0.5] add support of multiple tile groups
                 if (gotFrameHeader) // bypass tile group if there is no respective frame header (no per-tile submission so far)
                     gotFrameData = true;
+                fh.firstTileOffset += static_cast<Ipp32u>(bs.BytesDecoded());
                 break;
             }
+
+            if (info.header.type != OBU_TILE_GROUP)
+                fh.firstTileOffset += static_cast<Ipp32u>(OBUTotalSize);
 
             tmp.MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
         }

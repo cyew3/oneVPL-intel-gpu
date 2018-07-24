@@ -69,6 +69,7 @@ namespace UMC_AV1_DECODER
     const Ipp8u SUPERRES_SCALE_BITS = 3;
     const Ipp8u SUPERRES_SCALE_DENOMINATOR_MIN = SCALE_NUMERATOR + 1;
     const Ipp8u PRIMARY_REF_BITS = 3;
+    const Ipp8u PRIMARY_REF_NONE = 7;
     const Ipp8u NO_FILTER_FOR_IBC = 1;
 #endif // UMC_AV1_DECODER_REV >= 5000
 
@@ -556,6 +557,10 @@ namespace UMC_AV1_DECODER
         Ipp32u loopFilterAcrossTilesVEnabled;
         Ipp32u loopFilterAcrossTilesHEnabled;
         Ipp32u uniformTileSpacingFlag;
+
+        Ipp32u largeScaleTile;
+
+        Ipp32u firstTileOffset;
 #endif
 
         Ipp32u frameHeaderLength;

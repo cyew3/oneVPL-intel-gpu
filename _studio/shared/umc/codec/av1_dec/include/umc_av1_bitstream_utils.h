@@ -13,6 +13,7 @@
 #ifndef __UMC_AV1_BITSTREAM_UTILS_H_
 #define __UMC_AV1_BITSTREAM_UTILS_H_
 
+#include <limits>
 #include "umc_av1_bitstream.h"
 #include "umc_vp9_utils.h"
 
@@ -37,6 +38,19 @@ namespace UMC_AV1_DECODER
             return v;
         else
             return (v << 1) - m + bs->GetBits(1);
+    }
+
+    inline Ipp32u read_uvlc(AV1Bitstream* bs)
+    {
+        Ipp32u leading_zeros = 0;
+        while (!bs->GetBit()) ++leading_zeros;
+
+        // Maximum 32 bits.
+        if (leading_zeros >= 32)
+            return std::numeric_limits<Ipp32u>::max();
+        const Ipp32u base = (1u << leading_zeros) - 1;
+        const Ipp32u value = bs->GetBits(leading_zeros);
+        return base + value;
     }
 #endif // UMC_AV1_DECODER_REV >= 5000
 
