@@ -1529,8 +1529,7 @@ bool SCDetect1(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 C
     }
     return 0;
 }
-bool SCDetect2(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)TSCindex;
+bool SCDetect2(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 /*TSCindex*/, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (MVDiff < 67) {
         if (diffTSC < 13) {
             if (gchDC < 7) {
@@ -3054,8 +3053,7 @@ bool SCDetect2(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 C
     }
     return 0;
 }
-bool SCDetect3(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)TSCindex;
+bool SCDetect3(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 /*TSCindex*/, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (AFD < 29) {
         if (diffMVdiffVal < 66) {
             if (diffAFD < 9) {
@@ -4484,8 +4482,7 @@ bool SCDetect3(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 C
     }
     return 0;
 }
-bool SCDetect4(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)TSCindex;
+bool SCDetect4(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 /*TSCindex*/, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (TSC < 16) {
         if (Rs < 569) {
             if (diffAFD < 9) {
@@ -10441,8 +10438,7 @@ bool SCDetect7(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 C
     }
     return 0;
 }
-bool SCDetect8(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)TSCindex;
+bool SCDetect8(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 /*TSCindex*/, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (diffTSC < 7) {
         if (diffMVdiffVal < 56) {
             if (TSC < 24) {
@@ -11901,8 +11897,7 @@ bool SCDetect8(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 C
     }
     return 0;
 }
-bool SCDetect9(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)Scindex;
+bool SCDetect9(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 /*Scindex*/, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (diffAFD < 14) {
         if (diffMVdiffVal < 54) {
             if (refDCval < 24) {
@@ -16394,8 +16389,7 @@ bool SCDetectB(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 C
     }
     return 0;
 }
-bool SCDetectC(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)Scindex;
+bool SCDetectC(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 /*Scindex*/, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (diffMVdiffVal < 58) {
         if (diffTSC < 8) {
             if (MVDiff < 140) {
@@ -26533,8 +26527,7 @@ bool SCDetect12(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 
     }
     return 0;
 }
-bool SCDetect13(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 TSCindex, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
-    (void)TSCindex;
+bool SCDetect13(mfxU32 MVDiff, mfxU32 RsCsDiff, mfxU32 Rs, mfxU32 gchDC, mfxU32 CsDiff, mfxI32 diffTSC, mfxU32 refDCval, mfxU32 TSC, mfxI32 diffAFD, mfxU32 posBalance, mfxU32 Cs, mfxU32 /*TSCindex*/, mfxU32 Scindex, mfxU32 AFD, mfxU32 SC, mfxU32 RsDiff, mfxI32 diffRsCsdiff, mfxU32 negBalance, mfxU32 ssDCval, mfxI32 diffMVdiffVal) {
     if (diffTSC < 7) {
         if (diffMVdiffVal < 71) {
             if (refDCval < 24) {

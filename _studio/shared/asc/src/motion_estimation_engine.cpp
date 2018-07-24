@@ -221,7 +221,7 @@ alignas(16) static const mfxU16 tab_killmask[8][8] = {
     { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff },
 };
 
-mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn, ASCimageData *scale, ASCimageData *scaleRef, bool first, ASCVidData *limits, t_ME_SAD_8x8_Block_Search ME_SAD_8x8_Block_Search) {
+mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn, ASCimageData *scale, ASCimageData *scaleRef, bool /*first*/, ASCVidData *limits, t_ME_SAD_8x8_Block_Search ME_SAD_8x8_Block_Search) {
     ASCMVector
         tMV,
         ttMV,
@@ -251,7 +251,6 @@ mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn,
     bool
         foundBetter = false;
 
-    (void)first;
 
     objFrame = &scale->Image.Y[offset];
     refFrame = &scaleRef->Image.Y[offset];
