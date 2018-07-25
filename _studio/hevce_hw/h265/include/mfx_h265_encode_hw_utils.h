@@ -41,12 +41,6 @@
 #define MFX_MAX(x,y) ((x) > (y) ? (x) : (y))
 #endif
 
-#ifndef ANDROID
-#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
-#else
-#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1];
-#endif
-
 #define MFX_SORT_COMMON(_AR, _SZ, _COND)\
     for (mfxU32 _i = 0; _i < (_SZ); _i ++)\
         for (mfxU32 _j = _i; _j < (_SZ); _j ++)\
@@ -81,7 +75,7 @@ template<class T> inline void Zero(std::vector<T> & vec)      { memset(&vec[0], 
 template<class T> inline void Zero(T * first, size_t cnt)     { memset(first, 0, sizeof(T) * cnt); }
 template<class T, class U> inline void Copy(T & dst, U const & src)
 {
-    STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
+    static_assert(sizeof(T) == sizeof(U), "copy_objects_of_different_size");
     memcpy_s(&dst, sizeof(dst), &src, sizeof(dst));
 }
 template<class T> inline void CopyN(T* dst, const T* src, size_t N)
@@ -710,7 +704,7 @@ namespace ExtBuffer
 
     template <class P> Proxy Get(P & par)
     {
-        STATIC_ASSERT(!(is_same<P, MfxVideoParam>::value), MfxVideoParam_is_invalid_for_this_template);
+        static_assert(!(is_same<P, MfxVideoParam>::value), "MfxVideoParam_is_invalid_for_this_template");
         return Proxy(par.ExtParam, par.NumExtParam);
     }
 

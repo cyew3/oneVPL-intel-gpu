@@ -52,12 +52,6 @@
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
-#ifndef ANDROID
-#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1]; MESSAGE
-#else
-#define STATIC_ASSERT(ASSERTION, MESSAGE) char MESSAGE[(ASSERTION) ? 1 : -1];
-#endif
-
 // this guid is used to identify that device creation is performed during Query or QueryIOSurf call
 static const GUID MSDK_Private_Guid_Encode_AVC_Query =
 { 0x32560c63, 0xe3dc, 0x43c9, { 0xa8, 0x16, 0xda, 0x73, 0x36, 0x45, 0x89, 0xe9 } };
@@ -151,7 +145,7 @@ namespace MfxHwH264Encode
 
     template<class T, class U> inline void Copy(T & dst, U const & src)
     {
-        STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
+        static_assert(sizeof(T) == sizeof(U), "copy_objects_of_different_size");
         MFX_INTERNAL_CPY(&dst, &src, sizeof(dst));
     }
 
