@@ -14,6 +14,11 @@
 #include "vm_shared_object.h"
 #include "cmrt_cross_platform.h"
 
+#ifdef CM_WIN
+#include <cfgmgr32.h>
+#include <devguid.h>
+#endif
+
 #ifdef WIN64
 
 #   ifdef CMRT_EMU
@@ -309,6 +314,132 @@ public:
 };
 
 #ifdef CM_WIN
+
+/*!
+Function for converting list of "str1\0str2\0str3\0\0" to vector of single strings
+\param input_str double-null string for parsing
+\param input_str_len length of input_str, including double null
+\param output_vec vector for storing found strings
+*/
+inline void ConvertDoubleNullTermStringToVector(const wchar_t *input_str, const size_t input_str_len, std::vector<std::wstring> &output_vec)
+{
+    const wchar_t *begin = input_str;
+    const wchar_t *end = input_str + input_str_len;
+    size_t len = 0;
+
+    if (!input_str) return;
+
+    while ((begin<end) && (len = wcslen(begin)) > 0)
+    {
+        output_vec.push_back(begin);
+        begin += len + 1;
+    }
+}
+/*!
+Function for comparing for Intel Device ID
+\param DeviceID string, containing Device ID for check
+\return true if Intel Device ID found
+*/
+inline bool IsIntelDeviceInstanceID(std::wstring &DeviceID)
+{
+    if (DeviceID.find(L"VEN_8086") != std::wstring::npos || DeviceID.find(L"ven_8086") != std::wstring::npos)
+        return true;
+    else
+        return false;
+}
+/*!
+Function for looking for MDF in DriverStore
+\param path allocated memory for storing path to MDF, not less than MAX_PATH
+\return true if path found
+*/
+inline bool GetMDFDriverStorePath(TCHAR *path, DWORD *dwPathSize)
+{
+    // Obtain a PnP handle to the Intel graphics adapter
+    CONFIGRET    result = CR_SUCCESS;
+    std::wstring IntelDeviceID;
+    std::vector<std::wstring> Devices;
+    ULONG        DeviceIDListSize = 0;
+    PWSTR        DeviceIDList = nullptr;
+    wchar_t      DisplayGUID[40];
+    DEVINST      DeviceInst;
+
+    if(StringFromGUID2(GUID_DEVCLASS_DISPLAY, DisplayGUID, sizeof(DisplayGUID))==0)
+    {
+        return false;
+    }
+
+    do
+    {
+        result = CM_Get_Device_ID_List_SizeW(&DeviceIDListSize, DisplayGUID, CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT);
+        if (result != CR_SUCCESS)
+        {
+            break;
+        }
+        //This block should be executed once, but if we come here several times we should cleanup before new allocation
+        if (DeviceIDList != nullptr)
+        {
+            delete[] DeviceIDList;
+            DeviceIDList = nullptr;
+        }
+        try
+        {
+            DeviceIDList = new WCHAR[DeviceIDListSize * sizeof(PWSTR)]; /* free in this method */
+        }
+        catch (...)
+        {
+            return false;
+        }
+        result = CM_Get_Device_ID_ListW(DisplayGUID, DeviceIDList, DeviceIDListSize, CM_GETIDLIST_FILTER_CLASS | CM_GETIDLIST_FILTER_PRESENT);
+
+    } while (result == CR_BUFFER_SMALL);
+
+    if (result != CR_SUCCESS)
+    {
+        if(DeviceIDList!=nullptr)
+        {
+            delete[] DeviceIDList;
+            DeviceIDList = nullptr;
+        }
+        return false;
+    }
+
+    ConvertDoubleNullTermStringToVector(DeviceIDList, DeviceIDListSize, Devices);
+    delete[] DeviceIDList;
+    DeviceIDList = nullptr;
+
+    //Look for MDF record
+    for (auto it = Devices.begin(); it != Devices.end(); ++it)
+    {
+        if (IsIntelDeviceInstanceID(*it))
+        {
+            result = CM_Locate_DevNodeW(&DeviceInst, const_cast<wchar_t *>((*it).c_str()), CM_LOCATE_DEVNODE_NORMAL);
+            if (result != CR_SUCCESS)
+            {
+                continue;
+            }
+
+            HKEY hKey_sw;
+            result = CM_Open_DevNode_Key(DeviceInst, KEY_READ, 0, RegDisposition_OpenExisting, &hKey_sw, CM_REGISTRY_SOFTWARE);
+            if (result != CR_SUCCESS)
+            {
+                continue;
+            }
+
+            ULONG nError;
+
+            nError = RegQueryValueEx(hKey_sw, _T("DriverStorePathForMDF"), 0, NULL, (LPBYTE)path, dwPathSize);
+
+            RegCloseKey(hKey_sw);
+
+            if (ERROR_SUCCESS == nError)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
 /*
 On windows we are looking for CMRT DLL in driver store directory
 Driver writes 'DriverStorePath' reg key during install.
@@ -364,6 +495,18 @@ vm_so_handle cm_dll_load(const vm_char *so_file_name)
                 handle = vm_so_load(path);
             }
             RegCloseKey(hkey);
+        }
+    }
+
+    /* try to load from DriverStore #3 UWD/HKR path */
+    if (handle == NULL)
+    {
+        size = sizeof(path);
+        if (GetMDFDriverStorePath(path, &size))
+        {
+            wcscat_s(path, MAX_PATH, _T("\\"));
+            wcscat_s(path, MAX_PATH, so_file_name);
+            handle = vm_so_load(path);
         }
     }
 

@@ -20,13 +20,13 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_VA_WIN;PTIR_PLUGIN_EXPORTS;</MfxDefinitions>
-    <MfxLibraries>ippcoremt.lib;ippccmt.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;</MfxLibraries>
+    <MfxLibraries>ippcoremt.lib;ippccmt.lib;D3d9.lib;dxva2.lib;version.lib;D3D11.lib;DXGI.lib;Cfgmgr32.lib;</MfxLibraries>
     <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
     <MfxTreatWarningAsError>false</MfxTreatWarningAsError>
     <MfxPostBuildEvent>copy "$(SolutionDir)e744753acd74402e89a2ee0635496179\plugin.cfg" "$(MfxRootOutDir)\bin\e744753acd74402e89a2ee0635496179\plugin.cfg" /y</MfxPostBuildEvent>
     <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)e744753acd74402e89a2ee0635496179\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\e744753acd74402e89a2ee0635496179\plugin.cfg" /y</MfxPostBuildEvent>
-	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_ptir_hw</MfxTargetName>
-	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+    <MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_ptir_hw</MfxTargetName>
+    <MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
   </PropertyGroup>
 <!-- End of ptir_plugin.vcxproj specific settings -->
 </Project>

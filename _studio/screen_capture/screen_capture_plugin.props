@@ -19,12 +19,12 @@
     $(MSDK_STUDIO_ROOT)\mfx_lib\vpp\include;
     </MfxIncludes>
     <MfxDefinitions>AS_VPP_PLUGIN;</MfxDefinitions>
-    <MfxLibraries>d3d11.lib;dxgi.lib;dxva2.lib;d3d9.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;</MfxLibraries>
+    <MfxLibraries>d3d11.lib;dxgi.lib;dxva2.lib;d3d9.lib;ippcoremt.lib;ippsmt.lib;ippvcmt.lib;ippimt.lib;ippccmt.lib;ippcvmt.lib;ippjmt.lib;ippmsdkmt.lib;Cfgmgr32.lib;</MfxLibraries>
     <MfxLibraryDir>$(MfxIppLibraryDir)</MfxLibraryDir>
     <MfxPostBuildEvent>copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" "$(MfxRootOutDir)\bin\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</MfxPostBuildEvent>
     <MfxPostBuildEvent Condition="'$(IntelDebugConf)'=='true'">copy "$(SolutionDir)22d62c07e672408fbb4cc20ed7a053e4\plugin_for_debug.cfg" "$(MfxRootOutDir)\bin\22d62c07e672408fbb4cc20ed7a053e4\plugin.cfg" /y</MfxPostBuildEvent>
-	<MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_screen_capture</MfxTargetName>
-	<MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
+    <MfxTargetName>mfxplugin$(MfxPlatformArchitecture)_screen_capture</MfxTargetName>
+    <MfxTargetName Condition="'$(IntelDebugConf)'=='true'">$(MfxTargetName)_d</MfxTargetName>
   </PropertyGroup>
 <!-- End of screen_capture_plugin.vcxproj specific settings -->
 </Project>
