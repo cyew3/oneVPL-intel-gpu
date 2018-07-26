@@ -4,7 +4,7 @@
 //     This software is supplied under the terms of a license agreement or
 //     nondisclosure agreement with Intel Corporation and may not be copied
 //     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+//          Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 //
 */
 
@@ -200,7 +200,7 @@ const char* getStream(const decltype(MFX_FOURCC_YV12)& fourcc)
     switch (fourcc)
     {
     case MFX_FOURCC_NV12: return "forBehaviorTest/foreman_cif.ivf";
-    case MFX_FOURCC_AYUV: return "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9";
+    case MFX_FOURCC_AYUV: return "conformance/vp9/SBE/8bit_444/Syntax_VP9_FC2p1ss444_432x240_101_inter_basic_1.4.vp9";
     case MFX_FOURCC_P010: return "conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9";
     case MFX_FOURCC_Y410: return "conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9";
     default: assert(!"Wrong/unsupported format requested!"); break;
