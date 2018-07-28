@@ -798,10 +798,8 @@ Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PAR
 // Linux/Android version
 Status MJPEGVideoDecoderMFX_HW::PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PARAMETER* obtainedScanParams, Ipp8u* buffersForUpdate)
 {
-    UMCVACompBuffer* compBuf = 0;
     Ipp32u bitstreamTile = 0;
     bool shiftDataOffset = false;
-    Status sts = UMC_OK;
 
     /////////////////////////////////////////////////////////////////////////////////////////
     if((*buffersForUpdate & 1) != 0)

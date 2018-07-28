@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1477,7 +1477,6 @@ namespace UMC
             Ipp32u* pFirstFieldStartCode = this->m_pContext->m_bitstream.pBitstream;
             Ipp32u Offset = 0;
 
-            Ipp32u RemBytesInSlice = 4;
             Ipp32u PicHeaderSize = 0;
             Ipp8u  Flag_03 = 0; //for search 00 00 03 on the end of pic header
 
@@ -1583,7 +1582,6 @@ namespace UMC
             VM_ASSERT(SliceSize<0x0FFFFFFF);
 
             {
-                Ipp32u BytesAlreadyExecuted = 0;
                 this->m_pPacker.VC1PackBitStream(this->m_pContext,
                                             DataSize,
                                             p_CurOriginalData + Offset,
@@ -1687,7 +1685,6 @@ namespace UMC
                     slparams.MBStartRow = 0; //we should decode fields steb by steb
 
                     {
-                        Ipp32u BytesAlreadyExecuted = 0;
                         this->m_pPacker.VC1PackBitStream(this->m_pContext, DataSize,
                                                     pOriginalData + *p_CurOriginalOffsets + Offset,SliceSize,
                                                     0, Flag_03);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1377,24 +1377,6 @@ JERRCODE CJPEGDecoderBase::FindSOI()
     }
   }
 } // CJPEGDecoderBase::ParseJPEGBitStream()
-
-
-static
-Ipp32u JPEG_BPP[JC_MAX] =
-{
-  1, // JC_UNKNOWN = 0,
-  1, // JC_GRAY    = 1,
-  3, // JC_RGB     = 2,
-  3, // JC_BGR     = 3,
-  2, // JC_YCBCR   = 4,
-  4, // JC_CMYK    = 5,
-  4, // JC_YCCK    = 6,
-  4, // JC_BGRA    = 7,
-  4, // JC_RGBA    = 8,
-
-  1, // JC_IMC3    = 9,
-  1 //JC_NV12    = 10
-};
 
 JERRCODE CJPEGDecoderBase::ReadHeader(
   int*    width,
