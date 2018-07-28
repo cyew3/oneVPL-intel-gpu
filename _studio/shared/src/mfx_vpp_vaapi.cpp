@@ -1557,7 +1557,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAAPIVideoProcessing::Execute_Composition_TiledVideoWall");
 
     VAStatus vaSts = VA_STATUS_SUCCESS;
-    VASurfaceAttrib attrib;
     std::vector<VABlendState> blend_state;
 
     MFX_CHECK_NULL_PTR1( pParams );
@@ -1569,7 +1568,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
     {
         return MFX_ERR_UNKNOWN;
     }
-    mfxU32 SampleCount = 1;
     mfxU32 layerCount = (mfxU32) pParams->fwdRefCount + 1;
 
     std::vector<m_tiledVideoWallParams> tilingParams;
@@ -2128,7 +2126,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
     for( refIdx = 1; refIdx <= (refCount + 1); refIdx++ )
     {
         /*for frames 8, 15, 22, 29,... */
-        unsigned int uLastPass = (refCount + 1) - ( (refIdx /7) *7);
         if ((refIdx != 1) && ((refIdx %7) == 1) )
         {
             {
