@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_va_base.h>
@@ -424,9 +424,6 @@ namespace UMC
             return umcRes;
 
         AutomaticMutex l(m_SyncMutex);
-
-        VAStatus va_res;
-        VAImage image;
 
         for (int i = 0; i < 2; ++i)
         {

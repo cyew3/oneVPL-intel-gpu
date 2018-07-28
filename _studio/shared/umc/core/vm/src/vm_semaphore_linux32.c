@@ -163,7 +163,6 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
 vm_status vm_semaphore_wait(vm_semaphore *sem)
 {
     vm_status umc_status = VM_NOT_INITIALIZED;
-    Ipp32s i_res = 0;
 
     /* check error(s) */
     if (NULL == sem)

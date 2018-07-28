@@ -87,8 +87,6 @@ template <> struct cmtype<SurfaceIndex> {
 
 #define SIMDCF_WRAPPER(X, SZ, i) X
 #define SIMDCF_ELEMENT_SKIP(i)
-#define CM_STATIC_ERROR(C,M)
-#define CM_STATIC_WARNING(C,M)
 #define OFFSET uint
 
 namespace cm {
@@ -150,13 +148,6 @@ namespace cm {
         unsigned int           cols_;
     };
 #endif
-};
-
-template <bool VALUE> struct check_true {
-    static const bool value = false;
-};
-template <> struct check_true<true> {
-    static const bool value = true;
 };
 
 template <typename T> struct is_inttype {
@@ -313,7 +304,7 @@ public:
 // stream
 template <typename T, uint SZ>
 class stream : public basic_stream {
-    static const bool type_conformable = cmtype<T>::value;
+    static_assert(cmtype<T>::value, "invalid type");
 public:
     typedef  T _Type;
 
@@ -583,7 +574,7 @@ public:
 
     CM_NOINLINE vector() : ::matrix<T, 1, SZ>() {}
     template <typename T2> CM_NOINLINE vector(const T2 initArray[]) : ::matrix<T, 1, SZ>(initArray) {
-        CM_STATIC_ERROR(!std::is_floating_point<T2>::value, "floating point array initialization values are not supported");
+        static_assert(!std::is_floating_point<T2>::value, "floating point array initialization values are not supported");
     }
     CM_NOINLINE vector(const vector<T, SZ>& src) : ::matrix<T, 1, SZ>((const matrix<T, 1, SZ>&)src) {}
     template <typename T2> CM_NOINLINE vector(const T2& src) : ::matrix<T, 1, SZ>(src) {}
@@ -631,12 +622,12 @@ public:
 
     //1D iselect only
     template <typename T2, uint WD> CM_NOINLINE vector<T, WD> iselect(const vector<T2, WD>& index) {
-        CM_STATIC_WARNING((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
+        static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
         return matrix<T, 1, SZ>::template iselect<T2, WD>(index);
     }
 
     template <typename T2, uint WD> CM_NOINLINE vector<T, WD> iselect(const vector_ref<T2, WD>& index) {
-        CM_STATIC_WARNING((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
+        static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
         return matrix<T, 1, SZ>::template iselect<T2, WD>(index);
     }
     //end of iselect
@@ -653,20 +644,20 @@ public:
 
     //vector select
     template <uint C, uint CS> CM_NOINLINE const vector_ref<T, C> select(OFFSET joff = 0) const {
-        CM_STATIC_ERROR(((SZ) >= (C)), "select size is greater than source vector size");
-        CM_STATIC_ERROR(((SZ) >= ((C - 1)*(CS)) + 1) || (CS == 1), "select range exceeds source vector bounds");
+        static_assert(((SZ) >= (C)), "select size is greater than source vector size");
+        static_assert(((SZ) >= ((C - 1)*(CS)) + 1) || (CS == 1), "select range exceeds source vector bounds");
         return ((matrix<T, 1, SZ>*)this)->template select<1, 1, C, CS>(0, joff);
     }
     template <uint C, uint CS> CM_NOINLINE vector_ref<T, C> select(OFFSET joff = 0) {
-        CM_STATIC_ERROR(((SZ) >= (C)), "select size is greater than source vector size");
-        CM_STATIC_ERROR(((SZ) >= ((C - 1)*(CS)) + 1) || (CS == 1), "select range exceeds source vector bounds");
+        static_assert(((SZ) >= (C)), "select size is greater than source vector size");
+        static_assert(((SZ) >= ((C - 1)*(CS)) + 1) || (CS == 1), "select range exceeds source vector bounds");
         return ((matrix<T, 1, SZ>*)this)->template select<1, 1, C, CS>(0, joff);
     }
 
     //vector genx_select
     template <uint R, uint VS, uint WD, uint HS> CM_NOINLINE const vector<T, R*WD> genx_select(OFFSET joff = 0) {
-        CM_STATIC_ERROR((!std::is_same<T, double>::value), "genx_select is not supported for vectors with element type 'double'");
-        CM_STATIC_ERROR(((SZ) >= (WD)), "genx_select width is greater than source vector size");
+        static_assert((!std::is_same<T, double>::value), "genx_select is not supported for vectors with element type 'double'");
+        static_assert(((SZ) >= (WD)), "genx_select width is greater than source vector size");
         return ((matrix<T, 1, SZ>*)this)->template genx_select<R, VS, WD, HS>(0, joff);
     }
 }; //vector
@@ -921,7 +912,7 @@ matrix<T, R, C>::matrix(const T2 initArray[])
     : array_2d_(data)
 #endif
 {
-    CM_STATIC_ERROR(!std::is_floating_point<T2>::value, "floating point array initialization values are not supported");
+    static_assert(!std::is_floating_point<T2>::value, "floating point array initialization values are not supported");
     typedef typename cm::pointer_traits<T2>::tail_pointee_type tail_pointee_type;
     for (int i = 0; i < SZ; i++) {
         SIMDCF_WRAPPER(data[i] = (T)((tail_pointee_type *)initArray)[i], SZ, i);
@@ -963,8 +954,7 @@ matrix<T, R, C>::matrix(const matrix<T2, R2, C2>& src, const uint sat)
     : array_2d_(data)
 #endif
 {
-    static const bool conformable = check_true<R*C == R2*C2>::value;
-    assert(R*C == R2*C2);
+    static_assert(R*C == R2*C2, "matrices have different dimensions");
 
     uint sat1 = 0;
     vector<T2, SZ> in_src; in_src.assign(src);
@@ -980,8 +970,7 @@ matrix<T, R, C>::matrix(const matrix_ref<T2, R2, C2>& src, const uint sat)
     : array_2d_(data)
 #endif
 {
-    static const bool conformable = check_true<R*C == R2*C2>::value;
-    assert(R*C == R2*C2);
+    static_assert(R*C == R2*C2, "matrices have different dimensions");
 
     vector<T2, SZ> in_src; in_src.assign(src);
 
@@ -1018,9 +1007,7 @@ template <typename T, uint R, uint C>
 template <typename T2, uint R2, uint C2>
 matrix<T, R, C>& matrix<T, R, C>::operator = (const matrix<T2, R2, C2>& src)
 {
-    CM_STATIC_ERROR(R*C == R2*C2, "matrices have different dimensions"); \
-        static const bool conformable = check_true<R*C == R2*C2>::value;
-    assert(R*C == R2*C2);
+    static_assert(R*C == R2*C2, "matrices have different dimensions");
 
     uint sat1 = 0;
     vector<T2, SZ> in_src; in_src.assign(src);
@@ -1035,9 +1022,7 @@ template <typename T, uint R, uint C>
 template <typename T2, uint R2, uint C2>
 matrix<T, R, C>& matrix<T, R, C>::operator = (const matrix_ref<T2, R2, C2>& src)
 {
-    CM_STATIC_ERROR(R*C == R2*C2, "matrices have different dimensions"); \
-        static const bool conformable = check_true<R*C == R2*C2>::value;
-    assert(R*C == R2*C2);
+    static_assert(R*C == R2*C2, "matrices have different dimensions");
 
     uint sat1 = 0;
     vector<T2, SZ> in_src; in_src.assign(src);
@@ -1056,7 +1041,7 @@ template <typename T, uint R, uint C> \
 template <typename T2> \
 matrix<T,R,C>& matrix<T,R,C>::operator OP##= (const T2 x) \
 { \
-        static const bool type_conformable = cmtype<T2>::value; \
+        static_assert(cmtype<T2>::value, "invalid type"); \
         uint sat1 = 0; \
         for (uint i=0; i < SZ; i++) { \
             SIMDCF_WRAPPER(this->getref(i) = CmEmulSys::satur<T>::saturate((*this).get(i) OP x, sat1), SZ, i); \
@@ -1067,9 +1052,7 @@ template <typename T, uint R, uint C> \
 template <typename T2, uint R2, uint C2> \
 matrix<T,R,C>& matrix<T,R,C>::operator OP##= (const matrix<T2,R2,C2>& x) \
 { \
-        CM_STATIC_ERROR(R*C == R2*C2, "matrices have different dimensions"); \
-        static const bool conformable = check_true<R*C == R2*C2>::value; \
-        assert(R*C == R2*C2); \
+        static_assert(R*C == R2*C2, "matrices have different dimensions"); \
         uint sat1 = 0; \
         vector<T2, /*SZ*/R*C> in_x; in_x.assign(x); \
         for (uint i=0; i < SZ; i++) { \
@@ -1081,9 +1064,7 @@ template <typename T, uint R, uint C> \
 template <typename T2, uint R2, uint C2> \
 matrix<T,R,C>& matrix<T,R,C>::operator OP##= (const matrix_ref<T2,R2,C2>& x) \
 { \
-        CM_STATIC_ERROR(R*C == R2*C2, "matrices have different dimensions"); \
-        static const bool conformable = check_true<R*C == R2*C2>::value; \
-        assert(R*C == R2*C2); \
+        static_assert(R*C == R2*C2, "matrices have different dimensions"); \
         uint sat1 = 0; \
         vector<T2, /*SZ*/R*C> in_x; in_x.assign(x); \
         for (uint i=0; i < SZ; i++) { \
@@ -1136,12 +1117,11 @@ template <typename T, uint R, uint C>
 template <uint R2, uint VS, uint WD, uint HS>
 const vector<T, R2*WD> matrix<T, R, C>::genx_select(OFFSET ioff, OFFSET joff)
 {
-    CM_STATIC_ERROR((!std::is_same<T, double>::value), "genx_select is not supported for matrices with element type of 'double'");
-    static const bool conformable1 = check_true<(R2 > 0)>::value;
-    static const bool conformable2 = check_true<(VS >= 0)>::value;
-    static const bool conformable3 = check_true<(WD > 0)>::value;
-    static const bool conformable4 = check_true<(HS >= 0)>::value;
-    assert(R2 >= 0 && VS >= 0 && WD >= 0 && HS >= 0);
+    static_assert((!std::is_same<T, double>::value), "genx_select is not supported for matrices with element type of 'double'");
+    static_assert(R2 > 0, "invalid dimensions");
+    static_assert(VS >= 0, "invalid dimensions");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(HS >= 0, "invalid dimensions");
 
     assert(ioff < R);
     assert(joff < C);
@@ -1166,9 +1146,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index, std::true_type)
 {
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert(is_inttype<T2>::value, "invalid type");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1185,9 +1166,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index, std::false_type)
 {
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert(is_inttype<T2>::value, "invalid type");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1211,9 +1193,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index, std::true_type)
 {
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert(is_inttype<T2>::value, "invalid type");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1230,9 +1213,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index, std::false_type)
 {
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert(is_inttype<T2>::value, "invalid type");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1249,9 +1233,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index)
 {
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert(is_inttype<T2>::value, "invalid type");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1268,9 +1253,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index)
 {
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert(is_inttype<T2>::value, "invalid type");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index.get(i) < SZ), WD, i);
@@ -1289,10 +1275,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index_x, const vector<T2, WD>& index_y)
 {
-    CM_STATIC_WARNING((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
@@ -1310,10 +1296,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index_x, const vector<T2, WD>& index_y)
 {
-    CM_STATIC_WARNING((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
@@ -1332,10 +1318,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector<T2, WD>& index_x, const vector_ref<T2, WD>& index_y)
 {
-    CM_STATIC_WARNING((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);
@@ -1353,10 +1339,10 @@ template <typename T, uint R, uint C>
 template <typename T2, uint WD>
 vector<T, WD> matrix<T, R, C>::iselect(const vector_ref<T2, WD>& index_x, const vector_ref<T2, WD>& index_y)
 {
-    CM_STATIC_WARNING((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
-    static const bool conformable1 = check_true<(WD > 0)>::value;
-    static const bool type_conformable = is_inttype<T2>::value;
-    assert(WD >= 0 && R >= 0 && C >= 0);
+    static_assert((std::is_unsigned<T2>::value), "iselect index vector element type must be unsigned");
+    static_assert(WD > 0, "invalid dimensions");
+    static_assert(R >= 0, "invalid dimensions");
+    static_assert(C >= 0, "invalid dimensions");
 
     for (uint i = 0; i < WD; i++) {
         SIMDCF_WRAPPER(assert(index_x.get(i) < R), WD, i);

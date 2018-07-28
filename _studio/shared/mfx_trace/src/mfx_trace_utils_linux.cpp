@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -59,7 +59,7 @@ mfxTraceU32 mfx_trace_get_value_pos(FILE* file,
                                     char* line, mfxTraceU32 line_size,
                                     char** value_pos)
 {
-    char *str = NULL, *p = NULL;
+    char *str = NULL;
     mfxTraceU32 n = 0;
     bool bFound = false;
 

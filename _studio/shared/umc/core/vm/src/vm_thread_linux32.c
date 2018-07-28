@@ -123,7 +123,6 @@ Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
     (void)arg;
 
     Ipp32s i_res = 1;
-    pthread_attr_t attr;
 
     /* check error(s) */
     if (NULL == thread)
