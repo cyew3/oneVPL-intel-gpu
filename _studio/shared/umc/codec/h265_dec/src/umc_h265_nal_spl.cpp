@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -25,8 +25,6 @@ enum
 
 // Change memory region to little endian for reading with 32-bit DWORDs and remove start code emulation prevention byteps
 void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets);
-
-static const Ipp8u start_code_prefix[] = {0, 0, 0, 1};
 
 // Search bitstream for start code
 static Ipp32s FindStartCode(const Ipp8u *pb, size_t &nSize)

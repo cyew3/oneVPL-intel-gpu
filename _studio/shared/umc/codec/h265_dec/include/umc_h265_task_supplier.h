@@ -90,7 +90,6 @@ private:
     Ipp32s m_SkipCycle;
     Ipp32s m_ModSkipCycle;
     Ipp32s m_PermanentTurnOffDeblocking;
-    Ipp32s m_SkipFlag;
 
     Ipp32s m_NumberOfSkippedFrames;
 };

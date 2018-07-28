@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -18,8 +18,6 @@
 namespace UMC
 {
 void SwapMemoryAndRemovePreventingBytes(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize);
-
-static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
 
 static Ipp32s FindStartCode(Ipp8u * (&pb), size_t &nSize)
 {

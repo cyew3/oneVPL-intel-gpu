@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -176,7 +176,6 @@ public:
         , m_SeqParamsSvcExt(pObjHeap)
         , m_PicParams(pObjHeap)
         , m_SEIParams(pObjHeap)
-        , m_pObjHeap(pObjHeap)
     {
         memset(&m_nalExtension, 0, sizeof(m_nalExtension));
     }
@@ -198,9 +197,6 @@ public:
     HeaderSet<H264PicParamSet>             m_PicParams;
     HeaderSet<H264SEIPayLoad>              m_SEIParams;
     H264NalExtension                       m_nalExtension;
-
-private:
-    H264_Heap_Objects  *m_pObjHeap;
 };
 
 } // namespace UMC

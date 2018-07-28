@@ -333,8 +333,7 @@ Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
     int cumulativeSize = 0;
     for (int i = 0; i < n; i++)
     {
-        void * ptr = va_arg(args, void *);
-        (void)ptr; // just skip it
+        va_arg(args, void *);
 
         int currSize = va_arg(args, int);
         cumulativeSize += currSize;
