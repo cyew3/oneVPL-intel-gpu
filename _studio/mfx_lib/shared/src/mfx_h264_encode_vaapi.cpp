@@ -162,7 +162,6 @@ mfxStatus SetRateControl(
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
-    mfxExtCodingOption3 const * extOpt3  = GetExtBuffer(par);
 
     if ( rateParamBuf_id != VA_INVALID_ID)
     {
@@ -197,6 +196,7 @@ mfxStatus SetRateControl(
 
 #if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
     // Activate frame tolerance sliding window mode
+    mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(par);
     if (extOpt3->WinBRCSize) {
         rate_param->rc_flags.bits.frame_tolerance_mode = 1;
     }
@@ -1136,7 +1136,6 @@ void UpdateSliceSizeLimited(
 {
     (void)sps;
 
-    mfxU32 numPics = task.GetPicStructForEncode() == MFX_PICSTRUCT_PROGRESSIVE ? 1 : 2;
     mfxU32 idx = 0, ref = 0;
 
     mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
@@ -2069,11 +2068,9 @@ mfxStatus VAAPIEncoder::Execute(
     mfxExtCodingOption2     const * ctrlOpt2      = GetExtBuffer(task.m_ctrl);
     mfxExtCodingOption3     const * ctrlOpt3      = GetExtBuffer(task.m_ctrl);
     mfxExtMBDisableSkipMap  const * ctrlNoSkipMap = GetExtBuffer(task.m_ctrl);
-    mfxExtCodingOption      const*  extOpt        = GetExtBuffer(m_videoParam);
 #if defined (MFX_ENABLE_H264_ROUNDING_OFFSET)
     mfxExtAVCRoundingOffset const * ctrlRoundingOffset  = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
 #endif
-    mfxU8 qp_delta_list[] = {0,0,0,0, 0,0,0,0};
 
     if (ctrlOpt2 && ctrlOpt2->SkipFrame <= MFX_SKIPFRAME_BRC_ONLY)
         skipMode = ctrlOpt2->SkipFrame;
@@ -2405,6 +2402,7 @@ mfxStatus VAAPIEncoder::Execute(
 
             if (NULL != rePakCtrl)
             {
+                mfxU8 qp_delta_list[] = { 0,0,0,0, 0,0,0,0 };
                 vaFeiFrameControl->max_frame_size = rePakCtrl->MaxFrameSize;
                 vaFeiFrameControl->num_passes     = rePakCtrl->NumPasses;
 
