@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -225,12 +225,12 @@ namespace hevce_default_ref_lists
 
         mfxU32 BPyrReorder(const std::vector<FrameIterator> & bframes)
         {
-            mfxU32 num = (mfxU32)bframes.size();
+            const mfxU32 num = (mfxU32)bframes.size();
             if (bframes[0]->bpo == (mfxU32)MFX_FRAMEORDER_UNKNOWN)
             {
                 bool bRef = false;
 
-                for(mfxU32 i = 0; i < (mfxU32)bframes.size(); i++)
+                for(mfxU32 i = 0; i < num; i++)
                 {
                     bframes[i]->bpo = GetBiFrameLocation(i,num, bRef);
                     if (bRef)
@@ -239,7 +239,7 @@ namespace hevce_default_ref_lists
             }
             mfxU32 minBPO = (mfxU32)MFX_FRAMEORDER_UNKNOWN;
             mfxU32 ind = 0;
-            for(mfxU32 i = 0; i < (mfxU32)bframes.size(); i++)
+            for(mfxU32 i = 0; i < num; i++)
             {
                 if (bframes[i]->bpo < minBPO)
                 {
@@ -289,6 +289,12 @@ namespace hevce_default_ref_lists
             if (bFields)
             {
                 m_lastFieldInfo.SaveInfo(*top);
+                // According to current lib implementation first field in pyramid is ref.
+                // Now can change 1st B in bpyr to ref after it was saved as not ref.
+                // If change before saving both fields will become ref.
+                if ((top->type & MFX_FRAMETYPE_B) && !top->bSecondField &&
+                    (((mfxExtCodingOption2&)m_emuPar).BRefType == MFX_B_REF_PYRAMID))
+                    top->type |= MFX_FRAMETYPE_REF;
             }
 
             return top;
@@ -321,6 +327,7 @@ namespace hevce_default_ref_lists
 
             if (!bframes.empty())
             {
+                // note, bframes here contain only first fields
                 return bframes[BPyrReorder(bframes)];
             }
 
@@ -332,7 +339,7 @@ namespace hevce_default_ref_lists
             {
                 top --;
                 if (strict)
-                    top = begin;
+                    top->type |= MFX_FRAMETYPE_REF;
                 else
                     top->type = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
 
@@ -340,7 +347,7 @@ namespace hevce_default_ref_lists
                 {
                     top--;
                     if (strict)
-                        top = begin;
+                        top->type |= MFX_FRAMETYPE_REF;
                     else
                         top->type = MFX_FRAMETYPE_P | MFX_FRAMETYPE_REF;
                 }
@@ -557,7 +564,7 @@ namespace hevce_default_ref_lists
 
                             L0.erase(weak);
                         }
-                    }
+                    } // if PPyramid
                 }
 
                 if (bIsFieldCoding)
@@ -591,9 +598,9 @@ namespace hevce_default_ref_lists
                     }
                 }
 
-                // if B's L1 is zero (e.g. in case of closed gop)
+                // if B's L1 is zero (e.g. in case of closed gop), take closest
                 if (isB && !L1.size() && L0.size())
-                    L1.push_back(L0[0]);
+                    L1.push_back( *std::min_element(L0.cbegin(), L0.cend(), distance) );
 
                 if (!isB)
                 {
@@ -768,7 +775,7 @@ namespace hevce_default_ref_lists
                         g_tsLog << " Slice type:\n";
                         g_tsLog << " - Actual: " << slices[sh.type]
                             << " - Expected: " << FrameTypeToChar(reorderedFrame->type) << "\n";
-                    return MFX_ERR_ABORTED;
+                        return MFX_ERR_ABORTED;
                     }
 
                     ExternalFrame & emulated = *frame;
