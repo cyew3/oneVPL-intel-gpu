@@ -802,9 +802,7 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
 {
     if(!pCurrentFrame || !pSliceInfo || !supplier) { throw h265_exception(UMC_ERR_NULL_PTR); }
     H265Slice * pSlice = pSliceInfo->GetSlice(0);
-    const H265SliceHeader* sliceHeader = pSlice->GetSliceHeader();
     const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
-    const H265PicParamSet* pPicParamSet = pSlice->GetPicParam();
 
     UMCVACompBuffer *picParamBuf;
     VAPictureParameterBufferHEVC* picParam = (VAPictureParameterBufferHEVC*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferHEVC));

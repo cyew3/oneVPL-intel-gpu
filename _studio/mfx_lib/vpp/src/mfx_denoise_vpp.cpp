@@ -1256,7 +1256,6 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
     mfxU8 history_weight;
     mfxI32 mb_diff, mb_asd, mb_scm;
     const mfxI32 q_table[16] = {1024, 512, 341, 256, 205, 171, 146, 128, 114, 102, 93, 85, 79, 73, 68, 64};
-    static const mfxI32 q_tab_sigma[9] = {2048, 1024, 682, 512, 409, 341, 292, 256, 227};
 
     /* param */
     mfxI32 noise_level    = pState->gaussianThresholdY;

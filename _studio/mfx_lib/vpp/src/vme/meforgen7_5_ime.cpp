@@ -1267,21 +1267,20 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
         d = LutMode[LUTMODE_INTER_8x8_FIELD]+useDistF8x8_0+useDistF8x8_1+useDistF8x8_2+useDistF8x8_3;
         if(d<=DistInter){*dist = d; DistInter = *dist; *mode = m;}
     }
-    else 
+    else
     {
         bidirValid = false;//CheckBidirValid(m, checkPruning, true);
         // Minors with no change of directions
-        m = (*mode)&0xFF; 
-        s = (*mode)>>8; 
+        m = (*mode)&0xFF;
+        s = (*mode)>>8;
         d = 0;
         i = 0; //variable initialization
         int imode = 0;
         df = 0;
-        I32     BlkMaxDist = (Vsta.SadType & INTER_CHROMA_MODE)? (MBMAXDIST>>1):(MBMAXDIST>>2); //0x3fff for luma, 0x7fff for chroma
         for(k=0;k<4;k++){
             i = ((s-1)&1);
             switch(m&3){
-                case 0: // 8x8                    
+                case 0: // 8x8
                     j = B8X8+k;
                     useDistM8x8 = Dist[0][j];
                     if(bidirValid){
@@ -1295,7 +1294,7 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
                     else {
                         useDistM8x8=Dist[i][j];;
                     }
-                    
+
                     if((i == 1&&(!L0_BWD_Penalty)) || ((i != 1)&&L0_BWD_Penalty))
                         additionalCost = LutMode[LUTMODE_INTER_BWD];
                     else
@@ -1305,19 +1304,19 @@ void MEforGen75::PreBMEPartition(I32 *dist, U16 *mode, bool benablecopy)
                     d += tempd;
                     imode |= i ? 0x20000 : 0x10000;
                     break;
-                case 1: // 8x4                    
+                case 1: // 8x4
                     //only best directions are checked for minor shapes
                     j = B8X4 + (k<<1);
-                    useDistM8x4_0 = Dist[i][j]; 
+                    useDistM8x4_0 = Dist[i][j];
                     useDistM8x4_1 = Dist[i][j+1];
                     if (benablecopy){
-                        useDistM8x4_0=Dist[0][j] = Dist[i][j]; 
+                        useDistM8x4_0=Dist[0][j] = Dist[i][j];
                         useDistM8x4_1=Dist[0][j+1] = Dist[i][j+1];
                     }
                     else {
-                        useDistM8x4_0 = Dist[i][j]; 
+                        useDistM8x4_0 = Dist[i][j];
                         useDistM8x4_1 = Dist[i][j+1];
-                    }                    
+                    }
                     if((i == 1&&(!L0_BWD_Penalty)) || ((i != 1)&&L0_BWD_Penalty))
                         additionalCost = LutMode[LUTMODE_INTER_BWD];
                     else

@@ -18,17 +18,6 @@ inline bool suppress_icl_warning(const void* p) { return p!=0; }
 
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODER_COMMON)
 
-static UMC_H264_ENCODER::MBTypeValue mapB16_type[] = {
-   0,8,9,12,13,14,15,16,17,18,19,20,25,26,27,28,
-   21,22,23,24,29,30
-};
-
-static UMC_H264_ENCODER::MBTypeValue mapP16_type[] = {
-  0,3,3,3,4,5
-};
-
-static Ipp32s sub8x8[4] = {0,2,8,10};
-
 UMC_H264_ENCODER::SB_Type mapSBTypeMFXUMC_B[4][4] = {
     { SBTYPE_FORWARD_8x8, SBTYPE_BACKWARD_8x8, SBTYPE_BIDIR_8x8,SBTYPE_DIRECT },
     { SBTYPE_FORWARD_8x4, SBTYPE_BACKWARD_8x4, SBTYPE_BIDIR_8x4,SBTYPE_DIRECT },

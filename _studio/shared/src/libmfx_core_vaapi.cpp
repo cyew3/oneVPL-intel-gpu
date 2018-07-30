@@ -1112,9 +1112,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
 
     CmCopyWrapper *pCmCopy = m_pCmCopy.get();
 
-    mfxU32 srcPitch = pSrc->Data.PitchLow + ((mfxU32)pSrc->Data.PitchHigh << 16);
-    mfxU32 dstPitch = pDst->Data.PitchLow + ((mfxU32)pDst->Data.PitchHigh << 16);
-
     bool canUseCMCopy = m_bCmCopy ? CmCopyWrapper::CanUseCmCopy(pDst, pSrc) : false;
 
     if (NULL != pSrc->Data.MemId && NULL != pDst->Data.MemId)
@@ -1177,8 +1174,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 }
                 MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
 
-                Ipp32u srcPitch = va_image.pitches[0];
-
                 {
                     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_vid2sys");
                     mfxStatus sts = mfxDefaultAllocatorVAAPI::SetFrameData(va_image, pDst->Info.FourCC, (mfxU8*)pBits, &pSrc->Data);
@@ -1240,8 +1235,6 @@ VAAPIVideoCORE::DoFastCopyExtended(
                 va_sts = vaMapBuffer(m_Display, va_image.buf, (void **) &pBits);
             }
             MFX_CHECK(VA_STATUS_SUCCESS == va_sts, MFX_ERR_DEVICE_FAILED);
-
-            Ipp32u dstPitch = va_image.pitches[0];
 
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "memcpy_sys2vid");

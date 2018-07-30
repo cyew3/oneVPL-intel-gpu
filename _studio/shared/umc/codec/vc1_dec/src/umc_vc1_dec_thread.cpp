@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -74,9 +74,6 @@ Status VC1ThreadDecoder::Init(VC1Context* pContext,
                               MemoryAllocator* pMemoryAllocator,
                               VC1TaskProcessor* pExternalProcessor)
 {
-    static Ipp32u mask[4] = {2,32,64,128};
-    static Ipp32u proc_mask[4] = {1,2,1,2};
-
     // release object before initialization
     Release();
 

@@ -2334,8 +2334,6 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
 
 mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 {
-    VAStatus vaSts;
-
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
     VASurfaceID waitSurface = VA_INVALID_SURFACE;
     mfxU32 indxSurf = 0;
@@ -2364,7 +2362,7 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
 #if !defined(ANDROID)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
-        vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
+        VAStatus vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
         if (vaSts == VA_STATUS_ERROR_HW_BUSY)
             return MFX_ERR_GPU_HANG;
         else
@@ -2386,10 +2384,9 @@ mfxStatus VAAPIVideoProcessing::QueryTaskStatus(mfxU32 taskIndex)
         while(iter != m_feedbackCache.end())
         {
             ExtVASurface currentFeedback = *iter;
-
             VASurfaceStatus surfSts = VASurfaceSkipped;
 
-            vaSts = vaQuerySurfaceStatus(m_vaDisplay,  currentFeedback.surface, &surfSts);
+            VAStatus vaSts = vaQuerySurfaceStatus(m_vaDisplay,  currentFeedback.surface, &surfSts);
             MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
             switch (surfSts)
