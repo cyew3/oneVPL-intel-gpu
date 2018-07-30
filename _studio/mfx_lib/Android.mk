@@ -167,6 +167,7 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/field_copy/src/, \
     genx_fcopy_gen9_isa.cpp \
     genx_fcopy_gen10_isa.cpp \
     genx_fcopy_gen11_isa.cpp \
+    genx_fcopy_gen11lp_isa.cpp \
     genx_fcopy_gen12_isa.cpp)
 
 MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/src/, \

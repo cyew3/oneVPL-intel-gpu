@@ -11,13 +11,7 @@
 #include <cm/cm.h>
 
 typedef unsigned char       uint1;  // unsigned byte
-typedef unsigned short      uint2;  // unsigned word
-typedef unsigned int        uint4;  // unsigned dword
-typedef unsigned long long  uint8;  // unsigned qword
 typedef char                int1;   // byte
-typedef short               int2;   // word
-typedef int                 int4;   // dword
-typedef long long           int8;   // qword
 
 extern "C" _GENX_MAIN_  void
 MbCopyFieLd(SurfaceIndex InSurfIndex, SurfaceIndex OutSurfIndex, int fieldMask)

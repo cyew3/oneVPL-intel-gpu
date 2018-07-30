@@ -41,6 +41,7 @@ list( APPEND sources
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen9_isa.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen10_isa.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen11_isa.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen11lp_isa.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_fcopy_gen12_isa.cpp
 )
 make_library( field_copy_kernels hw static )

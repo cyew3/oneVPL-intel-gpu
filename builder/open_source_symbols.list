@@ -83,6 +83,7 @@ __genx_fcopy_gen8__
 __genx_fcopy_gen9__
 __genx_fcopy_gen10__
 __genx_fcopy_gen11__
+__genx_fcopy_gen11lp__
 __genx_bdw_simple_me__
 __genx_hsw_histogram__
 __genx_hsw_simple_me__

@@ -7,7 +7,8 @@
 //
 // Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
+
 #ifndef __genx_fcopy_gen7_5__
 #define __genx_fcopy_gen7_5__
-extern const unsigned char genx_fcopy_gen7_5[13289];
+extern const unsigned char genx_fcopy_gen7_5[5413];
 #endif
