@@ -29,7 +29,7 @@ namespace hevce_fei_idr_insertion
 
     const int MFX_PAR = 1;
 
-    const mfxF64 PSNR_THRESHOLD = 43.0;
+    const mfxF64 PSNR_THRESHOLD = 42.5;
 
     typedef std::map<mfxU64,std::pair<mfxU32, mfxU8>> FrameMap; // <TimeStamp, <FrameOrder, FrameType>>
 
