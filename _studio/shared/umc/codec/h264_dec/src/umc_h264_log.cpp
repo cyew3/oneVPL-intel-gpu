@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -32,6 +32,8 @@ namespace UMC
     }
 #endif
 
+#ifdef ENABLE_LOGGING
+
 static const vm_char * frameTypes[] =
 {
     VM_STRING("None"),
@@ -39,8 +41,6 @@ static const vm_char * frameTypes[] =
     VM_STRING("P_PICTURE"),
     VM_STRING("B_PICTURE")
 };
-
-#ifdef ENABLE_LOGGING
 
 Logging::Logging()
 {

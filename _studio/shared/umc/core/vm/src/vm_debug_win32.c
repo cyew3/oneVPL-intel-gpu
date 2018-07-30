@@ -299,31 +299,6 @@ void vm_debug_trace_ex(Ipp32s level,
     }
 }
 
-#else /*  !VM_DEBUG */
-
-vm_debug_level vm_debug_setlevel(vm_debug_level level)
-{
-    return level;
-}
-
-vm_debug_output vm_debug_setoutput(vm_debug_output output)
-{
-    return output;
-}
-
-void vm_debug_setfile(vm_char *file, Ipp32s truncate)
-{
-    (void)file;
-    (void)truncate;
-}
-
-void vm_debug_message(const vm_char *format, ...)
-{
-    (void)format;
-}
-
-#endif /* VM_DEBUG */
-
 static struct {
     int code;
     vm_char *string;
@@ -371,6 +346,31 @@ ErrorStringTable[] =
     { 0x80040211L,          VM_STRING("VFW_E_NOT_COMMITTED: Cannot allocate a sample when the allocator is not active") },
     { 0x80040227L,          VM_STRING("VFW_E_WRONG_STATE: The operation could not be performed because the filter is in the wrong state") },
 };
+
+#else /*  !VM_DEBUG */
+
+vm_debug_level vm_debug_setlevel(vm_debug_level level)
+{
+    return level;
+}
+
+vm_debug_output vm_debug_setoutput(vm_debug_output output)
+{
+    return output;
+}
+
+void vm_debug_setfile(vm_char *file, Ipp32s truncate)
+{
+    (void)file;
+    (void)truncate;
+}
+
+void vm_debug_message(const vm_char *format, ...)
+{
+    (void)format;
+}
+
+#endif /* VM_DEBUG */
 
 Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, Ipp32u line)
 {

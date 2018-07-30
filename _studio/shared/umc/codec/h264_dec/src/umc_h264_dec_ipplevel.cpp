@@ -189,9 +189,6 @@ const Ipp8u ClampTbl[768] =
     ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff ,0xff
 };
 
-static Ipp16s zeroArray[16] = {0};
-
-
 /* Define NULL pointer value */
 #ifndef NULL
 #ifdef  __cplusplus

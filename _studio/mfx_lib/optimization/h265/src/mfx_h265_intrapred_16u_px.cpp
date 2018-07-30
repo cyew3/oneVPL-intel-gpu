@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -15,7 +15,7 @@
 #include "mfx_h265_optimization.h"
 #include "ipps.h"
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO) 
+#if defined(MFX_TARGET_OPTIMIZATION_PX) || defined(MFX_TARGET_OPTIMIZATION_SSSE3) || defined(MFX_TARGET_OPTIMIZATION_SSE4) || defined(MFX_TARGET_OPTIMIZATION_AVX2) || defined(MFX_TARGET_OPTIMIZATION_ATOM) || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 
 
 #define Saturate(min_val, max_val, val) MAX((min_val), MIN((max_val), (val)))
@@ -299,7 +299,7 @@ namespace MFX_HEVC_PP
             }
 
             *pPredPel = RefV; *(pPredPel+1) = RefU; tIF = tpIf;
-            
+
             // Fill top line with correct padding
             if(tIF) {
                 tPredPel = pPredPel + 2; tmpSrcPtr = pSrc - srcPitch;
@@ -327,7 +327,7 @@ namespace MFX_HEVC_PP
                 for(j = 0; j < (Ipp32s)(blkSize2>>1); j++)
                     *pDst16++ = refVal;
             }
-            
+
             tIF = lfIf;
             // Fill left line with correct padding
             if(tIF) {
@@ -357,7 +357,7 @@ namespace MFX_HEVC_PP
                 for (j = 0; j < num4x4InCU; j++)
                 {
                     if (itIF & 0x1) {
-                        tPredPel -= 8; 
+                        tPredPel -= 8;
                         RefV = tPredPel[1];
                         RefU = tPredPel[2];
                     } else {
@@ -450,7 +450,7 @@ namespace MFX_HEVC_PP
             dcval += PredPel[2*width+1+i];
         }
 
-        Ipp64u dcval64; 
+        Ipp64u dcval64;
         switch (width) {
         case 4:
             dcval = (dcval + 4) >> 3;
@@ -715,9 +715,6 @@ namespace MFX_HEVC_PP
 
     void h265_PredictIntra_DC_ChromaNV12_16u(PixType* PredPel, PixType* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
-        Ipp32s k;
-        Ipp32s l;
-
         Ipp32s dc1, dc2;
         Ipp32s Sum1 = 0, Sum2 = 0;
 

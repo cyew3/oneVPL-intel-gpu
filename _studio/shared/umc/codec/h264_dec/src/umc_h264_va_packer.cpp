@@ -2280,7 +2280,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         {
             Ipp32s defaultIndex = ((0 == pCurrentFrame->m_index) && !pRefPicList0[i]->IsFrameExist()) ? 1 : 0;
 
-            Ipp32s idx = FillRefFrame(&(pSlice_H264->RefPicList0[i]), pRefPicList0[i],
+            FillRefFrame(&(pSlice_H264->RefPicList0[i]), pRefPicList0[i],
                 pFields0[i], pSliceHeader->field_pic_flag, defaultIndex);
 
             if (pSlice_H264->RefPicList0[i].picture_id == pPicParams_H264->CurrPic.picture_id &&
@@ -2298,7 +2298,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         {
             Ipp32s defaultIndex = ((0 == pCurrentFrame->m_index) && !pRefPicList1[i]->IsFrameExist()) ? 1 : 0;
 
-            Ipp32s idx = FillRefFrame(&(pSlice_H264->RefPicList1[i]), pRefPicList1[i],
+            FillRefFrame(&(pSlice_H264->RefPicList1[i]), pRefPicList1[i],
                 pFields1[i], pSliceHeader->field_pic_flag, defaultIndex);
 
             if (pSlice_H264->RefPicList1[i].picture_id == pPicParams_H264->CurrPic.picture_id && pRefPicList1[i]->IsFrameExist())
@@ -2577,9 +2577,6 @@ PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * suppl
 void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
 {
     const H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
-    const H264SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
-    const H264PicParamSet* pPicParamSet = pSlice->GetPicParam();
-
     const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
 
     UMCVACompBuffer *picParamBuf;
@@ -2600,8 +2597,6 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
 
     Ipp32s referenceCount = 0;
     Ipp32s j = 0;
-
-    bool isSkipFirst = true;
 
     Ipp32s viewCount = m_supplier->GetViewCount();
 

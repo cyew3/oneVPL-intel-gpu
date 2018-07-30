@@ -280,8 +280,6 @@ static VC1Status MBLayer_InterlacePskipped(VC1Context* pContext)
 
     Ipp16s X = 0, Y = 0;
 
-    static const  Ipp32u predict_offset[6] = {0,8,128,136,256,320};
-
     pCurrMB->mbType = VC1_MB_1MV_INTER | VC1_MB_FORWARD;
     pCurrMB->m_cbpBits = 0;
     pCurrMB->FIELDTX = 0;

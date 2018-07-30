@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -25,7 +25,10 @@ template<typename T> static
 bool store_yuv(H264DecoderFrame *frame)
 {
     static FILE *yuv_file;
+
+#ifdef STORE_OUTPUT_AND_DIFF_YUV
     static FILE *diff_file;
+#endif
 
     if (!frame)
         return true;

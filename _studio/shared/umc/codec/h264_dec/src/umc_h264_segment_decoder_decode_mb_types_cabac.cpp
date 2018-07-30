@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,44 +17,6 @@
 
 namespace UMC
 {
-
-static
-Ipp32s MBTYPETBL[] =
-{
-    0-31, 1-31, 2-31, 3-31,
-    4-31, 5-31, 6-31, 7-31,
-    8-31, 9-31, 10-31, 11-31,
-    12-31, 13-31, 14-31, 15-31,
-    16-31, 17-31, 18-31, 19-31,
-    20-31, 21-31, 22-31, 23-31,
-    24-31, 25-31, 26-31, 27-31,
-    28-31, 29-31, 30-31, 31-31,
-    32-31, 33-31, 34-31, 35-31,
-
-    36-27, 37-27, 38-27, 39-27,
-    40-27, 41-27, 42-27, 43-27,
-
-    44-67, 45-67, 46-67, 47-67,
-    48-67, 49-67, 50-67, 51-67,
-    52-67, 53-67, 54-67, 55-67,
-    56-67, 57-67, 58-67, 59-67,
-    60-67, 61-67, 62-67, 63-67,
-    64-67, 65-67, 66-67, 67-67,
-    68-67, 69-67, 70-67, 71-67,
-    72-67, 73-67, 74-67, 75-67,
-    76-67, 77-67, 78-67, 79-67,
-
-    80-71, 81-71, 82-71, 83-71,
-    84-71, 85-71, 86-71, 87-71,
-    88-71, 89-71, 90-71, 91-71,
-    92-71, 93-71, 94-71, 95-71,
-};
-
-static
-Ipp32s PMBTYPETBL[] =
-{
-    0, 3, 2, 1
-};
 
 void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
 {
@@ -85,28 +47,6 @@ void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
     }
 
 } // void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
-
-static
-Ipp8u block4_block8[16] =
-{
-    0,  0,  1,  1,
-    0,  0,  1,  1,
-    2,  2,  3,  3,
-    2,  2,  3,  3
-};
-
-static
-Ipp32s bit_mask[] =
-{
-    1<<0,1<<1,1<<2,1<<3,
-    1<<4,1<<5,1<<6,1<<7,
-    1<<8,1<<9,1<<10,1<<11,
-    1<<12,1<<13,1<<14,1<<15,
-    1<<16,1<<17,1<<18,1<<19,
-    1<<20,1<<21,1<<22,1<<23,
-    1<<24,1<<25,1<<26,1<<27,
-    1<<28,1<<29,1<<30,1<<31,
-};
 
 Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
 {
@@ -861,27 +801,6 @@ Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
     }
 
 } // Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
-
-static
-Ipp32s PREDMBTYPETBL[] =
-{
-    MBTYPE_FORWARD,   MBTYPE_INTER_16x8,
-    MBTYPE_INTER_8x16,MBTYPE_INTER_8x8,
-    -1,               MBTYPE_INTRA,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_INTRA_16x16,MBTYPE_INTRA_16x16,
-    MBTYPE_PCM, MBTYPE_PCM, MBTYPE_PCM
-};
 
 static
 Ipp32s SBTYPETBL[] =
