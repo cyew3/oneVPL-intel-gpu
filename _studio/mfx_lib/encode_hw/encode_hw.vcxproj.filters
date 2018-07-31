@@ -65,34 +65,34 @@
     <ClCompile Include="mjpeg\src\mfx_mjpeg_encode_d3d_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_brc.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_brc.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_bs.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d_common.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d_common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d9.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_d3d11.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_ddi.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_ddi_trace.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi_trace.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_par.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_utils.cpp">
+    <ClCompile Include="h265\src\mfx_h265_encode_hw_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw.cpp">
@@ -163,34 +163,34 @@
     <ClInclude Include="mjpeg\include\mfx_mjpeg_encode_d3d_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_brc.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_brc.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_bs.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_bs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_d3d_common.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_d3d9.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d9.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_d3d11.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_d3d11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_ddi.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_ddi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_ddi_trace.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_ddi_trace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_set.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_set.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_utils.h">
+    <ClInclude Include="h265\include\mfx_h265_encode_hw_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw.h">
