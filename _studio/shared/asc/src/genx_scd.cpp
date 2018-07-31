@@ -75,7 +75,7 @@ SubSamplePoint_p(SurfaceIndex ibuf, SurfaceIndex obuf, uint in_width, uint in_he
     matrix<uchar, 1, 1>
         pxl;
     vector<uint, 4>
-        lumaVal = 0;
+        lumaVal;
 #pragma unroll(OUT_BLOCK)
     for (int i = 0; i < OUT_BLOCK; i++) {
         read(ibuf, offset_x, offset_y, pxl);

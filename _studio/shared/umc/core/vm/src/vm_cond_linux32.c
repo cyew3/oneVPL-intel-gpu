@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -208,6 +208,8 @@ void vm_cond_destroy(vm_cond *cond)
     {
         int res = pthread_cond_destroy(&cond->handle);
         assert(!res); // we experienced undefined behavior
+        (void)res;
+
         vm_cond_set_invalid_internal(cond);
     }
 } /* void vm_cond_destroy(vm_cond *cond) */

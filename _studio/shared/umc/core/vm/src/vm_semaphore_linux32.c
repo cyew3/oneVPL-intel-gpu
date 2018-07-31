@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if   defined(LINUX32) || defined(__APPLE__)
@@ -67,6 +67,8 @@ vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s init_count)
         {
             int cres = pthread_cond_destroy(&sem->cond);
             assert(!cres); // we experienced undefined behavior
+            (void)cres;
+
             vm_semaphore_set_invalid_internal(sem);
         }
     }
@@ -92,7 +94,9 @@ vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s init_count, Ipp32s max
         if (res)
         {
             int cres = pthread_cond_destroy(&sem->cond);
-            assert(!res); // we experienced undefined behavior
+            assert(!cres); // we experienced undefined behavior
+            (void)cres;
+
             vm_semaphore_set_invalid_internal(sem);
         }
     }

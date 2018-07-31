@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -161,6 +161,8 @@ void vm_mutex_destroy(vm_mutex *mutex)
     {
         int res = pthread_mutex_destroy(&mutex->handle);
         assert(!res); // we experienced undefined behavior
+        (void)res;
+
         vm_mutex_set_invalid_internal(mutex);
     }
 } /* void vm_mutex_destroy(vm_mutex *mutex) */
