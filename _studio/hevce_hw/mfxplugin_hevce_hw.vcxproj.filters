@@ -11,7 +11,7 @@
     <ClCompile Include="h265\src\mfx_h265_encode_hw_par.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d9.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_d3d11.cpp" />
-    <ClCompile Include="h265\src\export.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_plugin.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_ddi_trace.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_vaapi.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_brc.cpp" />

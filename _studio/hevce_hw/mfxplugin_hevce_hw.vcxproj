@@ -284,7 +284,7 @@
   <ItemGroup>
     <ClCompile Include="..\mfx_lib\shared\src\mfx_brc_common.cpp" />
     <ClCompile Include="..\shared\src\auxiliary_device.cpp" />
-    <ClCompile Include="h265\src\export.cpp" />
+    <ClCompile Include="h265\src\mfx_h265_encode_plugin.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_brc.cpp" />
     <ClCompile Include="h265\src\mfx_h265_encode_hw_bs.cpp" />

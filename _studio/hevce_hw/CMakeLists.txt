@@ -28,7 +28,7 @@ set( LIBS "" )
 set( defs "" )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
-list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/h265/src/export.cpp )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/h265/src/mfx_h265_encode_plugin.cpp )
 
 set( USE_STRICT_NAME TRUE )
 set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map" )

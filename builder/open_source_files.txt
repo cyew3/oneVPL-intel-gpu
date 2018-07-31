@@ -32,7 +32,7 @@ _studio/hevce_hw/h265/include/mfx_h265_encode_hw_utils.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_plugin_hw.h
 _studio/hevce_hw/h265/include/mfx_h265_encode_vaapi.h
 _studio/hevce_hw/h265/include/plugin_version_linux.h
-_studio/hevce_hw/h265/src/export.cpp
+_studio/hevce_hw/h265/src/mfx_h265_encode_plugin.cpp
 _studio/hevce_hw/h265/src/mfx_h265_encode_hw.cpp
 _studio/hevce_hw/h265/src/mfx_h265_encode_hw_brc.cpp
 _studio/hevce_hw/h265/src/mfx_h265_encode_hw_bs.cpp
