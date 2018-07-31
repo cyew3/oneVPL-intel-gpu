@@ -26,6 +26,19 @@ namespace MfxHwVP9Encode
         return new VAAPIEncoder;
     }
 
+    mfxU8 ConvertRTFormatMFX2VAAPI(mfxU8 chromaFormat)
+    {
+        VP9_LOG("ConvertRTFormatMFX2VAAPI \n");
+        switch (chromaFormat)
+        {
+            case MFX_CHROMAFORMAT_YUV420:
+                return VA_RT_FORMAT_YUV420;
+            case MFX_CHROMAFORMAT_YUV444:
+                return VA_RT_FORMAT_YUV444;
+            default: assert(!"Unsupported ChromaFormat"); return 0;
+        }
+    } // mfxU8 ConvertRTFormatMFX2VAAPI(mfxU8 chromaFormat)
+
     mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
     {
         VP9_LOG("ConvertRateControlMFX2VAAPI \n");
@@ -544,7 +557,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     VAStatus vaSts = vaGetConfigAttributes(m_vaDisplay,
                           ConvertGuidToVAAPIProfile(guid),
                           VAEntrypointEncSliceLP,
-                          attrs.data(), 
+                          attrs.data(),
                           (int)attrs.size());
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
@@ -553,7 +566,8 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     if (m_platform.CodeName >= MFX_PLATFORM_ICELAKE)
     {
-        m_caps.MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit; TO DO: 10bit also must be supported
+        m_caps.Color420Only = 0;
+        m_caps.MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit;
         m_caps.NumScalablePipesMinus1 = 1;
     }
     if (attrs[idx_map[VAConfigAttribRTFormat]].value != VA_ATTRIB_NOT_SUPPORTED)
@@ -637,6 +651,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     MFX_CHECK(m_vaDisplay, MFX_ERR_DEVICE_FAILED);
     VAStatus vaSts;
 
+    VAProfile va_profile = ConvertGuidToVAAPIProfile(GetGuid(par));
     mfxI32 entrypointsIndx = 0;
     mfxI32 numEntrypoints = vaMaxNumEntrypoints(m_vaDisplay);
     MFX_CHECK(numEntrypoints, MFX_ERR_DEVICE_FAILED);
@@ -645,7 +660,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
 
     vaSts = vaQueryConfigEntrypoints(
                 m_vaDisplay,
-                VAProfileVP9Profile0,
+                va_profile,
                 pEntrypoints.data(),
                 &numEntrypoints);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
@@ -670,12 +685,13 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     attrib[0].type = VAConfigAttribRTFormat;
     attrib[1].type = VAConfigAttribRateControl;
     vaSts = vaGetConfigAttributes(m_vaDisplay,
-                          VAProfileVP9Profile0,
+                          va_profile,
                           (VAEntrypoint)VAEntrypointEncSliceLP,
                           &attrib[0], 2);
     MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
 
-    if ((attrib[0].value & VA_RT_FORMAT_YUV420) == 0)
+    mfxU8 vaRTFormat = ConvertRTFormatMFX2VAAPI(par.mfx.FrameInfo.ChromaFormat);
+    if ((attrib[0].value & vaRTFormat) == 0)
         return MFX_ERR_DEVICE_FAILED;
 
     mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
@@ -683,12 +699,12 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
 
-    attrib[0].value = VA_RT_FORMAT_YUV420;
+    attrib[0].value = vaRTFormat;
     attrib[1].value = vaRCType;
 
     vaSts = vaCreateConfig(
         m_vaDisplay,
-        VAProfileVP9Profile0,
+        va_profile,
         (VAEntrypoint)VAEntrypointEncSliceLP,
         attrib,
         2,

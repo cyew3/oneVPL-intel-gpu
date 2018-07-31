@@ -85,42 +85,6 @@ mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
     return MFX_ERR_NONE;
 }
 
-inline GUID GetGuid(VP9MfxVideoParam  par)
-{
-    if (par.mfx.CodecProfile == 0)
-    {
-        SetDefailtsForProfileAndFrameInfo(par);
-    }
-
-    // Currently we don't support LP=OFF
-    // so it is mapped to GUID_NULL
-    // it will cause Query/Init fails with Unsupported
-    // ever when driver support LP=OFF
-    switch (par.mfx.CodecProfile)
-    {
-    case MFX_PROFILE_VP9_0:
-        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-            DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; //DXVA2_Intel_Encode_VP9_Profile0;
-        break;
-    case MFX_PROFILE_VP9_1:
-        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-            DXVA2_Intel_LowpowerEncode_VP9_Profile1 : GUID_NULL; //DXVA2_Intel_Encode_VP9_Profile1;
-        break;
-    case MFX_PROFILE_VP9_2:
-        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-            DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile2 : GUID_NULL; // DXVA2_Intel_Encode_VP9_10bit_Profile2;
-        break;
-    case MFX_PROFILE_VP9_3:
-        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-            DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 : GUID_NULL; // DXVA2_Intel_Encode_VP9_10bit_Profile3;
-        break;
-    default:
-        // profile cannot be identified. Use Profile0 so far
-        return (par.mfx.LowPower != MFX_CODINGOPTION_OFF) ?
-            DXVA2_Intel_LowpowerEncode_VP9_Profile0 : GUID_NULL; // DXVA2_Intel_Encode_VP9_Profile0;
-    }
-}
-
 mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 {
     VP9_LOG("\n (VP9_LOG) Plugin::Query +");

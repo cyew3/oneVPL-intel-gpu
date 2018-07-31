@@ -39,6 +39,8 @@ static const GUID DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile2 =
 static const GUID DXVA2_Intel_LowpowerEncode_VP9_10bit_Profile3 =
 { 0x353aca91, 0xd945, 0x4c13, {0xae, 0x7e, 0x46, 0x90, 0x60, 0xfa, 0xc8, 0xd8 } };
 
+GUID GetGuid(VP9MfxVideoParam  par);
+
 #define DDI_FROM_MAINLINE_DRIVER
 
 typedef struct tagENCODE_CAPS_VP9
