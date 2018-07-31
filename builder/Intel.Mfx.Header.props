@@ -6,6 +6,7 @@
     <MSDK_STUDIO_ROOT>$(MSBuildThisFileDirectory)..\_studio</MSDK_STUDIO_ROOT>
     <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-api</MSDK_API_ROOT>
     <MSDK_MFX_BUILD_DIR>$(MSBuildThisFileDirectory)..\..\build</MSDK_MFX_BUILD_DIR>
+    <MSDK_MFX_CONTRIB_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-contrib</MSDK_MFX_CONTRIB_ROOT>
     <MfxPropsDir Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props')">$(SolutionDir)</MfxPropsDir>
     <MfxPropsDir Condition="!Exists('$(MfxPropsDir)') And Exists('$(MEDIASDK_LIB_ROOT)\builder\Intel.Mfx.Header.props')">$(MEDIASDK_LIB_ROOT)\builder</MfxPropsDir>
     <MfxPropsDir Condition="!Exists('$(MfxPropsDir)') And Exists('$(MSBuildThisFileDirectory)..\..\builder\Intel.Mfx.Header.props')">$(MSBuildThisFileDirectory)..\..\builder</MfxPropsDir>
@@ -140,8 +141,8 @@
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\ia32\lib</MfxIppLibraryDir>
     <MfxIppGoldIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\include</MfxIppGoldIncludeDir>
     <MfxIppGoldLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\ia32\lib</MfxIppGoldLibraryDir>
-    <MfxIttIncludeDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\include</MfxIttIncludeDir>
-    <MfxIttLibraryDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\lib32</MfxIttLibraryDir>
+    <MfxIttIncludeDir>$(MSDK_MFX_CONTRIB_ROOT)\itt\include</MfxIttIncludeDir>
+    <MfxIttLibraryDir>$(MSDK_MFX_CONTRIB_ROOT)\itt\windows\lib32</MfxIttLibraryDir>
     <MfxIntelIncludeDir>$(MfxIntelPath)\compiler\include\</MfxIntelIncludeDir>
     <MfxIntelLibraryDir>$(MfxIntelPath)\compiler\lib\ia32_win\</MfxIntelLibraryDir>
     <MfxMDFIncludeDir>$(MEDIASDK_ROOT)\cmrt\compiler\include\</MfxMDFIncludeDir>
@@ -153,8 +154,8 @@
     <MfxIppLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81goldGuard\windows\em64t\lib</MfxIppLibraryDir>
     <MfxIppGoldIncludeDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\include</MfxIppGoldIncludeDir>
     <MfxIppGoldLibraryDir>$(MEDIASDK_ROOT)\ipp\ipp81gold\windows\em64t\lib</MfxIppGoldLibraryDir>
-    <MfxIttIncludeDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\include</MfxIttIncludeDir>
-    <MfxIttLibraryDir>$(MEDIASDK_ROOT)\mdp_msdk-contrib\itt\windows\lib64</MfxIttLibraryDir>
+    <MfxIttIncludeDir>$(MSDK_MFX_CONTRIB_ROOT)\itt\include</MfxIttIncludeDir>
+    <MfxIttLibraryDir>$(MSDK_MFX_CONTRIB_ROOT)\itt\windows\lib64</MfxIttLibraryDir>
     <MfxIntelIncludeDir>$(MfxIntelPath)\compiler\include\</MfxIntelIncludeDir>
     <MfxIntelLibraryDir>$(MfxIntelPath)\compiler\lib\intel64_win\</MfxIntelLibraryDir>
     <MfxMDFIncludeDir>$(MEDIASDK_ROOT)\cmrt\compiler\include\</MfxMDFIncludeDir>
