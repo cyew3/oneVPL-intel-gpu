@@ -173,12 +173,6 @@ void ownvc_Average8x16HP_HH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pD
     FUNC_AVE_HP(8, 8, pSrc, srcStep, pDst, dstStep, 3, 0);
     FUNC_AVE_HP(8, 8, pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep, 3, 0);
 }
-const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4] = {
-  ownvc_Average8x16_8u_C1R,
-  ownvc_Average8x16HP_HF0_8u_C1R,
-  ownvc_Average8x16HP_FH0_8u_C1R,
-  ownvc_Average8x16HP_HH0_8u_C1R
-};
 
 /****************************************************************/
 

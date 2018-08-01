@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -364,7 +364,7 @@ void GetIntraDCPredictors(VC1Context* pContext)
             DCPred.ACLEFT[11] = pC->DCBlkPred[4].ACLEFT;
 
             //block 5
-            DCPred.DC[13] = pC->DCBlkPred[5].DC,QurrQuant;
+            DCPred.DC[13] = pC->DCBlkPred[5].DC;
             DCPred.ACTOP[13] =  pC->DCBlkPred[5].ACTOP;
             DCPred.ACLEFT[13] = pC->DCBlkPred[5].ACLEFT;
         }

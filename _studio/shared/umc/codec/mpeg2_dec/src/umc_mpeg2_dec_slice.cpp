@@ -73,7 +73,7 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
   max_bits = *tbl++;
   num_tbl = *tbl++;
   for (i = 0; i < num_tbl; i++) {
-    *tbl++;
+    tbl++;
   }
   n = 0;
   ptbl = tbl;

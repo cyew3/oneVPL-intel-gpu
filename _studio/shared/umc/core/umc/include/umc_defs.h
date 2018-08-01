@@ -179,7 +179,8 @@ typedef struct {
   #define ALIGN_DECL(X) __attribute__ ((aligned(X)))
 #endif
 
-#if (defined(_MSC_VER) && _MSC_VER >= 1900)
+#if (defined(_MSC_VER) && _MSC_VER >= 1900) || \
+    (defined(__clang__) && (__clang_major__ == 3 && __clang_minor__ > 4 || __clang_major__ >= 4))
 /*
 this is a hot fix for C++11 compiler
 By default, the compiler generates implicit noexcept(true) specifiers for user-defined destructors and deallocator functions

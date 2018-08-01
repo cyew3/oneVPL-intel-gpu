@@ -89,6 +89,14 @@ H264Bitstream::~H264Bitstream()
 {
 } // H264Bitstream::~H264Bitstream()
 
+// Function 'p8_ippiHuffmanTableFree_32s' is depricated
+#if defined(__GNUC__)
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__clang__)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 void H264Bitstream::ReleaseTables(void)
 {
     Ipp32s i;
@@ -149,6 +157,12 @@ void H264Bitstream::ReleaseTables(void)
     m_bTablesInited = false;
 
 } // void H264Bitstream::ReleaseTable(void)
+
+#if defined(__GNUC__)
+  #pragma GCC diagnostic pop // "-Wdeprecated-declarations"
+#elif defined(__clang__)
+  #pragma clang diagnostic pop // "-Wdeprecated-declarations"
+#endif
 
 Status H264Bitstream::InitTables(void)
 {

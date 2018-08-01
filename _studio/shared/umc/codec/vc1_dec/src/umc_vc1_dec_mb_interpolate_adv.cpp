@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -18,8 +18,6 @@
 #include "assert.h"
 
 #define NEW_INTERPOLATION
-
-static const Ipp32s blk_table[] = {0,0,0,0,1,1};
 
 typedef void (*CropMV) (VC1Context* pContext, Ipp16s* xMV, Ipp16s* yMV);
 

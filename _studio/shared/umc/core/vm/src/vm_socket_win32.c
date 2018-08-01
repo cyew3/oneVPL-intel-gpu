@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_SOCKET_SUPPORT)
@@ -16,10 +16,10 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#if defined (__ICL)
+#if defined (__ICL) || defined(_MSVC_LANG)
 /* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
-#endif
+#endif /* __ICL || _MSVC_LANG */
 
 #define LINE_SIZE 128
 
@@ -536,6 +536,9 @@ Ipp32s vm_socket_get_client_ip(vm_socket *hd, Ipp8u* buffer, Ipp32s len)
 }
 #endif /* defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE) */
 
-#else
-# pragma warning( disable: 4206 )
+#else /* defined(_SOCKET_SUPPORT) */
+#if defined(_WIN32) || defined(_WIN64)
+/* nonstandard extension used : translation unit is empty */
+#pragma warning( disable: 4206 )
+#endif
 #endif /* defined(_SOCKET_SUPPORT) */
