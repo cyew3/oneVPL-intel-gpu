@@ -244,10 +244,6 @@ protected:
     // Release the object
     void Close(void);
 
-    // Assign CPU mask for every thread
-    void SetThreadsAffinityMask(void);
-    // Assign socket affinity for every thread
-    void SetThreadsAffinityToSockets(void);
     // Wake up all internal threads, except the pointed one
     void WakeUpThreads(const mfxU32 curThreadNum = (mfxU32) MFX_INVALID_THREAD_ID,
                        const eWakeUpReason reason = MFX_SCHEDULER_NEW_TASK);
@@ -332,7 +328,10 @@ protected:
     void PrintTaskInfoUnsafe(void);
 
     // Sets scheduling for the specified thread
-    bool SetScheduling(vm_thread& handle);
+    bool SetScheduling(std::thread& handle);
+
+    // Assign socket affinity for every thread
+    void SetThreadsAffinityToSockets(void);
 
     inline MFX_SCHEDULER_THREAD_CONTEXT* GetThreadCtx(mfxU32 thread_id)
 #if defined(MFX_EXTERNAL_THREADING)
@@ -396,13 +395,9 @@ protected:
     // Some task was done in HW
     vm_event m_hwTaskDone;
     // Handle to the wakeup thread
-    vm_thread m_hwWakeUpThread;
+    std::thread m_hwWakeUpThread;
 
     // declare thread working routine
-    static
-    Ipp32u VM_THREAD_CALLCONVENTION scheduler_thread_proc(void *pParam);
-    static
-    Ipp32u VM_THREAD_CALLCONVENTION scheduler_wakeup_thread_proc(void *pParam);
 
     void ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext);
     void WakeupThreadProc();

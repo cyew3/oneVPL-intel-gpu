@@ -49,7 +49,6 @@ mfxSchedulerCore::mfxSchedulerCore(void)
     m_vmtick_msec_frequency = vm_time_get_frequency()/1000;
     vm_mutex_set_invalid(&m_guard);
     vm_event_set_invalid(&m_hwTaskDone);
-    vm_thread_set_invalid(&m_hwWakeUpThread);
 
     // reset task variables
     memset(m_pTasks, 0, sizeof(m_pTasks));
@@ -92,21 +91,88 @@ mfxSchedulerCore::~mfxSchedulerCore(void)
 
 } // mfxSchedulerCore::~mfxSchedulerCore(void)
 
-bool mfxSchedulerCore::SetScheduling(vm_thread& handle)
+bool mfxSchedulerCore::SetScheduling(std::thread& handle)
 {
     handle;
 #if !defined(_WIN32) && !defined(_WIN64)
     if (m_param.params.SchedulingType || m_param.params.Priority) {
-        vm_thread_linux_schedparams params;
+        if (handle.joinable()) {
+            struct sched_param param {};
 
-        memset(&params, 0, sizeof(params));
-        params.schedtype = m_param.params.SchedulingType;
-        params.priority = m_param.params.Priority;
-        return vm_thread_set_scheduling(&handle, &params);
+            param.sched_priority = m_param.params.Priority;
+            return !pthread_setschedparam(handle.native_handle(), m_param.params.SchedulingType, &param);
+        }
     }
 #endif
     return true;
 }
+
+void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
+{
+    // The code below works correctly on Linux, but doesn't affect performance,
+    // because Linux scheduler ensures socket affinity by itself
+#if defined(_WIN32_WCE)
+    return;
+#elif (defined(WIN32) || defined(WIN64))/* && !defined(MFX_VA)*/
+
+    mfxU64 cpuMasks[16], mask;
+    mfxU32 numNodeCpus[16];
+    GROUP_AFFINITY group_affinity;
+    ULONG numNodes = 0;
+    BOOL ret = GetNumaHighestNodeNumber(&numNodes);
+
+    if (!ret)
+        return;
+    else
+        numNodes++;
+
+    if (numNodes <= 1) return;
+    if (numNodes > 16) numNodes = 16;
+
+    mfxU32 n;
+
+    for (UCHAR i = 0; i < numNodes; i++) {
+        memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
+        GetNumaNodeProcessorMaskEx(i, &group_affinity);
+        cpuMasks[i] = (mfxU64)group_affinity.Mask;
+        numNodeCpus[i] = 0;
+        for (n = 0; n < 64; n++) {
+            if (cpuMasks[i] & (1LL << n))
+                numNodeCpus[i]++;
+        }
+    }
+
+    mfxU32 curNode = 0, curThread = 0;
+    PROCESSOR_NUMBER proc_number;
+    for (mfxU32 i = 0; i < m_param.numberOfThreads; i += 1)
+    {
+        mask = cpuMasks[curNode];
+        if (++curThread >= numNodeCpus[curNode]) {
+            if (++curNode >= numNodes) curNode = 0;
+            curThread = 0;
+        }
+#if defined(MFX_EXTERNAL_THREADING)
+        if (m_ppThreadCtx[i])
+        {
+            memset(&proc_number, 0, sizeof(PROCESSOR_NUMBER));
+            memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
+            GetCurrentProcessorNumberEx(&proc_number);
+            group_affinity.Group = proc_number.Group;
+            group_affinity.Mask = (KAFFINITY)mask;
+            SetThreadGroupAffinity(m_ppThreadCtx[i]->threadHandle.native_handle(), &group_affinity, NULL);
+        }
+#else
+        memset(&proc_number, 0, sizeof(PROCESSOR_NUMBER));
+        memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
+        GetCurrentProcessorNumberEx(&proc_number);
+        group_affinity.Group = proc_number.Group;
+        group_affinity.Mask = (KAFFINITY)mask;
+        SetThreadGroupAffinity(m_pThreadCtx[i].threadHandle.native_handle(), &group_affinity, NULL);
+#endif
+    }
+#endif
+    return;
+} // void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
 
 void mfxSchedulerCore::Close(void)
 {
@@ -130,7 +196,8 @@ void mfxSchedulerCore::Close(void)
         if (pContext)
         {
             // wait for particular thread
-            vm_thread_close(&pContext->threadHandle);
+            if (pContext->threadHandle.joinable())
+                pContext->threadHandle.join();
             // delete associated resources (context and event)
             RemoveThreadFromPool(pContext); // m_param.numberOfThreads modified here
         }
@@ -151,8 +218,8 @@ void mfxSchedulerCore::Close(void)
         for (i = 0; i < m_param.numberOfThreads; i += 1)
         {
             // wait for particular thread
-            vm_thread_wait(&(m_pThreadCtx[i].threadHandle));
-            vm_thread_close(&(m_pThreadCtx[i].threadHandle));
+            if (m_pThreadCtx[i].threadHandle.joinable())
+                m_pThreadCtx[i].threadHandle.join();
         }
 
         delete[] m_pThreadCtx;
@@ -222,98 +289,6 @@ void mfxSchedulerCore::Close(void)
 
     vm_mutex_destroy(&m_guard);
 }
-
-void mfxSchedulerCore::SetThreadsAffinityMask(void)
-{
-    mfxU32 numCpu;
-
-    // get the actual number of threads
-    numCpu = vm_sys_info_get_cpu_num();
-
-    // simple case,
-    // set one CPU per thread
-    if (m_param.numberOfThreads == numCpu)
-    {
-        mfxU32 i;
-
-        for (i = 0; i < m_param.numberOfThreads; i += 1)
-        {
-#if defined(MFX_EXTERNAL_THREADING)
-            if (m_ppThreadCtx[i])
-            {
-                vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle), 1LL << i);
-            }
-#else
-            vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle), 1LL << i);
-#endif
-        }
-    }
-    else
-    {
-        mfxU32 i;
-        mfxF32 cpuPerThread = ((mfxF32) numCpu) / ((mfxF32) m_param.numberOfThreads);
-
-        for (i = 0; i < m_param.numberOfThreads; i += 1)
-        {
-#if defined(MFX_EXTERNAL_THREADING)
-            if (m_ppThreadCtx[i])
-            {
-                vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle),
-                    1LL << (mfxU32)(cpuPerThread * i));
-            }
-#else
-            vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle),
-                1LL << (mfxU32)(cpuPerThread * i));
-#endif
-        }
-    }
-
-} // void mfxSchedulerCore::SetThreadsAffinityMask(void)
-
-void mfxSchedulerCore::SetThreadsAffinityToSockets(void)
-{
-// The code below works correctly on Linux, but doesn't affect performance,
-// because Linux scheduler ensures socket affinity by itself
-#if (defined(WIN32) || defined(WIN64)) && !defined(MFX_VA)
-    mfxU64 cpuMasks[16], mask;
-    mfxU32 numNodeCpus[16], numNodes;
-
-    numNodes = vm_sys_info_get_numa_nodes_num();
-
-    if (numNodes <= 1) return;
-    if (numNodes > 16) numNodes = 16;
-
-    mfxU32 i, n;
-
-    for (i = 0; i < numNodes; i++) {
-        cpuMasks[i] = vm_sys_info_get_cpu_mask_of_numa_node(i);
-        numNodeCpus[i] = 0;
-        for (n = 0; n < 64; n++) {
-            if (cpuMasks[i] & (1LL << n))
-                numNodeCpus[i]++;
-        }
-    }
-
-    mfxU32 curNode = 0, curThread = 0;
-    for (i = 0; i < m_param.numberOfThreads; i += 1)
-    {
-        mask = cpuMasks[curNode];
-        if (++curThread >= numNodeCpus[curNode]) {
-            if (++curNode >= numNodes) curNode = 0;
-            curThread = 0;
-        }
-#if defined(MFX_EXTERNAL_THREADING)
-        if (m_ppThreadCtx[i])
-        {
-            vm_set_thread_affinity_mask(&(m_ppThreadCtx[i]->threadHandle), mask);
-        }
-#else
-        vm_set_thread_affinity_mask(&(m_pThreadCtx[i].threadHandle), mask);
-#endif
-    }
-#endif
-    return;
-} // void mfxSchedulerCore::SetThreadsAffinityMask(void)
 
 void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
                                      const eWakeUpReason reason)

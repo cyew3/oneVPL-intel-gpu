@@ -65,7 +65,6 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
 {
     UMC::Status umcRes;
     mfxU32 i;
-    mfxU32 iRes;
 
     // release the object before initialization
     Close();
@@ -172,14 +171,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                 pContext->threadNum = AddThreadToPool(pContext); // m_param.numberOfThreads modified here
 
                 // spawn a thread
-                iRes = vm_thread_create(&pContext->threadHandle,
-                    scheduler_thread_proc,
-                    pContext);
-
-                if (0 == iRes)
-                {
-                    return MFX_ERR_UNKNOWN;
-                }
+                m_pThreadCtx[i].threadHandle = std::thread([this, i]() { ThreadProc(&m_pThreadCtx[i]); });
             }
 
         }
@@ -213,14 +205,7 @@ mfxStatus mfxSchedulerCore::Initialize2(const MFX_SCHEDULER_PARAM2 *pParam)
                     return MFX_ERR_UNKNOWN;
                 }
                 // spawn a thread
-                iRes = vm_thread_create(
-                    &(m_pThreadCtx[i].threadHandle),
-                    scheduler_thread_proc,
-                    m_pThreadCtx + i);
-                if (0 == iRes)
-                {
-                    return MFX_ERR_UNKNOWN;
-                }
+                m_pThreadCtx[i].threadHandle = std::thread([this, i]() { ThreadProc(&m_pThreadCtx[i]); });
                 if (!SetScheduling(m_pThreadCtx[i].threadHandle)) {
                     return MFX_ERR_UNKNOWN;
                 }
@@ -701,10 +686,7 @@ mfxStatus mfxSchedulerCore::AdjustPerformance(const mfxSchedulerMessage message)
 #if defined (MFX_VA)
         if (m_param.flags != MFX_SINGLE_THREAD)
         {
-            if (0 == vm_thread_is_valid(&m_hwWakeUpThread))
-            {
-                mfxRes = StartWakeUpThread();
-            }
+            mfxRes = StartWakeUpThread();
         }
 #endif
         break;
@@ -713,10 +695,7 @@ mfxStatus mfxSchedulerCore::AdjustPerformance(const mfxSchedulerMessage message)
 #if defined (MFX_VA)
         if (m_param.flags != MFX_SINGLE_THREAD)
         {
-            if (vm_thread_is_valid(&m_hwWakeUpThread))
-            {
-                mfxRes = StopWakeUpThread();
-            }
+            mfxRes = StopWakeUpThread();
         }
 #endif
         break;
@@ -1009,31 +988,10 @@ mfxStatus mfxSchedulerCore::DoWork()
 {
 #if defined(MFX_EXTERNAL_THREADING)
     MFX_SCHEDULER_THREAD_CONTEXT * pContext = new MFX_SCHEDULER_THREAD_CONTEXT;
-    
     pContext->pSchedulerCore = this;
-
-    Ipp32s iRes = vm_thread_attach(&pContext->threadHandle, 0, 0);
-    mfxStatus mfxRes = MFX_ERR_NONE;
-
-    if (0 != iRes)
-    {
-        pContext->threadNum = AddThreadToPool(pContext);
-
-        scheduler_thread_proc(pContext);
-#if defined(LINUX32) || defined(__APPLE__)
-        vm_event_signal(&pContext->threadHandle.exit_event);
-#endif
-#if defined(_WIN32)
-        vm_thread_set_invalid(&pContext->threadHandle);
-#endif
-    }
-    else
-    {
-        delete pContext;
-        mfxRes = MFX_ERR_UNKNOWN;
-    }
-
-    return mfxRes;
+    pContext->threadNum = AddThreadToPool(pContext);
+    pContext->pSchedulerCore->ThreadProc(pContext);
+    return MFX_ERR_NONE;
 #else // !MFX_EXTERNAL_THREADING
     return MFX_ERR_UNSUPPORTED;
 #endif // MFX_EXTERNAL_THREADING

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -24,7 +24,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
 {
     // stop the thread before creating it again
     // don't try to check thread status, it might lead to interesting effects.
-    if (m_hwWakeUpThread.handle)
+    if (m_hwWakeUpThread.joinable())
         StopWakeUpThread();
 
     m_timer_hw_event = MFX_THREAD_TIME_TO_WAIT;
@@ -42,13 +42,7 @@ mfxStatus mfxSchedulerCore::StartWakeUpThread(void)
     if (m_hwTaskDone.handle)
     {
         // create 'hardware task done' thread
-        Ipp32s iRes = vm_thread_create(&m_hwWakeUpThread,
-                                        scheduler_wakeup_thread_proc,
-                                        this);
-        if (0 == iRes)
-        {
-            return MFX_ERR_UNKNOWN;
-        }
+        m_hwWakeUpThread = std::thread([this]() { WakeupThreadProc(); });
     }
 #endif // defined(_WIN32) || defined(_WIN64)
 
@@ -64,8 +58,9 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
     vm_event_signal(&m_hwTaskDone); 
 
     // close hardware listening tools
-    vm_thread_wait(&m_hwWakeUpThread); 
-    vm_thread_close(&m_hwWakeUpThread);
+    if (m_hwWakeUpThread.joinable())
+        m_hwWakeUpThread.join();
+
     //no specific path to obtain event
     // let close handle
 #if defined  (MFX_VA)
@@ -85,35 +80,26 @@ mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 
     m_bQuitWakeUpThread = false;
     vm_event_set_invalid(&m_hwTaskDone);
-    vm_thread_set_invalid(&m_hwWakeUpThread);
 #endif // defined(_WIN32) || defined(_WIN64)
 
     return MFX_ERR_NONE;
 
 } // mfxStatus mfxSchedulerCore::StopWakeUpThread(void)
 
-Ipp32u mfxSchedulerCore::scheduler_thread_proc(void *pParam)
+void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
 {
-    MFX_SCHEDULER_THREAD_CONTEXT *pContext = (MFX_SCHEDULER_THREAD_CONTEXT *) pParam;
+    mfxTaskHandle previousTaskHandle = {};
+    const uint32_t threadNum = pContext->threadNum;
 
     {
         char thread_name[30] = {};
 #if defined(_WIN32) || defined(_WIN64)
-        _snprintf_s(thread_name, sizeof(thread_name) - 1, _TRUNCATE, "ThreadName=MSDK#%d", pContext->threadNum);
+        _snprintf_s(thread_name, sizeof(thread_name) - 1, _TRUNCATE, "ThreadName=MSDK#%d", threadNum);
 #else
-        snprintf(thread_name, sizeof(thread_name)-1, "ThreadName=MSDK#%d", pContext->threadNum);
+        snprintf(thread_name, sizeof(thread_name)-1, "ThreadName=MSDK#%d", threadNum);
 #endif
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, thread_name);
     }
-
-    pContext->pSchedulerCore->ThreadProc(pContext);
-    return (0x0cced00 + pContext->threadNum);
-}
-
-void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
-{
-    mfxTaskHandle previousTaskHandle = {};
-    const Ipp32u threadNum = pContext->threadNum;
 
     // main working cycle for threads
     while (false == m_bQuit)
@@ -166,21 +152,13 @@ void mfxSchedulerCore::ThreadProc(MFX_SCHEDULER_THREAD_CONTEXT *pContext)
     }
 }
 
-Ipp32u mfxSchedulerCore::scheduler_wakeup_thread_proc(void *pParam)
+void mfxSchedulerCore::WakeupThreadProc()
 {
-    mfxSchedulerCore * const pSchedulerCore = (mfxSchedulerCore *) pParam;
-
     {
         const char thread_name[30] = "ThreadName=MSDKHWL#0";
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, thread_name);
     }
 
-    pSchedulerCore->WakeupThreadProc();
-    return 0x0ccedff;
-}
-
-void mfxSchedulerCore::WakeupThreadProc()
-{
     // main working cycle for threads
     while (false == m_bQuitWakeUpThread)
     {
