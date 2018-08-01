@@ -666,7 +666,8 @@ mfxStatus tsVideoEncoder::GetVACaps(VADisplay& device, void *pCaps, mfxU32 *pCap
             VAConfigAttribEncMaxRefFrames,
             VAConfigAttribEncSliceStructure,
             VAConfigAttribEncROI,
-            VAConfigAttribEncDirtyRect
+            VAConfigAttribEncDirtyRect,
+            VAConfigAttribFrameSizeToleranceSupport
         };
         std::vector<VAConfigAttrib> attrs;
         attrs.reserve(sizeof(attr_types) / sizeof(attr_types[0]));
