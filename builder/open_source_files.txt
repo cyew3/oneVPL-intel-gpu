@@ -5,6 +5,7 @@ _studio/mfx_lib/OpenSourceCMakeLists.txt
 _studio/mfx_lib/decode/OpenSourceCMakeLists.txt
 _studio/mfx_lib/encode_hw/OpenSourceCMakeLists.txt
 _studio/mfx_lib/fei/OpenSourceCMakeLists.txt
+_studio/mfx_lib/genx/OpenSourceCMakeLists.txt
 _studio/mfx_lib/mctf_package/OpenSourceCMakeLists.txt
 _studio/mfx_lib/plugin/OpenSourceCMakeLists.txt
 _studio/mfx_lib/vpp/OpenSourceCMakeLists.txt

@@ -118,16 +118,6 @@ list( APPEND plugin_common_sources
   ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp
 )
 
-foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
-  list( APPEND plugin_common_sources
-    ${prefix}/genx_cht_copy_isa.cpp
-    ${prefix}/genx_skl_copy_isa.cpp
-    ${prefix}/genx_cnl_copy_isa.cpp
-    ${prefix}/genx_icl_copy_isa.cpp
-    ${prefix}/genx_icllp_copy_isa.cpp
-  )
-endforeach()
-
 foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   list( APPEND plugin_common_sources
     ${prefix}/mfx_scheduler_core.cpp
@@ -241,7 +231,7 @@ foreach( variant ${hevcd_variants} )
   if( variant MATCHES hw )
     set( hw_defs "-DMFX_VA -DVA_HEVC_DECODER" )
     list( APPEND LIBS
-      umc_va_elk_hw )
+      genx umc_va_elk_hw )
   endif()
 
   set( defs "-DAS_HEVCD_PLUGIN -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVC_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${description_name}\"\\\" ${hevc_version_defs} ${hw_defs}" )
@@ -439,22 +429,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/encode_hw/h264/src )
   )
 endforeach()
 
-foreach( prefix ${MSDK_LIB_ROOT}/genx/h264_encode/src )
-  list( APPEND sources
-    ${prefix}/genx_hsw_simple_me_isa.cpp
-    ${prefix}/genx_bdw_simple_me_isa.cpp
-    ${prefix}/genx_skl_simple_me_isa.cpp
-    ${prefix}/genx_hsw_simple_me_proto.cpp
-    ${prefix}/genx_skl_histogram_isa.cpp
-    ${prefix}/genx_cnl_simple_me_isa.cpp
-    ${prefix}/genx_cnl_histogram_isa.cpp
-    ${prefix}/genx_icl_simple_me_isa.cpp
-    ${prefix}/genx_icl_histogram_isa.cpp
-    ${prefix}/genx_icllp_simple_me_isa.cpp
-    ${prefix}/genx_icllp_histogram_isa.cpp
-  )
-endforeach()
-
 list( APPEND sources ${MSDK_LIB_ROOT}/cmrt_cross_platform/src/cmrt_cross_platform.cpp )
 list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/mvc/src/mfx_mvc_encode_hw.cpp )
 list( APPEND sources ${MSDK_LIB_ROOT}/encode_hw/svc/src/mfx_svc_encode_hw.cpp )
@@ -505,6 +479,7 @@ foreach( variant hw )
     umc
     vm
     vm_plus
+    genx
     asc
     ${ITT_LIBS}
     ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
@@ -604,6 +579,7 @@ if( ENABLE_HEVC_FEI )
       )
     if(${variant} MATCHES hw)
       list( APPEND LIBS
+        genx
         umc_va_elk_hw
       )
     endif()
@@ -688,7 +664,7 @@ foreach( variant
   if(${variant} MATCHES hw)
 
     list( APPEND LIBS
-      va
+      genx va
       umc_va_elk_hw
     )
 
@@ -815,6 +791,7 @@ foreach( variant
   if(${variant} MATCHES hw)
 
     list( APPEND LIBS
+      genx
       va
       umc_va_elk_hw
     )

@@ -121,13 +121,12 @@ foreach( variant
     umc_io
     umc_va_elk_hw
     cmrt_cross_platform_hw
-    copy_kernels_hw
-    field_copy_kernels_hw
+    genx
     decode_${variant}
     encode_hw
     enc_hw
     h264_la
-    genx_h264_encode_embeded
+    genx
     vc1_common
     vc1_dec_${variant}
     scene_analyzer
@@ -254,8 +253,8 @@ list( APPEND LIBS
   umc
   vm
   vm_plus
+  genx
   mfx_common_hw
-  copy_kernels_hw
   ${ITT_LIBS}
   ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
   pthread
@@ -327,7 +326,7 @@ foreach( variant sw )
     ${MCTF_LIB}
     vpp_${variant}
     cmrt_cross_platform_hw
-    genx_h264_encode_embeded
+    genx
     audio_decode
     audio_encode
     umc_acodecs_merged

@@ -94,16 +94,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/scheduler/src )
   )
 endforeach()
 
-foreach( prefix ${MSDK_LIB_ROOT}/genx/copy_kernels/src )
-  list( APPEND sources
-    ${prefix}/genx_cht_copy_isa.cpp
-    ${prefix}/genx_skl_copy_isa.cpp
-    ${prefix}/genx_cnl_copy_isa.cpp
-    ${prefix}/genx_icl_copy_isa.cpp
-    ${prefix}/genx_icllp_copy_isa.cpp
-  )
-endforeach()
-
 include_directories( ${MSDK_LIB_ROOT}/genx/field_copy/include )
 include_directories( ${MSDK_LIB_ROOT}/vpp/include )
 include_directories( ${MSDK_LIB_ROOT}/scheduler/include )
@@ -152,7 +142,7 @@ endforeach()
     umc
     vm
     vm_plus
-    field_copy_kernels_hw
+    genx
     ${ITT_LIBS}
     pthread
     dl
