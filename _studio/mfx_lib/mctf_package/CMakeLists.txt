@@ -12,16 +12,10 @@ if( API_VERSION VERSION_GREATER 1.25 )
     set( sources "" )
     set( sources.plus "" )
 
-    file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/mctf/src/*.cpp"
-                            "${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/src/*.cpp"
-    )
+    file( GLOB_RECURSE srcs "${CMAKE_CURRENT_SOURCE_DIR}/mctf/src/*.cpp")
     list( APPEND sources ${srcs} )
-    list( REMOVE_ITEM sources "${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/src/genx_mc.cpp" )
-    list( REMOVE_ITEM sources "${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/src/genx_me.cpp" )
-    list( REMOVE_ITEM sources "${CMAKE_CURRENT_SOURCE_DIR}/../genx/mctf/src/genx_sd.cpp" )
 
     set( LIBS "" )
-    list( APPEND LIBS asc )
     set( defs "${defs} ${WARNING_FLAGS}")
     make_library( mctf  hw static )
     set( defs "" )
