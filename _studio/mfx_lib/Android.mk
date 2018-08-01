@@ -57,6 +57,7 @@ MFX_LOCAL_INCLUDES_IMPL := \
 MFX_LOCAL_INCLUDES_HW := \
     $(MFX_LOCAL_INCLUDES_IMPL) \
     $(foreach dir, $(MFX_LOCAL_DIRS_HW), $(wildcard $(LOCAL_PATH)/mfx_lib/$(dir)/include)) \
+    $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/asc/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/field_copy/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/copy_kernels/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/mfx_lib/genx/mctf/include \
@@ -72,6 +73,7 @@ MFX_LOCAL_STATIC_LIBRARIES_HW := \
     libumc_core_merged \
     libmfx_trace_hw \
     libasc \
+    libgenx \
     libsafec \
     libippj_l \
     libippvc_l \
@@ -151,7 +153,14 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/shared/src/, \
     mfx_h264_encode_vaapi.cpp \
     mfx_h264_encode_factory.cpp)
 
-MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/copy_kernels/src/, \
+GENX_FILES := $(addprefix mfx_lib/genx/asc/src/, \
+    genx_scd_bdw_isa.cpp \
+    genx_scd_cnl_isa.cpp \
+    genx_scd_skl_isa.cpp \
+    genx_scd_icl_isa.cpp \
+    genx_scd_icllp_isa.cpp)
+
+GENX_FILES += $(addprefix mfx_lib/genx/copy_kernels/src/, \
     embed_isa.c \
     genx_cht_copy_isa.cpp \
     genx_cnl_copy_isa.cpp \
@@ -161,7 +170,7 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/copy_kernels/src/, \
     genx_tgl_copy_isa.cpp \
     genx_tgllp_copy_isa.cpp)
 
-MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/field_copy/src/, \
+GENX_FILES += $(addprefix mfx_lib/genx/field_copy/src/, \
     genx_fcopy_gen7_5_isa.cpp \
     genx_fcopy_gen8_isa.cpp \
     genx_fcopy_gen9_isa.cpp \
@@ -170,7 +179,7 @@ MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/field_copy/src/, \
     genx_fcopy_gen11lp_isa.cpp \
     genx_fcopy_gen12_isa.cpp)
 
-MFX_SHARED_FILES_HW += $(addprefix mfx_lib/genx/mctf/src/, \
+GENX_FILES += $(addprefix mfx_lib/genx/mctf/src/, \
     genx_me_skl_isa.cpp \
     genx_me_icl_isa.cpp \
     genx_me_icllp_isa.cpp \
@@ -246,6 +255,36 @@ LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_optimization
 
 include $(BUILD_STATIC_LIBRARY)
+
+# =============================================================================
+
+ifeq ($(MFX_IMPL_HW), true)
+  include $(CLEAR_VARS)
+  include $(MFX_HOME)/mdp_msdk-lib/android/mfx_defs.mk
+
+  LOCAL_SRC_FILES := \
+    $(GENX_FILES)
+
+  LOCAL_C_INCLUDES := \
+    $(MFX_LOCAL_INCLUDES_HW) \
+    $(UMC_LOCAL_INCLUDES_HW) \
+    $(MFX_INCLUDES_INTERNAL_HW)
+  LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
+  LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
+
+  LOCAL_CFLAGS := \
+    $(MFX_CFLAGS_INTERNAL_HW) \
+    -Wall -Werror
+  LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
+  LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
+
+  LOCAL_MODULE_TAGS := optional
+  LOCAL_MODULE := libgenx
+
+  include $(BUILD_STATIC_LIBRARY)
+endif # ifeq ($(MFX_IMPL_HW), true)
 
 # =============================================================================
 

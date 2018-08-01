@@ -4,6 +4,7 @@ mfx_include_dirs( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../mfx_lib/cmrt_cross_platform/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../mfx_lib/genx/asc/include )
 
 set( defs "${WARNING_FLAGS}" )
 set( sources "" )
@@ -14,13 +15,6 @@ list( APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/asc_avx2_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/asc_c_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/asc_sse4_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_bdw_isa.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_cnl_isa.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_skl_isa.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_icl_isa.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_icllp_isa.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_tgl_isa.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_tgllp_isa.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iofunctions.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/motion_estimation_engine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tree.cpp

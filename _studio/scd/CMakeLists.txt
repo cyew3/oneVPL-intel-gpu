@@ -74,6 +74,7 @@ list( APPEND LIBS
     vm
     vm_plus
     cmrt_cross_platform_hw
+    genx
     ${ITT_LIBS}
     pthread
     dl
