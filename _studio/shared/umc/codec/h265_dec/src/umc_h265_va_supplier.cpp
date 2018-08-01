@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -67,6 +67,11 @@ void VATaskSupplier::CreateTaskBroker()
     {
         m_pSegmentDecoder[i] = new H265_DXVA_SegmentDecoder(this);
     }
+}
+
+mfxStatus VATaskSupplier::ChangeVideoDecodingSpeed(Ipp32s& /* num */)
+{
+    return MFX_ERR_UNSUPPORTED;
 }
 
 void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)

@@ -25,8 +25,6 @@
 #if defined(__GNUC__)
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
-  #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wunused-parameter"
 #elif defined(__clang__)
   #pragma clang diagnostic push
@@ -915,8 +913,7 @@ namespace UMC
 } // namespace UMC
 
 #if defined(__GNUC__)
-  #pragma GCC diagnostic pop // "-Wunused-parameter"
-  #pragma GCC diagnistic pop // "-Wdeprecated-declarations"
+  #pragma GCC diagnostic pop // "-Wunused-parameter", "-Wdeprecated-declarations"
 #elif defined(__clang__)
   #pragma clang diagnostic pop // "-Wunused-parameter"
 #endif

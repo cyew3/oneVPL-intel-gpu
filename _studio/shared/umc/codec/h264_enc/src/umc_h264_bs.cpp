@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -76,9 +76,9 @@ static Ipp8u H264CoeffTokenIdxTab2[] = {
 static Ipp8u* H264TotalCoeffTrailingOnesTab[] = {
     H264TotalCoeffTrailingOnesTab0,
     H264TotalCoeffTrailingOnesTab1,
-    H264TotalCoeffTrailingOnesTab2, 
-    H264TotalCoeffTrailingOnesTab2, 
-    H264TotalCoeffTrailingOnesTab2, 
+    H264TotalCoeffTrailingOnesTab2,
+    H264TotalCoeffTrailingOnesTab2,
+    H264TotalCoeffTrailingOnesTab2,
     H264TotalCoeffTrailingOnesTab2
 };
 
@@ -330,9 +330,6 @@ const Ipp32u ctxIdxOffset_BlockCat5_CoeffAbsLevelMinus1 = 426;
 
 // See "Table 9-40 - Assignment of ctxIdxBlockCatOffset to ctxBlockCat for syntax elements coded_block_flag,
 // significant_coeff_flag, last_significant_coeff_flag, and coeff_abs_level_minus1" in H.264 standard
-static const Ipp32u ctxIdxBlockCatOffset_CodedBlockFlag_Table[14] = {
-    0,  4,  8, 12, 16, 0, 0,  4,  8, 4, 0,  4,  8, 8
-};
 static const Ipp32u ctxIdxBlockCatOffset_SignificantCoeffFlag_Table[14] = {
     0, 15, 29, 44, 47, 0, 0, 15, 29, 0, 0, 15, 29, 0
 };
@@ -2154,7 +2151,7 @@ IppStatus ippiCABACInitOwn_H264(
     }
 }
 
-IppStatus ippiCABACInitAEEOwn_H264( 
+IppStatus ippiCABACInitAEEOwn_H264(
     IppvcCABACState* pCabacState_,
     Ipp8u*          pBitStream,
     Ipp32u          nBitStreamOffsetBits,

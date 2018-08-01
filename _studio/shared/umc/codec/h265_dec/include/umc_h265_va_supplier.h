@@ -43,7 +43,7 @@ public:
 
     virtual void CreateTaskBroker();
 
-    mfxStatus ChangeVideoDecodingSpeed(Ipp32s& num) { num; return MFX_ERR_UNSUPPORTED; }
+    mfxStatus ChangeVideoDecodingSpeed(Ipp32s& num);
 
     void SetBufferedFramesNumber(Ipp32u buffered);
 

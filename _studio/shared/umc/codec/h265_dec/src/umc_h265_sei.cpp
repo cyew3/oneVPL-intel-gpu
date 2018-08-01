@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -116,8 +116,8 @@ Ipp32s H265HeadersBitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, 
     if (csps->frame_field_info_present_flag)
     {
         spl->SEI_messages.pic_timing.pic_struct = (DisplayPictureStruct_H265)GetBits(4);
-        (Ipp8u)GetBits(2); // source_scan_type
-        (Ipp8u)GetBits(1); // duplicate_flag
+        GetBits(2); // source_scan_type
+        GetBits(1); // duplicate_flag
     }
 
     if (csps->m_hrdParameters.nal_hrd_parameters_present_flag || csps->m_hrdParameters.vcl_hrd_parameters_present_flag)

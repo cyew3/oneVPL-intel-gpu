@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -616,14 +616,6 @@ static void get_blocks_info(MBTypeValue mb_type, SBTypeValue *sub_type, MV_Ref_I
         break;
     }
 }
-
-// table used to obtain block mask bit from subblock index
-static const Ipp8u subblock2block[24] =
-{
-    0x01, 0x01, 0x02, 0x02, 0x01, 0x01, 0x02, 0x02,
-    0x04, 0x04, 0x08, 0x08, 0x04, 0x04, 0x08, 0x08,
-    0x10, 0x10, 0x10, 0x10, 0x20, 0x20, 0x20, 0x20
-};
 
 ////////////////////////////////////////////////////////////////////////////////
 //
