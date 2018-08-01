@@ -631,8 +631,8 @@ void UpdatePPS(
 
 void FillSliceBuffer(
     MfxVideoParam const & par,
-    VAEncSequenceParameterBufferHEVC const & sps,
-    VAEncPictureParameterBufferHEVC const & pps,
+    VAEncSequenceParameterBufferHEVC const & /* sps */,
+    VAEncPictureParameterBufferHEVC const & /* pps */,
     std::vector<VAEncSliceParameterBufferHEVC> & slices)
 {
     slices.resize(par.m_slice.size());
@@ -650,7 +650,7 @@ void FillSliceBuffer(
 
 void UpdateSlice(
     Task const &                               task,
-    VAEncSequenceParameterBufferHEVC const     & sps,
+    VAEncSequenceParameterBufferHEVC const     & /* sps */,
     VAEncPictureParameterBufferHEVC const      & pps,
     std::vector<VAEncSliceParameterBufferHEVC> & slices)
 {

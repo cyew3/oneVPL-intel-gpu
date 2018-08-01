@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -47,18 +47,6 @@ namespace MFX_HEVC_PP
         390,  315,  256,  315,  390,  482,  630,  910,
         1638, 4096,    0, 4096, 1638,  910,  630,  482,
         390,  315,  256
-    };
-
-    /* ((1 << 15) + i/2) / i) */
-    static const Ipp32s ImDiv[] = {
-        32768, 16384, 10923,  8192,  6554,  5461,  4681,  4096,
-        3641,  3277,  2979,  2731,  2521,  2341,  2185,  2048,
-        1928,  1820,  1725,  1638,  1560,  1489,  1425,  1365,
-        1311,  1260,  1214,  1170,  1130,  1092,  1057,  1024,
-        993,   964,   936,   910,   886,   862,   840,   819,
-        799,   780,   762,   745,   728,   712,   697,   683,
-        669,   655,   643,   630,   618,   607,   596,   585,
-        575,   565,   555,   546,   537,   529,   520,   512
     };
 
 #if defined(MFX_TARGET_OPTIMIZATION_AUTO) || defined(MFX_TARGET_OPTIMIZATION_PX)
@@ -1086,9 +1074,9 @@ namespace MFX_HEVC_PP
 #define INTRA_VER                26
 #define INTRA_HOR                10
 
+#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
     static const Ipp32s FilteredModes[] = {10, 7, 1, 0, 10};
 
-#if defined(MFX_TARGET_OPTIMIZATION_PX)  || defined(MFX_TARGET_OPTIMIZATION_AUTO)
 #if defined(MFX_TARGET_OPTIMIZATION_PX)
     void h265_PredictIntra_Ang_All_8u(
 #elif defined(MFX_TARGET_OPTIMIZATION_AUTO)

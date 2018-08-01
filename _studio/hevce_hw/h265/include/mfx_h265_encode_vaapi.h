@@ -253,13 +253,13 @@ mfxStatus SetSkipFrame(
 
     protected:
         virtual
-        mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
+        mfxStatus ConfigureExtraVAattribs(std::vector<VAConfigAttrib> & /* attrib */)
         {
             return MFX_ERR_NONE;
         }
 
         virtual
-        mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & attrib)
+        mfxStatus CheckExtraVAattribs(std::vector<VAConfigAttrib> & /* attrib */)
         {
             return MFX_ERR_NONE;
         }

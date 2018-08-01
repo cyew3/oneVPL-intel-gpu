@@ -935,6 +935,7 @@ void VideoDECODEVP8_HW::UpdateLoopFilterDeltas(MFX_VP8_BoolDecoder &dec)
   } \
 }
 
+#ifdef MFX_VA_WIN
 static const Ipp32s vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
@@ -1016,7 +1017,7 @@ static const Ipp32s vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
 
   132, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132, 132
 };
-
+#endif
 
 void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
 {

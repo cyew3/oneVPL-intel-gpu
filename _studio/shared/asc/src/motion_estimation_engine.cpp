@@ -80,7 +80,7 @@ bool MVcalcSAD8x8(ASCMVector MV, pmfxU8 curY, pmfxU8 refY, ASCImDetails *dataIn,
         preDist = (MV.x * MV.x) + (MV.y * MV.y),
         _fPos = MV.x + (MV.y * dataIn->Extended_Width);
     pmfxU8
-        fRef = &refY[_fPos];                 
+        fRef = &refY[_fPos];
     mfxU16
         SAD = ME_SAD_8x8_Block(curY, fRef, dataIn->Extended_Width, dataIn->Extended_Width);
     if((SAD < *bestSAD) || ((SAD == *(bestSAD)) && *distance > preDist)) {
@@ -95,7 +95,7 @@ bool MVcalcSAD16x8(ASCMVector MV, pmfxU8 curY, pmfxU8 refY, ASCImDetails dataIn,
     mfxI32
         preDist = (MV.x * MV.x) + (MV.y * MV.y);
     pmfxU8
-        fRef = refY + MV.x + (MV.y * dataIn.Extended_Width);                 
+        fRef = refY + MV.x + (MV.y * dataIn.Extended_Width);
     mfxU16
         SAD = ME_SAD_16x8_Block(curY, fRef, dataIn.Extended_Width, dataIn.Extended_Width);
     if((SAD < *bestSAD) || ((SAD == *(bestSAD)) && *distance > preDist)) {
@@ -205,22 +205,6 @@ void MVpropagationCheck(mfxI32 xLoc, mfxI32 yLoc, ASCImDetails dataIn, ASCMVecto
 
 #define SAD_SEARCH_VSTEP 2  // 1=FS 2=FHS
 
-
-alignas(16) static const mfxU16 tab_twostep[8] = {
-    0x0000, 0xffff, 0x0000, 0xffff, 0x0000, 0xffff, 0x0000, 0xffff,
-};
-
-alignas(16) static const mfxU16 tab_killmask[8][8] = {
-    { 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff },
-    { 0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff },
-    { 0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff },
-    { 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff },
-    { 0x0000, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff, 0xffff },
-    { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff, 0xffff },
-    { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff, 0xffff },
-    { 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xffff },
-};
-
 mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn, ASCimageData *scale, ASCimageData *scaleRef, bool /*first*/, ASCVidData *limits, t_ME_SAD_8x8_Block_Search ME_SAD_8x8_Block_Search) {
     ASCMVector
         tMV,
@@ -306,7 +290,7 @@ mfxU16 __cdecl ME_simple(ASCVidRead *videoIn, mfxI32 fPos, ASCImDetails *dataIn,
             }
         }
     }
-    
+
     //Search around the best predictor (zero or Neighbor)
     SearchLimitsCalcSqr(xLoc, yLoc, &limitXleft, &limitXright, &limitYup, &limitYdown, dataIn, 8, current[fPos], limits);//Checks limits for +-8
     ttMV     = current[fPos];

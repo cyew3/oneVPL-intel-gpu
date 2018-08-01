@@ -2641,7 +2641,7 @@ mfxStatus TaskManager::PutTasksForRecode(Task* pTask)
     TaskList::iterator it_from = m_querying.begin();
     TaskList::iterator it_where =m_encoding.begin();
 
-    for (;it_from != m_querying.end() && pTask != &*it_from; it_from ++);
+    for (;it_from != m_querying.end() && pTask != &*it_from; it_from ++) {}
     MFX_CHECK(it_from != m_querying.end(), MFX_ERR_UNDEFINED_BEHAVIOR);
 
     for (;it_where != m_encoding.end() && (it_where->m_stage & FRAME_SUBMITTED)!=0; it_where ++);

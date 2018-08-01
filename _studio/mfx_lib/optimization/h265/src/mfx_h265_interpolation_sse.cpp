@@ -181,24 +181,6 @@ ALIGN_DECL(16) static const signed char shufTabPlane[4][16] = {
     {  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14 },
 };
 
-/* pshufb table for luma, 16-bit horizontal filtering */
-ALIGN_DECL(16) static const signed char shufTabPlane16[2][16] = {
-    {  0,  1,  2,  3,  2,  3,  4,  5,  4,  5,  6,  7,  6,  7,  8,  9 },
-    {  4,  5,  6,  7,  6,  7,  8,  9,  8,  9, 10, 11, 10, 11, 12, 13 },
-};
-
-/* pshufb table for interleaved chroma, 8-bit horizontal filtering */
-ALIGN_DECL(16) static const signed char shufTabIntUV[2][16] = {
-    {  0,  2,  1,  3,  2,  4,  3,  5,  4,  6,  5,  7,  6,  8,  7,  9 },
-    {  4,  6,  5,  7,  6,  8,  7,  9,  8, 10,  9, 11, 10, 12, 11, 13 },
-};
-
-/* pshufb table for interleaved chroma, 16-bit horizontal filtering */
-ALIGN_DECL(16) static const signed char shufTabIntUV16[2][16] = {
-    {  0,  1,  4,  5,  2,  3,  6,  7,  4,  5,  8,  9,  6,  7, 10, 11 },
-    {  0,  1,  4,  5,  2,  3,  6,  7,  4,  5,  8,  9,  6,  7, 10, 11 },
-};
-
 template<int widthMul, int shift>
 static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)
 {
@@ -300,6 +282,24 @@ static void t_InterpLumaFast_s8_d16_H(const unsigned char* pSrc, unsigned int sr
 }
 
 #if !defined MFX_SSE_OPTIMIZATION_FOR_ATOM
+/* pshufb table for luma, 16-bit horizontal filtering */
+ALIGN_DECL(16) static const signed char shufTabPlane16[2][16] = {
+    {  0,  1,  2,  3,  2,  3,  4,  5,  4,  5,  6,  7,  6,  7,  8,  9 },
+    {  4,  5,  6,  7,  6,  7,  8,  9,  8,  9, 10, 11, 10, 11, 12, 13 },
+};
+
+/* pshufb table for interleaved chroma, 8-bit horizontal filtering */
+ALIGN_DECL(16) static const signed char shufTabIntUV[2][16] = {
+    {  0,  2,  1,  3,  2,  4,  3,  5,  4,  6,  5,  7,  6,  8,  7,  9 },
+    {  4,  6,  5,  7,  6,  8,  7,  9,  8, 10,  9, 11, 10, 12, 11, 13 },
+};
+
+/* pshufb table for interleaved chroma, 16-bit horizontal filtering */
+ALIGN_DECL(16) static const signed char shufTabIntUV16[2][16] = {
+    {  0,  1,  4,  5,  2,  3,  6,  7,  4,  5,  8,  9,  6,  7, 10, 11 },
+    {  0,  1,  4,  5,  2,  3,  6,  7,  4,  5,  8,  9,  6,  7, 10, 11 },
+};
+
 /* luma, horizontal, 8-bit input, 16-bit output */
 void MAKE_NAME(h265_InterpLuma_s8_d16_H)(INTERP_S8_D16_PARAMETERS_LIST)
 {
