@@ -71,10 +71,19 @@ public:
         set_trace_level(0);
         for(mfxU32 i = 0; i < m_numFrames; i ++)
         {
-            m_pAU = &ParseOrDie();
+            auto au = &ParseOrDie();
+            if (!au)
+                break;
+
+            m_pAU = au;
             if((p = GetNalu(*m_pAU, BS_HEVC::SPS_NUT)))
                 m_sps = *p;
         }
+
+        EXPECT_TRUE(m_pAU)
+            << "Init: None Access Unit was found";
+        EXPECT_TRUE(m_sps.nal_unit_type == BS_HEVC::SPS_NUT)
+            << "Init: No SPS was found";
 
         m_bs_int.MaxLength = (mfxU32)get_offset() + max_repack_buf_size;
         m_bs_int.Data = new mfxU8[m_bs_int.MaxLength];
@@ -133,12 +142,19 @@ public:
 
         for(mfxU32 i = 0; i < m_numFrames; i ++)
         {
-            m_pAU = &ParseOrDie();
+            auto au = &ParseOrDie();
+            if (!au)
+                break;
+
+            m_pAU = au;
             if((p = GetNalu(*m_pAU, BS_HEVC::SPS_NUT)))
                 m_sps = *p;
             if((p = GetNalu(*m_pAU, BS_HEVC::PPS_NUT)))
                 m_pps = *p;
         }
+
+        EXPECT_TRUE(m_pAU)
+            << "Repack: None Access Unit was found";
 
         *(tsReader*)this = m_bs_int;
     }
