@@ -2305,6 +2305,7 @@ mfxStatus  VideoVPPHW::Init(
             eMFXHWType m_platform = m_pCore->GetHWType();
             switch (m_platform)
             {
+#ifdef MFX_ENABLE_KERNELS
             case MFX_HW_BDW:
             case MFX_HW_CHT:
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen8,sizeof(genx_fcopy_gen8),m_pCmProgram,"nojitter");
@@ -2333,6 +2334,7 @@ mfxStatus  VideoVPPHW::Init(
                 res = m_pCmDevice->LoadProgram((void*)genx_fcopy_gen12,sizeof(genx_fcopy_gen12),m_pCmProgram,"nojitter");
                 break;
         #endif  // PRE_SI_TARGET_PLATFORM_GEN12
+#endif
             default:
                 res = CM_FAILURE;
                 break;

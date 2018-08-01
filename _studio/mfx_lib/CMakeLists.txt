@@ -245,6 +245,12 @@ else()
   set( mfxrtlibname mfxrt32 )
 endif()
 
+if( MFX_ENABLE_KERNELS )
+  set(GENX_LIB "genx")
+else()
+  set(GENX_LIB "")
+endif()
+
 set( LIBS "" )
 list( APPEND LIBS
   media_buffers
@@ -253,7 +259,7 @@ list( APPEND LIBS
   umc
   vm
   vm_plus
-  genx
+  ${GENX_LIB}
   mfx_common_hw
   ${ITT_LIBS}
   ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l

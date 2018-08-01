@@ -751,6 +751,7 @@ mfxStatus CMC::MCTF_SET_ENV(
 
     switch (hwType)
     {
+#ifdef MFX_ENABLE_KERNELS
     case PLATFORM_INTEL_BDW:
         res = device->LoadProgram((void *)genx_me_bdw, sizeof(genx_me_bdw), programMe, "nojitter");
         break;
@@ -776,6 +777,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_GLK:
         res = device->LoadProgram((void *)genx_me_skl, sizeof(genx_me_skl), programMe, "nojitter");
         break;
+#endif
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -800,6 +802,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     //Motion Compensation
     switch (hwType)
     {
+#ifdef MFX_ENABLE_KERNELS
     case PLATFORM_INTEL_BDW:
         res = device->LoadProgram((void *)genx_mc_bdw, sizeof(genx_mc_bdw), programMc, "nojitter");
         break;
@@ -825,6 +828,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_GLK:
         res = device->LoadProgram((void *)genx_mc_skl, sizeof(genx_mc_skl), programMc, "nojitter");
         break;
+#endif
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -832,6 +836,7 @@ mfxStatus CMC::MCTF_SET_ENV(
 
     switch (hwType)
     {
+#ifdef MFX_ENABLE_KERNELS
     case PLATFORM_INTEL_BDW:
         res = device->LoadProgram((void *)genx_sd_bdw, sizeof(genx_sd_bdw), programDe, "nojitter");
         break;
@@ -857,6 +862,7 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_GLK:
         res = device->LoadProgram((void *)genx_sd_skl, sizeof(genx_sd_skl), programDe, "nojitter");
         break;
+#endif
     default:
         return MFX_ERR_UNSUPPORTED;
     }

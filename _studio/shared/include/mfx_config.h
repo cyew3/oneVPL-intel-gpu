@@ -71,6 +71,8 @@
 #undef  MFX_DEBUG_TOOLS // to avoid redefinition
 #define MFX_DEBUG_TOOLS
 #endif
+
+#define MFX_ENABLE_KERNELS
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
 #ifdef MFX_VA

@@ -880,6 +880,7 @@ void CmContext::Setup(
 
     switch (core->GetHWType())
     {
+#ifdef MFX_ENABLE_KERNELS
 #if !defined(_WIN32) && !defined(_WIN64)
     case MFX_HW_BDW:
     case MFX_HW_CHT:
@@ -913,6 +914,7 @@ void CmContext::Setup(
         m_programHist = ReadProgram(m_device, genx_icllp_histogram, SizeOf(genx_icllp_histogram));
         break;
 #endif
+#endif // #ifdef MFX_ENABLE_KERNELS
     default:
         throw CmRuntimeError();
     }
