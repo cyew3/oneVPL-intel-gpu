@@ -216,6 +216,13 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
     MFX_CHECK_NULL_PTR1(out);
     mfxStatus mfxSts = MFX_ERR_NONE;
 
+    m_core = m_session->m_pCORE.get();
+    m_platform = m_core->GetHWType();
+
+    // CameraPipe is unsupported on LKF
+    if (MFX_HW_LKF == m_platform)
+        return MFX_ERR_UNSUPPORTED;
+
     CAMERA_DEBUG_LOG("Query in=%p out=%p inited %d core  %p device  %p\n", in, out, m_isInitialized, m_core, m_cmDevice);
     if (NULL == in)
     {
@@ -680,9 +687,6 @@ mfxStatus MFXCamera_Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             return mfxSts;
         else if (sts < MFX_ERR_NONE)
             return sts;
-
-        m_core = m_session->m_pCORE.get();
-        m_platform = m_core->GetHWType();
 
 #if defined (_WIN32) || defined (_WIN64)
         if (MFX_HW_SCL<= m_platform)
