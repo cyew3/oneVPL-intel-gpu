@@ -3635,6 +3635,19 @@ void ConfigureTask(
         // is current frame will be used as LTR
         if (par.LTRInterval)
             task.m_ltr |= isLTR(task.m_dpb[TASK_DPB_AFTER], par.LTRInterval, task.m_poc);
+
+        // cur frame will be LTR
+        if (pExtListCtrl)
+        {
+            for (mfxU16 i = 0; i < 16 && pExtListCtrl->LongTermRefList[i].FrameOrder != static_cast<mfxU32>(MFX_FRAMEORDER_UNKNOWN); i++)
+            {
+                if (pExtListCtrl->LongTermRefList[i].FrameOrder == (mfxU32)task.m_poc)
+                {
+                    task.m_ltr = true;
+                    break;
+                }
+            }
+        }
     }
 
 
