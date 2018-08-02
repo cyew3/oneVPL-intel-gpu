@@ -33,6 +33,7 @@ static inline mfxI32 CpuFeature_SSE41() {
     return((__builtin_cpu_supports("sse4.1")));
 #endif
 }
+#if defined(__AVX2__) && (defined(_WIN32) || defined(_WIN64))
 static mfxI32 CpuFeature_AVX() {
 #if defined(_WIN32)
     mfxI32 info[4], mask = (1 << 27) | (1 << 28);    // OSXSAVE,AVX
@@ -44,6 +45,7 @@ static mfxI32 CpuFeature_AVX() {
     return((__builtin_cpu_supports("avx2")));
 #endif
 }
+#endif
 
 static inline mfxI32 CpuFeature_AVX2() {
 #if defined(__AVX2__)
