@@ -1913,8 +1913,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif //#if (MFX_VERSION >= 1027)
 
     if (CO3.LowDelayBRC == MFX_CODINGOPTION_ON) {
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
-            par.mfx.RateControlMethod != MFX_RATECONTROL_VCM) {
+        if ((par.m_platform.CodeName < MFX_PLATFORM_ICELAKE) ||
+            (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
+            par.mfx.RateControlMethod != MFX_RATECONTROL_VCM)) {
             CO3.LowDelayBRC = MFX_CODINGOPTION_OFF;
             changed++;
         }

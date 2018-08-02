@@ -161,6 +161,12 @@ namespace TEST_NAME
             }
         }
 
+        if (ext3.LowDelayBRC == MFX_CODINGOPTION_ON && g_tsHWtype < MFX_HW_ICL) {
+            g_tsLog << "\n\nWARNING: LowDelayBRC is supported starting from Gen11!\n\n\n";
+            g_tsStatus.disable();
+            throw tsSKIP;
+        }
+
         if (m_par.mfx.RateControlMethod == MFX_RATECONTROL_VCM || m_par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
         {
             if (g_tsOSFamily == MFX_OS_FAMILY_LINUX && g_tsHWtype < MFX_HW_KBL)
