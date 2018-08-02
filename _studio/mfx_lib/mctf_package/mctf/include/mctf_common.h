@@ -475,7 +475,6 @@ private:
         *distSurf;
     SurfaceIndex
         *idxCtrl,
-        *idxRefBuf,
         *idxSrc,
         *idxRef1,
         *idxRef2,

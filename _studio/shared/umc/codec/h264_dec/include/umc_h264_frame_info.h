@@ -106,11 +106,10 @@ class H264DecoderFrameInfo : public H264DecoderLayer
 {
 public:
 
-    H264DecoderFrameInfo(H264DecoderFrame * pFrame,  H264_Heap_Objects * pObjHeap)
+    H264DecoderFrameInfo(H264DecoderFrame * pFrame,  H264_Heap_Objects * /* pObjHeap */)
         : m_pFrame(pFrame)
         , m_prepared(0)
         , m_SliceCount(0)
-        , m_pObjHeap(pObjHeap)
         , decRefPicMarking()
     {
         Reset();
@@ -402,12 +401,9 @@ public:
 private:
 
     FillnessStatus m_Status;
-
     Ipp32s m_SliceCount;
 
-    H264_Heap_Objects * m_pObjHeap;
     bool m_IsNeedDeblocking;
-
     bool m_IsReferenceAU;
     bool m_IsIntraAU;
     bool m_IsField;

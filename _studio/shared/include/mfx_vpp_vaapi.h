@@ -35,7 +35,7 @@ namespace MfxHwVideoProcessing
     public:
 
         VAAPIVideoProcessing();
-        
+
         virtual ~VAAPIVideoProcessing();
 
         virtual mfxStatus CreateDevice(VideoCORE * core, mfxVideoParam *pParams, bool isTemporal = false);
@@ -44,8 +44,8 @@ namespace MfxHwVideoProcessing
 
         virtual mfxStatus DestroyDevice( void );
 
-        virtual mfxStatus Register(mfxHDLPair* pSurfaces, 
-                                   mfxU32 num, 
+        virtual mfxStatus Register(mfxHDLPair* pSurfaces,
+                                   mfxU32 num,
                                    BOOL bRegister);
 
         virtual mfxStatus QueryTaskStatus(mfxU32 taskIndex);
@@ -89,7 +89,7 @@ namespace MfxHwVideoProcessing
             mfxU16 y;
             _compositionStreamElement()
                 : index(0)
-                , active(false) 
+                , active(false)
                 , x(0)
                 , y(0)
             {};
@@ -129,7 +129,9 @@ namespace MfxHwVideoProcessing
         mfxU32     m_deintFrameCount;
         BOOL       m_bFakeOutputEnabled;
         VASurfaceID m_refForFRC[5];
+#ifdef MFX_ENABLE_VPP_FRC
         mfxU32 m_frcCyclicCounter;
+#endif
 
         VABufferID m_filterBufs[VAProcFilterCount];
         mfxU32 m_numFilterBufs;
@@ -139,7 +141,7 @@ namespace MfxHwVideoProcessing
 
         std::set<mfxU32> m_cachedReadyTaskIndex;
 
-        typedef struct 
+        typedef struct
         {
             VASurfaceID surface;
             mfxU32 number;
@@ -147,7 +149,7 @@ namespace MfxHwVideoProcessing
 
         VASurfaceID* m_primarySurface4Composition ;
 
-        std::vector<ExtVASurface> m_feedbackCache; 
+        std::vector<ExtVASurface> m_feedbackCache;
 
         UMC::Mutex m_guard;
 
