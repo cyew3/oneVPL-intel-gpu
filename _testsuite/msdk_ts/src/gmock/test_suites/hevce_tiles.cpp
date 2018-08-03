@@ -49,6 +49,7 @@ namespace hevce_tiles {
         GT_MAX_ROW,
         GT_MAX_COL,
         GT_MAX_COL_WRN,
+        MIN_TILE_SIZE,
         NxN
     };
 
@@ -107,15 +108,16 @@ namespace hevce_tiles {
         } },
 
         {/*03*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
-            QUERY | INIT | ENCODE, NONE, {
-            TILES_PARS(TILES,          9, 1),
-            TILES_PARS(TILES_EXPECTED, 8, 1)
+            QUERY | INIT | ENCODE, MIN_TILE_SIZE, {
+            TILES_PARS(TILES,          8, 1),
+            TILES_PARS(TILES_EXPECTED, 7, 1),
+            TILES_PARS(TILES_EXPECTED_VDENC, 3, 1)
         } },
 
         {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE },
             QUERY | INIT | ENCODE, GT_MAX_COL_WRN, {
-            TILES_PARS(TILES,          1, 4),
-            TILES_PARS(TILES_EXPECTED, 1, 3)
+            TILES_PARS(TILES,          1, 3),
+            TILES_PARS(TILES_EXPECTED, 1, 2)
         } },
 
         {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM, MFX_ERR_NONE },
@@ -133,8 +135,7 @@ namespace hevce_tiles {
         {/*07*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
             QUERY | INIT | ENCODE, NxN, {
             TILES_PARS(TILES,          2, 2),
-            TILES_PARS(TILES_EXPECTED, 2, 2),
-            TILES_PARS(TILES_EXPECTED_VDENC, 1, 2)
+            TILES_PARS(TILES_EXPECTED, 2, 2)
         } },
     };
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -190,7 +191,7 @@ namespace hevce_tiles {
             if (unsupported_platform && tc.sub_type == UNSUP) {
                 SETPARS(&extHEVCTiles_expectation, TILES_EXPECTED_UNSUP);
             }
-            else if (lowpower && tc.sub_type == NxN) {
+            else if (lowpower && tc.sub_type == MIN_TILE_SIZE) {
                 SETPARS(&extHEVCTiles_expectation, TILES_EXPECTED_VDENC);
             }
             else {
@@ -221,8 +222,6 @@ namespace hevce_tiles {
 
             if (unsupported_platform && tc.sub_type == UNSUP)
                 sts = MFX_ERR_UNSUPPORTED;
-            else if (lowpower && tc.sub_type == NxN)
-                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             else if (tc.sub_type != GT_MAX_COL_WRN)
                 sts = tc.sts.query;
 
@@ -241,8 +240,6 @@ namespace hevce_tiles {
 
             if (unsupported_platform && tc.sub_type == UNSUP)
                 sts = MFX_ERR_INVALID_VIDEO_PARAM;
-            else if (lowpower && tc.sub_type == NxN)
-                sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
             else if (tc.sub_type != GT_MAX_COL_WRN)
                 sts = tc.sts.init;
 
