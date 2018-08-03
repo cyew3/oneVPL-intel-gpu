@@ -78,6 +78,7 @@ CEncodingPipeline::CEncodingPipeline(AppConfig* pAppConfig)
     , m_bUseHWmemory(pAppConfig->bUseHWmemory) //only HW memory is supported (ENCODE supports SW memory)
     , m_bExternalAlloc(pAppConfig->bUseHWmemory)
     , m_bParametersAdjusted(false)
+    , m_bRecoverDeviceFailWithInputReset(true)
     , m_hwdev(NULL)
 
     , m_surfPoolStrategy((pAppConfig->nReconSurf || pAppConfig->nInputSurf) ? PREFER_NEW : PREFER_FIRST_FREE)
@@ -243,6 +244,16 @@ mfxStatus CEncodingPipeline::ResetMFXComponents()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    if (m_bRecoverDeviceFailWithInputReset)
+    {
+        sts = ResetIOFiles();
+        MSDK_CHECK_STATUS(sts, "ResetIOFiles failed");
+
+        // Reset state indexes
+        m_frameCount = 0;
+        m_nDRC_idx   = 0;
+    }
+
     if (m_pYUVReader)
     {
         m_pYUVReader->Close();
@@ -351,6 +362,9 @@ mfxStatus CEncodingPipeline::ResetMFXComponents()
         m_bParametersAdjusted |= sts == MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
         MSDK_CHECK_STATUS(sts, "FEI ENCPAK: Init failed");
     }
+
+    // Mark all buffers as vacant without reallocation
+    ResetExtBuffers();
 
     return sts;
 }
@@ -715,6 +729,15 @@ void CEncodingPipeline::ReleaseResources()
     ClearDecoderBuffers();
 }
 
+void CEncodingPipeline::ResetExtBuffers()
+{
+    m_inputTasks.Clear();
+    m_preencBufs.UnlockAll();
+    m_encodeBufs.UnlockAll();
+
+    m_pExtBufDecodeStreamout = nullptr;
+}
+
 void CEncodingPipeline::DeleteHWDevice()
 {
     MSDK_SAFE_DELETE(m_hwdev);
@@ -729,7 +752,7 @@ void CEncodingPipeline::DeleteAllocator()
     DeleteHWDevice();
 }
 
-mfxStatus CEncodingPipeline::ResetIOFiles(const AppConfig & Config)
+mfxStatus CEncodingPipeline::ResetIOFiles()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -1580,7 +1603,7 @@ mfxStatus CEncodingPipeline::Run()
         if (sts == MFX_ERR_MORE_DATA && m_appCfg.nTimeout) // New cycle in loop mode
         {
             m_insertIDR = true;
-            sts = ResetIOFiles(m_appCfg);
+            sts = ResetIOFiles();
             MSDK_CHECK_STATUS(sts, "ResetIOFiles failed");
             continue;
         }

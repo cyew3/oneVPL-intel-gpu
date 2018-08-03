@@ -1280,6 +1280,7 @@ mfxStatus RunPipeline(CEncodingPipeline * pPipeline, int session_id)
             sts = pPipeline->ResetMFXComponents();
             MSDK_CHECK_STATUS(sts, "pPipeline->ResetMFXComponents failed");
 
+            msdk_printf(MSDK_STRING("\nRecovery successfully completed\n"));
             continue;
         }
         else
