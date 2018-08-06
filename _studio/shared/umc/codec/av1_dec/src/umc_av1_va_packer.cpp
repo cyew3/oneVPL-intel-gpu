@@ -406,19 +406,36 @@ namespace UMC_AV1_DECODER
 
         picParam->tg_size_bit_offset = info.tileGroupBitOffset;
 
+#if AV1D_DDI_VERSION >= 21
+        if (info.uniformTileSpacingFlag)
+        {
+            picParam->tile_cols = (USHORT)info.tileCols;
+            picParam->tile_rows = (USHORT)info.tileRows;
+
+            for (Ipp32u i = 0; i < picParam->tile_cols; i++)
+            {
+                picParam->width_in_sbs_minus_1[i] =
+                    (USHORT)(info.tileColStartSB[i + 1] - info.tileColStartSB[i]);
+            }
+
+            for (int i = 0; i < picParam->tile_rows; i++)
+            {
+                picParam->height_in_sbs_minus_1[i] =
+                    (USHORT)(info.tileRowStartSB[i + 1] - info.tileRowStartSB[i]);
+            }
+        }
+        else
+        {
+            picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
+            picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
+        }
+#else
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
         picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
 
-        // TODO: [Rev0.5] add proper calculation of tile_rows/tile_cols during read of uncompressed header
         picParam->tile_cols = (USHORT)info.tileCols;
         picParam->tile_rows = (USHORT)info.tileRows;
-#if AV1D_DDI_VERSION >= 21
-        const Ipp32u sbSize = (sh.sb_size == BLOCK_128X128) ? 128 : 64;
 
-        // TODO: [Rev0.5] Add support for multiple tiles
-        picParam->width_in_sbs_minus_1[0] = (USHORT)((info.width + sbSize - 1) / sbSize);
-        picParam->height_in_sbs_minus_1[0] = (USHORT)((info.height + sbSize - 1) / sbSize);
-#else
         picParam->tile_size_bytes = (UCHAR)info.tileSizeBytes;
 #endif
     }
