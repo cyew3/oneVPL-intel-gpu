@@ -2063,42 +2063,6 @@ namespace
         }
     }
 
-    void ReorderRefPicListPreserveOrderInInitialRefList (
-        ArrayU8x33 &                     refPicList,
-        ArrayDpbFrame const &            dpb,
-        std::vector<Reconstruct> const & recons,
-        mfxExtAVCRefListCtrl const &     ctrl,
-        mfxU32                           numActiveRef,
-        mfxU32                           curPicStruct)
-    {
-        mfxU8 * begin = refPicList.Begin();
-        mfxU8 * end   = refPicList.End();
-
-        for (mfxU8 * ref = refPicList.Begin(); ref < end; ++ref)
-        {
-            mfxU32 extFrameTag = recons[dpb[(*ref) & 0x7f].m_frameIdx].m_extFrameTag;
-
-            mfxU32 picStruct = curPicStruct;
-            if (picStruct != MFX_PICSTRUCT_PROGRESSIVE)
-                picStruct = ((*ref) & 0x80) ? MFX_PICSTRUCT_FIELD_BFF : MFX_PICSTRUCT_FIELD_TFF;
-
-            if (IsPreferred(ctrl, extFrameTag, picStruct))
-            {
-                RotateRight(begin, ref + 1);
-                begin++;
-            }
-            else if (IsRejected(ctrl, extFrameTag, picStruct))
-            {
-                RotateLeft(ref, end);
-                --end;
-            }
-        }
-
-        refPicList.Resize((mfxU32)(end - refPicList.Begin()));
-        if (refPicList.Size() > numActiveRef)
-            refPicList.Resize(numActiveRef);
-    }
-
     void ReorderRefPicList( // PreserveOrderInPreferredRefList
         ArrayU8x33 &                     refPicList,
         ArrayDpbFrame const &            dpb,

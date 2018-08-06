@@ -69,7 +69,7 @@ typedef mfxI32 cmStatus;
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
-static bool operator < (const mfxHDLPair & l, const mfxHDLPair & r)
+static inline bool operator < (const mfxHDLPair & l, const mfxHDLPair & r)
 {
     return (l.first == r.first) ? (l.second < r.second) : (l.first < r.first);
 };

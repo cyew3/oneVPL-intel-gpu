@@ -173,6 +173,14 @@ ALIGN_DECL(16) static const short filtTabChroma_S16[7*2][8] = {
     {  58,  -2,  58,  -2,  58,  -2,  58,  -2 },
 };
 
+#if defined(__clang__)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
+#elif defined (__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunneeded-internal-declaration"
+#endif
+
 /* pshufb table for luma, 8-bit horizontal filtering */
 ALIGN_DECL(16) static const signed char shufTabPlane[4][16] = {
     {  0,  1,  1,  2,  2,  3,  3,  4,  4,  5,  5,  6,  6,  7,  7,  8 },
@@ -180,6 +188,12 @@ ALIGN_DECL(16) static const signed char shufTabPlane[4][16] = {
     {  4,  5,  5,  6,  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12 },
     {  6,  7,  7,  8,  8,  9,  9, 10, 10, 11, 11, 12, 12, 13, 13, 14 },
 };
+
+#if defined(__clang__)
+    #pragma clang diagnostic pop
+#elif defined (__GNUC__)
+    #pragma GCC diagnostic pop
+#endif
 
 template<int widthMul, int shift>
 static void t_InterpLuma_s8_d16_H(const unsigned char* pSrc, unsigned int srcPitch, short *pDst, unsigned int dstPitch, int tab_index, int width, int height)

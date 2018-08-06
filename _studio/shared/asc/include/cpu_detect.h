@@ -24,7 +24,7 @@
 #pragma warning(disable:4505)
 #endif
 
-static mfxI32 CpuFeature_SSE41() {
+static inline mfxI32 CpuFeature_SSE41() {
 #if defined(_WIN32) || defined(_WIN64)
     mfxI32 info[4], mask = (1 << 19);    // SSE41
     __cpuidex(info, 0x1, 0);
@@ -45,7 +45,7 @@ static mfxI32 CpuFeature_AVX() {
 #endif
 }
 
-static mfxI32 CpuFeature_AVX2() {
+static inline mfxI32 CpuFeature_AVX2() {
 #if defined(__AVX2__)
     #if defined(_WIN32) || defined(_WIN64)
         mfxI32 info[4], mask = (1 << 5); // AVX2

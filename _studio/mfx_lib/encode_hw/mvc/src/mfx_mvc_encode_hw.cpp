@@ -131,38 +131,6 @@ namespace
         return MFX_ERR_NONE;
     }
 
-    mfxU8 * PatchSequenceHeader(
-        mfxU8 *               mvcSpsBegin,
-        mfxU8 *               mvcSpsEnd,
-        mfxU8 const *         avcSpsBegin,
-        mfxU8 const *         avcSpsEnd,
-        mfxVideoParam const & video)
-    {
-        mfxExtMVCSeqDesc const * extMvc = GetExtBuffer(video);
-
-        mfxExtSpsHeader sps = {};
-
-        InputBitstream ibs(avcSpsBegin, avcSpsEnd);
-        ReadSpsHeader(ibs, sps);
-
-        OutputBitstream obs(mvcSpsBegin,  mvcSpsEnd);
-
-        sps.maxNumRefFrames /= 3;
-
-        if (sps.seqParameterSetId == 0)
-        { // base view
-            WriteSpsHeader(obs, sps);
-        }
-        else
-        { // dependent view
-            sps.profileIdc  = mfxU8(video.mfx.CodecProfile);
-            sps.nalUnitType = 15;
-            WriteSpsHeader(obs, sps, extMvc->Header);
-        }
-
-        return mvcSpsBegin + (obs.GetNumBits() + 7) / 8;
-    }
-
     mfxU8 * RePackSequenceHeader(
         mfxU8 *               mvcSpsBegin,
         mfxU8 *               mvcSpsEnd,
@@ -506,25 +474,8 @@ namespace
 
         return 0;
     }
-
-    ArrayU8x33 ModifyList(
-        ArrayDpbFrame const & dpb,
-        ArrayU8x33 const &    initList,
-        mfxU32                curViewIdx)
-    {
-        ArrayU8x33 modList;
-
-        for (mfxU32 i = 0; i < initList.Size(); i++)
-            if (dpb[initList[i] & 0x7f].m_viewIdx != curViewIdx)
-                modList.PushBack(initList[i]);
-
-        for (mfxU32 i = 0; i < initList.Size(); i++)
-            if (dpb[initList[i] & 0x7f].m_viewIdx == curViewIdx)
-                modList.PushBack(initList[i]);
-
-        return modList;
-    }
 };
+
 
 TaskManagerMvc::TaskManagerMvc()
     : m_core(0)
@@ -659,98 +610,6 @@ mfxStatus TaskManagerMvc::AssignTask(
     if (m_currentView < m_numView && m_viewOut == 0)
 // MVC BD }
         return MFX_ERR_MORE_DATA;
-
-    /*
-    mfxU32 idrPicFlag = !!((*m_currentTask)[0]->m_type.top & MFX_FRAMETYPE_IDR);
-
-    // modify ref lists and dpb for interview prediction
-    for (mfxU32 viewIdx = 1; viewIdx < m_numView; viewIdx++)
-    {
-        mfxMVCViewDependency & viewDesc = m_seqDesc.View[viewIdx];
-
-        DdiTask & subTask  = *(*m_currentTask)[viewIdx];
-        mfxU16   numRefsL0 = idrPicFlag ? viewDesc.NumAnchorRefsL0 : viewDesc.NumNonAnchorRefsL0;
-        mfxU16   numRefsL1 = idrPicFlag ? viewDesc.NumAnchorRefsL1 : viewDesc.NumNonAnchorRefsL1;
-        mfxU16 * refL0     = idrPicFlag ? viewDesc.AnchorRefL0 : viewDesc.NonAnchorRefL0;
-        mfxU16 * refL1     = idrPicFlag ? viewDesc.AnchorRefL1 : viewDesc.NonAnchorRefL1;
-
-        // add inter-view prediction if needed (to each field)
-        for (mfxU32 f = 0; f < subTask.GetPictureCount(); f++)
-        {
-            mfxU8 fieldFlag = mfxU8(f * 0x80);
-
-            ArrayDpbFrame & dpb = subTask.m_dpb[f];
-
-            if (subTask.m_type[f] & (MFX_FRAMETYPE_P | MFX_FRAMETYPE_B))
-            {
-                ArrayU8x33 & list0 = subTask.m_list0[f];
-
-                for (mfxU32 i = 0; i < numRefsL0; i++)
-                {
-                    if (list0.m_numElem == 32 || dpb.m_numElem == 16)
-                        break; // no more place in dpb or list0
-
-                    mfxU16 refViewIdx = ViewId2Idx(m_seqDesc, refL0[i]);
-                    assert(refViewIdx < viewIdx);
-
-                    DdiTask const & subTaskRef = *(*m_currentTask)[refViewIdx];
-                    list0.PushBack(mfxU8(dpb.m_numElem | fieldFlag));
-
-                    dpb[dpb.m_numElem].m_poc.top  = subTaskRef.GetPoc(TFIELD);
-                    dpb[dpb.m_numElem].m_poc.bot  = subTaskRef.GetPoc(BFIELD);
-                    dpb[dpb.m_numElem].m_viewIdx  = refViewIdx;
-                    dpb[dpb.m_numElem].m_frameIdx = mfxU8(subTaskRef.m_idxRecon);
-                    dpb.m_numElem++;
-                }
-
-                ArrayU8x33 oldList0 = list0;
-                list0 = ModifyList(dpb, oldList0, viewIdx);
-
-                subTask.m_refPicList0Mod[f] = CreateRefListMod(
-                    dpb,
-                    m_viewMan[viewIdx].m_recons,
-                    oldList0,
-                    list0,
-                    viewIdx,
-                    subTask.m_picNum[f]);
-            }
-
-            if (subTask.m_type[f] & MFX_FRAMETYPE_B)
-            {
-                ArrayU8x33 & list1 = subTask.m_list1[f];
-
-                for (mfxU32 idxL1 = 0; idxL1 < numRefsL1; idxL1++)
-                {
-                    if (list1.m_numElem == 32 || dpb.m_numElem == 16)
-                        break; // no more place in dpb or list1
-
-                    mfxU16 refViewIdx = ViewId2Idx(m_seqDesc, refL1[idxL1]);
-                    assert(refViewIdx < viewIdx);
-                    DdiTask const & subTaskRef = *(*m_currentTask)[refViewIdx];
-                    list1.PushBack(mfxU8(dpb.m_numElem | fieldFlag));
-
-                    dpb[dpb.m_numElem].m_poc.top  = subTaskRef.GetPoc(TFIELD);
-                    dpb[dpb.m_numElem].m_poc.bot  = subTaskRef.GetPoc(BFIELD);
-                    dpb[dpb.m_numElem].m_viewIdx  = refViewIdx;
-                    dpb[dpb.m_numElem].m_frameIdx = mfxU8(subTaskRef.m_idxRecon);
-                    dpb.m_numElem++;
-                }
-
-                ArrayU8x33 oldList1 = list1;
-
-                list1 = ModifyList(dpb, oldList1, viewIdx);
-
-                subTask.m_refPicList1Mod[f] = CreateRefListMod(
-                    dpb,
-                    m_viewMan[viewIdx].m_recons,
-                    oldList1,
-                    list1,
-                    viewIdx,
-                    subTask.m_picNum[f]);
-            }
-        }
-    }
-    */
 
 // MVC BD {
     if (m_viewOut == 0 || (m_viewOut && m_currentView == 1))
