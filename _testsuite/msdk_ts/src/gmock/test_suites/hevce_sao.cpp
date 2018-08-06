@@ -191,6 +191,9 @@ namespace hevce_sao
 /* 9 */ { 4, sY,       4, sC | sY,    {} },
 /* 10 */{ 4, sC,       4, sY,         {} },
 /* 11 */{ 4, sY | sC,  4, s0,         {} },
+/* 12 */{ 7, sY | sC,  7, s0,{} },
+/* 13 */{ 7, s0,  7, sY | sC,{} },
+/* 14 */{ 7, sD,  7, s0,              {sY | sC, sY | sC, sY, sC, sY | sC} }
     };
 
     bool isUnsupported(tsExtBufType<mfxVideoParam>& par)
