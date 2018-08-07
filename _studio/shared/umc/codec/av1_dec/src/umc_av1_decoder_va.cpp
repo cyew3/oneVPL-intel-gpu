@@ -52,13 +52,59 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
-    UMC::Status AV1DecoderVA::CompleteFrame(AV1DecoderFrame* frame)
+    UMC::Status AV1DecoderVA::SubmitTiles(AV1DecoderFrame* frame, bool firstSubmission)
     {
+#if UMC_AV1_DECODER_REV >= 5000
         if (!frame)
             return UMC::UMC_ERR_FAILED;;
 
         VM_ASSERT(va);
-        UMC::Status sts = va->BeginFrame(frame->GetMemID());
+        UMC::Status sts = UMC::UMC_OK;
+
+        if (firstSubmission)
+        {
+            // it's first submission for current frame - need to call BeginFrame
+            sts = va->BeginFrame(frame->GetMemID());
+            if (sts != UMC::UMC_OK)
+                return sts;
+
+            VM_ASSERT(packer);
+            packer->BeginFrame();
+        }
+
+        auto &tileSets = frame->GetTileSets();
+        packer->PackAU(tileSets, frame, firstSubmission);
+
+        FrameHeader const& fh = frame->GetFrameHeader();
+        const bool lastSubmission = CalcTilesInTileSets(tileSets) == fh.tileCols * fh.tileRows;
+        if (lastSubmission)
+            packer->EndFrame();
+
+        sts = va->Execute();
+
+        if (lastSubmission) // it's last submission for current frame - need to call EndFrame
+            sts = va->EndFrame();
+
+        return sts;
+#else // UMC_AV1_DECODER_REV >= 5000
+        frame; firstSubmission;
+        return UMC::UMC_ERR_NOT_IMPLEMENTED;
+#endif // UMC_AV1_DECODER_REV >= 5000
+    }
+
+    UMC::Status AV1DecoderVA::CompleteFrame(AV1DecoderFrame* frame)
+    {
+#if UMC_AV1_DECODER_REV >= 5000
+        frame;
+        return UMC::UMC_ERR_NOT_IMPLEMENTED;
+#else // UMC_AV1_DECODER_REV >= 5000
+        if (!frame)
+            return UMC::UMC_ERR_FAILED;;
+
+        VM_ASSERT(va);
+        UMC::Status sts = UMC::UMC_OK;
+
+        sts = va->BeginFrame(frame->GetMemID());
         if (sts != UMC::UMC_OK)
             return sts;
 
@@ -78,6 +124,7 @@ namespace UMC_AV1_DECODER
         sts = va->EndFrame();
 
         return sts;
+#endif // UMC_AV1_DECODER_REV >= 5000
     }
 
     void AV1DecoderVA::AllocateFrameData(UMC::VideoDataInfo const& info, UMC::FrameMemID id, AV1DecoderFrame* frame)

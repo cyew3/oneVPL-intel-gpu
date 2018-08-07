@@ -22,10 +22,59 @@
 
 namespace UMC_AV1_DECODER
 {
+    TileSet::TileSet(UMC::MediaData* in, TileLayout const& layout_)
+        : layout(layout_)
+    {
+        if (!in)
+            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
+        TileLocation const& lastTile = layout.back();
+        size_t const size = lastTile.offset + lastTile.size;
+        source.Alloc(size);
+        if (source.GetBufferSize() < size)
+            throw av1_exception(UMC::UMC_ERR_ALLOC);
+
+        memcpy_s(source.GetDataPointer(), size, in->GetDataPointer(), size);
+        source.SetDataSize(size);
+    }
+
+    size_t TileSet::Submit(Ipp8u* bsBuffer, size_t spaceInBuffer, size_t offsetInBuffer, TileLayout& layoutWithOffset)
+    {
+        if (submitted)
+            return 0;
+
+        Ipp8u* data = static_cast<Ipp8u*>(source.GetDataPointer());
+        const size_t length = std::min<size_t>(source.GetDataSize(), spaceInBuffer);
+
+        mfx_memcpy(bsBuffer + offsetInBuffer, length, data, length);
+        source.Close();
+
+        for (auto& loc : layout)
+        {
+            layoutWithOffset.emplace_back(loc);
+            layoutWithOffset.back().offset += offsetInBuffer;
+        }
+
+        submitted = true;
+
+        return length;
+    }
+
+    Ipp32u CalcTilesInTileSets(std::vector<TileSet> const& tileSets)
+    {
+        Ipp32u numTiles = 0;
+        for (auto& tileSet : tileSets)
+            numTiles += tileSet.GetTileCount();
+
+        return numTiles;
+    }
+
     AV1DecoderFrame::AV1DecoderFrame()
         : locked(0)
         , data(new UMC::FrameData{})
+#if UMC_AV1_DECODER_REV < 5000
         , source(new UMC::MediaData{})
+#endif
         , seq_header(new SequenceHeader{})
         , header(new FrameHeader{})
     {
@@ -46,6 +95,9 @@ namespace UMC_AV1_DECODER
         decoding_started = false;
         decoding_completed = false;
         data->Close();
+#if UMC_AV1_DECODER_REV >= 5000
+        tile_sets.resize(0);
+#endif
 
         memset(seq_header.get(), 0, sizeof(SequenceHeader));
         memset(header.get(), 0, sizeof(FrameHeader));
@@ -98,6 +150,11 @@ namespace UMC_AV1_DECODER
 
         memcpy_s(source->GetDataPointer(), size, in->GetDataPointer(), size);
         source->SetDataSize(size);
+    }
+
+    void AV1DecoderFrame::AddTileSet(UMC::MediaData* in, TileLayout const& layout)
+    {
+        tile_sets.emplace_back(in, layout);
     }
 
     void AV1DecoderFrame::SetSeqHeader(SequenceHeader const& sh)

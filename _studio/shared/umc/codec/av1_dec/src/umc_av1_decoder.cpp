@@ -212,6 +212,7 @@ namespace UMC_AV1_DECODER
         bool gotFrameData = false;
 
         UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
+        TileLayout layout;
 
         while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && !gotFrameData)
         {
@@ -248,6 +249,10 @@ namespace UMC_AV1_DECODER
                 if (gotFrameHeader) // bypass tile group if there is no respective frame header (no per-tile submission so far)
                     gotFrameData = true;
                 fh.firstTileOffset += static_cast<Ipp32u>(bs.BytesDecoded());
+                TileLocation loc = {};
+                loc.offset = fh.firstTileOffset;
+                loc.size = OBUTotalSize - static_cast<Ipp32u>(bs.BytesDecoded());
+                layout.push_back(loc);
                 break;
             }
 
@@ -280,14 +285,22 @@ namespace UMC_AV1_DECODER
         if (fh.refreshFrameFlags)
             frame->SetRefValid(true);
 
+#if UMC_AV1_DECODER_REV >= 5000
+        frame->AddTileSet(in, layout);
+#else
         frame->AddSource(in);
+#endif
         in->MoveDataPointer(size);
 
         frame->frame_dpb = updated_refs;
         frame->UpdateReferenceList();
         prev_frame = frame;
 
+#if UMC_AV1_DECODER_REV >= 5000
+        UMC::Status umcRes = SubmitTiles(frame, true);
+#else
         UMC::Status umcRes = CompleteFrame(frame);
+#endif
 
         frame->StartDecoding();
 

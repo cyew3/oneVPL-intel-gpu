@@ -127,6 +127,7 @@ namespace UMC_AV1_DECODER
         virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) = 0;
         virtual void CompleteDecodedFrames();
         virtual UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) = 0;
+        virtual UMC::Status SubmitTiles(AV1DecoderFrame*, bool) = 0;
 
     private:
 

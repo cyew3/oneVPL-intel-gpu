@@ -71,6 +71,11 @@ namespace UMC_AV1_DECODER
     {
         return IsFrameIntraOnly(fh) || fh->errorResilientMode;
     }
+
+    inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
+    {
+        memcpy_s(dst, dstLen, src, len);
+    }
 }
 
 #endif //__UMC_AV1_UTILS_H_

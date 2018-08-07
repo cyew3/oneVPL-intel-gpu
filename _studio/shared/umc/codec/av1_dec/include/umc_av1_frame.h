@@ -20,16 +20,42 @@
 
 #include <memory>
 
-namespace UMC
-{
-    class FrameData;
-    class MediaData;
-}
-
 namespace UMC_AV1_DECODER
 {
     struct SequenceHeader;
     struct FrameHeader;
+
+    struct TileLocation
+    {
+        size_t offset; // offset in the buffer
+        size_t size; // size of the tile
+        Ipp32u row; // row in tile grid
+        Ipp32u col; // column in tile grid
+        Ipp32u startIdx; // index of 1st tile in current tile group
+        Ipp32u endIdx; // index of last tile in current tile group
+    };
+
+    typedef std::vector<TileLocation> TileLayout;
+
+    class TileSet
+    {
+    public:
+
+        TileSet() {};
+        TileSet(UMC::MediaData*, TileLayout const&);
+        ~TileSet() {};
+
+        size_t Submit(Ipp8u*, size_t, size_t, TileLayout&);
+        Ipp32u GetTileCount() const
+        { return static_cast<Ipp32u>(layout.size()); }
+
+    private:
+        UMC::MediaData source;
+        TileLayout layout;
+        bool submitted = false;
+    };
+
+    Ipp32u CalcTilesInTileSets(std::vector<TileSet> const&);
 
     class AV1DecoderFrame : public RefCounter
     {
@@ -42,10 +68,16 @@ namespace UMC_AV1_DECODER
         void Reset();
         void Reset(FrameHeader const*);
         void Allocate(UMC::FrameData const*);
+
         void AddSource(UMC::MediaData*);
 
         UMC::MediaData* GetSource()
         { return source.get(); }
+
+        void AddTileSet(UMC::MediaData* in, TileLayout const& layout);
+
+        std::vector<TileSet>& GetTileSets()
+        { return tile_sets; }
 
         Ipp32s GetError() const
         { return error; }
@@ -135,6 +167,8 @@ namespace UMC_AV1_DECODER
 
         std::unique_ptr<UMC::FrameData>   data;
         std::unique_ptr<UMC::MediaData>   source;
+
+        std::vector<TileSet>              tile_sets;
 
         Ipp32s                            error;
 

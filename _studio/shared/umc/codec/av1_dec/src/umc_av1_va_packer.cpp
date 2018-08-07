@@ -12,6 +12,7 @@
 
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
+#include <algorithm>
 #include "umc_structures.h"
 #include "umc_vp9_bitstream.h"
 #include "umc_vp9_frame.h"
@@ -29,13 +30,6 @@ using namespace UMC;
 
 namespace UMC_AV1_DECODER
 {
-
-    inline
-        void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
-    {
-        memcpy_s(dst, dstLen, src, len);
-    }
-
     Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
     {
 #ifdef UMC_VA_DXVA
@@ -83,6 +77,59 @@ namespace UMC_AV1_DECODER
         : PackerDXVA(va)
     {}
 
+#if UMC_AV1_DECODER_REV >= 5000
+    void PackerIntel::PackAU(std::vector<TileSet>& tileSets, AV1DecoderFrame const* info, bool firtsSubmission)
+    {
+        if (firtsSubmission)
+        {
+            // it's first submission for current frame - need to fill and submit picture parameters
+            UMC::UMCVACompBuffer* compBufPic = NULL;
+            DXVA_Intel_PicParams_AV1 *picParam = (DXVA_Intel_PicParams_AV1*)m_va->GetCompBuffer(DXVA_PICTURE_DECODE_BUFFER, &compBufPic);
+            if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < sizeof(DXVA_Intel_PicParams_AV1)))
+                throw UMC_VP9_DECODER::vp9_exception(MFX_ERR_MEMORY_ALLOC);
+
+            compBufPic->SetDataSize(sizeof(DXVA_Intel_PicParams_AV1));
+            memset(picParam, 0, sizeof(DXVA_Intel_PicParams_AV1));
+
+            PackPicParams(picParam, info);
+        }
+
+        UMC::UMCVACompBuffer* compBufBs = nullptr;
+        Ipp8u* const bistreamData = (mfxU8 *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &compBufBs);
+        if (!bistreamData || !compBufBs)
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        std::vector<DXVA_Intel_Tile_AV1> tileControlParams;
+
+        for (auto& tileSet : tileSets)
+        {
+            const size_t offsetInBuffer = compBufBs->GetDataSize();
+            const size_t spaceInBuffer = compBufBs->GetBufferSize() - offsetInBuffer;
+            TileLayout layout;
+            const size_t bytesSubmitted = tileSet.Submit(bistreamData, spaceInBuffer, offsetInBuffer, layout);
+
+            if (bytesSubmitted)
+            {
+                compBufBs->SetDataSize(static_cast<Ipp32u>(offsetInBuffer + bytesSubmitted));
+
+                for (auto& loc : layout)
+                {
+                    tileControlParams.emplace_back();
+                    PackTileControlParams(&tileControlParams.back(), loc);
+                }
+            }
+        }
+
+        UMCVACompBuffer* compBufTile = nullptr;
+        const Ipp32s tileControlInfoSize = static_cast<Ipp32s>(sizeof(DXVA_Intel_Tile_AV1) * tileControlParams.size());
+        DXVA_Intel_Tile_AV1 *tileControlParam = (DXVA_Intel_Tile_AV1*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufTile);
+        if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        memcpy_s(tileControlParam, compBufTile->GetBufferSize(), tileControlParams.data(), tileControlInfoSize);
+        compBufTile->SetDataSize(tileControlInfoSize);
+    }
+#else // #if UMC_AV1_DECODER_REV >= 5000
     void PackerIntel::PackAU(UMC_VP9_DECODER::VP9Bitstream* bs, AV1DecoderFrame const* info)
     {
         UMC::UMCVACompBuffer* compBufPic = NULL;
@@ -99,18 +146,6 @@ namespace UMC_AV1_DECODER
         Ipp32u length;
         bs->GetOrg(&data, &length);
 
-#if AV1D_DDI_VERSION >= 21
-        UMCVACompBuffer* compBufTile = NULL;
-
-        DXVA_Intel_Tile_AV1 *tileControlParam = (DXVA_Intel_Tile_AV1*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufTile);
-        if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < sizeof(DXVA_Intel_Tile_AV1)))
-            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
-
-        compBufTile->SetDataSize(sizeof(DXVA_Intel_Tile_AV1));
-        memset(tileControlParam, 0, sizeof(DXVA_Intel_Tile_AV1));
-
-        PackTileControlParams(tileControlParam, info, length);
-#else
         UMCVACompBuffer* compBufBsCtrl = NULL;
 
         DXVA_Intel_BitStream_AV1_Short *bsControlParam = (DXVA_Intel_BitStream_AV1_Short*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufBsCtrl);
@@ -121,7 +156,6 @@ namespace UMC_AV1_DECODER
         memset(bsControlParam, 0, sizeof(DXVA_Intel_BitStream_AV1_Short));
 
         PackBitstreamControlParams(bsControlParam, info);
-#endif
 
         Ipp32u offset = (Ipp32u)bs->BytesDecoded();
         length -= offset;
@@ -151,6 +185,7 @@ namespace UMC_AV1_DECODER
             }
         } while (length);
     }
+#endif // #if UMC_AV1_DECODER_REV >= 5000
 
     void PackerIntel::PackPicParams(DXVA_Intel_PicParams_AV1* picParam, AV1DecoderFrame const* frame)
     {
@@ -441,21 +476,18 @@ namespace UMC_AV1_DECODER
     }
 
 #if AV1D_DDI_VERSION >= 21
-    void PackerIntel::PackTileControlParams(DXVA_Intel_Tile_AV1* tileControlParam, AV1DecoderFrame const* frame, Ipp32u size)
+    void PackerIntel::PackTileControlParams(DXVA_Intel_Tile_AV1* tileControlParam, TileLocation const& loc)
     {
-        FrameHeader const& info =
-            frame->GetFrameHeader();
-
         // TODO: [Rev0.5] Add support for multiple tiles
-        tileControlParam->BSTileDataLocation = info.firstTileOffset;
-        tileControlParam->BSTileBytesInBuffer = size - tileControlParam->BSTileDataLocation;
+        tileControlParam->BSTileDataLocation = (UINT)loc.offset;
+        tileControlParam->BSTileBytesInBuffer = (UINT)loc.size;
         tileControlParam->wBadBSBufferChopping = 0;
-        tileControlParam->tile_row = 0;
-        tileControlParam->tile_column = 0;
-        tileControlParam->StartTileIdx = 0;
-        tileControlParam->EndTileIdx = 0;
+        tileControlParam->tile_row = (USHORT)loc.row;
+        tileControlParam->tile_column = (USHORT)loc.col;
+        tileControlParam->StartTileIdx = (USHORT)loc.startIdx;
+        tileControlParam->EndTileIdx = (USHORT)loc.endIdx;
         tileControlParam->anchor_frame_idx.Index15Bits = 0;
-        tileControlParam->BSTilePayloadSizeInBytes = size - tileControlParam->BSTileDataLocation;
+        tileControlParam->BSTilePayloadSizeInBytes = (UINT)loc.size;
     }
 #else
     void PackerIntel::PackBitstreamControlParams(DXVA_Intel_BitStream_AV1_Short* bsControlParam, AV1DecoderFrame const* frame)

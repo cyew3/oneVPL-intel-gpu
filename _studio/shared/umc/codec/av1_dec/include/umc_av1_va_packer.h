@@ -46,7 +46,11 @@ public:
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
 
+#if UMC_AV1_DECODER_REV >= 5000
+    virtual void PackAU(std::vector<TileSet>&, AV1DecoderFrame const*, bool) = 0;
+#else
     virtual void PackAU(UMC_VP9_DECODER::VP9Bitstream*, AV1DecoderFrame const*) = 0;
+#endif
 
     static Packer* CreatePacker(UMC::VideoAccelerator * va);
 
@@ -82,13 +86,17 @@ public:
 
     PackerIntel(UMC::VideoAccelerator * va);
 
-    void PackAU(UMC_VP9_DECODER::VP9Bitstream*, AV1DecoderFrame const*);
+#if UMC_AV1_DECODER_REV >= 5000
+    void PackAU(std::vector<TileSet>&, AV1DecoderFrame const*, bool) override;
+#else
+    void PackAU(UMC_VP9_DECODER::VP9Bitstream*, AV1DecoderFrame const*) override;
+#endif
 
 private:
 
     void PackPicParams(DXVA_Intel_PicParams_AV1*, AV1DecoderFrame const*);
 #if AV1D_DDI_VERSION >= 21
-    void PackTileControlParams(DXVA_Intel_Tile_AV1*, AV1DecoderFrame const*, Ipp32u);
+    void PackTileControlParams(DXVA_Intel_Tile_AV1*, TileLocation const&);
 #else
     void PackBitstreamControlParams(DXVA_Intel_BitStream_AV1_Short*, AV1DecoderFrame const*);
 #endif
