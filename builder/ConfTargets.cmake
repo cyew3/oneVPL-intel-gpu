@@ -73,7 +73,11 @@ append("-std=c++11" CMAKE_CXX_FLAGS)
 
 option( MFX_ENABLE_KERNELS "Build with advanced media kernels support?" ON )
 
-if(MFX_ENABLE_KERNELS)
-  append("-DMFX_ENABLE_KERNELS" CMAKE_C_FLAGS)
-  append("-DMFX_ENABLE_KERNELS" CMAKE_CXX_FLAGS)
+if (DEFINED MFX_CONFIG_FILE)
+    # Include user provided cmake config file of the format:
+    # set( VARIABLE VALUE )
+    include(${MFX_CONFIG_FILE})
 endif()
+
+configure_file(${BUILDER_ROOT}/mfxconfig.h.in mfxconfig.h)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})

@@ -66,8 +66,6 @@
 #undef  MFX_DEBUG_TOOLS // to avoid redefinition
 #define MFX_DEBUG_TOOLS
 #endif
-
-#define MFX_ENABLE_KERNELS
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
 #ifdef MFX_VA
@@ -104,6 +102,16 @@
     #if defined(HEVCD_EVALUATION)
         #define MFX_MAX_DECODE_FRAMES 1000
     #endif
+#endif
+
+#if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
+    #define MFX_ENABLE_KERNELS
+#elif defined(ANDROID)
+    // placeholder: #include "mfx_android_defs.h"
+#else
+    // mfxconfig.h is auto-generated file containing mediasdk per-component
+    // enable defines
+    #include "mfxconfig.h"
 #endif
 
 #if !defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_BDW) || defined(LINUX_TARGET_PLATFORM_CFL) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BSW)  || defined(LINUX_TARGET_PLATFORM_ATS)

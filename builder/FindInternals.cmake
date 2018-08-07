@@ -31,6 +31,8 @@ set( MSDK_LIB_ROOT     ${MSDK_STUDIO_ROOT}/mfx_lib                     )
 set( MSDK_UMC_ROOT     ${MSDK_STUDIO_ROOT}/shared/umc                  )
 set( MSDK_SAMPLES_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/samples    )
 set( MSDK_BUILDER_ROOT ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/builder    )
+# to emulate open source
+set( BUILDER_ROOT ${MSDK_BUILDER_ROOT})
 
 function( mfx_include_dirs )
   include_directories (

@@ -12,6 +12,7 @@ _studio/mfx_lib/vpp/OpenSourceCMakeLists.txt
 _studio/shared/asc/OpenSourceCMakeLists.txt
 _studio/shared/mfx_trace/OpenSourceCMakeLists.txt
 _studio/shared/umc/OpenSourceCMakeLists.txt
+builder/mfxconfig.h.in
 builder/ConfTargets.cmake
 builder/FindFunctions.cmake
 builder/FindGlobals.cmake
