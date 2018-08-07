@@ -24,7 +24,7 @@
 ## THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ##******************************************************************************
 
-cmake_minimum_required( VERSION 2.6.2 FATAL_ERROR )
+cmake_minimum_required( VERSION 2.8.5 FATAL_ERROR )
 project( mfx )
 
 set( MFX_API_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/../../include )
@@ -56,6 +56,8 @@ else( )
     set( CMAKE_INSTALL_PREFIX /opt/intel/mediasdk CACHE PATH "Install Path Prefix" FORCE )
   endif( )
   message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}" )
+ 
+  include( GNUInstallDirs )
 
   if( NOT DEFINED MFX_PLUGINS_DIR )
     set( MFX_PLUGINS_DIR ${CMAKE_INSTALL_PREFIX}/plugins )
@@ -64,11 +66,7 @@ else( )
   message( STATUS "MFX_PLUGINS_DIR=${MFX_PLUGINS_DIR}" )
 
   if( NOT DEFINED MFX_MODULES_DIR )
-    if(__ARCH MATCHES intel64)
-        set( MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib64 )
-    else( )
-        set( MFX_MODULES_DIR ${CMAKE_INSTALL_PREFIX}/lib )
-    endif( )
+        set( MFX_MODULES_DIR ${CMAKE_INSTALL_FULL_LIBDIR} )
   endif( )
   add_definitions( -DMFX_MODULES_DIR="${MFX_MODULES_DIR}" )
   message( STATUS "MFX_MODULES_DIR=${MFX_MODULES_DIR}" )
@@ -157,14 +155,6 @@ endfunction( )
 set( defs "${WARNING_FLAGS}" )
 make_static_library( mfx )
 
-if(__ARCH MATCHES intel64)
-  install( TARGETS mfx ARCHIVE DESTINATION lib64 )
-else( )
-  install( TARGETS mfx ARCHIVE DESTINATION lib )
-endif( )
-
-install( DIRECTORY ${MFX_API_FOLDER}/ DESTINATION include FILES_MATCHING PATTERN *.h )
-
 set( defs "-DMFX_DISPATCHER_EXPOSED_PREFIX ${WARNING_FLAGS}" )
 make_static_library( dispatch_shared )
 
@@ -179,11 +169,6 @@ get_api_version(MFX_VERSION_MAJOR MFX_VERSION_MINOR)
 set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/${PROJECT_NAME}.pc")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
 
-if(__ARCH MATCHES intel64)
-  install( TARGETS mfx ARCHIVE DESTINATION lib/lin_x64 )
-  install( FILES ${PKG_CONFIG_FNAME} DESTINATION lib/lin_x64/pkgconfig )
-else( )
-  install( TARGETS mfx ARCHIVE DESTINATION lib/lin_x86 )
-  install( FILES ${PKG_CONFIG_FNAME} DESTINATION lib/lin_x86/pkgconfig )
-endif( )
-install( DIRECTORY ${MFX_API_FOLDER}/ DESTINATION include FILES_MATCHING PATTERN *.h )
+install( TARGETS mfx ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+install( DIRECTORY ${MFX_API_FOLDER}/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} FILES_MATCHING PATTERN *.h )
