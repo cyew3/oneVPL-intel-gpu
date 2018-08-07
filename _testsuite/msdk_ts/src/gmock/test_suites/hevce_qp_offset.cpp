@@ -87,7 +87,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {
         MFX_ERR_NONE,
         {
-            {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1}
+            {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
+            {EXTCO3, &tsStruct::mfxExtCodingOption3.PRefType, MFX_P_REF_PYRAMID}
         },
         {},
         P, 0
@@ -97,7 +98,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         MFX_ERR_NONE,
         {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
-            {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON}
+            {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON},
+            {EXTCO3, &tsStruct::mfxExtCodingOption3.PRefType, MFX_P_REF_PYRAMID}
         },
         {-10, -5, 4, },
         P, 0
@@ -204,7 +206,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         {
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1},
             {MFXPAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 10},
-            {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON}
+            {EXTCO3, &tsStruct::mfxExtCodingOption3.EnableQPOffset, MFX_CODINGOPTION_ON},
+            {EXTCO3, &tsStruct::mfxExtCodingOption3.PRefType, MFX_P_REF_PYRAMID}
         },
         { -2, 0, 2},
         P, 0
