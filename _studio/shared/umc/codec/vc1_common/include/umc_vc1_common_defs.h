@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -381,8 +381,8 @@ typedef struct
     Ipp32u POSTPROCFLAG;      //1
     Ipp32u MAX_CODED_WIDTH;   //12
     Ipp32u MAX_CODED_HEIGHT;  //12
-    Ipp32s AspectRatioW; 
-    Ipp32s AspectRatioH; 
+    Ipp32s AspectRatioW;
+    Ipp32s AspectRatioH;
     Ipp32u PULLDOWN;          //1
     Ipp32u INTERLACE;         //1
     Ipp32u TFCNTRFLAG;        //1
@@ -530,7 +530,7 @@ typedef struct
 
 //B only
     Ipp32u     BFRACTION;
-    Ipp32u     BFRACTION_orig; // need for correct filling VA structures
+    Ipp32u     BFRACTION_index;
     VC1Bitplane      m_DirectMB;
     Ipp32s           ScaleFactor;
 // B only. Interlace field

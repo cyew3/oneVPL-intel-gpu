@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -292,6 +292,20 @@ const extern Ipp32s VC1_BFraction_tbl[]=
     0x7F, VC1_BRACTION_BI, VC1_BRACTION_BI,
 
     -1
+};
+const extern Ipp32s VC1_BFraction_indexes[8][9] =
+{
+/* 21 is an invalid index */
+/*          0   1   2   3   4   5   6   7 */
+/* 0 */    21, 21, 21, 21, 21, 21, 21, 21,
+/* 1 */    21, 21, 21, 21, 21, 21, 21, 21,
+/* 2 */    21,  0, 21, 21, 21, 21, 21, 21,
+/* 3 */    21,  1,  2, 21, 21, 21, 21, 21,
+/* 4 */    21,  3, 21,  4, 21, 21, 21, 21,
+/* 5 */    21,  5,  6,  7,  8, 21, 21, 21,
+/* 6 */    21,  9, 21, 21, 21, 10, 21, 21,
+/* 7 */    21, 11, 12, 13, 14, 15, 16, 21,
+/* 8 */    21, 17, 21, 18, 21, 19, 21, 20,
 };
 //////////////////////////////////////////
 ///////////////////////////////////////////

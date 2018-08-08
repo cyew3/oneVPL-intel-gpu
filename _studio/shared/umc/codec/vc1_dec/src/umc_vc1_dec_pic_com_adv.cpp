@@ -15,17 +15,7 @@
 #include "umc_vc1_dec_seq.h"
 #include "umc_vc1_dec_debug.h"
 #include "umc_vc1_huffman.h"
-
-static const Ipp32s VC1_VA_Bfraction_tbl[7][7] =
-{
-    { 0, 1, 3, 5,  114, 116, 122 },
-    { 0, 2, 0, 6,    0, 117,   0 },
-    { 0, 0, 4, 112,  0, 118, 123 },
-    { 0, 0, 0, 113,  0, 119,   0 },
-    { 0, 0, 0, 0,  115, 120, 124 },
-    { 0, 0, 0, 0,    0, 121,   0 },
-    { 0, 0, 0, 0,    0,   0, 125 }
-};
+#include "umc_vc1_common_tables.h"
 
 #ifdef ALLOW_SW_VC1_FALLBACK
 void PrepareForNextFrame(VC1Context*pContext)
@@ -255,11 +245,12 @@ VC1Status DecodePictureHeader_Adv(VC1Context* pContext)
 
                 picLayerHeader->BFRACTION = (z1*2>=z2)?1:0;
                 picLayerHeader->ScaleFactor = ((256+z2/2)/z2)*z1;
-                picLayerHeader->BFRACTION_orig = VC1_VA_Bfraction_tbl[z1-1][z2-2];
+                if (z1 < 8 && z2 < 9)
+                    picLayerHeader->BFRACTION_index = VC1_BFraction_indexes[z1][z2];
             }
 
             //picture quantizer index
-            VC1_GET_BITS(5,picLayerHeader->PQINDEX);            
+            VC1_GET_BITS(5,picLayerHeader->PQINDEX);
 
             if(picLayerHeader->PQINDEX<=8)
             {
@@ -504,7 +495,8 @@ VC1Status DecodePictHeaderParams_InterlaceFieldPicture_Adv (VC1Context* pContext
 
            picLayerHeader->BFRACTION = (z1*2>=z2)?1:0;
            picLayerHeader->ScaleFactor = ((256+z2/2)/z2)*z1;
-           picLayerHeader->BFRACTION_orig = VC1_VA_Bfraction_tbl[z1-1][z2-2];
+            if (z1 < 8 && z2 < 9)
+                picLayerHeader->BFRACTION_index = VC1_BFraction_indexes[z1][z2];
         }
 
     if(picLayerHeader->CurrField == 0)

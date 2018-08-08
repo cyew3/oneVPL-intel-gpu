@@ -791,7 +791,7 @@ namespace UMC
         ptr->range_mapping_fields.bits.chroma_flag = pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG;
         ptr->range_mapping_fields.bits.chroma = pContext->m_seqLayerHeader.RANGE_MAPUV_FLAG ? pContext->m_seqLayerHeader.RANGE_MAPUV : 0;
 
-        ptr->b_picture_fraction       = pContext->m_picLayerHeader->BFRACTION_orig;
+        ptr->b_picture_fraction       = pContext->m_picLayerHeader->BFRACTION_index;
         ptr->cbp_table                = pContext->m_picLayerHeader->CBPTAB;
         ptr->mb_mode_table            = pContext->m_picLayerHeader->MBMODETAB;
         ptr->range_reduction_frame = pContext->m_picLayerHeader->RANGEREDFRM;

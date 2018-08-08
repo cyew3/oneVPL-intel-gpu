@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -67,8 +67,9 @@ const extern Ipp32s VC1_Bitplane_IMODE_tbl[];
 //VC-1 Table 81: Code table for 3x2 and 2x3 tiles
 const extern Ipp32s VC1_BitplaneTaledbitsTbl[];
 
-//VC-1 Table 39
+//VC-1 7.1.1.14 Table 40
 const extern Ipp32s VC1_BFraction_tbl[];
+const extern Ipp32s VC1_BFraction_indexes[8][9];
 
 #endif //__umc_vc1_common_tables_H__
 #endif //UMC_ENABLE_VC1_VIDEO_DECODER
