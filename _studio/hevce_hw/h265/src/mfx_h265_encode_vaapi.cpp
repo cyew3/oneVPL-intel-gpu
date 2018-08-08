@@ -960,6 +960,14 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
             attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value & 0xffff;
         m_caps.MaxNum_Reference1 =
             (attrs[ idx_map[VAConfigAttribEncMaxRefFrames] ].value >>16) & 0xffff;
+
+        /*document: Intel_HEVC_DDI_Rev0.9951
+        MaxNum_Reference1: ... If number is 0 or bigger than MaxNum_Reference0 it shall be
+        treated as MaxNumReference0...*/
+        if(!m_caps.MaxNum_Reference1 || (m_caps.MaxNum_Reference1 > m_caps.MaxNum_Reference0))
+        {
+            m_caps.MaxNum_Reference1 = m_caps.MaxNum_Reference0;
+        }
     }
     else
     {
