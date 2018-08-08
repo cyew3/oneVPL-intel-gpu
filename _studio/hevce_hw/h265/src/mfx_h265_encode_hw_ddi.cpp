@@ -758,6 +758,9 @@ void FillSpsBuffer(
 
     sps.FrameSizeTolerance = ConvertLowDelayBRCMfx2Ddi(par.m_ext.CO3.LowDelayBRC);
 
+    if ((par.mfx.RateControlMethod == MFX_RATECONTROL_VBR || par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR) && par.m_ext.CO3.WinBRCSize)
+        sps.FrameSizeTolerance = eFrameSizeTolerance_Low; //sliding window
+
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         sps.ICQQualityFactor = (mfxU8)par.mfx.ICQQuality;
     else if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)

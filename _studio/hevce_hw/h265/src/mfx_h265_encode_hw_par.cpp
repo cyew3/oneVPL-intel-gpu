@@ -12,6 +12,7 @@
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 #include "mfx_h265_encode_hw_utils.h"
 #include "mfx_h265_encode_hw_ddi.h"
+#include "mfx_enc_common.h"
 #include <assert.h>
 #include <math.h>
 
@@ -2614,14 +2615,61 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
     if (CO3.WinBRCSize > 0 || CO3.WinBRCMaxAvgKbps > 0)
     {
-        if (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR || !par.isSWBRC())
+        if ((par.mfx.RateControlMethod != MFX_RATECONTROL_VBR && par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR))
         {
-            changed += CheckOption(CO3.WinBRCSize, 0, 0);
-            changed += CheckOption(CO3.WinBRCMaxAvgKbps, 0, 0);
+            //Sliding window is for VBR or QVBR (on Windows)
+            CO3.WinBRCMaxAvgKbps = 0;
+            CO3.WinBRCSize = 0;
+            changed++;
         }
-        else
+        else if (!IsOn(CO2.ExtBRC)) // if ExtBRC is off - need to do additional checks
         {
-            changed += CheckMin(CO3.WinBRCMaxAvgKbps, par.mfx.TargetKbps);
+            if (par.mfx.FrameInfo.FrameRateExtN != 0 && par.mfx.FrameInfo.FrameRateExtD != 0)
+            {
+                mfxU16 iframerate = (mfxU16)ceil((mfxF64)par.mfx.FrameInfo.FrameRateExtN / par.mfx.FrameInfo.FrameRateExtD);
+                if (CO3.WinBRCSize != iframerate) //WinBRCSize must be equal to iframerate
+                {
+                    CO3.WinBRCSize = iframerate;
+                    changed++;
+                }
+            }
+            else
+            {
+                //if FrameRateExtN and FrameRateExtD are not set - need to calculate them
+                CalculateMFXFramerate((mfxF64)CO3.WinBRCSize, &par.mfx.FrameInfo.FrameRateExtN, &par.mfx.FrameInfo.FrameRateExtD);
+            }
+            if (par.MaxKbps)
+            {
+                if (CO3.WinBRCMaxAvgKbps != par.MaxKbps) // WinBRCMaxAvgKbps must be equal MaxKbps
+                {
+                    CO3.WinBRCMaxAvgKbps = (mfxU16)par.MaxKbps;
+                    changed++;
+                }
+            }
+            else if (CO3.WinBRCMaxAvgKbps)
+            {
+                if (par.TargetKbps && CO3.WinBRCMaxAvgKbps < par.TargetKbps) // WinBRCMaxAvgKbps must not be less than TargetKbps
+                {
+                    CO3.WinBRCMaxAvgKbps = 0;
+                    CO3.WinBRCSize = 0;
+                    invalid++;
+                }
+                else
+                {
+                    par.MaxKbps = CO3.WinBRCMaxAvgKbps;
+                    changed++;
+                }
+            }
+            else
+            {
+                changed++;
+            }
+        }
+        else if (par.TargetKbps && CO3.WinBRCMaxAvgKbps && CO3.WinBRCMaxAvgKbps < par.TargetKbps)
+        {
+            CO3.WinBRCMaxAvgKbps = 0;
+            CO3.WinBRCSize = 0;
+            invalid++;
         }
     }
     if (par.mfx.RateControlMethod != MFX_RATECONTROL_CQP && par.isSWBRC())
