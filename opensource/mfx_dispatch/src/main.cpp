@@ -874,6 +874,8 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         return MFX_ERR_UNSUPPORTED;
     }
     hr = (*(HRESULT(MFX_CDECL *) (HANDLE*, LPVOID, LPVOID)) pFunc) ((HANDLE*)session, &par, nullptr);
+#elif defined(MEDIASDK_ARM_LOADER)
+    hr = E_NOTIMPL;
 #else
     hr = InitialiseMediaSession((HANDLE*)session, &par, nullptr);
 #endif
@@ -904,6 +906,8 @@ mfxStatus MFXClose(mfxSession session)
     }
     else
         return MFX_ERR_INVALID_HANDLE;
+#elif defined(MEDIASDK_ARM_LOADER)
+    hr = E_NOTIMPL;
 #else
     hr = DisposeMediaSession(HANDLE(session));
 #endif

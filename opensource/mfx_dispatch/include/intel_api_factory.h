@@ -30,7 +30,7 @@ File Name: intel_api_factory.h
 
 #pragma once
 
-#if defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER)
+#if defined(MEDIASDK_UWP_PROCTABLE) && !defined(MEDIASDK_DFP_LOADER) && !defined(MEDIASDK_ARM_LOADER)
 
 #ifdef __cplusplus
 extern "C"
