@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -57,16 +57,6 @@ static int umc_h264_getAddr(Ipp32s m_isMBAFF, Ipp32s frame_width_in_mbs, Ipp32s 
 ///////////////////////////////
 // SVC interlayer prediction //
 ///////////////////////////////
-
-static const Ipp32s NxNPartIdx[6][4] =
-{
-    { 0, 0, 0, 0 }, // MODE_SKIP (P Slice)
-    { 0, 0, 0, 0 }, // MODE_16x16     or    BLK_8x8
-    { 0, 0, 2, 2 }, // MODE_16x8      or    BLK_8x4
-    { 0, 1, 0, 1 }, // MODE_8x16      or    BLK_4x8
-    { 0, 1, 2, 3 }, // MODE_8x8       or    BLK_4x4
-    { 0, 1, 2, 3 }  // MODE_8x8ref0
-};
 
 static int BicubiFilter[16][4] = {
     { 0, 32,  0,  0},
@@ -1414,7 +1404,7 @@ void upsamplingResidual(H264LayerResizeParameter* pResizeParameter,
             (pResizeParameter->mbRegionFull.y << 3) * fullW,
         fullW*2, curEnc->svc_UpsampleResidChromaSpec,
         pResizeParameter->mbRegionFull, curEnc->svc_UpsampleBuf);
-    
+
     ippiUpsampleResidualsChroma_SVC_16s_C1R(refEnc->m_pVResidual, refW*2,
         curEnc->m_pVInputResidual + (pResizeParameter->mbRegionFull.x << 3) +
             (pResizeParameter->mbRegionFull.y << 3) * fullW,

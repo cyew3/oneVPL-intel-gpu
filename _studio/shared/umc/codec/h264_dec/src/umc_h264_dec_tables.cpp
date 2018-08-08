@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -299,45 +299,6 @@ const Ipp32u subblock_block_membership[16] = {
         0,0,1,1,
         2,2,3,3,
         2,2,3,3
-};
-
-const Ipp32s pre_norm_adjust_index4x4[16] =
-{// 0 1 2 3
-    0,2,0,2,//0
-    2,1,2,1,//1
-    0,2,0,2,//2
-    2,1,2,1 //3
-};
-
-const Ipp32s pre_norm_adjust4x4[6][3] =
-{
-    {10,16,13},
-    {11,18,14},
-    {13,20,16},
-    {14,23,18},
-    {16,25,20},
-    {18,29,23}
-};
-
-const Ipp32s pre_norm_adjust8x8[6][6] =
-{
-    {20, 18, 32, 19, 25, 24},
-    {22, 19, 35, 21, 28, 26},
-    {26, 23, 42, 24, 33, 31},
-    {28, 25, 45, 26, 35, 33},
-    {32, 28, 51, 30, 40, 38},
-    {36, 32, 58, 34, 46, 43}
-};
-const Ipp32s pre_norm_adjust_index8x8[64] =
-{// 0 1 2 3 4 5 6 7
-    0,3,4,3,0,3,4,3,//0
-    3,1,5,1,3,1,5,1,//1
-    4,5,2,5,4,5,2,5,//2
-    3,1,5,1,3,1,5,1,//3
-    0,3,4,3,0,3,4,3,//4
-    3,1,5,1,3,1,5,1,//5
-    4,5,2,5,4,5,2,5,//6
-    3,1,5,1,3,1,5,1 //7
 };
 const Ipp8s ClipQPTable[52*3]=
 {
