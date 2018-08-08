@@ -59,6 +59,7 @@ extern Platform::String^ RunArgs;
 bool DumpToFile = false,
      CloseImm = false,
      UseHEVC = false;
+String^ DestinationFolder;
 
 MainPage::MainPage()
 {
@@ -131,13 +132,11 @@ bool mfx_uwptest::MainPage::MfxProbeLib(Platform::String ^ name)
 
 void mfx_uwptest::MainPage::MfxMediaSDKProbe(void)
 {
-    volatile char heapcorruptionbuffer[1024] = {};
     size_t strSize = 256;
     wchar_t *str = new wchar_t[strSize];
     mfxVersion msdkVersion = {};
     mfxSession msdkSession = NULL;
     mfxStatus sts = MFX_ERR_NONE;
-    volatile char heapcorruptionbuffer2[1024] = {};
 
     MSDKVersion->Text = L"";
     LogMsg(L"--------------------------------------------------------------");
@@ -222,10 +221,11 @@ void mfx_uwptest::MainPage::Grid_Loaded(Platform::Object^ sender, Windows::UI::X
     Array<String^>^ strNames = ref new Array<String^>(sizeof(libNames) / sizeof(libNames[0]));
     Log->Text = L"";
     LogMsg(L"Available command line usage");
-    LogMsg(L"mfx_uwptest [/dump] [/hevcd] [/close]");
+    LogMsg(L"mfx_uwptest [/dump] [/hevcd] [/close] [/destination Destination\\Path]");
     LogMsg(L"/dump - dump log to Documents\\mfx_uwptest.mfxresult");
     LogMsg(L"/close - close immediately after work is completed");
     LogMsg(L"/hevcd - run HEVC decode instead of AVC (by default)");
+    LogMsg(L"/output - put results to the destination folder (Documents by default)");
     LogMsg(L"==============================================================");
 
     for (int i = 0; i < sizeof(libNames) / sizeof(libNames[0]); ++i)
@@ -271,6 +271,8 @@ void mfx_uwptest::MainPage::Grid_Loaded(Platform::Object^ sender, Windows::UI::X
 #pragma warning(disable:4996)
     wchar_t delim[] = L" ";
     wchar_t *pwc = NULL;
+    //Debug
+    //RunArgs = L"/dump /output d:\\results";
     if (!RunArgs->IsEmpty())
     {
         pwc = wcstok((wchar_t*)RunArgs->Begin(), &delim[0], 0);
@@ -286,6 +288,14 @@ void mfx_uwptest::MainPage::Grid_Loaded(Platform::Object^ sender, Windows::UI::X
             CloseImm = true;
         if(part == L"/hevcd")
             UseHEVC = true;
+        if (part == L"/output")
+        {
+            pwc = wcstok(NULL, &delim[0], 0);
+            if (pwc != NULL)
+            {
+                DestinationFolder = ref new String(pwc);
+            }
+        }
         pwc = wcstok(NULL, &delim[0], 0);
     }
 
@@ -332,12 +342,16 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
     sourcePath = Windows::ApplicationModel::Package::Current->InstalledLocation->Path + L"\\Assets";
     std::shared_ptr<IRandomAccessStream^> outputStream = std::make_shared<IRandomAccessStream^>(nullptr);
     std::shared_ptr<String^> toWrite = std::make_shared<String^>(nullptr);
+    std::shared_ptr<StorageFolder^> outputDir = std::make_shared<StorageFolder^>(nullptr);
+
+    this->LogMsg(ref new String(L"Output folder: ") + (DestinationFolder->IsEmpty() ? L"Documents":DestinationFolder));
 
     /* Opening file in Documents folder for writing. As result - saving stream in outputStream shared_ptr */
-    create_task(KnownFolders::GetFolderForUserAsync(nullptr, KnownFolderId::DocumentsLibrary))
-        .then([ofl](StorageFolder^ folder)
+    create_task(DestinationFolder->IsEmpty() ? KnownFolders::GetFolderForUserAsync(nullptr, KnownFolderId::DocumentsLibrary) : StorageFolder::GetFolderFromPathAsync(DestinationFolder))
+        .then([ofl, outputDir](StorageFolder^ folder)
     {
-        return create_task(folder->CreateFileAsync(ofl, CreationCollisionOption::ReplaceExisting));
+        *outputDir = folder;
+        return create_task((*outputDir)->CreateFileAsync(ofl, CreationCollisionOption::ReplaceExisting));
     })
         .then([](StorageFile^ file)
     {
@@ -717,15 +731,11 @@ noerror:
         *toWrite = this->Log->Text;
         Log->Height = Log->ActualHeight + 100;
     }, task_continuation_context::use_default())
-        .then([&, toWrite]()
+        .then([&, toWrite, outputDir]()
     {
         if (DumpToFile)
         {
-             create_task(KnownFolders::GetFolderForUserAsync(nullptr, KnownFolderId::DocumentsLibrary))
-                .then([this, toWrite](StorageFolder^ folder)
-            {
-                return create_task(folder->CreateFileAsync(L"mfx_uwptest.mfxresult", CreationCollisionOption::ReplaceExisting));
-            })
+             create_task((*outputDir)->CreateFileAsync(L"mfx_uwptest.mfxresult", CreationCollisionOption::ReplaceExisting))
                 .then([this, toWrite](StorageFile^ file)
             {
                 return create_task(file->OpenAsync(FileAccessMode::ReadWrite));
