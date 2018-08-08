@@ -206,11 +206,11 @@ protected: // variables
     bool m_bIsOutOpaque;
 
 #if defined(_WIN32) || defined(_WIN64)
-    std::auto_ptr<OpenCLFilter> m_OpenCLFilter;
+    std::unique_ptr<OpenCLFilter> m_OpenCLFilter;
 #else
-    std::auto_ptr<OpenCLFilterVA> m_OpenCLFilter;
+    std::unique_ptr<OpenCLFilterVA> m_OpenCLFilter;
 #endif
-    std::auto_ptr<OpenCLRotator180Context> m_pOpenCLRotator180Context;
+    std::unique_ptr<OpenCLRotator180Context> m_pOpenCLRotator180Context;
     mfxHDL m_device;
 
     mfxCoreInterface *m_pmfxCore;

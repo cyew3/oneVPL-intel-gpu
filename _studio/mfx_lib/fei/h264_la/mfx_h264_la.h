@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -289,7 +289,7 @@ private:
 private:
 
     MfxHwH264Encode::CmDevicePtr                    m_cmDevice;
-    std::auto_ptr<MfxEncLA::CmContextLA>            m_cmCtx;
+    std::unique_ptr<MfxEncLA::CmContextLA>            m_cmCtx;
     MfxHwH264Encode::MfxVideoParam                  m_video;
     std::vector<MfxHwH264Encode::VmeData>           m_vmeDataStorage;
         

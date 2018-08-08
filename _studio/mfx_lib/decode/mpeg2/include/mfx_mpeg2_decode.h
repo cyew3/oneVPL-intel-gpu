@@ -169,7 +169,7 @@ public:
     Ipp32s m_InitH;
     Ipp32s m_InitPicStruct;
 
-    std::auto_ptr<UMC::MPEG2VideoDecoderBase> m_implUmc;
+    std::unique_ptr<UMC::MPEG2VideoDecoderBase> m_implUmc;
 
     bool m_isSWBuf;
     bool m_isOpaqueMemory;
@@ -338,7 +338,7 @@ class VideoDECODEMPEG2 : public VideoDECODE
 {
 
 public:
-    std::auto_ptr<VideoDECODEMPEG2InternalBase> internalImpl;
+    std::unique_ptr<VideoDECODEMPEG2InternalBase> internalImpl;
 
     static mfxStatus Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request);

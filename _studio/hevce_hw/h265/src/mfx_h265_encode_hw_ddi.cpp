@@ -185,7 +185,7 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
 
 mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par)
 {
-    std::auto_ptr<DriverEncoder> ddi;
+    std::unique_ptr<DriverEncoder> ddi;
 
     ddi.reset(CreatePlatformH265Encoder(core));
     MFX_CHECK(ddi.get(), MFX_ERR_UNSUPPORTED);

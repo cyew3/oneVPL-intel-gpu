@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -124,10 +124,10 @@ protected:
     // Get original Surface corresponding to OpaqueSurface
     mfxFrameSurface1 * GetOriginalSurface(mfxFrameSurface1 *surface);
 
-    std::auto_ptr<MFXTaskSupplier_H265>  m_pH265VideoDecoder;
+    std::unique_ptr<MFXTaskSupplier_H265>  m_pH265VideoDecoder;
     mfx_UMC_MemAllocator            m_MemoryAllocator;
 
-    std::auto_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
+    std::unique_ptr<mfx_UMC_FrameAllocator>    m_FrameAllocator;
 
     mfxVideoParamWrapper m_vInitPar;
     mfxVideoParamWrapper m_vFirstPar;

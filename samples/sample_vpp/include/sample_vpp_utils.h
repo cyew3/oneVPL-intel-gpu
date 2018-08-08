@@ -304,7 +304,7 @@ struct sMemoryAllocator
     #endif
 
     #ifdef LIBVA_SUPPORT
-    std::auto_ptr<CLibVA> libvaKeeper;
+    std::unique_ptr<CLibVA> libvaKeeper;
     #endif*/
 };
 
@@ -403,7 +403,7 @@ public :
         mfxFrameSurface1* pSurface);
 
 private:
-    std::auto_ptr<CRawVideoWriter> m_ofile[8];
+    std::unique_ptr<CRawVideoWriter> m_ofile[8];
 
     bool m_svcMode;
 };

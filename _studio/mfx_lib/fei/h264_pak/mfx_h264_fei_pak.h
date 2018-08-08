@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_H264_PAK_H_
@@ -81,7 +81,7 @@ private:
     VideoCORE*                                    m_core;
 
 
-    std::auto_ptr<MfxHwH264Encode::DriverEncoder> m_ddi;
+    std::unique_ptr<MfxHwH264Encode::DriverEncoder> m_ddi;
     std::vector<mfxU32>                           m_recFrameOrder; // !!! HACK !!!
     ENCODE_CAPS                                   m_caps;
 

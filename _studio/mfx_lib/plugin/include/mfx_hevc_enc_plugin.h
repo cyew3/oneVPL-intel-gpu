@@ -141,7 +141,7 @@ protected:
 
     mfxPluginParam      m_PluginParam;
     bool                m_createdByDispatcher;
-    std::auto_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
+    std::unique_ptr<MFXPluginAdapter<MFXEncoderPlugin> > m_adapter;
 };
 
 #if defined( AS_HEVCE_DP_PLUGIN)

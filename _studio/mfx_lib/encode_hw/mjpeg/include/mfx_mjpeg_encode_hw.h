@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MJPEG_ENCODE_HW_H__
@@ -119,7 +119,7 @@ protected:
     VideoCORE*          m_pCore;
     mfxVideoParam       m_vFirstParam;
     mfxVideoParam       m_vParam;
-    std::auto_ptr<DriverEncoder> m_ddi;
+    std::unique_ptr<DriverEncoder> m_ddi;
 
     bool                m_bInitialized;
     bool                m_deviceFailed;

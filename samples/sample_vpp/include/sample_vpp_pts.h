@@ -54,7 +54,7 @@ protected:
     // FRC based on pts
     bool    CheckAdvancedPTS(mfxFrameSurface1 *pSurface);
 
-    std::auto_ptr<BaseFRCChecker>  m_pFRCChecker;
+    std::unique_ptr<BaseFRCChecker>  m_pFRCChecker;
 
     mfxU32  m_FRateExtN_In;
     mfxU32  m_FRateExtD_In;

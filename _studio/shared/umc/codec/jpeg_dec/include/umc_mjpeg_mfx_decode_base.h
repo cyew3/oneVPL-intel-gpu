@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MJPEG_VIDEO_DECODER_MFX_DECODE_BASE_H
@@ -95,7 +95,7 @@ protected:
     int                     m_frameSampling;
 
     // JPEG decoders allocated
-    std::auto_ptr<CJPEGDecoderBase> m_decoder;
+    std::unique_ptr<CJPEGDecoderBase> m_decoder;
     CJPEGDecoderBase * m_decBase;
 
     FrameAllocator *        m_frameAllocator;
