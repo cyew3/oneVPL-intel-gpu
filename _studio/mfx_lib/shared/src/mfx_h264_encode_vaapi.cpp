@@ -2479,7 +2479,7 @@ mfxStatus VAAPIEncoder::Execute(
         // SEI
         if (sei.Size() > 0)
         {
-            packed_header_param_buffer.type = VAEncPackedHeaderH264_SEI;
+            packed_header_param_buffer.type = VAEncPackedHeaderRawData;
             packed_header_param_buffer.has_emulation_bytes = 1;
             packed_header_param_buffer.bit_length = sei.Size()*8;
 
@@ -2610,7 +2610,7 @@ mfxStatus VAAPIEncoder::Execute(
         // SEI
         if (sei.Size() > 0)
         {
-            packed_header_param_buffer.type = VAEncPackedHeaderH264_SEI;
+            packed_header_param_buffer.type = VAEncPackedHeaderRawData;
             packed_header_param_buffer.has_emulation_bytes = 1;
             packed_header_param_buffer.bit_length = sei.Size()*8;
 
