@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2017-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -81,6 +81,7 @@ public:
 
     virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info) = 0;
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf) = 0;
+    virtual mfxStatus ResetIOState() = 0;
 
 protected:
     SourceFrameInfo m_inPars;
@@ -110,6 +111,7 @@ public:
 
     virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
+    virtual mfxStatus ResetIOState();
 
 protected:
     mfxStatus FillInputFrameInfo(mfxFrameInfo& fi);
@@ -146,6 +148,7 @@ public:
 
     virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
+    virtual mfxStatus ResetIOState();
 
 protected:
     mfxStatus InitDecParams(MfxVideoParamsWrapper & par);
@@ -186,6 +189,7 @@ public:
 
     virtual mfxStatus GetActualFrameInfo(mfxFrameInfo & info);
     virtual mfxStatus GetFrame(mfxFrameSurface1* & pSurf);
+    virtual mfxStatus ResetIOState();
 
 protected:
     mfxStatus VPPOneFrame(mfxFrameSurface1* pSurfaceIn, mfxFrameSurface1** pSurfaceOut);

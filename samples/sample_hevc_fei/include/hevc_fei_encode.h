@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2017-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -48,6 +48,8 @@ public:
     mfxStatus EncodeFrame(mfxFrameSurface1* pSurf);
     mfxStatus EncodeFrame(HevcTask* task);
 
+    mfxStatus ResetIOState();
+
 private:
     MFXVideoSession*        m_pmfxSession;
     MFXVideoENCODE          m_mfxENCODE;
@@ -65,6 +67,8 @@ private:
     std::auto_ptr<PredictorsRepaking> m_repacker;
 
     mfxExtFeiHevcEncFrameCtrl m_defFrameCtrl; // contain default per-frame options including user-specified
+
+    mfxU32  m_processedFrames;
 
     mfxStatus SyncOperation();
     mfxStatus AllocateSufficientBuffer();

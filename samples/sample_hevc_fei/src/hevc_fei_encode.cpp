@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2017, Intel Corporation
+Copyright (c) 2017-2018, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -30,6 +30,7 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapp
     , m_syncPoint(0)
     , m_dstFileName(dst_output)
     , m_defFrameCtrl(def_ctrl)
+    , m_processedFrames(0)
 {
     if (0 != msdk_strlen(mvpInFile))
     {
@@ -44,6 +45,7 @@ FEI_Encode::FEI_Encode(MFXVideoSession* session, mfxHDL hdl, MfxVideoParamsWrapp
 
 FEI_Encode::~FEI_Encode()
 {
+    msdk_printf(MSDK_STRING("\nEncode processed %u frames\n"), m_processedFrames);
     m_mfxENCODE.Close();
     m_pmfxSession = NULL;
     WipeMfxBitstream(&m_bitstream);
@@ -99,15 +101,6 @@ mfxStatus FEI_Encode::PreInit()
         pMVP->VaBufferID = VA_INVALID_ID;
     }
 
-    // TODO: add condition when buffer is required
-#if 0
-    {
-        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.AddExtBuffer<mfxExtFeiHevcEncQP>();
-        MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
-        pQP->VaBufferID = VA_INVALID_ID;
-    }
-#endif
-
     sts = ResetExtBuffers(m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI Encode ResetExtBuffers failed");
 
@@ -162,8 +155,12 @@ mfxStatus FEI_Encode::Query()
 
 mfxStatus FEI_Encode::Init()
 {
-    mfxStatus sts = m_FileWriter.Init(m_dstFileName.c_str());
-    MSDK_CHECK_STATUS(sts, "FileWriter Init failed");
+    mfxStatus sts = MFX_ERR_NONE;
+    if (m_dstFileName.length())
+    {
+        sts = m_FileWriter.Init(m_dstFileName.c_str());
+        MSDK_CHECK_STATUS(sts, "FileWriter Init failed");
+    }
 
     sts = m_mfxENCODE.Init(&m_videoParams);
     MSDK_CHECK_STATUS(sts, "FEI Encode Init failed");
@@ -337,30 +334,6 @@ mfxStatus FEI_Encode::SetCtrlParams(const HevcTask& task)
         }
     }
 
-    // TODO: add condition when buffer is required
-#if 0
-    {
-        ctrl->PerCuQp = 1;
-
-        mfxExtFeiHevcEncQP* pQP = m_encodeCtrl.GetExtBuffer<mfxExtFeiHevcEncQP>();
-        MSDK_CHECK_POINTER(pQP, MFX_ERR_NOT_INITIALIZED);
-        AutoBufferLocker<mfxExtFeiHevcEncQP> lock(m_buf_allocator, *pQP);
-
-        // Fill per block QP
-        mfxU32 w_ctu = (m_videoParams.mfx.FrameInfo.CropW + 31) / 32;
-        mfxU32 h_ctu = (m_videoParams.mfx.FrameInfo.CropH + 31) / 32;
-        if (w_ctu > pQP->Pitch || h_ctu > pQP->Height)
-            MSDK_CHECK_STATUS(MFX_ERR_UNDEFINED_BEHAVIOR, "FEI Encode: wrong QP buffer size");
-        for (mfxU32 i = 0; i < h_ctu; i++)
-        {
-            for (mfxU32 j = 0; j < w_ctu; j++)
-            {
-                pQP->Data[i*pQP->Pitch + j] = i % 51 + 1;
-            }
-        }
-    }
-#endif
-
     return MFX_ERR_NONE;
 }
 
@@ -371,8 +344,15 @@ mfxStatus FEI_Encode::SyncOperation()
     sts = m_pmfxSession->SyncOperation(m_syncPoint, MSDK_WAIT_INTERVAL);
     MSDK_CHECK_STATUS(sts, "FEI Encode: SyncOperation failed");
 
-    sts = m_FileWriter.WriteNextFrame(&m_bitstream);
-    MSDK_CHECK_STATUS(sts, "FEI Encode: WriteNextFrame failed");
+    m_processedFrames++;
+
+    if (m_dstFileName.length())
+    {
+        sts = m_FileWriter.WriteNextFrame(&m_bitstream);
+        MSDK_CHECK_STATUS(sts, "FEI Encode: WriteNextFrame failed");
+    }
+    // mark that there's no need bit stream data any more
+    m_bitstream.DataLength = 0;
 
     return sts;
 }
@@ -387,6 +367,29 @@ mfxStatus FEI_Encode::AllocateSufficientBuffer()
     // reallocate bigger buffer for output
     sts = ExtendMfxBitstream(&m_bitstream, m_videoParams.mfx.BufferSizeInKB * 1000);
     MSDK_CHECK_STATUS_SAFE(sts, "ExtendMfxBitstream failed", WipeMfxBitstream(&m_bitstream));
+
+    return sts;
+}
+
+mfxStatus FEI_Encode::ResetIOState()
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    m_bitstream.DataOffset = 0;
+    m_bitstream.DataLength = 0;
+    m_syncPoint = 0;
+
+    if (m_dstFileName.length())
+    {
+        sts = m_FileWriter.Reset();
+        MSDK_CHECK_STATUS(sts, "FEI Encode: file writer reset failed");
+    }
+
+    if (m_pFile_MVP_in.get())
+    {
+        sts = m_pFile_MVP_in->Seek(0, SEEK_SET);
+        MSDK_CHECK_STATUS(sts, "FEI Encode: failed to rewind file with MVP");
+    }
 
     return sts;
 }
