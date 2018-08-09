@@ -108,12 +108,14 @@
 #if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
     #define MFX_ENABLE_KERNELS
 
+    #define MFX_ENABLE_MPEG2_VIDEO_DECODE
     #if defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_DECODE
         #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
         #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #endif
 
+    #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
     #define MFX_ENABLE_H264_VIDEO_ENCODE
     #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
@@ -154,10 +156,7 @@
             #endif
         #endif
 
-        // mpeg2
-        #define MFX_ENABLE_MPEG2_VIDEO_DECODE
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
-        #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
         #define MFX_ENABLE_MPEG2_VIDEO_PAK
         #define MFX_ENABLE_MPEG2_VIDEO_ENC
 
@@ -174,7 +173,6 @@
         #define MFX_ENABLE_VPP
         #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
 
-        #define MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
         //#define MFX_ENABLE_H264_VIDEO_ENC_HW
         #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
         #if defined(AS_H264LA_PLUGIN)
@@ -254,7 +252,6 @@
         #undef MFX_ENABLE_VPP
         #undef MFX_ENABLE_MJPEG_WEAVE_DI_VPP
         #undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
-        #undef MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
         #undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
         #undef MFX_ENABLE_USER_DECODE
         #undef MFX_ENABLE_USER_ENCODE

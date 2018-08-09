@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2019 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_ENCODE_D3D_COMMON_H
@@ -13,7 +13,7 @@
 
 #include "mfx_common.h"
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 
 #include "encoding_ddi.h"
 #include "mfx_mpeg2_enc_common_hw.h"
@@ -55,6 +55,6 @@ namespace MfxHwMpeg2Encode
 }; // namespace
 
 #endif // MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW) && (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && (MFX_VA_WIN)
 #endif // __MFX_MPEG2_ENCODE_D3D_COMMON_H
 /* EOF */

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2019 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -13,7 +13,7 @@
 #include "libmfx_core_interface.h"
 #include "mfx_session.h"
 
-#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
 #include "mfx_mpeg2_encode_d3d_common.h"
@@ -74,5 +74,5 @@ mfxStatus D3DXCommonEncoder::FillBSBuffer(mfxU32 nFeedback, mfxU32 nBitstream, m
 }
 
 #endif // MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW) && defined (MFX_VA_WIN)
+#endif // #if defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE) && defined (MFX_VA_WIN)
 /* EOF */
