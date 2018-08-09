@@ -1,4 +1,5 @@
 OpenSourceCMakeLists.txt
+_studio/OpenSourceCMakeLists.txt
 _studio/hevce_hw/OpenSourceCMakeLists.txt
 _studio/hevc_fei/OpenSourceCMakeLists.txt
 _studio/mfx_lib/OpenSourceCMakeLists.txt
