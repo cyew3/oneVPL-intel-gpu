@@ -81,7 +81,7 @@ TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_Y210, res_change_tag>::test_c
     {/* 0*/ {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265"}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit"}},
     {/* 1*/ {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit"}, {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
     {/* 2*/ {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}},
-    {/* 3*/ {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}, {"hevc/TSCTX_10bit_RExt_SHARP_1_converted_to_422_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
+    {/* 3*/ {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}, {"hevc/422format_10bit/TSCTX_10bit_RExt_SHARP_1_converted_to_422_10.265", 0, MFX_ERR_INCOMPATIBLE_VIDEO_PARAM}},
     {/* 4*/ {"hevc/422format_10bit/TSCTX_10bit_RExt_SHARP_1_converted_to_422_10.265", 5}, {"hevc/422format_10bit/Kimono1_704x576_24_422_10.265", 5}, {"hevc/422format_10bit/GENERAL_10b_422_RExt_Sony_1.bit", 5}},
     
 };
