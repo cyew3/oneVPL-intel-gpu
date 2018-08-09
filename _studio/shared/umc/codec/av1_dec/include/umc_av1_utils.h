@@ -61,6 +61,16 @@ namespace UMC_AV1_DECODER
     }
 
     void SetupPastIndependence(FrameHeader & info);
+
+    inline bool IsFrameIntraOnly(FrameHeader const * fh)
+    {
+        return (fh->frameType == KEY_FRAME || fh->intraOnly);
+    }
+
+    inline bool IsFrameResilent(FrameHeader const * fh)
+    {
+        return IsFrameIntraOnly(fh) || fh->errorResilientMode;
+    }
 }
 
 #endif //__UMC_AV1_UTILS_H_

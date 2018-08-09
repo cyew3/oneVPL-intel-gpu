@@ -115,7 +115,7 @@ namespace UMC_AV1_DECODER
     protected:
 
 #if UMC_AV1_DECODER_REV >= 5000
-        static UMC::Status FillVideoParam(SequenceHeader const&, FrameHeader const&, UMC::VideoDecoderParams*);
+        static UMC::Status FillVideoParam(SequenceHeader const&, UMC::VideoDecoderParams*);
 #else
         static UMC::Status FillVideoParam(FrameHeader const&, UMC::VideoDecoderParams*);
 #endif

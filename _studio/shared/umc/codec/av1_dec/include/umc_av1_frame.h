@@ -28,6 +28,9 @@ namespace UMC
 
 namespace UMC_AV1_DECODER
 {
+    struct SequenceHeader;
+    struct FrameHeader;
+
     class AV1DecoderFrame : public RefCounter
     {
 
@@ -53,15 +56,15 @@ namespace UMC_AV1_DECODER
         void AddError(Ipp32s e)
         { error |= e; }
 
-        void SetSeqHeader(SequenceHeader sh)
-        { seq_header = sh; }
+        void SetSeqHeader(SequenceHeader const&);
+
         SequenceHeader const& GetSeqHeader() const
-        { return seq_header; }
+        { return *seq_header; }
 
         FrameHeader& GetFrameHeader()
-        { return header; }
+        { return *header; }
         FrameHeader const& GetFrameHeader() const
-        { return header; }
+        { return *header; }
 
         bool Empty() const;
         bool Decoded() const;
@@ -103,6 +106,9 @@ namespace UMC_AV1_DECODER
         bool RefValid() const
         { return ref_valid; };
 
+        Ipp32u GetUpscaledWidth() const;
+        Ipp32u GetHeight() const;
+
     public:
 
         Ipp32s           UID;
@@ -132,8 +138,8 @@ namespace UMC_AV1_DECODER
 
         Ipp32s                            error;
 
-        SequenceHeader                    seq_header;
-        FrameHeader                       header;
+        std::unique_ptr<SequenceHeader>   seq_header;
+        std::unique_ptr<FrameHeader>      header;
 
         DPBType                           references;
 

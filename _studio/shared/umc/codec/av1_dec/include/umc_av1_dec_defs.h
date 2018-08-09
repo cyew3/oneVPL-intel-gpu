@@ -64,7 +64,6 @@ namespace UMC_AV1_DECODER
     const Ipp8u MI_SIZE_LOG2 = 2;
     const Ipp8u MAX_MIB_SIZE_LOG2 = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
 
-#if UMC_AV1_DECODER_REV >= 5000
     const Ipp8u SCALE_NUMERATOR = 8;
     const Ipp8u SUPERRES_SCALE_BITS = 3;
     const Ipp8u SUPERRES_SCALE_DENOMINATOR_MIN = SCALE_NUMERATOR + 1;
@@ -76,7 +75,6 @@ namespace UMC_AV1_DECODER
     const Ipp32u MAX_TILE_AREA  = 4096 * 2304;  // Maximum tile area in pixels
     const Ipp32u MAX_TILE_ROWS  = 1024;
     const Ipp32u MAX_TILE_COLS  = 1024;
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
     const Ipp8u MAX_MODE_LF_DELTAS            = 2;
@@ -380,7 +378,6 @@ namespace UMC_AV1_DECODER
         Ipp32s restorationUnitSize;
     };
 
-#if UMC_AV1_DECODER_REV >= 5000
     struct FilmGrain{
         Ipp32s apply_grain;
         Ipp32s update_parameters;
@@ -433,7 +430,6 @@ namespace UMC_AV1_DECODER
 
         Ipp32u random_seed;
     };
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     struct  SizeOfFrame{
         Ipp32u width;
@@ -456,13 +452,6 @@ namespace UMC_AV1_DECODER
 
         Ipp32u displayWidth;
         Ipp32u displayHeight;
-
-#if UMC_AV1_DECODER_REV < 5000
-        Ipp32u profile;
-        Ipp32u bitDepth;
-        Ipp32u subsamplingX;
-        Ipp32u subsamplingY;
-#endif // UMC_AV1_DECODER_REV < 5000
 
         Ipp32u lossless;
         Ipp32u errorResilientMode;
@@ -536,7 +525,6 @@ namespace UMC_AV1_DECODER
         Ipp32u lrUnitShift;
         Ipp32u lrUVShift;
 
-#if UMC_AV1_DECODER_REV >= 5000
         Ipp32u enableIntraEdgeFilter;
         Ipp32u allowFilterIntra;
         Ipp32u disableCdfUpdate;
@@ -575,10 +563,15 @@ namespace UMC_AV1_DECODER
         Ipp32u largeScaleTile;
 
         Ipp32u firstTileOffset;
-#else // UMC_AV1_DECODER_REV >= 5000
+//#if UMC_AV1_DECODER_REV < 5000
+        // this part is for Rev0.25.2 only
+        Ipp32u profile;
+        Ipp32u bitDepth;
+        Ipp32u subsamplingX;
+        Ipp32u subsamplingY;
         Ipp32u frameHeaderLength;
         Ipp32u frameDataSize;
-#endif // UMC_AV1_DECODER_REV >= 5000
+//#endif // UMC_AV1_DECODER_REV < 5000
     };
 
 #if UMC_AV1_DECODER_REV >= 5000
@@ -595,16 +588,6 @@ namespace UMC_AV1_DECODER
         size_t size;
     };
 #endif // UMC_AV1_DECODER_REV >= 5000
-
-    inline bool IsFrameIntraOnly(FrameHeader const * fh)
-    {
-        return (fh->frameType == KEY_FRAME || fh->intraOnly);
-    }
-
-    inline bool IsFrameResilent(FrameHeader const * fh)
-    {
-        return IsFrameIntraOnly(fh) || fh->errorResilientMode;
-    }
 
     class av1_exception
         : public std::runtime_error

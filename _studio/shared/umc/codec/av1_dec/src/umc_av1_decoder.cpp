@@ -93,10 +93,11 @@ namespace UMC_AV1_DECODER
                 case OBU_FRAME:
                     if (!gotSeqHeader)
                         break; // bypass frame header if there is no active seq header
+                    // let's read frame header to check compatibility with sequence header
                     bs.GetFrameHeaderPart1(&fh, &sh);
                     in->MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
 
-                    if (FillVideoParam(sh, fh, par) == UMC::UMC_OK)
+                    if (FillVideoParam(sh, par) == UMC::UMC_OK)
                         return UMC::UMC_OK;
 
                     break;
@@ -333,14 +334,14 @@ namespace UMC_AV1_DECODER
     }
 
 #if UMC_AV1_DECODER_REV >= 5000
-    UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, FrameHeader const& fh, UMC::VideoDecoderParams* par)
+    UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC::VideoDecoderParams* par)
     {
         VM_ASSERT(par);
 
         par->info.stream_type = UMC::AV1_VIDEO;
         par->info.profile = sh.profile;
 
-        par->info.clip_info = { Ipp32s(fh.width), Ipp32s(fh.height) };
+        par->info.clip_info = { Ipp32s(sh.max_frame_width), Ipp32s(sh.max_frame_height) };
         par->info.disp_clip_info = par->info.clip_info;
 
         if (!sh.subsampling_x && !sh.subsampling_y)

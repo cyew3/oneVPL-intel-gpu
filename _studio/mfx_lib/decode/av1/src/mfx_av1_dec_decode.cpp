@@ -24,7 +24,6 @@
 #include "mfx_umc_alloc_wrapper.h"
 
 #include "umc_av1_dec_defs.h"
-#include "umc_av1_utils.h"
 #include "umc_av1_frame.h"
 
 #include "libmfx_core_hw.h"
@@ -801,6 +800,9 @@ void VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameS
     UMC::VideoDataInfo const* vi = fd->GetInfo();
     VM_ASSERT(vi);
     vi;
+
+    surface->Info.CropW = static_cast<mfxU16>(frame->GetUpscaledWidth());
+    surface->Info.CropH = static_cast<mfxU16>(frame->GetHeight());
 }
 
 #endif
