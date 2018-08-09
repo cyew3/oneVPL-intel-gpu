@@ -106,7 +106,7 @@ struct sInputParams
         , QP(26)
         , dstWidth(0)
         , dstHeight(0)
-        , nNumFrames(0xffff)
+        , nNumFrames(0)
         , nNumSlices(1)
         , CodecProfile(MFX_PROFILE_HEVC_MAIN)
         , CodecLevel(MFX_LEVEL_UNKNOWN)
