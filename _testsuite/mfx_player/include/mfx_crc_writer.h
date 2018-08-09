@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -49,6 +49,7 @@ public:
             vm_string_sprintf(&md5_result[i*2], VM_STRING("%02x"), md5_digest[i]);
         }
         PrintInfo(VM_STRING("MD5"), md5_result);
+        WriteMd5ToFile(md5_result);
 
         PrintInfo(VM_STRING("CRC"), VM_STRING("%08X"), m_crc32 );
         WriteCrcToFile();
@@ -99,7 +100,27 @@ protected:
         }
         return MFX_ERR_NONE;
     }
-
+    tstring Md5FileName() {
+        tstring md5File;
+        if (m_crcFile.size() > 4) {
+            tstring fileExtension = tstring(m_crcFile.end() - 4, m_crcFile.end());
+            if (fileExtension.compare(tstring(VM_STRING(".crc"))) == 0) {
+                md5File = tstring(m_crcFile.begin(), (m_crcFile.end() - 4)) + VM_STRING(".md5");
+            }
+        }
+        return md5File;
+    }
+    mfxStatus WriteMd5ToFile(vm_char md5_result[33]) {
+        tstring md5File = Md5FileName();
+        if (!md5File.empty()) {
+            vm_file *f;
+            MFX_CHECK_VM_FOPEN(f, md5File.c_str(), VM_STRING("wb"));
+            if (vm_file_fprintf(f, VM_STRING("%s"), md5_result) == 0)
+                return MFX_ERR_UNKNOWN;
+            vm_file_fclose(f);
+        }
+        return MFX_ERR_NONE;
+    }
     IppsMD5State *ctx;
     mfxU8 md5_digest[MD5_DIGEST_LENGTH];
 };
