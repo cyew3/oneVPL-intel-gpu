@@ -21,7 +21,6 @@ builder/FindInternals.cmake
 builder/FindMFX.cmake
 builder/FindPackages.cmake
 builder/FindITT.cmake
-builder/FindTrace.cmake
 builder/FindOpenCL.cmake
 _studio/hevce_hw/libmfx_h265e_plugin.map
 _studio/hevce_hw/h265/include/mfx_h265_encode_plugin_hw.h
