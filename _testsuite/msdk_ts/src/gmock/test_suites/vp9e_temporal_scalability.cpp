@@ -12,6 +12,7 @@ Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 #include "ts_decoder.h"
 #include "ts_parser.h"
 #include "ts_struct.h"
+#include "mfx_ext_buffers.h"
 
 namespace vp9e_temporal_scalability
 {
@@ -27,7 +28,6 @@ namespace vp9e_temporal_scalability
     {
         NONE,
         MFX_PAR,
-        CDO2_PAR,
     };
 
     enum
@@ -43,6 +43,7 @@ namespace vp9e_temporal_scalability
         CHECK_SWITCH_ON_TEMP_SCAL = 0x1 << 8,
         CHECK_TEMP_SCAL_ON_FRAME = 0x1 << 9,
         CHECK_PSNR = 0x1 << 10,
+        CHECK_MULTICONTEXT_AND_REFRESH = 0x1 << 11,
     };
 
     struct tc_struct
@@ -73,6 +74,7 @@ namespace vp9e_temporal_scalability
         mfxI8 m_LayerNestingLevel[VP9E_MAX_FRAMES_IN_TEST_SEQUENCE];
         mfxI8 m_LayerToCheck;
         mfxU32 m_SourceFrameCount = 0;
+        mfxU32 m_CaseID = 0;
 
         TestSuite()
             : tsVideoEncoder(MFX_CODEC_VP9)
@@ -522,6 +524,86 @@ namespace vp9e_temporal_scalability
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE / 5 },
             }
         },
+
+        // Cases below check TS with multi-context and context refresh. This is optimal encoding mode for TS,
+        //  because it allows to have lower bitrate with the same quality.
+        // As soon as correct working confirmed it's suggested to make this mode as default for TS.
+
+        // CQP + 2 layers
+        {/*36*/ MFX_ERR_NONE, CHECK_MULTICONTEXT_AND_REFRESH | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, 0 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, 0 },
+            }
+        },
+
+        // CQP + 3 layers
+        {/*37*/ MFX_ERR_NONE, CHECK_MULTICONTEXT_AND_REFRESH | CHECK_ENCODE | CHECK_FIRST_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPI, 50 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.QPP, 50 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, 0 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, 0 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, 0 },
+            }
+        },
+
+        // BRC + 2 layers
+        {/*38*/ MFX_ERR_NONE, CHECK_MULTICONTEXT_AND_REFRESH | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // BRC + 3 layers
+        {/*39*/ MFX_ERR_NONE, CHECK_MULTICONTEXT_AND_REFRESH | CHECK_ENCODE | CHECK_FIRST_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].FrameRateScale, 4 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[2].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // BRC + 2 layers + GOP-5
+        {/*40*/ MFX_ERR_NONE, CHECK_MULTICONTEXT_AND_REFRESH | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 5 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // BRC + 2 layers + GOP-3
+        {/*41*/ MFX_ERR_NONE, CHECK_MULTICONTEXT_AND_REFRESH | CHECK_ENCODE | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 3 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_case) / sizeof(tc_struct);
@@ -557,13 +639,14 @@ namespace vp9e_temporal_scalability
         mfxU32 checked = 0;
 
         SetBuffer(bs);
-/*
+        /*
         // Dump encoded stream to file
         const int encoded_size = bs.DataLength;
-        static FILE *fp_vp9 = fopen("vp9e_encoded_temporal_scalability.vp9", "wb");
+        std::string out_filename = "temporal_case-" + std::to_string(m_TestPtr->m_CaseID) + ".vp9";
+        static FILE *fp_vp9 = fopen(out_filename.c_str(), "wb");
         fwrite(bs.Data, encoded_size, 1, fp_vp9);
         fflush(fp_vp9);
-*/
+        */
         m_TestPtr->m_encoded_frame_sizes[m_ChunkCount] = bs.DataLength;
 
         while (checked++ < nFrames)
@@ -1049,6 +1132,7 @@ namespace vp9e_temporal_scalability
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
         const tc_struct& tc = test_case[id];
+        m_CaseID = id;
         return RunTest(tc, fourcc);
     }
 
@@ -1130,6 +1214,14 @@ namespace vp9e_temporal_scalability
         if (tc.type & CHECK_TEMP_SCAL_ON_FRAME)
         {
             m_RuntimeSettingsCtrl = 1;
+        }
+
+        if (tc.type & CHECK_MULTICONTEXT_AND_REFRESH)
+        {
+            m_par.AddExtBuffer(MFX_EXTBUFF_DDI, sizeof(mfxExtCodingOptionDDI));
+            mfxExtCodingOptionDDI* m_extDDI = (mfxExtCodingOptionDDI*)m_par.GetExtBuffer(MFX_EXTBUFF_DDI);
+            m_extDDI->RefreshFrameContext = MFX_CODINGOPTION_ON;
+            m_extDDI->ChangeFrameContextIdxForTS = MFX_CODINGOPTION_ON;
         }
 
         InitAndSetAllocator();
