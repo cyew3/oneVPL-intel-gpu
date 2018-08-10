@@ -439,6 +439,40 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(ENCODE_CAPS
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryMbPerSec(mfxVideoParam const & par, mfxU32(&mbPerSec)[16])
+{
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_1);
+    HRESULT hRes;
+    ENCODE_QUERY_PROCESSING_RATE_INPUT inPar;
+    // Some encoding parameters affect MB processibng rate. Pass them to driver.
+    // DDI driver programming notes require to send 0x(ff) for undefined parameters
+    inPar.GopPicSize = par.mfx.GopPicSize ? par.mfx.GopPicSize : 0xffff;
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, inPar.GopPicSize);
+    inPar.GopRefDist = (mfxU8)(par.mfx.GopRefDist ? par.mfx.GopRefDist : 0xff);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, inPar.GopRefDist);
+    inPar.Level = (mfxU8)(par.mfx.CodecLevel ? par.mfx.CodecLevel : 0xff);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, inPar.Level);
+    inPar.Profile = (mfxU8)(par.mfx.CodecProfile ? par.mfx.CodecProfile : 0xff);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, inPar.Profile);
+    inPar.TargetUsage = (mfxU8)(par.mfx.TargetUsage ? par.mfx.TargetUsage : 0xff);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, inPar.TargetUsage);
+    D3D11_VIDEO_DECODER_EXTENSION decoderExtParam;
+    decoderExtParam.Function = ENCODE_QUERY_MAX_MB_PER_SEC_ID;
+    decoderExtParam.pPrivateInputData = &inPar;
+    decoderExtParam.PrivateInputDataSize = sizeof(ENCODE_QUERY_PROCESSING_RATE_INPUT);
+    decoderExtParam.pPrivateOutputData = &mbPerSec[0];
+    decoderExtParam.PrivateOutputDataSize = sizeof(mfxU32) * 16;
+    decoderExtParam.ResourceCount = 0;
+    decoderExtParam.ppResourceList = 0;
+
+    hRes = DecoderExtension(decoderExtParam);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, mbPerSec[0]);
+    MFX_CHECK(SUCCEEDED(hRes), MFX_ERR_DEVICE_FAILED);
+
+    return MFX_ERR_NONE;
+}
+
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
     MFX_CHECK_WITH_ASSERT(m_core, MFX_ERR_NOT_INITIALIZED);
@@ -885,14 +919,17 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 HRESULT D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::DecoderExtension(D3D11_VIDEO_DECODER_EXTENSION const & ext)
 {
+    MFX_AUTO_LTRACE_FUNC(MFX_TRACE_LEVEL_1);
     HRESULT hr;
 
     Trace(">>Function", ext.Function);
+    MFX_LTRACE_X(MFX_TRACE_LEVEL_1, ext.Function);
 
     if (!ext.pPrivateOutputData || ext.pPrivateInputData)
         Trace(ext, 0); //input
 
     hr = m_vcontext->DecoderExtension(m_vdecoder, &ext);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, hr);
 
     if (ext.pPrivateOutputData)
         Trace(ext, 1); //output

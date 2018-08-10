@@ -293,6 +293,15 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryEncodeCaps(ENCODE_CAPS_
 }
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
+mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryMbPerSec(mfxVideoParam const & par, mfxU32(&mbPerSec)[16])
+{
+    mbPerSec;
+    par;
+
+    return MFX_ERR_UNSUPPORTED;
+}
+
+template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
 #ifndef HEADER_PACKING_TEST

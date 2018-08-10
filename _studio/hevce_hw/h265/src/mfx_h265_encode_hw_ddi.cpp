@@ -168,8 +168,45 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
     return sts;
 }
 
-mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par)
+mfxStatus QueryMbProcRate(VideoCORE* core, mfxVideoParam const & par, mfxU32(&mbPerSec)[16], const MfxVideoParam * in)
 {
+    mfxU32 width = in->mfx.FrameInfo.Width == 0 ? 1920 : in->mfx.FrameInfo.Width;
+    mfxU32 height = in->mfx.FrameInfo.Height == 0 ? 1088 : in->mfx.FrameInfo.Height;
+
+    GUID guid = GetGUID(*in);
+    EncodeHWCaps* pEncodeCaps = QueryCoreInterface<EncodeHWCaps>(core, MFXIHWMBPROCRATE_GUID);
+    if (!pEncodeCaps)
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+    else
+    {
+        if (pEncodeCaps->GetHWCaps<mfxU32>(guid, mbPerSec, 16) == MFX_ERR_NONE &&
+            mbPerSec[(par.mfx.TargetUsage ? par.mfx.TargetUsage : 4) - 1] != 0) //check if MbPerSec for particular TU was already queried or need to save
+            return MFX_ERR_NONE;
+    }
+
+    std::auto_ptr<DriverEncoder> ddi;
+
+    ddi.reset(CreatePlatformH265Encoder(core));
+    if (ddi.get() == 0)
+    {
+        return MFX_ERR_DEVICE_FAILED;
+    }
+
+    mfxStatus sts = ddi->CreateAuxilliaryDevice(core, guid, width, height, *in);
+    MFX_CHECK_STS(sts);
+
+    mfxU32 tempMbPerSec[16] = { 0, };
+    sts = ddi->QueryMbPerSec(par, tempMbPerSec);
+    MFX_LTRACE_I(MFX_TRACE_LEVEL_1, tempMbPerSec[0]);
+    MFX_CHECK_STS(sts);
+
+    mbPerSec[(par.mfx.TargetUsage ? par.mfx.TargetUsage : 4) - 1] = tempMbPerSec[0];
+    sts = pEncodeCaps->SetHWCaps<mfxU32>(guid, mbPerSec, 16);
+
+    return sts;
+}
+
+mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par){
     std::unique_ptr<DriverEncoder> ddi;
 
     MFX_CHECK_NULL_PTR1(core);

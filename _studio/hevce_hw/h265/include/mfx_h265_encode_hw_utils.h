@@ -493,8 +493,9 @@ namespace ExtBuffer
 #endif
 #ifdef MFX_ENABLE_HEVCE_HDR_SEI
          MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME,
-         MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO
+         MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO,
 #endif
+         MFX_EXTBUFF_ENCODER_CAPABILITY
     };
 
     template<class T> struct ExtBufferMap {};

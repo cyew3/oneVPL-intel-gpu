@@ -229,6 +229,11 @@ mfxStatus SetSkipFrame(
             ENCODE_CAPS_HEVC& caps);
 
         virtual
+        mfxStatus QueryMbPerSec(
+            mfxVideoParam const & par,
+            mfxU32(&mbPerSec)[16]);
+
+        virtual
         mfxStatus QueryStatus(Task & task);
 
         virtual

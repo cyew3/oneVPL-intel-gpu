@@ -1192,6 +1192,11 @@ mfxStatus VAAPIEncoder::QueryEncodeCaps(ENCODE_CAPS_HEVC& caps)
     return MFX_ERR_NONE;
 }
 
+mfxStatus VAAPIEncoder::QueryMbPerSec(mfxVideoParam const & par, mfxU32(&mbPerSec)[16])
+{
+    return MFX_ERR_UNSUPPORTED;
+}
+
 mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
     std::vector<ExtVASurface> * pQueue;

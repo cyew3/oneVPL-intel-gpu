@@ -627,9 +627,6 @@ mfxStatus MFXVideoENCODEH265_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVi
     }
     else
     {
-        sts = CheckInputParam(in, out);
-        MFX_CHECK_STS(sts);
-
         eMFXHWType platform = core->GetHWType();
 
         MfxVideoParam tmp(*in, platform);
@@ -638,7 +635,26 @@ mfxStatus MFXVideoENCODEH265_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVi
         mfxExtEncoderCapability * enc_cap = ExtBuffer::Get(*in);
 
         if (enc_cap)
-            return MFX_ERR_UNSUPPORTED;
+        {
+            // Query MB_Per_SEC
+            mfxU32 mbPerSec[16] = { 0, };
+            out->mfx.TargetUsage = in->mfx.TargetUsage == 0 ? 4 : in->mfx.TargetUsage;
+            mfxExtEncoderCapability * extCaps = ExtBuffer::Get(*out);
+            if (extCaps == 0)
+            {
+                return MFX_ERR_UNSUPPORTED;
+            }
+            SetLowpowerDefault(tmp);
+            sts = QueryMbProcRate(core, *out, mbPerSec, &tmp);
+            extCaps->MBPerSec = mbPerSec[out->mfx.TargetUsage - 1];
+            MFX_CHECK_STS(sts);
+            if (extCaps->MBPerSec != 0)
+                return MFX_ERR_NONE;
+            else
+                return MFX_ERR_UNSUPPORTED;
+        }
+
+        sts = CheckInputParam(in, out);
 
         mfxStatus lpsts = SetLowpowerDefault(tmp);
 
