@@ -47,9 +47,17 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
   option( ENABLE_WAYLAND "Build WAYLAND versions of the targets?" OFF )
 endif()
 
+# -DBUILD_ALL will enable all the build targets unless user did not
+# -explicitly
+# switched some targets OFF, i.e. configuring in the following way is
+# possible:
+#   cmake -DBUILD_ALL=ON -DBUILD_SAMPLES=OFF
+# and it will configure all targets except samples.
+option( BUILD_ALL "Build all the targets?" OFF )
+
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
 option( BUILD_DISPATCHER "Build dispatcher?" ON )
-option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
+option( BUILD_TESTS "Build tests?" "${BUILD_ALL}" )
 
 include( ${BUILDER_ROOT}/FindOpenCL.cmake )
 include( ${BUILDER_ROOT}/FindFunctions.cmake )
