@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,11 +36,13 @@ extern "C"
 
 /*------------------------------------------------------------------------------*/
 
-mfxTraceU32 g_PrintfSuppress = MFX_TRACE_TEXTLOG_SUPPRESS_FILE_NAME |
-                          MFX_TRACE_TEXTLOG_SUPPRESS_LINE_NUM |
-                          MFX_TRACE_TEXTLOG_SUPPRESS_LEVEL;
-FILE* g_mfxTracePrintfFile = NULL;
-mfxTraceChar g_mfxTracePrintfFileName[MAX_PATH] = MFT_TRACE_PATH_TO_TEMP_LIBLOG;
+static FILE* g_mfxTracePrintfFile = NULL;
+static mfxTraceChar g_mfxTracePrintfFileName[MAX_PATH] =
+    MFT_TRACE_PATH_TO_TEMP_LIBLOG;
+static mfxTraceU32 g_PrintfSuppress =
+    MFX_TRACE_TEXTLOG_SUPPRESS_FILE_NAME |
+    MFX_TRACE_TEXTLOG_SUPPRESS_LINE_NUM |
+    MFX_TRACE_TEXTLOG_SUPPRESS_LEVEL;
 
 /*------------------------------------------------------------------------------*/
 
