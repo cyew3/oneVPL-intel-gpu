@@ -127,7 +127,7 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
                && EncFrameCtrl->RefWidth       == 0
                && EncFrameCtrl->RefHeight      == 0, MFX_ERR_INVALID_VIDEO_PARAM);
 
-        MFX_CHECK(EncFrameCtrl->SearchWindow <= 6,   MFX_ERR_INVALID_VIDEO_PARAM);
+        MFX_CHECK(EncFrameCtrl->SearchWindow <= 5,   MFX_ERR_INVALID_VIDEO_PARAM);
     }
     else
     {
