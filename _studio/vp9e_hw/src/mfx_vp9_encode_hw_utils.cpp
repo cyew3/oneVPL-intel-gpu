@@ -370,6 +370,16 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         }
     }
 
+    if (par.m_numLayers > 1 && IsOn(extDdi.ChangeFrameContextIdxForTS) && frameParam.refreshFrameContext)
+    {
+        // context refreshing should be disabled for certain frames in TS-encoding
+        // this is demand by kernel processing logic
+        if (IsNeedDisableRefreshForFrameTS(par, task.m_frameOrderInGop))
+        {
+            frameParam.refreshFrameContext = false;
+        }
+    }
+
     frameParam.log2TileRows = static_cast<mfxU8>(CeilLog2(extPar.NumTileRows));
     frameParam.log2TileCols = static_cast<mfxU8>(CeilLog2(extPar.NumTileColumns));
 

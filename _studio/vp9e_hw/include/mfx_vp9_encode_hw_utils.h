@@ -801,6 +801,39 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
         return i;
     }
 
+    // for TS-encoding: context refreshing should be disabled for the 1st frame in each layer
+    //  in case if this frame can appear next to the key-frame after layers extraction
+    // this is demand by kernel processing logic
+    inline bool IsNeedDisableRefreshForFrameTS(VP9MfxVideoParam const & par, mfxU32 frameOrderInGop)
+    {
+        if (par.m_numLayers > 1 && frameOrderInGop >= 2)
+        {
+            mfxExtVP9TemporalLayers const & tl = GetExtBufferRef(par);
+            mfxU32 maxScale = tl.Layer[par.m_numLayers - 1].FrameRateScale;
+            if (frameOrderInGop > maxScale)
+            {
+                // not applicable outside of the 1st GOP
+                return false;
+            }
+            else if (frameOrderInGop == maxScale)
+            {
+                // the last affected frame is the first frame in the 2nd GOP
+                return true;
+            }
+            else if (frameOrderInGop <= (maxScale / 2))
+            {
+                // inside the first GOP affected all frames in the beginning of Layer-2 and Layer-3
+                // (Layer-0 and Layer-1 not affected)
+                if (CalcTemporalLayerIndex(par, frameOrderInGop) < CalcTemporalLayerIndex(par, frameOrderInGop - 1))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     mfxStatus GetRealSurface(
         mfxCoreInterface const *pCore,
         VP9MfxVideoParam const &par,
