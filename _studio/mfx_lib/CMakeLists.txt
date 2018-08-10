@@ -93,7 +93,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 foreach( variant
          sw
          hw )
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( mfxlibname mfx${variant}64 )
   else()
     set( mfxlibname mfx${variant}32 )
@@ -228,7 +228,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR} )
 endforeach()
 
 
-if( __ARCH MATCHES intel64 )
+if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
   set( mfxrtlibname mfxrt64 )
 else()
   set( mfxrtlibname mfxrt32 )
@@ -296,7 +296,7 @@ set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map" )
 
 foreach( variant sw )
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( mfxlibname mfxaudio${variant}64 )
   else()
     set( mfxlibname mfxaudio${variant}32 )

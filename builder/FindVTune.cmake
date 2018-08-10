@@ -35,7 +35,7 @@ if(__ITT OR ENABLE_ITT)
       set( VTUNE_HOME /opt/intel/vtune_amplifier_xe )
     endif()
 
-    if( __ARCH MATCHES intel64 )
+    if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
       set( arch "64" )
     elseif()
       set( arch "32" )

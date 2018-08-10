@@ -25,10 +25,10 @@
 ##  Content: Intel(R) Media SDK Samples projects creation and build
 ##******************************************************************************
 
-if (__ARCH MATCHES ia32)
-  set( ipp_arch ${__ARCH})
-else()
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
   set( ipp_arch em64t )
+else()
+  set( ipp_arch ${__ARCH})
 endif()
 
 set( ipp_root $ENV{MEDIASDK_ROOT}/ipp )

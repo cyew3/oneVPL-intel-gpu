@@ -209,7 +209,7 @@ else()
 endif()
 
 foreach( variant ${hevcd_variants} )
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_hevcd_${variant}64 )
     set( eval_plugin_name mfx_eval_hevcd_${variant}64 )
   else()
@@ -326,7 +326,7 @@ foreach( dir ${MSDK_LIB_ROOT}/fei/h265/src )
 endforeach()
 
 foreach( variant ${hevce_variants} )
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     if( variant MATCHES hw )
       set( plugin_name mfx_hevce_gacc64 )
       set( eval_plugin_name mfx_eval_hevce_gacc64 )
@@ -498,7 +498,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE
 # H264LA
 
 foreach( variant hw )
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_h264la_${variant}64 )
 #    set( eval_plugin_name mfx_eval_h264la_${variant}64 )
   else()
@@ -609,7 +609,7 @@ if( ENABLE_HEVC_FEI )
   ${MSDK_STUDIO_ROOT}/shared/src/mfx_umc_alloc_wrapper.cpp )
 
   foreach( variant hw )
-    if( __ARCH MATCHES intel64 )
+    if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
       set( plugin_name mfx_h265fei_${variant}64 )
     else()
       set( plugin_name mfx_h265fei_${variant}32 )
@@ -711,7 +711,7 @@ foreach( variant
          sw
          hw )
 
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_vp8d_${variant}64 )
   else()
     set( plugin_name mfx_vp8d_${variant}32 )
@@ -847,7 +847,7 @@ foreach( variant
          sw
          hw )
 
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_vp9d_${variant}64 )
   else()
     set( plugin_name mfx_vp9d_${variant}32 )

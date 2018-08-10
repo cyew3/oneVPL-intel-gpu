@@ -52,7 +52,7 @@ endforeach()
 # sw veriants of VP8E deprecated as newer versions of libvpx incompatible with MSDK
 foreach( variant hw )
 
-  if( __ARCH MATCHES intel64 )
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( plugin_name mfx_vp8e_${variant}64 )
   else()
     set( plugin_name mfx_vp8e_${variant}32 )

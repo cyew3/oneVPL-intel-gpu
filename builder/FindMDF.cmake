@@ -26,12 +26,12 @@
 ##******************************************************************************
 
 
-if (__ARCH MATCHES ia32)
-  set( mdf_arch x86)
-  set( mdf_lib_suffix 86 )
-else()
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
   set( mdf_arch x64 )
   set( mdf_lib_suffix 64 )
+else()
+  set( mdf_arch x86)
+  set( mdf_lib_suffix 86 )
 endif()
 
 set( mdf_root $ENV{MFX_MDF_PATH} )
