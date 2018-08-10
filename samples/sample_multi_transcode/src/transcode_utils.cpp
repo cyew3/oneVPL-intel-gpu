@@ -1409,6 +1409,10 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
         {
             InputParams.nBRefType = MFX_B_REF_OFF;
         }
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-nobref")))
+        {
+            InputParams.nBRefType = MFX_B_REF_OFF;
+        }
         else if(0 == msdk_strcmp(argv[i], MSDK_STRING("-u")))
         {
             VAL_CHECK(i+1 == argc, i, argv[i]);
