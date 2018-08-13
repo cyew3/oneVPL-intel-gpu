@@ -390,6 +390,7 @@
     <ClCompile Include="src\gmock\test_suites\hevce_roi.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_sao.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_slice_size_report.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_sliding_window.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_spspps_get.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_query.cpp" />
     <ClCompile Include="src\gmock\test_suites\hevce_co2_disable_deblocking.cpp" />
