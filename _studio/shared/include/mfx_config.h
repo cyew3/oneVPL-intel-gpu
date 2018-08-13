@@ -108,6 +108,12 @@
 #if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
     #define MFX_ENABLE_KERNELS
 
+    #if defined(MFX_VA)
+        #define MFX_ENABLE_H265_VIDEO_DECODE
+        #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+        #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+    #endif
+
     #define MFX_ENABLE_H264_VIDEO_ENCODE
     #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
@@ -132,9 +138,6 @@
 
         // h265d
         #if defined(MFX_VA)
-            #define MFX_ENABLE_H265_VIDEO_DECODE
-            #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-            #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
             #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
             #if (MFX_VERSION >= MFX_VERSION_NEXT) && (!defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_ATS)) // TODO: change to VAAPI version check
                 #define MFX_ENABLE_AV1_VIDEO_DECODE
@@ -407,6 +410,16 @@
         #endif
     #endif
 #endif
+
+#ifdef OPEN_SOURCE
+#if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
+#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+#endif
+
+#if defined(MFX_ENABLE_VP8_VIDEO_DECODE)
+#define MFX_ENABLE_VP8_VIDEO_DECODE_HW
+#endif
+#endif // #ifdef OPEN_SOURCE
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     #define MFX_ENABLE_HEVCD_SUBSET
