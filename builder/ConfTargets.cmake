@@ -71,12 +71,19 @@ append("-std=c++11" CMAKE_CXX_FLAGS)
     append("-m${T_ARCH}" CMAKE_CXX_FLAGS)
   endif()
 
+include(CMakeDependentOption)
+
 option( MFX_ENABLE_KERNELS "Build with advanced media kernels support?" ON )
 
 option( MFX_ENABLE_USER_DECODE "Enabled user decode plugins?" ON)
 option( MFX_ENABLE_USER_ENCODE "Enabled user encode plugins?" ON)
 option( MFX_ENABLE_USER_ENC "Enabled user ENC plugins?" ON)
 option( MFX_ENABLE_USER_VPP "Enabled user VPP plugins?" ON)
+
+option( MFX_ENABLE_H265_VIDEO_ENCODE "Enable H.265 (HEVC) encoder?" ON)
+cmake_dependent_option(
+  MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE "Enable H.265 (HEVC) FEI?" ON
+  "MFX_ENABLE_H265_VIDEO_ENCODE" OFF)
 
 # Now we will include config file which may overwrite default values of the
 # options and options which user provided in a command line.

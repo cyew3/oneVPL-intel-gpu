@@ -106,6 +106,10 @@
 
 #if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
     #define MFX_ENABLE_KERNELS
+
+    #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
+        #define MFX_ENABLE_H265_VIDEO_ENCODE
+    #endif
 #elif defined(ANDROID)
     // placeholder: #include "mfx_android_defs.h"
 #else
@@ -132,19 +136,10 @@
             #if (MFX_VERSION >= MFX_VERSION_NEXT) && (!defined(LINUX_TARGET_PLATFORM) || defined(LINUX_TARGET_PLATFORM_ATS)) // TODO: change to VAAPI version check
                 #define MFX_ENABLE_AV1_VIDEO_DECODE
             #endif
-
-            #if defined(MFX_VA_LINUX)
-                #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-            #endif
         #endif
 
         //h264e
         #define MFX_ENABLE_H264_VIDEO_ENCODE
-
-        //h265e
-        #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
-            #define MFX_ENABLE_H265_VIDEO_ENCODE
-        #endif
 
         #if defined(AS_AV1E_PLUGIN)
             #define MFX_ENABLE_AV1_VIDEO_ENCODE
@@ -288,9 +283,6 @@
     #endif
     #if defined(AS_HEVCE_PLUGIN)
         #define MFX_ENABLE_H265_VIDEO_ENCODE
-        #if !defined(__APPLE__)
-            #define MFX_ENABLE_CM
-        #endif
     #endif
 
     #if defined(AS_AV1E_PLUGIN)
