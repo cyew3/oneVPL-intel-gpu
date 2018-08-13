@@ -107,6 +107,8 @@
 #if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
     #define MFX_ENABLE_KERNELS
 
+    #define MFX_ENABLE_H264_VIDEO_ENCODE
+    #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_ENCODE
     #endif
@@ -138,14 +140,9 @@
             #endif
         #endif
 
-        //h264e
-        #define MFX_ENABLE_H264_VIDEO_ENCODE
-
         #if defined(AS_AV1E_PLUGIN)
             #define MFX_ENABLE_AV1_VIDEO_ENCODE
         #endif
-
-
 
         #if defined(MFX_VA_LINUX) && (MFX_VERSION >= 1025)
             #if !defined(AS_H264LA_PLUGIN)
@@ -153,9 +150,6 @@
             #endif
         #endif
 
-        #if defined(LINUX64)
-            #define MFX_ENABLE_H264_VIDEO_FEI_ENCODE
-        #endif
         // mpeg2
         #define MFX_ENABLE_MPEG2_VIDEO_DECODE
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
@@ -176,7 +170,6 @@
         #define MFX_ENABLE_VPP
         #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
 
-        #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
         #define MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
         //#define MFX_ENABLE_H264_VIDEO_ENC_HW
         #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
@@ -363,6 +356,9 @@
 // Here follows per-codec feature enable options which as of now we don't
 // want to expose on build system level since they are too detailed.
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
+    #ifdef OPEN_SOURCE
+    #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
+    #endif
     #if MFX_VERSION >= 1023
         #define MFX_ENABLE_H264_REPARTITION_CHECK
         #if defined(MFX_VA_WIN)
