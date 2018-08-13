@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,7 @@
 
 #include "mfx_stub_dec_plugin.h"
 
-#if defined( AS_VP9D_PLUGIN )
-
+#if defined(OPEN_SOURCE) || defined( AS_VP9D_PLUGIN )
 class MFXVP9DecoderPlugin : MFXStubDecoderPlugin
 {
 public:
@@ -47,7 +46,7 @@ protected:
     std::unique_ptr<MFXPluginAdapter<MFXDecoderPlugin> > m_adapter;
 #endif
 };
-#endif //#if defined( AS_VP9D_PLUGIN )
+#endif // #if defined(OPEN_SOURCE) || defined( AS_VP9D_PLUGIN )
 
 #if defined(_WIN32) || defined(_WIN64)
 #define MSDK_PLUGIN_API(ret_type) extern "C" __declspec(dllexport)  ret_type __cdecl
