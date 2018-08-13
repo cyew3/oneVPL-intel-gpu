@@ -69,31 +69,31 @@
 #endif // #if defined(_WIN32) || defined(_WIN64)
 
 #ifdef MFX_VA
-    #if defined(LINUX32) || defined(LINUX64)
-        #include <va/va_version.h>
-        #undef  MFX_VA_LINUX
-        #define MFX_VA_LINUX
+#if defined(LINUX32) || defined(LINUX64)
+    #include <va/va_version.h>
+    #undef  MFX_VA_LINUX
+    #define MFX_VA_LINUX
 
-        #undef  UMC_VA_LINUX
-        #define UMC_VA_LINUX
+    #undef  UMC_VA_LINUX
+    #define UMC_VA_LINUX
 
-    #elif defined(_WIN32) || defined(_WIN64)
+#elif defined(_WIN32) || defined(_WIN64)
 
-        #undef  MFX_VA_WIN
-        #define MFX_VA_WIN
+    #undef  MFX_VA_WIN
+    #define MFX_VA_WIN
 
-        #undef  UMC_VA_DXVA
-        #define UMC_VA_DXVA
+    #undef  UMC_VA_DXVA
+    #define UMC_VA_DXVA
 
-        #define MFX_D3D9_ENABLED
+    #define MFX_D3D9_ENABLED
 
-    #elif defined(__APPLE__)
-        #undef  MFX_VA_OSX
-        #define MFX_VA_OSX
+#elif defined(__APPLE__)
+    #undef  MFX_VA_OSX
+    #define MFX_VA_OSX
 
-        #undef  UMC_VA_OSX
-        #define UMC_VA_OSX
-    #endif // #if defined(LINUX32) || defined(LINUX64)
+    #undef  UMC_VA_OSX
+    #define UMC_VA_OSX
+#endif // #if defined(LINUX32) || defined(LINUX64)
 #endif // MFX_VA
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
