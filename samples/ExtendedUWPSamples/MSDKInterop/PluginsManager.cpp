@@ -84,7 +84,7 @@ mfxStatus CPluginsManager::LoadPluginByGUID(mfxPluginUID pluginGUID,mfxU32 versi
 
 mfxStatus CPluginsManager::UnloadAllPlugins()
 {
-    for(unsigned int i=0;i<loadedPlugins.size();i++)
+    for(int i=0;i<loadedPlugins.size();i++)
     {
         mfxStatus sts = MFXVideoUSER_UnLoad((mfxSession)parentSession, &loadedPlugins[i].GUID);
         if(sts!=MFX_ERR_NONE)
@@ -126,7 +126,7 @@ mfxStatus CPluginsManager::UnloadVideoPlugin(mfxU32 codecID,EPluginSpecification
 
 const CPluginDescription* CPluginsManager::GetLoadedVideoPlugin(mfxU32 codecID,EPluginSpecification spec)
 {
-    for(unsigned int i=0;i<loadedPlugins.size();i++)
+    for(int i=0;i<loadedPlugins.size();i++)
     {
         if(loadedPlugins[i].CodecID==codecID && (knownPlugins[i].Specification & spec) == knownPlugins[i].Specification)
         {
@@ -139,7 +139,7 @@ const CPluginDescription* CPluginsManager::GetLoadedVideoPlugin(mfxU32 codecID,E
 
 const CPluginDescription* CPluginsManager::GetLoadedPluginByGUID(mfxPluginUID pluginGUID)
 {
-    for(unsigned int i=0;i<loadedPlugins.size();i++)
+    for(int i=0;i<loadedPlugins.size();i++)
     {
         if(loadedPlugins[i].GUID==pluginGUID)
         {

@@ -98,10 +98,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <PackageCertificateKeyFile>SampleDecodeUWP_TemporaryKey.pfx</PackageCertificateKeyFile>
-    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
-    <AppxBundle>Always</AppxBundle>
-    <AppxBundlePlatforms>x64</AppxBundlePlatforms>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxBundle>Auto</AppxBundle>
+    <AppxBundlePlatforms>x86|x64</AppxBundlePlatforms>
     <PackageCertificateThumbprint>5453114FF2F5EDB5D1C8DD16076BFCFC499BD5A7</PackageCertificateThumbprint>
+    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)..\_build\$(Platform)\$(Configuration)\SampleDecodeUWP\</OutDir>
@@ -159,8 +160,8 @@
       <PreprocessorDefinitions>MEDIASDK_UWP_SUPPORT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\x86\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\win32\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp_dfp.lib;WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -171,8 +172,8 @@
       <PreprocessorDefinitions>MEDIASDK_UWP_SUPPORT;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\x86\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\win32\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libmfx_uwp_dfp.lib;WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -186,7 +187,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\x64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libmfx_uwp.lib; WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>libmfx_uwp_dfp.lib; WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -198,7 +199,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(INTELMEDIASDKROOT)\lib\x64\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libmfx_uwp.lib; ;WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
+      <AdditionalDependencies>libmfx_uwp_dfp.lib;WindowsApp.lib;%(AdditionalDependencies);</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -1,0 +1,1 @@
+setx INTELMEDIASDKROOT %~dp0

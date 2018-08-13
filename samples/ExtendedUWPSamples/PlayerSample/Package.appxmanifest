@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap mp">
-  <Identity Name="406876bc-9382-4c39-9d3d-0af6353a1c41" Publisher="CN=developer" Version="1.0.7.0" />
-  <mp:PhoneIdentity PhoneProductId="406876bc-9382-4c39-9d3d-0af6353a1c41" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
+  <Identity Name="5ae232e0-99c1-4896-a514-5dc13f2eb088" Publisher="CN=developer" Version="1.0.6.0" />
+  <mp:PhoneIdentity PhoneProductId="5ae232e0-99c1-4896-a514-5dc13f2eb088" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
-    <DisplayName>SampleDecodeUWP</DisplayName>
+    <DisplayName>PlayerSample</DisplayName>
     <PublisherDisplayName>developer</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -15,12 +15,9 @@
     <Resource Language="x-generate" />
   </Resources>
   <Applications>
-    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="SampleDecodeUWP.App">
-      <uap:VisualElements DisplayName="SampleDecodeUWP" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="SampleDecodeUWP" BackgroundColor="transparent">
-        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" ShortName="Square">
-          <uap:ShowNameOnTiles>
-            <uap:ShowOn Tile="square150x150Logo" />
-          </uap:ShowNameOnTiles>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="PlayerSample.App">
+      <uap:VisualElements DisplayName="PlayerSample" Square150x150Logo="Assets\Square150x150Logo.png" Square44x44Logo="Assets\Square44x44Logo.png" Description="PlayerSample" BackgroundColor="transparent">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png">
         </uap:DefaultTile>
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>

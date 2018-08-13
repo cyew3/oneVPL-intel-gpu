@@ -10,8 +10,9 @@ _build
 /samples/SampleDecodeUWP/SampleDecodeUWP/Generated Files
 /samples/SampleDecodeUWP/SampleDecodeUWP/x64/
 /samples/SampleDecodeUWP/x64/
-/samples/SampleDecodeUWP/ConsoleTest/Generated Files
-/samples/SampleDecodeUWP/ConsoleTest/x64/
+/samples/SampleEncodeUWP/SampleEncodeUWP/Generated Files
+/samples/SampleEncodeUWP/SampleEncodeUWP/x64/
+/samples/SampleEncodeUWP/x64/
 Debug/
 Release/
 # CMake intermidiate files
@@ -21,3 +22,12 @@ __cmake
 *.ipch
 /samples/include
 content
+# Android sub-projects
+/samples/sample_openmax_plugins
+
+/samples/ExtendedUWPSamples/PlayerSample/Generated Files
+/samples/ExtendedUWPSamples/EncoderSample/Generated Files
+/samples/SampleDecodeUWP/AppPackages/*
+/samples/SampleEncodeUWP/AppPackages/*
+BundleArtifacts/
+/samples/ExtendedUWPSamples/AppPackages/
