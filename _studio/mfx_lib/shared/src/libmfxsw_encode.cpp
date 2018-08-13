@@ -73,7 +73,7 @@
 #endif
 
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
-#if !defined(AS_HEVCE_PLUGIN)
+#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
 #if defined(MFX_VA)
 #include "mfx_h265_encode_hw.h"
 #endif
@@ -395,7 +395,7 @@ static const CodecId2Handlers codecId2Handlers =
     },
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && (defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN))
   #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
     {
         {
@@ -922,10 +922,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0: bs;
 
 // specific plug-in case to run additional task after main task
-#if !defined(AS_HEVCE_PLUGIN)
-                {
-                    task.pSrc[1] =  bs;
-                }
+#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
+                task.pSrc[1] =  bs;
 #endif
                 task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
 
@@ -949,10 +947,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 // fill dependencies
                 task.pSrc[0] = surface;
                 // specific plug-in case to run additional task after main task
-#if !defined(AS_HEVCE_PLUGIN)
-                {
-                    task.pSrc[1] =  bs;
-                }
+#if defined(OPEN_SOURCE) || !defined(AS_HEVCE_PLUGIN)
+                task.pSrc[1] =  bs;
 #endif
                 task.pSrc[2] = ctrl ? ctrl->ExtParam : 0;
                 task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0 : bs;

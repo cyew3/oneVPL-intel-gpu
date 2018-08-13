@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2018 Intel Corporation
+// Copyright (c) 2014-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -19,7 +19,7 @@
 // SOFTWARE.
 
 #include "mfx_common.h"
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(AS_HEVCE_PLUGIN)
+#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && (defined(OPEN_SOURCE) || defined(AS_HEVCE_PLUGIN))
 #include "mfx_h265_encode_plugin_hw.h"
 #include "plugin_version_linux.h"
 

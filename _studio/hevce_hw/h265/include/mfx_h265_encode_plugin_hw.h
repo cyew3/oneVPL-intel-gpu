@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2018 Intel Corporation
+// Copyright (c) 2018-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,7 @@
 #pragma once
 
 #include "mfx_common.h"
-#if defined(AS_HEVCE_PLUGIN)
-
+#if defined(OPEN_SOURCE) || defined(AS_HEVCE_PLUGIN)
 #include "mfxplugin++.h"
 
 namespace MfxHwH265Encode
@@ -162,5 +161,4 @@ protected:
     MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
 };
 } //MfxHwH265Encode
-
-#endif//defined(AS_HEVCE_PLUGIN)
+#endif// #if defined(OPEN_SOURCE) || defined(AS_HEVCE_PLUGIN)
