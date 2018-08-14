@@ -83,18 +83,10 @@ DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE ty
         case MFX_IMPL_VIA_D3D9:
             if (type == ENCODER_REXT)
                 return new D3D9EncoderREXT;
-#if defined(MFX_ENABLE_HEVCE_SCC)
-            if (type == ENCODER_SCC)
-                return new D3D9EncoderSCC;
-#endif
             return new D3D9EncoderDefault;
         case MFX_IMPL_VIA_D3D11:
             if (type == ENCODER_REXT)
                 return new D3D11EncoderREXT;
-#if defined(MFX_ENABLE_HEVCE_SCC)
-            if (type == ENCODER_SCC)
-                return new D3D11EncoderSCC;
-#endif
             return new D3D11EncoderDefault;
 #elif defined (MFX_VA_LINUX)
         case MFX_IMPL_VIA_VAAPI:
@@ -868,6 +860,9 @@ void FillSpsBuffer(
     }
 #endif //(MFX_VERSION >= 1025)
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    sps.palette_mode_enabled_flag = par.m_sps.palette_mode_enabled_flag;
+#endif
 }
 
 void FillPpsBuffer(
@@ -989,6 +984,10 @@ void FillPpsBuffer(
 
     pps.DisplayFormatSwizzle = (par.mfx.FrameInfo.FourCC == MFX_FOURCC_A2RGB10) ||
                                (par.mfx.FrameInfo.FourCC == MFX_FOURCC_RGB4);
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    pps.pps_curr_pic_ref_enabled_flag = par.m_pps.curr_pic_ref_enabled_flag;
+#endif
 }
 
 void FillPpsBuffer(
@@ -1187,31 +1186,6 @@ void FillPpsBuffer(
     pps.log2_sao_offset_scale_chroma                = par.m_pps.log2_sao_offset_scale_chroma;
 }
 
-#if defined(MFX_ENABLE_HEVCE_SCC)
-void FillSpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_CAPS_HEVC const & caps,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC & sps)
-{
-    Zero(sps);
-    FillSpsBuffer(par, caps, (ENCODE_SET_SEQUENCE_PARAMETERS_HEVC&)sps);
-
-    sps.palette_mode_enabled_flag = par.m_sps.palette_mode_enabled_flag;
-    sps.palette_max_size = (mfxU8)par.m_sps.palette_max_size;
-    sps.delta_palette_max_predictor_size = (mfxU8)par.m_sps.delta_palette_max_predictor_size;
-}
-
-void FillPpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_CAPS_HEVC const & caps,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC & pps)
-{
-    Zero(pps);
-    FillPpsBuffer(par, caps, (ENCODE_SET_PICTURE_PARAMETERS_HEVC&)pps);
-
-    pps.pps_curr_pic_ref_enabled_flag = par.m_pps.curr_pic_ref_enabled_flag;
-}
-#endif
 #endif //defined(_WIN32) || defined(_WIN64)
 
 }; // namespace MfxHwH265Encode

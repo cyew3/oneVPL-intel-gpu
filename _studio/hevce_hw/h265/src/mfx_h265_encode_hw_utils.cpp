@@ -2024,7 +2024,6 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #if defined(MFX_ENABLE_HEVCE_SCC)
     if (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
     {
-        //TBD
         m_pps.curr_pic_ref_enabled_flag = 0;
         m_pps.scc_extension_flag = 1;
 

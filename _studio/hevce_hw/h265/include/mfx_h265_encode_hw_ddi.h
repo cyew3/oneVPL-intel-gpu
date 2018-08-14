@@ -167,9 +167,6 @@ typedef enum tagENCODER_TYPE
 {
     ENCODER_DEFAULT = 0
     , ENCODER_REXT
-#if defined(MFX_ENABLE_HEVCE_SCC)
-    , ENCODER_SCC
-#endif
 } ENCODER_TYPE;
 
 DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE type = ENCODER_DEFAULT);
@@ -362,7 +359,6 @@ void FillSliceBuffer(
     ENCODE_SET_PICTURE_PARAMETERS_HEVC const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC> & slice);
 
-
 void FillSpsBuffer(
     MfxVideoParam const & par,
     ENCODE_CAPS_HEVC const & /*caps*/,
@@ -384,19 +380,6 @@ void FillSliceBuffer(
     ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT const & /*sps*/,
     ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & /*pps*/,
     std::vector<ENCODE_SET_SLICE_HEADER_HEVC_REXT> & slice);
-
-
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-void FillSpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_CAPS_HEVC const & /*caps*/,
-    ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC & sps);
-
-void FillPpsBuffer(
-    MfxVideoParam const & par,
-    ENCODE_CAPS_HEVC const & caps,
-    ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC & pps);
-#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
 
 #endif //defined(_WIN32) || defined(_WIN64)
 

@@ -702,30 +702,6 @@ DECL_START(ENCODE_SET_SLICE_HEADER_HEVC_REXT)
 DECL_END
 #undef FIELD_FORMAT
 
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC)
-   Trace((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC const &)b, idx);
-   TRACE("%d", palette_mode_enabled_flag);
-   TRACE("%d", motion_vector_resolution_control_idc);
-   TRACE("%d", intra_boundary_filtering_disabled_flag);
-   TRACE("%d", palette_max_size);
-   TRACE("%d", delta_palette_max_predictor_size);
-DECL_END
-#undef FIELD_FORMAT
-
-#define FIELD_FORMAT "%-38s"
-DECL_START(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC)
-   Trace((ENCODE_SET_PICTURE_PARAMETERS_HEVC const &)b, idx);
-   TRACE("%d", pps_curr_pic_ref_enabled_flag);
-   TRACE("%d", residual_adaptive_colour_transform_enabled_flag);
-   TRACE("%d", pps_slice_act_qp_offsets_present_flag);
-   TRACE("%d", PredictorPaletteSize);
-   TRACE("%d", pps_act_y_qp_offset_plus5);
-   TRACE("%d", pps_act_cb_qp_offset_plus5);
-   TRACE("%d", pps_act_cr_qp_offset_plus3);
-DECL_END
-#undef FIELD_FORMAT
-
 #endif //#ifdef DDI_TRACE
 }
 #endif
