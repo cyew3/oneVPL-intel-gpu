@@ -179,7 +179,7 @@ msdk_printf(MSDK_STRING("                            2 - quality mode\n\n"));
 
 msdk_printf(MSDK_STRING("   [-denoise (level)]  - enable denoise algorithm. Level is optional \n"));
 msdk_printf(MSDK_STRING("                         range of  noise level is [0, 100]\n"));
-#ifdef ENABLE_FF
+#if MFX_VERSION >= 1025
 msdk_printf(MSDK_STRING("   [-chroma_siting (vmode hmode)] - specify chroma siting mode for VPP color conversion, allowed values: vtop|vcen|vbot hleft|hcen\n"));
 #endif
 #ifdef ENABLE_MCTF
@@ -230,7 +230,6 @@ msdk_printf(MSDK_STRING("   [-istab (mode)]       - enable Image Stabilization a
 msdk_printf(MSDK_STRING("                           mode of istab can be [1, 2] (def: 2)\n"));
 msdk_printf(MSDK_STRING("                           where: 1 means upscale mode, 2 means croppping mode\n"));
 msdk_printf(MSDK_STRING("   [-view:count value]   - enable Multi View preprocessing. range of views [1, 1024] (def: 1)\n\n"));
-msdk_printf(MSDK_STRING("   [-svc id width height]- enable Scalable Video Processing mode\n"));
 msdk_printf(MSDK_STRING("                           id-layerId, width/height-resolution \n\n"));
 msdk_printf(MSDK_STRING("   [-ssitm (id)]         - specify YUV<->RGB transfer matrix for input surface.\n"));
 msdk_printf(MSDK_STRING("   [-dsitm (id)]         - specify YUV<->RGB transfer matrix for output surface.\n"));
@@ -1242,7 +1241,7 @@ mfxStatus vppParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams
                 pParams->bScaling = true;
                 msdk_sscanf(strInput[i], MSDK_STRING("%hu"), &pParams->scalingMode);
             }
-#ifdef ENABLE_FF
+#if MFX_VERSION >= 1025
             else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-chroma_siting")))
             {
                 VAL_CHECK(2 + i == nArgNum);

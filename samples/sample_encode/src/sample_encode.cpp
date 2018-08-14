@@ -152,12 +152,14 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     msdk_printf(MSDK_STRING("   [-usei]                  - insert user data unregistered SEI. eg: 7fc92488825d11e7bb31be2e44b06b34:0:MSDK (uuid:type<0-preifx/1-suffix>:message)\n"));
     msdk_printf(MSDK_STRING("                              the suffix SEI for HEVCe can be inserted when CQP used or HRD disabled\n"));
 #if (MFX_VERSION >= 1024)
-    msdk_printf(MSDK_STRING("   [-extbrc:<on,off,implicit>] - External BRC for AVC and HEVC encoders"));
+    msdk_printf(MSDK_STRING("   [-extbrc:<on,off,implicit>] - External BRC for AVC and HEVC encoders\n"));
 #endif
 #if (MFX_VERSION >= 1026)
     msdk_printf(MSDK_STRING("   [-ExtBrcAdaptiveLTR:<on,off>] - Set AdaptiveLTR for implicit extbrc"));
 #endif
     msdk_printf(MSDK_STRING("Example: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
+    msdk_printf(MSDK_STRING("   [-preset <default,dss,conference,gaming>] - Use particular preset for encoding parameters\n"));
+    msdk_printf(MSDK_STRING("   [-pp] - Print preset parameters\n"));    msdk_printf(MSDK_STRING("\nExample: %s h265 -i InputYUVFile -o OutputEncodedFile -w width -h height -hw -p 2fca99749fdb49aeb121a5b63ef568f7\n"), strAppName);
 #if D3D_SURFACES_SUPPORT
     msdk_printf(MSDK_STRING("   [-d3d] - work with d3d surfaces\n"));
     msdk_printf(MSDK_STRING("   [-d3d11] - work with d3d11 surfaces\n"));
@@ -714,6 +716,28 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->ExtBrcAdaptiveLTR = MFX_CODINGOPTION_OFF;;
         }
 #endif
+
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-pp")))
+        {
+            pParams->shouldPrintPresets = true;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-preset")))
+        {
+            msdk_char presetName[MSDK_MAX_FILENAME_LEN];
+            VAL_CHECK(i + 1 >= nArgNum, i, strInput[i]);
+            if (MFX_ERR_NONE != msdk_opt_read(strInput[++i], presetName))
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Preset Name is not defined"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+
+            pParams->PresetMode = CPresetManager::PresetNameToMode(presetName);
+            if (pParams->PresetMode == PRESET_MAX_MODES)
+            {
+                PrintHelp(strInput[0], MSDK_STRING("Preset Name is invalid"));
+                return MFX_ERR_UNSUPPORTED;
+            }
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-amfs:on")))
         {
             pParams->nAdaptiveMaxFrameSize = MFX_CODINGOPTION_ON;
@@ -1045,11 +1069,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         pParams->numViews = nviews;
     }
 
-    if (MFX_TARGETUSAGE_BEST_QUALITY != pParams->nTargetUsage && MFX_TARGETUSAGE_BEST_SPEED != pParams->nTargetUsage)
-    {
-        pParams->nTargetUsage = MFX_TARGETUSAGE_BALANCED;
-    }
-
     if (pParams->dFrameRate <= 0)
     {
         pParams->dFrameRate = 30;
@@ -1064,13 +1083,6 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (pParams->nDstHeight == 0)
     {
         pParams->nDstHeight = pParams->nHeight;
-    }
-
-    // calculate default bitrate based on the resolution (a parameter for encoder, so Dst resolution is used)
-    if (pParams->nBitRate == 0)
-    {
-        pParams->nBitRate = CalculateDefaultBitrate(pParams->CodecId, pParams->nTargetUsage, pParams->nDstWidth,
-            pParams->nDstHeight, pParams->dFrameRate);
     }
 
     if (!pParams->nPicStruct)
@@ -1138,20 +1150,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (pParams->nAsyncDepth == 0)
-    {
-        pParams->nAsyncDepth = 4; //set by default;
-    }
-
     // Ignoring user-defined Async Depth for LA
     if (pParams->nMaxSliceSize)
     {
         pParams->nAsyncDepth = 1;
-    }
-
-    if (pParams->nRateControlMethod == 0)
-    {
-        pParams->nRateControlMethod = MFX_RATECONTROL_CBR;
     }
 
     if(pParams->UseRegionEncode)
@@ -1176,6 +1178,61 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     }
 
     return MFX_ERR_NONE;
+}
+
+
+void ModifyParamsUsingPresets(sInputParams& params)
+{
+    COutputPresetParameters presetParams = CPresetManager::Inst.GetPreset(params.PresetMode, params.CodecId,params.dFrameRate, params.nWidth, params.nHeight, params.bUseHWLib);
+
+    if (presetParams.RateControlMethod == MFX_RATECONTROL_LA_EXT)
+    {
+        // Currently sample_encode does not support external LA, so we will use ExtBRC instead
+        presetParams.RateControlMethod = MFX_RATECONTROL_VBR;
+        presetParams.LookAheadDepth = 0;
+        presetParams.ExtBRCUsage = EXTBRC_ON;
+    }
+
+    if (params.shouldPrintPresets)
+    {
+        msdk_printf(MSDK_STRING("Preset-controlled parameters (%s):\n"), presetParams.PresetName.c_str());
+    }
+    MODIFY_AND_PRINT_PARAM(params.nAdaptiveMaxFrameSize, AdaptiveMaxFrameSize,params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.nAsyncDepth, AsyncDepth, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.nBRefType, BRefType, params.shouldPrintPresets);
+//    MODIFY_AND_PRINT_PARAM(params., EnableBPyramid);
+//    MODIFY_AND_PRINT_PARAM(params., EnablePPyramid);
+    MODIFY_AND_PRINT_PARAM(params.nGopPicSize, GopPicSize, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.nGopRefDist, GopRefDist, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.IntRefCycleDist, IntRefCycleDist, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.IntRefCycleSize, IntRefCycleSize, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.IntRefQPDelta, IntRefQPDelta, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.IntRefType, IntRefType, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.nLADepth, LookAheadDepth, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.LowDelayBRC, LowDelayBRC, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.nMaxFrameSize, MaxFrameSize, params.shouldPrintPresets);
+    if (!params.nRateControlMethod)
+    {
+        // Use preset ExtBRC parameter only if rate control mode was not set manually
+        MODIFY_AND_PRINT_PARAM_EXT(params.nExtBRC, ExtBRCUsage, (ExtBRCType)presetParams.ExtBRCUsage, params.shouldPrintPresets);
+    }
+    MODIFY_AND_PRINT_PARAM(params.nRateControlMethod, RateControlMethod, params.shouldPrintPresets);
+
+    if (params.nRateControlMethod != MFX_RATECONTROL_CQP)
+    {
+        MODIFY_AND_PRINT_PARAM(params.nBitRate, TargetKbps, params.shouldPrintPresets);
+        MODIFY_AND_PRINT_PARAM(params.MaxKbps, MaxKbps, params.shouldPrintPresets);
+        presetParams.BufferSizeInKB = params.nBitRate; // Update bitrate to reflect manually set bitrate. BufferSize should be enough for 1 second of video
+        MODIFY_AND_PRINT_PARAM(params.BufferSizeInKB, BufferSizeInKB, params.shouldPrintPresets);
+    }
+
+    MODIFY_AND_PRINT_PARAM(params.nTargetUsage, TargetUsage, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.WeightedBiPred, WeightedBiPred, params.shouldPrintPresets);
+    MODIFY_AND_PRINT_PARAM(params.WeightedPred, WeightedPred, params.shouldPrintPresets);
+    if (params.shouldPrintPresets)
+    {
+        msdk_printf(MSDK_STRING("\n"));
+    }
 }
 
 CEncodingPipeline* CreatePipeline(const sInputParams& params)
@@ -1209,7 +1266,10 @@ int main(int argc, char *argv[])
 
     mfxStatus sts = MFX_ERR_NONE; // return value check
 
+    // Parsing Input stream workign with presets
     sts = ParseInputString(argv, (mfxU8)argc, &Params);
+    ModifyParamsUsingPresets(Params);
+    
     MSDK_CHECK_PARSE_RESULT(sts, MFX_ERR_NONE, 1);
 
     // Choosing which pipeline to use

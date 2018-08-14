@@ -252,7 +252,7 @@ VOID CDecodeD3DRender::UpdateTitle(double fps)
 
         if (NULL != m_sWindowParams.lpWindowName) {
             TCHAR str[20];
-            _stprintf_s(str, 20, _T("fps=%.2lf"), fps );
+            _stprintf_s(str, 20, MSDK_STRING("fps=%.2lf"), fps );
 
             SetWindowText(m_Hwnd, str);
         }

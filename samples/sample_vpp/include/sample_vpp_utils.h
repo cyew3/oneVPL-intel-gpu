@@ -457,7 +457,7 @@ struct sAppResources
 #endif
     mfxExtVPPRotation   rotationConfig;
     mfxExtVPPScaling    scalingConfig;
-#ifdef ENABLE_FF
+#if MFX_VERSION >= 1025
     mfxExtColorConversion    chromaSitingConfig;
 #endif
     mfxExtVPPFrameRateConversion    frcConfig;

@@ -178,7 +178,7 @@ mfxStatus ConfigVideoEnhancementFilters( sInputParams* pParams, sAppResources* p
 
         pVppParam->ExtParam[pVppParam->NumExtParam++] = (mfxExtBuffer*)&(pResources->scalingConfig);
     }
-#ifdef ENABLE_FF
+#if MFX_VERSION >= 1025
     if (pParams->bChromaSiting)
     {
         pResources->chromaSitingConfig.Header.BufferId = MFX_EXTBUFF_VPP_COLOR_CONVERSION;

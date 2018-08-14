@@ -1222,10 +1222,11 @@ mfxStatus ExtendMfxBitstream(mfxBitstream* pBitstream, mfxU32 nSize)
 
 void WipeMfxBitstream(mfxBitstream* pBitstream)
 {
-    MSDK_CHECK_POINTER(pBitstream);
-
-    //free allocated memory
-    MSDK_SAFE_DELETE_ARRAY(pBitstream->Data);
+    if(pBitstream)
+    {
+        //free allocated memory
+        MSDK_SAFE_DELETE_ARRAY(pBitstream->Data);
+    }
 }
 
 std::basic_string<msdk_char> CodecIdToStr(mfxU32 nFourCC)
@@ -1347,6 +1348,15 @@ mfxU16 CalculateDefaultBitrate(mfxU32 nCodecId, mfxU32 nTargetUsage, mfxU32 nWid
 
     switch (nCodecId)
     {
+    case MFX_CODEC_HEVC :
+    {
+        fnc.AddPair(0, 0);
+        fnc.AddPair(25344, 225/1.3);
+        fnc.AddPair(101376, 1000/1.3);
+        fnc.AddPair(414720, 4000/1.3);
+        fnc.AddPair(2058240, 5000/1.3);
+        break;
+    }
     case MFX_CODEC_AVC :
         {
             fnc.AddPair(0, 0);

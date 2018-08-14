@@ -241,6 +241,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
     // create sessions, allocators
     for (i = 0; i < m_InputParamsArray.size(); i++)
     {
+        msdk_printf(MSDK_STRING("Session %d:\n"), i);
         GeneralAllocator* pAllocator = new GeneralAllocator;
         sts = pAllocator->Init(m_pAllocParam.get());
         MSDK_CHECK_STATUS(sts, "pAllocator->Init failed");

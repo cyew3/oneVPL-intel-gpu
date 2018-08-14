@@ -1,7 +1,7 @@
 @echo off
 IF "%~1%"=="" (
 	echo Target Dir is not set
-	echo Usage: createMSDKInstalled.bat ^<Target_Dir^> ^<MFXLib_API_Dir^> ^<samples_Dir^>
+	echo Usage: createMSDKInstalled.bat ^<Target_Dir^> ^<MFXLib_API_Dir^>
 	exit /b
 )
 
@@ -11,17 +11,9 @@ IF "%~2%"=="" (
 	exit /b
 )
 
-IF "%~3%"=="" (
-	echo Sample_Dir is not set
-	echo Usage: createMSDKInstalled.bat ^<Target_Dir^> ^<MFXLib_API_Dir^> ^<samples_Dir^>
-	exit /b
-)
-
-
 set TargetDir="%~1"
 set APIDir="%~2"
 set BuildDir="%~2\..\Build"
-set SamplesDir="%~3"
 
 mkdir %TargetDir%
 
@@ -36,11 +28,6 @@ rem mkdir %TargetDir%\igfx_s3dcontrol
 rem mkdir %TargetDir%\igfx_s3dcontrol\include
 rem mkdir %TargetDir%\igfx_s3dcontrol\lib\win32
 rem mkdir %TargetDir%\igfx_s3dcontrol\lib\x64
-
-rem copy %SamplesDir%\..\igfx_s3dcontrol\include\API\*.* %TargetDir%\igfx_s3dcontrol\include\*.*
-rem copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\win32\*.* %TargetDir%\igfx_s3dcontrol\lib\win32\*.*
-rem copy %SamplesDir%\..\igfx_s3dcontrol\_build\lib\x64\*.* %TargetDir%\igfx_s3dcontrol\lib\x64\*.*
-
 
 mkdir %TargetDir%\include
 rem erase /Q %TargetDir%\include\*.*

@@ -42,6 +42,8 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #include "plugin_loader.h"
 
+#include "preset_manager.h"
+
 #if defined (ENABLE_V4L2_SUPPORT)
 #include "v4l2_util.h"
 #endif
@@ -69,13 +71,6 @@ enum MemType {
     SYSTEM_MEMORY = 0x00,
     D3D9_MEMORY   = 0x01,
     D3D11_MEMORY  = 0x02,
-};
-
-enum ExtBRCType {
-    EXTBRC_DEFAULT,
-    EXTBRC_OFF,
-    EXTBRC_ON,
-    EXTBRC_IMPLICIT
 };
 
 struct sInputParams
@@ -180,6 +175,9 @@ struct sInputParams
 #endif
     msdk_char DumpFileName[MSDK_MAX_FILENAME_LEN];
     msdk_char uSEI[MSDK_MAX_USER_DATA_UNREG_SEI_LEN];
+
+    EPresetModes PresetMode;
+    bool shouldPrintPresets;
 
 #if defined (ENABLE_V4L2_SUPPORT)
     msdk_char DeviceName[MSDK_MAX_FILENAME_LEN];
@@ -407,7 +405,6 @@ protected:
 #if (MFX_VERSION >= 1027)
     FILE* m_round_in;
 #endif
-
     bool m_bSoftRobustFlag;
 
     mfxU32 m_nTimeout;

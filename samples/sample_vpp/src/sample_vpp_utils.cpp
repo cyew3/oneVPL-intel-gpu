@@ -188,7 +188,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     msdk_printf(MSDK_STRING("Deinterlace\t%s\n"), (pParams->frameInfoIn[0].PicStruct != pParams->frameInfoOut[0].PicStruct) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
     msdk_printf(MSDK_STRING("Signal info\t%s\n"),   (VPP_FILTER_DISABLED != pParams->videoSignalInfoParam[0].mode) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
     msdk_printf(MSDK_STRING("Scaling\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->bScaling) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
-#ifdef ENABLE_FF
+#if MFX_VERSION >= 1025
     msdk_printf(MSDK_STRING("CromaSiting\t\t%s\n"), (VPP_FILTER_DISABLED != pParams->bChromaSiting) ? MSDK_STRING("ON") : MSDK_STRING("OFF"));
 #endif
     msdk_printf(MSDK_STRING("Denoise\t\t%s\n"),     (VPP_FILTER_DISABLED != pParams->denoiseParam[0].mode) ? MSDK_STRING("ON"): MSDK_STRING("OFF"));
@@ -1897,26 +1897,6 @@ mfxStatus CRawVideoWriter::WriteFrame(
             MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
     }
-#ifdef ENABLE_PS
-    else if( pInfo->FourCC == MFX_FOURCC_Y210)
-    {
-        ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
-
-        for(i = 0; i < h; i++)
-        {
-            MSDK_CHECK_NOT_EQUAL( fwrite(ptr+ i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-        }
-    }
-    else if (pInfo->FourCC == MFX_FOURCC_Y410)
-    {
-        ptr = (mfxU8*)pData->Y410 + pInfo->CropX + pInfo->CropY * pitch;
-
-        for(i = 0; i < h; i++)
-        {
-            MSDK_CHECK_NOT_EQUAL( fwrite(ptr + i * pitch, 1, 4*w, m_fDst), 4u*w, MFX_ERR_UNDEFINED_BEHAVIOR);
-        }
-    }
-#endif
     else
     {
         return MFX_ERR_UNSUPPORTED;

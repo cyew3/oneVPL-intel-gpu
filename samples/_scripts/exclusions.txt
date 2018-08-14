@@ -10,5 +10,6 @@
 \SampleDecodeUWP\
 \SampleEncodeUWP\
 \_scripts\
+\content\
 about-the-video.txt
 readme-setup.txt

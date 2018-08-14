@@ -33,7 +33,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 #if (MFX_VERSION >= 1026)
 #define ENABLE_MCTF
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if defined(MFX_VERSION_NEXT) && (MFX_VERSION >= MFX_VERSION_NEXT)
 //---MCTF, extended interface
 #define ENABLE_MCTF_EXT
 enum {MCTF_BITRATE_MULTIPLIER = 100000};

@@ -60,9 +60,6 @@
     <ClInclude Include="include\sample_defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sample_params.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\sample_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -127,6 +124,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\parameters_dumper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\preset_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -195,6 +195,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\parameters_dumper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\preset_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -52,6 +52,7 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 #include "plugin_loader.h"
 #include "sample_defs.h"
 #include "plugin_utils.h"
+#include "preset_manager.h"
 
 #if (MFX_VERSION >= 1024)
 #include "brc_routines.h"
@@ -149,6 +150,9 @@ namespace TranscodingSample
 
     struct sMctfRunTimeParams
     {
+        sMctfRunTimeParams() : CurIdx(0)
+        {}
+
         mfxU32 CurIdx;
         std::vector<sMctfRunTimeParam> RunTimeParams;
         // returns rt-param corresponding to CurIdx or NULL if
@@ -307,6 +311,16 @@ namespace TranscodingSample
 
         ExtBRCType nExtBRC;
 
+        mfxU16 nAdaptiveMaxFrameSize;
+        mfxU16 LowDelayBRC;
+
+        mfxU16 IntRefType;
+        mfxU16 IntRefCycleSize;
+        mfxU16 IntRefQPDelta;
+        mfxU16 IntRefCycleDist;
+
+        mfxU32 nMaxFrameSize;
+
 #if (MFX_VERSION >= 1025)
         mfxU16 numMFEFrames;
         mfxU16 MFMode;
@@ -324,6 +338,9 @@ namespace TranscodingSample
 #endif // defined(MFX_LIBVA_SUPPORT)
 
         CHWDevice             *m_hwdev;
+
+        EPresetModes PresetMode;
+        bool shouldPrintPresets;
     };
 
     struct sInputParams: public __sInputParams
@@ -643,6 +660,8 @@ namespace TranscodingSample
 
         mfxExtMVCSeqDesc GetDecMVCSeqDesc() const {return m_MVCSeqDesc;}
 
+        static void ModifyParamsUsingPresets(sInputParams& params, mfxF64 fps, mfxU32 width, mfxU32 height);
+
         // alloc frames for all component
         mfxStatus AllocFrames(mfxFrameAllocRequest  *pRequest, bool isDecAlloc);
         mfxStatus AllocFrames();
@@ -669,6 +688,8 @@ namespace TranscodingSample
         virtual mfxStatus InitEncMfxParams(sInputParams *pInParams);
         mfxStatus InitPluginMfxParams(sInputParams *pInParams);
         mfxStatus InitPreEncMfxParams(sInputParams *pInParams);
+
+        void FillFrameInfoForEncoding(mfxFrameInfo& info, sInputParams *pInParams);
 
         mfxStatus AllocAndInitVppDoNotUse(sInputParams *pInParams);
         mfxStatus AllocMVCSeqDesc();

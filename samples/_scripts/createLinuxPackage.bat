@@ -67,6 +67,7 @@ xcopy /S /Y ..\content\* %1\samples\_bin\content\
 rem !!! Possibly need to remove this later
 erase %1\samples\_bin\content\test_stream_vp9.ivf
 
+erase  %1.tar.gz
 
 Set filename=%1
 For %%A in ("%filename%") do (

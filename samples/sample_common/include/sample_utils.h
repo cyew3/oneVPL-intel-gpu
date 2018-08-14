@@ -103,6 +103,13 @@ enum
     MFX_FOURCC_I420         = MFX_MAKEFOURCC('I','4','2','0')
 };
 
+enum ExtBRCType {
+    EXTBRC_DEFAULT,
+    EXTBRC_OFF,
+    EXTBRC_ON,
+    EXTBRC_IMPLICIT
+};
+
 bool IsDecodeCodecSupported(mfxU32 codecFormat);
 bool IsEncodeCodecSupported(mfxU32 codecFormat);
 bool IsPluginCodecSupported(mfxU32 codecFormat);

@@ -696,6 +696,7 @@ samples/sample_common/include/mfx_samples_config.h
 samples/sample_common/include/parameters_dumper.h
 samples/sample_common/include/plugin_loader.h
 samples/sample_common/include/plugin_utils.h
+samples/sample_common/include/preset_manager.h
 samples/sample_common/include/sample_defs.h
 samples/sample_common/include/sample_types.h
 samples/sample_common/include/sample_utils.h
@@ -732,6 +733,7 @@ samples/sample_common/src/general_allocator.cpp
 samples/sample_common/src/mfx_buffering.cpp
 samples/sample_common/src/parameters_dumper.cpp
 samples/sample_common/src/plugin_utils.cpp
+samples/sample_common/src/preset_manager.cpp
 samples/sample_common/src/sample_utils.cpp
 samples/sample_common/src/sysmem_allocator.cpp
 samples/sample_common/src/v4l2_util.cpp
