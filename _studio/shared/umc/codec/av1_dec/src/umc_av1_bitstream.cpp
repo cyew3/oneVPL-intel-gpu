@@ -1003,7 +1003,7 @@ namespace UMC_AV1_DECODER
         else
             fh->loopFilterAcrossTilesHEnabled = 1;
 
-        if (fh->tileCols * fh->tileRows > 1)
+        if (NumTiles(*fh) > 1)
             fh->tileSizeBytes = bs->GetBits(2) + 1;
 
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
@@ -1396,6 +1396,7 @@ namespace UMC_AV1_DECODER
     }
 #endif
 
+#if UMC_AV1_DECODER_REV < 5000
     Ipp8u AV1Bitstream::ReadSuperFrameIndex(Ipp32u sizes[8])
     {
         if (m_bitOffset)
@@ -1437,6 +1438,7 @@ namespace UMC_AV1_DECODER
 
         return 0;
     }
+#endif // UMC_AV1_DECODER_REV < 5000
 
 #if UMC_AV1_DECODER_REV >= 5000
     inline
@@ -1470,6 +1472,62 @@ namespace UMC_AV1_DECODER
     {
         av1_read_obu_size(this, &info->size, &info->sizeFieldLength);
         info->header = av1_read_obu_header(this);
+    }
+
+    void AV1Bitstream::ReadByteAlignment()
+    {
+        if (m_bitOffset)
+        {
+            const Ipp32u bitsToRead = 8 - m_bitOffset;
+            const Ipp32u bits = GetBits(bitsToRead);
+            if (bits)
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+        }
+    }
+
+    void AV1Bitstream::ReadTileGroupHeader(FrameHeader const* fh, TileGroupInfo* info)
+    {
+        Ipp8u tile_start_and_end_present_flag = 0;
+        if (!fh->largeScaleTile && NumTiles(*fh) > 1)
+            tile_start_and_end_present_flag = GetBit();
+
+        if (tile_start_and_end_present_flag)
+        {
+            const Ipp32u log2Tiles = fh->log2TileCols + fh->log2TileRows;
+            info->startTileIdx = GetBits(log2Tiles);
+            info->endTileIdx = GetBits(log2Tiles);
+            info->numTiles = info->endTileIdx - info->startTileIdx + 1;
+        }
+        else
+        {
+            info->numTiles = NumTiles(*fh);
+            info->startTileIdx = 0;
+            info->endTileIdx = info->numTiles - 1;
+        }
+
+        ReadByteAlignment();
+    }
+
+    Ipp64u AV1Bitstream::GetLE(Ipp32u n)
+    {
+        VM_ASSERT(m_bitOffset == 0);
+        VM_ASSERT(n <= 8);
+
+        Ipp64u t = 0;
+        for (Ipp32u i = 0; i < n; i++)
+            t += (*m_pbs++) << (i * 8);
+
+        return t;
+    }
+
+    void AV1Bitstream::ReadTile(FrameHeader const* fh, size_t& reportedSize, size_t& actualSize)
+    {
+        actualSize = reportedSize = GetLE(fh->tileSizeBytes);
+
+        if (BytesLeft() < reportedSize)
+            actualSize = BytesLeft();
+
+        m_pbs += actualSize;
     }
 #endif
 

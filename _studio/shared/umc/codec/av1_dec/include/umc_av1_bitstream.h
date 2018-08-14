@@ -30,6 +30,10 @@ namespace UMC_AV1_DECODER
 
 #if UMC_AV1_DECODER_REV >= 5000
         void ReadOBUHeader(OBUInfo*);
+        void ReadTileGroupHeader(FrameHeader const*, TileGroupInfo*);
+        void ReadTile(FrameHeader const*, size_t&, size_t&);
+        void ReadByteAlignment();
+        Ipp64u GetLE(Ipp32u);
 #endif
         void GetSequenceHeader(SequenceHeader*);
 #if UMC_AV1_DECODER_REV >= 5000
@@ -47,7 +51,7 @@ namespace UMC_AV1_DECODER
         }
 
     protected:
-#if UMC_AV1_DECODER_REV >= 2510
+#if UMC_AV1_DECODER_REV < 5000
         Ipp8u ReadSuperFrameIndex(Ipp32u sizes[8]);
 #endif
     };

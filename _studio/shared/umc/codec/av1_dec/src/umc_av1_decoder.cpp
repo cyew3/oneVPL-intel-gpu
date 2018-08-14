@@ -15,6 +15,7 @@
 #include "umc_frame_data.h"
 
 #include "umc_av1_decoder.h"
+#include "umc_av1_utils.h"
 #include "umc_av1_bitstream.h"
 #include "umc_av1_frame.h"
 
@@ -193,11 +194,53 @@ namespace UMC_AV1_DECODER
         return updatedFrameDPB;
     }
 
+#if UMC_AV1_DECODER_REV >= 5000
+    static void GetTileLocation(
+        AV1Bitstream* bs,
+        FrameHeader const* fh,
+        TileGroupInfo const* tgInfo,
+        Ipp32u idxInTG,
+        size_t OBUSize,
+        size_t OBUOffset,
+        TileLocation* loc)
+    {
+        // calculate tile row and column
+        const Ipp32u idxInFrame = tgInfo->startTileIdx + idxInTG;
+        loc->row = idxInFrame / fh->tileCols;
+        loc->col = idxInFrame - loc->row * fh->tileCols;
+
+        size_t tileOffsetInTG = bs->BytesDecoded();
+
+        if (idxInTG == tgInfo->numTiles - 1)
+            loc->size = OBUSize - tileOffsetInTG;  // tile is last in tile group - no explicit size signaling
+        else
+        {
+            tileOffsetInTG += fh->tileSizeBytes;
+
+            // read tile size
+            size_t reportedSize;
+            size_t actualSize;
+            bs->ReadTile(fh, reportedSize, actualSize);
+            if (actualSize != reportedSize)
+            {
+                // before parsing tiles we check that tile_group_obu() is complete (bitstream has enough bytes to hold whole OBU)
+                // but here we encountered incomplete tile inside this tile_group_obu() which means tile size corruption
+                // later check for complete tile_group_obu() will be removed, and thus incomplete tile will be possible
+                VM_ASSERT("Tile size corruption: Incomplete tile encountered inside complete tile_group_obu()!");
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+            }
+
+            loc->size = reportedSize;
+        }
+
+        loc->offset = OBUOffset + tileOffsetInTG;
+    }
+#endif
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
 
         FrameHeader fh = {};
-        Ipp32u const size = Ipp32u(in->GetDataSize());
 
         DPBType updated_refs;
         FrameHeader const* prev_fh = 0;
@@ -209,12 +252,15 @@ namespace UMC_AV1_DECODER
 
 #if UMC_AV1_DECODER_REV >= 5000
         bool gotFrameHeader = false;
-        bool gotFrameData = false;
+        bool gotTileGroup = false;
+        bool gotFullFrame = false;
 
         UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
+        Ipp32u OBUOffset = 0;
         TileLayout layout;
+        Ipp32u idxInLayout = 0;
 
-        while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && !gotFrameData)
+        while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false)
         {
             const auto src = reinterpret_cast<Ipp8u*>(tmp.GetDataPointer());
             AV1Bitstream bs(src, Ipp32u(tmp.GetDataSize()));
@@ -226,6 +272,8 @@ namespace UMC_AV1_DECODER
 
             if (tmp.GetDataSize() < OBUTotalSize)
                 return UMC::UMC_ERR_NOT_ENOUGH_DATA; // not enough data in the buffer to hold full OBU unit
+                                                     // we return error because there is no support for chopped tile_group_obu() submission so far
+                                                     // TODO: [Global] Add support for submission of incomplete tile group OBUs
 
             switch (info.header.type)
             {
@@ -241,31 +289,55 @@ namespace UMC_AV1_DECODER
                 bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
                 gotFrameHeader = true;
                 if (info.header.type == OBU_FRAME)
-                    gotFrameData = true;
+                {
+                    // TODO: [Rev0.5] Add support for case when tile_group_obu() is transmitted inside frame_obu()
+                    VM_ASSERT("No support for frame_obu()!");
+                    throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
+                }
                 break;
             case OBU_TILE_GROUP:
-                // TODO: [Rev0.5] parse tile group header here
-                // TODO: [Rev0.5] add support of multiple tile groups
-                if (gotFrameHeader) // bypass tile group if there is no respective frame header (no per-tile submission so far)
-                    gotFrameData = true;
-                fh.firstTileOffset += static_cast<Ipp32u>(bs.BytesDecoded());
-                TileLocation loc = {};
-                loc.offset = fh.firstTileOffset;
-                loc.size = OBUTotalSize - static_cast<Ipp32u>(bs.BytesDecoded());
-                layout.push_back(loc);
-                break;
+                if (gotFrameHeader) // bypass tile group if there is no respective frame header (only whole frame submission is supported for now)
+                                    // TODO: [Rev0.5] add support of frame submission by portions (each portion contains one or multiple complete tile groups)
+                {
+                    TileGroupInfo tgInfo = {};
+                    bs.ReadTileGroupHeader(&fh, &tgInfo);
+                    const Ipp32u numTilesMet = static_cast<Ipp32u>(layout.size()) + tgInfo.numTiles;
+                    if (numTilesMet > NumTiles(fh))
+                        throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+                    layout.resize(numTilesMet, {tgInfo.startTileIdx, tgInfo.endTileIdx});
+                    Ipp32u idxInTG = 0;
+
+                    for (; idxInLayout < layout.size(); idxInLayout++, idxInTG++)
+                    {
+                        TileLocation& loc = layout[idxInLayout];
+                        GetTileLocation(&bs, &fh, &tgInfo, idxInTG, OBUTotalSize, OBUOffset, &loc);
+                    }
+
+                    gotTileGroup = true;
+                    if (numTilesMet == NumTiles(fh))
+                        gotFullFrame = true;
+
+                    break;
+                }
             }
 
-            if (info.header.type != OBU_TILE_GROUP)
-                fh.firstTileOffset += static_cast<Ipp32u>(OBUTotalSize);
-
+            OBUOffset += static_cast<Ipp32u>(OBUTotalSize);
             tmp.MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
         }
 
-        if (!gotFrameData)
-            return UMC::UMC_ERR_NOT_ENOUGH_DATA; // no frame OBU or incomplete frame OBU (no per-tile submission so far)
+        if (!gotFullFrame)
+        {
+            // only whole frame submission is supported for now
+            // TODO: [Rev0.5] add support of frame submission by portions (each portion contains one or multiple complete tile groups)
+            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
+        }
+
+        /*if (!gotTileGroup)
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA;*/ // no tile_group_obu() or incomplete tile_group_obu (no support for chopped tile_group_obu() submission so far)
+                                                   // TODO: [Global] Add support for submission of incomplete tile group OBUs
 
 #else // UMC_AV1_DECODER_REV >= 5000
+        Ipp32u const size = Ipp32u(in->GetDataSize());
         Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
         if (size < MINIMAL_DATA_SIZE)
             return UMC::UMC_ERR_NOT_ENOUGH_DATA;
@@ -287,10 +359,11 @@ namespace UMC_AV1_DECODER
 
 #if UMC_AV1_DECODER_REV >= 5000
         frame->AddTileSet(in, layout);
+        in->MoveDataPointer(OBUOffset);
 #else
         frame->AddSource(in);
-#endif
         in->MoveDataPointer(size);
+#endif
 
         frame->frame_dpb = updated_refs;
         frame->UpdateReferenceList();

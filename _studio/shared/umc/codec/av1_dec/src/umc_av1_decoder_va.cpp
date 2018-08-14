@@ -15,6 +15,7 @@
 #include "umc_va_base.h"
 
 #include "umc_av1_decoder_va.h"
+#include "umc_av1_utils.h"
 #include "umc_av1_frame.h"
 #include "umc_av1_bitstream.h"
 #include "umc_av1_va_packer.h"
@@ -76,7 +77,7 @@ namespace UMC_AV1_DECODER
         packer->PackAU(tileSets, frame, firstSubmission);
 
         FrameHeader const& fh = frame->GetFrameHeader();
-        const bool lastSubmission = CalcTilesInTileSets(tileSets) == fh.tileCols * fh.tileRows;
+        const bool lastSubmission = CalcTilesInTileSets(tileSets) == NumTiles(fh);
         if (lastSubmission)
             packer->EndFrame();
 

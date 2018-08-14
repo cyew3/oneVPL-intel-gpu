@@ -562,7 +562,6 @@ namespace UMC_AV1_DECODER
 
         Ipp32u largeScaleTile;
 
-        Ipp32u firstTileOffset;
 //#if UMC_AV1_DECODER_REV < 5000
         // this part is for Rev0.25.2 only
         Ipp32u profile;
@@ -582,10 +581,18 @@ namespace UMC_AV1_DECODER
         Ipp32u enhancementLayerId;
     };
 
-    struct OBUInfo {
+    struct OBUInfo
+    {
         OBUHeader header;
         size_t sizeFieldLength;
         size_t size;
+    };
+
+    struct TileGroupInfo
+    {
+        Ipp32u numTiles;
+        Ipp32u startTileIdx;
+        Ipp32u endTileIdx;
     };
 #endif // UMC_AV1_DECODER_REV >= 5000
 

@@ -76,6 +76,11 @@ namespace UMC_AV1_DECODER
     {
         memcpy_s(dst, dstLen, src, len);
     }
+
+    inline Ipp32u NumTiles(FrameHeader const & fh)
+    {
+        return fh.tileCols * fh.tileRows;
+    }
 }
 
 #endif //__UMC_AV1_UTILS_H_

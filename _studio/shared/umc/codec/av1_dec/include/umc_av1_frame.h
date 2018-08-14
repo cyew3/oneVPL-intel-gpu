@@ -27,12 +27,12 @@ namespace UMC_AV1_DECODER
 
     struct TileLocation
     {
+        Ipp32u startIdx; // index of 1st tile in current tile group
+        Ipp32u endIdx; // index of last tile in current tile group
         size_t offset; // offset in the buffer
         size_t size; // size of the tile
         Ipp32u row; // row in tile grid
         Ipp32u col; // column in tile grid
-        Ipp32u startIdx; // index of 1st tile in current tile group
-        Ipp32u endIdx; // index of last tile in current tile group
     };
 
     typedef std::vector<TileLocation> TileLayout;
