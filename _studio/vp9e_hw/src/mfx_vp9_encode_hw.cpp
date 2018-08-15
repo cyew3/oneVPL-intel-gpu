@@ -19,75 +19,9 @@
 
 namespace MfxHwVP9Encode
 {
-
-Plugin::Plugin(bool CreateByDispatcher)
-    : m_bStartIVFSequence(false)
-    , m_maxBsSize(0)
-    , m_pmfxCore(NULL)
-    , m_PluginParam()
-    , m_createdByDispatcher(CreateByDispatcher)
-    , m_adapter(this)
-    , m_initialized(false)
-    , m_frameArrivalOrder(0)
-    , m_drainState(false)
-    , m_resetBrc(false)
-    , m_taskIdForDriver(0)
-    , m_numBufferedFrames(0)
-    , m_initWidth(0)
-    , m_initHeight(0)
-    , m_frameOrderInGop(0)
-    , m_frameOrderInRefStructure(0)
+mfxStatus MFXVideoENCODEVP9_HW::Query(mfxCoreInterface *core, mfxVideoParam *in, mfxVideoParam *out)
 {
-    m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
-    m_PluginParam.MaxThreadNum = 1;
-    m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
-    m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
-    m_PluginParam.PluginUID = MFX_PLUGINID_VP9E_HW;
-    m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
-    m_PluginParam.CodecId = MFX_CODEC_VP9;
-    m_PluginParam.PluginVersion = 1;
-
-    m_prevSegment.Header.BufferId = MFX_EXTBUFF_VP9_SEGMENTATION;
-    m_prevSegment.Header.BufferSz = sizeof(mfxExtVP9Segmentation);
-    ZeroExtBuffer(m_prevSegment);
-
-    Zero(m_prevFrameParam);
-}
-
-mfxStatus Plugin::PluginInit(mfxCoreInterface * pCore)
-{
-    if (!pCore)
-        return MFX_ERR_NULL_PTR;
-
-    m_pmfxCore = pCore;
-    m_initialized = false;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Plugin::PluginClose()
-{
-    m_initialized = false;
-
-    if (m_createdByDispatcher) {
-        delete this;
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Plugin::GetPluginParam(mfxPluginParam *par)
-{
-    if (!par)
-        return MFX_ERR_NULL_PTR;
-    *par = m_PluginParam;
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
-{
-    VP9_LOG("\n (VP9_LOG) Plugin::Query +");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Query +");
     MFX_CHECK_NULL_PTR1(out);
 
     if (in == 0)
@@ -104,10 +38,12 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         VP9MfxVideoParam toValidate = *in;
 
+        mfxCoreInterface _core = *core;
+
         // get HW caps from driver
         ENCODE_CAPS_VP9 caps = {};
         mfxPlatform platform = {};
-        MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate), in->mfx.FrameInfo.Width, in->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(&_core, caps, platform, GetGuid(toValidate), in->mfx.FrameInfo.Width, in->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
         // validate input parameters
         sts = CheckParameters(toValidate, caps);
@@ -144,15 +80,14 @@ mfxStatus Plugin::Query(mfxVideoParam *in, mfxVideoParam *out)
             }
         }
 
-        VP9_LOG("\n (VP9_LOG) Plugin::Query -");
+        VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Query -");
         return sts;
     }
 }
 
-mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxFrameAllocRequest *out)
+mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(mfxCoreInterface *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
-    out;
-    MFX_CHECK_NULL_PTR2(par,in);
+    MFX_CHECK_NULL_PTR2(par,request);
     mfxStatus sts = CheckExtBufferHeaders(par->NumExtParam, par->ExtParam);
     MFX_CHECK_STS(sts);
 
@@ -163,10 +98,12 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
 
     VP9MfxVideoParam toValidate = *par;
 
+    mfxCoreInterface _core = *core;
+
     // get HW caps from driver
     ENCODE_CAPS_VP9 caps = {};
     mfxPlatform platform = {};
-    MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(m_pmfxCore, caps, platform, GetGuid(toValidate), par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(&_core, caps, platform, GetGuid(toValidate), par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
     // get validated and properly initialized set of parameters
     CheckParameters(toValidate, caps);
@@ -176,22 +113,22 @@ mfxStatus Plugin::QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *in, mfxF
     switch (par->IOPattern)
     {
     case MFX_IOPATTERN_IN_SYSTEM_MEMORY:
-        in->Type = MFX_MEMTYPE_SYS_EXT;
+        request->Type = MFX_MEMTYPE_SYS_EXT;
         break;
     case MFX_IOPATTERN_IN_VIDEO_MEMORY:
-        in->Type = MFX_MEMTYPE_D3D_EXT;
+        request->Type = MFX_MEMTYPE_D3D_EXT;
         break;
     case MFX_IOPATTERN_IN_OPAQUE_MEMORY:
-        in->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
+        request->Type = MFX_MEMTYPE_FROM_ENCODE | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_OPAQUE_FRAME;
         break;
     default:
         return MFX_ERR_INVALID_VIDEO_PARAM;
     }
 
-    in->NumFrameMin = (mfxU16)CalcNumSurfRaw(toValidate);
-    in->NumFrameSuggested = in->NumFrameMin;
+    request->NumFrameMin = (mfxU16)CalcNumSurfRaw(toValidate);
+    request->NumFrameSuggested = request->NumFrameMin;
 
-    in->Info = par->mfx.FrameInfo;
+    request->Info = par->mfx.FrameInfo;
 
     return MFX_ERR_NONE;
 }
@@ -237,9 +174,9 @@ void SetReconInfo(VP9MfxVideoParam const & par, mfxFrameInfo& fi)
     fi.BitDepthChroma = depth;
 }
 
-mfxStatus Plugin::Init(mfxVideoParam *par)
+mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 {
-    VP9_LOG("\n (VP9_LOG) Plugin::Init +");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Init +");
 
     if (m_initialized == true)
     {
@@ -254,10 +191,10 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
 
     m_video = *par;
 
-    m_ddi.reset(CreatePlatformVp9Encoder(m_pmfxCore));
+    m_ddi.reset(CreatePlatformVp9Encoder(m_pCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
 
-    sts = m_ddi->CreateAuxilliaryDevice(m_pmfxCore, GetGuid(m_video),
+    sts = m_ddi->CreateAuxilliaryDevice(m_pCore, GetGuid(m_video),
         m_video.mfx.FrameInfo.Width, m_video.mfx.FrameInfo.Height);
     MFX_CHECK(sts != MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM);
     MFX_CHECK(sts == MFX_ERR_NONE, MFX_ERR_DEVICE_FAILED);
@@ -288,20 +225,20 @@ mfxStatus Plugin::Init(mfxVideoParam *par)
     if (m_video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY)
     {
         request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRaw(m_video);
-        sts = m_rawLocalFrames.Init(m_pmfxCore, &request);
+        sts = m_rawLocalFrames.Init(m_pCore, &request);
         MFX_CHECK_STS(sts);
     }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
         mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(m_video);
 
-        sts = m_pmfxCore->MapOpaqueSurface(m_pmfxCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        sts = m_pCore->MapOpaqueSurface(m_pCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
         MFX_CHECK_STS(sts);
 
         if (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
             request.NumFrameMin = request.NumFrameSuggested = opaq.In.NumSurface;
-            sts = m_rawLocalFrames.Init(m_pmfxCore, &request);
+            sts = m_rawLocalFrames.Init(m_pCore, &request);
 MFX_CHECK_STS(sts);
         }
     }
@@ -314,7 +251,7 @@ MFX_CHECK_STS(sts);
     request.Info.FourCC = MFX_FOURCC_NV12;
 #endif
 
-    sts = m_reconFrames.Init(m_pmfxCore, &request);
+    sts = m_reconFrames.Init(m_pCore, &request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_reconFrames.GetFrameAllocReponse(), D3DDDIFMT_NV12);
     MFX_CHECK_STS(sts);
@@ -369,7 +306,7 @@ MFX_CHECK_STS(sts);
         request.Info.Height = static_cast<mfxU16>(tmp_height);
     }
 
-    sts = m_outBitstreams.Init(m_pmfxCore, &request);
+    sts = m_outBitstreams.Init(m_pCore, &request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_outBitstreams.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_BITSTREAMDATA);
     MFX_CHECK_STS(sts);
@@ -380,7 +317,7 @@ MFX_CHECK_STS(sts);
     MFX_CHECK_STS(sts);
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumTasks(m_video);
 
-    sts = m_segmentMaps.Init(m_pmfxCore, &request);
+    sts = m_segmentMaps.Init(m_pCore, &request);
     MFX_CHECK_STS(sts);
     sts = m_ddi->Register(m_segmentMaps.GetFrameAllocReponse(), D3DDDIFMT_INTELENCODE_MBSEGMENTMAP);
     MFX_CHECK_STS(sts);
@@ -414,13 +351,13 @@ MFX_CHECK_STS(sts);
 
     m_videoForParamChange.push_back(m_video);
 
-    VP9_LOG("\n (VP9_LOG) Plugin::Init -");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Init -");
     return checkSts;
 }
 
-mfxStatus Plugin::Reset(mfxVideoParam *par)
+mfxStatus MFXVideoENCODEVP9_HW::Reset(mfxVideoParam *par)
 {
-    VP9_LOG("\n (VP9_LOG) Plugin::Reset +");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Reset +");
 
     if (m_initialized == false)
     {
@@ -487,17 +424,17 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
         // below commented code is to completely reset encoding pipeline
         /*
         // release all the reconstructed frames
-        ReleaseDpbFrames(m_pmfxCore, m_dpb);
+        ReleaseDpbFrames(m_pCore, m_dpb);
         Zero(m_dpb);
         // release all the tasks
         for (std::list<Task>::iterator i = m_accepted.begin(); i != m_accepted.end(); i ++)
         {
-            sts = FreeTask(m_pmfxCore, *i);
+            sts = FreeTask(m_pCore, *i);
             MFX_CHECK_STS(sts);
         }
         for (std::list<Task>::iterator i = m_submitted.begin(); i != m_submitted.end(); i++)
         {
-            sts = FreeTask(m_pmfxCore, *i);
+            sts = FreeTask(m_pCore, *i);
             MFX_CHECK_STS(sts);
         }
         //m_accepted.resize(0);
@@ -534,12 +471,12 @@ mfxStatus Plugin::Reset(mfxVideoParam *par)
 
     m_videoForParamChange.push_back(m_video);
 
-    VP9_LOG("\n (VP9_LOG) Plugin::Reset -");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Reset -");
 
     return checkSts;
 }
 
-mfxStatus Plugin::RemoveObsoleteParameters()
+mfxStatus MFXVideoENCODEVP9_HW::RemoveObsoleteParameters()
 {
     if (m_videoForParamChange.size() > 1) // m_videoForParamChange.back() contains latest encoding parameters. It shouldn't be removed.
     {
@@ -551,7 +488,7 @@ mfxStatus Plugin::RemoveObsoleteParameters()
             if (m_accepted.end() == std::find_if(m_accepted.begin(), m_accepted.end(), FindTaskByMfxVideoParam(&*par)) && // [par] isn't referenced by "acceped" Tasks
                 m_submitted.end() == std::find_if(m_submitted.begin(), m_submitted.end(), FindTaskByMfxVideoParam(&*par))) // [par] isn't referenced by "submitted" Tasks
             {
-                // [par] isn't referenced by any Task submitted to the plugin. It's obsolete and can be safely removed.
+                // [par] isn't referenced by any Task submitted to the MFXVideoENCODEVP9_HW. It's obsolete and can be safely removed.
                 par = m_videoForParamChange.erase(par);
             }
             else
@@ -564,9 +501,9 @@ mfxStatus Plugin::RemoveObsoleteParameters()
     return MFX_ERR_NONE;
 }
 
-mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
+mfxStatus MFXVideoENCODEVP9_HW::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxThreadTask *task)
 {
-    VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit +", m_frameArrivalOrder);
+    VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::EncodeFrameSubmit +", m_frameArrivalOrder);
 
     if (m_initialized == false || m_videoForParamChange.size() == 0)
     {
@@ -629,7 +566,7 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
             Zero(newFrame);
             sts = m_rawFrames.GetFrame(surface, newFrame.m_pRawFrame);
             MFX_CHECK_STS(sts);
-            sts = LockSurface(newFrame.m_pRawFrame, m_pmfxCore);
+            sts = LockSurface(newFrame.m_pRawFrame, m_pCore);
             MFX_CHECK_STS(sts);
 
             ENCODE_CAPS_VP9 caps = {};
@@ -679,14 +616,14 @@ mfxStatus Plugin::EncodeFrameSubmit(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surfa
 
     *task = (mfxThreadTask)surface;
 
-    VP9_LOG("\n (VP9_LOG) Frame %d Plugin::EncodeFrameSubmit -", m_frameArrivalOrder);
+    VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::EncodeFrameSubmit -", m_frameArrivalOrder);
 
     MFX_CHECK_STS(bufferingSts);
 
     return checkSts;
 }
 
-mfxStatus Plugin::ConfigTask(Task &task)
+mfxStatus MFXVideoENCODEVP9_HW::ConfigTask(Task &task)
 {
     VP9FrameLevelParam frameParam = { };
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
@@ -767,23 +704,23 @@ mfxStatus Plugin::ConfigTask(Task &task)
         task.m_pRecRefFrames[REF_ALT] = m_dpb[idxAlt] != m_dpb[idxLast] && m_dpb[idxAlt] != m_dpb[idxGold] ? m_dpb[idxAlt] : 0;
     }
 
-    sts = LockSurface(task.m_pRecFrame, m_pmfxCore);
+    sts = LockSurface(task.m_pRecFrame, m_pCore);
     MFX_CHECK_STS(sts);
-    sts = LockSurface(task.m_pRawLocalFrame, m_pmfxCore);
+    sts = LockSurface(task.m_pRawLocalFrame, m_pCore);
     MFX_CHECK_STS(sts);
-    sts = LockSurface(task.m_pOutBs, m_pmfxCore);
+    sts = LockSurface(task.m_pOutBs, m_pCore);
     MFX_CHECK_STS(sts);
-    sts = LockSurface(task.m_pSegmentMap, m_pmfxCore);
+    sts = LockSurface(task.m_pSegmentMap, m_pCore);
     MFX_CHECK_STS(sts);
 
-    UpdateDpb(frameParam, task.m_pRecFrame, m_dpb, m_pmfxCore);
+    UpdateDpb(frameParam, task.m_pRecFrame, m_dpb, m_pCore);
 
     m_prevFrameParam = task.m_frameParam;
 
     return sts;
 }
 
-mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
+mfxStatus MFXVideoENCODEVP9_HW::Execute(mfxThreadTask task, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
 {
     if (m_initialized == false)
     {
@@ -798,7 +735,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         Task& newFrame = m_accepted.front(); // no mutex required here since splice() method doesn't cause race conditions for getting and modification of existing elements
         if (newFrame.m_pRawFrame->pSurface == pSurf) // frame pointed by pSurf isn't submitted yet - let's proceed with submission
         {
-            VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame +", newFrame.m_frameOrder);
+            VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::SubmitFrame +", newFrame.m_frameOrder);
             mfxStatus sts = MFX_ERR_NONE;
             const VP9MfxVideoParam& curMfxPar = *newFrame.m_pParam;
             newFrame.m_pPrevSegment = &m_prevSegment;
@@ -810,15 +747,15 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             mfxHDLPair surfaceHDL = {};
 
             // copy input frame from SYSTEM to VIDEO memory (if required)
-            sts = CopyRawSurfaceToVideoMemory(m_pmfxCore, curMfxPar, newFrame);
+            sts = CopyRawSurfaceToVideoMemory(m_pCore, curMfxPar, newFrame);
             MFX_CHECK_STS(sts);
 
-            sts = GetInputSurface(m_pmfxCore, curMfxPar, newFrame, pSurface);
+            sts = GetInputSurface(m_pCore, curMfxPar, newFrame, pSurface);
             MFX_CHECK_STS(sts);
 
             // get handle to input frame in VIDEO memory (either external or local)
-            //sts = m_pmfxCore->FrameAllocator.GetHDL(m_pmfxCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
-            sts = m_pmfxCore->GetFrameHandle(m_pmfxCore->pthis, &pSurface->Data, &surfaceHDL.first);
+            //sts = m_pCore->FrameAllocator.GetHDL(m_pCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
+            sts = m_pCore->GetFrameHandle(m_pCore->pthis, &pSurface->Data, &surfaceHDL.first);
             MFX_CHECK_STS(sts);
             MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -840,7 +777,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
             m_frameOrderInGop++;
             m_frameOrderInRefStructure++;
 
-            VP9_LOG("\n (VP9_LOG) Frame %d Plugin::SubmitFrame -", newFrame.m_frameOrder);
+            VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::SubmitFrame -", newFrame.m_frameOrder);
         }
     }
 
@@ -850,7 +787,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
     {
         Task& frameToGet = m_submitted.front();
 
-        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame +", frameToGet.m_frameOrder);
+        VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::QueryFrame +", frameToGet.m_frameOrder);
         assert(m_outs.size() > 0);
 
         mfxStatus sts = MFX_ERR_NONE;
@@ -858,7 +795,7 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         sts = m_ddi->QueryStatus(frameToGet);
         if (sts == MFX_WRN_DEVICE_BUSY)
         {
-            VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame - (MFX_WRN_DEVICE_BUSY)", frameToGet.m_frameOrder);
+            VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::QueryFrame - (MFX_WRN_DEVICE_BUSY)", frameToGet.m_frameOrder);
             return MFX_TASK_BUSY;
         }
         MFX_CHECK_STS(sts);
@@ -870,23 +807,23 @@ mfxStatus Plugin::Execute(mfxThreadTask task, mfxU32 , mfxU32 )
         {
             UMC::AutomaticUMCMutex guard(m_taskMutex);
             m_outs.pop();
-            sts = FreeTask(m_pmfxCore, frameToGet);
+            sts = FreeTask(m_pCore, frameToGet);
             MFX_CHECK_STS(sts);
             m_free.splice(m_free.end(), m_submitted, m_submitted.begin());
         }
 
-        VP9_LOG("\n (VP9_LOG) Frame %d Plugin::QueryFrame -", frameToGet.m_frameOrder);
+        VP9_LOG("\n (VP9_LOG) Frame %d MFXVideoENCODEVP9_HW::QueryFrame -", frameToGet.m_frameOrder);
     }
 
     return MFX_TASK_DONE;
 }
 
-mfxStatus Plugin::FreeResources(mfxThreadTask task, mfxStatus )
+mfxStatus MFXVideoENCODEVP9_HW::FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/)
 {
-    task; return MFX_ERR_NONE;
+    return MFX_ERR_NONE;
 }
 
-mfxStatus Plugin::Close()
+mfxStatus MFXVideoENCODEVP9_HW::Close()
 {
     if (m_initialized == false)
     {
@@ -897,12 +834,12 @@ mfxStatus Plugin::Close()
 
     for (std::list<Task>::iterator i = m_accepted.begin(); i != m_accepted.end(); i++)
     {
-        sts = FreeTask(m_pmfxCore, *i);
+        sts = FreeTask(m_pCore, *i);
         MFX_CHECK_STS(sts);
     }
     for (std::list<Task>::iterator i = m_submitted.begin(); i != m_submitted.end(); i++)
     {
-        sts = FreeTask(m_pmfxCore, *i);
+        sts = FreeTask(m_pCore, *i);
         MFX_CHECK_STS(sts);
     }
 
@@ -919,7 +856,7 @@ mfxStatus Plugin::Close()
 
     if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && opaq.In.Surfaces)
     {
-        sts = m_pmfxCore->UnmapOpaqueSurface(m_pmfxCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        sts = m_pCore->UnmapOpaqueSurface(m_pCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
         Zero(opaq);
     }
 
@@ -934,7 +871,7 @@ mfxStatus Plugin::Close()
     return MFX_ERR_NONE;
 }
 
-mfxStatus Plugin::GetVideoParam(mfxVideoParam *par)
+mfxStatus MFXVideoENCODEVP9_HW::GetVideoParam(mfxVideoParam *par)
 {
     if (m_initialized == false)
     {
@@ -982,14 +919,14 @@ inline void UpdatePictureHeader(mfxU32 frameLen, mfxU32 frameNum, mfxU8* pPictur
 //#define SUPERFRAME_WA_MSDK
 
 
-mfxStatus Plugin::UpdateBitstream(
+mfxStatus MFXVideoENCODEVP9_HW::UpdateBitstream(
     Task & task)
 {
-    VP9_LOG("\n (VP9_LOG) Plugin::UpdateBitstream +");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::UpdateBitstream +");
 
     mfxFrameData bitstream = {};
 
-    FrameLocker lock(m_pmfxCore, bitstream, task.m_pOutBs->pSurface->Data.MemId);
+    FrameLocker lock(m_pCore, bitstream, task.m_pOutBs->pSurface->Data.MemId);
     if (bitstream.Y == 0)
     {
         return MFX_ERR_LOCK_MEMORY;
@@ -1094,7 +1031,7 @@ mfxStatus Plugin::UpdateBitstream(
     task.m_pBitsteam->FrameType = mfxU16(task.m_frameParam.frameType == KEY_FRAME ? MFX_FRAMETYPE_I : MFX_FRAMETYPE_P);
     task.m_pBitsteam->PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 
-    VP9_LOG("\n (VP9_LOG) Plugin::UpdateBitstream -");
+    VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::UpdateBitstream -");
 
     return MFX_ERR_NONE;
 }
