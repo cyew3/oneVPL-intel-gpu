@@ -115,6 +115,7 @@
         #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
         #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #endif
+    #define MFX_ENABLE_VC1_VIDEO_DECODE
 
     #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
     #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
@@ -161,9 +162,6 @@
         #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
         #define MFX_ENABLE_MPEG2_VIDEO_PAK
         #define MFX_ENABLE_MPEG2_VIDEO_ENC
-
-        //// vc1
-        #define MFX_ENABLE_VC1_VIDEO_DECODE
 
         // vpp
         #define MFX_ENABLE_DENOISE_VIDEO_VPP
