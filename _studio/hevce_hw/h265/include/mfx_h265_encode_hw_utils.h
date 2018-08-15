@@ -220,6 +220,12 @@ enum
     CODING_TYPE_B2  = 5, //B2, references include B1
 };
 
+enum SLICE_TYPE {
+    SLICE_B = 0,
+    SLICE_P,
+    SLICE_I,
+};
+
 enum
 {
     INSERT_AUD = 0x01,
@@ -416,6 +422,9 @@ typedef struct _Task : DpbFrame
     bool          m_flushMfe;
 #endif // MFX_ENABLE_MFE
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    bool          m_isSCC;
+#endif
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     GPU_SYNC_EVENT_HANDLE m_GpuEvent;

@@ -1615,26 +1615,35 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         mfxI32 STDist = Min<mfxI32>(mfx.GopPicSize, 128);
         bool moreLTR = !!LTRInterval;
         mfxI32 lastIPoc = 0;
+        bool isSCC = false;
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+        isSCC = (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC);
+        if(isSCC)
+            STDist += STDist;
+#endif
 
         Fill(dpb, IDX_INVALID);
-
 
         for (mfxU32 i = 0; (moreLTR || sets.size() != 64); i++)
         {
             FakeTask new_frame = { static_cast<int>(i), GetFrameType(*this, i), 0, (mfxU32)MFX_FRAMEORDER_UNKNOWN, 0, (isField() && i%2 == 1) };
 
             frames.push_back(new_frame);
-
-
-
-            {
-                cur = Reorder(*this, dpb, frames.begin(), frames.end(), false);
-
-
-            }
+            cur = Reorder(*this, dpb, frames.begin(), frames.end(), false);
 
             if (cur == frames.end())
                 continue;
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+            bool isRPSforI = false;
+            if (isSCC && (cur->m_frameType & MFX_FRAMETYPE_I)) {
+                // SCC I frames are treated as P frames for RPS definition
+                cur->m_frameType &= ~MFX_FRAMETYPE_I;
+                cur->m_frameType |=  MFX_FRAMETYPE_P;
+                isRPSforI = true;
+            }
+#endif
 
             if (isTL())
             {
@@ -1648,11 +1657,11 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
                         Remove(dpb, j--);
             }
 
-            if (   (i > 0 && (cur->m_frameType & MFX_FRAMETYPE_I))
+            if ((i > 0 && (cur->m_frameType & MFX_FRAMETYPE_I))
                 || (!moreLTR && cur->m_poc >= STDist))
                 break;
 
-            if (!(cur->m_frameType & MFX_FRAMETYPE_I) && cur->m_poc < STDist)
+            if (!(cur->m_frameType & (MFX_FRAMETYPE_I|MFX_FRAMETYPE_IDR)) && cur->m_poc < STDist)
             {
                 if (cur->m_frameType & MFX_FRAMETYPE_B)
                 {
@@ -1671,6 +1680,17 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
                 Zero(rps);
                 ConstructSTRPS(dpb, rpl, nRef, cur->m_poc, rps);
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+                if (isRPSforI) {
+                    // SCC I picture is not using any refs, but saves them in RPS to be user by future pics.
+                    for (int cp_idx = 0; cp_idx < 16; cp_idx++) {
+                        rps.pic[cp_idx].used_by_curr_pic_flag = 0;
+                        rps.pic[cp_idx].used_by_curr_pic_s0_flag = 0;
+                    }
+                    lastIPoc = cur->m_poc;
+                }
+#endif
 
                 it = std::find_if(sets.begin(), sets.end(), EqSTRPS(rps));
 
@@ -1872,10 +1892,10 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #if defined(MFX_ENABLE_HEVCE_SCC)
     if (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
     {
-        m_sps.curr_pic_ref_enabled_flag = 0;
+        m_sps.curr_pic_ref_enabled_flag = 1;
         m_sps.palette_mode_enabled_flag = 1;
         m_sps.palette_max_size = 64;
-        m_sps.delta_palette_max_predictor_size = 64;
+        m_sps.delta_palette_max_predictor_size = 32;
         m_sps.scc_extension_flag = 1;
 
         m_sps.extension_flag |= m_sps.scc_extension_flag;
@@ -2022,10 +2042,12 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 #if defined(MFX_ENABLE_HEVCE_SCC)
     if (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC)
     {
-        m_pps.curr_pic_ref_enabled_flag = 0;
+        m_pps.curr_pic_ref_enabled_flag = 1;
         m_pps.scc_extension_flag = 1;
 
         m_pps.extension_flag |= m_pps.scc_extension_flag;
+        // Disable ref-list modification
+        m_pps.lists_modification_present_flag = 0;
     }
 #endif
 }
@@ -2033,10 +2055,10 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 mfxU16 FrameType2SliceType(mfxU32 ft)
 {
     if (ft & MFX_FRAMETYPE_B)
-        return 0;
+        return SLICE_B;
     if (ft & MFX_FRAMETYPE_P)
-        return 1;
-    return 2;
+        return SLICE_P;
+    return SLICE_I;
 }
 
 bool isCurrRef(
@@ -2145,6 +2167,18 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
     }
 
     s.type = FrameType2SliceType(task.m_frameType);
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (task.m_isSCC && s.type == SLICE_I) { // Change slice type from I to P and disable temporal MV prediction
+        s.type = SLICE_P;
+        s.temporal_mvp_enabled_flag = 0;
+    } else if (m_sps.temporal_mvp_enabled_flag) {
+        s.temporal_mvp_enabled_flag = 1;
+    }
+#else
+    if (m_sps.temporal_mvp_enabled_flag)
+        s.temporal_mvp_enabled_flag = 1;
+#endif
 
     if (m_pps.output_flag_present_flag)
         s.pic_output_flag = 1;
@@ -2272,9 +2306,6 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
                 }
             }
         }
-
-        if (m_sps.temporal_mvp_enabled_flag)
-            s.temporal_mvp_enabled_flag = 1;
 
         if (m_pps.lists_modification_present_flag)
         {
@@ -2414,6 +2445,14 @@ mfxStatus MfxVideoParam::GetSliceHeader(Task const & task, Task const & prevTask
 
         s.five_minus_max_num_merge_cand = 0;
     }
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if (task.m_isSCC) { // IBC is enabled
+        s.num_ref_idx_active_override_flag = 1;
+        if (isP || isB)
+            s.num_ref_idx_l0_active_minus1++;
+    }
+#endif
 
     if (mfx.RateControlMethod == MFX_RATECONTROL_CQP || mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT)
         s.slice_qp_delta = mfxI8(task.m_qpY - (m_pps.init_qp_minus26 + 26));
@@ -3489,6 +3528,10 @@ void ConfigureTask(
     const mfxExtCodingOption3& CO3 = par.m_ext.CO3;
     (void)(caps);
 
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    task.m_isSCC = par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC;
+#endif
+
 #if (MFX_VERSION >= 1027)
     const mfxU8 maxQP = mfxU8(51 + 6 * (CO3.TargetBitDepthLuma - 8));
 #else
@@ -3523,7 +3566,6 @@ void ConfigureTask(
 #endif
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
-
     mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
     if (mbqp && mbqp->NumQPAlloc > 0)
         task.m_bCUQPMap = 1;
@@ -3532,7 +3574,6 @@ void ConfigureTask(
     // process roi
     mfxExtEncoderROI const * parRoi = &par.m_ext.ROI;
     mfxExtEncoderROI * rtRoi = ExtBuffer::Get(task.m_ctrl);
-
 
     if (rtRoi && rtRoi->NumROI)
     {
@@ -3696,8 +3737,6 @@ void ConfigureTask(
     task.m_lastIPoc = prevTask.m_lastIPoc;
     task.m_lastRAP = prevTask.m_lastRAP;
     task.m_eo = prevTask.m_eo + 1;
-
-
     task.m_dpb_output_delay = (task.m_fo + par.m_sps.sub_layer[0].max_num_reorder_pics - task.m_eo);
 
     InitDPB(task, prevTask, pExtListCtrl);
@@ -3730,7 +3769,7 @@ void ConfigureTask(
     if (isIDR)
         task.m_insertHeaders |= (INSERT_VPS | INSERT_SPS | INSERT_PPS);
 
-    if (needCpbRemovalDelay && par.m_sps.vui.hrd_parameters_present_flag )
+    if (needCpbRemovalDelay && par.m_sps.vui.hrd_parameters_present_flag)
         task.m_insertHeaders |= INSERT_BPSEI;
 
     if (   par.m_sps.vui.frame_field_info_present_flag
@@ -3742,8 +3781,9 @@ void ConfigureTask(
     if (IsOn(par.m_ext.CO.AUDelimiter)) task.m_insertHeaders |= INSERT_AUD;
 
     // update dpb
-    if (isIDR)
+    if (isIDR) {
         Fill(task.m_dpb[TASK_DPB_AFTER], IDX_INVALID);
+    }
     else
         Copy(task.m_dpb[TASK_DPB_AFTER], task.m_dpb[TASK_DPB_ACTIVE]);
 
@@ -3771,7 +3811,6 @@ void ConfigureTask(
             }
         }
     }
-
 
     task.m_shNUT = GetSHNUT(task, par.RAPIntra);
     if (task.m_shNUT == CRA_NUT || task.m_shNUT == IDR_W_RADL || task.m_shNUT == IDR_N_LP)

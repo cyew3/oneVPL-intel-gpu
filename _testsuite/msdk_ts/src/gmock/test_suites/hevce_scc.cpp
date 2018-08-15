@@ -17,7 +17,12 @@ namespace hevce_scc
 {
     using namespace BS_HEVC2;
 
-    const int MFX_PAR = 1;
+    enum
+    {
+        MFX_PAR = 1,
+        EXT_COD2,
+        EXT_COD3
+    };
 
     struct streamDesc
     {
@@ -96,12 +101,129 @@ namespace hevce_scc
 
     const tc_struct TestSuite::test_case[] =
     {
-        {/*00*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        // 00 Sequence of IDR frames
+        {{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
         QUERY | INIT | ENCODE, {
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
+        } },
+
+        // 01 Sequence of I frames
+        {{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
             { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 1 },
         } },
+
+        // 02 Sequence of IDR P IDR P frames
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
+        } },
+
+        // 03 Sequence of IDR P I P frames
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 4 },
+        } },
+
+        // 04 Sequence of IDR P I P frames, nore refs
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 4 },
+//            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.NumRefFrame, 1 },
+//            { EXT_COD3, &tsStruct::mfxExtCodingOption3.NumRefActiveP[0], 1 },
+//            { EXT_COD3, &tsStruct::mfxExtCodingOption3.NumRefActiveBL0[0], 1 },
+//            { EXT_COD3, &tsStruct::mfxExtCodingOption3.NumRefActiveBL1[0], 1 },
+        } },
+
+        // 05 Sequence of IDR 7P IDR 7P frames
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
+        } },
+
+        // 06 Sequence of IDR 7P IDR 7P frames, nore refs
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 1 },
+        } },
+
+        // 07 Sequence of IDR 7P I 7P frames
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
+        } },
+
+        // 08 Sequence of IDR 7P I 7P frames, more refs
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 1 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
+        } },
+/*
+        // 04 Sequence of I B P B I frames
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 2 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
+            { EXT_COD3, &tsStruct::mfxExtCodingOption3.GPB, MFX_CODINGOPTION_OFF } // GPB will be forced on Windows
+        } },
+
+        // 05 Sequence of I B B B P B B B I frames
+        { { MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
+        QUERY | INIT | ENCODE,{
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 7 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.CodecProfile, MFX_PROFILE_HEVC_SCC },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.LowPower, MFX_CODINGOPTION_ON },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopPicSize, 8 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.GopRefDist, 4 },
+            { MFX_PAR, &tsStruct::mfxVideoParam.mfx.IdrInterval, 2 },
+        } },
+*/
     };
 
     const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case) / sizeof(TestSuite::test_case[0]);
@@ -126,29 +248,64 @@ namespace hevce_scc
                 if (!IsHEVCSlice(pNALU->nal_unit_type)) continue;
 
                 auto& slice = *pNALU->slice;
-                TS_TRACE(slice.POC);
 
-                TS_TRACE((mfxU32)slice.sps->ptl->profile_idc);
-                TS_TRACE((mfxU32)slice.sps->scc_extension_flag);
-                TS_TRACE((mfxU32)slice.pps->scc_extension_flag);
-                TS_TRACE((mfxU32)slice.sps->palette_mode_enabled_flag);
-                TS_TRACE((mfxU32)slice.sps->curr_pic_ref_enabled_flag);
+                // All frames must have SCC enabled with palette and IBC
+                if (slice.sps->ptl->profile_idc != SCC || !slice.pps->scc_extension_flag || !slice.sps->scc_extension_flag
+                    || !slice.sps->palette_mode_enabled_flag || !slice.sps->curr_pic_ref_enabled_flag)
+                {
+                    g_tsLog << "[ ERROR ] Stream with SCC profile and enabled palette/IBC coding tools is expected\n";
+                    TS_TRACE((mfxU32)slice.sps->ptl->profile_idc);
+                    TS_TRACE((mfxU32)slice.sps->scc_extension_flag);
+                    TS_TRACE((mfxU32)slice.pps->scc_extension_flag);
+                    TS_TRACE((mfxU32)slice.sps->palette_mode_enabled_flag);
+                    TS_TRACE((mfxU32)slice.sps->curr_pic_ref_enabled_flag);
 
-                // All frames must have SCC enabled
-                if (slice.sps->ptl->profile_idc != SCC || !slice.pps->scc_extension_flag || !slice.sps->scc_extension_flag )
-                      return MFX_ERR_UNSUPPORTED;
+                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                }
 
-                mfxI32 palCnt = 0;
+                // All frames with enabled IBC must have at least one ref in L0
+                if (!slice.num_ref_idx_l0_active)
+                {
+                    g_tsLog << "[ ERROR ] Stream with enabled IBC must have at least one ref in L0\n";
+                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                }
+
+                // Last frame in L0 must be IBC ref
+                if (slice.L0[slice.num_ref_idx_l0_active-1].POC != slice.POC)
+                {
+                    g_tsLog << "[ ERROR ] Last frame in L0 must be IBC reference \n";
+                    TS_TRACE(slice.POC);
+                    TS_TRACE(slice.L0[slice.num_ref_idx_l0_active-1].POC)
+                    return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
+                }
+
+                mfxI32 palCnt = 0, ibcCnt = 0;
                 for (auto pCTU = slice.ctu; pCTU; pCTU = pCTU->Next) {
                     for (auto pCU = pCTU->Cu; pCU; pCU = pCU->Next) {
+                        for (auto pPU = pCU->Pu; pPU; pPU = pPU->Next)
+                        {
+                            if (PRED_L0 == pPU->inter_pred_idc || PRED_BI == pPU->inter_pred_idc)
+                            {
+                                ibcCnt += (pPU->ref_idx_l0 == (slice.num_ref_idx_l0_active - 1));
+                            }
+                        }
                         palCnt += pCU->palette_mode_flag;
                     }
                 }
                 TS_TRACE(palCnt);
+                TS_TRACE(ibcCnt);
 
-                /* For I frames or P frames with single reference and enabled IBC */
-                if(slice.type == SLICE_TYPE::I || (slice.type == SLICE_TYPE::P && slice.sps->curr_pic_ref_enabled_flag && slice.num_ref_idx_l0_active == 1))
+                if (slice.type == SLICE_TYPE::I) {
+                    // For I frames palette tool must be used
                     EXPECT_GT(palCnt, 0);
+                } else if (slice.type == SLICE_TYPE::P && slice.sps->curr_pic_ref_enabled_flag && slice.num_ref_idx_l0_active == 1) {
+                    // For P frames with single reference expect both palette and IBC coding tools to be used
+                    EXPECT_GT(palCnt, 0); EXPECT_GT(ibcCnt, 0);
+                } else {
+                    // For other frames at least one block must use SCC coding tools
+                    // Need to update the streams removing frame duplicates, check temporary disabled
+                    // EXPECT_GT(palCnt + ibcCnt, 0);
+                }
             }
         }
 
@@ -199,20 +356,32 @@ namespace hevce_scc
 
         if (tc.type & QUERY) {
             SETPARS(m_par, MFX_PAR);
+            mfxExtCodingOption2& co2 = m_par;
+            SETPARS(&co2, EXT_COD2);
+            mfxExtCodingOption3& co3 = m_par;
+            SETPARS(&co3, EXT_COD3);            
             g_tsStatus.expect(tc.sts.query);
             Query();
         }
 
         if (tc.type & INIT) {
             SETPARS(m_par, MFX_PAR);
+            mfxExtCodingOption2& co2 = m_par;
+            SETPARS(&co2, EXT_COD2);
+            mfxExtCodingOption3& co3 = m_par;
+            SETPARS(&co3, EXT_COD3);
             g_tsStatus.expect(tc.sts.init);
             sts = Init();
             }
 
         if (tc.type & ENCODE) {
             SETPARS(m_par, MFX_PAR);
+            mfxExtCodingOption2& co2 = m_par;
+            SETPARS(&co2, EXT_COD2);
+            mfxExtCodingOption3& co3 = m_par;
+            SETPARS(&co3, EXT_COD3);
             g_tsStatus.expect(tc.sts.encode);
-            EncodeFrames(g_tsConfig.sim ? 30 : 250);
+            EncodeFrames(/*g_tsConfig.sim ? 2 : 250*/ 32);
         }
 
         if (m_initialized) {

@@ -381,7 +381,11 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackHeader(Task const & task, mfxU32 
             mfxU32 frameType = task.m_frameType & (MFX_FRAMETYPE_I | MFX_FRAMETYPE_P | MFX_FRAMETYPE_B);
 
             if (frameType == MFX_FRAMETYPE_I)
+#if defined(MFX_ENABLE_HEVCE_SCC)
+                m_packer.GetAUD(m_cur->pData, m_cur->DataLength, task.m_isSCC ? 1 : 0);
+#else
                 m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 0);
+#endif
             else if (frameType == MFX_FRAMETYPE_P)
                 m_packer.GetAUD(m_cur->pData, m_cur->DataLength, 1);
             else
@@ -635,6 +639,13 @@ void FillSliceBuffer(
     ENCODE_SET_SLICE_HEADER_HEVC & cs)
 {
     cs.slice_type                           = task.m_sh.type;
+
+#if defined(MFX_ENABLE_HEVCE_SCC)
+    if ((task.m_frameType & MFX_FRAMETYPE_I) && task.m_isSCC) {
+        for (int i = 0; i < 15; i++) cs.RefPicList[0][i].bPicEntry = cs.RefPicList[1][i].bPicEntry = 0xFF;
+        cs.num_ref_idx_l0_active_minus1 = 0;
+    } else
+#endif
     if (cs.slice_type != 2)
     {
         Copy(cs.RefPicList, task.m_refPicList);
