@@ -4,18 +4,19 @@
   <PropertyGroup Label="mfx_common_hw settings">
     <MfxUsingSettings>mfx_common_hw;$(MfxUsedSettings)</MfxUsingSettings>
     <MfxIncludes>
-    $(MfxIppIncludeDir);
-    $(MSDK_API_ROOT)\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;
-    $(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;
-    $(MSDK_STUDIO_ROOT)\shared\include;
-    $(MSDK_STUDIO_ROOT)\shared\asc\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
-    $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
+      $(MfxIppIncludeDir);
+      $(MSDK_API_ROOT)\include;
+      $(MSDK_STUDIO_ROOT)\hevce_hw\h265\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\umc\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\core\vm_plus\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\codec\brc\include;
+      $(MSDK_STUDIO_ROOT)\shared\umc\codec\h264_enc\include;
+      $(MSDK_STUDIO_ROOT)\shared\include;
+      $(MSDK_STUDIO_ROOT)\shared\asc\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
+      $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
     </MfxIncludes>
     <MfxDefinitions>MFX_VA;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
