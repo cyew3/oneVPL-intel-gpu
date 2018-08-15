@@ -299,6 +299,7 @@ _studio/shared/src/libmfx_core_vaapi.cpp
 _studio/shared/src/mfx_mfe_adapter.cpp
 _studio/shared/src/mfx_static_assert_structs.cpp
 _studio/shared/src/mfx_umc_alloc_wrapper.cpp
+_studio/shared/src/mfx_umc_mjpeg_vpp.cpp
 _studio/shared/src/mfx_vpp_vaapi.cpp
 _studio/shared/asc/src/asc.cpp
 _studio/shared/asc/src/asc_avx2_impl.cpp

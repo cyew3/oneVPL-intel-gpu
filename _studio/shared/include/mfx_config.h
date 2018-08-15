@@ -109,6 +109,7 @@
     #define MFX_ENABLE_KERNELS
 
     #define MFX_ENABLE_MPEG2_VIDEO_DECODE
+    #define MFX_ENABLE_MJPEG_VIDEO_DECODE
     #if defined(MFX_VA)
         #define MFX_ENABLE_H265_VIDEO_DECODE
         #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
@@ -116,6 +117,7 @@
     #endif
 
     #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
+    #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
     #define MFX_ENABLE_H264_VIDEO_ENCODE
     #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
     #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
@@ -162,10 +164,6 @@
 
         //// vc1
         #define MFX_ENABLE_VC1_VIDEO_DECODE
-
-        // mjpeg
-        #define MFX_ENABLE_MJPEG_VIDEO_DECODE
-        #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
         // vpp
         #define MFX_ENABLE_DENOISE_VIDEO_VPP

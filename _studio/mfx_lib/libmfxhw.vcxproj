@@ -62,6 +62,7 @@
     <ClCompile Include="shared\src\mfx_session.cpp" />
     <ClCompile Include="..\shared\src\mfx_timing.cpp" />
     <ClCompile Include="..\shared\src\mfx_umc_alloc_wrapper.cpp" />
+    <ClCompile Include="..\shared\src\mfx_umc_mjpeg_vpp.cpp" />
     <ClCompile Include="shared\src\mfx_user_plugin.cpp" />
     <ClCompile Include="scheduler\src\mfx_scheduler_core.cpp" />
     <ClCompile Include="scheduler\src\mfx_scheduler_core_ischeduler.cpp" />

@@ -98,6 +98,9 @@
     <ClCompile Include="..\shared\src\mfx_umc_alloc_wrapper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\src\mfx_umc_mjpeg_vpp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="shared\src\mfx_user_plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
