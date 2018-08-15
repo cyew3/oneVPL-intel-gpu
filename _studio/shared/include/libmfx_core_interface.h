@@ -161,6 +161,8 @@ public:
             m_encode_guid = encode_guid;
             m_size = array_size;
             m_caps = malloc(sizeof(CAPS)*array_size);
+            if (!m_caps)
+                return MFX_ERR_MEMORY_ALLOC;
             memcpy_s(m_caps, sizeof(CAPS)*array_size, hwCaps, sizeof(CAPS)*array_size);
         }
         else
