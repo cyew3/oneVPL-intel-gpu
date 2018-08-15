@@ -915,6 +915,7 @@ public:
     bool   bMBQPInput;
     bool   RAPIntra;
     bool   bFieldReord;
+    bool   bNonStandardReord; // Possible in encoding order only. No NumRefFrames limitation.
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     bool   WiDi;

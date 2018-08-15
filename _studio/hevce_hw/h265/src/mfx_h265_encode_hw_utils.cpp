@@ -687,6 +687,7 @@ MfxVideoParam::MfxVideoParam()
     , bMBQPInput        (false)
     , RAPIntra          (false)
     , bFieldReord       (false)
+    , bNonStandardReord (false)
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , WiDi              (false)
 #endif
@@ -698,6 +699,7 @@ MfxVideoParam::MfxVideoParam()
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     : m_slice()
     , bFieldReord(false)
+    , bNonStandardReord(false)
 {
      Copy(m_platform, par.m_platform);
      Construct(par);
@@ -748,6 +750,7 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
     bMBQPInput       = par.bMBQPInput;
     RAPIntra         = par.RAPIntra;
     bFieldReord      = par.bFieldReord;
+    bNonStandardReord = par.bNonStandardReord;
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     WiDi             = par.WiDi;
 #endif
@@ -985,6 +988,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
     bMBQPInput     = false;
     RAPIntra       = !isField();
     bFieldReord    = false; /*isField() && isBPyramid()*/;
+    bNonStandardReord = false;
 
     m_slice.resize(0);
 
@@ -1576,7 +1580,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
 
     assert(0 == m_sps.pcm_enabled_flag);
 
-    if (!mfx.EncodedOrder)
+    if (!bNonStandardReord)
     {
         mfxExtCodingOption3& CO3 = m_ext.CO3;
         mfxU32 MaxPocLsb = (1<<(m_sps.log2_max_pic_order_cnt_lsb_minus4+4));
