@@ -1922,16 +1922,16 @@ mfxStatus MfxHwH264Encode::CopySpsPpsToVideoParam(
 
     if (extBits->SPSBuffer)
     {
-        mfxExtSpsHeader const * extSps = GetExtBuffer(par);
-        if (!CheckAgreementOfSequenceLevelParameters<FunctionInit>(par, *extSps))
+        mfxExtSpsHeader const & extSps = GetExtBufferRef(par);
+        if (!CheckAgreementOfSequenceLevelParameters<FunctionInit>(par, extSps))
             changed = true;
     }
 
 
     if (extBits->PPSBuffer)
     {
-        mfxExtPpsHeader const * extPps = GetExtBuffer(par);
-        if (!CheckAgreementOfPictureLevelParameters<FunctionInit>(par, *extPps))
+        mfxExtPpsHeader const & extPps = GetExtBufferRef(par);
+        if (!CheckAgreementOfPictureLevelParameters<FunctionInit>(par, extPps))
             changed = true;
     }
 
