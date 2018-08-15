@@ -2005,6 +2005,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 
         mfxU16 nCol = (mfxU16)(par.m_ext.HEVCParam.PicWidthInLumaSamples / minTileWidth);
         mfxU16 nRow = (mfxU16)(par.m_ext.HEVCParam.PicHeightInLumaSamples / minTileHeight);
+        CheckMin(nCol, 1);
+        CheckMin(nRow, 1);
 
         changed += CheckMax(par.m_ext.HEVCTiles.NumTileColumns, nCol);
         changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, nRow);
