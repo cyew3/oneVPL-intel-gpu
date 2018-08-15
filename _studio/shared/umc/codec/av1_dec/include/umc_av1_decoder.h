@@ -133,6 +133,7 @@ namespace UMC_AV1_DECODER
 
         template <typename F>
         AV1DecoderFrame* FindFrame(F pred);
+        UMC::Status StartFrame(FrameHeader const&, DPBType const&);
 
     protected:
 
@@ -147,6 +148,7 @@ namespace UMC_AV1_DECODER
         AV1DecoderParams                params;
 
         AV1DecoderFrame*                prev_frame;
+        AV1DecoderFrame*                curr_frame;
     };
 }
 

@@ -32,6 +32,9 @@ namespace UMC_AV1_DECODER
 #endif
         , counter(0)
         , prev_frame(nullptr)
+#if UMC_AV1_DECODER_REV >= 5000
+        , curr_frame(nullptr)
+#endif
     {
     }
 
@@ -235,22 +238,50 @@ namespace UMC_AV1_DECODER
 
         loc->offset = OBUOffset + tileOffsetInTG;
     }
-#endif
+
+    inline bool CheckTileGroup(Ipp32u prevNumTiles, FrameHeader const* fh, TileGroupInfo const* tgInfo)
+    {
+        if (prevNumTiles + tgInfo->numTiles > NumTiles(*fh))
+            return false;
+
+        if (tgInfo->numTiles == 0)
+            return false;
+
+        return true;
+    }
+
+    UMC::Status AV1Decoder::StartFrame(FrameHeader const& fh, DPBType const& frameDPB)
+    {
+        curr_frame = GetFrameBuffer(fh);
+
+        if (!curr_frame)
+            return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+
+        curr_frame->SetSeqHeader(*sequence_header.get());
+
+        if (fh.refreshFrameFlags)
+            curr_frame->SetRefValid(true);
+
+        curr_frame->frame_dpb = frameDPB;
+        curr_frame->UpdateReferenceList();
+
+        curr_frame->StartDecoding();
+
+        return UMC::UMC_OK;
+    }
 
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
-
         FrameHeader fh = {};
 
         DPBType updated_refs;
         FrameHeader const* prev_fh = 0;
-        if (prev_frame)
+        if (prev_frame && !curr_frame)
         {
             updated_refs = DPBUpdate(prev_frame);
             prev_fh = &(prev_frame->GetFrameHeader());
         }
 
-#if UMC_AV1_DECODER_REV >= 5000
         bool gotFrameHeader = false;
         bool gotTileGroup = false;
         bool gotFullFrame = false;
@@ -275,6 +306,13 @@ namespace UMC_AV1_DECODER
                                                      // we return error because there is no support for chopped tile_group_obu() submission so far
                                                      // TODO: [Global] Add support for submission of incomplete tile group OBUs
 
+            if (curr_frame && info.header.type != OBU_TILE_GROUP)
+            {
+                VM_ASSERT("Series of tile_group_obu() was interrupted unexpectedly!");
+                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+                // TODO: [robust] add support for cases when series of tile_group_obu() interrupted by other OBU type before end of frame was reached
+            }
+
             switch (info.header.type)
             {
             case OBU_SEQUENCE_HEADER:
@@ -296,25 +334,35 @@ namespace UMC_AV1_DECODER
                 }
                 break;
             case OBU_TILE_GROUP:
-                if (gotFrameHeader) // bypass tile group if there is no respective frame header (only whole frame submission is supported for now)
-                                    // TODO: [Rev0.5] add support of frame submission by portions (each portion contains one or multiple complete tile groups)
+                FrameHeader const* pFH = nullptr;
+                if (curr_frame)
+                    pFH = &(curr_frame->GetFrameHeader());
+                else if (gotFrameHeader)
+                    pFH = &fh;
+
+                if (pFH) // bypass tile group if there is no respective frame header
                 {
                     TileGroupInfo tgInfo = {};
-                    bs.ReadTileGroupHeader(&fh, &tgInfo);
-                    const Ipp32u numTilesMet = static_cast<Ipp32u>(layout.size()) + tgInfo.numTiles;
-                    if (numTilesMet > NumTiles(fh))
-                        throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
-                    layout.resize(numTilesMet, {tgInfo.startTileIdx, tgInfo.endTileIdx});
-                    Ipp32u idxInTG = 0;
+                    bs.ReadTileGroupHeader(pFH, &tgInfo);
 
+                    if (!CheckTileGroup(static_cast<Ipp32u>(layout.size()), pFH, &tgInfo))
+                        throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+                    layout.resize(layout.size() + tgInfo.numTiles,
+                        { tgInfo.startTileIdx, tgInfo.endTileIdx });
+
+                    Ipp32u idxInTG = 0;
                     for (; idxInLayout < layout.size(); idxInLayout++, idxInTG++)
                     {
                         TileLocation& loc = layout[idxInLayout];
-                        GetTileLocation(&bs, &fh, &tgInfo, idxInTG, OBUTotalSize, OBUOffset, &loc);
+                        GetTileLocation(&bs, pFH, &tgInfo, idxInTG, OBUTotalSize, OBUOffset, &loc);
                     }
 
                     gotTileGroup = true;
-                    if (numTilesMet == NumTiles(fh))
+
+                    const Ipp32u numTilesAccumulated = static_cast<Ipp32u>(layout.size()) +
+                        (curr_frame ? CalcTilesInTileSets(curr_frame->GetTileSets()) : 0);
+                    if (numTilesAccumulated == NumTiles(*pFH))
                         gotFullFrame = true;
 
                     break;
@@ -325,60 +373,76 @@ namespace UMC_AV1_DECODER
             tmp.MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
         }
 
-        if (!gotFullFrame)
+        if (!gotTileGroup)
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA; // no tile_group_obu() or incomplete tile_group_obu (no support for chopped tile_group_obu() submission so far)
+                                                 // TODO: [Global] Add support for submission of incomplete tile group OBUs
+
+        bool firstSubmission = false;
+
+        if (curr_frame == 0)
         {
-            // only whole frame submission is supported for now
-            // TODO: [Rev0.5] add support of frame submission by portions (each portion contains one or multiple complete tile groups)
-            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
+            UMC::Status umcRes = StartFrame(fh, updated_refs);
+            if (umcRes != UMC::UMC_OK)
+                return umcRes;
+            firstSubmission = true;
         }
 
-        /*if (!gotTileGroup)
-            return UMC::UMC_ERR_NOT_ENOUGH_DATA;*/ // no tile_group_obu() or incomplete tile_group_obu (no support for chopped tile_group_obu() submission so far)
-                                                   // TODO: [Global] Add support for submission of incomplete tile group OBUs
-
-#else // UMC_AV1_DECODER_REV >= 5000
-        Ipp32u const size = Ipp32u(in->GetDataSize());
-        Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
-        if (size < MINIMAL_DATA_SIZE)
-            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-
-        AV1Bitstream bs(src, size);
-
-        bs.GetFrameHeaderPart1(&fh, sequence_header.get());
-        bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
-#endif // UMC_AV1_DECODER_REV >= 5000
-
-        AV1DecoderFrame* frame = GetFrameBuffer(fh);
-        if (!frame)
-            return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
-
-        frame->SetSeqHeader(*sequence_header.get());
-
-        if (fh.refreshFrameFlags)
-            frame->SetRefValid(true);
-
-#if UMC_AV1_DECODER_REV >= 5000
-        frame->AddTileSet(in, layout);
+        curr_frame->AddTileSet(in, layout);
         in->MoveDataPointer(OBUOffset);
-#else
-        frame->AddSource(in);
-        in->MoveDataPointer(size);
-#endif
 
-        frame->frame_dpb = updated_refs;
-        frame->UpdateReferenceList();
-        prev_frame = frame;
+        UMC::Status umcRes = SubmitTiles(curr_frame, firstSubmission);
 
-#if UMC_AV1_DECODER_REV >= 5000
-        UMC::Status umcRes = SubmitTiles(frame, true);
-#else
-        UMC::Status umcRes = CompleteFrame(frame);
-#endif
-
-        frame->StartDecoding();
+        if (gotFullFrame)
+        {
+            prev_frame = curr_frame;
+            curr_frame = nullptr;
+        }
 
         return umcRes;
     }
+#else // UMC_AV1_DECODER_REV >= 5000
+UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
+{
+    DPBType updated_refs;
+    FrameHeader const* prev_fh = 0;
+    if (prev_frame)
+    {
+        updated_refs = DPBUpdate(prev_frame);
+        prev_fh = &(prev_frame->GetFrameHeader());
+    }
+
+    Ipp32u const size = Ipp32u(in->GetDataSize());
+    Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
+    if (size < MINIMAL_DATA_SIZE)
+        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+
+    AV1Bitstream bs(src, size);
+
+    FrameHeader fh = {};
+
+    bs.GetFrameHeaderPart1(&fh, sequence_header.get());
+    bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
+
+    AV1DecoderFrame* frame = GetFrameBuffer(fh);
+    if (!frame)
+        return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
+
+    frame->SetSeqHeader(*sequence_header.get());
+
+    frame->AddSource(in);
+    in->MoveDataPointer(size);
+
+    frame->frame_dpb = updated_refs;
+    frame->UpdateReferenceList();
+    prev_frame = frame;
+
+    UMC::Status umcRes = CompleteFrame(frame);
+
+    frame->StartDecoding();
+
+    return umcRes;
+}
+#endif // UMC_AV1_DECODER_REV >= 5000
 
     AV1DecoderFrame* AV1Decoder::FindFrameByMemID(UMC::FrameMemID id)
     {
