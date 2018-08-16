@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" xmlns:uap6="http://schemas.microsoft.com/appx/manifest/uap/windows10/6" IgnorableNamespaces="uap mp build uap5 rescap uap6">
-  <Identity Name="838f1175-a73b-424c-b32c-364c7f7254e8" Publisher="CN=gkrivor" Version="1.0.1.0" />
+  <Identity Name="MediaSDK.UWP.EP" Publisher="CN=gkrivor" Version="1.0.1.0" />
   <mp:PhoneIdentity PhoneProductId="838f1175-a73b-424c-b32c-364c7f7254e8" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>MediaSDK UWP Environment Probe</DisplayName>
