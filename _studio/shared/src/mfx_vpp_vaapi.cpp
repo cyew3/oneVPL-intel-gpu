@@ -798,7 +798,7 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
                         deint.flags = VA_DEINTERLACING_BOTTOM_FIELD_FIRST | VA_DEINTERLACING_BOTTOM_FIELD;
                 }
 
-                deint.flags |= 0x0010; // Use BOB when Scene Change occur.  There will be a special define in va_vpp.h
+                deint.flags |= VA_DEINTERLACING_SCD_ENABLE; // It forces BOB
             }
 
             vaSts = vaCreateBuffer(m_vaDisplay,
