@@ -126,7 +126,6 @@ bool mfx_uwptest::MainPage::MfxProbeLib(Platform::String ^ name)
     return true;
 }
 
-#pragma comment(lib, "libmfx_uwp_dfp.lib")
 #include "mfxdefs.h"
 #include "mfxsession.h"
 
