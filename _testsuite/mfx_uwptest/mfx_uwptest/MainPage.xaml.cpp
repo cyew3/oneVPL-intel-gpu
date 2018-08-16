@@ -319,6 +319,27 @@ void mfx_uwptest::MainPage::Grid_Loaded(Platform::Object^ sender, Windows::UI::X
 #include "mfxvideo++.h"
 #include "mfxplugin.h"
 
+#define EX_HANDLER(expr) \
+try \
+{ \
+    expr \
+} \
+catch(const std::exception &e) \
+{ \
+    size_t exStrSize = 256; \
+    wchar_t *exStr = new wchar_t[exStrSize]; \
+    swprintf_s(exStr, exStrSize, L"%s, line %d thrown std::exception %S", L#expr, __LINE__, e.what()); \
+    LogMsg(exStr); \
+} \
+catch(...) \
+{ \
+    size_t exStrSize = 256; \
+    wchar_t *exStr = new wchar_t[exStrSize]; \
+    swprintf_s(exStr, exStrSize, L"%s thrown unknown exception", L#expr); \
+    LogMsg(exStr); \
+}
+
+
 bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
 {
     String^ sourcePath;
@@ -423,13 +444,13 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
         DataWriter^ dataWriter = ref new DataWriter((*outputStream));
 
         /* MediaSDK initialization */
-        sts = MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11, &minVersion, &session);
+        EX_HANDLER(sts = MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11, &minVersion, &session););
         swprintf_s(str, strSize, L"MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11) returned status: %X", sts);
         LogMsg(str);
         if (sts != MFX_ERR_NONE) goto error;
         if (hevc)
         {
-            sts = MFXVideoUSER_Load(session, &MFX_PLUGINID_HEVCD_HW, 0);
+            EX_HANDLER(sts = MFXVideoUSER_Load(session, &MFX_PLUGINID_HEVCD_HW, 0););
             swprintf_s(str, strSize, L"MFXVideoUSER_Load(MFX_PLUGINID_HEVCD_HW) returned status: %X", sts);
             LogMsg(str);
             if (sts != MFX_ERR_NONE) goto error;
@@ -459,7 +480,7 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
         inputBS.DataLength = inputBS.MaxLength = bytes->Length;
 
         /* Decoding header of bitstream */
-        sts = MFXVideoDECODE_DecodeHeader(session, &inputBS, &vParams);
+        EX_HANDLER(sts = MFXVideoDECODE_DecodeHeader(session, &inputBS, &vParams););
         swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeHeader returned status: %X", sts);
         LogMsg(str);
         if (sts != MFX_ERR_NONE) goto error;
@@ -474,12 +495,12 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
         }
 
         /* Decoder initialization */
-        sts = MFXVideoDECODE_QueryIOSurf(session, &vParams, &allocRequest);
+        EX_HANDLER(sts = MFXVideoDECODE_QueryIOSurf(session, &vParams, &allocRequest););
         swprintf_s(str, strSize, L"MFXVideoDECODE_QueryIOSurf returned status: %X", sts);
         LogMsg(str);
         if (sts != MFX_ERR_NONE) goto error;
 
-        sts = MFXVideoDECODE_Init(session, &vParams);
+        EX_HANDLER(sts = MFXVideoDECODE_Init(session, &vParams););
         swprintf_s(str, strSize, L"MFXVideoDECODE_Init returned status: %X", sts);
         LogMsg(str);
         if (sts != MFX_ERR_NONE) goto error;
@@ -547,7 +568,7 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
 
             // Decode a frame asychronously (returns immediately)
             //  - If input bitstream contains multiple frames DecodeFrameAsync will start decoding multiple frames, and remove them from bitstream
-            sts = MFXVideoDECODE_DecodeFrameAsync(session, &inputBS, freeFrame, &displayOrderFrame, &syncPoint);
+            EX_HANDLER(sts = MFXVideoDECODE_DecodeFrameAsync(session, &inputBS, freeFrame, &displayOrderFrame, &syncPoint););
             if (sts != MFX_ERR_NONE)
             {
                 swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeFrameAsync returned status: %X", sts);
@@ -560,7 +581,7 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
                 sts = MFX_ERR_NONE;
 
             if (sts == MFX_ERR_NONE) {
-                sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE);
+                EX_HANDLER(sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE););
                 decodedFrameCount++;
                 if (sts != MFX_ERR_NONE)
                 {
@@ -627,7 +648,7 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
             }
 
             // Decode a frame asychronously (returns immediately)
-            sts = MFXVideoDECODE_DecodeFrameAsync(session, NULL, freeFrame, &displayOrderFrame, &syncPoint);
+            EX_HANDLER(sts = MFXVideoDECODE_DecodeFrameAsync(session, NULL, freeFrame, &displayOrderFrame, &syncPoint););
             if (sts != MFX_ERR_NONE)
             {
                 swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeFrameAsync returned status: %X", sts);
@@ -640,7 +661,7 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
                 sts = MFX_ERR_NONE;
 
             if (sts == MFX_ERR_NONE) {
-                sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE);
+                EX_HANDLER(sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE););
                 decodedFrameCount++;
                 if (sts != MFX_ERR_NONE)
                 {
@@ -690,7 +711,10 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
         /* MediaSDK De-Initialization */
         if (session != NULL)
         {
-            sts = MFXClose(session);
+            EX_HANDLER(sts = MFXVideoDECODE_Close(session););
+            swprintf_s(str, strSize, L"MFXVideoDECODE_Close returned status: %X", sts);
+            LogMsg(str);
+            EX_HANDLER(sts = MFXClose(session););
             swprintf_s(str, strSize, L"MFXClose returned status: %X", sts);
             LogMsg(str);
             if (!decodingError)
