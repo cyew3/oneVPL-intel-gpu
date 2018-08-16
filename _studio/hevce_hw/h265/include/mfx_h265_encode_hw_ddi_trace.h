@@ -48,9 +48,6 @@ public:
     void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT const & b, mfxU32 idx);
     void Trace(ENCODE_SET_SLICE_HEADER_HEVC_REXT const & b, mfxU32 idx);
 
-    void Trace(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC const & b, mfxU32 idx);
-    void Trace(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC const & b, mfxU32 idx);
-
     inline void Trace(GUID const & guid, mfxU32) { TraceGUID(guid, m_log); };
     void Trace(const char* name, mfxU32 value);
     template<mfxU32 N> inline void Trace(const char name[N], mfxU32 value) { Trace((const char*) name, value);  }

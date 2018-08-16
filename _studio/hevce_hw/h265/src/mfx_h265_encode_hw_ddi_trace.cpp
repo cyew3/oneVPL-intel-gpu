@@ -100,10 +100,6 @@ DECL_START(ENCODE_COMPBUFFERDESC)
     {
     case D3DDDIFMT_INTELENCODE_SPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_SPSDATA:
-        if (m_type == ENCODER_SCC)
-            TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC*)pBuf,
-            (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_SCC)));
-        else
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT)));
@@ -113,10 +109,6 @@ DECL_START(ENCODE_COMPBUFFERDESC)
         break;
     case D3DDDIFMT_INTELENCODE_PPSDATA:
     case D3D11_DDI_VIDEO_ENCODER_BUFFER_PPSDATA:
-        if (m_type == ENCODER_SCC)
-            TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC*)pBuf,
-            (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_SCC)));
-        else
         if (m_type == ENCODER_REXT)
             TraceArray((ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT*)pBuf,
                 (b.DataSize / sizeof(ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT)));
