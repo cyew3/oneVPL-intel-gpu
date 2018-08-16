@@ -48,6 +48,7 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
 endif()
 
 option( BUILD_RUNTIME "Build mediasdk runtime (library, plugins, etc.)?" ON )
+option( BUILD_DISPATCHER "Build dispatcher?" ON )
 option(BUILD_TESTS "Build tests?" "${BUILD_ALL}")
 
 include( ${BUILDER_ROOT}/FindOpenCL.cmake )
@@ -59,6 +60,11 @@ include( ${BUILDER_ROOT}/FindInternals.cmake )
 include( ${BUILDER_ROOT}/FindTrace.cmake )
 include( ${BUILDER_ROOT}/ConfTargets.cmake )
 
+# should prepend others to define target mfx
+if (BUILD_DISPATCHER)
+  add_subdirectory(api/mfx_dispatch/linux)
+endif()
+
 if (BUILD_RUNTIME)
   add_subdirectory(${CMAKE_HOME_DIRECTORY}/_studio)
 endif()
@@ -67,7 +73,7 @@ if (BUILD_TESTS AND GTEST_FOUND)
   add_subdirectory(tests)
 endif()
 
-foreach( dir api contrib samples )
+foreach( dir contrib samples )
   set( CMAKE_SOURCE_DIR "${CMAKE_HOME_DIRECTORY}/${dir}" )
   create_build()
 endforeach()
@@ -116,6 +122,7 @@ if( CMAKE_SYSTEM_NAME MATCHES Linux )
   message("  ENABLE_WAYLAND                          : ${ENABLE_WAYLAND}")
 endif()
 message("  BUILD_RUNTIME                           : ${BUILD_RUNTIME}")
+message("  BUILD_DISPATCHER                        : ${BUILD_DISPATCHER}")
 message("  BUILD_TESTS                             : ${BUILD_TESTS}")
 message("*****************************************************************************")
 
