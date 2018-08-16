@@ -3441,6 +3441,19 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                 }
                 //printf("Real frameSize %d, repack %d\n", bsDataLength, task->m_repack);
                 bool bRecoding = false;
+
+                // IDR frame require CpbRemovalDelay calculation
+                // it is archived by wait until all previously submitted encoding tasks are finished
+                // but if recoding happened then HRD get changed too.
+                // trigger recoding if HDR parameters are different from expected.
+                if ((task->GetFrameType() & MFX_FRAMETYPE_IDR) &&
+                     ( task->m_initCpbRemoval != hrd.GetInitCpbRemovalDelay() ||
+                    task->m_initCpbRemovalOffset != hrd.GetInitCpbRemovalDelayOffset()))
+                {
+                    task->m_initCpbRemoval = hrd.GetInitCpbRemovalDelay();
+                    task->m_initCpbRemovalOffset = hrd.GetInitCpbRemovalDelayOffset();
+                    bRecoding = true;
+                }
                 if (extOpt2->MaxSliceSize)
                 {
                     mfxU32   bsSizeAvail = mfxU32(m_tmpBsBuf.size());
