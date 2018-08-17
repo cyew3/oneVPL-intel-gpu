@@ -165,7 +165,7 @@ mfxStatus D3D9VideoCORE::GetIntelDataPrivateReport(const GUID guid, DXVA2_Config
     }
 
     if (!isRequestedGuidPresent)
-        //return MFX_ERR_NOT_FOUND;
+        return MFX_ERR_NOT_FOUND;
 
     if (!isIntelGuidPresent) // if no required GUID - no acceleration at all
         return MFX_WRN_PARTIAL_ACCELERATION;
