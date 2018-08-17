@@ -325,6 +325,10 @@ void FillPpsBuffer(
 mfxStatus FillSegmentMap(Task const & task,
                          mfxCoreInterface* m_pmfxCore)
 {
+    // for now application seg map is accepted in 32x32 and 64x64 blocks
+    // and driver seg map is always in 16x16 blocks
+    // need to map one to another
+
     mfxFrameData segMap = {};
 
     FrameLocker lock(m_pmfxCore, segMap, task.m_pSegmentMap->pSurface->Data.MemId);
@@ -346,8 +350,10 @@ mfxStatus FillSegmentMap(Task const & task,
     mfxU16 srcBlockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
     mfxU32 srcW = (srcFi.Width + srcBlockSize - 1) / srcBlockSize;
     mfxU32 srcH = (srcFi.Height + srcBlockSize - 1) / srcBlockSize;
+
     // driver seg map is always in 16x16 blocks because of HW limitation
     const mfxU16 dstBlockSize = 16;
+
     mfxU16 ratio = srcBlockSize / dstBlockSize;
 
     if (seg.NumSegmentIdAlloc < srcW * srcH || seg.SegmentId == 0 ||
@@ -355,14 +361,26 @@ mfxStatus FillSegmentMap(Task const & task,
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    // for now application seg map is accepted in 32x32 and 64x64 blocks
-    // and driver seg map is always in 16x16 blocks
-    // need to map one to another
+
+    mfxU32 dstPitch = 0;
+
+    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D9)
+    {
+        // for D3D9 2D surface is used, need to take pitch into account
+        dstPitch = segMap.Pitch;
+    }
+    else
+    {
+        // for D3D11 1D surface is used, no pitch here
+        dstPitch = dstW;
+    }
+
+    // set segment IDs to the driver's surface
     for (mfxU32 i = 0; i < dstH; i++)
     {
         for (mfxU32 j = 0; j < dstW; j++)
         {
-            segMap.Y[i * dstW + j] = seg.SegmentId[(i / ratio) * srcW + j / ratio];
+            segMap.Y[i * dstPitch + j] = seg.SegmentId[(i / ratio) * srcW + j / ratio];
         }
     }
 
