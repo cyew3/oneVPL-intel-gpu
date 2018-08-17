@@ -87,7 +87,7 @@ private:
 
     bool                    m_adaptiveMode;
     mfxU32                  m_index;
-    std::auto_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
+    std::unique_ptr<mfx_UMC_FrameAllocator> m_FrameAllocator;
 
 #ifdef UMC_VA_DXVA
     std::map<UMC::FrameMemID, UCHAR> m_idToIndexMap;
@@ -96,7 +96,7 @@ private:
     UMC_VP9_DECODER::VP9DecoderFrame MemIdToDXVAIndices(UMC_VP9_DECODER::VP9DecoderFrame const & info);
 #endif
 
-    std::auto_ptr<UMC_VP9_DECODER::Packer>  m_Packer;
+    std::unique_ptr<UMC_VP9_DECODER::Packer>  m_Packer;
 
     mfxFrameAllocRequest     m_request;
     mfxFrameAllocResponse    m_response;
