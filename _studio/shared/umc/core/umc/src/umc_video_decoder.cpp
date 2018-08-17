@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <string.h>
@@ -17,7 +17,7 @@ namespace UMC
 VideoDecoderParams::VideoDecoderParams(void)
 {
     m_pData = NULL;
-    memset(&info, 0, sizeof(sVideoStreamInfo));
+    memset(reinterpret_cast<void*>(&info), 0, sizeof(sVideoStreamInfo));
     lFlags = 0;
     pPostProcessing = NULL;
     lpMemoryAllocator = NULL;

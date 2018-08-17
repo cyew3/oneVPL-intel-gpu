@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -348,7 +348,7 @@ Status VC1VideoDecoder::ContextAllocation(Ipp32u mbWidth,Ipp32u mbHeight)
             m_stCodes = (MediaDataEx::_MediaDataEx *)(ptr);
 
 
-            memset(m_stCodes, 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(MediaDataEx::_MediaDataEx)));
+            memset(reinterpret_cast<void*>(m_stCodes), 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(MediaDataEx::_MediaDataEx)));
             m_stCodes->count      = 0;
             m_stCodes->index      = 0;
             m_stCodes->bstrm_pos  = 0;

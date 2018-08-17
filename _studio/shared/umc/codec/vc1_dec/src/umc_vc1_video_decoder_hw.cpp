@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -227,7 +227,7 @@ bool VC1VideoDecoderHW::InitAlloc(VC1Context* pContext, Ipp32u )
         m_stCodes_VA = (MediaDataEx::_MediaDataEx *)malloc(START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx));
         if (m_stCodes_VA == NULL)
             return false;
-        memset(m_stCodes_VA, 0, (START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx)));
+        memset(reinterpret_cast<void*>(m_stCodes_VA), 0, (START_CODE_NUMBER * 2 * sizeof(Ipp32s) + sizeof(MediaDataEx::_MediaDataEx)));
         m_stCodes_VA->count = 0;
         m_stCodes_VA->index = 0;
         m_stCodes_VA->bstrm_pos = 0;
