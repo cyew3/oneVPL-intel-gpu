@@ -3157,14 +3157,6 @@ mfxStatus VAAPIEncoder::QueryStatus(
     m_feedbackCache.erase(m_feedbackCache.begin() + indxSurf);
     guard.Unlock();
 
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "vaSyncSurface");
-        vaSts = vaSyncSurface(m_vaDisplay, waitSurface);
-        // ignore VA_STATUS_ERROR_DECODING_ERROR in encoder
-        if (vaSts == VA_STATUS_ERROR_DECODING_ERROR)
-            vaSts = VA_STATUS_SUCCESS;
-        MFX_CHECK_WITH_ASSERT(VA_STATUS_SUCCESS == vaSts, MFX_ERR_DEVICE_FAILED);
-    }
 #    else
     VASurfaceStatus surfSts = VASurfaceSkipped;
 
