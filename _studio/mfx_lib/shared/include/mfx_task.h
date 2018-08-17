@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_TASK_H
@@ -111,9 +111,9 @@ struct MFX_TASK
     // these are only in/out dependencies.
 
     // Array of source dependencies
-    const void *(pSrc[MFX_TASK_NUM_DEPENDENCIES]);
+    const void *pSrc[MFX_TASK_NUM_DEPENDENCIES];
     // Array of destination dependencies
-    void *(pDst[MFX_TASK_NUM_DEPENDENCIES]);
+    void *pDst[MFX_TASK_NUM_DEPENDENCIES];
 
     // Task's priority
     mfxPriority priority;

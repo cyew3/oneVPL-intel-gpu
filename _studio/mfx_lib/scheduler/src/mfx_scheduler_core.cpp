@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_scheduler_core.h>
@@ -595,7 +595,7 @@ void mfxSchedulerCore::ScrubCompletedTasks(bool bComprehensive)
 void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
 {
     mfxU32 i, tableIdx, remainInputs;
-    const void *(pSrcCopy[MFX_TASK_NUM_DEPENDENCIES]);
+    const void *pSrcCopy[MFX_TASK_NUM_DEPENDENCIES];
     mfxStatus taskRes = MFX_WRN_IN_EXECUTION;
 
     //

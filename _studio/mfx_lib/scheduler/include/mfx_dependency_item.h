@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if !defined(__MFX_DEPENDENCY_ITEM_H)
@@ -242,7 +242,7 @@ protected:
     MFX_DEPENDENCY_LIST_ITEM m_beginListObjects;
     MFX_DEPENDENCY_LIST_ITEM m_endListObjects;
     // Pointer to the next item in the corresponding dependency list
-    MFX_DEPENDENCY_LIST_ITEM (m_dependency[dependency_level]);
+    MFX_DEPENDENCY_LIST_ITEM m_dependency[dependency_level];
 };
 
 #endif // __MFX_DEPENDENCY_ITEM_H
