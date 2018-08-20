@@ -220,7 +220,7 @@ void mfx_uwptest::MainPage::Grid_Loaded(Platform::Object^ sender, Windows::UI::X
     Array<String^>^ strNames = ref new Array<String^>(sizeof(libNames) / sizeof(libNames[0]));
     Log->Text = L"";
     LogMsg(L"Available command line usage");
-    LogMsg(L"mfx_uwptest [/dump] [/hevcd] [/close] [/destination Destination\\Path]");
+    LogMsg(L"mfx_uwptest [/dump] [/hevcd] [/close] [/output Destination\\Path]");
     LogMsg(L"/dump - dump log to Documents\\mfx_uwptest.mfxresult");
     LogMsg(L"/close - close immediately after work is completed");
     LogMsg(L"/hevcd - run HEVC decode instead of AVC (by default)");
@@ -453,7 +453,10 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
             EX_HANDLER(sts = MFXVideoUSER_Load(session, &MFX_PLUGINID_HEVCD_HW, 0););
             swprintf_s(str, strSize, L"MFXVideoUSER_Load(MFX_PLUGINID_HEVCD_HW) returned status: %X", sts);
             LogMsg(str);
-            if (sts != MFX_ERR_NONE) goto error;
+            if (sts != MFX_ERR_NONE)
+            {
+                LogMsg(ref new String(L"Possible HEVC is placed in libmfxhw, trying to use it without plugin loading"));
+            }
          }
         if (hevc)
         {
