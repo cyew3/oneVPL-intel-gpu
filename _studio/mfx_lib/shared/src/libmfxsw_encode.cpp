@@ -69,6 +69,10 @@
 #endif
 #endif
 
+#if defined (MFX_ENABLE_VP9_VIDEO_ENCODE_HW) && !defined (AS_VP9E_PLUGIN) && defined(MFX_VA)
+#include "mfx_vp9_encode_hw.h"
+#endif
+
 #if defined (MFX_RT)
 #pragma warning(disable:4065)
 #endif
@@ -186,6 +190,19 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
         }
         break;
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
+
+#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
+    case MFX_CODEC_VP9:
+        if (session->m_bIsHWENCSupport)
+        {
+            pENCODE = new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(&session->m_coreInt, &mfxRes);
+        }
+        else
+        {
+            pENCODE = nullptr;
+        }
+        break;
+#endif
     default:
         break;
     }
@@ -340,6 +357,20 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             }
             break;
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
+
+#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
+        case MFX_CODEC_VP9:
+            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::Query(&session->m_coreInt, in, out);
+            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+            {
+                mfxRes = MFX_ERR_UNSUPPORTED;
+            }
+            else
+            {
+                bIsHWENCSupport = true;
+            }
+            break;
+#endif //MFX_ENABLE_VP9_VIDEO_ENCODE_HW
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;
         }
@@ -514,6 +545,20 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
             }
             break;
 #endif // MFX_ENABLE_H265_VIDEO_ENCODE
+
+#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
+        case MFX_CODEC_VP9:
+            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(&session->m_coreInt, par, request);
+            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
+            {
+                mfxRes = MFX_ERR_UNSUPPORTED;
+            }
+            else
+            {
+                bIsHWENCSupport = true;
+            }
+            break;
+#endif //MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 
         default:
             mfxRes = MFX_ERR_UNSUPPORTED;

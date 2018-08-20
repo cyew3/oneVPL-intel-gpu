@@ -1656,8 +1656,10 @@ mfxStatus SetDefaults(
     SetDefault(fi.BitDepthChroma, 8);
 #endif // MFX_VERSION >= 1027
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     SetDefault(extPar.NumTileColumns, (extPar.FrameWidth + MAX_TILE_WIDTH - 1) / MAX_TILE_WIDTH);
     SetDefault(extPar.NumTileRows, 1);
+#endif // (MFX_VERSION >= MFX_VERSION_NEXT)
 
     // ext buffers
     // TODO: uncomment when buffer mfxExtVP9CodingOption will be added to API

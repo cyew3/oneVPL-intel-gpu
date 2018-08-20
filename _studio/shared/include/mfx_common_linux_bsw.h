@@ -26,6 +26,7 @@
     #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
     //#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #define MFX_ENABLE_H265_VIDEO_ENCODE
+    #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
 
 #define MFX_ENABLE_H264_VIDEO_ENCODE
@@ -151,8 +152,8 @@
     #undef MFX_ENABLE_VPP
 #endif
 
-#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT)
-	#undef MFX_ENABLE_H265_VIDEO_DECODE
+#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(AS_VP8D_PLUGIN) || defined(AS_VP8E_PLUGIN) || defined(AS_VP9D_PLUGIN) || defined(AS_VP9E_PLUGIN) || defined(AS_CAMERA_PLUGIN) || defined (MFX_RT)
+    #undef MFX_ENABLE_H265_VIDEO_DECODE
     #undef MFX_ENABLE_H265_VIDEO_ENCODE
     #undef MFX_ENABLE_H264_VIDEO_DECODE
     #undef MFX_ENABLE_H264_VIDEO_ENCODE
@@ -180,6 +181,7 @@
     #undef MFX_ENABLE_VP8_VIDEO_DECODE
     #undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
     #undef MFX_ENABLE_VP9_VIDEO_DECODE
+    #undef MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #undef MFX_ENABLE_VP9_VIDEO_DECODE_HW
 #endif // #if defined(AS_HEVCD_PLUGIN)
 #if defined(AS_CAMERA_PLUGIN)
@@ -212,6 +214,12 @@
 //#define MFX_ENABLE_VP9_VIDEO_DECODE
 #ifdef MFX_VA
 #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+#endif
+#endif
+
+#if defined(AS_VP9E_PLUGIN)
+#ifdef MFX_VA
+#define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
 #endif
 

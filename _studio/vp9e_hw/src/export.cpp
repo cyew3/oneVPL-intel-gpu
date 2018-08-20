@@ -9,7 +9,8 @@
 //
 
 #include "mfx_common.h"
-#include "mfx_vp9_encode_hw.h"
+#if defined(AS_VP9E_PLUGIN)
+#include "mfx_vp9_encode_plugin_hw.h"
 #include "plugin_version_linux.h"
 
 #if defined(_WIN32)
@@ -29,3 +30,4 @@ MSDK_PLUGIN_API(mfxStatus) CreatePlugin(mfxPluginUID uid, mfxPlugin* plugin)
 {
     return MfxHwVP9Encode::Plugin::CreateByDispatcher(uid, plugin);
 }
+#endif

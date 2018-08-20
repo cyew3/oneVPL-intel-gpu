@@ -9,7 +9,6 @@
 //
 
 #include "mfxvideo++int.h"
-#include "mfx_plugin_module.h"
 #include "mfx_vp9_encode_hw.h"
 #include "mfx_vp9_encode_hw_par.h"
 #include "mfx_vp9_encode_hw_ddi.h"

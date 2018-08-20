@@ -12,7 +12,7 @@
 #include "mfx_vp8_dec_plugin.h"
 #include "mfx_vp9_dec_plugin.h"
 #include "mfx_h265_encode_plugin_hw.h"
-#include "mfx_vp9_encode_hw.h"
+#include "mfx_vp9_encode_plugin_hw.h"
 #include "mfx_camera_plugin.h"
 #if defined (WIN64) || defined(LINUX64)
 #include "mfx_hevc_enc_plugin.h"

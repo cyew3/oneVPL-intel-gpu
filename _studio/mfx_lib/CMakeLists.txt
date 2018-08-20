@@ -31,6 +31,7 @@ foreach( dir ${cdirs} )
 endforeach( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/include )
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../vp9e_hw/include )
 
 # =============================================================================
 

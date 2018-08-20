@@ -56,25 +56,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    mfx_common_hw
-    media_buffers
-    umc_io
-    umc_va_elk_hw
-    umc
-    vm
-    vm_plus
-    ${ITT_LIBS}
-    pthread
-    dl
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-  )
+list( APPEND sources "${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp")
 
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9E_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${VP9E_HW_DESCRIPTION}\"\\\" ${VP9E_HW_version_defs}" )
 

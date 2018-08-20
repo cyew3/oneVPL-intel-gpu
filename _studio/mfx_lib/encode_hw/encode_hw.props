@@ -19,6 +19,7 @@
     $(MSDK_STUDIO_ROOT)\shared\asc\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\cmrt_cross_platform\include;
     $(MSDK_STUDIO_ROOT)\hevce_hw\h265\include;
+    $(MSDK_STUDIO_ROOT)\vp9e_hw\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\h264\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mjpeg\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\mpeg2\include;

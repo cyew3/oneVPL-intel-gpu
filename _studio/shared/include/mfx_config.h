@@ -127,6 +127,12 @@
         #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN) || defined(MFX_VA)
             #define MFX_ENABLE_H265_VIDEO_ENCODE
         #endif
+
+        //vp9e
+#if defined (MFX_VA)
+        #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+#endif
+
         #define MFX_ENABLE_MVC_VIDEO_ENCODE
         //#define MFX_ENABLE_H264_VIDEO_PAK
         //#define MFX_ENABLE_H264_VIDEO_ENC
@@ -275,6 +281,12 @@
         //#define MFX_ENABLE_VP9_VIDEO_DECODE
         #ifdef MFX_VA
             #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
+        #endif
+    #endif
+
+    #if defined(AS_VP9E_PLUGIN)
+        #ifdef MFX_VA
+            #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
         #endif
     #endif
 

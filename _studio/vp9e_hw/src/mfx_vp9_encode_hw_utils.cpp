@@ -379,9 +379,10 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
             frameParam.refreshFrameContext = false;
         }
     }
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     frameParam.log2TileRows = static_cast<mfxU8>(CeilLog2(extPar.NumTileRows));
     frameParam.log2TileCols = static_cast<mfxU8>(CeilLog2(extPar.NumTileColumns));
+#endif // (MFX_VERSION >= MFX_VERSION_NEXT)
 
     return MFX_ERR_NONE;
 }
