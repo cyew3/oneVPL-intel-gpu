@@ -4016,6 +4016,7 @@ mfxFrameSurface1* CTranscodingPipeline::GetFreeSurface(bool isDec, mfxU64 timeou
         if (m_bForceStop)
         {
             m_mStopSession.Unlock();
+            msdk_printf(MSDK_STRING("WARNING: m_bForceStop is set, returning NULL ptr from GetFreeSurface\n"));
             break;
         }
         m_mStopSession.Unlock();
