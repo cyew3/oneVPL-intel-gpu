@@ -26,7 +26,6 @@
 ##******************************************************************************
 
 set_property( GLOBAL PROPERTY USE_FOLDERS ON )
-set( CMAKE_VERBOSE_MAKEFILE             TRUE )
 
 # the following options should disable rpath in both build and install cases
 set( CMAKE_INSTALL_RPATH "" )
