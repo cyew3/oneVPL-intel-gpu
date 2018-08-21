@@ -44,7 +44,7 @@ endif
 MFX_CFLAGS += \
   -DMFX_ANDROID_VERSION=$(MFX_ANDROID_VERSION) \
   -DMFX_ANDROID_PLATFORM=$(MFX_ANDROID_PLATFORM) \
-  -include mfx_config.h
+  -include mfx_android_config.h
 
 # Setting version information for the binaries
 ifeq ($(MFX_VERSION),)
