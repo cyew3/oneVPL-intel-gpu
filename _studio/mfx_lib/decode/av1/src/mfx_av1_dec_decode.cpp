@@ -692,17 +692,17 @@ mfxU16 color_format2bit_depth(UMC::ColorFormat format)
     {
         case UMC::NV12:
         case UMC::YUY2:
-        case UMC::YUV444: return 8;
+        case UMC::AYUV: return 8;
 
         case UMC::P010:
         case UMC::Y210:
-        case UMC::Y410:   return 10;
+        case UMC::Y410:  return 10;
 
         case UMC::P016:
         case UMC::Y216:
-        case UMC::Y416:   return 12;
+        case UMC::Y416:  return 12;
 
-        default:          return 0;
+        default:         return 0;
     }
 }
 
@@ -713,17 +713,17 @@ mfxU16 color_format2chroma_format(UMC::ColorFormat format)
     {
         case UMC::NV12:
         case UMC::P010:
-        case UMC::P016:   return MFX_CHROMAFORMAT_YUV420;
+        case UMC::P016: return MFX_CHROMAFORMAT_YUV420;
 
         case UMC::YUY2:
         case UMC::Y210:
-        case UMC::Y216:   return MFX_CHROMAFORMAT_YUV422;
+        case UMC::Y216: return MFX_CHROMAFORMAT_YUV422;
 
-        case UMC::YUV444:
+        case UMC::AYUV:
         case UMC::Y410:
-        case UMC::Y416:   return MFX_CHROMAFORMAT_YUV444;
+        case UMC::Y416: return MFX_CHROMAFORMAT_YUV444;
 
-        default:          return MFX_CHROMAFORMAT_YUV420;
+        default:        return MFX_CHROMAFORMAT_YUV420;
     }
 }
 

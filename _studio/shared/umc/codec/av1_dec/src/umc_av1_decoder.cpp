@@ -501,6 +501,8 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         else if (sh.subsampling_x && sh.subsampling_y)
             par->info.color_format = UMC::NV12;
 
+        if (sh.bit_depth == 8 && par->info.color_format == UMC::YUV444)
+            par->info.color_format = UMC::AYUV;
         if (sh.bit_depth == 10)
         {
             switch (par->info.color_format)

@@ -1536,7 +1536,7 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
 
 #if UMC_AV1_DECODER_REV >= 5000
-        sh->profile = av1_profile(this);
+        sh->profile = GetBits(2);
         GetBits(4); // level
 
         Ipp32u elayers_cnt = GetBits(2);
