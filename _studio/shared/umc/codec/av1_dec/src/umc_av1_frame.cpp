@@ -198,7 +198,7 @@ namespace UMC_AV1_DECODER
 
     void AV1DecoderFrame::UpdateReferenceList()
     {
-        if (frame_dpb.size() == 0)
+        if (header->frameType == KEY_FRAME)
             return;
 
         for (Ipp8u i = 0; i < INTER_REFS; ++i)

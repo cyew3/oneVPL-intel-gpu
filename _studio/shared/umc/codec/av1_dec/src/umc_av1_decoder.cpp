@@ -316,7 +316,8 @@ namespace UMC_AV1_DECODER
             switch (info.header.type)
             {
             case OBU_SEQUENCE_HEADER:
-                sequence_header.reset(new SequenceHeader);
+                if (!sequence_header.get())
+                    sequence_header.reset(new SequenceHeader);
                 bs.GetSequenceHeader(sequence_header.get());
                 break;
             case OBU_FRAME_HEADER:

@@ -101,16 +101,16 @@ namespace UMC_AV1_DECODER
 
         std::vector<DXVA_Intel_Tile_AV1> tileControlParams;
 
+        size_t offsetInBuffer = 0;
         for (auto& tileSet : tileSets)
         {
-            const size_t offsetInBuffer = compBufBs->GetDataSize();
             const size_t spaceInBuffer = compBufBs->GetBufferSize() - offsetInBuffer;
             TileLayout layout;
             const size_t bytesSubmitted = tileSet.Submit(bistreamData, spaceInBuffer, offsetInBuffer, layout);
 
             if (bytesSubmitted)
             {
-                compBufBs->SetDataSize(static_cast<Ipp32u>(offsetInBuffer + bytesSubmitted));
+                offsetInBuffer += bytesSubmitted;
 
                 for (auto& loc : layout)
                 {
@@ -119,6 +119,7 @@ namespace UMC_AV1_DECODER
                 }
             }
         }
+        compBufBs->SetDataSize(static_cast<Ipp32u>(offsetInBuffer));
 
         UMCVACompBuffer* compBufTile = nullptr;
         const Ipp32s tileControlInfoSize = static_cast<Ipp32s>(sizeof(DXVA_Intel_Tile_AV1) * tileControlParams.size());
