@@ -156,7 +156,8 @@ namespace av1d_decode_frame_async
         const char* sname = g_tsStreamPool.Get(sd.name);
         g_tsStreamPool.Reg();
 
-        tsBitstreamReaderIVF reader(sname, 1024*1024);
+        const Ipp32u size = 1024 * 1024;
+        tsBitstreamReaderIVF reader(sname, size);
         m_bs_processor = &reader;
 
         MFXInit();
@@ -183,6 +184,7 @@ namespace av1d_decode_frame_async
 
         if(FAILED_INIT == tc.mode)
             g_tsStatus.disable_next_check();
+        DecodeHeader();
         if(NOT_INITIALIZED != tc.mode)
             Init();
 
@@ -280,15 +282,15 @@ namespace av1d_decode_frame_async
     TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, fourcc>, std::integral_constant<unsigned, profile>);
 
     /* 8 bit */
-    TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_AV1_0>)
+    TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_NV12>, std::integral_constant<unsigned, MFX_PROFILE_AV1_MAIN>)
     {
-        static const TestSuite::stream_desc sd{ 352, 288, "conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf" };
+        static const TestSuite::stream_desc sd{ 432, 240, "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1" };
         return sd;
     }
 
     /* 8b 420 */
     template <>
-    TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::test_cases[] =
+    TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_MAIN>::test_cases[] =
     {
         {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 10, RUNTIME_SURF} },
         {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_NV12, RUNTIME_SURF},
@@ -305,18 +307,18 @@ namespace av1d_decode_frame_async
                                                         } },
     };
     template <>
-    unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::test_cases) / sizeof(TestSuite::tc_struct);
+    unsigned int const TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_MAIN>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_MAIN>::test_cases) / sizeof(TestSuite::tc_struct);
 
     /* 10 bit */
-    TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_AV1_2>)
+    TestSuite::stream_desc const& query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>, std::integral_constant<unsigned, MFX_PROFILE_AV1_MAIN>)
     {
-        static const TestSuite::stream_desc sd{ 640, 360, "conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf" };
+        static const TestSuite::stream_desc sd{ 432, 240, "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1" };
         return sd;
     }
 
     /* 10b 420 */
     template <>
-    TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::test_cases[] =
+    TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_MAIN>::test_cases[] =
     {
         {/*32*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { &tsStruct::mfxFrameSurface1.Info.BitDepthLuma, 8, RUNTIME_SURF} },
         {/*33*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, 1, { {&tsStruct::mfxFrameSurface1.Info.FourCC, MFX_FOURCC_P010, RUNTIME_SURF},
@@ -333,7 +335,7 @@ namespace av1d_decode_frame_async
                                                         } },
     };
     template <>
-    unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::test_cases) / sizeof(TestSuite::tc_struct);
+    unsigned int const TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_MAIN>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_MAIN>::test_cases) / sizeof(TestSuite::tc_struct);
 
     template <unsigned fourcc, unsigned profile>
     int TestSuiteExt<fourcc, profile>::RunTest(unsigned int id)
@@ -348,8 +350,8 @@ namespace av1d_decode_frame_async
         return suite.RunTest(tc, sd);
     }
 
-TS_REG_TEST_SUITE(av1d_8b_420_nv12_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_0>::n_cases));
-TS_REG_TEST_SUITE(av1d_10b_420_p010_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_2>::n_cases));
+TS_REG_TEST_SUITE(av1d_8b_420_nv12_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_MAIN>::RunTest), (TestSuiteExt<MFX_FOURCC_NV12, MFX_PROFILE_AV1_MAIN>::n_cases));
+TS_REG_TEST_SUITE(av1d_10b_420_p010_decode_frame_async,  (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_MAIN>::RunTest), (TestSuiteExt<MFX_FOURCC_P010, MFX_PROFILE_AV1_MAIN>::n_cases));
 
 }
 #undef TEST_NAME

@@ -20,11 +20,11 @@ namespace av1d_get_payload
 
     /* 8 bit */
     char const* query_stream(unsigned int id, std::integral_constant<unsigned, MFX_FOURCC_NV12>)
-    { return "conformance/av1/avp_rev25_1_akiyo0_128x64_2frm_zeromv.ivf"; }
+    { return "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1"; }
 
     /* 10 bit */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)
-    { return "conformance/av1/DVK/Smaller_AV1_p2b10_432x240_209_extra_smaller_1.0.av1"; }
+    { return "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1"; }
 
     template <unsigned fourcc>
     class TestSuite
@@ -56,7 +56,8 @@ namespace av1d_get_payload
         {
             TS_START;
 
-            tsBitstreamReaderIVF r{name, 1024 * 1024};
+            const Ipp32u size = 1024 * 1024;
+            tsBitstreamReaderIVF r{name, size};
             m_bs_processor = &r;
 
             DecodeFrames(1);

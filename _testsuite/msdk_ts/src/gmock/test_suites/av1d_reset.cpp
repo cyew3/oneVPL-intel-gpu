@@ -207,14 +207,15 @@ int TestSuite::RunTest(tc_struct const& tc)
         Load();
     }
 
+    const Ipp32u size = 1024 * 1024;
     if(tc.stream[0] != "")
     {
         if (m_bs_processor)
             delete m_bs_processor;
-        m_bs_processor = new tsBitstreamReaderIVF(stream0, 100000);
+        m_bs_processor = new tsBitstreamReaderIVF(stream0, size);
     } else
     {
-        m_par.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+        m_par.mfx.CodecProfile = MFX_PROFILE_AV1_MAIN;
         m_par_set = true;
     }
 
@@ -236,7 +237,7 @@ int TestSuite::RunTest(tc_struct const& tc)
         {
             if (m_bs_processor)
                 delete m_bs_processor;
-            m_bs_processor = new tsBitstreamReader(stream1, 100000);
+            m_bs_processor = new tsBitstreamReaderIVF(stream1, size);
             m_bitstream.DataLength = 0;
             DecodeHeader();
         }
@@ -280,16 +281,16 @@ struct TestSuiteExt
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_NV12>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf", ""},
+    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1", ""},
         {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf", ""},
+    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/from_fulsim/bowing0_352x288_8b_420_LowLatency_qp12.ivf", "conformance/av1/from_fulsim/football_352x288_8b_444_LowLatency_qp12.ivf"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1", "conformance/av1/DVK/Syntax_AV1_p1b10ss444_432x240_101_inter_basic_1.1.av1"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_NV12>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_NV12>::test_cases) / sizeof(TestSuite::tc_struct);
@@ -298,16 +299,16 @@ unsigned int const TestSuiteExt<MFX_FOURCC_NV12>::n_cases = TestSuite::n_cases +
 template <>
 TestSuite::tc_struct const TestSuiteExt<MFX_FOURCC_P010>::test_cases[] =
 {
-    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf", ""},
+    {/* 0*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1", ""},
         {{INIT|ALLOCATOR, 0, {frame_allocator::SOFTWARE, frame_allocator::ALLOC_MAX}},
         {REPEAT, 0, {2}}}
     },
 
-    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf", ""},
+    {/* 1*/ MFX_ERR_NONE, {"conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1", ""},
         {{INIT|MFXVPAR, &tsStruct::mfxVideoParam.IOPattern, {MFX_IOPATTERN_OUT_VIDEO_MEMORY}},
         {REPEAT, 0, {2}}}
     },
-    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf", "conformance/av1/self_coded/Kimono1_640x360_10b_444.av1"}},
+    {/* 2*/ MFX_ERR_INCOMPATIBLE_VIDEO_PARAM, {"conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1", "conformance/av1/DVK/Syntax_AV1_p1b10ss444_432x240_101_inter_basic_1.1.av1"}},
 };
 template <>
 unsigned int const TestSuiteExt<MFX_FOURCC_P010>::n_cases = TestSuite::n_cases + sizeof(TestSuiteExt<MFX_FOURCC_P010>::test_cases) / sizeof(TestSuite::tc_struct);

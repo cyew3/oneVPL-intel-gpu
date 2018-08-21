@@ -169,7 +169,8 @@ struct streamDesc
 const streamDesc NO_STREAM = { 0, 0, "" };
 
 const streamDesc streams[] = {
-    { 128, 64, "conformance/av1/avp_rev25_1_akiyo0_128x64_2frm_zeromv.ivf"},
+    { 432, 240, "conformance/av1/DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1"},
+    { 432, 240, "conformance/av1/DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1"},
 };
 
 const streamDesc& getStreamDesc(const mfxU32& fourcc)
@@ -179,7 +180,7 @@ const streamDesc& getStreamDesc(const mfxU32& fourcc)
         case MFX_FOURCC_NV12:
             return streams[0];
         case MFX_FOURCC_P010:
-            return NO_STREAM;
+            return streams[1];
         case MFX_FOURCC_AYUV:
         case MFX_FOURCC_Y410:
         case MFX_FOURCC_P016:
@@ -325,7 +326,8 @@ void TestSuite::ReadStream()
 {
     const char* sname = g_tsStreamPool.Get(m_input_stream_name);
     g_tsStreamPool.Reg();
-    m_bs_reader.reset(new tsBitstreamReaderIVF(sname, 1024*1024) );
+    const Ipp32u size = 1024 * 1024;
+    m_bs_reader.reset(new tsBitstreamReaderIVF(sname, size) );
     m_bs_processor = m_bs_reader.get();
 
     m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);

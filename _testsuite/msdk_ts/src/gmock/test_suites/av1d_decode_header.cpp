@@ -63,8 +63,8 @@ const char TestSuite::path[] = "conformance/av1/";
 
 const TestSuite::tc_struct TestSuite::test_case[] =
 {
-    {/* 0*/ MFX_ERR_NONE,  "from_fulsim/akiyo0_176x144_8b_420_LowLatency_qp12.ivf",
-      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_0 },
+    {/* 0*/ MFX_ERR_NONE,  "DVK/MainProfile_8bit420/Syntax_AV1_432x240_101_inter_basic_1.1.av1",
+      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_MAIN },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,         MFX_FOURCC_NV12 },
@@ -72,12 +72,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,   MFX_CHROMAFORMAT_YUV420 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,   1 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,   1 },
-        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          176 },
-        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         144 } },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          432 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         240 } },
     },
 
     {/* 1*/ MFX_ERR_NONE,  "self_coded/Kimono1_352x288_422.av1",
-      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_1 },
+      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_PRO },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,         MFX_FOURCC_YUY2 },
@@ -89,8 +89,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         288 } },
     },
 
-    {/* 2*/ MFX_ERR_NONE,  "from_fulsim/carphone_176x144_8b_444_LowLatency_qp12.ivf",
-      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_1 },
+    {/* 2*/ MFX_ERR_NONE,  "from_fulsim/football_352x288_8b_444_LowLatency_qp12.ivf",
+      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_HIGH },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 8 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,         MFX_FOURCC_AYUV },
@@ -98,12 +98,12 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,   MFX_CHROMAFORMAT_YUV444 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,   1 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,   1 },
-        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          176 },
-        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         144 } },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          352 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         288 } },
     },
 
-    {/* 3*/ MFX_ERR_NONE,  "from_fulsim/rain2_640x360_10b_420_LowLatency_qp12.ivf",
-      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_2 },
+    {/* 3*/ MFX_ERR_NONE,  "DVK/MainProfile_10bit420/Syntax_AV1_p0b10ss420_432x240_101_inter_basic_1.1.av1",
+      { { &tsStruct::mfxVideoParam.mfx.CodecProfile,             MFX_PROFILE_AV1_MAIN },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthLuma,   10 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.BitDepthChroma, 10 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.FourCC,         MFX_FOURCC_P010 },
@@ -111,8 +111,8 @@ const TestSuite::tc_struct TestSuite::test_case[] =
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.ChromaFormat,   MFX_CHROMAFORMAT_YUV420 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW,   1 },
         { &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH,   1 },
-        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          640 },
-        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         368 } },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Width,          432 },
+        { &tsStruct::mfxVideoParam.mfx.FrameInfo.Height,         240 } },
     },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
@@ -150,7 +150,8 @@ int TestSuite::RunTest(unsigned int id)
     auto name = g_tsStreamPool.Get(tc.stream, path);
     g_tsStreamPool.Reg();
 
-    tsBitstreamReaderIVF reader(name, 100000);
+    const Ipp32u size = 1024 * 1024;
+    tsBitstreamReaderIVF reader(name, size);
     m_bs_processor = &reader;
     m_pBitstream = m_bs_processor->ProcessBitstream(m_bitstream);
 
