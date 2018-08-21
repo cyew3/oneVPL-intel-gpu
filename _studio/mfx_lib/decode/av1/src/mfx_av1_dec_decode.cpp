@@ -39,7 +39,7 @@ namespace MFX_VPX_Utility
     mfxU16 MatchProfile(mfxU32 fourcc)
     {
         fourcc;
-        return MFX_PROFILE_AV1_0;
+        return MFX_PROFILE_AV1_MAIN;
     }
 
     const GUID DXVA_Intel_ModeAV1_VLD =
@@ -81,8 +81,7 @@ namespace MFX_VPX_Utility
         //Linux doesn't check GUID, just [mfxVideoParam]
         switch (profile)
         {
-            case MFX_PROFILE_AV1_0:
-            case MFX_PROFILE_AV1_2:
+            case MFX_PROFILE_AV1_MAIN:
                 return true;
             default: return false;
         }
@@ -733,10 +732,9 @@ mfxU16 av1_native_profile_to_mfx_profile(mfxU16 native)
 {
     switch (native)
     {
-    case 0: return MFX_PROFILE_AV1_0;
-    case 1: return MFX_PROFILE_AV1_1;
-    case 2: return MFX_PROFILE_AV1_2;
-    case 3: return MFX_PROFILE_AV1_3;
+    case 0: return MFX_PROFILE_AV1_MAIN;
+    case 1: return MFX_PROFILE_AV1_HIGH;
+    case 2: return MFX_PROFILE_AV1_PRO;
     default: return 0;
     }
 }
