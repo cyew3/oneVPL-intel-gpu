@@ -136,7 +136,6 @@
     <Import Project="..\Intel.Dispatcher.DllExe.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
@@ -173,6 +172,17 @@
     <IgnoreImportLibrary>false</IgnoreImportLibrary>
     <TargetName>$(ProjectName)-$(PlatformTarget)</TargetName>
   </PropertyGroup>
+  <PropertyGroup>
+    <MfxAppxPacking>set tmp_path=$(MfxBuildDir)win_$(PlatformName)\Intel.MediaSDK.$(PlatformTarget)
+mkdir "%tmp_path%"
+copy "$(OutDir)$(TargetName).dll" "%tmp_path%"
+copy "$(MSBuildProjectDirectory)\dfp\AppxManifest.$(PlatformTarget).xml" "%tmp_path%\AppxManifest.xml"
+copy "$(MSBuildProjectDirectory)\dfp\logo.png" "%tmp_path%"
+del /q "$(OutDir)Intel.MediaSDK.$(PlatformTarget).appx"
+makeappx.exe pack /p "$(OutDir)Intel.MediaSDK.$(PlatformTarget).appx" /d "%tmp_path%" /l /h sha256
+signtool sign /fd sha256 /f "$(MSBuildProjectDirectory)\dfp\key.pfx" "$(OutDir)Intel.MediaSDK.$(PlatformTarget).appx"
+rmdir /s /q "%tmp_path%"</MfxAppxPacking>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>$(ProjectDir);$(GeneratedFilesDir);$(SolutionDir)..\opensource\mfx_dispatch\include;$(SolutionDir)..\..\..\mdp_msdk-api\include;include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -208,6 +218,9 @@
       <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>$(MfxAppxPacking)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -240,6 +253,9 @@
       <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>$(MfxAppxPacking)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -272,6 +288,9 @@
       <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>$(MfxAppxPacking)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -306,6 +325,9 @@
       <AdditionalDependencies>WindowsApp.lib;dxgi.lib;</AdditionalDependencies>
       <ModuleDefinitionFile>src\intel_api.def</ModuleDefinitionFile>
     </Link>
+    <PostBuildEvent>
+      <Command>$(MfxAppxPacking)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="src\intel_api.def" />
