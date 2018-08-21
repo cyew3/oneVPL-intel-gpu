@@ -1468,7 +1468,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/salesman_352x288_50.yuv"));
             inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/salesman_704x576_50.yuv"));
             inputStreams.emplace(Resolution(1280, 720), g_tsStreamPool.Get("forBehaviorTest/park_scene_1280x720_30.yuv"));
-            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/salesman_1408X1152_50.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/salesman_1408x1152_50.yuv"));
             inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/salesman_2816x2304_50.yuv"));
             inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/salesman_5632x4608_2.yuv"));
             inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/salesman_7680x6288_2.yuv"));
@@ -1478,7 +1478,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/Kimono1_176x144_24_ayuv.yuv"));
             inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_352x288_24_ayuv_50.yuv"));
             inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/Kimono1_704x576_24_ayuv_50.yuv"));
-            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408X1152_24_ayuv_10.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408x1152_24_ayuv_10.yuv"));
             inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/Kimono1_2816x2304_24_ayuv_10.yuv"));
             inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/Kimono1_5632x4608_24_ayuv_2.yuv"));
             inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x6288_24_ayuv_2.yuv"));
@@ -1488,7 +1488,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/Kimono1_176x144_24_p010_shifted.yuv"));
             inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_352x288_24_p010_shifted_50.yuv"));
             inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/Kimono1_704x576_24_p010_shifted_50.yuv"));
-            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408X1152_24_p010_shifted_10.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408x1152_24_p010_shifted_10.yuv"));
             inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/Kimono1_2816x2304_24_p010_shifted_10.yuv"));
             inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/Kimono1_5632x4608_24_p010_shifted_2.yuv"));
             inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x6288_24_p010_shifted_2.yuv"));
@@ -1498,7 +1498,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
             inputStreams.emplace(Resolution(176, 144), g_tsStreamPool.Get("forBehaviorTest/Kimono1_176x144_24_y410.yuv"));
             inputStreams.emplace(Resolution(352, 288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_352x288_24_y410_50.yuv"));
             inputStreams.emplace(Resolution(704, 576), g_tsStreamPool.Get("forBehaviorTest/Kimono1_704x576_24_y410_50.yuv"));
-            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408X1152_24_y410_10.yuv"));
+            inputStreams.emplace(Resolution(1408, 1152), g_tsStreamPool.Get("forBehaviorTest/Kimono1_1408x1152_24_y410_10.yuv"));
             inputStreams.emplace(Resolution(2816, 2304), g_tsStreamPool.Get("forBehaviorTest/Kimono1_2816x2304_24_y410_10.yuv"));
             inputStreams.emplace(Resolution(5632, 4608), g_tsStreamPool.Get("forBehaviorTest/Kimono1_5632x4608_24_y410_2.yuv"));
             inputStreams.emplace(Resolution(7680, 6288), g_tsStreamPool.Get("forBehaviorTest/Kimono1_7680x6288_24_y410_2.yuv"));
