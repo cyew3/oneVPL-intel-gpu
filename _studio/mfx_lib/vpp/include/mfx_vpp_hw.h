@@ -26,7 +26,7 @@
 #if defined(MFX_VA)
  #include "cmrt_cross_platform.h" // Gpucopy stuff
  #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
-  #include "mfx_scd.h"        // Scene change detection
+  #include "asc.h"        // Scene change detection
  #endif
  #include "cm_mem_copy.h"         // Needed for mirroring kernels
  #include "genx_fcopy_gen8_isa.h" // Field copy kernels
@@ -991,7 +991,7 @@ namespace MfxHwVideoProcessing
         CmCopyWrapper *m_pCmCopy;
 
 #if defined(MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP)
-        SceneChangeDetector m_SCD;
+       ns_asc::ASC m_SCD;
 #endif
 
         CmDevice  *m_pCmDevice;
