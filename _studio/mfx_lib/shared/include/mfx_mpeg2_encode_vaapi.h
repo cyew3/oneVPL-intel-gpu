@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_ENCODE_VAAPI__H
@@ -86,7 +86,6 @@ namespace MfxHwMpeg2Encode
 
         mfxStatus QueryCompBufferInfo(D3DDDIFORMAT type, mfxFrameAllocRequest* pRequest, ExecuteBuffers* pExecuteBuffers);
         mfxStatus CreateCompBuffers  (ExecuteBuffers* pExecuteBuffers, mfxU32 numRefFrames);
-        mfxStatus CreateMBDataBuffer  (mfxU32 numRefFrames);
         mfxStatus CreateBSBuffer      (mfxU32 numRefFrames, ExecuteBuffers* pExecuteBuffers);
 
         mfxStatus GetBuffersInfo();
