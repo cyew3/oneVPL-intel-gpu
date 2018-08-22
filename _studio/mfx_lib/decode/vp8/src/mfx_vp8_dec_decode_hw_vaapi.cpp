@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -226,8 +226,8 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      VAProbabilityDataBufferVP8 *coeffProbs = (VAProbabilityDataBufferVP8*)m_p_video_accelerator->
              GetCompBuffer(VAProbabilityBufferType, &compBufCp, sizeof(VAProbabilityDataBufferVP8));
 
-     std::copy(reinterpret_cast<const char*>(m_frameProbs.coeff_probs), 
-               reinterpret_cast<const char*>(m_frameProbs.coeff_probs) + sizeof(m_frameProbs.coeff_probs), 
+     std::copy(reinterpret_cast<const char*>(m_frameProbs.coeff_probs),
+               reinterpret_cast<const char*>(m_frameProbs.coeff_probs) + sizeof(m_frameProbs.coeff_probs),
                reinterpret_cast<char*>(coeffProbs));
 
      compBufCp->SetDataSize(sizeof(VAProbabilityDataBufferVP8));
@@ -236,7 +236,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      UMCVACompBuffer* compBufQm;
      VAIQMatrixBufferVP8 *qmTable = (VAIQMatrixBufferVP8*)m_p_video_accelerator->
              GetCompBuffer(VAIQMatrixBufferType, &compBufQm, sizeof(VAIQMatrixBufferVP8));
-     
+
      if (m_frame_info.segmentationEnabled == 0)
      {
 
@@ -281,8 +281,21 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          = (VASliceParameterBufferVP8*)m_p_video_accelerator->
              GetCompBuffer(VASliceParameterBufferType, &compBufSlice, sizeof(VASliceParameterBufferVP8));
 
-#ifdef ANDROID
-
+/*
+                          |         first_part_size             |
+                          |<----------------------------------->|
+    slice_data_offset     |macroblock_offset| |partition_size[0]|    num_of_partitions=N+1
+------------------------->|<--------------->| |<--------------->|    // counts both control and token partitions
+                          |                 | |<--byte boudary  |
+┌-------------------------┼---------------┬-┼-┬-----------------┼--------------------┬-----┬----------------------┐
+| Uncompressed data chunk |  Header info  |X|X|   Pre-MB info   |  Token Partition 0 | ... |  Token Partition N-1 |
+└-------------------------┴---------------┴-┴-┴-----------------┴--------------------┴-----┴----------------------┘
+                                         /  |  \
+                                 ┌------------------------------------┐
+                                 |used_bits |remaining_bits_in_context|
+                                 └<-------->┴<----------------------->┘
+                                                bool_coder_ctx.count
+*/
      // number of bytes in the slice data buffer for the partitions
      sliceParams->slice_data_size = (Ipp32s)size - offset;
 
@@ -291,8 +304,6 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      //see VA_SLICE_DATA_FLAG_XXX definitions
      sliceParams->slice_data_flag = VA_SLICE_DATA_FLAG_ALL;
-
-#endif
 
      //offset to the first bit of MB from the first byte of partition data
      sliceParams->macroblock_offset = m_frame_info.entropyDecSize;
