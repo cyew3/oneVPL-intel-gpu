@@ -639,10 +639,12 @@ void _mfxSession::Cleanup(void)
     m_pVPP.reset();
     m_pDECODE.reset();
     m_pENCODE.reset();
-    m_pCORE.reset();
 
     // release m_pScheduler and m_pSchedulerAllocated
     ReleaseScheduler();
+
+    // release core
+    m_pCORE.reset();
 
     //delete m_coreInt.ExternalSurfaceAllocator;
     Clear();
