@@ -458,7 +458,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/genx/h264_encode/src )
     ${prefix}/genx_bdw_simple_me_isa.cpp
     ${prefix}/genx_skl_simple_me_isa.cpp
     ${prefix}/genx_hsw_simple_me_proto.cpp
-    ${prefix}/genx_hsw_histogram_isa.cpp
     ${prefix}/genx_skl_histogram_isa.cpp
     ${prefix}/genx_cnl_simple_me_isa.cpp
     ${prefix}/genx_cnl_histogram_isa.cpp

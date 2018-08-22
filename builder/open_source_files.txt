@@ -531,7 +531,6 @@ _studio/mfx_lib/genx/copy_kernels/src/genx_icl_copy_isa.cpp
 _studio/mfx_lib/genx/copy_kernels/src/genx_icllp_copy_isa.cpp
 _studio/mfx_lib/genx/h264_encode/include/genx_bdw_h264_scd_isa.h
 _studio/mfx_lib/genx/h264_encode/include/genx_bdw_simple_me_isa.h
-_studio/mfx_lib/genx/h264_encode/include/genx_hsw_histogram_isa.h
 _studio/mfx_lib/genx/h264_encode/include/genx_hsw_simple_me_isa.h
 _studio/mfx_lib/genx/h264_encode/include/genx_skl_histogram_isa.h
 _studio/mfx_lib/genx/h264_encode/include/genx_skl_simple_me_isa.h
@@ -542,7 +541,6 @@ _studio/mfx_lib/genx/h264_encode/include/genx_icl_simple_me_isa.h
 _studio/mfx_lib/genx/h264_encode/include/genx_icllp_histogram_isa.h
 _studio/mfx_lib/genx/h264_encode/include/genx_icllp_simple_me_isa.h
 _studio/mfx_lib/genx/h264_encode/src/genx_bdw_simple_me_isa.cpp
-_studio/mfx_lib/genx/h264_encode/src/genx_hsw_histogram_isa.cpp
 _studio/mfx_lib/genx/h264_encode/src/genx_hsw_simple_me_isa.cpp
 _studio/mfx_lib/genx/h264_encode/src/genx_hsw_simple_me_proto.cpp
 _studio/mfx_lib/genx/h264_encode/src/genx_skl_histogram_isa.cpp
