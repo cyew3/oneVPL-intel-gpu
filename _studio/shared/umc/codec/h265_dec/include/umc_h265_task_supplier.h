@@ -72,13 +72,13 @@ public:
     // Check if frame should be skipped to decrease decoding delays
     bool IsShouldSkipFrame(H265DecoderFrame * pFrame);
     // Set decoding skip frame mode
-    virtual mfxStatus ChangeVideoDecodingSpeed(Ipp32s& num);
+    virtual mfxStatus ChangeVideoDecodingSpeed(int32_t& num);
     void Reset();
 
     struct SkipInfo
     {
         bool isDeblockingTurnedOff;
-        Ipp32s numberOfSkippedFrames;
+        int32_t numberOfSkippedFrames;
     };
 
     // Get current skip mode state
@@ -86,12 +86,12 @@ public:
 
 private:
 
-    Ipp32s m_VideoDecodingSpeed;
-    Ipp32s m_SkipCycle;
-    Ipp32s m_ModSkipCycle;
-    Ipp32s m_PermanentTurnOffDeblocking;
+    int32_t m_VideoDecodingSpeed;
+    int32_t m_SkipCycle;
+    int32_t m_ModSkipCycle;
+    int32_t m_PermanentTurnOffDeblocking;
 
-    Ipp32s m_NumberOfSkippedFrames;
+    int32_t m_NumberOfSkippedFrames;
 };
 
 /****************************************************************************************************/
@@ -107,13 +107,13 @@ public:
 
         size_t      size;
         size_t      offset;
-        Ipp8u*      data;
+        uint8_t*      data;
 
-        Ipp32s      nal_type;
-        Ipp64f      timestamp;
+        int32_t      nal_type;
+        double      timestamp;
         SEI_TYPE    type;
 
-        Ipp32s      isUsed;
+        int32_t      isUsed;
 
         SEI_Message()
         {
@@ -169,11 +169,11 @@ private:
         MAX_ELEMENTS = 128
     };
 
-    std::vector<Ipp8u>  m_data;
+    std::vector<uint8_t>  m_data;
     std::vector<SEI_Message> m_payloads;
 
     size_t m_offset;
-    Ipp32s m_lastUsed;
+    int32_t m_lastUsed;
 
     //std::list<> ;
 };
@@ -201,21 +201,21 @@ struct ViewItem_H265
     void Reset(void);
 
     // Reset the size of DPB for particular view item
-    void SetDPBSize(H265SeqParamSet *pSps, Ipp32u & level_idc);
+    void SetDPBSize(H265SeqParamSet *pSps, uint32_t & level_idc);
 
     // Pointer to the view's DPB
     mutable std::unique_ptr<H265DBPList> pDPB;
 
     // Size of DPB capacity in frames
-    Ipp32u dpbSize;
+    uint32_t dpbSize;
     // Maximum number frames used semultaneously
-    Ipp32u sps_max_dec_pic_buffering;
-    Ipp32u sps_max_num_reorder_pics;
+    uint32_t sps_max_dec_pic_buffering;
+    uint32_t sps_max_num_reorder_pics;
 
     // Pointer to the frame being processed
     H265DecoderFrame *pCurFrame;
 
-    Ipp64f localFrameTime;
+    double localFrameTime;
 };
 
 /****************************************************************************************************/
@@ -234,11 +234,11 @@ public:
     ViewItem_H265 *GetView();
 
 protected:
-    Ipp32u m_temporal_id;
-    Ipp32u m_priority_id;
-    Ipp32u HighestTid;
+    uint32_t m_temporal_id;
+    uint32_t m_priority_id;
+    uint32_t HighestTid;
 
-    Ipp32u  m_level_idc;
+    uint32_t  m_level_idc;
 
     ViewItem_H265 m_view;
 };
@@ -257,12 +257,12 @@ public:
 
     void Reset();
 
-    Ipp32u  GetDPBError() const;
+    uint32_t  GetDPBError() const;
 
 protected:
 
-    Ipp32u  m_isDPBErrorFound;
-    Ipp32s  m_frameCount;
+    uint32_t  m_isDPBErrorFound;
+    int32_t  m_frameCount;
 
     void ResetError();
 };
@@ -276,7 +276,7 @@ class TaskSupplier_H265 : public Skipping_H265, public AU_Splitter_H265, public 
     friend class TaskBrokerSingleThreadDXVA;
 
 public:
-    Ipp32u m_SliceIdxInTaskSupplier; //for h265 sliceidx cursliceidx m_sliceidx m_currsliceidx m_inumber
+    uint32_t m_SliceIdxInTaskSupplier; //for h265 sliceidx cursliceidx m_sliceidx m_currsliceidx m_inumber
 
     TaskSupplier_H265();
     virtual ~TaskSupplier_H265();
@@ -411,7 +411,7 @@ protected:
     virtual UMC::Status AddOneFrame(UMC::MediaData * pSource);
 
     // Allocate frame internals
-    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
+    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, mfxSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
 
     // Decode a bitstream header NAL unit
     virtual UMC::Status DecodeHeaders(UMC::MediaDataEx *nalUnit);
@@ -428,10 +428,10 @@ protected:
     void PreventDPBFullness();
 
     H265SegmentDecoderBase **m_pSegmentDecoder;
-    Ipp32u m_iThreadNum;
+    uint32_t m_iThreadNum;
 
-    Ipp32s      m_maxUIDWhenWasDisplayed;
-    Ipp64f      m_local_delta_frame_time;
+    int32_t      m_maxUIDWhenWasDisplayed;
+    double      m_local_delta_frame_time;
     bool        m_use_external_framerate;
     bool        m_decodedOrder;
     bool        m_checkCRAInsideResetProcess;
@@ -447,18 +447,18 @@ protected:
     bool              m_WaitForIDR;
     bool              m_prevSliceBroken;
 
-    Ipp32s m_RA_POC;
-    Ipp8u  NoRaslOutputFlag;
+    int32_t m_RA_POC;
+    uint8_t  NoRaslOutputFlag;
     NalUnitType m_IRAPType;
 
-    Ipp32u            m_DPBSizeEx;
-    Ipp32s            m_frameOrder;
+    uint32_t            m_DPBSizeEx;
+    int32_t            m_frameOrder;
 
     TaskBroker_H265 * m_pTaskBroker;
 
     UMC::VideoDecoderParams     m_initializationParams;
 
-    Ipp32s m_UIDFrameCounter;
+    int32_t m_UIDFrameCounter;
 
     H265SEIPayLoad m_UserData;
     SEI_Storer_H265 *m_sei_messages;
@@ -486,7 +486,7 @@ private:
 };
 
 // Calculate maximum DPB size based on level and resolution
-extern Ipp32s CalculateDPBSize(Ipp32u profile_idc, Ipp32u &level_idc, Ipp32s width, Ipp32s height, Ipp32u num_ref_frames);
+extern int32_t CalculateDPBSize(uint32_t profile_idc, uint32_t &level_idc, int32_t width, int32_t height, uint32_t num_ref_frames);
 
 } // namespace UMC_HEVC_DECODER
 

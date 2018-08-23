@@ -43,13 +43,13 @@ public:
 
     virtual void CreateTaskBroker();
 
-    mfxStatus ChangeVideoDecodingSpeed(Ipp32s& num);
+    mfxStatus ChangeVideoDecodingSpeed(int32_t& num);
 
-    void SetBufferedFramesNumber(Ipp32u buffered);
+    void SetBufferedFramesNumber(uint32_t buffered);
 
 
 protected:
-    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
+    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, mfxSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
 
     virtual void InitFrameCounter(H265DecoderFrame * pFrame, const H265Slice *pSlice);
 
@@ -59,7 +59,7 @@ protected:
 
     virtual H265DecoderFrame *GetFrameToDisplayInternal(bool force);
 
-    Ipp32u m_bufferedFrameNumber;
+    uint32_t m_bufferedFrameNumber;
 
 private:
     VATaskSupplier & operator = (VATaskSupplier &)
@@ -82,7 +82,7 @@ public:
 
 protected:
 
-    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet * pps)
+    virtual UMC::Status AllocateFrameData(H265DecoderFrame * pFrame, mfxSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet * pps)
     {
         UMC::Status ret = BaseClass::AllocateFrameData(pFrame, dimensions, pSeqParamSet, pps);
 

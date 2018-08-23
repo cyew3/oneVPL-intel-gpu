@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -28,8 +28,8 @@ struct H265MotionVector
 {
 public:
 
-    Ipp16s Horizontal;
-    Ipp16s Vertical;
+    int16_t Horizontal;
+    int16_t Vertical;
 
     H265MotionVector()
     {
@@ -37,10 +37,10 @@ public:
         Horizontal = 0;
     }
 
-    H265MotionVector(Ipp32s horizontal, Ipp32s vertical)
+    H265MotionVector(int32_t horizontal, int32_t vertical)
     {
-        Horizontal = (Ipp16s)horizontal;
-        Vertical = (Ipp16s)vertical;
+        Horizontal = (int16_t)horizontal;
+        Vertical = (int16_t)vertical;
     }
 
     //set
@@ -70,11 +70,11 @@ public:
         return (Horizontal != MV.Horizontal || Vertical != MV.Vertical);
     }
 
-    const H265MotionVector scaleMV(Ipp32s scale) const
+    const H265MotionVector scaleMV(int32_t scale) const
     {
-        Ipp32s mvx = Clip3(-32768, 32767, (scale * Horizontal + 127 + (scale * Horizontal < 0)) >> 8);
-        Ipp32s mvy = Clip3(-32768, 32767, (scale * Vertical + 127 + (scale * Vertical < 0)) >> 8);
-        return H265MotionVector((Ipp16s)mvx, (Ipp16s)mvy);
+        int32_t mvx = Clip3(-32768, 32767, (scale * Horizontal + 127 + (scale * Horizontal < 0)) >> 8);
+        int32_t mvy = Clip3(-32768, 32767, (scale * Vertical + 127 + (scale * Vertical < 0)) >> 8);
+        return H265MotionVector((int16_t)mvx, (int16_t)mvy);
     }
 };
 
@@ -82,19 +82,19 @@ public:
 struct AMVPInfo
 {
     H265MotionVector MVCandidate[AMVP_MAX_NUM_CAND + 1]; //array of motion vector predictor candidates
-    Ipp32s NumbOfCands;
+    int32_t NumbOfCands;
 };
 
-typedef Ipp8s RefIndexType;
+typedef int8_t RefIndexType;
 // Structure used for motion info. Contains both ref index and POC since both are used in different places of code
 struct H265MVInfo
 {
 public:
     H265MotionVector    m_mv[2];
     RefIndexType        m_refIdx[2];
-    Ipp8s               m_index[2];
+    int8_t               m_index[2];
 
-    void setMVInfo(Ipp32s refList, RefIndexType iRefIdx, H265MotionVector const &cMV)
+    void setMVInfo(int32_t refList, RefIndexType iRefIdx, H265MotionVector const &cMV)
     {
         m_refIdx[refList] = iRefIdx;
         m_mv[refList] = cMV;

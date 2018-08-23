@@ -40,7 +40,7 @@ public:
 
     T * AddHeader(T* hdr)
     {
-        Ipp32u id = hdr->GetID();
+        uint32_t id = hdr->GetID();
 
         if (id >= m_Header.size())
         {
@@ -65,9 +65,9 @@ public:
         return header;
     }
 
-    T * GetHeader(Ipp32s id)
+    T * GetHeader(int32_t id)
     {
-        if ((Ipp32u)id >= m_Header.size())
+        if ((uint32_t)id >= m_Header.size())
         {
             return 0;
         }
@@ -75,9 +75,9 @@ public:
         return m_Header[id];
     }
 
-    const T * GetHeader(Ipp32s id) const
+    const T * GetHeader(int32_t id) const
     {
-        if ((Ipp32u)id >= m_Header.size())
+        if ((uint32_t)id >= m_Header.size())
         {
             return 0;
         }
@@ -94,7 +94,7 @@ public:
             return;
         }
 
-        Ipp32u id = tmp->GetID();
+        uint32_t id = tmp->GetID();
 
         if (id >= m_Header.size())
         {
@@ -117,7 +117,7 @@ public:
     {
         if (!isPartialReset)
         {
-            for (Ipp32u i = 0; i < m_Header.size(); i++)
+            for (uint32_t i = 0; i < m_Header.size(); i++)
             {
                 m_pObjHeap->FreeObject(m_Header[i]);
             }
@@ -127,13 +127,13 @@ public:
         }
     }
 
-    void SetCurrentID(Ipp32s id)
+    void SetCurrentID(int32_t id)
     {
         if (GetHeader(id))
             m_currentID = id;
     }
 
-    Ipp32s GetCurrentID() const
+    int32_t GetCurrentID() const
     {
         return m_currentID;
     }
@@ -158,7 +158,7 @@ private:
     std::vector<T*>           m_Header;
     Heap_Objects             *m_pObjHeap;
 
-    Ipp32s                    m_currentID;
+    int32_t                    m_currentID;
 };
 
 /****************************************************************************************************/

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -19,27 +19,27 @@
 namespace UMC_HEVC_DECODER
 {
     // Reconstruct intra quad tree including handling IPCM
-    void H265SegmentDecoder::ReconIntraQT(Ipp32u AbsPartIdx, Ipp32u Depth)
+    void H265SegmentDecoder::ReconIntraQT(uint32_t AbsPartIdx, uint32_t Depth)
     {
-        Ipp32u InitTrDepth = (m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N ? 0 : 1);
-        Ipp32u NumPart = m_cu->getNumPartInter(AbsPartIdx);
-        Ipp32u NumQParts = m_cu->m_NumPartition >> (Depth << 1); // Number of partitions on this depth
+        uint32_t InitTrDepth = (m_cu->GetPartitionSize(AbsPartIdx) == PART_SIZE_2Nx2N ? 0 : 1);
+        uint32_t NumPart = m_cu->getNumPartInter(AbsPartIdx);
+        uint32_t NumQParts = m_cu->m_NumPartition >> (Depth << 1); // Number of partitions on this depth
         NumQParts >>= 2;
 
         if (m_cu->GetIPCMFlag(AbsPartIdx))
         {
             ReconPCM(AbsPartIdx, Depth);
 
-            Ipp32s Size = m_pSeqParamSet->MaxCUSize >> Depth;
-            Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
-            Ipp32s YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
+            int32_t Size = m_pSeqParamSet->MaxCUSize >> Depth;
+            int32_t XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
+            int32_t YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
             UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
             return;
         }
 
-        Ipp32u ChromaPredMode = m_cu->GetChromaIntra(AbsPartIdx);
+        uint32_t ChromaPredMode = m_cu->GetChromaIntra(AbsPartIdx);
 
-        for (Ipp32u PU = 0; PU < NumPart; PU++)
+        for (uint32_t PU = 0; PU < NumPart; PU++)
         {
             IntraRecQT(InitTrDepth, AbsPartIdx + PU * NumQParts, ChromaPredMode);
         }
@@ -47,36 +47,36 @@ namespace UMC_HEVC_DECODER
 
     // Reconstruct intra (no IPCM) quad tree recursively
     void H265SegmentDecoder::IntraRecQT(
-        Ipp32u TrDepth,
-        Ipp32u AbsPartIdx,
-        Ipp32u ChromaPredMode)
+        uint32_t TrDepth,
+        uint32_t AbsPartIdx,
+        uint32_t ChromaPredMode)
     {
-        Ipp32u FullDepth = m_cu->GetDepth(AbsPartIdx) + TrDepth;
-        Ipp32u TrMode = m_cu->GetTrIndex(AbsPartIdx);
+        uint32_t FullDepth = m_cu->GetDepth(AbsPartIdx) + TrDepth;
+        uint32_t TrMode = m_cu->GetTrIndex(AbsPartIdx);
         if (TrMode == TrDepth)
         {
-            Ipp32s Size = m_pSeqParamSet->MaxCUSize >> FullDepth;
-            Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
-            Ipp32s YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
-            Ipp32s diagId = XInc + (m_pSeqParamSet->MaxCUSize >> 2) - YInc - 1;
+            int32_t Size = m_pSeqParamSet->MaxCUSize >> FullDepth;
+            int32_t XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
+            int32_t YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
+            int32_t diagId = XInc + (m_pSeqParamSet->MaxCUSize >> 2) - YInc - 1;
 
-            Ipp32u lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
-            Ipp32u tlIf = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
-            Ipp32u tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
+            uint32_t lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
+            uint32_t tlIf = (*m_context->m_RecTLIntraFlags >> diagId) & 0x1;
+            uint32_t tpIf = m_context->m_RecTpIntraFlags[YInc] >> (XInc);
 
             IntraRecLumaBlk(TrDepth, AbsPartIdx, tpIf, lfIf, tlIf);
 
             UpdateRecNeighboursBuffersN(XInc, YInc, Size, true);
 
-            Ipp32u num4x4InCU =
+            uint32_t num4x4InCU =
                 (m_cu->GetWidth(AbsPartIdx) >> TrDepth) / 4;
             if (Size == 4)
                 //scesial case - virtually increase count for 4x4 since we gather chroma from 8x8
                 //and should calc pred. pels accord. to correct neigbors
                 num4x4InCU *= 2;
 
-            Ipp32u const scale = m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 ? 1 : 2;
-            Ipp32u const avlMask  = (1 << (num4x4InCU * scale)) - 1;
+            uint32_t const scale = m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422 ? 1 : 2;
+            uint32_t const avlMask  = (1 << (num4x4InCU * scale)) - 1;
 
             if (Size != 4)
             {
@@ -100,16 +100,16 @@ namespace UMC_HEVC_DECODER
         }
         else
         {
-            Ipp32u NumQPart = m_pCurrentFrame->getCD()->getNumPartInCU() >> ((FullDepth + 1) << 1);
-            for (Ipp32u Part = 0; Part < 4; Part++)
+            uint32_t NumQPart = m_pCurrentFrame->getCD()->getNumPartInCU() >> ((FullDepth + 1) << 1);
+            for (uint32_t Part = 0; Part < 4; Part++)
             {
                 IntraRecQT(TrDepth + 1, AbsPartIdx + Part * NumQPart, ChromaPredMode);
             }
         }
     }
 
-    extern const Ipp32s FilteredModes[5] = {10, 7, 1, 0, 10};
-    static const Ipp8u h265_log2table[] =
+    extern const int32_t FilteredModes[5] = {10, 7, 1, 0, 10};
+    static const uint8_t h265_log2table[] =
     {
         2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
         5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6
@@ -117,20 +117,20 @@ namespace UMC_HEVC_DECODER
 
     // Reconstruct intra luma block
     void H265SegmentDecoder::IntraRecLumaBlk(
-        Ipp32u TrDepth,
-        Ipp32u AbsPartIdx,
-        Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
+        uint32_t TrDepth,
+        uint32_t AbsPartIdx,
+        uint32_t tpIf, uint32_t lfIf, uint32_t tlIf)
     {
-        Ipp32u width = m_cu->GetWidth(AbsPartIdx) >> TrDepth;
+        uint32_t width = m_cu->GetWidth(AbsPartIdx) >> TrDepth;
 
-        Ipp8u PredPel[(4*64+1) * 2];
+        uint8_t PredPel[(4*64+1) * 2];
 
         // Get prediction from neighbours
         m_reconstructor->GetPredPelsLuma(m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx),
             PredPel, width, m_pCurrentFrame->pitch_luma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_luma);
 
         bool isFilterNeeded = true;
-        Ipp32u LumaPredMode = m_cu->GetLumaIntra(AbsPartIdx);
+        uint32_t LumaPredMode = m_cu->GetLumaIntra(AbsPartIdx);
 
         if (LumaPredMode == INTRA_LUMA_DC_IDX)
         {
@@ -138,7 +138,7 @@ namespace UMC_HEVC_DECODER
         }
         else
         {
-            Ipp32s diff = IPP_MIN(abs((int)LumaPredMode - (int)INTRA_LUMA_HOR_IDX), abs((int)LumaPredMode - (int)INTRA_LUMA_VER_IDX));
+            int32_t diff = MFX_MIN(abs((int)LumaPredMode - (int)INTRA_LUMA_HOR_IDX), abs((int)LumaPredMode - (int)INTRA_LUMA_VER_IDX));
 
             if (diff <= FilteredModes[h265_log2table[width - 4] - 2])
             {
@@ -153,7 +153,7 @@ namespace UMC_HEVC_DECODER
 
         // Do prediction from neighbours
         PlanePtrY pRec = m_context->m_frame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx);
-        Ipp32u pitch = m_context->m_frame->pitch_luma();
+        uint32_t pitch = m_context->m_frame->pitch_luma();
 
         m_reconstructor->PredictIntra(LumaPredMode, PredPel, pRec, pitch, width, m_pSeqParamSet->bit_depth_luma);
 
@@ -171,15 +171,15 @@ namespace UMC_HEVC_DECODER
 
     // Add residual to prediction for NV12 chroma
     template <typename PixType>
-    void SumOfResidAndPred(CoeffsPtr p_ResiU, CoeffsPtr p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, Ipp32u Size,
-        bool chromaUPresent, bool chromaVPresent, Ipp32u bit_depth)
+    void SumOfResidAndPred(CoeffsPtr p_ResiU, CoeffsPtr p_ResiV, size_t residualPitch, PixType *pRecIPred, size_t RecIPredStride, uint32_t Size,
+        bool chromaUPresent, bool chromaVPresent, uint32_t bit_depth)
     {
         if (sizeof(PixType) == 1)
             bit_depth = 8;
 
-        for (Ipp32u y = 0; y < Size; y++)
+        for (uint32_t y = 0; y < Size; y++)
         {
-            for (Ipp32u x = 0; x < Size; x++)
+            for (uint32_t x = 0; x < Size; x++)
             {
                 if (chromaUPresent)
                     pRecIPred[2*x] = (PixType)ClipC(pRecIPred[2*x] + p_ResiU[x], bit_depth);
@@ -194,23 +194,23 @@ namespace UMC_HEVC_DECODER
     }
 
     // Reconstruct intra NV12 chroma block
-    void H265SegmentDecoder::IntraRecChromaBlk(Ipp32u TrDepth,
-        Ipp32u AbsPartIdx,
-        Ipp32u ChromaPredMode,
-        Ipp32u tpIf, Ipp32u lfIf, Ipp32u tlIf)
+    void H265SegmentDecoder::IntraRecChromaBlk(uint32_t TrDepth,
+        uint32_t AbsPartIdx,
+        uint32_t ChromaPredMode,
+        uint32_t tpIf, uint32_t lfIf, uint32_t tlIf)
     {
         if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_400)
             return;
 
-        Ipp8u PredPel[(4*64+2)*2];
+        uint8_t PredPel[(4*64+2)*2];
 
         m_reconstructor->GetPredPelsChromaNV12(m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx),
             PredPel, m_cu->GetWidth(AbsPartIdx) >> TrDepth, m_pCurrentFrame->pitch_chroma(), tpIf, lfIf, tlIf, m_pSeqParamSet->bit_depth_chroma);
 
         // Get prediction from neighbours
-        Ipp32u Size = m_cu->GetWidth(AbsPartIdx) >> (TrDepth + 1);
+        uint32_t Size = m_cu->GetWidth(AbsPartIdx) >> (TrDepth + 1);
         PlanePtrUV pRecIPred = m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx);
-        Ipp32u RecIPredStride = m_pCurrentFrame->pitch_chroma();
+        uint32_t RecIPredStride = m_pCurrentFrame->pitch_chroma();
 
         // Do prediction from neighbours
         m_reconstructor->PredictIntraChroma(ChromaPredMode, PredPel, pRecIPred, RecIPredStride, Size);
@@ -230,7 +230,7 @@ namespace UMC_HEVC_DECODER
         if (chromaUPresent || chromaVPresent || chromaUPresent1 || chromaVPresent1)
         {
             // Inverse transform and addition of residual and prediction
-            Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
+            uint32_t residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
 
             // Cb
             if (chromaUPresent)
@@ -284,34 +284,34 @@ namespace UMC_HEVC_DECODER
             if (chromaUPresent || chromaVPresent)
             {
                 if (m_pSeqParamSet->need16bitOutput)
-                    SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
+                    SumOfResidAndPred<uint16_t>(p_ResiU, p_ResiV, residualPitch, (uint16_t*)pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
                 else
-                    SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
+                    SumOfResidAndPred<uint8_t>(p_ResiU, p_ResiV, residualPitch, pRecIPred, RecIPredStride, Size, chromaUPresent, chromaVPresent, m_pSeqParamSet->bit_depth_chroma);
             }
         }
 
         if (m_pSeqParamSet->ChromaArrayType == CHROMA_FORMAT_422)
         {
-            Ipp32u num4x4InCU = m_cu->GetWidth(AbsPartIdx) >> TrDepth >> 2;
-            Ipp32u const avlMask = (((Ipp32u)(1<<((num4x4InCU))))-1);
+            uint32_t num4x4InCU = m_cu->GetWidth(AbsPartIdx) >> TrDepth >> 2;
+            uint32_t const avlMask = (((uint32_t)(1<<((num4x4InCU))))-1);
 
             //we always have top from U/V
             tpIf = avlMask;
 
             //re-use Left flags from U/V to calculate U1/V1 TopLeft flag:
             //peek first half (U/V) and get lowest position - this is MSB bit
-            Ipp32u const TL_idx = (num4x4InCU / 2) - 1;
-            Ipp32u const TL_mask = 1 << TL_idx;
+            uint32_t const TL_idx = (num4x4InCU / 2) - 1;
+            uint32_t const TL_mask = 1 << TL_idx;
             tlIf = !!(lfIf & TL_mask);
 
             //update Left flags
-            Ipp32s XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
-            Ipp32s YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
+            int32_t XInc = m_cu->m_rasterToPelX[AbsPartIdx] >> 2;
+            int32_t YInc = m_cu->m_rasterToPelY[AbsPartIdx] >> 2;
             YInc += num4x4InCU >> 1; //shift flags for U1/V1
             lfIf = m_context->m_RecLfIntraFlags[XInc] >> (YInc);
             lfIf &= avlMask;
 
-            Ipp32u const bottomOffset =
+            uint32_t const bottomOffset =
                 (Size*RecIPredStride) << m_pSeqParamSet->need16bitOutput;
 
             m_reconstructor->GetPredPelsChromaNV12(m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx) + bottomOffset,
@@ -321,15 +321,15 @@ namespace UMC_HEVC_DECODER
 
             if (chromaUPresent1 || chromaVPresent1)
             {
-                Ipp32u residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
-                Ipp32u bottomResOffset = Size*residualPitch;
+                uint32_t residualPitch = m_ppcYUVResi->pitch_chroma() >> 1;
+                uint32_t bottomResOffset = Size*residualPitch;
                 CoeffsPtr p_ResiU = (CoeffsPtr)m_ppcYUVResi->m_pUPlane + bottomResOffset;
                 CoeffsPtr p_ResiV = (CoeffsPtr)m_ppcYUVResi->m_pVPlane + bottomResOffset;
 
                 if (m_pSeqParamSet->need16bitOutput)
-                    SumOfResidAndPred<Ipp16u>(p_ResiU, p_ResiV, residualPitch, (Ipp16u*)(pRecIPred + bottomOffset), RecIPredStride, Size, chromaUPresent1, chromaVPresent1, m_pSeqParamSet->bit_depth_chroma);
+                    SumOfResidAndPred<uint16_t>(p_ResiU, p_ResiV, residualPitch, (uint16_t*)(pRecIPred + bottomOffset), RecIPredStride, Size, chromaUPresent1, chromaVPresent1, m_pSeqParamSet->bit_depth_chroma);
                 else
-                    SumOfResidAndPred<Ipp8u>(p_ResiU, p_ResiV, residualPitch, pRecIPred + bottomOffset, RecIPredStride, Size, chromaUPresent1, chromaVPresent1, m_pSeqParamSet->bit_depth_chroma);
+                    SumOfResidAndPred<uint8_t>(p_ResiU, p_ResiV, residualPitch, pRecIPred + bottomOffset, RecIPredStride, Size, chromaUPresent1, chromaVPresent1, m_pSeqParamSet->bit_depth_chroma);
             }
         }
     }

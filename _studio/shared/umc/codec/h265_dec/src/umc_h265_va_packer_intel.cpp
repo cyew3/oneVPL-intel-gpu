@@ -48,7 +48,7 @@ namespace UMC_HEVC_DECODER
 
         void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
-        bool PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice);
+        bool PackSliceParams(H265Slice *pSlice, uint32_t &, bool isLastSlice);
         void PackSubsets(const H265DecoderFrame *pCurrentFrame);
     };
 
@@ -56,7 +56,7 @@ namespace UMC_HEVC_DECODER
     { return new PackerDXVA2intel(va); }
 
     template <typename T>
-    void GetPicParamsBuffer(UMC::VideoAccelerator* va, T** ppPicParams, Ipp32s size)
+    void GetPicParamsBuffer(UMC::VideoAccelerator* va, T** ppPicParams, int32_t size)
     {
         VM_ASSERT(va);
         VM_ASSERT(ppPicParams);
@@ -76,7 +76,7 @@ namespace UMC_HEVC_DECODER
     }
 
     template <typename T>
-    void GetSliceVABuffers(UMC::VideoAccelerator* va, T** ppSliceHeader, Ipp32s headerSize, void **ppSliceData, Ipp32s dataSize, Ipp32s dataAlignment)
+    void GetSliceVABuffers(UMC::VideoAccelerator* va, T** ppSliceHeader, int32_t headerSize, void **ppSliceData, int32_t dataSize, int32_t dataAlignment)
     {
         VM_ASSERT(va);
         VM_ASSERT(ppSliceHeader);
@@ -89,11 +89,11 @@ namespace UMC_HEVC_DECODER
             void *headBffr = va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
             void *dataBffr = va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
 
-            Ipp32s const headBffrSize = headVABffr->GetBufferSize();
-            Ipp32s const headBffrOffs = headVABffr->GetDataSize();
+            int32_t const headBffrSize = headVABffr->GetBufferSize();
+            int32_t const headBffrOffs = headVABffr->GetDataSize();
 
-            Ipp32s const dataBffrSize = dataVABffr->GetBufferSize();
-            Ipp32s       dataBffrOffs = dataVABffr->GetDataSize();
+            int32_t const dataBffrSize = dataVABffr->GetBufferSize();
+            int32_t       dataBffrOffs = dataVABffr->GetDataSize();
 
             dataBffrOffs = dataAlignment ?
                 dataAlignment * ((dataBffrOffs + dataAlignment - 1) / dataAlignment) : dataBffrOffs;
@@ -204,7 +204,7 @@ namespace UMC_HEVC_DECODER
             count++;
         }
 
-        Ipp32u index;
+        uint32_t index;
         int pocList[3 * 8];
         int numRefPicSetStCurrBefore = 0,
             numRefPicSetStCurrAfter = 0,
@@ -215,7 +215,7 @@ namespace UMC_HEVC_DECODER
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
         for (; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         {
-            Ipp32s poc = rps->getPOC(index);
+            int32_t poc = rps->getPOC(index);
             H265DecoderFrame *pFrm = dpb->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
 
             if (pFrm)
@@ -281,8 +281,8 @@ namespace UMC_HEVC_DECODER
         pPicParam->wNumBitsForShortTermRPSInSlice = (USHORT)sliceHeader->wNumBitsForShortTermRPSInSlice;
         pPicParam->ucNumDeltaPocsOfRefRpsIdx = (UCHAR)pPicParam->wNumBitsForShortTermRPSInSlice;
 
-        Ipp32u num_offsets = 0;
-        for (Ipp32u i = 0; i < pSliceInfo->GetSliceCount(); ++i)
+        uint32_t num_offsets = 0;
+        for (uint32_t i = 0; i < pSliceInfo->GetSliceCount(); ++i)
         {
             H265Slice const* slice = pSliceInfo->GetSlice(i);
             if (!slice)
@@ -345,14 +345,14 @@ namespace UMC_HEVC_DECODER
             pPicParam->num_tile_columns_minus1 = (UCHAR)pPicParamSet->num_tile_columns - 1;
             pPicParam->num_tile_rows_minus1 = (UCHAR)pPicParamSet->num_tile_rows - 1;
 
-            pPicParam->num_tile_columns_minus1 = IPP_MIN(sizeof(pPicParam->column_width_minus1) / sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
-            pPicParam->num_tile_rows_minus1 = IPP_MIN(sizeof(pPicParam->row_height_minus1) / sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
+            pPicParam->num_tile_columns_minus1 = MFX_MIN(sizeof(pPicParam->column_width_minus1) / sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
+            pPicParam->num_tile_rows_minus1 = MFX_MIN(sizeof(pPicParam->row_height_minus1) / sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
 
-            for (Ipp32u i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
-                pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+            for (uint32_t i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
+                pPicParam->column_width_minus1[i] = (uint16_t)(pPicParamSet->column_width[i] - 1);
 
-            for (Ipp32u i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
-                pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
+            for (uint32_t i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
+                pPicParam->row_height_minus1[i] = (uint16_t)(pPicParamSet->row_height[i] - 1);
         }
 
         pPicParam->diff_cu_qp_delta_depth = (UCHAR)(pPicParamSet->diff_cu_qp_delta_depth);
@@ -403,7 +403,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->log2_sao_offset_scale_chroma = (UCHAR)pPicParamSet->log2_sao_offset_scale_chroma;
         pPicParam->log2_max_transform_skip_block_size_minus2 = pPicParamSet->pps_range_extensions_flag && pPicParamSet->transform_skip_enabled_flag ? (UCHAR)pPicParamSet->log2_max_transform_skip_block_size_minus2 : 0;
 
-        for (Ipp32u i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
+        for (uint32_t i = 0; i < pPicParamSet->chroma_qp_offset_list_len; i++)
         {
             pPicParam->cb_qp_offset_list[i] = (CHAR)pPicParamSet->cb_qp_offset_list[i + 1];
             pPicParam->cr_qp_offset_list[i] = (CHAR)pPicParamSet->cr_qp_offset_list[i + 1];
@@ -412,15 +412,15 @@ namespace UMC_HEVC_DECODER
 
 #if DDI_VERSION >= 945
     inline
-    void FillPaletteEntries(DXVA_Intel_PicParams_HEVC_SCC* pPicParam, Ipp8u numComps, Ipp32u const* entries, Ipp32u count)
+    void FillPaletteEntries(DXVA_Intel_PicParams_HEVC_SCC* pPicParam, uint8_t numComps, uint32_t const* entries, uint32_t count)
     {
         VM_ASSERT(!(count > 128));
         VM_ASSERT(!(numComps > 3));
 
         pPicParam->PredictorPaletteSize = static_cast<UCHAR>(count);
-        for (Ipp8u i = 0; i < numComps; ++i, entries += count)
+        for (uint8_t i = 0; i < numComps; ++i, entries += count)
         {
-            for (Ipp8u j = 0; j < count; ++j)
+            for (uint8_t j = 0; j < count; ++j)
                 pPicParam->PredictorPaletteEntries[i][j] = static_cast<USHORT>(*(entries + j));
         }
 //            std::copy(entries, entries + count, pPicParam->PredictorPaletteEntries[i]);
@@ -453,7 +453,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->palette_max_size = static_cast<UCHAR>(pSeqParamSet->palette_max_size);
         pPicParam->delta_palette_max_predictor_size = static_cast<UCHAR>(pSeqParamSet->delta_palette_max_predictor_size);
 
-        Ipp8u const numComps = pSeqParamSet->chroma_format_idc ? 3 : 1;
+        uint8_t const numComps = pSeqParamSet->chroma_format_idc ? 3 : 1;
         if (pPicParamSet->pps_palette_predictor_initializer_present_flag)
         {
             VM_ASSERT(!pPicParamSet->m_paletteInitializers.empty());
@@ -504,7 +504,7 @@ namespace UMC_HEVC_DECODER
     }
 
     inline
-    Ipp32u GetEntryPointOffsetStep(H265Slice const* slice)
+    uint32_t GetEntryPointOffsetStep(H265Slice const* slice)
     {
         H265PicParamSet const* pps = slice->GetPicParam();
         VM_ASSERT(pps);
@@ -518,9 +518,9 @@ namespace UMC_HEVC_DECODER
         //[m_TileIdx] has size of WidthInLCU * HeightInLCU + 1
         //value of [SliceHeader :: slice_segment_address] is checked during bitstream parsing
         VM_ASSERT(sh->slice_segment_address < pps->m_TileIdx.size());
-        Ipp32u const tile = pps->m_TileIdx[sh->slice_segment_address];
+        uint32_t const tile = pps->m_TileIdx[sh->slice_segment_address];
 
-        Ipp32u const row = tile / pps->num_tile_columns;
+        uint32_t const row = tile / pps->num_tile_columns;
         if (!(row < pps->row_height.size()))
             throw h265_exception(UMC_ERR_FAILED);
 
@@ -626,9 +626,9 @@ namespace UMC_HEVC_DECODER
         if (!fi)
             throw h265_exception(UMC_ERR_FAILED);
 
-        Ipp32u offset = 0;
-        Ipp32u const count = fi->GetSliceCount();
-        for (Ipp32u i = 0; i < count; ++i)
+        uint32_t offset = 0;
+        uint32_t const count = fi->GetSliceCount();
+        for (uint32_t i = 0; i < count; ++i)
         {
             H265Slice const* slice = fi->GetSlice(i);
             VM_ASSERT(slice);
@@ -639,7 +639,7 @@ namespace UMC_HEVC_DECODER
             H265SliceHeader const* h = slice->GetSliceHeader();
             VM_ASSERT(h);
 
-            Ipp32u const step = GetEntryPointOffsetStep(slice);
+            uint32_t const step = GetEntryPointOffsetStep(slice);
             offset += h->num_entry_point_offsets / step;
         }
 
@@ -743,17 +743,17 @@ namespace UMC_HEVC_DECODER
     }
 #endif
 
-    bool PackerDXVA2intel::PackSliceParams(H265Slice *pSlice, Ipp32u &, bool isLastSlice)
+    bool PackerDXVA2intel::PackSliceParams(H265Slice *pSlice, uint32_t &, bool isLastSlice)
     {
-        Ipp8u const start_code_prefix[] = { 0, 0, 1 };
+        uint8_t const start_code_prefix[] = { 0, 0, 1 };
         size_t const prefix_size = 0;//sizeof(start_code_prefix);
 
         H265HeadersBitstream* pBitstream = pSlice->GetBitStream();
         VM_ASSERT(pBitstream);
 
-        Ipp32u      rawDataSize = 0;
+        uint32_t      rawDataSize = 0;
         const void* rawDataPtr = 0;
-        pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
+        pBitstream->GetOrg((uint32_t**)&rawDataPtr, &rawDataSize);
 
         void*       pSliceData = 0;
         bool isLong = m_va->IsLongSliceControl();
@@ -789,7 +789,7 @@ namespace UMC_HEVC_DECODER
         // copy slice data to slice data buffer
         VM_ASSERT(pSliceData);
         MFX_INTERNAL_CPY(pSliceData, start_code_prefix, prefix_size);
-        MFX_INTERNAL_CPY((Ipp8u*)pSliceData + prefix_size, rawDataPtr, rawDataSize);
+        MFX_INTERNAL_CPY((uint8_t*)pSliceData + prefix_size, rawDataPtr, rawDataSize);
 
         return true;
     }
@@ -831,8 +831,8 @@ namespace UMC_HEVC_DECODER
             throw h265_exception(UMC_ERR_FAILED);
 
         auto offset = &subset->entry_point_offset_minus1[0];
-        Ipp32u const count = fi->GetSliceCount();
-        for (Ipp32u i = 0; i < count; ++i)
+        uint32_t const count = fi->GetSliceCount();
+        for (uint32_t i = 0; i < count; ++i)
         {
             H265Slice const* slice = fi->GetSlice(i);
             if (!slice)
@@ -844,16 +844,16 @@ namespace UMC_HEVC_DECODER
 #endif
 
 #if DDI_VERSION < 954
-            Ipp32u const step = 1;
+            uint32_t const step = 1;
 #else
-            Ipp32u const step = GetEntryPointOffsetStep(slice);
+            uint32_t const step = GetEntryPointOffsetStep(slice);
 #endif
             //'m_tileByteLocation' contains absolute offsets, but we have to pass relative ones just as they are in a bitstream
             //NOTE: send only entry points for tiles
             auto position = slice->m_tileByteLocation[0];
-            for (Ipp32u j = step; j < slice->getTileLocationCount(); j += step)
+            for (uint32_t j = step; j < slice->getTileLocationCount(); j += step)
             {
-                Ipp32u const entry = slice->m_tileByteLocation[j];
+                uint32_t const entry = slice->m_tileByteLocation[j];
                 *offset++ = entry - (position  + 1);
                 position  = entry;
             }

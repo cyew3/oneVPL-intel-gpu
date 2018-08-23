@@ -183,7 +183,7 @@ bool H265DecoderFrame::IsFullFrame() const
 // Set frame flag denoting that all slices for it were found
 void H265DecoderFrame::SetFullFrame(bool isFull)
 {
-    m_Flags.isFull = (Ipp8u) (isFull ? 1 : 0);
+    m_Flags.isFull = (uint8_t) (isFull ? 1 : 0);
 }
 
 // Returns whether frame has been decoded
@@ -292,7 +292,7 @@ void H265DecoderFrame::Free()
 
 void H265DecoderFrame::AddSlice(H265Slice * pSlice)
 {
-    Ipp32s iSliceNumber = m_pSlicesInfo->GetSliceCount() + 1;
+    int32_t iSliceNumber = m_pSlicesInfo->GetSliceCount() + 1;
 
     pSlice->SetSliceNumber(iSliceNumber);
     pSlice->m_pCurrentFrame = this;
@@ -303,7 +303,7 @@ void H265DecoderFrame::AddSlice(H265Slice * pSlice)
 
 bool H265DecoderFrame::CheckReferenceFrameError()
 {
-    Ipp32u checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
+    uint32_t checkedErrorMask = UMC::ERROR_FRAME_MINOR | UMC::ERROR_FRAME_MAJOR | UMC::ERROR_FRAME_REFERENCE_FRAME;
     for (size_t i = 0; i < m_refPicList.size(); i ++)
     {
         H265DecoderRefPicList* list = &m_refPicList[i].m_refPicList[REF_PIC_LIST_0];
@@ -326,11 +326,11 @@ bool H265DecoderFrame::CheckReferenceFrameError()
 
 #ifndef MFX_VA
 // Fill frame planes with default values
-void H265DecoderFrame::DefaultFill(bool isChromaOnly, Ipp8u defaultValue)
+void H265DecoderFrame::DefaultFill(bool isChromaOnly, uint8_t defaultValue)
 {
     try
     {
-        IppiSize roi;
+        mfxSize roi;
 
         if (!isChromaOnly)
         {
@@ -369,12 +369,12 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         m_CodingData = new H265FrameCodingData();
     }
 
-    Ipp32u MaxCUSize = sps->MaxCUSize;
+    uint32_t MaxCUSize = sps->MaxCUSize;
 
-    Ipp32u MaxCUDepth   = sps->MaxCUDepth;
+    uint32_t MaxCUDepth   = sps->MaxCUDepth;
 
-    Ipp32u widthInCU = (m_lumaSize.width % MaxCUSize) ? m_lumaSize.width / MaxCUSize + 1 : m_lumaSize.width / MaxCUSize;
-    Ipp32u heightInCU = (m_lumaSize.height % MaxCUSize) ? m_lumaSize.height / MaxCUSize + 1 : m_lumaSize.height / MaxCUSize;
+    uint32_t widthInCU = (m_lumaSize.width % MaxCUSize) ? m_lumaSize.width / MaxCUSize + 1 : m_lumaSize.width / MaxCUSize;
+    uint32_t heightInCU = (m_lumaSize.height % MaxCUSize) ? m_lumaSize.height / MaxCUSize + 1 : m_lumaSize.height / MaxCUSize;
 
     m_CodingData->m_partitionInfo.Init(sps);
 
@@ -386,20 +386,20 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
 
         delete[] m_cuOffsetY;
 
-        Ipp32u pixelSize = (sps->need16bitOutput) ? 2 : 1;
-        Ipp32s NumCUInWidth = m_CodingData->m_WidthInCU;
-        Ipp32s NumCUInHeight = m_CodingData->m_HeightInCU;
+        uint32_t pixelSize = (sps->need16bitOutput) ? 2 : 1;
+        int32_t NumCUInWidth = m_CodingData->m_WidthInCU;
+        int32_t NumCUInHeight = m_CodingData->m_HeightInCU;
 
-        Ipp32u buOffsetSize = (1 << (2 * MaxCUDepth));
-        Ipp32s accumulateSum = 2*NumCUInWidth * NumCUInHeight + 2*buOffsetSize;
+        uint32_t buOffsetSize = (1 << (2 * MaxCUDepth));
+        int32_t accumulateSum = 2*NumCUInWidth * NumCUInHeight + 2*buOffsetSize;
 
         // Initialize CU offset tables
-        m_cuOffsetY = h265_new_array_throw<Ipp32s>(accumulateSum);
+        m_cuOffsetY = h265_new_array_throw<int32_t>(accumulateSum);
         m_cuOffsetC = m_cuOffsetY + NumCUInWidth * NumCUInHeight;
 
-        for (Ipp32s cuRow = 0; cuRow < NumCUInHeight; cuRow++)
+        for (int32_t cuRow = 0; cuRow < NumCUInHeight; cuRow++)
         {
-            for (Ipp32s cuCol = 0; cuCol < NumCUInWidth; cuCol++)
+            for (int32_t cuCol = 0; cuCol < NumCUInWidth; cuCol++)
             {
                 m_cuOffsetY[cuRow * NumCUInWidth + cuCol] = m_pitch_luma * cuRow * MaxCUSize + cuCol * MaxCUSize;
                 m_cuOffsetC[cuRow * NumCUInWidth + cuCol] = m_pitch_chroma * cuRow * (MaxCUSize / sps->SubHeightC()) + cuCol * MaxCUSize;
@@ -412,11 +412,11 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         // Initialize partition offsets tables
         m_buOffsetY = m_cuOffsetC + NumCUInWidth * NumCUInHeight;
         m_buOffsetC = m_buOffsetY + buOffsetSize;
-        for (Ipp32s buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
+        for (int32_t buRow = 0; buRow < (1 << MaxCUDepth); buRow++)
         {
-            for (Ipp32s buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
+            for (int32_t buCol = 0; buCol < (1 << MaxCUDepth); buCol++)
             {
-                Ipp32s buRowOffset = buRow * (MaxCUSize >> MaxCUDepth);
+                int32_t buRowOffset = buRow * (MaxCUSize >> MaxCUDepth);
                 m_buOffsetY[(buRow << MaxCUDepth) + buCol] = m_pitch_luma * buRowOffset + buCol * (MaxCUSize  >> MaxCUDepth);
                 m_buOffsetC[(buRow << MaxCUDepth) + buCol] = m_pitch_chroma * buRowOffset / sps->SubHeightC() + buCol * (MaxCUSize >> MaxCUDepth);
 
@@ -426,9 +426,9 @@ void H265DecoderFrame::allocateCodingData(const H265SeqParamSet* sps, const H265
         }
     }
 
-    m_CodingData->m_CUOrderMap = const_cast<Ipp32u*>(&pps->m_CtbAddrTStoRS[0]);
-    m_CodingData->m_InverseCUOrderMap = const_cast<Ipp32u*>(&pps->m_CtbAddrRStoTS[0]);
-    m_CodingData->m_TileIdxMap = const_cast<Ipp32u*>(&pps->m_TileIdx[0]);
+    m_CodingData->m_CUOrderMap = const_cast<uint32_t*>(&pps->m_CtbAddrTStoRS[0]);
+    m_CodingData->m_InverseCUOrderMap = const_cast<uint32_t*>(&pps->m_CtbAddrRStoTS[0]);
+    m_CodingData->m_TileIdxMap = const_cast<uint32_t*>(&pps->m_TileIdx[0]);
 
     m_CodingData->initSAO(sps);
 }
@@ -444,43 +444,43 @@ void H265DecoderFrame::deallocateCodingData()
 }
 
 // Returns a CTB by its raster address
-H265CodingUnit* H265DecoderFrame::getCU(Ipp32u CUaddr) const
+H265CodingUnit* H265DecoderFrame::getCU(uint32_t CUaddr) const
 {
     return m_CodingData->getCU(CUaddr);
 }
 
 // Returns number of CTBs in frame
-Ipp32u H265DecoderFrame::getNumCUsInFrame() const
+uint32_t H265DecoderFrame::getNumCUsInFrame() const
 {
     return m_CodingData->m_NumCUsInFrame;
 }
 
 // Returns number of minimal partitions in CTB width or height
-Ipp32u H265DecoderFrame::getNumPartInCUSize() const
+uint32_t H265DecoderFrame::getNumPartInCUSize() const
 {
     return m_CodingData->m_NumPartInWidth;
 }
 
 // Returns number of CTBs in frame width
-Ipp32u H265DecoderFrame::getFrameWidthInCU() const
+uint32_t H265DecoderFrame::getFrameWidthInCU() const
 {
     return m_CodingData->m_WidthInCU;
 }
 
 // Returns number of CTBs in frame height
-Ipp32u H265DecoderFrame::getFrameHeightInCU() const
+uint32_t H265DecoderFrame::getFrameHeightInCU() const
 {
     return m_CodingData->m_HeightInCU;
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr) const
+PlanePtrY H265DecoderFrame::GetLumaAddr(int32_t CUAddr) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr];
 }
 
 //  Access starting position of original picture for specific coding unit (CU)
-PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
+PlanePtrUV H265DecoderFrame::GetCbCrAddr(int32_t CUAddr) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr];
@@ -488,13 +488,13 @@ PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr) const
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
 // ML: OPT: TODO: Make these functions available for inlining
-PlanePtrY H265DecoderFrame::GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
+PlanePtrY H265DecoderFrame::GetLumaAddr(int32_t CUAddr, uint32_t AbsZorderIdx) const
 {
     return m_pYPlane + m_cuOffsetY[CUAddr] + m_buOffsetY[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];
 }
 
 //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-PlanePtrUV H265DecoderFrame::GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const
+PlanePtrUV H265DecoderFrame::GetCbCrAddr(int32_t CUAddr, uint32_t AbsZorderIdx) const
 {
     // Chroma offset is already multiplied to chroma pitch (double for NV12)
     return m_pUVPlane + m_cuOffsetC[CUAddr] + m_buOffsetC[getCD()->m_partitionInfo.m_zscanToRaster[AbsZorderIdx]];

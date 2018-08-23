@@ -40,7 +40,7 @@ enum
 extern int const s_quantTSDefault4x4[16];
 extern int const s_quantIntraDefault8x8[64];
 extern int const s_quantInterDefault8x8[64];
-extern Ipp16u const* SL_tab_up_right[];
+extern uint16_t const* SL_tab_up_right[];
 
 inline
 int const* getDefaultScalingList(unsigned sizeId, unsigned listId)
@@ -82,7 +82,7 @@ void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char q
         Inter   Cb      4
         Inter   Cr      5         */
 
-    Ipp16u const* scan = 0;
+    uint16_t const* scan = 0;
     if (force_upright_scan)
         scan = SL_tab_up_right[sizeId];
 
@@ -121,7 +121,7 @@ void initQMatrix(const H265ScalingList *scalingList, int sizeId, unsigned char q
         Intra   Y       0
         Inter   Y       1         */
 
-    Ipp16u const* scan = 0;
+    uint16_t const* scan = 0;
     if (force_upright_scan)
         scan = SL_tab_up_right[sizeId];
 
@@ -149,7 +149,7 @@ public:
     virtual ~Packer();
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size) = 0;
-    virtual UMC::Status SyncTask(Ipp32s index, void * error) = 0;
+    virtual UMC::Status SyncTask(int32_t index, void * error) = 0;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     virtual bool IsGPUSyncEventDisable() = 0;
 #endif
@@ -163,7 +163,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier) = 0;
 
-    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice) = 0;
+    virtual bool PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice) = 0;
 
     virtual void PackQmatrix(const H265Slice *pSlice) = 0;
 
@@ -181,7 +181,7 @@ public:
     PackerVA(UMC::VideoAccelerator * va);
 
     virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
-    virtual UMC::Status SyncTask(Ipp32s index, void * error) { return m_va->SyncTask(index, error); }
+    virtual UMC::Status SyncTask(int32_t index, void * error) { return m_va->SyncTask(index, error); }
 
     virtual void PackQmatrix(const H265Slice *pSlice);
 
@@ -189,7 +189,7 @@ public:
                         H265DecoderFrameInfo * pSliceInfo,
                         TaskSupplier_H265 * supplier);
 
-    virtual bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
+    virtual bool PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice);
 
     virtual void BeginFrame(H265DecoderFrame*);
     virtual void EndFrame();
@@ -219,7 +219,7 @@ public:
 
 #endif // UMC_VA_LINUX
 
-inline bool IsVLDProfile (Ipp32s profile)
+inline bool IsVLDProfile (int32_t profile)
 {
     return (profile & UMC::VA_VLD) != 0;
 }

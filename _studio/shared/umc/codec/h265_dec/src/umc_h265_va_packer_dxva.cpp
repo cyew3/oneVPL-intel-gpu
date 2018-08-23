@@ -33,10 +33,10 @@ namespace UMC_HEVC_DECODER
 
     Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
     {
-        return m_va->ExecuteStatusReportBuffer(pStatusReport, (Ipp32u)size);
+        return m_va->ExecuteStatusReportBuffer(pStatusReport, (uint32_t)size);
     }
 
-    Status PackerDXVA2::SyncTask(Ipp32s index, void * error)
+    Status PackerDXVA2::SyncTask(int32_t index, void * error)
     {
         return m_va->SyncTask(index, error);
     }
@@ -81,7 +81,7 @@ namespace UMC_HEVC_DECODER
         if (!pCurrentFrame)
             throw h265_exception(UMC_ERR_FAILED);
 
-        Ipp32s first_slice = 0;
+        int32_t first_slice = 0;
 
         for (;;)
         {
@@ -97,14 +97,14 @@ namespace UMC_HEVC_DECODER
                 PackSubsets(frame);
             }
 
-            Ipp32u sliceNum = 0;
-            for (Ipp32s n = first_slice; n < sliceCount; n++)
+            uint32_t sliceNum = 0;
+            for (int32_t n = first_slice; n < sliceCount; n++)
             {
                 notchopping = PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
                 if (!notchopping)
                 {
                     //dependent slices should be with first independent slice
-                    for (Ipp32s i = n; i >= first_slice; i--)
+                    for (int32_t i = n; i >= first_slice; i--)
                     {
                         if (!sliceInfo->GetSlice(i)->GetSliceHeader()->dependent_slice_segment_flag)
                             break;
@@ -112,7 +112,7 @@ namespace UMC_HEVC_DECODER
                         UMCVACompBuffer *headVABffr = 0;
 
                         m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &headVABffr);
-                        Ipp32s headerSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Slice_HEVC_Short);
+                        int32_t headerSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Intel_Slice_HEVC_Long) : sizeof(DXVA_Slice_HEVC_Short);
                         headVABffr->SetDataSize(headVABffr->GetDataSize() - headerSize); //remove one slice
 
                         n--;
@@ -165,14 +165,14 @@ namespace UMC_HEVC_DECODER
 
             if (doInit)
             {
-                for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+                for (uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
                 {
-                    for (Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
+                    for (uint32_t listId = 0; listId < g_scalingListNum[sizeId]; listId++)
                     {
                         const int *src = getDefaultScalingList(sizeId, listId);
                         int *dst = sl.getScalingListAddress(sizeId, listId);
-                        int count = std::min<Ipp32s>(MAX_MATRIX_COEF_NUM, g_scalingListSize[sizeId]);
-                        MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
+                        int count = std::min<int32_t>(MAX_MATRIX_COEF_NUM, g_scalingListSize[sizeId]);
+                        MFX_INTERNAL_CPY(dst, src, sizeof(int32_t) * count);
                         sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
                     }
                 }
@@ -193,9 +193,9 @@ namespace UMC_HEVC_DECODER
         initQMatrix<64>(scalingList, SCALING_LIST_16x16, pQmatrix->ucScalingLists2, force_upright_scan);    // 16x16
         initQMatrix(scalingList, SCALING_LIST_32x32, pQmatrix->ucScalingLists3, force_upright_scan);    // 32x32
 
-        for (Ipp32u sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
+        for (uint32_t sizeId = SCALING_LIST_16x16; sizeId <= SCALING_LIST_32x32; sizeId++)
         {
-            for (Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
+            for (uint32_t listId = 0; listId < g_scalingListNum[sizeId]; listId++)
             {
                 if (sizeId == SCALING_LIST_16x16)
                     pQmatrix->ucScalingListDCCoefSizeID2[listId] = (UCHAR)scalingList->getScalingListDC(sizeId, listId);

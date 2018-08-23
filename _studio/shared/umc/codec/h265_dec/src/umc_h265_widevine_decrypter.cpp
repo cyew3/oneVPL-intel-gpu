@@ -81,7 +81,7 @@ void DecryptParametersWrapper::CopyDecryptParams(const DECRYPT_QUERY_STATUS_PARA
 }
 
 // Parse HRD information in VPS or in VUI block of SPS
-void DecryptParametersWrapper::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_present_flag, Ipp32u vps_max_sub_layers)
+void DecryptParametersWrapper::parseHrdParameters(H265HRD *hrd, uint8_t cprms_present_flag, uint32_t vps_max_sub_layers)
 {
     hrd->initial_cpb_removal_delay_length = 23 + 1;
     hrd->au_cpb_removal_delay_length = 23 + 1;
@@ -117,7 +117,7 @@ void DecryptParametersWrapper::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_pres
         }
     }
 
-    for (Ipp32u i = 0; i < vps_max_sub_layers; i++)
+    for (uint32_t i = 0; i < vps_max_sub_layers; i++)
     {
         H265HrdSubLayerInfo * hrdSubLayerInfo = hrd->GetHRDSubLayerParam(i);
         hrdSubLayerInfo->fixed_pic_rate_general_flag = SeqParams.sps_vui.vui_hrd_parameters.hrd_fixed_pic_rate_general_flag[i];
@@ -154,7 +154,7 @@ void DecryptParametersWrapper::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_pres
 
         if(hrd->nal_hrd_parameters_present_flag)
         {
-            for (Ipp32u j = 0 ; j < hrdSubLayerInfo->cpb_cnt; j++)
+            for (uint32_t j = 0 ; j < hrdSubLayerInfo->cpb_cnt; j++)
             {
                 hrdSubLayerInfo->bit_rate_value[j][0] = SeqParams.sps_vui.vui_hrd_parameters.hrd_sublayer_nal.bit_rate_value_minus1[j] + 1;
                 hrdSubLayerInfo->cpb_size_value[j][0] = SeqParams.sps_vui.vui_hrd_parameters.hrd_sublayer_nal.cpb_size_value_minus1[j] + 1;
@@ -170,7 +170,7 @@ void DecryptParametersWrapper::parseHrdParameters(H265HRD *hrd, Ipp8u cprms_pres
 
         if(hrd->vcl_hrd_parameters_present_flag)
         {
-            for (Ipp32u j = 0 ; j < hrdSubLayerInfo->cpb_cnt; j++)
+            for (uint32_t j = 0 ; j < hrdSubLayerInfo->cpb_cnt; j++)
             {
                 hrdSubLayerInfo->bit_rate_value[j][1] = SeqParams.sps_vui.vui_hrd_parameters.hrd_sublayer_vcl.bit_rate_value_minus1[j] + 1;
                 hrdSubLayerInfo->cpb_size_value[j][1] = SeqParams.sps_vui.vui_hrd_parameters.hrd_sublayer_vcl.cpb_size_value_minus1[j] + 1;
@@ -195,25 +195,25 @@ UMC::Status DecryptParametersWrapper::GetVideoParamSet(H265VideoParamSet * /*pcV
 // Parse scaling list data block
 void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId, h265_scaling_list * sourceList)
 {
-    int i,coefNum = IPP_MIN(MAX_MATRIX_COEF_NUM,(int)g_scalingListSize[sizeId]);
+    int i,coefNum = MFX_MIN(MAX_MATRIX_COEF_NUM,(int)g_scalingListSize[sizeId]);
     //int nextCoef = SCALING_LIST_START_VALUE;
-    const Ipp16u *scan  = (sizeId == 0) ? ScanTableDiag4x4 : g_sigLastScanCG32x32;
+    const uint16_t *scan  = (sizeId == 0) ? ScanTableDiag4x4 : g_sigLastScanCG32x32;
     int *dst = scalingList->getScalingListAddress(sizeId, listId);
 
-    Ipp8u** source = NULL;
+    uint8_t** source = NULL;
     switch (sizeId)
     {
         case SCALING_LIST_4x4:
-            source = (Ipp8u**)sourceList->sps_scaling_list_4x4;
+            source = (uint8_t**)sourceList->sps_scaling_list_4x4;
             break;
         case SCALING_LIST_8x8:
-            source = (Ipp8u**)sourceList->sps_scaling_list_8x8;
+            source = (uint8_t**)sourceList->sps_scaling_list_8x8;
             break;
         case SCALING_LIST_16x16:
-            source = (Ipp8u**)sourceList->sps_scaling_list_16x16;
+            source = (uint8_t**)sourceList->sps_scaling_list_16x16;
             break;
         case SCALING_LIST_32x32:
-            source = (Ipp8u**)sourceList->sps_scaling_list_32x32;
+            source = (uint8_t**)sourceList->sps_scaling_list_32x32;
             break;
         default:
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -227,7 +227,7 @@ void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, 
 
     for(i = 0; i < coefNum; i++)
     {
-    //    Ipp32s scaling_list_delta_coef = GetVLCElementS();
+    //    int32_t scaling_list_delta_coef = GetVLCElementS();
 
     //    if (scaling_list_delta_coef < -128 || scaling_list_delta_coef > 127)
     //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -242,14 +242,14 @@ void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, 
 void DecryptParametersWrapper::parseScalingList(H265ScalingList *scalingList, h265_scaling_list * sourceList)
 {
     //for each size
-    for(Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    for(uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
-        for(Ipp32u listId = 0; listId <  g_scalingListNum[sizeId]; listId++)
+        for(uint32_t listId = 0; listId <  g_scalingListNum[sizeId]; listId++)
         {
-            Ipp8u scaling_list_pred_mode_flag = sourceList->scaling_list_pred_mode_flag[sizeId][listId];
+            uint8_t scaling_list_pred_mode_flag = sourceList->scaling_list_pred_mode_flag[sizeId][listId];
             if(!scaling_list_pred_mode_flag) //Copy Mode
             {
-                Ipp32u scaling_list_pred_matrix_id_delta = sourceList->scaling_list_pred_matrix_id_delta[sizeId][listId];
+                uint32_t scaling_list_pred_matrix_id_delta = sourceList->scaling_list_pred_matrix_id_delta[sizeId][listId];
                 if (scaling_list_pred_matrix_id_delta > listId)
                     throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
@@ -275,7 +275,7 @@ void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNum
     parseProfileTier(rpcPTL->GetGeneralPTL(), &SeqParams.sps_profile_tier_level.general_ptl);
 
     {
-        Ipp32s level_idc = SeqParams.sps_profile_tier_level.general_ptl.layer_level_idc;
+        int32_t level_idc = SeqParams.sps_profile_tier_level.general_ptl.layer_level_idc;
         level_idc = ((level_idc * 10) / 30);
         rpcPTL->GetGeneralPTL()->level_idc = level_idc;
     }
@@ -291,7 +291,7 @@ void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNum
     //{
     //    for (int i = maxNumSubLayersMinus1; i < 8; i++)
     //    {
-    //        Ipp32u reserved_zero_2bits = GetBits(2);
+    //        uint32_t reserved_zero_2bits = GetBits(2);
     //        if (reserved_zero_2bits)
     //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     //    }
@@ -308,7 +308,7 @@ void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNum
         if (SeqParams.sps_profile_tier_level.sub_layer_level_present_flag[i])
         {
             rpcPTL->sub_layer_level_present_flag |= 1 << i;
-            Ipp32s level_idc = SeqParams.sps_profile_tier_level.sub_layer_ptl[i].layer_level_idc;
+            int32_t level_idc = SeqParams.sps_profile_tier_level.sub_layer_ptl[i].layer_level_idc;
             level_idc = ((level_idc*10) / 30);
             rpcPTL->GetSubLayerPTL(i)->level_idc = level_idc;
         }
@@ -354,22 +354,22 @@ void DecryptParametersWrapper::parseProfileTier(H265PTL *ptl, h265_layer_profile
 
     //if (ptl->profile_idc == H265_PROFILE_FREXT || (ptl->profile_compatibility_flags & (1 << 4)))
     //{
-    ////    Ipp8u max_12bit_constraint_flag = Get1Bit();
-    //    Ipp8u max_10bit_constraint_flag = Get1Bit();
-    //    Ipp8u max_8bit_constraint_flag = Get1Bit();
-    //    Ipp8u max_422chroma_constraint_flag = Get1Bit();
-    //    Ipp8u max_420chroma_constraint_flag = Get1Bit();
-    //    Ipp8u max_monochrome_constraint_flag = Get1Bit();
-    //    Ipp8u intra_constraint_flag = Get1Bit();
-    //    Ipp8u one_picture_only_constraint_flag = Get1Bit();
-    //    Ipp8u lower_bit_rate_constraint_flag = Get1Bit();
+    ////    uint8_t max_12bit_constraint_flag = Get1Bit();
+    //    uint8_t max_10bit_constraint_flag = Get1Bit();
+    //    uint8_t max_8bit_constraint_flag = Get1Bit();
+    //    uint8_t max_422chroma_constraint_flag = Get1Bit();
+    //    uint8_t max_420chroma_constraint_flag = Get1Bit();
+    //    uint8_t max_monochrome_constraint_flag = Get1Bit();
+    //    uint8_t intra_constraint_flag = Get1Bit();
+    //    uint8_t one_picture_only_constraint_flag = Get1Bit();
+    //    uint8_t lower_bit_rate_constraint_flag = Get1Bit();
 
-    //    Ipp32u XXX_reserved_zero_35bits = GetBits(32);
+    //    uint32_t XXX_reserved_zero_35bits = GetBits(32);
     //    XXX_reserved_zero_35bits = GetBits(3);
     //}
     //else
     //{
-    //    Ipp32u XXX_reserved_zero_44bits = GetBits(32);
+    //    uint32_t XXX_reserved_zero_44bits = GetBits(32);
     //    XXX_reserved_zero_44bits = GetBits(12);
     //    //if (XXX_reserved_zero_44bits)
     //      //  throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -455,8 +455,8 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
 
     pcSPS->sps_sub_layer_ordering_info_present_flag = SeqParams.sps_sub_layer_ordering_info_present_flag;
 
-    Ipp32u start = pcSPS->sps_sub_layer_ordering_info_present_flag ? 0 : (pcSPS->sps_max_sub_layers-1);
-    for (Ipp32u i = 0; i < pcSPS->sps_max_sub_layers; i++)
+    uint32_t start = pcSPS->sps_sub_layer_ordering_info_present_flag ? 0 : (pcSPS->sps_max_sub_layers-1);
+    for (uint32_t i = 0; i < pcSPS->sps_max_sub_layers; i++)
     {
         pcSPS->sps_max_dec_pic_buffering[i] = SeqParams.sps_max_dec_pic_buffering_minus1[start+i] + 1;
 
@@ -491,13 +491,13 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
 
     pcSPS->log2_min_luma_coding_block_size = SeqParams.sps_log2_min_luma_coding_block_size_minus3 + 3;
 
-    Ipp32u MinCbLog2SizeY = pcSPS->log2_min_luma_coding_block_size;
-    Ipp32u MinCbSizeY = 1 << pcSPS->log2_min_luma_coding_block_size;
+    uint32_t MinCbLog2SizeY = pcSPS->log2_min_luma_coding_block_size;
+    uint32_t MinCbSizeY = 1 << pcSPS->log2_min_luma_coding_block_size;
 
     if ((pcSPS->pic_width_in_luma_samples % MinCbSizeY) || (pcSPS->pic_height_in_luma_samples % MinCbSizeY))
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    Ipp32u log2_diff_max_min_coding_block_size = SeqParams.sps_log2_diff_max_min_luma_coding_block_size;
+    uint32_t log2_diff_max_min_coding_block_size = SeqParams.sps_log2_diff_max_min_luma_coding_block_size;
     pcSPS->log2_max_luma_coding_block_size = log2_diff_max_min_coding_block_size + pcSPS->log2_min_luma_coding_block_size;
     pcSPS->MaxCUSize =  1 << pcSPS->log2_max_luma_coding_block_size;
 
@@ -506,12 +506,12 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
     if (pcSPS->log2_min_transform_block_size >= MinCbLog2SizeY)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    Ipp32u log2_diff_max_min_transform_block_size = SeqParams.sps_log2_diff_max_min_transform_block_size;
+    uint32_t log2_diff_max_min_transform_block_size = SeqParams.sps_log2_diff_max_min_transform_block_size;
     pcSPS->log2_max_transform_block_size = log2_diff_max_min_transform_block_size + pcSPS->log2_min_transform_block_size;
     pcSPS->m_maxTrSize = 1 << pcSPS->log2_max_transform_block_size;
 
-    Ipp32u CtbLog2SizeY = pcSPS->log2_max_luma_coding_block_size;
-    if (pcSPS->log2_max_transform_block_size > IPP_MIN(5, CtbLog2SizeY))
+    uint32_t CtbLog2SizeY = pcSPS->log2_max_luma_coding_block_size;
+    if (pcSPS->log2_max_transform_block_size > MFX_MIN(5, CtbLog2SizeY))
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     pcSPS->max_transform_hierarchy_depth_inter = SeqParams.sps_max_transform_hierarchy_depth_inter;
@@ -523,8 +523,8 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
     if (pcSPS->max_transform_hierarchy_depth_intra > CtbLog2SizeY - pcSPS->log2_min_transform_block_size)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    Ipp32u addCUDepth = 0;
-    while((pcSPS->MaxCUSize >> log2_diff_max_min_coding_block_size) > (Ipp32u)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
+    uint32_t addCUDepth = 0;
+    while((pcSPS->MaxCUSize >> log2_diff_max_min_coding_block_size) > (uint32_t)( 1 << ( pcSPS->log2_min_transform_block_size + addCUDepth)))
     {
         addCUDepth++;
     }
@@ -558,12 +558,12 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
 
         pcSPS->log2_min_pcm_luma_coding_block_size = SeqParams.sps_log2_min_pcm_luma_coding_block_size_minus3 + 3;
 
-        if (pcSPS->log2_min_pcm_luma_coding_block_size < IPP_MIN(MinCbLog2SizeY, 5) || pcSPS->log2_min_pcm_luma_coding_block_size > IPP_MIN(CtbLog2SizeY, 5))
+        if (pcSPS->log2_min_pcm_luma_coding_block_size < MFX_MIN(MinCbLog2SizeY, 5) || pcSPS->log2_min_pcm_luma_coding_block_size > MFX_MIN(CtbLog2SizeY, 5))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         pcSPS->log2_max_pcm_luma_coding_block_size = SeqParams.sps_log2_diff_max_min_pcm_luma_coding_block_size + pcSPS->log2_min_pcm_luma_coding_block_size;
 
-        if (pcSPS->log2_max_pcm_luma_coding_block_size > IPP_MIN(CtbLog2SizeY, 5))
+        if (pcSPS->log2_max_pcm_luma_coding_block_size > MFX_MIN(CtbLog2SizeY, 5))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         pcSPS->pcm_loop_filter_disabled_flag = SeqParams.sps_pcm_loop_filter_disable_flag;
@@ -578,13 +578,13 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
     ReferencePictureSetList* rpsList = pcSPS->getRPSList();
     ReferencePictureSet* rps;
 
-    for(Ipp32u i = 0; i < rpsList->getNumberOfReferencePictureSets(); i++)
+    for(uint32_t i = 0; i < rpsList->getNumberOfReferencePictureSets(); i++)
     {
         rps = rpsList->getReferencePictureSet(i);
         parseShortTermRefPicSet(pcSPS, rps, i);
 
-        if (((Ipp32u)rps->getNumberOfNegativePictures() > pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1]) ||
-            ((Ipp32u)rps->getNumberOfPositivePictures() > pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1] - (Ipp32u)rps->getNumberOfNegativePictures()))
+        if (((uint32_t)rps->getNumberOfNegativePictures() > pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1]) ||
+            ((uint32_t)rps->getNumberOfPositivePictures() > pcSPS->sps_max_dec_pic_buffering[pcSPS->sps_max_sub_layers - 1] - (uint32_t)rps->getNumberOfNegativePictures()))
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     }
 
@@ -596,7 +596,7 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
         if (pcSPS->num_long_term_ref_pics_sps > 32)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        for (Ipp32u k = 0; k < pcSPS->num_long_term_ref_pics_sps; k++)
+        for (uint32_t k = 0; k < pcSPS->num_long_term_ref_pics_sps; k++)
         {
             pcSPS->lt_ref_pic_poc_lsb_sps[k] = SeqParams.sps_lt_ref_pic_poc_lsb_sps[k];
             pcSPS->used_by_curr_pic_lt_sps_flag[k] = SeqParams.sps_used_by_curr_pic_lt_sps_flag[k];
@@ -612,32 +612,32 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
         parseVUI(pcSPS);
     }
 
-    Ipp8u sps_extension_present_flag = SeqParams.sps_extension_flag;
+    uint8_t sps_extension_present_flag = SeqParams.sps_extension_flag;
     if (sps_extension_present_flag)
     {
         // Currently not supported
         ;//throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //Ipp32u sps_range_extension_flag = Get1Bit();
-        //Ipp32u sps_extension_7bits = GetBits(7);
+        //uint32_t sps_range_extension_flag = Get1Bit();
+        //uint32_t sps_extension_7bits = GetBits(7);
 
         //if (sps_range_extension_flag)
         //{
-        //    Ipp8u transform_skip_rotation_enabled_flag = Get1Bit();
-        //    Ipp8u transform_skip_context_enabled_flag = Get1Bit();
-        //    Ipp8u implicit_residual_dpcm_enabled_flag = Get1Bit();
-        //    Ipp8u explicit_residual_dpcm_enabled_flag = Get1Bit();
-        //    Ipp8u extended_precision_processing_flag = Get1Bit();
-        //    Ipp8u intra_smoothing_disabled_flag = Get1Bit();
-        //    Ipp8u high_precision_offsets_enabled_flag = Get1Bit();
-        //    Ipp8u fast_rice_adaptation_enabled_flag = Get1Bit();
-        //    Ipp8u cabac_bypass_alignment_enabled_flag = Get1Bit();
+        //    uint8_t transform_skip_rotation_enabled_flag = Get1Bit();
+        //    uint8_t transform_skip_context_enabled_flag = Get1Bit();
+        //    uint8_t implicit_residual_dpcm_enabled_flag = Get1Bit();
+        //    uint8_t explicit_residual_dpcm_enabled_flag = Get1Bit();
+        //    uint8_t extended_precision_processing_flag = Get1Bit();
+        //    uint8_t intra_smoothing_disabled_flag = Get1Bit();
+        //    uint8_t high_precision_offsets_enabled_flag = Get1Bit();
+        //    uint8_t fast_rice_adaptation_enabled_flag = Get1Bit();
+        //    uint8_t cabac_bypass_alignment_enabled_flag = Get1Bit();
         //}
 
         //if (sps_extension_7bits)
         //{
         //    while (MoreRbspData())
         //    {
-        //        /*Ipp8u sps_extension_data_flag =*/ Get1Bit();
+        //        /*uint8_t sps_extension_data_flag =*/ Get1Bit();
         //    }
         //}
     }
@@ -770,7 +770,7 @@ UMC::Status DecryptParametersWrapper::GetPictureParamSetFull(H265PicParamSet *pc
     if (pcPPS->num_ref_idx_l1_default_active > 15)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    pcPPS->init_qp = (Ipp8s)(PicParams.pps_init_qp_minus26 + 26);
+    pcPPS->init_qp = (int8_t)(PicParams.pps_init_qp_minus26 + 26);
 
     pcPPS->constrained_intra_pred_flag = PicParams.pps_constrained_intra_pred_flag;
     pcPPS->transform_skip_enabled_flag = PicParams.pps_transform_skip_enabled_flag;
@@ -816,14 +816,14 @@ UMC::Status DecryptParametersWrapper::GetPictureParamSetFull(H265PicParamSet *pc
         if (!pcPPS->uniform_spacing_flag)
         {
             pcPPS->column_width.resize(pcPPS->num_tile_columns);
-            for (Ipp32u i=0; i < pcPPS->num_tile_columns - 1; i++)
+            for (uint32_t i=0; i < pcPPS->num_tile_columns - 1; i++)
             {
                 pcPPS->column_width[i] = PicParams.pps_column_width_minus1[i] + 1;
             }
 
             pcPPS->row_height.resize(pcPPS->num_tile_rows);
 
-            for (Ipp32u i=0; i < pcPPS->num_tile_rows - 1; i++)
+            for (uint32_t i=0; i < pcPPS->num_tile_rows - 1; i++)
             {
                 pcPPS->row_height[i] = PicParams.pps_row_height_minus1[i] + 1;
             }
@@ -870,35 +870,35 @@ UMC::Status DecryptParametersWrapper::GetPictureParamSetFull(H265PicParamSet *pc
     pcPPS->log2_parallel_merge_level = PicParams.pps_log2_parallel_merge_level_minus2 + 2;
     pcPPS->slice_segment_header_extension_present_flag = PicParams.pps_slice_segment_header_extension_present_flag;
 
-    Ipp8u pps_extension_present_flag = PicParams.pps_extension_flag;
+    uint8_t pps_extension_present_flag = PicParams.pps_extension_flag;
     if (pps_extension_present_flag)
     {
         // Currently not supported
         ;//throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //Ipp8u pps_range_extensions_flag = Get1Bit();
-        //Ipp8u pps_extension_7bits = GetBits(7);
+        //uint8_t pps_range_extensions_flag = Get1Bit();
+        //uint8_t pps_extension_7bits = GetBits(7);
 
         //if (pps_range_extensions_flag)
         //{
         //    if (pcPPS->transform_skip_enabled_flag)
         //    {
-        //        Ipp32u log2_max_transform_skip_block_size_minus2 = GetVLCElementU();
-        //        Ipp8u cross_component_prediction_enabled_flag = Get1Bit();
+        //        uint32_t log2_max_transform_skip_block_size_minus2 = GetVLCElementU();
+        //        uint8_t cross_component_prediction_enabled_flag = Get1Bit();
 
-        //        Ipp8u chroma_qp_offset_list_enabled_flag = Get1Bit();
+        //        uint8_t chroma_qp_offset_list_enabled_flag = Get1Bit();
         //        if (chroma_qp_offset_list_enabled_flag)
         //        {
-        //            Ipp32u diff_cu_chroma_qp_offset_depth = GetVLCElementU();
-        //            Ipp32u chroma_qp_offset_list_len_minus1 = GetVLCElementU();
-        //            for (Ipp32u i = 0; i < chroma_qp_offset_list_len_minus1; i++)
+        //            uint32_t diff_cu_chroma_qp_offset_depth = GetVLCElementU();
+        //            uint32_t chroma_qp_offset_list_len_minus1 = GetVLCElementU();
+        //            for (uint32_t i = 0; i < chroma_qp_offset_list_len_minus1; i++)
         //            {
-        //                Ipp32u cb_qp_offset_list = GetVLCElementS();
-        //                Ipp32u cr_qp_offset_list = GetVLCElementS();
+        //                uint32_t cb_qp_offset_list = GetVLCElementS();
+        //                uint32_t cr_qp_offset_list = GetVLCElementS();
         //            }
         //        }
 
-        //        Ipp32u log2_sao_offset_scale_luma = GetVLCElementU();
-        //        Ipp32u log2_sao_offset_scale_chroma = GetVLCElementU();
+        //        uint32_t log2_sao_offset_scale_luma = GetVLCElementU();
+        //        uint32_t log2_sao_offset_scale_chroma = GetVLCElementU();
         //    }
         //}
 
@@ -955,11 +955,11 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
     //    sliceHdr->dependent_slice_segment_flag = 0;
     //}
 
-    //Ipp32u numCTUs = ((sps->pic_width_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize)*((sps->pic_height_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize);
-    //Ipp32s maxParts = 1<<(sps->MaxCUDepth<<1);
-    //Ipp32u bitsSliceSegmentAddress = 0;
+    //uint32_t numCTUs = ((sps->pic_width_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize)*((sps->pic_height_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize);
+    //int32_t maxParts = 1<<(sps->MaxCUDepth<<1);
+    //uint32_t bitsSliceSegmentAddress = 0;
 
-    //while (numCTUs > Ipp32u(1<<bitsSliceSegmentAddress))
+    //while (numCTUs > uint32_t(1<<bitsSliceSegmentAddress))
     //{
     //    bitsSliceSegmentAddress++;
     //}
@@ -973,7 +973,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
     //}
 
     //set uiCode to equal slice start address (or dependent slice start address)
-    //Ipp32s startCuAddress = maxParts*sliceHdr->slice_segment_address;
+    //int32_t startCuAddress = maxParts*sliceHdr->slice_segment_address;
     //sliceHdr->m_sliceSegmentCurStartCUAddr = startCuAddress;
     //sliceHdr->m_sliceSegmentCurEndCUAddr = (numCTUs - 1) *maxParts;
     // DO NOT REMOVE THIS LINE !!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -985,7 +985,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
 
     //if (!sliceHdr->dependent_slice_segment_flag)
     //{
-    //    for (Ipp32u i = 0; i < pps->num_extra_slice_header_bits; i++)
+    //    for (uint32_t i = 0; i < pps->num_extra_slice_header_bits; i++)
     //    {
     //        Get1Bit(); //slice_reserved_undetermined_flag
     //    }
@@ -1037,8 +1037,8 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
                 ReferencePictureSet* rps = pSlice->getRPS();
                 parseRefPicSet(rps);
 
-                if (((Ipp32u)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
-                    ((Ipp32u)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (Ipp32u)rps->getNumberOfNegativePictures()))
+                if (((uint32_t)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
+                    ((uint32_t)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (uint32_t)rps->getNumberOfNegativePictures()))
                 {
                     pSlice->m_bError = true;
                     if (sliceHdr->slice_type != I_SLICE)
@@ -1050,17 +1050,17 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
                 }
             }
 
-        //        sliceHdr->wNumBitsForShortTermRPSInSlice = (Ipp32s)(BitsDecoded() - bitsDecoded);
+        //        sliceHdr->wNumBitsForShortTermRPSInSlice = (int32_t)(BitsDecoded() - bitsDecoded);
         //    }
         //    else // reference to ST ref pic set in PPS
         //    {
-        //        Ipp32s numBits = 0;
-        //        while ((Ipp32u)(1 << numBits) < sps->getRPSList()->getNumberOfReferencePictureSets())
+        //        int32_t numBits = 0;
+        //        while ((uint32_t)(1 << numBits) < sps->getRPSList()->getNumberOfReferencePictureSets())
         //            numBits++;
 
         //        sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
 
-        //        Ipp32u short_term_ref_pic_set_idx = numBits > 0 ? GetBits(numBits) : 0;
+        //        uint32_t short_term_ref_pic_set_idx = numBits > 0 ? GetBits(numBits) : 0;
         //        if (short_term_ref_pic_set_idx >= sps->getRPSList()->getNumberOfReferencePictureSets())
         //        {
         //            pSlice->m_bError = true;
@@ -1076,7 +1076,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
             if (sps->long_term_ref_pics_present_flag)
             {
                 ReferencePictureSet* rps = pSlice->getRPS();
-                Ipp32u offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
+                uint32_t offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
         //        if (sps->num_long_term_ref_pics_sps > 0)
         //        {
         //            rps->num_long_term_sps = GetVLCElementU();
@@ -1091,16 +1091,16 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
         //        if (offset + rps->num_long_term_sps + rps->num_long_term_pics > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1])
         //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-                for(Ipp32u j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
+                for(uint32_t j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
                 {
         //            int pocLsbLt;
         //            if (k < rps->num_long_term_sps)
         //            {
-        //                Ipp32u lt_idx_sps = 0;
+        //                uint32_t lt_idx_sps = 0;
         //                if (sps->num_long_term_ref_pics_sps > 1)
         //                {
-        //                    Ipp32u bitsForLtrpInSPS = 0;
-        //                    while (sps->num_long_term_ref_pics_sps > (Ipp32u)(1 << bitsForLtrpInSPS))
+        //                    uint32_t bitsForLtrpInSPS = 0;
+        //                    while (sps->num_long_term_ref_pics_sps > (uint32_t)(1 << bitsForLtrpInSPS))
         //                        bitsForLtrpInSPS++;
 
         //                    lt_idx_sps = GetBits(bitsForLtrpInSPS);
@@ -1111,7 +1111,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
         //            }
         //            else
         //            {
-        //                Ipp32u poc_lsb_lt = GetBits(sps->log2_max_pic_order_cnt_lsb);
+        //                uint32_t poc_lsb_lt = GetBits(sps->log2_max_pic_order_cnt_lsb);
         //                pocLsbLt = poc_lsb_lt;
         //                rps->used_by_curr_pic_flag[j] = Get1Bit();
         //            }
@@ -1121,7 +1121,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
                     rps->delta_poc_msb_present_flag[j] = RefFrames.ref_set_deltapoc_msb_present_flag[k];
         //            if (rps->delta_poc_msb_present_flag[j])
         //            {
-        //                rps->delta_poc_msb_cycle_lt[j] = (Ipp8u)GetVLCElementU();
+        //                rps->delta_poc_msb_cycle_lt[j] = (uint8_t)GetVLCElementU();
         //            }
                 }
         //        offset += rps->getNumberOfLongtermPictures();
@@ -1154,7 +1154,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
 /*
         if (sliceHdr->slice_type != I_SLICE)
         {
-            Ipp8u num_ref_idx_active_override_flag = Get1Bit();
+            uint8_t num_ref_idx_active_override_flag = Get1Bit();
             if (num_ref_idx_active_override_flag)
             {
                 sliceHdr->m_numRefIdx[REF_PIC_LIST_0] = GetVLCElementU() + 1;
@@ -1288,7 +1288,7 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
         //        (sliceHdr->collocated_from_l0_flag ==0 && pSlice->getNumRefIdx(REF_PIC_LIST_1)>1)))
         //    {
         //        sliceHdr->collocated_ref_idx = GetVLCElementU();
-        //        if (sliceHdr->collocated_ref_idx >= (Ipp32u)sliceHdr->m_numRefIdx[sliceHdr->collocated_from_l0_flag ? REF_PIC_LIST_0 : REF_PIC_LIST_1])
+        //        if (sliceHdr->collocated_ref_idx >= (uint32_t)sliceHdr->m_numRefIdx[sliceHdr->collocated_from_l0_flag ? REF_PIC_LIST_0 : REF_PIC_LIST_1])
         //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         //    }
         //    else
@@ -1396,12 +1396,12 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
 
     //if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
     //{
-    //    Ipp32u *entryPointOffset  = 0;
+    //    uint32_t *entryPointOffset  = 0;
     //    int offsetLenMinus1 = 0;
 
     //    sliceHdr->num_entry_point_offsets = GetVLCElementU();
 
-    //    Ipp32u PicHeightInCtbsY = sps->HeightInCU;
+    //    uint32_t PicHeightInCtbsY = sps->HeightInCU;
 
     //    if (!pps->tiles_enabled_flag && pps->entropy_coding_sync_enabled_flag && sliceHdr->num_entry_point_offsets > PicHeightInCtbsY)
     //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -1419,8 +1419,8 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
     //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     //    }
 
-    //    entryPointOffset = new Ipp32u[sliceHdr->num_entry_point_offsets];
-    //    for (Ipp32u idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
+    //    entryPointOffset = new uint32_t[sliceHdr->num_entry_point_offsets];
+    //    for (uint32_t idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
     //    {
     //        entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
     //    }
@@ -1454,12 +1454,12 @@ void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265
 
     //if(pps->slice_segment_header_extension_present_flag)
     //{
-    //    Ipp32u slice_header_extension_length = GetVLCElementU();
+    //    uint32_t slice_header_extension_length = GetVLCElementU();
 
     //    if (slice_header_extension_length > 256)
     //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    //    for (Ipp32u i = 0; i < slice_header_extension_length; i++)
+    //    for (uint32_t i = 0; i < slice_header_extension_length; i++)
     //    {
     //        GetBits(8); // slice_header_extension_data_byte
     //    }
@@ -1480,7 +1480,7 @@ UMC::Status DecryptParametersWrapper::GetSliceHeaderFull(H265WidevineSlice *rpcS
 }
 
 // Parse RPS part in SPS
-void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* rps, Ipp32u idx)
+void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* rps, uint32_t idx)
 {
     if (idx > 0)
     {
@@ -1491,7 +1491,7 @@ void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sp
 
     if (rps->inter_ref_pic_set_prediction_flag)
     {
-        Ipp32u delta_idx_minus1 = 0;
+        uint32_t delta_idx_minus1 = 0;
 
         if (idx == sps->getRPSList()->getNumberOfReferencePictureSets())
         {
@@ -1501,14 +1501,14 @@ void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sp
         if (delta_idx_minus1 > idx - 1)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        Ipp32u rIdx = idx - 1 - delta_idx_minus1;
+        uint32_t rIdx = idx - 1 - delta_idx_minus1;
 
         if (rIdx > idx - 1)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         ReferencePictureSet*   rpsRef = const_cast<H265SeqParamSet *>(sps)->getRPSList()->getReferencePictureSet(rIdx);
-        Ipp32u num_pics = rpsRef->getNumberOfPictures();
-        for(Ipp32u j = 0 ;j <= num_pics; j++)
+        uint32_t num_pics = rpsRef->getNumberOfPictures();
+        for(uint32_t j = 0 ;j <= num_pics; j++)
         {
             rps->m_DeltaPOC[j] = SeqParams.sps_short_term_ref_pic_set[idx].rps_delta_poc[j];
             rps->used_by_curr_pic_flag[j] = SeqParams.sps_short_term_ref_pic_set[idx].rps_is_used[j];
@@ -1527,7 +1527,7 @@ void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sp
         if (rps->num_negative_pics >= MAX_NUM_REF_PICS || rps->num_positive_pics >= MAX_NUM_REF_PICS || (rps->num_positive_pics + rps->num_negative_pics) >= MAX_NUM_REF_PICS)
             throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        for(Ipp32u j = 0 ;j <= rps->num_pics; j++)
+        for(uint32_t j = 0 ;j <= rps->num_pics; j++)
         {
             rps->m_DeltaPOC[j] = SeqParams.sps_short_term_ref_pic_set[idx].rps_delta_poc[j];
             rps->used_by_curr_pic_flag[j] = SeqParams.sps_short_term_ref_pic_set[idx].rps_is_used[j];
@@ -1543,7 +1543,7 @@ void DecryptParametersWrapper::parseRefPicSet(ReferencePictureSet* rps)
     rps->num_pics = 0;
     rps->num_lt_pics = 0;
 
-    Ipp32s index = 0, j;
+    int32_t index = 0, j;
     for(j = 0; j < RefFrames.ref_set_num_of_curr_before; index++, j++)
     {
         rps->used_by_curr_pic_flag[index] = 1;
@@ -1598,7 +1598,7 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H265SE
     spl->Reset();
     spl->payLoadType = SEI_PIC_TIMING_TYPE;
 
-    Ipp32s seq_parameter_set_id = headers.m_SeqParams.GetCurrentID();;
+    int32_t seq_parameter_set_id = headers.m_SeqParams.GetCurrentID();;
     if (seq_parameter_set_id == -1)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
@@ -1617,7 +1617,7 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H265SE
 
         if (csps->m_hrdParameters.sub_pic_hrd_params_present_flag && csps->m_hrdParameters.sub_pic_cpb_params_in_pic_timing_sei_flag)
         {
-            Ipp32u num_decoding_units_minus1 = SeiPicTiming.sei_pt_num_decoding_units_minus1;
+            uint32_t num_decoding_units_minus1 = SeiPicTiming.sei_pt_num_decoding_units_minus1;
 
             if (num_decoding_units_minus1 > csps->WidthInCU * csps->HeightInCU)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -1791,7 +1791,7 @@ UMC::Status WidevineDecrypter::DecryptFrame(UMC::MediaData *pSource, DecryptPara
 
         *pDecryptParams = *pDecryptStatusReturned;
 
-        pSource->MoveDataPointer((Ipp32s)pSource->GetDataSize());
+        pSource->MoveDataPointer((int32_t)pSource->GetDataSize());
 
         m_bitstreamSubmitted = true;
     }

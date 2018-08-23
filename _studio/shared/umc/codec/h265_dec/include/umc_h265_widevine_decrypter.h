@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -41,8 +41,8 @@ public:
     void ParseSEIBufferingPeriod(const Headers & headers, H265SEIPayLoad *spl);
     void ParseSEIPicTiming(const Headers & headers, H265SEIPayLoad *spl);
 
-    Ipp64f GetTime() const {return m_pts;}
-    void SetTime(Ipp64f pts) {m_pts = pts;}
+    double GetTime() const {return m_pts;}
+    void SetTime(double pts) {m_pts = pts;}
 
 private:
     // Parse profile tier layers header part in VPS or SPS
@@ -50,13 +50,13 @@ private:
     // Parse one profile tier layer
     void parseProfileTier(H265PTL *ptl, h265_layer_profile_tier_level *sourcePtl);
     // Parse RPS part in SPS
-    void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, Ipp32u idx);
+    void parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* pRPS, uint32_t idx);
     // Parse RPS part in slice header
     void parseRefPicSet(ReferencePictureSet* pRPS);
     // Parse video usability information block in SPS
     void parseVUI(H265SeqParamSet *sps);
     // Parse HRD information in VPS or in VUI block of SPS
-    void parseHrdParameters(H265HRD *hrd, Ipp8u commonInfPresentFlag, Ipp32u vps_max_sub_layers);
+    void parseHrdParameters(H265HRD *hrd, uint8_t commonInfPresentFlag, uint32_t vps_max_sub_layers);
     // Parse scaling list information in SPS or PPS
     void parseScalingList(H265ScalingList *, h265_scaling_list *);
     // Parse scaling list data block
@@ -67,7 +67,7 @@ private:
     void CopyDecryptParams(const DECRYPT_QUERY_STATUS_PARAMS_HEVC & pDecryptParameters);
 
 private:
-    Ipp64f m_pts;
+    double m_pts;
 };
 
 
@@ -119,7 +119,7 @@ public:
 protected:
     UMC::VideoAccelerator *m_va;
     bool m_bitstreamSubmitted;
-    Ipp16u m_PESPacketCounter;
+    uint16_t m_PESPacketCounter;
 
 #ifdef UMC_VA_DXVA
     IDirect3DSurface9* m_pDummySurface;

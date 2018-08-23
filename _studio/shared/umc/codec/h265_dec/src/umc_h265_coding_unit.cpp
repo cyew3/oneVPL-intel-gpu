@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -56,7 +56,7 @@ H265CodingUnit::~H265CodingUnit()
 }
 
 // Initialize coding data dependent fields
-void H265CodingUnit::create(H265FrameCodingData * frameCD, Ipp32s cuAddr)
+void H265CodingUnit::create(H265FrameCodingData * frameCD, int32_t cuAddr)
 {
     m_Frame = NULL;
     m_SliceHeader = NULL;
@@ -79,7 +79,7 @@ void H265CodingUnit::destroy()
 }
 
 // Initialize coding unit coordinates and references to frame and slice
-void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
+void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, uint32_t iCUAddr)
 {
     const H265SeqParamSet* sps = sd->m_pSeqParamSet;
     H265DecoderFrame *Pic = sd->m_pCurrentFrame;
@@ -98,37 +98,37 @@ void H265CodingUnit::initCU(H265SegmentDecoderMultiThreaded* sd, Ipp32u iCUAddr)
 
 // Initialize CU subparts' values that happen to be outside of the frame.
 // This data may be needed later to find last valid part index if DQP is enabled.
-void H265CodingUnit::setOutsideCUPart(Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setOutsideCUPart(uint32_t AbsPartIdx, uint32_t Depth)
 {
-    Ipp8u Width = (Ipp8u) (m_Frame->getCD()->m_MaxCUWidth >> Depth);
+    uint8_t Width = (uint8_t) (m_Frame->getCD()->m_MaxCUWidth >> Depth);
 
-    m_cuData[AbsPartIdx].depth = (Ipp8u)Depth;
-    m_cuData[AbsPartIdx].width = (Ipp8u)Width;
+    m_cuData[AbsPartIdx].depth = (uint8_t)Depth;
+    m_cuData[AbsPartIdx].width = (uint8_t)Width;
     m_cuData[AbsPartIdx].predMode = MODE_NONE;
     SetCUDataSubParts(AbsPartIdx, Depth);
 }
 
 // Find last part index which is not outside of the frame (has any mode other than MODE_NONE).
-Ipp32s H265CodingUnit::getLastValidPartIdx(Ipp32s AbsPartIdx)
+int32_t H265CodingUnit::getLastValidPartIdx(int32_t AbsPartIdx)
 {
-    Ipp32s LastValidPartIdx = AbsPartIdx - 1;
+    int32_t LastValidPartIdx = AbsPartIdx - 1;
     while (LastValidPartIdx >= 0
         && GetPredictionMode(LastValidPartIdx) == MODE_NONE)
     {
-        Ipp32u Depth = GetDepth(LastValidPartIdx);
+        uint32_t Depth = GetDepth(LastValidPartIdx);
         LastValidPartIdx -= m_NumPartition >> (Depth << 1);
     }
     return LastValidPartIdx;
 }
 
 // Return whether TU is coded without quantization. For such blocks SAO should be skipped.
-bool H265CodingUnit::isLosslessCoded(Ipp32u absPartIdx)
+bool H265CodingUnit::isLosslessCoded(uint32_t absPartIdx)
 {
   return (m_SliceHeader->m_PicParamSet->transquant_bypass_enabled_flag && GetCUTransquantBypass(absPartIdx));
 }
 
 // Derive chroma modes for decoded luma mode. See HEVC specification 8.4.3.
-void H265CodingUnit::getAllowedChromaDir(Ipp32u AbsPartIdx, Ipp32u* ModeList)
+void H265CodingUnit::getAllowedChromaDir(uint32_t AbsPartIdx, uint32_t* ModeList)
 {
     ModeList[0] = INTRA_LUMA_PLANAR_IDX;
     ModeList[1] = INTRA_LUMA_VER_IDX;
@@ -136,9 +136,9 @@ void H265CodingUnit::getAllowedChromaDir(Ipp32u AbsPartIdx, Ipp32u* ModeList)
     ModeList[3] = INTRA_LUMA_DC_IDX;
     ModeList[4] = INTRA_DM_CHROMA_IDX;
 
-    Ipp32u LumaMode = GetLumaIntra(AbsPartIdx);
+    uint32_t LumaMode = GetLumaIntra(AbsPartIdx);
 
-    for (Ipp32s i = 0; i < INTRA_NUM_CHROMA_MODE - 1; i++)
+    for (int32_t i = 0; i < INTRA_NUM_CHROMA_MODE - 1; i++)
     {
         if (LumaMode == ModeList[i])
         {
@@ -149,16 +149,16 @@ void H265CodingUnit::getAllowedChromaDir(Ipp32u AbsPartIdx, Ipp32u* ModeList)
 }
 
 // Get size of minimum TU in CU specified by part index. Used only in assertion that
-Ipp32u H265CodingUnit::getQuadtreeTULog2MinSizeInCU(Ipp32u Idx)
+uint32_t H265CodingUnit::getQuadtreeTULog2MinSizeInCU(uint32_t Idx)
 {
-    Ipp32u Log2CbSize = g_ConvertToBit[GetWidth(Idx)] + 2;
+    uint32_t Log2CbSize = g_ConvertToBit[GetWidth(Idx)] + 2;
     EnumPartSize partSize = GetPartitionSize(Idx);
     const H265SeqParamSet *sps = m_SliceHeader->m_SeqParamSet;
-    Ipp32u QuadtreeTUMaxDepth = GetPredictionMode(Idx) == MODE_INTRA ? sps->max_transform_hierarchy_depth_intra : sps->max_transform_hierarchy_depth_inter;
-    Ipp32s IntraSplitFlag = GetPredictionMode(Idx) == MODE_INTRA && partSize == PART_SIZE_NxN;
-    Ipp32s InterSplitFlag = GetPredictionMode(Idx) == MODE_INTER && sps->max_transform_hierarchy_depth_inter == 0 && partSize != PART_SIZE_2Nx2N;
+    uint32_t QuadtreeTUMaxDepth = GetPredictionMode(Idx) == MODE_INTRA ? sps->max_transform_hierarchy_depth_intra : sps->max_transform_hierarchy_depth_inter;
+    int32_t IntraSplitFlag = GetPredictionMode(Idx) == MODE_INTRA && partSize == PART_SIZE_NxN;
+    int32_t InterSplitFlag = GetPredictionMode(Idx) == MODE_INTER && sps->max_transform_hierarchy_depth_inter == 0 && partSize != PART_SIZE_2Nx2N;
 
-    Ipp32u Log2MinTUSizeInCU = 0;
+    uint32_t Log2MinTUSizeInCU = 0;
 
     if (Log2CbSize < sps->log2_min_transform_block_size + QuadtreeTUMaxDepth + InterSplitFlag + IntraSplitFlag)
     {
@@ -176,116 +176,116 @@ Ipp32u H265CodingUnit::getQuadtreeTULog2MinSizeInCU(Ipp32u Idx)
 }
 
 // Set CBF flags for all planes in CU partition
-void H265CodingUnit::setCbfSubParts(Ipp32u CbfY, Ipp32u CbfU, Ipp32u CbfV, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setCbfSubParts(uint32_t CbfY, uint32_t CbfU, uint32_t CbfV, uint32_t AbsPartIdx, uint32_t Depth)
 {
-    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
-    memset(m_cbf[0] + AbsPartIdx, CbfY, sizeof(Ipp8u) * CurrPartNumb);
-    memset(m_cbf[1] + AbsPartIdx, CbfU, sizeof(Ipp8u) * CurrPartNumb);
-    memset(m_cbf[2] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
+    uint32_t CurrPartNumb = m_NumPartition >> (Depth << 1);
+    memset(m_cbf[0] + AbsPartIdx, CbfY, sizeof(uint8_t) * CurrPartNumb);
+    memset(m_cbf[1] + AbsPartIdx, CbfU, sizeof(uint8_t) * CurrPartNumb);
+    memset(m_cbf[2] + AbsPartIdx, CbfV, sizeof(uint8_t) * CurrPartNumb);
 
     if (m_cbf[3]) // null if not chroma 422
     {
-        memset(m_cbf[3] + AbsPartIdx, CbfU, sizeof(Ipp8u) * CurrPartNumb);
-        memset(m_cbf[4] + AbsPartIdx, CbfV, sizeof(Ipp8u) * CurrPartNumb);
+        memset(m_cbf[3] + AbsPartIdx, CbfU, sizeof(uint8_t) * CurrPartNumb);
+        memset(m_cbf[4] + AbsPartIdx, CbfV, sizeof(uint8_t) * CurrPartNumb);
     }
 }
 
 // Set CBF flags for one plane in CU partition
-void H265CodingUnit::setCbfSubParts(Ipp32u uCbf, ComponentPlane plane, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setCbfSubParts(uint32_t uCbf, ComponentPlane plane, uint32_t AbsPartIdx, uint32_t Depth)
 {
-    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
-    memset(m_cbf[plane] + AbsPartIdx, uCbf, sizeof(Ipp8u) * CurrPartNumb);
+    uint32_t CurrPartNumb = m_NumPartition >> (Depth << 1);
+    memset(m_cbf[plane] + AbsPartIdx, uCbf, sizeof(uint8_t) * CurrPartNumb);
 }
 
 // Set CU partition depth value in left-top corner
-void H265CodingUnit::setDepth(Ipp32u Depth, Ipp32u AbsPartIdx)
+void H265CodingUnit::setDepth(uint32_t Depth, uint32_t AbsPartIdx)
 {
-    m_cuData[AbsPartIdx].depth = (Ipp8u)Depth;
+    m_cuData[AbsPartIdx].depth = (uint8_t)Depth;
 }
 
 // Set CU partition siize value in left-top corner
-void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, Ipp32u AbsPartIdx)
+void H265CodingUnit::setPartSizeSubParts(EnumPartSize Mode, uint32_t AbsPartIdx)
 {
-    m_cuData[AbsPartIdx].partSize = (Ipp8u)Mode;
+    m_cuData[AbsPartIdx].partSize = (uint8_t)Mode;
 }
 
 // Set CU partition transquant bypass flag in left-top corner
-void H265CodingUnit::setCUTransquantBypass(bool flag, Ipp32u AbsPartIdx)
+void H265CodingUnit::setCUTransquantBypass(bool flag, uint32_t AbsPartIdx)
 {
     m_cuData[AbsPartIdx].cu_transform_bypass = flag;
 }
 
 // Set CU partition prediction mode in left-top corner
-void H265CodingUnit::setPredMode(EnumPredMode Mode, Ipp32u AbsPartIdx)
+void H265CodingUnit::setPredMode(EnumPredMode Mode, uint32_t AbsPartIdx)
 {
-    m_cuData[AbsPartIdx].predMode = (Ipp8u)Mode;
+    m_cuData[AbsPartIdx].predMode = (uint8_t)Mode;
 }
 
 // Propagate CU partition data from left-top corner to all other subparts
-void H265CodingUnit::SetCUDataSubParts(Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::SetCUDataSubParts(uint32_t AbsPartIdx, uint32_t Depth)
 {
-    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
-    for (Ipp32u i = 1; i < CurrPartNumb; i++)
+    uint32_t CurrPartNumb = m_NumPartition >> (Depth << 1);
+    for (uint32_t i = 1; i < CurrPartNumb; i++)
     {
         m_cuData[AbsPartIdx + i] = m_cuData[AbsPartIdx];
     }
 }
 
 // Set CU transform skip flag in left-top corner for specified plane
-void H265CodingUnit::setTransformSkip(Ipp32u useTransformSkip, ComponentPlane plane, Ipp32u AbsPartIdx)
+void H265CodingUnit::setTransformSkip(uint32_t useTransformSkip, ComponentPlane plane, uint32_t AbsPartIdx)
 {
     m_cuData[AbsPartIdx].transform_skip &= ~(1 << plane);
     m_cuData[AbsPartIdx].transform_skip |= useTransformSkip << plane;
 }
 
 // Set intra luma prediction direction for all partition subparts
-void H265CodingUnit::setLumaIntraDirSubParts(Ipp32u Dir, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setLumaIntraDirSubParts(uint32_t Dir, uint32_t AbsPartIdx, uint32_t Depth)
 {
-    Ipp32u CurrPartNumb = m_NumPartition >> (Depth << 1);
+    uint32_t CurrPartNumb = m_NumPartition >> (Depth << 1);
 
-    memset(m_lumaIntraDir + AbsPartIdx, Dir, sizeof(Ipp8u) * CurrPartNumb);
+    memset(m_lumaIntraDir + AbsPartIdx, Dir, sizeof(uint8_t) * CurrPartNumb);
 }
 
 // Set chroma intra prediction direction for all partition subparts
-void H265CodingUnit::setChromIntraDirSubParts(Ipp32u uDir, Ipp32u AbsPartIdx, Ipp32u Depth)
+void H265CodingUnit::setChromIntraDirSubParts(uint32_t uDir, uint32_t AbsPartIdx, uint32_t Depth)
 {
-    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
+    uint32_t uCurrPartNumb = m_NumPartition >> (Depth << 1);
 
-    memset(m_chromaIntraDir + AbsPartIdx, uDir, sizeof(Ipp8u) * uCurrPartNumb);
+    memset(m_chromaIntraDir + AbsPartIdx, uDir, sizeof(uint8_t) * uCurrPartNumb);
 }
 
 // Set transform depth level for all subparts in CU partition
-void H265CodingUnit::setTrIdx(Ipp32u uTrIdx, Ipp32u AbsPartIdx, Ipp32s Depth)
+void H265CodingUnit::setTrIdx(uint32_t uTrIdx, uint32_t AbsPartIdx, int32_t Depth)
 {
-    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
+    uint32_t uCurrPartNumb = m_NumPartition >> (Depth << 1);
 
-    for (Ipp32u i = 0; i < uCurrPartNumb; i++)
+    for (uint32_t i = 0; i < uCurrPartNumb; i++)
     {
-        m_cuData[AbsPartIdx + i].trIndex = (Ipp8u)uTrIdx;
+        m_cuData[AbsPartIdx + i].trIndex = (uint8_t)uTrIdx;
     }
 }
 
 // Change QP specified in CU subparts after a new QP value is decoded from bitstream
-void H265CodingUnit::UpdateTUQpInfo (Ipp32u AbsPartIdx, Ipp32s qp, Ipp32s Depth)
+void H265CodingUnit::UpdateTUQpInfo (uint32_t AbsPartIdx, int32_t qp, int32_t Depth)
 {
-    Ipp32u uCurrPartNumb = m_NumPartition >> (Depth << 1);
+    uint32_t uCurrPartNumb = m_NumPartition >> (Depth << 1);
 
-    for (Ipp32u i = 0; i < uCurrPartNumb; i++)
+    for (uint32_t i = 0; i < uCurrPartNumb; i++)
     {
-        m_cuData[AbsPartIdx + i].qp = (Ipp8s)qp;
+        m_cuData[AbsPartIdx + i].qp = (int8_t)qp;
     }
 }
 
 // Set CU partition size top-left corner
-void H265CodingUnit::setSize(Ipp32u Width, Ipp32u AbsPartIdx)
+void H265CodingUnit::setSize(uint32_t Width, uint32_t AbsPartIdx)
 {
-    m_cuData[AbsPartIdx].width = (Ipp8u)Width;
+    m_cuData[AbsPartIdx].width = (uint8_t)Width;
 }
 
 // Returns number of prediction units in CU partition
-Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
+uint8_t H265CodingUnit::getNumPartInter(uint32_t AbsPartIdx)
 {
-    Ipp8u iNumPart = 0;
+    uint8_t iNumPart = 0;
 
     // ML: OPT: TODO: Change switch to table lookup instead
     switch (GetPartitionSize(AbsPartIdx))
@@ -323,9 +323,9 @@ Ipp8u H265CodingUnit::getNumPartInter(Ipp32u AbsPartIdx)
 }
 
 // Returns number of prediction units in CU partition and prediction unit size in pixels
-void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp32u &Width, Ipp32u &Height)
+void H265CodingUnit::getPartIndexAndSize(uint32_t AbsPartIdx, uint32_t uPartIdx, uint32_t &Width, uint32_t &Height)
 {
-    Ipp32u cuWidth = GetWidth(AbsPartIdx);
+    uint32_t cuWidth = GetWidth(AbsPartIdx);
 
     switch (GetPartitionSize(AbsPartIdx))
     {
@@ -366,9 +366,9 @@ void H265CodingUnit::getPartIndexAndSize(Ipp32u AbsPartIdx, Ipp32u uPartIdx, Ipp
 }
 
 // Returns prediction unit size in pixels
-void H265CodingUnit::getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW, Ipp32s &nPSH)
+void H265CodingUnit::getPartSize(uint32_t AbsPartIdx, uint32_t partIdx, int32_t &nPSW, int32_t &nPSH)
 {
-    Ipp32u cuWidth = GetWidth(AbsPartIdx);
+    uint32_t cuWidth = GetWidth(AbsPartIdx);
 
     switch (GetPartitionSize(AbsPartIdx))
     {
@@ -409,17 +409,17 @@ void H265CodingUnit::getPartSize(Ipp32u AbsPartIdx, Ipp32u partIdx, Ipp32s &nPSW
 }
 
 // Set IPCM flag in top-left corner of CU partition
-void H265CodingUnit::setIPCMFlag (bool IpcmFlag, Ipp32u AbsPartIdx)
+void H265CodingUnit::setIPCMFlag (bool IpcmFlag, uint32_t AbsPartIdx)
 {
     m_cuData[AbsPartIdx].pcm_flag = IpcmFlag;
 }
 
 // Returns whether partition is too small to be predicted not only from L0 reflist
 // (see HEVC specification 8.5.3.2.2).
-bool H265CodingUnit::isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx)
+bool H265CodingUnit::isBipredRestriction(uint32_t AbsPartIdx, uint32_t PartIdx)
 {
-    Ipp32s width = 0;
-    Ipp32s height = 0;
+    int32_t width = 0;
+    int32_t height = 0;
 
     getPartSize(AbsPartIdx, PartIdx, width, height);
     if (GetWidth(AbsPartIdx) == 8 && (width < 8 || height < 8))
@@ -430,10 +430,10 @@ bool H265CodingUnit::isBipredRestriction(Ipp32u AbsPartIdx, Ipp32u PartIdx)
 }
 
 // Calculate possible scan order index for specified CU partition. Inter prediction always uses diagonal scan.
-Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool IsLuma, bool IsIntra)
+uint32_t H265CodingUnit::getCoefScanIdx(uint32_t AbsPartIdx, uint32_t L2Width, bool IsLuma, bool IsIntra)
 {
-    Ipp32u uiScanIdx = SCAN_DIAG;
-    Ipp32u uiDirMode;
+    uint32_t uiScanIdx = SCAN_DIAG;
+    uint32_t uiDirMode;
 
     if(IsIntra) {
         if ( IsLuma )
@@ -441,7 +441,7 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
             uiDirMode = GetLumaIntra(AbsPartIdx);
             if (L2Width > 1 && L2Width < 4 )
             {
-                uiScanIdx = abs((Ipp32s) uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+                uiScanIdx = abs((int32_t) uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((int32_t)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
             }
         }
         else
@@ -450,13 +450,13 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
             VM_ASSERT(uiDirMode != INTRA_DM_CHROMA_IDX);
             /*if (uiDirMode == INTRA_DM_CHROMA_IDX)
             {
-                Ipp32u depth = GetDepth(AbsPartIdx);
-                Ipp32u numParts = m_NumPartition >> (depth << 1);
+                uint32_t depth = GetDepth(AbsPartIdx);
+                uint32_t numParts = m_NumPartition >> (depth << 1);
                 uiDirMode = GetLumaIntra((AbsPartIdx / numParts) * numParts);
             }*/
             if (L2Width < 3)
             {
-                uiScanIdx = abs((Ipp32s)uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((Ipp32s)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
+                uiScanIdx = abs((int32_t)uiDirMode - INTRA_LUMA_VER_IDX) < 5 ? SCAN_HOR : (abs((int32_t)uiDirMode - INTRA_LUMA_HOR_IDX) < 5 ? SCAN_VER : SCAN_DIAG);
             }
         }
     }
@@ -465,7 +465,7 @@ Ipp32u H265CodingUnit::getCoefScanIdx(Ipp32u AbsPartIdx, Ipp32u L2Width, bool Is
 }
 
 // Returns CTB address in tile scan in TU units
-Ipp32u H265CodingUnit::getSCUAddr()
+uint32_t H265CodingUnit::getSCUAddr()
 {
     return m_Frame->m_CodingData->GetInverseCUOrderMap(CUAddr) * (1 << (m_SliceHeader->m_SeqParamSet->MaxCUDepth << 1));
 }
@@ -481,10 +481,10 @@ Ipp32u H265CodingUnit::getSCUAddr()
         else                                                                                   \
         {                                                                                      \
             H265CodingUnit* refCU = m_Frame->getCU(refCUAddr);                                 \
-            Ipp32u          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;                 \
-            Ipp32u          SA = m_SliceHeader->SliceCurStartCUAddr;                           \
+            uint32_t          refSA = refCU->m_SliceHeader->SliceCurStartCUAddr;                 \
+            uint32_t          SA = m_SliceHeader->SliceCurStartCUAddr;                           \
                                                                                                \
-            Ipp8u borderFlag = (refSA == SA) ? 1 : ((refSA > SA) ?                             \
+            uint8_t borderFlag = (refSA == SA) ? 1 : ((refSA > SA) ?                             \
                 refCU->m_SliceHeader->slice_loop_filter_across_slices_enabled_flag :           \
                 m_SliceHeader->slice_loop_filter_across_slices_enabled_flag);                  \
             m_AvailBorder.data |= borderFlag << borderIndex;                                   \
@@ -504,8 +504,8 @@ void H265CodingUnit::setNDBFilterBlockBorderAvailability(bool independentTileBou
     bool noPicTBoundary = ((m_CUPelY == 0) ? false : true);
     bool noPicRBoundary = ((m_CUPelX + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_width_in_luma_samples)  ? false : true);
     bool noPicBBoundary = ((m_CUPelY + m_SliceHeader->m_SeqParamSet->MaxCUSize >= m_SliceHeader->m_SeqParamSet->pic_height_in_luma_samples) ? false : true);
-    Ipp32s numLCUInPicWidth = m_Frame->m_CodingData->m_WidthInCU;
-    Ipp32u tileID = m_Frame->m_CodingData->getTileIdxMap(CUAddr);
+    int32_t numLCUInPicWidth = m_Frame->m_CodingData->m_WidthInCU;
+    uint32_t tileID = m_Frame->m_CodingData->getTileIdxMap(CUAddr);
 
     m_AvailBorder.data = 0;
 

@@ -42,7 +42,7 @@ void RawHeader_H265::Reset()
     m_buffer.clear();
 }
 
-Ipp32s RawHeader_H265::GetID() const
+int32_t RawHeader_H265::GetID() const
 {
     return m_id;
 }
@@ -52,13 +52,13 @@ size_t RawHeader_H265::GetSize() const
     return m_buffer.size();
 }
 
-Ipp8u * RawHeader_H265::GetPointer()
+uint8_t * RawHeader_H265::GetPointer()
 {
     return
         m_buffer.empty() ? nullptr : &m_buffer[0];
 }
 
-void RawHeader_H265::Resize(Ipp32s id, size_t newSize)
+void RawHeader_H265::Resize(int32_t id, size_t newSize)
 {
     m_id = id;
     m_buffer.resize(newSize);
@@ -114,7 +114,7 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
     m_sei_messages = new SEI_Storer_H265();
     m_sei_messages->Init();
 
-    Ipp32s nAllowedThreadNumber = init->numThreads;
+    int32_t nAllowedThreadNumber = init->numThreads;
     if(nAllowedThreadNumber < 0) nAllowedThreadNumber = 0;
 
     // calculate number of slice decoders.
@@ -135,7 +135,7 @@ UMC::Status MFXTaskSupplier_H265::Init(UMC::VideoDecoderParams *init)
     CreateTaskBroker();
     m_pTaskBroker->Init(m_iThreadNum);
 
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    for (uint32_t i = 0; i < m_iThreadNum; i += 1)
     {
         if (UMC::UMC_OK != m_pSegmentDecoder[i]->Init(i))
             return UMC::UMC_ERR_INIT;
@@ -173,8 +173,8 @@ bool MFXTaskSupplier_H265::CheckDecoding(bool should_additional_check, H265Decod
         if (!should_additional_check)
             return true;
 
-        Ipp32s maxReadyUID = outputFrame->m_UID;
-        Ipp32u inDisplayStage = 0;
+        int32_t maxReadyUID = outputFrame->m_UID;
+        uint32_t inDisplayStage = 0;
 
         UMC::AutomaticUMCMutex guard(m_mGuard);
 
@@ -260,19 +260,19 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
     {
         // save sps/pps
-        Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
+        uint32_t nal_unit_type = nalUnit->GetExData()->values[0];
         switch(nal_unit_type)
         {
             case NAL_UT_SPS:
             case NAL_UT_PPS:
                 {
-                    static const Ipp8u start_code_prefix[] = {0, 0, 0, 1};
+                    static const uint8_t start_code_prefix[] = {0, 0, 0, 1};
                     size_t const prefix_size = sizeof(start_code_prefix);
 
                     size_t size = nalUnit->GetDataSize();
                     bool isSPS = (nal_unit_type == NAL_UT_SPS);
                     RawHeader_H265 * hdr = isSPS ? GetSPS() : GetPPS();
-                    Ipp32s id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
+                    int32_t id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
                     if (hdr->GetPointer() && hdr->GetID() == id)
                     {
                         bool changed =
@@ -287,7 +287,7 @@ UMC::Status MFXTaskSupplier_H265::DecodeHeaders(UMC::MediaDataEx *nalUnit)
 
                     hdr->Resize(id, size + prefix_size);
                     MFX_INTERNAL_CPY(hdr->GetPointer(), start_code_prefix,  prefix_size);
-                    MFX_INTERNAL_CPY(hdr->GetPointer() + prefix_size, (Ipp8u*)nalUnit->GetDataPointer(), size);
+                    MFX_INTERNAL_CPY(hdr->GetPointer() + prefix_size, (uint8_t*)nalUnit->GetDataPointer(), size);
                 }
             break;
         }
@@ -333,10 +333,10 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
         SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         swapper->SwapMemory(&swappedMem, &mem, 0);
 
-        bitStream.Reset((Ipp8u*)swappedMem.GetPointer(), (Ipp32u)swappedMem.GetDataSize());
+        bitStream.Reset((uint8_t*)swappedMem.GetPointer(), (uint32_t)swappedMem.GetDataSize());
 
         NalUnitType nal_unit_type;
-        Ipp32u temporal_id;
+        uint32_t temporal_id;
 
         bitStream.GetNALUnitType(nal_unit_type, temporal_id);
         nalUnit->MoveDataPointer(2); // skip[ [NAL unit header = 16 bits]
@@ -373,19 +373,19 @@ UMC::Status MFXTaskSupplier_H265::DecodeSEI(UMC::MediaDataEx *nalUnit)
                 UMC::MediaDataEx nalUnit1;
 
                 size_t nal_u_size = size;
-                for(Ipp8u *ptr = (Ipp8u*)nalUnit->GetDataPointer(); ptr < (Ipp8u*)nalUnit->GetDataPointer() + nal_u_size; ptr++)
+                for(uint8_t *ptr = (uint8_t*)nalUnit->GetDataPointer(); ptr < (uint8_t*)nalUnit->GetDataPointer() + nal_u_size; ptr++)
                     if (ptr[0]==0 && ptr[1]==0 && ptr[2]==3)
                         nal_u_size += 1;
 
-                nalUnit1.SetBufferPointer((Ipp8u*)nalUnit->GetDataPointer(), nal_u_size);
+                nalUnit1.SetBufferPointer((uint8_t*)nalUnit->GetDataPointer(), nal_u_size);
                 nalUnit1.SetDataSize(nal_u_size);
                 nalUnit1.SetExData(nalUnit->GetExData());
 
-                Ipp64f start, stop;
+                double start, stop;
                 nalUnit->GetTime(start, stop);
                 nalUnit1.SetTime(start, stop);
 
-                nalUnit->MoveDataPointer((Ipp32s)nal_u_size);
+                nalUnit->MoveDataPointer((int32_t)nal_u_size);
 
                 SEI_Storer_H265::SEI_Message* msg =
                     m_sei_messages->AddMessage(&nalUnit1, m_SEIPayLoads.payLoadType);

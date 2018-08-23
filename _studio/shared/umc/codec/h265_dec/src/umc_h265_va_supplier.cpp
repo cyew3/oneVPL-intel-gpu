@@ -63,18 +63,18 @@ void VATaskSupplier::CreateTaskBroker()
 {
     m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
 
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    for (uint32_t i = 0; i < m_iThreadNum; i += 1)
     {
         m_pSegmentDecoder[i] = new H265_DXVA_SegmentDecoder(this);
     }
 }
 
-mfxStatus VATaskSupplier::ChangeVideoDecodingSpeed(Ipp32s& /* num */)
+mfxStatus VATaskSupplier::ChangeVideoDecodingSpeed(int32_t& /* num */)
 {
     return MFX_ERR_UNSUPPORTED;
 }
 
-void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)
+void VATaskSupplier::SetBufferedFramesNumber(uint32_t buffered)
 {
     m_DPBSizeEx = 1 + buffered;
     m_bufferedFrameNumber = buffered;
@@ -131,11 +131,11 @@ void VATaskSupplier::InitFrameCounter(H265DecoderFrame * pFrame, const H265Slice
     TaskSupplier_H265::InitFrameCounter(pFrame, pSlice);
 }
 
-UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *)
+UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, mfxSize dimensions, const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *)
 {
     UMC::ColorFormat chroma_format_idc = pFrame->GetColorFormat();
     UMC::VideoDataInfo info;
-    Ipp32s bit_depth = pSeqParamSet->need16bitOutput ? 10 : 8;
+    int32_t bit_depth = pSeqParamSet->need16bitOutput ? 10 : 8;
     info.Init(dimensions.width, dimensions.height, chroma_format_idc, bit_depth);
 
     UMC::FrameMemID frmMID;
@@ -175,7 +175,7 @@ UMC::Status VATaskSupplier::AllocateFrameData(H265DecoderFrame * pFrame, IppiSiz
 H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
 {
     size_t dataSize = nalUnit->GetDataSize();
-    nalUnit->SetDataSize(IPP_MIN(1024, dataSize));
+    nalUnit->SetDataSize(MFX_MIN(1024, dataSize));
 
     H265Slice * slice = TaskSupplier_H265::DecodeSliceHeader(nalUnit);
 
@@ -187,7 +187,7 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
     if (nalUnit->GetFlags() & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
     {
         slice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-        MFX_INTERNAL_CPY(slice->m_source.GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
+        MFX_INTERNAL_CPY(slice->m_source.GetPointer(), nalUnit->GetDataPointer(), (uint32_t)nalUnit->GetDataSize());
         memset(slice->m_source.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
         slice->m_source.SetDataSize(nalUnit->GetDataSize());
         slice->m_source.SetTime(nalUnit->GetTime());
@@ -197,16 +197,16 @@ H265Slice * VATaskSupplier::DecodeSliceHeader(UMC::MediaDataEx *nalUnit)
         slice->m_source.SetData(nalUnit);
     }
 
-    Ipp32u* pbs;
-    Ipp32u bitOffset;
+    uint32_t* pbs;
+    uint32_t bitOffset;
 
     slice->GetBitStream()->GetState(&pbs, &bitOffset);
 
     size_t bytes = slice->GetBitStream()->BytesDecodedRoundOff();
 
     slice->GetBitStream()->Reset(slice->m_source.GetPointer(), bitOffset,
-        (Ipp32u)slice->m_source.GetDataSize());
-    slice->GetBitStream()->SetState((Ipp32u*)(slice->m_source.GetPointer() + bytes), bitOffset);
+        (uint32_t)slice->m_source.GetDataSize());
+    slice->GetBitStream()->SetState((uint32_t*)(slice->m_source.GetPointer() + bytes), bitOffset);
 
 
     return slice;

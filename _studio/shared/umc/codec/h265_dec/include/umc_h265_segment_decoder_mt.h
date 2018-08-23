@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -33,7 +33,7 @@ public:
     virtual ~H265SegmentDecoderMultiThreaded(void);
 
     // Initialize slice decoder
-    virtual UMC::Status Init(Ipp32s iNumber);
+    virtual UMC::Status Init(int32_t iNumber);
 
     // Initialize decoder and call task processing function
     virtual UMC::Status ProcessSegment(void);
@@ -70,18 +70,18 @@ protected:
     bool DecodeCodingUnit_CABAC();
 
     // Decode CTB range
-    UMC::Status DecodeSegment(Ipp32s curCUAddr, Ipp32s &nBorder);
+    UMC::Status DecodeSegment(int32_t curCUAddr, int32_t &nBorder);
 
     // Reconstruct CTB range
-    UMC::Status ReconstructSegment(Ipp32s curCUAddr, Ipp32s nBorder);
+    UMC::Status ReconstructSegment(int32_t curCUAddr, int32_t nBorder);
 
     // Both decode and reconstruct a CTB range
-    UMC::Status DecodeSegmentCABAC_Single_H265(Ipp32s curCUAddr, Ipp32s & nBorder);
+    UMC::Status DecodeSegmentCABAC_Single_H265(int32_t curCUAddr, int32_t & nBorder);
 
     // Reconstructor depends on bitdepth_luma || bitdepth_chroma
     void CreateReconstructor();
 
-    void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H265DecoderFrame *pRefFrame);
+    void RestoreErrorRect(int32_t startMb, int32_t endMb, H265DecoderFrame *pRefFrame);
 
 private:
 

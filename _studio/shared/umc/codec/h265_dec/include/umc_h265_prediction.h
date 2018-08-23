@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -34,8 +34,8 @@ struct H265PUInfo
 {
     H265MVInfo *interinfo;
     H265DecoderFrame *refFrame[2];
-    Ipp32u PartAddr;
-    Ipp32u Width, Height;
+    uint32_t PartAddr;
+    uint32_t Width, Height;
 };
 
 // prediction class
@@ -45,7 +45,7 @@ public:
 
 protected:
     PlanePtrY m_temp_interpolarion_buffer;
-    Ipp32u m_MaxCUSize;
+    uint32_t m_MaxCUSize;
 
     DecodingContext* m_context;
 
@@ -62,40 +62,40 @@ protected:
     template<typename PixType>
     static void WriteAverageToPic(
                      const PixType * in_pSrc0,
-                     Ipp32u in_Src0Pitch,      // in samples
+                     uint32_t in_Src0Pitch,      // in samples
                      const PixType * in_pSrc1,
-                     Ipp32u in_Src1Pitch,      // in samples
+                     uint32_t in_Src1Pitch,      // in samples
                      PixType* H265_RESTRICT in_pDst,
-                     Ipp32u in_DstPitch,       // in samples
-                     Ipp32s width,
-                     Ipp32s height);
+                     uint32_t in_DstPitch,       // in samples
+                     int32_t width,
+                     int32_t height);
 
     // Copy prediction unit extending its bits for later addition with PU from another reference
     template <typename PixType>
     static void CopyExtendPU(const PixType * in_pSrc,
-                     Ipp32u in_SrcPitch, // in samples
-                     Ipp16s* H265_RESTRICT in_pDst,
-                     Ipp32u in_DstPitch, // in samples
-                     Ipp32s width,
-                     Ipp32s height,
+                     uint32_t in_SrcPitch, // in samples
+                     int16_t* H265_RESTRICT in_pDst,
+                     uint32_t in_DstPitch, // in samples
+                     int32_t width,
+                     int32_t height,
                      int c_shift);
 
     // Do weighted prediction from one reference frame
     template<typename PixType>
-    void CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height,
-        Ipp32s *w, Ipp32s *o, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void CopyWeighted(H265DecoderFrame* frame, H265DecYUVBufferPadded* src, uint32_t CUAddr, uint32_t PartIdx, uint32_t Width, uint32_t Height,
+        int32_t *w, int32_t *o, int32_t *logWD, int32_t *round, uint32_t bit_depth, uint32_t bit_depth_chroma);
 
     // Do weighted prediction from two reference frames
     template<typename PixType>
-    void CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferPadded* src1, H265DecYUVBufferPadded* src2, Ipp32u CUAddr, Ipp32u PartIdx, Ipp32u Width, Ipp32u Height,
-        Ipp32s *w0, Ipp32s *w1, Ipp32s *logWD, Ipp32s *round, Ipp32u bit_depth, Ipp32u bit_depth_chroma);
+    void CopyWeightedBidi(H265DecoderFrame* frame, H265DecYUVBufferPadded* src1, H265DecYUVBufferPadded* src2, uint32_t CUAddr, uint32_t PartIdx, uint32_t Width, uint32_t Height,
+        int32_t *w0, int32_t *w1, int32_t *logWD, int32_t *round, uint32_t bit_depth, uint32_t bit_depth_chroma);
 
     // Calculate address offset inside of source frame
-    Ipp32s GetAddrOffset(Ipp32u PartUnitIdx, Ipp32u width);
+    int32_t GetAddrOffset(uint32_t PartUnitIdx, uint32_t width);
 
     // Motion compensation with bit depth constant
     template<typename PixType>
-    void MotionCompensationInternal(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void MotionCompensationInternal(H265CodingUnit* pCU, uint32_t AbsPartIdx, uint32_t Depth);
 
     // Perform weighted addition from one or two reference sources
     template<typename PixType>
@@ -108,7 +108,7 @@ public:
     // Allocate temporal buffers which may be necessary to store interpolated reference frames
     void InitTempBuff(DecodingContext* context);
 
-    void MotionCompensation(H265CodingUnit* pCU, Ipp32u AbsPartIdx, Ipp32u Depth);
+    void MotionCompensation(H265CodingUnit* pCU, uint32_t AbsPartIdx, uint32_t Depth);
 };
 
 } // end namespace UMC_HEVC_DECODER

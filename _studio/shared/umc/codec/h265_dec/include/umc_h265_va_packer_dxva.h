@@ -39,7 +39,7 @@ namespace UMC_HEVC_DECODER
         PackerDXVA2(UMC::VideoAccelerator * va);
 
         virtual UMC::Status GetStatusReport(void * pStatusReport, size_t size);
-        virtual UMC::Status SyncTask(Ipp32s index, void * error);
+        virtual UMC::Status SyncTask(int32_t index, void * error);
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
         virtual bool IsGPUSyncEventDisable();
 #endif
@@ -60,7 +60,7 @@ namespace UMC_HEVC_DECODER
 
     protected:
 
-        Ipp32u              m_statusReportFeedbackCounter;
+        uint32_t              m_statusReportFeedbackCounter;
         int                 m_refFrameListCacheSize;
     };
 }

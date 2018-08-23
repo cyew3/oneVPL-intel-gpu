@@ -34,18 +34,18 @@ public:
 
     void Reset();
 
-    Ipp32s GetID() const;
+    int32_t GetID() const;
 
     size_t GetSize() const;
 
-    Ipp8u * GetPointer();
+    uint8_t * GetPointer();
 
-    void Resize(Ipp32s id, size_t newSize);
+    void Resize(int32_t id, size_t newSize);
 
 protected:
-    typedef std::vector<Ipp8u> BufferType;
+    typedef std::vector<uint8_t> BufferType;
     BufferType  m_buffer;
-    Ipp32s      m_id;
+    int32_t      m_id;
 };
 
 // Container for raw SPS and PPS stream headers

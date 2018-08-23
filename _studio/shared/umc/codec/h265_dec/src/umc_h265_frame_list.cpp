@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -95,8 +95,8 @@ H265DBPList::H265DBPList()
 H265DecoderFrame * H265DBPList::GetOldestDisposable(void)
 {
     H265DecoderFrame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32s  LargestRefPicListResetCount = 0;
+    int32_t  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
+    int32_t  LargestRefPicListResetCount = 0;
 
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
@@ -137,7 +137,7 @@ bool H265DBPList::IsDisposableExist()
 // Returns whether DPB contains frames which may be reused after asynchronous decoding finishes
 bool H265DBPList::IsAlmostDisposableExist()
 {
-    Ipp32s count = 0;
+    int32_t count = 0;
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
         count++;
@@ -167,15 +167,15 @@ H265DecoderFrame * H265DBPList::GetDisposable(void)
 
 // Search through the list for the oldest displayable frame. It must be
 // not disposable, not outputted, and have smallest PicOrderCnt.
-H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
+H265DecoderFrame * H265DBPList::findOldestDisplayable(int32_t /*dbpSize*/ )
 {
     H265DecoderFrame *pCurr = m_pHead;
     H265DecoderFrame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32s  LargestRefPicListResetCount = 0;
-    Ipp32s  uid = 0x7fffffff;
+    int32_t  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
+    int32_t  LargestRefPicListResetCount = 0;
+    int32_t  uid = 0x7fffffff;
 
-    Ipp32s count = 0;
+    int32_t count = 0;
     while (pCurr)
     {
         if (pCurr->isDisplayable() && !pCurr->wasOutputted())
@@ -225,10 +225,10 @@ H265DecoderFrame * H265DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
 }    // findOldestDisplayable
 
 // Returns the number of frames in DPB
-Ipp32u H265DBPList::countAllFrames()
+uint32_t H265DBPList::countAllFrames()
 {
     H265DecoderFrame *pCurr = head();
-    Ipp32u count = 0;
+    uint32_t count = 0;
 
     while (pCurr)
     {
@@ -239,7 +239,7 @@ Ipp32u H265DBPList::countAllFrames()
     return count;
 }
 
-void H265DBPList::calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &countDPBFullness, Ipp32s &maxUID)
+void H265DBPList::calculateInfoForDisplay(uint32_t &countDisplayable, uint32_t &countDPBFullness, int32_t &maxUID)
 {
     H265DecoderFrame *pCurr = head();
 
@@ -275,7 +275,7 @@ void H265DBPList::calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &coun
 }    // calculateInfoForDisplay
 
 // Return number of active short and long term reference frames.
-void H265DBPList::countActiveRefs(Ipp32u &NumShortTerm, Ipp32u &NumLongTerm)
+void H265DBPList::countActiveRefs(uint32_t &NumShortTerm, uint32_t &NumLongTerm)
 {
     H265DecoderFrame *pCurr = m_pHead;
     NumShortTerm = 0;
@@ -342,7 +342,7 @@ void H265DBPList::printDPB()
 }
 
 // Searches DPB for a short term reference frame with specified POC
-H265DecoderFrame *H265DBPList::findShortRefPic(Ipp32s picPOC)
+H265DecoderFrame *H265DBPList::findShortRefPic(int32_t picPOC)
 {
     H265DecoderFrame *pCurr = m_pHead;
 
@@ -358,16 +358,16 @@ H265DecoderFrame *H265DBPList::findShortRefPic(Ipp32s picPOC)
 }
 
 // Searches DPB for a long term reference frame with specified POC
-H265DecoderFrame *H265DBPList::findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask) const
+H265DecoderFrame *H265DBPList::findLongTermRefPic(const H265DecoderFrame *excludeFrame, int32_t picPOC, uint32_t bitsForPOC, bool isUseMask) const
 {
     H265DecoderFrame *pCurr = m_pHead;
     H265DecoderFrame *pStPic = pCurr;
-    Ipp32u POCmask = (1 << bitsForPOC) - 1;
+    uint32_t POCmask = (1 << bitsForPOC) - 1;
 
     if (!isUseMask)
         POCmask = 0xffffffff;
 
-    Ipp32s excludeUID = excludeFrame ? excludeFrame->m_UID : 0x7fffffff;
+    int32_t excludeUID = excludeFrame ? excludeFrame->m_UID : 0x7fffffff;
     H265DecoderFrame *correctPic = 0;
 
     while (pCurr)
@@ -388,13 +388,13 @@ H265DecoderFrame *H265DBPList::findLongTermRefPic(const H265DecoderFrame *exclud
 // Try to find a frame closest to specified for error recovery
 H265DecoderFrame * H265DBPList::FindClosest(H265DecoderFrame * pFrame)
 {
-    Ipp32s originalPOC = pFrame->PicOrderCnt();
-    Ipp32s originalResetCount = pFrame->RefPicListResetCount();
+    int32_t originalPOC = pFrame->PicOrderCnt();
+    int32_t originalResetCount = pFrame->RefPicListResetCount();
 
     H265DecoderFrame * pOldest = 0;
 
-    Ipp32s  SmallestPicOrderCnt = 0;    // very large positive
-    Ipp32s  SmallestRefPicListResetCount = 0x7fffffff;
+    int32_t  SmallestPicOrderCnt = 0;    // very large positive
+    int32_t  SmallestRefPicListResetCount = 0x7fffffff;
 
     for (H265DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
@@ -464,7 +464,7 @@ void H265DBPList::DebugPrint()
 {
 #ifdef ENABLE_TRACE
     Trace(VM_STRING("-==========================================\n"));
-    Ipp32s curID = -1;
+    int32_t curID = -1;
     H265DecoderFrame * minTmp = 0;
 
     for (;;)

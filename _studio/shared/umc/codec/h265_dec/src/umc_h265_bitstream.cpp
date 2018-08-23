@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -22,18 +22,18 @@ namespace UMC_HEVC_DECODER
 {
 
 #if INSTRUMENTED_CABAC
-    Ipp32u H265Bitstream::m_c = 0;
+    uint32_t H265Bitstream::m_c = 0;
     FILE* H265Bitstream::cabac_bits = 0;
 #endif
 
-H265Bitstream::H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize)
+H265Bitstream::H265Bitstream(uint8_t * const pb, const uint32_t maxsize)
      : H265HeadersBitstream(pb, maxsize)
 {
     m_bitsNeeded = 0;
     m_lcodIOffset = 0;
     m_lcodIRange = 0;
     m_LastByte = 0;
-} // H265Bitstream::H265Bitstream(Ipp8u * const pb,
+} // H265Bitstream::H265Bitstream(uint8_t * const pb,
 
 H265Bitstream::H265Bitstream()
     : H265HeadersBitstream()

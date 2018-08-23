@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -44,16 +44,16 @@ enum
 // Task completeness information structure
 struct CUProcessInfo
 {
-    Ipp32s firstCU;
-    Ipp32s maxCU;
-    Ipp32s m_curCUToProcess[LAST_PROCESS_ID];
-    Ipp32s m_processInProgress[LAST_PROCESS_ID];
+    int32_t firstCU;
+    int32_t maxCU;
+    int32_t m_curCUToProcess[LAST_PROCESS_ID];
+    int32_t m_processInProgress[LAST_PROCESS_ID];
     bool m_isCompleted;
-    Ipp32s m_width;
+    int32_t m_width;
 
-    void Initialize(Ipp32s firstCUAddr, Ipp32s width)
+    void Initialize(int32_t firstCUAddr, int32_t width)
     {
-        for (Ipp32s task = 0; task < LAST_PROCESS_ID; task++)
+        for (int32_t task = 0; task < LAST_PROCESS_ID; task++)
         {
             m_curCUToProcess[task] = firstCUAddr;
             m_processInProgress[task] = 0;
@@ -78,13 +78,13 @@ public:
     // Decode slice header and initializ slice structure with parsed values
     virtual bool Reset(PocDecoding * pocDecoding);
     // Set current slice number
-    void SetSliceNumber(Ipp32s iSliceNumber);
+    void SetSliceNumber(int32_t iSliceNumber);
 
     // Initialize CABAC context depending on slice type
     void InitializeContexts();
 
     // Parse beginning of slice header to get PPS ID
-    virtual Ipp32s RetrievePicParamSetNumber();
+    virtual int32_t RetrievePicParamSetNumber();
 
     //
     // method(s) to obtain slice specific information
@@ -93,7 +93,7 @@ public:
     // Obtain pointer to slice header
     const H265SliceHeader *GetSliceHeader() const {return &m_SliceHeader;}
     H265SliceHeader *GetSliceHeader() {return &m_SliceHeader;}
-    Ipp32s GetFirstMB() const {return m_iFirstMB;}
+    int32_t GetFirstMB() const {return m_iFirstMB;}
     // Obtain current picture parameter set
     const H265PicParamSet *GetPicParam() const {return m_pPicParamSet;}
     void SetPicParam(const H265PicParamSet * pps)
@@ -116,10 +116,10 @@ public:
     void SetCurrentFrame(H265DecoderFrame * pFrame){m_pCurrentFrame = pFrame;}
 
     // Obtain slice number
-    Ipp32s GetSliceNum(void) const {return m_iNumber;}
+    int32_t GetSliceNum(void) const {return m_iNumber;}
     // Obtain maximum of macroblock
-    Ipp32s GetMaxMB(void) const {return m_iMaxMB;}
-    void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
+    int32_t GetMaxMB(void) const {return m_iMaxMB;}
+    void SetMaxMB(int32_t x) {m_iMaxMB = x;}
 
     // Build reference lists from slice reference pic set. HEVC spec 8.3.2
     virtual UMC::Status UpdateReferenceList(H265DBPList *dpb, H265DecoderFrame* curr_ref);
@@ -161,11 +161,11 @@ protected:
 public:
     H265DecoderFrame *m_pCurrentFrame;        // (H265DecoderFrame *) pointer to destination frame
 
-    Ipp32s m_iNumber;                                           // (Ipp32s) current slice number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB number in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) last unavailable  MB number in slice
+    int32_t m_iNumber;                                           // (int32_t) current slice number
+    int32_t m_iFirstMB;                                          // (int32_t) first MB number in slice
+    int32_t m_iMaxMB;                                            // (int32_t) last unavailable  MB number in slice
 
-    Ipp16u m_WidevineStatusReportNumber;
+    uint16_t m_WidevineStatusReportNumber;
 
     CUProcessInfo processInfo;
 
@@ -185,17 +185,17 @@ public:
     // Returns number of used references in RPS
     int getNumRpsCurrTempList() const;
 
-    Ipp32s m_tileCount;
-    Ipp32u *m_tileByteLocation;
+    int32_t m_tileCount;
+    uint32_t *m_tileByteLocation;
 
-    Ipp32u getTileLocationCount() const   { return m_tileCount; }
-    void allocateTileLocation(Ipp32s val)
+    uint32_t getTileLocationCount() const   { return m_tileCount; }
+    void allocateTileLocation(int32_t val)
     {
         if (m_tileCount < val)
             delete[] m_tileByteLocation;
 
         m_tileCount = val;
-        m_tileByteLocation = new Ipp32u[val];
+        m_tileByteLocation = new uint32_t[val];
     }
 
     // For dependent slice copy data from another slice
@@ -227,7 +227,7 @@ bool IsPictureTheSame(H265Slice *pSliceOne, H265Slice *pSliceTwo)
 
 // Returns true if slice is sublayer non-reference
 inline
-bool IsSubLayerNonReference(Ipp32s nal_unit_type)
+bool IsSubLayerNonReference(int32_t nal_unit_type)
 {
     switch (nal_unit_type)
     {
@@ -242,7 +242,7 @@ bool IsSubLayerNonReference(Ipp32s nal_unit_type)
 
     return false;
 
-} // bool IsSubLayerNonReference(Ipp32s nal_unit_type)
+} // bool IsSubLayerNonReference(int32_t nal_unit_type)
 
 
 } // namespace UMC_HEVC_DECODER

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -36,10 +36,10 @@ class H265Bitstream  : public H265HeadersBitstream
 {
 public:
 #if INSTRUMENTED_CABAC
-    static Ipp32u m_c;
+    static uint32_t m_c;
     static FILE* cabac_bits;
 
-    inline void PRINT_CABAC_VALUES(Ipp32u val, Ipp32u range, Ipp32u finalRange)
+    inline void PRINT_CABAC_VALUES(uint32_t val, uint32_t range, uint32_t finalRange)
     {
         fprintf(cabac_bits, "%d: coding bin value %d, range = [%d->%d]\n", m_c++, val, range, finalRange);
         fflush(cabac_bits);
@@ -47,7 +47,7 @@ public:
 
 #endif
     H265Bitstream(void);
-    H265Bitstream(Ipp8u * const pb, const Ipp32u maxsize);
+    H265Bitstream(uint8_t * const pb, const uint32_t maxsize);
     virtual ~H265Bitstream(void);
 
     //
@@ -60,62 +60,62 @@ public:
     void TerminateDecode_CABAC(void);
 
     // Initialize all CABAC contexts. HEVC spec 9.3.2.2
-    void InitializeContextVariablesHEVC_CABAC(Ipp32s initializationType,
-                                              Ipp32s SliceQPy);
+    void InitializeContextVariablesHEVC_CABAC(int32_t initializationType,
+                                              int32_t SliceQPy);
 
 
     // Decode single bin from stream
     inline
-    Ipp32u DecodeSingleBin_CABAC(Ipp32u ctxIdx);
+    uint32_t DecodeSingleBin_CABAC(uint32_t ctxIdx);
 
 #if defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
-    Ipp32u DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx);
-    Ipp32u DecodeSingleBin_CABAC_cmov_BMI(Ipp32u ctxIdx);
+    uint32_t DecodeSingleBin_CABAC_cmov(uint32_t ctxIdx);
+    uint32_t DecodeSingleBin_CABAC_cmov_BMI(uint32_t ctxIdx);
 #endif
 
     // Decode single bin using bypass decoding
     inline
-    Ipp32u DecodeSingleBinEP_CABAC();
+    uint32_t DecodeSingleBinEP_CABAC();
 
     // Decode N bits encoded with CABAC bypass
     inline
-    Ipp32u DecodeBypassBins_CABAC(Ipp32s numBins);
+    uint32_t DecodeBypassBins_CABAC(int32_t numBins);
 
     // Decode terminating flag for slice end or row end in WPP case
     inline
-    Ipp32u DecodeTerminatingBit_CABAC(void);
+    uint32_t DecodeTerminatingBit_CABAC(void);
 
     // Reset CABAC state
     void ResetBac_CABAC();
 
-    Ipp8u  context_hevc[NUM_CTX];
-    Ipp8u  wpp_saved_cabac_context[NUM_CTX];
+    uint8_t  context_hevc[NUM_CTX];
+    uint8_t  wpp_saved_cabac_context[NUM_CTX];
 
 protected:
 
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u m_lcodIRange;                                        // (Ipp32u) arithmetic decoding engine variable
-    Ipp64u m_lcodIOffset;                                       // (Ipp32u) arithmetic decoding engine variable
-    Ipp32s m_iExtendedBits;                                        // (Ipp32s) available extra CABAC bits
-    Ipp16u *m_pExtendedBits;                                       // (Ipp16u *) pointer to CABAC data
+    unsigned long long m_lcodIRange;                                        // (uint32_t) arithmetic decoding engine variable
+    unsigned long long m_lcodIOffset;                                       // (uint32_t) arithmetic decoding engine variable
+    int32_t m_iExtendedBits;                                        // (int32_t) available extra CABAC bits
+    uint16_t *m_pExtendedBits;                                       // (uint16_t *) pointer to CABAC data
 #else
-    Ipp32u m_lcodIRange;                                        // (Ipp32u) arithmetic decoding engine variable
-    Ipp32u m_lcodIOffset;                                       // (Ipp32u) arithmetic decoding engine variable
-    Ipp32s m_bitsNeeded;
+    uint32_t m_lcodIRange;                                        // (uint32_t) arithmetic decoding engine variable
+    uint32_t m_lcodIOffset;                                       // (uint32_t) arithmetic decoding engine variable
+    int32_t m_bitsNeeded;
 #endif
-    Ipp32u m_LastByte;
+    uint32_t m_LastByte;
 
     // Decoding SEI message functions
-    Ipp32s sei_message(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl);
+    int32_t sei_message(const HeaderSet<H265SeqParamSet> & sps,int32_t current_sps,H265SEIPayLoad *spl);
     // Parse SEI payload data
-    Ipp32s sei_payload(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
+    int32_t sei_payload(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad *spl);
     // Parse pic timing SEI data
-    Ipp32s pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
+    int32_t pic_timing(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad *spl);
     // Parse recovery point SEI data
-    Ipp32s recovery_point(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
+    int32_t recovery_point(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad *spl);
 
     // Skip unrecognized SEI message payload
-    Ipp32s reserved_sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl);
+    int32_t reserved_sei_message(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad *spl);
 };
 
 } // namespace UMC_HEVC_DECODER

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -53,7 +53,7 @@ void AU_Splitter_H265::Reset()
 }
 
 // Wrapper for NAL unit splitter CheckNalUnitType
-Ipp32s AU_Splitter_H265::CheckNalUnitType(UMC::MediaData * src)
+int32_t AU_Splitter_H265::CheckNalUnitType(UMC::MediaData * src)
 {
     return m_pNALSplitter->CheckNalUnitType(src);
 }

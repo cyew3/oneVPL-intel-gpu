@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -37,9 +37,9 @@ public:
     void append(H265DecoderFrame *pFrame);
     // Append the given frame to our tail
 
-    Ipp32s GetFreeIndex()
+    int32_t GetFreeIndex()
     {
-        for(Ipp32s i = 0; i < 128; i++)
+        for(int32_t i = 0; i < 128; i++)
         {
             H265DecoderFrame *pFrm;
 
@@ -90,31 +90,31 @@ public:
     void IncreaseRefPicListResetCount(H265DecoderFrame *excludeFrame);
 
     // Searches DPB for a short term reference frame with specified POC
-    H265DecoderFrame *findShortRefPic(Ipp32s picPOC);
+    H265DecoderFrame *findShortRefPic(int32_t picPOC);
 
     // Searches DPB for a long term reference frame with specified POC
-    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, Ipp32s picPOC, Ipp32u bitsForPOC, bool isUseMask) const;
+    H265DecoderFrame *findLongTermRefPic(const H265DecoderFrame *excludeFrame, int32_t picPOC, uint32_t bitsForPOC, bool isUseMask) const;
 
     // Returns the number of frames in DPB
-    Ipp32u countAllFrames();
+    uint32_t countAllFrames();
 
     // Return number of active short and long term reference frames.
-    void countActiveRefs(Ipp32u &numShortTerm, Ipp32u &numLongTerm);
+    void countActiveRefs(uint32_t &numShortTerm, uint32_t &numLongTerm);
 
     // Search through the list for the oldest displayable frame.
-    H265DecoderFrame *findOldestDisplayable(Ipp32s dbpSize);
+    H265DecoderFrame *findOldestDisplayable(int32_t dbpSize);
 
-    void calculateInfoForDisplay(Ipp32u &countDisplayable, Ipp32u &countDPBFullness, Ipp32s &maxUID);
+    void calculateInfoForDisplay(uint32_t &countDisplayable, uint32_t &countDPBFullness, int32_t &maxUID);
 
     // Try to find a frame closest to specified for error recovery
     H265DecoderFrame * FindClosest(H265DecoderFrame * pFrame);
 
-    Ipp32s GetDPBSize() const
+    int32_t GetDPBSize() const
     {
         return m_dpbSize;
     }
 
-    void SetDPBSize(Ipp32s dpbSize)
+    void SetDPBSize(int32_t dpbSize)
     {
         m_dpbSize = dpbSize;
     }
@@ -128,7 +128,7 @@ public:
     void printDPB();
 
 protected:
-    Ipp32s m_dpbSize;
+    int32_t m_dpbSize;
 };
 
 } // end namespace UMC_HEVC_DECODER

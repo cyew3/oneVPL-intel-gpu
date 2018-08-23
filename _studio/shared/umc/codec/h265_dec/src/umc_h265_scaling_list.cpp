@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,16 +23,16 @@ void H265ScalingList::init()
 {
     VM_ASSERT(!m_initialized);
 
-    for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    for (uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
-        Ipp32u scalingListNum = g_scalingListNum[sizeId];
-        Ipp32u scalingListSize = g_scalingListSize[sizeId];
+        uint32_t scalingListNum = g_scalingListNum[sizeId];
+        uint32_t scalingListSize = g_scalingListSize[sizeId];
 
-        Ipp16s* pScalingList = h265_new_array_throw<Ipp16s>(scalingListNum * scalingListSize * SCALING_LIST_REM_NUM);
+        int16_t* pScalingList = h265_new_array_throw<int16_t>(scalingListNum * scalingListSize * SCALING_LIST_REM_NUM);
 
-        for (Ipp32u listId = 0; listId < scalingListNum; listId++)
+        for (uint32_t listId = 0; listId < scalingListNum; listId++)
         {
-            for (Ipp32u qp = 0; qp < SCALING_LIST_REM_NUM; qp++)
+            for (uint32_t qp = 0; qp < SCALING_LIST_REM_NUM; qp++)
             {
                 m_dequantCoef[sizeId][listId][qp] = pScalingList + (qp * scalingListSize);
             }
@@ -41,7 +41,7 @@ void H265ScalingList::init()
     }
 
     //alias list [1] as [3].
-    for (Ipp32u qp = 0; qp < SCALING_LIST_REM_NUM; qp++)
+    for (uint32_t qp = 0; qp < SCALING_LIST_REM_NUM; qp++)
     {
         m_dequantCoef[SCALING_LIST_32x32][3][qp] = m_dequantCoef[SCALING_LIST_32x32][1][qp];
     }
@@ -55,7 +55,7 @@ void H265ScalingList::destroy()
     if (!m_initialized)
         return;
 
-    for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    for (uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
         delete [] m_dequantCoef[sizeId][0][0];
         m_dequantCoef[sizeId][0][0] = 0;
@@ -69,23 +69,23 @@ void H265ScalingList::calculateDequantCoef(void)
 {
     VM_ASSERT(m_initialized);
 
-    static const Ipp32u g_scalingListSizeX[4] = { 4, 8, 16, 32 };
+    static const uint32_t g_scalingListSizeX[4] = { 4, 8, 16, 32 };
 
-    for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    for (uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
-        for (Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
+        for (uint32_t listId = 0; listId < g_scalingListNum[sizeId]; listId++)
         {
-            for (Ipp32u qp = 0; qp < SCALING_LIST_REM_NUM; qp++)
+            for (uint32_t qp = 0; qp < SCALING_LIST_REM_NUM; qp++)
             {
-                Ipp32u width = g_scalingListSizeX[sizeId];
-                Ipp32u height = g_scalingListSizeX[sizeId];
-                Ipp32u ratio = g_scalingListSizeX[sizeId] / IPP_MIN(MAX_MATRIX_SIZE_NUM, (Ipp32s)g_scalingListSizeX[sizeId]);
-                Ipp16s *dequantcoeff;
-                Ipp32s *coeff = getScalingListAddress(sizeId, listId);
+                uint32_t width = g_scalingListSizeX[sizeId];
+                uint32_t height = g_scalingListSizeX[sizeId];
+                uint32_t ratio = g_scalingListSizeX[sizeId] / MFX_MIN(MAX_MATRIX_SIZE_NUM, (int32_t)g_scalingListSizeX[sizeId]);
+                int16_t *dequantcoeff;
+                int32_t *coeff = getScalingListAddress(sizeId, listId);
 
                 dequantcoeff = getDequantCoeff(listId, qp, sizeId);
                 processScalingListDec(coeff, dequantcoeff, g_invQuantScales[qp], height, width, ratio,
-                    IPP_MIN(MAX_MATRIX_SIZE_NUM, (Ipp32s)g_scalingListSizeX[sizeId]), getScalingListDC(sizeId, listId));
+                    MFX_MIN(MAX_MATRIX_SIZE_NUM, (int32_t)g_scalingListSizeX[sizeId]), getScalingListDC(sizeId, listId));
             }
         }
     }
@@ -98,13 +98,13 @@ void H265ScalingList::initFromDefaultScalingList()
 
     init();
 
-    for (Ipp32u sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
+    for (uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
-        for (Ipp32u listId = 0; listId < g_scalingListNum[sizeId]; listId++)
+        for (uint32_t listId = 0; listId < g_scalingListNum[sizeId]; listId++)
         {
             MFX_INTERNAL_CPY(getScalingListAddress(sizeId, listId),
                 getScalingListDefaultAddress(sizeId, listId),
-                sizeof(Ipp32s) * IPP_MIN(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]));
+                sizeof(int32_t) * MFX_MIN(MAX_MATRIX_COEF_NUM, (int32_t)g_scalingListSize[sizeId]));
             setScalingListDC(sizeId, listId, SCALING_LIST_DC);
         }
     }
@@ -113,21 +113,21 @@ void H265ScalingList::initFromDefaultScalingList()
 }
 
 // Calculated coefficients used for dequantization in one scaling list matrix
-void H265ScalingList::processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc)
+void H265ScalingList::processScalingListDec(int32_t *coeff, int16_t *dequantcoeff, int32_t invQuantScales, uint32_t height, uint32_t width, uint32_t ratio, uint32_t sizuNum, uint32_t dc)
 {
-    for(Ipp32u j = 0; j < height; j++)
+    for(uint32_t j = 0; j < height; j++)
     {
 #ifdef __INTEL_COMPILER
         #pragma vector always
 #endif
-        for(Ipp32u i = 0; i < width; i++)
+        for(uint32_t i = 0; i < width; i++)
         {
-            dequantcoeff[j * width + i] = (Ipp16s)(invQuantScales * coeff[sizuNum * (j / ratio) + i / ratio]);
+            dequantcoeff[j * width + i] = (int16_t)(invQuantScales * coeff[sizuNum * (j / ratio) + i / ratio]);
         }
     }
     if(ratio > 1)
     {
-        dequantcoeff[0] = (Ipp16s)(invQuantScales * dc);
+        dequantcoeff[0] = (int16_t)(invQuantScales * dc);
     }
 }
 
@@ -162,7 +162,7 @@ void H265ScalingList::processRefMatrix(unsigned sizeId, unsigned listId , unsign
 {
   MFX_INTERNAL_CPY(getScalingListAddress(sizeId, listId),
       ((listId == refListId) ? getScalingListDefaultAddress(sizeId, refListId) : getScalingListAddress(sizeId, refListId)),
-      sizeof(int)*IPP_MIN(MAX_MATRIX_COEF_NUM, (int)g_scalingListSize[sizeId]));
+      sizeof(int)*MFX_MIN(MAX_MATRIX_COEF_NUM, (int)g_scalingListSize[sizeId]));
 }
 
 } // end namespace UMC_HEVC_DECODER

@@ -59,13 +59,13 @@ public:
     ~H265_DXVA_SegmentDecoder();
 
     // Initialize object
-    virtual UMC::Status Init(Ipp32s iNumber);
+    virtual UMC::Status Init(int32_t iNumber);
 
     void PackAllHeaders(H265DecoderFrame * pFrame);
 
     virtual UMC::Status ProcessSegment(void);
 
-    Ipp32s m_CurrentSliceID;
+    int32_t m_CurrentSliceID;
 
     Packer * GetPacker() { return m_Packer.get();}
 
@@ -119,7 +119,7 @@ public:
         H265_DXVA_SegmentDecoder * dxva_sd = (H265_DXVA_SegmentDecoder*)(m_Base->m_pSegmentDecoder[0]);
         VM_ASSERT(dxva_sd);
 
-        for (Ipp32u i = 0; i < m_Base->m_iThreadNum; i++)
+        for (uint32_t i = 0; i < m_Base->m_iThreadNum; i++)
         {
             ((H265_DXVA_SegmentDecoder *)m_Base->m_pSegmentDecoder[i])->SetVideoAccelerator(m_va);
         }
@@ -168,11 +168,11 @@ protected:
     class ReportItem
     {
     public:
-        Ipp32u  m_index;
-        Ipp32u  m_field;
-        Ipp8u   m_status;
+        uint32_t  m_index;
+        uint32_t  m_field;
+        uint8_t   m_status;
 
-        ReportItem(Ipp32u index, Ipp32u field, Ipp8u status)
+        ReportItem(uint32_t index, uint32_t field, uint8_t status)
             : m_index(index)
             , m_field(field)
             , m_status(status)
@@ -192,8 +192,8 @@ protected:
 
     typedef std::vector<ReportItem> Report;
     Report m_reports;
-    Ipp64u m_lastCounter;
-    Ipp64u m_counterFrequency;
+    unsigned long long m_lastCounter;
+    unsigned long long m_counterFrequency;
 };
 
 } // namespace UMC_HEVC_DECODER

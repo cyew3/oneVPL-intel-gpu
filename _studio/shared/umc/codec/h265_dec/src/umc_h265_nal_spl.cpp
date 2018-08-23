@@ -24,13 +24,13 @@ enum
 };
 
 // Change memory region to little endian for reading with 32-bit DWORDs and remove start code emulation prevention byteps
-void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets);
+void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<uint32_t> *pRemovedOffsets);
 
 // Search bitstream for start code
-static Ipp32s FindStartCode(const Ipp8u *pb, size_t &nSize)
+static int32_t FindStartCode(const uint8_t *pb, size_t &nSize)
 {
     // there is no data
-    if ((Ipp32s) nSize < 4)
+    if ((int32_t) nSize < 4)
         return -1;
 
     // find start code
@@ -47,7 +47,7 @@ static Ipp32s FindStartCode(const Ipp8u *pb, size_t &nSize)
 
     return -1;
 
-} // Ipp32s FindStartCode(Ipp8u * (&pb), size_t &nSize)
+} // int32_t FindStartCode(uint8_t * (&pb), size_t &nSize)
 
 // NAL unit splitter class
 class StartCodeIterator : public StartCodeIteratorBase
@@ -69,29 +69,29 @@ public:
     }
 
     // Initialize with bitstream buffer
-    virtual Ipp32s Init(UMC::MediaData * pSource)
+    virtual int32_t Init(UMC::MediaData * pSource)
     {
         Reset();
         StartCodeIteratorBase::Init(pSource);
-        Ipp32s iCode = UMC_HEVC_DECODER::FindStartCode(m_pSource, m_nSourceSize);
+        int32_t iCode = UMC_HEVC_DECODER::FindStartCode(m_pSource, m_nSourceSize);
         return iCode;
     }
 
     // Returns first NAL unit ID in memory buffer
-    virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource)
+    virtual int32_t CheckNalUnitType(UMC::MediaData * pSource)
     {
         if (!pSource)
             return -1;
 
-        Ipp8u * source = (Ipp8u *)pSource->GetDataPointer();
+        uint8_t * source = (uint8_t *)pSource->GetDataPointer();
         size_t  size = pSource->GetDataSize();
 
-        Ipp32s startCodeSize;
+        int32_t startCodeSize;
         return FindStartCode(source, size, startCodeSize);
     }
 
     // Set bitstream pointer to start code address
-    virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource)
+    virtual int32_t MoveToStartCode(UMC::MediaData * pSource)
     {
         if (!pSource)
             return -1;
@@ -99,13 +99,13 @@ public:
         if (m_code == -1)
             m_prev.clear();
 
-        Ipp8u * source = (Ipp8u *)pSource->GetDataPointer();
+        uint8_t * source = (uint8_t *)pSource->GetDataPointer();
         size_t  size = pSource->GetDataSize();
 
-        Ipp32s startCodeSize;
-        Ipp32s iCodeNext = FindStartCode(source, size, startCodeSize);
+        int32_t startCodeSize;
+        int32_t iCodeNext = FindStartCode(source, size, startCodeSize);
 
-        pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
+        pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer()));
         if (iCodeNext != -1)
         {
              pSource->MoveDataPointer(-startCodeSize);
@@ -115,12 +115,12 @@ public:
     }
 
     // Set destination bitstream pointer and size to NAL unit
-    virtual Ipp32s GetNALUnit(UMC::MediaData * pSource, UMC::MediaData * pDst)
+    virtual int32_t GetNALUnit(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
         if (!pSource)
             return EndOfStream(pDst);
 
-        Ipp32s iCode = GetNALUnitInternal(pSource, pDst);
+        int32_t iCode = GetNALUnitInternal(pSource, pDst);
         if (iCode == -1)
         {
             bool endOfStream = pSource && ((pSource->GetFlags() & UMC::MediaData::FLAG_VIDEO_DATA_END_OF_STREAM) != 0);
@@ -132,50 +132,50 @@ public:
     }
 
     // Set destination bitstream pointer and size to NAL unit
-    Ipp32s GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
+    int32_t GetNALUnitInternal(UMC::MediaData * pSource, UMC::MediaData * pDst)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "GetNALUnitInternal");
-        static const Ipp8u startCodePrefix[] = {0, 0, 1};
+        static const uint8_t startCodePrefix[] = {0, 0, 1};
 
         if (m_code == -1)
             m_prev.clear();
 
-        Ipp8u * source = (Ipp8u *)pSource->GetDataPointer();
+        uint8_t * source = (uint8_t *)pSource->GetDataPointer();
         size_t  size = pSource->GetDataSize();
 
         if (!size)
             return -1;
 
-        Ipp32s startCodeSize;
+        int32_t startCodeSize;
 
-        Ipp32s iCodeNext = FindStartCode(source, size, startCodeSize);
+        int32_t iCodeNext = FindStartCode(source, size, startCodeSize);
 
         // Use start code data which is saved from previous call because start code could be split between input buffers from application
         if (m_prev.size())
         {
             if (iCodeNext == -1)
             {
-                size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
+                size_t sz = source - (uint8_t *)pSource->GetDataPointer();
                 size_t szToMove = sz;
                 if (m_prev.size() + sz >  m_suggestedSize)
                 {
-                    sz = IPP_MIN(0, m_suggestedSize - m_prev.size());
+                    sz = MFX_MIN(0, m_suggestedSize - m_prev.size());
                 }
 
-                m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
-                pSource->MoveDataPointer((Ipp32s)szToMove);
+                m_prev.insert(m_prev.end(), (uint8_t *)pSource->GetDataPointer(), (uint8_t *)pSource->GetDataPointer() + sz);
+                pSource->MoveDataPointer((int32_t)szToMove);
                 return -1;
             }
 
             source -= startCodeSize;
-            m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), source);
-            pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
+            m_prev.insert(m_prev.end(), (uint8_t *)pSource->GetDataPointer(), source);
+            pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer()));
 
             pDst->SetFlags(UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME);
             pDst->SetBufferPointer(&(m_prev[3]), m_prev.size() - 3);
             pDst->SetDataSize(m_prev.size() - 3);
             pDst->SetTime(m_pts);
-            Ipp32s code = m_code;
+            int32_t code = m_code;
             m_code = -1;
             m_pts = -1;
             return code;
@@ -183,7 +183,7 @@ public:
 
         if (iCodeNext == -1)
         {
-            pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
+            pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer()));
             return -1;
         }
 
@@ -191,14 +191,14 @@ public:
         m_code = iCodeNext;
 
         // move before start code
-        pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer() - startCodeSize));
+        pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer() - startCodeSize));
 
-        Ipp32s startCodeSize1;
+        int32_t startCodeSize1;
         iCodeNext = FindStartCode(source, size, startCodeSize1);
 
         pSource->MoveDataPointer(startCodeSize);
 
-        Ipp32u flags = pSource->GetFlags();
+        uint32_t flags = pSource->GetFlags();
 
         if (iCodeNext == -1 && !(flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_UNIT))
         {
@@ -218,7 +218,7 @@ public:
 
             VM_ASSERT(!m_prev.size());
 
-            size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
+            size_t sz = source - (uint8_t *)pSource->GetDataPointer();
             size_t szToMove = sz;
             if (sz >  m_suggestedSize)
             {
@@ -227,19 +227,19 @@ public:
 
             if (!m_prev.size())
                 m_prev.insert(m_prev.end(), startCodePrefix, startCodePrefix + sizeof(startCodePrefix));
-            m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
-            pSource->MoveDataPointer((Ipp32s)szToMove);
+            m_prev.insert(m_prev.end(), (uint8_t *)pSource->GetDataPointer(), (uint8_t *)pSource->GetDataPointer() + sz);
+            pSource->MoveDataPointer((int32_t)szToMove);
             return -1;
         }
 
         // fill
-        size_t nal_size = source - (Ipp8u *)pSource->GetDataPointer() - startCodeSize1;
-        pDst->SetBufferPointer((Ipp8u*)pSource->GetDataPointer(), nal_size);
+        size_t nal_size = source - (uint8_t *)pSource->GetDataPointer() - startCodeSize1;
+        pDst->SetBufferPointer((uint8_t*)pSource->GetDataPointer(), nal_size);
         pDst->SetDataSize(nal_size);
         pDst->SetFlags(pSource->GetFlags());
-        pSource->MoveDataPointer((Ipp32s)nal_size);
+        pSource->MoveDataPointer((int32_t)nal_size);
 
-        Ipp32s code = m_code;
+        int32_t code = m_code;
         m_code = -1;
 
         pDst->SetTime(m_pts);
@@ -248,7 +248,7 @@ public:
     }
 
     // Reset state because stream is finished
-    Ipp32s EndOfStream(UMC::MediaData * pDst)
+    int32_t EndOfStream(UMC::MediaData * pDst)
     {
         if (m_code == -1)
         {
@@ -261,7 +261,7 @@ public:
             pDst->SetBufferPointer(&(m_prev[3]), m_prev.size() - 3);
             pDst->SetDataSize(m_prev.size() - 3);
             pDst->SetTime(m_pts);
-            Ipp32s code = m_code;
+            int32_t code = m_code;
             m_code = -1;
             m_pts = -1;
             return code;
@@ -272,18 +272,18 @@ public:
     }
 
 private:
-    std::vector<Ipp8u>  m_prev;
-    Ipp32s   m_code;
-    Ipp64f   m_pts;
+    std::vector<uint8_t>  m_prev;
+    int32_t   m_code;
+    double   m_pts;
 
     // Searches NAL unit start code, places input pointer to it and fills up size paramters
     // ML: OPT: TODO: Replace with MaxL's fast start code search
-    Ipp32s FindStartCode(Ipp8u * (&pb), size_t & size, Ipp32s & startCodeSize)
+    int32_t FindStartCode(uint8_t * (&pb), size_t & size, int32_t & startCodeSize)
     {
-        Ipp32u zeroCount = 0;
+        uint32_t zeroCount = 0;
 
-        Ipp32s i = 0;
-        for (; i < (Ipp32s)size - 2; )
+        int32_t i = 0;
+        for (; i < (int32_t)size - 2; )
         {
             if (pb[1])
             {
@@ -296,8 +296,8 @@ private:
             if (!pb[0])
                 zeroCount++;
 
-            Ipp32u j;
-            for (j = 1; j < (Ipp32u)size - i; j++)
+            uint32_t j;
+            for (j = 1; j < (uint32_t)size - i; j++)
             {
                 if (pb[j])
                     break;
@@ -308,14 +308,14 @@ private:
             pb += j;
             i += j;
 
-            if (i >= (Ipp32s)size)
+            if (i >= (int32_t)size)
             {
                 break;
             }
 
             if (zeroCount >= 2 && pb[0] == 1)
             {
-                startCodeSize = IPP_MIN(zeroCount + 1, 4);
+                startCodeSize = MFX_MIN(zeroCount + 1, 4);
                 size -= i + 1;
                 pb++; // remove 0x01 symbol
                 if (size >= 1)
@@ -336,7 +336,7 @@ private:
 
         if (!zeroCount)
         {
-            for (Ipp32u k = 0; k < size - i; k++, pb++)
+            for (uint32_t k = 0; k < size - i; k++, pb++)
             {
                 if (pb[0])
                 {
@@ -348,7 +348,7 @@ private:
             }
         }
 
-        zeroCount = IPP_MIN(zeroCount, 3);
+        zeroCount = MFX_MIN(zeroCount, 3);
         pb -= zeroCount;
         size = zeroCount;
         startCodeSize = zeroCount;
@@ -361,12 +361,12 @@ class Swapper : public SwapperBase
 {
 public:
 
-    virtual void SwapMemory(Ipp8u *pDestination, size_t &nDstSize, Ipp8u *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets)
+    virtual void SwapMemory(uint8_t *pDestination, size_t &nDstSize, uint8_t *pSource, size_t nSrcSize, std::vector<uint32_t> *pRemovedOffsets)
     {
         SwapMemoryAndRemovePreventingBytes_H265(pDestination, nDstSize, pSource, nSrcSize, pRemovedOffsets);
     }
 
-    virtual void SwapMemory(MemoryPiece * pMemDst, MemoryPiece * pMemSrc, std::vector<Ipp32u> *pRemovedOffsets)
+    virtual void SwapMemory(MemoryPiece * pMemDst, MemoryPiece * pMemSrc, std::vector<uint32_t> *pRemovedOffsets)
     {
         size_t dstSize = pMemSrc->GetDataSize();
         SwapMemory(pMemDst->GetPointer(),
@@ -376,7 +376,7 @@ public:
                     pRemovedOffsets);
 
         VM_ASSERT(pMemDst->GetSize() >= dstSize);
-        size_t tail_size = IPP_MIN(pMemDst->GetSize() - dstSize, DEFAULT_NU_TAIL_SIZE);
+        size_t tail_size = MFX_MIN(pMemDst->GetSize() - dstSize, DEFAULT_NU_TAIL_SIZE);
         memset(pMemDst->GetPointer() + dstSize, DEFAULT_NU_TAIL_VALUE, tail_size);
         pMemDst->SetDataSize(dstSize);
         pMemDst->SetTime(pMemSrc->GetTime());
@@ -423,13 +423,13 @@ void NALUnitSplitter_H265::Release()
 }
 
 // Returns first NAL unit ID in memory buffer
-Ipp32s NALUnitSplitter_H265::CheckNalUnitType(UMC::MediaData * pSource)
+int32_t NALUnitSplitter_H265::CheckNalUnitType(UMC::MediaData * pSource)
 {
     return m_pStartCodeIter->CheckNalUnitType(pSource); // find first start code
 }
 
 // Set bitstream pointer to start code address
-Ipp32s NALUnitSplitter_H265::MoveToStartCode(UMC::MediaData * pSource)
+int32_t NALUnitSplitter_H265::MoveToStartCode(UMC::MediaData * pSource)
 {
     return m_pStartCodeIter->MoveToStartCode(pSource); // find first start code
 }
@@ -440,7 +440,7 @@ UMC::MediaDataEx * NALUnitSplitter_H265::GetNalUnits(UMC::MediaData * pSource)
     UMC::MediaDataEx * out = &m_MediaData;
     UMC::MediaDataEx::_MediaDataEx* pMediaDataEx = &m_MediaDataEx;
 
-    Ipp32s iCode = m_pStartCodeIter->GetNALUnit(pSource, out);
+    int32_t iCode = m_pStartCodeIter->GetNALUnit(pSource, out);
 
     if (iCode == -1)
     {
@@ -451,7 +451,7 @@ UMC::MediaDataEx * NALUnitSplitter_H265::GetNalUnits(UMC::MediaData * pSource)
     pMediaDataEx->values[0] = iCode;
 
     pMediaDataEx->offsets[0] = 0;
-    pMediaDataEx->offsets[1] = (Ipp32s)out->GetDataSize();
+    pMediaDataEx->offsets[1] = (int32_t)out->GetDataSize();
     pMediaDataEx->count = 1;
     pMediaDataEx->index = 0;
     return out;
@@ -471,7 +471,7 @@ public:
 
     H265DwordPointer_ operator = (void *pDest)
     {
-        m_pDest = (Ipp32u *) pDest;
+        m_pDest = (uint32_t *) pDest;
         m_nByteNum = 0;
         m_iCur = 0;
 
@@ -494,17 +494,17 @@ public:
         return *this;
     }
 
-    Ipp8u operator = (Ipp8u nByte)
+    uint8_t operator = (uint8_t nByte)
     {
-        m_iCur = (m_iCur & ~0x0ff) | ((Ipp32u) nByte);
+        m_iCur = (m_iCur & ~0x0ff) | ((uint32_t) nByte);
 
         return nByte;
     }
 
 protected:
-    Ipp32u *m_pDest;                                            // (Ipp32u *) pointer to destination buffer
-    Ipp32u m_nByteNum;                                          // (Ipp32u) number of current byte in dword
-    Ipp32u m_iCur;                                              // (Ipp32u) current dword
+    uint32_t *m_pDest;                                            // (uint32_t *) pointer to destination buffer
+    uint32_t m_nByteNum;                                          // (uint32_t) number of current byte in dword
+    uint32_t m_iCur;                                              // (uint32_t) current dword
 };
 
 // Utility class for reading big endian bitstream
@@ -521,7 +521,7 @@ public:
 
     H265SourcePointer_ &operator = (void *pSource)
     {
-        m_pSource = (Ipp8u *) pSource;
+        m_pSource = (uint8_t *) pSource;
 
         m_nZeros = 0;
         m_nRemovedBytes = 0;
@@ -531,7 +531,7 @@ public:
 
     H265SourcePointer_ &operator ++ (void)
     {
-        Ipp8u bCurByte = m_pSource[0];
+        uint8_t bCurByte = m_pSource[0];
 
         if (0 == bCurByte)
             m_nZeros += 1;
@@ -555,24 +555,24 @@ public:
             return false;
     }
 
-    operator Ipp8u (void)
+    operator uint8_t (void)
     {
         return m_pSource[0];
     }
 
-    Ipp32u GetRemovedBytes(void)
+    uint32_t GetRemovedBytes(void)
     {
         return m_nRemovedBytes;
     }
 
 protected:
-    Ipp8u *m_pSource;                                           // (Ipp8u *) pointer to destination buffer
-    Ipp32u m_nZeros;                                            // (Ipp32u) number of preceding zeros
-    Ipp32u m_nRemovedBytes;                                     // (Ipp32u) number of removed bytes
+    uint8_t *m_pSource;                                           // (uint8_t *) pointer to destination buffer
+    uint32_t m_nZeros;                                            // (uint32_t) number of preceding zeros
+    uint32_t m_nRemovedBytes;                                     // (uint32_t) number of removed bytes
 };
 
 // Change memory region to little endian for reading with 32-bit DWORDs and remove start code emulation prevention byteps
-void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets)
+void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSize, void *pSource, size_t nSrcSize, std::vector<uint32_t> *pRemovedOffsets)
 {
     H265DwordPointer_ pDst;
     H265SourcePointer_ pSrc;
@@ -587,9 +587,9 @@ void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSiz
 
     // first two bytes
     i = 0;
-    while (i < (Ipp32u) IPP_MIN(2, nSrcSize))
+    while (i < (uint32_t) MFX_MIN(2, nSrcSize))
     {
-        pDst = (Ipp8u) pSrc;
+        pDst = (uint8_t) pSrc;
         ++pDst;
         ++pSrc;
         ++i;
@@ -598,15 +598,15 @@ void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSiz
     // do swapping
     if (NULL != pRemovedOffsets)
     {
-        while (i < (Ipp32u) nSrcSize)
+        while (i < (uint32_t) nSrcSize)
         {
             if (false == pSrc.IsPrevent())
             {
-                pDst = (Ipp8u) pSrc;
+                pDst = (uint8_t) pSrc;
                 ++pDst;
             }
             else
-                pRemovedOffsets->push_back(Ipp32u(i));
+                pRemovedOffsets->push_back(uint32_t(i));
 
             ++pSrc;
             ++i;
@@ -614,11 +614,11 @@ void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSiz
     }
     else
     {
-        while (i < (Ipp32u) nSrcSize)
+        while (i < (uint32_t) nSrcSize)
         {
             if (false == pSrc.IsPrevent())
             {
-                pDst = (Ipp8u) pSrc;
+                pDst = (uint8_t) pSrc;
                 ++pDst;
             }
 
@@ -631,12 +631,12 @@ void SwapMemoryAndRemovePreventingBytes_H265(void *pDestination, size_t &nDstSiz
     nDstSize = nSrcSize - pSrc.GetRemovedBytes();
     while (nDstSize & 3)
     {
-        pDst = (Ipp8u) (0);
+        pDst = (uint8_t) (0);
         ++nDstSize;
         ++pDst;
     }
 
-} // void SwapMemoryAndRemovePreventingBytes_H265(void *pDst, size_t &nDstSize, void *pSrc, size_t nSrcSize, , std::vector<Ipp32u> *pRemovedOffsets)
+} // void SwapMemoryAndRemovePreventingBytes_H265(void *pDst, size_t &nDstSize, void *pSrc, size_t nSrcSize, , std::vector<uint32_t> *pRemovedOffsets)
 
 } // namespace UMC_HEVC_DECODER
 

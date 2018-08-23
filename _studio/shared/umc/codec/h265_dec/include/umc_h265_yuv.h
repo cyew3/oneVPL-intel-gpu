@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -26,7 +26,7 @@ class H265DecYUVBufferPadded
 {
 public:
 
-    Ipp32s  m_chroma_format; // standard value chroma_format_idc
+    int32_t  m_chroma_format; // standard value chroma_format_idc
 
     PlanePtrY               m_pYPlane;
 
@@ -55,11 +55,11 @@ public:
     // Deallocate all memory
     void deallocate();
 
-    const IppiSize& lumaSize() const { return m_lumaSize; }
-    const IppiSize& chromaSize() const { return m_chromaSize; }
+    const mfxSize& lumaSize() const { return m_lumaSize; }
+    const mfxSize& chromaSize() const { return m_chromaSize; }
 
-    Ipp32u pitch_luma() const { return m_pitch_luma; }
-    Ipp32u pitch_chroma() const { return m_pitch_chroma; }
+    uint32_t pitch_luma() const { return m_pitch_luma; }
+    uint32_t pitch_chroma() const { return m_pitch_chroma; }
 
     // Returns pointer to FrameData instance
     UMC::FrameData * GetFrameData();
@@ -74,13 +74,13 @@ protected:
 
     // m_pAllocatedBuffer contains the pointer returned when
     // we allocated space for the data.
-    Ipp8u                 *m_pAllocatedBuffer;
+    uint8_t                 *m_pAllocatedBuffer;
 
-    IppiSize            m_lumaSize;
-    IppiSize            m_chromaSize;
+    mfxSize            m_lumaSize;
+    mfxSize            m_chromaSize;
 
-    Ipp32s  m_pitch_luma;
-    Ipp32s  m_pitch_chroma;
+    int32_t  m_pitch_luma;
+    int32_t  m_pitch_chroma;
 
     UMC::FrameData m_frameData;
 

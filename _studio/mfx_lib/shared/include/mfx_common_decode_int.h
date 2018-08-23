@@ -78,7 +78,7 @@ mfxStatus CheckIntelDataPrivateReport(T *pConfig, mfxVideoParam *par)
     {
         bool isBaselineConstraints = true;
 
-        for (Ipp32u i = 0; i < sizeof(svcDesc->DependencyLayer)/sizeof(svcDesc->DependencyLayer[0]); i++)
+        for (uint32_t i = 0; i < sizeof(svcDesc->DependencyLayer)/sizeof(svcDesc->DependencyLayer[0]); i++)
         {
             if (svcDesc->DependencyLayer[i].Active)
             {
@@ -88,11 +88,11 @@ mfxStatus CheckIntelDataPrivateReport(T *pConfig, mfxVideoParam *par)
                     break;
                 }
 
-                Ipp32u depD = svcDesc->DependencyLayer[i].RefLayerDid;
+                uint32_t depD = svcDesc->DependencyLayer[i].RefLayerDid;
                 if (depD >= 8)
                     continue;
-                Ipp16u scaledW = (Ipp16u)(svcDesc->DependencyLayer[i].Width - svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[0]-svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[2]);
-                Ipp16u scaledH = (Ipp16u)(svcDesc->DependencyLayer[i].Height - svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[1]-svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[3]);
+                uint16_t scaledW = (uint16_t)(svcDesc->DependencyLayer[i].Width - svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[0]-svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[2]);
+                uint16_t scaledH = (uint16_t)(svcDesc->DependencyLayer[i].Height - svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[1]-svcDesc->DependencyLayer[i].ScaledRefLayerOffsets[3]);
                 if ( ! ((scaledW == svcDesc->DependencyLayer[depD].Width &&
                     scaledH == svcDesc->DependencyLayer[depD].Height) ||
 
@@ -142,10 +142,10 @@ public:
 
     void ResetRefCounter() { m_refCounter = 0; }
 
-    Ipp32u GetRefCounter() const { return m_refCounter; }
+    uint32_t GetRefCounter() const { return m_refCounter; }
 
 protected:
-    mutable Ipp32s m_refCounter;
+    mutable int32_t m_refCounter;
 
     virtual ~RefCounter()
     {

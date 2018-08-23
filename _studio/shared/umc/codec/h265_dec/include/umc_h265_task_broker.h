@@ -40,7 +40,7 @@ public:
     TaskBroker_H265(TaskSupplier_H265 * pTaskSupplier);
 
     // Initialize task broker with threads number
-    virtual bool Init(Ipp32s iConsumerNumber);
+    virtual bool Init(int32_t iConsumerNumber);
     virtual ~TaskBroker_H265();
 
     // Add frame to decoding queue
@@ -78,7 +78,7 @@ public:
 protected:
 
     // Returns number of access units available in the list but not processed yet
-    Ipp32s GetNumberOfTasks(void);
+    int32_t GetNumberOfTasks(void);
     // Returns whether frame decoding is finished
     bool IsFrameCompleted(H265DecoderFrame * pFrame) const;
 
@@ -97,7 +97,7 @@ protected:
     // Remove access unit from the linked list of frames
     void RemoveAU(H265DecoderFrameInfo * toRemove);
 
-    Ipp32s m_iConsumerNumber;
+    int32_t m_iConsumerNumber;
 
     H265DecoderFrameInfo * m_FirstAU;
 
@@ -128,7 +128,7 @@ class H265Task
 {
 public:
     // Default constructor
-    H265Task(Ipp32s iThreadNumber)
+    H265Task(int32_t iThreadNumber)
         : m_iThreadNumber(iThreadNumber)
     {
         m_pSlice = 0;
@@ -147,7 +147,7 @@ public:
         m_pSlicesInfo = 0;
     }
 
-    CoeffsPtr m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
+    CoeffsPtr m_pBuffer;                                  // (int16_t *) pointer to working buffer
     size_t          m_WrittenSize;
 
     DecodingContext * m_context;
@@ -156,11 +156,11 @@ public:
     H265DecoderFrameInfo * m_pSlicesInfo;
     UMC::AutomaticUMCMutex    * m_taskPreparingGuard;
 
-    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
-    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
-    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
+    int32_t m_iThreadNumber;                                     // (int32_t) owning thread number
+    int32_t m_iFirstMB;                                          // (int32_t) first MB in slice
+    int32_t m_iMaxMB;                                            // (int32_t) maximum MB number in owning slice
+    int32_t m_iMBToProcess;                                      // (int32_t) number of MB to processing
+    int32_t m_iTaskID;                                           // (int32_t) task identificator
     bool m_bError;                                              // (bool) there is a error
 };
 
@@ -203,7 +203,7 @@ public:
 
     TaskBrokerTwoThread_H265(TaskSupplier_H265 * pTaskSupplier);
 
-    virtual bool Init(Ipp32s iConsumerNumber);
+    virtual bool Init(int32_t iConsumerNumber);
 
     // Select a new task for available frame and initialize a task object for it
     virtual bool GetNextTaskManySlices(H265DecoderFrameInfo * info, H265Task *pTask);

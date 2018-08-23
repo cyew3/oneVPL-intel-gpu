@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -19,23 +19,23 @@
 namespace UMC_HEVC_DECODER
 {
 // Scaling list initialization scan lookup table
-extern const Ipp16u g_sigLastScanCG32x32[64];
+extern const uint16_t g_sigLastScanCG32x32[64];
 // Scaling list initialization scan lookup table
-extern const Ipp16u ScanTableDiag4x4[16];
+extern const uint16_t ScanTableDiag4x4[16];
 // Default scaling list 8x8 for intra prediction
-extern const Ipp32s g_quantIntraDefault8x8[64];
+extern const int32_t g_quantIntraDefault8x8[64];
 // Default scaling list 8x8 for inter prediction
-extern const Ipp32s g_quantInterDefault8x8[64];
+extern const int32_t g_quantInterDefault8x8[64];
 // Default scaling list 4x4
-extern const Ipp32s g_quantTSDefault4x4[16];
+extern const int32_t g_quantTSDefault4x4[16];
 
 // Scaling list table sizes
-static const Ipp32u g_scalingListSize [4] = {16, 64, 256, 1024};
+static const uint32_t g_scalingListSize [4] = {16, 64, 256, 1024};
 // Number of possible scaling lists of different sizes
-static const Ipp32u g_scalingListNum[SCALING_LIST_SIZE_NUM]={6, 6, 6, 2};
+static const uint32_t g_scalingListNum[SCALING_LIST_SIZE_NUM]={6, 6, 6, 2};
 
 // Sample aspect ratios by aspect_ratio_idc index. HEVC spec E.3.1
-const Ipp16u SAspectRatio[17][2] =
+const uint16_t SAspectRatio[17][2] =
 {
     { 0,  0}, { 1,  1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, { 24, 11},
     {20, 11}, {32, 11}, {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160, 99},
@@ -43,11 +43,11 @@ const Ipp16u SAspectRatio[17][2] =
 };
 
 // Inverse QP scale lookup table
-extern const Ipp16u g_invQuantScales[6];            // IQ(QP%6)
+extern const uint16_t g_invQuantScales[6];            // IQ(QP%6)
 
 #ifndef MFX_VA
 // Prediction unit partition index increment inside of CU
-extern const Ipp32u g_PUOffset[8];
+extern const uint32_t g_PUOffset[8];
 
 #define QUANT_IQUANT_SHIFT    20 // Q(QP%6) * IQ(QP%6) = 2^20
 #define QUANT_SHIFT           14 // Q(4) = 2^14
@@ -55,17 +55,17 @@ extern const Ipp32u g_PUOffset[8];
 #define MAX_TR_DYNAMIC_RANGE  15 // Maximum transform dynamic range (excluding sign bit)
 
 // Luma to chroma QP scale lookup table. HEVC spec 8.6.1
-extern const Ipp8u g_ChromaScale[2][58];
+extern const uint8_t g_ChromaScale[2][58];
 
 // chroma 422 pred mode from Luma IntraPredMode table 8-3 of spec
-extern const Ipp8u g_Chroma422IntraPredModeC[INTRA_DM_CHROMA_IDX];
+extern const uint8_t g_Chroma422IntraPredModeC[INTRA_DM_CHROMA_IDX];
 
 // Lookup table used for decoding coefficients and groups of coefficients
-extern ALIGN_DECL(32) const Ipp8u scanGCZr[128];
+extern ALIGN_DECL(32) const uint8_t scanGCZr[128];
 // XY coefficient position inside of transform block lookup table
-extern const Ipp32u g_GroupIdx[32];
+extern const uint32_t g_GroupIdx[32];
 // Group index inside of transfrom block lookup table
-extern const Ipp32u g_MinInGroup[10];
+extern const uint32_t g_MinInGroup[10];
 
 // clip x, such that 0 <= x <= maximum luma value
 // ML: OPT: called in hot loops, compiler does not seem to always honor 'inline'
@@ -90,12 +90,12 @@ static T inline H265_FORCEINLINE ClipC(T Value, int c_bitDepth = 8)
 }
 
 // Lookup table for converting number log2(number)-2
-extern const Ipp8s g_ConvertToBit[MAX_CU_SIZE + 1];   // from width to log2(width)-2
+extern const int8_t g_ConvertToBit[MAX_CU_SIZE + 1];   // from width to log2(width)-2
 
 // Convert chroma samples width to luma samples with chroma_format_idc index
-const Ipp32u SubWidthC[4]  = { 1, 2, 2, 1 };
+const uint32_t SubWidthC[4]  = { 1, 2, 2, 1 };
 // Convert chroma samples height to luma samples with chroma_format_idc index
-const Ipp32u SubHeightC[4] = { 1, 2, 1, 1 };
+const uint32_t SubHeightC[4] = { 1, 2, 1, 1 };
 
 // cabac tables and enums
 // Syntax element type for HEVC
@@ -138,7 +138,7 @@ enum
 // CABAC contexts initialization values offset in a common table of all contexts
 // ML: OPT: Moved into header to allow accesses be resolved at compile time
 const
-Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
+uint32_t ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 {
     0,   // SPLIT_CODING_UNIT_FLAG_HEVC
     3,   // SKIP_FLAG_HEVC
@@ -173,7 +173,7 @@ Ipp32u ctxIdxOffsetHEVC[MAIN_SYNTAX_ELEMENT_NUMBER_HEVC] =
 
 // LPS precalculated probability ranges. HEVC spec 9.3.4.3.1
 const
-Ipp8u rangeTabLPSH265[128][4]=
+uint8_t rangeTabLPSH265[128][4]=
 {
     { 128, 176, 208, 240},
     { 128, 176, 208, 240},
@@ -310,7 +310,7 @@ Ipp8u rangeTabLPSH265[128][4]=
 
 // State transition table for MPS path. HEVC spec 9.3.4.3.2.2
 const
-Ipp8u transIdxMPSH265[] =
+uint8_t transIdxMPSH265[] =
 {
     DECL( 1), DECL( 2), DECL( 3), DECL( 4), DECL( 5), DECL( 6), DECL( 7), DECL( 8),
     DECL( 9), DECL(10), DECL(11), DECL(12), DECL(13), DECL(14), DECL(15), DECL(16),
@@ -324,7 +324,7 @@ Ipp8u transIdxMPSH265[] =
 
 // State transition table for LPS path. HEVC spec 9.3.4.3.2.2
 const
-Ipp8u transIdxLPSH265[] =
+uint8_t transIdxLPSH265[] =
 {
     1,   0,   DECL( 0), DECL( 1), DECL( 2), DECL( 2), DECL( 4), DECL( 4), DECL( 5),
     DECL( 6), DECL( 7), DECL( 8), DECL( 9), DECL( 9), DECL(11), DECL(11), DECL(12),

@@ -341,7 +341,7 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         return 0;
 
     mfxU16 bit_depth =
-       IPP_MAX(frameInfo->BitDepthLuma, frameInfo->BitDepthChroma);
+       MFX_MAX(frameInfo->BitDepthLuma, frameInfo->BitDepthChroma);
 
     //map chroma fmt & bit depth onto fourcc (NOTE: we currently don't support bit depth above 10 bit)
     mfxU32 const map[][4] =
@@ -635,7 +635,7 @@ UMC::Status HeadersAnalyzer::ProcessNalUnit(UMC::MediaData * data)
 {
     try
     {
-        Ipp32s startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
+        int32_t startCode = m_supplier->GetNalUnitSplitter()->CheckNalUnitType(data);
 
         bool needProcess = false;
 
@@ -852,7 +852,7 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
         if ((in->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY) || (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) ||
             (in->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY))
         {
-            Ipp32u mask = in->IOPattern & 0xf0;
+            uint32_t mask = in->IOPattern & 0xf0;
             if (mask == MFX_IOPATTERN_OUT_VIDEO_MEMORY || mask == MFX_IOPATTERN_OUT_SYSTEM_MEMORY || mask == MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
                 out->IOPattern = in->IOPattern;
             else

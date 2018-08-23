@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -41,7 +41,7 @@ namespace UMC_HEVC_DECODER
 
         void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
-        bool PackSliceParams(H265Slice*, Ipp32u& /*sliceNum*/, bool /*isLastSlice*/)
+        bool PackSliceParams(H265Slice*, uint32_t& /*sliceNum*/, bool /*isLastSlice*/)
         { return true; }
         void PackQmatrix(const H265Slice* /*pSlice*/) {}
     };
@@ -77,7 +77,7 @@ namespace UMC_HEVC_DECODER
 
             if (bs && bs->EncryptedData)
             {
-                Ipp32s count = sliceInfo->GetSliceCount();
+                int32_t count = sliceInfo->GetSliceCount();
                 m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
             }
         }
@@ -127,7 +127,7 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        Ipp32u index;
+        uint32_t index;
         int pocList[3*8];
         int numRefPicSetStCurrBefore = 0,
             numRefPicSetStCurrAfter  = 0,
@@ -138,7 +138,7 @@ namespace UMC_HEVC_DECODER
                 pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
         for(; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         {
-            Ipp32s poc = rps->getPOC(index);
+            int32_t poc = rps->getPOC(index);
             H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
 
             if (pFrm)

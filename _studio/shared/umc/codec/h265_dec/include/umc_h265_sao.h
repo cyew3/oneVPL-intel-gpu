@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -45,13 +45,13 @@ struct SAOLCUParam
 {
     struct
     {
-        Ipp8u sao_merge_up_flag : 1;
-        Ipp8u sao_merge_left_flag : 1;
+        uint8_t sao_merge_up_flag : 1;
+        uint8_t sao_merge_left_flag : 1;
     };
 
-    Ipp8s m_typeIdx[2];
-    Ipp8s m_subTypeIdx[3];
-    Ipp32s m_offset[3][4];
+    int8_t m_typeIdx[2];
+    int8_t m_subTypeIdx[3];
+    int32_t m_offset[3][4];
 };
 
 #pragma pack()
@@ -68,7 +68,7 @@ public:
     virtual void init(const H265SeqParamSet* sps) = 0;
     virtual void destroy() = 0;
 
-    virtual void SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU) = 0;
+    virtual void SAOProcess(H265DecoderFrame* pFrame, int32_t startCU, int32_t toProcessCU) = 0;
 };
 
 // SAO functionality and state
@@ -91,16 +91,16 @@ public:
     virtual void destroy();
 
     // Apply SAO filter to a frame
-    virtual void SAOProcess(H265DecoderFrame* pFrame, Ipp32s startCU, Ipp32s toProcessCU);
+    virtual void SAOProcess(H265DecoderFrame* pFrame, int32_t startCU, int32_t toProcessCU);
 
 protected:
     H265DecoderFrame*   m_Frame;
     const H265SeqParamSet* m_sps;
 
-    Ipp32s              m_OffsetEo[LUMA_GROUP_NUM];
-    Ipp32s              m_OffsetEo2[LUMA_GROUP_NUM];
-    Ipp32s              m_OffsetEoChroma[LUMA_GROUP_NUM];
-    Ipp32s              m_OffsetEo2Chroma[LUMA_GROUP_NUM];
+    int32_t              m_OffsetEo[LUMA_GROUP_NUM];
+    int32_t              m_OffsetEo2[LUMA_GROUP_NUM];
+    int32_t              m_OffsetEoChroma[LUMA_GROUP_NUM];
+    int32_t              m_OffsetEo2Chroma[LUMA_GROUP_NUM];
     PlaneType       *m_OffsetBo;
     PlaneType       *m_OffsetBoChroma;
     PlaneType       *m_OffsetBo2Chroma;
@@ -116,13 +116,13 @@ protected:
 
     PlaneType *m_tempPCMBuffer;
 
-    Ipp32u              m_PicWidth;
-    Ipp32u              m_PicHeight;
-    Ipp32u              m_chroma_format_idc;
-    Ipp32u              m_bitdepth_luma;
-    Ipp32u              m_bitdepth_chroma;
-    Ipp32u              m_MaxCUSize;
-    Ipp32u              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
+    uint32_t              m_PicWidth;
+    uint32_t              m_PicHeight;
+    uint32_t              m_chroma_format_idc;
+    uint32_t              m_bitdepth_luma;
+    uint32_t              m_bitdepth_chroma;
+    uint32_t              m_MaxCUSize;
+    uint32_t              m_SaoBitIncreaseY, m_SaoBitIncreaseC;
     bool                m_UseNIF;
     bool                m_needPCMRestoration;
     bool                m_slice_sao_luma_flag;
@@ -131,30 +131,30 @@ protected:
     bool                m_isInitialized;
 
     // Calculate SAO lookup tables for luma offsets from bitstream data
-    void SetOffsetsLuma(SAOLCUParam &saoLCUParam, Ipp32s typeIdx);
+    void SetOffsetsLuma(SAOLCUParam &saoLCUParam, int32_t typeIdx);
     // Calculate SAO lookup tables for chroma offsets from bitstream data
-    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, Ipp32s typeIdx);
+    void SetOffsetsChroma(SAOLCUParam &saoLCUParamCb, int32_t typeIdx);
 
     // Calculate whether it is necessary to check slice and tile boundaries because of
     // filtering restrictions in some slice of the frame.
     void createNonDBFilterInfo();
     // Restore parts of CTB encoded with PCM or transquant bypass if filtering should be disabled for them
-    void PCMCURestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore);
+    void PCMCURestoration(H265CodingUnit* pcCU, uint32_t AbsZorderIdx, uint32_t Depth, bool restore);
     // Save/restore losless coded samples from temporary buffer back to frame
-    void PCMSampleRestoration(H265CodingUnit* pcCU, Ipp32u AbsZorderIdx, Ipp32u Depth, bool restore);
+    void PCMSampleRestoration(H265CodingUnit* pcCU, uint32_t AbsZorderIdx, uint32_t Depth, bool restore);
 
     // Apply SAO filtering to NV12 chroma plane. Filter is enabled across slices and
     // tiles so only frame boundaries are taken into account.
     // HEVC spec 8.7.3.
-    void processSaoCuOrgChroma(Ipp32s Addr, Ipp32s PartIdx, PlaneType *tmpL);
+    void processSaoCuOrgChroma(int32_t Addr, int32_t PartIdx, PlaneType *tmpL);
     // Apply SAO filtering to NV12 chroma plane. Filter may be disabled across slices or
     // tiles so neighbour availability has to be checked for every CTB.
     // HEVC spec 8.7.3.
-    void processSaoCuChroma(Ipp32s addr, Ipp32s saoType, PlaneType *tmpL);
+    void processSaoCuChroma(int32_t addr, int32_t saoType, PlaneType *tmpL);
     // Apply SAO filter to a range of CTBs
-    void processSaoUnits(Ipp32s first, Ipp32s toProcess);
+    void processSaoUnits(int32_t first, int32_t toProcess);
     // Apply SAO filter to a line or part of line of CTBs in a frame
-    void processSaoLine(SAOLCUParam* saoLCUParam, Ipp32s firstCU, Ipp32s lastCU);
+    void processSaoLine(SAOLCUParam* saoLCUParam, int32_t firstCU, int32_t lastCU);
 };
 
 // SAO interface class
@@ -170,7 +170,7 @@ public:
     virtual void destroy();
 
     // Apply SAO filter to a target frame CTB range
-    void SAOProcess(H265DecoderFrame* pFrame, Ipp32s start, Ipp32s toProcess);
+    void SAOProcess(H265DecoderFrame* pFrame, int32_t start, int32_t toProcess);
 
 protected:
     H265SampleAdaptiveOffsetBase * m_base;

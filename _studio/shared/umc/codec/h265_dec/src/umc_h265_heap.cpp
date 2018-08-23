@@ -60,23 +60,23 @@ void CoeffsBuffer::Close(void)
     m_pBuffers = 0;
 } // void CoeffsBuffer::Close(void)
 
-UMC::Status CoeffsBuffer::Init(Ipp32s numberOfItems, Ipp32s sizeOfItem)
+UMC::Status CoeffsBuffer::Init(int32_t numberOfItems, int32_t sizeOfItem)
 {
-    Ipp32s lMaxSampleSize = sizeOfItem + COEFFS_BUFFER_ALIGN_VALUE_H265 + (Ipp32s)sizeof(BufferInfo);
-    Ipp32s lAllocate = lMaxSampleSize * numberOfItems;
+    int32_t lMaxSampleSize = sizeOfItem + COEFFS_BUFFER_ALIGN_VALUE_H265 + (int32_t)sizeof(BufferInfo);
+    int32_t lAllocate = lMaxSampleSize * numberOfItems;
 
-    if ((Ipp32s)m_lBufferSize != lAllocate)
+    if ((int32_t)m_lBufferSize != lAllocate)
     {
         Close();
 
         // allocate buffer
-        m_pbAllocatedBuffer = h265_new_array_throw<Ipp8u>(lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265);
+        m_pbAllocatedBuffer = h265_new_array_throw<uint8_t>(lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265);
         m_lBufferSize = lAllocate;
 
         m_lAllocatedBufferSize = lAllocate + COEFFS_BUFFER_ALIGN_VALUE_H265;
 
         // align buffer
-        m_pbBuffer = UMC::align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
+        m_pbBuffer = UMC::align_pointer<uint8_t *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
     }
     
     m_pBuffers = 0;
@@ -129,7 +129,7 @@ bool CoeffsBuffer::IsInputAvailable() const
     return true;
 } // bool CoeffsBuffer::IsInputAvailable() const
 
-Ipp8u* CoeffsBuffer::LockInputBuffer()
+uint8_t* CoeffsBuffer::LockInputBuffer()
 {
     size_t lFreeSize;
 
@@ -196,7 +196,7 @@ bool CoeffsBuffer::UnLockInputBuffer(size_t size)
 {
     size_t lFreeSize;
     BufferInfo *pTemp;
-    Ipp8u *pb;
+    uint8_t *pb;
 
     // check error(s)
     if (NULL == m_pbFree)
@@ -224,7 +224,7 @@ bool CoeffsBuffer::UnLockInputBuffer(size_t size)
     }
 
     // get new buffer info
-    pb = UMC::align_pointer<Ipp8u *> (m_pbFree + size, COEFFS_BUFFER_ALIGN_VALUE_H265);
+    pb = UMC::align_pointer<uint8_t *> (m_pbFree + size, COEFFS_BUFFER_ALIGN_VALUE_H265);
     pTemp = reinterpret_cast<BufferInfo *> (pb);
 
     size += COEFFS_BUFFER_ALIGN_VALUE_H265 + sizeof(BufferInfo);
@@ -261,7 +261,7 @@ bool CoeffsBuffer::IsOutputAvailable() const
     return (0 != m_pBuffers);
 } // bool CoeffsBuffer::IsOutputAvailable() const
 
-bool CoeffsBuffer::LockOutputBuffer(Ipp8u* &pointer, size_t &size)
+bool CoeffsBuffer::LockOutputBuffer(uint8_t* &pointer, size_t &size)
 {
     // check error(s)
     if (0 == m_pBuffers)
@@ -271,7 +271,7 @@ bool CoeffsBuffer::LockOutputBuffer(Ipp8u* &pointer, size_t &size)
     pointer = m_pBuffers->m_pPointer;
     size = m_pBuffers->m_Size;
     return true;
-} // bool CoeffsBuffer::LockOutputBuffer(Ipp8u* &pointer, size_t &size)
+} // bool CoeffsBuffer::LockOutputBuffer(uint8_t* &pointer, size_t &size)
 
 bool CoeffsBuffer::UnLockOutputBuffer()
 {
@@ -289,7 +289,7 @@ bool CoeffsBuffer::UnLockOutputBuffer()
 void CoeffsBuffer::Reset()
 {
     // align buffer
-    m_pbBuffer = UMC::align_pointer<Ipp8u *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
+    m_pbBuffer = UMC::align_pointer<uint8_t *> (m_pbAllocatedBuffer, COEFFS_BUFFER_ALIGN_VALUE_H265);
 
     m_pBuffers = 0;
 
@@ -304,7 +304,7 @@ void CoeffsBuffer::Free()
 
 void HeapObject::Free()
 {
-    Item * item = (Item *) ((Ipp8u*)this - sizeof(Item));
+    Item * item = (Item *) ((uint8_t*)this - sizeof(Item));
     item->m_heap->Free(this);
 }
 
@@ -325,7 +325,7 @@ void RefCounter::DecrementReference()
 }
 
 // Allocate several arrays inside of one memory buffer
-Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
+uint8_t * CumulativeArraysAllocation(int n, int align, ...)
 {
     va_list args;
     va_start(args, align);
@@ -338,8 +338,9 @@ Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
         cumulativeSize += currSize;
     }
     va_end(args);
-    Ipp8u *cumulativePtr = h265_new_array_throw<Ipp8u>(cumulativeSize + align * n);
-    Ipp8u *cumulativePtrSaved = cumulativePtr;
+
+    uint8_t *cumulativePtr = h265_new_array_throw<uint8_t>(cumulativeSize + align * n);
+    uint8_t *cumulativePtrSaved = cumulativePtr;
     va_start(args, align);
     for (int i = 0; i < n; i++)
     {
@@ -347,13 +348,13 @@ Ipp8u * CumulativeArraysAllocation(int n, int align, ...)
 
         *ptr = align ? UMC::align_pointer<void*>(cumulativePtr, align) : cumulativePtr;
         int currSize = va_arg(args, int);
-        cumulativePtr = (Ipp8u*)*ptr + currSize;
+        cumulativePtr = (uint8_t*)*ptr + currSize;
     }
     va_end(args);
     return cumulativePtrSaved;
 }
 // Free memory allocated by CumulativeArraysAllocation
-void CumulativeFree(Ipp8u * ptr)
+void CumulativeFree(uint8_t * ptr)
 {
     delete[] ptr;
 }

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -20,7 +20,7 @@ namespace UMC_HEVC_DECODER
 {
 
 // Table for CABAC contexts initialization
-const Ipp8u cabacInitTable[3][NUM_CTX] = 
+const uint8_t cabacInitTable[3][NUM_CTX] = 
 {
     { 107, 139, 126, 197, 185, 201, 154, 137, 154, 139, 154, 154, 154, 134, 183, 152, 139,  95,  79,  63,  31,  31, 169, 198, 153,
       153, 154, 154, 154, 153, 111, 154, 154, 154, 149,  92, 167, 154, 154,  79, 121, 140,  61, 154, 170, 154, 139, 153, 139, 123,
@@ -49,21 +49,21 @@ const Ipp8u cabacInitTable[3][NUM_CTX] =
 };
 
 // Initialize one CABAC context
-void InitializeContext(Ipp8u *pContext, Ipp8u initVal, Ipp32s SliceQPy)
+void InitializeContext(uint8_t *pContext, uint8_t initVal, int32_t SliceQPy)
 {
-    Ipp32s slope      = (initVal >> 4) * 5 - 45;
-    Ipp32s offset     = ((initVal & 15) << 3) - 16;
-    Ipp32s initState  =  IPP_MIN(IPP_MAX(1, (((slope * SliceQPy) >> 4) + offset)), 126);
-    Ipp32u mpState    = (initState >= 64);
-    *pContext = Ipp8u(((mpState? (initState - 64) : (63 - initState)) << 1) + mpState);
+    int32_t slope      = (initVal >> 4) * 5 - 45;
+    int32_t offset     = ((initVal & 15) << 3) - 16;
+    int32_t initState  =  MFX_MIN(MFX_MAX(1, (((slope * SliceQPy) >> 4) + offset)), 126);
+    uint32_t mpState    = (initState >= 64);
+    *pContext = uint8_t(((mpState? (initState - 64) : (63 - initState)) << 1) + mpState);
 }
 
 // Initialize all CABAC contexts. HEVC spec 9.3.2.2
-void H265Bitstream::InitializeContextVariablesHEVC_CABAC(Ipp32s initializationType, Ipp32s SliceQPy)
+void H265Bitstream::InitializeContextVariablesHEVC_CABAC(int32_t initializationType, int32_t SliceQPy)
 {
-    Ipp32u l = 0;
-    SliceQPy = IPP_MAX(0, SliceQPy);
-    SliceQPy = IPP_MIN(51, SliceQPy);
+    uint32_t l = 0;
+    SliceQPy = MFX_MAX(0, SliceQPy);
+    SliceQPy = MFX_MIN(51, SliceQPy);
 
     for (l = 0; l < NUM_CTX; l++)
     {
@@ -85,13 +85,13 @@ void H265Bitstream::InitializeDecodingEngine_CABAC()
     m_lcodIRange = m_lcodIRange << CABAC_MAGIC_BITS;
     m_lcodIOffset = m_lcodIOffset << CABAC_MAGIC_BITS;
     {
-        Ipp32u nBits;
+        uint32_t nBits;
 
         m_iExtendedBits = (m_bitOffset % CABAC_MAGIC_BITS) + 1;
         nBits = GetBits(m_iExtendedBits);
         m_lcodIOffset |= nBits << (CABAC_MAGIC_BITS - m_iExtendedBits);
 
-        m_pExtendedBits = ((Ipp16u *) m_pbs) + ((15 == m_bitOffset) ? (1) : (0));
+        m_pExtendedBits = ((uint16_t *) m_pbs) + ((15 == m_bitOffset) ? (1) : (0));
     }
 #else
     m_bitsNeeded = -8;
@@ -104,7 +104,7 @@ void H265Bitstream::TerminateDecode_CABAC(void)
 {
 #if (CABAC_MAGIC_BITS > 0)
     // restore source pointer
-    m_pbs = (Ipp32u *) (((size_t) m_pExtendedBits) & -0x04);
+    m_pbs = (uint32_t *) (((size_t) m_pExtendedBits) & -0x04);
     m_bitOffset = (((size_t) m_pExtendedBits) & 0x02) ? (15) : (31);
     // return prereaded bits
     ippiUngetNBits(m_pbs, m_bitOffset, m_iExtendedBits);
@@ -125,13 +125,13 @@ void H265Bitstream::ResetBac_CABAC()
     m_lcodIRange = m_lcodIRange << CABAC_MAGIC_BITS;
     m_lcodIOffset = m_lcodIOffset << CABAC_MAGIC_BITS;
     {
-        Ipp32u nBits;
+        uint32_t nBits;
 
         m_iExtendedBits = (m_bitOffset % 16) + 1;
         nBits = GetBits(m_iExtendedBits);
         m_lcodIOffset |= nBits << (16 - m_iExtendedBits);
 
-        m_pExtendedBits = ((Ipp16u *) m_pbs) + ((15 == m_bitOffset) ? (1) : (0));
+        m_pExtendedBits = ((uint16_t *) m_pbs) + ((15 == m_bitOffset) ? (1) : (0));
     }
 #else
     m_bitsNeeded = -8;
@@ -141,17 +141,17 @@ void H265Bitstream::ResetBac_CABAC()
 
 #if INSTRUMENTED_CABAC == 0 && defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
-Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx)
+uint32_t H265Bitstream::DecodeSingleBin_CABAC_cmov(uint32_t ctxIdx)
 {
-    Ipp32u pState = context_hevc[ctxIdx];
-    Ipp32u codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> 6) - 4];
+    uint32_t pState = context_hevc[ctxIdx];
+    uint32_t codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> 6) - 4];
     m_lcodIRange -= codIRangeLPS;
 
-    Ipp32u binVal      = pState & 1;
-    Ipp32u transState  = (pState < 124) ? pState + 2 : pState;       // transIdxMPSH265[pState];
-    Ipp32u scaledRange = m_lcodIRange << 7;
-    Ipp32u lcodIOffset = m_lcodIOffset;
-    Ipp32u numBits     = (scaledRange < g_scaled256) ? 1 : 0;
+    uint32_t binVal      = pState & 1;
+    uint32_t transState  = (pState < 124) ? pState + 2 : pState;       // transIdxMPSH265[pState];
+    uint32_t scaledRange = m_lcodIRange << 7;
+    uint32_t lcodIOffset = m_lcodIOffset;
+    uint32_t numBits     = (scaledRange < g_scaled256) ? 1 : 0;
 
     __asm__ (
         "\n    xorl     %%edx, %%edx"
@@ -177,7 +177,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx)
         : "%edx"
     );
 
-    context_hevc[ctxIdx] = (Ipp8u)transState;
+    context_hevc[ctxIdx] = (uint8_t)transState;
 
     m_bitsNeeded += numBits;
     if (m_bitsNeeded >= 0 )
@@ -190,18 +190,18 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov(Ipp32u ctxIdx)
     return binVal;
 }
 
-Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov_BMI(Ipp32u ctxIdx)
+uint32_t H265Bitstream::DecodeSingleBin_CABAC_cmov_BMI(uint32_t ctxIdx)
 {
-    Ipp32u pState = context_hevc[ctxIdx];
-    Ipp32u codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> 6) - 4];
+    uint32_t pState = context_hevc[ctxIdx];
+    uint32_t codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> 6) - 4];
     m_lcodIRange -= codIRangeLPS;
 
-    Ipp32u binVal      = pState & 1;
-    Ipp32u transState  = (pState < 124) ? pState + 2 : pState;       // transIdxMPSH265[pState];
-    Ipp32u scaledRange = m_lcodIRange << 7;
-    Ipp32u lcodIOffset = m_lcodIOffset;
-    Ipp32u numBits     = (scaledRange < g_scaled256) ? 1 : 0;
-    Ipp32u numBitsL    = _lzcnt_u32( codIRangeLPS ) - (32 - 6 - 3);    //  = c_RenormTable[codIRangeLPS >> 3];
+    uint32_t binVal      = pState & 1;
+    uint32_t transState  = (pState < 124) ? pState + 2 : pState;       // transIdxMPSH265[pState];
+    uint32_t scaledRange = m_lcodIRange << 7;
+    uint32_t lcodIOffset = m_lcodIOffset;
+    uint32_t numBits     = (scaledRange < g_scaled256) ? 1 : 0;
+    uint32_t numBitsL    = _lzcnt_u32( codIRangeLPS ) - (32 - 6 - 3);    //  = c_RenormTable[codIRangeLPS >> 3];
 
     __asm__ (
         "\n    xorl     %%edx, %%edx"
@@ -227,7 +227,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC_cmov_BMI(Ipp32u ctxIdx)
         : "%edx"
     );
 
-    context_hevc[ctxIdx] = (Ipp8u)transState;
+    context_hevc[ctxIdx] = (uint8_t)transState;
 
     m_bitsNeeded += numBits;
     if (m_bitsNeeded >= 0 )

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -22,17 +22,17 @@
 namespace UMC_HEVC_DECODER
 {
 
-const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
+const unsigned long long g_scaled256 = (unsigned long long)0x100 << (7+ CABAC_MAGIC_BITS);
 
 #if CABAC_MAGIC_BITS == 16
 #define RefreshCABACBits(codOffset, pBits, iBits) \
 { \
-    Ipp16u *pRealPointer; \
+    uint16_t *pRealPointer; \
     /* we have to handle the bit pointer very thorougly. */ \
     /* this sophisticated logic is used to avoid compilers' warnings. */ \
     /* In two words we just select required word by the pointer */ \
-    pRealPointer = (Ipp16u *) (((Ipp8u *) 0) + \
-                               ((((Ipp8u *) pBits) - (Ipp8u *) 0) ^ 2)); \
+    pRealPointer = (uint16_t *) (((uint8_t *) 0) + \
+                               ((((uint8_t *) pBits) - (uint8_t *) 0) ^ 2)); \
     codOffset |= *(pRealPointer) << (-iBits); \
     pBits += 1; \
     iBits += 16; \
@@ -42,20 +42,20 @@ const Ipp64u g_scaled256 = (Ipp64u)0x100 << (7+ CABAC_MAGIC_BITS);
 #if CABAC_MAGIC_BITS == 24
 #define RefreshCABACBits(codOffset, pBits, iBits) \
 { \
-    Ipp16u *pRealPointer; \
+    uint16_t *pRealPointer; \
     /* we have to handle the bit pointer very thorougly. */ \
     /* this sophisticated logic is used to avoid compilers' warnings. */ \
     /* In two words we just select required word by the pointer */ \
-    pRealPointer = (Ipp16u *) (((Ipp8u *) 0) + \
-                               ((((Ipp8u *) pBits) - (Ipp8u *) 0) ^ 2)); \
+    pRealPointer = (uint16_t *) (((uint8_t *) 0) + \
+                               ((((uint8_t *) pBits) - (uint8_t *) 0) ^ 2)); \
     codOffset |= *(pRealPointer) << (24-iBits); \
-    codOffset |= *((Ipp8u*)pRealPointer + 2) << (8-iBits); \
-    pBits = (Ipp16u*)((Ipp8u*)pBits + 3); \
+    codOffset |= *((uint8_t*)pRealPointer + 2) << (8-iBits); \
+    pBits = (uint16_t*)((uint8_t*)pBits + 3); \
     iBits += 24; \
 }
 #endif
 
-const Ipp32u c_RenormTable[32] =
+const uint32_t c_RenormTable[32] =
 {
   6,  5,  4,  4,
   3,  3,  3,  3,
@@ -71,15 +71,15 @@ const Ipp32u c_RenormTable[32] =
 
 // Optimized function which uses bit manipulation instructions (BMI)
 H265_FORCEINLINE
-Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
+uint32_t H265BaseBitstream::GetBits_BMI(uint32_t nbits)
 {
     VM_ASSERT(nbits > 0 && nbits <= 32);
     VM_ASSERT(m_bitOffset >= 0 && m_bitOffset <= 31);
 
-    Ipp32u bits;
+    uint32_t bits;
 
     m_bitOffset -= nbits;
-    Ipp32u shift = m_bitOffset + 1;
+    uint32_t shift = m_bitOffset + 1;
 
     if (m_bitOffset >=0 )
         bits = _shrx_u32( m_pbs[0], shift );
@@ -108,12 +108,12 @@ Ipp32u H265BaseBitstream::GetBits_BMI(Ipp32u nbits)
 
 #if INSTRUMENTED_CABAC == 0 && defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
-typedef Ipp32u (H265Bitstream::* t_DecodeSingleBin_CABAC)(Ipp32u ctxIdx);
+typedef uint32_t (H265Bitstream::* t_DecodeSingleBin_CABAC)(uint32_t ctxIdx);
 extern t_DecodeSingleBin_CABAC s_pDecodeSingleBin_CABAC_dispatched;
 
 // Call optimized function by pointer either cmov_BMI or just cmov versions
 H265_FORCEINLINE
-Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
+uint32_t H265Bitstream::DecodeSingleBin_CABAC(uint32_t ctxIdx)
 {
     return (this->*s_pDecodeSingleBin_CABAC_dispatched)( ctxIdx );
 }
@@ -122,23 +122,23 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
 // Decode one bin from CABAC stream
 inline
-Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
+uint32_t H265Bitstream::DecodeSingleBin_CABAC(uint32_t ctxIdx)
 {
 #if INSTRUMENTED_CABAC
-    Ipp32u range = m_lcodIRange;
+    uint32_t range = m_lcodIRange;
 #endif
 
-    Ipp32u codIRangeLPS;
+    uint32_t codIRangeLPS;
 
-    Ipp32u pState = context_hevc[ctxIdx];
-    Ipp32u binVal;
+    uint32_t pState = context_hevc[ctxIdx];
+    uint32_t binVal;
 
     codIRangeLPS = rangeTabLPSH265[pState][(m_lcodIRange >> (6 + CABAC_MAGIC_BITS)) - 4];
     m_lcodIRange -= codIRangeLPS << CABAC_MAGIC_BITS;
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u
+    unsigned long long
 #else
-    Ipp32u
+    uint32_t
 #endif
     scaledRange = m_lcodIRange << 7;
     // most probably state.
@@ -173,7 +173,7 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     }
     else
     {
-        Ipp32s numBits = c_RenormTable[codIRangeLPS >> 3];
+        int32_t numBits = c_RenormTable[codIRangeLPS >> 3];
         m_lcodIOffset = (m_lcodIOffset - scaledRange) << numBits;
         m_lcodIRange = codIRangeLPS << (CABAC_MAGIC_BITS + numBits);
 
@@ -201,20 +201,20 @@ Ipp32u H265Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 #endif
     return binVal;
 
-} //Ipp32s H265Bitstream::DecodeSingleBin_CABAC(Ipp32s ctxIdx)
+} //int32_t H265Bitstream::DecodeSingleBin_CABAC(int32_t ctxIdx)
 
 #endif // defined( __INTEL_COMPILER ) && (defined( __x86_64__ ) || defined ( _WIN64 ))
 
 // Decode terminating flag for slice end or row end in WPP case
 H265_FORCEINLINE
-Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
+uint32_t H265Bitstream::DecodeTerminatingBit_CABAC(void)
 {
-    Ipp32u Bin = 1;
+    uint32_t Bin = 1;
     m_lcodIRange -= (2<<CABAC_MAGIC_BITS);
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u
+    unsigned long long
 #else
-    Ipp32u
+    uint32_t
 #endif
     scaledRange = m_lcodIRange << 7;
     if (m_lcodIOffset < scaledRange)
@@ -242,14 +242,14 @@ Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
     }
 
     return Bin;
-} //Ipp32u H265Bitstream::DecodeTerminatingBit_CABAC(void)
+} //uint32_t H265Bitstream::DecodeTerminatingBit_CABAC(void)
 
 // Decode one bit encoded with CABAC bypass
 H265_FORCEINLINE
-Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
+uint32_t H265Bitstream::DecodeSingleBinEP_CABAC(void)
 {
 #if INSTRUMENTED_CABAC
-    //Ipp32u range = m_lcodIRange;
+    //uint32_t range = m_lcodIRange;
 #endif
 
     m_lcodIOffset += m_lcodIOffset;
@@ -267,11 +267,11 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     }
 #endif // (CABAC_MAGIC_BITS > 0)
 
-    Ipp32u Bin = 0;
+    uint32_t Bin = 0;
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u
+    unsigned long long
 #else
-    Ipp32u
+    uint32_t
 #endif
     scaledRange = m_lcodIRange << 7;
     if (m_lcodIOffset >= scaledRange)
@@ -284,17 +284,17 @@ Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
     //PRINT_CABAC_VALUES(Bin, range, m_lcodIRange);
 #endif
     return Bin;
-} //Ipp32u H265Bitstream::DecodeSingleBinEP_CABAC(void)
+} //uint32_t H265Bitstream::DecodeSingleBinEP_CABAC(void)
 
 // Decode N bits encoded with CABAC bypass
 H265_FORCEINLINE
-Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
+uint32_t H265Bitstream::DecodeBypassBins_CABAC(int32_t numBins)
 {
 #if INSTRUMENTED_CABAC
-    //Ipp32u range = m_lcodIRange;
+    //uint32_t range = m_lcodIRange;
 #endif
 
-    Ipp32u bins = 0;
+    uint32_t bins = 0;
 
 #if (CABAC_MAGIC_BITS > 0)
     while (numBins > CABAC_MAGIC_BITS)
@@ -303,8 +303,8 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
         if (0 >= m_iExtendedBits)
             RefreshCABACBits(m_lcodIOffset, m_pExtendedBits, m_iExtendedBits);
 
-        Ipp64u scaledRange = m_lcodIRange << (7+CABAC_MAGIC_BITS);
-        for (Ipp32s i = 0; i < CABAC_MAGIC_BITS; i++)
+        unsigned long long scaledRange = m_lcodIRange << (7+CABAC_MAGIC_BITS);
+        for (int32_t i = 0; i < CABAC_MAGIC_BITS; i++)
         {
             bins += bins;
             scaledRange >>= 1;
@@ -329,8 +329,8 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
         m_LastByte = GetPredefinedBits<8>();
         m_lcodIOffset = (m_lcodIOffset << 8) + (m_LastByte << (8 + m_bitsNeeded));
 
-        Ipp32u scaledRange = (Ipp32u)(m_lcodIRange << 15);
-        for (Ipp32s i = 0; i < 8; i++)
+        uint32_t scaledRange = (uint32_t)(m_lcodIRange << 15);
+        for (int32_t i = 0; i < 8; i++)
         {
             bins += bins;
             scaledRange >>= 1;
@@ -358,12 +358,12 @@ Ipp32u H265Bitstream::DecodeBypassBins_CABAC(Ipp32s numBins)
 #endif // (CABAC_MAGIC_BITS > 0)
 
 #if (CABAC_MAGIC_BITS > 0)
-    Ipp64u
+    unsigned long long
 #else
-    Ipp32u
+    uint32_t
 #endif
     scaledRange = m_lcodIRange << (numBins + 7);
-    for (Ipp32s i = 0; i < numBins; i++)
+    for (int32_t i = 0; i < numBins; i++)
     {
         bins += bins;
         scaledRange >>= 1;

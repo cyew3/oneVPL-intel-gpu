@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,10 +23,10 @@ void H265DecoderFrameInfo::FillTileInfo()
 {
     H265Slice * slice = GetAnySlice();
     const H265PicParamSet * pps = slice->GetPicParam();
-    Ipp32u tilesCount = pps->getNumTiles();
+    uint32_t tilesCount = pps->getNumTiles();
     m_tilesThreadingInfo.resize(tilesCount);
 
-    for (Ipp32u i = 0; i < tilesCount; i++)
+    for (uint32_t i = 0; i < tilesCount; i++)
     {
         TileThreadingInfo & info = m_tilesThreadingInfo[i];
         info.processInfo.firstCU = m_pFrame->getCD()->GetInverseCUOrderMap(pps->tilesInfo[i].firstCUAddr);
@@ -37,7 +37,7 @@ void H265DecoderFrameInfo::FillTileInfo()
 
     if (!m_hasTiles)
     {
-        for (Ipp32u i = 0; i < LAST_PROCESS_ID; i++)
+        for (uint32_t i = 0; i < LAST_PROCESS_ID; i++)
         {
             m_curCUToProcess[i] = m_pSliceQueue[0]->GetFirstMB(); // it can be more then 0
         }
@@ -56,7 +56,7 @@ void H265DecoderFrameInfo::FillTileInfo()
     if (!m_hasTiles)
     {
         bool deblStopped = !IsNeedDeblocking();
-        for (Ipp32s i = 0; i < m_SliceCount; i ++)
+        for (int32_t i = 0; i < m_SliceCount; i ++)
         {
             H265Slice *slice = m_pSliceQueue[i];
 
@@ -83,8 +83,8 @@ bool H265DecoderFrameInfo::IsCompleted() const
     if (!m_pFrame->getCD())
         return false;
 
-    Ipp32s maxCUAddr = m_pFrame->getCD()->m_NumCUsInFrame;
-    for (Ipp32s i = 0; i < LAST_PROCESS_ID; i++)
+    int32_t maxCUAddr = m_pFrame->getCD()->m_NumCUsInFrame;
+    for (int32_t i = 0; i < LAST_PROCESS_ID; i++)
     {
         if (m_curCUToProcess[i] < maxCUAddr)
             return false;
@@ -146,14 +146,14 @@ void H265DecoderFrameInfo::Free()
     m_prepared = 0;
 }
 
-void H265DecoderFrameInfo::RemoveSlice(Ipp32s num)
+void H265DecoderFrameInfo::RemoveSlice(int32_t num)
 {
     H265Slice * pCurSlice = GetSlice(num);
 
     if (!pCurSlice) // nothing to do
         return;
 
-    for (Ipp32s i = num; i < m_SliceCount - 1; i++)
+    for (int32_t i = num; i < m_SliceCount - 1; i++)
     {
         m_pSliceQueue[i] = m_pSliceQueue[i + 1];
     }
@@ -169,14 +169,14 @@ void H265DecoderFrameInfo::EliminateErrors()
         return;
 
     // Remove dependent slices without a corresponding independent slice
-    for (Ipp32u sliceId = 0; sliceId < GetSliceCount(); sliceId++)
+    for (uint32_t sliceId = 0; sliceId < GetSliceCount(); sliceId++)
     {
         H265Slice * slice = GetSlice(sliceId);
 
         if (slice->GetSliceHeader()->dependent_slice_segment_flag)
         {
             RemoveSlice(sliceId);
-            sliceId = Ipp32u(-1);
+            sliceId = uint32_t(-1);
             continue;
         }
         else
@@ -188,7 +188,7 @@ void H265DecoderFrameInfo::EliminateErrors()
         H265Slice *baseSlice = GetSlice(0); // after the for() loop above ,the first slice is treated as 'base' slice
 
         bool bIndepSliceMissing = false;
-        for (Ipp32u sliceId = 1; sliceId < GetSliceCount(); sliceId++)
+        for (uint32_t sliceId = 1; sliceId < GetSliceCount(); sliceId++)
         {
             H265SliceHeader *sliceHeader = GetSlice(sliceId)->GetSliceHeader();
 
@@ -211,7 +211,7 @@ void H265DecoderFrameInfo::EliminateErrors()
     }
 
     // Remove slices with duplicated slice_segment_address syntax
-    for (Ipp32u sliceId = 0; sliceId < GetSliceCount(); sliceId++)
+    for (uint32_t sliceId = 0; sliceId < GetSliceCount(); sliceId++)
     {
         H265Slice * slice = GetSlice(sliceId);
         H265Slice * nextSlice = GetSlice(sliceId + 1);
@@ -221,7 +221,7 @@ void H265DecoderFrameInfo::EliminateErrors()
 
         if (slice->GetFirstMB() == slice->GetMaxMB())
         {
-            Ipp32u sliceIdToRemove;
+            uint32_t sliceIdToRemove;
 
             // Heuristic logic:
             if (slice->GetSliceHeader()->dependent_slice_segment_flag && !nextSlice->GetSliceHeader()->dependent_slice_segment_flag)
@@ -235,7 +235,7 @@ void H265DecoderFrameInfo::EliminateErrors()
                 sliceIdToRemove = sliceId + 1;
             }
             RemoveSlice(sliceIdToRemove);
-            sliceId = Ipp32u(-1);
+            sliceId = uint32_t(-1);
             continue;
         }
     }
@@ -243,19 +243,19 @@ void H265DecoderFrameInfo::EliminateErrors()
 
 void H265DecoderFrameInfo::EliminateASO()
 {
-    static Ipp32s MAX_MB_NUMBER = 0x7fffffff;
+    static int32_t MAX_MB_NUMBER = 0x7fffffff;
 
     if (!GetSlice(0))
         return;
 
-    Ipp32u count = GetSliceCount();
-    for (Ipp32u sliceId = 0; sliceId < count; sliceId++)
+    uint32_t count = GetSliceCount();
+    for (uint32_t sliceId = 0; sliceId < count; sliceId++)
     {
         H265Slice * curSlice = GetSlice(sliceId);
-        Ipp32s minFirst = MAX_MB_NUMBER;
-        Ipp32u minSlice = 0;
+        int32_t minFirst = MAX_MB_NUMBER;
+        uint32_t minSlice = 0;
 
-        for (Ipp32u j = sliceId; j < count; j++)
+        for (uint32_t j = sliceId; j < count; j++)
         {
             H265Slice * slice = GetSlice(j);
             if (slice->GetFirstMB() < curSlice->GetFirstMB() && minFirst > slice->GetFirstMB())
@@ -273,7 +273,7 @@ void H265DecoderFrameInfo::EliminateASO()
         }
     }
 
-    for (Ipp32u sliceId = 0; sliceId < count; sliceId++)
+    for (uint32_t sliceId = 0; sliceId < count; sliceId++)
     {
         H265Slice * slice = GetSlice(sliceId);
         H265Slice * nextSlice = GetSlice(sliceId + 1);

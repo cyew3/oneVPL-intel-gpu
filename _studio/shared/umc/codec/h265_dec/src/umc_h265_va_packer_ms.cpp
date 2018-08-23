@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -38,7 +38,7 @@ namespace UMC_HEVC_DECODER
 
         void PackQmatrix(const H265Slice *pSlice);
         void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 * supplier);
-        bool PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice);
+        bool PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice);
     };
 
     Packer* CreatePackerMS(UMC::VideoAccelerator* va)
@@ -154,16 +154,16 @@ namespace UMC_HEVC_DECODER
             pPicParam->num_tile_columns_minus1 = (UCHAR)pPicParamSet->num_tile_columns - 1;
             pPicParam->num_tile_rows_minus1 = (UCHAR)pPicParamSet->num_tile_rows - 1;
 
-            pPicParam->num_tile_columns_minus1 = IPP_MIN(sizeof(pPicParam->column_width_minus1) / sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
-            pPicParam->num_tile_rows_minus1 = IPP_MIN(sizeof(pPicParam->row_height_minus1) / sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
+            pPicParam->num_tile_columns_minus1 = MFX_MIN(sizeof(pPicParam->column_width_minus1) / sizeof(pPicParam->column_width_minus1[0]) - 1, pPicParam->num_tile_columns_minus1);
+            pPicParam->num_tile_rows_minus1 = MFX_MIN(sizeof(pPicParam->row_height_minus1) / sizeof(pPicParam->row_height_minus1[0]) - 1, pPicParam->num_tile_rows_minus1);
 
             //if (!pPicParamSet->uniform_spacing_flag)
             {
-                for (Ipp32u i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
-                    pPicParam->column_width_minus1[i] = (Ipp16u)(pPicParamSet->column_width[i] - 1);
+                for (uint32_t i = 0; i <= pPicParam->num_tile_columns_minus1; i++)
+                    pPicParam->column_width_minus1[i] = (uint16_t)(pPicParamSet->column_width[i] - 1);
 
-                for (Ipp32u i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
-                    pPicParam->row_height_minus1[i] = (Ipp16u)(pPicParamSet->row_height[i] - 1);
+                for (uint32_t i = 0; i <= pPicParam->num_tile_rows_minus1; i++)
+                    pPicParam->row_height_minus1[i] = (uint16_t)(pPicParamSet->row_height[i] - 1);
             }
         }
 
@@ -174,7 +174,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->CurrPicOrderCntVal = sliceHeader->slice_pic_order_cnt_lsb;
 
 
-        Ipp32s count = 0;
+        int32_t count = 0;
         H265DBPList *dpb = supplier->GetDPBList();
         ReferencePictureSet *rps = pSlice->getRPS();
         for (H265DecoderFrame* frame = dpb->head(); frame && count < sizeof(pPicParam->RefPicList) / sizeof(pPicParam->RefPicList[0]); frame = frame->future())
@@ -195,9 +195,9 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        Ipp32u index;
-        Ipp32s pocList[3 * 8];
-        Ipp32s numRefPicSetStCurrBefore = 0,
+        uint32_t index;
+        int32_t pocList[3 * 8];
+        int32_t numRefPicSetStCurrBefore = 0,
             numRefPicSetStCurrAfter = 0,
             numRefPicSetLtCurr = 0;
         for (index = 0; index < rps->getNumberOfNegativePictures(); index++)
@@ -206,7 +206,7 @@ namespace UMC_HEVC_DECODER
             pocList[numRefPicSetStCurrBefore + numRefPicSetStCurrAfter++] = pPicParam->CurrPicOrderCntVal + rps->getDeltaPOC(index);
         for (; index < rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures() + rps->getNumberOfLongtermPictures(); index++)
         {
-            Ipp32s poc = rps->getPOC(index);
+            int32_t poc = rps->getPOC(index);
             H265DecoderFrame *pFrm = supplier->GetDPBList()->findLongTermRefPic(pCurrentFrame, poc, pSeqParamSet->log2_max_pic_order_cnt_lsb, !rps->getCheckLTMSBPresent(index));
 
             if (pFrm)
@@ -219,16 +219,16 @@ namespace UMC_HEVC_DECODER
             }
         }
 
-        Ipp32s cntRefPicSetStCurrBefore = 0,
+        int32_t cntRefPicSetStCurrBefore = 0,
             cntRefPicSetStCurrAfter = 0,
             cntRefPicSetLtCurr = 0;
 
-        for (Ipp32s n = 0; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr; n++)
+        for (int32_t n = 0; n < numRefPicSetStCurrBefore + numRefPicSetStCurrAfter + numRefPicSetLtCurr; n++)
         {
             if (!rps->getUsed(n))
                 continue;
 
-            for (Ipp32s k = 0; k < count; k++)
+            for (int32_t k = 0; k < count; k++)
             {
                 if (pocList[n] == pPicParam->PicOrderCntValList[k])
                 {
@@ -249,7 +249,7 @@ namespace UMC_HEVC_DECODER
             pPicParam->PicOrderCntValList[n] = -1;
         }
 
-        for (Ipp32s i = 0; i < 8; i++)
+        for (int32_t i = 0; i < 8; i++)
         {
             if (i >= cntRefPicSetStCurrBefore)
                 pPicParam->RefPicSetStCurrBefore[i] = 0xff;
@@ -262,15 +262,15 @@ namespace UMC_HEVC_DECODER
         pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
     }
 
-    bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, Ipp32u &sliceNum, bool isLastSlice)
+    bool MSPackerDXVA2::PackSliceParams(H265Slice *pSlice, uint32_t &sliceNum, bool isLastSlice)
     {
-        static Ipp8u start_code_prefix[] = { 0, 0, 1 };
+        static uint8_t start_code_prefix[] = { 0, 0, 1 };
 
-        Ipp32u  rawDataSize = 0;
+        uint32_t  rawDataSize = 0;
         const void*  rawDataPtr = 0;
 
         H265HeadersBitstream *pBitstream = pSlice->GetBitStream();
-        pBitstream->GetOrg((Ipp32u**)&rawDataPtr, &rawDataSize);
+        pBitstream->GetOrg((uint32_t**)&rawDataPtr, &rawDataSize);
 
         UMCVACompBuffer *headVABffr = 0;
         UMCVACompBuffer *dataVABffr = 0;
@@ -279,11 +279,11 @@ namespace UMC_HEVC_DECODER
             return false;
 
         dxvaSlice += sliceNum;
-        Ipp8u *dataBffr = (Ipp8u *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
+        uint8_t *dataBffr = (uint8_t *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &dataVABffr);
 
         dxvaSlice->BSNALunitDataLocation = dataVABffr->GetDataSize();
 
-        Ipp32s storedSize = rawDataSize + sizeof(start_code_prefix);
+        int32_t storedSize = rawDataSize + sizeof(start_code_prefix);
         dxvaSlice->SliceBytesInBuffer = storedSize;
         dxvaSlice->wBadSliceChopping = 0;
 
@@ -294,10 +294,10 @@ namespace UMC_HEVC_DECODER
         MFX_INTERNAL_CPY(dataBffr, start_code_prefix, sizeof(start_code_prefix));
         MFX_INTERNAL_CPY(dataBffr + sizeof(start_code_prefix), rawDataPtr, rawDataSize);
 
-        Ipp32s fullSize = dataVABffr->GetDataSize() + storedSize;
+        int32_t fullSize = dataVABffr->GetDataSize() + storedSize;
         if (isLastSlice)
         {
-            Ipp32s alignedSize = align_value<Ipp32s>(fullSize, 128);
+            int32_t alignedSize = align_value<int32_t>(fullSize, 128);
             VM_ASSERT(alignedSize < dataVABffr->GetBufferSize());
             memset(dataBffr + storedSize, 0, alignedSize - fullSize);
             fullSize = alignedSize;

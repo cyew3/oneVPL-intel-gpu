@@ -18,16 +18,16 @@ namespace UMC_HEVC_DECODER
 {
 
 // Parse SEI message
-Ipp32s H265HeadersBitstream::ParseSEI(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
+int32_t H265HeadersBitstream::ParseSEI(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad *spl)
 {
     return sei_message(sps,current_sps,spl);
 }
 
 // Parse SEI message
-Ipp32s H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad *spl)
+int32_t H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad *spl)
 {
-    Ipp32u code;
-    Ipp32s payloadType = 0;
+    uint32_t code;
+    int32_t payloadType = 0;
 
     PeakNextBits(m_pbs, m_bitOffset, 8, code);
     while (code  ==  0xFF)
@@ -38,12 +38,12 @@ Ipp32s H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps,
         PeakNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
-    Ipp32s last_payload_type_byte;    //Ipp32u integer using 8 bits
+    int32_t last_payload_type_byte;    //uint32_t integer using 8 bits
     GetNBits(m_pbs, m_bitOffset, 8, last_payload_type_byte);
 
     payloadType += last_payload_type_byte;
 
-    Ipp32s payloadSize = 0;
+    int32_t payloadSize = 0;
 
     PeakNextBits(m_pbs, m_bitOffset, 8, code);
     while( code  ==  0xFF )
@@ -54,7 +54,7 @@ Ipp32s H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps,
         PeakNextBits(m_pbs, m_bitOffset, 8, code);
     }
 
-    Ipp32s last_payload_size_byte;    //Ipp32u integer using 8 bits
+    int32_t last_payload_size_byte;    //uint32_t integer using 8 bits
 
     GetNBits(m_pbs, m_bitOffset, 8, last_payload_size_byte);
     payloadSize += last_payload_size_byte;
@@ -71,16 +71,16 @@ Ipp32s H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps,
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
     }
 
-    Ipp32u * pbs;
-    Ipp32u bitOffsetU;
-    Ipp32s bitOffset;
+    uint32_t * pbs;
+    uint32_t bitOffsetU;
+    int32_t bitOffset;
 
     GetState(&pbs, &bitOffsetU);
     bitOffset = bitOffsetU;
 
-    Ipp32s ret = sei_payload(sps, current_sps, spl);
+    int32_t ret = sei_payload(sps, current_sps, spl);
 
-    for (Ipp32u i = 0; i < spl->payLoadSize; i++)
+    for (uint32_t i = 0; i < spl->payLoadSize; i++)
     {
         SkipNBits(pbs, bitOffset, 8);
     }
@@ -91,9 +91,9 @@ Ipp32s H265HeadersBitstream::sei_message(const HeaderSet<H265SeqParamSet> & sps,
 }
 
 // Parse SEI payload data
-Ipp32s H265HeadersBitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,Ipp32s current_sps,H265SEIPayLoad *spl)
+int32_t H265HeadersBitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,int32_t current_sps,H265SEIPayLoad *spl)
 {
-    Ipp32u payloadType =spl->payLoadType;
+    uint32_t payloadType =spl->payLoadType;
     switch( payloadType)
     {
     case SEI_PIC_TIMING_TYPE:
@@ -106,7 +106,7 @@ Ipp32s H265HeadersBitstream::sei_payload(const HeaderSet<H265SeqParamSet> & sps,
 }
 
 // Parse pic timing SEI data
-Ipp32s H265HeadersBitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, Ipp32s current_sps, H265SEIPayLoad * spl)
+int32_t H265HeadersBitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, int32_t current_sps, H265SEIPayLoad * spl)
 {
     const H265SeqParamSet *csps = sps.GetHeader(current_sps);
 
@@ -132,18 +132,18 @@ Ipp32s H265HeadersBitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, 
 
         if (csps->m_hrdParameters.sub_pic_hrd_params_present_flag && csps->m_hrdParameters.sub_pic_cpb_params_in_pic_timing_sei_flag)
         {
-            Ipp32u num_decoding_units_minus1 = GetVLCElementU();
+            uint32_t num_decoding_units_minus1 = GetVLCElementU();
 
             if (num_decoding_units_minus1 > csps->WidthInCU * csps->HeightInCU)
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-            Ipp8u du_common_cpb_removal_delay_flag = (Ipp8u)GetBits(1);
+            uint8_t du_common_cpb_removal_delay_flag = (uint8_t)GetBits(1);
             if (du_common_cpb_removal_delay_flag)
             {
                 GetBits(csps->m_hrdParameters.du_cpb_removal_delay_increment_length); //du_common_cpb_removal_delay_increment_minus1
             }
 
-            for (Ipp32u i = 0; i <= num_decoding_units_minus1; i++)
+            for (uint32_t i = 0; i <= num_decoding_units_minus1; i++)
             {
                 GetVLCElementU(); // num_nalus_in_du_minus1
                 if (!du_common_cpb_removal_delay_flag && i < num_decoding_units_minus1)
@@ -160,22 +160,22 @@ Ipp32s H265HeadersBitstream::pic_timing(const HeaderSet<H265SeqParamSet> & sps, 
 }
 
 // Parse recovery point SEI data
-Ipp32s H265HeadersBitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
+int32_t H265HeadersBitstream::recovery_point(const HeaderSet<H265SeqParamSet> & , int32_t current_sps, H265SEIPayLoad *spl)
 {
     H265SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
 
     recPoint->recovery_poc_cnt = GetVLCElementS();
 
-    recPoint->exact_match_flag = (Ipp8u)Get1Bit();
-    recPoint->broken_link_flag = (Ipp8u)Get1Bit();
+    recPoint->exact_match_flag = (uint8_t)Get1Bit();
+    recPoint->broken_link_flag = (uint8_t)Get1Bit();
 
     return current_sps;
 }
 
 // Skip unrecognized SEI message payload
-Ipp32s H265HeadersBitstream::reserved_sei_message(const HeaderSet<H265SeqParamSet> & , Ipp32s current_sps, H265SEIPayLoad *spl)
+int32_t H265HeadersBitstream::reserved_sei_message(const HeaderSet<H265SeqParamSet> & , int32_t current_sps, H265SEIPayLoad *spl)
 {
-    for(Ipp32u i = 0; i < spl->payLoadSize; i++)
+    for(uint32_t i = 0; i < spl->payLoadSize; i++)
         SkipNBits(m_pbs, m_bitOffset, 8)
     AlignPointerRight();
     return current_sps;

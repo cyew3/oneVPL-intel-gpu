@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -125,7 +125,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
 
     m_chroma_format = GetH265ColorFormat(info->GetColorFormat());
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;
-    m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneSampleSize(0);
+    m_pitch_luma = (int32_t)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneSampleSize(0);
 
     m_pYPlane = (PlanePtrY)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
@@ -134,7 +134,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
         if (m_chroma_format == 0)
             info = frameData->GetInfo();
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
-        m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneSampleSize(1);
+        m_pitch_chroma = (int32_t)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneSampleSize(1);
 
         if (m_frameData.GetInfo()->GetNumPlanes() == 2)
         {
@@ -169,8 +169,8 @@ UMC::ColorFormat H265DecYUVBufferPadded::GetColorFormat() const
 // Used for temporary picture buffers, e.g. residuals.
 void H265DecYUVBufferPadded::createPredictionBuffer(const H265SeqParamSet * sps)
 {
-    Ipp32u ElementSizeY = sizeof(Ipp16s);
-    Ipp32u ElementSizeUV = sizeof(Ipp16s);
+    uint32_t ElementSizeY = sizeof(int16_t);
+    uint32_t ElementSizeUV = sizeof(int16_t);
     m_lumaSize.width = sps->MaxCUSize;
     m_lumaSize.height = sps->MaxCUSize;
 
@@ -184,7 +184,7 @@ void H265DecYUVBufferPadded::createPredictionBuffer(const H265SeqParamSet * sps)
     size_t allocationSize = (m_lumaSize.height) * m_pitch_luma * ElementSizeY +
         (m_chromaSize.height) * m_pitch_chroma * ElementSizeUV*2 + 512;
 
-    m_pAllocatedBuffer = h265_new_array_throw<Ipp8u>((Ipp32s)allocationSize);
+    m_pAllocatedBuffer = h265_new_array_throw<uint8_t>((int32_t)allocationSize);
     m_pYPlane = UMC::align_pointer<PlanePtrY>(m_pAllocatedBuffer, 64);
 
     m_pUVPlane = m_pUPlane = UMC::align_pointer<PlanePtrY>(m_pYPlane + (m_lumaSize.height) * m_pitch_luma * ElementSizeY + 128, 64);

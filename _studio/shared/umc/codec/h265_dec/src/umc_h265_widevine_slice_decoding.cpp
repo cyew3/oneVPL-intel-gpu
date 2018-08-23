@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -56,7 +56,7 @@ void H265WidevineSlice::SetDecryptParameters(DecryptParametersWrapper* pDecryptP
 
 
 // Parse beginning of slice header to get PPS ID
-Ipp32s H265WidevineSlice::RetrievePicParamSetNumber()
+int32_t H265WidevineSlice::RetrievePicParamSetNumber()
 {
     memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
 
@@ -78,24 +78,24 @@ Ipp32s H265WidevineSlice::RetrievePicParamSetNumber()
 
     return m_SliceHeader.slice_pic_parameter_set_id;
 
-} // Ipp32s H265WidevineSlice::RetrievePicParamSetNumber()
+} // int32_t H265WidevineSlice::RetrievePicParamSetNumber()
 
 
 // Decode slice header and initializ slice structure with parsed values
 bool H265WidevineSlice::Reset(PocDecoding * pocDecoding)
 {
-    //m_BitStream.Reset((Ipp8u *) m_source.GetPointer(), (Ipp32u) m_source.GetDataSize());
+    //m_BitStream.Reset((uint8_t *) m_source.GetPointer(), (uint32_t) m_source.GetDataSize());
 
     // decode slice header
     if (false == DecodeSliceHeader(pocDecoding))
         return false;
 
-    //m_SliceHeader.m_HeaderBitstreamOffset = (Ipp32u)m_BitStream.BytesDecoded();
+    //m_SliceHeader.m_HeaderBitstreamOffset = (uint32_t)m_BitStream.BytesDecoded();
 
     m_SliceHeader.m_SeqParamSet = m_pSeqParamSet;
     m_SliceHeader.m_PicParamSet = m_pPicParamSet;
 
-    //Ipp32s iMBInFrame = (GetSeqParam()->WidthInCU * GetSeqParam()->HeightInCU);
+    //int32_t iMBInFrame = (GetSeqParam()->WidthInCU * GetSeqParam()->HeightInCU);
 
     // set slice variables
     //m_iFirstMB = m_SliceHeader.slice_segment_address;
@@ -138,11 +138,11 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
         {
             if (!GetSliceHeader()->IdrPicFlag)
             {
-                Ipp32s PicOrderCntMsb;
-                Ipp32s slice_pic_order_cnt_lsb = m_SliceHeader.slice_pic_order_cnt_lsb;
-                Ipp32s MaxPicOrderCntLsb = 1<< GetSeqParam()->log2_max_pic_order_cnt_lsb;
-                Ipp32s prevPicOrderCntLsb = pocDecoding->prevPocPicOrderCntLsb;
-                Ipp32s prevPicOrderCntMsb = pocDecoding->prevPicOrderCntMsb;
+                int32_t PicOrderCntMsb;
+                int32_t slice_pic_order_cnt_lsb = m_SliceHeader.slice_pic_order_cnt_lsb;
+                int32_t MaxPicOrderCntLsb = 1<< GetSeqParam()->log2_max_pic_order_cnt_lsb;
+                int32_t prevPicOrderCntLsb = pocDecoding->prevPocPicOrderCntLsb;
+                int32_t prevPicOrderCntMsb = pocDecoding->prevPicOrderCntMsb;
 
                 if ( (slice_pic_order_cnt_lsb  <  prevPicOrderCntLsb) && ( (prevPicOrderCntLsb - slice_pic_order_cnt_lsb)  >=  (MaxPicOrderCntLsb / 2) ) )
                 {
@@ -171,8 +171,8 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
                 {
                     ReferencePictureSet *rps = getRPS();
-                    Ipp32u offset = rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures();
-                    for (Ipp32u index = offset; index < offset + rps->getNumberOfLongtermPictures(); index++)
+                    uint32_t offset = rps->getNumberOfNegativePictures() + rps->getNumberOfPositivePictures();
+                    for (uint32_t index = offset; index < offset + rps->getNumberOfLongtermPictures(); index++)
                     {
                         rps->m_POC[index] = sliceHdr->slice_pic_order_cnt_lsb + rps->m_DeltaPOC[index];
                     }
@@ -181,12 +181,12 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
                 //if (GetSeqParam()->long_term_ref_pics_present_flag)
                 //{
                 //    ReferencePictureSet *rps = getRPS();
-                //    Ipp32u offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
+                //    uint32_t offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
 
-                //    Ipp32s prevDeltaMSB = 0;
-                //    Ipp32s maxPicOrderCntLSB = 1 << sps->log2_max_pic_order_cnt_lsb;
-                //    Ipp32s DeltaPocMsbCycleLt = 0;
-                //    for(Ipp32u j = offset, k = 0; k < rps->getNumberOfLongtermPictures(); j++, k++)
+                //    int32_t prevDeltaMSB = 0;
+                //    int32_t maxPicOrderCntLSB = 1 << sps->log2_max_pic_order_cnt_lsb;
+                //    int32_t DeltaPocMsbCycleLt = 0;
+                //    for(uint32_t j = offset, k = 0; k < rps->getNumberOfLongtermPictures(); j++, k++)
                 //    {
                 //        int pocLsbLt = rps->poc_lbs_lt[j];
                 //        if (rps->delta_poc_msb_present_flag[j])
@@ -201,7 +201,7 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
                 //            else
                 //                DeltaPocMsbCycleLt = rps->delta_poc_msb_cycle_lt[j] + prevDeltaMSB;
 
-                //            Ipp32s pocLTCurr = sliceHdr->slice_pic_order_cnt_lsb - DeltaPocMsbCycleLt * maxPicOrderCntLSB - slice_pic_order_cnt_lsb + pocLsbLt;
+                //            int32_t pocLTCurr = sliceHdr->slice_pic_order_cnt_lsb - DeltaPocMsbCycleLt * maxPicOrderCntLSB - slice_pic_order_cnt_lsb + pocLsbLt;
                 //            rps->setPOC(j, pocLTCurr);
                 //            rps->setDeltaPOC(j, - sliceHdr->slice_pic_order_cnt_lsb + pocLTCurr);
                 //        }
@@ -278,7 +278,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
 
     if (GetSliceHeader()->slice_type == I_SLICE)
     {
-        for (Ipp32s number = 0; number < 3; number++)
+        for (int32_t number = 0; number < 3; number++)
             GetSliceHeader()->m_numRefIdx[number] = 0;
 
         return UMC::UMC_OK;
@@ -287,16 +287,16 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     H265DecoderFrame *RefPicSetStCurr0[16] = {NULL};
     H265DecoderFrame *RefPicSetStCurr1[16] = {NULL};
     H265DecoderFrame *RefPicSetLtCurr[16] = {NULL};
-    Ipp32u NumPocStCurr0 = 0;
-    Ipp32u NumPocStCurr1 = 0;
-    Ipp32u NumPocLtCurr = 0;
-    Ipp32u i;
+    uint32_t NumPocStCurr0 = 0;
+    uint32_t NumPocStCurr1 = 0;
+    uint32_t NumPocLtCurr = 0;
+    uint32_t i;
 
     for(i = 0; i < getRPS()->getNumberOfNegativePictures(); i++)
     {
         if(getRPS()->getUsed(i))
         {
-            Ipp32s poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
+            int32_t poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
             m_pCurrentFrame->AddReferenceFrame(pFrm);
@@ -313,7 +313,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     {
         if(getRPS()->getUsed(i))
         {
-            Ipp32s poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
+            int32_t poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
             m_pCurrentFrame->AddReferenceFrame(pFrm);
@@ -331,7 +331,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     {
         if(getRPS()->getUsed(i))
         {
-            Ipp32s poc = getRPS()->getPOC(i);
+            int32_t poc = getRPS()->getPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findLongTermRefPic(m_pCurrentFrame, poc, GetSeqParam()->log2_max_pic_order_cnt_lsb, !getRPS()->getCheckLTMSBPresent(i));
 
@@ -350,7 +350,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     // ref_pic_list_init
     H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1] = {NULL};
     H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1] = {NULL};
-    Ipp32s numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
+    int32_t numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
 
     if (!numPocTotalCurr) // this is error
     {
@@ -358,7 +358,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
         return UMC::UMC_OK;
     }
 
-    Ipp32s cIdx = 0;
+    int32_t cIdx = 0;
     for (i = 0; i < NumPocStCurr0; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetStCurr0[i];
@@ -395,7 +395,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     //{
     //    bool isLong = refPicListModification.ref_pic_list_modification_flag_l0 ?
     //        (refPicListModification.list_entry_l0[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
-    //        : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
+    //        : ((uint32_t)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
     //    pRefPicList0[cIdx].refFrame = refPicListModification.ref_pic_list_modification_flag_l0 ? refPicListTemp0[refPicListModification.list_entry_l0[cIdx]] : refPicListTemp0[cIdx % numPocTotalCurr];
     //    pRefPicList0[cIdx].isLongReference = isLong;
@@ -411,7 +411,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     //    {
     //        bool isLong = refPicListModification.ref_pic_list_modification_flag_l1 ?
     //            (refPicListModification.list_entry_l1[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
-    //            : ((Ipp32u)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
+    //            : ((uint32_t)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
 
     //        pRefPicList1[cIdx].refFrame = refPicListModification.ref_pic_list_modification_flag_l1 ? refPicListTemp1[refPicListModification.list_entry_l1[cIdx]] : refPicListTemp1[cIdx % numPocTotalCurr];
     //        pRefPicList1[cIdx].isLongReference = isLong;
@@ -444,10 +444,10 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
 /*
     if (GetSliceHeader()->slice_type == B_SLICE && getNumRefIdx(REF_PIC_LIST_1) == 0)
     {
-        Ipp32s iNumRefIdx = getNumRefIdx(REF_PIC_LIST_0);
+        int32_t iNumRefIdx = getNumRefIdx(REF_PIC_LIST_0);
         GetSliceHeader()->m_numRefIdx[REF_PIC_LIST_1] = iNumRefIdx;
 
-        for (Ipp32s iRefIdx = 0; iRefIdx < iNumRefIdx; iRefIdx++)
+        for (int32_t iRefIdx = 0; iRefIdx < iNumRefIdx; iRefIdx++)
         {
             pRefPicList1[iRefIdx] = pRefPicList0[iRefIdx];
         }
@@ -456,16 +456,16 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     if (GetSliceHeader()->slice_type != I_SLICE)
     {
         bool bLowDelay = true;
-        Ipp32s currPOC = GetSliceHeader()->slice_pic_order_cnt_lsb;
+        int32_t currPOC = GetSliceHeader()->slice_pic_order_cnt_lsb;
 
         H265DecoderFrame *missedReference = 0;
 
-        for (Ipp32s i = 0; !missedReference && i < numPocTotalCurr; i++)
+        for (int32_t i = 0; !missedReference && i < numPocTotalCurr; i++)
         {
             missedReference = refPicListTemp0[i];
         }
 
-        for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
+        for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
         {
             if (!pRefPicList0[k].refFrame)
             {
@@ -473,7 +473,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
             }
         }
 
-        for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
+        for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
         {
             if (pRefPicList0[k].refFrame && pRefPicList0[k].refFrame->PicOrderCnt() > currPOC)
             {
@@ -483,7 +483,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
 
         if (GetSliceHeader()->slice_type == B_SLICE)
         {
-            for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_1); k++)
+            for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_1); k++)
             {
                 if (!pRefPicList1[k].refFrame)
                 {
@@ -491,7 +491,7 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
                 }
             }
 
-            for (Ipp32s k = 0; k < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; k++)
+            for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; k++)
             {
                 if (pRefPicList1[k].refFrame && pRefPicList1[k].refFrame->PicOrderCnt() > currPOC)
                 {

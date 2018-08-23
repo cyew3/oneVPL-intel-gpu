@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -79,10 +79,10 @@ class H265DecoderFrame : public H265DecYUVBufferPadded, public RefCounter
 {
 public:
 
-    Ipp32s  m_PicOrderCnt;    // Display order picture count mod MAX_PIC_ORDER_CNT.
+    int32_t  m_PicOrderCnt;    // Display order picture count mod MAX_PIC_ORDER_CNT.
 
-    Ipp32s  m_frameOrder;
-    Ipp32s  m_ErrorType;
+    int32_t  m_frameOrder;
+    int32_t  m_ErrorType;
 
     H265DecoderFrameInfo * m_pSlicesInfo;
 
@@ -98,7 +98,7 @@ public:
 
     H265SEIPayLoad m_UserData;
 
-    Ipp64f           m_dFrameTime;
+    double           m_dFrameTime;
     bool             m_isOriginalPTS;
 
     DisplayPictureStruct_H265  m_DisplayPictureStruct_H265;
@@ -108,21 +108,21 @@ public:
 
     bool post_procces_complete;
 
-    Ipp32s m_index;
-    Ipp32s m_UID;
+    int32_t m_index;
+    int32_t m_UID;
     UMC::FrameType m_FrameType;
 
     UMC::MemID m_MemID;
 
-    Ipp32s           m_RefPicListResetCount;
-    Ipp32s           m_crop_left;
-    Ipp32s           m_crop_right;
-    Ipp32s           m_crop_top;
-    Ipp32s           m_crop_bottom;
-    Ipp32s           m_crop_flag;
+    int32_t           m_RefPicListResetCount;
+    int32_t           m_crop_left;
+    int32_t           m_crop_right;
+    int32_t           m_crop_top;
+    int32_t           m_crop_bottom;
+    int32_t           m_crop_flag;
 
-    Ipp32s           m_aspect_width;
-    Ipp32s           m_aspect_height;
+    int32_t           m_aspect_width;
+    int32_t           m_aspect_height;
 
     bool             m_pic_output;
 
@@ -137,16 +137,16 @@ public:
 
     struct
     {
-        Ipp8u  isFull    : 1;
-        Ipp8u  isDecoded : 1;
-        Ipp8u  isDecodingStarted : 1;
-        Ipp8u  isDecodingCompleted : 1;
+        uint8_t  isFull    : 1;
+        uint8_t  isDecoded : 1;
+        uint8_t  isDecodingStarted : 1;
+        uint8_t  isDecodingCompleted : 1;
     } m_Flags;
 
-    Ipp8u  m_isDisplayable;
-    Ipp8u  m_wasDisplayed;
-    Ipp8u  m_wasOutputted;
-    Ipp32s m_maxUIDWhenWasDisplayed;
+    uint8_t  m_isDisplayable;
+    uint8_t  m_wasDisplayed;
+    uint8_t  m_wasOutputted;
+    int32_t m_maxUIDWhenWasDisplayed;
 
     typedef std::list<RefCounter *>  ReferenceList;
     ReferenceList m_references;
@@ -162,7 +162,7 @@ public:
     void FreeResources();
 
     // Accelerator for getting 'surface Index' FrameMID
-    inline Ipp32s GetFrameMID() const
+    inline int32_t GetFrameMID() const
     {
         return m_frameData.GetFrameMID();
     }
@@ -231,11 +231,11 @@ public:
     // Mark frame as short term reference frame
     void SetisShortTermRef(bool isRef);
 
-    Ipp32s PicOrderCnt() const
+    int32_t PicOrderCnt() const
     {
         return m_PicOrderCnt;
     }
-    void setPicOrderCnt(Ipp32s PicOrderCnt)
+    void setPicOrderCnt(int32_t PicOrderCnt)
     {
         m_PicOrderCnt = PicOrderCnt;
     }
@@ -258,18 +258,18 @@ public:
         m_RefPicListResetCount = 0;
     }
 
-    Ipp32s RefPicListResetCount() const
+    int32_t RefPicListResetCount() const
     {
         return m_RefPicListResetCount;
     }
 
     // GetRefPicList
     // Returns pointer to start of specified ref pic list.
-    H265_FORCEINLINE const H265DecoderRefPicList* GetRefPicList(Ipp32s sliceNumber, Ipp32s list) const
+    H265_FORCEINLINE const H265DecoderRefPicList* GetRefPicList(int32_t sliceNumber, int32_t list) const
     {
         VM_ASSERT(list <= REF_PIC_LIST_1 && list >= 0);
 
-        if (sliceNumber >= (Ipp32s)m_refPicList.size())
+        if (sliceNumber >= (int32_t)m_refPicList.size())
         {
             return 0;
         }
@@ -277,17 +277,17 @@ public:
         return &m_refPicList[sliceNumber].m_refPicList[list];
     }
 
-    Ipp32s GetError() const
+    int32_t GetError() const
     {
         return m_ErrorType;
     }
 
-    void SetError(Ipp32s errorType)
+    void SetError(int32_t errorType)
     {
         m_ErrorType = errorType;
     }
 
-    void SetErrorFlagged(Ipp32s errorType)
+    void SetErrorFlagged(int32_t errorType)
     {
         m_ErrorType |= errorType;
     }
@@ -300,24 +300,24 @@ public:
     H265FrameCodingData* getCD() const {return m_CodingData;}
 
     // Returns a CTB by its raster address
-    H265CodingUnit* getCU(Ipp32u CUaddr) const;
+    H265CodingUnit* getCU(uint32_t CUaddr) const;
 
     // Returns number of CTBs in frame
-    Ipp32u getNumCUsInFrame() const;
+    uint32_t getNumCUsInFrame() const;
     // Returns number of minimal partitions in CTB
-    Ipp32u getNumPartInCUSize() const;
+    uint32_t getNumPartInCUSize() const;
     // Returns number of CTBs in frame width
-    Ipp32u getFrameWidthInCU() const;
+    uint32_t getFrameWidthInCU() const;
     // Returns number of CTBs in frame height
-    Ipp32u getFrameHeightInCU() const;
+    uint32_t getFrameHeightInCU() const;
 
-    Ipp32s*  m_cuOffsetY;
-    Ipp32s*  m_cuOffsetC;
-    Ipp32s*  m_buOffsetY;
-    Ipp32s*  m_buOffsetC;
+    int32_t*  m_cuOffsetY;
+    int32_t*  m_cuOffsetC;
+    int32_t*  m_buOffsetY;
+    int32_t*  m_buOffsetC;
 
     // Fill frame planes with default values
-    void DefaultFill(bool isChromaOnly, Ipp8u defaultValue = 128);
+    void DefaultFill(bool isChromaOnly, uint8_t defaultValue = 128);
 
     // Allocate and initialize frame array of CTBs and SAO parameters
     void allocateCodingData(const H265SeqParamSet* pSeqParamSet, const H265PicParamSet *pPicParamSet);
@@ -325,13 +325,13 @@ public:
     void deallocateCodingData();
 
     //  Access starting position of original picture for specific coding unit (CU)
-    PlanePtrY GetLumaAddr(Ipp32s CUAddr) const;
+    PlanePtrY GetLumaAddr(int32_t CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU)
-    PlanePtrUV GetCbCrAddr(Ipp32s CUAddr) const;
+    PlanePtrUV GetCbCrAddr(int32_t CUAddr) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    PlanePtrY GetLumaAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    PlanePtrY GetLumaAddr(int32_t CUAddr, uint32_t AbsZorderIdx) const;
     //  Access starting position of original picture for specific coding unit (CU) and partition unit (PU)
-    PlanePtrUV GetCbCrAddr(Ipp32s CUAddr, Ipp32u AbsZorderIdx) const;
+    PlanePtrUV GetCbCrAddr(int32_t CUAddr, uint32_t AbsZorderIdx) const;
 #endif
 
     void AddSlice(H265Slice * pSlice);

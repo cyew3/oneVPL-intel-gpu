@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -28,8 +28,8 @@ class SwapperBase
 public:
     virtual ~SwapperBase() {}
 
-    virtual void SwapMemory(Ipp8u *pDestination, size_t &nDstSize, Ipp8u *pSource, size_t nSrcSize, std::vector<Ipp32u> *pRemovedOffsets) = 0;
-    virtual void SwapMemory(MemoryPiece * pMemDst, MemoryPiece * pMemSrc, std::vector<Ipp32u> *pRemovedOffsets) = 0;
+    virtual void SwapMemory(uint8_t *pDestination, size_t &nDstSize, uint8_t *pSource, size_t nSrcSize, std::vector<uint32_t> *pRemovedOffsets) = 0;
+    virtual void SwapMemory(MemoryPiece * pMemDst, MemoryPiece * pMemSrc, std::vector<uint32_t> *pRemovedOffsets) = 0;
 };
 
 // NAL unit start code search class
@@ -50,16 +50,16 @@ public:
     {
     }
 
-    virtual Ipp32s Init(UMC::MediaData * pSource)
+    virtual int32_t Init(UMC::MediaData * pSource)
     {
-        m_pSourceBase = m_pSource = (Ipp8u *) pSource->GetDataPointer();
+        m_pSourceBase = m_pSource = (uint8_t *) pSource->GetDataPointer();
         m_nSourceBaseSize = m_nSourceSize = pSource->GetDataSize();
         return 0;
     }
 
-    Ipp32s GetCurrentOffset()
+    int32_t GetCurrentOffset()
     {
-        return (Ipp32s)(m_pSource - m_pSourceBase);
+        return (int32_t)(m_pSource - m_pSourceBase);
     }
 
     // Set maximum NAL unit size
@@ -70,19 +70,19 @@ public:
     }
 
     // Returns first NAL unit ID in memory buffer
-    virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource) = 0;
+    virtual int32_t CheckNalUnitType(UMC::MediaData * pSource) = 0;
     // Set bitstream pointer to start code address
-    virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource) = 0;
+    virtual int32_t MoveToStartCode(UMC::MediaData * pSource) = 0;
     // Set destination bitstream pointer and size to NAL unit
-    virtual Ipp32s GetNALUnit(UMC::MediaData * pSource, UMC::MediaData * pDst) = 0;
+    virtual int32_t GetNALUnit(UMC::MediaData * pSource, UMC::MediaData * pDst) = 0;
 
     virtual void Reset() = 0;
 
 protected:
-    Ipp8u * m_pSource;
+    uint8_t * m_pSource;
     size_t  m_nSourceSize;
 
-    Ipp8u * m_pSourceBase;
+    uint8_t * m_pSourceBase;
     size_t  m_nSourceBaseSize;
 
     size_t  m_suggestedSize;
@@ -103,9 +103,9 @@ public:
     virtual void Release();
 
     // Returns first NAL unit ID in memory buffer
-    virtual Ipp32s CheckNalUnitType(UMC::MediaData * pSource);
+    virtual int32_t CheckNalUnitType(UMC::MediaData * pSource);
     // Set bitstream pointer to start code address
-    virtual Ipp32s MoveToStartCode(UMC::MediaData * pSource);
+    virtual int32_t MoveToStartCode(UMC::MediaData * pSource);
     // Set destination bitstream pointer and size to NAL unit
     virtual UMC::MediaDataEx * GetNalUnits(UMC::MediaData * in);
 

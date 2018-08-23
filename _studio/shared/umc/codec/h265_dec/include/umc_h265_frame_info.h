@@ -92,22 +92,22 @@ public:
         }
     }
 
-    Ipp32u GetSliceCount() const
+    uint32_t GetSliceCount() const
     {
         return m_SliceCount;
     }
 
-    H265Slice* GetSlice(Ipp32s num) const
+    H265Slice* GetSlice(int32_t num) const
     {
         if (num < 0 || num >= m_SliceCount)
             return 0;
         return m_pSliceQueue[num];
     }
 
-    H265Slice* GetSliceByNumber(Ipp32s num) const
+    H265Slice* GetSliceByNumber(int32_t num) const
     {
         size_t count = m_pSliceQueue.size();
-        for (Ipp32u i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
         {
             if (m_pSliceQueue[i]->GetSliceNum() == num)
                 return m_pSliceQueue[i];
@@ -116,10 +116,10 @@ public:
         return 0;
     }
 
-    Ipp32s GetPositionByNumber(Ipp32s num) const
+    int32_t GetPositionByNumber(int32_t num) const
     {
         size_t count = m_pSliceQueue.size();
-        for (Ipp32u i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
         {
             if (m_pSliceQueue[i]->GetSliceNum() == num)
                 return i;
@@ -141,7 +141,7 @@ public:
     }
 
     void Free();
-    void RemoveSlice(Ipp32s num);
+    void RemoveSlice(int32_t num);
 
     bool IsNeedDeblocking() const
     {
@@ -195,14 +195,14 @@ public:
 #ifndef MFX_VA
     std::vector<TileThreadingInfo> m_tilesThreadingInfo;
 
-    Ipp32s m_curCUToProcess[LAST_PROCESS_ID];
-    Ipp32s m_processInProgress[LAST_PROCESS_ID];
+    int32_t m_curCUToProcess[LAST_PROCESS_ID];
+    int32_t m_processInProgress[LAST_PROCESS_ID];
 #endif
 
     bool   m_hasTiles;
 
     H265DecoderFrame * m_pFrame;
-    Ipp32s m_prepared;
+    int32_t m_prepared;
     bool m_IsIDR;
 
 private:
@@ -212,7 +212,7 @@ private:
     H265SeqParamSet * m_sps;
     std::vector<H265Slice*> m_pSliceQueue;
 
-    Ipp32s m_SliceCount;
+    int32_t m_SliceCount;
 
     bool m_isNeedDeblocking;
     bool m_isNeedSAO;

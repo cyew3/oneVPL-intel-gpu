@@ -33,13 +33,13 @@ public:
     // Decode slice header and initializ slice structure with parsed values
     virtual bool Reset(PocDecoding * pocDecoding);
 /*    // Set current slice number
-    void SetSliceNumber(Ipp32s iSliceNumber);
+    void SetSliceNumber(int32_t iSliceNumber);
 
     // Initialize CABAC context depending on slice type
     void InitializeContexts();
 */
     // Parse beginning of slice header to get PPS ID
-    virtual Ipp32s RetrievePicParamSetNumber();
+    virtual int32_t RetrievePicParamSetNumber();
 /*
     //
     // method(s) to obtain slice specific information
@@ -50,7 +50,7 @@ public:
     H265SliceHeader *GetSliceHeader() {return &m_SliceHeader;}
     // Obtain bit stream object
     H265Bitstream *GetBitStream(){return &m_BitStream;}
-    Ipp32s GetFirstMB() const {return m_iFirstMB;}
+    int32_t GetFirstMB() const {return m_iFirstMB;}
     // Obtain current picture parameter set
     const H265PicParamSet *GetPicParam() const {return m_pPicParamSet;}
     void SetPicParam(const H265PicParamSet * pps)
@@ -73,10 +73,10 @@ public:
     void SetCurrentFrame(H265DecoderFrame * pFrame){m_pCurrentFrame = pFrame;}
 
     // Obtain slice number
-    Ipp32s GetSliceNum(void) const {return m_iNumber;}
+    int32_t GetSliceNum(void) const {return m_iNumber;}
     // Obtain maximum of macroblock
-    Ipp32s GetMaxMB(void) const {return m_iMaxMB;}
-    void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
+    int32_t GetMaxMB(void) const {return m_iMaxMB;}
+    void SetMaxMB(int32_t x) {m_iMaxMB = x;}
 */
 
     using H265Slice::UpdateReferenceList;
@@ -111,11 +111,11 @@ private:
 public:
     H265DecoderFrame *m_pCurrentFrame;        // (H265DecoderFrame *) pointer to destination frame
 
-    Ipp32s m_iNumber;                                           // (Ipp32s) current slice number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB number in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) last unavailable  MB number in slice
+    int32_t m_iNumber;                                           // (int32_t) current slice number
+    int32_t m_iFirstMB;                                          // (int32_t) first MB number in slice
+    int32_t m_iMaxMB;                                            // (int32_t) last unavailable  MB number in slice
 
-    Ipp16u m_WidevineStatusReportNumber;
+    uint16_t m_WidevineStatusReportNumber;
 
     CUProcessInfo processInfo;
 
@@ -135,17 +135,17 @@ public:
     // Returns number of used references in RPS
     int getNumRpsCurrTempList() const;
 
-    Ipp32s m_tileCount;
-    Ipp32u *m_tileByteLocation;
+    int32_t m_tileCount;
+    uint32_t *m_tileByteLocation;
 
-    Ipp32s getTileLocationCount() const   { return m_tileCount; }
-    void allocateTileLocation(Ipp32s val)
+    int32_t getTileLocationCount() const   { return m_tileCount; }
+    void allocateTileLocation(int32_t val)
     {
         if (m_tileCount < val)
             delete[] m_tileByteLocation;
 
         m_tileCount = val;
-        m_tileByteLocation = new Ipp32u[val];
+        m_tileByteLocation = new uint32_t[val];
     }
 
     // For dependent slice copy data from another slice

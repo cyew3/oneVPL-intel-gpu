@@ -58,7 +58,7 @@ H265_DXVA_SegmentDecoder::~H265_DXVA_SegmentDecoder()
 {
 }
 
-UMC::Status H265_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
+UMC::Status H265_DXVA_SegmentDecoder::Init(int32_t iNumber)
 {
     return H265SegmentDecoderBase::Init(iNumber);
 }
@@ -158,7 +158,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 #else
     UMC::Status sts = UMC::UMC_OK;
     VAStatus surfErr = VA_STATUS_SUCCESS;
-    Ipp32s index;
+    int32_t index;
 
     for (H265DecoderFrameInfo * au = m_FirstAU; au; au = au->GetNextAU())
     {
@@ -210,7 +210,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
         UMC::Status sts = UMC::UMC_OK;
         if (!dxva_sd->GetPacker()->IsGPUSyncEventDisable())
         {
-            Ipp32s index = au->m_pFrame->GetFrameMID();
+            int32_t index = au->m_pFrame->GetFrameMID();
             m_mGuard.Unlock();
             {
                 MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_SCHED, "Dec vaSyncSurface");
@@ -220,9 +220,9 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
         }
 #endif
 
-        for (Ipp32u i = 0; i < m_reports.size(); i++)
+        for (uint32_t i = 0; i < m_reports.size(); i++)
         {
-            if (m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index)
+            if (m_reports[i].m_index == (uint32_t)au->m_pFrame->m_index)
             {
                 switch (m_reports[i].m_status)
                 {
@@ -256,7 +256,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
             memset(&pStatusReport, 0, sizeof(pStatusReport));
             dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_HEVC)* NUMBER_OF_STATUS);
 
-            for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+            for (uint32_t i = 0; i < NUMBER_OF_STATUS; i++)
             {
                 if (!pStatusReport[i].StatusReportFeedbackNumber)
                     continue;
@@ -311,12 +311,12 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H265Task *)
 
     if (!wasCompleted && m_FirstAU)
     {
-        Ipp64u currentCounter = (Ipp64u) vm_time_get_tick();
+        unsigned long long currentCounter = (unsigned long long) vm_time_get_tick();
 
         if (m_lastCounter == 0)
             m_lastCounter = currentCounter;
 
-        Ipp64u diff = (currentCounter - m_lastCounter);
+        unsigned long long diff = (currentCounter - m_lastCounter);
         if (diff >= m_counterFrequency)
         {
             Report::iterator iter = std::find(m_reports.begin(), m_reports.end(), ReportItem(m_FirstAU->m_pFrame->m_index, false, 0));

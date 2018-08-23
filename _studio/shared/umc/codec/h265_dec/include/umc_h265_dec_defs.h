@@ -185,9 +185,9 @@ enum DisplayPictureStruct_H265 {
     DPS_BOTTOM_TOP_NEXT_H265, //12 - Bottom field paired with next top field in output order
 };
 
-typedef Ipp8u PlaneY;
-typedef Ipp8u PlaneUV;
-typedef Ipp16s Coeffs;
+typedef uint8_t PlaneY;
+typedef uint8_t PlaneUV;
+typedef int16_t Coeffs;
 
 typedef Coeffs *CoeffsPtr;
 typedef PlaneY *PlanePtrY;
@@ -397,10 +397,10 @@ public:
 
     void ResetRefCounter() {m_refCounter = 0;}
 
-    Ipp32u GetRefCounter() {return m_refCounter;}
+    uint32_t GetRefCounter() {return m_refCounter;}
 
 protected:
-    mutable Ipp32s m_refCounter;
+    mutable int32_t m_refCounter;
 
     virtual ~RefCounter()
     {
@@ -456,15 +456,15 @@ public:
     // Deallocate scaling list tables
     void destroy();
 
-    Ipp16s *m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
+    int16_t *m_dequantCoef[SCALING_LIST_SIZE_NUM][SCALING_LIST_NUM][SCALING_LIST_REM_NUM];
 
 private:
-    H265_FORCEINLINE Ipp16s* getDequantCoeff(Ipp32u list, Ipp32u qp, Ipp32u size)
+    H265_FORCEINLINE int16_t* getDequantCoeff(uint32_t list, uint32_t qp, uint32_t size)
     {
         return m_dequantCoef[size][list][qp];
     }
     // Calculated coefficients used for dequantization in one scaling list matrix
-    __inline void processScalingListDec(Ipp32s *coeff, Ipp16s *dequantcoeff, Ipp32s invQuantScales, Ipp32u height, Ipp32u width, Ipp32u ratio, Ipp32u sizuNum, Ipp32u dc);
+    __inline void processScalingListDec(int32_t *coeff, int16_t *dequantcoeff, int32_t invQuantScales, uint32_t height, uint32_t width, uint32_t ratio, uint32_t sizuNum, uint32_t dc);
     // Returns default scaling matrix for specified parameters
     static const int *getScalingListDefaultAddress(unsigned sizeId, unsigned listId);
 
@@ -477,26 +477,26 @@ private:
 // One profile, tier, level data structure
 struct H265PTL
 {
-    Ipp32u      profile_space;
-    Ipp8u       tier_flag;
-    Ipp32u      profile_idc;
-    Ipp32u      profile_compatibility_flags;    // bitfield, 32 flags
-    Ipp8u       progressive_source_flag;
-    Ipp8u       interlaced_source_flag;
-    Ipp8u       non_packed_constraint_flag;
-    Ipp8u       frame_only_constraint_flag;
-    Ipp32u      level_idc;
+    uint32_t      profile_space;
+    uint8_t       tier_flag;
+    uint32_t      profile_idc;
+    uint32_t      profile_compatibility_flags;    // bitfield, 32 flags
+    uint8_t       progressive_source_flag;
+    uint8_t       interlaced_source_flag;
+    uint8_t       non_packed_constraint_flag;
+    uint8_t       frame_only_constraint_flag;
+    uint32_t      level_idc;
 
-    Ipp8u       max_12bit_constraint_flag;
-    Ipp8u       max_10bit_constraint_flag;
-    Ipp8u       max_8bit_constraint_flag;
-    Ipp8u       max_422chroma_constraint_flag;
-    Ipp8u       max_420chroma_constraint_flag;
-    Ipp8u       max_monochrome_constraint_flag;
-    Ipp8u       intra_constraint_flag;
-    Ipp8u       one_picture_only_constraint_flag;
-    Ipp8u       lower_bit_rate_constraint_flag;
-    Ipp8u       max_14bit_constraint_flag;
+    uint8_t       max_12bit_constraint_flag;
+    uint8_t       max_10bit_constraint_flag;
+    uint8_t       max_8bit_constraint_flag;
+    uint8_t       max_422chroma_constraint_flag;
+    uint8_t       max_420chroma_constraint_flag;
+    uint8_t       max_monochrome_constraint_flag;
+    uint8_t       intra_constraint_flag;
+    uint8_t       one_picture_only_constraint_flag;
+    uint8_t       lower_bit_rate_constraint_flag;
+    uint8_t       max_14bit_constraint_flag;
 
     H265PTL()   { memset(this, 0, sizeof(*this)); }
 };
@@ -507,8 +507,8 @@ struct H265ProfileTierLevel
 {
     H265PTL generalPTL;
     H265PTL subLayerPTL[H265_MAX_SUBLAYER_PTL];
-    Ipp32u  sub_layer_profile_present_flags;       // bitfield [0:H265_MAX_SUBLAYER_PTL]
-    Ipp32u  sub_layer_level_present_flag;          // bitfield [0:H265_MAX_SUBLAYER_PTL]
+    uint32_t  sub_layer_profile_present_flags;       // bitfield [0:H265_MAX_SUBLAYER_PTL]
+    uint32_t  sub_layer_level_present_flag;          // bitfield [0:H265_MAX_SUBLAYER_PTL]
 
     H265ProfileTierLevel()
         : sub_layer_profile_present_flags(0)
@@ -517,48 +517,48 @@ struct H265ProfileTierLevel
     }
 
     const H265PTL* GetGeneralPTL() const        { return &generalPTL; }
-    const H265PTL* GetSubLayerPTL(Ipp32s i) const  { return &subLayerPTL[i]; }
+    const H265PTL* GetSubLayerPTL(int32_t i) const  { return &subLayerPTL[i]; }
 
     H265PTL* GetGeneralPTL()       { return &generalPTL; }
-    H265PTL* GetSubLayerPTL(Ipp32s i) { return &subLayerPTL[i]; }
+    H265PTL* GetSubLayerPTL(int32_t i) { return &subLayerPTL[i]; }
 };
 
 // HRD information data structure
 struct H265HrdSubLayerInfo
 {
-    Ipp8u       fixed_pic_rate_general_flag;
-    Ipp8u       fixed_pic_rate_within_cvs_flag;
-    Ipp32u      elemental_duration_in_tc;
-    Ipp8u       low_delay_hrd_flag;
-    Ipp32u      cpb_cnt;
+    uint8_t       fixed_pic_rate_general_flag;
+    uint8_t       fixed_pic_rate_within_cvs_flag;
+    uint32_t      elemental_duration_in_tc;
+    uint8_t       low_delay_hrd_flag;
+    uint32_t      cpb_cnt;
 
     // sub layer hrd params
-    Ipp32u      bit_rate_value[MAX_CPB_CNT][2];
-    Ipp32u      cpb_size_value[MAX_CPB_CNT][2];
-    Ipp32u      cpb_size_du_value[MAX_CPB_CNT][2];
-    Ipp32u      bit_rate_du_value[MAX_CPB_CNT][2];
-    Ipp8u       cbr_flag[MAX_CPB_CNT][2];
+    uint32_t      bit_rate_value[MAX_CPB_CNT][2];
+    uint32_t      cpb_size_value[MAX_CPB_CNT][2];
+    uint32_t      cpb_size_du_value[MAX_CPB_CNT][2];
+    uint32_t      bit_rate_du_value[MAX_CPB_CNT][2];
+    uint8_t       cbr_flag[MAX_CPB_CNT][2];
 };
 
 // HRD VUI information
 struct H265HRD
 {
-    Ipp8u       nal_hrd_parameters_present_flag;
-    Ipp8u       vcl_hrd_parameters_present_flag;
-    Ipp8u       sub_pic_hrd_params_present_flag;
+    uint8_t       nal_hrd_parameters_present_flag;
+    uint8_t       vcl_hrd_parameters_present_flag;
+    uint8_t       sub_pic_hrd_params_present_flag;
 
     // sub_pic_hrd_params_present_flag
-    Ipp32u      tick_divisor;
-    Ipp32u      du_cpb_removal_delay_increment_length;
-    Ipp8u       sub_pic_cpb_params_in_pic_timing_sei_flag;
-    Ipp32u      dpb_output_delay_du_length;
+    uint32_t      tick_divisor;
+    uint32_t      du_cpb_removal_delay_increment_length;
+    uint8_t       sub_pic_cpb_params_in_pic_timing_sei_flag;
+    uint32_t      dpb_output_delay_du_length;
 
-    Ipp32u      bit_rate_scale;
-    Ipp32u      cpb_size_scale;
-    Ipp32u      cpb_size_du_scale;
-    Ipp32u      initial_cpb_removal_delay_length;
-    Ipp32u      au_cpb_removal_delay_length;
-    Ipp32u      dpb_output_delay_length;
+    uint32_t      bit_rate_scale;
+    uint32_t      cpb_size_scale;
+    uint32_t      cpb_size_du_scale;
+    uint32_t      initial_cpb_removal_delay_length;
+    uint32_t      au_cpb_removal_delay_length;
+    uint32_t      dpb_output_delay_length;
 
     H265HrdSubLayerInfo m_HRD[MAX_TEMPORAL_LAYER];
 
@@ -567,17 +567,17 @@ struct H265HRD
         ::memset(this, 0, sizeof(*this));
     }
 
-    H265HrdSubLayerInfo * GetHRDSubLayerParam(Ipp32u i) { return &m_HRD[i]; }
+    H265HrdSubLayerInfo * GetHRDSubLayerParam(uint32_t i) { return &m_HRD[i]; }
 };
 
 // VUI timing information
 struct H265TimingInfo
 {
-    Ipp8u   vps_timing_info_present_flag;
-    Ipp32u  vps_num_units_in_tick;
-    Ipp32u  vps_time_scale;
-    Ipp8u   vps_poc_proportional_to_timing_flag;
-    Ipp32s  vps_num_ticks_poc_diff_one;
+    uint8_t   vps_timing_info_present_flag;
+    uint32_t  vps_num_units_in_tick;
+    uint32_t  vps_time_scale;
+    uint8_t   vps_poc_proportional_to_timing_flag;
+    int32_t  vps_num_ticks_poc_diff_one;
 
 public:
     H265TimingInfo()
@@ -593,30 +593,30 @@ public:
 class H265VideoParamSet : public HeapObject
 {
 public:
-    Ipp32u      vps_video_parameter_set_id;
-    Ipp32u      vps_max_layers;
-    Ipp32u      vps_max_sub_layers;
-    Ipp8u       vps_temporal_id_nesting_flag;
+    uint32_t      vps_video_parameter_set_id;
+    uint32_t      vps_max_layers;
+    uint32_t      vps_max_sub_layers;
+    uint8_t       vps_temporal_id_nesting_flag;
 
     // profile_tier_level
     H265ProfileTierLevel    m_pcPTL;
 
     // vpd sub layer ordering info
-    Ipp32u      vps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
-    Ipp32u      vps_num_reorder_pics[MAX_TEMPORAL_LAYER];
-    Ipp32u      vps_max_latency_increase[MAX_TEMPORAL_LAYER];
+    uint32_t      vps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
+    uint32_t      vps_num_reorder_pics[MAX_TEMPORAL_LAYER];
+    uint32_t      vps_max_latency_increase[MAX_TEMPORAL_LAYER];
 
-    Ipp32u      vps_max_layer_id;
-    Ipp32u      vps_num_layer_sets;
-    Ipp8u       layer_id_included_flag[MAX_VPS_NUM_LAYER_SETS][MAX_NUH_LAYER_ID];
+    uint32_t      vps_max_layer_id;
+    uint32_t      vps_num_layer_sets;
+    uint8_t       layer_id_included_flag[MAX_VPS_NUM_LAYER_SETS][MAX_NUH_LAYER_ID];
 
     // vps timing info
     H265TimingInfo          m_timingInfo;
 
     // hrd parameters
-    Ipp32u    vps_num_hrd_parameters;
-    Ipp32u*   hrd_layer_set_idx;
-    Ipp8u*    cprms_present_flag;
+    uint32_t    vps_num_hrd_parameters;
+    uint32_t*   hrd_layer_set_idx;
+    uint8_t*    cprms_present_flag;
     H265HRD*  m_hrdParameters;
 
 public:
@@ -642,7 +642,7 @@ public:
         hrd_layer_set_idx = new unsigned[vps_num_hrd_parameters];
 
         delete[] cprms_present_flag;
-        cprms_present_flag = new Ipp8u[vps_num_hrd_parameters];
+        cprms_present_flag = new uint8_t[vps_num_hrd_parameters];
     }
 
     void Reset()
@@ -669,7 +669,7 @@ public:
         }
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return vps_video_parameter_set_id;
     }
@@ -679,51 +679,51 @@ public:
     H265TimingInfo* getTimingInfo() { return &m_timingInfo; }
 };
 
-typedef Ipp32u IntraType;
+typedef uint32_t IntraType;
 
 // RPS data structure
 struct ReferencePictureSet
 {
-    Ipp8u inter_ref_pic_set_prediction_flag;
+    uint8_t inter_ref_pic_set_prediction_flag;
 
-    Ipp32u num_negative_pics;
-    Ipp32u num_positive_pics;
+    uint32_t num_negative_pics;
+    uint32_t num_positive_pics;
 
-    Ipp32u num_pics;
+    uint32_t num_pics;
 
-    Ipp32u num_lt_pics;
+    uint32_t num_lt_pics;
 
-    Ipp32u num_long_term_pics;
-    Ipp32u num_long_term_sps;
+    uint32_t num_long_term_pics;
+    uint32_t num_long_term_sps;
 
-    Ipp32s m_DeltaPOC[MAX_NUM_REF_PICS];
-    Ipp32s m_POC[MAX_NUM_REF_PICS];
-    Ipp8u used_by_curr_pic_flag[MAX_NUM_REF_PICS];
+    int32_t m_DeltaPOC[MAX_NUM_REF_PICS];
+    int32_t m_POC[MAX_NUM_REF_PICS];
+    uint8_t used_by_curr_pic_flag[MAX_NUM_REF_PICS];
 
-    Ipp8u delta_poc_msb_present_flag[MAX_NUM_REF_PICS];
-    Ipp8u delta_poc_msb_cycle_lt[MAX_NUM_REF_PICS];
-    Ipp32s poc_lbs_lt[MAX_NUM_REF_PICS];
+    uint8_t delta_poc_msb_present_flag[MAX_NUM_REF_PICS];
+    uint8_t delta_poc_msb_cycle_lt[MAX_NUM_REF_PICS];
+    int32_t poc_lbs_lt[MAX_NUM_REF_PICS];
 
     ReferencePictureSet();
 
     void sortDeltaPOC();
 
     void setInterRPSPrediction(bool f)      { inter_ref_pic_set_prediction_flag = f; }
-    Ipp32u getNumberOfPictures() const    { return num_pics; }
-    Ipp32u getNumberOfNegativePictures() const    { return num_negative_pics; }
-    Ipp32u getNumberOfPositivePictures() const    { return num_positive_pics; }
-    Ipp32u getNumberOfLongtermPictures() const    { return num_lt_pics; }
-    void setNumberOfLongtermPictures(Ipp32u val)  { num_lt_pics = val; }
+    uint32_t getNumberOfPictures() const    { return num_pics; }
+    uint32_t getNumberOfNegativePictures() const    { return num_negative_pics; }
+    uint32_t getNumberOfPositivePictures() const    { return num_positive_pics; }
+    uint32_t getNumberOfLongtermPictures() const    { return num_lt_pics; }
+    void setNumberOfLongtermPictures(uint32_t val)  { num_lt_pics = val; }
     int getDeltaPOC(int index) const        { return m_DeltaPOC[index]; }
     void setDeltaPOC(int index, int val)    { m_DeltaPOC[index] = val; }
-    Ipp8u getUsed(int index) const           { return used_by_curr_pic_flag[index]; }
+    uint8_t getUsed(int index) const           { return used_by_curr_pic_flag[index]; }
 
     void setPOC(int bufferNum, int POC)     { m_POC[bufferNum] = POC; }
     int getPOC(int index) const             { return m_POC[index]; }
 
-    Ipp8u getCheckLTMSBPresent(Ipp32s bufferNum) const { return delta_poc_msb_present_flag[bufferNum]; }
+    uint8_t getCheckLTMSBPresent(int32_t bufferNum) const { return delta_poc_msb_present_flag[bufferNum]; }
 
-    Ipp32u getNumberOfUsedPictures() const;
+    uint32_t getNumberOfUsedPictures() const;
 };
 
 // Reference picture list data structure
@@ -745,180 +745,180 @@ private:
 // Reference picture list data structure
 struct RefPicListModification
 {
-    Ipp32u ref_pic_list_modification_flag_l0;
-    Ipp32u ref_pic_list_modification_flag_l1;
+    uint32_t ref_pic_list_modification_flag_l0;
+    uint32_t ref_pic_list_modification_flag_l1;
 
-    Ipp32u list_entry_l0[MAX_NUM_REF_PICS + 1];
-    Ipp32u list_entry_l1[MAX_NUM_REF_PICS + 1];
+    uint32_t list_entry_l0[MAX_NUM_REF_PICS + 1];
+    uint32_t list_entry_l1[MAX_NUM_REF_PICS + 1];
 };
 
 // Sequence parameter set structure, corresponding to the HEVC bitstream definition.
 struct H265SeqParamSetBase
 {
     // bitstream params
-    Ipp32s  sps_video_parameter_set_id;
-    Ipp32u  sps_max_sub_layers;
-    Ipp8u   sps_temporal_id_nesting_flag;
+    int32_t  sps_video_parameter_set_id;
+    uint32_t  sps_max_sub_layers;
+    uint8_t   sps_temporal_id_nesting_flag;
 
     H265ProfileTierLevel     m_pcPTL;
 
-    Ipp8u   sps_seq_parameter_set_id;
-    Ipp8u   chroma_format_idc;
+    uint8_t   sps_seq_parameter_set_id;
+    uint8_t   chroma_format_idc;
 
-    Ipp8u   separate_colour_plane_flag;
+    uint8_t   separate_colour_plane_flag;
 
-    Ipp32u  pic_width_in_luma_samples;
-    Ipp32u  pic_height_in_luma_samples;
+    uint32_t  pic_width_in_luma_samples;
+    uint32_t  pic_height_in_luma_samples;
 
     // cropping params
-    Ipp8u   conformance_window_flag;
-    Ipp32u  conf_win_left_offset;
-    Ipp32u  conf_win_right_offset;
-    Ipp32u  conf_win_top_offset;
-    Ipp32u  conf_win_bottom_offset;
+    uint8_t   conformance_window_flag;
+    uint32_t  conf_win_left_offset;
+    uint32_t  conf_win_right_offset;
+    uint32_t  conf_win_top_offset;
+    uint32_t  conf_win_bottom_offset;
 
-    Ipp32u  bit_depth_luma;
-    Ipp32u  bit_depth_chroma;
+    uint32_t  bit_depth_luma;
+    uint32_t  bit_depth_chroma;
 
-    Ipp32u  log2_max_pic_order_cnt_lsb;
-    Ipp8u   sps_sub_layer_ordering_info_present_flag;
+    uint32_t  log2_max_pic_order_cnt_lsb;
+    uint8_t   sps_sub_layer_ordering_info_present_flag;
 
-    Ipp32u  sps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
-    Ipp32u  sps_max_num_reorder_pics[MAX_TEMPORAL_LAYER];
-    Ipp32u  sps_max_latency_increase[MAX_TEMPORAL_LAYER];
+    uint32_t  sps_max_dec_pic_buffering[MAX_TEMPORAL_LAYER];
+    uint32_t  sps_max_num_reorder_pics[MAX_TEMPORAL_LAYER];
+    uint32_t  sps_max_latency_increase[MAX_TEMPORAL_LAYER];
 
-    Ipp32u  log2_min_luma_coding_block_size;
-    Ipp32u  log2_max_luma_coding_block_size;
-    Ipp32u  log2_min_transform_block_size;
-    Ipp32u  log2_max_transform_block_size;
-    Ipp32u  max_transform_hierarchy_depth_inter;
-    Ipp32u  max_transform_hierarchy_depth_intra;
+    uint32_t  log2_min_luma_coding_block_size;
+    uint32_t  log2_max_luma_coding_block_size;
+    uint32_t  log2_min_transform_block_size;
+    uint32_t  log2_max_transform_block_size;
+    uint32_t  max_transform_hierarchy_depth_inter;
+    uint32_t  max_transform_hierarchy_depth_intra;
 
-    Ipp8u   scaling_list_enabled_flag;
-    Ipp8u   sps_scaling_list_data_present_flag;
+    uint8_t   scaling_list_enabled_flag;
+    uint8_t   sps_scaling_list_data_present_flag;
 
-    Ipp8u   amp_enabled_flag;
-    Ipp8u   sample_adaptive_offset_enabled_flag;
+    uint8_t   amp_enabled_flag;
+    uint8_t   sample_adaptive_offset_enabled_flag;
 
-    Ipp8u   pcm_enabled_flag;
+    uint8_t   pcm_enabled_flag;
 
     // pcm params
-    Ipp32u  pcm_sample_bit_depth_luma;
-    Ipp32u  pcm_sample_bit_depth_chroma;
-    Ipp32u  log2_min_pcm_luma_coding_block_size;
-    Ipp32u  log2_max_pcm_luma_coding_block_size;
-    Ipp8u   pcm_loop_filter_disabled_flag;
+    uint32_t  pcm_sample_bit_depth_luma;
+    uint32_t  pcm_sample_bit_depth_chroma;
+    uint32_t  log2_min_pcm_luma_coding_block_size;
+    uint32_t  log2_max_pcm_luma_coding_block_size;
+    uint8_t   pcm_loop_filter_disabled_flag;
 
-    Ipp32u  num_short_term_ref_pic_sets;
+    uint32_t  num_short_term_ref_pic_sets;
     ReferencePictureSetList m_RPSList;
 
-    Ipp8u   long_term_ref_pics_present_flag;
-    Ipp32u  num_long_term_ref_pics_sps;
-    Ipp32u  lt_ref_pic_poc_lsb_sps[33];
-    Ipp8u   used_by_curr_pic_lt_sps_flag[33];
+    uint8_t   long_term_ref_pics_present_flag;
+    uint32_t  num_long_term_ref_pics_sps;
+    uint32_t  lt_ref_pic_poc_lsb_sps[33];
+    uint8_t   used_by_curr_pic_lt_sps_flag[33];
 
-    Ipp8u   sps_temporal_mvp_enabled_flag;
-    Ipp8u   sps_strong_intra_smoothing_enabled_flag;
+    uint8_t   sps_temporal_mvp_enabled_flag;
+    uint8_t   sps_strong_intra_smoothing_enabled_flag;
 
     // vui part
-    Ipp8u   vui_parameters_present_flag;         // Zero indicates default VUI parameters
+    uint8_t   vui_parameters_present_flag;         // Zero indicates default VUI parameters
 
-    Ipp8u   aspect_ratio_info_present_flag;
-    Ipp32u  aspect_ratio_idc;
-    Ipp32u  sar_width;
-    Ipp32u  sar_height;
+    uint8_t   aspect_ratio_info_present_flag;
+    uint32_t  aspect_ratio_idc;
+    uint32_t  sar_width;
+    uint32_t  sar_height;
 
-    Ipp8u   overscan_info_present_flag;
-    Ipp8u   overscan_appropriate_flag;
+    uint8_t   overscan_info_present_flag;
+    uint8_t   overscan_appropriate_flag;
 
-    Ipp8u   video_signal_type_present_flag;
-    Ipp32u  video_format;
-    Ipp8u   video_full_range_flag;
-    Ipp8u   colour_description_present_flag;
-    Ipp32u  colour_primaries;
-    Ipp32u  transfer_characteristics;
-    Ipp32u  matrix_coeffs;
+    uint8_t   video_signal_type_present_flag;
+    uint32_t  video_format;
+    uint8_t   video_full_range_flag;
+    uint8_t   colour_description_present_flag;
+    uint32_t  colour_primaries;
+    uint32_t  transfer_characteristics;
+    uint32_t  matrix_coeffs;
 
-    Ipp8u   chroma_loc_info_present_flag;
-    Ipp32u  chroma_sample_loc_type_top_field;
-    Ipp32u  chroma_sample_loc_type_bottom_field;
+    uint8_t   chroma_loc_info_present_flag;
+    uint32_t  chroma_sample_loc_type_top_field;
+    uint32_t  chroma_sample_loc_type_bottom_field;
 
-    Ipp8u   neutral_chroma_indication_flag;
-    Ipp8u   field_seq_flag;
-    Ipp8u   frame_field_info_present_flag;
+    uint8_t   neutral_chroma_indication_flag;
+    uint8_t   field_seq_flag;
+    uint8_t   frame_field_info_present_flag;
 
-    Ipp8u   default_display_window_flag;
-    Ipp32u  def_disp_win_left_offset;
-    Ipp32u  def_disp_win_right_offset;
-    Ipp32u  def_disp_win_top_offset;
-    Ipp32u  def_disp_win_bottom_offset;
+    uint8_t   default_display_window_flag;
+    uint32_t  def_disp_win_left_offset;
+    uint32_t  def_disp_win_right_offset;
+    uint32_t  def_disp_win_top_offset;
+    uint32_t  def_disp_win_bottom_offset;
 
-    Ipp8u           vui_timing_info_present_flag;
+    uint8_t           vui_timing_info_present_flag;
     H265TimingInfo  m_timingInfo;
 
-    Ipp8u           vui_hrd_parameters_present_flag;
+    uint8_t           vui_hrd_parameters_present_flag;
     H265HRD         m_hrdParameters;
 
-    Ipp8u   bitstream_restriction_flag;
-    Ipp8u   tiles_fixed_structure_flag;
-    Ipp8u   motion_vectors_over_pic_boundaries_flag;
-    Ipp8u   restricted_ref_pic_lists_flag;
-    Ipp32u  min_spatial_segmentation_idc;
-    Ipp32u  max_bytes_per_pic_denom;
-    Ipp32u  max_bits_per_min_cu_denom;
-    Ipp32u  log2_max_mv_length_horizontal;
-    Ipp32u  log2_max_mv_length_vertical;
+    uint8_t   bitstream_restriction_flag;
+    uint8_t   tiles_fixed_structure_flag;
+    uint8_t   motion_vectors_over_pic_boundaries_flag;
+    uint8_t   restricted_ref_pic_lists_flag;
+    uint32_t  min_spatial_segmentation_idc;
+    uint32_t  max_bytes_per_pic_denom;
+    uint32_t  max_bits_per_min_cu_denom;
+    uint32_t  log2_max_mv_length_horizontal;
+    uint32_t  log2_max_mv_length_vertical;
 
     // sps extension
-    Ipp8u sps_range_extension_flag;
-    Ipp8u sps_scc_extension_flag;
+    uint8_t sps_range_extension_flag;
+    uint8_t sps_scc_extension_flag;
 
     //range extention
-    Ipp8u transform_skip_rotation_enabled_flag;
-    Ipp8u transform_skip_context_enabled_flag;
-    Ipp8u implicit_residual_dpcm_enabled_flag;
-    Ipp8u explicit_residual_dpcm_enabled_flag;
-    Ipp8u extended_precision_processing_flag;
-    Ipp8u intra_smoothing_disabled_flag;
-    Ipp8u high_precision_offsets_enabled_flag;
-    Ipp8u fast_rice_adaptation_enabled_flag;
-    Ipp8u cabac_bypass_alignment_enabled_flag;
+    uint8_t transform_skip_rotation_enabled_flag;
+    uint8_t transform_skip_context_enabled_flag;
+    uint8_t implicit_residual_dpcm_enabled_flag;
+    uint8_t explicit_residual_dpcm_enabled_flag;
+    uint8_t extended_precision_processing_flag;
+    uint8_t intra_smoothing_disabled_flag;
+    uint8_t high_precision_offsets_enabled_flag;
+    uint8_t fast_rice_adaptation_enabled_flag;
+    uint8_t cabac_bypass_alignment_enabled_flag;
 
     //scc extention
-    Ipp8u sps_curr_pic_ref_enabled_flag;
-    Ipp8u palette_mode_enabled_flag;
-    Ipp32u palette_max_size;
-    Ipp32u delta_palette_max_predictor_size;
-    Ipp8u sps_palette_predictor_initializer_present_flag;
-    Ipp32u sps_num_palette_predictor_initializer;
-    Ipp32u motion_vector_resolution_control_idc;
-    Ipp8u intra_boundary_filtering_disabled_flag;
+    uint8_t sps_curr_pic_ref_enabled_flag;
+    uint8_t palette_mode_enabled_flag;
+    uint32_t palette_max_size;
+    uint32_t delta_palette_max_predictor_size;
+    uint8_t sps_palette_predictor_initializer_present_flag;
+    uint32_t sps_num_palette_predictor_initializer;
+    uint32_t motion_vector_resolution_control_idc;
+    uint8_t intra_boundary_filtering_disabled_flag;
 
     ///////////////////////////////////////////////////////
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
 
-    Ipp32u MaxCUSize;
-    Ipp32u MaxCUDepth;
-    Ipp32u MinCUSize;
-    Ipp32s AddCUDepth;
-    Ipp32u WidthInCU;
-    Ipp32u HeightInCU;
-    Ipp32u NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth;
-    Ipp32u m_maxTrSize;
+    uint32_t MaxCUSize;
+    uint32_t MaxCUDepth;
+    uint32_t MinCUSize;
+    int32_t AddCUDepth;
+    uint32_t WidthInCU;
+    uint32_t HeightInCU;
+    uint32_t NumPartitionsInCU, NumPartitionsInCUSize, NumPartitionsInFrameWidth;
+    uint32_t m_maxTrSize;
 
-    Ipp32s m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
+    int32_t m_AMPAcc[MAX_CU_DEPTH]; //AMP Accuracy
 
     int m_QPBDOffsetY;
     int m_QPBDOffsetC;
 
-    Ipp32u ChromaArrayType;
+    uint32_t ChromaArrayType;
 
-    Ipp32u chromaShiftW;
-    Ipp32u chromaShiftH;
+    uint32_t chromaShiftW;
+    uint32_t chromaShiftH;
 
-    Ipp32u need16bitOutput;
+    uint32_t need16bitOutput;
 
     void Reset()
     {
@@ -932,7 +932,7 @@ struct H265SeqParamSetBase
 struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 {
     H265ScalingList     m_scalingList;
-    std::vector<Ipp32u> m_paletteInitializers;
+    std::vector<uint32_t> m_paletteInitializers;
     bool                m_changed;
 
     H265SeqParamSet()
@@ -945,7 +945,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     ~H265SeqParamSet()
     {}
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return sps_seq_parameter_set_id;
     }
@@ -979,14 +979,14 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 
     int SubWidthC() const
     {
-        static Ipp32s subWidth[] = {1, 2, 2, 1};
+        static int32_t subWidth[] = {1, 2, 2, 1};
         VM_ASSERT (chroma_format_idc >= 0 && chroma_format_idc <= 4);
         return subWidth[chroma_format_idc];
     }
 
     int SubHeightC() const
     {
-        static Ipp32s subHeight[] = {1, 2, 1, 1};
+        static int32_t subHeight[] = {1, 2, 1, 1};
         VM_ASSERT (chroma_format_idc >= 0 && chroma_format_idc <= 4);
         return subHeight[chroma_format_idc];
     }
@@ -996,7 +996,7 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
     int getQpBDOffsetC() const                  { return m_QPBDOffsetC; }
     void setQpBDOffsetC(int val)                { m_QPBDOffsetC = val; }
 
-    void createRPSList(Ipp32s numRPS)
+    void createRPSList(int32_t numRPS)
     {
         m_RPSList.allocate(numRPS);
     }
@@ -1018,104 +1018,104 @@ struct H265SeqParamSet : public HeapObject, public H265SeqParamSetBase
 // Tiles description
 struct TileInfo
 {
-    Ipp32s firstCUAddr;
-    Ipp32s endCUAddr;
-    Ipp32s width;
+    int32_t firstCUAddr;
+    int32_t endCUAddr;
+    int32_t width;
 };
 
 // Picture parameter set structure, corresponding to the HEVC bitstream definition.
 struct H265PicParamSetBase
 {
-    Ipp32u  pps_pic_parameter_set_id;
-    Ipp32u  pps_seq_parameter_set_id;
+    uint32_t  pps_pic_parameter_set_id;
+    uint32_t  pps_seq_parameter_set_id;
 
-    Ipp8u   dependent_slice_segments_enabled_flag;
-    Ipp8u   output_flag_present_flag;
-    Ipp32u  num_extra_slice_header_bits;
-    Ipp8u   sign_data_hiding_enabled_flag;
-    Ipp8u   cabac_init_present_flag;
+    uint8_t   dependent_slice_segments_enabled_flag;
+    uint8_t   output_flag_present_flag;
+    uint32_t  num_extra_slice_header_bits;
+    uint8_t   sign_data_hiding_enabled_flag;
+    uint8_t   cabac_init_present_flag;
 
-    Ipp32u  num_ref_idx_l0_default_active;
-    Ipp32u  num_ref_idx_l1_default_active;
+    uint32_t  num_ref_idx_l0_default_active;
+    uint32_t  num_ref_idx_l1_default_active;
 
-    Ipp8s   init_qp;                     // default QP for I,P,B slices
-    Ipp8u   constrained_intra_pred_flag;
-    Ipp8u   transform_skip_enabled_flag;
-    Ipp8u   cu_qp_delta_enabled_flag;
-    Ipp32u  diff_cu_qp_delta_depth;
-    Ipp32s  pps_cb_qp_offset;
-    Ipp32s  pps_cr_qp_offset;
+    int8_t   init_qp;                     // default QP for I,P,B slices
+    uint8_t   constrained_intra_pred_flag;
+    uint8_t   transform_skip_enabled_flag;
+    uint8_t   cu_qp_delta_enabled_flag;
+    uint32_t  diff_cu_qp_delta_depth;
+    int32_t  pps_cb_qp_offset;
+    int32_t  pps_cr_qp_offset;
 
-    Ipp8u   pps_slice_chroma_qp_offsets_present_flag;
-    Ipp8u   weighted_pred_flag;              // Nonzero indicates weighted prediction applied to P and SP slices
-    Ipp8u   weighted_bipred_flag;            // 0: no weighted prediction in B slices,  1: explicit weighted prediction
-    Ipp8u   transquant_bypass_enabled_flag;
-    Ipp8u   tiles_enabled_flag;
-    Ipp8u   entropy_coding_sync_enabled_flag;  // presence of wavefronts flag
+    uint8_t   pps_slice_chroma_qp_offsets_present_flag;
+    uint8_t   weighted_pred_flag;              // Nonzero indicates weighted prediction applied to P and SP slices
+    uint8_t   weighted_bipred_flag;            // 0: no weighted prediction in B slices,  1: explicit weighted prediction
+    uint8_t   transquant_bypass_enabled_flag;
+    uint8_t   tiles_enabled_flag;
+    uint8_t   entropy_coding_sync_enabled_flag;  // presence of wavefronts flag
 
     // tiles info
-    Ipp32u  num_tile_columns;
-    Ipp32u  num_tile_rows;
-    Ipp32u  uniform_spacing_flag;
-    std::vector<Ipp32u> column_width;
-    std::vector<Ipp32u> row_height;
-    Ipp8u   loop_filter_across_tiles_enabled_flag;
+    uint32_t  num_tile_columns;
+    uint32_t  num_tile_rows;
+    uint32_t  uniform_spacing_flag;
+    std::vector<uint32_t> column_width;
+    std::vector<uint32_t> row_height;
+    uint8_t   loop_filter_across_tiles_enabled_flag;
 
-    Ipp8u   pps_loop_filter_across_slices_enabled_flag;
+    uint8_t   pps_loop_filter_across_slices_enabled_flag;
 
-    Ipp8u   deblocking_filter_control_present_flag;
-    Ipp8u   deblocking_filter_override_enabled_flag;
-    Ipp8u   pps_deblocking_filter_disabled_flag;
-    Ipp32s  pps_beta_offset;
-    Ipp32s  pps_tc_offset;
+    uint8_t   deblocking_filter_control_present_flag;
+    uint8_t   deblocking_filter_override_enabled_flag;
+    uint8_t   pps_deblocking_filter_disabled_flag;
+    int32_t  pps_beta_offset;
+    int32_t  pps_tc_offset;
 
-    Ipp8u   pps_scaling_list_data_present_flag;
+    uint8_t   pps_scaling_list_data_present_flag;
 
-    Ipp8u   lists_modification_present_flag;
-    Ipp32u  log2_parallel_merge_level;
-    Ipp8u   slice_segment_header_extension_present_flag;
+    uint8_t   lists_modification_present_flag;
+    uint32_t  log2_parallel_merge_level;
+    uint8_t   slice_segment_header_extension_present_flag;
 
     // pps extension
-    Ipp8u  pps_range_extensions_flag;
-    Ipp8u  pps_scc_extension_flag;
+    uint8_t  pps_range_extensions_flag;
+    uint8_t  pps_scc_extension_flag;
 
     // pps range extension
-    Ipp32u log2_max_transform_skip_block_size_minus2;
+    uint32_t log2_max_transform_skip_block_size_minus2;
 
-    Ipp8u cross_component_prediction_enabled_flag;
-    Ipp8u chroma_qp_offset_list_enabled_flag;
-    Ipp32u diff_cu_chroma_qp_offset_depth;
-    Ipp32u chroma_qp_offset_list_len;
-    Ipp32s cb_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
-    Ipp32s cr_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
+    uint8_t cross_component_prediction_enabled_flag;
+    uint8_t chroma_qp_offset_list_enabled_flag;
+    uint32_t diff_cu_chroma_qp_offset_depth;
+    uint32_t chroma_qp_offset_list_len;
+    int32_t cb_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
+    int32_t cr_qp_offset_list[MAX_CHROMA_OFFSET_ELEMENTS];
 
-    Ipp32u log2_sao_offset_scale_luma;
-    Ipp32u log2_sao_offset_scale_chroma;
+    uint32_t log2_sao_offset_scale_luma;
+    uint32_t log2_sao_offset_scale_chroma;
 
     // scc extension
-    Ipp8u pps_curr_pic_ref_enabled_flag;
-    Ipp8u residual_adaptive_colour_transform_enabled_flag;
-    Ipp8u pps_slice_act_qp_offsets_present_flag;
-    Ipp32s pps_act_y_qp_offset;
-    Ipp32s pps_act_cb_qp_offset;
-    Ipp32s pps_act_cr_qp_offset;
+    uint8_t pps_curr_pic_ref_enabled_flag;
+    uint8_t residual_adaptive_colour_transform_enabled_flag;
+    uint8_t pps_slice_act_qp_offsets_present_flag;
+    int32_t pps_act_y_qp_offset;
+    int32_t pps_act_cb_qp_offset;
+    int32_t pps_act_cr_qp_offset;
 
-    Ipp8u pps_palette_predictor_initializer_present_flag;
-    Ipp32u pps_num_palette_predictor_initializer;
-    Ipp8u monochrome_palette_flag;
-    Ipp32u luma_bit_depth_entry;
-    Ipp32u chroma_bit_depth_entry;
+    uint8_t pps_palette_predictor_initializer_present_flag;
+    uint32_t pps_num_palette_predictor_initializer;
+    uint8_t monochrome_palette_flag;
+    uint32_t luma_bit_depth_entry;
+    uint32_t chroma_bit_depth_entry;
 
     ///////////////////////////////////////////////////////
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
-    Ipp32u getColumnWidth(Ipp32u columnIdx) { return column_width[columnIdx]; }
-    Ipp32u getRowHeight(Ipp32u rowIdx)    { return row_height[rowIdx]; }
+    uint32_t getColumnWidth(uint32_t columnIdx) { return column_width[columnIdx]; }
+    uint32_t getRowHeight(uint32_t rowIdx)    { return row_height[rowIdx]; }
 
-    std::vector<Ipp32u> m_CtbAddrRStoTS;
-    std::vector<Ipp32u> m_CtbAddrTStoRS;
-    std::vector<Ipp32u> m_TileIdx;
+    std::vector<uint32_t> m_CtbAddrRStoTS;
+    std::vector<uint32_t> m_CtbAddrTStoRS;
+    std::vector<uint32_t> m_TileIdx;
 
     void Reset()
     {
@@ -1129,7 +1129,7 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 {
     H265ScalingList       m_scalingList;
     std::vector<TileInfo> tilesInfo;
-    std::vector<Ipp32u>   m_paletteInitializers;
+    std::vector<uint32_t>   m_paletteInitializers;
     bool                  m_changed;
 
     H265PicParamSet()
@@ -1165,12 +1165,12 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
     {
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return pps_pic_parameter_set_id;
     }
 
-    Ipp32u getNumTiles() const { return num_tile_rows*num_tile_columns; }
+    uint32_t getNumTiles() const { return num_tile_rows*num_tile_columns; }
     H265ScalingList* getScalingList()               { return &m_scalingList; }
     H265ScalingList* getScalingList() const         { return const_cast<H265ScalingList *>(&m_scalingList); }
 };    // H265PicParamSet
@@ -1178,11 +1178,11 @@ struct H265PicParamSet : public HeapObject, public H265PicParamSetBase
 // Explicit weighted prediction parameters parsed in slice header,
 // or Implicit weighted prediction parameters (8 bits depth values).
 typedef struct {
-  Ipp8u       present_flag;
-  Ipp32u      log2_weight_denom;
-  Ipp32s      weight;
-  Ipp32s      offset;
-  Ipp32s      delta_weight; // for HW decoder
+  uint8_t       present_flag;
+  uint32_t      log2_weight_denom;
+  int32_t      weight;
+  int32_t      offset;
+  int32_t      delta_weight; // for HW decoder
 } wpScalingParam;
 
 // Slice header structure, corresponding to the HEVC bitstream definition.
@@ -1190,111 +1190,111 @@ struct H265SliceHeader
 {
     // from nal unit header
     NalUnitType nal_unit_type;
-    Ipp32u      nuh_temporal_id;
+    uint32_t      nuh_temporal_id;
 
     // slice spec members
-    Ipp32s      first_slice_segment_in_pic_flag;
-    Ipp8u       no_output_of_prior_pics_flag;       // nonzero: remove previously decoded pictures from decoded picture buffer
-    Ipp16u      slice_pic_parameter_set_id;
-    Ipp8u       dependent_slice_segment_flag;
+    int32_t      first_slice_segment_in_pic_flag;
+    uint8_t       no_output_of_prior_pics_flag;       // nonzero: remove previously decoded pictures from decoded picture buffer
+    uint16_t      slice_pic_parameter_set_id;
+    uint8_t       dependent_slice_segment_flag;
 
-    Ipp32u      slice_segment_address;
+    uint32_t      slice_segment_address;
     SliceType   slice_type;
-    Ipp8u       pic_output_flag;
+    uint8_t       pic_output_flag;
 
-    Ipp32u      colour_plane_id; // if separate_colour_plane_flag = = 1 only
+    uint32_t      colour_plane_id; // if separate_colour_plane_flag = = 1 only
 
-    Ipp32s      slice_pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
-    Ipp8u       short_term_ref_pic_set_sps_flag;
+    int32_t      slice_pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
+    uint8_t       short_term_ref_pic_set_sps_flag;
 
-    Ipp8u       slice_temporal_mvp_enabled_flag;
+    uint8_t       slice_temporal_mvp_enabled_flag;
 
-    Ipp8u       slice_sao_luma_flag;
-    Ipp8u       slice_sao_chroma_flag;
+    uint8_t       slice_sao_luma_flag;
+    uint8_t       slice_sao_chroma_flag;
 
-    Ipp8u       num_ref_idx_active_override_flag;
-    Ipp32s      num_ref_idx_l0_active;
-    Ipp32s      num_ref_idx_l1_active;
+    uint8_t       num_ref_idx_active_override_flag;
+    int32_t      num_ref_idx_l0_active;
+    int32_t      num_ref_idx_l1_active;
 
-    Ipp8u       mvd_l1_zero_flag;
-    Ipp8u       cabac_init_flag;
-    Ipp32u      collocated_from_l0_flag;
-    Ipp32u      collocated_ref_idx;
+    uint8_t       mvd_l1_zero_flag;
+    uint8_t       cabac_init_flag;
+    uint32_t      collocated_from_l0_flag;
+    uint32_t      collocated_ref_idx;
 
     // pred_weight params
-    Ipp32u      luma_log2_weight_denom;
-    Ipp32u      chroma_log2_weight_denom;
+    uint32_t      luma_log2_weight_denom;
+    uint32_t      chroma_log2_weight_denom;
     wpScalingParam  pred_weight_table[2][MAX_NUM_REF_PICS][3]; // [REF_PIC_LIST_0 or REF_PIC_LIST_1][refIdx][0:Y, 1:U, 2:V]
 
-    Ipp32s      max_num_merge_cand;
-    Ipp8u       use_integer_mv_flag;
+    int32_t      max_num_merge_cand;
+    uint8_t       use_integer_mv_flag;
 
-    Ipp32s      slice_qp_delta;                       // to calculate default slice QP
-    Ipp32s      slice_cb_qp_offset;
-    Ipp32s      slice_cr_qp_offset;
+    int32_t      slice_qp_delta;                       // to calculate default slice QP
+    int32_t      slice_cb_qp_offset;
+    int32_t      slice_cr_qp_offset;
 
-    Ipp32s      slice_act_y_qp_offset;
-    Ipp32s      slice_act_cb_qp_offset;
-    Ipp32s      slice_act_cr_qp_offset;
+    int32_t      slice_act_y_qp_offset;
+    int32_t      slice_act_cb_qp_offset;
+    int32_t      slice_act_cr_qp_offset;
 
-    Ipp8u       cu_chroma_qp_offset_enabled_flag;
+    uint8_t       cu_chroma_qp_offset_enabled_flag;
 
-    Ipp8u       deblocking_filter_override_flag;
-    Ipp8u       slice_deblocking_filter_disabled_flag;
-    Ipp32s      slice_beta_offset;
-    Ipp32s      slice_tc_offset;
-    Ipp8u       slice_loop_filter_across_slices_enabled_flag;
+    uint8_t       deblocking_filter_override_flag;
+    uint8_t       slice_deblocking_filter_disabled_flag;
+    int32_t      slice_beta_offset;
+    int32_t      slice_tc_offset;
+    uint8_t       slice_loop_filter_across_slices_enabled_flag;
 
-    Ipp32u      num_entry_point_offsets;
+    uint32_t      num_entry_point_offsets;
 
     ///////////////////////////////////////////////////////
     // calculated params
     // These fields are calculated from values above.  They are not written to the bitstream
     ///////////////////////////////////////////////////////
 
-    Ipp32u m_HeaderBitstreamOffset;
+    uint32_t m_HeaderBitstreamOffset;
     //h265 elements of slice header ----------------------------------------------------------------------------------------------------------------
     const H265SeqParamSet* m_SeqParamSet;
     const H265PicParamSet* m_PicParamSet;
 
-    Ipp32u m_sliceSegmentCurStartCUAddr;
-    Ipp32u m_sliceSegmentCurEndCUAddr;
+    uint32_t m_sliceSegmentCurStartCUAddr;
+    uint32_t m_sliceSegmentCurEndCUAddr;
 
-    Ipp32s SliceQP;
+    int32_t SliceQP;
 
-    Ipp32s SliceCurStartCUAddr;
+    int32_t SliceCurStartCUAddr;
 
     bool m_CheckLDC;
-    Ipp32s m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
+    int32_t m_numRefIdx[3]; //  for multiple reference of current slice. IT SEEMS BE SAME AS num_ref_idx_l0_active, l1, lc
 
     ReferencePictureSet m_rps;
     RefPicListModification m_RefPicListModification;
 
     // flag equal 1 means that the slice belong to IDR or anchor access unit
-    Ipp32u IdrPicFlag;
+    uint32_t IdrPicFlag;
 
-    Ipp32s wNumBitsForShortTermRPSInSlice;  // used in h/w decoder
+    int32_t wNumBitsForShortTermRPSInSlice;  // used in h/w decoder
 }; // H265SliceHeader
 
 // SEI data storage
 struct H265SEIPayLoadBase
 {
     SEI_TYPE payLoadType;
-    Ipp32u   payLoadSize;
+    uint32_t   payLoadSize;
 
     union SEIMessages
     {
         struct PicTiming
         {
             DisplayPictureStruct_H265 pic_struct;
-            Ipp32u pic_dpb_output_delay;
+            uint32_t pic_dpb_output_delay;
         } pic_timing;
 
         struct RecoveryPoint
         {
-            Ipp32s recovery_poc_cnt;
-            Ipp8u exact_match_flag;
-            Ipp8u broken_link_flag;
+            int32_t recovery_poc_cnt;
+            uint8_t exact_match_flag;
+            uint8_t broken_link_flag;
         }recovery_point;
 
     }SEI_messages;
@@ -1311,7 +1311,7 @@ struct H265SEIPayLoadBase
 // SEI heap object
 struct H265SEIPayLoad : public HeapObject, public H265SEIPayLoadBase
 {
-    std::vector<Ipp8u> user_data; // for UserDataRegistered or UserDataUnRegistered
+    std::vector<uint8_t> user_data; // for UserDataRegistered or UserDataUnRegistered
 
     H265SEIPayLoad()
         : H265SEIPayLoadBase()
@@ -1324,7 +1324,7 @@ struct H265SEIPayLoad : public HeapObject, public H265SEIPayLoadBase
         user_data.clear();
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return payLoadType;
     }
@@ -1334,8 +1334,8 @@ struct H265SEIPayLoad : public HeapObject, public H265SEIPayLoadBase
 class PocDecoding
 {
 public:
-    Ipp32s prevPocPicOrderCntLsb;
-    Ipp32s prevPicOrderCntMsb;
+    int32_t prevPocPicOrderCntLsb;
+    int32_t prevPicOrderCntMsb;
 
     PocDecoding()
         : prevPocPicOrderCntLsb(0)
@@ -1354,7 +1354,7 @@ public:
 class h265_exception
 {
 public:
-    h265_exception(Ipp32s status = -1)
+    h265_exception(int32_t status = -1)
         : m_Status(status)
     {
     }
@@ -1363,18 +1363,18 @@ public:
     {
     }
 
-    Ipp32s GetStatus() const
+    int32_t GetStatus() const
     {
         return m_Status;
     }
 
 private:
-    Ipp32s m_Status;
+    int32_t m_Status;
 };
 
 // Allocate an array or throw exception
 template <typename T>
-inline T * h265_new_array_throw(Ipp32s size)
+inline T * h265_new_array_throw(int32_t size)
 {
     T * t = new T[size];
     if (!t)
@@ -1391,7 +1391,7 @@ enum
 };
 
 // Color format constants conversion
-inline UMC::ColorFormat GetUMCColorFormat_H265(Ipp32s color_format)
+inline UMC::ColorFormat GetUMCColorFormat_H265(int32_t color_format)
 {
     UMC::ColorFormat format;
     switch(color_format)
@@ -1415,9 +1415,9 @@ inline UMC::ColorFormat GetUMCColorFormat_H265(Ipp32s color_format)
 }
 
 // Color format constants conversion
-inline Ipp32s GetH265ColorFormat(UMC::ColorFormat color_format)
+inline int32_t GetH265ColorFormat(UMC::ColorFormat color_format)
 {
-    Ipp32s format;
+    int32_t format;
     switch(color_format)
     {
     case UMC::GRAY:

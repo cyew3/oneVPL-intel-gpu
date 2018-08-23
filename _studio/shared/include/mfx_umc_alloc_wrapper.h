@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_ALLOC_WRAPPER_H_
@@ -41,7 +41,7 @@ public:
 
     // Allocates or reserves physical memory and return unique ID
     // Sets lock counter to 0
-    virtual UMC::Status Alloc(UMC::MemID *pNewMemID, size_t Size, Ipp32u Flags, Ipp32u Align = 16);
+    virtual UMC::Status Alloc(UMC::MemID *pNewMemID, size_t Size, uint32_t Flags, uint32_t Align = 16);
 
     // Lock() provides pointer from ID. If data is not in memory (swapped)
     // prepares (restores) it. Increases lock counter
@@ -86,7 +86,7 @@ public:
 
     // Allocates or reserves physical memory and returns unique ID
     // Sets lock counter to 0
-    virtual UMC::Status Alloc(UMC::FrameMemID *pNewMemID, const UMC::VideoDataInfo * info, Ipp32u flags);
+    virtual UMC::Status Alloc(UMC::FrameMemID *pNewMemID, const UMC::VideoDataInfo * info, uint32_t flags);
 
     virtual UMC::Status GetFrameHandle(UMC::FrameMemID memId, void * handle);
 
@@ -259,7 +259,7 @@ public:
 
     typedef struct
     {
-        Ipp32s colorFormat;
+        int32_t colorFormat;
         size_t UOffset;
         size_t VOffset;
     } JPEG_Info;

@@ -25,7 +25,7 @@
 namespace UMC_HEVC_DECODER
 {
 
-const Ipp32u levelIndexArray[] = {
+const uint32_t levelIndexArray[] = {
     H265_LEVEL_1,
     H265_LEVEL_2,
     H265_LEVEL_21,
@@ -155,12 +155,12 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             sps.NumPartitionsInCU = 1 << (sps.MaxCUDepth << 1);
             sps.NumPartitionsInFrameWidth = sps.WidthInCU * sps.NumPartitionsInCUSize;
 
-            Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->profile_idc, sps.getPTL()->GetGeneralPTL()->level_idc,
+            uint8_t newDPBsize = (uint8_t)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->profile_idc, sps.getPTL()->GetGeneralPTL()->level_idc,
                                         sps.pic_width_in_luma_samples,
                                         sps.pic_height_in_luma_samples,
                                         sps.sps_max_dec_pic_buffering[HighestTid]);
 
-            for (Ipp32u i = 0; i <= HighestTid; i++)
+            for (uint32_t i = 0; i <= HighestTid; i++)
             {
                 if (sps.sps_max_dec_pic_buffering[i] > newDPBsize)
                     sps.sps_max_dec_pic_buffering[i] = newDPBsize;
@@ -170,11 +170,11 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
 
             if (!sps.getPTL()->GetGeneralPTL()->level_idc && sps.sps_max_dec_pic_buffering[HighestTid])
             {
-                Ipp32u level_idc = levelIndexArray[0];
+                uint32_t level_idc = levelIndexArray[0];
                 for (size_t i = 0; i < sizeof(levelIndexArray)/sizeof(levelIndexArray[0]); i++)
                 {
                     level_idc = levelIndexArray[i];
-                    newDPBsize = (Ipp8u)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->profile_idc, level_idc,
+                    newDPBsize = (uint8_t)CalculateDPBSize(sps.getPTL()->GetGeneralPTL()->profile_idc, level_idc,
                                             sps.pic_width_in_luma_samples,
                                             sps.pic_height_in_luma_samples,
                                             sps.sps_max_dec_pic_buffering[HighestTid]);
@@ -212,7 +212,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                 return UMC::UMC_ERR_INVALID_STREAM;
 
             // additional PPS members checks:
-            Ipp32s QpBdOffsetY = 6 * (sps->bit_depth_luma - 8);
+            int32_t QpBdOffsetY = 6 * (sps->bit_depth_luma - 8);
             if (pps.init_qp < -QpBdOffsetY || pps.init_qp > 25 + 26)
                 return UMC::UMC_ERR_INVALID_STREAM;
 
@@ -234,8 +234,8 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             if (pps.log2_sao_offset_scale_chroma  > sps->bit_depth_chroma - 10)
                 return UMC::UMC_ERR_INVALID_STREAM;
 
-            Ipp32u WidthInLCU = sps->WidthInCU;
-            Ipp32u HeightInLCU = sps->HeightInCU;
+            uint32_t WidthInLCU = sps->WidthInCU;
+            uint32_t HeightInLCU = sps->HeightInCU;
 
             pps.m_CtbAddrRStoTS.resize(WidthInLCU * HeightInLCU + 1);
             pps.m_CtbAddrTStoRS.resize(WidthInLCU * HeightInLCU + 1);
@@ -244,8 +244,8 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             // Calculate tiles rows and columns coordinates
             if (pps.tiles_enabled_flag)
             {
-                Ipp32u columns = pps.num_tile_columns;
-                Ipp32u rows = pps.num_tile_rows;
+                uint32_t columns = pps.num_tile_columns;
+                uint32_t rows = pps.num_tile_rows;
 
                 if (columns > WidthInLCU)
                     return UMC::UMC_ERR_INVALID_STREAM;
@@ -255,7 +255,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
 
                 if (pps.uniform_spacing_flag)
                 {
-                    Ipp32u lastDiv, i;
+                    uint32_t lastDiv, i;
 
                     pps.column_width.resize(columns);
                     pps.row_height.resize(rows);
@@ -263,7 +263,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                     lastDiv = 0;
                     for (i = 0; i < columns; i++)
                     {
-                        Ipp32u tmp = ((i + 1) * WidthInLCU) / columns;
+                        uint32_t tmp = ((i + 1) * WidthInLCU) / columns;
                         pps.column_width[i] = tmp - lastDiv;
                         lastDiv = tmp;
                     }
@@ -271,7 +271,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                     lastDiv = 0;
                     for (i = 0; i < rows; i++)
                     {
-                        Ipp32u tmp = ((i + 1) * HeightInLCU) / rows;
+                        uint32_t tmp = ((i + 1) * HeightInLCU) / rows;
                         pps.row_height[i] = tmp - lastDiv;
                         lastDiv = tmp;
                     }
@@ -279,12 +279,12 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                 else
                 {
                     // Initialize last column/row values, all previous values were parsed from PPS header
-                    Ipp32u i;
-                    Ipp32u tmp = 0;
+                    uint32_t i;
+                    uint32_t tmp = 0;
 
                     for (i = 0; i < pps.num_tile_columns - 1; i++)
                     {
-                        Ipp32u column = pps.getColumnWidth(i);
+                        uint32_t column = pps.getColumnWidth(i);
                         if (column > WidthInLCU)
                             return UMC::UMC_ERR_INVALID_STREAM;
                         tmp += column;
@@ -298,7 +298,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                     tmp = 0;
                     for (i = 0; i < pps.num_tile_rows - 1; i++)
                     {
-                        Ipp32u row = pps.getRowHeight(i);
+                        uint32_t row = pps.getRowHeight(i);
                         if (row > HeightInLCU)
                             return UMC::UMC_ERR_INVALID_STREAM;
                         tmp += row;
@@ -309,29 +309,29 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                         return UMC::UMC_ERR_INVALID_STREAM;
                 }
 
-                Ipp32u *colBd = h265_new_array_throw<Ipp32u>(columns);
-                Ipp32u *rowBd = h265_new_array_throw<Ipp32u>(rows);
+                uint32_t *colBd = h265_new_array_throw<uint32_t>(columns);
+                uint32_t *rowBd = h265_new_array_throw<uint32_t>(rows);
 
                 colBd[0] = 0;
-                for (Ipp32u i = 0; i < pps.num_tile_columns - 1; i++)
+                for (uint32_t i = 0; i < pps.num_tile_columns - 1; i++)
                 {
                     colBd[i + 1] = colBd[i] + pps.getColumnWidth(i);
                 }
 
                 rowBd[0] = 0;
-                for (Ipp32u i = 0; i < pps.num_tile_rows - 1; i++)
+                for (uint32_t i = 0; i < pps.num_tile_rows - 1; i++)
                 {
                     rowBd[i + 1] = rowBd[i] + pps.getRowHeight(i);
                 }
 
-                Ipp32u tbX = 0, tbY = 0;
+                uint32_t tbX = 0, tbY = 0;
 
                 // Initialize CTB index raster to tile and inverse lookup tables
-                for (Ipp32u i = 0; i < WidthInLCU * HeightInLCU; i++)
+                for (uint32_t i = 0; i < WidthInLCU * HeightInLCU; i++)
                 {
-                    Ipp32u tileX = 0, tileY = 0, CtbAddrRStoTS;
+                    uint32_t tileX = 0, tileY = 0, CtbAddrRStoTS;
 
-                    for (Ipp32u j = 0; j < columns; j++)
+                    for (uint32_t j = 0; j < columns; j++)
                     {
                         if (tbX >= colBd[j])
                         {
@@ -339,7 +339,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                         }
                     }
 
-                    for (Ipp32u j = 0; j < rows; j++)
+                    for (uint32_t j = 0; j < rows; j++)
                     {
                         if (tbY >= rowBd[j])
                         {
@@ -361,9 +361,9 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                     }
                 }
 
-                for (Ipp32u i = 0; i < WidthInLCU * HeightInLCU; i++)
+                for (uint32_t i = 0; i < WidthInLCU * HeightInLCU; i++)
                 {
-                    Ipp32u CtbAddrRStoTS = pps.m_CtbAddrRStoTS[i];
+                    uint32_t CtbAddrRStoTS = pps.m_CtbAddrRStoTS[i];
                     pps.m_CtbAddrTStoRS[CtbAddrRStoTS] = i;
                 }
 
@@ -376,7 +376,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             }
             else
             {
-                for (Ipp32u i = 0; i < WidthInLCU * HeightInLCU + 1; i++)
+                for (uint32_t i = 0; i < WidthInLCU * HeightInLCU + 1; i++)
                 {
                     pps.m_CtbAddrTStoRS[i] = i;
                     pps.m_CtbAddrRStoTS[i] = i;
@@ -384,7 +384,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
                 fill(pps.m_TileIdx.begin(), pps.m_TileIdx.end(), 0);
             }
 
-            Ipp32s numberOfTiles = pps.tiles_enabled_flag ? pps.getNumTiles() : 0;
+            int32_t numberOfTiles = pps.tiles_enabled_flag ? pps.getNumTiles() : 0;
 
             pps.tilesInfo.resize(numberOfTiles);
 
@@ -396,20 +396,20 @@ UMC::Status WidevineTaskSupplier::ParseWidevineVPSSPSPPS(DecryptParametersWrappe
             }
 
             // Initialize tiles coordinates
-            for (Ipp32s i = 0; i < numberOfTiles; i++)
+            for (int32_t i = 0; i < numberOfTiles; i++)
             {
-                Ipp32s tileY = i / pps.num_tile_columns;
-                Ipp32s tileX = i % pps.num_tile_columns;
+                int32_t tileY = i / pps.num_tile_columns;
+                int32_t tileX = i % pps.num_tile_columns;
 
-                Ipp32s startY = 0;
-                Ipp32s startX = 0;
+                int32_t startY = 0;
+                int32_t startX = 0;
 
-                for (Ipp32s j = 0; j < tileX; j++)
+                for (int32_t j = 0; j < tileX; j++)
                 {
                     startX += pps.column_width[j];
                 }
 
-                for (Ipp32s j = 0; j < tileY; j++)
+                for (int32_t j = 0; j < tileY; j++)
                 {
                     startY += pps.row_height[j];
                 }
@@ -450,7 +450,7 @@ H265Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     pSlice->SetDecryptParameters(pDecryptParams);
     pSlice->m_source.SetTime(pDecryptParams->GetTime());
 
-    Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber();
+    int32_t pps_pid = pSlice->RetrievePicParamSetNumber();
     if (pps_pid == -1)
     {
         return 0;
@@ -462,7 +462,7 @@ H265Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         return 0;
     }
 
-    Ipp32s seq_parameter_set_id = pSlice->GetPicParam()->pps_seq_parameter_set_id;
+    int32_t seq_parameter_set_id = pSlice->GetPicParam()->pps_seq_parameter_set_id;
 
     pSlice->SetSeqParam(m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id));
     if (!pSlice->GetSeqParam())
@@ -552,7 +552,7 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
             return umsRes;
     }
 
-    Ipp32u flags = src ? src->GetFlags() : 0;
+    uint32_t const flags = src ? src->GetFlags() : 0;
     if (flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
         return UMC::UMC_ERR_INVALID_STREAM;
 

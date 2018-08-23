@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -32,20 +32,20 @@ public:
     void Init(const H265SeqParamSet* sps);
 
     // conversion of partition index to picture pel position
-    Ipp32u m_rasterToPelX[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
-    Ipp32u m_rasterToPelY[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
+    uint32_t m_rasterToPelX[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
+    uint32_t m_rasterToPelY[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
 
     // flexible conversion from relative to absolute index
-    Ipp32u m_zscanToRaster[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
-    Ipp32u m_rasterToZscan[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
+    uint32_t m_zscanToRaster[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
+    uint32_t m_rasterToZscan[MAX_NUM_PU_IN_ROW * MAX_NUM_PU_IN_ROW];
 
 private:
-    void InitZscanToRaster(Ipp32s MaxDepth, Ipp32s Depth, Ipp32u StartVal, Ipp32u*& CurrIdx);
+    void InitZscanToRaster(int32_t MaxDepth, int32_t Depth, uint32_t StartVal, uint32_t*& CurrIdx);
     void InitRasterToZscan(const H265SeqParamSet* sps);
     void InitRasterToPelXY(const H265SeqParamSet* sps);
 
-    Ipp32u m_MaxCUDepth;
-    Ipp32u m_MaxCUSize;
+    uint32_t m_MaxCUDepth;
+    uint32_t m_MaxCUSize;
 };
 
 // Values for m_ColTUFlags
@@ -60,11 +60,11 @@ enum
 // Deblocking edge description
 struct H265PartialEdgeData
 {
-    Ipp8u deblockP  : 1;
-    Ipp8u deblockQ  : 1;
-    Ipp8s strength  : 3;
+    uint8_t deblockP  : 1;
+    uint8_t deblockQ  : 1;
+    int8_t strength  : 3;
 
-    Ipp8s qp;
+    int8_t qp;
 }; // sizeof - 2 bytes
 
 
@@ -74,26 +74,26 @@ class H265FrameCodingData
     DISALLOW_COPY_AND_ASSIGN(H265FrameCodingData);
 
 public:
-    Ipp32u m_WidthInCU;
-    Ipp32u m_HeightInCU;
+    uint32_t m_WidthInCU;
+    uint32_t m_HeightInCU;
 
-    Ipp32u m_MaxCUWidth;
+    uint32_t m_MaxCUWidth;
 
-    Ipp8u m_MaxCUDepth;                        // max. depth
-    Ipp32s m_NumPartitions;
-    Ipp32s m_NumPartInWidth;
-    Ipp32s m_NumCUsInFrame;
+    uint8_t m_MaxCUDepth;                        // max. depth
+    int32_t m_NumPartitions;
+    int32_t m_NumPartInWidth;
+    int32_t m_NumCUsInFrame;
 
     H265CodingUnit *m_CU;
     std::vector<H265CodingUnitData> m_cuData;
-    Ipp8u * m_cumulativeMemoryPtr;
+    uint8_t * m_cumulativeMemoryPtr;
 
-    Ipp32u* m_CUOrderMap;                   //the map of LCU raster scan address relative to LCU encoding order
-    Ipp32u* m_TileIdxMap;                   //the map of the tile index relative to LCU raster scan address
-    Ipp32u* m_InverseCUOrderMap;
+    uint32_t* m_CUOrderMap;                   //the map of LCU raster scan address relative to LCU encoding order
+    uint32_t* m_TileIdxMap;                   //the map of the tile index relative to LCU raster scan address
+    uint32_t* m_InverseCUOrderMap;
 
     SAOLCUParam* m_saoLcuParam;
-    Ipp32s m_sizeOfSAOData;
+    int32_t m_sizeOfSAOData;
 
     PartitionInfo m_partitionInfo;
 #ifndef MFX_VA
@@ -101,12 +101,12 @@ public:
 #endif
     // Deblocking data
     H265PartialEdgeData *m_edge;
-    Ipp32s m_edgesInCTBSize, m_edgesInFrameWidth;
+    int32_t m_edgesInCTBSize, m_edgesInFrameWidth;
 
     struct RefFrameInfo
     {
-        Ipp32s pocDelta;
-        Ipp32s flags;
+        int32_t pocDelta;
+        int32_t flags;
     };
 
     std::vector<RefFrameInfo> m_refFrameInfo;
@@ -115,57 +115,57 @@ public:
 
     H265MVInfo *m_colocatedInfo;
 
-    H265MotionVector & GetMV(EnumRefPicList direction, Ipp32u partNumber)
+    H265MotionVector & GetMV(EnumRefPicList direction, uint32_t partNumber)
     {
         return m_colocatedInfo[partNumber].m_mv[direction];
     }
 
-    Ipp8u GetTUFlags(EnumRefPicList direction, Ipp32u partNumber)
+    uint8_t GetTUFlags(EnumRefPicList direction, uint32_t partNumber)
     {
         if (m_colocatedInfo[partNumber].m_refIdx[direction] == -1)
             return COL_TU_INVALID_INTER;
 
-        return (Ipp8u)m_refFrameInfo[m_colocatedInfo[partNumber].m_index[direction]].flags;
+        return (uint8_t)m_refFrameInfo[m_colocatedInfo[partNumber].m_index[direction]].flags;
     }
 
-    Ipp32s GetTUPOCDelta(EnumRefPicList direction, Ipp32u partNumber)
+    int32_t GetTUPOCDelta(EnumRefPicList direction, uint32_t partNumber)
     {
         return m_refFrameInfo[m_colocatedInfo[partNumber].m_index[direction]].pocDelta;
     }
 
-    RefIndexType & GetRefIdx(EnumRefPicList direction, Ipp32u partNumber)
+    RefIndexType & GetRefIdx(EnumRefPicList direction, uint32_t partNumber)
     {
         return m_colocatedInfo[partNumber].m_refIdx[direction];
     }
 
-    H265MVInfo & GetTUInfo(Ipp32u partNumber)
+    H265MVInfo & GetTUInfo(uint32_t partNumber)
     {
         return m_colocatedInfo[partNumber];
     }
 
-    void create(Ipp32s iPicWidth, Ipp32s iPicHeight, const H265SeqParamSet* sps);
+    void create(int32_t iPicWidth, int32_t iPicHeight, const H265SeqParamSet* sps);
     void destroy();
     void initSAO(const H265SeqParamSet* sps);
 
     H265FrameCodingData();
     ~H265FrameCodingData();
 
-    H265CodingUnit* getCU(Ipp32u CUAddr) const
+    H265CodingUnit* getCU(uint32_t CUAddr) const
     {
         return &m_CU[CUAddr];
     }
 
-    Ipp32u getNumPartInCU()
+    uint32_t getNumPartInCU()
     {
         return m_NumPartitions;
     }
 
-    Ipp32s getCUOrderMap(Ipp32s encCUOrder)
+    int32_t getCUOrderMap(int32_t encCUOrder)
     {
         return *(m_CUOrderMap + (encCUOrder >= m_NumCUsInFrame ? m_NumCUsInFrame : encCUOrder));
     }
-    Ipp32u getTileIdxMap(Ipp32s i)                              { return *(m_TileIdxMap + i); }
-    Ipp32s GetInverseCUOrderMap(Ipp32s cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
+    uint32_t getTileIdxMap(int32_t i)                              { return *(m_TileIdxMap + i); }
+    int32_t GetInverseCUOrderMap(int32_t cuAddr)                  {return *(m_InverseCUOrderMap + (cuAddr >= m_NumCUsInFrame ? m_NumCUsInFrame : cuAddr));}
 };
 
 } // end namespace UMC_HEVC_DECODER

@@ -27,69 +27,69 @@ namespace UMC_HEVC_DECODER
 
 typedef struct H265InterpolationParams_8u
 {
-    const Ipp8u *pSrc;                                          /* (const Ipp8u *) pointer to the source memory */
+    const uint8_t *pSrc;                                          /* (const uint8_t *) pointer to the source memory */
     size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
-    Ipp8u *pDst;                                                /* (Ipp8u *) pointer to the destination memory */
+    uint8_t *pDst;                                                /* (uint8_t *) pointer to the destination memory */
     size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
 
-    Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
-    Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
+    int32_t hFraction;                                           /* (int32_t) horizontal fraction of interpolation */
+    int32_t vFraction;                                           /* (int32_t) vertical fraction of interpolation */
 
-    Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
-    Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
+    int32_t blockWidth;                                          /* (int32_t) width of destination block */
+    int32_t blockHeight;                                         /* (int32_t) height of destination block */
 
     IppiPoint pointVector;
     IppiPoint pointBlockPos;
 
-    IppiSize frameSize;                                         /* (IppiSize) frame size */
+    mfxSize frameSize;                                         /* (mfxSize) frame size */
 
     // filled by internal part
-    Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
+    int32_t iType;                                               /* (int32_t) type of interpolation */
 
-    Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
-    Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
-    Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
-    Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
+    int32_t xPos;                                                /* (int32_t) x coordinate of source data block */
+    int32_t yPos;                                                /* (int32_t) y coordinate of source data block */
+    int32_t dataWidth;                                           /* (int32_t) width of the used source data */
+    int32_t dataHeight;                                          /* (int32_t) height of the used source data */
 
 } H265InterpolationParams_8u;
 
 typedef struct H265InterpolationParams_16u
 {
-    const Ipp16u *pSrc;                                          /* (const Ipp16u *) pointer to the source memory */
+    const uint16_t *pSrc;                                          /* (const uint16_t *) pointer to the source memory */
     size_t srcStep;                                             /* (SIZE_T) pitch of the source memory */
-    Ipp16u *pDst;                                                /* (Ipp16u *) pointer to the destination memory */
+    uint16_t *pDst;                                                /* (uint16_t *) pointer to the destination memory */
     size_t dstStep;                                             /* (SIZE_T) pitch of the destination memory */
 
-    Ipp32s hFraction;                                           /* (Ipp32s) horizontal fraction of interpolation */
-    Ipp32s vFraction;                                           /* (Ipp32s) vertical fraction of interpolation */
+    int32_t hFraction;                                           /* (int32_t) horizontal fraction of interpolation */
+    int32_t vFraction;                                           /* (int32_t) vertical fraction of interpolation */
 
-    Ipp32s blockWidth;                                          /* (Ipp32s) width of destination block */
-    Ipp32s blockHeight;                                         /* (Ipp32s) height of destination block */
+    int32_t blockWidth;                                          /* (int32_t) width of destination block */
+    int32_t blockHeight;                                         /* (int32_t) height of destination block */
 
     IppiPoint pointVector;
     IppiPoint pointBlockPos;
 
-    IppiSize frameSize;                                         /* (IppiSize) frame size */
+    mfxSize frameSize;                                         /* (mfxSize) frame size */
 
     // filled by internal part
-    Ipp32s iType;                                               /* (Ipp32s) type of interpolation */
+    int32_t iType;                                               /* (int32_t) type of interpolation */
 
-    Ipp32s xPos;                                                /* (Ipp32s) x coordinate of source data block */
-    Ipp32s yPos;                                                /* (Ipp32s) y coordinate of source data block */
-    Ipp32s dataWidth;                                           /* (Ipp32s) width of the used source data */
-    Ipp32s dataHeight;                                          /* (Ipp32s) height of the used source data */
+    int32_t xPos;                                                /* (int32_t) x coordinate of source data block */
+    int32_t yPos;                                                /* (int32_t) y coordinate of source data block */
+    int32_t dataWidth;                                           /* (int32_t) width of the used source data */
+    int32_t dataHeight;                                          /* (int32_t) height of the used source data */
 
 } H265InterpolationParams_16u;
 
 // Check for frame boundaries and expand luma border values if necessary
-IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer));
+IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpolateInfo, uint8_t *temporary_buffer));
 // Check for frame boundaries and expand chroma border values if necessary
-IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp8u *temporary_buffer));
+IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, uint8_t *temporary_buffer));
 
 // Check for frame boundaries and expand luma border values if necessary
-IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
+IPPFUN(IppStatus, ippiInterpolateLumaBlock, (H265InterpolationParams_8u *interpolateInfo, uint16_t *temporary_buffer));
 // Check for frame boundaries and expand chroma border values if necessary
-IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, Ipp16u *temporary_buffer));
+IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *interpolateInfo, uint16_t *temporary_buffer));
 
 // turn off the "unreferenced formal parameter" warning
 #ifdef _MSVC_LANG
@@ -97,15 +97,15 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *inter
 #endif
 
     // Set plane values inside of region of interest to val
-    inline IppStatus SetPlane(Ipp8u value, Ipp8u* pDst, Ipp32s dstStep,
-                              IppiSize roiSize )
+    inline IppStatus SetPlane(uint8_t value, uint8_t* pDst, int32_t dstStep,
+                              mfxSize roiSize )
     {
         return ippiSet_8u_C1R(value, pDst, dstStep, roiSize);
     }
 
     // Copy frame plane inside of region of intereset
-    inline IppStatus CopyPlane(Ipp8u* pSrc, Ipp32s srcStep, Ipp8u* pDst, Ipp32s dstStep,
-                              IppiSize roiSize )
+    inline IppStatus CopyPlane(uint8_t* pSrc, int32_t srcStep, uint8_t* pDst, int32_t dstStep,
+                              mfxSize roiSize )
     {
         return ippiCopy_8u_C1R(pSrc, srcStep, pDst, dstStep,
                               roiSize);
@@ -116,23 +116,23 @@ IPPFUN(IppStatus, ippiInterpolateChromaBlock, (H265InterpolationParams_8u *inter
     ///****************************************************************************************/
 
     // Set plane values inside of region of interest to val
-    inline IppStatus SetPlane(Ipp16u value, Ipp16u* pDst, Ipp32s dstStep,
-                              IppiSize roiSize )
+    inline IppStatus SetPlane(uint16_t value, uint16_t* pDst, int32_t dstStep,
+                              mfxSize roiSize )
     {
         if (!pDst)
             return ippStsNullPtrErr;
 
-        return ippiSet_16s_C1R(value, (Ipp16s*)pDst, dstStep, roiSize);
+        return ippiSet_16s_C1R(value, (int16_t*)pDst, dstStep, roiSize);
     }
 
     // Copy frame plane inside of region of intereset
-    inline IppStatus CopyPlane(const Ipp16u* pSrc, Ipp32s srcStep, Ipp16u* pDst, Ipp32s dstStep,
-                              IppiSize roiSize)
+    inline IppStatus CopyPlane(const uint16_t* pSrc, int32_t srcStep, uint16_t* pDst, int32_t dstStep,
+                              mfxSize roiSize)
     {
         if (!pSrc || !pDst)
             return ippStsNullPtrErr;
 
-        return ippiCopy_16s_C1R((const Ipp16s*)pSrc, srcStep, (Ipp16s*)pDst, dstStep,
+        return ippiCopy_16s_C1R((const int16_t*)pSrc, srcStep, (int16_t*)pDst, dstStep,
                         roiSize);
     }
 
