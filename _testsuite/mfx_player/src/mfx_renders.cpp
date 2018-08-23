@@ -537,34 +537,24 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
     }
 #endif
 
-    //allocating yv12 frame if neccessary
-    mfxU32 nOldCC = m_VideoParams.mfx.FrameInfo.FourCC;
-    if ( MFX_FOURCC_YV12 != m_VideoParams.mfx.FrameInfo.FourCC ||
-        MFX_FOURCC_YUV420_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
-        MFX_FOURCC_YUV422_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
-        MFX_FOURCC_YUV444_16 != m_VideoParams.mfx.FrameInfo.FourCC ||
-        MFX_FOURCC_YUV444_8 != m_VideoParams.mfx.FrameInfo.FourCC ||
-        MFX_FOURCC_YV16 != m_VideoParams.mfx.FrameInfo.FourCC)
+    if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YV16 ||
+        m_nFourCC == MFX_FOURCC_YUV420_16 || m_nFourCC == MFX_FOURCC_YUV422_16 || m_nFourCC == MFX_FOURCC_YUV444_16 ||
+        m_nFourCC == MFX_FOURCC_YUV444_8)
     {
-        if (m_nFourCC == 0 || m_nFourCC == MFX_FOURCC_YV12 || m_nFourCC == MFX_FOURCC_YV16 ||
-            m_nFourCC == MFX_FOURCC_YUV420_16 ||  m_nFourCC == MFX_FOURCC_YUV422_16 || m_nFourCC == MFX_FOURCC_YUV444_16 ||
-            m_nFourCC == MFX_FOURCC_YUV444_8)
+        mfxFrameInfo targetInfo = m_VideoParams.mfx.FrameInfo;
+        if (!m_params.useHMstyle)
         {
-            if (!m_params.useHMstyle)
-            {
-                VM_ASSERT(m_nFourCC != MFX_FOURCC_YUV422_16);
-                bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
-                m_VideoParams.mfx.FrameInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : static_cast<int>(MFX_FOURCC_YV12);
-                if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
-                    m_VideoParams.mfx.FrameInfo.FourCC = MFX_FOURCC_YV16;
-            }
-            else
-            {
-                m_VideoParams.mfx.FrameInfo.FourCC = m_nFourCC;
-            }
-            MFX_CHECK_STS(AllocSurface(&m_VideoParams.mfx.FrameInfo, &m_yv12Surface));
-            m_VideoParams.mfx.FrameInfo.FourCC = nOldCC;
+            VM_ASSERT(m_nFourCC != MFX_FOURCC_YUV422_16);
+            bool useP010 = m_nFourCC == MFX_FOURCC_YUV420_16 || m_params.use10bitOutput;
+            targetInfo.FourCC = useP010 ? MFX_FOURCC_YUV420_16 : static_cast<int>(MFX_FOURCC_YV12);
+            if (m_VideoParams.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422)
+                targetInfo.FourCC = MFX_FOURCC_YV16;
         }
+        else
+        {
+            targetInfo.FourCC = m_nFourCC;
+        }
+        MFX_CHECK_STS(AllocSurface(&targetInfo, &m_yv12Surface));
     }
 
     m_copier = HWtoSYSCopier::CreateGenericPlugin(m_pSessionWrapper->GetMFXSession());
@@ -1463,6 +1453,7 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
             break;
 #if defined(_WIN32) || defined(_WIN64)
         case DXGI_FORMAT_AYUV :
+        case MFX_FOURCC_AYUV :
             nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 4 ;
             break;
 #endif
@@ -1483,6 +1474,11 @@ mfxStatus MFXMetricComparatorRender::RenderFrame(mfxFrameSurface1 *surface, mfxE
                 nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
             break;
 
+        case MFX_FOURCC_YUV444_16 :
+            nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 6;
+            if (skipChroma)
+                nFrameSize = (mfxU64)(surface->Info.CropW * surface->Info.CropH) * 2;
+            break;
         default:
             vm_char ar[] = {*(0 + (char*)&surface->Info.FourCC),
                           *(1 + (char*)&surface->Info.FourCC),
