@@ -11,7 +11,6 @@
 #ifndef __UMC_FRAME_CONSTRUCTOR_H__
 #define __UMC_FRAME_CONSTRUCTOR_H__
 
-#include <ipps.h>
 #include "umc_defs.h"
 #include "umc_media_buffer.h"
 #include "umc_linked_list.h"
@@ -49,24 +48,24 @@ namespace UMC
     #define MPEGA_HDR_EMPH(x)          ((x & 0x00003))
 
     inline
-    Ipp32s CalcCurrentLevel(Ipp32s iStart, Ipp32s iEnd, Ipp32s iBufSize)
+    int32_t CalcCurrentLevel(int32_t iStart, int32_t iEnd, int32_t iBufSize)
     {
-        Ipp32s iCurrentLevel = iEnd - iStart;
+        int32_t iCurrentLevel = iEnd - iStart;
         return iCurrentLevel + ((iCurrentLevel >= 0) ? 0 : iBufSize);
     }
 
     inline
-    bool ArePTSEqual(Ipp64f dTime1, Ipp64f dTime2)
+    bool ArePTSEqual(double dTime1, double dTime2)
     {
-        return 0 == (Ipp32s)(90000 * (dTime1 - dTime2));
+        return 0 == (int32_t)(90000 * (dTime1 - dTime2));
     }
 
     // maps TrackType to AudioStreamType and VideoStreamType
-    Ipp32u ConvertTrackType(TrackType type);
+    uint32_t ConvertTrackType(TrackType type);
     // maps AudioStreamType to TrackType
-    TrackType ConvertAudioType(Ipp32u type);
+    TrackType ConvertAudioType(uint32_t type);
     // maps VideoStreamType to TrackType
-    TrackType ConvertVideoType(Ipp32u type);
+    TrackType ConvertVideoType(uint32_t type);
 
     struct TeletextStreamInfo : public StreamInfo
     {
@@ -76,10 +75,10 @@ namespace UMC
             memset(szLanguage, 0, sizeof(szLanguage));
         }
 
-        Ipp8u szLanguage[4];
-        Ipp8u uiType;
-        Ipp8u uiMagazineNumber;
-        Ipp8u uiPageNumber;
+        uint8_t szLanguage[4];
+        uint8_t uiType;
+        uint8_t uiMagazineNumber;
+        uint8_t uiPageNumber;
     };
 
     // extends TrackInfo for needs of mpeg2
@@ -101,17 +100,17 @@ namespace UMC
         // allocates StreamInfo pointer, copies PID and stream type from parent object
         Status Alloc(void);
         // sets duration field (m_Type is requiered)
-        void SetDuration(Ipp64f dDuration);
+        void SetDuration(double dDuration);
 
         // number of program that track belongs to
         // 0 if not applied
-        Ipp32u m_uiProgNum;
+        uint32_t m_uiProgNum;
         // number of frames is currently stored in track buffer
         // it decreaments after lock
-        Ipp32u m_uiFramesReady;
+        uint32_t m_uiFramesReady;
         // number of track in order of its first frame ready
         // -1 means that first frame isn't ready yet
-        Ipp32s m_iFirstFrameOrder;
+        int32_t m_iFirstFrameOrder;
     };
 
     class SplMediaData : public MediaData
@@ -121,93 +120,93 @@ namespace UMC
         // constructor
         SplMediaData();
         // sets absolute position
-        void SetAbsPos(Ipp64u uiAbsPos);
+        void SetAbsPos(unsigned long long uiAbsPos);
         // returns absolute position
-        Ipp64u GetAbsPos(void) const;
+        unsigned long long GetAbsPos(void) const;
         // updates certain flag, returns its previous value
-        bool SetFlag(Ipp32u mask, bool flag);
+        bool SetFlag(uint32_t mask, bool flag);
         // returns certain flag
-        bool GetFlag(Ipp32u mask) const;
+        bool GetFlag(uint32_t mask) const;
         // updates all flags, returns previous flagset
-        Ipp32u SetFlags(Ipp32u flags);
+        uint32_t SetFlags(uint32_t flags);
         // returns current flagset
-        Ipp32u GetFlags() const;
+        uint32_t GetFlags() const;
     protected:
         // absolute position of sample (specified by data reader)
-        Ipp64u m_uiAbsPos;
-        Ipp32u m_uiFlags;
+        unsigned long long m_uiAbsPos;
+        uint32_t m_uiFlags;
     };
 
     struct FCSample
     {
-        static const Ipp32u STAMPS_APPLIED  = 0x00000010;
-        static const Ipp32u PES_START       = 0x00000020;
-        static const Ipp32u ACCESS_POINT    = 0x00000040;
-        static const Ipp32u ACCESS_UNIT     = 0x00000080;
-        static const Ipp32u FIRST_SLICE     = 0x00000100;
+        static const uint32_t STAMPS_APPLIED  = 0x00000010;
+        static const uint32_t PES_START       = 0x00000020;
+        static const uint32_t ACCESS_POINT    = 0x00000040;
+        static const uint32_t ACCESS_UNIT     = 0x00000080;
+        static const uint32_t FIRST_SLICE     = 0x00000100;
 
         // constructor
         FCSample();
         // resets sample
         void Reset(void);
         // copy from MediaData
-        void CopyFrom(MediaData &data, Ipp32s iOffset);
+        void CopyFrom(MediaData &data, int32_t iOffset);
         // copy to MediaData
-        void CopyTo(MediaData &data, Ipp8u *pBufBase);
+        void CopyTo(MediaData &data, uint8_t *pBufBase);
         // checks if position is enclosed
-        bool IsHit(Ipp32s iPos);
+        bool IsHit(int32_t iPos);
         // sets frame type, returns previous
-        Ipp32u SetFrameType(Ipp32u uiType);
+        uint32_t SetFrameType(uint32_t uiType);
         // returns frame type
-        Ipp32u GetFrameType(void);
+        uint32_t GetFrameType(void);
         // sets certain flag, returns its previous value
-        bool SetFlag(Ipp32u uiFlagMask, bool bNewFlag);
+        bool SetFlag(uint32_t uiFlagMask, bool bNewFlag);
         // returns certain flag
-        bool GetFlag(Ipp32u uiFlagMask);
+        bool GetFlag(uint32_t uiFlagMask);
         // updates all flags, returns previous flagset
-        Ipp32u SetFlags(Ipp32u flags);
+        uint32_t SetFlags(uint32_t flags);
         // returns current flagset
-        Ipp32u GetFlags();
+        uint32_t GetFlags();
         // moves forward data pointer
-        void MovePointer(Ipp32u off);
+        void MovePointer(uint32_t off);
 
         // PTS of media sample
-        Ipp64f dPTS;
+        double dPTS;
         // DTS or media sample
-        Ipp64f dDTS;
+        double dDTS;
         // media sample size
-        Ipp32u uiSize;
+        uint32_t uiSize;
         // bits 0...2 - picture type (only for video)
         // bit      3 - reserved
         // bit      4 - is set if sample's timestamps are used (for input samples)
         // bit      5 - indicates if access unit commence here
         // bit      6 - indicates if access point commence here
-        Ipp32u uiFlags;
+        uint32_t uiFlags;
         // absolute position of sample in stream
-        Ipp64u uiAbsPos;
+        unsigned long long uiAbsPos;
         // offset in buffer of first byte of sample
-        Ipp32s iBufOffset;
+        int32_t iBufOffset;
     };
 
     inline
-    void UpdateInputSample(FCSample &sample, Ipp32s iFrom, Ipp32s iTo, bool isPure)
+    void UpdateInputSample(FCSample &sample, int32_t iFrom, int32_t iTo, bool isPure)
     {
         if (isPure && (iTo > sample.iBufOffset))
-            sample.uiAbsPos += IPP_MIN(iTo - IPP_MAX(iFrom, sample.iBufOffset), (Ipp32s)sample.uiSize);
+            sample.uiAbsPos += MFX_MIN(iTo - MFX_MAX(iFrom, sample.iBufOffset), (int32_t)sample.uiSize);
 
-        Ipp32s iEndOffset = sample.iBufOffset + sample.uiSize;
+        int32_t iEndOffset = sample.iBufOffset + sample.uiSize;
         if (sample.iBufOffset > iFrom)
-            sample.iBufOffset -= IPP_MIN(sample.iBufOffset, iTo) - iFrom;
+            sample.iBufOffset -= MFX_MIN(sample.iBufOffset, iTo) - iFrom;
         if (iEndOffset > iFrom)
-            iEndOffset -= IPP_MIN(iEndOffset, iTo) - iFrom;
+            iEndOffset -= MFX_MIN(iEndOffset, iTo) - iFrom;
         sample.uiSize = iEndOffset - sample.iBufOffset;
     }
 
     inline
-    void CutInterval(FCSample &sample1, FCSample &sample2, Ipp8u *pBuf, Ipp32s iFrom, Ipp32s iTo, Ipp32s iLastByte, bool isPure = false)
+    void CutInterval(FCSample &sample1, FCSample &sample2, uint8_t *pBuf, int32_t iFrom, int32_t iTo, int32_t iLastByte, bool isPure = false)
     {
-        Ipp8u *pFrom = pBuf + iTo;
-        Ipp8u *pTo = pBuf + iFrom;
+        uint8_t *pFrom = pBuf + iTo;
+        uint8_t *pTo = pBuf + iFrom;
         MFX_INTERNAL_CPY(pTo, pFrom, iLastByte - iTo);
         UpdateInputSample(sample1, iFrom, iTo, isPure);
         UpdateInputSample(sample2, iFrom, iTo, isPure);
@@ -240,14 +239,14 @@ namespace UMC
         using LinkedList<InnerListElement>::Get;
 
         Status Add(FCSample &rSample);
-        Status Add(FCSample &rSample, Ipp32s idx);
+        Status Add(FCSample &rSample, int32_t idx);
         Status Remove(void);
-        Status Remove(Ipp32s idx);
+        Status Remove(int32_t idx);
         Status First(FCSample &rSample);
         Status Last(FCSample &rSample);
         Status Next(FCSample &rSample);
         Status Prev(FCSample &rSample);
-        Status Get(FCSample &rSample, Ipp32s idx);
+        Status Get(FCSample &rSample, int32_t idx);
 
         const FCSample *FirstBO(void) const;
         const FCSample *LastBO(void) const;
@@ -265,27 +264,27 @@ namespace UMC
     public:
         // Default constructor
         BitstreamReader(void);
-        BitstreamReader(Ipp8u *pStream, Ipp32u len);
+        BitstreamReader(uint8_t *pStream, uint32_t len);
         // Destructor
         virtual ~BitstreamReader(void) {}
         // Initialize bit stream reader
-        void Init(Ipp8u *pStream, Ipp32u len = 0xffffffff);
+        void Init(uint8_t *pStream, uint32_t len = 0xffffffff);
         // Copy next bit
-        Ipp32u CopyBit(void);
+        uint32_t CopyBit(void);
         // Get bit (move pointer)
-        Ipp32u GetBit(void);
+        uint32_t GetBit(void);
         //Pick bits (doesn't move pointer)
-        Ipp32u PeekBits(Ipp32s iNum);
+        uint32_t PeekBits(int32_t iNum);
         // Get bits (move pointer)
-        Ipp32u GetBits(Ipp32s iNum);
+        uint32_t GetBits(int32_t iNum);
         // Skip bits (move pointer)
-        void SkipBits(Ipp32s iNum);
+        void SkipBits(int32_t iNum);
         // Get current pointer
-        Ipp8u *Stream(void);
+        uint8_t *Stream(void);
         // Get unsigned integer Exp-Golomb-coded element (move pointer)
-        Ipp32u GetUE(void);
+        uint32_t GetUE(void);
         // Get signed integer Exp-Golomb-coded element (move pointer)
-        Ipp32s GetSE(void);
+        int32_t GetSE(void);
 
     protected:
         // Refresh pre-read bits
@@ -293,12 +292,12 @@ namespace UMC
 
     protected:
         // pointer to source stream
-        Ipp8u *m_pSource;
-        Ipp8u *m_pEnd;
+        uint8_t *m_pSource;
+        uint8_t *m_pEnd;
         // pre-read stream bits
-        Ipp32u m_nBits;
+        uint32_t m_nBits;
         // amount of pre-read bits
-        Ipp32s m_iReadyBits;
+        int32_t m_iReadyBits;
     };
 
     // object extends base bitstream reader for h264 video
@@ -308,8 +307,8 @@ namespace UMC
     public:
         // Constructor
         H264BitstreamReader(void);
-        H264BitstreamReader(Ipp8u *pStream, Ipp32u len);
-        void Init(Ipp8u *pStream, Ipp32u len);
+        H264BitstreamReader(uint8_t *pStream, uint32_t len);
+        void Init(uint8_t *pStream, uint32_t len);
 
     protected:
         // Function is overloaded for removing prevention bytes
@@ -317,7 +316,7 @@ namespace UMC
 
     protected:
         // amount of sequential zeroes
-        Ipp32s m_iZeroes;
+        int32_t m_iZeroes;
     };
 
     class FrameConstructorParams : public MediaReceiverParams
@@ -333,7 +332,7 @@ namespace UMC
         // size of buffer to allocate
         size_t m_lBufferSize;
         // initial number of samples in buffer (might be dynamically allocated if needed)
-        Ipp32u m_nOfFrames;
+        uint32_t m_nOfFrames;
         // indicates if stop when frame is constructed or parses whole input chunk
         bool m_bStopAtFrame;
         // this option affect absPos value assignment
@@ -372,7 +371,7 @@ namespace UMC
         // resets tailing bytes after last constracted sample
         virtual Status SoftReset();
         // sets playback rate, affects only video frame constructors
-        virtual void SetRate(Ipp64f dRate);
+        virtual void SetRate(double dRate);
         // unlocks input buffer and tries to construct frame
         // but constructed frame is uncommited (can be rolled back)
         virtual Status PreUnLockInputBuffer(MediaData *in, Status streamStatus = UMC_OK);
@@ -384,14 +383,14 @@ namespace UMC
     protected:
         virtual Status GetFrame(SplMediaData *frame);
         virtual Status GetSampleFromQueue(FCSample *pSample);
-        void AssignAbsPos(Ipp32s iPos);
-        void AssignTimeStamps(Ipp32s iPos);
+        void AssignAbsPos(int32_t iPos);
+        void AssignTimeStamps(int32_t iPos);
 
         // synchro object
         vm_mutex m_synchro;
 
         // pointer to allocated buffer
-        Ipp8u *m_pBuf;
+        uint8_t *m_pBuf;
         // memory ID of allocated buffer
         MemID m_midAllocatedBuffer;
 
@@ -400,7 +399,7 @@ namespace UMC
         // queue of output samples
         ReorderQueue m_OutputQueue;
         // index of first-to-decode sample
-        Ipp32s m_iFirstInDecOrderIdx;
+        int32_t m_iFirstInDecOrderIdx;
         // last constructed frame
         SplMediaData m_LastFrame;
         // previous input sample
@@ -419,24 +418,24 @@ namespace UMC
         bool m_bPureStream;
 
         // size of allocated buffer
-        Ipp32s m_lBufferSize;
+        int32_t m_lBufferSize;
         // position in buffer of byte after last data byte
-        Ipp32s m_lLastBytePos;
+        int32_t m_lLastBytePos;
         // position in buffer of first data byte
-        Ipp32s m_lFirstBytePos;
+        int32_t m_lFirstBytePos;
         // current position in buffer
-        Ipp32s m_lCurPos;
+        int32_t m_lCurPos;
         // position in buffer of picture start code of frame being constuncted
-        Ipp32s m_lCurPicStart;
+        int32_t m_lCurPicStart;
 
         // playback rate
-        Ipp64f m_dRate;
+        double m_dRate;
         // number of commited frames
-        Ipp32u m_uiCommitedFrames;
+        uint32_t m_uiCommitedFrames;
         // total number of frames in buffer
-        Ipp32u m_uiTotalFrames;
+        uint32_t m_uiTotalFrames;
         // actual size of user data
-        Ipp32s m_iCurrentLevel;
+        int32_t m_iCurrentLevel;
         // pointer to info structure
         Mpeg2TrackInfo *m_pInfo;
     };
@@ -445,20 +444,20 @@ namespace UMC
     {
     public:
         static const AudioStreamType MpegAStreamType[2][3];
-        static const Ipp32s MpegAFrequency[3][4];
-        static const Ipp32s MpegABitrate[2][3][15];
-        static const Ipp32s MpegAChannels[4];
-        static const Ipp32s AC3Frequency[3];
-        static const Ipp32s AC3FrequencyExt[8];
-        static const Ipp32s AC3BitRate[19];
-        static const Ipp32s AC3NumChannels[];
-        static const Ipp32f MpegAFramesize[2][4];
-        static const Ipp32s AACFrequency[16];
-        static const Ipp32s AACChannels[16];
-        static const Ipp32s DTSChannels[16];
-        static const Ipp32s DTSFrequency[16];
-        static const Ipp32s DTSBitrate[32];
-        static const Ipp32s LPCMChannels[16];
+        static const int32_t MpegAFrequency[3][4];
+        static const int32_t MpegABitrate[2][3][15];
+        static const int32_t MpegAChannels[4];
+        static const int32_t AC3Frequency[3];
+        static const int32_t AC3FrequencyExt[8];
+        static const int32_t AC3BitRate[19];
+        static const int32_t AC3NumChannels[];
+        static const float MpegAFramesize[2][4];
+        static const int32_t AACFrequency[16];
+        static const int32_t AACChannels[16];
+        static const int32_t DTSChannels[16];
+        static const int32_t DTSFrequency[16];
+        static const int32_t DTSBitrate[32];
+        static const int32_t LPCMChannels[16];
         Status Init(MediaReceiverParams *pInit);
     protected:
         // parses headers of all supported audio
@@ -476,10 +475,10 @@ namespace UMC
     class BufferedAudioFrameConstructor : public AudioFrameConstructor
     {
     public:
-        explicit BufferedAudioFrameConstructor(Ipp64f dToBuf = 0.05);
+        explicit BufferedAudioFrameConstructor(double dToBuf = 0.05);
         Status GetFrame(SplMediaData *frame);
     protected:
-        Ipp64f m_dToBuf;
+        double m_dToBuf;
     };
 
     class PureAudioFrameConstructor : public AudioFrameConstructor
@@ -495,14 +494,14 @@ namespace UMC
         virtual Status Init(MediaReceiverParams *pInit);
         virtual Status Reset(void);
         virtual Status SoftReset(void);
-        virtual void SetRate(Ipp64f dRate);
+        virtual void SetRate(double dRate);
         virtual bool IsFrameStartFound(void);
 
     protected:
         // find next sample to output, performs reordering at backward
         virtual Status GetSampleFromQueue(FCSample *pSample);
         // returns true when sample such sample is allowed at playback rate
-        bool IsSampleComplyWithTmPolicy(FCSample &sample, Ipp64f dRate);
+        bool IsSampleComplyWithTmPolicy(FCSample &sample, double dRate);
         // is sequence header found and parsed
         bool m_bSeqSCFound;
         // is picture header found and parsed
@@ -517,15 +516,15 @@ namespace UMC
     {
     public:
         // parses sequence header and fills info if passed
-        static Status ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo);
+        static Status ParseSequenceHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo);
         // parses picture header and sets interlace_type field if info struct passed
-        static Status ParsePictureHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo);
+        static Status ParsePictureHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo);
         // mpeg1/2 frame rate values
-        static const Ipp64f FrameRate[9];
+        static const double FrameRate[9];
         // mpeg1 aspect ratio valus
-        static const Ipp64f AspectRatioMp1[15];
+        static const double AspectRatioMp1[15];
         // mpeg2 aspect ratio valus
-        static const Ipp32s AspectRatioMp2[5][2];
+        static const int32_t AspectRatioMp2[5][2];
         // mpeg2 color format values
         static const ColorFormat ColorFormats[4];
     protected:
@@ -536,9 +535,9 @@ namespace UMC
     {
     public:
         // parses video object layer header and fills info if passed
-        static Status ParseVideoObjectLayer(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo);
+        static Status ParseVideoObjectLayer(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo);
         // mpeg4 aspect ratio values
-        static const Ipp32s AspectRatio[6][2];
+        static const int32_t AspectRatio[6][2];
     protected:
         virtual Status GetFrame(SplMediaData *frame);
     };
@@ -547,7 +546,7 @@ namespace UMC
     {
     public:
         // parses h261 header and fills info if passed
-        static Status ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo);
+        static Status ParseHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo);
     protected:
         virtual Status GetFrame(SplMediaData *frame);
     };
@@ -556,9 +555,9 @@ namespace UMC
     {
     public:
         // parses h263 header and fills info if passed
-        static Status ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo);
+        static Status ParseHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo);
         // valid frame sizes for h263 video
-        static const Ipp16s PictureSize[6][2];
+        static const int16_t PictureSize[6][2];
     protected:
         virtual Status GetFrame(SplMediaData *frame);
     };
@@ -601,17 +600,17 @@ namespace UMC
         void Reset();
 
     protected:
-        static const Ipp32u BytesForSliceReq = 30;
-        static const Ipp32u MaxNumSps = 32;
-        static const Ipp32u MaxNumPps = 256;
+        static const uint32_t BytesForSliceReq = 30;
+        static const uint32_t MaxNumSps = 32;
+        static const uint32_t MaxNumPps = 256;
         static const FrameType SliceType[10];
-        static const Ipp16u AspectRatio[17][2];
+        static const uint16_t AspectRatio[17][2];
         static const ColorFormat ColorFormats[4];
         struct Slice;
 
-        Status ParseSps(Ipp8u* buf, Ipp32s len);
-        Status ParsePps(Ipp8u* buf, Ipp32s len);
-        Status ParseSh(Ipp8u* buf, Ipp32s len);
+        Status ParseSps(uint8_t* buf, int32_t len);
+        Status ParsePps(uint8_t* buf, int32_t len);
+        Status ParseSh(uint8_t* buf, int32_t len);
         bool IsNewPicture(const Slice& prev, const Slice& last);
         bool IsFieldOfOneFrame(const Slice& prev, const Slice& last);
 
@@ -628,24 +627,24 @@ namespace UMC
         {
             Sps() { Reset(); }
             void Reset();
-            Ipp32u time_scale; // 30
-            Ipp32u num_units_in_tick; // 1
-            Ipp16u sar_width; // 1
-            Ipp16u sar_height; // 1
-            Ipp8u profile_idc;
-            Ipp8u level_idc;
-            Ipp8u chroma_format_idc; // 1
-            Ipp8u log2_max_pic_order_cnt_lsb;
-            Ipp8u log2_max_frame_num;
-            Ipp8u frame_mbs_only_flag;
-            Ipp8u pic_order_cnt_type;
-            Ipp8u delta_pic_order_always_zero_flag;
-            Ipp8u frame_width_in_mbs;
-            Ipp8u frame_height_in_mbs;
-            Ipp8u frame_cropping_rect_left_offset;
-            Ipp8u frame_cropping_rect_right_offset;
-            Ipp8u frame_cropping_rect_top_offset;
-            Ipp8u frame_cropping_rect_bottom_offset;
+            uint32_t time_scale; // 30
+            uint32_t num_units_in_tick; // 1
+            uint16_t sar_width; // 1
+            uint16_t sar_height; // 1
+            uint8_t profile_idc;
+            uint8_t level_idc;
+            uint8_t chroma_format_idc; // 1
+            uint8_t log2_max_pic_order_cnt_lsb;
+            uint8_t log2_max_frame_num;
+            uint8_t frame_mbs_only_flag;
+            uint8_t pic_order_cnt_type;
+            uint8_t delta_pic_order_always_zero_flag;
+            uint8_t frame_width_in_mbs;
+            uint8_t frame_height_in_mbs;
+            uint8_t frame_cropping_rect_left_offset;
+            uint8_t frame_cropping_rect_right_offset;
+            uint8_t frame_cropping_rect_top_offset;
+            uint8_t frame_cropping_rect_bottom_offset;
         };
 
         struct Pps : public BaseNaluHeader
@@ -654,7 +653,7 @@ namespace UMC
             void Reset();
             void SetSps(const Sps& sps) { m_sps = &sps; }
             const Sps& GetSps() const { return *m_sps; }
-            Ipp8u pic_order_present_flag;
+            uint8_t pic_order_present_flag;
         private:
             const Sps* m_sps;
         };
@@ -666,17 +665,17 @@ namespace UMC
             void SetPps(const Pps& pps) { m_pps = &pps; }
             const Pps& GetPps() const { return *m_pps; }
 
-            Ipp16u pic_parameter_set_id;
-            Ipp8u field_pic_flag;
-            Ipp8u bottom_field_flag;
-            Ipp32u frame_num;
-            Ipp32s slice_type;
-            Ipp32u pic_order_cnt_lsb;
-            Ipp32s delta_pic_order_cnt_bottom;
-            Ipp32s delta_pic_order_cnt[2];
-            Ipp8u nal_ref_idc;
-            Ipp8u idr_flag;
-            Ipp32u idr_pic_id;
+            uint16_t pic_parameter_set_id;
+            uint8_t field_pic_flag;
+            uint8_t bottom_field_flag;
+            uint32_t frame_num;
+            int32_t slice_type;
+            uint32_t pic_order_cnt_lsb;
+            int32_t delta_pic_order_cnt_bottom;
+            int32_t delta_pic_order_cnt[2];
+            uint8_t nal_ref_idc;
+            uint8_t idr_flag;
+            uint32_t idr_pic_id;
         private:
             const Pps* m_pps;
         };
@@ -686,7 +685,7 @@ namespace UMC
         Slice m_prev;
         Slice m_last;
         bool m_synced;
-        Ipp32u m_skip;
+        uint32_t m_skip;
         FrameType m_type;
         bool m_spsParsed;
     };
@@ -721,8 +720,8 @@ namespace UMC
             StateWaitEoi,
             StateWaitMarkerLength,
         } m_state;
-        Ipp32s m_lParserStartPos;
-        Ipp32s m_lNumBytesToSkip;
+        int32_t m_lParserStartPos;
+        int32_t m_lNumBytesToSkip;
     public:
         MJPEGFrameConstructor();
         virtual Status Init(MediaReceiverParams *pInit);

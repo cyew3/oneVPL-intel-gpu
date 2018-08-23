@@ -9,7 +9,6 @@
 //
 
 #include "umc_defs.h"
-#include <ipps.h>
 #include "umc_automatic_mutex.h"
 #include "umc_default_memory_allocator.h"
 #include "umc_frame_constructor.h"
@@ -17,28 +16,28 @@
 namespace UMC
 {
 
-const Ipp64f Mpeg2FrameConstructor::FrameRate[9] = {
+const double Mpeg2FrameConstructor::FrameRate[9] = {
     0., 24000 / 1001., 24., 25., 30000 / 1001., 30., 50., 60000 / 1001., 60.
 };
 const ColorFormat Mpeg2FrameConstructor::ColorFormats[4] = {
     NONE, YUV420, YUV422, YUV444
 };
 
-const Ipp64f Mpeg2FrameConstructor::AspectRatioMp1[15] = {
+const double Mpeg2FrameConstructor::AspectRatioMp1[15] = {
     0.0000, 1.0000, 0.6735, 0.7031, 0.7615,
     0.8055, 0.8437, 0.8437, 0.9375, 0.9815,
     1.0255, 1.0695, 1.1250, 1.1575, 1.2015
 };
 
-const Ipp32s Mpeg2FrameConstructor::AspectRatioMp2[5][2] = {
+const int32_t Mpeg2FrameConstructor::AspectRatioMp2[5][2] = {
     {1, 1}, {1, 1}, {4, 3}, {16, 9}, {221, 100}
 };
 
-const Ipp32s Mpeg4FrameConstructor::AspectRatio[6][2] = {
+const int32_t Mpeg4FrameConstructor::AspectRatio[6][2] = {
     {0, 0}, {1, 1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}
 };
 
-const Ipp16s H263FrameConstructor::PictureSize[6][2] = {
+const int16_t H263FrameConstructor::PictureSize[6][2] = {
     {0, 0}, {128, 96}, {176, 144}, {352, 288}, {704, 576}, {1408, 1152}
 };
 
@@ -47,13 +46,13 @@ const AudioStreamType AudioFrameConstructor::MpegAStreamType[2][3] = {
     {MP1L1_AUDIO, MP1L2_AUDIO, MP1L3_AUDIO}
 };
 
-const Ipp32s AudioFrameConstructor::MpegAFrequency[3][4] = {
+const int32_t AudioFrameConstructor::MpegAFrequency[3][4] = {
     {22050, 24000, 16000, 0}, /* MPEG 1 */
     {44100, 48000, 32000, 0}, /* MPEG 2 */
     {11025, 12000,  8000, 0}  /* MPEG 2.5 */
 };
 
-const Ipp32s AudioFrameConstructor::MpegABitrate[2][3][15] = {
+const int32_t AudioFrameConstructor::MpegABitrate[2][3][15] = {
     { /* MPEG 2 */
         {0, 32, 48, 56,  64,  80,  96, 112, 128, 144, 160, 176, 192, 224, 256}, /* Layer 1 */
         {0,  8, 16, 24,  32,  40,  48,  56,  64,  80,  96, 112, 128, 144, 160}, /* Layer 2 */
@@ -66,65 +65,65 @@ const Ipp32s AudioFrameConstructor::MpegABitrate[2][3][15] = {
     }
 };
 
-const Ipp32s AudioFrameConstructor::MpegAChannels[4] = {
+const int32_t AudioFrameConstructor::MpegAChannels[4] = {
     2, 2, 2, 1
 };
 
-const Ipp32f AudioFrameConstructor::MpegAFramesize[2][4] = {
+const float AudioFrameConstructor::MpegAFramesize[2][4] = {
     { 0.0f, 384.0f, 1152.0f,  576.0f }, /* MPEG 2 */
     { 0.0f, 384.0f, 1152.0f, 1152.0f }  /* MPEG 1 */
 };
 
-const Ipp32s AudioFrameConstructor::AACFrequency[16] = {
+const int32_t AudioFrameConstructor::AACFrequency[16] = {
     96000, 88200, 64000, 48000, 44100, 32000, 24000,
     22050, 16000, 12000, 11025, 8000, 7350, 0, 0, 0
 };
 
-const Ipp32s AudioFrameConstructor::AACChannels[16] = {
+const int32_t AudioFrameConstructor::AACChannels[16] = {
     0, 1, 2, 3, 4, 5, 6, 8, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-const Ipp32s AudioFrameConstructor::AC3Frequency[3] = {
+const int32_t AudioFrameConstructor::AC3Frequency[3] = {
     48000, 44100, 32000
 };
 
-const Ipp32s AudioFrameConstructor::AC3FrequencyExt[8] = {
+const int32_t AudioFrameConstructor::AC3FrequencyExt[8] = {
     48000, 44100, 32000, 0, 48000, 48000, 44100, 48000
 };
 
-const Ipp32s AudioFrameConstructor::AC3BitRate[19] = {
+const int32_t AudioFrameConstructor::AC3BitRate[19] = {
      32000,  40000,  48000,  56000,  64000,  80000,  96000, 112000, 128000, 160000,
     192000, 224000, 256000, 320000, 384000, 448000, 512000, 576000, 640000
 };
 
-const Ipp32s AudioFrameConstructor::AC3NumChannels[] = {
+const int32_t AudioFrameConstructor::AC3NumChannels[] = {
     2, 1, 2, 3, 3, 4, 4, 5, 1, 2, 3, 4, 5, 6
 };
 
-const Ipp32s AudioFrameConstructor::DTSChannels[16] = {
+const int32_t AudioFrameConstructor::DTSChannels[16] = {
     1, 2, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 6, 7, 8, 8
 };
 
-const Ipp32s AudioFrameConstructor::DTSFrequency[16] = {
+const int32_t AudioFrameConstructor::DTSFrequency[16] = {
     0, 8000, 16000, 32000, 0, 0, 11025, 22050, 44100, 0, 0, 12000, 24000, 48000, 0, 0
 };
 
-const Ipp32s AudioFrameConstructor::DTSBitrate[32] = {
+const int32_t AudioFrameConstructor::DTSBitrate[32] = {
       32000,   56000,   64000,   96000,  112000,  128000,  192000,  224000,
      256000,  320000,  384000,  448000,  512000,  576000,  640000,  768000,
      960000, 1024000, 1152000, 1280000, 1344000, 1408000, 1411200, 1472000,
     1536000, 1920000, 2048000, 3072000, 3840000,       0,       0,       0
 };
 
-const Ipp32s AudioFrameConstructor::LPCMChannels[16] = {
+const int32_t AudioFrameConstructor::LPCMChannels[16] = {
     1, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0
 };
 
-Status Mpeg2FrameConstructor::ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo)
+Status Mpeg2FrameConstructor::ParseSequenceHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo)
 {
     VideoStreamInfo vInfo;
 
-    Ipp32s uiHeaderSizeEstimation = 17;
+    int32_t uiHeaderSizeEstimation = 17;
     if (iLen >= 0 && uiHeaderSizeEstimation > iLen)
         return UMC_ERR_NOT_ENOUGH_DATA;
 
@@ -132,13 +131,13 @@ Status Mpeg2FrameConstructor::ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2
     bs.Init(buf, iLen);
     bs.SkipBits(32); // skip sequence header
 
-    vInfo.clip_info.width = (Ipp16u)bs.GetBits(12);
-    vInfo.clip_info.height = (Ipp16u)bs.GetBits(12);
+    vInfo.clip_info.width = (uint16_t)bs.GetBits(12);
+    vInfo.clip_info.height = (uint16_t)bs.GetBits(12);
 
     // aspect_ratio_information will be checked separately for MPEG1 and MPEG2
     // because this field has different sematics
-    Ipp32u aspect_ratio_information = bs.GetBits(4) & 0x0f;
-    Ipp8u frame_rate_code = (Ipp8u)bs.GetBits(4);
+    uint32_t aspect_ratio_information = bs.GetBits(4) & 0x0f;
+    uint8_t frame_rate_code = (uint8_t)bs.GetBits(4);
     if (0 == frame_rate_code || frame_rate_code > 8)
         return UMC_ERR_INVALID_STREAM;
     vInfo.framerate = FrameRate[frame_rate_code];
@@ -166,7 +165,7 @@ Status Mpeg2FrameConstructor::ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2
     }
 
     TrackType trackType;
-    Ipp32u code = bs.GetBits(32);
+    uint32_t code = bs.GetBits(32);
     if (0x1B5 == code && 0x01 == bs.GetBits(4))
     { // presence sequence_extension indicates MPEG2
         trackType = TRACK_MPEG2V;
@@ -216,7 +215,7 @@ Status Mpeg2FrameConstructor::ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2
         bs.GetBits(1);  // low_delay
 
         if(frame_rate_code > 8)
-            vInfo.framerate = frame_rate_code*(Ipp64f)(bs.GetBits(2) + 1)/(Ipp64f)(bs.GetBits(5) + 1); // (frame_rate_extension_n+1)/(frame_rate_extension_d+1)
+            vInfo.framerate = frame_rate_code*(double)(bs.GetBits(2) + 1)/(double)(bs.GetBits(5) + 1); // (frame_rate_extension_n+1)/(frame_rate_extension_d+1)
     }
     else
     { // absence of sequence_extension indicates MPEG1
@@ -230,7 +229,7 @@ Status Mpeg2FrameConstructor::ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2
 
         // MPEG1 specifies pixel aspect ratio
         vInfo.aspect_ratio_width = vInfo.clip_info.width;
-        vInfo.aspect_ratio_height = (Ipp32s)(vInfo.clip_info.height * AspectRatioMp1[aspect_ratio_information]);
+        vInfo.aspect_ratio_height = (int32_t)(vInfo.clip_info.height * AspectRatioMp1[aspect_ratio_information]);
     }
 
     if (0 == vInfo.clip_info.width)
@@ -255,12 +254,12 @@ Status Mpeg2FrameConstructor::ParseSequenceHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2
     return UMC_OK;
 }
 
-Status Mpeg2FrameConstructor::ParsePictureHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo)
+Status Mpeg2FrameConstructor::ParsePictureHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo)
 {
     InterlaceType interlace_type = PROGRESSIVE;
 
     // Find first picture coding extension
-    Ipp32s offset = 0;
+    int32_t offset = 0;
     while ((iLen < 0 || offset < iLen - 8) && !(IS_CODE(&buf[offset], 0xb5) && (buf[offset + 4] & 0xf0) == 0x80))
         offset++;
     if (iLen >= 0 && offset >= iLen - 8)
@@ -271,13 +270,13 @@ Status Mpeg2FrameConstructor::ParsePictureHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2T
 
     // start_code, start_code_identifier, f_codes, intra_dc_precision
     bs.SkipBits(32 + 4 + 4 + 4 + 4 + 4 + 2);
-    Ipp32u picture_structure = bs.GetBits(2);
-    Ipp32u top_field_first = bs.GetBits(1);
+    uint32_t picture_structure = bs.GetBits(2);
+    uint32_t top_field_first = bs.GetBits(1);
     // frame_pred_frame_dct, concealment_motion_vectors, q_scale_type, intra_vlc_format
     // alternate_scan, repeat_first_field, chroma_420_type
     bs.SkipBits(1 + 1 + 1 + 1 + 1 + 1 + 1);
 
-    Ipp32u progressive_frame = bs.GetBits(1);
+    uint32_t progressive_frame = bs.GetBits(1);
     if (1 == progressive_frame)
         interlace_type = PROGRESSIVE;
     else
@@ -295,30 +294,30 @@ Status Mpeg2FrameConstructor::ParsePictureHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2T
     return UMC_OK;
 }
 
-Status Mpeg4FrameConstructor::ParseVideoObjectLayer(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo)
+Status Mpeg4FrameConstructor::ParseVideoObjectLayer(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo)
 {
     VideoStreamInfo vInfo;
 
-    Ipp32s pos = 0;
+    int32_t pos = 0;
     while ((iLen < 0 || pos < iLen - 3) && !IS_CODE_INT(&buf[pos], 0x20, 0x2f))
         pos++;
     if (iLen > 0 && pos >= iLen - 3)
         return UMC_ERR_NOT_ENOUGH_DATA;
 
     // 28 bytes is enough for header
-    Ipp32s iEstimatedHeaderSize = 28;
+    int32_t iEstimatedHeaderSize = 28;
     if (iLen > 0 && pos + iEstimatedHeaderSize >= iLen)
         return UMC_ERR_NOT_ENOUGH_DATA;
 
     BitstreamReader bs;
     bs.Init(&buf[pos + 4], 0xffffffff);
     bs.GetBits(1); // random_accessible_vol
-    Ipp32u video_object_type_indication = bs.GetBits(8);
+    uint32_t video_object_type_indication = bs.GetBits(8);
     if (0x12 == video_object_type_indication) // "Fine Granularity Scalable"
         return UMC_ERR_INVALID_STREAM;
 
-    Ipp32u video_object_layer_verid;
-    Ipp32u is_object_layer_identifier = bs.GetBits(1);
+    uint32_t video_object_layer_verid;
+    uint32_t is_object_layer_identifier = bs.GetBits(1);
     if (is_object_layer_identifier)
     {
         video_object_layer_verid = bs.GetBits(4);
@@ -330,7 +329,7 @@ Status Mpeg4FrameConstructor::ParseVideoObjectLayer(Ipp8u *buf, Ipp32s iLen, Mpe
     if (0x01 > video_object_layer_verid || 0x05 < video_object_layer_verid)
         return UMC_ERR_INVALID_STREAM;
 
-    Ipp32u aspect_ratio_info = (Ipp8u)bs.GetBits(4);
+    uint32_t aspect_ratio_info = (uint8_t)bs.GetBits(4);
     if (0x0F == aspect_ratio_info)
     { // "extended_PAR"
         vInfo.aspect_ratio_width = bs.GetBits(8);
@@ -341,7 +340,7 @@ Status Mpeg4FrameConstructor::ParseVideoObjectLayer(Ipp8u *buf, Ipp32s iLen, Mpe
     else
     {
         // treat forbidden or reserved values as a default value
-        aspect_ratio_info = IPP_MAX(1, IPP_MIN(aspect_ratio_info, 5));
+        aspect_ratio_info = MFX_MAX(1, MFX_MIN(aspect_ratio_info, 5));
         vInfo.aspect_ratio_width = AspectRatio[aspect_ratio_info][0];
         vInfo.aspect_ratio_height = AspectRatio[aspect_ratio_info][1];
     }
@@ -355,28 +354,28 @@ Status Mpeg4FrameConstructor::ParseVideoObjectLayer(Ipp8u *buf, Ipp32s iLen, Mpe
             bs.SkipBits(79); // skip vbv_parameters
     }
 
-    Ipp32u video_object_layer_shape = bs.GetBits(2);
+    uint32_t video_object_layer_shape = bs.GetBits(2);
     if (0x03 == video_object_layer_verid && 0x01 != video_object_layer_shape)
         bs.GetBits(4); // skip video_object_layer_shape_extension
 
     if (1 != bs.GetBits(1)) // marker_bit
         return UMC_ERR_INVALID_STREAM;
 
-    Ipp32u vop_time_increment_resolution = bs.GetBits(16);
+    uint32_t vop_time_increment_resolution = bs.GetBits(16);
     if (0x00 == vop_time_increment_resolution)
         return UMC_ERR_INVALID_STREAM;
 
     if (1 != bs.GetBits(1)) // marker_bit
         return UMC_ERR_INVALID_STREAM;
 
-    Ipp8u uiBitCount = 0;
+    uint8_t uiBitCount = 0;
     while (vop_time_increment_resolution >> uiBitCount)
         uiBitCount++;
 
     vInfo.framerate = 0.0;
     if (bs.GetBits(1)) // fixed_vop_rate
     {
-        Ipp32u fixed_vop_time_increment = bs.GetBits(uiBitCount);
+        uint32_t fixed_vop_time_increment = bs.GetBits(uiBitCount);
         if (0x00 == fixed_vop_time_increment)
             return UMC_ERR_INVALID_STREAM;
         vInfo.framerate = vop_time_increment_resolution / fixed_vop_time_increment;
@@ -421,7 +420,7 @@ Status Mpeg4FrameConstructor::ParseVideoObjectLayer(Ipp8u *buf, Ipp32s iLen, Mpe
     return UMC_OK;
 }
 
-Status H261FrameConstructor::ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo)
+Status H261FrameConstructor::ParseHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo)
 {
     VideoStreamInfo vInfo;
     BitstreamReader bs;
@@ -462,13 +461,13 @@ Status H261FrameConstructor::ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo
     return UMC_OK;
 }
 
-Status H263FrameConstructor::ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo *pInfo)
+Status H263FrameConstructor::ParseHeader(uint8_t *buf, int32_t iLen, Mpeg2TrackInfo *pInfo)
 {
     VideoStreamInfo vInfo;
     BitstreamReader bs;
     bs.Init(buf, iLen);
-    Ipp32u pixel_aspect_ratio_code = 2;
-    Ipp8u source_format;
+    uint32_t pixel_aspect_ratio_code = 2;
+    uint8_t source_format;
 
     // 14 bytes are enough for header
     if (iLen >= 0 && iLen < 14)
@@ -477,16 +476,16 @@ Status H263FrameConstructor::ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo
     bs.SkipBits(22); // skip short_video_start_marker
     bs.SkipBits(8); // skip temporal_reference
 
-    Ipp32u marker_bit = bs.GetBits(1);
+    uint32_t marker_bit = bs.GetBits(1);
     if (0 == marker_bit)
         return UMC_ERR_INVALID_STREAM;
 
-    Ipp32u zero_bit = bs.GetBits(1);
+    uint32_t zero_bit = bs.GetBits(1);
     if (1 == zero_bit) // zero_bit
         return UMC_ERR_INVALID_STREAM;
 
     bs.SkipBits(3); // skip bits
-    source_format = (Ipp8u)bs.GetBits(3);
+    source_format = (uint8_t)bs.GetBits(3);
     if (0 == source_format || 6 == source_format)
         return UMC_ERR_INVALID_STREAM;
 
@@ -497,15 +496,15 @@ Status H263FrameConstructor::ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo
     // PLUSPTYPE
     if (7 == source_format)
     {
-        Ipp8u ufep = (Ipp8u)bs.GetBits(3);
-        Ipp8u custom_PCF = 0;
+        uint8_t ufep = (uint8_t)bs.GetBits(3);
+        uint8_t custom_PCF = 0;
         if (0x01 == ufep)
         { // OPPTYPE
-            source_format = (Ipp8u)bs.GetBits(3);
+            source_format = (uint8_t)bs.GetBits(3);
             if (0 == source_format || 7 == source_format)
                 return UMC_ERR_FAILED;
 
-            custom_PCF = (Ipp8u)bs.GetBits(1);
+            custom_PCF = (uint8_t)bs.GetBits(1);
             bs.SkipBits(10);
             if (0x08 != bs.GetBits(4))
                 return UMC_ERR_FAILED;
@@ -555,8 +554,8 @@ Status H263FrameConstructor::ParseHeader(Ipp8u *buf, Ipp32s iLen, Mpeg2TrackInfo
 
             if (1 == custom_PCF)
             { // Custom Picture Clock Frequency Code (CPCFC)
-                Ipp32u clock_conversion_factor = 1000 + (Ipp8u)bs.GetBits(1);
-                Ipp32u clock_divisor = (Ipp8u)bs.GetBits(7);
+                uint32_t clock_conversion_factor = 1000 + (uint8_t)bs.GetBits(1);
+                uint32_t clock_divisor = (uint8_t)bs.GetBits(7);
                 if (0 == clock_divisor)
                     return UMC_ERR_FAILED;
 
@@ -663,7 +662,7 @@ Status FrameConstructor::Init(MediaReceiverParams *pInit)
             return UMC_ERR_INIT;
 
     // allocate buffer (one more)
-    m_lBufferSize = (Ipp32s)pParams->m_lBufferSize;
+    m_lBufferSize = (int32_t)pParams->m_lBufferSize;
 
     if (pParams->m_pMemoryAllocator)
     { // use the external memory allocator
@@ -682,7 +681,7 @@ Status FrameConstructor::Init(MediaReceiverParams *pInit)
     if (UMC_OK != umcRes)
         return UMC_ERR_ALLOC;
 
-    m_pBuf = (Ipp8u *)m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
+    m_pBuf = (uint8_t *)m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
     if (NULL == m_pBuf)
         return UMC_ERR_ALLOC;
 
@@ -805,7 +804,7 @@ Status FrameConstructor::SoftReset()
     return UMC_OK;
 }
 
-void FrameConstructor::SetRate(Ipp64f dRate)
+void FrameConstructor::SetRate(double dRate)
 {
     m_dRate = dRate;
 }
@@ -813,35 +812,35 @@ void FrameConstructor::SetRate(Ipp64f dRate)
 Status FrameConstructor::LockInputBuffer(MediaData *in)
 {
     AutomaticMutex guard(m_synchro);
-    Ipp32s lChunkSize;
+    int32_t lChunkSize;
 
     // check error(s)
     if (NULL == in)
         return UMC_ERR_NULL_PTR;
 
-    lChunkSize = (Ipp32s)in->GetDataSize();
+    lChunkSize = (int32_t)in->GetDataSize();
 
     in->SetBufferPointer(m_pBuf + m_lLastBytePos, (size_t)((m_lFirstBytePos > m_lLastBytePos) ?
-        IPP_MAX(0, m_lFirstBytePos - m_lLastBytePos - 4) : m_lBufferSize - m_lLastBytePos));
+        MFX_MAX(0, m_lFirstBytePos - m_lLastBytePos - 4) : m_lBufferSize - m_lLastBytePos));
 
     if ((m_lFirstBytePos > m_lLastBytePos) && (m_lLastBytePos + lChunkSize + 4 >= m_lFirstBytePos))
         return UMC_ERR_NOT_ENOUGH_BUFFER; // at least 4 bytes gap between last and first bytes
 
     if ((m_lFirstBytePos <= m_lLastBytePos) && (m_lLastBytePos + lChunkSize > m_lBufferSize))
     {
-        Ipp32s curFramePos = m_CurFrame.iBufOffset >= 0 ? m_CurFrame.iBufOffset : m_lLastBytePos;
+        int32_t curFramePos = m_CurFrame.iBufOffset >= 0 ? m_CurFrame.iBufOffset : m_lLastBytePos;
         if (m_lLastBytePos + lChunkSize - curFramePos >= m_lFirstBytePos)
             return UMC_ERR_NOT_ENOUGH_BUFFER;
 
         MFX_INTERNAL_CPY(m_pBuf, m_pBuf + curFramePos, m_lLastBytePos - curFramePos);
         m_lLastBytePos -= curFramePos;
         m_lCurPos -= curFramePos;
-        m_lCurPicStart -= IPP_MIN(m_lCurPicStart, curFramePos);
-        m_PrevSample.iBufOffset -= IPP_MIN(m_PrevSample.iBufOffset, curFramePos);
-        m_LastSample.iBufOffset -= IPP_MIN(m_LastSample.iBufOffset, curFramePos);
+        m_lCurPicStart -= MFX_MIN(m_lCurPicStart, curFramePos);
+        m_PrevSample.iBufOffset -= MFX_MIN(m_PrevSample.iBufOffset, curFramePos);
+        m_LastSample.iBufOffset -= MFX_MIN(m_LastSample.iBufOffset, curFramePos);
         m_CurFrame.iBufOffset = m_CurFrame.iBufOffset >= 0 ? 0 : m_CurFrame.iBufOffset;
         in->SetBufferPointer(m_pBuf + m_lLastBytePos,
-            (size_t)(IPP_MAX(0, m_lFirstBytePos - m_lLastBytePos - 4)));
+            (size_t)(MFX_MAX(0, m_lFirstBytePos - m_lLastBytePos - 4)));
     }
 
     return UMC_OK;
@@ -867,7 +866,7 @@ Status FrameConstructor::PreUnLockInputBuffer(MediaData *in, Status streamStatus
     {
         if (DynamicCast<SplMediaData>(in) && ((SplMediaData *)in)->GetAbsPos() == m_LastSample.uiAbsPos)
         { // add on at the end of last input
-            m_LastSample.uiSize += (Ipp32u)in->GetDataSize();
+            m_LastSample.uiSize += (uint32_t)in->GetDataSize();
         }
         else
         { // scroll input samples
@@ -875,7 +874,7 @@ Status FrameConstructor::PreUnLockInputBuffer(MediaData *in, Status streamStatus
             m_LastSample.CopyFrom(in[0], m_lLastBytePos);
         }
 
-        m_lLastBytePos += (Ipp32s)in->GetDataSize();
+        m_lLastBytePos += (int32_t)in->GetDataSize();
     }
 
     if (UMC_OK != streamStatus)
@@ -899,8 +898,8 @@ Status FrameConstructor::PreUnLockInputBuffer(MediaData *in, Status streamStatus
                 frame.SetTime(-1.0, -1.0);
 
             FCSample sample;
-            sample.CopyFrom(frame, (Ipp32s)((Ipp8u *)frame.GetDataPointer() - m_pBuf));
-            m_iCurrentLevel += (Ipp32s)frame.GetDataSize();
+            sample.CopyFrom(frame, (int32_t)((uint8_t *)frame.GetDataPointer() - m_pBuf));
+            m_iCurrentLevel += (int32_t)frame.GetDataSize();
 
             if (sample.uiAbsPos < m_LastFrame.GetAbsPos())
                 m_uiCommitedFrames = m_uiTotalFrames;
@@ -1018,7 +1017,7 @@ Mpeg2TrackInfo *FrameConstructor::GetInfo(void)
     return m_pInfo;
 }
 
-void FrameConstructor::AssignAbsPos(Ipp32s iPos)
+void FrameConstructor::AssignAbsPos(int32_t iPos)
 {
     if (m_PrevSample.IsHit(iPos))
     {
@@ -1034,7 +1033,7 @@ void FrameConstructor::AssignAbsPos(Ipp32s iPos)
     }
 }
 
-void FrameConstructor::AssignTimeStamps(Ipp32s iPos)
+void FrameConstructor::AssignTimeStamps(int32_t iPos)
 {
     if (m_PrevSample.IsHit(iPos) && !m_PrevSample.GetFlag(FCSample::STAMPS_APPLIED))
     {
@@ -1082,14 +1081,14 @@ Status VideoFrameConstructor::GetSampleFromQueue(FCSample *pSample)
         return FrameConstructor::GetSampleFromQueue(pSample);
     }
 
-    if (0 == (Ipp32s)m_uiCommitedFrames)
+    if (0 == (int32_t)m_uiCommitedFrames)
         return UMC_ERR_NOT_ENOUGH_DATA;
 
     if (m_iFirstInDecOrderIdx >= 0)
         return m_OutputQueue.Get(pSample[0], m_iFirstInDecOrderIdx);
 
-    Ipp32s iIdx;
-    for (iIdx = 0; iIdx < (Ipp32s)m_uiCommitedFrames; iIdx++)
+    int32_t iIdx;
+    for (iIdx = 0; iIdx < (int32_t)m_uiCommitedFrames; iIdx++)
     {
         m_OutputQueue.Get(pSample[0], iIdx);
         if (I_PICTURE == pSample[0].GetFrameType())
@@ -1097,7 +1096,7 @@ Status VideoFrameConstructor::GetSampleFromQueue(FCSample *pSample)
     }
 
     // unable to find I_PICTURE
-    if (iIdx >= (Ipp32s)m_uiCommitedFrames)
+    if (iIdx >= (int32_t)m_uiCommitedFrames)
         return m_bEndOfStream ? UMC_ERR_END_OF_STREAM : UMC_ERR_NOT_ENOUGH_DATA;
 
     m_iFirstInDecOrderIdx = iIdx;
@@ -1125,7 +1124,7 @@ Status VideoFrameConstructor::SoftReset()
     return UMC_OK;
 }
 
-void VideoFrameConstructor::SetRate(Ipp64f dRate)
+void VideoFrameConstructor::SetRate(double dRate)
 {
     m_dRate = dRate;
     m_iFirstInDecOrderIdx = m_dRate < 0.0 ? -1 : 0;
@@ -1145,9 +1144,9 @@ bool VideoFrameConstructor::IsFrameStartFound(void)
     return false;
 }
 
-bool VideoFrameConstructor::IsSampleComplyWithTmPolicy(FCSample &sample, Ipp64f dRate)
+bool VideoFrameConstructor::IsSampleComplyWithTmPolicy(FCSample &sample, double dRate)
 {
-    Ipp64f absRate = IPP_ABS(dRate);
+    double absRate = MFX_ABS(dRate);
     return (absRate < 3 || B_PICTURE != sample.GetFrameType()) &&
            (absRate < 4 || P_PICTURE != sample.GetFrameType());
 }
@@ -1155,7 +1154,7 @@ bool VideoFrameConstructor::IsSampleComplyWithTmPolicy(FCSample &sample, Ipp64f 
 Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
 {
     Status umcRes;
-    Ipp8u *buf = m_pBuf;
+    uint8_t *buf = m_pBuf;
     bool bFound = false;
 
     while (!bFound)
@@ -1170,7 +1169,7 @@ Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
                 if (m_lCurPos >= m_lLastBytePos - 3)
                     return m_bEndOfStream ? UMC_ERR_END_OF_STREAM : UMC_ERR_SYNC;
 
-                Ipp32s seqEnd = m_lCurPos + 4;
+                int32_t seqEnd = m_lCurPos + 4;
                 while (seqEnd < m_lLastBytePos - 3 && !IS_CODE_4(&m_pBuf[seqEnd], 0x00, 0xb3, 0xb7, 0xb8))
                     seqEnd++;
                 if (seqEnd >= m_lLastBytePos - 3)
@@ -1217,7 +1216,7 @@ Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
         // Find begin of frame
         if (!m_bFrameBegFound)
         {
-            Ipp32s savePos = m_lCurPos;
+            int32_t savePos = m_lCurPos;
             while (m_lCurPos < m_lLastBytePos - 3 && !IS_CODE_3(&m_pBuf[m_lCurPos], 0xb3, 0xb8, 0x00))
                 m_lCurPos++;
             if (m_lCurPos >= m_lLastBytePos - 3)
@@ -1274,7 +1273,7 @@ Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
                 if (!m_bEndOfStream)
                     return UMC_ERR_NOT_ENOUGH_DATA;
 
-                ippsZero_8u(&m_pBuf[m_lLastBytePos], 4);
+                MFX_INTERNAL_ZERO(&m_pBuf[m_lLastBytePos], 4);
                 m_lLastBytePos += 4;
                 m_lCurPos = m_lLastBytePos;
             }
@@ -1313,7 +1312,7 @@ Status Mpeg2FrameConstructor::GetFrame(SplMediaData *frame)
 Status Mpeg4FrameConstructor::GetFrame(SplMediaData *frame)
 {
     Status umcRes;
-    Ipp8u *buf = m_pBuf;
+    uint8_t *buf = m_pBuf;
     bool bFrameFound = false;
 
     // initialization loop
@@ -1332,7 +1331,7 @@ Status Mpeg4FrameConstructor::GetFrame(SplMediaData *frame)
         m_CurFrame.iBufOffset = m_lCurPos;
         AssignAbsPos(m_CurFrame.iBufOffset);
 
-        Ipp32s offset = 0;
+        int32_t offset = 0;
         while (m_lCurPos + offset < m_lLastBytePos - 3 && !IS_CODE(&m_pBuf[m_lCurPos + offset], 0xb6))
             offset++;
         if (m_lCurPos + offset >= m_lLastBytePos - 5)
@@ -1388,7 +1387,7 @@ Status Mpeg4FrameConstructor::GetFrame(SplMediaData *frame)
 Status H261FrameConstructor::GetFrame(SplMediaData *frame)
 {
     Status umcRes;
-    Ipp8u *buf = m_pBuf;
+    uint8_t *buf = m_pBuf;
     bool bFrameFound = false;
 
     while (!m_bSeqSCFound)
@@ -1447,7 +1446,7 @@ Status H261FrameConstructor::GetFrame(SplMediaData *frame)
 Status H263FrameConstructor::GetFrame(SplMediaData *frame)
 {
     Status umcRes;
-    Ipp8u *buf = m_pBuf;
+    uint8_t *buf = m_pBuf;
     bool bFrameFound = false;
 
     while (!m_bSeqSCFound)
@@ -1590,8 +1589,8 @@ Status TimeStampedAudioFrameConstructor::GetFrame(SplMediaData *frame)
     return UMC_OK;
 }
 
-BufferedAudioFrameConstructor::BufferedAudioFrameConstructor(Ipp64f dToBuf)
-: AudioFrameConstructor(), m_dToBuf(IPP_MAX(0.0, dToBuf))
+BufferedAudioFrameConstructor::BufferedAudioFrameConstructor(double dToBuf)
+: AudioFrameConstructor(), m_dToBuf(MFX_MAX(0.0, dToBuf))
 {
 }
 
@@ -1691,14 +1690,14 @@ Status PureAudioFrameConstructor::GetFrame(SplMediaData *frame)
 Status AudioFrameConstructor::ParseHeader()
 {
     AudioStreamInfo *pASI = (AudioStreamInfo *)m_pInfo->m_pStreamInfo;
-    Ipp32s curPos = m_lCurPos;
-    Ipp8u *buf = m_pBuf;
+    int32_t curPos = m_lCurPos;
+    uint8_t *buf = m_pBuf;
 
     if (TRACK_MPEGA == m_pInfo->m_Type)
     {
-        Ipp32u header = 0, nextHeader;
-        Ipp32s id = 0, layer = 0, bitrate = 0, freq = 0, mode = 0, padding = 0, protection = 0;
-        Ipp32s mpg25 = 0;
+        uint32_t header = 0, nextHeader;
+        int32_t id = 0, layer = 0, bitrate = 0, freq = 0, mode = 0, padding = 0, protection = 0;
+        int32_t mpg25 = 0;
         bool bFound = false;
         bool bSyncWordFound = false;
 
@@ -1734,7 +1733,7 @@ Status AudioFrameConstructor::ParseHeader()
 
             bSyncWordFound = true;
 
-            Ipp32s size = 0;
+            int32_t size = 0;
 
             // evaluate frame size
             if (layer == 3)
@@ -1791,7 +1790,7 @@ Status AudioFrameConstructor::ParseHeader()
     else if (TRACK_AC3 == m_pInfo->m_Type)
     {
         bool bFound = false;
-        Ipp32s sample_rate_code = 0, frame_size_code = 0;
+        int32_t sample_rate_code = 0, frame_size_code = 0;
         for (; curPos < m_lLastBytePos - 4; curPos++)
         {
             if (buf[curPos + 0] != 0x0b || buf[curPos + 1] != 0x77)
@@ -1825,14 +1824,14 @@ Status AudioFrameConstructor::ParseHeader()
     }
     else if (TRACK_AAC == m_pInfo->m_Type && AAC_MPEG4_STREAM == pASI->stream_type)
     {
-        Ipp32u pos = 0;
-        Ipp8u *ptr = (Ipp8u *)m_pInfo->m_pDecSpecInfo->GetDataPointer();
+        uint32_t pos = 0;
+        uint8_t *ptr = (uint8_t *)m_pInfo->m_pDecSpecInfo->GetDataPointer();
         size_t len = m_pInfo->m_pDecSpecInfo->GetDataSize();
 
         if (len < 2)
             return UMC_OK;
-        //Ipp32u audioObjectType = m_pBuf[0] >> 3;
-        Ipp32u freq_index = ((ptr[0] & 0x7) << 1) | (ptr[1] >> 7);
+        //uint32_t audioObjectType = m_pBuf[0] >> 3;
+        uint32_t freq_index = ((ptr[0] & 0x7) << 1) | (ptr[1] >> 7);
         if (0x0f == freq_index)
         {
             if (len < 5)
@@ -1844,13 +1843,13 @@ Status AudioFrameConstructor::ParseHeader()
         else
             pASI->sample_frequency = AACFrequency[freq_index];
 
-        Ipp32u chan = (ptr[pos + 1] >> 3) & 0x0f;
+        uint32_t chan = (ptr[pos + 1] >> 3) & 0x0f;
         pASI->channels = AACChannels[chan];
         pASI->bitPerSample = 16;
     }
     else if (TRACK_AAC == m_pInfo->m_Type && AAC_AUDIO == pASI->stream_type)
     {
-        Ipp32s freq = 0, protection = 0, chan_conf = 0, length = 0;
+        int32_t freq = 0, protection = 0, chan_conf = 0, length = 0;
         bool bFound = false;
         bool bSyncWordFound = false;
 
@@ -1860,14 +1859,14 @@ Status AudioFrameConstructor::ParseHeader()
             if (buf[curPos] != 0xff || (buf[curPos + 1] & 0xf6) != 0xf0)
                 continue;
 
-            Ipp32u uint = (buf[curPos + 0] << 24) | (buf[curPos + 1] << 16) |
+            uint32_t uint = (buf[curPos + 0] << 24) | (buf[curPos + 1] << 16) |
                           (buf[curPos + 2] <<  8) | (buf[curPos + 3]);
 
             protection = (uint >> 16) & 0x01;
             freq = (uint >> 10) & 0x0f;
             chan_conf = (uint >> 6) & 0x07;
             length = ((buf[curPos + 3] & 0x03) << 11) + (buf[curPos + 4] << 3) + ((buf[curPos + 5] >> 5) & 0x07);
-            Ipp32s max_length = 768 * AACChannels[chan_conf] + 7 + 2 * (protection == 0);
+            int32_t max_length = 768 * AACChannels[chan_conf] + 7 + 2 * (protection == 0);
 
             // check forbidden values
             if (freq > 12 || chan_conf > 7 || 0 == length || length > max_length)
@@ -1878,7 +1877,7 @@ Status AudioFrameConstructor::ParseHeader()
             if (curPos + length + 3 >= m_lLastBytePos)
                 return UMC_ERR_NOT_ENOUGH_DATA;
 
-            Ipp32u next_uint =
+            uint32_t next_uint =
                 (buf[curPos + length + 0] << 24) | (buf[curPos + length + 1] << 16) |
                 (buf[curPos + length + 2] <<  8) | (buf[curPos + length + 3]);
 
@@ -1909,9 +1908,9 @@ Status AudioFrameConstructor::ParseHeader()
     }
     else if (TRACK_DTS == m_pInfo->m_Type)
     {
-        Ipp8u byte0 = buf[curPos + 0], byte1 = buf[curPos + 1], byte2 = buf[curPos + 2];
-        Ipp8u byte3 = buf[curPos + 3], byte4 = buf[curPos + 4], byte5 = buf[curPos + 5];
-        Ipp32s freq_code = 0, chan_code = 0, rate_code = 0;
+        uint8_t byte0 = buf[curPos + 0], byte1 = buf[curPos + 1], byte2 = buf[curPos + 2];
+        uint8_t byte3 = buf[curPos + 3], byte4 = buf[curPos + 4], byte5 = buf[curPos + 5];
+        int32_t freq_code = 0, chan_code = 0, rate_code = 0;
 
         if (0x7f == byte0 && 0xfe == byte1 && 0x80 == byte2 && 0x01 == byte3)
         { // 16-bit word in BE
@@ -1979,7 +1978,7 @@ Status Mpeg2TrackInfo::CopyFrom(Mpeg2TrackInfo *pSrc)
         size_t size = pSrc->m_pDecSpecInfo->GetDataSize();
         UMC_NEW(m_pDecSpecInfo, MediaData);
         UMC_CALL(m_pDecSpecInfo->Alloc(size));
-        MFX_INTERNAL_CPY((Ipp8u *)m_pDecSpecInfo->GetDataPointer(), (Ipp8u *)pSrc->m_pDecSpecInfo->GetDataPointer(), (int)size);
+        MFX_INTERNAL_CPY((uint8_t *)m_pDecSpecInfo->GetDataPointer(), (uint8_t *)pSrc->m_pDecSpecInfo->GetDataPointer(), (int)size);
         UMC_CALL(m_pDecSpecInfo->SetDataSize(size));
     }
 
@@ -2053,7 +2052,7 @@ Status Mpeg2TrackInfo::Alloc(void)
     return UMC_OK;
 }
 
-void Mpeg2TrackInfo::SetDuration(Ipp64f dDuration)
+void Mpeg2TrackInfo::SetDuration(double dDuration)
 {
     if (m_pStreamInfo)
     {
@@ -2070,36 +2069,36 @@ SplMediaData::SplMediaData()
     m_uiFlags = 0;
 }
 
-void SplMediaData::SetAbsPos(Ipp64u uiAbsPos)
+void SplMediaData::SetAbsPos(unsigned long long uiAbsPos)
 {
     m_uiAbsPos = uiAbsPos;
 }
 
-Ipp64u SplMediaData::GetAbsPos(void) const
+unsigned long long SplMediaData::GetAbsPos(void) const
 {
     return m_uiAbsPos;
 }
 
-bool SplMediaData::SetFlag(Ipp32u mask, bool flag)
+bool SplMediaData::SetFlag(uint32_t mask, bool flag)
 {
     bool previousFlag = (m_uiFlags & mask) ? true : false;
     m_uiFlags = flag ? (m_uiFlags | mask) : (m_uiFlags & ~mask);
     return previousFlag;
 }
 
-bool SplMediaData::GetFlag(Ipp32u mask) const
+bool SplMediaData::GetFlag(uint32_t mask) const
 {
     return (m_uiFlags & mask) ? true : false;
 }
 
-Ipp32u SplMediaData::SetFlags(Ipp32u flags)
+uint32_t SplMediaData::SetFlags(uint32_t flags)
 {
-    Ipp32u oldFlags = m_uiFlags;
+    uint32_t oldFlags = m_uiFlags;
     m_uiFlags = flags;
     return oldFlags;
 }
 
-Ipp32u SplMediaData::GetFlags() const
+uint32_t SplMediaData::GetFlags() const
 {
     return m_uiFlags;
 }
@@ -2119,10 +2118,10 @@ void FCSample::Reset(void)
     iBufOffset = 0;
 }
 
-void FCSample::CopyFrom(MediaData &data, Ipp32s iOffset)
+void FCSample::CopyFrom(MediaData &data, int32_t iOffset)
 {
     data.GetTime(dPTS, dDTS);
-    uiSize = (Ipp32u)data.GetDataSize();
+    uiSize = (uint32_t)data.GetDataSize();
     iBufOffset = iOffset;
     uiFlags = 0;
     SetFrameType(data.GetFrameType());
@@ -2133,7 +2132,7 @@ void FCSample::CopyFrom(MediaData &data, Ipp32s iOffset)
     }
 }
 
-void FCSample::CopyTo(MediaData &data, Ipp8u *pBufBase)
+void FCSample::CopyTo(MediaData &data, uint8_t *pBufBase)
 {
     data.SetBufferPointer(pBufBase + iBufOffset, uiSize);
     data.SetDataSize(uiSize);
@@ -2146,38 +2145,38 @@ void FCSample::CopyTo(MediaData &data, Ipp8u *pBufBase)
     }
 }
 
-bool FCSample::IsHit(Ipp32s iPos)
+bool FCSample::IsHit(int32_t iPos)
 {
-    return (iBufOffset <= iPos && iPos < iBufOffset + (Ipp32s)uiSize);
+    return (iBufOffset <= iPos && iPos < iBufOffset + (int32_t)uiSize);
 }
 
-Ipp32u FCSample::SetFrameType(Ipp32u uiType)
+uint32_t FCSample::SetFrameType(uint32_t uiType)
 {
     FrameType previousType = (FrameType)(uiFlags & 0x07);
     uiFlags = (uiFlags & ~0x07) | uiType;
     return previousType;
 }
 
-Ipp32u FCSample::GetFrameType(void)
+uint32_t FCSample::GetFrameType(void)
 {
     return (FrameType)(uiFlags & 0x07);
 }
 
-bool FCSample::SetFlag(Ipp32u uiFlagMask, bool bNewFlag)
+bool FCSample::SetFlag(uint32_t uiFlagMask, bool bNewFlag)
 {
     bool previousFlag = (uiFlags & uiFlagMask) ? true : false;
     uiFlags = bNewFlag ? (uiFlags | uiFlagMask) : (uiFlags & ~uiFlagMask);
     return previousFlag;
 }
 
-bool FCSample::GetFlag(Ipp32u uiFlagMask)
+bool FCSample::GetFlag(uint32_t uiFlagMask)
 {
     return (uiFlags & uiFlagMask) ? true : false;
 }
 
-void FCSample::MovePointer(Ipp32u off)
+void FCSample::MovePointer(uint32_t off)
 {
-    off = IPP_MIN(off, uiSize);
+    off = MFX_MIN(off, uiSize);
     uiSize -= off;
     iBufOffset += off;
 }
@@ -2236,7 +2235,7 @@ Status ReorderQueue::Add(FCSample &rSample)
     return umcRes;
 }
 
-Status ReorderQueue::Add(FCSample &rSample, Ipp32s idx)
+Status ReorderQueue::Add(FCSample &rSample, int32_t idx)
 {
     Status umcRes;
     InnerListElement innerElem(rSample);
@@ -2264,7 +2263,7 @@ Status ReorderQueue::Remove(void)
     return umcRes;
 }
 
-Status ReorderQueue::Remove(Ipp32s idx)
+Status ReorderQueue::Remove(int32_t idx)
 {
     Status umcRes = LinkedList<InnerListElement>::Remove(idx);
     if (UMC_OK == umcRes)
@@ -2318,7 +2317,7 @@ Status ReorderQueue::Prev(FCSample &rSample)
     return UMC_OK;
 }
 
-Status ReorderQueue::Get(FCSample &rSample, Ipp32s idx)
+Status ReorderQueue::Get(FCSample &rSample, int32_t idx)
 {
     LinkedList<InnerListElement>::ListElement *pElem = LinkedList<InnerListElement>::GetElement(idx);
     if (!pElem)
@@ -2387,12 +2386,12 @@ BitstreamReader::BitstreamReader(void)
     m_iReadyBits = 0;
 }
 
-BitstreamReader::BitstreamReader(Ipp8u *pStream, Ipp32u len)
+BitstreamReader::BitstreamReader(uint8_t *pStream, uint32_t len)
 {
     Init(pStream, len);
 }
 
-void BitstreamReader::Init(Ipp8u *pStream, Ipp32u len)
+void BitstreamReader::Init(uint8_t *pStream, uint32_t len)
 {
     m_pSource = pStream;
     m_pEnd = pStream + len;
@@ -2400,7 +2399,7 @@ void BitstreamReader::Init(Ipp8u *pStream, Ipp32u len)
     m_iReadyBits = 0;
 }
 
-Ipp32u BitstreamReader::CopyBit(void)
+uint32_t BitstreamReader::CopyBit(void)
 {
     if (0 == m_iReadyBits)
         Refresh();
@@ -2408,7 +2407,7 @@ Ipp32u BitstreamReader::CopyBit(void)
     return ((m_nBits >> (m_iReadyBits - 1)) & 1);
 }
 
-Ipp32u BitstreamReader::GetBit(void)
+uint32_t BitstreamReader::GetBit(void)
 {
     if (0 == m_iReadyBits)
         Refresh();
@@ -2417,7 +2416,7 @@ Ipp32u BitstreamReader::GetBit(void)
     return ((m_nBits >> m_iReadyBits) & 1);
 }
 
-Ipp32u BitstreamReader::PeekBits(Ipp32s iNum)
+uint32_t BitstreamReader::PeekBits(int32_t iNum)
 {
     if (iNum <= 24)
     {
@@ -2432,7 +2431,7 @@ Ipp32u BitstreamReader::PeekBits(Ipp32s iNum)
     }
 }
 
-Ipp32u BitstreamReader::GetBits(Ipp32s iNum)
+uint32_t BitstreamReader::GetBits(int32_t iNum)
 {
     if (iNum <= 24)
     {
@@ -2448,7 +2447,7 @@ Ipp32u BitstreamReader::GetBits(Ipp32s iNum)
     }
 }
 
-void BitstreamReader::SkipBits(Ipp32s iNum)
+void BitstreamReader::SkipBits(int32_t iNum)
 {
     if (iNum <= m_iReadyBits)
     {
@@ -2464,14 +2463,14 @@ void BitstreamReader::SkipBits(Ipp32s iNum)
     }
 }
 
-Ipp8u *BitstreamReader::Stream(void)
+uint8_t *BitstreamReader::Stream(void)
 {
     return m_pSource - ((m_iReadyBits + 7) >> 3);
 }
 
-Ipp32u BitstreamReader::GetUE(void)
+uint32_t BitstreamReader::GetUE(void)
 {
-    Ipp32s iZeros;
+    int32_t iZeros;
 
     // count leading zeros
     iZeros = 0;
@@ -2485,10 +2484,10 @@ Ipp32u BitstreamReader::GetUE(void)
     return (GetBits(iZeros + 1) - 1);
 }
 
-Ipp32s BitstreamReader::GetSE(void)
+int32_t BitstreamReader::GetSE(void)
 {
-    Ipp32s iZeros;
-    Ipp32s iValue;
+    int32_t iZeros;
+    int32_t iValue;
 
     // count leading zeros
     iZeros = 0;
@@ -2518,12 +2517,12 @@ H264BitstreamReader::H264BitstreamReader(void)
     m_iZeroes = 0;
 }
 
-H264BitstreamReader::H264BitstreamReader(Ipp8u *pStream, Ipp32u len)
+H264BitstreamReader::H264BitstreamReader(uint8_t *pStream, uint32_t len)
 {
     Init(pStream, len);
 }
 
-void H264BitstreamReader::Init(Ipp8u *pStream, Ipp32u len)
+void H264BitstreamReader::Init(uint8_t *pStream, uint32_t len)
 {
     m_iZeroes = 0;
     BitstreamReader::Init(pStream, len);
@@ -2555,7 +2554,7 @@ void H264BitstreamReader::Refresh(void)
     }
 }
 
-Ipp32u ConvertTrackType(TrackType type)
+uint32_t ConvertTrackType(TrackType type)
 {
     switch (type)
     {
@@ -2583,7 +2582,7 @@ Ipp32u ConvertTrackType(TrackType type)
     }
 }
 
-TrackType ConvertAudioType(Ipp32u type)
+TrackType ConvertAudioType(uint32_t type)
 {
     switch (type)
     {
@@ -2606,7 +2605,7 @@ TrackType ConvertAudioType(Ipp32u type)
     }
 }
 
-TrackType ConvertVideoType(Ipp32u type)
+TrackType ConvertVideoType(uint32_t type)
 {
     switch (type)
     {
@@ -2632,7 +2631,7 @@ const FrameType H264ParsingCore::SliceType[10] = {
     P_PICTURE, B_PICTURE, I_PICTURE, P_PICTURE, I_PICTURE
 };
 
-const Ipp16u H264ParsingCore::AspectRatio[17][2] = {
+const uint16_t H264ParsingCore::AspectRatio[17][2] = {
     { 1,  1}, { 1,  1}, {12, 11}, {10, 11}, {16, 11}, {40, 33}, { 24, 11},
     {20, 11}, {32, 11}, {80, 33}, {18, 11}, {15, 11}, {64, 33}, {160, 99},
     { 4,  3}, { 3,  2}, { 2,  1}
@@ -2656,7 +2655,7 @@ H264ParsingCore::H264ParsingCore() :
 
 void H264ParsingCore::Reset()
 {
-    Ipp32u i;
+    uint32_t i;
     for (i = 0; i < MaxNumSps; i++)
         m_sps[i].Reset();
     for (i = 0; i < MaxNumPps; i++)
@@ -2694,38 +2693,38 @@ void H264ParsingCore::GetInfo(VideoStreamInfo& info)
 }
 
 static
-Ipp8u FindNalu(MediaData& data)
+uint8_t FindNalu(MediaData& data)
 {
-    Ipp8u res = 0xff;
-    const Ipp8u* beg = (Ipp8u *)data.GetDataPointer();
-    const Ipp8u* end = beg + data.GetDataSize();
-    const Ipp8u* ptr;
+    uint8_t res = 0xff;
+    const uint8_t* beg = (uint8_t *)data.GetDataPointer();
+    const uint8_t* end = beg + data.GetDataSize();
+    const uint8_t* ptr;
     for (ptr = beg; ptr + 3 < end; ++ptr)
     {
         if (ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 1)
         {
-            res = (Ipp8u) (ptr[3] & 0x1f);
+            res = (uint8_t) (ptr[3] & 0x1f);
             if (ptr > beg && *(ptr - 1) == 0)
                 --ptr;
             break;
         }
     }
 
-    data.MoveDataPointer((Ipp32s)(ptr - beg));
+    data.MoveDataPointer((int32_t)(ptr - beg));
     return res;
 }
 
 static
-Ipp8u* GetDP(MediaData& data)
+uint8_t* GetDP(MediaData& data)
 {
-    return (Ipp8u *)data.GetDataPointer();
+    return (uint8_t *)data.GetDataPointer();
 }
 
 static
-Ipp32u GetDPDist(MediaData& l, MediaData& r)
+uint32_t GetDPDist(MediaData& l, MediaData& r)
 {
-    Ipp8u *pBegin = GetDP(r);
-    return (Ipp32u)(pBegin - GetDP(l));
+    uint8_t *pBegin = GetDP(r);
+    return (uint32_t)(pBegin - GetDP(l));
 }
 
 H264ParsingCore::Result H264ParsingCore::Sync(MediaData& data, bool eos)
@@ -2736,7 +2735,7 @@ H264ParsingCore::Result H264ParsingCore::Sync(MediaData& data, bool eos)
     m_type = NONE_PICTURE;
     data.SetFrameType(m_type);
 
-    for (Ipp8u naluType = FindNalu(data); naluType != 0xff; naluType = FindNalu(data))
+    for (uint8_t naluType = FindNalu(data); naluType != 0xff; naluType = FindNalu(data))
     {
         switch (naluType)
         {
@@ -2749,7 +2748,7 @@ H264ParsingCore::Result H264ParsingCore::Sync(MediaData& data, bool eos)
                 if (FindNalu(next) == 0xff)
                     return ErrNeedData;
 
-                Ipp32u naluSize = GetDPDist(data, next);
+                uint32_t naluSize = GetDPDist(data, next);
                 Status umcRes = (naluType == NALU_PPS) ?
                     ParsePps(GetDP(data), naluSize + 4) : ParseSps(GetDP(data), naluSize + 4);
 
@@ -2772,7 +2771,7 @@ H264ParsingCore::Result H264ParsingCore::Sync(MediaData& data, bool eos)
                 size_t dataSize = data.GetDataSize();
                 if (dataSize < BytesForSliceReq && !eos)
                     return ErrNeedData;
-                Status umcRes = ParseSh(GetDP(data), (Ipp32s)dataSize);
+                Status umcRes = ParseSh(GetDP(data), (int32_t)dataSize);
                 if (umcRes == UMC_ERR_NOT_ENOUGH_DATA)
                 {
                     MediaData next = data;
@@ -2897,7 +2896,7 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
     data.MoveDataPointer(m_skip);
     m_skip = 0;
 
-    for (Ipp8u naluType = FindNalu(data); naluType != 0xff; naluType = FindNalu(data))
+    for (uint8_t naluType = FindNalu(data); naluType != 0xff; naluType = FindNalu(data))
     {
         switch (naluType)
         {
@@ -2910,7 +2909,7 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
                 if (FindNalu(next) == 0xff)
                     return ErrNeedData;
 
-                Ipp32u naluSize = GetDPDist(data, next);
+                uint32_t naluSize = GetDPDist(data, next);
                 Status umcRes = (naluType == NALU_PPS) ?
                     ParsePps(GetDP(data), naluSize + 4) : ParseSps(GetDP(data), naluSize + 4);
                 if (umcRes != UMC_OK)
@@ -2931,7 +2930,7 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
                 if (FindNalu(next) == 0xff)
                     return ErrNeedData;
 
-                Ipp32u naluSize = GetDPDist(data, next);
+                uint32_t naluSize = GetDPDist(data, next);
                 data.MoveDataPointer(naluSize);
             }
             break;
@@ -2942,7 +2941,7 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
                 if (dataSize < BytesForSliceReq && !eos)
                     return ErrNeedData;
 
-                Status umcRes = ParseSh(GetDP(data), (Ipp32s)dataSize);
+                Status umcRes = ParseSh(GetDP(data), (int32_t)dataSize);
                 if (umcRes == UMC_ERR_NOT_ENOUGH_DATA)
                 {
                     MediaData next = data;
@@ -2978,7 +2977,7 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
                     }
                     else
                     {
-                        m_type = IPP_MAX(m_type, SliceType[m_last.slice_type]);
+                        m_type = MFX_MAX(m_type, SliceType[m_last.slice_type]);
                         if (m_last.nal_ref_idc == 0)
                             m_prev.nal_ref_idc = 0;
                         if (m_last.idr_flag == 1)
@@ -2998,10 +2997,10 @@ H264ParsingCore::Result H264ParsingCore::Construct(MediaData& data, bool eos)
     return ErrNeedData;
 }
 
-Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
+Status H264ParsingCore::ParseSps(uint8_t *buf, int32_t len)
 {
     Sps sps;
-    Ipp32s i, j;
+    int32_t i, j;
     H264BitstreamReader bs(buf, len);
 
     try
@@ -3009,11 +3008,11 @@ Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
         while (0 == bs.GetBits(8)); // skip all zeroes and one
         bs.GetBits(8); // skip nal_ref_idc and nal_unit_type
 
-        sps.profile_idc = (Ipp8u)bs.GetBits(8);
+        sps.profile_idc = (uint8_t)bs.GetBits(8);
         bs.GetBits(8); // skip flags
-        sps.level_idc = (Ipp8u)bs.GetBits(8);
+        sps.level_idc = (uint8_t)bs.GetBits(8);
 
-        Ipp8u idSps = (Ipp8u)bs.GetUE();
+        uint8_t idSps = (uint8_t)bs.GetUE();
         if (idSps >= MaxNumSps)
             return UMC_ERR_INVALID_STREAM;
 
@@ -3021,17 +3020,17 @@ Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
             83 == sps.profile_idc || 86 == sps.profile_idc ||
             128 == sps.profile_idc || 118 == sps.profile_idc)
         {
-            sps.chroma_format_idc = (Ipp8u)bs.GetUE();
+            sps.chroma_format_idc = (uint8_t)bs.GetUE();
             if (sps.chroma_format_idc > 3)
                 return UMC_ERR_INVALID_STREAM;
             if (sps.chroma_format_idc == 3)
                 bs.GetBit(); // residue_transform_flag
 
-            Ipp8u value = (Ipp8u)bs.GetUE(); // bit_depth_luma_minus8
+            uint8_t value = (uint8_t)bs.GetUE(); // bit_depth_luma_minus8
             if (value > 4)
                 return UMC_ERR_INVALID_STREAM;
 
-            value = (Ipp8u)bs.GetUE(); // bit_depth_chroma_minus8
+            value = (uint8_t)bs.GetUE(); // bit_depth_chroma_minus8
             if (value > 4)
                 return UMC_ERR_INVALID_STREAM;
 
@@ -3043,14 +3042,14 @@ Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
                     if (bs.GetBit()) // presented_flag[i]
                     {
                         // pass scaling_lists
-                        Ipp32u lastScale = 8;
-                        Ipp32u nextScale = 8;
-                        Ipp32s maxnum = i < 6 ? 16 : 64;
+                        uint32_t lastScale = 8;
+                        uint32_t nextScale = 8;
+                        int32_t maxnum = i < 6 ? 16 : 64;
                         for (j = 0; j < maxnum; j++)
                         {
                             if (0 != nextScale)
                             {
-                                Ipp32s delta_scale = bs.GetSE();
+                                int32_t delta_scale = bs.GetSE();
                                 if (delta_scale < -128 || delta_scale > 127)
                                     return UMC_ERR_INVALID_STREAM;
 
@@ -3064,23 +3063,23 @@ Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
             }
         }
 
-        sps.log2_max_frame_num = (Ipp8u) (bs.GetUE() + 4);
-        sps.pic_order_cnt_type = (Ipp8u) bs.GetUE();
+        sps.log2_max_frame_num = (uint8_t) (bs.GetUE() + 4);
+        sps.pic_order_cnt_type = (uint8_t) bs.GetUE();
 
         if (sps.pic_order_cnt_type == 0)
         {
-            sps.log2_max_pic_order_cnt_lsb = (Ipp8u) (bs.GetUE() + 4);
+            sps.log2_max_pic_order_cnt_lsb = (uint8_t) (bs.GetUE() + 4);
             if (sps.log2_max_pic_order_cnt_lsb < 4 || sps.log2_max_pic_order_cnt_lsb > 16)
                 return UMC_ERR_INVALID_STREAM;
         }
         else if (sps.pic_order_cnt_type == 1)
         {
-            sps.delta_pic_order_always_zero_flag = (Ipp8u)bs.GetBit();
+            sps.delta_pic_order_always_zero_flag = (uint8_t)bs.GetBit();
             bs.GetSE(); // offset_for_non_ref_pic
             bs.GetSE(); // offset_for_top_to_bottom_field
-            Ipp32u num_ref_frames_in_pic_order_cnt_cycle = bs.GetUE();
+            uint32_t num_ref_frames_in_pic_order_cnt_cycle = bs.GetUE();
 
-            for (i = 0; i < (Ipp32s)num_ref_frames_in_pic_order_cnt_cycle; i++)
+            for (i = 0; i < (int32_t)num_ref_frames_in_pic_order_cnt_cycle; i++)
                 bs.GetSE(); // offset_for_ref_frame[i]
         }
         else if (sps.pic_order_cnt_type > 2)
@@ -3088,30 +3087,30 @@ Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
 
         bs.GetUE(); // num_ref_frames
         bs.GetBit(); // gaps_in_frame_num_value_allowed_flag
-        sps.frame_width_in_mbs = (Ipp8u) (bs.GetUE() + 1);
-        sps.frame_height_in_mbs = (Ipp8u) (bs.GetUE() + 1);
-        sps.frame_mbs_only_flag = (Ipp8u)bs.GetBit();
+        sps.frame_width_in_mbs = (uint8_t) (bs.GetUE() + 1);
+        sps.frame_height_in_mbs = (uint8_t) (bs.GetUE() + 1);
+        sps.frame_mbs_only_flag = (uint8_t)bs.GetBit();
         if (sps.frame_mbs_only_flag == 0)
             bs.GetBit(); // mb_adaptive_frame_field_flag
 
         bs.GetBit(); // direct_8x8_inference_flag
         if (bs.GetBit()) // frame_cropping_flag
         {
-            sps.frame_cropping_rect_left_offset = (Ipp8u)bs.GetUE();
-            sps.frame_cropping_rect_right_offset = (Ipp8u)bs.GetUE();
-            sps.frame_cropping_rect_top_offset = (Ipp8u)bs.GetUE();
-            sps.frame_cropping_rect_bottom_offset = (Ipp8u)bs.GetUE();
+            sps.frame_cropping_rect_left_offset = (uint8_t)bs.GetUE();
+            sps.frame_cropping_rect_right_offset = (uint8_t)bs.GetUE();
+            sps.frame_cropping_rect_top_offset = (uint8_t)bs.GetUE();
+            sps.frame_cropping_rect_bottom_offset = (uint8_t)bs.GetUE();
         }
 
         if (bs.GetBit()) // vui_parameters_present_flag
         {
             if (bs.GetBit()) // aspect_ratio_present_flag
             {
-                Ipp8u aspect_ratio_idc = (Ipp8u)bs.GetBits(8);
+                uint8_t aspect_ratio_idc = (uint8_t)bs.GetBits(8);
                 if (aspect_ratio_idc == 255)
                 { // EXTENDED_SAR
-                    sps.sar_width = (Ipp16u)bs.GetBits(16);
-                    sps.sar_height = (Ipp16u)bs.GetBits(16);
+                    sps.sar_width = (uint16_t)bs.GetBits(16);
+                    sps.sar_height = (uint16_t)bs.GetBits(16);
                 }
                 else if (aspect_ratio_idc < 17)
                 {
@@ -3169,7 +3168,7 @@ Status H264ParsingCore::ParseSps(Ipp8u *buf, Ipp32s len)
     return UMC_OK;
 }
 
-Status H264ParsingCore::ParsePps(Ipp8u *buf, Ipp32s len)
+Status H264ParsingCore::ParsePps(uint8_t *buf, int32_t len)
 {
     Pps pps;
     H264BitstreamReader bs(buf, len);
@@ -3179,17 +3178,17 @@ Status H264ParsingCore::ParsePps(Ipp8u *buf, Ipp32s len)
         while (0 == bs.GetBits(8)); // skip all zeroes and one
         bs.GetBits(8); // skip nal_ref_idc and nal_unit_type
 
-        Ipp32u idPps = bs.GetUE();
+        uint32_t idPps = bs.GetUE();
         if (idPps >= MaxNumPps)
             return UMC_ERR_INVALID_STREAM;
 
-        Ipp32u idSps = bs.GetUE();
+        uint32_t idSps = bs.GetUE();
         if (idSps >= MaxNumSps || !m_sps[idSps].IsReady())
             return UMC_ERR_INVALID_STREAM;
         pps.SetSps(m_sps[idSps]);
 
         bs.GetBit(); // entropy_coding_mode
-        pps.pic_order_present_flag = (Ipp8u)bs.GetBit();
+        pps.pic_order_present_flag = (uint8_t)bs.GetBit();
 
         // if no error validate PPS
         pps.SetReady(true);
@@ -3203,7 +3202,7 @@ Status H264ParsingCore::ParsePps(Ipp8u *buf, Ipp32s len)
     return UMC_OK;
 }
 
-Status H264ParsingCore::ParseSh(Ipp8u *buf, Ipp32s len)
+Status H264ParsingCore::ParseSh(uint8_t *buf, int32_t len)
 {
     Slice sh;
     H264BitstreamReader bs(buf, len);
@@ -3212,15 +3211,15 @@ Status H264ParsingCore::ParseSh(Ipp8u *buf, Ipp32s len)
     {
         while (0 == bs.GetBits(8)); // skip all zeros and one
         bs.GetBit(); // skip forbidden zero bit
-        sh.nal_ref_idc = (Ipp8u)bs.GetBits(2);
+        sh.nal_ref_idc = (uint8_t)bs.GetBits(2);
         sh.idr_flag = (5 == bs.GetBits(5));
 
         bs.GetUE(); // first_mb_in_slice
-        sh.slice_type = (Ipp8u)bs.GetUE();
+        sh.slice_type = (uint8_t)bs.GetUE();
         if (sh.slice_type > 9)
             return UMC_ERR_INVALID_STREAM;
 
-        Ipp32u idPps = bs.GetUE();
+        uint32_t idPps = bs.GetUE();
         if (idPps >= MaxNumPps || !m_pps[idPps].IsReady())
             return UMC_ERR_INVALID_STREAM;
         sh.SetPps(m_pps[idPps]);
@@ -3228,9 +3227,9 @@ Status H264ParsingCore::ParseSh(Ipp8u *buf, Ipp32s len)
         sh.frame_num = bs.GetBits(sh.GetPps().GetSps().log2_max_frame_num);
         if (sh.GetPps().GetSps().frame_mbs_only_flag == 0)
         {
-            sh.field_pic_flag = (Ipp8u)bs.GetBit();
+            sh.field_pic_flag = (uint8_t)bs.GetBit();
             if (sh.field_pic_flag)
-                sh.bottom_field_flag = (Ipp8u)bs.GetBit();
+                sh.bottom_field_flag = (uint8_t)bs.GetBit();
         }
 
         if (sh.idr_flag)
@@ -3335,25 +3334,25 @@ Status H264FrameConstructor::SoftReset()
 }
 
 static
-Ipp8u* Find001(Ipp8u* beg, Ipp8u* end)
+uint8_t* Find001(uint8_t* beg, uint8_t* end)
 {
-    for (Ipp8u* ptr = beg; ptr + 3 < end; ++ptr)
+    for (uint8_t* ptr = beg; ptr + 3 < end; ++ptr)
         if (ptr[0] == 0 && ptr[1] == 0 && ptr[2] == 1)
             return ptr;
     return end;
 }
 
 static
-Status PopulateDecSpecInfoH264(Mpeg2TrackInfo& info, Ipp8u* beg, Ipp8u* end)
+Status PopulateDecSpecInfoH264(Mpeg2TrackInfo& info, uint8_t* beg, uint8_t* end)
 {
     // info already exists
     if (info.m_pDecSpecInfo)
         return UMC_ERR_FAILED;
 
-    Ipp8u* pStart = 0;
-    Ipp8u* pEnd = 0;
+    uint8_t* pStart = 0;
+    uint8_t* pEnd = 0;
 
-    Ipp8u* naluBeg = Find001(beg, end);
+    uint8_t* naluBeg = Find001(beg, end);
     if (naluBeg == end)
         return UMC_ERR_NOT_ENOUGH_DATA;
 
@@ -3373,10 +3372,10 @@ Status PopulateDecSpecInfoH264(Mpeg2TrackInfo& info, Ipp8u* beg, Ipp8u* end)
 
     HeadersFoundFlag flags;
 
-    Ipp8u* naluEnd;
+    uint8_t* naluEnd;
     for (naluEnd = Find001(naluBeg + 1, end); naluEnd != end; naluEnd = Find001(naluBeg + 1, end))
     {
-        Ipp32u startCode = (naluBeg[3] & 0x1f);
+        uint32_t startCode = (naluBeg[3] & 0x1f);
 
         bool quite = false;
 
@@ -3422,13 +3421,13 @@ Status PopulateDecSpecInfoH264(Mpeg2TrackInfo& info, Ipp8u* beg, Ipp8u* end)
     size_t size = pEnd - pStart;
     info.m_pDecSpecInfo = new MediaData(size);
     info.m_pDecSpecInfo->SetDataSize(size);
-    Ipp8u* pDsi = (Ipp8u *)info.m_pDecSpecInfo->GetDataPointer();
-    MFX_INTERNAL_CPY(pDsi, pStart, (Ipp32u)size);
+    uint8_t* pDsi = (uint8_t *)info.m_pDecSpecInfo->GetDataPointer();
+    MFX_INTERNAL_CPY(pDsi, pStart, (uint32_t)size);
     return UMC_OK;
 }
 
 static
-bool IsSampleComplyWithTmPolicyH264(FrameType type, Ipp64f dRate)
+bool IsSampleComplyWithTmPolicyH264(FrameType type, double dRate)
 {
     return ((I_PICTURE == type) || (0.0 <= dRate && dRate <= 1.0));
 }
@@ -3441,7 +3440,7 @@ void H264FrameConstructor::InternBuf2MediaData(MediaData& data)
 
 void H264FrameConstructor::MediaData2InternBuf(MediaData& data)
 {
-    m_lCurPos = (Ipp32s)((Ipp8u *)data.GetDataPointer() - m_pBuf);
+    m_lCurPos = (int32_t)((uint8_t *)data.GetDataPointer() - m_pBuf);
 }
 
 Status H264FrameConstructor::GetFrame(SplMediaData *frame)
@@ -3553,14 +3552,14 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
     {
         return UMC_ERR_UNSUPPORTED;
     }
-    Ipp8u * pDataStart = m_pBuf + m_lCurPos;
-    Ipp32u  nData = m_lLastBytePos - m_lCurPos;
-    Ipp8u * pDataEnd = pDataStart + nData;
-    Ipp8u * pData;
+    uint8_t * pDataStart = m_pBuf + m_lCurPos;
+    uint32_t  nData = m_lLastBytePos - m_lCurPos;
+    uint8_t * pDataEnd = pDataStart + nData;
+    uint8_t * pData;
 
     for (pData = pDataStart + m_lParserStartPos; pData + 2 <= pDataEnd; pData++)
     {
-        Ipp16u shortCode = *(Ipp16u*)pData ;
+        uint16_t shortCode = *(uint16_t*)pData ;
 
         if(m_lNumBytesToSkip)
         {
@@ -3584,7 +3583,7 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
 
         if (JPEG_SOI == shortCode)
         {
-            m_lCurPos = (Ipp32s)(pData - m_pBuf);
+            m_lCurPos = (int32_t)(pData - m_pBuf);
             m_state = StateWaitEoi;
             m_CurFrame.iBufOffset = m_lCurPos;
             m_lParserStartPos = 0;
@@ -3599,7 +3598,7 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
             case StateWaitSoi : break;
             case StateWaitEoi :
             {
-                m_CurFrame.uiSize = (Ipp32u)(pData - pDataStart) + 2;
+                m_CurFrame.uiSize = (uint32_t)(pData - pDataStart) + 2;
                 m_CurFrame.SetFrameType(I_PICTURE);
                 m_CurFrame.CopyTo(frame[0], m_pBuf);
 
@@ -3620,7 +3619,7 @@ Status MJPEGFrameConstructor::GetFrame(SplMediaData *frame)
         case StateWaitSoi : break;
         case StateWaitMarkerLength:
         case StateWaitEoi : {
-            m_lParserStartPos = (Ipp32s)(pData - pDataStart);
+            m_lParserStartPos = (int32_t)(pData - pDataStart);
             break;
         }
     }

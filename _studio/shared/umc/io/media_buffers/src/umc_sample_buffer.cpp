@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_defs.h>
@@ -126,18 +126,18 @@ Status SampleBuffer::Init(MediaReceiverParams *init)
     }
 
     // allocate buffer
-    lMaxSampleSize = IPP_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) +
+    lMaxSampleSize = MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) +
                      ALIGN_VALUE + sizeof(SampleInfo);
-    lAllocate = lMaxSampleSize * IPP_MAX(pParams->m_numberOfFrames, 3);
+    lAllocate = lMaxSampleSize * MFX_MAX(pParams->m_numberOfFrames, 3);
     if (UMC_OK != m_pMemoryAllocator->Alloc(&m_midAllocatedBuffer, lAllocate + ALIGN_VALUE, UMC_ALLOC_PERSISTENT, 16))
         return UMC_ERR_ALLOC;
-    m_pbAllocatedBuffer = (Ipp8u *) m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
+    m_pbAllocatedBuffer = (uint8_t *) m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
     if (NULL == m_pbAllocatedBuffer)
         return UMC_ERR_ALLOC;
     m_lAllocatedBufferSize = lAllocate + ALIGN_VALUE;
 
     // align buffer
-    m_pbBuffer = align_pointer<Ipp8u *> (m_pbAllocatedBuffer, ALIGN_VALUE);
+    m_pbBuffer = align_pointer<uint8_t *> (m_pbAllocatedBuffer, ALIGN_VALUE);
     m_lBufferSize = lAllocate;
 
     m_pbFree = m_pbBuffer;
@@ -226,7 +226,7 @@ Status SampleBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
     AutomaticMutex guard(m_synchro);
     size_t lFreeSize;
     SampleInfo *pTemp;
-    Ipp8u *pb;
+    uint8_t *pb;
 
     // check END OF STREAM
     if (UMC_OK != StreamStatus)
@@ -258,7 +258,7 @@ Status SampleBuffer::UnLockInputBuffer(MediaData* in, Status StreamStatus)
         return UMC_ERR_FAILED;
 
     // get new sample info
-    pb = align_pointer<Ipp8u *> (m_pbFree + in->GetDataSize(), ALIGN_VALUE);
+    pb = align_pointer<uint8_t *> (m_pbFree + in->GetDataSize(), ALIGN_VALUE);
     pTemp = reinterpret_cast<SampleInfo *> (pb);
 
     // fill sample info

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VIDEO_BUFFER_H
@@ -26,8 +26,8 @@ public:
     // Destructor
     virtual ~VideoBufferParams(void);
 
-    Ipp32u m_lIPDistance;         // (Ipp32u) distance between I,P & B frames
-    Ipp32u m_lGOPSize;            // (Ipp32u) size of GOP
+    uint32_t m_lIPDistance;         // (uint32_t) distance between I,P & B frames
+    uint32_t m_lGOPSize;            // (uint32_t) size of GOP
 };
 
 class VideoBuffer : public SampleBuffer
@@ -57,9 +57,9 @@ protected:
     // Build help pattern
     bool BuildPattern(void);
 
-    Ipp32u m_lFrameNumber;        // (Ipp32u) number of current frame
-    Ipp32u m_lIPDistance;         // (Ipp32u) distance between I,P & P frame(s)
-    Ipp32u m_lGOPSize;            // (Ipp32u) size of GOP
+    uint32_t m_lFrameNumber;        // (uint32_t) number of current frame
+    uint32_t m_lIPDistance;         // (uint32_t) distance between I,P & P frame(s)
+    uint32_t m_lGOPSize;            // (uint32_t) size of GOP
     FrameType *m_pEncPattern;     // (FrameType *) pointer to array of encoding pattern
 
     size_t m_nImageSize;        // (size_t) size of frame(s)

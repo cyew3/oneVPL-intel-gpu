@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_SAMPLE_BUFFER_H
@@ -67,18 +67,18 @@ public:
 protected:
     vm_mutex m_synchro;                                         // (vm_mutex) synchro object
 
-    Ipp8u *m_pbAllocatedBuffer;                                 // (Ipp8u *) pointer to allocated buffer
+    uint8_t *m_pbAllocatedBuffer;                                 // (uint8_t *) pointer to allocated buffer
     MemID m_midAllocatedBuffer;                                 // (MemID) memory ID of allocated buffer
     size_t m_lAllocatedBufferSize;                              // (size_t) size of allocated buffer
 
-    Ipp8u *m_pbBuffer;                                          // (Ipp8u *) pointer to allocated buffer
+    uint8_t *m_pbBuffer;                                          // (uint8_t *) pointer to allocated buffer
     size_t m_lBufferSize;                                       // (size_t) size of using buffer
 
-    Ipp8u *m_pbFree;                                            // (Ipp8u *) pointer to free space
+    uint8_t *m_pbFree;                                            // (uint8_t *) pointer to free space
     size_t m_lFreeSize;                                         // (size_t) size of free space
     size_t m_lInputSize;                                        // (size_t) size of input data portion
 
-    Ipp8u *m_pbUsed;                                            // (Ipp8u *) pointer to used space
+    uint8_t *m_pbUsed;                                            // (uint8_t *) pointer to used space
     size_t m_lUsedSize;                                         // (size_t) size of used space
 
     SampleInfo *m_pSamples;                                     // (SampleInfo *) queue of filled sample info

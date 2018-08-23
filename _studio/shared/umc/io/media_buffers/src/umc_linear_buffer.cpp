@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_defs.h>
@@ -127,7 +127,7 @@ Status LinearBuffer::Close(void)
 Status LinearBuffer::Init(MediaReceiverParams *init)
 {
     size_t lAllocate, lMaxSampleSize;
-    Ipp32u l, lFramesNumber;
+    uint32_t l, lFramesNumber;
     MediaBufferParams *pParams = DynamicCast<MediaBufferParams> (init);
     Status umcRes;
 
@@ -158,17 +158,17 @@ Status LinearBuffer::Init(MediaReceiverParams *init)
     }
 
     // allocate buffer (one more)
-    lMaxSampleSize = IPP_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize);
-    lAllocate = lMaxSampleSize * (IPP_MAX(pParams->m_numberOfFrames, 3) + 1);
+    lMaxSampleSize = MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize);
+    lAllocate = lMaxSampleSize * (MFX_MAX(pParams->m_numberOfFrames, 3) + 1);
     if (UMC_OK != m_pMemoryAllocator->Alloc(&m_midAllocatedBuffer, lAllocate + ALIGN_VALUE, UMC_ALLOC_PERSISTENT, 16))
         return UMC_ERR_ALLOC;
-    m_pbAllocatedBuffer = (Ipp8u *) m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
+    m_pbAllocatedBuffer = (uint8_t *) m_pMemoryAllocator->Lock(m_midAllocatedBuffer);
     if (NULL == m_pbAllocatedBuffer)
         return UMC_ERR_ALLOC;
     m_lAllocatedBufferSize = lAllocate + ALIGN_VALUE;
 
     // align buffer & reserve one sample
-    m_pbBuffer = align_pointer<Ipp8u *> (m_pbAllocatedBuffer + lMaxSampleSize, ALIGN_VALUE);
+    m_pbBuffer = align_pointer<uint8_t *> (m_pbAllocatedBuffer + lMaxSampleSize, ALIGN_VALUE);
     m_lBufferSize = lAllocate - lMaxSampleSize;
 
     m_pbFree = m_pbBuffer;
@@ -177,9 +177,9 @@ Status LinearBuffer::Init(MediaReceiverParams *init)
     m_lUsedSize = 0;
 
     // allocate sample info
-    lFramesNumber = (Ipp32u)((IPP_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) *
+    lFramesNumber = (uint32_t)((MFX_MAX(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize) *
                     pParams->m_numberOfFrames) /
-                    IPP_MIN(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize));
+                    MFX_MIN(pParams->m_prefInputBufferSize, pParams->m_prefOutputBufferSize));
     for (l = 0; l < lFramesNumber; l++)
     {
         SampleInfo *pTemp;
@@ -516,7 +516,7 @@ Status LinearBuffer::UnLockOutputBuffer(MediaData* out)
             if (lToSkip < pTemp->m_lDataSize)
                 lFreeSizeInc = 0;
             else
-                lFreeSizeInc = IPP_MAX(m_pbUsed + pTemp->m_lBufferSize - m_pbBuffer, 0);
+                lFreeSizeInc = MFX_MAX(m_pbUsed + pTemp->m_lBufferSize - m_pbBuffer, 0);
         }
         // when skipped data is placed in middle of buffer
         else

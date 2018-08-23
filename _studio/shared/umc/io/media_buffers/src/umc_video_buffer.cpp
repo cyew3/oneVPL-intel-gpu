@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <umc_defs.h>
@@ -53,7 +53,7 @@ VideoBuffer::~VideoBuffer(void)
 
 bool VideoBuffer::BuildPattern(void)
 {
-    Ipp32u i;
+    uint32_t i;
 
     // error checking
     if ((0 == m_lGOPSize) || (m_lIPDistance > m_lGOPSize))
@@ -99,7 +99,7 @@ Status VideoBuffer::Init(MediaReceiverParams* init)
     // release buffer
     Close();
 
-    pParams->m_numberOfFrames = IPP_MAX(pParams->m_lIPDistance + 2, pParams->m_numberOfFrames);
+    pParams->m_numberOfFrames = MFX_MAX(pParams->m_lIPDistance + 2, pParams->m_numberOfFrames);
 
     // initalize buffer (call to parent)
     umcRes = SampleBuffer::Init(pParams);
@@ -184,7 +184,7 @@ Status VideoBuffer::LockOutputBuffer(MediaData *out)
     VideoData *pData = DynamicCast<VideoData> (out);
     AutomaticMutex guard(m_synchro);
     SampleInfo *pTemp = NULL;
-    Ipp32u lOffset;
+    uint32_t lOffset;
 
     // check error(s)
     if (NULL == pData)
@@ -254,7 +254,7 @@ Status VideoBuffer::UnLockOutputBuffer(MediaData* out)
 {
     AutomaticMutex guard(m_synchro);
     SampleInfo *pTemp = NULL;
-    Ipp32u lOffset;
+    uint32_t lOffset;
 
     // check error(s)
     if ((NULL == out) ||
