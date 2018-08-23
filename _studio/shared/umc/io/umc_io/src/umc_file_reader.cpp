@@ -5,10 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
-#include "ipps.h"
 #include "umc_defs.h"
 #include "umc_file_reader.h"
 
@@ -89,23 +88,23 @@ Status FileReader::Reset()
 // 0 < m_iPageSize
 // 0 < m_iPortion
 // m_mmap is valid
-Status FileReader::OpenView(Ipp64s iSize)
+Status FileReader::OpenView(long long iSize)
 {
-    UMC_CHECK((iSize > (Ipp64s)(m_pEODPointer - m_pDataPointer)), UMC_OK); // already ok
-    Ipp64s iPos     = m_iOff + (Ipp64s)(m_pDataPointer - m_pBuffer);
-    Ipp64s iStart   = iPos - (iPos % m_iPageSize);     // align to page
-    Ipp64s iMax     = m_iFileSize - iStart;            // maximum depends on file size
-    Ipp64u iiStart  = iStart, iiSize;                  // for vm_mmap_set_view
+    UMC_CHECK((iSize > (long long)(m_pEODPointer - m_pDataPointer)), UMC_OK); // already ok
+    long long iPos     = m_iOff + (long long)(m_pDataPointer - m_pBuffer);
+    long long iStart   = iPos - (iPos % m_iPageSize);     // align to page
+    long long iMax     = m_iFileSize - iStart;            // maximum depends on file size
+    unsigned long long iiStart  = iStart, iiSize;                  // for vm_mmap_set_view
 
     iSize += iPos - iStart;                            // increase size due align
-    iSize  = IPP_MAX(iSize, m_iPortion);               // would like to open more if iSize small
-    iSize = IPP_MIN(iSize, iMax);             // cut off end of file
-    iiSize = (Ipp64u) iSize;
-    UMC_CHECK(((iSize - (iPos - iStart)) > (Ipp64s)(m_pEODPointer - m_pDataPointer)), UMC_OK); // ok after end of file cut
+    iSize  = MFX_MAX(iSize, m_iPortion);               // would like to open more if iSize small
+    iSize = MFX_MIN(iSize, iMax);             // cut off end of file
+    iiSize = (unsigned long long) iSize;
+    UMC_CHECK(((iSize - (iPos - iStart)) > (long long)(m_pEODPointer - m_pDataPointer)), UMC_OK); // ok after end of file cut
 
-    m_pBuffer      = m_pEODPointer = m_pDataPointer =  (Ipp8u *)vm_mmap_set_view(&m_mmap, &iiStart, &iiSize);
+    m_pBuffer      = m_pEODPointer = m_pDataPointer =  (uint8_t *)vm_mmap_set_view(&m_mmap, &iiStart, &iiSize);
     m_iOff         = iPos; // nullify all if bad return
-    UMC_CHECK(((m_pDataPointer) && (iStart == (Ipp64s)iiStart) && (iSize == (Ipp64s)iiSize)), UMC_ERR_FAILED); // sanity check
+    UMC_CHECK(((m_pDataPointer) && (iStart == (long long)iiStart) && (iSize == (long long)iiSize)), UMC_ERR_FAILED); // sanity check
     m_iOff          = iStart; // right setup if ok
     m_pDataPointer += (iPos - iStart);
     m_pEODPointer  += iSize;
@@ -113,7 +112,7 @@ Status FileReader::OpenView(Ipp64s iSize)
     return UMC_OK;
 }
 
-Status FileReader::ReadData(void *data, Ipp32u *nsize)
+Status FileReader::ReadData(void *data, uint32_t *nsize)
 {
     if (((size_t)(m_pEODPointer - m_pDataPointer)) >= *nsize)
     {
@@ -128,14 +127,14 @@ Status FileReader::ReadData(void *data, Ipp32u *nsize)
     return umcRes;
 }
 
-Status FileReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
+Status FileReader::CacheData(void *data, uint32_t *nsize, int32_t how_far)
 {
     if (((size_t)(m_pEODPointer - m_pDataPointer)) >= (*nsize + how_far))
     {
         memcpy_s(data, *nsize, m_pDataPointer + how_far, *nsize);
         return UMC_OK;
     }
-    Ipp64s iSize = *nsize, iMax;
+    long long iSize = *nsize, iMax;
     Status umcRes;
 
     *nsize = 0; // return zero if nothing read
@@ -143,10 +142,10 @@ Status FileReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
         umcRes = OpenView(iSize + how_far);
     if (UMC_OK == umcRes)
     {
-        umcRes = ((iSize += how_far) <= (iMax = (Ipp64s)(m_pEODPointer - m_pDataPointer))) ? UMC_OK : UMC_ERR_END_OF_STREAM;
-        iSize  = IPP_MIN(iSize, iMax);
+        umcRes = ((iSize += how_far) <= (iMax = (long long)(m_pEODPointer - m_pDataPointer))) ? UMC_OK : UMC_ERR_END_OF_STREAM;
+        iSize  = MFX_MIN(iSize, iMax);
         iSize -= how_far;
-        *nsize = (Ipp32u)IPP_MAX(iSize, 0);
+        *nsize = (uint32_t)MFX_MAX(iSize, 0);
         if (iSize)
             memcpy_s(data, *nsize, m_pDataPointer + how_far, *nsize);
     }
@@ -154,18 +153,18 @@ Status FileReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
     return umcRes;
 }
 
-Status FileReader::MovePosition(Ipp64u npos)
+Status FileReader::MovePosition(unsigned long long npos)
 {
     UMC_CHECK(vm_mmap_is_valid(&m_mmap), UMC_ERR_NOT_INITIALIZED)
-        Ipp64s iOldPos = m_iOff + (Ipp64s)(m_pDataPointer - m_pBuffer);
-    Ipp64s iPos = iOldPos + npos;
+        long long iOldPos = m_iOff + (long long)(m_pDataPointer - m_pBuffer);
+    long long iPos = iOldPos + npos;
 
     if ( iOldPos == m_iFileSize && iPos > m_iFileSize )
         return UMC_ERR_END_OF_STREAM;
 
-    iPos = IPP_MIN(m_iFileSize, iPos); // cut max
-    iPos = IPP_MAX(0, iPos);           // cut min
-    if ((iPos < m_iOff) || (iPos > (m_iOff + (Ipp64s)(m_pEODPointer - m_pBuffer)))) // out of view
+    iPos = MFX_MIN(m_iFileSize, iPos); // cut max
+    iPos = MFX_MAX(0, iPos);           // cut min
+    if ((iPos < m_iOff) || (iPos > (m_iOff + (long long)(m_pEODPointer - m_pBuffer)))) // out of view
     {
         vm_mmap_unmap(&m_mmap);
         m_pBuffer = m_pDataPointer = m_pEODPointer = 0;
@@ -176,21 +175,21 @@ Status FileReader::MovePosition(Ipp64u npos)
     return UMC_OK;
 }
 
-Ipp64u FileReader::GetPosition()
+unsigned long long FileReader::GetPosition()
 {
-    return (Ipp64u)(m_iOff + (Ipp64s)(m_pDataPointer - m_pBuffer));
+    return (unsigned long long)(m_iOff + (long long)(m_pDataPointer - m_pBuffer));
 }
 
-Status FileReader::SetPosition(Ipp64f position)
+Status FileReader::SetPosition(double position)
 {
     UMC_CHECK(vm_mmap_is_valid(&m_mmap), UMC_ERR_NOT_INITIALIZED)
-        Ipp64s iPos = (Ipp64s)(position * (m_iFileSize + 0.5));
-    Ipp64s iOldPos = m_iOff + (Ipp64s)(m_pDataPointer - m_pBuffer);
+        long long iPos = (long long)(position * (m_iFileSize + 0.5));
+    long long iOldPos = m_iOff + (long long)(m_pDataPointer - m_pBuffer);
 
-    return MovePosition((Ipp64u) (iPos - iOldPos));
+    return MovePosition((unsigned long long) (iPos - iOldPos));
 }
 
-Ipp64u FileReader::GetSize()
+unsigned long long FileReader::GetSize()
 {
     return m_iFileSize;
 }

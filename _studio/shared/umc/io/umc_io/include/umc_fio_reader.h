@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FIO_READER_H__
@@ -58,7 +58,7 @@ namespace UMC
         \retval UMC_ERR_NOT_INITIALIZED object was not initialize
         \retval UMC_ERR_END_OF_STREAM   end of stream
         */
-        virtual Status ReadData(void *data, Ipp32u *nsize);
+        virtual Status ReadData(void *data, uint32_t *nsize);
 
         /**
         Move position on npos bytes
@@ -67,24 +67,24 @@ namespace UMC
         \retval UMC_ERR_NOT_INITIALIZED object was not initialize
         \retval UMC_ERR_END_OF_STREAM   end of stream
         */
-        virtual Status MovePosition(Ipp64u npos);
+        virtual Status MovePosition(unsigned long long npos);
 
-        virtual Status CacheData(void *data, Ipp32u *nsize, Ipp32s how_far);
+        virtual Status CacheData(void *data, uint32_t *nsize, int32_t how_far);
 
         /**
         Set position
-        \param pos Ipp64f (0:1.0)
+        \param pos double (0:1.0)
         \retval OK
         \retval ERR_MAP    Error map next portion
         \note set position in the stream (file size * pos)
         */
-        virtual Status SetPosition(Ipp64f pos);
+        virtual Status SetPosition(double pos);
 
         /// return position in the stream
-        virtual Ipp64u GetPosition();
+        virtual unsigned long long GetPosition();
 
         /// return file_size
-        virtual Ipp64u GetSize();
+        virtual unsigned long long GetSize();
 
         FIOReader();
         virtual ~FIOReader();
@@ -92,8 +92,8 @@ namespace UMC
     protected:
         vm_file*     m_pFile;
 
-        Ipp64u    m_stFileSize;               // file size
-        Ipp64u    m_stPos;                    // position in current portion of file
+        unsigned long long    m_stFileSize;               // file size
+        unsigned long long    m_stPos;                    // position in current portion of file
     };
 
 }//namespace UMC

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -80,10 +80,10 @@ UMC::Status UMC::FileWriter::Init(DataWriterParams *pInit)
     {
         m_uiPortionSize = m_uiPageSize;
 
-        Ipp64u csize  = m_uiPortionSize;
-        Ipp64u offset = 0;
+        unsigned long long csize  = m_uiPortionSize;
+        unsigned long long offset = 0;
         m_bBufferInit = false;
-        m_pbBuffer = (Ipp8u*)vm_mmap_set_view(&m_mmap, &offset, &csize);
+        m_pbBuffer = (uint8_t*)vm_mmap_set_view(&m_mmap, &offset, &csize);
 
         if (!m_pbBuffer)
         {
@@ -138,7 +138,7 @@ UMC::Status UMC::FileWriter::Reset()
 #ifdef USE_FILE_MAPPING
 UMC::Status UMC::FileWriter::MapCSize()
 {
-    Ipp64u tmp_size;
+    unsigned long long tmp_size;
 
     if (!vm_mmap_is_valid(&m_mmap)) { return UMC_ERR_NOT_INITIALIZED; }
 
@@ -151,7 +151,7 @@ UMC::Status UMC::FileWriter::MapCSize()
     if(m_uiFileSize < m_stDoneSize)
         return UMC_ERR_ALLOC;
 
-    m_pbBuffer = (Ipp8u*)vm_mmap_set_view(&m_mmap, &m_stDoneSize, &tmp_size);
+    m_pbBuffer = (uint8_t*)vm_mmap_set_view(&m_mmap, &m_stDoneSize, &tmp_size);
     if (!m_pbBuffer)
     {
         return UMC_ERR_ALLOC;
@@ -163,17 +163,17 @@ UMC::Status UMC::FileWriter::MapCSize()
 #endif // USE_FILE_MAPPING
 
 
-UMC::Status UMC::FileWriter::PutData(void *data, Ipp32s &nsize)
+UMC::Status UMC::FileWriter::PutData(void *data, int32_t &nsize)
 {
 #ifndef USE_FILE_MAPPING
     if(m_file && data && (nsize > 0))
-        nsize = static_cast<Ipp32s> (vm_file_fwrite(data, 1, nsize, m_file));
+        nsize = static_cast<int32_t> (vm_file_fwrite(data, 1, nsize, m_file));
 
     return UMC_OK;
 #else
     Status  ret     = UMC_OK;
-    Ipp32s  bufsize = 0;
-    Ipp32s  tmp_size = nsize;
+    int32_t  bufsize = 0;
+    int32_t  tmp_size = nsize;
 
     if (!vm_mmap_is_valid(&m_mmap))
         return UMC_ERR_NOT_INITIALIZED;
@@ -190,7 +190,7 @@ UMC::Status UMC::FileWriter::PutData(void *data, Ipp32s &nsize)
 
         if((UMC_OK == ret) && (tmp_size <= m_uiPageSize))
         {
-            MFX_INTERNAL_CPY(m_pbBuffer + m_stPos, (Ipp8u*)data + bufsize, tmp_size);
+            MFX_INTERNAL_CPY(m_pbBuffer + m_stPos, (uint8_t*)data + bufsize, tmp_size);
             m_stPos += tmp_size;
             break;
         }
@@ -201,7 +201,7 @@ UMC::Status UMC::FileWriter::PutData(void *data, Ipp32s &nsize)
 
 #ifndef USE_FILE_MAPPING
 
-UMC::Status UMC::FileWriter::SetPosition(Ipp32u nPosLow, Ipp32u *lpnPosHight, Ipp32u nMethod)
+UMC::Status UMC::FileWriter::SetPosition(uint32_t nPosLow, uint32_t *lpnPosHight, uint32_t nMethod)
 {
     // check error(s)
     if (NULL == m_file)
@@ -220,7 +220,7 @@ UMC::Status UMC::FileWriter::SetPosition(Ipp32u nPosLow, Ipp32u *lpnPosHight, Ip
 } // FileWriter::SetPosition()
 
 
-UMC::Status UMC::FileWriter::GetPosition(Ipp32u *lpnPosLow, Ipp32u *lpnPosHigh)
+UMC::Status UMC::FileWriter::GetPosition(uint32_t *lpnPosLow, uint32_t *lpnPosHigh)
 {
     // check error(s)
     if (NULL == m_file)
@@ -232,7 +232,7 @@ UMC::Status UMC::FileWriter::GetPosition(Ipp32u *lpnPosLow, Ipp32u *lpnPosHigh)
     if (lpnPosHigh)
         *lpnPosHigh = 0;
 
-    *lpnPosLow = (Ipp32u)vm_file_ftell(m_file);
+    *lpnPosLow = (uint32_t)vm_file_ftell(m_file);
 
     return UMC::UMC_OK;
 } // FileWriter::GetPosition()

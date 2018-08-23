@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_par_file_util.h"
@@ -25,8 +25,8 @@ vm_char* UMC::umc_file_fgets_ascii(vm_char* str, int nchar, vm_file* fd)
   /* read up to VM_MAX_TEMP_LINE bytes from input file, try
    * to satisfy fgets conditions
    */
-  Ipp64s fpos;
-  Ipp32s rdchar, i, j = 0; // j - current position in the output string
+  long long fpos;
+  int32_t rdchar, i, j = 0; // j - current position in the output string
   vm_char* rtv = NULL;
 
   if (fd == vm_stdin)
@@ -41,8 +41,8 @@ vm_char* UMC::umc_file_fgets_ascii(vm_char* str, int nchar, vm_file* fd)
 
     while (fgets(buffer, VM_MAX_TEMP_LINE, stdin) && 0 < nchar)
     {
-      Ipp32s length = (Ipp32s) _mbstrlen(buffer); // can't be bigger than VM_MAX_TEMP_LINE
-      Ipp32u min_length = length < nchar ? length : nchar;
+      int32_t length = (int32_t) _mbstrlen(buffer); // can't be bigger than VM_MAX_TEMP_LINE
+      uint32_t min_length = length < nchar ? length : nchar;
       size_t count;
       errno_t res;
 
@@ -85,7 +85,7 @@ vm_char* UMC::umc_file_fgets_ascii(vm_char* str, int nchar, vm_file* fd)
         for(i = 0; i < rdchar; ++i)
         {
 #ifdef _UNICODE
-          Ipp32s count = mbtowc(str + j, ((char *)fd[0].tbuf) + i, 1);
+          int32_t count = mbtowc(str + j, ((char *)fd[0].tbuf) + i, 1);
           if (count == 0 || count == -1)
             str[j] = '\0';
           else

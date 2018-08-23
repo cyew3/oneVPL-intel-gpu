@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FILE_WRITER_H__
@@ -16,7 +16,7 @@
 #if defined (UMC_ENABLE_FILE_WRITER)
 
 #include <stdio.h>
-#include "ippdefs.h"
+
 #include "umc_data_writer.h"
 #include "vm_file.h"
 
@@ -29,7 +29,7 @@ namespace UMC
         DYNAMIC_CAST_DECL(FileWriterParams, DataWriterParams)
     public:
         vm_char m_file_name[MAXIMUM_PATH];
-        Ipp64u  m_portion_size;
+        unsigned long long  m_portion_size;
 
         FileWriterParams();
     };
@@ -103,7 +103,7 @@ namespace UMC
         //  Notes:
         //
         ////////////////////////////////////////////////////////////////////////////////
-        Status PutData(void *data, Ipp32s &nsize);
+        Status PutData(void *data, int32_t &nsize);
 
 #ifndef USE_FILE_MAPPING
         //////////////////////////////////////////////////////////////////////////////
@@ -125,7 +125,7 @@ namespace UMC
         //  Notes:
         //    Not all media can change current position
         ////////////////////////////////////////////////////////////////////////////////
-        virtual Status SetPosition(Ipp32u nPosLow, Ipp32u *lpnPosHigh, Ipp32u nMethod);
+        virtual Status SetPosition(uint32_t nPosLow, uint32_t *lpnPosHigh, uint32_t nMethod);
 
         //////////////////////////////////////////////////////////////////////////////
         //  Name:           GetPosition
@@ -142,7 +142,7 @@ namespace UMC
         //  Notes:
         //    Not all media can return current position
         ////////////////////////////////////////////////////////////////////////////////
-        virtual Status GetPosition(Ipp32u *lpnPosLow, Ipp32u *lpnPosHigh);
+        virtual Status GetPosition(uint32_t *lpnPosLow, uint32_t *lpnPosHigh);
 #endif //USE_FILE_MAPPING
 
         FileWriter();
@@ -156,12 +156,12 @@ namespace UMC
         Status FileWriter::MapCSize();
         vm_mmap      m_mmap;
 
-        Ipp8u       *m_pbBuffer;
-        Ipp32u       m_uiFileSize;
-        Ipp32u       m_uiPortionSize;
-        Ipp64u       m_stDoneSize;               // accumulative size of processed portions
-        Ipp64u       m_stPos;                    // position in current portion of file
-        Ipp32u       m_uiPageSize;
+        uint8_t       *m_pbBuffer;
+        uint32_t       m_uiFileSize;
+        uint32_t       m_uiPortionSize;
+        unsigned long long       m_stDoneSize;               // accumulative size of processed portions
+        unsigned long long       m_stPos;                    // position in current portion of file
+        uint32_t       m_uiPageSize;
         bool         m_bBufferInit;
 #endif
     };

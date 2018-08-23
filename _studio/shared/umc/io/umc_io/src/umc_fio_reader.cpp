@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -41,10 +41,10 @@ UMC::Status UMC::FIOReader::Init(DataReaderParams *pInit)
 
     if (0 == vm_file_fseek(m_pFile, 0, VM_FILE_SEEK_END))
     {
-        Ipp64u lRes = vm_file_ftell(m_pFile);
+        unsigned long long lRes = vm_file_ftell(m_pFile);
         if (-1 != static_cast<int>(lRes))
         {
-            m_stFileSize = (Ipp64u)lRes;
+            m_stFileSize = (unsigned long long)lRes;
         }
 
         if (0 != vm_file_fseek(m_pFile, 0, VM_FILE_SEEK_SET))
@@ -81,7 +81,7 @@ UMC::Status UMC::FIOReader::Reset()
     return UMC_OK;
 }
 
-UMC::Status UMC::FIOReader::ReadData(void *data, Ipp32u *nsize)
+UMC::Status UMC::FIOReader::ReadData(void *data, uint32_t *nsize)
 {
     if (!m_pFile)
         return UMC_ERR_NOT_INITIALIZED;
@@ -91,7 +91,7 @@ UMC::Status UMC::FIOReader::ReadData(void *data, Ipp32u *nsize)
     {
         if (vm_file_feof(m_pFile))
         {
-            *nsize = (Ipp32u) stRes;
+            *nsize = (uint32_t) stRes;
             return UMC_ERR_END_OF_STREAM;
         }
         else
@@ -106,9 +106,9 @@ UMC::Status UMC::FIOReader::ReadData(void *data, Ipp32u *nsize)
     return UMC_OK;
 }
 
-UMC::Status UMC::FIOReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
+UMC::Status UMC::FIOReader::CacheData(void *data, uint32_t *nsize, int32_t how_far)
 {
-    Ipp64u stInitialPos = m_stPos;
+    unsigned long long stInitialPos = m_stPos;
 
     if (!m_pFile)
         return UMC_ERR_NOT_INITIALIZED;
@@ -128,7 +128,7 @@ UMC::Status UMC::FIOReader::CacheData(void *data, Ipp32u *nsize, Ipp32s how_far)
     return umcRes;
 }
 
-UMC::Status UMC::FIOReader::MovePosition(Ipp64u npos)
+UMC::Status UMC::FIOReader::MovePosition(unsigned long long npos)
 {
     if (!m_pFile)
         return UMC_ERR_NOT_INITIALIZED;
@@ -143,17 +143,17 @@ UMC::Status UMC::FIOReader::MovePosition(Ipp64u npos)
     return UMC_OK;
 }
 
-Ipp64u UMC::FIOReader::GetPosition()
+unsigned long long UMC::FIOReader::GetPosition()
 {
     return m_stPos;
 }
 
-UMC::Status UMC::FIOReader::SetPosition(Ipp64f position)
+UMC::Status UMC::FIOReader::SetPosition(double position)
 {
     if (!m_pFile)
         return UMC_ERR_NOT_INITIALIZED;
 
-    long lOffset = (long) (((Ipp64s) m_stFileSize) * position);
+    long lOffset = (long) (((long long) m_stFileSize) * position);
     if (0 != vm_file_fseek(m_pFile, lOffset, VM_FILE_SEEK_SET))
         return UMC_ERR_FAILED;
 
@@ -162,7 +162,7 @@ UMC::Status UMC::FIOReader::SetPosition(Ipp64f position)
     return UMC_OK;
 }
 
-Ipp64u UMC::FIOReader::GetSize()
+unsigned long long UMC::FIOReader::GetSize()
 {
     return m_stFileSize;
 }

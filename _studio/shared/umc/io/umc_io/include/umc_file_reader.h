@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FILE_READER_H__
@@ -17,7 +17,7 @@
 
 #include "vm_mmap.h"
 #include "vm_types.h"
-#include "ippdefs.h"
+
 #include "umc_data_reader.h"
 
 namespace UMC
@@ -34,7 +34,7 @@ namespace UMC
         {   memset(m_file_name, 0, sizeof(m_file_name));   }
 
         vm_char m_file_name[MAXIMUM_PATH]; ///< file name
-        Ipp32u m_portion_size; ///< portion size
+        uint32_t m_portion_size; ///< portion size
     };
 
     class FileReader : public DataReader
@@ -73,7 +73,7 @@ namespace UMC
         \retval UMC_ERR_END_OF_STREAM   end of stream
         \retval UMC_ERR_FAILED          can't map
         */
-        Status      ReadData(void *data, Ipp32u *nsize);
+        Status      ReadData(void *data, uint32_t *nsize);
 
         /**
         Move position on npos bytes
@@ -82,36 +82,36 @@ namespace UMC
         \retval UMC_ERR_NOT_INITIALIZED object was not initialize
         \retval UMC_ERR_END_OF_STREAM   end of stream
         */
-        Status      MovePosition(Ipp64u npos);
+        Status      MovePosition(unsigned long long npos);
 
-        Status      CacheData(void *data, Ipp32u *nsize, Ipp32s how_far);
+        Status      CacheData(void *data, uint32_t *nsize, int32_t how_far);
 
         /**
         Set position
-        \param pos Ipp64f (0:1.0)
+        \param pos double (0:1.0)
         \retval OK
         \note set position in the stream (file size * pos)
         */
-        Status      SetPosition(Ipp64f pos);
+        Status      SetPosition(double pos);
 
         /// return position in the stream
-        Ipp64u      GetPosition();
+        unsigned long long      GetPosition();
 
         /// return file_size
-        Ipp64u      GetSize();
+        unsigned long long      GetSize();
 
         FileReader();
         virtual ~FileReader();
 
     protected:
         vm_mmap             m_mmap;
-        Ipp8u               *m_pBuffer;
-        Ipp32s              m_iPageSize; // granularity size
-        Ipp64s              m_iFileSize; // file size
-        Ipp64s              m_iOff;      // offset of m_pBuffer
-        Ipp32s              m_iPortion;  // desired view size
+        uint8_t               *m_pBuffer;
+        int32_t              m_iPageSize; // granularity size
+        long long              m_iFileSize; // file size
+        long long              m_iOff;      // offset of m_pBuffer
+        int32_t              m_iPortion;  // desired view size
 
-        virtual Status  OpenView(Ipp64s iSize);
+        virtual Status  OpenView(long long iSize);
     };
 
 } // namespace UMC
