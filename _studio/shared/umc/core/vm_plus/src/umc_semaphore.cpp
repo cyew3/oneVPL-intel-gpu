@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_semaphore.h"
@@ -29,7 +29,7 @@ Semaphore::~Semaphore(void)
 
 } // Semaphore::~Semaphore(void)
 
-Status Semaphore::Init(Ipp32s iInitCount)
+Status Semaphore::Init(int32_t iInitCount)
 {
     if (vm_semaphore_is_valid(&m_handle))
     {
@@ -38,9 +38,9 @@ Status Semaphore::Init(Ipp32s iInitCount)
     }
     return vm_semaphore_init(&m_handle, iInitCount);
 
-} // Status Semaphore::Init(Ipp32s iInitCount)
+} // Status Semaphore::Init(int32_t iInitCount)
 
-Status Semaphore::Init(Ipp32s iInitCount, Ipp32s iMaxCount)
+Status Semaphore::Init(int32_t iInitCount, int32_t iMaxCount)
 {
     if (vm_semaphore_is_valid(&m_handle))
     {
@@ -49,6 +49,6 @@ Status Semaphore::Init(Ipp32s iInitCount, Ipp32s iMaxCount)
     }
     return vm_semaphore_init_max(&m_handle, iInitCount, iMaxCount);
 
-} // Status Semaphore::Init(Ipp32s iInitCount, Ipp32s iMaxCount)
+} // Status Semaphore::Init(int32_t iInitCount, int32_t iMaxCount)
 
 } // namespace UMC

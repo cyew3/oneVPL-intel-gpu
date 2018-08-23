@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_STRUCTURES_H__
@@ -15,16 +15,16 @@
 #include <vm_debug.h>
 
 #define BSWAP16(x) \
-    (Ipp16u) ((x) >> 8 | (x) << 8)
+    (uint16_t) ((x) >> 8 | (x) << 8)
 
 #define BSWAP32(x) \
-    (Ipp32u)(((x) << 24) + \
+    (uint32_t)(((x) << 24) + \
     (((x)&0xff00) << 8) + \
     (((x) >> 8)&0xff00) + \
-    ((Ipp32u)(x) >> 24))
+    ((uint32_t)(x) >> 24))
 
 #define BSWAP64(x) \
-    (Ipp64u)(((x) << 56) + \
+    (unsigned long long)(((x) << 56) + \
     (((x)&0xff00) << 40) + \
     (((x)&0xff0000) << 24) + \
     (((x)&0xff000000) << 8) + \
@@ -52,8 +52,8 @@
 /* macro to create FOURCC */
 #ifndef DO_FOURCC
 #define DO_FOURCC(ch0, ch1, ch2, ch3) \
-    ( (Ipp32u)(Ipp8u)(ch0) | ( (Ipp32u)(Ipp8u)(ch1) << 8 ) | \
-    ( (Ipp32u)(Ipp8u)(ch2) << 16 ) | ( (Ipp32u)(Ipp8u)(ch3) << 24 ) )
+    ( (uint32_t)(uint8_t)(ch0) | ( (uint32_t)(uint8_t)(ch1) << 8 ) | \
+    ( (uint32_t)(uint8_t)(ch2) << 16 ) | ( (uint32_t)(uint8_t)(ch3) << 24 ) )
 #endif /* DO_FOURCC */
 
 /***************************************************************************/
@@ -528,30 +528,30 @@ namespace UMC
         {
         }
 
-        Ipp32s channels;                                        // (Ipp32s) number of audio channels
-        Ipp32s sample_frequency;                                // (Ipp32s) sample rate in Hz
-        Ipp32u bitrate;                                         // (Ipp32u) bitstream in bps
-        Ipp32u bitPerSample;                                    // (Ipp32u) 0 if compressed
+        int32_t  channels;                                        // (int32_t) number of audio channels
+        int32_t  sample_frequency;                                // (int32_t) sample rate in Hz
+        uint32_t bitrate;                                         // (uint32_t) bitstream in bps
+        uint32_t bitPerSample;                                    // (uint32_t) 0 if compressed
 
-        Ipp64f duration;                                        // (Ipp64f) duration of the stream
+        double   duration;                                        // (double) duration of the stream
 
-        AudioStreamType stream_type;                            // (AudioStreamType) general type of stream
-        AudioStreamSubType stream_subtype;                      // (AudioStreamSubType) minor type of stream
-        Ipp32s iProfile;   // profile
-        Ipp32s iLevel;   // level
+        AudioStreamType    stream_type;                           // (AudioStreamType) general type of stream
+        AudioStreamSubType stream_subtype;                        // (AudioStreamSubType) minor type of stream
+        int32_t iProfile;                                         // profile
+        int32_t iLevel;                                           // level
 
-        Ipp32u channel_mask;                                    // (Ipp32u) channel mask
-        Ipp32u streamPID;                                       // (Ipp32u) unique ID
+        uint32_t channel_mask;                                    // (uint32_t) channel mask
+        uint32_t streamPID;                                       // (uint32_t) unique ID
 
-        bool   is_protected;                                    // audio is encrypted
-        Ipp32u header;                                          // (Ipp32u) can carry audio header (4-bytes)
+        bool   is_protected;                                      // audio is encrypted
+        uint32_t header;                                          // (uint32_t) can carry audio header (4-bytes)
 
     } AudioStreamInfo;
 
     typedef struct sClipInfo
     {
-        Ipp32s width;                                           // (Ipp32s) width of media
-        Ipp32s height;                                          // (Ipp32s) height of media
+        int32_t width;                                           // (int32_t) width of media
+        int32_t height;                                          // (int32_t) height of media
 
     } ClipInfo;
 
@@ -571,22 +571,22 @@ namespace UMC
         ClipInfo            clip_info;                          // (ClipInfo) size of video stream
         ClipInfo            disp_clip_info;
         ColorFormat         color_format;                       // (ColorFormat) color format of uncompressed video
-        Ipp32u              bitrate;                            // (Ipp32u) bitrate of video
-        Ipp32s              aspect_ratio_width;                 // (Ipp32s) pixel aspect ratio
-        Ipp32s              aspect_ratio_height;                // (Ipp32s) pixel aspect ratio
-        Ipp64f              framerate;                          // (Ipp64f) frame rate of video
-        Ipp64f              duration;                           // (Ipp64f) duration of media stream
+        uint32_t            bitrate;                            // (uint32_t) bitrate of video
+        int32_t             aspect_ratio_width;                 // (int32_t) pixel aspect ratio
+        int32_t             aspect_ratio_height;                // (int32_t) pixel aspect ratio
+        double              framerate;                          // (double) frame rate of video
+        double              duration;                           // (double) duration of media stream
         InterlaceType       interlace_type;                     // (InterlaceType) interlaced info
         VideoStreamType     stream_type;                        // (VideoStreamType) video stream type
         VideoStreamSubType  stream_subtype;                     // (VideoStreamSubType) video stream type
-        Ipp32u              streamPID;                          // (Ipp32u) unique ID
-        Ipp32s              profile;                            // (Ipp32s) profile
-        Ipp32s              level;                              // (Ipp32s) level
+        uint32_t            streamPID;                          // (uint32_t) unique ID
+        int32_t             profile;                            // (int32_t) profile
+        int32_t             level;                              // (int32_t) level
     } VideoStreamInfo;
 
     typedef struct sSystemStreamInfo
     {
-        Ipp64f muxrate;                                         // (Ipp64f) stream bitrate
+        double muxrate;                                         // (double) stream bitrate
         SystemStreamType stream_type;                           // (SystemStreamType) stream type
     } SystemStreamInfo;
 
@@ -599,10 +599,10 @@ namespace UMC
             bottom(0)
         {}
 
-        Ipp16s left;
-        Ipp16s top;
-        Ipp16s right;
-        Ipp16s bottom;
+        int16_t left;
+        int16_t top;
+        int16_t right;
+        int16_t bottom;
         inline
         void SwapBigEndian()
         {
@@ -641,7 +641,7 @@ namespace UMC
         UMC_NTF_NEW_RESOLUTION        = 7
     };
 
-    typedef Ipp32s Status;
+    typedef int32_t Status;
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -680,7 +680,7 @@ namespace UMC
     {
         // some compilers complain to conversion to/from
         // pointer types from/to integral types.
-        return (T) ((((Ipp8u *) pv - (Ipp8u *) 0) + (lAlignValue - 1)) &
+        return (T) ((((uint8_t *) pv - (uint8_t *) 0) + (lAlignValue - 1)) &
                     ~(lAlignValue - 1));
     }
 

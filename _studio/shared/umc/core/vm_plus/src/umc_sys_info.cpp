@@ -98,29 +98,29 @@ void SysInfo::ResetMemUsage(void)
     m_MemoryCount = 0;
 }
 
-Ipp64f SysInfo::GetMemUsage(void)
+double SysInfo::GetMemUsage(void)
 {
     if (!m_FuncGetMemUsage) return 0;
-    Ipp64f mem_usage = m_FuncGetMemUsage()/(1024.0*1024.0);
+    double mem_usage = m_FuncGetMemUsage()/(1024.0*1024.0);
     m_MemorySum += mem_usage;
     m_MemoryCount++;
     if (mem_usage > m_MemoryMax) m_MemoryMax = mem_usage;
     return mem_usage;
 }
 
-Ipp64f SysInfo::GetAvgMemUsage(void)
+double SysInfo::GetAvgMemUsage(void)
 {
     return (m_MemoryCount) ? m_MemorySum/m_MemoryCount : 0;
 }
 
-Ipp64f SysInfo::GetMaxMemUsage(void)
+double SysInfo::GetMaxMemUsage(void)
 {
     return m_MemoryMax;
 }
 
-Ipp64f SysInfo::GetCpuUsage(void)
+double SysInfo::GetCpuUsage(void)
 {
-    Ipp64f cpu_use = 0;
+    double cpu_use = 0;
     vm_tick user_time_cur = 0;
     vm_tick total_time_cur = 0;
     GetCpuUseTime(m_sSystemInfo.program_name, &user_time_cur, &total_time_cur);
@@ -129,10 +129,10 @@ Ipp64f SysInfo::GetCpuUsage(void)
         return cpu_use;
     }
     if ((user_time) && (total_time)) {
-        Ipp64f dUserTime = (Ipp64f)(Ipp64s)((user_time_cur - user_time));
-        Ipp64f dTotalTime = (Ipp64f)(Ipp64s)((total_time_cur - total_time));
-        Ipp64f dUserTimeAvg = (Ipp64f)(Ipp64s)((user_time_cur - user_time_start));
-        Ipp64f dTotalTimeAvg = (Ipp64f)(Ipp64s)((total_time_cur - total_time_start));
+        double dUserTime = (double)(long long)((user_time_cur - user_time));
+        double dTotalTime = (double)(long long)((total_time_cur - total_time));
+        double dUserTimeAvg = (double)(long long)((user_time_cur - user_time_start));
+        double dTotalTimeAvg = (double)(long long)((total_time_cur - total_time_start));
 #if defined(_WIN32_WCE)
         cpu_use = 100 - ((dUserTime) / (dTotalTime)) * 100;
         avg_cpuusage = 100 - ((dUserTimeAvg) / (dTotalTimeAvg)) * 100;
@@ -173,14 +173,14 @@ void GetCpuUseTime(vm_char* proc_name, vm_tick* process_use, vm_tick* total_use)
     *process_use = GetIdleTime();
     *total_use = GetTickCount();
 #else //(defined(_WIN32_WCE))
-    Ipp32s Status;
+    int32_t Status;
     PSYSTEM_PROCESSES pProcesses;
     HINSTANCE hNtDll;
     HANDLE hHeap = GetProcessHeap();
     ULONG cbBuffer = 0x8000;
     PVOID pBuffer = NULL;
 
-    Ipp32s (WINAPI * _ZwQuerySystemInformation)(UINT, PVOID, ULONG, PULONG);
+    int32_t (WINAPI * _ZwQuerySystemInformation)(UINT, PVOID, ULONG, PULONG);
 
     // get handle NTDLL.DLL
     hNtDll = GetModuleHandle(_T("ntdll.dll"));
@@ -253,12 +253,12 @@ void GetCpuUseTime(vm_char* proc_name, vm_tick* process_use, vm_tick* total_use)
 #elif defined(LINUX32)
     struct rusage ru;
 
-    memset((Ipp8u*)&ru, 0, sizeof(rusage));
+    memset((uint8_t*)&ru, 0, sizeof(rusage));
     getrusage(RUSAGE_SELF, &ru); // values for process
     *process_use  = TIMEVAL_TO_TICK(ru.ru_utime);
     *process_use += TIMEVAL_TO_TICK(ru.ru_stime);
 
-    memset((Ipp8u*)&ru, 0, sizeof(rusage));
+    memset((uint8_t*)&ru, 0, sizeof(rusage));
     getrusage(RUSAGE_CHILDREN, &ru); // values for dead child processes
     *process_use += TIMEVAL_TO_TICK(ru.ru_utime);
     *process_use += TIMEVAL_TO_TICK(ru.ru_stime);

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_EVENT_H__
@@ -27,7 +27,7 @@ public:
     virtual ~Event(void);
 
     // Initialize event
-    Status Init(Ipp32s iManual, Ipp32s iState);
+    Status Init(int32_t iManual, int32_t iState);
     // Set event to signaled state
     Status Set(void);
     // Set event to non-signaled state
@@ -35,7 +35,7 @@ public:
     // Pulse event (should not be used)
     Status Pulse(void);
     // Wait until event is signaled
-    Status Wait(Ipp32u msec);
+    Status Wait(uint32_t msec);
     // Infinitely wait until event is signaled
     Status Wait(void);
 
@@ -65,11 +65,11 @@ Status Event::Pulse(void)
 } // Status Event::Pulse(void)
 
 inline
-Status Event::Wait(Ipp32u msec)
+Status Event::Wait(uint32_t msec)
 {
     return vm_event_timed_wait(&m_handle, msec);
 
-} // Status Event::Wait(Ipp32u msec)
+} // Status Event::Wait(uint32_t msec)
 
 inline
 Status Event::Wait(void)

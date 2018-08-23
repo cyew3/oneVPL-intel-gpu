@@ -24,7 +24,6 @@
     <ClCompile Include="src\mfx_vm++_pthread.cpp" />
     <ClCompile Include="src\mfx_vm++_pthread_windows.cpp" />
     <ClCompile Include="src\umc_event.cpp" />
-    <ClCompile Include="src\umc_malloc.cpp" />
     <ClCompile Include="src\umc_mmap.cpp" />
     <ClCompile Include="src\umc_semaphore.cpp" />
     <ClCompile Include="src\umc_sys_info.cpp" />
@@ -34,7 +33,6 @@
     <ClInclude Include="include\mfx_vm++_pthread.h" />
     <ClInclude Include="include\umc_automatic_mutex.h" />
     <ClInclude Include="include\umc_event.h" />
-    <ClInclude Include="include\umc_malloc.h" />
     <ClInclude Include="include\umc_mmap.h" />
     <ClInclude Include="include\umc_semaphore.h" />
     <ClInclude Include="include\umc_sys_info.h" />

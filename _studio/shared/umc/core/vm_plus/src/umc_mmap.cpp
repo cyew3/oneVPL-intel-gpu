@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_mmap.h"
@@ -47,10 +47,10 @@ Status MMap::Init(vm_char *sz_file)
 
 } // Status MMap::Init(vm_char *sz_file)
 
-Status MMap::Map(Ipp64u st_offset, Ipp64u st_sizet)
+Status MMap::Map(unsigned long long st_offset, unsigned long long st_sizet)
 {
     void *pv_addr;
-    Ipp64u st_align = st_offset % vm_mmap_get_alloc_granularity();
+    unsigned long long st_align = st_offset % vm_mmap_get_alloc_granularity();
 
     // check error(s)
     if (!vm_mmap_is_valid(&m_handle))
@@ -77,6 +77,6 @@ Status MMap::Map(Ipp64u st_offset, Ipp64u st_sizet)
 
     return UMC_OK;
 
-} // Status MMap::Map(Ipp64u st_offset, Ipp64u st_sizet)
+} // Status MMap::Map(unsigned long long st_offset, unsigned long long st_sizet)
 
 }   //  namespace UMC

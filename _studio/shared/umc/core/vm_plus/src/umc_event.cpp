@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_event.h"
@@ -28,7 +28,7 @@ Event::~Event(void)
     }
 } // Event::~Event(void)
 
-Status Event::Init(Ipp32s iManual, Ipp32s iState)
+Status Event::Init(int32_t iManual, int32_t iState)
 {
     Status umcRes = UMC_OK;
 
@@ -43,6 +43,6 @@ Status Event::Init(Ipp32s iManual, Ipp32s iState)
 
     return umcRes;
 
-} // Status Event::Init(Ipp32s iManual, Ipp32s iState)
+} // Status Event::Init(int32_t iManual, int32_t iState)
 
 } // namespace UMC

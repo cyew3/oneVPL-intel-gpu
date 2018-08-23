@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __SYS_INFO_H__
@@ -21,8 +21,8 @@ namespace UMC
 
 typedef struct sSystemInfo
 {
-    Ipp32u num_proc;                                           // (Ipp32u) number of processor(s)
-    Ipp32u cpu_freq;                                           // (Ipp32u) CPU frequency
+    uint32_t num_proc;                                           // (uint32_t) number of processor(s)
+    uint32_t cpu_freq;                                           // (uint32_t) CPU frequency
     vm_char os_name[_MAX_LEN];                                 // (vm_char []) OS name
     vm_char proc_name[_MAX_LEN];                               // (vm_char []) processor's name
     vm_char computer_name[_MAX_LEN];                           // (vm_char []) computer's name
@@ -31,7 +31,7 @@ typedef struct sSystemInfo
     vm_char program_path[_MAX_LEN];                            // (vm_char []) program path
     vm_char program_name[_MAX_LEN];                            // (vm_char []) program name
     vm_char description[_MAX_LEN];
-    Ipp32u phys_mem;
+    uint32_t phys_mem;
 } sSystemInfo;
 
 #if ! (defined(_WIN32_WCE) || defined(__linux) || defined(__APPLE__))
@@ -40,7 +40,7 @@ typedef struct sSystemInfo
 typedef struct _VIRTUAL_MACHINE_COUNTERS {
     size_t        size1;
     size_t        size2;
-    Ipp32u        size3;
+    uint32_t        size3;
     size_t        size4;
     size_t        size5;
     size_t        size6;
@@ -52,43 +52,43 @@ typedef struct _VIRTUAL_MACHINE_COUNTERS {
 } VIRTUAL_MACHINE_COUNTERS;
 
 typedef struct _TASK_ID {
-    Ipp32u        ProcessID;
-    Ipp32u        ThreadID;
+    uint32_t        ProcessID;
+    uint32_t        ThreadID;
 } TASK_ID;
 
 typedef struct _ST {
-    Ipp64u        TimeOfKernel;
-    Ipp64u        TimeOfUser;
-    Ipp64u        TimeOfCreation;
-    Ipp32u        TimeOfWaiting;
+    unsigned long long        TimeOfKernel;
+    unsigned long long        TimeOfUser;
+    unsigned long long        TimeOfCreation;
+    uint32_t        TimeOfWaiting;
     void          *BaseAddress;
     TASK_ID       TaskID;
-    Ipp32s        Priority;
-    Ipp32s        StartPriority;
-    Ipp32u        CSCount;
-    Ipp32s        State;
-    Ipp32s        ReasonOfWaiting;
+    int32_t        Priority;
+    int32_t        StartPriority;
+    uint32_t        CSCount;
+    int32_t        State;
+    int32_t        ReasonOfWaiting;
 } ST;
 
 typedef struct _WSTRING {
-    Ipp16u        Len;
-    Ipp16u        MaxLen;
+    uint16_t        Len;
+    uint16_t        MaxLen;
     wchar_t       *Ptr;
 } WSTRING;
 
 typedef struct _SYSTEM_PROCESSES {
-    Ipp32u             OffsetOfNextEntry;
-    Ipp32u             Reserved1;
-    Ipp32u             Reserved2[6];
-    Ipp64u             Reserved3;
-    Ipp64u             APP_Time;
-    Ipp64u             OS_Time;
+    uint32_t             OffsetOfNextEntry;
+    uint32_t             Reserved1;
+    uint32_t             Reserved2[6];
+    unsigned long long             Reserved3;
+    unsigned long long             APP_Time;
+    unsigned long long             OS_Time;
     WSTRING            Application_Name;
-    Ipp32s             Start_priority;
-    Ipp32u             PID;
-    Ipp32u             Reserved4;
-    Ipp32u             Reserved5;
-    Ipp32u             Reserved6[2];
+    int32_t             Start_priority;
+    uint32_t             PID;
+    uint32_t             Reserved4;
+    uint32_t             Reserved5;
+    uint32_t             Reserved6[2];
     VIRTUAL_MACHINE_COUNTERS       Reserved7;
 #if _WIN32_WINNT >= 0x500
     IO_COUNTERS        Reserved8;
@@ -96,13 +96,13 @@ typedef struct _SYSTEM_PROCESSES {
     ST                 Reserved9[1];
 } SYSTEM_PROCESSES, * PSYSTEM_PROCESSES;
 
-typedef Ipp32s    COUNTERS_STATUS;
+typedef int32_t    COUNTERS_STATUS;
 #define IF_SUCCESS(Status) ((COUNTERS_STATUS)(Status) >= 0)
 #define NEXT_AVAILABLE     ((COUNTERS_STATUS)0xC0000004L)
 
 #endif // if !(defined(_WIN32_WCE) || defined(__linux) || defined(__APPLE__))
 
-typedef Ipp32u (*FuncGetMemUsage)();
+typedef uint32_t (*FuncGetMemUsage)();
 
 class SysInfo
 {
@@ -116,16 +116,16 @@ public:
     sSystemInfo *GetSysInfo(void);
 
     // CPU usage
-    Ipp64f GetCpuUsage(void);
-    Ipp64f GetAvgCpuUsage(void) {return avg_cpuusage;};
-    Ipp64f GetMaxCpuUsage(void) {return max_cpuusage;};
+    double GetCpuUsage(void);
+    double GetAvgCpuUsage(void) {return avg_cpuusage;};
+    double GetMaxCpuUsage(void) {return max_cpuusage;};
     void CpuUsageRelease(void);
 
     // Memory usage
     void   SetFuncGetMemUsage(FuncGetMemUsage pFunc) { m_FuncGetMemUsage = pFunc; }
-    Ipp64f GetMemUsage(void);
-    Ipp64f GetAvgMemUsage(void);
-    Ipp64f GetMaxMemUsage(void);
+    double GetMemUsage(void);
+    double GetAvgMemUsage(void);
+    double GetMaxMemUsage(void);
     void   ResetMemUsage(void);
 
 protected:
@@ -137,15 +137,15 @@ protected:
     vm_tick total_time;
     vm_tick user_time_start;
     vm_tick total_time_start;
-    Ipp64f last_cpuusage;
-    Ipp64f max_cpuusage;
-    Ipp64f avg_cpuusage;
+    double last_cpuusage;
+    double max_cpuusage;
+    double avg_cpuusage;
 
     // memory usage
     FuncGetMemUsage m_FuncGetMemUsage;
-    Ipp64f  m_MemoryMax;
-    Ipp64f  m_MemorySum;
-    Ipp32s  m_MemoryCount;
+    double  m_MemoryMax;
+    double  m_MemorySum;
+    int32_t  m_MemoryCount;
 };
 
 } // namespace UMC

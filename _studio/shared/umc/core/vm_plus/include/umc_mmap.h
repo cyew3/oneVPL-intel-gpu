@@ -5,13 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MMAP_H__
 #define __UMC_MMAP_H__
 
-#include "ippdefs.h"
 #include "vm_debug.h"
 #include "vm_mmap.h"
 #include "umc_structures.h"
@@ -30,22 +29,22 @@ public:
     // Initialize object
     Status Init(vm_char *sz_file);
     // Map memory
-    Status Map(Ipp64u st_offset, Ipp64u st_sizet);
+    Status Map(unsigned long long st_offset, unsigned long long st_sizet);
     // Get addres of mapping
     void *GetAddr(void);
     // Get offset of mapping
-    Ipp64u GetOffset(void);
+    unsigned long long GetOffset(void);
     // Get size of mapping
-    Ipp64u GetSize(void);
+    unsigned long long GetSize(void);
     // Get size of mapped file
-    Ipp64u GetFileSize(void);
+    unsigned long long GetFileSize(void);
 
 protected:
     vm_mmap m_handle;                                         // (vm_mmap) handle to system mmap object
     void *m_address;                                          // (void *) addres of mapped window
-    Ipp64u m_file_size;                                       // (Ipp64u) file size
-    Ipp64u m_offset;                                          // (Ipp64u) offset of mapping
-    Ipp64u m_sizet;                                           // (Ipp64u) size of window
+    unsigned long long m_file_size;                                       // (unsigned long long) file size
+    unsigned long long m_offset;                                          // (unsigned long long) offset of mapping
+    unsigned long long m_sizet;                                           // (unsigned long long) size of window
 };
 
 inline
@@ -56,25 +55,25 @@ void *MMap::GetAddr(void)
 } // void *MMap::GetAddr(void)
 
 inline
-Ipp64u MMap::GetOffset(void)
+unsigned long long MMap::GetOffset(void)
 {
     return m_offset;
 
-} // Ipp64u MMap::GetOffset(void)
+} // unsigned long long MMap::GetOffset(void)
 
 inline
-Ipp64u MMap::GetSize(void)
+unsigned long long MMap::GetSize(void)
 {
     return m_sizet;
 
-} // Ipp64u MMap::GetSize(void)
+} // unsigned long long MMap::GetSize(void)
 
 inline
-Ipp64u MMap::GetFileSize(void)
+unsigned long long MMap::GetFileSize(void)
 {
     return m_file_size;
 
-} // Ipp64u MMap::GetFileSize(void)
+} // unsigned long long MMap::GetFileSize(void)
 
 } // namespace UMC
 

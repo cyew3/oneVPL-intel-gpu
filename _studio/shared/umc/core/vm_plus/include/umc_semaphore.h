@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_SEMAPHORE_H__
@@ -27,18 +27,18 @@ public:
     virtual ~Semaphore(void);
 
     // Initialize semaphore
-    Status Init(Ipp32s iInitCount);
-    Status Init(Ipp32s iInitCount, Ipp32s iMaxCount);
+    Status Init(int32_t iInitCount);
+    Status Init(int32_t iInitCount, int32_t iMaxCount);
     // Check semaphore state
     bool IsValid(void);
     // Try to obtain semaphore
     Status TryWait(void);
     // Wait until semaphore is signaled
-    Status Wait(Ipp32u msec);
+    Status Wait(uint32_t msec);
     // Infinitely wait until semaphore is signaled
     Status Wait(void);
     // Set semaphore to signaled state
-    Status Signal(Ipp32u count = 1);
+    Status Signal(uint32_t count = 1);
 
 protected:
     vm_semaphore m_handle;                                      // (vm_semaphore) handle to system semaphore
@@ -59,11 +59,11 @@ Status Semaphore::TryWait(void)
 } // Status Semaphore::TryWait(void)
 
 inline
-Status Semaphore::Wait(Ipp32u msec)
+Status Semaphore::Wait(uint32_t msec)
 {
     return vm_semaphore_timedwait(&m_handle, msec);
 
-} // Status Semaphore::Wait(Ipp32u msec)
+} // Status Semaphore::Wait(uint32_t msec)
 
 inline
 Status Semaphore::Wait(void)
@@ -73,11 +73,11 @@ Status Semaphore::Wait(void)
 } // Status Semaphore::Wait(void)
 
 inline
-Status Semaphore::Signal(Ipp32u count)
+Status Semaphore::Signal(uint32_t count)
 {
     return vm_semaphore_post_many(&m_handle, count);
 
-} // Status Semaphore::Signal(Ipp32u count)
+} // Status Semaphore::Signal(uint32_t count)
 
 } // namespace UMC
 
