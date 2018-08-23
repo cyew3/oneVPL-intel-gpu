@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -70,7 +70,7 @@ public:
 
 protected:
 
-    Ipp32u  m_report_counter;
+    uint32_t  m_report_counter;
 };
 
 class PackerIntel

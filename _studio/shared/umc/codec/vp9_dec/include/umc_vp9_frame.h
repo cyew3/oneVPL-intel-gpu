@@ -24,79 +24,79 @@ class VP9DecoderFrame
 {
 public:
 
-    VM_ALIGN16_DECL(Ipp16s) yDequant[QINDEX_RANGE][8];
-    VM_ALIGN16_DECL(Ipp16s) uvDequant[QINDEX_RANGE][8];
+    VM_ALIGN16_DECL(int16_t) yDequant[QINDEX_RANGE][8];
+    VM_ALIGN16_DECL(int16_t) uvDequant[QINDEX_RANGE][8];
 
     COLOR_SPACE color_space;
 
-    Ipp32u width;
-    Ipp32u height;
+    uint32_t width;
+    uint32_t height;
 
-    Ipp32u displayWidth;
-    Ipp32u displayHeight;
+    uint32_t displayWidth;
+    uint32_t displayHeight;
 
-    Ipp32s subsamplingX;
-    Ipp32s subsamplingY;
+    int32_t subsamplingX;
+    int32_t subsamplingY;
 
     UMC::FrameMemID currFrame;
 
-    Ipp32s activeRefIdx[REFS_PER_FRAME];
+    int32_t activeRefIdx[REFS_PER_FRAME];
     UMC::FrameMemID ref_frame_map[NUM_REF_FRAMES]; /* maps fb_idx to reference slot */
 
     SizeOfFrame sizesOfRefFrame[NUM_REF_FRAMES];
 
     VP9_FRAME_TYPE frameType;
 
-    Ipp32u show_existing_frame;
-    Ipp32u frame_to_show;
+    uint32_t show_existing_frame;
+    uint32_t frame_to_show;
 
-    Ipp32u showFrame;
-    Ipp32u lastShowFrame;
+    uint32_t showFrame;
+    uint32_t lastShowFrame;
 
-    Ipp32u intraOnly;
+    uint32_t intraOnly;
 
-    Ipp32u allowHighPrecisionMv;
+    uint32_t allowHighPrecisionMv;
 
-    Ipp32u resetFrameContext;
+    uint32_t resetFrameContext;
 
-    Ipp8u refreshFrameFlags;
+    uint8_t refreshFrameFlags;
 
-    Ipp32s baseQIndex;
-    Ipp32s y_dc_delta_q;
-    Ipp32s uv_dc_delta_q;
-    Ipp32s uv_ac_delta_q;
+    int32_t baseQIndex;
+    int32_t y_dc_delta_q;
+    int32_t uv_dc_delta_q;
+    int32_t uv_ac_delta_q;
 
-    Ipp32u lossless;
+    uint32_t lossless;
 
     INTERP_FILTER interpFilter;
 
     LoopFilterInfo lf_info;
 
-    Ipp32u refreshFrameContext;
+    uint32_t refreshFrameContext;
 
-    Ipp32u refFrameSignBias[MAX_REF_FRAMES];
+    uint32_t refFrameSignBias[MAX_REF_FRAMES];
 
     Loopfilter lf;
     VP9Segmentation segmentation;
 
-    Ipp32u frameContextIdx;
+    uint32_t frameContextIdx;
 
-    Ipp32u currentVideoFrame;
-    Ipp32u profile;
-    Ipp32u bit_depth;
+    uint32_t currentVideoFrame;
+    uint32_t profile;
+    uint32_t bit_depth;
 
-    Ipp32u errorResilientMode;
-    Ipp32u frameParallelDecodingMode;
+    uint32_t errorResilientMode;
+    uint32_t frameParallelDecodingMode;
 
-    Ipp32u log2TileColumns;
-    Ipp32u log2TileRows;
+    uint32_t log2TileColumns;
+    uint32_t log2TileRows;
 
-    Ipp32u frameHeaderLength; // in bytes
-    Ipp32u firstPartitionSize;
-    Ipp32u frameDataSize;
+    uint32_t frameHeaderLength; // in bytes
+    uint32_t firstPartitionSize;
+    uint32_t frameDataSize;
 
-    Ipp32u frameCountInBS;
-    Ipp32u currFrameInBS;
+    uint32_t frameCountInBS;
+    uint32_t currFrameInBS;
 };
 
 } // end namespace UMC_VP9_DECODER

@@ -25,19 +25,19 @@ VP9Bitstream::VP9Bitstream()
     Reset(0, 0);
 }
 
-VP9Bitstream::VP9Bitstream(Ipp8u * const pb, const Ipp32u maxsize)
+VP9Bitstream::VP9Bitstream(uint8_t * const pb, const uint32_t maxsize)
 {
     Reset(pb, maxsize);
 }
 
 // Reset the bitstream with new data pointer
-void VP9Bitstream::Reset(Ipp8u * const pb, const Ipp32u maxsize)
+void VP9Bitstream::Reset(uint8_t * const pb, const uint32_t maxsize)
 {
     Reset(pb, 0, maxsize);
 }
 
 // Reset the bitstream with new data pointer and bit offset
-void VP9Bitstream::Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize)
+void VP9Bitstream::Reset(uint8_t * const pb, int32_t offset, const uint32_t maxsize)
 {
     m_pbs       = pb;
     m_pbsBase   = pb;
@@ -47,13 +47,13 @@ void VP9Bitstream::Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize)
 }
 
 // Return bitstream array base address and size
-void VP9Bitstream::GetOrg(Ipp8u **pbs, Ipp32u *size)
+void VP9Bitstream::GetOrg(uint8_t **pbs, uint32_t *size)
 {
     *pbs       = m_pbsBase;
     *size      = m_maxBsSize; 
 }
 
-Ipp32u VP9Bitstream::GetBits(Ipp32u nbits)
+uint32_t VP9Bitstream::GetBits(uint32_t nbits)
 {
     mfxU32 bits = 0;
     for (; nbits > 0; --nbits)
@@ -65,9 +65,9 @@ Ipp32u VP9Bitstream::GetBits(Ipp32u nbits)
     return bits;
 }
 
-Ipp32u VP9Bitstream::GetUe()
+uint32_t VP9Bitstream::GetUe()
 {
-    Ipp32u zeroes = 0;
+    uint32_t zeroes = 0;
     while (GetBit() == 0)
         ++zeroes;
 
@@ -75,14 +75,14 @@ Ipp32u VP9Bitstream::GetUe()
         0 : ((1 << zeroes) | GetBits(zeroes)) - 1; 
 }
 
-Ipp32s VP9Bitstream::GetSe()
+int32_t VP9Bitstream::GetSe()
 {
-    Ipp32s val = GetUe();
-    Ipp32u sign = (val & 1);
+    int32_t val = GetUe();
+    uint32_t sign = (val & 1);
     val = (val + 1) >> 1;
 
     return
-        sign ? val : -Ipp32s(val); 
+        sign ? val : -int32_t(val); 
 }
 
 void GetFrameSize(VP9Bitstream* bs, VP9DecoderFrame* frame)
@@ -118,7 +118,7 @@ void GetBitDepthAndColorSpace(VP9Bitstream* bs, VP9DecoderFrame* frame)
         return;
     }
 
-    Ipp32u const colorspace
+    uint32_t const colorspace
         = bs->GetBits(3);
 
     if (colorspace != SRGB)
@@ -149,7 +149,7 @@ void GetBitDepthAndColorSpace(VP9Bitstream* bs, VP9DecoderFrame* frame)
 void GetFrameSizeWithRefs(VP9Bitstream* bs, VP9DecoderFrame* frame)
 {
     bool bFound = false;
-    for (Ipp8u i = 0; i < REFS_PER_FRAME; ++i)
+    for (uint8_t i = 0; i < REFS_PER_FRAME; ++i)
     {
         if (bs->GetBit())
         {
@@ -178,27 +178,27 @@ void SetupLoopFilter(VP9Bitstream* bs, Loopfilter* filter)
 
     mfxI8 value = 0;
 
-    filter->modeRefDeltaEnabled = (Ipp8u)bs->GetBit();
+    filter->modeRefDeltaEnabled = (uint8_t)bs->GetBit();
     if (filter->modeRefDeltaEnabled)
     {
-        filter->modeRefDeltaUpdate = (Ipp8u)bs->GetBit();
+        filter->modeRefDeltaUpdate = (uint8_t)bs->GetBit();
 
         if (filter->modeRefDeltaUpdate)
         {
-            for (Ipp32u i = 0; i < MAX_REF_LF_DELTAS; i++)
+            for (uint32_t i = 0; i < MAX_REF_LF_DELTAS; i++)
             {
                 if (bs->GetBit())
                 {
-                    value = (Ipp8s)bs->GetBits(6);
+                    value = (int8_t)bs->GetBits(6);
                     filter->refDeltas[i] = bs->GetBit() ? -value : value;
                 }
             }
 
-            for (Ipp32u i = 0; i < MAX_MODE_LF_DELTAS; i++)
+            for (uint32_t i = 0; i < MAX_MODE_LF_DELTAS; i++)
             {
                 if (bs->GetBit())
                 {
-                    value = (Ipp8s)bs->GetBits(6);
+                    value = (int8_t)bs->GetBits(6);
                     filter->modeDeltas[i] = bs->GetBit() ? -value : value;
                 }
             }

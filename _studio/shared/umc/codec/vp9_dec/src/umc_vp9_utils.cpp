@@ -234,7 +234,7 @@ namespace UMC_VP9_DECODER
     };
 
     inline
-    Ipp16s vp9_dc_quant(Ipp32s qindex, Ipp32s delta, Ipp32u bit_depth)
+    int16_t vp9_dc_quant(int32_t qindex, int32_t delta, uint32_t bit_depth)
     {
         switch (bit_depth) {
             case 8:
@@ -250,7 +250,7 @@ namespace UMC_VP9_DECODER
     }
 
     inline
-    Ipp16s vp9_ac_quant(Ipp32s qindex, Ipp32s delta, Ipp32u bit_depth)
+    int16_t vp9_ac_quant(int32_t qindex, int32_t delta, uint32_t bit_depth)
     {
         switch (bit_depth) {
             case 8:
@@ -265,13 +265,13 @@ namespace UMC_VP9_DECODER
           }
     }
 
-    Ipp32s GetQIndex(VP9Segmentation const & seg, Ipp8u segmentId, Ipp32s baseQIndex)
+    int32_t GetQIndex(VP9Segmentation const & seg, uint8_t segmentId, int32_t baseQIndex)
     {
         if (!IsSegFeatureActive(seg, segmentId, SEG_LVL_ALT_Q))
             return baseQIndex;
         else
         {
-            const Ipp32s data = GetSegData(seg, segmentId, UMC_VP9_DECODER::SEG_LVL_ALT_Q);
+            const int32_t data = GetSegData(seg, segmentId, UMC_VP9_DECODER::SEG_LVL_ALT_Q);
             return
                  seg.absDelta == SEGMENT_ABSDATA ?
                  data :  // Abs value
@@ -344,7 +344,7 @@ namespace UMC_VP9_DECODER
 
     }
 
-    void SetSegData(VP9Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data)
+    void SetSegData(VP9Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data)
     {
         VM_ASSERT(seg_data <= SEG_FEATURE_DATA_MAX[featureId]);
         if (seg_data < 0)
@@ -379,10 +379,10 @@ namespace UMC_VP9_DECODER
         memset(info.refFrameSignBias, 0, sizeof(info.refFrameSignBias));
     }
 
-    void GetTileNBits(const Ipp32s miCols, Ipp32s & minLog2TileCols, Ipp32s & maxLog2TileCols)
+    void GetTileNBits(const int32_t miCols, int32_t & minLog2TileCols, int32_t & maxLog2TileCols)
     {
-        const Ipp32s sbCols = ALIGN_POWER_OF_TWO(miCols, MI_BLOCK_SIZE_LOG2) >> MI_BLOCK_SIZE_LOG2;
-        Ipp32s minLog2 = 0, maxLog2 = 0;
+        const int32_t sbCols = ALIGN_POWER_OF_TWO(miCols, MI_BLOCK_SIZE_LOG2) >> MI_BLOCK_SIZE_LOG2;
+        int32_t minLog2 = 0, maxLog2 = 0;
 
         while ((sbCols >> maxLog2) >= MIN_TILE_WIDTH_B64)
             ++maxLog2;

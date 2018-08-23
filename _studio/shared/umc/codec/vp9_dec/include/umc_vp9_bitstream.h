@@ -28,12 +28,12 @@ namespace UMC_VP9_DECODER
     public:
 
         VP9Bitstream();
-        VP9Bitstream(Ipp8u * const pb, const Ipp32u maxsize);
+        VP9Bitstream(uint8_t * const pb, const uint32_t maxsize);
 
         // Reset the bitstream with new data pointer 
-        void Reset(Ipp8u * const pb, const Ipp32u maxsize);
+        void Reset(uint8_t * const pb, const uint32_t maxsize);
         // Reset the bitstream with new data pointer and bit offset
-        void Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize); 
+        void Reset(uint8_t * const pb, int32_t offset, const uint32_t maxsize); 
         
         // Returns number of decoded bytes since last reset
         size_t BytesDecoded() const
@@ -53,18 +53,18 @@ namespace UMC_VP9_DECODER
         size_t BytesLeft() const
         {
             return
-                (Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded(); 
+                (int32_t)m_maxBsSize - (int32_t) BytesDecoded(); 
         }
  
         // Return bitstream array base address and size
-        void GetOrg(Ipp8u **pbs, Ipp32u *size);
+        void GetOrg(uint8_t **pbs, uint32_t *size);
 
-        Ipp32u GetBit()
+        uint32_t GetBit()
         {
             if (m_pbs >= m_pbsBase + m_maxBsSize)
                 throw vp9_exception(UMC::UMC_ERR_NOT_ENOUGH_DATA);
 
-            Ipp32u const bit = (*m_pbs >> (7 - m_bitOffset)) & 1;
+            uint32_t const bit = (*m_pbs >> (7 - m_bitOffset)) & 1;
             if (++m_bitOffset == 8)
             {
                 ++m_pbs;
@@ -74,16 +74,16 @@ namespace UMC_VP9_DECODER
             return bit;
         }
 
-        Ipp32u GetBits(Ipp32u nbits);
-        Ipp32u GetUe();
-        Ipp32s GetSe();
+        uint32_t GetBits(uint32_t nbits);
+        uint32_t GetUe();
+        int32_t GetSe();
 
     protected:
 
-        Ipp8u* m_pbs;                                              // pointer to the current position of the buffer.
-        Ipp32s m_bitOffset;                                        // the bit position (0 to 31) in the dword pointed by m_pbs.
-        Ipp8u* m_pbsBase;                                          // pointer to the first byte of the buffer.
-        Ipp32u m_maxBsSize;                                        // maximum buffer size in bytes. 
+        uint8_t* m_pbs;                                              // pointer to the current position of the buffer.
+        int32_t m_bitOffset;                                        // the bit position (0 to 31) in the dword pointed by m_pbs.
+        uint8_t* m_pbsBase;                                          // pointer to the first byte of the buffer.
+        uint32_t m_maxBsSize;                                        // maximum buffer size in bytes. 
     };
 
     inline

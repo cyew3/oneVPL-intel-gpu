@@ -16,11 +16,11 @@
 
 namespace UMC_VP9_DECODER
 {
-    const Ipp8u VP9_SYNC_CODE_0 = 0x49;
-    const Ipp8u VP9_SYNC_CODE_1 = 0x83;
-    const Ipp8u VP9_SYNC_CODE_2 = 0x42;
+    const uint8_t VP9_SYNC_CODE_0 = 0x49;
+    const uint8_t VP9_SYNC_CODE_1 = 0x83;
+    const uint8_t VP9_SYNC_CODE_2 = 0x42;
 
-    const Ipp8u VP9_FRAME_MARKER = 0x2;
+    const uint8_t VP9_FRAME_MARKER = 0x2;
 
     typedef enum tagVP9_FRAME_TYPE
     {
@@ -59,9 +59,9 @@ namespace UMC_VP9_DECODER
         SWITCHABLE = 4
     } INTERP_FILTER;
 
-    const Ipp8u VP9_MAX_NUM_OF_SEGMENTS = 8;
-    const Ipp8u VP9_NUM_OF_SEGMENT_TREE_PROBS = VP9_MAX_NUM_OF_SEGMENTS - 1;
-    const Ipp8u VP9_NUM_OF_PREDICTION_PROBS = 3;
+    const uint8_t VP9_MAX_NUM_OF_SEGMENTS = 8;
+    const uint8_t VP9_NUM_OF_SEGMENT_TREE_PROBS = VP9_MAX_NUM_OF_SEGMENTS - 1;
+    const uint8_t VP9_NUM_OF_PREDICTION_PROBS = 3;
 
     // Segment level features.
     typedef enum tagSEG_LVL_FEATURES
@@ -73,76 +73,76 @@ namespace UMC_VP9_DECODER
         SEG_LVL_MAX = 4                  // Number of features supported
     } SEG_LVL_FEATURES;
 
-    const Ipp8u REFS_PER_FRAME = 3;
-    const Ipp8u REF_FRAMES_LOG2 = 3;
-    const Ipp8u NUM_REF_FRAMES = 1 << REF_FRAMES_LOG2;
+    const uint8_t REFS_PER_FRAME = 3;
+    const uint8_t REF_FRAMES_LOG2 = 3;
+    const uint8_t NUM_REF_FRAMES = 1 << REF_FRAMES_LOG2;
 
-    const Ipp8u FRAME_CONTEXTS_LOG2 = 2;
+    const uint8_t FRAME_CONTEXTS_LOG2 = 2;
 
-    const Ipp8u QINDEX_BITS = 8;
+    const uint8_t QINDEX_BITS = 8;
 
-    const Ipp8u VP9_MAX_PROB = 255;
+    const uint8_t VP9_MAX_PROB = 255;
 
     typedef struct tagSizeOfFrame{
-        Ipp32u width;
-        Ipp32u height;
+        uint32_t width;
+        uint32_t height;
     } SizeOfFrame;
 
-    const Ipp8u MINQ = 0;
-    const Ipp8u MAXQ = 255;
-    const Ipp16u QINDEX_RANGE = MAXQ - MINQ + 1;
+    const uint8_t MINQ = 0;
+    const uint8_t MAXQ = 255;
+    const uint16_t QINDEX_RANGE = MAXQ - MINQ + 1;
 
-    const Ipp8u SEGMENT_DELTADATA = 0;
-    const Ipp8u SEGMENT_ABSDATA = 1;
+    const uint8_t SEGMENT_DELTADATA = 0;
+    const uint8_t SEGMENT_ABSDATA = 1;
 
-    const Ipp8u MAX_REF_LF_DELTAS = 4;
-    const Ipp8u MAX_MODE_LF_DELTAS = 2;
+    const uint8_t MAX_REF_LF_DELTAS = 4;
+    const uint8_t MAX_MODE_LF_DELTAS = 2;
 
-    const Ipp8u MAX_LOOP_FILTER = 63;
+    const uint8_t MAX_LOOP_FILTER = 63;
 
-    const Ipp8u MIN_TILE_WIDTH_B64 = 4;
-    const Ipp8u MAX_TILE_WIDTH_B64 = 64;
-    const Ipp8u MI_SIZE_LOG2 = 3;
-    const Ipp8u MI_BLOCK_SIZE_LOG2 = 6 - MI_SIZE_LOG2; // 64 = 2^6
+    const uint8_t MIN_TILE_WIDTH_B64 = 4;
+    const uint8_t MAX_TILE_WIDTH_B64 = 64;
+    const uint8_t MI_SIZE_LOG2 = 3;
+    const uint8_t MI_BLOCK_SIZE_LOG2 = 6 - MI_SIZE_LOG2; // 64 = 2^6
 
-    const Ipp8u SEG_FEATURE_DATA_SIGNED[SEG_LVL_MAX] = { 1, 1, 0, 0 };
-    const Ipp8u SEG_FEATURE_DATA_MAX[SEG_LVL_MAX] = { MAXQ, MAX_LOOP_FILTER, 3, 0 };
+    const uint8_t SEG_FEATURE_DATA_SIGNED[SEG_LVL_MAX] = { 1, 1, 0, 0 };
+    const uint8_t SEG_FEATURE_DATA_MAX[SEG_LVL_MAX] = { MAXQ, MAX_LOOP_FILTER, 3, 0 };
 
     struct Loopfilter
     {
-        Ipp32s filterLevel;
+        int32_t filterLevel;
 
-        Ipp32s sharpnessLevel;
-        Ipp32s lastSharpnessLevel;
+        int32_t sharpnessLevel;
+        int32_t lastSharpnessLevel;
 
-        Ipp8u modeRefDeltaEnabled;
-        Ipp8u modeRefDeltaUpdate;
+        uint8_t modeRefDeltaEnabled;
+        uint8_t modeRefDeltaUpdate;
 
         // 0 = Intra, Last, GF, ARF
-        Ipp8s refDeltas[MAX_REF_LF_DELTAS];
+        int8_t refDeltas[MAX_REF_LF_DELTAS];
 
         // 0 = ZERO_MV, MV
-        Ipp8s modeDeltas[MAX_MODE_LF_DELTAS];
+        int8_t modeDeltas[MAX_MODE_LF_DELTAS];
     };
 
     struct LoopFilterInfo
     {
-        Ipp8u level[VP9_MAX_NUM_OF_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
+        uint8_t level[VP9_MAX_NUM_OF_SEGMENTS][MAX_REF_FRAMES][MAX_MODE_LF_DELTAS];
     };
 
     struct VP9Segmentation
     {
-        Ipp8u enabled;
-        Ipp8u updateMap;
-        Ipp8u updateData;
-        Ipp8u absDelta;
-        Ipp8u temporalUpdate;
+        uint8_t enabled;
+        uint8_t updateMap;
+        uint8_t updateData;
+        uint8_t absDelta;
+        uint8_t temporalUpdate;
 
-        Ipp8u treeProbs[VP9_NUM_OF_SEGMENT_TREE_PROBS];
-        Ipp8u predProbs[VP9_NUM_OF_PREDICTION_PROBS];
+        uint8_t treeProbs[VP9_NUM_OF_SEGMENT_TREE_PROBS];
+        uint8_t predProbs[VP9_NUM_OF_PREDICTION_PROBS];
 
-        Ipp32s featureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
-        Ipp32u featureMask[VP9_MAX_NUM_OF_SEGMENTS];
+        int32_t featureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
+        uint32_t featureMask[VP9_MAX_NUM_OF_SEGMENTS];
 
     };
 
@@ -150,21 +150,21 @@ namespace UMC_VP9_DECODER
     {
     public:
 
-        vp9_exception(Ipp32s status = -1)
+        vp9_exception(int32_t status = -1)
             : m_Status(status)
         {}
 
         virtual ~vp9_exception()
         {}
 
-        Ipp32s GetStatus() const
+        int32_t GetStatus() const
         {
             return m_Status;
         }
 
     private:
 
-        Ipp32s m_Status;
+        int32_t m_Status;
     };
 } // end namespace UMC_VP9_DECODER
 

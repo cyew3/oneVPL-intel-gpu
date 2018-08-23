@@ -71,7 +71,7 @@ PackerDXVA::PackerDXVA(VideoAccelerator * va)
 Status PackerDXVA::GetStatusReport(void * pStatusReport, size_t size)
 {
     return
-        m_va->ExecuteStatusReportBuffer(pStatusReport, (Ipp32u)size);
+        m_va->ExecuteStatusReportBuffer(pStatusReport, (uint32_t)size);
 }
 
 void PackerDXVA::BeginFrame()
@@ -112,10 +112,10 @@ void PackerIntel::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
 
     PackSegmentParams(segParam, info);
 
-    Ipp8u* data;
-    Ipp32u length;
+    uint8_t* data;
+    uint32_t length;
     bs->GetOrg(&data, &length);
-    Ipp32u offset = (Ipp32u)bs->BytesDecoded();
+    uint32_t offset = (uint32_t)bs->BytesDecoded();
     length -= offset;
 
     do
@@ -260,11 +260,11 @@ void PackerMS::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
 
     PackPicParams(picParam, info);
 
-    Ipp8u* data;
-    Ipp32u length;
+    uint8_t* data;
+    uint32_t length;
     bs->GetOrg(&data, &length);
 
-    Ipp32u const offset = static_cast<Ipp32u>(bs->BytesDecoded());
+    uint32_t const offset = static_cast<uint32_t>(bs->BytesDecoded());
     data += offset;
     length -= offset;
 
@@ -293,7 +293,7 @@ void PackerMS::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
             lenght2 = compBufBs->GetBufferSize();
         
         mfxU32 const padding = 
-            align_value<Ipp32s>(lenght2, 128) - lenght2;
+            align_value<int32_t>(lenght2, 128) - lenght2;
 
         mfx_memcpy(bistreamData, lenght2, data, lenght2);
 
@@ -369,7 +369,7 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
             pp->frame_refs[i].bPicEntry = 255;
         else
         {
-            Ipp32s index = info->activeRefIdx[i];
+            int32_t index = info->activeRefIdx[i];
             if (index < 0 || index >= NUM_REF_FRAMES)
             {
                 index = 0;
@@ -388,10 +388,10 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
     pp->mode_ref_delta_update    = info->lf.modeRefDeltaUpdate;
     pp->use_prev_in_find_mv_refs = !info->errorResilientMode && !info->lastShowFrame;
        
-    for (Ipp8u i = 0; i < MAX_REF_LF_DELTAS; i++)
+    for (uint8_t i = 0; i < MAX_REF_LF_DELTAS; i++)
         pp->ref_deltas[i]  = info->lf.refDeltas[i];
 
-    for (Ipp8u i = 0; i < MAX_MODE_LF_DELTAS; i++)
+    for (uint8_t i = 0; i < MAX_MODE_LF_DELTAS; i++)
         pp->mode_deltas[i]  = info->lf.modeDeltas[i];
 
     pp->base_qindex   = (SHORT)info->baseQIndex;
@@ -404,14 +404,14 @@ void PackerMS::PackPicParams(DXVA_PicParams_VP9* pp, VP9DecoderFrame const* info
     pp->stVP9Segments.temporal_update = info->segmentation.temporalUpdate;
     pp->stVP9Segments.abs_delta = info->segmentation.absDelta;
 
-    for (Ipp8u i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; i++)
+    for (uint8_t i = 0; i < VP9_NUM_OF_SEGMENT_TREE_PROBS; i++)
         pp->stVP9Segments.tree_probs[i] = info->segmentation.treeProbs[i];
 
     //segmentation.predProbs[] is already filled with VP9_MAX_PROB when !segmentation.temporalUpdate (see VideoDECODEVP9_HW::DecodeFrameHeader)
-    for (Ipp8u i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
+    for (uint8_t i = 0; i < VP9_NUM_OF_PREDICTION_PROBS; ++i)
         pp->stVP9Segments.pred_probs[i] = info->segmentation.predProbs[i];
 
-    for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+    for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
     {
         pp->stVP9Segments.feature_mask[i] = (UCHAR)info->segmentation.featureMask[i];
 
@@ -480,10 +480,10 @@ void PackerVA::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
     memset(sliceParam, 0, sizeof(VASliceParameterBufferVP9));
     PackSliceParams(sliceParam, info);
 
-    Ipp8u* data;
-    Ipp32u length;
+    uint8_t* data;
+    uint32_t length;
     bs->GetOrg(&data, &length);
-    Ipp32u const offset = bs->BytesDecoded();
+    uint32_t const offset = bs->BytesDecoded();
     length -= offset;
 
     pCompBuf = NULL;

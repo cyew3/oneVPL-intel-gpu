@@ -26,35 +26,35 @@ namespace UMC_VP9_DECODER
     class VP9DecoderFrame;
 
     inline
-    Ipp32s clamp(Ipp32s value, Ipp32s low, Ipp32s high)
+    int32_t clamp(int32_t value, int32_t low, int32_t high)
     {
         return value < low ? low : (value > high ? high : value);
     }
 
-    void SetSegData(VP9Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data);
+    void SetSegData(VP9Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data);
 
     inline
-    Ipp32s GetSegData(VP9Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    int32_t GetSegData(VP9Segmentation const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.featureData[segmentId][featureId];
     }
 
     inline
-    bool IsSegFeatureActive(VP9Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    bool IsSegFeatureActive(VP9Segmentation const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.enabled && (seg.featureMask[segmentId] & (1 << featureId));
     }
 
     inline
-    void EnableSegFeature(VP9Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    void EnableSegFeature(VP9Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         seg.featureMask[segmentId] |= 1 << featureId;
     }
 
     inline
-    Ipp8u IsSegFeatureSigned(SEG_LVL_FEATURES featureId)
+    uint8_t IsSegFeatureSigned(SEG_LVL_FEATURES featureId)
     {
         return
             SEG_FEATURE_DATA_SIGNED[featureId];
@@ -68,15 +68,15 @@ namespace UMC_VP9_DECODER
     }
 
     inline
-    Ipp32u GetMostSignificantBit(Ipp32u n)
+    uint32_t GetMostSignificantBit(uint32_t n)
     {
-        Ipp32u log = 0;
-        Ipp32u value = n;
+        uint32_t log = 0;
+        uint32_t value = n;
 
-        for (Ipp8s i = 4; i >= 0; --i)
+        for (int8_t i = 4; i >= 0; --i)
         {
-            const Ipp32u shift = (1u << i);
-            const Ipp32u x = value >> shift;
+            const uint32_t shift = (1u << i);
+            const uint32_t x = value >> shift;
             if (x != 0)
             {
                 value = x;
@@ -88,13 +88,13 @@ namespace UMC_VP9_DECODER
     }
 
     inline
-    Ipp32u GetUnsignedBits(Ipp32u numValues)
+    uint32_t GetUnsignedBits(uint32_t numValues)
     {
         return
             numValues > 0 ? GetMostSignificantBit(numValues) + 1 : 0;
     }
 
-    Ipp32s GetQIndex(VP9Segmentation const & seg, Ipp8u segmentId, Ipp32s baseQIndex);
+    int32_t GetQIndex(VP9Segmentation const & seg, uint8_t segmentId, int32_t baseQIndex);
 
     void InitDequantizer(VP9DecoderFrame* info);
 
@@ -102,7 +102,7 @@ namespace UMC_VP9_DECODER
 
     void SetupPastIndependence(VP9DecoderFrame & info);
 
-    void GetTileNBits(const Ipp32s miCols, Ipp32s & minLog2TileCols, Ipp32s & maxLog2TileCols);
+    void GetTileNBits(const int32_t miCols, int32_t & minLog2TileCols, int32_t & maxLog2TileCols);
 
 } //UMC_VP9_DECODER
 
