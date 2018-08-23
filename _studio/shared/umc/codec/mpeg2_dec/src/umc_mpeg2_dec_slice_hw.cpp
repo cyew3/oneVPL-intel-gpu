@@ -25,8 +25,8 @@
 using namespace UMC;
 #if defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)
 
-//extern Ipp8u default_intra_quantizer_matrix[64];
-static const Ipp8u default_intra_quantizer_matrix[64] =
+//extern uint8_t default_intra_quantizer_matrix[64];
+static const uint8_t default_intra_quantizer_matrix[64] =
 {
      8, 16, 16, 19, 16, 19, 22, 22,
     22, 22, 22, 22, 26, 24, 26, 27,
@@ -40,8 +40,8 @@ static const Ipp8u default_intra_quantizer_matrix[64] =
 
 struct VLCEntry
 {
-    Ipp8s value;
-    Ipp8s length;
+    int8_t value;
+    int8_t length;
 };
 
 static const VLCEntry MBAddrIncrTabB1_1[16] = {
@@ -84,10 +84,10 @@ static const VLCEntry MBAddrIncrTabB1_2[104] = {
     { 3 + 5, 0 + 7 }, { 0 + 8, 0 + 7 }, { 6 + 2, 3 + 4 }, { 3 + 5, 1 + 6 },
 };
 
-Ipp32s DecoderMBInc(VideoContext  *video)
+int32_t DecoderMBInc(VideoContext  *video)
 {
-    Ipp32s macroblock_address_increment = 0;
-    Ipp32s cc;
+    int32_t macroblock_address_increment = 0;
+    int32_t cc;
 
     for (;;)
     {
@@ -112,7 +112,7 @@ Ipp32s DecoderMBInc(VideoContext  *video)
         return macroblock_address_increment + 1;
     }
 
-    Ipp32s cc1;
+    int32_t cc1;
 
     if (cc >= 128) {
         cc >>= 6;
@@ -126,13 +126,13 @@ Ipp32s DecoderMBInc(VideoContext  *video)
 }
 
 #ifdef UMC_VA_DXVA
-Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counterMode)
+uint32_t DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counterMode)
 {
     if(encryptedData->Next)
     {
-        Ipp64u counter1 = encryptedData->CipherCounter.Count;
-        Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-        Ipp64u zero = 0xffffffffffffffff;
+        unsigned long long counter1 = encryptedData->CipherCounter.Count;
+        unsigned long long counter2 = encryptedData->Next->CipherCounter.Count;
+        unsigned long long zero = 0xffffffffffffffff;
         if(counterMode == PAVP_COUNTER_TYPE_A)
         {
             counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -146,11 +146,11 @@ Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counte
         }
         if(counter2 < counter1)
         {
-            return (Ipp32u)(counter2 +(zero - counter1))*16;
+            return (uint32_t)(counter2 +(zero - counter1))*16;
         }
         else
         {
-            return (Ipp32u)(counter2 - counter1)*16;
+            return (uint32_t)(counter2 - counter1)*16;
         }
     }
     else
@@ -162,8 +162,8 @@ Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counte
     }
 }
 //slice size with alignment
-Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode,
-                 Ipp32u &overlap)
+uint32_t SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode,
+                 uint32_t &overlap)
 {
     mfxEncryptedData *temp = first;
     int size = temp->DataLength + temp->DataOffset;
@@ -173,9 +173,9 @@ Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode,
     int retSize = size - overlap;
     if(temp->Next)
     {
-        Ipp64u counter1 = temp->CipherCounter.Count;
-        Ipp64u counter2 = temp->Next->CipherCounter.Count;
-        Ipp64u zero = 0xffffffffffffffff;
+        unsigned long long counter1 = temp->CipherCounter.Count;
+        unsigned long long counter2 = temp->Next->CipherCounter.Count;
+        unsigned long long zero = 0xffffffffffffffff;
         if(counterMode == PAVP_COUNTER_TYPE_A)
         {
             counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -187,14 +187,14 @@ Ipp32u SliceSize(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode,
             counter1 = LITTLE_ENDIAN_SWAP64(counter1);
             counter2 = LITTLE_ENDIAN_SWAP64(counter2);
         }
-        Ipp64u endCounter = counter1 + size / 16;
+        unsigned long long endCounter = counter1 + size / 16;
         if(endCounter >= counter2)
         {
-          overlap = (Ipp32u)(endCounter - counter2)*16;
+          overlap = (uint32_t)(endCounter - counter2)*16;
         }
         else
         {
-          overlap = (Ipp32u)(endCounter + (zero- counter2))*16;
+          overlap = (uint32_t)(endCounter + (zero- counter2))*16;
         }
     }
     else
@@ -213,9 +213,9 @@ Status CheckData(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode)
     {
         if(temp->Next)
         {
-            Ipp64u counter1 = temp->CipherCounter.Count;
-            Ipp64u counter2 = temp->Next->CipherCounter.Count;
-            Ipp64u zero = 0xffffffffffffffff;
+            unsigned long long counter1 = temp->CipherCounter.Count;
+            unsigned long long counter2 = temp->Next->CipherCounter.Count;
+            unsigned long long zero = 0xffffffffffffffff;
             if(counterMode == PAVP_COUNTER_TYPE_A)
             {
                 counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -230,10 +230,10 @@ Status CheckData(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode)
             //second slice offset starts after the first, there is no counter overall
             if(counter1 <= counter2)
             {
-                Ipp32u size = temp->DataLength + temp->DataOffset;
+                uint32_t size = temp->DataLength + temp->DataOffset;
                 if(size & 0xf)
                     size= size+(0x10 - (size & 0xf));
-                Ipp32u sizeCount = (Ipp32u)(counter2 - counter1) *16;
+                uint32_t sizeCount = (uint32_t)(counter2 - counter1) *16;
                 //if we have hole between slices
                 if(sizeCount > size)
                     return UMC_ERR_INVALID_STREAM;
@@ -244,22 +244,22 @@ Status CheckData(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode)
             else //there is counter overall or second slice offset starts earlier then the first one
             {
                 //length of the second slice offset in 16-bytes blocks
-                Ipp64u offsetCounter = (temp->Next->DataOffset + 15)/16;
+                unsigned long long offsetCounter = (temp->Next->DataOffset + 15)/16;
                 // no counter2 overall
                 if(zero - counter2 > offsetCounter)
                 {
-                    Ipp32u size = temp->DataLength + temp->DataOffset;
+                    uint32_t size = temp->DataLength + temp->DataOffset;
                     if(size & 0xf)
                         size= size+(0x10 - (size & 0xf));
-                    Ipp64u counter3 = size / 16;
+                    unsigned long long counter3 = size / 16;
                     // no zero during the first slice
                     if(zero - counter1 >= counter3)
                     {
                         //second slice offset contains the first slice with offset
                         if(counter2 + offsetCounter >= counter3)
                         {
-                            temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                            temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
+                            temp->Next->Data += (uint32_t)(counter1 - counter2) * 16;
+                            temp->Next->DataOffset -= (uint32_t)(counter1 - counter2) * 16;
                             temp->Next->CipherCounter = temp->CipherCounter;
                             //overlap between slices is different in different buffers
                             if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
@@ -273,7 +273,7 @@ Status CheckData(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode)
                     else
                     {
                         //size of data between counters
-                        Ipp32u sizeCount = (Ipp32u)(counter2 + (zero - counter1)) *16;
+                        uint32_t sizeCount = (uint32_t)(counter2 + (zero - counter1)) *16;
                         //hole between slices
                         if(sizeCount > size)
                             return UMC_ERR_INVALID_STREAM;
@@ -284,8 +284,8 @@ Status CheckData(mfxEncryptedData *first, PAVP_COUNTER_TYPE counterMode)
                 }
                 else
                 {
-                    temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                    temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
+                    temp->Next->Data += (uint32_t)(counter1 - counter2) * 16;
+                    temp->Next->DataOffset -= (uint32_t)(counter1 - counter2) * 16;
                     temp->Next->CipherCounter = temp->CipherCounter;
                     //overlap between slices is different in different buffers
                     if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
@@ -315,10 +315,10 @@ Status MPEG2VideoDecoderHW::Init(BaseCodecParams *pInit)
 
 Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 {
-    Ipp32u extra_bit_slice;
-    Ipp32u code;
-    Ipp32s bytes_remain = 0;
-    Ipp32s bit_pos = 0;
+    uint32_t extra_bit_slice;
+    uint32_t code;
+    int32_t bytes_remain = 0;
+    int32_t bit_pos = 0;
     bool isCorrupted = false;
 
     if (!video)
@@ -328,19 +328,19 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 
     FIND_START_CODE(video->bs, code)
 #if defined(UMC_VA_LINUX)
-    Ipp32u start_code = code;
+    uint32_t start_code = code;
 #endif
 
-    if(code == (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA)
+    if(code == (uint32_t)UMC_ERR_NOT_ENOUGH_DATA)
     {
         if (VA_VLD_W == pack_w.va_mode && false == pack_w.IsProtectedBS)
         {
             // update latest slice information
-            Ipp8u *start_ptr = GET_BYTE_PTR(video->bs);
-            Ipp8u *end_ptr = GET_END_PTR(video->bs);
-            Ipp8u *ptr = start_ptr;
-            Ipp32u count = 0;
-            Ipp32u zeroes = 0;
+            uint8_t *start_ptr = GET_BYTE_PTR(video->bs);
+            uint8_t *end_ptr = GET_END_PTR(video->bs);
+            uint8_t *ptr = start_ptr;
+            uint32_t count = 0;
+            uint32_t zeroes = 0;
             //calculating the size of slice data, if 4 consecutive 0s are found, it indicates the end of the slice no further check is needed
             while (ptr < end_ptr)
             {
@@ -370,8 +370,8 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 
     if(pack_w.va_mode == VA_VLD_W) {
         // start of slice code
-        bytes_remain = (Ipp32s)GET_REMAINED_BYTES(video->bs);
-        bit_pos = (Ipp32s)GET_BIT_OFFSET(video->bs);
+        bytes_remain = (int32_t)GET_REMAINED_BYTES(video->bs);
+        bit_pos = (int32_t)GET_BIT_OFFSET(video->bs);
 #ifdef UMC_VA_DXVA
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
@@ -386,8 +386,8 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 
         if(pack_w.pSliceInfo > pack_w.pSliceInfoBuffer)
         {
-             Ipp32s dsize = 0;
-             Ipp32u overlap = pack_w.overlap;
+             int32_t dsize = 0;
+             uint32_t overlap = pack_w.overlap;
              pack_w.pSliceInfo[-1].dwSliceBitsInBuffer -= bytes_remain*8;
 
              dsize = pack_w.pSliceInfo[-1].dwSliceBitsInBuffer/8;
@@ -406,11 +406,11 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 #endif
 
             if(pack_w.bs_size >= pack_w.bs_size_getting ||
-                (Ipp32s)((Ipp8u*)pack_w.pSliceInfo - (Ipp8u*)pack_w.pSliceInfoBuffer) >= (Ipp32s)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
+                (int32_t)((uint8_t*)pack_w.pSliceInfo - (uint8_t*)pack_w.pSliceInfoBuffer) >= (int32_t)(pack_w.slice_size_getting-sizeof(DXVA_SliceInfo)))
             {
                 bool slice_split = false;
                 DXVA_SliceInfo s_info;
-                Ipp32s sz = 0, sz_align = 0;
+                int32_t sz = 0, sz_align = 0;
 
                 memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
 
@@ -424,7 +424,7 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if(pack_w.IsProtectedBS)
                     {
-                        Ipp32s NumSlices = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
+                        int32_t NumSlices = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
                         mfxEncryptedData *encryptedData = pack_w.curr_bs_encryptedData;
                         pack_w.bs_size = pack_w.add_to_slice_start;//0;
                         pack_w.overlap = 0;
@@ -452,26 +452,26 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
 
                         if(!pack_w.is_bs_aligned_16)
                         {
-                            std::vector<Ipp8u> buf(sz_align);
+                            std::vector<uint8_t> buf(sz_align);
                             NumSlices++;
                             encryptedData = pack_w.curr_bs_encryptedData;
-                            Ipp8u *ptr = &buf[0];
-                        Ipp8u *pBuf=ptr;
+                            uint8_t *ptr = &buf[0];
+                        uint8_t *pBuf=ptr;
                             for (int i = 0; i < NumSlices; i++)
                             {
                                 if (!encryptedData)
                                     return UMC_ERR_DEVICE_FAILED;
-                            Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+                            uint32_t alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
                             if(alignedSize & 0xf)
                                 alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
                                 if(i < NumSlices - 1)
                                 {
                                 MFX_INTERNAL_CPY(pBuf, encryptedData->Data, alignedSize);
-                                Ipp32u diff = (Ipp32u)(ptr - pBuf);
+                                uint32_t diff = (uint32_t)(ptr - pBuf);
                                 ptr += alignedSize - diff;
-                                Ipp64u counter1 = encryptedData->CipherCounter.Count;
-                                Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-                                Ipp64u zero = 0xffffffffffffffff;
+                                unsigned long long counter1 = encryptedData->CipherCounter.Count;
+                                unsigned long long counter2 = encryptedData->Next->CipherCounter.Count;
+                                unsigned long long zero = 0xffffffffffffffff;
                                 if((pack_w.m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                                 {
                                     counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -485,11 +485,11 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
                                 }
                                 if(counter2 < counter1)
                                 {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
+                                    (unsigned char*)pBuf += (uint32_t)(counter2 +(zero - counter1))*16;
                                 }
                                 else
                                 {
-                                    (unsigned char*)pBuf += (Ipp32u)(counter2 - counter1)*16;
+                                    (unsigned char*)pBuf += (uint32_t)(counter2 - counter1)*16;
                                 }
                             }
                             else
@@ -505,7 +505,7 @@ Status MPEG2VideoDecoderHW::DecodeSliceHeader(VideoContext *video, int task_num)
                     }
 #endif
 
-mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
+mm:                 int32_t numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE) ?
                                         sequenceHeader.numMB[task_num] : sequenceHeader.numMB[task_num]/2;
 
                     if(pack_w.SetBufferSize(numMB)!= UMC_OK)
@@ -690,8 +690,8 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
             return UMC_ERR_INVALID_STREAM;
         }
 
-        Ipp32u slice_idx = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
-        Ipp32u num_allocated_slices = pack_w.slice_size_getting/sizeof(VASliceParameterBufferMPEG2);
+        uint32_t slice_idx = pack_w.pSliceInfo - pack_w.pSliceInfoBuffer;
+        uint32_t num_allocated_slices = pack_w.slice_size_getting/sizeof(VASliceParameterBufferMPEG2);
 
         if (slice_idx < num_allocated_slices)
         {
@@ -708,7 +708,7 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
                 if(BOTTOM_FIELD == PictureHeader[task_num].picture_structure)
                     ++pack_l.pSliceInfo->slice_vertical_position;
 
-                Ipp32u macroblock_address_increment=1;
+                uint32_t macroblock_address_increment=1;
 
 
                 if (IS_NEXTBIT1(video->bs))
@@ -755,9 +755,9 @@ mm:                 Ipp32s numMB = (PictureHeader[task_num].picture_structure ==
 Status MPEG2VideoDecoderHW::DecodeSlice(VideoContext  *video, int task_num)
 {
 #if defined UMC_VA_DXVA
-    Ipp32s macroblock_address_increment = 1;
+    int32_t macroblock_address_increment = 1;
 
-    Ipp32s remained = GET_REMAINED_BYTES(video->bs);
+    int32_t remained = GET_REMAINED_BYTES(video->bs);
 
     if (remained == 0)
     {
@@ -849,12 +849,12 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
              // printf("pack_w.bs_size = %d\n", pack_w.bs_size);
              // printf("pack_w.bs_size_getting = %d\n", pack_w.bs_size_getting);
             if ((pack_w.bs_size >= pack_w.bs_size_getting) ||
-                ((Ipp32s)((Ipp8u*)pack_w.pSliceInfo - (Ipp8u*)pack_w.pSliceInfoBuffer) >=
-                    (pack_w.slice_size_getting-(Ipp32s)sizeof(DXVA_SliceInfo))))
+                ((int32_t)((uint8_t*)pack_w.pSliceInfo - (uint8_t*)pack_w.pSliceInfoBuffer) >=
+                    (pack_w.slice_size_getting-(int32_t)sizeof(DXVA_SliceInfo))))
               {
                 DXVA_SliceInfo s_info;
                 bool slice_split = false;
-                Ipp32s sz = 0, sz_align = 0;
+                int32_t sz = 0, sz_align = 0;
 
                 memcpy_s(&s_info,sizeof(DXVA_SliceInfo),&pack_w.pSliceInfo[-1],sizeof(DXVA_SliceInfo));
 
@@ -868,7 +868,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
                     if(pack_w.IsProtectedBS)
                     {
-                        Ipp32s NumSlices = (Ipp32s)(pack_w.pSliceInfo - pack_w.pSliceInfoBuffer);
+                        int32_t NumSlices = (int32_t)(pack_w.pSliceInfo - pack_w.pSliceInfoBuffer);
                         mfxEncryptedData *encryptedData = pack_w.curr_bs_encryptedData;
                         pack_w.bs_size = pack_w.add_to_slice_start;//0;
                         pack_w.overlap = 0;
@@ -897,22 +897,22 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
 
                         if(!pack_w.is_bs_aligned_16)
                         {
-                            std::vector<Ipp8u> buf(sz_align);
+                            std::vector<uint8_t> buf(sz_align);
                             NumSlices++;
                             encryptedData = pack_w.curr_bs_encryptedData;
-                            Ipp8u *ptr = &buf[0];
-                            Ipp8u *pBuf=ptr;
+                            uint8_t *ptr = &buf[0];
+                            uint8_t *pBuf=ptr;
                             for (int i = 0; i < NumSlices; i++)
                             {
                                 if (!encryptedData)
                                     return UMC_ERR_DEVICE_FAILED;
-                                Ipp32u alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
+                                uint32_t alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
                                 if(alignedSize & 0xf)
                                     alignedSize = alignedSize+(0x10 - (alignedSize & 0xf));
                                 if(i < NumSlices - 1)
                                 {
                                     MFX_INTERNAL_CPY(pBuf, encryptedData->Data ,alignedSize);
-                                    Ipp32u diff = (Ipp32u)(ptr - pBuf);
+                                    uint32_t diff = (uint32_t)(ptr - pBuf);
                                     ptr += alignedSize - diff;
 
                                     (unsigned char*)pBuf += DistToNextSlice(encryptedData,
@@ -938,7 +938,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
             {
                 VASliceParameterBufferMPEG2  s_info;
                 bool slice_split = false;
-                Ipp32s sz = 0, sz_align = 0;
+                int32_t sz = 0, sz_align = 0;
                 memcpy_s(&s_info, sizeof(VASliceParameterBufferMPEG2), &pack_w.pSliceInfo[-1], sizeof(VASliceParameterBufferMPEG2));
                 pack_w.pSliceInfo--;
                 int size_bs = GET_END_PTR(Video[task_num][0]->bs) - GET_START_PTR(Video[task_num][0]->bs)+4;   // ao: I copied from BeginVAFrame. Is it ok? or == bs_size
@@ -948,7 +948,7 @@ Status MPEG2VideoDecoderHW::PostProcessFrame(int display_index, int task_num)
 #   endif  //UMC_VA_LINUX (part 1)
                   //  printf("Save previous slices\n");
 mm:
-                    Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE)
+                    int32_t numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE)
                         ? sequenceHeader.numMB[task_num]
                         : sequenceHeader.numMB[task_num]/2;
 
@@ -1076,7 +1076,7 @@ mm:
                 return umcRes;
             }
 
-            Ipp32s numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE)
+            int32_t numMB = (PictureHeader[task_num].picture_structure == FRAME_PICTURE)
                 ? sequenceHeader.numMB[task_num]
                 : sequenceHeader.numMB[task_num]/2;
 
@@ -1124,11 +1124,11 @@ mm:
 
 void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
 {
-    Ipp32s i;
-    Ipp32u code;
+    int32_t i;
+    uint32_t code;
     VideoContext* video = Video[task_num][0];
-    Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
-    Ipp8u q_matrix[4][64] = {};
+    int32_t load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
+    uint8_t q_matrix[4][64] = {};
 
     GET_TO9BITS(video->bs, 4 ,code)
     GET_1BIT(video->bs,load_intra_quantizer_matrix)
@@ -1136,7 +1136,7 @@ void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_BITS(video->bs, 8, code);
-            q_matrix[0][i] = (Ipp8u)code;
+            q_matrix[0][i] = (uint8_t)code;
         }
     }
 
@@ -1145,7 +1145,7 @@ void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_BITS(video->bs, 8, code);
-            q_matrix[1][i] = (Ipp8u)code;
+            q_matrix[1][i] = (uint8_t)code;
         }
     }
 
@@ -1154,7 +1154,7 @@ void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (Ipp8u)code;
+            q_matrix[2][i] = (uint8_t)code;
         }
     }
 
@@ -1163,7 +1163,7 @@ void MPEG2VideoDecoderHW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (Ipp8u)code;
+            q_matrix[2][i] = (uint8_t)code;
         }
     }
 
@@ -1281,7 +1281,7 @@ Status MPEG2VideoDecoderHW::BeginVAFrame(int)
 #endif
 }
 
-Status MPEG2VideoDecoderHW::UpdateFrameBuffer(int , Ipp8u* iqm, Ipp8u*niqm)
+Status MPEG2VideoDecoderHW::UpdateFrameBuffer(int , uint8_t* iqm, uint8_t*niqm)
 {
 #if defined UMC_VA_DXVA
     if(pack_w.va_mode == VA_VLD_W) {

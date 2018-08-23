@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -25,8 +25,8 @@ static QUANT_MATRIX_TYPE Qmatrix[64] =
     16,16,16,16,16,16,16,16,
 };
 
-#define UHBITS(code, nbits) (((Ipp32u)(code)) >> (32 - (nbits)))
-#define SHBITS(code, nbits) (((Ipp32s)(code)) >> (32 - (nbits)))
+#define UHBITS(code, nbits) (((uint32_t)(code)) >> (32 - (nbits)))
+#define SHBITS(code, nbits) (((int32_t)(code)) >> (32 - (nbits)))
 
 #define TAB1_OFFSET_10BIT 248
 #define TAB1_OFFSET_15BIT 360
@@ -34,7 +34,7 @@ static QUANT_MATRIX_TYPE Qmatrix[64] =
 #define TAB1_OFFSET_8BIT_INTRA 432
 #define TAB1_OFFSET_10BIT_INTRA 680
 
-const Ipp16u MPEG2_VLC_TAB1[] =
+const uint16_t MPEG2_VLC_TAB1[] =
 {
   0xae2, 0xae2,
   0x6e9, 0x6e9,
@@ -193,7 +193,7 @@ const Ipp16u MPEG2_VLC_TAB1[] =
   0x1342, 0x750, 0x72f, 0x72f,
 };
 
-const Ipp8u MPEG2_DCSIZE_TAB[128] = {
+const uint8_t MPEG2_DCSIZE_TAB[128] = {
   0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21, 0x21,
   0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22, 0x22,
   0x30, 0x30, 0x30, 0x30, 0x33, 0x33, 0x33, 0x33,
@@ -240,7 +240,7 @@ SCAN_MATRIX_TYPE scan_tbl[2][64] =
 };
 
 
-Ipp8u default_intra_quantizer_matrix[64] =
+uint8_t default_intra_quantizer_matrix[64] =
 {
    8, 16, 16, 19, 16, 19, 22, 22,
   22, 22, 22, 22, 26, 24, 26, 27,
@@ -258,12 +258,12 @@ Ipp8u default_intra_quantizer_matrix[64] =
   SCAN_MATRIX_TYPE *scanMatrix = pQuantSpec->scanMatrix;            \
   QUANT_MATRIX_TYPE *pQuantMatrix = pQuantSpec->quantMatrix;        \
   DEF_BLOCK(pDstBlock);                                             \
-  Ipp8u *BS_curr_ptr;                                               \
-  Ipp32s BS_bit_offset;                                             \
-  Ipp32s i, j, k;                                                   \
-  Ipp32s val, run, len, sign;                                       \
-  Ipp32u tbl;                                                       \
-  Ipp32u code
+  uint8_t *BS_curr_ptr;                                               \
+  int32_t BS_bit_offset;                                             \
+  int32_t i, j, k;                                                   \
+  int32_t val, run, len, sign;                                       \
+  uint32_t tbl;                                                       \
+  uint32_t code
 
 /***************************************************************/
 
@@ -295,17 +295,17 @@ Ipp8u default_intra_quantizer_matrix[64] =
 */
 
 MP2_FUNC(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u, (
-    Ipp8u**                            BitStream_curr_ptr,
-    Ipp32s*                            BitStream_bit_offset,
+    uint8_t**                            BitStream_curr_ptr,
+    int32_t*                            BitStream_bit_offset,
     IppiDecodeInterSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             quant,
-    Ipp8u*                             pSrcDst,
-    Ipp32s                             srcDstStep))
+    int32_t                             quant,
+    uint8_t*                             pSrcDst,
+    int32_t                             srcDstStep))
 {
   DEF_VARS();
   DEF_BLOCK(idct);
-  Ipp32s mask;
-  Ipp32s q;
+  int32_t mask;
+  int32_t q;
 
   COPY_BITSTREAM(BS, *BitStream)
   SHOW_HI9BITS(BS, code);
@@ -325,7 +325,7 @@ MP2_FUNC(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u, (
       for (k = 0; k < 64; k++) {
         pDstBlock[k] = 0;
       }
-      pDstBlock[0] = (Ipp16s)val;
+      pDstBlock[0] = (int16_t)val;
       mask = 1 ^ val;
       SKIP_BITS(BS, 2);
       SHOW_HI9BITS(BS, code);
@@ -357,7 +357,7 @@ common:
         sign = SHBITS(code << len, 1);
         APPLY_SIGN(val, sign);
         SKIP_BITS(BS, (len+1));
-        pDstBlock[j] = (Ipp16s)val;
+        pDstBlock[j] = (int16_t)val;
         mask ^= val;
         SHOW_HI9BITS(BS, code);
         continue;
@@ -374,7 +374,7 @@ common:
         val = 2 * (SHBITS(code, 12) + SHBITS(code, 1)) + 1;
         val = (val * q) / 32;
         SAT(val)
-        pDstBlock[j] = (Ipp16s)val;
+        pDstBlock[j] = (int16_t)val;
         mask ^= val;
 
         SKIP_BITS(BS, 24);
@@ -399,7 +399,7 @@ common:
       }
     }
   } else {
-    Ipp32s q_mul1 = quant << 3;
+    int32_t q_mul1 = quant << 3;
     //pQuantMatrix = Qmatrix;
     if (code & 0x80000000) { /* first 2-bit code */
       val = q_mul1 + q_mul1 + (q_mul1 &~ 15); // = 1
@@ -415,7 +415,7 @@ common:
       for (k = 0; k < 64; k++) {
         pDstBlock[k] = 0;
       }
-      pDstBlock[0] = (Ipp16s)val;
+      pDstBlock[0] = (int16_t)val;
       mask = 1 ^ val;
       SKIP_BITS(BS, 2);
       SHOW_HI9BITS(BS, code);
@@ -447,7 +447,7 @@ common2:
         sign = SHBITS(code << len, 1);
         APPLY_SIGN(val, sign);
         SKIP_BITS(BS, (len+1));
-        pDstBlock[j] = (Ipp16s)val;
+        pDstBlock[j] = (int16_t)val;
         mask ^= val;
         SHOW_HI9BITS(BS, code);
         continue;
@@ -462,7 +462,7 @@ common2:
         val = 2 * (SHBITS(code, 12) + SHBITS(code, 1)) + 1;
         val = (val * quant) / 2;
         SAT(val)
-        pDstBlock[j] = (Ipp16s)val;
+        pDstBlock[j] = (int16_t)val;
         mask ^= val;
 
         SKIP_BITS(BS, 24);
@@ -487,9 +487,9 @@ common2:
       }
     }
   }
-  Ipp32s bit = pDstBlock[63];
+  int32_t bit = pDstBlock[63];
   bit ^= mask & 1;
-  pDstBlock[63] = (Ipp16s)bit;
+  pDstBlock[63] = (int16_t)bit;
   SKIP_BITS(BS, 2);
   COPY_BITSTREAM(*BitStream, BS)
 
@@ -534,26 +534,26 @@ common2:
 */
 
 MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
-    Ipp8u**                            BitStream_curr_ptr,
-    Ipp32s*                            BitStream_bit_offset,
+    uint8_t**                            BitStream_curr_ptr,
+    int32_t*                            BitStream_bit_offset,
     IppiDecodeIntraSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             quant,
-    Ipp32s                             chromaFlag,
-    Ipp16s*                            dct_dc_past,
-    Ipp8u*                             pDst,
-    Ipp32s                             dstStep))
+    int32_t                             quant,
+    int32_t                             chromaFlag,
+    int16_t*                            dct_dc_past,
+    uint8_t*                             pDst,
+    int32_t                             dstStep))
 {
-  Ipp32s intra_vlc_format = pQuantSpec->intraVLCFormat;
-  Ipp32s intra_dc_shift = pQuantSpec->intraShiftDC;
+  int32_t intra_vlc_format = pQuantSpec->intraVLCFormat;
+  int32_t intra_dc_shift = pQuantSpec->intraShiftDC;
   DEF_VARS();
-  Ipp32s mask;
+  int32_t mask;
 
   COPY_BITSTREAM(BS, *BitStream)
 
   /* DC */
   DECODE_DC(val)
   val += *dct_dc_past;
-  *dct_dc_past = (Ipp16s)val;
+  *dct_dc_past = (int16_t)val;
   val <<= intra_dc_shift;
 #ifdef MISMATCH_INTRA
   mask = ~val;
@@ -572,7 +572,7 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
     for (k = 0; k < 64; k++) {
       pDstBlock[k] = 0;
     }
-    pDstBlock[0] = (Ipp16s)val;
+    pDstBlock[0] = (int16_t)val;
     for (;;) {
       if ((code & 0xf0000000) == 0x60000000) {
         break;
@@ -589,7 +589,7 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
           val = SHBITS(code, 12);
           val = (val * (quant*pQuantMatrix[j])) / 16;
           SAT(val)
-          pDstBlock[j] = (Ipp16s)val;
+          pDstBlock[j] = (int16_t)val;
 #ifdef MISMATCH_INTRA
           mask ^= val;
 #endif
@@ -623,16 +623,16 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
       sign = SHBITS(code << len, 1);
       APPLY_SIGN(val, sign);
       SKIP_BITS(BS, (len + 1));
-      pDstBlock[j] = (Ipp16s)val;
+      pDstBlock[j] = (int16_t)val;
 #ifdef MISMATCH_INTRA
       mask ^= val;
 #endif
       SHOW_HI9BITS(BS, code);
     }
 #ifdef MISMATCH_INTRA
-    Ipp32s bit = pDstBlock[63];
+    int32_t bit = pDstBlock[63];
     bit ^= mask & 1;
-    pDstBlock[63] = (Ipp16s)bit;
+    pDstBlock[63] = (int16_t)bit;
 #endif
     SKIP_BITS(BS, 4);
     COPY_BITSTREAM(*BitStream, BS)
@@ -640,7 +640,7 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
     for (k = 0; k < 64; k++) {
       pDstBlock[k] = 0;
     }
-    pDstBlock[0] = (Ipp16s)val;
+    pDstBlock[0] = (int16_t)val;
     for (;;) {
       if ((code & 0xc0000000) == 0x80000000) {
         break;
@@ -657,7 +657,7 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
         val = SHBITS(code, 12);
         val = (val * (quant*pQuantMatrix[j])) / 16;
         SAT(val)
-        pDstBlock[j] = (Ipp16s)val;
+        pDstBlock[j] = (int16_t)val;
 #ifdef MISMATCH_INTRA
         mask ^= val;
 #endif
@@ -691,16 +691,16 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
       sign = SHBITS(code << len, 1);
       APPLY_SIGN(val, sign);
       SKIP_BITS(BS, (len + 1));
-      pDstBlock[j] = (Ipp16s)val;
+      pDstBlock[j] = (int16_t)val;
 #ifdef MISMATCH_INTRA
       mask ^= val;
 #endif
       SHOW_HI9BITS(BS, code);
     }
 #ifdef MISMATCH_INTRA
-    Ipp32s bit = pDstBlock[63];
+    int32_t bit = pDstBlock[63];
     bit ^= mask & 1;
-    pDstBlock[63] = (Ipp16s)bit;
+    pDstBlock[63] = (int16_t)bit;
 #endif
     SKIP_BITS(BS, 2);
     COPY_BITSTREAM(*BitStream, BS)
@@ -714,12 +714,12 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
 /********************************************************************/
 
 MP2_FUNC(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG1_1u8u, (
-    Ipp8u**                            BitStream_curr_ptr,
-    Ipp32s*                            BitStream_bit_offset,
+    uint8_t**                            BitStream_curr_ptr,
+    int32_t*                            BitStream_bit_offset,
     IppiDecodeInterSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             quant,
-    Ipp8u*                             pSrcDst,
-    Ipp32s                             srcDstStep))
+    int32_t                             quant,
+    uint8_t*                             pSrcDst,
+    int32_t                             srcDstStep))
 {
   DEF_VARS();
   DEF_BLOCK(idct);
@@ -739,7 +739,7 @@ MP2_FUNC(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG1_1u8u, (
     for (k = 0; k < 64; k++) {
       pDstBlock[k] = 0;
     }
-    pDstBlock[0] = (Ipp16s)val;
+    pDstBlock[0] = (int16_t)val;
 
     SKIP_BITS(BS, 2);
     SHOW_HI9BITS(BS, code);
@@ -769,7 +769,7 @@ common:
       APPLY_SIGN(val, sign);
 
       SKIP_BITS(BS, (len + 1));
-      pDstBlock[j] = (Ipp16s)val;
+      pDstBlock[j] = (int16_t)val;
       SHOW_HI9BITS(BS, code);
       continue;
     } else if (code >= 0x04000000) {
@@ -780,10 +780,10 @@ common:
 
       SKIP_BITS(BS, 12);
       GET_TO9BITS(BS, 8, val);
-      val = (Ipp8s)val;
+      val = (int8_t)val;
       if (!(val & 0x7f))
       {
-        Ipp32s val2;
+        int32_t val2;
         GET_TO9BITS(BS, 8, val2);
         val = 2*val + val2;
       }
@@ -793,7 +793,7 @@ common:
       val = (val + ~sign) | 1;
 
       SAT(val)
-      pDstBlock[j] = (Ipp16s)val;
+      pDstBlock[j] = (int16_t)val;
 
       SHOW_HI9BITS(BS, code);
       continue;
@@ -825,17 +825,17 @@ common:
 }
 
 MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
-    Ipp8u**                            BitStream_curr_ptr,
-    Ipp32s*                            BitStream_bit_offset,
+    uint8_t**                            BitStream_curr_ptr,
+    int32_t*                            BitStream_bit_offset,
     IppiDecodeIntraSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             quant,
-    Ipp32s                             blockType,
-    Ipp16s*                            dct_dc_past,
-    Ipp8u*                             pDst,
-    Ipp32s                             dstStep))
+    int32_t                             quant,
+    int32_t                             blockType,
+    int16_t*                            dct_dc_past,
+    uint8_t*                             pDst,
+    int32_t                             dstStep))
 {
   DEF_VARS();
-  Ipp32s chromaFlag = blockType & 1;
+  int32_t chromaFlag = blockType & 1;
 
   for (k = 0; k < 64; k++) {
     pDstBlock[k] = 0;
@@ -846,8 +846,8 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
   /* DC */
   DECODE_DC(val)
   val += *dct_dc_past;
-  *dct_dc_past = (Ipp16s)val;
-  pDstBlock[0] = (Ipp16s)(val << 3);
+  *dct_dc_past = (int16_t)val;
+  pDstBlock[0] = (int16_t)(val << 3);
 
   if (blockType & 4) { // D-type picture, DC coef only
     COPY_BITSTREAM(*BitStream, BS)
@@ -872,19 +872,19 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
 
       SKIP_BITS(BS, 12);
       GET_TO9BITS(BS, 8, val);
-      val = (Ipp8s)val;
-      if (!(val & (Ipp8s)0x7f))
+      val = (int8_t)val;
+      if (!(val & (int8_t)0x7f))
       {
-        Ipp16s base = (Ipp16s)((val & 0x80) ? -256 : 0);
+        int16_t base = (int16_t)((val & 0x80) ? -256 : 0);
         GET_TO9BITS(BS, 8, val);
-        val = (Ipp16s)(val+base);
+        val = (int16_t)(val+base);
       }
       sign = SHBITS(val, 1);
       val = (val * (quant*pQuantMatrix[j])) / 8;
       val = (val + ~sign) | 1;
 
       SAT(val)
-      pDstBlock[j] = (Ipp16s)val;
+      pDstBlock[j] = (int16_t)val;
 
       SHOW_HI9BITS(BS, code);
       continue;
@@ -914,7 +914,7 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
     APPLY_SIGN(val, sign);
 
     SKIP_BITS(BS, (len + 1));
-    pDstBlock[j] = (Ipp16s)val;
+    pDstBlock[j] = (int16_t)val;
     SHOW_HI9BITS(BS, code);
   }
 
@@ -953,10 +953,10 @@ MP2_FUNC(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
 */
 
 MP2_FUNC(IppStatus, ippiDecodeIntraInit_MPEG2, (
-    const Ipp8u*                 pQuantMatrix,
-    Ipp32s                       flag,
-    Ipp32s                       intraVLCFormat,
-    Ipp32s                       intraShiftDC,
+    const uint8_t*                 pQuantMatrix,
+    int32_t                       flag,
+    int32_t                       intraVLCFormat,
+    int32_t                       intraShiftDC,
     IppiDecodeIntraSpec_MPEG2*   pSpec))
 {
   SCAN_MATRIX_TYPE *scan = scan_tbl[flag & 1]; // IPPVC_ALT_SCAN == 1
@@ -966,7 +966,7 @@ MP2_FUNC(IppStatus, ippiDecodeIntraInit_MPEG2, (
     pSpec->scanMatrix = scan;
   }
   if (!(flag & IPPVC_LEAVE_QUANT_UNCHANGED)) {
-    Ipp32s i;
+    int32_t i;
     if (!pQuantMatrix) pQuantMatrix = default_intra_quantizer_matrix;
     pSpec->quantMatrix = pSpec->_quantMatrix;
     for (i = 0; i < 64; i++) {
@@ -977,8 +977,8 @@ MP2_FUNC(IppStatus, ippiDecodeIntraInit_MPEG2, (
 }
 
 MP2_FUNC(IppStatus, ippiDecodeInterInit_MPEG2, (
-    const Ipp8u*                 pQuantMatrix,
-    Ipp32s                       flag,
+    const uint8_t*                 pQuantMatrix,
+    int32_t                       flag,
     IppiDecodeInterSpec_MPEG2*   pSpec))
 {
   SCAN_MATRIX_TYPE *scan = scan_tbl[flag & 1];
@@ -987,7 +987,7 @@ MP2_FUNC(IppStatus, ippiDecodeInterInit_MPEG2, (
   }
   if (!(flag & IPPVC_LEAVE_QUANT_UNCHANGED)) {
     if (pQuantMatrix) {
-      Ipp32s i, mask = 0;
+      int32_t i, mask = 0;
       pSpec->quantMatrix = pSpec->_quantMatrix;
       for (i = 0; i < 64; i++) {
         pSpec->quantMatrix[scan[i]] = pQuantMatrix[i];
@@ -1022,13 +1022,13 @@ MP2_FUNC(IppStatus, ippiDecodeInterInit_MPEG2, (
 
 #if 0
 MP2_FUNC(IppStatus, ippiDecodeIntraGetSize_MPEG2, (
-    Ipp32s* pSpecSize))
+    int32_t* pSpecSize))
 {
   return ippStsNoErr;
 }
 
 MP2_FUNC(IppStatus, ippiDecodeInterGetSize_MPEG2, (
-    Ipp32s* pSpecSize))
+    int32_t* pSpecSize))
 {
   return ippStsNoErr;
 }
@@ -1042,7 +1042,7 @@ MP2_FUNC(IppStatus, ippiDecodeInterGetSize_MPEG2, (
 
 #define RND_VAL  8
 
-DECLALIGN(16) static Ipp16s gg[] = {
+DECLALIGN(16) static int16_t gg[] = {
   0x2000, 0x2000, 0x2000, 0x2000,
   0x2c62, 0x25a0, 0x1924, 0x08d4,
   0x29cf, 0x1151, 0xeeaf, 0xd631,
@@ -1050,7 +1050,7 @@ DECLALIGN(16) static Ipp16s gg[] = {
   RND_VAL, RND_VAL, RND_VAL, RND_VAL
 };
 
-/*static*/ void Pack8x8(Ipp16s* x, Ipp8u* y, Ipp32s step)
+/*static*/ void Pack8x8(int16_t* x, uint8_t* y, int32_t step)
 {
   __m128i *px = (__m128i*)x;
   __m128i zero;
@@ -1081,7 +1081,7 @@ DECLALIGN(16) static Ipp16s gg[] = {
   _mm_storel_epi64((__m128i*)y, _mm_packus_epi16(*px, zero));
 }
 
-/*static*/ void IDCTAdd_1x1to8x8(Ipp32s val, Ipp8u* y, Ipp32s step)
+/*static*/ void IDCTAdd_1x1to8x8(int32_t val, uint8_t* y, int32_t step)
 {
   __m128i v, zero;
 
@@ -1108,7 +1108,7 @@ DECLALIGN(16) static Ipp16s gg[] = {
   _mm_storel_epi64((__m128i*)y, _mm_packus_epi16(_mm_add_epi16(v, _mm_unpacklo_epi8(_mm_loadl_epi64((__m128i*)y), zero)), zero));
 }
 
-/*static*/ void IDCTAdd_1x4to8x8(const Ipp16s* x, Ipp8u* y, Ipp32s step)
+/*static*/ void IDCTAdd_1x4to8x8(const int16_t* x, uint8_t* y, int32_t step)
 {
   __m128i s0, s1, g0, g1, t0, t1;
   __m128i r0, r1, r2, r3, zero;
@@ -1175,15 +1175,15 @@ DECLALIGN(16) static Ipp16s gg[] = {
 
 #else
 
-/*static*/ void IDCTAdd_1x1to8x8(Ipp32s val, Ipp8u* y, Ipp32s step) {
-  Ipp32s i, j;
+/*static*/ void IDCTAdd_1x1to8x8(int32_t val, uint8_t* y, int32_t step) {
+  int32_t i, j;
   val = (val + 4) >> 3;
   for (j = 0; j < 8; j++) {
     for (i = 0; i < 8; i++) {
-      Ipp32s r = y[i] + val;
+      int32_t r = y[i] + val;
       if (r < 0) r = 0;
       if (r > 255) r = 255;
-      y[i] = (Ipp8u)r;
+      y[i] = (uint8_t)r;
     }
     y += step;
   }

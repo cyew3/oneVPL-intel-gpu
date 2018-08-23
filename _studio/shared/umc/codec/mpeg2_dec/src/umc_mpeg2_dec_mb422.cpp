@@ -23,15 +23,15 @@ using namespace UMC;
 
 Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_422(VideoContext *video, int task_num)
 {
-  Ipp32s dct_type = 0;
-  Ipp32s pitch_l = video->Y_comp_pitch;
-  Ipp32s pitch_c = video->U_comp_pitch;
-  Ipp32s macroblock_type, macroblock_address_increment;
-  Ipp32s load_dct_type;
+  int32_t dct_type = 0;
+  int32_t pitch_l = video->Y_comp_pitch;
+  int32_t pitch_c = video->U_comp_pitch;
+  int32_t macroblock_type, macroblock_address_increment;
+  int32_t load_dct_type;
 
   video->dct_dc_past[0] =
   video->dct_dc_past[1] =
-  video->dct_dc_past[2] = (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+  video->dct_dc_past[2] = (int16_t)PictureHeader[task_num].curr_reset_dc;
 
   video->mb_row = video->slice_vertical_position - 1;
   video->mb_col = -1;
@@ -94,15 +94,15 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FrameI_422(VideoContext *video, int task
 
 Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int task_num)
 {
-  Ipp32s dct_type = 0;
-  Ipp32s macroblock_type;
-  Ipp32s macroblock_address_increment;
+  int32_t dct_type = 0;
+  int32_t macroblock_type;
+  int32_t macroblock_address_increment;
 
   video->prediction_type = IPPVC_MC_FRAME;
 
   video->dct_dc_past[0] =
   video->dct_dc_past[1] =
-  video->dct_dc_past[2] = (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+  video->dct_dc_past[2] = (int16_t)PictureHeader[task_num].curr_reset_dc;
 
   video->mb_row = video->slice_vertical_position - 1;
   video->mb_col = -1;
@@ -125,17 +125,17 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int tas
 
       video->dct_dc_past[0] =
       video->dct_dc_past[1] =
-      video->dct_dc_past[2] = (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+      video->dct_dc_past[2] = (int16_t)PictureHeader[task_num].curr_reset_dc;
 
       // skipped macroblocks
       if (video->mb_col > 0)
       {
-        Ipp32s pitch_l = video->Y_comp_pitch;
-        Ipp32s pitch_c = video->U_comp_pitch;
-        Ipp32s offset_l = video->offset_l;
-        Ipp32s offset_c = video->offset_c;
-        Ipp32s id_his_new;
-        Ipp32s prev_index = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
+        int32_t pitch_l = video->Y_comp_pitch;
+        int32_t pitch_c = video->U_comp_pitch;
+        int32_t offset_l = video->offset_l;
+        int32_t offset_c = video->offset_c;
+        int32_t id_his_new;
+        int32_t prev_index = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
 
         if (PictureHeader[task_num].picture_coding_type == MPEG2_P_PICTURE) {
           RESET_PMV(video->PMV)
@@ -156,14 +156,14 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int tas
           }
         }
         if (id_his_new) {
-          Ipp32s curr_index = frame_buffer.curr_index[task_num];
-          Ipp8u *ref_Y_data = frame_buffer.frame_p_c_n[prev_index].Y_comp_data;
-          Ipp8u *ref_U_data = frame_buffer.frame_p_c_n[prev_index].U_comp_data;
-          Ipp8u *ref_V_data = frame_buffer.frame_p_c_n[prev_index].V_comp_data;
-          Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
-          Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
-          Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
-          IppiSize roi = {16*macroblock_address_increment, 16};
+          int32_t curr_index = frame_buffer.curr_index[task_num];
+          uint8_t *ref_Y_data = frame_buffer.frame_p_c_n[prev_index].Y_comp_data;
+          uint8_t *ref_U_data = frame_buffer.frame_p_c_n[prev_index].U_comp_data;
+          uint8_t *ref_V_data = frame_buffer.frame_p_c_n[prev_index].V_comp_data;
+          uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
+          uint8_t *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
+          uint8_t *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
+          mfxSize roi = {16*macroblock_address_increment, 16};
           ippiCopy_8u_C1R(ref_Y_data + offset_l, pitch_l, cur_Y_data + offset_l, pitch_l, roi);
           roi.height = 1 << ROW_CHROMA_SHIFT_422;
           roi.width >>= 1;
@@ -208,7 +208,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int tas
       }
       else
       {
-        //Ipp32s code;
+        //int32_t code;
 
         video->prediction_type = IPPVC_MC_FRAME;
 
@@ -226,7 +226,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int tas
 
     video->dct_dc_past[0] =
     video->dct_dc_past[1] =
-    video->dct_dc_past[2] = (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+    video->dct_dc_past[2] = (int16_t)PictureHeader[task_num].curr_reset_dc;
 
     if(!PictureHeader[task_num].frame_pred_frame_dct) {
       if (video->macroblock_motion_forward || video->macroblock_motion_backward) {
@@ -241,10 +241,10 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int tas
       DECODE_QUANTIZER_SCALE(video->bs, video->cur_q_scale);
     }
 
-    Ipp32s curr_index = frame_buffer.curr_index[task_num];
-    Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
-    Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
-    Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
+    int32_t curr_index = frame_buffer.curr_index[task_num];
+    uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
+    uint8_t *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
+    uint8_t *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
     video->blkCurrYUV[0] = cur_Y_data + video->offset_l;
     video->blkCurrYUV[1] = cur_U_data + video->offset_c;
     video->blkCurrYUV[2] = cur_V_data + video->offset_c;
@@ -275,17 +275,17 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FramePB_422(VideoContext *video, int tas
 
 Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int task_num)
 {
-  Ipp32s macroblock_type;
-  Ipp32s macroblock_address_increment;
-  Ipp32s pitch_l = video->Y_comp_pitch;
-  Ipp32s pitch_c = video->U_comp_pitch;
+  int32_t macroblock_type;
+  int32_t macroblock_address_increment;
+  int32_t pitch_l = video->Y_comp_pitch;
+  int32_t pitch_c = video->U_comp_pitch;
 
   video->prediction_type = IPPVC_MC_FIELD;
 
   video->dct_dc_past[0] =
   video->dct_dc_past[1] =
   video->dct_dc_past[2] =
-    (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+    (int16_t)PictureHeader[task_num].curr_reset_dc;
 
   video->mb_row = video->slice_vertical_position - 1;
   video->mb_col = -1;
@@ -324,17 +324,17 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int tas
 
       video->dct_dc_past[0] =
       video->dct_dc_past[1] =
-      video->dct_dc_past[2] = (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+      video->dct_dc_past[2] = (int16_t)PictureHeader[task_num].curr_reset_dc;
 
       // skipped macroblocks
       if (video->mb_col > 0)
       {
-        Ipp32s pitch_l1 = video->Y_comp_pitch * 2;
-        Ipp32s pitch_c1 = video->U_comp_pitch * 2;
-        Ipp32s offset_l = video->offset_l;
-        Ipp32s offset_c = video->offset_c;
-        Ipp32s id_his_new;
-        Ipp32s prev_index = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
+        int32_t pitch_l1 = video->Y_comp_pitch * 2;
+        int32_t pitch_c1 = video->U_comp_pitch * 2;
+        int32_t offset_l = video->offset_l;
+        int32_t offset_c = video->offset_c;
+        int32_t id_his_new;
+        int32_t prev_index = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
 
         if (PictureHeader[task_num].picture_coding_type == MPEG2_P_PICTURE) {
           RESET_PMV(video->PMV)
@@ -356,14 +356,14 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int tas
         }
 
         if (id_his_new) {
-          Ipp32s curr_index = frame_buffer.curr_index[task_num];
-          Ipp8u *ref_Y_data = frame_buffer.frame_p_c_n[prev_index].Y_comp_data;
-          Ipp8u *ref_U_data = frame_buffer.frame_p_c_n[prev_index].U_comp_data;
-          Ipp8u *ref_V_data = frame_buffer.frame_p_c_n[prev_index].V_comp_data;
-          Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
-          Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
-          Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
-          IppiSize roi = {16*macroblock_address_increment, 16};
+          int32_t curr_index = frame_buffer.curr_index[task_num];
+          uint8_t *ref_Y_data = frame_buffer.frame_p_c_n[prev_index].Y_comp_data;
+          uint8_t *ref_U_data = frame_buffer.frame_p_c_n[prev_index].U_comp_data;
+          uint8_t *ref_V_data = frame_buffer.frame_p_c_n[prev_index].V_comp_data;
+          uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
+          uint8_t *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
+          uint8_t *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
+          mfxSize roi = {16*macroblock_address_increment, 16};
           ippiCopy_8u_C1R(ref_Y_data + offset_l, pitch_l1, cur_Y_data + offset_l, pitch_l1, roi);
           roi.height = 1 << ROW_CHROMA_SHIFT_422;
           roi.width >>= 1;
@@ -406,8 +406,8 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int tas
       }
       else
       {
-        //Ipp32s field_sel;
-        //Ipp32s code;
+        //int32_t field_sel;
+        //int32_t code;
 
         video->prediction_type = IPPVC_MC_FIELD;
         //GET_1BIT(video->bs, field_sel);
@@ -427,7 +427,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int tas
 
     video->dct_dc_past[0] =
     video->dct_dc_past[1] =
-    video->dct_dc_past[2] = (Ipp16s)PictureHeader[task_num].curr_reset_dc;
+    video->dct_dc_past[2] = (int16_t)PictureHeader[task_num].curr_reset_dc;
 
     if (video->macroblock_motion_forward || video->macroblock_motion_backward) {
       GET_TO9BITS(video->bs, 2, video->prediction_type);
@@ -437,10 +437,10 @@ Status MPEG2VideoDecoderSW::DecodeSlice_FieldPB_422(VideoContext *video, int tas
       DECODE_QUANTIZER_SCALE(video->bs, video->cur_q_scale);
     }
 
-    Ipp32s curr_index = frame_buffer.curr_index[task_num];
-    Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
-    Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
-    Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
+    int32_t curr_index = frame_buffer.curr_index[task_num];
+    uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
+    uint8_t *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
+    uint8_t *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
     video->blkCurrYUV[0] = cur_Y_data + video->offset_l;
     video->blkCurrYUV[1] = cur_U_data + video->offset_c;
     video->blkCurrYUV[2] = cur_V_data + video->offset_c;

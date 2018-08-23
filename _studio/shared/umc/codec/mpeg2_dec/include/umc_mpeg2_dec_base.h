@@ -35,8 +35,8 @@ namespace UMC
 {
     typedef struct _SeqHeaderMask
     {
-        Ipp8u *memMask;
-        Ipp16u memSize;
+        uint8_t *memMask;
+        uint16_t memSize;
 
     } SeqHeaderMask;
 
@@ -80,31 +80,31 @@ namespace UMC
         virtual Status GetInfo(BaseCodecParams* info);
 
         //additional functions for UMC-MFX interaction
-        Status GetCCData(Ipp8u* ptr, Ipp32u *size, Ipp64u *time, Ipp32u bufsize);
+        Status GetCCData(uint8_t* ptr, uint32_t *size, unsigned long long *time, uint32_t bufsize);
         Status GetPictureHeader(MediaData* input, int task_num, int prev_task_num);
-        Ipp32s GetCurrDecodingIndex(int task_num);
-        Ipp32s GetNextDecodingIndex(int index);
-        Ipp32s GetPrevDecodingIndex(int index);
+        int32_t GetCurrDecodingIndex(int task_num);
+        int32_t GetNextDecodingIndex(int index);
+        int32_t GetPrevDecodingIndex(int index);
 
         void SetCorruptionFlag(int task_num);
         bool GetCorruptionFlag(int index);
 
-        Ipp32s GetFrameType(int index);
-        Ipp32s GetDisplayIndex();
-        Ipp32s GetRetBufferLen();
+        int32_t GetFrameType(int index);
+        int32_t GetDisplayIndex();
+        int32_t GetRetBufferLen();
         Status PostProcessUserData(int display_index);
         virtual Status ProcessRestFrame(int task_num);
         bool IsFramePictureStructure(int task_num);
         bool IsFrameSkipped();
-        void SetSkipMode(Ipp32s SkipMode);
-        Ipp64f GetCurrDecodedTime(int index);
+        void SetSkipMode(int32_t SkipMode);
+        double GetCurrDecodedTime(int index);
         bool isOriginalTimeStamp(int index);
         void LockTask(int index);
         void UnLockTask(int index);
         int FindFreeTask();
-        Ipp32s GetCurrThreadsNum(int task_num);
+        int32_t GetCurrThreadsNum(int task_num);
 
-        Status GetSequenceHeaderMemoryMask(Ipp8u *buffer, Ipp16u &size);
+        Status GetSequenceHeaderMemoryMask(uint8_t *buffer, uint16_t &size);
         Status GetSignalInfoInformation(mfxExtVideoSignalInfo *buffer);
 
     // for BSD and DEC
@@ -116,21 +116,21 @@ namespace UMC
         const sSequenceHeader& GetSequenceHeader() const { return sequenceHeader; }
         const sPictureHeader& GetPictureHeader(int task_num) const { return PictureHeader[task_num]; }
 
-        virtual Status DecodeSlices(Ipp32s threadID, int task_num);
+        virtual Status DecodeSlices(int32_t threadID, int task_num);
 
     protected:
 
         Status          PrepareBuffer(MediaData* data, int task_num);
 
         typedef struct {
-            Ipp64f time;
+            double time;
             bool   isOriginal;
         } TimeStampInfo;
 
         VideoStreamInfo         m_ClipInfo;                         // (VideoStreamInfo) clip info
 
         TimeStampInfo   m_dTime[2 * DPB_SIZE];
-        Ipp64f          m_dTimeCalc;
+        double          m_dTimeCalc;
         MPEG2FrameType  m_picture_coding_type_save;
         bool   bNeedNewFrame;
 
@@ -142,7 +142,7 @@ namespace UMC
             SKIP_PB,
             SKIP_ALL
         };
-        Ipp32s m_SkipLevel;
+        int32_t m_SkipLevel;
 
     protected:
         //The purpose of protected interface to have controlled
@@ -176,7 +176,7 @@ namespace UMC
         virtual  Status DecodeSlice(VideoContext *video, int task_num) = 0;
 
         // decode all headers but slice, starts right after startcode
-        virtual Status DecodeHeader(Ipp32s startcode, VideoContext *video, int task_num);
+        virtual Status DecodeHeader(int32_t startcode, VideoContext *video, int task_num);
 
         ///////////////////////////////////////////////////////
         /////////////Level 3 protected interface///////////////
@@ -198,7 +198,7 @@ namespace UMC
  protected:
 
         sVideoFrameBuffer::UserDataVector m_user_data;
-        std::vector< std::pair<Ipp64f, size_t> > m_user_ts_data;
+        std::vector< std::pair<double, size_t> > m_user_ts_data;
         sSequenceHeader           sequenceHeader;
         sSHSavedPars              sHSaved;
 
@@ -212,18 +212,18 @@ namespace UMC
         sFrameBuffer              frame_buffer;
         sFrameBuffer              frameBuffer_backup_previous;
         sFrameBuffer              frameBuffer_backup;
-        Ipp32s                    b_curr_number_backup;
-        Ipp32s                    first_i_occure_backup;
-        Ipp32s                    frame_count_backup;
+        int32_t                    b_curr_number_backup;
+        int32_t                    first_i_occure_backup;
+        int32_t                    frame_count_backup;
 
         VideoContext**         Video[2*DPB_SIZE];
-        Ipp8u *                   video_ptr;
+        uint8_t *                   video_ptr;
 
-        Ipp32u                    m_lFlags;
+        uint32_t                    m_lFlags;
 
-        Ipp32s                    m_nNumberOfThreads;
-        Ipp32s                    m_nNumberOfThreadsTask[2*DPB_SIZE];
-        Ipp32s                    m_nNumberOfAllocatedThreads;
+        int32_t                    m_nNumberOfThreads;
+        int32_t                    m_nNumberOfThreadsTask[2*DPB_SIZE];
+        int32_t                    m_nNumberOfAllocatedThreads;
         bool                      m_IsFrameSkipped;
         bool                      m_IsSHDecoded;
         bool                      m_FirstHeaderAfterSequenceHeaderParsed;
@@ -233,10 +233,10 @@ namespace UMC
         bool                      m_isAspectRatioFromInit;
         VideoStreamInfo           m_InitClipInfo;                         // (VideoStreamInfo) Init clip info
 
-        virtual Status          ThreadingSetup(Ipp32s maxThreads);
+        virtual Status          ThreadingSetup(int32_t maxThreads);
         bool                    DeleteTables();
-        void                    CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num, bool buffered);
-        bool                    PictureStructureValid(Ipp32u picture_structure);
+        void                    CalculateFrameTime(double in_time, double * out_time, bool * isOriginal, int task_num, bool buffered);
+        bool                    PictureStructureValid(uint32_t picture_structure);
 
          void                   sequence_display_extension(int task_num);
          void                   sequence_scalable_extension(int task_num);
@@ -247,7 +247,7 @@ namespace UMC
          virtual void           quant_matrix_extension(int task_num) = 0;
 
          void                   ReadCCData(int task_num);
-         virtual Status         UpdateFrameBuffer(int , Ipp8u* , Ipp8u*) = 0;
+         virtual Status         UpdateFrameBuffer(int , uint8_t* , uint8_t*) = 0;
     };
 }
 

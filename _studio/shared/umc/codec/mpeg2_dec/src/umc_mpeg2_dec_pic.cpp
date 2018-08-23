@@ -37,9 +37,9 @@ using namespace UMC;
 
 // can decode all headers, except of slices
 // bitstream should point to next after header byte
-Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, VideoContext* video, int task_num)
+Status MPEG2VideoDecoderBase::DecodeHeader(int32_t startcode, VideoContext* video, int task_num)
 {
-  Ipp32u code;
+  uint32_t code;
   //m_IsUserDataPresent = false;
   bool prev_of_m_FirstHeaderAfterSequenceHeaderParsed = m_FirstHeaderAfterSequenceHeaderParsed;
   if (sequenceHeader.is_decoded && startcode != SEQUENCE_HEADER_CODE)
@@ -76,7 +76,7 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, VideoContext* video
                 return UMC_ERR_INVALID_STREAM;
             }
 
-            Ipp32u bit_rate_extension, chroma_format;
+            uint32_t bit_rate_extension, chroma_format;
             GET_BITS32(video->bs, code)
             sequenceHeader.profile                          = (code >> 24) & 0x7;//ignore escape bit
             sequenceHeader.level                            = (code >> 20) & 0xf;
@@ -179,7 +179,7 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, VideoContext* video
 
             PictureHeader[task_num].curr_intra_dc_multi = intra_dc_multi[PictureHeader[task_num].intra_dc_precision];
             PictureHeader[task_num].curr_reset_dc          = reset_dc[PictureHeader[task_num].intra_dc_precision];
-            Ipp32s i, f;
+            int32_t i, f;
             for(i = 0; i < 4; i++) {
                 f = 1 << PictureHeader[task_num].r_size[i];
                 PictureHeader[task_num].low_in_range[i] = -(f * 16);
@@ -226,12 +226,12 @@ Status MPEG2VideoDecoderBase::DecodeHeader(Ipp32s startcode, VideoContext* video
 //Sequence Header search. Stops after header start code
 Status MPEG2VideoDecoderBase::FindSequenceHeader(VideoContext *video)
 {
-  Ipp32u code;
+  uint32_t code;
   do {
     GET_START_CODE(video->bs, code);
     if(SEQUENCE_HEADER_CODE == code)
       return (UMC_OK);
-  } while ( code != (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA );
+  } while ( code != (uint32_t)UMC_ERR_NOT_ENOUGH_DATA );
 
   return UMC_ERR_NOT_ENOUGH_DATA;
 }
@@ -244,14 +244,14 @@ enum {
 
 Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task_num)
 {
-    Ipp32u load_non_intra_quantizer_matrix = 0;
-    Ipp32u load_intra_quantizer_matrix = 0;
-    Ipp32u constrained_parameters_flag;
-    Ipp32u frame_rate_code = 0, dar_code = 0;
-    Ipp32s i;
-    Ipp32u code;
-    Ipp8u  iqm[64];
-    Ipp8u  niqm[64];
+    uint32_t load_non_intra_quantizer_matrix = 0;
+    uint32_t load_intra_quantizer_matrix = 0;
+    uint32_t constrained_parameters_flag;
+    uint32_t frame_rate_code = 0, dar_code = 0;
+    int32_t i;
+    uint32_t code;
+    uint8_t  iqm[64];
+    uint8_t  niqm[64];
 
 
     if (0 != video)
@@ -284,12 +284,12 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
 
             GET_BITS(video->bs, 7, code)
             code |= (load_non_intra_quantizer_matrix << 7);
-            iqm[0] = (Ipp8u)code;
+            iqm[0] = (uint8_t)code;
 
             for (i = 1; i < 64; i++)
             {
                 GET_BITS(video->bs, 8, code);
-                iqm[i] = (Ipp8u)code;
+                iqm[i] = (uint8_t)code;
             }
 
             GET_1BIT(video->bs, load_non_intra_quantizer_matrix);
@@ -300,12 +300,12 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
             for (i = 0; i < 64; i++)
             {
                 GET_BITS(video->bs, 8, code);
-                niqm[i] = (Ipp8u)code;
+                niqm[i] = (uint8_t)code;
             }
         }
 
         // calculate size of sequence header
-        shMask.memSize = (Ipp16u) (video->bs_sequence_header_start - video->bs_start_ptr);
+        shMask.memSize = (uint16_t) (video->bs_sequence_header_start - video->bs_start_ptr);
 
         // init signal info structure members by default values
         m_signalInfo.VideoFormat = 5;
@@ -329,7 +329,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
                     newtype = MPEG2_VIDEO;
 
                     DecodeHeader(EXTENSION_START_CODE, video, task_num);
-                    shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
+                    shMask.memSize += (uint16_t) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
                 }
             }
         }
@@ -363,7 +363,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
         {
             SKIP_BITS_32(video->bs);
 
-            Ipp32u ext_name;
+            uint32_t ext_name;
             SHOW_TO9BITS(video->bs, 4, ext_name)
 
             DecodeHeader(code, video, task_num);
@@ -371,7 +371,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
 
             if (SEQUENCE_DISPLAY_EXTENSION_ID == ext_name)
             {
-                shMask.memSize += (Ipp16u) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
+                shMask.memSize += (uint16_t) (video->bs_curr_ptr - (video->bs_sequence_header_start + shMask.memSize));
             }
         }
     }
@@ -385,7 +385,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
           shMask.memMask = NULL;
       }
 
-      shMask.memMask = (Ipp8u *) malloc(shMask.memSize);
+      shMask.memMask = (uint8_t *) malloc(shMask.memSize);
       if (NULL == shMask.memMask)
       {
         return (UMC_ERR_ALLOC);
@@ -461,7 +461,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
       m_ClipInfo.framerate        = 1.0 / sequenceHeader.delta_frame_time;
 
       if(m_ClipInfo.stream_type == MPEG1_VIDEO) {
-        Ipp32s ar_m1_tab[][2] = { // 11172-2 2.4.3.2
+        int32_t ar_m1_tab[][2] = { // 11172-2 2.4.3.2
           { 1, 1},    // 0   forbidden
           { 1, 1},    // 1   1.0000 VGA etc.
           {33,49},    // 2   0.6735
@@ -492,7 +492,7 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
         sequenceHeader.width = m_ClipInfo.clip_info.width;
         return (UMC_OK);
       }
-      Ipp32s W, H;
+      int32_t W, H;
 
       if(m_ClipInfo.disp_clip_info.width == 0 ||  m_ClipInfo.disp_clip_info.height == 0)
       {
@@ -537,23 +537,23 @@ Status MPEG2VideoDecoderBase::DecodeSequenceHeader(VideoContext* video, int task
     sequenceHeader.frame_rate_code = frame_rate_code;
     sequenceHeader.height = m_ClipInfo.clip_info.height;
     sequenceHeader.width = m_ClipInfo.clip_info.width;
-    sequenceHeader.aspect_ratio_w = (Ipp16u)m_ClipInfo.aspect_ratio_width;
-    sequenceHeader.aspect_ratio_h = (Ipp16u)m_ClipInfo.aspect_ratio_height;
+    sequenceHeader.aspect_ratio_w = (uint16_t)m_ClipInfo.aspect_ratio_width;
+    sequenceHeader.aspect_ratio_h = (uint16_t)m_ClipInfo.aspect_ratio_height;
     return (UMC_OK);
 }
 
 
 void MPEG2VideoDecoderBase::sequence_display_extension(int task_num)
 {
-    Ipp32u  code;
+    uint32_t  code;
     VideoContext* video = Video[task_num][0];
-    Ipp8u* ptr = video->bs_curr_ptr - 4;
+    uint8_t* ptr = video->bs_curr_ptr - 4;
 
     // skip 3 bits, get 1
-    Ipp16u video_format = (ptr[4] >> 1) & 0x07;
+    uint16_t video_format = (ptr[4] >> 1) & 0x07;
     m_signalInfo.VideoFormat = video_format;
 
-    Ipp32u colour = ptr[4] & 0x01;
+    uint32_t colour = ptr[4] & 0x01;
     m_signalInfo.ColourDescriptionPresent = colour;
 
     if (colour)
@@ -577,7 +577,7 @@ void MPEG2VideoDecoderBase::sequence_display_extension(int task_num)
 
 void MPEG2VideoDecoderBase::sequence_scalable_extension(int task_num)
 {
-    Ipp32u code;
+    uint32_t code;
     VideoContext* video = Video[task_num][0];
     sequenceHeader.extension_start_code_ID[task_num] = SEQUENCE_SCALABLE_EXTENSION_ID;
 
@@ -597,7 +597,7 @@ void MPEG2VideoDecoderBase::sequence_scalable_extension(int task_num)
     }
 }
 
-bool MPEG2VideoDecoderBase::PictureStructureValid(Ipp32u picture_structure)
+bool MPEG2VideoDecoderBase::PictureStructureValid(uint32_t picture_structure)
 {
     switch (picture_structure)
     {
@@ -614,10 +614,10 @@ bool MPEG2VideoDecoderBase::PictureStructureValid(Ipp32u picture_structure)
 // called after field_buffer_index switching
 // when FLAG_VDEC_REORDER isn't set, time can be wrong
 //   if repeat_first_field happens != 0
-void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time, bool * isOriginal, int task_num, bool buffered)
+void MPEG2VideoDecoderBase::CalculateFrameTime(double in_time, double * out_time, bool * isOriginal, int task_num, bool buffered)
 {
-    Ipp32s index;
-    Ipp64f duration = sequenceHeader.delta_frame_time;
+    int32_t index;
+    double duration = sequenceHeader.delta_frame_time;
 
     bool isTelecineCalc = false;
 
@@ -741,7 +741,7 @@ void MPEG2VideoDecoderBase::CalculateFrameTime(Ipp64f in_time, Ipp64f * out_time
 
 
 
-Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
+Status MPEG2VideoDecoderBase::DecodeSlices(int32_t threadID, int task_num)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MPEG2VideoDecoderBase::DecodeSlices");
     VideoContext *video = Video[task_num][threadID];
@@ -768,8 +768,8 @@ Status MPEG2VideoDecoderBase::DecodeSlices(Ipp32s threadID, int task_num)
 
 Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
 {
-    Ipp32u          code;
-    Ipp32s          pic_type = 0;
+    uint32_t          code;
+    int32_t          pic_type = 0;
     VideoContext *video   = Video[task_num][0];
     sPictureHeader  *pPic    = &PictureHeader[task_num];
 
@@ -878,7 +878,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
     PictureHeader[task_num].curr_intra_dc_multi        = intra_dc_multi[0];
     PictureHeader[task_num].curr_reset_dc              = reset_dc[0];
 
-    Ipp32s i, f;
+    int32_t i, f;
     for(i = 0; i < 4; i++) {
         f = 1 << pPic->r_size[i];
         pPic->low_in_range[i] = -(f * 16);
@@ -889,7 +889,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
     FIND_START_CODE(video->bs, code);
 
     //VM_ASSERT(code == EXTENSION_START_CODE);
-    Ipp32u ecode = 0;
+    uint32_t ecode = 0;
     if(code == EXTENSION_START_CODE)
     {
         SKIP_BITS_32(video->bs);
@@ -1069,7 +1069,7 @@ Status MPEG2VideoDecoderBase::DecodePictureHeader(int task_num)
         if (PictureHeader[task_num].picture_structure == FRAME_PICTURE
             || frame_buffer.field_buffer_index[task_num] == 1)
         { // complete frame
-              Ipp32u ret_index = frame_buffer.curr_index[task_num];
+              uint32_t ret_index = frame_buffer.curr_index[task_num];
 
               if (ret_index >= DPB_SIZE)
               {
@@ -1131,8 +1131,8 @@ void MPEG2VideoDecoderBase::copyright_extension(int task_num)
 
 void MPEG2VideoDecoderBase::picture_display_extension(int task_num)
 {
-    Ipp32s number_of_frame_center_offsets = 0, i;
-    //Ipp32u code;
+    int32_t number_of_frame_center_offsets = 0, i;
+    //uint32_t code;
     VideoContext* video = Video[task_num][0];
 
     //GET_TO9BITS(video->bs, 4 ,code)

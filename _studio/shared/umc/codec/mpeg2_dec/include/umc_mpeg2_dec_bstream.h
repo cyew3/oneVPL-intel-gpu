@@ -5,15 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
 
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
-
-#include "ippdefs.h"
 
 //#ifdef __ICL
 #if (defined( _MSC_VER ) || defined( __ICL )) && (!defined(_WIN32_WCE))
@@ -39,7 +37,7 @@
   ((video##_curr_ptr - video##_start_ptr)*8 + video##_bit_offset)
 
 #define SET_PTR(video, PTR) {           \
-  video##_curr_ptr = (Ipp8u*)(PTR);      \
+  video##_curr_ptr = (uint8_t*)(PTR);      \
   video##_bit_offset = 0;                \
 }
 
@@ -47,13 +45,13 @@
   (GET_END_PTR(video) - GET_BYTE_PTR(video))
 
 #define INIT_BITSTREAM(video, start_ptr, end_ptr) { \
-  video##_start_ptr = (Ipp8u*)(start_ptr); \
-  video##_end_ptr = (Ipp8u*)(end_ptr); \
+  video##_start_ptr = (uint8_t*)(start_ptr); \
+  video##_end_ptr = (uint8_t*)(end_ptr); \
   SET_PTR(video, video##_start_ptr); \
 }
 
 #define SHOW_BITS_32(video, CODE) { \
-  Ipp32u _code = \
+  uint32_t _code = \
   (video##_curr_ptr[0] << 24) | \
   (video##_curr_ptr[1] << 16) | \
   (video##_curr_ptr[2] << 8) | \
@@ -62,7 +60,7 @@
 }
 
 #define SHOW_BITS_LONG(video, NUM_BITS, CODE) { \
-  Ipp32u _code2; \
+  uint32_t _code2; \
   SHOW_BITS_32(video, _code2); \
   CODE = _code2 >> (32 - NUM_BITS); \
 }
@@ -80,7 +78,7 @@
   CODE |= video##_curr_ptr[3] << video##_bit_offset;
 
 #define SHOW_BITS(video, NUM_BITS, CODE) { \
-  Ipp32u _code = \
+  uint32_t _code = \
   (video##_curr_ptr[0] << 24) | \
   (video##_curr_ptr[1] << 16) | \
   (video##_curr_ptr[2] << 8); \
@@ -95,7 +93,7 @@
   (video##_curr_ptr[0] & (0x80 >> video##_bit_offset))
 
 #define SHOW_TO9BITS(video, NUM_BITS, CODE) { \
-  Ipp32u _code = \
+  uint32_t _code = \
   (video##_curr_ptr[0] << 8) | (video##_curr_ptr[1] ); \
   CODE = (_code >> (16 - NUM_BITS - video##_bit_offset)) & ((1<<NUM_BITS)-1); \
 }
@@ -147,8 +145,8 @@
 /***************************************************************/
 
 #define FIND_START_CODE(video, code) {                          \
-  Ipp8u *ptr = GET_BYTE_PTR(video);                             \
-  Ipp8u *end_ptr = GET_END_PTR(video) - 3;                      \
+  uint8_t *ptr = GET_BYTE_PTR(video);                             \
+  uint8_t *end_ptr = GET_END_PTR(video) - 3;                      \
   while (ptr < end_ptr && (ptr[0] || ptr[1] || (1 != ptr[2]))) {\
     ptr++;                                                      \
   }                                                             \
@@ -156,14 +154,14 @@
     code = 256 + ptr[3];                                        \
     SET_PTR(video, ptr);                                        \
   } else {                                                      \
-    code = (Ipp32u)UMC::UMC_ERR_NOT_ENOUGH_DATA;                \
+    code = (uint32_t)UMC::UMC_ERR_NOT_ENOUGH_DATA;                \
   }                                                             \
   /*printf("code %x at %5d (%5d) %p\n",code,idx,end,video##_bitstream_current_data);*/ \
 }
 
 #define GET_START_CODE(video, code) { \
   FIND_START_CODE(video, code)        \
-  if(code != (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA) { \
+  if(code != (uint32_t)UMC_ERR_NOT_ENOUGH_DATA) { \
     SKIP_BITS_32(video);                    \
   }                                         \
 }
@@ -175,17 +173,17 @@
 
 #define DECODE_VLC(value, bitstream, pVLC) \
 { \
-  Ipp32u __code; \
-  Ipp32s tbl_value; \
-  Ipp32s bits_table0 = pVLC.bits_table0; \
+  uint32_t __code; \
+  int32_t tbl_value; \
+  int32_t bits_table0 = pVLC.bits_table0; \
   \
   SHOW_HI9BITS(bitstream, __code); \
   \
   tbl_value = pVLC.table0[__code >> (32 - bits_table0)]; \
   \
   if (tbl_value & (VLC_BAD | VLC_NEXTTABLE)) { \
-    Ipp32s max_bits = pVLC.max_bits; \
-    Ipp32s bits_table1 = pVLC.bits_table1; \
+    int32_t max_bits = pVLC.max_bits; \
+    int32_t bits_table1 = pVLC.bits_table1; \
   \
     if (tbl_value & VLC_BAD) return UMC_ERR_INVALID_STREAM; \
     EXPAND_17BITS(bitstream, __code); \
@@ -203,25 +201,25 @@
 /***************************************************************/
 
 
-#define SCAN_MATRIX_TYPE   const Ipp8u
-#define QUANT_MATRIX_TYPE  Ipp8u
+#define SCAN_MATRIX_TYPE   const uint8_t
+#define QUANT_MATRIX_TYPE  uint8_t
 
 struct DecodeIntraSpec_MPEG2 {
   QUANT_MATRIX_TYPE _quantMatrix[64];
-  Ipp16s pDstBlock[64];
-  Ipp16s idct[64];
+  int16_t pDstBlock[64];
+  int16_t idct[64];
   QUANT_MATRIX_TYPE *quantMatrix;
   SCAN_MATRIX_TYPE  *scanMatrix;
-  Ipp32s intraVLCFormat;
-  Ipp32s intraShiftDC;
+  int32_t intraVLCFormat;
+  int32_t intraShiftDC;
 };
 
 struct DecodeInterSpec_MPEG2 {
   QUANT_MATRIX_TYPE _quantMatrix[64];
-  Ipp16s pDstBlock[64];
-  Ipp16s idct[64];
+  int16_t pDstBlock[64];
+  int16_t idct[64];
   QUANT_MATRIX_TYPE *quantMatrix;
   SCAN_MATRIX_TYPE  *scanMatrix;
-  Ipp32s idxLastNonZero;
-  Ipp32s align;
+  int32_t idxLastNonZero;
+  int32_t align;
 };

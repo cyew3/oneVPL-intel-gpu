@@ -62,18 +62,18 @@ DECLALIGN(8)
 DECLALIGN(8)
     DecodeInterSpec_MPEG2 decodeInterSpecChroma;
 
-Ipp32s      flag;
+int32_t      flag;
 };
 
 #if defined (__ICL)
-//non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits
+//non-pointer conversion from "unsigned __int64" to "int32_t={signed int}" may lose significant bits
 //#pragma warning(disable:2259)
-void ownvc_Average8x16_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep);
-void ownvc_Average8x16HP_HF0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep);
-void ownvc_Average8x16HP_FH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep);
-void ownvc_Average8x16HP_HH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep);
+void ownvc_Average8x16_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep);
+void ownvc_Average8x16HP_HF0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep);
+void ownvc_Average8x16HP_FH0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep);
+void ownvc_Average8x16HP_HH0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep);
 template<class TSrc, class TDst>
-void GeneralCopy(TSrc* src, Ipp32u srcStep, TDst* dst, Ipp32u dstStep, IppiSize roi);
+void GeneralCopy(TSrc* src, uint32_t srcStep, TDst* dst, uint32_t dstStep, mfxSize roi);
 #endif
 
 namespace UMC
@@ -117,8 +117,8 @@ protected:
 
 
  protected:
-     virtual Status          ThreadingSetup(Ipp32s maxThreads);
-     virtual Status UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*niqm);
+     virtual Status          ThreadingSetup(int32_t maxThreads);
+     virtual Status UpdateFrameBuffer(int task_num, uint8_t* iqm, uint8_t*niqm);
      virtual void OnDecodePicHeaderEx(int task_num);
      virtual Status ProcessRestFrame(int task_num);
      virtual void   quant_matrix_extension(int task_num);
@@ -130,9 +130,9 @@ protected:
     Status                  DecodeSlice_FieldPB_420(VideoContext *video, int task_num);
     Status                  DecodeSlice_FieldPB_422(VideoContext *video, int task_num);
 
-    Status                  mv_decode(Ipp32s r, Ipp32s s, VideoContext *video, int task_num);
+    Status                  mv_decode(int32_t r, int32_t s, VideoContext *video, int task_num);
     Status                  mv_decode_dp(VideoContext *video, int task_num);
-    Status                  update_mv(Ipp16s *pval, Ipp32s s, VideoContext *video, int task_num);
+    Status                  update_mv(int16_t *pval, int32_t s, VideoContext *video, int task_num);
 
     Status                  mc_frame_forward_420(VideoContext *video, int task_num);
     Status                  mc_frame_forward_422(VideoContext *video, int task_num);

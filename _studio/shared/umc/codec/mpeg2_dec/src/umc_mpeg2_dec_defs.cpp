@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,11 +16,11 @@
 namespace UMC
 {
 
-Ipp16s reset_dc[4] = {128, 256, 512, 1024};
+int16_t reset_dc[4] = {128, 256, 512, 1024};
 
-Ipp16s intra_dc_multi[4] = {3, 2, 1, 0};
+int16_t intra_dc_multi[4] = {3, 2, 1, 0};
 
-Ipp16s q_scale[2][32] =
+int16_t q_scale[2][32] =
 {
   {
     0,  2,  4,  6,  8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,

@@ -27,7 +27,7 @@ using namespace UMC;
 
 
 #ifdef UMC_VA_DXVA
-extern Ipp32u DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counterMode);
+extern uint32_t DistToNextSlice(mfxEncryptedData *encryptedData, PAVP_COUNTER_TYPE counterMode);
 #endif
 ///////////////////////////////////////////////////////////////////////////
 // PackVA class
@@ -108,7 +108,7 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
       CompBuf = NULL;
 
       // request bitstream buffer
-      pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+      pBitsreamData = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
       if (NULL == CompBuf)
       {
@@ -135,7 +135,7 @@ Status PackVA::InitBuffers(int /*size_bs*/, int /*size_sl*/)
 
 Status
 PackVA::SetBufferSize(
-    Ipp32s          numMB,
+    int32_t          numMB,
     int             size_bs,
     int             size_sl)
 {
@@ -150,7 +150,7 @@ PackVA::SetBufferSize(
         {
                 return UMC_ERR_FAILED;
         }
-        CompBuf->SetDataSize((Ipp32s) (sizeof (DXVA_PictureParameters)));
+        CompBuf->SetDataSize((int32_t) (sizeof (DXVA_PictureParameters)));
         CompBuf->FirstMb = 0;
         CompBuf->NumOfMB = numMB;
 
@@ -162,7 +162,7 @@ PackVA::SetBufferSize(
             {
                 return UMC_ERR_FAILED;
             }
-            CompBuf->SetDataSize((Ipp32s) sizeof(DXVA_QmatrixData));
+            CompBuf->SetDataSize((int32_t) sizeof(DXVA_QmatrixData));
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = numMB;
 
@@ -172,13 +172,13 @@ PackVA::SetBufferSize(
             {
                     return UMC_ERR_FAILED;
             }
-            CompBuf->SetDataSize((Ipp32s) ((Ipp8u*)pSliceInfo - (Ipp8u*)pSliceInfoBuffer));
+            CompBuf->SetDataSize((int32_t) ((uint8_t*)pSliceInfo - (uint8_t*)pSliceInfoBuffer));
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = numMB;
 
             CompBuf = NULL;
             m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-            //CompBuf->SetDataSize((Ipp32s) (pSliceInfo[-1].dwSliceDataLocation +
+            //CompBuf->SetDataSize((int32_t) (pSliceInfo[-1].dwSliceDataLocation +
 
             if (NULL == CompBuf)
             {
@@ -189,7 +189,7 @@ PackVA::SetBufferSize(
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = numMB;
 
-            // CompBuf->SetNumOfItem((Ipp32s)(pSliceInfo - pSliceInfoBuffer));
+            // CompBuf->SetNumOfItem((int32_t)(pSliceInfo - pSliceInfoBuffer));
         }
     }
     catch(...)
@@ -204,14 +204,14 @@ Status
 PackVA::SaveVLDParameters(
     sSequenceHeader*    sequenceHeader,
     sPictureHeader*     PictureHeader,
-    Ipp8u*              bs_start_ptr,
+    uint8_t*              bs_start_ptr,
     sFrameBuffer*       frame_buffer,
-    Ipp32s              task_num,
-    Ipp32s)
+    int32_t              task_num,
+    int32_t)
 {
   if(va_mode == VA_NO) return UMC_OK;
 
-  Ipp32s numSlices = (Ipp32s)(pSliceInfo - pSliceInfoBuffer);
+  int32_t numSlices = (int32_t)(pSliceInfo - pSliceInfoBuffer);
   for (int i = 1; i < numSlices; i++)
   {
       DXVA_SliceInfo  & slice = pSliceInfoBuffer[i];
@@ -234,9 +234,9 @@ PackVA::SaveVLDParameters(
         if (m_va->GetProtectedVA())
         {
             prot = m_va->GetProtectedVA()->GetProtected();
-            Ipp32s i;
+            int32_t i;
 
-            Ipp32s NumSlices = (Ipp32s) (pSliceInfo - pSliceInfoBuffer);
+            int32_t NumSlices = (int32_t) (pSliceInfo - pSliceInfoBuffer);
             mfxEncryptedData *encryptedData = curr_bs_encryptedData;
 
            // if (m_SliceNum == 0)
@@ -281,8 +281,8 @@ PackVA::SaveVLDParameters(
 
             if(encryptedData)
             {
-                Ipp8u* ptr = (Ipp8u*)pBitsreamData;
-                Ipp8u* pBuf = ptr;
+                uint8_t* ptr = (uint8_t*)pBitsreamData;
+                uint8_t* pBuf = ptr;
 
                 DXVA_SliceInfo * p = pSliceInfoBuffer;
 
@@ -295,8 +295,8 @@ PackVA::SaveVLDParameters(
                     ptr += add_to_slice_start;
                     pBuf=ptr;
                 }
-                Ipp32u alignedSize = 0;
-                Ipp32u diff = 0;
+                uint32_t alignedSize = 0;
+                uint32_t diff = 0;
                 for (i = 0; i < NumSlices; i++)
                 {
                     alignedSize = encryptedData->DataLength + encryptedData->DataOffset;
@@ -305,7 +305,7 @@ PackVA::SaveVLDParameters(
 
                     MFX_INTERNAL_CPY(pBuf, encryptedData->Data,alignedSize);
 
-                    diff = (Ipp32u)(ptr - pBuf);
+                    diff = (uint32_t)(ptr - pBuf);
                     ptr += alignedSize - diff;
 
                     (unsigned char*)pBuf += DistToNextSlice(encryptedData,
@@ -313,7 +313,7 @@ PackVA::SaveVLDParameters(
 
                     if(i < NumSlices-1)
                     {
-                        diff = (Ipp32u)(ptr - pBuf);
+                        diff = (uint32_t)(ptr - pBuf);
                         p[i+1].dwSliceDataLocation = p[i].dwSliceDataLocation +
                             (alignedSize - encryptedData->DataOffset)+
                             encryptedData->Next->DataOffset - diff;
@@ -335,7 +335,7 @@ PackVA::SaveVLDParameters(
             {
                 bs_size = pSliceInfo[-1].dwSliceDataLocation +
                     pSliceInfo[-1].dwSliceBitsInBuffer/8;
-                MFX_INTERNAL_CPY((Ipp8u*)pBitsreamData, bs_start_ptr, bs_size);
+                MFX_INTERNAL_CPY((uint8_t*)pBitsreamData, bs_start_ptr, bs_size);
             }
         }//if (pack_w.m_va->GetProtectedVA())
         else//not protected
@@ -343,16 +343,16 @@ PackVA::SaveVLDParameters(
         {
           bs_size = pSliceInfo[-1].dwSliceDataLocation +
                         pSliceInfo[-1].dwSliceBitsInBuffer/8;
-          MFX_INTERNAL_CPY((Ipp8u*)pBitsreamData, bs_start_ptr, bs_size);
+          MFX_INTERNAL_CPY((uint8_t*)pBitsreamData, bs_start_ptr, bs_size);
         }
 
-      Ipp32s from, to;
+      int32_t from, to;
       for(from = 0, to = 0; from < 4; from++)
       {
         pQmatrixData->bNewQmatrix[from] = QmatrixData.bNewQmatrix[from];
         if(QmatrixData.bNewQmatrix[from])
         {
-          MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->Qmatrix[to], (Ipp8u*)QmatrixData.Qmatrix[from],
+          MFX_INTERNAL_CPY((uint8_t*)pQmatrixData->Qmatrix[to], (uint8_t*)QmatrixData.Qmatrix[from],
             sizeof(pQmatrixData->Qmatrix[0]));
           to++;
         }
@@ -361,13 +361,13 @@ PackVA::SaveVLDParameters(
 
   if (vpPictureParam) {
     DXVA_PictureParameters *pPictureParam = (DXVA_PictureParameters*)vpPictureParam;
-    Ipp32s pict_type = PictureHeader->picture_coding_type;
-    Ipp32s width_in_MBs = sequenceHeader->mb_width[task_num];
-    Ipp32s height_in_MBs = sequenceHeader->mb_height[task_num];
-    Ipp32s pict_struct = PictureHeader->picture_structure;
-    Ipp32s secondfield = (pict_struct != FRAME_PICTURE) && (field_buffer_index == 1);
+    int32_t pict_type = PictureHeader->picture_coding_type;
+    int32_t width_in_MBs = sequenceHeader->mb_width[task_num];
+    int32_t height_in_MBs = sequenceHeader->mb_height[task_num];
+    int32_t pict_struct = PictureHeader->picture_structure;
+    int32_t secondfield = (pict_struct != FRAME_PICTURE) && (field_buffer_index == 1);
 
-    Ipp32s f_ref_pic = -1;
+    int32_t f_ref_pic = -1;
     if(pict_type == MPEG2_P_PICTURE)
     {
         if (frame_buffer->frame_p_c_n[frame_buffer->curr_index[task_num]].prev_index < 0)
@@ -385,7 +385,7 @@ PackVA::SaveVLDParameters(
     }
     else if(pict_type == MPEG2_B_PICTURE)
     {
-        Ipp32s idx = frame_buffer->frame_p_c_n[frame_buffer->curr_index[task_num]].prev_index;
+        int32_t idx = frame_buffer->frame_p_c_n[frame_buffer->curr_index[task_num]].prev_index;
 
         if (idx < 0)
         {
@@ -415,8 +415,8 @@ PackVA::SaveVLDParameters(
     pPictureParam->bBlockWidthMinus1 = 7;
     pPictureParam->bBlockHeightMinus1 = 7;
     pPictureParam->bBPPminus1 = 7;
-    pPictureParam->bPicStructure = (Ipp8u)pict_struct;
-    pPictureParam->bSecondField = (Ipp8u)secondfield;
+    pPictureParam->bPicStructure = (uint8_t)pict_struct;
+    pPictureParam->bSecondField = (uint8_t)secondfield;
     pPictureParam->bPicIntra = (BYTE)((pict_type == MPEG2_I_PICTURE) ? 1 : 0);
     pPictureParam->bPicBackwardPrediction = (BYTE)((pict_type == MPEG2_B_PICTURE) ? 1 : 0);
     pPictureParam->bBidirectionalAveragingMode = 0;
@@ -441,15 +441,15 @@ PackVA::SaveVLDParameters(
     pPictureParam->bMV_RPS = 0;
 
     {
-      Ipp32s i;
-      Ipp32s f;
+      int32_t i;
+      int32_t f;
       for(i=0, pPictureParam->wBitstreamFcodes=0; i<4; i++)
       {
           f = pPictureParam->wBitstreamFcodes;
           f |= (PictureHeader->f_code[i] << (12 - 4*i));
           pPictureParam->wBitstreamFcodes = (WORD)f;
       }
-      f = (Ipp16s)(PictureHeader->intra_dc_precision << 14);
+      f = (int16_t)(PictureHeader->intra_dc_precision << 14);
       f |= (pict_struct << 12);
       f |= (PictureHeader->top_field_first << 11);
       f |= (PictureHeader->frame_pred_frame_dct << 10);
@@ -521,7 +521,7 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
             if (NULL == (pQmatrixData = (VAIQMatrixBufferMPEG2*)m_va->GetCompBuffer(VAIQMatrixBufferType, &CompBuf, sizeof (VAIQMatrixBufferMPEG2))))
                 return UMC_ERR_ALLOC;
 
-            Ipp32s prev_slice_size_getting = slice_size_getting;
+            int32_t prev_slice_size_getting = slice_size_getting;
             slice_size_getting = sizeof (VASliceParameterBufferMPEG2) * size_sl;
 
             if(NULL == pSliceInfoBuffer)
@@ -537,7 +537,7 @@ Status PackVA::InitBuffers(int size_bs, int size_sl)
 
             memset(pSliceInfoBuffer, 0, slice_size_getting);
 
-            if (NULL == (pBitsreamData = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size_bs)))
+            if (NULL == (pBitsreamData = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf, size_bs)))
                 return UMC_ERR_ALLOC;
 
             CompBuf->SetPVPState(NULL, 0);
@@ -578,10 +578,10 @@ Status
 PackVA::SaveVLDParameters(
     sSequenceHeader*    sequenceHeader,
     sPictureHeader*     PictureHeader,
-    Ipp8u*              bs_start_ptr,
+    uint8_t*              bs_start_ptr,
     sFrameBuffer*       frame_buffer,
-    Ipp32s              task_num,
-    Ipp32s              source_mb_height)
+    int32_t              task_num,
+    int32_t              source_mb_height)
 {
     (void)source_mb_height;
 
@@ -593,7 +593,7 @@ PackVA::SaveVLDParameters(
         return UMC_OK;
     }
 
-    Ipp32s numSlices = (Ipp32s)(pSliceInfo - pSliceInfoBuffer);
+    int32_t numSlices = (int32_t)(pSliceInfo - pSliceInfoBuffer);
     for (int i = 1; i < numSlices; i++)
     {
         VASliceParameterBufferMPEG2 & slice = pSliceInfoBuffer[i];
@@ -610,14 +610,14 @@ PackVA::SaveVLDParameters(
 
     if(va_mode == VA_VLD_L)
     {
-        Ipp32s size = 0;
+        int32_t size = 0;
         if(pSliceInfoBuffer < pSliceInfo)
             size = pSliceInfo[-1].slice_data_offset + pSliceInfo[-1].slice_data_size;
-        MFX_INTERNAL_CPY((Ipp8u*)pBitsreamData, bs_start_ptr, size);
+        MFX_INTERNAL_CPY((uint8_t*)pBitsreamData, bs_start_ptr, size);
 
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf);
-        Ipp32s buffer_size = CompBuf->GetBufferSize();
+        int32_t buffer_size = CompBuf->GetBufferSize();
         if(buffer_size > size)
             memset(pBitsreamData + size, 0, buffer_size - size);
 
@@ -626,13 +626,13 @@ PackVA::SaveVLDParameters(
         pQmatrixData->load_chroma_intra_quantiser_matrix = QmatrixData.load_chroma_intra_quantiser_matrix;
         pQmatrixData->load_chroma_non_intra_quantiser_matrix = QmatrixData.load_chroma_non_intra_quantiser_matrix;
 
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->intra_quantiser_matrix, (Ipp8u*)QmatrixData.intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((uint8_t*)pQmatrixData->intra_quantiser_matrix, (uint8_t*)QmatrixData.intra_quantiser_matrix,
             sizeof(pQmatrixData->intra_quantiser_matrix));
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.non_intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((uint8_t*)pQmatrixData->non_intra_quantiser_matrix, (uint8_t*)QmatrixData.non_intra_quantiser_matrix,
             sizeof(pQmatrixData->non_intra_quantiser_matrix));
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((uint8_t*)pQmatrixData->chroma_intra_quantiser_matrix, (uint8_t*)QmatrixData.chroma_intra_quantiser_matrix,
             sizeof(pQmatrixData->chroma_intra_quantiser_matrix));
-        MFX_INTERNAL_CPY((Ipp8u*)pQmatrixData->chroma_non_intra_quantiser_matrix, (Ipp8u*)QmatrixData.chroma_non_intra_quantiser_matrix,
+        MFX_INTERNAL_CPY((uint8_t*)pQmatrixData->chroma_non_intra_quantiser_matrix, (uint8_t*)QmatrixData.chroma_non_intra_quantiser_matrix,
             sizeof(pQmatrixData->chroma_non_intra_quantiser_matrix));
 
         NumOfItem = (int)(pSliceInfo - pSliceInfoBuffer);
@@ -640,9 +640,9 @@ PackVA::SaveVLDParameters(
         VASliceParameterBufferMPEG2 *l_pSliceInfoBuffer = (VASliceParameterBufferMPEG2*)m_va->GetCompBuffer(
             VASliceParameterBufferType,
             &CompBuf,
-            (Ipp32s) (sizeof (VASliceParameterBufferMPEG2))*NumOfItem);
+            (int32_t) (sizeof (VASliceParameterBufferMPEG2))*NumOfItem);
 
-        MFX_INTERNAL_CPY((Ipp8u*)l_pSliceInfoBuffer, (Ipp8u*)pSliceInfoBuffer,
+        MFX_INTERNAL_CPY((uint8_t*)l_pSliceInfoBuffer, (uint8_t*)pSliceInfoBuffer,
             sizeof(VASliceParameterBufferMPEG2) * NumOfItem);
 
         m_va->GetCompBuffer(VASliceParameterBufferType,&CompBuf);
@@ -651,7 +651,7 @@ PackVA::SaveVLDParameters(
 
     if (vpPictureParam)
     {
-        Ipp32s pict_type = PictureHeader->picture_coding_type;
+        int32_t pict_type = PictureHeader->picture_coding_type;
         VAPictureParameterBufferMPEG2 *pPictureParam = vpPictureParam;
 
         pPictureParam->horizontal_size = sequenceHeader->mb_width[task_num] * 16;
@@ -659,7 +659,7 @@ PackVA::SaveVLDParameters(
 
         //pPictureParam->forward_reference_picture = m_va->GetSurfaceID(prev_index);//prev_index;
         //pPictureParam->backward_reference_picture = m_va->GetSurfaceID(next_index);//next_index;
-        Ipp32s f_ref_pic = VA_INVALID_SURFACE;
+        int32_t f_ref_pic = VA_INVALID_SURFACE;
 
         if(pict_type == MPEG2_P_PICTURE)
         {
@@ -716,7 +716,7 @@ PackVA::SaveVLDParameters(
 
 Status
 PackVA::SetBufferSize(
-    Ipp32s          numMB,
+    int32_t          numMB,
     int             size_bs,
     int             size_sl)
 {
@@ -729,8 +729,8 @@ PackVA::SetBufferSize(
             m_va->GetCompBuffer(
                 VAPictureParameterBufferType,
                 &CompBuf,
-                (Ipp32s)sizeof (VAPictureParameterBufferMPEG2));
-            CompBuf->SetDataSize((Ipp32s) (sizeof (VAPictureParameterBufferMPEG2)));
+                (int32_t)sizeof (VAPictureParameterBufferMPEG2));
+            CompBuf->SetDataSize((int32_t) (sizeof (VAPictureParameterBufferMPEG2)));
             CompBuf->FirstMb = 0;
             CompBuf->NumOfMB = 0;
 
@@ -739,16 +739,16 @@ PackVA::SetBufferSize(
                 m_va->GetCompBuffer(
                     VAIQMatrixBufferType,
                     &CompBuf,
-                    (Ipp32s)sizeof(VAIQMatrixBufferMPEG2));
-                CompBuf->SetDataSize((Ipp32s)sizeof(VAIQMatrixBufferMPEG2));
+                    (int32_t)sizeof(VAIQMatrixBufferMPEG2));
+                CompBuf->SetDataSize((int32_t)sizeof(VAIQMatrixBufferMPEG2));
                 CompBuf->FirstMb = 0;
                 CompBuf->NumOfMB = 0;
 
                 m_va->GetCompBuffer(
                     VASliceParameterBufferType,
                     &CompBuf,
-                    (Ipp32s)sizeof(VASliceParameterBufferMPEG2)*size_sl);
-                CompBuf->SetDataSize((Ipp32s) ((Ipp8u*)pSliceInfo - (Ipp8u*)pSliceInfoBuffer));
+                    (int32_t)sizeof(VASliceParameterBufferMPEG2)*size_sl);
+                CompBuf->SetDataSize((int32_t) ((uint8_t*)pSliceInfo - (uint8_t*)pSliceInfoBuffer));
                 CompBuf->FirstMb = 0;
                 CompBuf->NumOfMB = numMB;
 

@@ -69,12 +69,12 @@ extern "C" {
 
 struct mp2_VLCTable
 {
-  Ipp32s max_bits;
-  Ipp32s bits_table0;
-  Ipp32s bits_table1;
-  Ipp32u threshold_table0;
-  Ipp16s *table0;
-  Ipp16s *table1;
+  int32_t max_bits;
+  int32_t bits_table0;
+  int32_t bits_table1;
+  uint32_t threshold_table0;
+  int16_t *table0;
+  int16_t *table1;
 };
 
 #define ippiCopy8x16_8u_C1R(pSrc, srcStep, pDst, dstStep)                   \
@@ -91,8 +91,8 @@ struct mp2_VLCTable
 
 /********************************************************************************/
 
-typedef void (*ownvc_CopyHP_8u_C1R_func) (const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep);
-typedef void (*ownvc_AverageHP_8u_C1R_func) (const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep);
+typedef void (*ownvc_CopyHP_8u_C1R_func) (const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep);
+typedef void (*ownvc_AverageHP_8u_C1R_func) (const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep);
 
 /********************************************************************************/
 
@@ -154,15 +154,15 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 #define HP_FLAG_AV  HP_FLAG_CP
 
 #define CHECK_OFFSET_L(offs, pitch, hh) \
-  if (offs < 0 || (Ipp32s)(offs+(hh-1)*(pitch)+15) > (Ipp32s)video->pic_size) \
+  if (offs < 0 || (int32_t)(offs+(hh-1)*(pitch)+15) > (int32_t)video->pic_size) \
 { \
   return UMC_ERR_INVALID_STREAM; \
 }
 
 #define CALC_OFFSETS_FRAME_420(offs_l, offs_c, flag_l, flag_c, xl, yl, HP_FLAG) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl/2; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl/2; \
 \
   offs_l = video->offset_l + (yl >> 1)*pitch_l + (xl >> 1); \
   offs_c = video->offset_c + (yc >> 1)*pitch_c + (xc >> 1); \
@@ -172,8 +172,8 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define CALC_OFFSETS_FULLPEL(offs_l, offs_c, xl, yl, pitch_l, pitch_c) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl/2; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl/2; \
 \
   offs_l = video->offset_l + (yl >> 1)*pitch_l + (xl >> 1); \
   offs_c = video->offset_c + (yc >> 1)*pitch_c + (xc >> 1); \
@@ -181,8 +181,8 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define CALC_OFFSETS_FIELD_420(offs_l, offs_c, flag_l, flag_c, xl, yl, field_sel, HP_FLAG) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl/2; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl/2; \
 \
   offs_l = video->offset_l + ((yl &~ 1) + field_sel)*pitch_l + (xl >> 1); \
   offs_c = video->offset_c + ((yc &~ 1) + field_sel)*pitch_c + (xc >> 1); \
@@ -192,8 +192,8 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define CALC_OFFSETS_FIELDX_420(offs_l, offs_c, flag_l, flag_c, xl, yl, field_sel, HP_FLAG) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl/2; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl/2; \
   offs_l = ((yl &~ 1) + 2*video->row_l + field_sel)*pitch_l + (xl >> 1) + video->col_l; \
   offs_c = ((yc &~ 1) + 2*video->row_c + field_sel)*pitch_c + (xc >> 1) + video->col_c; \
   HP_FLAG(flag_l, xl, yl); \
@@ -202,8 +202,8 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define CALC_OFFSETS_FRAME_422(offs_l, offs_c, flag_l, flag_c, xl, yl, HP_FLAG) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl; \
 \
   offs_l = video->offset_l + (yl >> 1)*pitch_l + (xl >> 1); \
   offs_c = video->offset_c + (yc >> 1)*pitch_c + (xc >> 1); \
@@ -213,8 +213,8 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define CALC_OFFSETS_FIELD_422(offs_l, offs_c, flag_l, flag_c, xl, yl, field_sel, HP_FLAG) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl; \
 \
   offs_l = video->offset_l + ((yl &~ 1) + field_sel)*pitch_l + (xl >> 1); \
   offs_c = video->offset_c + ((yc &~ 1) + field_sel)*pitch_c + (xc >> 1); \
@@ -224,8 +224,8 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define CALC_OFFSETS_FIELDX_422(offs_l, offs_c, flag_l, flag_c, xl, yl, field_sel, HP_FLAG) \
 { \
-  Ipp32s xc = xl/2; \
-  Ipp32s yc = yl; \
+  int32_t xc = xl/2; \
+  int32_t yc = yl; \
   offs_l = ((yl &~ 1) + 2*video->row_l + field_sel)*pitch_l + (xl >> 1) + video->col_l; \
   offs_c = ((yc &~ 1) + 2*video->row_c + field_sel)*pitch_c + (xc >> 1) + video->col_c; \
   HP_FLAG(flag_l, xl, yl); \
@@ -300,26 +300,26 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 
 #define COPY_PMV(adst,asrc) {                                   \
-  for(unsigned int nn=0; nn<sizeof(adst)/sizeof(Ipp32s); nn++)  \
-    ((Ipp32s*)adst)[nn] = ((Ipp32s*)asrc)[nn];                  \
+  for(unsigned int nn=0; nn<sizeof(adst)/sizeof(int32_t); nn++)  \
+    ((int32_t*)adst)[nn] = ((int32_t*)asrc)[nn];                  \
 }
 
 #define RECONSTRUCT_INTRA_MB(BITSTREAM, NUM_BLK, DCT_TYPE)               \
 {                                                                        \
-  Ipp32s *pitch = video->blkPitches[DCT_TYPE];                                  \
-  Ipp32s *offsets = video->blkOffsets[DCT_TYPE];                                \
-  Ipp32s curr_index = frame_buffer.curr_index[task_num];               \
-  Ipp8u* yuv[3] = {                                                      \
+  int32_t *pitch = video->blkPitches[DCT_TYPE];                                  \
+  int32_t *offsets = video->blkOffsets[DCT_TYPE];                                \
+  int32_t curr_index = frame_buffer.curr_index[task_num];               \
+  uint8_t* yuv[3] = {                                                      \
     frame_buffer.frame_p_c_n[curr_index].Y_comp_data + video->offset_l,  \
     frame_buffer.frame_p_c_n[curr_index].U_comp_data + video->offset_c,  \
     frame_buffer.frame_p_c_n[curr_index].V_comp_data + video->offset_c   \
   };                                                                     \
-  Ipp32s blk;                                                            \
+  int32_t blk;                                                            \
   IppiDecodeIntraSpec_MPEG2 *intraSpec = &video->decodeIntraSpec;        \
                                                                          \
   for (blk = 0; blk < NUM_BLK; blk++) {                                  \
     IppStatus sts;                                                       \
-    Ipp32s chromaFlag, cc;                                               \
+    int32_t chromaFlag, cc;                                               \
     chromaFlag = blk >> 2;                                               \
     cc = chromaFlag + (blk & chromaFlag);                                \
     CHR_SPECINTRA_##NUM_BLK                                              \
@@ -353,7 +353,7 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define DECODE_MBPATTERN_8(code, BITSTREAM, vlcMBPattern)                \
 {                                                                        \
-  Ipp32s cbp_1;                                                          \
+  int32_t cbp_1;                                                          \
   DECODE_VLC(code, BITSTREAM, vlcMBPattern);                             \
   GET_TO9BITS(video->bs, 2, cbp_1);                                      \
   code = (code << 2) | cbp_1;                                            \
@@ -362,20 +362,20 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 #define RECONSTRUCT_INTER_MB(BITSTREAM, NUM_BLK, DCT_TYPE)               \
 {                                                                        \
   IppiDecodeInterSpec_MPEG2 *interSpec = &video->decodeInterSpec;        \
-  Ipp32s cur_q_scale = video->cur_q_scale;                               \
-  Ipp32s *pitch = video->blkPitches[DCT_TYPE];                           \
-  Ipp32s *offsets = video->blkOffsets[DCT_TYPE];                         \
-  Ipp32s mask = 1 << (NUM_BLK - 1);                                      \
-  Ipp32s code;                                                           \
-  Ipp32s blk;                                                            \
+  int32_t cur_q_scale = video->cur_q_scale;                               \
+  int32_t *pitch = video->blkPitches[DCT_TYPE];                           \
+  int32_t *offsets = video->blkOffsets[DCT_TYPE];                         \
+  int32_t mask = 1 << (NUM_BLK - 1);                                      \
+  int32_t code;                                                           \
+  int32_t blk;                                                            \
                                                                          \
   DECODE_MBPATTERN_##NUM_BLK(code, BITSTREAM, vlcMBPattern);             \
                                                                          \
   for (blk = 0; blk < NUM_BLK; blk++) {                                  \
     if (code & mask) {                                                   \
       IppStatus sts;                                                     \
-      Ipp32s chromaFlag = blk >> 2;                                      \
-      Ipp32s cc = chromaFlag + (blk & chromaFlag);                       \
+      int32_t chromaFlag = blk >> 2;                                      \
+      int32_t cc = chromaFlag + (blk & chromaFlag);                       \
       CHR_SPECINTER_##NUM_BLK                                                 \
                                                                          \
       sts = ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u(                        \
@@ -461,35 +461,35 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
   VECTOR_BOUNDS_CORRECT_X(vectorX,task_num);            \
                                                         \
   /* Decode y vector */                                 \
-  vectorY = (Ipp16s)(video->PMV[R + 1] >> 1);           \
+  vectorY = (int16_t)(video->PMV[R + 1] >> 1);           \
   if (IS_NEXTBIT1(BS)) {                                \
     SKIP_BITS(BS, 1)                                    \
   } else {                                              \
     update_mv(&vectorY, S + 1, video, task_num);                  \
   }                                                     \
-  video->PMV[R + 1] = (Ipp16s)(vectorY << 1)
+  video->PMV[R + 1] = (int16_t)(vectorY << 1)
 
 
 #define DECODE_MV_FULLPEL(BS, R, S, vectorX, vectorY, task_num)   \
   /* R = 2*(2*r + s); S = 2*s */                        \
   /* Decode x vector */                                 \
-  vectorX = (Ipp16s)(video->PMV[R] >> 1);               \
+  vectorX = (int16_t)(video->PMV[R] >> 1);               \
   if (IS_NEXTBIT1(BS)) {                                \
     SKIP_BITS(BS, 1)                                    \
   } else {                                              \
     update_mv(&vectorX, S, video, task_num);                      \
   }                                                     \
   VECTOR_BOUNDS_CORRECT_X(vectorX,task_num);            \
-  video->PMV[R] = (Ipp16s)(vectorX << 1);               \
+  video->PMV[R] = (int16_t)(vectorX << 1);               \
                                                         \
   /* Decode y vector */                                 \
-  vectorY = (Ipp16s)(video->PMV[R + 1] >> 1);           \
+  vectorY = (int16_t)(video->PMV[R + 1] >> 1);           \
   if (IS_NEXTBIT1(BS)) {                                \
     SKIP_BITS(BS, 1)                                    \
   } else {                                              \
     update_mv(&vectorY, S + 1, video, task_num);                  \
   }                                                     \
-  video->PMV[R + 1] = (Ipp16s)(vectorY << 1)
+  video->PMV[R + 1] = (int16_t)(vectorY << 1)
 #else
 #define DECODE_MV(BS, R, S, vectorX, vectorY, task_num)           \
   /* R = 2*(2*r + s); S = 2*s */                        \
@@ -520,39 +520,39 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
   vectorX = video->PMV[R];                              \
                                                         \
   /* Decode y vector */                                 \
-  vectorY = (Ipp16s)(video->PMV[R + 1] >> 1);           \
+  vectorY = (int16_t)(video->PMV[R + 1] >> 1);           \
   if (IS_NEXTBIT1(BS)) {                                \
     SKIP_BITS(BS, 1)                                    \
   } else {                                              \
     update_mv(&vectorY, S + 1, video, task_num);                  \
   }                                                     \
-  video->PMV[R + 1] = (Ipp16s)(vectorY << 1)
+  video->PMV[R + 1] = (int16_t)(vectorY << 1)
 
 
 #define DECODE_MV_FULLPEL(BS, R, S, vectorX, vectorY, task_num)   \
   /* R = 2*(2*r + s); S = 2*s */                        \
   /* Decode x vector */                                 \
-  vectorX = (Ipp16s)(video->PMV[R] >> 1);               \
+  vectorX = (int16_t)(video->PMV[R] >> 1);               \
   if (IS_NEXTBIT1(BS)) {                                \
     SKIP_BITS(BS, 1)                                    \
   } else {                                              \
     update_mv(&vectorX, S, video, task_num);                      \
   }                                                     \
-  video->PMV[R] = (Ipp16s)(vectorX << 1);               \
+  video->PMV[R] = (int16_t)(vectorX << 1);               \
                                                         \
   /* Decode y vector */                                 \
-  vectorY = (Ipp16s)(video->PMV[R + 1] >> 1);           \
+  vectorY = (int16_t)(video->PMV[R + 1] >> 1);           \
   if (IS_NEXTBIT1(BS)) {                                \
     SKIP_BITS(BS, 1)                                    \
   } else {                                              \
     update_mv(&vectorY, S + 1, video, task_num);                  \
   }                                                     \
-  video->PMV[R + 1] = (Ipp16s)(vectorY << 1)
+  video->PMV[R + 1] = (int16_t)(vectorY << 1)
 #endif
 
 #define DECODE_QUANTIZER_SCALE(BS, Q_SCALE) \
 {                                           \
-  Ipp32s _q_scale;                             \
+  int32_t _q_scale;                             \
   GET_TO9BITS(video->bs, 5, _q_scale)       \
   if (_q_scale < 1) {                       \
     return UMC_ERR_INVALID_STREAM;                  \
@@ -562,7 +562,7 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #define DECODE_MB_INCREMENT(BS, macroblock_address_increment)         \
 {                                                                     \
-  Ipp32s cc;                                                          \
+  int32_t cc;                                                          \
   SHOW_BITS(BS, 11, cc)                                               \
                                                                       \
   if(cc == 0) {                                                       \
@@ -597,10 +597,10 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 
 #ifdef LOCAL_BUFFERS
 #define DEF_BLOCK(NAME) \
-  Ipp16s NAME[64];
+  int16_t NAME[64];
 #else
 #define DEF_BLOCK(NAME) \
-  Ipp16s *NAME = pQuantSpec->NAME;
+  int16_t *NAME = pQuantSpec->NAME;
 #endif
 
 #define MP2_FUNC(type, name, arg)  type name arg
@@ -609,11 +609,11 @@ extern const ownvc_AverageHP_8u_C1R_func ownvc_Average8x16HP_8u_C1R[4];
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern void dct_8x8_inv_2x2_16s(Ipp16s* pSrc, Ipp16s* pDst);
-extern void dct_8x8_inv_4x4_16s(Ipp16s* pSrc, Ipp16s* pDst);
-extern void dct_8x8_inv_16s(Ipp16s* pSrc, Ipp16s* pDst);
-extern void dct_8x8_inv_16s8uR(Ipp16s* pSrc, Ipp8u* pDst, Ipp32s dstStep);
-extern void ownvc_Add8x8_16s8u_C1IRS(const Ipp16s* pSrc, Ipp32s srcStep, Ipp8u* pSrcDst, Ipp32s srcDstStep);
+extern void dct_8x8_inv_2x2_16s(int16_t* pSrc, int16_t* pDst);
+extern void dct_8x8_inv_4x4_16s(int16_t* pSrc, int16_t* pDst);
+extern void dct_8x8_inv_16s(int16_t* pSrc, int16_t* pDst);
+extern void dct_8x8_inv_16s8uR(int16_t* pSrc, uint8_t* pDst, int32_t dstStep);
+extern void ownvc_Add8x8_16s8u_C1IRS(const int16_t* pSrc, int32_t srcStep, uint8_t* pSrcDst, int32_t srcDstStep);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
@@ -630,15 +630,15 @@ extern void ownvc_Add8x8_16s8u_C1IRS(const Ipp16s* pSrc, Ipp32s srcStep, Ipp8u* 
 #define FUNC_ADD8x8      ippiAdd8x8_16s8u_C1IRS
 #endif
 
-void IDCTAdd_1x1to8x8(Ipp32s val, Ipp8u* y, Ipp32s step);
-void IDCTAdd_1x4to8x8(const Ipp16s* x, Ipp8u* y, Ipp32s step);
-void Pack8x8(Ipp16s* x, Ipp8u* y, Ipp32s step);
+void IDCTAdd_1x1to8x8(int32_t val, uint8_t* y, int32_t step);
+void IDCTAdd_1x4to8x8(const int16_t* x, uint8_t* y, int32_t step);
+void Pack8x8(int16_t* x, uint8_t* y, int32_t step);
 
 
 #ifdef MPEG2_USE_REF_IDCT
 
 extern "C" {
-void Reference_IDCT(Ipp16s *block, Ipp16s *out, Ipp32s step);
+void Reference_IDCT(int16_t *block, int16_t *out, int32_t step);
 //#define Reference_IDCT(in, out, step) ippiDCT8x8Inv_16s_C1R(in, out, 2*(step))
 } /* extern "C" */
 
@@ -655,7 +655,7 @@ void Reference_IDCT(Ipp16s *block, Ipp16s *out, Ipp32s step);
   IDCT_INTER(pDstBlock, 0, idct, pSrcDst, srcDstStep)
 
 #define IDCT_INTRA(SRC, NUM, BUFF, DST, STEP)       \
-  Ipp32s ii, jj;                                    \
+  int32_t ii, jj;                                    \
   SRC[0] -= 1024;                                   \
   Reference_IDCT(SRC, BUFF, 8);                     \
   for(ii = 0; ii < 8; ii++) {                       \
@@ -703,7 +703,7 @@ void Reference_IDCT(Ipp16s *block, Ipp16s *out, Ipp32s step);
   }
 
 #define IDCT_INTER1(val, idct, pSrcDst, srcDstStep) \
-  ippiAddC8x8_16s8u_C1IR((Ipp16s)((val + 4) >> 3), pSrcDst, srcDstStep)
+  ippiAddC8x8_16s8u_C1IR((int16_t)((val + 4) >> 3), pSrcDst, srcDstStep)
 
 #ifdef USE_INTRINSICS
 
@@ -731,7 +731,7 @@ void Reference_IDCT(Ipp16s *block, Ipp16s *out, Ipp32s step);
 #endif
 
 #define IDCT_INTRA1(val, idct, pSrcDst, srcDstStep) \
-  pDstBlock[0] = (Ipp16s)val; \
+  pDstBlock[0] = (int16_t)val; \
   ippiDCT8x8Inv_AANTransposed_16s8u_C1R(pDstBlock, pSrcDst, srcDstStep, 0)
 
 #endif // MPEG2_USE_REF_IDCT
@@ -782,20 +782,20 @@ typedef DecodeInterSpec_MPEG2 IppiDecodeInterSpec_MPEG2;
 */
 
 MP2_API(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG1_1u8u, (
-    Ipp8u**                            ppBitStream,
-    Ipp32s*                            pBitOffset,
+    uint8_t**                            ppBitStream,
+    int32_t*                            pBitOffset,
     IppiDecodeInterSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             QP,
-    Ipp8u*                             pSrcDst,
-    Ipp32s                             srcDstStep))
+    int32_t                             QP,
+    uint8_t*                             pSrcDst,
+    int32_t                             srcDstStep))
 
 MP2_API(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u, (
-    Ipp8u**                            ppBitStream,
-    Ipp32s*                            pBitOffset,
+    uint8_t**                            ppBitStream,
+    int32_t*                            pBitOffset,
     IppiDecodeInterSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             QP,
-    Ipp8u*                             pSrcDst,
-    Ipp32s                             srcDstStep))
+    int32_t                             QP,
+    uint8_t*                             pSrcDst,
+    int32_t                             srcDstStep))
 
 /* ///////////////////////////////////////////////////////////////////////////
 //  Name:
@@ -832,24 +832,24 @@ MP2_API(IppStatus, ippiDecodeInter8x8IDCTAdd_MPEG2_1u8u, (
 */
 
 MP2_API(IppStatus, ippiDecodeIntra8x8IDCT_MPEG1_1u8u, (
-    Ipp8u**                            ppBitStream,
-    Ipp32s*                            pBitOffset,
+    uint8_t**                            ppBitStream,
+    int32_t*                            pBitOffset,
     IppiDecodeIntraSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             QP,
-    Ipp32s                             blockType,
-    Ipp16s*                            pDCPred,
-    Ipp8u*                             pDst,
-    Ipp32s                             dstStep))
+    int32_t                             QP,
+    int32_t                             blockType,
+    int16_t*                            pDCPred,
+    uint8_t*                             pDst,
+    int32_t                             dstStep))
 
 MP2_API(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
-    Ipp8u**                            ppBitStream,
-    Ipp32s*                            pBitOffset,
+    uint8_t**                            ppBitStream,
+    int32_t*                            pBitOffset,
     IppiDecodeIntraSpec_MPEG2*         pQuantSpec,
-    Ipp32s                             QP,
-    Ipp32s                             blockType,
-    Ipp16s*                            pDCPred,
-    Ipp8u*                             pDst,
-    Ipp32s                             dstStep))
+    int32_t                             QP,
+    int32_t                             blockType,
+    int16_t*                            pDCPred,
+    uint8_t*                             pDst,
+    int32_t                             dstStep))
 
 /* ///////////////////////////////////////////////////////////////////////////
 //  Name:
@@ -876,15 +876,15 @@ MP2_API(IppStatus, ippiDecodeIntra8x8IDCT_MPEG2_1u8u, (
 */
 
 MP2_API(IppStatus, ippiDecodeIntraInit_MPEG2, (
-    const Ipp8u*                 pQuantMatrix,
-    Ipp32s                       scan,
-    Ipp32s                       intraVLCFormat,
-    Ipp32s                       intraShiftDC,
+    const uint8_t*                 pQuantMatrix,
+    int32_t                       scan,
+    int32_t                       intraVLCFormat,
+    int32_t                       intraShiftDC,
     IppiDecodeIntraSpec_MPEG2*   pSpec))
 
 MP2_API(IppStatus, ippiDecodeInterInit_MPEG2, (
-    const Ipp8u*                 pQuantMatrix,
-    Ipp32s                       flag,
+    const uint8_t*                 pQuantMatrix,
+    int32_t                       flag,
     IppiDecodeInterSpec_MPEG2*   pSpec))
 
 /* ///////////////////////////////////////////////////////////////////////////
@@ -905,20 +905,20 @@ MP2_API(IppStatus, ippiDecodeInterInit_MPEG2, (
 */
 
 MP2_API(IppStatus, ippiDecodeIntraGetSize_MPEG2, (
-    Ipp32s* pSpecSize))
+    int32_t* pSpecSize))
 
 MP2_API(IppStatus, ippiDecodeInterGetSize_MPEG2, (
-    Ipp32s* pSpecSize))
+    int32_t* pSpecSize))
 
 #endif /* __MPEG2_FUNC__ */
 
 /***************************************************************/
 
-extern const Ipp16u MPEG2_VLC_TAB1[];
-extern const Ipp8u  MPEG2_DCSIZE_TAB[];
+extern const uint16_t MPEG2_VLC_TAB1[];
+extern const uint8_t  MPEG2_DCSIZE_TAB[];
 
-#define UHBITS(code, nbits) (((Ipp32u)(code)) >> (32 - (nbits)))
-#define SHBITS(code, nbits) (((Ipp32s)(code)) >> (32 - (nbits)))
+#define UHBITS(code, nbits) (((uint32_t)(code)) >> (32 - (nbits)))
+#define SHBITS(code, nbits) (((int32_t)(code)) >> (32 - (nbits)))
 
 #define TAB1_OFFSET_10BIT 248
 #define TAB1_OFFSET_15BIT 360
@@ -928,7 +928,7 @@ extern const Ipp8u  MPEG2_DCSIZE_TAB[];
 
 #define UNPACK_VLC1(tab_val, run, val, len) \
 { \
-  Ipp32u _tab_val = tab_val; \
+  uint32_t _tab_val = tab_val; \
   run = _tab_val & 0x1f; \
   len = (_tab_val >> 5) & 0xf; \
   val = (_tab_val >> 9); \
@@ -936,7 +936,7 @@ extern const Ipp8u  MPEG2_DCSIZE_TAB[];
 
 #define UNPACK_VLC2(tab_val, run, val, len) \
 { \
-  Ipp32u _tab_val = tab_val; \
+  uint32_t _tab_val = tab_val; \
   run = _tab_val & 0x1f; \
   len = (_tab_val >> 5) & 0xf; \
   val = (_tab_val >> 10); \
@@ -944,8 +944,8 @@ extern const Ipp8u  MPEG2_DCSIZE_TAB[];
 
 #define DECODE_DC(val)                                    \
 {                                                         \
-  const Ipp8u *pTab;                                      \
-  Ipp32s dct_dc_size;                                     \
+  const uint8_t *pTab;                                      \
+  int32_t dct_dc_size;                                     \
   SHOW_HI9BITS(BS, code);                                 \
   pTab = MPEG2_DCSIZE_TAB + (chromaFlag << 6);            \
   if (code < 0xf8000000) {                                \

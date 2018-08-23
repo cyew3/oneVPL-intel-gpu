@@ -89,16 +89,16 @@ public:
     bool SetVideoAccelerator(VideoAccelerator * va);
     Status InitBuffers(int size_bf = 0, int size_sl = 0);
     Status SetBufferSize(
-        Ipp32s          numMB,
+        int32_t          numMB,
         int             size_bs=0,
         int             size_sl=0);
     Status SaveVLDParameters(
         sSequenceHeader*    sequenceHeader,
         sPictureHeader*     PictureHeader,
-        Ipp8u*              bs_start_ptr,
+        uint8_t*              bs_start_ptr,
         sFrameBuffer*       frame_buffer,
-        Ipp32s              task_num,
-        Ipp32s              source_mb_height = 0);
+        int32_t              task_num,
+        int32_t              source_mb_height = 0);
 
 #if defined(UMC_VA_DXVA)
     Status GetStatusReport(DXVA_Status_VC1 *pStatusReport);
@@ -111,27 +111,27 @@ public:
     bool   bTriggerGPUHang;
 #endif
 
-    Ipp32s totalNumCoef;
-    Ipp8u  *pBitsreamData;
-    Ipp32s va_index;
-    Ipp32s field_buffer_index;
-    Ipp8u  *pSliceStart;
-    Ipp32s bs_size;
-    Ipp32s bs_size_getting;
-    Ipp32s slice_size_getting;
-    Ipp32s m_SliceNum;
+    int32_t totalNumCoef;
+    uint8_t  *pBitsreamData;
+    int32_t va_index;
+    int32_t field_buffer_index;
+    uint8_t  *pSliceStart;
+    int32_t bs_size;
+    int32_t bs_size_getting;
+    int32_t slice_size_getting;
+    int32_t m_SliceNum;
     //protected content:
-    Ipp8u  add_bytes[16];
+    uint8_t  add_bytes[16];
     bool   IsProtectedBS;
-    Ipp32u init_count[4];
+    uint32_t init_count[4];
     mfxBitstream * bs;
-    Ipp32s add_to_slice_start;
+    int32_t add_to_slice_start;
     bool   is_bs_aligned_16;
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxEncryptedData * curr_encryptedData;
     mfxEncryptedData * curr_bs_encryptedData;
 #endif
-    Ipp32u overlap;
+    uint32_t overlap;
 
 #ifdef UMC_VA_DXVA
     DXVA_PictureParameters  *vpPictureParam;
@@ -192,7 +192,7 @@ public:
 
         virtual Status ProcessRestFrame(int task_num);
         virtual void           quant_matrix_extension(int task_num);
-        virtual Status UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*niqm);
+        virtual Status UpdateFrameBuffer(int task_num, uint8_t* iqm, uint8_t*niqm);
 
 protected:
          Status BeginVAFrame(int task_num);

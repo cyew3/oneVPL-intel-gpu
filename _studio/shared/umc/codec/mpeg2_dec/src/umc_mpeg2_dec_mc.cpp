@@ -28,7 +28,7 @@ extern "C" {
 #endif
 
 #define DEF_COPY_HP(NAME) \
-extern void NAME(const Ipp8u* pSrc, Ipp32s srcStep, Ipp8u* pDst, Ipp32s dstStep)
+extern void NAME(const uint8_t* pSrc, int32_t srcStep, uint8_t* pDst, int32_t dstStep)
 
 #ifdef IPP_DIRECT_CALLS
 
@@ -74,22 +74,22 @@ const ownvc_CopyHP_8u_C1R_func ownvc_Copy16x16HP_8u_C1R[4] = {
   ownvc_Copy16x16HP_HH0_8u_C1R
 };
 
-void ownvc_Copy8x16_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Copy8x16_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     ownvc_Copy8x8HP_8u_C1R[0](pSrc, srcStep, pDst, dstStep);
     ownvc_Copy8x8HP_8u_C1R[0](pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep);
 }
-void ownvc_Copy8x16HP_HF0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Copy8x16HP_HF0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     ownvc_Copy8x8HP_8u_C1R[1](pSrc, srcStep, pDst, dstStep);
     ownvc_Copy8x8HP_8u_C1R[1](pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep);
 }
-void ownvc_Copy8x16HP_FH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Copy8x16HP_FH0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     ownvc_Copy8x8HP_8u_C1R[2](pSrc, srcStep, pDst, dstStep);
     ownvc_Copy8x8HP_8u_C1R[2](pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep);
 }
-void ownvc_Copy8x16HP_HH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Copy8x16HP_HH0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     ownvc_Copy8x8HP_8u_C1R[3](pSrc, srcStep, pDst, dstStep);
     ownvc_Copy8x8HP_8u_C1R[3](pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep);
@@ -153,22 +153,22 @@ const ownvc_AverageHP_8u_C1R_func ownvc_Average16x16HP_8u_C1R[4] = {
 #endif
 
 /****************************************************************/
-void ownvc_Average8x16_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Average8x16_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     FUNC_AVE_HP(8, 8, pSrc, srcStep, pDst, dstStep, 0, 0);
     FUNC_AVE_HP(8, 8, pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep, 0, 0);
 }
-void ownvc_Average8x16HP_HF0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Average8x16HP_HF0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     FUNC_AVE_HP(8, 8, pSrc, srcStep, pDst, dstStep, 1, 0);
     FUNC_AVE_HP(8, 8, pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep, 1, 0);
 }
-void ownvc_Average8x16HP_FH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Average8x16HP_FH0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     FUNC_AVE_HP(8, 8, pSrc, srcStep, pDst, dstStep, 2, 0);
     FUNC_AVE_HP(8, 8, pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep, 2, 0);
 }
-void ownvc_Average8x16HP_HH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pDst, Ipp32s dstStep)
+void ownvc_Average8x16HP_HH0_8u_C1R(const uint8_t *pSrc, int32_t srcStep, uint8_t *pDst, int32_t dstStep)
 {
     FUNC_AVE_HP(8, 8, pSrc, srcStep, pDst, dstStep, 3, 0);
     FUNC_AVE_HP(8, 8, pSrc + 8 * srcStep, srcStep, pDst + 8 * dstStep, dstStep, 3, 0);
@@ -176,19 +176,19 @@ void ownvc_Average8x16HP_HH0_8u_C1R(const Ipp8u *pSrc, Ipp32s srcStep, Ipp8u *pD
 
 /****************************************************************/
 
-Ipp16s zero_memory[64*8] = {0};
+int16_t zero_memory[64*8] = {0};
 
 #define MC_FORWARD0(H, PITCH_L, PITCH_C, task_num)                                                    \
-  Ipp32s prev_index = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;                                              \
-  Ipp32s curr_index = frame_buffer.curr_index[task_num];                                              \
-  Ipp8u *ref_Y_data = frame_buffer.frame_p_c_n[prev_index].Y_comp_data;                     \
-  Ipp8u *ref_U_data = frame_buffer.frame_p_c_n[prev_index].U_comp_data;                     \
-  Ipp8u *ref_V_data = frame_buffer.frame_p_c_n[prev_index].V_comp_data;                     \
-  Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;                     \
-  Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;                     \
-  Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;                     \
-  Ipp32s offset_l = video->offset_l;                                                        \
-  Ipp32s offset_c = video->offset_c;                                                        \
+  int32_t prev_index = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;                                              \
+  int32_t curr_index = frame_buffer.curr_index[task_num];                                              \
+  uint8_t *ref_Y_data = frame_buffer.frame_p_c_n[prev_index].Y_comp_data;                     \
+  uint8_t *ref_U_data = frame_buffer.frame_p_c_n[prev_index].U_comp_data;                     \
+  uint8_t *ref_V_data = frame_buffer.frame_p_c_n[prev_index].V_comp_data;                     \
+  uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;                     \
+  uint8_t *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;                     \
+  uint8_t *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;                     \
+  int32_t offset_l = video->offset_l;                                                        \
+  int32_t offset_c = video->offset_c;                                                        \
   ippiCopy16x16_8u_C1R(ref_Y_data + offset_l, PITCH_L, cur_Y_data + offset_l, PITCH_L);     \
   ippiCopy8x##H##_8u_C1R(ref_U_data + offset_c, PITCH_C, cur_U_data + offset_c, PITCH_C);   \
   ippiCopy8x##H##_8u_C1R(ref_V_data + offset_c, PITCH_C, cur_V_data + offset_c, PITCH_C);
@@ -219,18 +219,18 @@ void MPEG2VideoDecoderSW::mc_field_forward0_422(VideoContext *video, int task_nu
 #define indexBKW  2
 
 #define FUNC_MC_MBLOCK_420(DIR, METH, FLG, task_num)                                               \
-  Ipp8u *refY = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].Y_comp_data;            \
-  Ipp8u *refU = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].U_comp_data;            \
-  Ipp8u *refV = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].V_comp_data;            \
-  Ipp8u *curY = video->blkCurrYUV[0];                                                    \
-  Ipp8u *curU = video->blkCurrYUV[1];                                                    \
-  Ipp8u *curV = video->blkCurrYUV[2];                                                    \
-  Ipp32s pitch_l = video->Y_comp_pitch;                                                  \
-  Ipp32s pitch_c = video->U_comp_pitch;                                                  \
-  Ipp32s flag_l, flag_c;                                                                 \
-  Ipp32s offs_l, offs_c;                                                                 \
-  Ipp16s vec_x, vec_y;                                                                   \
-  Ipp32s lvec_x, lvec_y;                                                                 \
+  uint8_t *refY = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].Y_comp_data;            \
+  uint8_t *refU = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].U_comp_data;            \
+  uint8_t *refV = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].V_comp_data;            \
+  uint8_t *curY = video->blkCurrYUV[0];                                                    \
+  uint8_t *curU = video->blkCurrYUV[1];                                                    \
+  uint8_t *curV = video->blkCurrYUV[2];                                                    \
+  int32_t pitch_l = video->Y_comp_pitch;                                                  \
+  int32_t pitch_c = video->U_comp_pitch;                                                  \
+  int32_t flag_l, flag_c;                                                                 \
+  int32_t offs_l, offs_c;                                                                 \
+  int16_t vec_x, vec_y;                                                                   \
+  int32_t lvec_x, lvec_y;                                                                 \
                                                                                          \
   if(video->prediction_type == IPPVC_MC_FRAME)                                           \
   {                                                                                      \
@@ -249,10 +249,10 @@ void MPEG2VideoDecoderSW::mc_field_forward0_422(VideoContext *video, int task_nu
   }                                                                                      \
   else                                                                                   \
   {                                                                                      \
-    Ipp32s pitch_l2 = pitch_l + pitch_l;                                                 \
-    Ipp32s pitch_c2 = pitch_c + pitch_c;                                                 \
-    Ipp32s field_sel0, field_sel1;                                                       \
-    Ipp16s vec1_x, vec1_y;                                                               \
+    int32_t pitch_l2 = pitch_l + pitch_l;                                                 \
+    int32_t pitch_c2 = pitch_c + pitch_c;                                                 \
+    int32_t field_sel0, field_sel1;                                                       \
+    int16_t vec1_x, vec1_y;                                                               \
                                                                                          \
     GET_1BIT(video->bs, field_sel0);                                                     \
     DECODE_MV_FIELD(video->bs, index##DIR, index##DIR, vec_x, vec_y, task_num);                    \
@@ -298,17 +298,17 @@ Status MPEG2VideoDecoderSW::mc_frame_backward_add_420(VideoContext *video, int t
 }
 
 #define FUNC_MC_MBLOCK_422(DIR, METH, FLG, task_num)                                               \
-  Ipp8u *refY = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].Y_comp_data;            \
-  Ipp8u *refU = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].U_comp_data;            \
-  Ipp8u *refV = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].V_comp_data;            \
-  Ipp8u *curY = video->blkCurrYUV[0];                                                    \
-  Ipp8u *curU = video->blkCurrYUV[1];                                                    \
-  Ipp8u *curV = video->blkCurrYUV[2];                                                    \
-  Ipp32s pitch_l = video->Y_comp_pitch;                                            \
-  Ipp32s pitch_c = video->U_comp_pitch;                                            \
-  Ipp32s flag_l, flag_c;                                                                 \
-  Ipp32s offs_l, offs_c;                                                                 \
-  Ipp16s vec_x, vec_y;                                                                   \
+  uint8_t *refY = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].Y_comp_data;            \
+  uint8_t *refU = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].U_comp_data;            \
+  uint8_t *refV = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].V_comp_data;            \
+  uint8_t *curY = video->blkCurrYUV[0];                                                    \
+  uint8_t *curU = video->blkCurrYUV[1];                                                    \
+  uint8_t *curV = video->blkCurrYUV[2];                                                    \
+  int32_t pitch_l = video->Y_comp_pitch;                                            \
+  int32_t pitch_c = video->U_comp_pitch;                                            \
+  int32_t flag_l, flag_c;                                                                 \
+  int32_t offs_l, offs_c;                                                                 \
+  int16_t vec_x, vec_y;                                                                   \
                                                                                          \
   if(video->prediction_type == IPPVC_MC_FRAME)                                           \
   {                                                                                      \
@@ -325,10 +325,10 @@ Status MPEG2VideoDecoderSW::mc_frame_backward_add_420(VideoContext *video, int t
   }                                                                                      \
   else                                                                                   \
   {                                                                                      \
-    Ipp32s pitch_l2 = pitch_l + pitch_l;                                                 \
-    Ipp32s pitch_c2 = pitch_c + pitch_c;                                                 \
-    Ipp32s field_sel0, field_sel1;                                                       \
-    Ipp16s vec1_x, vec1_y;                                                               \
+    int32_t pitch_l2 = pitch_l + pitch_l;                                                 \
+    int32_t pitch_c2 = pitch_c + pitch_c;                                                 \
+    int32_t field_sel0, field_sel1;                                                       \
+    int16_t vec1_x, vec1_y;                                                               \
                                                                                          \
     GET_1BIT(video->bs, field_sel0);                                                     \
     DECODE_MV_FIELD(video->bs, index##DIR, index##DIR, vec_x, vec_y, task_num);                    \
@@ -367,16 +367,16 @@ Status MPEG2VideoDecoderSW::mc_frame_backward_add_422(VideoContext *video, int t
 }
 
 #define FUNC_MC_FULLPEL(DIR, METH, FLG, task_num)                                       \
-  Ipp8u *refY = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].Y_comp_data; \
-  Ipp8u *refU = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].U_comp_data; \
-  Ipp8u *refV = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].V_comp_data; \
-  Ipp8u *curY = video->blkCurrYUV[0];                                         \
-  Ipp8u *curU = video->blkCurrYUV[1];                                         \
-  Ipp8u *curV = video->blkCurrYUV[2];                                         \
-  Ipp32s pitch_l = video->Y_comp_pitch;                                       \
-  Ipp32s pitch_c = video->U_comp_pitch;                                       \
-  Ipp32s offs_l, offs_c;                                                      \
-  Ipp16s vec_x, vec_y;                                                        \
+  uint8_t *refY = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].Y_comp_data; \
+  uint8_t *refU = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].U_comp_data; \
+  uint8_t *refV = frame_buffer.frame_p_c_n[frame_buffer.buff##DIR].V_comp_data; \
+  uint8_t *curY = video->blkCurrYUV[0];                                         \
+  uint8_t *curU = video->blkCurrYUV[1];                                         \
+  uint8_t *curV = video->blkCurrYUV[2];                                         \
+  int32_t pitch_l = video->Y_comp_pitch;                                       \
+  int32_t pitch_c = video->U_comp_pitch;                                       \
+  int32_t offs_l, offs_c;                                                      \
+  int16_t vec_x, vec_y;                                                        \
                                                                               \
   DECODE_MV_FULLPEL(video->bs, index##DIR, index##DIR, vec_x, vec_y, task_num);         \
                                                                               \
@@ -409,28 +409,28 @@ Status MPEG2VideoDecoderSW::mc_fullpel_backward_add(VideoContext *video, int tas
    ? frame_buffer.curr_index[task_num] : frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index)
 
 #define FUNC_MC_FIELD_420(DIR, METH, FLG, task_num)                                                           \
-  Ipp8u *cur_Y = video->blkCurrYUV[0];                                                              \
-  Ipp8u *cur_U = video->blkCurrYUV[1];                                                              \
-  Ipp8u *cur_V = video->blkCurrYUV[2];                                                              \
-  Ipp32s pitch_l = video->Y_comp_pitch;                                                       \
-  Ipp32s pitch_c = video->U_comp_pitch;                                                       \
+  uint8_t *cur_Y = video->blkCurrYUV[0];                                                              \
+  uint8_t *cur_U = video->blkCurrYUV[1];                                                              \
+  uint8_t *cur_V = video->blkCurrYUV[2];                                                              \
+  int32_t pitch_l = video->Y_comp_pitch;                                                       \
+  int32_t pitch_c = video->U_comp_pitch;                                                       \
                                                                                                     \
   if(video->prediction_type == IPPVC_MC_FIELD)                                                      \
   {                                                                                                 \
-    Ipp8u *ref_Y;                                                                                   \
-    Ipp8u *ref_U;                                                                                   \
-    Ipp8u *ref_V;                                                                                   \
-    Ipp32s offs_l, offs_c;                                                                          \
-    Ipp32s flag_l, flag_c;                                                                          \
-    Ipp16s vec_x, vec_y;                                                                            \
-    Ipp32s field_sel;                                                                               \
+    uint8_t *ref_Y;                                                                                   \
+    uint8_t *ref_U;                                                                                   \
+    uint8_t *ref_V;                                                                                   \
+    int32_t offs_l, offs_c;                                                                          \
+    int32_t flag_l, flag_c;                                                                          \
+    int16_t vec_x, vec_y;                                                                            \
+    int32_t field_sel;                                                                               \
                                                                                                     \
     GET_1BIT(video->bs, field_sel);                                                                 \
     DECODE_MV(video->bs, index##DIR, index##DIR, vec_x, vec_y, task_num);                                     \
     video->PMV[index##DIR + 4] = video->PMV[index##DIR + 0];                                        \
     video->PMV[index##DIR + 5] = video->PMV[index##DIR + 1];                                        \
                                                                                                     \
-    Ipp32s ind0 = FIELD_BUFF_IND(field_sel);                                                        \
+    int32_t ind0 = FIELD_BUFF_IND(field_sel);                                                        \
     if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)                                             \
       ind0 = frame_buffer.buff##DIR;                                                                \
                                                                                                     \
@@ -448,8 +448,8 @@ Status MPEG2VideoDecoderSW::mc_fullpel_backward_add(VideoContext *video, int tas
   }                                                                                                 \
   else /* 16x8 */                                                                                   \
   {                                                                                                 \
-    Ipp16s vec_x0, vec_y0, vec_x1, vec_y1;                                                          \
-    Ipp32s field_sel0, field_sel1;                                                                  \
+    int16_t vec_x0, vec_y0, vec_x1, vec_y1;                                                          \
+    int32_t field_sel0, field_sel1;                                                                  \
                                                                                                     \
     GET_1BIT(video->bs, field_sel0);                                                                \
     DECODE_MV(video->bs, index##DIR, index##DIR, vec_x0, vec_y0, task_num);                                   \
@@ -457,19 +457,19 @@ Status MPEG2VideoDecoderSW::mc_fullpel_backward_add(VideoContext *video, int tas
     GET_1BIT(video->bs, field_sel1);                                                                \
     DECODE_MV(video->bs, index##DIR + 4, index##DIR, vec_x1, vec_y1, task_num);                               \
                                                                                                     \
-    Ipp32s ind0 = FIELD_BUFF_IND(field_sel0);                                                       \
-    Ipp32s ind1 = FIELD_BUFF_IND(field_sel1);                                                       \
+    int32_t ind0 = FIELD_BUFF_IND(field_sel0);                                                       \
+    int32_t ind1 = FIELD_BUFF_IND(field_sel1);                                                       \
     if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)                                             \
       ind0 = ind1 = frame_buffer.buff##DIR;                                                         \
                                                                                                     \
-    Ipp8u *ref_Y0 = frame_buffer.frame_p_c_n[ind0].Y_comp_data;                                     \
-    Ipp8u *ref_U0 = frame_buffer.frame_p_c_n[ind0].U_comp_data;                                     \
-    Ipp8u *ref_V0 = frame_buffer.frame_p_c_n[ind0].V_comp_data;                                     \
-    Ipp8u *ref_Y1 = frame_buffer.frame_p_c_n[ind1].Y_comp_data;                                     \
-    Ipp8u *ref_U1 = frame_buffer.frame_p_c_n[ind1].U_comp_data;                                     \
-    Ipp8u *ref_V1 = frame_buffer.frame_p_c_n[ind1].V_comp_data;                                     \
-    Ipp32s offs_l0, offs_c0, flag_l0, flag_c0;                                                      \
-    Ipp32s offs_l1, offs_c1, flag_l1, flag_c1;                                                      \
+    uint8_t *ref_Y0 = frame_buffer.frame_p_c_n[ind0].Y_comp_data;                                     \
+    uint8_t *ref_U0 = frame_buffer.frame_p_c_n[ind0].U_comp_data;                                     \
+    uint8_t *ref_V0 = frame_buffer.frame_p_c_n[ind0].V_comp_data;                                     \
+    uint8_t *ref_Y1 = frame_buffer.frame_p_c_n[ind1].Y_comp_data;                                     \
+    uint8_t *ref_U1 = frame_buffer.frame_p_c_n[ind1].U_comp_data;                                     \
+    uint8_t *ref_V1 = frame_buffer.frame_p_c_n[ind1].V_comp_data;                                     \
+    int32_t offs_l0, offs_c0, flag_l0, flag_c0;                                                      \
+    int32_t offs_l1, offs_c1, flag_l1, flag_c1;                                                      \
                                                                                                     \
     CALC_OFFSETS_FIELDX_420(offs_l0, offs_c0, flag_l0, flag_c0, vec_x0, vec_y0, field_sel0, HP_FLAG_##FLG) \
     CALC_OFFSETS_FIELDX_420(offs_l1, offs_c1, flag_l1, flag_c1, vec_x1, vec_y1, field_sel1, HP_FLAG_##FLG) \
@@ -497,28 +497,28 @@ Status MPEG2VideoDecoderSW::mc_field_backward_420(VideoContext *video, int task_
 {
   //FUNC_MC_FIELD_420(BKW, COPY, CP);
   //  #define FUNC_MC_FIELD_420(DIR, METH, FLG)
-  Ipp8u *cur_Y = video->blkCurrYUV[0];
-  Ipp8u *cur_U = video->blkCurrYUV[1];
-  Ipp8u *cur_V = video->blkCurrYUV[2];
-  Ipp32s pitch_l = video->Y_comp_pitch;
-  Ipp32s pitch_c = video->U_comp_pitch;
+  uint8_t *cur_Y = video->blkCurrYUV[0];
+  uint8_t *cur_U = video->blkCurrYUV[1];
+  uint8_t *cur_V = video->blkCurrYUV[2];
+  int32_t pitch_l = video->Y_comp_pitch;
+  int32_t pitch_c = video->U_comp_pitch;
 
   if(video->prediction_type == IPPVC_MC_FIELD)
   {
-    Ipp8u *ref_Y;
-    Ipp8u *ref_U;
-    Ipp8u *ref_V;
-    Ipp32s offs_l, offs_c;
-    Ipp32s flag_l, flag_c;
-    Ipp16s vec_x, vec_y;
-    Ipp32s field_sel;
+    uint8_t *ref_Y;
+    uint8_t *ref_U;
+    uint8_t *ref_V;
+    int32_t offs_l, offs_c;
+    int32_t flag_l, flag_c;
+    int16_t vec_x, vec_y;
+    int32_t field_sel;
 
     GET_1BIT(video->bs, field_sel);
     DECODE_MV(video->bs, indexBKW, indexBKW, vec_x, vec_y, task_num);
     video->PMV[indexBKW + 4] = video->PMV[indexBKW + 0];
     video->PMV[indexBKW + 5] = video->PMV[indexBKW + 1];
 
-    Ipp32s ind0 = FIELD_BUFF_IND(field_sel);
+    int32_t ind0 = FIELD_BUFF_IND(field_sel);
     if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)
       ind0 = frame_buffer.buffBKW;
 
@@ -536,8 +536,8 @@ Status MPEG2VideoDecoderSW::mc_field_backward_420(VideoContext *video, int task_
   }
   else /* 16x8 */
   {
-    Ipp16s vec_x0, vec_y0, vec_x1, vec_y1;
-    Ipp32s field_sel0, field_sel1;
+    int16_t vec_x0, vec_y0, vec_x1, vec_y1;
+    int32_t field_sel0, field_sel1;
 
     GET_1BIT(video->bs, field_sel0);
     DECODE_MV(video->bs, indexBKW, indexBKW, vec_x0, vec_y0, task_num);
@@ -545,19 +545,19 @@ Status MPEG2VideoDecoderSW::mc_field_backward_420(VideoContext *video, int task_
     GET_1BIT(video->bs, field_sel1);
     DECODE_MV(video->bs, indexBKW + 4, indexBKW, vec_x1, vec_y1, task_num);
 
-    Ipp32s ind0 = FIELD_BUFF_IND(field_sel0);
-    Ipp32s ind1 = FIELD_BUFF_IND(field_sel1);
+    int32_t ind0 = FIELD_BUFF_IND(field_sel0);
+    int32_t ind1 = FIELD_BUFF_IND(field_sel1);
     if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)
       ind0 = ind1 = frame_buffer.buffBKW;
 
-    Ipp8u *ref_Y0 = frame_buffer.frame_p_c_n[ind0].Y_comp_data;
-    Ipp8u *ref_U0 = frame_buffer.frame_p_c_n[ind0].U_comp_data;
-    Ipp8u *ref_V0 = frame_buffer.frame_p_c_n[ind0].V_comp_data;
-    Ipp8u *ref_Y1 = frame_buffer.frame_p_c_n[ind1].Y_comp_data;
-    Ipp8u *ref_U1 = frame_buffer.frame_p_c_n[ind1].U_comp_data;
-    Ipp8u *ref_V1 = frame_buffer.frame_p_c_n[ind1].V_comp_data;
-    Ipp32s offs_l0, offs_c0, flag_l0, flag_c0;
-    Ipp32s offs_l1, offs_c1, flag_l1, flag_c1;
+    uint8_t *ref_Y0 = frame_buffer.frame_p_c_n[ind0].Y_comp_data;
+    uint8_t *ref_U0 = frame_buffer.frame_p_c_n[ind0].U_comp_data;
+    uint8_t *ref_V0 = frame_buffer.frame_p_c_n[ind0].V_comp_data;
+    uint8_t *ref_Y1 = frame_buffer.frame_p_c_n[ind1].Y_comp_data;
+    uint8_t *ref_U1 = frame_buffer.frame_p_c_n[ind1].U_comp_data;
+    uint8_t *ref_V1 = frame_buffer.frame_p_c_n[ind1].V_comp_data;
+    int32_t offs_l0, offs_c0, flag_l0, flag_c0;
+    int32_t offs_l1, offs_c1, flag_l1, flag_c1;
 
     CALC_OFFSETS_FIELDX_420(offs_l0, offs_c0, flag_l0, flag_c0, vec_x0, vec_y0, field_sel0, HP_FLAG_CP)
     CALC_OFFSETS_FIELDX_420(offs_l1, offs_c1, flag_l1, flag_c1, vec_x1, vec_y1, field_sel1, HP_FLAG_CP)
@@ -584,28 +584,28 @@ Status MPEG2VideoDecoderSW::mc_field_backward_add_420(VideoContext *video, int t
 }
 
 #define FUNC_MC_FIELD_422(DIR, METH, FLG, task_num)                                                           \
-  Ipp8u *cur_Y = video->blkCurrYUV[0];                                                              \
-  Ipp8u *cur_U = video->blkCurrYUV[1];                                                              \
-  Ipp8u *cur_V = video->blkCurrYUV[2];                                                              \
-  Ipp32s pitch_l = video->Y_comp_pitch;                                                       \
-  Ipp32s pitch_c = video->U_comp_pitch;                                                       \
+  uint8_t *cur_Y = video->blkCurrYUV[0];                                                              \
+  uint8_t *cur_U = video->blkCurrYUV[1];                                                              \
+  uint8_t *cur_V = video->blkCurrYUV[2];                                                              \
+  int32_t pitch_l = video->Y_comp_pitch;                                                       \
+  int32_t pitch_c = video->U_comp_pitch;                                                       \
                                                                                                     \
   if(video->prediction_type == IPPVC_MC_FIELD)                                                      \
   {                                                                                                 \
-    Ipp8u *ref_Y;                                                                                   \
-    Ipp8u *ref_U;                                                                                   \
-    Ipp8u *ref_V;                                                                                   \
-    Ipp32s offs_l, offs_c;                                                                          \
-    Ipp32s flag_l, flag_c;                                                                          \
-    Ipp16s vec_x, vec_y;                                                                            \
-    Ipp32s field_sel;                                                                               \
+    uint8_t *ref_Y;                                                                                   \
+    uint8_t *ref_U;                                                                                   \
+    uint8_t *ref_V;                                                                                   \
+    int32_t offs_l, offs_c;                                                                          \
+    int32_t flag_l, flag_c;                                                                          \
+    int16_t vec_x, vec_y;                                                                            \
+    int32_t field_sel;                                                                               \
                                                                                                     \
     GET_1BIT(video->bs, field_sel);                                                                 \
     DECODE_MV(video->bs, index##DIR, index##DIR, vec_x, vec_y, task_num);                                     \
     video->PMV[index##DIR + 4] = video->PMV[index##DIR + 0];                                        \
     video->PMV[index##DIR + 5] = video->PMV[index##DIR + 1];                                        \
                                                                                                     \
-    Ipp32s ind0 = FIELD_BUFF_IND(field_sel);                                                        \
+    int32_t ind0 = FIELD_BUFF_IND(field_sel);                                                        \
     if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)                                             \
       ind0 = frame_buffer.buff##DIR;                                                                \
                                                                                                     \
@@ -623,8 +623,8 @@ Status MPEG2VideoDecoderSW::mc_field_backward_add_420(VideoContext *video, int t
   }                                                                                                 \
   else /* 16x8 */                                                                                   \
   {                                                                                                 \
-    Ipp16s vec_x0, vec_y0, vec_x1, vec_y1;                                                          \
-    Ipp32s field_sel0, field_sel1;                                                                  \
+    int16_t vec_x0, vec_y0, vec_x1, vec_y1;                                                          \
+    int32_t field_sel0, field_sel1;                                                                  \
                                                                                                     \
     GET_1BIT(video->bs, field_sel0);                                                                \
     DECODE_MV(video->bs, index##DIR, index##DIR, vec_x0, vec_y0, task_num);                                   \
@@ -632,19 +632,19 @@ Status MPEG2VideoDecoderSW::mc_field_backward_add_420(VideoContext *video, int t
     GET_1BIT(video->bs, field_sel1);                                                                \
     DECODE_MV(video->bs, index##DIR + 4, index##DIR, vec_x1, vec_y1, task_num);                               \
                                                                                                     \
-    Ipp32s ind0 = FIELD_BUFF_IND(field_sel0);                                                       \
-    Ipp32s ind1 = FIELD_BUFF_IND(field_sel1);                                                       \
+    int32_t ind0 = FIELD_BUFF_IND(field_sel0);                                                       \
+    int32_t ind1 = FIELD_BUFF_IND(field_sel1);                                                       \
     if (PictureHeader[task_num].picture_coding_type == MPEG2_B_PICTURE)                                             \
       ind0 = ind1 = frame_buffer.buff##DIR;                                                         \
                                                                                                     \
-    Ipp8u *ref_Y0 = frame_buffer.frame_p_c_n[ind0].Y_comp_data;                                     \
-    Ipp8u *ref_U0 = frame_buffer.frame_p_c_n[ind0].U_comp_data;                                     \
-    Ipp8u *ref_V0 = frame_buffer.frame_p_c_n[ind0].V_comp_data;                                     \
-    Ipp8u *ref_Y1 = frame_buffer.frame_p_c_n[ind1].Y_comp_data;                                     \
-    Ipp8u *ref_U1 = frame_buffer.frame_p_c_n[ind1].U_comp_data;                                     \
-    Ipp8u *ref_V1 = frame_buffer.frame_p_c_n[ind1].V_comp_data;                                     \
-    Ipp32s offs_l0, offs_c0, flag_l0, flag_c0;                                                      \
-    Ipp32s offs_l1, offs_c1, flag_l1, flag_c1;                                                      \
+    uint8_t *ref_Y0 = frame_buffer.frame_p_c_n[ind0].Y_comp_data;                                     \
+    uint8_t *ref_U0 = frame_buffer.frame_p_c_n[ind0].U_comp_data;                                     \
+    uint8_t *ref_V0 = frame_buffer.frame_p_c_n[ind0].V_comp_data;                                     \
+    uint8_t *ref_Y1 = frame_buffer.frame_p_c_n[ind1].Y_comp_data;                                     \
+    uint8_t *ref_U1 = frame_buffer.frame_p_c_n[ind1].U_comp_data;                                     \
+    uint8_t *ref_V1 = frame_buffer.frame_p_c_n[ind1].V_comp_data;                                     \
+    int32_t offs_l0, offs_c0, flag_l0, flag_c0;                                                      \
+    int32_t offs_l1, offs_c1, flag_l1, flag_c1;                                                      \
                                                                                                     \
     CALC_OFFSETS_FIELDX_422(offs_l0, offs_c0, flag_l0, flag_c0, vec_x0, vec_y0, field_sel0, HP_FLAG_##FLG) \
     CALC_OFFSETS_FIELDX_422(offs_l1, offs_c1, flag_l1, flag_c1, vec_x1, vec_y1, field_sel1, HP_FLAG_##FLG) \
@@ -680,21 +680,21 @@ Status MPEG2VideoDecoderSW::mc_field_backward_add_422(VideoContext *video, int t
 
 Status MPEG2VideoDecoderSW::mc_mp2_420_skip(VideoContext *video, int task_num)
 {
-  Ipp32s ref_index = (video->macroblock_motion_backward) ?
+  int32_t ref_index = (video->macroblock_motion_backward) ?
       frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index : frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
-  Ipp8u *ref_Y_data = frame_buffer.frame_p_c_n[ref_index].Y_comp_data;
-  Ipp8u *ref_U_data = frame_buffer.frame_p_c_n[ref_index].U_comp_data;
-  Ipp8u *ref_V_data = frame_buffer.frame_p_c_n[ref_index].V_comp_data;
-  Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].Y_comp_data;
-  Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].U_comp_data;
-  Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].V_comp_data;
-  Ipp32u pitch_l  = video->Y_comp_pitch;
-  Ipp32u pitch_c = video->U_comp_pitch;
-  Ipp32u flag1, flag2;
-  Ipp32s offs_uv1, offs_y1;
-  Ipp16s *vector = video->vector;
-  IppiSize roi = {16*(video->mb_address_increment - 1), 16};
-  Ipp32s i;
+  uint8_t *ref_Y_data = frame_buffer.frame_p_c_n[ref_index].Y_comp_data;
+  uint8_t *ref_U_data = frame_buffer.frame_p_c_n[ref_index].U_comp_data;
+  uint8_t *ref_V_data = frame_buffer.frame_p_c_n[ref_index].V_comp_data;
+  uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].Y_comp_data;
+  uint8_t *cur_U_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].U_comp_data;
+  uint8_t *cur_V_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].V_comp_data;
+  uint32_t pitch_l  = video->Y_comp_pitch;
+  uint32_t pitch_c = video->U_comp_pitch;
+  uint32_t flag1, flag2;
+  int32_t offs_uv1, offs_y1;
+  int16_t *vector = video->vector;
+  mfxSize roi = {16*(video->mb_address_increment - 1), 16};
+  int32_t i;
 
   cur_Y_data += video->offset_l;
   cur_U_data += video->offset_c;
@@ -747,23 +747,23 @@ Status MPEG2VideoDecoderSW::mc_mp2_420_skip(VideoContext *video, int task_num)
 
 Status MPEG2VideoDecoderSW::mc_mp2_422_skip(VideoContext *video, int task_num)
 {
-  Ipp32s ref_index = (video->macroblock_motion_backward) ?
+  int32_t ref_index = (video->macroblock_motion_backward) ?
       frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index : frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index;
-  Ipp8u *ref_Y_data = frame_buffer.frame_p_c_n[ref_index].Y_comp_data;
-  Ipp8u *ref_U_data = frame_buffer.frame_p_c_n[ref_index].U_comp_data;
-  Ipp8u *ref_V_data = frame_buffer.frame_p_c_n[ref_index].V_comp_data;
-  Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].Y_comp_data;
-  Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].U_comp_data;
-  Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].V_comp_data;
+  uint8_t *ref_Y_data = frame_buffer.frame_p_c_n[ref_index].Y_comp_data;
+  uint8_t *ref_U_data = frame_buffer.frame_p_c_n[ref_index].U_comp_data;
+  uint8_t *ref_V_data = frame_buffer.frame_p_c_n[ref_index].V_comp_data;
+  uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].Y_comp_data;
+  uint8_t *cur_U_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].U_comp_data;
+  uint8_t *cur_V_data = frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].V_comp_data;
 
-  Ipp32u pitch_l  = video->Y_comp_pitch;
-  Ipp32u pitch_c = video->U_comp_pitch;
+  uint32_t pitch_l  = video->Y_comp_pitch;
+  uint32_t pitch_c = video->U_comp_pitch;
 
-  Ipp32u flag1, flag2;
-  Ipp32s offs_uv1, offs_y1;
-  Ipp16s *vector = video->vector;
-  IppiSize roi = {16*(video->mb_address_increment - 1), 16};
-  Ipp32s i;
+  uint32_t flag1, flag2;
+  int32_t offs_uv1, offs_y1;
+  int16_t *vector = video->vector;
+  mfxSize roi = {16*(video->mb_address_increment - 1), 16};
+  int32_t i;
 
   cur_Y_data += video->offset_l;
   cur_U_data += video->offset_c;
@@ -815,20 +815,20 @@ Status MPEG2VideoDecoderSW::mc_mp2_422_skip(VideoContext *video, int task_num)
 
 Status MPEG2VideoDecoderSW::mc_mp2_420b_skip(VideoContext *video, int task_num)
 {
-  Ipp8u *ref_Y_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].Y_comp_data;
-  Ipp8u *ref_U_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].U_comp_data;
-  Ipp8u *ref_V_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].V_comp_data;
-  Ipp8u *ref_Y_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].Y_comp_data;
-  Ipp8u *ref_U_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].U_comp_data;
-  Ipp8u *ref_V_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].V_comp_data;
-  Ipp8u *cur_Y_data = video->blkCurrYUV[0];
-  Ipp8u *cur_U_data = video->blkCurrYUV[1];
-  Ipp8u *cur_V_data = video->blkCurrYUV[2];
-  Ipp32u flag1, flag2, flag3, flag4;
-  Ipp32s offs_uv1, offs_uv2, offs_y1, offs_y2;
-  Ipp32u pitch_l, pitch_c;
-  Ipp32u pitch_l2, pitch_c2;
-  Ipp32s i;
+  uint8_t *ref_Y_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].Y_comp_data;
+  uint8_t *ref_U_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].U_comp_data;
+  uint8_t *ref_V_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].V_comp_data;
+  uint8_t *ref_Y_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].Y_comp_data;
+  uint8_t *ref_U_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].U_comp_data;
+  uint8_t *ref_V_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].V_comp_data;
+  uint8_t *cur_Y_data = video->blkCurrYUV[0];
+  uint8_t *cur_U_data = video->blkCurrYUV[1];
+  uint8_t *cur_V_data = video->blkCurrYUV[2];
+  uint32_t flag1, flag2, flag3, flag4;
+  int32_t offs_uv1, offs_uv2, offs_y1, offs_y2;
+  uint32_t pitch_l, pitch_c;
+  uint32_t pitch_l2, pitch_c2;
+  int32_t i;
 
    pitch_l2 = pitch_l =  video->Y_comp_pitch;
    pitch_c2 = pitch_c =  video->U_comp_pitch;
@@ -898,20 +898,20 @@ Status MPEG2VideoDecoderSW::mc_mp2_420b_skip(VideoContext *video, int task_num)
 Status MPEG2VideoDecoderSW::mc_mp2_422b_skip(VideoContext *video, int task_num)
 {
 
-  Ipp8u *ref_Y_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].Y_comp_data;
-  Ipp8u *ref_U_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].U_comp_data;
-  Ipp8u *ref_V_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].V_comp_data;
-  Ipp8u *ref_Y_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].Y_comp_data;
-  Ipp8u *ref_U_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].U_comp_data;
-  Ipp8u *ref_V_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].V_comp_data;
-  Ipp8u *cur_Y_data = video->blkCurrYUV[0];
-  Ipp8u *cur_U_data = video->blkCurrYUV[1];
-  Ipp8u *cur_V_data = video->blkCurrYUV[2];
-  Ipp32u flag1, flag2, flag3, flag4;
-  Ipp32s offs_uv1, offs_uv2, offs_y1, offs_y2;
-  Ipp32u pitch_l, pitch_c;
-  Ipp32u pitch_l2, pitch_c2;
-  Ipp32s i;
+  uint8_t *ref_Y_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].Y_comp_data;
+  uint8_t *ref_U_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].U_comp_data;
+  uint8_t *ref_V_data1 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].prev_index].V_comp_data;
+  uint8_t *ref_Y_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].Y_comp_data;
+  uint8_t *ref_U_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].U_comp_data;
+  uint8_t *ref_V_data2 = frame_buffer.frame_p_c_n[frame_buffer.frame_p_c_n[frame_buffer.curr_index[task_num]].next_index].V_comp_data;
+  uint8_t *cur_Y_data = video->blkCurrYUV[0];
+  uint8_t *cur_U_data = video->blkCurrYUV[1];
+  uint8_t *cur_V_data = video->blkCurrYUV[2];
+  uint32_t flag1, flag2, flag3, flag4;
+  int32_t offs_uv1, offs_uv2, offs_y1, offs_y2;
+  uint32_t pitch_l, pitch_c;
+  uint32_t pitch_l2, pitch_c2;
+  int32_t i;
 
   pitch_l2 = pitch_l =  video->Y_comp_pitch;
   pitch_c2 = pitch_c =  video->U_comp_pitch;
@@ -980,17 +980,17 @@ Status MPEG2VideoDecoderSW::mc_mp2_422b_skip(VideoContext *video, int task_num)
 
 Status MPEG2VideoDecoderSW::mc_dualprime_frame_420(VideoContext *video, int task_num)
 {
-  Ipp32s pitch_l, pitch_c;
-  Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
-  Ipp8u *cur_Y_data = video->blkCurrYUV[0];
-  Ipp8u *cur_U_data = video->blkCurrYUV[1];
-  Ipp8u *cur_V_data = video->blkCurrYUV[2];
-  Ipp32s nMCType,  nMCTypeUV;
-  Ipp32s nMCType0, nMCTypeUV0;
-  Ipp32s nMCType1, nMCTypeUV1;
-  Ipp32s off_l, off_c;
-  Ipp32s off0_l, off0_c;
-  Ipp32s off1_l, off1_c;
+  int32_t pitch_l, pitch_c;
+  uint8_t *ref_Y_data, *ref_U_data, *ref_V_data;
+  uint8_t *cur_Y_data = video->blkCurrYUV[0];
+  uint8_t *cur_U_data = video->blkCurrYUV[1];
+  uint8_t *cur_V_data = video->blkCurrYUV[2];
+  int32_t nMCType,  nMCTypeUV;
+  int32_t nMCType0, nMCTypeUV0;
+  int32_t nMCType1, nMCTypeUV1;
+  int32_t off_l, off_c;
+  int32_t off0_l, off0_c;
+  int32_t off1_l, off1_c;
 
   mv_decode_dp(video, task_num);
 
@@ -1043,15 +1043,15 @@ Status MPEG2VideoDecoderSW::mc_dualprime_frame_420(VideoContext *video, int task
 
 Status MPEG2VideoDecoderSW::mc_dualprime_field_420(VideoContext *video, int task_num)
 {
-  Ipp32s pitch_l, pitch_c;
-  Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
-  Ipp8u *prev_Y_data, *prev_U_data, *prev_V_data;
-  Ipp8u *cur_Y_data = video->blkCurrYUV[0];
-  Ipp8u *cur_U_data = video->blkCurrYUV[1];
-  Ipp8u *cur_V_data = video->blkCurrYUV[2];
-  Ipp32s nMCType,  nMCTypeUV, nMCType2, nMCTypeUV2;
-  Ipp32s off_l, off_c, off2_l, off2_c;
-  Ipp32s off_fld, off_fldUV;
+  int32_t pitch_l, pitch_c;
+  uint8_t *ref_Y_data, *ref_U_data, *ref_V_data;
+  uint8_t *prev_Y_data, *prev_U_data, *prev_V_data;
+  uint8_t *cur_Y_data = video->blkCurrYUV[0];
+  uint8_t *cur_U_data = video->blkCurrYUV[1];
+  uint8_t *cur_V_data = video->blkCurrYUV[2];
+  int32_t nMCType,  nMCTypeUV, nMCType2, nMCTypeUV2;
+  int32_t off_l, off_c, off2_l, off2_c;
+  int32_t off_fld, off_fldUV;
 
   mv_decode_dp(video, task_num);
 
@@ -1107,17 +1107,17 @@ Status MPEG2VideoDecoderSW::mc_dualprime_field_420(VideoContext *video, int task
 
 Status MPEG2VideoDecoderSW::mc_dualprime_frame_422(VideoContext *video, int task_num)
 {
-  Ipp32s pitch_l, pitch_c;
-  Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
-  Ipp8u *cur_Y_data = video->blkCurrYUV[0];
-  Ipp8u *cur_U_data = video->blkCurrYUV[1];
-  Ipp8u *cur_V_data = video->blkCurrYUV[2];
-  Ipp32s nMCType,  nMCTypeUV;
-  Ipp32s nMCType0, nMCTypeUV0;
-  Ipp32s nMCType1, nMCTypeUV1;
-  Ipp32s off_l, off_c;
-  Ipp32s off0_l, off0_c;
-  Ipp32s off1_l, off1_c;
+  int32_t pitch_l, pitch_c;
+  uint8_t *ref_Y_data, *ref_U_data, *ref_V_data;
+  uint8_t *cur_Y_data = video->blkCurrYUV[0];
+  uint8_t *cur_U_data = video->blkCurrYUV[1];
+  uint8_t *cur_V_data = video->blkCurrYUV[2];
+  int32_t nMCType,  nMCTypeUV;
+  int32_t nMCType0, nMCTypeUV0;
+  int32_t nMCType1, nMCTypeUV1;
+  int32_t off_l, off_c;
+  int32_t off0_l, off0_c;
+  int32_t off1_l, off1_c;
 
   mv_decode_dp(video, task_num);
 
@@ -1170,15 +1170,15 @@ Status MPEG2VideoDecoderSW::mc_dualprime_frame_422(VideoContext *video, int task
 
 Status MPEG2VideoDecoderSW::mc_dualprime_field_422(VideoContext *video, int task_num)
 {
-  Ipp32s pitch_l, pitch_c;
-  Ipp8u *ref_Y_data, *ref_U_data, *ref_V_data;
-  Ipp8u *prev_Y_data, *prev_U_data, *prev_V_data;
-  Ipp8u *cur_Y_data = video->blkCurrYUV[0];
-  Ipp8u *cur_U_data = video->blkCurrYUV[1];
-  Ipp8u *cur_V_data = video->blkCurrYUV[2];
-  Ipp32s nMCType,  nMCTypeUV, nMCType2, nMCTypeUV2;
-  Ipp32s off_l, off_c, off2_l, off2_c;
-  Ipp32s off_fld, off_fldUV;
+  int32_t pitch_l, pitch_c;
+  uint8_t *ref_Y_data, *ref_U_data, *ref_V_data;
+  uint8_t *prev_Y_data, *prev_U_data, *prev_V_data;
+  uint8_t *cur_Y_data = video->blkCurrYUV[0];
+  uint8_t *cur_U_data = video->blkCurrYUV[1];
+  uint8_t *cur_V_data = video->blkCurrYUV[2];
+  int32_t nMCType,  nMCTypeUV, nMCType2, nMCTypeUV2;
+  int32_t off_l, off_c, off2_l, off2_c;
+  int32_t off_fld, off_fldUV;
 
   mv_decode_dp(video, task_num);
 

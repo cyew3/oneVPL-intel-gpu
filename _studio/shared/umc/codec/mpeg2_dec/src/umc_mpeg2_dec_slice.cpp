@@ -23,7 +23,7 @@
 
 using namespace UMC;
 
-const Ipp32s ALIGN_VALUE  = 16;
+const int32_t ALIGN_VALUE  = 16;
 
 static void mp2_HuffmanTableFree(mp2_VLCTable *vlc)
 {
@@ -37,7 +37,7 @@ static void mp2_HuffmanTableFree(mp2_VLCTable *vlc)
     }
 }
 
-static IppStatus mp2_HuffmanTableInitAlloc_HandleError(Ipp32s *buffer, Ipp16s *table0, Ipp16s *table1)
+static IppStatus mp2_HuffmanTableInitAlloc_HandleError(int32_t *buffer, int16_t *table0, int16_t *table1)
 {
   if (buffer)
     delete[] buffer;
@@ -48,26 +48,26 @@ static IppStatus mp2_HuffmanTableInitAlloc_HandleError(Ipp32s *buffer, Ipp16s *t
   return ippStsErr;
 }
 
-static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_VLCTable *vlc)
+static IppStatus mp2_HuffmanTableInitAlloc(int32_t *tbl, int32_t bits_table0, mp2_VLCTable *vlc)
 {
-  Ipp32s *ptbl;
-  Ipp16s bad_value = 0;
-  Ipp32s max_bits;
-  Ipp32s num_tbl;
-  Ipp32s i, j, k, m, n;
-  Ipp32s bits, code, value;
-  Ipp32s bits0, bits1;
-  Ipp32s min_value, max_value, spec_value;
-  Ipp32s min_code0, min_code1;
-  Ipp32s max_code0, max_code1;
-  Ipp32s prefix_code1 = -1;
-  Ipp32s bits_table1 = 0;
-  Ipp32s *buffer = NULL;
-  Ipp32s *codes;
-  Ipp32s *cbits;
-  Ipp32s *values;
-  Ipp16s *table0 = NULL;
-  Ipp16s *table1 = NULL;
+  int32_t *ptbl;
+  int16_t bad_value = 0;
+  int32_t max_bits;
+  int32_t num_tbl;
+  int32_t i, j, k, m, n;
+  int32_t bits, code, value;
+  int32_t bits0, bits1;
+  int32_t min_value, max_value, spec_value;
+  int32_t min_code0, min_code1;
+  int32_t max_code0, max_code1;
+  int32_t prefix_code1 = -1;
+  int32_t bits_table1 = 0;
+  int32_t *buffer = NULL;
+  int32_t *codes;
+  int32_t *cbits;
+  int32_t *values;
+  int16_t *table0 = NULL;
+  int16_t *table1 = NULL;
 
   /* get number of entries (n) */
   max_bits = *tbl++;
@@ -85,7 +85,7 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
   }
 
   /* alloc internal table */
-  buffer = new Ipp32s[3*n];
+  buffer = new int32_t[3*n];
   if (!buffer) return ippStsErr;
   codes = buffer;
   cbits = buffer + n;
@@ -193,7 +193,7 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
     return ippStsErr;
   }
 
-  bad_value = (Ipp16s)((bad_value << 8) | VLC_BAD);
+  bad_value = (int16_t)((bad_value << 8) | VLC_BAD);
 
   table0 = ippsMalloc_16s(1 << bits_table0);
   if (NULL == table0)
@@ -214,13 +214,13 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
     if (bits <= bits_table0) {
       code = code >> (30 - bits_table0);
       for (j = 0; j < (1 << (bits_table0 - bits)); j++) {
-        table0[code + j] = (Ipp16s)((value << 8) | bits);
+        table0[code + j] = (int16_t)((value << 8) | bits);
       }
     } else if(table1){
       code = code >> (30 - max_bits);
       code = code & ((1 << bits_table1) - 1);
       for (j = 0; j < (1 << (max_bits - bits)); j++) {
-        table1[code + j] = (Ipp16s)((value << 8) | bits);
+        table1[code + j] = (int16_t)((value << 8) | bits);
       }
     }
   }
@@ -229,7 +229,7 @@ static IppStatus mp2_HuffmanTableInitAlloc(Ipp32s *tbl, Ipp32s bits_table0, mp2_
     if (prefix_code1 == -1)
       return mp2_HuffmanTableInitAlloc_HandleError(buffer, table0, table1);
 
-    bad_value = (Ipp16s)((bad_value &~ 255) | VLC_NEXTTABLE);
+    bad_value = (int16_t)((bad_value &~ 255) | VLC_NEXTTABLE);
     for (j = 0; j < (1 << ((bits_table0 - (max_bits - bits_table1)))); j++) {
       table0[prefix_code1 + j] = bad_value;
     }
@@ -252,7 +252,7 @@ MPEG2VideoDecoderSW::MPEG2VideoDecoderSW()
     , vlcMotionVector()
 {
     m_Spec_raw_memory_ptr = malloc(sizeof(DecodeSpec) + 15);
-    m_Spec = new((void*)(((Ipp64u)m_Spec_raw_memory_ptr + 15) >> 4 << 4)) DecodeSpec();
+    m_Spec = new((void*)(((unsigned long long)m_Spec_raw_memory_ptr + 15) >> 4 << 4)) DecodeSpec();
 }
 
 MPEG2VideoDecoderSW::~MPEG2VideoDecoderSW()
@@ -300,8 +300,8 @@ void MPEG2VideoDecoderSW::DeleteHuffmanTables()
 
 Status MPEG2VideoDecoderSW::DecodeSliceHeader(VideoContext *video, int task_num)
 {
-    Ipp32u extra_bit_slice;
-    Ipp32u code;
+    uint32_t extra_bit_slice;
+    uint32_t code;
     bool isCorrupted = false;
 
     if (!video)
@@ -311,7 +311,7 @@ Status MPEG2VideoDecoderSW::DecodeSliceHeader(VideoContext *video, int task_num)
 
     FIND_START_CODE(video->bs, code)
 
-    if(code == (Ipp32u)UMC_ERR_NOT_ENOUGH_DATA)
+    if(code == (uint32_t)UMC_ERR_NOT_ENOUGH_DATA)
     {
         SKIP_TO_END(video->bs);
         return UMC_ERR_NOT_ENOUGH_DATA;
@@ -450,10 +450,10 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
     VideoData *out_data = DynamicCast<VideoData, MediaData>(output);
     if (out_data == 0)
         return;
-    Ipp32s curr_index = frame_buffer.curr_index[task_num];
-    Ipp32s pitch_l, pitch_c;
+    int32_t curr_index = frame_buffer.curr_index[task_num];
+    int32_t pitch_l, pitch_c;
 
-    Ipp32u threadsNum = GetCurrThreadsNum(task_num);
+    uint32_t threadsNum = GetCurrThreadsNum(task_num);
 
     if(frame_buffer.field_buffer_index[task_num] == 1)
     {
@@ -469,7 +469,7 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 
         frame_buffer.frame_p_c_n[curr_index].isCorrupted = false;
 
-        for (Ipp32u i = 0; i < threadsNum; i += 1)
+        for (uint32_t i = 0; i < threadsNum; i += 1)
         {
             VideoContext* video = Video[task_num][i];
 
@@ -520,24 +520,24 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
     {
         if(curr_index >= DPB_SIZE)
             return;
-        frame_buffer.frame_p_c_n[curr_index].Y_comp_data = (Ipp8u*)out_data->GetPlanePointer(0);
-        frame_buffer.frame_p_c_n[curr_index].U_comp_data = (Ipp8u*)out_data->GetPlanePointer(1);
-        frame_buffer.frame_p_c_n[curr_index].V_comp_data = (Ipp8u*)out_data->GetPlanePointer(2);
+        frame_buffer.frame_p_c_n[curr_index].Y_comp_data = (uint8_t*)out_data->GetPlanePointer(0);
+        frame_buffer.frame_p_c_n[curr_index].U_comp_data = (uint8_t*)out_data->GetPlanePointer(1);
+        frame_buffer.frame_p_c_n[curr_index].V_comp_data = (uint8_t*)out_data->GetPlanePointer(2);
       //  frame_buffer.frame_p_c_n[curr_index].IsUserDataDecoded = false;
       //  frame_buffer.frame_p_c_n[curr_index].us_data_size = 0;
-        pitch_l = (Ipp32s)out_data->GetPlanePitch(0);
+        pitch_l = (int32_t)out_data->GetPlanePitch(0);
         pitch_c = pitch_l >> 1;
         frame_buffer.Y_comp_pitch = pitch_l;
         frame_buffer.U_comp_pitch = pitch_c;
         frame_buffer.V_comp_pitch = pitch_c;
         frame_buffer.Y_comp_height = out_data->GetHeight();
-        Ipp32s l_size, c_size;
+        int32_t l_size, c_size;
         //frame_buffer.pic_size = (frame_buffer.Y_comp_pitch*frame_buffer.Y_comp_height*3)/2;
         frame_buffer.pic_size = l_size = sequenceHeader.mb_height[task_num]*16*pitch_l;
 
 // ------------------------------------------------
 
-        for (Ipp32u i = 0; i < threadsNum; i += 1)
+        for (uint32_t i = 0; i < threadsNum; i += 1)
         {
             VideoContext* video = Video[task_num][i];
 
@@ -564,7 +564,7 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 
 // ------------------------------------------------
 
-    for (Ipp32u i = 0; i < threadsNum; i += 1)
+    for (uint32_t i = 0; i < threadsNum; i += 1)
     {
         VideoContext* video = Video[task_num][i];
 
@@ -604,11 +604,11 @@ void MPEG2VideoDecoderSW::SetOutputPointers(MediaData *output, int task_num)
 
 void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
 {
-    Ipp32s i;
-    Ipp32u code;
+    int32_t i;
+    uint32_t code;
     VideoContext* video = Video[task_num][0];
-    Ipp32s load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
-    Ipp8u q_matrix[4][64];
+    int32_t load_intra_quantizer_matrix, load_non_intra_quantizer_matrix, load_chroma_intra_quantizer_matrix, load_chroma_non_intra_quantizer_matrix;
+    uint8_t q_matrix[4][64];
 
     GET_TO9BITS(video->bs, 4 ,code)
     GET_1BIT(video->bs,load_intra_quantizer_matrix)
@@ -616,7 +616,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_BITS(video->bs, 8, code);
-            q_matrix[0][i] = (Ipp8u)code;
+            q_matrix[0][i] = (uint8_t)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
           ippiDecodeIntraInit_MPEG2(q_matrix[0], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpec);
@@ -629,7 +629,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_BITS(video->bs, 8, code);
-            q_matrix[1][i] = (Ipp8u)code;
+            q_matrix[1][i] = (uint8_t)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
           ippiDecodeInterInit_MPEG2(q_matrix[1], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec->decodeInterSpec);
@@ -642,7 +642,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (Ipp8u)code;
+            q_matrix[2][i] = (uint8_t)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
             ippiDecodeIntraInit_MPEG2(q_matrix[2], IPPVC_LEAVE_SCAN_UNCHANGED, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpecChroma);
@@ -661,7 +661,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
     {
         for(i= 0; i < 64; i++) {
             GET_TO9BITS(video->bs, 8, code);
-            q_matrix[2][i] = (Ipp8u)code;
+            q_matrix[2][i] = (uint8_t)code;
         }
         for (i = 0; i < m_nNumberOfThreads; i++) {
             ippiDecodeInterInit_MPEG2(q_matrix[3], IPPVC_LEAVE_SCAN_UNCHANGED, &m_Spec->decodeInterSpecChroma);
@@ -679,7 +679,7 @@ void MPEG2VideoDecoderSW::quant_matrix_extension(int task_num)
 
 Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
 {
-    for (Ipp32s i = 0; i < m_nNumberOfThreads; i++)
+    for (int32_t i = 0; i < m_nNumberOfThreads; i++)
     {
         int j;
 
@@ -761,8 +761,8 @@ Status MPEG2VideoDecoderSW::ProcessRestFrame(int task_num)
 
 void MPEG2VideoDecoderSW::OnDecodePicHeaderEx(int task_num)
 {
-    for (Ipp32s i = 0; i < m_nNumberOfThreads; i++) {
-        Ipp32s flag = PictureHeader[task_num].alternate_scan | IPPVC_LEAVE_QUANT_UNCHANGED;
+    for (int32_t i = 0; i < m_nNumberOfThreads; i++) {
+        int32_t flag = PictureHeader[task_num].alternate_scan | IPPVC_LEAVE_QUANT_UNCHANGED;
         ippiDecodeInterInit_MPEG2(NULL, flag, &m_Spec->decodeInterSpec);
         m_Spec->decodeIntraSpec.intraVLCFormat = PictureHeader[task_num].intra_vlc_format;
         m_Spec->decodeIntraSpec.intraShiftDC = PictureHeader[task_num].curr_intra_dc_multi;
@@ -774,14 +774,14 @@ void MPEG2VideoDecoderSW::OnDecodePicHeaderEx(int task_num)
     }
 }
 
-Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*niqm)
+Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, uint8_t* iqm, uint8_t*niqm)
 {
-      Ipp32s pitch_l, pitch_c;
-      Ipp32s height_l, height_c;
-      Ipp32s size_l, size_c;
+      int32_t pitch_l, pitch_c;
+      int32_t height_l, height_c;
+      int32_t size_l, size_c;
 
-      pitch_l = align_value<Ipp32s>(sequenceHeader.mb_width[task_num]*16, ALIGN_VALUE);
-      height_l = align_value<Ipp32s>(sequenceHeader.mb_height[task_num]*16, ALIGN_VALUE);
+      pitch_l = align_value<int32_t>(sequenceHeader.mb_width[task_num]*16, ALIGN_VALUE);
+      height_l = align_value<int32_t>(sequenceHeader.mb_height[task_num]*16, ALIGN_VALUE);
       size_l = height_l*pitch_l;
       if (m_ClipInfo.color_format != YUV444) {
 
@@ -800,9 +800,9 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
       frame_buffer.V_comp_pitch = pitch_c;
       frame_buffer.pic_size = size_l;
 
-      Ipp32u threadsNum = GetCurrThreadsNum(task_num);
+      uint32_t threadsNum = GetCurrThreadsNum(task_num);
 
-    for (Ipp32u i = 0; i < threadsNum; i += 1)
+    for (uint32_t i = 0; i < threadsNum; i += 1)
     {
         VideoContext* video = Video[task_num][i];
 
@@ -812,7 +812,7 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
         video->pic_size = size_l;
     }
 
-  for (Ipp32u i = 0; i < threadsNum; i += 1)
+  for (uint32_t i = 0; i < threadsNum; i += 1)
     {
       VideoContext* video = Video[task_num][i];
 
@@ -857,7 +857,7 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
 
   // Alloc frames
 
-    Ipp32s flag_mpeg1 = (m_ClipInfo.stream_type == MPEG1_VIDEO) ? IPPVC_MPEG1_STREAM : 0;
+    int32_t flag_mpeg1 = (m_ClipInfo.stream_type == MPEG1_VIDEO) ? IPPVC_MPEG1_STREAM : 0;
     ippiDecodeIntraInit_MPEG2(NULL, flag_mpeg1, PictureHeader[task_num].intra_vlc_format, PictureHeader[task_num].curr_intra_dc_multi, &m_Spec->decodeIntraSpec);
     ippiDecodeInterInit_MPEG2(NULL, flag_mpeg1, &m_Spec->decodeInterSpec);
 
@@ -882,7 +882,7 @@ Status MPEG2VideoDecoderSW::UpdateFrameBuffer(int task_num, Ipp8u* iqm, Ipp8u*ni
     return UMC_OK;
 }
 
-Status MPEG2VideoDecoderSW::ThreadingSetup(Ipp32s maxThreads)
+Status MPEG2VideoDecoderSW::ThreadingSetup(int32_t maxThreads)
 {
     memset(&m_Spec->decodeIntraSpec, 0, sizeof(IppiDecodeIntraSpec_MPEG2));
     memset(&m_Spec->decodeInterSpec, 0, sizeof(IppiDecodeInterSpec_MPEG2));

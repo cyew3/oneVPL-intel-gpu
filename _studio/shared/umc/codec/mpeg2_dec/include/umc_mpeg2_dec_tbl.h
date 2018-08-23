@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -15,26 +15,26 @@
 
 #include <ippdefs.h>
 
-extern Ipp32s MBAdressing[];
+extern int32_t MBAdressing[];
 
-extern Ipp32s IMBType[];
+extern int32_t IMBType[];
 
-extern Ipp32s PMBType[];
+extern int32_t PMBType[];
 
-extern Ipp32s BMBType[];
+extern int32_t BMBType[];
 
-extern Ipp32s MBPattern[];
+extern int32_t MBPattern[];
 
-extern Ipp32s MotionVector[];
+extern int32_t MotionVector[];
 
-extern Ipp32s dct_dc_size_luma[];
+extern int32_t dct_dc_size_luma[];
 
-extern Ipp32s dct_dc_size_chroma[];
+extern int32_t dct_dc_size_chroma[];
 
-extern Ipp32s dct_coeff_first_RL[];
+extern int32_t dct_coeff_first_RL[];
 
-extern Ipp32s dct_coeff_next_RL[];
+extern int32_t dct_coeff_next_RL[];
 
-extern Ipp32s Table15[];
+extern int32_t Table15[];
 
 #endif // UMC_ENABLE_MPEG2_VIDEO_DECODER

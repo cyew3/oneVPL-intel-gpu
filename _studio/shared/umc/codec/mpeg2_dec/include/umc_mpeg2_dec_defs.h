@@ -12,8 +12,6 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MPEG2_VIDEO_DECODER)
 
-#include <ippi.h>
-#include <ippvc.h>
 #include "umc_structures.h"
 #include "umc_memory_allocator.h"
 #include "umc_mpeg2_dec_bstream.h"
@@ -63,89 +61,89 @@ enum MPEG2FrameType
 #define BOTTOM_FIELD             2
 ///////////////////////
 
-extern Ipp16s q_scale[2][32];
-extern Ipp16s reset_dc[4];
-extern Ipp16s intra_dc_multi[4];
+extern int16_t q_scale[2][32];
+extern int16_t reset_dc[4];
+extern int16_t intra_dc_multi[4];
 
 
 struct sVideoFrameBuffer
 {
-    typedef std::vector< std::pair<Ipp8u *,size_t> > UserDataVector;
+    typedef std::vector< std::pair<uint8_t *,size_t> > UserDataVector;
 
     sVideoFrameBuffer();
 
-    Ipp8u*           Y_comp_data;
-    Ipp8u*           U_comp_data;
-    Ipp8u*           V_comp_data;
-    Ipp8u*           user_data;
+    uint8_t*           Y_comp_data;
+    uint8_t*           U_comp_data;
+    uint8_t*           V_comp_data;
+    uint8_t*           user_data;
     FrameType        frame_type; // 1-I, 2-P, 3-B
-    Ipp64f           frame_time;
+    double           frame_time;
     bool             is_original_frame_time;
-    Ipp64f           duration;
-    Ipp32s           va_index;
+    double           duration;
+    int32_t           va_index;
     bool             IsUserDataDecoded;
-    Ipp32s           us_buf_size;
-    Ipp32s           us_data_size;
-    Ipp32s           prev_index;//index for frame_buffer for prev reference;
-    Ipp32s           next_index;//index for frame_buffer for next reference;
+    int32_t           us_buf_size;
+    int32_t           us_data_size;
+    int32_t           prev_index;//index for frame_buffer for prev reference;
+    int32_t           next_index;//index for frame_buffer for next reference;
     bool             isCorrupted;
 };
 
 struct sGOPTimeCode
 {
-    Ipp16u           gop_seconds;
-    Ipp16u           gop_minutes;
-    Ipp16u           gop_hours;
-    Ipp16u           gop_picture;   // starting picture in gop_second
-    Ipp16u           gop_drop_frame_flag;
+    uint16_t           gop_seconds;
+    uint16_t           gop_minutes;
+    uint16_t           gop_hours;
+    uint16_t           gop_picture;   // starting picture in gop_second
+    uint16_t           gop_drop_frame_flag;
 };
 
 struct sSequenceHeader
 {
-    Ipp32s           mb_width[2*DPB_SIZE]; //the number of macroblocks in the row of the picture
-    Ipp32s           mb_height[2*DPB_SIZE];//the number of macroblocks in the column of the picture
-    Ipp32s           numMB[2*DPB_SIZE];    //the number of macroblocks in the picture
+    int32_t           mb_width[2*DPB_SIZE]; //the number of macroblocks in the row of the picture
+    int32_t           mb_height[2*DPB_SIZE];//the number of macroblocks in the column of the picture
+    int32_t           numMB[2*DPB_SIZE];    //the number of macroblocks in the picture
 
 //sequence extension
-    Ipp32u           profile;
-    Ipp32u           level;
-    Ipp32u           extension_start_code_ID[2*DPB_SIZE];
-    Ipp32u           scalable_mode[2*DPB_SIZE];
-    Ipp32u           progressive_sequence;
+    uint32_t           profile;
+    uint32_t           level;
+    uint32_t           extension_start_code_ID[2*DPB_SIZE];
+    uint32_t           scalable_mode[2*DPB_SIZE];
+    uint32_t           progressive_sequence;
 
-    Ipp32s           frame_rate_extension_d;
-    Ipp32s           frame_rate_extension_n;
-    Ipp32u           frame_rate_code;
-    Ipp32u           aspect_ratio_code;
-    Ipp16u           aspect_ratio_w;
-    Ipp16u           aspect_ratio_h;
-    Ipp32u           chroma_format;
-    Ipp32u           width;
-    Ipp32u           height;
-    Ipp64f           delta_frame_time;
-    Ipp64f           stream_time;
-    Ipp32s           stream_time_temporal_reference; // for current stream_time
-    Ipp32s           first_p_occure;
-    Ipp32s           first_i_occure;
-    Ipp32s           b_curr_number;
-    Ipp32s           is_decoded;
+    int32_t           frame_rate_extension_d;
+    int32_t           frame_rate_extension_n;
+    uint32_t           frame_rate_code;
+    uint32_t           aspect_ratio_code;
+    uint16_t           aspect_ratio_w;
+    uint16_t           aspect_ratio_h;
+    uint32_t           chroma_format;
+    uint32_t           width;
+    uint32_t           height;
+    double           delta_frame_time;
+    double           stream_time;
+    int32_t           stream_time_temporal_reference; // for current stream_time
+    int32_t           first_p_occure;
+    int32_t           first_i_occure;
+    int32_t           b_curr_number;
+    int32_t           is_decoded;
 
     // GOP info.
-    Ipp32s           closed_gop;    // no ref to previous GOP
-    Ipp32s           broken_link;   // ref to absent prev GOP
+    int32_t           closed_gop;    // no ref to previous GOP
+    int32_t           broken_link;   // ref to absent prev GOP
     // GOP time code
     sGOPTimeCode     time_code;
 
-    Ipp32s           frame_count;   // number of decoded pictures from last sequence header
+    int32_t           frame_count;   // number of decoded pictures from last sequence header
 };
 
 struct sSHSavedPars
 {
-    Ipp32s mb_width;
-    Ipp32s mb_height;
-    Ipp32s numMB;
-    Ipp32u extension_start_code_ID;
-    Ipp32u scalable_mode;
+    int32_t mb_width;
+    int32_t mb_height;
+    int32_t numMB;
+    uint32_t extension_start_code_ID;
+    uint32_t scalable_mode;
 };
 
 // for prediction (forward and backward) and current frame;
@@ -154,57 +152,57 @@ struct sFrameBuffer
     sFrameBuffer();
 
     sVideoFrameBuffer     frame_p_c_n[DPB_SIZE*2];    // previous, current and next frames
-    Ipp32u                Y_comp_height;
-    Ipp32u                Y_comp_pitch;
-    Ipp32u                U_comp_pitch;
-    Ipp32u                V_comp_pitch;
-    Ipp32u                pic_size;
-    Ipp32s                curr_index[2*DPB_SIZE]; // 0 initially
-    Ipp32s                common_curr_index;// 0 initially
-    Ipp32s                latest_prev; // 0 initially
-    Ipp32s                latest_next; // 0 initially
-    Ipp32s                retrieve;   // index of retrieved frame; -1 initially
-    Ipp32s                field_buffer_index[2*DPB_SIZE];
-    Ipp32s                allocated_mb_width;
-    Ipp32s                allocated_mb_height;
+    uint32_t                Y_comp_height;
+    uint32_t                Y_comp_pitch;
+    uint32_t                U_comp_pitch;
+    uint32_t                V_comp_pitch;
+    uint32_t                pic_size;
+    int32_t                curr_index[2*DPB_SIZE]; // 0 initially
+    int32_t                common_curr_index;// 0 initially
+    int32_t                latest_prev; // 0 initially
+    int32_t                latest_next; // 0 initially
+    int32_t                retrieve;   // index of retrieved frame; -1 initially
+    int32_t                field_buffer_index[2*DPB_SIZE];
+    int32_t                allocated_mb_width;
+    int32_t                allocated_mb_height;
     ColorFormat           allocated_cformat;
-    Ipp32s                ret_array[2*DPB_SIZE];
-    Ipp32s                ret_array_curr;
-    Ipp32s                ret_index;
-    Ipp32s                ret_array_free;
-    Ipp32s                ret_array_len;
+    int32_t                ret_array[2*DPB_SIZE];
+    int32_t                ret_array_curr;
+    int32_t                ret_index;
+    int32_t                ret_array_free;
+    int32_t                ret_array_len;
 };
 
 
 struct sPictureHeader
 {
     MPEG2FrameType   picture_coding_type;
-    Ipp32u           d_picture;
+    uint32_t           d_picture;
 
-    Ipp32s           full_pel_forward_vector;
-    Ipp32s           full_pel_backward_vector;
+    int32_t           full_pel_forward_vector;
+    int32_t           full_pel_backward_vector;
 
     //extensions
-    Ipp32s           f_code[4];
-    Ipp32s           r_size[4];
-    Ipp32s           low_in_range[4];
-    Ipp32s           high_in_range[4];
-    Ipp32s           range[4];
-    Ipp32u           picture_structure;
-    Ipp32u           intra_dc_precision;
-    Ipp32u           top_field_first;
-    Ipp32u           frame_pred_frame_dct;
-    Ipp32u           concealment_motion_vectors;
-    Ipp32u           q_scale_type;
-    Ipp32u           repeat_first_field;
-    Ipp32u           progressive_frame;
-    Ipp32s           temporal_reference;
+    int32_t           f_code[4];
+    int32_t           r_size[4];
+    int32_t           low_in_range[4];
+    int32_t           high_in_range[4];
+    int32_t           range[4];
+    uint32_t           picture_structure;
+    uint32_t           intra_dc_precision;
+    uint32_t           top_field_first;
+    uint32_t           frame_pred_frame_dct;
+    uint32_t           concealment_motion_vectors;
+    uint32_t           q_scale_type;
+    uint32_t           repeat_first_field;
+    uint32_t           progressive_frame;
+    int32_t           temporal_reference;
 
-    Ipp32s           curr_reset_dc;
-    Ipp32s           intra_vlc_format;
-    Ipp32s           alternate_scan;
-    Ipp32s           curr_intra_dc_multi;
-    Ipp32s           max_slice_vert_pos;
+    int32_t           curr_reset_dc;
+    int32_t           intra_vlc_format;
+    int32_t           alternate_scan;
+    int32_t           curr_intra_dc_multi;
+    int32_t           max_slice_vert_pos;
 
     sGOPTimeCode     time_code;
     bool             first_in_sequence;
@@ -213,28 +211,28 @@ struct sPictureHeader
 struct  VideoContext
 {
 //Slice
-    Ipp32s       slice_vertical_position;
-    Ipp32u       m_bNewSlice;//l
-    Ipp32s       cur_q_scale;
+    int32_t       slice_vertical_position;
+    uint32_t       m_bNewSlice;//l
+    int32_t       cur_q_scale;
 
-    Ipp32s       mb_row;
-    Ipp32s       mb_col;
+    int32_t       mb_row;
+    int32_t       mb_col;
 
 //Macroblock
-    Ipp32u       macroblock_motion_forward;
-    Ipp32u       macroblock_motion_backward;
-    Ipp32s       prediction_type;
+    uint32_t       macroblock_motion_forward;
+    uint32_t       macroblock_motion_backward;
+    int32_t       prediction_type;
 
-DECLALIGN(16) Ipp16s PMV[8];
-DECLALIGN(16) Ipp16s vector[8];
+DECLALIGN(16) int16_t PMV[8];
+DECLALIGN(16) int16_t vector[8];
 
-    Ipp16s       dct_dc_past[3]; // y,u,v
+    int16_t       dct_dc_past[3]; // y,u,v
 
-    Ipp32s       mb_address_increment;//l
-    Ipp32s       row_l, col_l, row_c, col_c;
-    Ipp32s       offset_l, offset_c;
+    int32_t       mb_address_increment;//l
+    int32_t       row_l, col_l, row_c, col_c;
+    int32_t       offset_l, offset_c;
 
-    Ipp8u        *blkCurrYUV[3];
+    uint8_t        *blkCurrYUV[3];
 
 //Block
 DECLALIGN(16)
@@ -247,23 +245,23 @@ DECLALIGN(8)
     DecodeInterSpec_MPEG2 decodeInterSpecChroma;
 
 //Bitstream
-    Ipp8u*       bs_curr_ptr;
-    Ipp32s       bs_bit_offset;
-    Ipp8u*       bs_start_ptr;
-    Ipp8u*       bs_end_ptr;
-    Ipp8u*       bs_sequence_header_start;
+    uint8_t*       bs_curr_ptr;
+    int32_t       bs_bit_offset;
+    uint8_t*       bs_start_ptr;
+    uint8_t*       bs_end_ptr;
+    uint8_t*       bs_sequence_header_start;
 
-    Ipp32s Y_comp_pitch;
-    Ipp32s U_comp_pitch;
-    Ipp32s V_comp_pitch;
-    Ipp32s Y_comp_height;
-    Ipp32u pic_size;
+    int32_t Y_comp_pitch;
+    int32_t U_comp_pitch;
+    int32_t V_comp_pitch;
+    int32_t Y_comp_height;
+    uint32_t pic_size;
 
-    Ipp32s blkOffsets[3][8];
-    Ipp32s blkPitches[3][2];
+    int32_t blkOffsets[3][8];
+    int32_t blkPitches[3][2];
 
-    Ipp32s clip_info_width;
-    Ipp32s clip_info_height;
+    int32_t clip_info_width;
+    int32_t clip_info_height;
 
     VideoStreamType stream_type;
     ColorFormat color_format;
@@ -272,10 +270,10 @@ DECLALIGN(8)
 
 struct Mpeg2Bitstream
 {
-    Ipp8u* bs_curr_ptr;
-    Ipp32s bs_bit_offset;
-    Ipp8u* bs_start_ptr;
-    Ipp8u* bs_end_ptr;
+    uint8_t* bs_curr_ptr;
+    int32_t bs_bit_offset;
+    uint8_t* bs_start_ptr;
+    uint8_t* bs_end_ptr;
 };
 
 enum { FCodeFwdX = 0, FCodeFwdY = 1, FCodeBwdX = 2, FCodeBwdY = 3 };
@@ -286,13 +284,13 @@ enum { FCodeFwdX = 0, FCodeFwdY = 1, FCodeBwdX = 2, FCodeBwdY = 3 };
 #pragma warning(default: 4324)
 #endif
 
-extern Ipp16s zero_memory[64*8];
+extern int16_t zero_memory[64*8];
 
 /*******************************************************/
 
 #define RESET_PMV(array) {                                      \
-  for(unsigned int nn=0; nn<sizeof(array)/sizeof(Ipp32s); nn++) \
-    ((Ipp32s*)array)[nn] = 0;                                   \
+  for(unsigned int nn=0; nn<sizeof(array)/sizeof(int32_t); nn++) \
+    ((int32_t*)array)[nn] = 0;                                   \
 }
 
 #endif // UMC_ENABLE_MPEG2_VIDEO_DECODER

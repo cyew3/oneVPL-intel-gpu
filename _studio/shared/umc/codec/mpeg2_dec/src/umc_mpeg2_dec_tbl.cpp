@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,7 +14,7 @@
 #include <ippvc.h>
 #include "umc_mpeg2_dec_tbl.h"
 
-Ipp32s MBAdressing[] =
+int32_t MBAdressing[] =
 {
 
 11, /* max bits */
@@ -48,7 +48,7 @@ Ipp32s MBAdressing[] =
 -1 /* end of table */
 };
 
-Ipp32s IMBType[] =
+int32_t IMBType[] =
 {
 
 2 , /* max bits */
@@ -62,7 +62,7 @@ Ipp32s IMBType[] =
 -1 /* end of table */
 };
 
-Ipp32s PMBType[] =
+int32_t PMBType[] =
 {
 
 6 , /* max bits */
@@ -83,7 +83,7 @@ Ipp32s PMBType[] =
 -1 /* end of table */
 };
 
-Ipp32s BMBType[] =
+int32_t BMBType[] =
 {
 
 6 , /* max bits */
@@ -104,7 +104,7 @@ Ipp32s BMBType[] =
 -1 /* end of table */
 };
 
-Ipp32s MBPattern[] =
+int32_t MBPattern[] =
 {
 
 9 , /* max bits */
@@ -145,7 +145,7 @@ Ipp32s MBPattern[] =
 -1 /* end of table */
 };
 
-Ipp32s MotionVector[] =
+int32_t MotionVector[] =
 {
 
 11, /* max bits */
@@ -156,25 +156,25 @@ Ipp32s MotionVector[] =
 0x00000001, 0x00000000,
  0, /* 2-bit codes */
  2, /* 3-bit codes */
-0x00000002, 0x00000001, 0x00000003, static_cast<Ipp32s>(0xffffffff),
+0x00000002, 0x00000001, 0x00000003, static_cast<int32_t>(0xffffffff),
  2, /* 4-bit codes */
-0x00000002, 0x00000002, 0x00000003, static_cast<Ipp32s>(0xfffffffe),
+0x00000002, 0x00000002, 0x00000003, static_cast<int32_t>(0xfffffffe),
  2, /* 5-bit codes */
-0x00000002, 0x00000003, 0x00000003, static_cast<Ipp32s>(0xfffffffd),
+0x00000002, 0x00000003, 0x00000003, static_cast<int32_t>(0xfffffffd),
  0, /* 6-bit codes */
  2, /* 7-bit codes */
-0x00000006, 0x00000004, 0x00000007, static_cast<Ipp32s>(0xfffffffc),
+0x00000006, 0x00000004, 0x00000007, static_cast<int32_t>(0xfffffffc),
  6, /* 8-bit codes */
-0x0000000a, 0x00000005, 0x0000000b, static_cast<Ipp32s>(0xfffffffb), 0x00000008, 0x00000006, 0x00000009, static_cast<Ipp32s>(0xfffffffa),
-0x00000006, 0x00000007, 0x00000007, static_cast<Ipp32s>(0xfffffff9),
+0x0000000a, 0x00000005, 0x0000000b, static_cast<int32_t>(0xfffffffb), 0x00000008, 0x00000006, 0x00000009, static_cast<int32_t>(0xfffffffa),
+0x00000006, 0x00000007, 0x00000007, static_cast<int32_t>(0xfffffff9),
  0, /* 9-bit codes */
  6, /* 10-bit codes */
-0x00000016, 0x00000008, 0x00000017, static_cast<Ipp32s>(0xfffffff8), 0x00000014, 0x00000009, 0x00000015, static_cast<Ipp32s>(0xfffffff7),
-0x00000012, 0x0000000a, 0x00000013, static_cast<Ipp32s>(0xfffffff6),
+0x00000016, 0x00000008, 0x00000017, static_cast<int32_t>(0xfffffff8), 0x00000014, 0x00000009, 0x00000015, static_cast<int32_t>(0xfffffff7),
+0x00000012, 0x0000000a, 0x00000013, static_cast<int32_t>(0xfffffff6),
  12, /* 11-bit codes */
 0x00000022, 0x0000000b, 0x00000020, 0x0000000c, 0x0000001e, 0x0000000d, 0x0000001c, 0x0000000e,
-0x0000001a, 0x0000000f, 0x00000018, 0x00000010, 0x00000019, static_cast<Ipp32s>(0xfffffff0), 0x0000001b, static_cast<Ipp32s>(0xfffffff1),
-0x0000001d, static_cast<Ipp32s>(0xfffffff2), 0x0000001f, static_cast<Ipp32s>(0xfffffff3), 0x00000021, static_cast<Ipp32s>(0xfffffff4), 0x00000023, static_cast<Ipp32s>(0xfffffff5),
+0x0000001a, 0x0000000f, 0x00000018, 0x00000010, 0x00000019, static_cast<int32_t>(0xfffffff0), 0x0000001b, static_cast<int32_t>(0xfffffff1),
+0x0000001d, static_cast<int32_t>(0xfffffff2), 0x0000001f, static_cast<int32_t>(0xfffffff3), 0x00000021, static_cast<int32_t>(0xfffffff4), 0x00000023, static_cast<int32_t>(0xfffffff5),
 
 -1 /* end of table */
 };

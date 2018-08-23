@@ -36,17 +36,17 @@ using namespace UMC;
 
 Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(VideoContext *video, int task_num)
 {
-  Ipp32s pitch_l = video->Y_comp_pitch;
-  Ipp32s pitch_c = video->U_comp_pitch;
-  Ipp32s coded_block_pattern = 0;
-  Ipp32s end_of_macroblock;
-  Ipp32s macroblock_type;
-  Ipp32s macroblock_quant;
-  Ipp32s macroblock_pattern;
-  Ipp32s macroblock_intra;
-  Ipp32s macroblock_address_increment = 0;
-  Ipp32u code;
-  Ipp32s mb_row_prev = 0, mb_col_prev = 0;
+  int32_t pitch_l = video->Y_comp_pitch;
+  int32_t pitch_c = video->U_comp_pitch;
+  int32_t coded_block_pattern = 0;
+  int32_t end_of_macroblock;
+  int32_t macroblock_type;
+  int32_t macroblock_quant;
+  int32_t macroblock_pattern;
+  int32_t macroblock_intra;
+  int32_t macroblock_address_increment = 0;
+  uint32_t code;
+  int32_t mb_row_prev = 0, mb_col_prev = 0;
 
   video->prediction_type = IPPVC_MC_FRAME;
 
@@ -114,10 +114,10 @@ Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(VideoContext *video, int task_num)
 
     if(video->mb_address_increment > 1)
     {
-      Ipp32s toskip = video->mb_address_increment-1;
-      Ipp32s row_l = mb_row_prev << 4;
-      Ipp32s col_l = mb_col_prev << 4;
-      Ipp32s nmb;
+      int32_t toskip = video->mb_address_increment-1;
+      int32_t row_l = mb_row_prev << 4;
+      int32_t col_l = mb_col_prev << 4;
+      int32_t nmb;
 
       if (PictureHeader[task_num].picture_coding_type == MPEG2_P_PICTURE) {
         video->PMV[0] = 0;
@@ -183,10 +183,10 @@ Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(VideoContext *video, int task_num)
 
     video->offset_l = (video->mb_row*pitch_l + video->mb_col) << 4;
     video->offset_c = (video->mb_row*pitch_c + video->mb_col) << 3;
-    Ipp32s curr_index = frame_buffer.curr_index[task_num];
-    Ipp8u *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
-    Ipp8u *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
-    Ipp8u *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
+    int32_t curr_index = frame_buffer.curr_index[task_num];
+    uint8_t *cur_Y_data = frame_buffer.frame_p_c_n[curr_index].Y_comp_data;
+    uint8_t *cur_U_data = frame_buffer.frame_p_c_n[curr_index].U_comp_data;
+    uint8_t *cur_V_data = frame_buffer.frame_p_c_n[curr_index].V_comp_data;
     cur_Y_data += video->offset_l;
     cur_U_data += video->offset_c;
     cur_V_data += video->offset_c;
@@ -196,7 +196,7 @@ Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(VideoContext *video, int task_num)
 
     if(macroblock_intra)
     {
-      Ipp32s flag = (PictureHeader[task_num].d_picture ? 4 : 0);
+      int32_t flag = (PictureHeader[task_num].d_picture ? 4 : 0);
 
       video->PMV[0] = 0;
       video->PMV[1] = 0;
@@ -256,11 +256,11 @@ Status MPEG2VideoDecoderSW::DecodeSlice_MPEG1(VideoContext *video, int task_num)
         DECODE_VLC(coded_block_pattern, video->bs, vlcMBPattern);
       }
 
-      Ipp32s blk;
+      int32_t blk;
       for (blk = 0; blk < 6; blk++) {
         if (coded_block_pattern & 32) {
-          Ipp32s chromaFlag = blk >> 2;
-          Ipp32s cc = chromaFlag + (blk & chromaFlag);
+          int32_t chromaFlag = blk >> 2;
+          int32_t cc = chromaFlag + (blk & chromaFlag);
           IppiDecodeInterSpec_MPEG2 *interSpec;
           interSpec = chromaFlag ? &video->decodeInterSpecChroma : &video->decodeInterSpec;
 
