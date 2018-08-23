@@ -5,16 +5,16 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
 
 #include "vm_strings.h"
 
-Ipp32s vm_string_vprintf(const vm_char *format, va_list argptr)
+int32_t vm_string_vprintf(const vm_char *format, va_list argptr)
 {
-    Ipp32s sts = 0;
+    int32_t sts = 0;
     va_list copy;
     va_copy(copy, argptr);
     sts = vprintf(format, copy);

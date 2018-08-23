@@ -53,7 +53,7 @@ void vm_thread_set_invalid(vm_thread *thread)
 } /* void vm_thread_set_invalid(vm_thread *thread) */
 
 /* verify if the thread handler is valid */
-Ipp32s vm_thread_is_valid(vm_thread *thread)
+int32_t vm_thread_is_valid(vm_thread *thread)
 {
     /* check error(s) */
     if (NULL == thread)
@@ -72,14 +72,14 @@ Ipp32s vm_thread_is_valid(vm_thread *thread)
     }
     return thread->is_valid;
 
-} /* Ipp32s vm_thread_is_valid(vm_thread *thread) */
+} /* int32_t vm_thread_is_valid(vm_thread *thread) */
 
 /* create a thread. return 1 if success */
-Ipp32s vm_thread_create(vm_thread *thread,
-                        Ipp32u (*vm_thread_func)(void *),
+int32_t vm_thread_create(vm_thread *thread,
+                        uint32_t (*vm_thread_func)(void *),
                         void *arg)
 {
-    Ipp32s i_res = 1;
+    int32_t i_res = 1;
 //    pthread_attr_t attr;
 
     /* check error(s) */
@@ -114,15 +114,15 @@ Ipp32s vm_thread_create(vm_thread *thread,
     }
     return i_res;
 
-} /* Ipp32s vm_thread_create(vm_thread *thread, */
+} /* int32_t vm_thread_create(vm_thread *thread, */
 
 
 /* attach to current thread. return 1 if successful  */
-Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
+int32_t vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
 {
     (void)arg;
 
-    Ipp32s i_res = 1;
+    int32_t i_res = 1;
 
     /* check error(s) */
     if (NULL == thread)
@@ -147,9 +147,9 @@ Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
     return i_res;
 }
 
-Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params)
+int32_t vm_thread_set_scheduling(vm_thread* thread, void* params)
 {
-    Ipp32s i_res = 1;
+    int32_t i_res = 1;
     struct sched_param param;
     vm_thread_linux_schedparams* linux_params = (vm_thread_linux_schedparams*)params;
 
@@ -168,10 +168,10 @@ Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params)
 }
 
 /* set thread priority, return 1 if successful */
-Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
+int32_t vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
 {
-    Ipp32s i_res = 1;
-    Ipp32s policy, pmin, pmax, pmean;
+    int32_t i_res = 1;
+    int32_t policy, pmin, pmax, pmean;
     struct sched_param param;
 
     /* check error(s) */
@@ -220,7 +220,7 @@ Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
     }
     return i_res;
 
-} /* Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority) */
+} /* int32_t vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority) */
 
 /* wait until a thread exists */
 void vm_thread_wait(vm_thread *thread)
@@ -271,7 +271,7 @@ void vm_set_current_thread_priority(vm_thread_priority priority)
     (void)priority;
 }
 
-void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask)
+void vm_set_thread_affinity_mask(vm_thread *thread, unsigned long long mask)
 {
 #ifdef __APPLE__
 // Apple code is inconsistent with new linux code, but seems to be unused now

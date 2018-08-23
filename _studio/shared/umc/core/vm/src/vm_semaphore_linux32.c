@@ -37,7 +37,7 @@ void vm_semaphore_set_invalid(vm_semaphore *sem)
 } /* void vm_semaphore_set_invalid(vm_semaphore *sem) */
 
 /* Verify if a semaphore is valid */
-Ipp32s vm_semaphore_is_valid(vm_semaphore *sem)
+int32_t vm_semaphore_is_valid(vm_semaphore *sem)
 {
     /* check error(s) */
     if (NULL == sem)
@@ -45,11 +45,11 @@ Ipp32s vm_semaphore_is_valid(vm_semaphore *sem)
 
     return (-1 < sem->count);
 
-} /* Ipp32s vm_semaphore_is_valid(vm_semaphore *sem) */
+} /* int32_t vm_semaphore_is_valid(vm_semaphore *sem) */
 
 
 /* Init a semaphore with value */
-vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s init_count)
+vm_status vm_semaphore_init(vm_semaphore *sem, int32_t init_count)
 {
     int res = 0;
 
@@ -75,9 +75,9 @@ vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s init_count)
 
     return (res)? VM_OPERATION_FAILED: VM_OK;
 
-} /* vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s init_count) */
+} /* vm_status vm_semaphore_init(vm_semaphore *sem, int32_t init_count) */
 
-vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s init_count, Ipp32s max_count)
+vm_status vm_semaphore_init_max(vm_semaphore *sem, int32_t init_count, int32_t max_count)
 {
     int res = 0;
 
@@ -103,10 +103,10 @@ vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s init_count, Ipp32s max
 
     return (res)? VM_OPERATION_FAILED: VM_OK;
 
-} /* vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s init_count, Ipp32s max_count) */
+} /* vm_status vm_semaphore_init_max(vm_semaphore *sem, int32_t init_count, int32_t max_count) */
 
 /* Decrease the semaphore value with blocking. */
-vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
+vm_status vm_semaphore_timedwait(vm_semaphore *sem, uint32_t msec)
 {
     vm_status umc_status = VM_NOT_INITIALIZED;
 
@@ -117,7 +117,7 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
     if (0 <= sem->count)
     {
         umc_status = VM_OK;
-        Ipp32s i_res = 0;
+        int32_t i_res = 0;
 
         i_res = pthread_mutex_lock(&sem->mutex);
         if (!i_res)
@@ -157,7 +157,7 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
     }
     return umc_status;
 
-} /* vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec) */
+} /* vm_status vm_semaphore_timedwait(vm_semaphore *sem, uint32_t msec) */
 
 /* Decrease the semaphore value with blocking. */
 vm_status vm_semaphore_wait(vm_semaphore *sem)
@@ -256,7 +256,7 @@ vm_status vm_semaphore_post(vm_semaphore *sem)
 } /* vm_status vm_semaphore_post(vm_semaphore *sem) */
 
 /* Increase the semaphore value */
-vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count)
+vm_status vm_semaphore_post_many(vm_semaphore *sem, int32_t post_count)
 {
     vm_status umc_status = VM_NOT_INITIALIZED;
     int res = 0, sts = 0;
@@ -270,7 +270,7 @@ vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count)
 
     if (0 <= sem->count)
     {
-        Ipp32s i;
+        int32_t i;
         for (i = 0; i < post_count; i++)
         {
             res = pthread_mutex_lock(&sem->mutex);
@@ -293,7 +293,7 @@ vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count)
     }
     return umc_status;
 
-} /* vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count) */
+} /* vm_status vm_semaphore_post_many(vm_semaphore *sem, int32_t post_count) */
 
 
 /* Destory a semaphore */

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -26,18 +26,18 @@ void vm_semaphore_set_invalid(vm_semaphore *sem)
 } /* void vm_semaphore_set_invalid(vm_semaphore *sem) */
 
 /* Verify if a semaphore is valid */
-Ipp32s vm_semaphore_is_valid(vm_semaphore *sem)
+int32_t vm_semaphore_is_valid(vm_semaphore *sem)
 {
     /* check error(s) */
     if (NULL == sem)
         return 0;
 
-    return (Ipp32s)(0 != sem->handle);
+    return (int32_t)(0 != sem->handle);
 
-} /* Ipp32s vm_semaphore_is_valid(vm_semaphore *sem) */
+} /* int32_t vm_semaphore_is_valid(vm_semaphore *sem) */
 
 /* Init a semaphore with value */
-vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s count)
+vm_status vm_semaphore_init(vm_semaphore *sem, int32_t count)
 {
     /* check error(s) */
     if (NULL == sem)
@@ -50,10 +50,10 @@ vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s count)
 #endif
     return (0 != sem->handle) ? VM_OK : VM_OPERATION_FAILED;
 
-} /* vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s count) */
+} /* vm_status vm_semaphore_init(vm_semaphore *sem, int32_t count) */
 
 /* Init a semaphore with value */
-vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s count, Ipp32s max_count)
+vm_status vm_semaphore_init_max(vm_semaphore *sem, int32_t count, int32_t max_count)
 {
     /* check error(s) */
     if (NULL == sem)
@@ -66,10 +66,10 @@ vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s count, Ipp32s max_coun
 #endif
     return (0 != sem->handle) ? VM_OK : VM_OPERATION_FAILED;
 
-} /* vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s count, Ipp32s max_count) */
+} /* vm_status vm_semaphore_init_max(vm_semaphore *sem, int32_t count, int32_t max_count) */
 
 /* Decrease the semaphore value with blocking. */
-vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
+vm_status vm_semaphore_timedwait(vm_semaphore *sem, uint32_t msec)
 {
     vm_status umcRes = VM_NOT_INITIALIZED;
 
@@ -79,7 +79,7 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
 
     if (sem->handle)
     {
-        Ipp32u dwRes = WaitForSingleObject(sem->handle, msec);
+        uint32_t dwRes = WaitForSingleObject(sem->handle, msec);
         umcRes = VM_OK;
 
         if (WAIT_TIMEOUT == dwRes)
@@ -89,7 +89,7 @@ vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec)
     }
     return umcRes;
 
-} /* vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec) */
+} /* vm_status vm_semaphore_timedwait(vm_semaphore *sem, uint32_t msec) */
 
 /* Decrease the semaphore value with blocking. */
 vm_status vm_semaphore_wait(vm_semaphore *sem)
@@ -142,7 +142,7 @@ vm_status vm_semaphore_post(vm_semaphore *sem)
 } /* vm_status vm_semaphore_post(vm_semaphore *sem) */
 
 /* Increase the semaphore value */
-vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count)
+vm_status vm_semaphore_post_many(vm_semaphore *sem, int32_t post_count)
 {
     vm_status umcRes = VM_NOT_INITIALIZED;
 
@@ -159,7 +159,7 @@ vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count)
     }
     return umcRes;
 
-} /* vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count) */
+} /* vm_status vm_semaphore_post_many(vm_semaphore *sem, int32_t post_count) */
 
 /* Destroy a semaphore */
 void vm_semaphore_destroy(vm_semaphore *sem)

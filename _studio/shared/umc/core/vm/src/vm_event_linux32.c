@@ -36,7 +36,7 @@ void vm_event_set_invalid(vm_event *event)
 } /* void vm_event_set_invalid(vm_event *event) */
 
 /* Verify if an event is valid */
-Ipp32s vm_event_is_valid(vm_event *event)
+int32_t vm_event_is_valid(vm_event *event)
 {
     /* check error(s) */
     if (NULL == event)
@@ -44,10 +44,10 @@ Ipp32s vm_event_is_valid(vm_event *event)
 
     return event->state >= 0;
 
-} /* Ipp32s vm_event_is_valid(vm_event *event) */
+} /* int32_t vm_event_is_valid(vm_event *event) */
 
 /* Init an event. Event is created unset. return 1 if success */
-vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state)
+vm_status vm_event_init(vm_event *event, int32_t manual, int32_t state)
 {
     int res = 0;
 
@@ -73,10 +73,10 @@ vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state)
 
     return (res)? VM_OPERATION_FAILED: VM_OK;
 
-} /* vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state) */
+} /* vm_status vm_event_init(vm_event *event, int32_t manual, int32_t state) */
 
 vm_status vm_event_named_init(vm_event *event,
-                              Ipp32s manual, Ipp32s state, const char *pcName)
+                              int32_t manual, int32_t state, const char *pcName)
 {
     (void)event;
     (void)manual;
@@ -267,7 +267,7 @@ vm_status vm_event_wait(vm_event *event)
 } /* vm_status vm_event_wait(vm_event *event) */
 
 /* Wait for event to be high without blocking, return 1 if successful */
-vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
+vm_status vm_event_timed_wait(vm_event *event, uint32_t msec)
 {
     vm_status umc_status = VM_NOT_INITIALIZED;
     int res = 0;
@@ -291,14 +291,14 @@ vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
                 {
                     struct timeval tval;
                     struct timespec tspec;
-                    Ipp32s i_res;
-                    Ipp64u micro_sec;
+                    int32_t i_res;
+                    unsigned long long micro_sec;
 
                     gettimeofday(&tval, NULL);
-                    // NOTE: micro_sec _should_ be Ipp64u, not Ipp32u to avoid overflow
+                    // NOTE: micro_sec _should_ be unsigned long long, not uint32_t to avoid overflow
                     micro_sec = 1000 * msec + tval.tv_usec;
-                    tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
-                    tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
+                    tspec.tv_sec = tval.tv_sec + (uint32_t)(micro_sec / 1000000);
+                    tspec.tv_nsec = (uint32_t)(micro_sec % 1000000) * 1000;
                     i_res = 0;
 
                     while (!i_res && !event->state)
@@ -334,7 +334,7 @@ vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
     }
     return umc_status;
 
-} /* vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec) */
+} /* vm_status vm_event_timed_wait(vm_event *event, uint32_t msec) */
 
 /* Destory the event */
 void vm_event_destroy(vm_event *event)

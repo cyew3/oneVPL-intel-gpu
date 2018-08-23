@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -21,7 +21,7 @@
 #include "vm_debug.h"
 
 #ifdef VM_THREAD_CATCHCRASH
-static Ipp32u __stdcall vm_thread_exception_reaction(void* p)
+static uint32_t __stdcall vm_thread_exception_reaction(void* p)
 {
     p;
     vm_debug_trace(VM_DEBUG_ALL, VM_STRING("exception\r\n"));
@@ -46,9 +46,9 @@ void vm_thread_set_invalid(vm_thread *thread)
 } /* void vm_thread_set_invalid(vm_thread *thread)*/
 
 /* verify if the thread handler is valid */
-Ipp32s vm_thread_is_valid(vm_thread *thread)
+int32_t vm_thread_is_valid(vm_thread *thread)
 {
-    Ipp32s iRes = 1;
+    int32_t iRes = 1;
 
     /* check error(s) */
     if (NULL == thread)
@@ -74,10 +74,10 @@ Ipp32s vm_thread_is_valid(vm_thread *thread)
     vm_mutex_unlock(&(thread->access_mut));
     return iRes;
 
-} /* Ipp32s vm_thread_is_valid(vm_thread *thread) */
+} /* int32_t vm_thread_is_valid(vm_thread *thread) */
 
 #ifdef VM_THREAD_CATCHCRASH
-static Ipp32u __stdcall vm_thread_protectedfunc(void* params)
+static uint32_t __stdcall vm_thread_protectedfunc(void* params)
 {
     vm_thread* thread = (vm_thread*)params;
     if (NULL == thread)
@@ -97,9 +97,9 @@ static Ipp32u __stdcall vm_thread_protectedfunc(void* params)
 
 /* create a thread.
  * return NULL if failed to create the thread */
-Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg)
+int32_t vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg)
 {
-    Ipp32s i_res = 1;
+    int32_t i_res = 1;
 
     /* check error(s) */
     if ((NULL == thread) ||
@@ -140,24 +140,24 @@ Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg)
 #else
                                  _beginthreadex(0,
                                                 0,
-                                                (Ipp32u (__stdcall *)(void*))func,
+                                                (uint32_t (__stdcall *)(void*))func,
                                                 arg,
                                                 0,
                                                 0);
 
 #endif /* _WIN32_WCE */
 
-        i_res = (Ipp32s) ((thread->handle) ? (1) : (0));
+        i_res = (int32_t) ((thread->handle) ? (1) : (0));
         vm_mutex_unlock(&thread->access_mut);
     }
     return i_res;
 
-} /* Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg) */
+} /* int32_t vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg) */
 
 /* attach to current thread. return 1 if successful  */
-Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
+int32_t vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
 {
-    Ipp32s i_res = 1;
+    int32_t i_res = 1;
 
     func;
     arg;
@@ -182,25 +182,25 @@ Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg)
             vm_thread_wait(thread);
 
         vm_mutex_lock(&thread->access_mut);
-        i_res = (Ipp32s)((thread->handle) ? (1) : (0));
+        i_res = (int32_t)((thread->handle) ? (1) : (0));
         thread->i_wait_count = 1; // prevent vm_thread_wait from closing this thread handle
         vm_mutex_unlock(&thread->access_mut);
     }
     return i_res;
 
 
-} /* Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg) */
+} /* int32_t vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg) */
 
-Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params)
+int32_t vm_thread_set_scheduling(vm_thread* thread, void* params)
 {
     thread; params;
     return 0; // not supported
 }
 
 /* set thread priority. return 1 if success */
-Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
+int32_t vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
 {
-    Ipp32s i_res = 0;
+    int32_t i_res = 0;
 
     /* check error(s) */
     if (NULL == thread)
@@ -244,7 +244,7 @@ Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority)
     }
     return i_res;
 
-} /* Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority) */
+} /* int32_t vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority) */
 
 /* wait until a thread exists */
 void vm_thread_wait(vm_thread *thread)
@@ -295,7 +295,7 @@ void vm_set_current_thread_priority(vm_thread_priority priority)
     SetThreadPriority(GetCurrentThread(), (int)priority);
 }
 
-void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask)
+void vm_set_thread_affinity_mask(vm_thread *thread, unsigned long long mask)
 {
     PROCESSOR_NUMBER proc_number;
     GROUP_AFFINITY group_affinity;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "vm_sys_info.h"
@@ -22,7 +22,7 @@
 #pragma warning(disable: 4201)
 
 #if defined (__ICL)
-/* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
+/* non-pointer conversion from "unsigned __int64" to "int32_t={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
 #endif
 
@@ -117,14 +117,14 @@ void vm_sys_info_get_os_name(vm_char *os_name)
 void vm_sys_info_get_program_name(vm_char *program_name)
 {
     vm_char tmp[_MAX_LEN] = {0,};
-    Ipp32s i = 0;
+    int32_t i = 0;
 
     /* check error(s) */
     if (NULL == program_name)
         return;
 
     GetModuleFileName(NULL, tmp, _MAX_LEN);
-    i = (Ipp32s) (vm_string_strrchr(tmp, (vm_char)('\\')) - tmp + 1);
+    i = (int32_t) (vm_string_strrchr(tmp, (vm_char)('\\')) - tmp + 1);
     vm_string_strncpy_s(program_name, _MAX_LEN, tmp + i, vm_string_strlen(tmp) - i);
 
 } /* void vm_sys_info_get_program_name(vm_char *program_name) */
@@ -132,20 +132,20 @@ void vm_sys_info_get_program_name(vm_char *program_name)
 void vm_sys_info_get_program_path(vm_char *program_path)
 {
     vm_char tmp[_MAX_LEN] = {0,};
-    Ipp32s i = 0;
+    int32_t i = 0;
 
     /* check error(s) */
     if (NULL == program_path)
         return;
 
     GetModuleFileName(NULL, tmp, _MAX_LEN);
-    i = (Ipp32s) (vm_string_strrchr(tmp, (vm_char)('\\')) - tmp + 1);
+    i = (int32_t) (vm_string_strrchr(tmp, (vm_char)('\\')) - tmp + 1);
     vm_string_strncpy_s(program_path, _MAX_LEN, tmp, i - 1);
     program_path[i - 1] = 0;
 
 } /* void vm_sys_info_get_program_path(vm_char *program_path) */
 
-Ipp32u vm_sys_info_get_cpu_num(void)
+uint32_t vm_sys_info_get_cpu_num(void)
 {
     SYSTEM_INFO siSysInfo;
 
@@ -154,9 +154,9 @@ Ipp32u vm_sys_info_get_cpu_num(void)
 
     return siSysInfo.dwNumberOfProcessors;
 
-} /* Ipp32u vm_sys_info_get_cpu_num(void) */
+} /* uint32_t vm_sys_info_get_cpu_num(void) */
 
-Ipp32u vm_sys_info_get_numa_nodes_num(void)
+uint32_t vm_sys_info_get_numa_nodes_num(void)
 {
 #if !defined(_WIN32_WCE)
     ULONG HighestNodeNumber;
@@ -169,26 +169,26 @@ Ipp32u vm_sys_info_get_numa_nodes_num(void)
 #else
     return 1;
 #endif
-} /* Ipp32u vm_sys_info_get_numa_nodes_num(void) */
+} /* uint32_t vm_sys_info_get_numa_nodes_num(void) */
 
-Ipp64u vm_sys_info_get_cpu_mask_of_numa_node(Ipp32u node)
+unsigned long long vm_sys_info_get_cpu_mask_of_numa_node(uint32_t node)
 {
     GROUP_AFFINITY group_affinity;
     memset(&group_affinity, 0, sizeof(GROUP_AFFINITY));
     GetNumaNodeProcessorMaskEx((UCHAR)node, &group_affinity);
-    return (Ipp64u)group_affinity.Mask;
+    return (unsigned long long)group_affinity.Mask;
 }
 
-Ipp32u vm_sys_info_get_mem_size(void)
+uint32_t vm_sys_info_get_mem_size(void)
 {
     MEMORYSTATUSEX m_memstat;
 
     ZeroMemory(&m_memstat, sizeof(MEMORYSTATUS));
     GlobalMemoryStatusEx(&m_memstat);
 
-    return (Ipp32u)((Ipp64f)m_memstat.ullTotalPhys / (1024 * 1024) + 0.5);
+    return (uint32_t)((double)m_memstat.ullTotalPhys / (1024 * 1024) + 0.5);
 
-} /* Ipp32u vm_sys_info_get_mem_size(void) */
+} /* uint32_t vm_sys_info_get_mem_size(void) */
 
 #if !defined(_WIN32_WCE) && !defined(WIN_TRESHOLD_MOBILE)
 
@@ -220,7 +220,7 @@ void vm_sys_info_get_vga_card(vm_char *vga_card)
     SP_DEVINFO_DATA sp_dev_info;
     HDEVINFO DeviceInfoSet;
     vm_char string1[] = VM_STRING("Display");
-    Ipp32u dwIndex = 0;
+    uint32_t dwIndex = 0;
     vm_char data[_MAX_LEN] = {0,};
 
     /* check error(s) */
@@ -238,7 +238,7 @@ void vm_sys_info_get_vga_card(vm_char *vga_card)
                                          &sp_dev_info,
                                          SPDRP_CLASS,
                                          NULL,
-                                         (Ipp8u *) data,
+                                         (uint8_t *) data,
                                          _MAX_LEN,
                                          NULL);
         if (!vm_string_strcmp((vm_char*)data, string1))
@@ -312,7 +312,7 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
     vm_char data[_MAX_LEN] = {0,};
     /* it can be wchar variable */
     DWORD dwSize = sizeof(data) / sizeof(data[0]);
-    Ipp32s i = 0;
+    int32_t i = 0;
     LONG lErr;
 
     /* check error(s) */
@@ -343,11 +343,11 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
 
 } /* void vm_sys_info_get_cpu_name(vm_char *cpu_name) */
 
-Ipp32u vm_sys_info_get_cpu_speed(void)
+uint32_t vm_sys_info_get_cpu_speed(void)
 {
     HKEY hKey;
-    Ipp32u data = 0;
-    DWORD dwSize = sizeof(Ipp32u);
+    uint32_t data = 0;
+    DWORD dwSize = sizeof(uint32_t);
     LONG lErr;
 
     lErr = RegOpenKeyEx(HKEY_LOCAL_MACHINE,
@@ -364,7 +364,7 @@ Ipp32u vm_sys_info_get_cpu_speed(void)
     else
         return 0;
 
-} /* Ipp32u vm_sys_info_get_cpu_speed(void) */
+} /* uint32_t vm_sys_info_get_cpu_speed(void) */
 
 void vm_sys_info_get_computer_name(vm_char *computer_name)
 {
@@ -385,26 +385,26 @@ void vm_sys_info_get_computer_name(vm_char *computer_name)
 
 #include <winioctl.h>
 
-BOOL KernelIoControl(Ipp32u dwIoControlCode,
+BOOL KernelIoControl(uint32_t dwIoControlCode,
                      LPVOID lpInBuf,
-                     Ipp32u nInBufSize,
+                     uint32_t nInBufSize,
                      LPVOID lpOutBuf,
-                     Ipp32u nOutBufSize,
+                     uint32_t nOutBufSize,
                      LPDWORD lpBytesReturned);
 
 #define IOCTL_PROCESSOR_INFORMATION CTL_CODE(FILE_DEVICE_HAL, 25, METHOD_BUFFERED, FILE_ANY_ACCESS)
 
 typedef struct _PROCESSOR_INFO
 {
-    Ipp16u        wVersion;
+    uint16_t        wVersion;
     vm_char       szProcessCore[40];
-    Ipp16u        wCoreRevision;
+    uint16_t        wCoreRevision;
     vm_char       szProcessorName[40];
-    Ipp16u        wProcessorRevision;
+    uint16_t        wProcessorRevision;
     vm_char       szCatalogNumber[100];
     vm_char       szVendor[100];
-    Ipp32u        dwInstructionSet;
-    Ipp32u        dwClockSpeed;
+    uint32_t        dwInstructionSet;
+    uint32_t        dwClockSpeed;
 } PROCESSOR_INFO;
 
 void vm_sys_info_get_vga_card(vm_char *vga_card)
@@ -420,8 +420,8 @@ void vm_sys_info_get_vga_card(vm_char *vga_card)
 void vm_sys_info_get_cpu_name(vm_char *cpu_name)
 {
     PROCESSOR_INFO pi;
-    Ipp32u dwBytesReturned;
-    Ipp32u dwSize = sizeof(PROCESSOR_INFO);
+    uint32_t dwBytesReturned;
+    uint32_t dwSize = sizeof(PROCESSOR_INFO);
     BOOL bResult;
 
     /* check error(s) */
@@ -447,7 +447,7 @@ void vm_sys_info_get_computer_name(vm_char *computer_name)
 {
     vm_char data[_MAX_LEN] = {0,};
     /* it can be wchar variable */
-    Ipp32u dwSize = sizeof(data) / sizeof(data[0]);
+    uint32_t dwSize = sizeof(data) / sizeof(data[0]);
 
     /* check error(s) */
     if (NULL == computer_name)
@@ -458,12 +458,12 @@ void vm_sys_info_get_computer_name(vm_char *computer_name)
 
 } /* void vm_sys_info_get_computer_name(vm_char *computer_name) */
 
-Ipp32u vm_sys_info_get_cpu_speed(void)
+uint32_t vm_sys_info_get_cpu_speed(void)
 {
     PROCESSOR_INFO pi;
-    Ipp32u res = 400;
-    Ipp32u dwBytesReturned;
-    Ipp32u dwSize = sizeof(PROCESSOR_INFO);
+    uint32_t res = 400;
+    uint32_t dwBytesReturned;
+    uint32_t dwSize = sizeof(PROCESSOR_INFO);
     BOOL bResult;
 
     ZeroMemory(&pi,sizeof(PROCESSOR_INFO));
@@ -477,7 +477,7 @@ Ipp32u vm_sys_info_get_cpu_speed(void)
         res = pi.dwClockSpeed;
     return res;
 
-} /* Ipp32u vm_sys_info_get_cpu_speed(void) */
+} /* uint32_t vm_sys_info_get_cpu_speed(void) */
 
 #elif defined(WIN_TRESHOLD_MOBILE)
 void vm_sys_info_get_vga_card(vm_char *vga_card)
@@ -492,10 +492,10 @@ void vm_sys_info_get_cpu_name(vm_char *cpu_name)
     return;
 } /* void vm_sys_info_get_cpu_name(vm_char *cpu_name) */
 
-Ipp32u vm_sys_info_get_cpu_speed(void)
+uint32_t vm_sys_info_get_cpu_speed(void)
 {
     return 0;
-} /* Ipp32u vm_sys_info_get_cpu_speed(void) */
+} /* uint32_t vm_sys_info_get_cpu_speed(void) */
 
 void vm_sys_info_get_computer_name(vm_char *computer_name)
 {

@@ -71,7 +71,7 @@ static vm_debug_output vm_DebugOutput = (vm_debug_output) (((vm_debug_output) VM
 static FILE *vm_LogFile = NULL;
 /*
 static vm_mutex mDebugMutex;
-static Ipp32s mDebugMutexIsValid = 1; */
+static int32_t mDebugMutexIsValid = 1; */
 
 vm_debug_level vm_debug_setlevel(vm_debug_level new_level) {
     vm_debug_level old_level = vm_DebugLevel;
@@ -85,7 +85,7 @@ vm_debug_output vm_debug_setoutput(vm_debug_output new_output) {
     return old_output;
 }
 
-void vm_debug_setfile(vm_char *file, Ipp32s truncate)
+void vm_debug_setfile(vm_char *file, int32_t truncate)
 {
     if (!file)
     {
@@ -129,11 +129,11 @@ void vm_debug_message(const vm_char *format,...)
 #endif
 }
 
-void vm_debug_trace_ex(Ipp32s level,
+void vm_debug_trace_ex(int32_t level,
                        const void *ptr_this,
                        const vm_char *func_name,
                        const vm_char *file_name,
-                       Ipp32s num_line,
+                       int32_t num_line,
                        const vm_char *format,
                        ...)
 {
@@ -359,7 +359,7 @@ vm_debug_output vm_debug_setoutput(vm_debug_output output)
     return output;
 }
 
-void vm_debug_setfile(vm_char *file, Ipp32s truncate)
+void vm_debug_setfile(vm_char *file, int32_t truncate)
 {
     (void)file;
     (void)truncate;
@@ -372,7 +372,7 @@ void vm_debug_message(const vm_char *format, ...)
 
 #endif /* VM_DEBUG */
 
-Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, Ipp32u line)
+int32_t vm_trace_hresult_func(int32_t hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, uint32_t line)
 {
     (void)pthis;
 
@@ -392,7 +392,7 @@ Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *fun
             pString = VM_STRING("Unknown error");
             for (i = 0; i < sizeof(ErrorStringTable)/sizeof(ErrorStringTable[0]); i++)
             {
-                if (hr == (Ipp32s) ErrorStringTable[i].code)
+                if (hr == (int32_t) ErrorStringTable[i].code)
                 {
                     pString = ErrorStringTable[i].string;
                 }
@@ -413,8 +413,8 @@ Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *fun
 }
 
 #if defined(LINUX32)
-void vm_debug_trace_ex(Ipp32s level, const vm_char *func_name, const vm_char *file_name,
-                       Ipp32s num_line, const vm_char *format, ...)
+void vm_debug_trace_ex(int32_t level, const vm_char *func_name, const vm_char *file_name,
+                       int32_t num_line, const vm_char *format, ...)
 {
     (void)level;
     (void)func_name;

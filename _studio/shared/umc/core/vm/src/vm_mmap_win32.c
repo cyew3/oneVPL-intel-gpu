@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -28,18 +28,18 @@ void vm_mmap_set_invalid(vm_mmap *handle)
 } /* void vm_mmap_set_invalid(vm_mmap *handle) */
 
 /* Verify if the mmap handle is valid */
-Ipp32s vm_mmap_is_valid(vm_mmap *handle)
+int32_t vm_mmap_is_valid(vm_mmap *handle)
 {
     /* check error(s) */
     if (NULL == handle)
         return 0;
 
-    return (Ipp32s)(NULL != handle->fd_map);
+    return (int32_t)(NULL != handle->fd_map);
 
-} /* Ipp32s vm_mmap_is_valid(vm_mmap *handle) */
+} /* int32_t vm_mmap_is_valid(vm_mmap *handle) */
 
 /* Map a file into system meory, return the file size */
-Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr)
+unsigned long long vm_mmap_create(vm_mmap *handle, vm_char *file, int32_t fileAccessAttr)
 {
     LARGE_INTEGER sizet;
 
@@ -117,7 +117,7 @@ Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr)
 
         while (!handle->fd_map)
         {
-            Ipp32u error;
+            uint32_t error;
             handle->fd_map = CreateFileMapping(handle->fd_file,
                                                NULL,
                                                PAGE_READWRITE,
@@ -138,22 +138,22 @@ Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr)
     if (FLAG_ATTRIBUTE_READ & fileAccessAttr || 16*1024*1024 <= sizet.LowPart)
     {
         if (handle->fd_map)
-            return (Ipp64u) sizet.QuadPart;
+            return (unsigned long long) sizet.QuadPart;
     }
 
     vm_mmap_close(handle);
     return 0;
 
-} /* Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr) */
+} /* unsigned long long vm_mmap_create(vm_mmap *handle, vm_char *file, int32_t fileAccessAttr) */
 
 /* Obtain the a view of the mapped file */
-void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
+void *vm_mmap_set_view(vm_mmap *handle, unsigned long long *offset, unsigned long long *sizet)
 {
     LARGE_INTEGER t_offset;
     LARGE_INTEGER t_sizet;
     SYSTEM_INFO info;
-    Ipp64u pagesize;
-    Ipp64u edge;
+    unsigned long long pagesize;
+    unsigned long long edge;
 
     /* check error(s) */
     if (NULL == handle)
@@ -167,7 +167,7 @@ void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
 
     edge = (*sizet) + (*offset);
     t_offset.QuadPart =
-    (*offset) = (Ipp64u)((*offset) / pagesize) * pagesize;
+    (*offset) = (unsigned long long)((*offset) / pagesize) * pagesize;
 
     t_sizet.QuadPart = (*sizet) = edge - (*offset);
 
@@ -189,7 +189,7 @@ void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
     }
     return handle->address;
 
-} /* void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet) */
+} /* void *vm_mmap_set_view(vm_mmap *handle, unsigned long long *offset, unsigned long long *sizet) */
 
 /* Remove the mmap */
 void vm_mmap_close(vm_mmap *handle)
@@ -218,23 +218,23 @@ void vm_mmap_close(vm_mmap *handle)
 } /* void vm_mmap_close(vm_mmap *handle) */
 
 /*  Return page size*/
-Ipp32u vm_mmap_get_page_size(void)
+uint32_t vm_mmap_get_page_size(void)
 {
     SYSTEM_INFO info;
 
     GetSystemInfo(&info);
     return info.dwPageSize;
 
-} /* Ipp32u vm_mmap_get_page_size(void) */
+} /* uint32_t vm_mmap_get_page_size(void) */
 
-Ipp32u vm_mmap_get_alloc_granularity(void)
+uint32_t vm_mmap_get_alloc_granularity(void)
 {
     SYSTEM_INFO info;
 
     GetSystemInfo(&info);
     return info.dwAllocationGranularity;
 
-} /* Ipp32u vm_mmap_get_alloc_granularity(void) */
+} /* uint32_t vm_mmap_get_alloc_granularity(void) */
 
 void vm_mmap_unmap(vm_mmap *handle)
 {

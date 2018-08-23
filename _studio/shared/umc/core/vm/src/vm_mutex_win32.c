@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -28,7 +28,7 @@ void vm_mutex_set_invalid(vm_mutex *mutex)
 } /* void vm_mutex_set_invalid(vm_mutex *mutex) */
 
 /* Verify if a mutex is valid */
-Ipp32s vm_mutex_is_valid(vm_mutex *mutex)
+int32_t vm_mutex_is_valid(vm_mutex *mutex)
 {
     /* check error(s) */
     if (NULL == mutex)
@@ -38,7 +38,7 @@ Ipp32s vm_mutex_is_valid(vm_mutex *mutex)
 
     return (mutex->handle) ? (1) : (0);
 
-} /* Ipp32s vm_mutex_is_valid(vm_mutex *mutex) */
+} /* int32_t vm_mutex_is_valid(vm_mutex *mutex) */
 
 /* Init a mutex, return 1 if successful */
 vm_status vm_mutex_init(vm_mutex *mutex)

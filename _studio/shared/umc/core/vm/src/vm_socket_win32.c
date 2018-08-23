@@ -17,17 +17,17 @@
 #if defined(_WIN32) || defined(_WIN64)
 
 #if defined (__ICL) || defined(_MSVC_LANG)
-/* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
+/* non-pointer conversion from "unsigned __int64" to "int32_t={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
 #endif /* __ICL || _MSVC_LANG */
 
 #define LINE_SIZE 128
 
 static
-Ipp32s fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host)
+int32_t fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host)
 {
     struct hostent *ent;
-    Ipp8s hostname[LINE_SIZE];
+    int8_t hostname[LINE_SIZE];
 
     memset(iaddr, 0, sizeof(*iaddr));
 
@@ -56,17 +56,17 @@ Ipp32s fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host)
 
     return 0;
 
-} /* Ipp32s fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host) */
+} /* int32_t fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host) */
 
 
 vm_status vm_socket_init(vm_socket *hd,
                          vm_socket_host *local,
                          vm_socket_host *remote,
-                         Ipp32s flags)
+                         int32_t flags)
 {
-    Ipp32s i;
-    Ipp32s error = 0;
-    Ipp32s connection_attempts = 7, reattempt = 0;
+    int32_t i;
+    int32_t error = 0;
+    int32_t connection_attempts = 7, reattempt = 0;
       WSADATA wsaData;
 
     if (WSAStartup(MAKEWORD(1,1), &wsaData))
@@ -121,7 +121,7 @@ vm_status vm_socket_init(vm_socket *hd,
         if (setsockopt(hd->chns[0],
             IPPROTO_IP,
             IP_ADD_MEMBERSHIP,
-            (Ipp8s *) &imr,
+            (int8_t *) &imr,
                     sizeof(imr))==SOCKET_ERROR)
               return VM_OPERATION_FAILED;
     }
@@ -161,16 +161,16 @@ vm_status vm_socket_init(vm_socket *hd,
     } \
 }
 
-Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks)
+int32_t vm_socket_select(vm_socket *hds, int32_t nhd, int32_t masks)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     FD_ZERO(&hds->r_set);
     FD_ZERO(&hds->w_set);
 
     for (i = 0; i < nhd; i++)
     {
-        Ipp32s flags = hds[i].flags;
+        int32_t flags = hds[i].flags;
         if (hds[i].chns[0] == INVALID_SOCKET)
             continue;
 
@@ -199,7 +199,7 @@ Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks)
 
     return (i < 0) ? -1 : i;
 
-} /* Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks) */
+} /* int32_t vm_socket_select(vm_socket *hds, int32_t nhd, int32_t masks) */
 
 /* WE HAD TO REDEFINE THIS DEFINE TO ELIMINATE THE WARNINGS */
 #undef FD_CLR
@@ -219,15 +219,15 @@ Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks)
     } \
 }
 
-Ipp32s vm_socket_next(vm_socket *hds, Ipp32s nhd, Ipp32s *idx, Ipp32s *chn, Ipp32s *type)
+int32_t vm_socket_next(vm_socket *hds, int32_t nhd, int32_t *idx, int32_t *chn, int32_t *type)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for (i = 0; i < nhd; i++)
     {
         for (j = 0; j <= VM_SOCKET_QUEUE; j++)
         {
-            Ipp32s flags = hds[i].flags;
+            int32_t flags = hds[i].flags;
             if (hds[i].chns[j] == INVALID_SOCKET)
                 continue;
 
@@ -269,11 +269,11 @@ Ipp32s vm_socket_next(vm_socket *hds, Ipp32s nhd, Ipp32s *idx, Ipp32s *chn, Ipp3
 
     return 0;
 
-} /* Ipp32s vm_socket_next(vm_socket *hds, Ipp32s nhd, Ipp32s *idx, Ipp32s *chn, Ipp32s *type) */
+} /* int32_t vm_socket_next(vm_socket *hds, int32_t nhd, int32_t *idx, int32_t *chn, int32_t *type) */
 
-Ipp32s vm_socket_accept(vm_socket *hd)
+int32_t vm_socket_accept(vm_socket *hd)
 {
-    Ipp32s psize, chn;
+    int32_t psize, chn;
 
     if (hd->chns[0] == INVALID_SOCKET)
         return -1;
@@ -300,11 +300,11 @@ Ipp32s vm_socket_accept(vm_socket *hd)
 
     return chn;
 
-} /* Ipp32s vm_socket_accept(vm_socket *hd) */
+} /* int32_t vm_socket_accept(vm_socket *hd) */
 
-Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
+int32_t vm_socket_read(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes)
 {
-    Ipp32s retr;
+    int32_t retr;
 
     if (chn < 0 || chn > VM_SOCKET_QUEUE)
         return -1;
@@ -313,7 +313,7 @@ Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
 
     if (hd->flags & VM_SOCKET_UDP)
     {
-        Ipp32s ssize = sizeof(hd->sar);
+        int32_t ssize = sizeof(hd->sar);
         retr = recvfrom(hd->chns[chn],
                         buffer,
                         nbytes,
@@ -323,7 +323,7 @@ Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
     }
     else
     {
-        Ipp32s time_out_count = 0;
+        int32_t time_out_count = 0;
 
         retr = recv(hd->chns[chn], buffer, nbytes, 0);
 
@@ -340,11 +340,11 @@ Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
 
     return retr;
 
-} /* Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes) */
+} /* int32_t vm_socket_read(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes) */
 
-Ipp32s vm_socket_write(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
+int32_t vm_socket_write(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes)
 {
-    Ipp32s retw;
+    int32_t retw;
 
     if (chn < 0 || chn > VM_SOCKET_QUEUE)
         return -1;
@@ -370,20 +370,20 @@ Ipp32s vm_socket_write(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
 
     return retw;
 
-} /* Ipp32s vm_socket_write(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes) */
+} /* int32_t vm_socket_write(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes) */
 
-void vm_socket_close_chn(vm_socket *hd, Ipp32s chn)
+void vm_socket_close_chn(vm_socket *hd, int32_t chn)
 {
     if (hd->chns[chn] != INVALID_SOCKET)
         closesocket(hd->chns[chn]);
 
     hd->chns[chn] = INVALID_SOCKET;
 
-} /* void vm_socket_close_chn(vm_socket *hd, Ipp32s chn) */
+} /* void vm_socket_close_chn(vm_socket *hd, int32_t chn) */
 
 void vm_socket_close(vm_socket *hd)
 {
-    Ipp32s i;
+    int32_t i;
 
     if ((hd->flags & VM_SOCKET_MCAST) && !(hd->flags&VM_SOCKET_SERVER))
     {
@@ -394,7 +394,7 @@ void vm_socket_close(vm_socket *hd)
         setsockopt(hd->chns[0],
                 IPPROTO_IP,
                 IP_DROP_MEMBERSHIP,
-                (Ipp8s *) &imr,
+                (int8_t *) &imr,
                 sizeof(imr));
     }
     for (i= VM_SOCKET_QUEUE; i >= 0; i--)
@@ -408,11 +408,11 @@ void vm_socket_close(vm_socket *hd)
 /* Old part */
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
 
-Ipp32s vm_sock_startup(vm_char a, vm_char b)
+int32_t vm_sock_startup(vm_char a, vm_char b)
 {
-    Ipp16u wVersionRequested = MAKEWORD(a, b);
+    uint16_t wVersionRequested = MAKEWORD(a, b);
     WSADATA wsaData;
-    Ipp32s nRet;
+    int32_t nRet;
 
     /*
     // Initialize WinSock and check version
@@ -426,23 +426,23 @@ Ipp32s vm_sock_startup(vm_char a, vm_char b)
 
     return 0;
 
-} /* Ipp32s vm_sock_startup(vm_char a, vm_char b) */
+} /* int32_t vm_sock_startup(vm_char a, vm_char b) */
 
-Ipp32s vm_sock_cleanup(void)
+int32_t vm_sock_cleanup(void)
 {
     return WSACleanup();
 
-} /* Ipp32s vm_sock_cleanup(void) */
+} /* int32_t vm_sock_cleanup(void) */
 
 static
-Ipp32u vm_inet_addr(const vm_char *szName)
+uint32_t vm_inet_addr(const vm_char *szName)
 {
-    Ipp32u ulRes;
+    uint32_t ulRes;
 
 #if defined(UNICODE)||defined(_UNICODE)
 
-    Ipp32s iStrSize = (Ipp32s) vm_string_strlen(szName);
-    Ipp8s *szAnciStr = malloc(iStrSize + 2);
+    int32_t iStrSize = (int32_t) vm_string_strlen(szName);
+    int8_t *szAnciStr = malloc(iStrSize + 2);
 
     if (NULL == szAnciStr)
         return INADDR_NONE;
@@ -463,7 +463,7 @@ Ipp32u vm_inet_addr(const vm_char *szName)
 
     return ulRes;
 
-} /* Ipp32u vm_inet_addr(const vm_char *szName) */
+} /* uint32_t vm_inet_addr(const vm_char *szName) */
 
 static
 struct hostent *vm_gethostbyname(const vm_char *szName)
@@ -472,8 +472,8 @@ struct hostent *vm_gethostbyname(const vm_char *szName)
 
 #if defined(UNICODE)||defined(_UNICODE)
 
-    Ipp32s iStrSize = (Ipp32s) vm_string_strlen(szName);
-    Ipp8s *szAnciStr = malloc(iStrSize + 2);
+    int32_t iStrSize = (int32_t) vm_string_strlen(szName);
+    int8_t *szAnciStr = malloc(iStrSize + 2);
 
     if (NULL == szAnciStr)
         return NULL;
@@ -497,7 +497,7 @@ struct hostent *vm_gethostbyname(const vm_char *szName)
 
 } /* struct hostent *vm_gethostbyname(const vm_char *szName) */
 
-Ipp32s vm_sock_host_by_name(vm_char * name, struct in_addr * paddr)
+int32_t vm_sock_host_by_name(vm_char * name, struct in_addr * paddr)
 {
     LPHOSTENT lpHostEntry;
 
@@ -514,17 +514,17 @@ Ipp32s vm_sock_host_by_name(vm_char * name, struct in_addr * paddr)
 
     return 0;
 
-} /* Ipp32s vm_sock_host_by_name(vm_char * name,struct in_addr * paddr) */
+} /* int32_t vm_sock_host_by_name(vm_char * name,struct in_addr * paddr) */
 
-Ipp32s vm_socket_get_client_ip(vm_socket *hd, Ipp8u* buffer, Ipp32s len)
+int32_t vm_socket_get_client_ip(vm_socket *hd, uint8_t* buffer, int32_t len)
 {
-    Ipp32s iplen;
+    int32_t iplen;
     if (hd == NULL)
         return -1;
     if (hd->chns[0] == INVALID_SOCKET)
         return -1;
 
-    iplen = (Ipp32s) strlen(inet_ntoa(hd->sal.sin_addr));
+    iplen = (int32_t) strlen(inet_ntoa(hd->sal.sin_addr));
 
     if (iplen >= len || buffer == NULL)
         return -1;

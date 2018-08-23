@@ -37,7 +37,7 @@ void vm_mutex_set_invalid(vm_mutex *mutex)
 } /* void vm_mutex_set_invalid(vm_mutex *mutex) */
 
 /* Verify if a mutex is valid */
-Ipp32s vm_mutex_is_valid(vm_mutex *mutex)
+int32_t vm_mutex_is_valid(vm_mutex *mutex)
 {
     /* check error(s) */
     if (NULL == mutex)
@@ -45,7 +45,7 @@ Ipp32s vm_mutex_is_valid(vm_mutex *mutex)
 
     return mutex->is_valid;
 
-} /* Ipp32s vm_mutex_is_valid(vm_mutex *mutex) */
+} /* int32_t vm_mutex_is_valid(vm_mutex *mutex) */
 
 /* Init a mutex, return 1 if success */
 vm_status vm_mutex_init(vm_mutex *mutex)
@@ -130,7 +130,7 @@ vm_status vm_mutex_try_lock(vm_mutex *mutex)
 
     if (mutex->is_valid)
     {
-        Ipp32s i_res = pthread_mutex_trylock(&mutex->handle);
+        int32_t i_res = pthread_mutex_trylock(&mutex->handle);
         switch (i_res)
         {
         case 0:

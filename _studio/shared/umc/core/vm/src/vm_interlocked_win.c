@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2009-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2009-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -29,34 +29,34 @@
 #include <vm_interlocked.h>
 #include <windows.h>
 
-Ipp16u vm_interlocked_inc16(volatile Ipp16u *pVariable)
+uint16_t vm_interlocked_inc16(volatile uint16_t *pVariable)
 {
     return _InterlockedIncrement16((volatile short*) pVariable);
-} /* Ipp16u vm_interlocked_inc16(volatile Ipp32u *pVariable) */
+} /* uint16_t vm_interlocked_inc16(volatile uint32_t *pVariable) */
 
-Ipp16u vm_interlocked_dec16(volatile Ipp16u *pVariable)
+uint16_t vm_interlocked_dec16(volatile uint16_t *pVariable)
 {
     return _InterlockedDecrement16((volatile short*) pVariable);
-} /* Ipp16u vm_interlocked_dec16(volatile Ipp32u *pVariable) */
+} /* uint16_t vm_interlocked_dec16(volatile uint32_t *pVariable) */
 
-Ipp32u vm_interlocked_inc32(volatile Ipp32u *pVariable)
+uint32_t vm_interlocked_inc32(volatile uint32_t *pVariable)
 {
     return InterlockedIncrement((LPLONG) pVariable);
-} /* Ipp32u vm_interlocked_inc32(volatile Ipp32u *pVariable) */
+} /* uint32_t vm_interlocked_inc32(volatile uint32_t *pVariable) */
 
-Ipp32u vm_interlocked_dec32(volatile Ipp32u *pVariable)
+uint32_t vm_interlocked_dec32(volatile uint32_t *pVariable)
 {
     return InterlockedDecrement((LPLONG) pVariable);
-} /* Ipp32u vm_interlocked_dec32(volatile Ipp32u *pVariable) */
+} /* uint32_t vm_interlocked_dec32(volatile uint32_t *pVariable) */
 
-Ipp32u vm_interlocked_cas32(volatile Ipp32u *pVariable, Ipp32u value_to_exchange, Ipp32u value_to_compare)
+uint32_t vm_interlocked_cas32(volatile uint32_t *pVariable, uint32_t value_to_exchange, uint32_t value_to_compare)
 {
     return InterlockedCompareExchange((LPLONG) pVariable, value_to_exchange, value_to_compare);
-} /* Ipp32u vm_interlocked_cas32(volatile Ipp32u *pVariable, Ipp32u value_to_exchange, Ipp32u value_to_compare) */
+} /* uint32_t vm_interlocked_cas32(volatile uint32_t *pVariable, uint32_t value_to_exchange, uint32_t value_to_compare) */
 
-Ipp32u vm_interlocked_xchg32(volatile Ipp32u *pVariable, Ipp32u value)
+uint32_t vm_interlocked_xchg32(volatile uint32_t *pVariable, uint32_t value)
 {
     return InterlockedExchange((LPLONG) pVariable, value);
-} /* Ipp32u vm_interlocked_xchg32(volatile Ipp32u *pVariable, Ipp32u value); */
+} /* uint32_t vm_interlocked_xchg32(volatile uint32_t *pVariable, uint32_t value); */
 
 #endif /* #if defined(_WIN32) || defined(_WIN64) */

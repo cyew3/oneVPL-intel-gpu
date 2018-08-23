@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -17,11 +17,6 @@
 #include <winsock.h>
 #endif /* defined(_WIN32_WCE) */
 #endif /* defined(_SOCKET_SUPPORT) */
-
-//#include <stdio.h>
-#include <ippcore.h>
-//#include <ipps.h>
-
 
 #ifdef _UNICODE
 # define vm_main wmain
@@ -68,7 +63,7 @@ typedef struct vm_mmap
 {
     vm_handle fd_file, fd_map;
     void  *address;
-    Ipp32s fAccessAttr;
+    int32_t fAccessAttr;
 } vm_mmap;
 
 /* vm_mutex.h */
@@ -90,9 +85,9 @@ typedef struct vm_thread
 {
     vm_handle handle;
     vm_mutex access_mut;
-    Ipp32s i_wait_count;
+    int32_t i_wait_count;
 
-    Ipp32u (__stdcall * protected_func)(void *);
+    uint32_t (__stdcall * protected_func)(void *);
     void *protected_arg;
 
 } vm_thread;
@@ -107,22 +102,22 @@ typedef struct vm_socket
     struct sockaddr_in sal;
     struct sockaddr_in sar;
     struct sockaddr_in peers[VM_SOCKET_QUEUE + 1];
-    Ipp32s flags;
+    int32_t flags;
 
 } vm_socket;
 #endif /* defined(_SOCKET_SUPPORT) */
 
 typedef struct vm_time
 {
-   Ipp64s start;
-   Ipp64s diff;
-   Ipp64s freq;
+   long long start;
+   long long diff;
+   long long freq;
 
 } vm_time;
 
 struct vm_timeval
 {
-  Ipp32u tv_sec;
+  uint32_t tv_sec;
   long int tv_usec;
 
 };

@@ -21,29 +21,29 @@
 #include <sched.h>
 
 /* yield the execution of current thread for msec miliseconds */
-void vm_time_sleep(Ipp32u msec)
+void vm_time_sleep(uint32_t msec)
 {
     if (msec)
         usleep(1000 * msec);
     else
         sched_yield();
-} /* void vm_time_sleep(Ipp32u msec) */
+} /* void vm_time_sleep(uint32_t msec) */
 
-Ipp32u vm_time_get_current_time(void)
+uint32_t vm_time_get_current_time(void)
 {
 #if 1
     struct timeval tval;
 
     if (0 != gettimeofday(&tval, NULL)) return 0;
-    return 1000 * tval.tv_sec + (Ipp32u)((Ipp64f)tval.tv_usec/(Ipp64f)1000);
+    return 1000 * tval.tv_sec + (uint32_t)((double)tval.tv_usec/(double)1000);
 #else
     struct timespec tspec;
 
     /* Note: clock_gettime function will required librt.a library to link with */
-    if (0 != clock_gettime(CLOCK_MONOTONIC, &tspec)) return (Ipp32u)-1;
-    return 1000 * tspec.tv_sec + (Ipp32u)((Ipp64f)tspec.tv_nsec/(Ipp64f)1000000);
+    if (0 != clock_gettime(CLOCK_MONOTONIC, &tspec)) return (uint32_t)-1;
+    return 1000 * tspec.tv_sec + (uint32_t)((double)tspec.tv_nsec/(double)1000000);
 #endif
-} /* Ipp32u vm_time_get_current_time(void) */
+} /* uint32_t vm_time_get_current_time(void) */
 
 #define VM_TIME_MHZ 1000000
 
@@ -112,22 +112,22 @@ vm_status vm_time_start(vm_time_handle handle, vm_time *m)
 } /* vm_status vm_time_start(vm_time_handle handle, vm_time *m) */
 
 /* Stop the process of time measure and obtain the sampling time in seconds */
-Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m)
+double vm_time_stop(vm_time_handle handle, vm_time *m)
 {
    (void)handle;
 
-   Ipp64f speed_sec;
-   Ipp64s end;
+   double speed_sec;
+   long long end;
 
    end = vm_time_get_tick();
    m->diff += (end - m->start);
 
    if(m->freq == 0) m->freq = vm_time_get_frequency();
-   speed_sec = (Ipp64f)m->diff/(Ipp64f)m->freq;
+   speed_sec = (double)m->diff/(double)m->freq;
 
    return speed_sec;
 
-} /* Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m) */
+} /* double vm_time_stop(vm_time_handle handle, vm_time *m) */
 
 vm_status vm_time_gettimeofday( struct vm_timeval *TP, struct vm_timezone *TZP ) {
   return (gettimeofday(TP, TZP) == 0) ? 0 : VM_NOT_INITIALIZED;

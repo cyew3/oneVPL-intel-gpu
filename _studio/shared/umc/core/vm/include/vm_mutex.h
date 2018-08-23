@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_MUTEX_H__
@@ -21,7 +21,7 @@ extern "C" {
 void vm_mutex_set_invalid(vm_mutex *mutex);
 
 /* Verify if a mutex is valid */
-Ipp32s  vm_mutex_is_valid(vm_mutex *mutex);
+int32_t  vm_mutex_is_valid(vm_mutex *mutex);
 
 /* Init a mutex, return VM_OK if success */
 vm_status vm_mutex_init(vm_mutex *mutex);

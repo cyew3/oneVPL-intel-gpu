@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_THREAD_H__
@@ -29,7 +29,7 @@ extern "C" {
 #define VM_THREAD_CALLCONVENTION
 #endif
 
-typedef Ipp32u (VM_THREAD_CALLCONVENTION * vm_thread_callback)(void *);
+typedef uint32_t (VM_THREAD_CALLCONVENTION * vm_thread_callback)(void *);
 
 typedef enum
 {
@@ -44,22 +44,22 @@ typedef enum
 void vm_thread_set_invalid(vm_thread *thread);
 
 /* Verify if the thread handler is valid */
-Ipp32s vm_thread_is_valid(vm_thread *thread);
+int32_t vm_thread_is_valid(vm_thread *thread);
 
 /* Create a thread. The thread is set to run at the call.
    Return 1 if successful */
-Ipp32s vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg);
+int32_t vm_thread_create(vm_thread *thread, vm_thread_callback func, void *arg);
 
 
 /* Attach to externally created thread. Should be called from the thread in question.
 Return 1 if successful */
-Ipp32s vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg);
+int32_t vm_thread_attach(vm_thread *thread, vm_thread_callback func, void *arg);
 
 /* Wait until a thread exists */
 void vm_thread_wait(vm_thread *thread);
 
 /* Set thread priority. Return 1 if successful */
-Ipp32s vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority);
+int32_t vm_thread_set_priority(vm_thread *thread, vm_thread_priority priority);
 
 /* Close thread after all */
 void vm_thread_close(vm_thread *thread);
@@ -72,15 +72,15 @@ void vm_set_current_thread_priority(vm_thread_priority priority);
 
 typedef struct
 {
-  Ipp32s schedtype;
-  Ipp32s priority;
+  int32_t schedtype;
+  int32_t priority;
 } vm_thread_linux_schedparams;
 
 /* Set thread scheduling type and corresponding parameters. */
-Ipp32s vm_thread_set_scheduling(vm_thread* thread, void* params);
+int32_t vm_thread_set_scheduling(vm_thread* thread, void* params);
 
 /* Set thread's affinity mask */
-void vm_set_thread_affinity_mask(vm_thread *thread, Ipp64u mask);
+void vm_set_thread_affinity_mask(vm_thread *thread, unsigned long long mask);
 
 #ifdef __cplusplus
 }

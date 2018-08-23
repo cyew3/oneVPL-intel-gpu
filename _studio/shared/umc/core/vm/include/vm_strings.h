@@ -5,12 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_STRINGS_H__
 #define __VM_STRINGS_H__
 
+#include <stdint.h>
 #include "ippdefs.h"
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -22,7 +23,6 @@
 # include <ctype.h>
 # include <dirent.h>
 # include <errno.h>
-# include <ipps.h>
 
 #if !defined(ANDROID)
 
@@ -126,7 +126,7 @@ typedef DIR* vm_findptr;
  */
 struct _finddata_t
 {
-  Ipp32u attrib;
+  uint32_t attrib;
   long long size;
   vm_char  name[260];
 };
@@ -136,10 +136,10 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-Ipp32s vm_string_vprintf(const vm_char *format, va_list argptr);
+int32_t vm_string_vprintf(const vm_char *format, va_list argptr);
 vm_findptr vm_string_findfirst(vm_char* filespec, vm_finddata_t* fileinfo);
-Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
-Ipp32s vm_string_findclose(vm_findptr handle);
+int32_t vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
+int32_t vm_string_findclose(vm_findptr handle);
 void vm_string_splitpath(const vm_char *path, char *drive, char *dir, char *fname, char *ext);
 
 #ifdef __cplusplus
@@ -208,7 +208,7 @@ extern "C"
 #endif /* __cplusplus */
 
 vm_findptr vm_string_findfirst(vm_char* filespec, vm_finddata_t* fileinfo);
-Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
+int32_t vm_string_findnext(vm_findptr handle, vm_finddata_t* fileinfo);
 
 #ifdef __cplusplus
 }

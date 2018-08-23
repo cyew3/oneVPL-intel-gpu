@@ -39,7 +39,7 @@
 
 /* obtain file info. return 0 if file is not accessible,
    file_size or file_attr can be NULL if either is not interested */
-Ipp32s vm_file_getinfo(const vm_char *filename, Ipp64u *file_size, Ipp32u *file_attr) {
+int32_t vm_file_getinfo(const vm_char *filename, unsigned long long *file_size, uint32_t *file_attr) {
 #if defined(__APPLE__) || defined(__ANDROID__) || defined(LINUX64)
    struct stat buf;
    if (stat(filename,&buf) != 0) return 0;
@@ -59,7 +59,7 @@ Ipp32s vm_file_getinfo(const vm_char *filename, Ipp64u *file_size, Ipp32u *file_
 
 
 
-Ipp64u vm_file_fseek(vm_file *fd, Ipp64s position, VM_FILE_SEEK_MODE mode) {
+unsigned long long vm_file_fseek(vm_file *fd, long long position, VM_FILE_SEEK_MODE mode) {
 #if defined(__APPLE__) || defined(__ANDROID__) || defined(LINUX64)
   return fseeko(fd, (off_t)position, mode);
 #else
@@ -67,28 +67,28 @@ Ipp64u vm_file_fseek(vm_file *fd, Ipp64s position, VM_FILE_SEEK_MODE mode) {
 #endif
   }
 
-Ipp64u vm_file_ftell(vm_file *fd) {
+unsigned long long vm_file_ftell(vm_file *fd) {
 #if defined(__APPLE__) || defined(__ANDROID__) || defined(LINUX64)
-  return (Ipp64u) ftello(fd);
+  return (unsigned long long) ftello(fd);
 #else
-  return (Ipp64u)ftello64(fd);
+  return (unsigned long long)ftello64(fd);
 #endif
   }
 
 /*
  *   Directory manipulations
  */
-Ipp32s vm_dir_remove(vm_char *path) {
+int32_t vm_dir_remove(vm_char *path) {
    return !remove(path);
 }
 
-Ipp32s vm_dir_mkdir(vm_char *path) {
+int32_t vm_dir_mkdir(vm_char *path) {
    return !mkdir(path,0777);
 }
 
 
 static vm_char *d_name = NULL;
-Ipp32s vm_dir_open(vm_dir **dd, vm_char *path) {
+int32_t vm_dir_open(vm_dir **dd, vm_char *path) {
   if ((dd[0]=opendir(path)) != NULL) {
     d_name = NULL;
     if(getcwd(d_name, 0) == NULL)
@@ -105,10 +105,10 @@ Ipp32s vm_dir_open(vm_dir **dd, vm_char *path) {
 
 /*
  * directory traverse */
-Ipp32s vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
+int32_t vm_dir_read(vm_dir *dd, vm_char *filename,int nchars) {
   (void)nchars;
 
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
   if (dd != NULL) {
    struct dirent *ent=readdir(dd);
    if (ent) {
@@ -137,10 +137,10 @@ void vm_dir_close(vm_dir *dd) {
  * findfirst, findnext, findclose direct emulation
  * for old ala Windows applications
  */
-Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t *fileinfo) {
-  Ipp32s rtv = 1;
-  Ipp64u sz;
-  Ipp32u atr;
+int32_t vm_string_findnext(vm_findptr handle, vm_finddata_t *fileinfo) {
+  int32_t rtv = 1;
+  unsigned long long sz;
+  uint32_t atr;
   if (vm_dir_read(handle, fileinfo[0].name, MAX_PATH))
     if (vm_file_getinfo(fileinfo[0].name, &sz, &atr)) {
       fileinfo[0].size = sz;
@@ -158,12 +158,12 @@ vm_findptr vm_string_findfirst(vm_char *filespec, vm_finddata_t *fileinfo) {
   return dd;
   }
 
-Ipp32s vm_string_findclose(vm_findptr handle) {
+int32_t vm_string_findclose(vm_findptr handle) {
   return closedir(handle);
   }
 
-Ipp64u vm_dir_get_free_disk_space( void ) {
-  Ipp64u rtv = 0;
+unsigned long long vm_dir_get_free_disk_space( void ) {
+  unsigned long long rtv = 0;
 #if defined(__ANDROID__)
   struct statfs fst;
   if (statfs(".", &fst) >= 0) {
@@ -188,9 +188,9 @@ void vm_string_splitpath(const vm_char *path, char *drive, char *dir, char *fnam
     }
 }
 
-Ipp32s vm_file_vfprintf(vm_file *fd, vm_char* format, va_list argptr)
+int32_t vm_file_vfprintf(vm_file *fd, vm_char* format, va_list argptr)
 {
-    Ipp32s sts = 0;
+    int32_t sts = 0;
     va_list copy;
     va_copy(copy, argptr);
     sts = vfprintf(fd, format,  copy);

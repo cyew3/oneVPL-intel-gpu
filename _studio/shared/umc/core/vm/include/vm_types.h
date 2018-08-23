@@ -5,12 +5,25 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_TYPES_H__
 #define __VM_TYPES_H__
 
+#include <stdint.h>
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+#include <ippdefs.h>
+#include <ippcore.h>
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 #if defined(LINUX32) || defined(__APPLE__)
 # include "sys/vm_types_linux32.h"

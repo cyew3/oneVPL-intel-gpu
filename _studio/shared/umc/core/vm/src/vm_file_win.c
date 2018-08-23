@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -21,8 +21,7 @@
 #if !defined(LINUX32) && !defined(__APPLE__)
 # include <stdio.h>
 # include <io.h>
-# include "ippdefs.h"
-# include "vm_strings.h"
+
 # include "vm_file.h"
 
 
@@ -56,7 +55,7 @@ static BOOL tmpup = FALSE;
  */
 
 #if defined (__ICL)
-/* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
+/* non-pointer conversion from "unsigned __int64" to "int32_t={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
 #endif
 typedef struct
@@ -191,13 +190,13 @@ void vm_file_remove_all_temporary( void )
 static
 vm_file* tempfile_create_file(vm_char* fname)
 {
-    Ipp32u   nlen;
+    uint32_t   nlen;
     vm_file* rtv;
     vm_temp_file_entry* t;
 
     rtv = NULL;
 
-    nlen = (Ipp32u)vm_string_strlen(fname) + 1;
+    nlen = (uint32_t)vm_string_strlen(fname) + 1;
 
     t = (vm_temp_file_entry*)malloc(sizeof(vm_temp_file_entry));
 
@@ -338,7 +337,7 @@ vm_char* vm_file_tempnam(vm_char* DIR, vm_char* PREFIX)
 
 vm_file* vm_file_fopen(const vm_char* fname, const vm_char* mode)
 {
-  Ipp32u   i;
+  uint32_t   i;
   DWORD    mds[4];
   vm_char  general;
   vm_char  islog;
@@ -423,9 +422,9 @@ vm_file* vm_file_fopen(const vm_char* fname, const vm_char* mode)
 } /* vm_file_fopen() */
 
 
-Ipp32s vm_file_fflush(vm_file *fd)
+int32_t vm_file_fflush(vm_file *fd)
 {
-  Ipp32s rtv = -1;
+  int32_t rtv = -1;
   if (fd == vm_stdout)
       rtv = fflush(stdout);
   else if (fd == vm_stderr)
@@ -435,15 +434,15 @@ Ipp32s vm_file_fflush(vm_file *fd)
   return rtv;
  }
 
-Ipp64u vm_file_fseek(vm_file* fd, Ipp64s position, VM_FILE_SEEK_MODE mode)
+unsigned long long vm_file_fseek(vm_file* fd, long long position, VM_FILE_SEEK_MODE mode)
 {
-  Ipp64u rtv   = 1;
+  unsigned long long rtv   = 1;
   DWORD  posmd = 0;
 
   union
   {
-    Ipp32s lpt[2];
-    Ipp64s hpt;
+    int32_t lpt[2];
+    long long hpt;
   } pwt;
 
   pwt.hpt = position;
@@ -469,14 +468,14 @@ Ipp64u vm_file_fseek(vm_file* fd, Ipp64s position, VM_FILE_SEEK_MODE mode)
 } /* vm_file_fseek() */
 
 
-Ipp64u vm_file_ftell(vm_file* fd)
+unsigned long long vm_file_ftell(vm_file* fd)
 {
-  Ipp64u rtv = 0;
+  unsigned long long rtv = 0;
 
   union
   {
-    Ipp32s lpt[2];
-    Ipp64s hpt;
+    int32_t lpt[2];
+    long long hpt;
   } pwt;
 
   pwt.hpt = 0; /* query current file position */
@@ -486,9 +485,9 @@ Ipp64u vm_file_ftell(vm_file* fd)
     LOCK;
     pwt.lpt[0] = SetFilePointer(fd[0].fd, pwt.lpt[0], (LONG *)&pwt.lpt[1], FILE_CURRENT);
     if ((pwt.lpt[0] != -1) || (GetLastError() == NO_ERROR))
-      rtv = (Ipp64u)pwt.hpt;
+      rtv = (unsigned long long)pwt.hpt;
     else
-      rtv = (Ipp64u) -1;
+      rtv = (unsigned long long) -1;
     UNLOCK;
   }
 
@@ -496,15 +495,15 @@ Ipp64u vm_file_ftell(vm_file* fd)
 } /* vm_file_ftell() */
 
 
-Ipp32s vm_file_remove(vm_char* path)
+int32_t vm_file_remove(vm_char* path)
 {
   return DeleteFile(path);
 }
 
 
-Ipp32s vm_file_fclose(vm_file* fd)
+int32_t vm_file_fclose(vm_file* fd)
 {
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
 
   if ((fd != NULL) && (fd[0].fd != INVALID_HANDLE_VALUE))
   {
@@ -524,13 +523,13 @@ Ipp32s vm_file_fclose(vm_file* fd)
 } /* vm_file_fclose() */
 
 
-Ipp32s vm_file_feof(vm_file* fd)
+int32_t vm_file_feof(vm_file* fd)
 {
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
 
   if ((fd != NULL) && (fd[0].fd != INVALID_HANDLE_VALUE))
   {
-    Ipp64u pos = vm_file_ftell(fd);
+    unsigned long long pos = vm_file_ftell(fd);
     if (pos >= fd[0].fsize)
       rtv = 1;
   }
@@ -539,11 +538,11 @@ Ipp32s vm_file_feof(vm_file* fd)
 } /* vm_file_feof() */
 
 
-Ipp32s vm_file_getinfo(const vm_char* filename, Ipp64u* file_size, Ipp32u* file_attr)
+int32_t vm_file_getinfo(const vm_char* filename, unsigned long long* file_size, uint32_t* file_attr)
 {
-  Ipp32s rtv = 0;
-  Ipp32s needsize = (file_size != NULL);
-  Ipp32s needattr = (file_attr != NULL);
+  int32_t rtv = 0;
+  int32_t needsize = (file_size != NULL);
+  int32_t needattr = (file_attr != NULL);
   WIN32_FILE_ATTRIBUTE_DATA ffi;
 
   if (filename && (needsize || needattr))
@@ -573,10 +572,10 @@ Ipp32s vm_file_getinfo(const vm_char* filename, Ipp64u* file_size, Ipp32u* file_
 
 /* binary file IO */
 
-Ipp32s vm_file_fread(void* buf, Ipp32u itemsz, Ipp32s nitems, vm_file* fd)
+int32_t vm_file_fread(void* buf, uint32_t itemsz, int32_t nitems, vm_file* fd)
 {
   DWORD  nmbread = 0;
-  Ipp32s rtv     = 0;
+  int32_t rtv     = 0;
 
   if ((fd != NULL) && (fd[0].fd != INVALID_HANDLE_VALUE))
   {
@@ -589,10 +588,10 @@ Ipp32s vm_file_fread(void* buf, Ipp32u itemsz, Ipp32s nitems, vm_file* fd)
 } /* vm_file_fread() */
 
 
-Ipp32s vm_file_fwrite(void* buf, Ipp32u itemsz, Ipp32s nitems, vm_file* fd)
+int32_t vm_file_fwrite(void* buf, uint32_t itemsz, int32_t nitems, vm_file* fd)
 {
   DWORD  nmbread;
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
 
   if ((fd != NULL) && (fd[0].fd != INVALID_HANDLE_VALUE))
   {
@@ -619,8 +618,8 @@ vm_char* vm_file_fgets(vm_char* str, int nchar, vm_file* fd)
   /* read up to VM_MAX_TEMP_LINE bytes from input file, try
    * to satisfy fgets conditions
    */
-  Ipp64s fpos;
-  Ipp32s bytesi, rdchar, rdbyte, i, j = 0; /* j - current position in the output string */
+  long long fpos;
+  int32_t bytesi, rdchar, rdbyte, i, j = 0; /* j - current position in the output string */
   vm_char* rtv = NULL;
 #ifdef _UNICODE
       char *pstr;
@@ -736,7 +735,7 @@ vm_char* vm_file_fgets(vm_char* str, int nchar, vm_file* fd)
 # define FPUTS fputs
 #endif
 
-Ipp32s vm_file_fputs(vm_char* str, vm_file* fd)
+int32_t vm_file_fputs(vm_char* str, vm_file* fd)
 {
     if ( fd == vm_stdout )
     {
@@ -749,16 +748,16 @@ Ipp32s vm_file_fputs(vm_char* str, vm_file* fd)
     else
     {
         size_t strLen = vm_string_strlen(str);
-        return (vm_file_fwrite((void*)str, 1, (Ipp32u)strLen, fd)==(Ipp32s)strLen) ? 1 : -1;
+        return (vm_file_fwrite((void*)str, 1, (uint32_t)strLen, fd)==(int32_t)strLen) ? 1 : -1;
     }
 }
 
 
 /* parse line, return total number of format specifiers */
 static
-Ipp32s fmtline_spcnmb( vm_char* s )
+int32_t fmtline_spcnmb( vm_char* s )
 {
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
 
   while ( *s )
     if ((*s++ == '%') && (*s != '%'))
@@ -768,14 +767,14 @@ Ipp32s fmtline_spcnmb( vm_char* s )
 }
 
 
-Ipp32s vm_file_fscanf(vm_file *fd, vm_char *format, ...)
+int32_t vm_file_fscanf(vm_file *fd, vm_char *format, ...)
 {
   BOOL     eol = FALSE;
-  Ipp32u   i = 0;
-  Ipp32s   rtv = 0;
-  Ipp32s   nsize = VM_MAX_TEMP_LINE;
-  Ipp32s   lnoffset = 0;
-  Ipp32s   items = 0;
+  uint32_t   i = 0;
+  int32_t   rtv = 0;
+  int32_t   nsize = VM_MAX_TEMP_LINE;
+  int32_t   lnoffset = 0;
+  int32_t   items = 0;
   vm_char* s = NULL;
   vm_char* fpt = NULL;
   vm_char* bpt = NULL;
@@ -882,14 +881,14 @@ Ipp32s vm_file_fscanf(vm_file *fd, vm_char *format, ...)
  * Error may occur if output string becomes longer than VM_MAX_TEMP_LINE
  */
 
-Ipp32s vm_file_fprintf(vm_file *fd, vm_char *format, ...)
+int32_t vm_file_fprintf(vm_file *fd, vm_char *format, ...)
 {
   DWORD   nmbwrite;
-  Ipp32s  rtv = 0;
+  int32_t  rtv = 0;
   va_list args;
 #if defined UNICODE
-  Ipp32s  nPos = 0;
-  Ipp32s  nStrLen = 0;
+  int32_t  nPos = 0;
+  int32_t  nStrLen = 0;
 #endif
   va_start( args, format );
 
@@ -906,7 +905,7 @@ Ipp32s vm_file_fprintf(vm_file *fd, vm_char *format, ...)
         vm_string_vsprintf( fd[0].tbuf, format, args );
 
         LOCK;
-        nStrLen = (Ipp32s)vm_string_strlen(fd[0].tbuf);
+        nStrLen = (int32_t)vm_string_strlen(fd[0].tbuf);
 #if defined UNICODE
         for (nPos = 0; nPos < nStrLen; nPos++)
         {
@@ -929,13 +928,13 @@ Ipp32s vm_file_fprintf(vm_file *fd, vm_char *format, ...)
 } /* vm_file_fprintf() */
 
 
-Ipp32s vm_file_vfprintf(vm_file* fd, vm_char* format,  va_list argptr)
+int32_t vm_file_vfprintf(vm_file* fd, vm_char* format,  va_list argptr)
 {
   DWORD  nmbwrite;
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
 #if defined UNICODE
-  Ipp32s  nPos = 0;
-  Ipp32s  nStrLen = 0;
+  int32_t  nPos = 0;
+  int32_t  nStrLen = 0;
 #endif
 
   if (fd == vm_stdout)
@@ -951,7 +950,7 @@ Ipp32s vm_file_vfprintf(vm_file* fd, vm_char* format,  va_list argptr)
         vm_string_vsprintf( fd[0].tbuf, format, argptr );
 
         LOCK;
-        nStrLen = (Ipp32s)vm_string_strlen(fd[0].tbuf);
+        nStrLen = (int32_t)vm_string_strlen(fd[0].tbuf);
 #if defined UNICODE
         for (nPos = 0; nPos < nStrLen; nPos++)
         {
@@ -974,9 +973,9 @@ Ipp32s vm_file_vfprintf(vm_file* fd, vm_char* format,  va_list argptr)
 
 /* Directory manipulations */
 
-Ipp32s vm_dir_remove(vm_char* path)
+int32_t vm_dir_remove(vm_char* path)
 {
-  Ipp32s rtv = 1;
+  int32_t rtv = 1;
 
   if (!DeleteFile(path))
     rtv = RemoveDirectory(path);
@@ -985,15 +984,15 @@ Ipp32s vm_dir_remove(vm_char* path)
 }
 
 
-Ipp32s vm_dir_mkdir(vm_char* path)
+int32_t vm_dir_mkdir(vm_char* path)
 {
    return CreateDirectory(path, NULL);
 }
 
 
-Ipp32s vm_dir_open(vm_dir** dd, vm_char* path)
+int32_t vm_dir_open(vm_dir** dd, vm_char* path)
 {
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
   WIN32_FIND_DATA fdata;
 
   vm_dir* td = (vm_dir*)malloc(sizeof(vm_dir));
@@ -1011,9 +1010,9 @@ Ipp32s vm_dir_open(vm_dir** dd, vm_char* path)
 } /* vm_dir_open() */
 
 
-Ipp32s vm_dir_read(vm_dir* dd, vm_char* filename,int nchars)
+int32_t vm_dir_read(vm_dir* dd, vm_char* filename,int nchars)
 {
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
   WIN32_FIND_DATA fdata;
 
   if (dd->handle != INVALID_HANDLE_VALUE)
@@ -1045,7 +1044,7 @@ void vm_dir_close(vm_dir *dd)
 } /* vm_dir_close() */
 
 
-Ipp64u vm_dir_get_free_disk_space( void )
+unsigned long long vm_dir_get_free_disk_space( void )
 {
   ULARGE_INTEGER freebytes[3];
 
@@ -1114,9 +1113,9 @@ vm_findptr vm_string_findfirst(vm_char* filespec, vm_finddata_t* fileinfo)
 } /* vm_string_findfirst() */
 
 
-Ipp32s vm_string_findnext(vm_findptr handle, vm_finddata_t *fileinfo)
+int vm_string_findnext(vm_findptr handle, vm_finddata_t *fileinfo)
 {
-  Ipp32s rtv = 0;
+  int32_t rtv = 0;
 
   if ((rtv = _tfindnext(handle, fileinfo)) == 0)
     fileinfo[0].attrib = reverse_attribute(fileinfo[0].attrib);

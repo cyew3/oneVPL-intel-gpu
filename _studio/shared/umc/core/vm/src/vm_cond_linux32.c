@@ -36,7 +36,7 @@ void vm_cond_set_invalid(vm_cond *cond)
 } /* void vm_cond_set_invalid(vm_cond *cond) */
 
 /* Verify if a condvar is valid */
-Ipp32s vm_cond_is_valid(vm_cond *cond)
+int32_t vm_cond_is_valid(vm_cond *cond)
 {
     /* check error(s) */
     if (NULL == cond)
@@ -45,7 +45,7 @@ Ipp32s vm_cond_is_valid(vm_cond *cond)
     }
 
     return cond->is_valid;
-} /* Ipp32s vm_cond_is_valid(vm_cond *cond) */
+} /* int32_t vm_cond_is_valid(vm_cond *cond) */
 
 /* Init a condvar, return 1 if successful */
 vm_status vm_cond_init(vm_cond *cond)
@@ -90,11 +90,11 @@ vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex)
             umc_res = VM_OPERATION_FAILED;
     }
     return umc_res;
-} /* vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 
 /* Sleeps on the specified condition variable and releases the specified critical section as an atomic operation */
-vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
+vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec)
 {
     vm_status umc_res = VM_NOT_INITIALIZED;
 
@@ -106,14 +106,14 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
     {
         struct timeval tval;
         struct timespec tspec;
-        Ipp32s res;
-        Ipp64u micro_sec;
+        int32_t res;
+        unsigned long long micro_sec;
 
         gettimeofday(&tval, NULL);
-        // NOTE: micro_sec _should_ be Ipp64u, not Ipp32u to avoid overflow
+        // NOTE: micro_sec _should_ be unsigned long long, not uint32_t to avoid overflow
         micro_sec = 1000 * msec + tval.tv_usec;
-        tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
-        tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
+        tspec.tv_sec = tval.tv_sec + (uint32_t)(micro_sec / 1000000);
+        tspec.tv_nsec = (uint32_t)(micro_sec % 1000000) * 1000;
 
         res = pthread_cond_timedwait(&cond->handle, &mutex->handle, &tspec);
         if (0 == res)
@@ -124,7 +124,7 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
             umc_res = VM_OPERATION_FAILED;
     }
     return umc_res;
-} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 /* Sleeps  in microseconds on the specified condition variable and releases the specified critical section as an atomic operation */
 vm_status vm_cond_timed_uwait(vm_cond *cond, vm_mutex *mutex, vm_tick usec)
@@ -139,14 +139,14 @@ vm_status vm_cond_timed_uwait(vm_cond *cond, vm_mutex *mutex, vm_tick usec)
     {
         struct timeval tval;
         struct timespec tspec;
-        Ipp32s res;
-        Ipp64u micro_sec;
+        int32_t res;
+        unsigned long long micro_sec;
 
         gettimeofday(&tval, NULL);
-        // NOTE: micro_sec _should_ be Ipp64u, not Ipp32u to avoid overflow
+        // NOTE: micro_sec _should_ be unsigned long long, not uint32_t to avoid overflow
         micro_sec = usec + tval.tv_usec;
-        tspec.tv_sec = tval.tv_sec + (Ipp32u)(micro_sec / 1000000);
-        tspec.tv_nsec = (Ipp32u)(micro_sec % 1000000) * 1000;
+        tspec.tv_sec = tval.tv_sec + (uint32_t)(micro_sec / 1000000);
+        tspec.tv_nsec = (uint32_t)(micro_sec % 1000000) * 1000;
 
         res = pthread_cond_timedwait(&cond->handle, &mutex->handle, &tspec);
         if (0 == res)
@@ -157,7 +157,7 @@ vm_status vm_cond_timed_uwait(vm_cond *cond, vm_mutex *mutex, vm_tick usec)
             umc_res = VM_OPERATION_FAILED;
     }
     return umc_res;
-} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 /* Wake a single thread waiting on the specified condition variable */
 vm_status vm_cond_signal(vm_cond *cond)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_SOCKET_H__
@@ -64,7 +64,7 @@ extern "C"
 typedef struct
 {
    vm_char *hostname; /* hostname */
-   Ipp16u port;       /* port number */
+   uint16_t port;       /* port number */
 } vm_socket_host;
 
 /* Initialize network connection and return socket handle.
@@ -85,7 +85,7 @@ typedef struct
 vm_status vm_socket_init(vm_socket *hd,              /* return socket handle */
                          vm_socket_host *local,      /* local binding */
                          vm_socket_host *remote,     /* remote binding */
-                         Ipp32s flags);              /* bit-or'ed flags */
+                         int32_t flags);              /* bit-or'ed flags */
 
 /* Wait until one of the sockets can accept connection or read/write
  * operations on the sockets can be performed without blocking.
@@ -106,28 +106,28 @@ vm_status vm_socket_init(vm_socket *hd,              /* return socket handle */
 #define VM_SOCKET_WRITE  0x2   /* test for write capability  */
 #define VM_SOCKET_ACCEPT 0x4   /* test for accept capability */
 
-Ipp32s vm_socket_select(vm_socket *handles, Ipp32s nhandle, Ipp32s masks);
-Ipp32s vm_socket_next(vm_socket *handles, Ipp32s nhandle, Ipp32s *idx, Ipp32s *chn, Ipp32s *type);
+int32_t vm_socket_select(vm_socket *handles, int32_t nhandle, int32_t masks);
+int32_t vm_socket_next(vm_socket *handles, int32_t nhandle, int32_t *idx, int32_t *chn, int32_t *type);
 
 /* Accept remote connection and return the channel number, to which subsequent
  * read and write are directed. Return -1 if failed.
  */
-Ipp32s vm_socket_accept(vm_socket *handle);
+int32_t vm_socket_accept(vm_socket *handle);
 
 /* Read data from a socket and return the number of bytes actually read.
  * In case of error or eof, return -1 or 0, and the channel is closed.
  * Use channel zero for TCP client, UDP or MCAST.
  */
-Ipp32s vm_socket_read(vm_socket *handle, Ipp32s chn, void *buffer, Ipp32s nbytes);
+int32_t vm_socket_read(vm_socket *handle, int32_t chn, void *buffer, int32_t nbytes);
 
 /* Write data to a socket and return the number of bytes actually written.
  * In case of error or eof, return -1 or 0, and the channel is closed.
  * Use channel zero for TCP client, UDP or MCAST.
  */
-Ipp32s vm_socket_write(vm_socket *handle, Ipp32s chn, void *buffer, Ipp32s nbytes);
+int32_t vm_socket_write(vm_socket *handle, int32_t chn, void *buffer, int32_t nbytes);
 
 /* clean up a socket channel */
-void vm_socket_close_chn(vm_socket *handle, Ipp32s chn);
+void vm_socket_close_chn(vm_socket *handle, int32_t chn);
 
 /* clean up all socket connections */
 void vm_socket_close(vm_socket *handle);
@@ -135,17 +135,17 @@ void vm_socket_close(vm_socket *handle);
 /* get client IP for successefully initialized socket
 * In case of error return -1.
 */
-Ipp32s vm_socket_get_client_ip(vm_socket *handle, Ipp8u* buffer, Ipp32s len);
+int32_t vm_socket_get_client_ip(vm_socket *handle, uint8_t* buffer, int32_t len);
 
 /*****************************************************************************/
 /** Old part **/
 #if defined(_WIN32) || defined (_WIN64) || defined(_WIN32_WCE)
 
-typedef Ipp32s socklen_t;
+typedef int32_t socklen_t;
 
-Ipp32s vm_sock_startup(vm_char a, vm_char b);
-Ipp32s vm_sock_cleanup(void);
-Ipp32s vm_sock_host_by_name(vm_char *name, struct in_addr *paddr);
+int32_t vm_sock_startup(vm_char a, vm_char b);
+int32_t vm_sock_cleanup(void);
+int32_t vm_sock_host_by_name(vm_char *name, struct in_addr *paddr);
 
 #define vm_sock_get_error() WSAGetLastError()
 
@@ -157,7 +157,7 @@ Ipp32s vm_sock_host_by_name(vm_char *name, struct in_addr *paddr);
 #include <unistd.h>
 #include <errno.h>
 
-typedef Ipp32s SOCKET;
+typedef int32_t SOCKET;
 enum
 {
     INVALID_SOCKET              =-1,
@@ -173,7 +173,7 @@ typedef struct sockaddr * LPSOCKADDR;
 
 #define vm_sock_get_error() errno
 
-Ipp32s vm_sock_host_by_name(vm_char *name, struct in_addr *paddr);
+int32_t vm_sock_host_by_name(vm_char *name, struct in_addr *paddr);
 
 #endif /* defined(_WIN32) || defined (_WIN64) || defined(_WIN32_WCE) */
 

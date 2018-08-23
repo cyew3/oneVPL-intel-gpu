@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -55,7 +55,7 @@ extern "C"
 typedef struct vm_cond
 {
     pthread_cond_t handle;
-    Ipp32s is_valid;
+    int32_t is_valid;
 } vm_cond;
 
 /* vm_event.h */
@@ -63,24 +63,24 @@ typedef struct vm_event
 {
     pthread_cond_t cond;
     pthread_mutex_t mutex;
-    Ipp32s manual;
-    Ipp32s state;
+    int32_t manual;
+    int32_t state;
 } vm_event;
 
 /* vm_mmap.h */
 typedef struct vm_mmap
 {
-    Ipp32s fd;
+    int32_t fd;
     void *address;
     size_t sizet;
-    Ipp32s fAccessAttr;
+    int32_t fAccessAttr;
 } vm_mmap;
 
 /* vm_mutex.h */
 typedef struct vm_mutex
 {
     pthread_mutex_t handle;
-    Ipp32s is_valid;
+    int32_t is_valid;
 } vm_mutex;
 
 /* vm_semaphore.h */
@@ -88,20 +88,20 @@ typedef struct vm_semaphore
 {
     pthread_cond_t cond;
     pthread_mutex_t mutex;
-    Ipp32s count;
-    Ipp32s max_count;
+    int32_t count;
+    int32_t max_count;
 } vm_semaphore;
 
 /* vm_thread.h */
 typedef struct vm_thread
 {
     pthread_t handle;
-    Ipp32s is_valid;
-    Ipp32u (*p_thread_func)(void *);
+    int32_t is_valid;
+    uint32_t (*p_thread_func)(void *);
     void *p_arg;
     vm_event exit_event;
     vm_mutex access_mut;
-    Ipp32s i_wait_count;
+    int32_t i_wait_count;
 } vm_thread;
 
 #if defined(_SOCKET_SUPPORT)
@@ -110,19 +110,19 @@ typedef struct vm_thread
 typedef struct vm_socket
 {
    fd_set r_set, w_set;
-   Ipp32s chns[VM_SOCKET_QUEUE+1];
+   int32_t chns[VM_SOCKET_QUEUE+1];
     struct sockaddr_in sal;
    struct sockaddr_in sar;
    struct sockaddr_in peers[VM_SOCKET_QUEUE+1];
-   Ipp32s flags;
+   int32_t flags;
 } vm_socket;
 #endif /* defined(_SOCKET_SUPPORT) */
 
 typedef struct vm_time
 {
-   Ipp64s start;
-   Ipp64s diff;
-   Ipp64s freq;
+   long long start;
+   long long diff;
+   long long freq;
 } vm_time;
 
 

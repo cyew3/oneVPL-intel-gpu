@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_COND_H__
@@ -23,7 +23,7 @@ extern "C" {
 void vm_cond_set_invalid(vm_cond *cond);
 
 /* Verify if a condvar is valid */
-Ipp32s  vm_cond_is_valid(vm_cond *cond);
+int32_t  vm_cond_is_valid(vm_cond *cond);
 
 /* Init a condvar, return VM_OK if success */
 vm_status vm_cond_init(vm_cond *cond);
@@ -32,7 +32,7 @@ vm_status vm_cond_init(vm_cond *cond);
 vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex);
 
 /* Sleeps on the specified condition variable and releases the specified critical section as an atomic operation */
-vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec);
+vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec);
 
 
 vm_status vm_cond_timed_uwait(vm_cond *cond, vm_mutex *mutex, vm_tick usec);

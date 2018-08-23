@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -29,7 +29,7 @@
  *  status : 1  - OK
  *           0 - operation failed
  */
-Ipp32u osx_sysctl_entry_32u( int ctl_class, int ctl_entry, Ipp32u *res ) {
+uint32_t osx_sysctl_entry_32u( int ctl_class, int ctl_entry, uint32_t *res ) {
   int dcb[2];
   size_t i;
    dcb[0] = ctl_class;  dcb[1] = ctl_entry;
@@ -43,17 +43,17 @@ Ipp32u osx_sysctl_entry_32u( int ctl_class, int ctl_entry, Ipp32u *res ) {
 
 #endif /* __APPLE__ */
 
-Ipp32u vm_sys_info_get_cpu_num(void)
+uint32_t vm_sys_info_get_cpu_num(void)
 {
 #if defined(__APPLE__)
-    Ipp32u cpu_num = 1;
+    uint32_t cpu_num = 1;
     return (osx_sysctl_entry_32u(CTL_HW, HW_NCPU, &cpu_num)) ? cpu_num : 1;
 #elif defined(ANDROID)
     return sysconf(_SC_NPROCESSORS_ONLN); /* on Android *_CONF will return number of _real_ processors */
 #else
     return sysconf(_SC_NPROCESSORS_CONF); /* on Linux *_CONF will return number of _logical_ processors */
 #endif
-} /* Ipp32u vm_sys_info_get_cpu_num(void) */
+} /* uint32_t vm_sys_info_get_cpu_num(void) */
 
 void vm_sys_info_get_cpu_name(vm_char *cpu_name)
 {
@@ -175,13 +175,13 @@ void vm_sys_info_get_program_path(vm_char *program_path)
 
 } /* void vm_sys_info_get_program_path(vm_char *program_path) */
 
-Ipp32u vm_sys_info_get_cpu_speed(void)
+uint32_t vm_sys_info_get_cpu_speed(void)
 {
 #ifdef __APPLE__
-    Ipp32u freq;
-    return (osx_sysctl_entry_32u(CTL_HW, HW_CPU_FREQ, &freq)) ? (Ipp32u)(freq/1000000) : 1000;
+    uint32_t freq;
+    return (osx_sysctl_entry_32u(CTL_HW, HW_CPU_FREQ, &freq)) ? (uint32_t)(freq/1000000) : 1000;
 #else
-    Ipp64f ret = 0;
+    double ret = 0;
     FILE *pFile = NULL;
     vm_char buf[PATH_MAX];
 
@@ -198,22 +198,22 @@ Ipp32u vm_sys_info_get_cpu_speed(void)
         }
     }
     fclose(pFile);
-    return ((Ipp32u) ret);
+    return ((uint32_t) ret);
 #endif
-} /* Ipp32u vm_sys_info_get_cpu_speed(void) */
+} /* uint32_t vm_sys_info_get_cpu_speed(void) */
 
-Ipp32u vm_sys_info_get_mem_size(void)
+uint32_t vm_sys_info_get_mem_size(void)
 {
 #ifndef __APPLE__
     struct sysinfo info;
     sysinfo(&info);
-    return (Ipp32u)((Ipp64f)info.totalram / (1024 * 1024) + 0.5);
+    return (uint32_t)((double)info.totalram / (1024 * 1024) + 0.5);
 #else
-    Ipp32u bts;
-    return (osx_sysctl_entry_32u(CTL_HW, HW_PHYSMEM, &bts)) ? (Ipp32u)(bts/(1024*1024+0.5)) : 1000;
+    uint32_t bts;
+    return (osx_sysctl_entry_32u(CTL_HW, HW_PHYSMEM, &bts)) ? (uint32_t)(bts/(1024*1024+0.5)) : 1000;
 #endif /* __APPLE__ */
 
-} /* Ipp32u vm_sys_info_get_mem_size(void) */
+} /* uint32_t vm_sys_info_get_mem_size(void) */
 
 #else
 # pragma warning( disable: 4206 )

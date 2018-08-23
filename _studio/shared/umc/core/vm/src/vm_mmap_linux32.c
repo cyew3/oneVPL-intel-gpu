@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(LINUX32) || defined(__APPLE__)
@@ -35,7 +35,7 @@ void vm_mmap_set_invalid(vm_mmap *handle)
 } /* void vm_mmap_set_invalid(vm_mmap *handle) */
 
 /* Verify if the mmap handle is valid */
-Ipp32s vm_mmap_is_valid(vm_mmap *handle)
+int32_t vm_mmap_is_valid(vm_mmap *handle)
 {
     /* check error(s) */
     if (NULL == handle)
@@ -43,12 +43,12 @@ Ipp32s vm_mmap_is_valid(vm_mmap *handle)
 
     return (-1 != handle->fd);
 
-} /* Ipp32s vm_mmap_is_valid(vm_mmap *handle) */
+} /* int32_t vm_mmap_is_valid(vm_mmap *handle) */
 
 /* Map a file into system meory, return size of the mapped file */
-Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr)
+unsigned long long vm_mmap_create(vm_mmap *handle, vm_char *file, int32_t fileAccessAttr)
 {
-    Ipp64u sizet;
+    unsigned long long sizet;
 
     /* check error(s) */
     if (NULL == handle)
@@ -73,13 +73,13 @@ Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr)
 
     return sizet;
 
-} /* Ipp64u vm_mmap_create(vm_mmap *handle, vm_char *file, Ipp32s fileAccessAttr) */
+} /* unsigned long long vm_mmap_create(vm_mmap *handle, vm_char *file, int32_t fileAccessAttr) */
 
 /* Obtain a view of the mapped file, return the adjusted offset & size */
-void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
+void *vm_mmap_set_view(vm_mmap *handle, unsigned long long *offset, unsigned long long *sizet)
 {
-    Ipp64u pagesize = getpagesize();
-    Ipp64u edge;
+    unsigned long long pagesize = getpagesize();
+    unsigned long long edge;
 
     /* check error(s) */
     if (NULL == handle)
@@ -89,7 +89,7 @@ void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
         munmap(handle->address,handle->sizet);
 
     edge = (*sizet) + (*offset);
-    (*offset) = ((Ipp64u)((*offset) / pagesize)) * pagesize;
+    (*offset) = ((unsigned long long)((*offset) / pagesize)) * pagesize;
     handle->sizet = (*sizet) = edge - (*offset);
     handle->address = mmap(0,
                            *sizet,
@@ -100,7 +100,7 @@ void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet)
 
     return (handle->address == (void *)-1) ? NULL : handle[0].address;
 
-} /* void *vm_mmap_set_view(vm_mmap *handle, Ipp64u *offset, Ipp64u *sizet) */
+} /* void *vm_mmap_set_view(vm_mmap *handle, unsigned long long *offset, unsigned long long *sizet) */
 
 /* Remove the mmap */
 void vm_mmap_close(vm_mmap *handle)
@@ -122,17 +122,17 @@ void vm_mmap_close(vm_mmap *handle)
     }
 } /* void vm_mmap_close(vm_mmap *handle) */
 
-Ipp32u vm_mmap_get_page_size(void)
+uint32_t vm_mmap_get_page_size(void)
 {
     return getpagesize();
 
-} /* Ipp32u vm_mmap_get_page_size(void) */
+} /* uint32_t vm_mmap_get_page_size(void) */
 
-Ipp32u vm_mmap_get_alloc_granularity(void)
+uint32_t vm_mmap_get_alloc_granularity(void)
 {
     return 16 * getpagesize();
 
-} /* Ipp32u vm_mmap_get_alloc_granularity(void) */
+} /* uint32_t vm_mmap_get_alloc_granularity(void) */
 
 void vm_mmap_unmap(vm_mmap *handle)
 {

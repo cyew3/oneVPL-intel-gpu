@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "vm_time.h"
@@ -17,18 +17,18 @@
 }
 
 #define VM_TIMEDEST \
-  destination[0].tv_sec = (Ipp32u)(cv0 / 1000000); \
+  destination[0].tv_sec = (uint32_t)(cv0 / 1000000); \
   destination[0].tv_usec = (long)(cv0 % 1000000)
 
-static Ipp64u vvalue( struct vm_timeval* B )
+static unsigned long long vvalue( struct vm_timeval* B )
 {
-  Ipp64u rtv;
+  unsigned long long rtv;
   rtv = B[0].tv_sec;
   return ((rtv * 1000000) + B[0].tv_usec);
 }
 
 #if defined (__ICL)
-/* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
+/* non-pointer conversion from "unsigned __int64" to "int32_t={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
 #endif
 
@@ -36,14 +36,14 @@ static Ipp64u vvalue( struct vm_timeval* B )
  * may be placed before compilation fence. */
 void vm_time_timeradd(struct vm_timeval* destination,  struct vm_timeval* src1, struct vm_timeval* src2)
 {
-  Ipp64u cv0;
+  unsigned long long cv0;
   VM_TIMEOP(cv0, src1, src2, + );
   VM_TIMEDEST;
 }
 
 void vm_time_timersub(struct vm_timeval* destination,  struct vm_timeval* src1, struct vm_timeval* src2)
 {
-  Ipp64u cv0;
+  unsigned long long cv0;
   VM_TIMEOP(cv0, src1, src2, - );
   VM_TIMEDEST;
 }
@@ -51,12 +51,12 @@ void vm_time_timersub(struct vm_timeval* destination,  struct vm_timeval* src1, 
 int vm_time_timercmp(struct vm_timeval* src1, struct vm_timeval* src2, struct vm_timeval *threshold)
 {
   if (threshold == NULL)
-    return ( ((Ipp64u *)src1)[0] == ((Ipp64u *)src2)[0] ) ? 1 : 0;
+    return ( ((unsigned long long *)src1)[0] == ((unsigned long long *)src2)[0] ) ? 1 : 0;
   else
   {
-    Ipp64u val1 = vvalue(src1);
-    Ipp64u val2 = vvalue(src2);
-    Ipp64u vald = (val1 > val2) ? (val1 - val2) : (val2 - val1);
+    unsigned long long val1 = vvalue(src1);
+    unsigned long long val2 = vvalue(src2);
+    unsigned long long vald = (val1 > val2) ? (val1 - val2) : (val2 - val1);
     return ( vald < vvalue(threshold) ) ? 1 : 0;
   }
 }
@@ -70,7 +70,7 @@ int vm_time_timercmp(struct vm_timeval* src1, struct vm_timeval* src2, struct vm
 #pragma comment(lib, "winmm.lib")
 
 /* yield the execution of current thread for msec milliseconds */
-void vm_time_sleep(Ipp32u msec)
+void vm_time_sleep(uint32_t msec)
 {
 #ifndef _WIN32_WCE
   if (msec) {
@@ -82,17 +82,17 @@ void vm_time_sleep(Ipp32u msec)
   Sleep(msec);  /* always Sleep for WinCE */
 #endif
 
-} /* void vm_time_sleep(Ipp32u msec)  */
+} /* void vm_time_sleep(uint32_t msec)  */
 
-Ipp32u vm_time_get_current_time(void)
+uint32_t vm_time_get_current_time(void)
 {
 #if defined(WIN_TRESHOLD_MOBILE)
     // uses GetTickCount on THM less accurate but no dependecy to winmm.dll
-    return (Ipp32u) GetTickCount();
+    return (uint32_t) GetTickCount();
 #else
-    return (Ipp32u)timeGetTime();
+    return (uint32_t)timeGetTime();
 #endif
-} /* Ipp32u vm_time_get_current_time(void) */
+} /* uint32_t vm_time_get_current_time(void) */
 
 /* obtain the clock tick of an uninterrupted master clock */
 vm_tick vm_time_get_tick(void)
@@ -161,9 +161,9 @@ vm_status vm_time_start(vm_time_handle handle, vm_time *m)
 } /* vm_status vm_time_start(vm_time_handle handle, vm_time *m) */
 
 /* Stop the process of time measure and obtain the sampling time in seconds */
-Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m)
+double vm_time_stop(vm_time_handle handle, vm_time *m)
 {
-   Ipp64f speed_sec;
+   double speed_sec;
    vm_tick end;
 
    /*  touch unreferenced parameters.
@@ -174,16 +174,16 @@ Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m)
    m->diff += end - m->start;
 
    if(m->freq == 0) m->freq = vm_time_get_frequency();
-   speed_sec = (Ipp64f)m->diff / (Ipp64f)m->freq;
+   speed_sec = (double)m->diff / (double)m->freq;
    return speed_sec;
 
-} /* Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m) */
+} /* double vm_time_stop(vm_time_handle handle, vm_time *m) */
 
-static Ipp64u offset_from_1601_to_1970 = 0;
+static unsigned long long offset_from_1601_to_1970 = 0;
 vm_status vm_time_gettimeofday( struct vm_timeval *TP, struct vm_timezone *TZP ) {
   /* FILETIME data structure is a 64-bit value representing the number
                of 100-nanosecond intervals since January 1, 1601 */
-  Ipp64u tmb;
+  unsigned long long tmb;
   SYSTEMTIME bp;
   if ( offset_from_1601_to_1970 == 0 ) {
     /* prepare 1970 "epoch" offset */
@@ -200,7 +200,7 @@ vm_status vm_time_gettimeofday( struct vm_timeval *TP, struct vm_timezone *TZP )
   SystemTimeToFileTime(&bp, (FILETIME *)&tmb);
 #endif
   tmb -= offset_from_1601_to_1970; /* 100 nsec ticks since 1 jan 1970 */
-  TP[0].tv_sec = (Ipp32u)(tmb / 10000000); /* */
+  TP[0].tv_sec = (uint32_t)(tmb / 10000000); /* */
   TP[0].tv_usec = (long)((tmb % 10000000) / 10); /* microseconds OK? */
   return  (TZP != NULL) ? VM_NOT_INITIALIZED : VM_OK;
 }

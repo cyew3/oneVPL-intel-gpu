@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifdef LINUX32
@@ -18,7 +18,7 @@
 #include "vm_socket.h"
 
 static
-Ipp32s fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host)
+int32_t fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host)
 {
     struct hostent *ent;
 
@@ -45,15 +45,15 @@ Ipp32s fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host)
     iaddr->sin_addr.s_addr = *((in_addr_t *)ent->h_addr_list[0]);
     return 0;
 
-} /* Ipp32s fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host) */
+} /* int32_t fill_sockaddr(struct sockaddr_in *iaddr, vm_socket_host *host) */
 
 vm_status vm_socket_init(vm_socket *hd,
                          vm_socket_host *local,
                          vm_socket_host *remote,
-                         Ipp32s flags)
+                         int32_t flags)
 {
     struct sockaddr_in sal;
-    Ipp32s i;
+    int32_t i;
 
     /* clean everything */
     memset(&hd->chns, -1, sizeof(hd->chns));
@@ -120,16 +120,16 @@ vm_status vm_socket_init(vm_socket *hd,
 
 } /* vm_status vm_socket_init(vm_socket *hd, */
 
-Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks)
+int32_t vm_socket_select(vm_socket *hds, int32_t nhd, int32_t masks)
 {
-    Ipp32s i, j, maxsd = -1;
+    int32_t i, j, maxsd = -1;
 
     FD_ZERO(&hds->r_set);
     FD_ZERO(&hds->w_set);
 
     for (i = 0; i < nhd; i++)
     {
-        Ipp32s flags = hds[i].flags;
+        int32_t flags = hds[i].flags;
         if (hds[i].chns[0] < 0)
             continue;
 
@@ -176,17 +176,17 @@ Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks)
 
     return (i<0) ? -1 : i;
 
-} /* Ipp32s vm_socket_select(vm_socket *hds, Ipp32s nhd, Ipp32s masks) */
+} /* int32_t vm_socket_select(vm_socket *hds, int32_t nhd, int32_t masks) */
 
-Ipp32s vm_socket_next(vm_socket *hds, Ipp32s nhd, Ipp32s *idx, Ipp32s *chn, Ipp32s *type)
+int32_t vm_socket_next(vm_socket *hds, int32_t nhd, int32_t *idx, int32_t *chn, int32_t *type)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for (i = 0;i<nhd;i++)
     {
         for (j = 0; j <= VM_SOCKET_QUEUE; j++)
         {
-            Ipp32s flags = hds[i].flags;
+            int32_t flags = hds[i].flags;
             if (hds[i].chns[j] < 0)
                 continue;
 
@@ -225,11 +225,11 @@ Ipp32s vm_socket_next(vm_socket *hds, Ipp32s nhd, Ipp32s *idx, Ipp32s *chn, Ipp3
     }
     return 0;
 
-} /* Ipp32s vm_socket_next(vm_socket *hds, Ipp32s nhd, Ipp32s *idx, Ipp32s *chn, Ipp32s *type) */
+} /* int32_t vm_socket_next(vm_socket *hds, int32_t nhd, int32_t *idx, int32_t *chn, int32_t *type) */
 
-Ipp32s vm_socket_accept(vm_socket *hd)
+int32_t vm_socket_accept(vm_socket *hd)
 {
-    Ipp32s psize, chn;
+    int32_t psize, chn;
 
     if (hd->chns[0] < 0)
         return -1;
@@ -255,12 +255,12 @@ Ipp32s vm_socket_accept(vm_socket *hd)
     }
     return chn;
 
-} /* Ipp32s vm_socket_accept(vm_socket *hd) */
+} /* int32_t vm_socket_accept(vm_socket *hd) */
 
 
-Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
+int32_t vm_socket_read(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes)
 {
-    Ipp32s retr;
+    int32_t retr;
 
     if (chn < 0 || chn > VM_SOCKET_QUEUE)
         return -1;
@@ -269,7 +269,7 @@ Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
 
     if (hd->flags & VM_SOCKET_UDP)
     {
-        Ipp32s ssize = sizeof(hd->sar);
+        int32_t ssize = sizeof(hd->sar);
         retr = recvfrom(hd->chns[chn],
                         buffer,
                         nbytes,
@@ -285,11 +285,11 @@ Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
 
     return retr;
 
-} /* Ipp32s vm_socket_read(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes) */
+} /* int32_t vm_socket_read(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes) */
 
-Ipp32s vm_socket_write(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
+int32_t vm_socket_write(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes)
 {
-   Ipp32s retw;
+   int32_t retw;
 
    if (chn<0 || chn>VM_SOCKET_QUEUE)
        return -1;
@@ -309,20 +309,20 @@ Ipp32s vm_socket_write(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes)
 
    return retw;
 
-} /* Ipp32s vm_socket_write(vm_socket *hd, Ipp32s chn, void *buffer, Ipp32s nbytes) */
+} /* int32_t vm_socket_write(vm_socket *hd, int32_t chn, void *buffer, int32_t nbytes) */
 
-void vm_socket_close_chn(vm_socket *hd, Ipp32s chn)
+void vm_socket_close_chn(vm_socket *hd, int32_t chn)
 {
    if (hd->chns[chn] >= 0)
        close(hd->chns[chn]);
 
    hd->chns[chn] = -1;
 
-} /* void vm_socket_close_chn(vm_socket *hd, Ipp32s chn) */
+} /* void vm_socket_close_chn(vm_socket *hd, int32_t chn) */
 
 void vm_socket_close(vm_socket *hd)
 {
-   Ipp32s i;
+   int32_t i;
 
    for (i = VM_SOCKET_QUEUE; i >= 0; i--)
        vm_socket_close_chn(hd, i);
@@ -330,7 +330,7 @@ void vm_socket_close(vm_socket *hd)
 } /* void vm_socket_close(vm_socket *hd) */
 
 /* Old part */
-Ipp32s vm_sock_host_by_name(vm_char *name, struct in_addr *paddr)
+int32_t vm_sock_host_by_name(vm_char *name, struct in_addr *paddr)
 {
     struct hostent *hostinfo;
 
@@ -342,11 +342,11 @@ Ipp32s vm_sock_host_by_name(vm_char *name, struct in_addr *paddr)
 
      return 0;
 
-} /* Ipp32s vm_sock_host_by_name(vm_char *name, struct in_addr *paddr) */
+} /* int32_t vm_sock_host_by_name(vm_char *name, struct in_addr *paddr) */
 
-Ipp32s vm_socket_get_client_ip(vm_socket *hd, Ipp8u* buffer, Ipp32s len)
+int32_t vm_socket_get_client_ip(vm_socket *hd, uint8_t* buffer, int32_t len)
 {
-    Ipp32s iplen;
+    int32_t iplen;
     if (hd == NULL)
         return -1;
     if (hd->chns[0] == INVALID_SOCKET)

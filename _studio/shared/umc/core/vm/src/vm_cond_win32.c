@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2015 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2015-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -30,7 +30,7 @@ void vm_cond_set_invalid(vm_cond *cond)
 } /* void vm_cond_set_invalid(vm_cond *cond) */
 
 /* Verify if a condvar is valid */
-Ipp32s vm_cond_is_valid(vm_cond *cond)
+int32_t vm_cond_is_valid(vm_cond *cond)
 {
     /* check error(s) */
     if (NULL == cond)
@@ -40,7 +40,7 @@ Ipp32s vm_cond_is_valid(vm_cond *cond)
 
     return (cond->handle) ? (1) : (0);
 
-} /* Ipp32s vm_cond_is_valid(vm_cond *cond) */
+} /* int32_t vm_cond_is_valid(vm_cond *cond) */
 
 /* Init a condvar, return 1 if successful */
 vm_status vm_cond_init(vm_cond *cond)
@@ -94,11 +94,11 @@ vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex)
 
     return VM_OK;
 
-} /* vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 
 /* Sleeps on the specified condition variable and releases the specified critical section as an atomic operation */
-vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
+vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec)
 {
     /* check error(s) */
     if (!cond || !mutex)
@@ -115,7 +115,7 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
 
     return VM_OK;
 
-} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 /* Wake a single thread waiting on the specified condition variable */
 vm_status vm_cond_signal(vm_cond *cond)
@@ -190,7 +190,7 @@ void vm_cond_set_invalid(vm_cond *cond)
 } /* void vm_cond_set_invalid(vm_cond *cond) */
 
 /* Verify if a condvar is valid */
-Ipp32s vm_cond_is_valid(vm_cond *cond)
+int32_t vm_cond_is_valid(vm_cond *cond)
 {
     /* check error(s) */
     if (NULL == cond)
@@ -200,7 +200,7 @@ Ipp32s vm_cond_is_valid(vm_cond *cond)
 
     return (cond->handle) ? (1) : (0);
 
-} /* Ipp32s vm_cond_is_valid(vm_cond *cond) */
+} /* int32_t vm_cond_is_valid(vm_cond *cond) */
 
 /* Init a condvar, return 1 if successful */
 vm_status vm_cond_init(vm_cond *cond)
@@ -235,11 +235,11 @@ vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex)
     // NOT IMPLEMENTED YET ///
     return VM_OPERATION_FAILED;
 
-} /* vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_wait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 
 /* Sleeps on the specified condition variable and releases the specified critical section as an atomic operation */
-vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
+vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec)
 {
     /* check error(s) */
     if (!cond || !mutex)
@@ -255,7 +255,7 @@ vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec)
     // NOT IMPLEMENTED YET ///
     return VM_OPERATION_FAILED;
 
-} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, Ipp32u msec) */
+} /* vm_status vm_cond_timedwait(vm_cond *cond, vm_mutex *mutex, uint32_t msec) */
 
 /* Wake a single thread waiting on the specified condition variable */
 vm_status vm_cond_signal(vm_cond *cond)

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_TIME_H__
@@ -18,16 +18,16 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-typedef Ipp64s vm_tick;
-typedef Ipp32s vm_time_handle;
+typedef long long vm_tick;
+typedef int32_t vm_time_handle;
 
 /* Yield the execution of current thread for msec miliseconds */
-void vm_time_sleep(Ipp32u msec);
+void vm_time_sleep(uint32_t msec);
 
 /* Obtain the time since the machine started in milliseconds on Windows
  * and time elapsed since the Epoch on Linux
  */
-Ipp32u vm_time_get_current_time(void);
+uint32_t vm_time_get_current_time(void);
 
 /* Obtain the clock tick of an uninterrupted master clock */
 vm_tick vm_time_get_tick(void);
@@ -45,7 +45,7 @@ vm_status vm_time_init(vm_time *m);
 vm_status vm_time_start(vm_time_handle handle, vm_time *m);
 
 /* Stop the process of time measure and obtain the sampling time in seconds */
-Ipp64f vm_time_stop(vm_time_handle handle, vm_time *m);
+double vm_time_stop(vm_time_handle handle, vm_time *m);
 
 /* Close the object of time measure */
 vm_status vm_time_close(vm_time_handle *handle);

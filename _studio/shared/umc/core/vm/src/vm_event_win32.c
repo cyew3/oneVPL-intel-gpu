@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #if defined(_WIN32) || defined(_WIN64) || defined(_WIN32_WCE)
@@ -25,18 +25,18 @@ void vm_event_set_invalid(vm_event *event)
 } /* void vm_event_set_invalid(vm_event *event) */
 
 /* Verify if the event handle is valid */
-Ipp32s vm_event_is_valid(vm_event *event)
+int32_t vm_event_is_valid(vm_event *event)
 {
     /* check error(s) */
     if (NULL == event)
         return 0;
 
-    return (Ipp32s)(NULL != event->handle);
+    return (int32_t)(NULL != event->handle);
 
-} /* Ipp32s vm_event_is_valid(vm_event *event) */
+} /* int32_t vm_event_is_valid(vm_event *event) */
 
 /* Init an event. Event is created unset. return 1 if success */
-vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state)
+vm_status vm_event_init(vm_event *event, int32_t manual, int32_t state)
 {
     /* check error(s) */
     if (NULL == event)
@@ -50,10 +50,10 @@ vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state)
     else
         return VM_OK;
 
-} /* vm_status vm_event_init(vm_event *event, Ipp32s manual, Ipp32s state) */
+} /* vm_status vm_event_init(vm_event *event, int32_t manual, int32_t state) */
 
 vm_status vm_event_named_init(vm_event *event,
-                              Ipp32s manual, Ipp32s state, const char *pcName)
+                              int32_t manual, int32_t state, const char *pcName)
 {
     /* check error(s) */
     if (NULL == event)
@@ -137,7 +137,7 @@ vm_status vm_event_wait(vm_event *event)
 } /* vm_status vm_event_wait(vm_event *event) */
 
 /* Wait for event to be high without blocking, return 1 if signaled */
-vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
+vm_status vm_event_timed_wait(vm_event *event, uint32_t msec)
 {
     vm_status umcRes = VM_NOT_INITIALIZED;
 
@@ -147,7 +147,7 @@ vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
 
     if (NULL != event->handle)
     {
-        Ipp32u dwRes = WaitForSingleObject(event->handle, msec);
+        uint32_t dwRes = WaitForSingleObject(event->handle, msec);
 
         if (WAIT_OBJECT_0 == dwRes)
             umcRes = VM_OK;
@@ -158,7 +158,7 @@ vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec)
     }
     return umcRes;
 
-} /* vm_status vm_event_timed_wait(vm_event *event, Ipp32u msec) */
+} /* vm_status vm_event_timed_wait(vm_event *event, uint32_t msec) */
 
 /* Destroy the event */
 void vm_event_destroy(vm_event *event)

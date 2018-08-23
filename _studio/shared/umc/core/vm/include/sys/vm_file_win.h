@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -34,9 +34,9 @@
 typedef struct {
   HANDLE fd;
   vm_char *tbuf;    /* temporary buffer for character io operations */
-  Ipp64u fsize;
-  Ipp32u fattributes;
-  Ipp8u   ftemp; /* temporary flag sign - added to support temporary files VM_TEMPORARY_PREFIX - temporary file */
+  unsigned long long fsize;
+  uint32_t fattributes;
+  uint8_t   ftemp; /* temporary flag sign - added to support temporary files VM_TEMPORARY_PREFIX - temporary file */
   } vm_file;
 
 typedef struct {

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 /*
@@ -22,7 +22,7 @@
 # endif
 #endif
 #if defined (__ICL)
-/* non-pointer conversion from "unsigned __int64" to "Ipp32s={signed int}" may lose significant bits */
+/* non-pointer conversion from "unsigned __int64" to "int32_t={signed int}" may lose significant bits */
 #pragma warning(disable:2259)
 #endif
 /*
@@ -31,9 +31,9 @@
  * return only path of file name */
 void vm_file_getpath(vm_char *filename, vm_char *path, int nchars) {
   /* go to end of line and then move up until first SLASH will be found */
-  Ipp32s len;
+  int32_t len;
   path[0] = '\0';
-  len = (Ipp32s) vm_string_strlen(filename);
+  len = (int32_t) vm_string_strlen(filename);
   while(len && (filename[len--] != SLASH));
   if (len) {
       memcpy_s((void *)path, nchars, (const void *)filename, (len <= nchars) ? len+1 : nchars);
@@ -45,7 +45,7 @@ void vm_file_getpath(vm_char *filename, vm_char *path, int nchars) {
  * return base file name free of path and all suffixes
  */
 void vm_file_getbasename(vm_char *filename, vm_char *base, int nchars) {
-  Ipp32s chrs = 0;
+  int32_t chrs = 0;
   vm_char *p, *q0, *q1, *s;
   base[0] = '\0';
   q0 = q1 = NULL;
@@ -62,7 +62,7 @@ void vm_file_getbasename(vm_char *filename, vm_char *base, int nchars) {
     p = &filename[vm_string_strlen(filename)];
   if ( q1 == NULL )
     q1 = filename;
-  chrs = (Ipp32s) (p - q1);
+  chrs = (int32_t) (p - q1);
   if (chrs) {
     if (q1[0] == SLASH) {
       ++q1;
@@ -81,8 +81,8 @@ void vm_file_getbasename(vm_char *filename, vm_char *base, int nchars) {
 void vm_file_getsuffix(vm_char *filename, vm_char *suffix, int nchars) {
   /* go to end of line and then go up until we will meet the suffix sign . or
    * to begining of line if no suffix found */
-  Ipp32s len, i = 0;
-  len = (Ipp32s) vm_string_strlen(filename);
+  int32_t len, i = 0;
+  len = (int32_t) vm_string_strlen(filename);
   suffix[0] = '\0';
   while(len && (filename[len--] != '.'));
   if (len) {
@@ -97,9 +97,9 @@ void vm_file_getsuffix(vm_char *filename, vm_char *suffix, int nchars) {
   }
 
 #define ADDPARM(A)                    \
-  if ((Ipp32u)nchars > vm_string_strlen(A)) {   \
+  if ((uint32_t)nchars > vm_string_strlen(A)) {   \
     vm_string_strcat_s(filename, nchars, A);              \
-    offs = (Ipp32u) vm_string_strlen(filename);          \
+    offs = (uint32_t) vm_string_strlen(filename);          \
     nchars -= offs;                   \
     if (nchars)                       \
       filename[offs] = SLASH;         \
@@ -111,9 +111,9 @@ void vm_file_getsuffix(vm_char *filename, vm_char *suffix, int nchars) {
  * prepare complex file name according with OS rules:
  *    / delimiter for unix and \ delimiter for Windows */
 void vm_file_makefilename(vm_char *path, vm_char *base, vm_char *suffix, vm_char *filename, int nchars) {
-  Ipp32u offs = 0;
+  uint32_t offs = 0;
   filename[0] = '\0';
-  if ((path != NULL) && (vm_string_strlen(path) < (Ipp32u)nchars))
+  if ((path != NULL) && (vm_string_strlen(path) < (uint32_t)nchars))
     ADDPARM(path)
   if (nchars && (base != NULL))
     ADDPARM(base)

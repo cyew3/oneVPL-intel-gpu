@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_SEMAPHORE_H__
@@ -22,14 +22,14 @@ extern "C"
 void vm_semaphore_set_invalid(vm_semaphore *sem);
 
 /* Verify if a semaphore is valid */
-Ipp32s vm_semaphore_is_valid(vm_semaphore *sem);
+int32_t vm_semaphore_is_valid(vm_semaphore *sem);
 
 /* Init a semaphore with value, return VM_OK if successful */
-vm_status vm_semaphore_init(vm_semaphore *sem, Ipp32s init_count);
-vm_status vm_semaphore_init_max(vm_semaphore *sem, Ipp32s init_count, Ipp32s max_count);
+vm_status vm_semaphore_init(vm_semaphore *sem, int32_t init_count);
+vm_status vm_semaphore_init_max(vm_semaphore *sem, int32_t init_count, int32_t max_count);
 
 /* Decrease the semaphore value with blocking. */
-vm_status vm_semaphore_timedwait(vm_semaphore *sem, Ipp32u msec);
+vm_status vm_semaphore_timedwait(vm_semaphore *sem, uint32_t msec);
 
 /* Decrease the semaphore value with blocking. */
 vm_status vm_semaphore_wait(vm_semaphore *sem);
@@ -41,7 +41,7 @@ vm_status vm_semaphore_try_wait(vm_semaphore *sem);
 vm_status vm_semaphore_post(vm_semaphore *sem);
 
 /* Increase the semaphore value */
-vm_status vm_semaphore_post_many(vm_semaphore *sem, Ipp32s post_count);
+vm_status vm_semaphore_post_many(vm_semaphore *sem, int32_t post_count);
 
 /* Destroy a semaphore */
 void vm_semaphore_destroy(vm_semaphore *sem);

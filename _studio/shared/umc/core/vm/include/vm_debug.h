@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __VM_DEBUG_H__
@@ -75,7 +75,7 @@ typedef enum vm_debug_output {  /* debug output */
 
 vm_debug_level vm_debug_setlevel(vm_debug_level level);
 vm_debug_output vm_debug_setoutput(vm_debug_output output);
-void vm_debug_setfile(vm_char *file, Ipp32s truncate);
+void vm_debug_setfile(vm_char *file, int32_t truncate);
 
 void vm_debug_message(const vm_char *format, ...);
 
@@ -100,11 +100,11 @@ void vm_debug_message(const vm_char *format, ...);
 #define PTR_THIS this */
 #define PTR_THIS NULL
 
-void vm_debug_trace_ex(Ipp32s level,
+void vm_debug_trace_ex(int32_t level,
                        const void *ptr_this,
                        const vm_char *func_name,
                        const vm_char *file_name,
-                       Ipp32s num_line,
+                       int32_t num_line,
                        const vm_char *format,
                        ...);
 
@@ -202,7 +202,7 @@ if (PTR) \
         _PRINTABLE(((char*)&(x))[2]),  \
         _PRINTABLE(((char*)&(x))[3]))
 
-Ipp32s vm_trace_hresult_func(Ipp32s hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, Ipp32u line);
+int32_t vm_trace_hresult_func(int32_t hr, vm_char *mess, void *pthis, vm_char *func, vm_char *file, uint32_t line);
 
 /* ///////////////////// */
 
