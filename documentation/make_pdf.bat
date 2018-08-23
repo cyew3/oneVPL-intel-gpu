@@ -47,6 +47,11 @@ set _Name=mediasdkhevcfei-man
 set _Title=SDK Developer Reference for HEVC FEI
 call :CONVERT
 
+set _PDF_BODY_OPT=--zoom 1.5
+set _Name=MFE-Overview
+set _Title=SDK Developer Reference for Multi-Frame Encode
+call :CONVERT
+
 set _PDF_BODY_OPT=
 set _Name=internal-dev
 set _Title=Media SDK Internal Development Document
