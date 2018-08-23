@@ -57,7 +57,7 @@ namespace UMC
         return UMC_OK;
     }
 
-    EventCache::EVENT_TYPE EventCache::GetFreeEventAndMap(Ipp32s index, Ipp32u fieldId)
+    EventCache::EVENT_TYPE EventCache::GetFreeEventAndMap(int32_t index, uint32_t fieldId)
     {
         UMC::AutomaticMutex guard(m_eventCacheGuard);
         EVENT_TYPE event = INVALID_HANDLE_VALUE;
@@ -100,7 +100,7 @@ namespace UMC
     }
 
 
-    EventCache::MapValue EventCache::GetEvents(Ipp32s index)
+    EventCache::MapValue EventCache::GetEvents(int32_t index)
     {
         UMC::AutomaticMutex guard(m_eventCacheGuard);
         auto iFoundE = eventCache.find(index);
@@ -118,7 +118,7 @@ namespace UMC
     return Event to cache and mark it as free
     MFX_ERR_NONE if successes
     */
-    Status EventCache::FreeEvents(Ipp32s index)
+    Status EventCache::FreeEvents(int32_t index)
     {
         UMC::AutomaticMutex guard(m_eventCacheGuard);
         auto iFoundE = eventCache.find(index);

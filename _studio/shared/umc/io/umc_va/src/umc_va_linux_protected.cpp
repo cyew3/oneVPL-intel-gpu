@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2016-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_va_base.h"
@@ -77,12 +77,12 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
     return UMC_OK;
 }
 
-Ipp32s ProtectedVA::GetEncryptionMode() const
+int32_t ProtectedVA::GetEncryptionMode() const
 {
     return m_encryptionType;
 }
 
-Ipp32s ProtectedVA::GetCounterMode() const
+int32_t ProtectedVA::GetCounterMode() const
 {
     return m_counterMode;
 }

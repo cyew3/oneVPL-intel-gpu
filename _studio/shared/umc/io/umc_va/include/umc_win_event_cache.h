@@ -26,7 +26,7 @@ namespace UMC
     public:
         static const size_t MaxEventsPerIndex = 2; // aka fields count
         typedef HANDLE EVENT_TYPE;
-        typedef Ipp32s MapKey; // index
+        typedef int32_t MapKey; // index
         typedef std::array<EVENT_TYPE, MaxEventsPerIndex> MapValue; // index
         /*
         UMC_OK if successes
@@ -44,7 +44,7 @@ namespace UMC
         associate index and fieldId with the Event
         returns INVALID_HANDLE_VALUE if such pair already exist (only in DEBUG build)
         */
-        EVENT_TYPE GetFreeEventAndMap(Ipp32s index, Ipp32u fieldId);
+        EVENT_TYPE GetFreeEventAndMap(int32_t index, uint32_t fieldId);
 
         /*
         Get events by index from map
@@ -53,13 +53,13 @@ namespace UMC
         both events is INVALID_HANDLE_VALUE
         if no associated events found
         */
-        EventCache::MapValue EventCache::GetEvents(Ipp32s index);
+        EventCache::MapValue EventCache::GetEvents(int32_t index);
         
         /*
         return Events to cache and mark it as free
         MFX_ERR_NONE if successes
         */
-        Status FreeEvents(Ipp32s index);
+        Status FreeEvents(int32_t index);
 
         virtual ~EventCache()
         {

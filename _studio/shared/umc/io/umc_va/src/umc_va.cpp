@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_va_base.h"
@@ -26,7 +26,7 @@ UMCVAFrameBuffer* VideoAcceleratorExt::GetFrameBuffer(int index) // to get point
         return NULL;
 }
 
-void* VideoAcceleratorExt::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index)
+void* VideoAcceleratorExt::GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index)
 {
     /*try to find cached buffer*/
     list<VACompBuffer>::iterator i= find( m_CachedCompBuffers.begin(), m_CachedCompBuffers.end(), VACompBuffer(buffer_type, -1, index));

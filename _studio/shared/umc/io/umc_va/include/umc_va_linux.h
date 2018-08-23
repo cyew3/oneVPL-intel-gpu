@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VA_LINUX_H__
@@ -34,21 +34,21 @@ public:
     virtual ~VACompBuffer(void);
 
     // UMCVACompBuffer methods
-    virtual void SetNumOfItem(Ipp32s num) { m_NumOfItem = num; };
+    virtual void SetNumOfItem(int32_t num) { m_NumOfItem = num; };
 
     // VACompBuffer methods
-    virtual Status SetBufferInfo   (Ipp32s _type, Ipp32s _id, Ipp32s _index = -1);
+    virtual Status SetBufferInfo   (int32_t _type, int32_t _id, int32_t _index = -1);
     virtual Status SetDestroyStatus(bool _destroy);
 
-    virtual Ipp32s GetIndex(void)    { return m_index; }
-    virtual Ipp32s GetID(void)       { return m_id; }
-    virtual Ipp32s GetNumOfItem(void){ return m_NumOfItem; }
+    virtual int32_t GetIndex(void)    { return m_index; }
+    virtual int32_t GetID(void)       { return m_id; }
+    virtual int32_t GetNumOfItem(void){ return m_NumOfItem; }
     virtual bool   NeedDestroy(void) { return m_bDestroy; }
 
 protected:
-    Ipp32s m_NumOfItem; //number of items in buffer
-    Ipp32s m_index;
-    Ipp32s m_id;
+    int32_t m_NumOfItem; //number of items in buffer
+    int32_t m_index;
+    int32_t m_id;
     bool   m_bDestroy;
 };
 
@@ -99,21 +99,21 @@ public:
     // VideoAccelerator methods
     virtual Status Init         (VideoAcceleratorParams* pInfo);
     virtual Status Close        (void);
-    virtual Status BeginFrame   (Ipp32s FrameBufIndex);
+    virtual Status BeginFrame   (int32_t FrameBufIndex);
     // gets buffer from cache if it exists or HW otherwise, buffers will be released in EndFrame
-    virtual void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index);
+    virtual void* GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index);
     virtual Status Execute      (void);
     virtual Status EndFrame     (void*);
-    virtual Ipp32s GetSurfaceID (Ipp32s idx);
+    virtual int32_t GetSurfaceID (int32_t idx);
 
     // NOT implemented functions:
-    virtual Status ReleaseBuffer(Ipp32s /*type*/)
+    virtual Status ReleaseBuffer(int32_t /*type*/)
     { return UMC_OK; };
 
     virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
-    virtual Status ExecuteStatusReportBuffer(void* /*x*/, Ipp32s /*y*/)  { return UMC_ERR_UNSUPPORTED;}
-    virtual Status SyncTask(Ipp32s index, void * error = NULL);
-    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error);
+    virtual Status ExecuteStatusReportBuffer(void* /*x*/, int32_t /*y*/)  { return UMC_ERR_UNSUPPORTED;}
+    virtual Status SyncTask(int32_t index, void * error = NULL);
+    virtual Status QueryTaskStatus(int32_t index, void * status, void * error);
     virtual bool IsIntelCustomGUID() const { return false;}
     virtual GUID GetDecoderGuid(){return m_guidDecoder;};
     virtual void GetVideoDecoder(void** /*handle*/) {};
@@ -121,12 +121,12 @@ public:
 protected:
     // VideoAcceleratorExt methods
     virtual Status AllocCompBuffers(void);
-    virtual VACompBuffer* GetCompBufferHW(Ipp32s type, Ipp32s size, Ipp32s index = -1);
+    virtual VACompBuffer* GetCompBufferHW(int32_t type, int32_t size, int32_t index = -1);
 
     // LinuxVideoAccelerator methods
-    Ipp16u GetDecodingError();
+    uint16_t GetDecodingError();
 
-    void SetTraceStrings(Ipp32u umc_codec);
+    void SetTraceStrings(uint32_t umc_codec);
 
 protected:
     VADisplay     m_dpy;
@@ -135,9 +135,9 @@ protected:
     bool*         m_pKeepVAState;
     lvaFrameState m_FrameState;
 
-    Ipp32s   m_NumOfFrameBuffers;
-    Ipp32u   m_uiCompBuffersNum;
-    Ipp32u   m_uiCompBuffersUsed;
+    int32_t   m_NumOfFrameBuffers;
+    uint32_t   m_uiCompBuffersNum;
+    uint32_t   m_uiCompBuffersUsed;
     vm_mutex m_SyncMutex;
     VACompBuffer** m_pCompBuffers;
 

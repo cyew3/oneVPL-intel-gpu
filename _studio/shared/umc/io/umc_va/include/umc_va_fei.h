@@ -38,26 +38,26 @@ namespace UMC
         bool RemapRefs() const
         { return m_remap_refs; }
 
-        void BindToField(Ipp32s field)
+        void BindToField(int32_t field)
         { m_field = field; }
-        Ipp32s GetField() const
+        int32_t GetField() const
         { return m_field; }
 
         void FillPicReferences(VAPictureParameterBufferH264 const*);
         void FillSliceReferences(VASliceParameterBufferH264 const*);
 
-        void RemapReferences(void*, Ipp32s);
+        void RemapReferences(void*, int32_t);
 
     private:
 
         bool           m_remap_refs;
-        Ipp32s         m_field;
+        int32_t         m_field;
 
-        Ipp16u         m_allowed_max_mbs_in_slice;
+        uint16_t         m_allowed_max_mbs_in_slice;
         VAPictureH264  m_references[16];
 
         //map [Slice::first_mb_in_slice] onto its Ref. lists
-        typedef std::list<std::pair<Ipp16u, std::vector<Ipp32u> > > slice_map;
+        typedef std::list<std::pair<uint16_t, std::vector<uint32_t> > > slice_map;
         slice_map      m_slice_map;
     };
 
@@ -78,10 +78,10 @@ namespace UMC
 
         using LinuxVideoAccelerator::ReleaseBuffer;
         void ReleaseBuffer(VAStreamOutBuffer*);
-        void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index);
-        Status SyncTask(Ipp32s index, void * error = NULL);
+        void* GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index);
+        Status SyncTask(int32_t index, void * error = NULL);
 
-        VAStreamOutBuffer* QueryStreamOutBuffer(Ipp32s index, Ipp32s field);
+        VAStreamOutBuffer* QueryStreamOutBuffer(int32_t index, int32_t field);
 
     private:
 

@@ -43,7 +43,7 @@ namespace UMC
     }
 
     inline
-    bool find_slice_mb(std::pair<Ipp16u, std::vector<Ipp32u> > const& l, std::pair<Ipp16u, std::vector<Ipp32u> > const& r)
+    bool find_slice_mb(std::pair<uint16_t, std::vector<uint32_t> > const& l, std::pair<uint16_t, std::vector<uint32_t> > const& r)
     {
         return
             l.first < r.first;
@@ -72,14 +72,14 @@ namespace UMC
     };
 
     inline
-    Ipp32u map_slice_ref(VAPictureH264 const* refs, Ipp32u count, VAPictureH264 const& pic)
+    uint32_t map_slice_ref(VAPictureH264 const* refs, uint32_t count, VAPictureH264 const& pic)
     {
        VAPictureH264 const* r =
             std::find_if(refs, refs + count, find_ref_frame(pic));
 
         //use count * 2 (top + bottom) to signal 'not found'
         return
-            r != refs + count ? Ipp32s(r - refs) : count * 2;
+            r != refs + count ? int32_t(r - refs) : count * 2;
     }
 
     void VAStreamOutBuffer::FillPicReferences(VAPictureParameterBufferH264 const* pp)
@@ -90,12 +90,12 @@ namespace UMC
         m_allowed_max_mbs_in_slice =
             (pp->picture_width_in_mbs_minus1 + 1) * ((pp->picture_height_in_mbs_minus1 + 1) >> pp->pic_fields.bits.field_pic_flag);
 
-        Ipp32u const count = sizeof(m_references) / sizeof(m_references[0]);
+        uint32_t const count = sizeof(m_references) / sizeof(m_references[0]);
         std::copy(pp->ReferenceFrames, pp->ReferenceFrames + count, m_references);
 
 #ifdef UMC_VA_STREAMOUT_DEBUG
         printf("\n----id: %04d poc: %04d/%04d flags: %x ----\n", pp->CurrPic.frame_idx, pp->CurrPic.TopFieldOrderCnt, pp->CurrPic.BottomFieldOrderCnt, pp->CurrPic.flags);
-        for (Ipp32u i = 0; i < count; ++i)
+        for (uint32_t i = 0; i < count; ++i)
              printf("\t#%02d id: %04d poc: %04d/%04d flags: %x\n",
                     i, pp->ReferenceFrames[i].frame_idx,
                     pp->ReferenceFrames[i].TopFieldOrderCnt, pp->ReferenceFrames[i].BottomFieldOrderCnt, pp->ReferenceFrames[i].flags
@@ -114,23 +114,23 @@ namespace UMC
         //NOTE: we keep [slice_map] sorted implicitly
         slice_map::iterator s =
             std::lower_bound(m_slice_map.begin(), m_slice_map.end(),
-                             std::make_pair(sp->first_mb_in_slice, std::vector<Ipp32u>()),
+                             std::make_pair(sp->first_mb_in_slice, std::vector<uint32_t>()),
                              find_slice_mb);
 
         if (s != m_slice_map.end())
             //there is this slice in map, due chopping for e.g.
             return;
 
-        m_slice_map.push_back(std::make_pair(sp->first_mb_in_slice, std::vector<Ipp32u>()));
+        m_slice_map.push_back(std::make_pair(sp->first_mb_in_slice, std::vector<uint32_t>()));
 
         //skip INTRASLICE & S_INTRASLICE
         if ((sp->slice_type % 5) == 2 ||
             (sp->slice_type % 5) == 4)
             return;
 
-        std::vector<Ipp32u>& slice_refs = m_slice_map.back().second;
+        std::vector<uint32_t>& slice_refs = m_slice_map.back().second;
 
-        Ipp32u const count = sizeof(m_references) / sizeof(m_references[0]);
+        uint32_t const count = sizeof(m_references) / sizeof(m_references[0]);
         //we use single array for both top/bottom & L0/L1
         //use one additional slot in table to place all invalid indices
         //layout: [ |L0 top|L0 bot|I||L1 top|L1 bot|I| ]
@@ -138,25 +138,25 @@ namespace UMC
 
         //loop in descending order to force using low indices when we have duplicates in RefList
         //L0
-        Ipp32u* map = &slice_refs[0];
-        for (Ipp32s i = sp->num_ref_idx_l0_active_minus1; i >= 0; --i)
+        uint32_t* map = &slice_refs[0];
+        for (int32_t i = sp->num_ref_idx_l0_active_minus1; i >= 0; --i)
         {
             VAPictureH264 const& pic = sp->RefPicList0[i];
-            Ipp32u const idx =
+            uint32_t const idx =
                 map_slice_ref(m_references, count, pic);
 
-            Ipp32u const bottom = !!(pic.flags & VA_PICTURE_H264_BOTTOM_FIELD);
+            uint32_t const bottom = !!(pic.flags & VA_PICTURE_H264_BOTTOM_FIELD);
             map[idx + count * bottom] = i;
         }
 
 #ifdef UMC_VA_STREAMOUT_DEBUG
-        for (Ipp32s i = 0; i <= sp->num_ref_idx_l0_active_minus1; ++i)
+        for (int32_t i = 0; i <= sp->num_ref_idx_l0_active_minus1; ++i)
             printf("\t#%02d id: %04d poc: %04d/%04d flags: %x\n",
                     i, sp->RefPicList0[i].frame_idx,
                     sp->RefPicList0[i].TopFieldOrderCnt, sp->RefPicList0[i].BottomFieldOrderCnt, sp->RefPicList0[i].flags
             );
 
-        for (Ipp32u i = 0; i < count * 2 + 1; ++i)
+        for (uint32_t i = 0; i < count * 2 + 1; ++i)
             printf("%02d ", map[i]);
         printf("\n");
 #endif
@@ -166,30 +166,30 @@ namespace UMC
 
         //L1
         map = &slice_refs[count * 2 + 1];
-        for (Ipp32s i = sp->num_ref_idx_l1_active_minus1; i >= 0; --i)
+        for (int32_t i = sp->num_ref_idx_l1_active_minus1; i >= 0; --i)
         {
             VAPictureH264 const& pic = sp->RefPicList1[i];
-            Ipp32u const idx =
+            uint32_t const idx =
                 map_slice_ref(m_references, count, pic);
 
-            Ipp32u const bottom = !!(pic.flags & VA_PICTURE_H264_BOTTOM_FIELD);
+            uint32_t const bottom = !!(pic.flags & VA_PICTURE_H264_BOTTOM_FIELD);
             map[idx + count * bottom] = i;
         }
 
 #ifdef UMC_VA_STREAMOUT_DEBUG
-        for (Ipp32s i = 0; i <= sp->num_ref_idx_l1_active_minus1; ++i)
+        for (int32_t i = 0; i <= sp->num_ref_idx_l1_active_minus1; ++i)
             printf("\t#%02d id: %04d poc: %04d/%04d flags: %x\n",
                     i, sp->RefPicList1[i].frame_idx,
                     sp->RefPicList1[i].TopFieldOrderCnt, sp->RefPicList1[i].BottomFieldOrderCnt, sp->RefPicList1[i].flags
             );
 
-        for (Ipp32u i = 0; i < count * 2 + 1; ++i)
+        for (uint32_t i = 0; i < count * 2 + 1; ++i)
             printf("%02d ", map[i]);
         printf("\n");
 #endif
     }
 
-    void VAStreamOutBuffer::RemapReferences(void* data, Ipp32s size)
+    void VAStreamOutBuffer::RemapReferences(void* data, int32_t size)
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VAStreamOutBuffer::RemapReferences");
         //InterMB.RefIdx explained:
@@ -199,23 +199,23 @@ namespace UMC
 
         mfxFeiDecStreamOutMBCtrl* mb_begin
             = reinterpret_cast<mfxFeiDecStreamOutMBCtrl*>(data);
-        Ipp32s const mb_total = size / sizeof(mfxFeiDecStreamOutMBCtrl);
-        Ipp32u const count = sizeof(m_references) / sizeof(m_references[0]);
+        int32_t const mb_total = size / sizeof(mfxFeiDecStreamOutMBCtrl);
+        uint32_t const count = sizeof(m_references) / sizeof(m_references[0]);
 
-        Ipp32s mb_processed = 0;
+        int32_t mb_processed = 0;
         slice_map::iterator
             f = m_slice_map.begin(),
             l = m_slice_map.end();
         for (; f != l; ++f)
         {
-            std::vector<Ipp32u> const& slice_refs = (*f).second;
+            std::vector<uint32_t> const& slice_refs = (*f).second;
             if (slice_refs.empty())
                 continue;
 
             slice_map::iterator n = f; ++n;
 
-            Ipp16u const first_mb_in_slice = (*f).first;
-            Ipp32s const mb_per_slice_count =
+            uint16_t const first_mb_in_slice = (*f).first;
+            int32_t const mb_per_slice_count =
                 ((n != l ? (*n).first : m_allowed_max_mbs_in_slice)) - first_mb_in_slice;
 
             mb_processed += mb_per_slice_count;
@@ -241,21 +241,21 @@ namespace UMC
                 for (int j = 0; j < l_count; ++j)
                 {
                     //select L0/L1
-                    Ipp32u const offset =
+                    uint32_t const offset =
                         (count * 2 + 1) * j;
 
-                    Ipp32u const* map = &slice_refs[offset];
+                    uint32_t const* map = &slice_refs[offset];
                     for (int k = 0; k < 4; ++k)
                     {
                         //NOTE: we still have no info about ref. field, use hardcoded zero
-                        Ipp32u const field = 0;
+                        uint32_t const field = 0;
 
                         //Ad Hoc: not active references is reported as zero
                         if (!(mb->InterMB.RefIdx[j][k] & 0x80))
                             mb->InterMB.RefIdx[j][k] = UCHAR_MAX;
                         else
                         {
-                            Ipp32u const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
+                            uint32_t const idx   = (mb->InterMB.RefIdx[j][k] & 0x1f);
 
                             mb->InterMB.RefIdx[j][k] =  map[count * field + idx];
                         }
@@ -336,7 +336,7 @@ namespace UMC
             if (!buffer || !buffer->GetPtr())
                 return UMC_ERR_FAILED;
 
-            Ipp32s const slice_count = buffer->GetNumOfItem();
+            int32_t const slice_count = buffer->GetNumOfItem();
             VASliceParameterBufferH264 const* sp
                 = reinterpret_cast<VASliceParameterBufferH264*>(buffer->GetPtr());
 
@@ -385,7 +385,7 @@ namespace UMC
         UMC_DELETE(buffer);
     }
 
-    void* FEIVideoAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index)
+    void* FEIVideoAccelerator::GetCompBuffer(int32_t type, UMCVACompBuffer **buf, int32_t size, int32_t index)
     {
         if (type != VADecodeStreamoutBufferType)
             return LinuxVideoAccelerator::GetCompBuffer(type, buf, size, index);
@@ -417,7 +417,7 @@ namespace UMC
         return NULL;
     }
 
-    Status FEIVideoAccelerator::SyncTask(Ipp32s index, void* error)
+    Status FEIVideoAccelerator::SyncTask(int32_t index, void* error)
     {
         Status umcRes = LinuxVideoAccelerator::SyncTask(index, error);
         if (umcRes != UMC_OK)
@@ -437,7 +437,7 @@ namespace UMC
                 void* ptr = streamOut->GetPtr();
                 VM_ASSERT(ptr);
 
-                Ipp32s const size = streamOut->GetDataSize();
+                int32_t const size = streamOut->GetDataSize();
                 VM_ASSERT(size = streamOut->GetBufferSize());
 
                 if (streamOut->RemapRefs())
@@ -455,7 +455,7 @@ namespace UMC
         return umcRes;
     }
 
-    VAStreamOutBuffer* FEIVideoAccelerator::QueryStreamOutBuffer(Ipp32s index, Ipp32s field)
+    VAStreamOutBuffer* FEIVideoAccelerator::QueryStreamOutBuffer(int32_t index, int32_t field)
     {
         std::vector<VAStreamOutBuffer*>::const_iterator
             f = m_streamOutCache.begin(),
@@ -473,12 +473,12 @@ namespace UMC
 
     Status FEIVideoAccelerator::MapStreamOutBuffer(VAStreamOutBuffer* buffer)
     {
-        Ipp8u* ptr = NULL;
+        uint8_t* ptr = NULL;
         VAStatus va_res = vaMapBuffer(m_dpy, buffer->GetID(), (void**)&ptr);
         Status umcRes = va_to_umc_res(va_res);
         if (umcRes == UMC_OK)
         {
-            Ipp32s const size = buffer->GetBufferSize();
+            int32_t const size = buffer->GetBufferSize();
             buffer->SetBufferPointer(ptr, size);
             buffer->SetDataSize(size);
         }

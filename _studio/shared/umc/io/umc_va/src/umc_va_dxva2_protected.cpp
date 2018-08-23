@@ -94,12 +94,12 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
     return UMC_OK;
 }
 
-Ipp32s ProtectedVA::GetEncryptionMode() const
+int32_t ProtectedVA::GetEncryptionMode() const
 {
     return m_encryptionType;
 }
 
-Ipp32s ProtectedVA::GetCounterMode() const
+int32_t ProtectedVA::GetCounterMode() const
 {
     return m_counterMode;
 }

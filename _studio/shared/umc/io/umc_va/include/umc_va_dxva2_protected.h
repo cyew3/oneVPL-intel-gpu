@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
@@ -76,9 +76,9 @@ public:
 
     Status SetModes(mfxVideoParam * params);
 
-    Ipp32s GetEncryptionMode() const;
+    int32_t GetEncryptionMode() const;
 
-    Ipp32s GetCounterMode() const;
+    int32_t GetCounterMode() const;
 
     void SetBitstream(mfxBitstream *bs);
 
@@ -96,11 +96,11 @@ protected:
     mfxU16 m_protected;
     mfxBitstream *m_bs;
 
-    Ipp32s m_counterMode;
-    Ipp32s m_encryptionType;
+    int32_t m_counterMode;
+    int32_t m_encryptionType;
 
-    Ipp32u m_encryptBegin;
-    Ipp32u m_encryptCount;
+    uint32_t m_encryptBegin;
+    uint32_t m_encryptCount;
 };
 
 }

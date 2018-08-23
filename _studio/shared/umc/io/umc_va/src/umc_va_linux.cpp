@@ -71,7 +71,7 @@ UMC::Status va_to_umc_res(VAStatus va_res)
     return umcRes;
 }
 
-VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
+VAEntrypoint umc_to_va_entrypoint(uint32_t umc_entrypoint)
 {
     VAEntrypoint va_entrypoint = (VAEntrypoint)-1;
 
@@ -97,7 +97,7 @@ VAEntrypoint umc_to_va_entrypoint(Ipp32u umc_entrypoint)
 }
 
 // profile priorities for codecs
-Ipp32u g_Profiles[] =
+uint32_t g_Profiles[] =
 {
     UMC::MPEG2_VLD,
     UMC::H264_VLD,
@@ -169,7 +169,7 @@ VAProfile g_JPEGProfiles[] =
     VAProfileJPEGBaseline
 };
 
-VAProfile get_next_va_profile(Ipp32u umc_codec, Ipp32u profile)
+VAProfile get_next_va_profile(uint32_t umc_codec, uint32_t profile)
 {
     VAProfile va_profile = (VAProfile)-1;
 
@@ -245,7 +245,7 @@ VACompBuffer::~VACompBuffer(void)
 {
 }
 
-Status VACompBuffer::SetBufferInfo(Ipp32s _type, Ipp32s _id, Ipp32s _index)
+Status VACompBuffer::SetBufferInfo(int32_t _type, int32_t _id, int32_t _index)
 {
     type  = _type;
     m_id    = _id;
@@ -300,7 +300,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     VAConfigAttrib va_attributes[4];
 
     LinuxVideoAcceleratorParams* pParams = DynamicCast<LinuxVideoAcceleratorParams>(pInfo);
-    Ipp32s width = 0, height = 0;
+    int32_t width = 0, height = 0;
     bool needRecreateContext = false;
 
     // checking errors in input parameters
@@ -378,7 +378,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
     // display initialization
     if (UMC_OK == umcRes)
     {
-        Ipp32s i,j;
+        int32_t i,j;
         int va_max_num_profiles      = vaMaxNumProfiles   (m_dpy);
         int va_max_num_entrypoints   = vaMaxNumEntrypoints(m_dpy);
         int va_num_profiles          = 0;
@@ -439,7 +439,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         }
         if (UMC_OK == umcRes)
         {
-            Ipp32u k = 0, profile = UNKNOWN;
+            uint32_t k = 0, profile = UNKNOWN;
 
             for (k = 0; k < UMC_ARRAY_SIZE(g_Profiles); ++k)
             {
@@ -506,7 +506,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 #endif
         }
 
-        Ipp32s attribsNumber = 2;
+        int32_t attribsNumber = 2;
 
         if (UMC_OK == umcRes && pParams->m_needVideoProcessingVA)
         {
@@ -587,7 +587,7 @@ Status LinuxVideoAccelerator::Close(void)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "LinuxVideoAccelerator::Close");
     VACompBuffer* pCompBuf = NULL;
-    Ipp32u i;
+    uint32_t i;
 
     if (NULL != m_pCompBuffers)
     {
@@ -639,7 +639,7 @@ Status LinuxVideoAccelerator::Close(void)
     return VideoAccelerator::Close();
 }
 
-Status LinuxVideoAccelerator::BeginFrame(Ipp32s FrameBufIndex)
+Status LinuxVideoAccelerator::BeginFrame(int32_t FrameBufIndex)
 {
     Status   umcRes = UMC_OK;
     VAStatus va_res = VA_STATUS_SUCCESS;
@@ -681,13 +681,13 @@ Status LinuxVideoAccelerator::AllocCompBuffers(void)
         }
         else
         {
-            Ipp32u uiNewCompBuffersNum = 0;
+            uint32_t uiNewCompBuffersNum = 0;
             VACompBuffer** pNewCompBuffers = NULL;
 
             uiNewCompBuffersNum = m_uiCompBuffersNum + UMC_VA_NUM_OF_COMP_BUFFERS;
             pNewCompBuffers = new VACompBuffer*[uiNewCompBuffersNum];
 
-            MFX_INTERNAL_CPY((Ipp8u*)pNewCompBuffers, (const Ipp8u*)m_pCompBuffers, m_uiCompBuffersNum*sizeof(VACompBuffer*));
+            MFX_INTERNAL_CPY((uint8_t*)pNewCompBuffers, (const uint8_t*)m_pCompBuffers, m_uiCompBuffersNum*sizeof(VACompBuffer*));
             delete[] m_pCompBuffers;
             m_uiCompBuffersNum = uiNewCompBuffersNum;
             m_pCompBuffers = pNewCompBuffers;
@@ -696,9 +696,9 @@ Status LinuxVideoAccelerator::AllocCompBuffers(void)
     return umcRes;
 }
 
-void* LinuxVideoAccelerator::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index)
+void* LinuxVideoAccelerator::GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index)
 {
-    Ipp32u i;
+    uint32_t i;
     VACompBuffer* pCompBuf = NULL;
     void* pBufferPointer = NULL;
 
@@ -729,13 +729,13 @@ void* LinuxVideoAccelerator::GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer *
     return pBufferPointer;
 }
 
-VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(Ipp32s type, Ipp32s size, Ipp32s index)
+VACompBuffer* LinuxVideoAccelerator::GetCompBufferHW(int32_t type, int32_t size, int32_t index)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "GetCompBufferHW");
     VAStatus   va_res = VA_STATUS_SUCCESS;
     VABufferID id;
-    Ipp8u*      buffer = NULL;
-    Ipp32u     buffer_size = 0;
+    uint8_t*      buffer = NULL;
+    uint32_t     buffer_size = 0;
     VACompBuffer* pCompBuffer = NULL;
 
     if (VA_STATUS_SUCCESS == va_res)
@@ -834,7 +834,7 @@ LinuxVideoAccelerator::Execute()
     VAStatus       va_res = VA_STATUS_SUCCESS;
     VAStatus       va_sts = VA_STATUS_SUCCESS;
     VABufferID     id;
-    Ipp32u         i;
+    uint32_t         i;
     VACompBuffer*  pCompBuf = NULL;
 
     vm_mutex_lock(&m_SyncMutex);
@@ -891,7 +891,7 @@ Status LinuxVideoAccelerator::EndFrame(void*)
     m_FrameState = lvaBeforeBegin;
 
     VACompBuffer* pCompBuf = NULL;
-    for (Ipp32u i = 0; i < m_uiCompBuffersUsed; ++i)
+    for (uint32_t i = 0; i < m_uiCompBuffersUsed; ++i)
     {
         pCompBuf = m_pCompBuffers[i];
         if (pCompBuf->NeedDestroy())
@@ -909,7 +909,7 @@ Status LinuxVideoAccelerator::EndFrame(void*)
 }
 
 /* TODO: need to rewrite return value type (possible problems with signed/unsigned) */
-Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
+int32_t LinuxVideoAccelerator::GetSurfaceID(int32_t idx)
 {
     VASurfaceID *surface;
     Status sts = m_allocator->GetFrameHandle(idx, &surface);
@@ -919,10 +919,10 @@ Ipp32s LinuxVideoAccelerator::GetSurfaceID(Ipp32s idx)
     return *surface;
 }
 
-Ipp16u LinuxVideoAccelerator::GetDecodingError()
+uint16_t LinuxVideoAccelerator::GetDecodingError()
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "GetDecodingError");
-    Ipp16u error = 0;
+    uint16_t error = 0;
 
 #ifndef ANDROID
     // NOTE: at the moment there is no such support for Android, so no need to execute...
@@ -960,7 +960,7 @@ Ipp16u LinuxVideoAccelerator::GetDecodingError()
 }
 
 
-void LinuxVideoAccelerator::SetTraceStrings(Ipp32u umc_codec)
+void LinuxVideoAccelerator::SetTraceStrings(uint32_t umc_codec)
 {
     switch (umc_codec)
     {
@@ -999,7 +999,7 @@ void LinuxVideoAccelerator::SetTraceStrings(Ipp32u umc_codec)
     }
 }
 
-Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * status, void * error)
+Status LinuxVideoAccelerator::QueryTaskStatus(int32_t FrameBufIndex, void * status, void * error)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "QueryTaskStatus");
     if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
@@ -1024,7 +1024,7 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
             switch (va_sts)
             {
                 case VA_STATUS_ERROR_DECODING_ERROR:
-                    *(Ipp16u*)error = GetDecodingError();
+                    *(uint16_t*)error = GetDecodingError();
                     break;
 
                 case VA_STATUS_ERROR_HW_BUSY:
@@ -1044,7 +1044,7 @@ Status LinuxVideoAccelerator::QueryTaskStatus(Ipp32s FrameBufIndex, void * statu
     return umcRes;
 }
 
-Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void *surfCorruption)
+Status LinuxVideoAccelerator::SyncTask(int32_t FrameBufIndex, void *surfCorruption)
 {
     if ((FrameBufIndex < 0) || (FrameBufIndex >= m_NumOfFrameBuffers))
         return UMC_ERR_INVALID_PARAMS;
@@ -1061,12 +1061,12 @@ Status LinuxVideoAccelerator::SyncTask(Ipp32s FrameBufIndex, void *surfCorruptio
     }
     if (VA_STATUS_ERROR_DECODING_ERROR == va_sts)
     {
-        if (surfCorruption) *(Ipp16u*)surfCorruption = GetDecodingError();
+        if (surfCorruption) *(uint16_t*)surfCorruption = GetDecodingError();
         return UMC_OK;
     }
     if (VA_STATUS_ERROR_OPERATION_FAILED == va_sts)
     {
-        if (surfCorruption) *(Ipp16u*)surfCorruption = MFX_CORRUPTION_MAJOR;
+        if (surfCorruption) *(uint16_t*)surfCorruption = MFX_CORRUPTION_MAJOR;
         return UMC_OK;
     }
     return va_to_umc_res(va_sts);

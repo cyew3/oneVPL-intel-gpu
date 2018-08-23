@@ -141,7 +141,7 @@ DEFINE_GUID(DXVA_Intel_ModeVP9_Profile3_YUV444_12bit_VLD,
 
 struct GuidProfile
 {
-    Ipp32s      profile;
+    int32_t      profile;
     GUID        guid;
 
     static const GuidProfile * GetGuidProfiles();
@@ -149,7 +149,7 @@ struct GuidProfile
     static size_t GetGuidProfileSize();
     static bool IsIntelCustomGUID(const GUID & guid);
     static bool IsMVCGUID(const GUID & guid);
-    static bool isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw);
+    static bool isShortFormat(bool isHEVCGUID, uint32_t configBitstreamRaw);
 
     bool IsIntelCustomGUID() const
     { return IsIntelCustomGUID(guid); }
@@ -174,26 +174,26 @@ public:
     virtual ~DXAccelerator();
     virtual Status Close(void);
 
-    void* GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf = NULL, Ipp32s size = -1, Ipp32s index = -1);
-    Status ReleaseBuffer(Ipp32s type);
+    void* GetCompBuffer(int32_t type, UMCVACompBuffer **buf = NULL, int32_t size = -1, int32_t index = -1);
+    Status ReleaseBuffer(int32_t type);
 
-    virtual Status BeginFrame(Ipp32s  index) = 0; // Begin decoding for specified index
+    virtual Status BeginFrame(int32_t  index) = 0; // Begin decoding for specified index
     // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
-    virtual Status BeginFrame(Ipp32s  index, Ipp32u fieldId);
+    virtual Status BeginFrame(int32_t  index, uint32_t fieldId);
 
-    virtual Status SyncTask(Ipp32s index, void * error = NULL);
+    virtual Status SyncTask(int32_t index, void * error = NULL);
 private:
 
     virtual Status GetCompBufferInternal(UMCVACompBuffer*) = 0;
     virtual Status ReleaseBufferInternal(UMCVACompBuffer*) = 0;
 protected:
 
-    UMCVACompBuffer* FindBuffer(Ipp32s type);
+    UMCVACompBuffer* FindBuffer(int32_t type);
 
 protected:
 
     UMCVACompBuffer         m_pCompBuffer[MAX_BUFFER_TYPES];
-    std::vector<Ipp32s>     m_bufferOrder;
+    std::vector<int32_t>     m_bufferOrder;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     struct DdiEvent
@@ -221,11 +221,11 @@ public:
 
     virtual Status Close(void);
 
-    virtual Status BeginFrame(Ipp32s index);
+    virtual Status BeginFrame(int32_t index);
     virtual Status Execute();
     virtual Status ExecuteExtensionBuffer(void * buffer);
-    virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
-    virtual Status QueryTaskStatus(Ipp32s , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
+    virtual Status ExecuteStatusReportBuffer(void * buffer, int32_t size);
+    virtual Status QueryTaskStatus(int32_t , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
     virtual Status EndFrame(void * handle = 0);
 
     virtual bool IsIntelCustomGUID() const;
@@ -287,9 +287,9 @@ protected:
 #define CHECK_HR(hr)  UMC_CHECK_HRESULT(hr, #hr)
 
 template <typename T>
-bool CheckDXVAConfig(Ipp32s profile_flags, T *config, ProtectedVA * protectedVA)
+bool CheckDXVAConfig(int32_t profile_flags, T *config, ProtectedVA * protectedVA)
 {
-    Ipp32s const profile = 
+    int32_t const profile = 
         (profile_flags & (VA_ENTRY_POINT | VA_CODEC));
 
     if (protectedVA)

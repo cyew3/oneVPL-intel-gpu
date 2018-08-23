@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_profile_level.h"
@@ -17,9 +17,9 @@ namespace UMC
 
 typedef struct _ProfileSpec
 {
-    Ipp32s type;
-    Ipp32s profile;
-    Ipp32s max_level;
+    int32_t type;
+    int32_t profile;
+    int32_t max_level;
     bool   bReverse;
 } ProfileSpec;
 
@@ -49,7 +49,7 @@ const ProfileSpec g_ProfileSpec[] =
 bool CheckProfileLevelMenlow(UMC::VideoDecoderParams *pParams)
 {
     bool bSupported = false;
-    Ipp32s type = 0, stype = 0, profile = 0, level = 0, i = 0;
+    int32_t type = 0, stype = 0, profile = 0, level = 0, i = 0;
 
     if (NULL == pParams) bSupported = true;
     else

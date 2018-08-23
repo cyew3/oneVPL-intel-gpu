@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VA_H__
@@ -28,13 +28,13 @@ namespace UMC
 class VACompBuffer : public UMCVACompBuffer
 {
 public:
-    Ipp32s      frame;
-    Ipp32s      NumOfItem; //number of items in buffer
+    int32_t      frame;
+    int32_t      NumOfItem; //number of items in buffer
     bool        locked;
-    Ipp32s      index;
-    Ipp32s      id;
+    int32_t      index;
+    int32_t      id;
 
-    VACompBuffer(Ipp32s Type=-1, Ipp32s Frame=-1, Ipp32s Index=-1, void* Ptr=NULL, Ipp32s BufSize=0, Ipp32s Id=-1)
+    VACompBuffer(int32_t Type=-1, int32_t Frame=-1, int32_t Index=-1, void* Ptr=NULL, int32_t BufSize=0, int32_t Id=-1)
         : frame(Frame), index(Index), locked(false), id(Id), NumOfItem(1)
     {
         type = Type;
@@ -47,7 +47,7 @@ public:
         *this = copy;
     }
 
-    void SetNumOfItem(Ipp32s num) { NumOfItem = num; };
+    void SetNumOfItem(int32_t num) { NumOfItem = num; };
 
     bool operator==(const VACompBuffer& right) const
     {
@@ -104,12 +104,12 @@ public:
         Close();
     };
 
-    virtual Status    BeginFrame    (Ipp32s FrameBufIndex) = 0;
+    virtual Status    BeginFrame    (int32_t FrameBufIndex) = 0;
     UMCVAFrameBuffer* GetFrameBuffer(int index); // to get pointer to uncompressed buffer.
     virtual Status    Execute       (void) { return UMC_OK; };
-    virtual Status    ReleaseBuffer (Ipp32s type)=0;
+    virtual Status    ReleaseBuffer (int32_t type)=0;
     virtual Status    EndFrame      (void);
-    virtual Status    DisplayFrame  (Ipp32s /*index*/){ return UMC_OK; };
+    virtual Status    DisplayFrame  (int32_t /*index*/){ return UMC_OK; };
 
     bool IsTightPack() const
     {
@@ -128,14 +128,14 @@ public:
 
     //GetCompBuffer function returns compressed buffer from cache if there is one in it or get buffer from HW and put
     //it to cache if there is not. All cached buffers will be released in EndFrame.
-    virtual void* GetCompBuffer(Ipp32s buffer_type, UMCVACompBuffer **buf, Ipp32s size, Ipp32s index);
+    virtual void* GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index);
 
 protected:
-    virtual VACompBuffer GetCompBufferHW(Ipp32s type, Ipp32s size, Ipp32s index = -1)=0; //get buffer from HW
+    virtual VACompBuffer GetCompBufferHW(int32_t type, int32_t size, int32_t index = -1)=0; //get buffer from HW
 
 public:
-    Ipp32s m_NumOfFrameBuffers;
-    Ipp32s m_NumOfCompBuffersSet;
+    int32_t m_NumOfFrameBuffers;
+    int32_t m_NumOfCompBuffersSet;
 
 protected:
     bool    m_bTightPack;

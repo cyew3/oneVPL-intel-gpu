@@ -89,7 +89,7 @@ UMC::Status DXAccelerator::Close(void)
 }
 
 // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
-Status DXAccelerator::BeginFrame(Ipp32s  index, Ipp32u fieldId)
+Status DXAccelerator::BeginFrame(int32_t  index, uint32_t fieldId)
 {
     (void)fieldId;
     Status sts = BeginFrame(index);
@@ -117,14 +117,14 @@ Status DXAccelerator::BeginFrame(Ipp32s  index, Ipp32u fieldId)
     return sts;
 }
 
-Status DXAccelerator::SyncTask(Ipp32s index, void * error)
+Status DXAccelerator::SyncTask(int32_t index, void * error)
 {
     (void)index;
     (void)error;
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     if (IsGPUSyncEventDisable())
         return UMC_ERR_UNSUPPORTED;
-    const Ipp32u timeoutms = 5000; // TIMEOUT FOR DECODE OPERATION
+    const uint32_t timeoutms = 5000; // TIMEOUT FOR DECODE OPERATION
     const size_t MAX_FIELD_SUPPORTED = 2;
 
     Status sts = UMC_OK;
@@ -176,7 +176,7 @@ Status DXAccelerator::SyncTask(Ipp32s index, void * error)
 #endif
 }
 
-void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*size*/, Ipp32s /*index*/)
+void* DXAccelerator::GetCompBuffer(int32_t type, UMCVACompBuffer **buf, int32_t /*size*/, int32_t /*index*/)
 {
     UMCVACompBuffer* buffer = FindBuffer(type);
     UMC_CHECK(buffer, NULL);
@@ -190,11 +190,11 @@ void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*
         m_bufferOrder.push_back(type);
     }
 
-    Ipp8u* data = reinterpret_cast<Ipp8u*>(buffer->GetPtr());
+    uint8_t* data = reinterpret_cast<uint8_t*>(buffer->GetPtr());
     UMC_CHECK(data, NULL);
 
 #if defined(DEBUG) || defined(_DEBUG)
-    Ipp32s const buffer_size = buffer->GetBufferSize();
+    int32_t const buffer_size = buffer->GetBufferSize();
     data[buffer_size - 1] = OVERFLOW_CHECK_VALUE;
 #endif
 
@@ -208,7 +208,7 @@ void* DXAccelerator::GetCompBuffer(Ipp32s type, UMCVACompBuffer **buf, Ipp32s /*
 
 //////////////////////////////////////////////////////////////
 
-Status DXAccelerator::ReleaseBuffer(Ipp32s type)
+Status DXAccelerator::ReleaseBuffer(int32_t type)
 {
     UMCVACompBuffer* buffer = FindBuffer(type);
     if (!buffer)
@@ -220,8 +220,8 @@ Status DXAccelerator::ReleaseBuffer(Ipp32s type)
         type == DXVA_MACROBLOCK_CONTROL_BUFFER ||
         type == DXVA_RESIDUAL_DIFFERENCE_BUFFER)
     {
-        Ipp8u const* data = reinterpret_cast<Ipp8u const*>(buffer->GetPtr());
-        Ipp32s const buffer_size = buffer->GetBufferSize();
+        uint8_t const* data = reinterpret_cast<uint8_t const*>(buffer->GetPtr());
+        int32_t const buffer_size = buffer->GetBufferSize();
 
         if (data[buffer_size - 1] != OVERFLOW_CHECK_VALUE)
         {
@@ -236,7 +236,7 @@ Status DXAccelerator::ReleaseBuffer(Ipp32s type)
 }
 
 inline
-Ipp32s GetBufferIndex(Ipp32s buffer_type)
+int32_t GetBufferIndex(int32_t buffer_type)
 {
     //use incoming [buffer_type] as direct index in [UMCVACompBuffer] if it less then DXVA_NUM_TYPES_COMP_BUFFERS,
     //otherwise re-index it in a way to fall in a range (DXVA_NUM_TYPES_COMP_BUFFERS, MAX_BUFFER_TYPES)
@@ -246,9 +246,9 @@ Ipp32s GetBufferIndex(Ipp32s buffer_type)
         ;
 }
 
-UMCVACompBuffer* DXAccelerator::FindBuffer(Ipp32s type)
+UMCVACompBuffer* DXAccelerator::FindBuffer(int32_t type)
 {
-    Ipp32s const buffer_index = GetBufferIndex(type);
+    int32_t const buffer_index = GetBufferIndex(type);
 
     UMC_CHECK(buffer_index >= 0, NULL);
     UMC_CHECK(buffer_index < MAX_BUFFER_TYPES, NULL);
@@ -295,7 +295,7 @@ DXVA2Accelerator::~DXVA2Accelerator()
 
 //////////////////////////////////////////////////////////////
 
-Status DXVA2Accelerator::BeginFrame(Ipp32s index)
+Status DXVA2Accelerator::BeginFrame(int32_t index)
 {
     IDirect3DSurface9* surface;
     Status sts = m_allocator->GetFrameHandle(index, &surface);
@@ -303,7 +303,7 @@ Status DXVA2Accelerator::BeginFrame(Ipp32s index)
         return sts;
 
     HRESULT hr = S_OK;
-    for (Ipp32u i = 0; i < 200; i++)
+    for (uint32_t i = 0; i < 200; i++)
     {
         hr = m_pDXVAVideoDecoder->BeginFrame(surface, NULL);
 
@@ -327,7 +327,7 @@ Status DXVA2Accelerator::BeginFrame(Ipp32s index)
 Status DXVA2Accelerator::EndFrame(void * handle)
 {
     std::for_each(std::begin(m_bufferOrder), std::end(m_bufferOrder),
-        [this](Ipp32s type)
+        [this](int32_t type)
         { ReleaseBuffer(type);  }
     );
 
@@ -366,7 +366,7 @@ Status DXVA2Accelerator::Execute()
 
     ZeroMemory(pBufferDesc, sizeof(pBufferDesc));
 
-    for (Ipp32s const type : m_bufferOrder)
+    for (int32_t const type : m_bufferOrder)
     {
         UMCVACompBuffer const* pCompBuffer = FindBuffer(type);
 
@@ -454,7 +454,7 @@ Status DXVA2Accelerator::ExecuteExtensionBuffer(void * buffer)
     CHECK_HR(hr);
     return UMC_OK;
 }
-Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
+Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
 {
     DXVA2_DecodeExecuteParams executeParams;
     DXVA2_DecodeExtensionData extensionData;
@@ -513,7 +513,7 @@ Status DXVA2Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
 {
     VM_ASSERT(buffer);
 
-    Ipp32s const type = buffer->GetType();
+    int32_t const type = buffer->GetType();
 
     void* data = NULL;
     UINT buffer_size = 0;
@@ -526,7 +526,7 @@ Status DXVA2Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
         return UMC_ERR_FAILED;
     }
 
-    buffer->SetBufferPointer(reinterpret_cast<Ipp8u*>(data), buffer_size);
+    buffer->SetBufferPointer(reinterpret_cast<uint8_t*>(data), buffer_size);
     buffer->SetDataSize(0);
 
     return UMC_OK;
@@ -536,7 +536,7 @@ Status DXVA2Accelerator::ReleaseBufferInternal(UMCVACompBuffer* buffer)
 {
     VM_ASSERT(buffer);
 
-    Ipp32s const type = buffer->GetType();
+    int32_t const type = buffer->GetType();
     HRESULT hr = m_pDXVAVideoDecoder->ReleaseBuffer(type - 1);
     CHECK_HR(hr);
 
@@ -634,7 +634,7 @@ size_t GuidProfile::GetGuidProfileSize()
     return sizeof(guidProfiles)/sizeof(guidProfiles[0]);
 }
 
-bool GuidProfile::isShortFormat(bool isHEVCGUID, Ipp32u configBitstreamRaw)
+bool GuidProfile::isShortFormat(bool isHEVCGUID, uint32_t configBitstreamRaw)
 {
     if (isHEVCGUID)
     {
@@ -768,7 +768,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 
     if (SUCCEEDED(hr))
     {
-        for (Ipp32u k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
+        for (uint32_t k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
         {
             if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC))!= (GuidProfile::GetGuidProfile(k)->profile & (VA_ENTRY_POINT | VA_CODEC)))
                 continue;
@@ -931,7 +931,7 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
 
     // Number of surfaces
-    Ipp32u numberSurfaces = pParams->m_iNumberSurfaces;
+    uint32_t numberSurfaces = pParams->m_iNumberSurfaces;
 
     // check surface width&height
     if (pParams->m_pVideoStreamInfo)
