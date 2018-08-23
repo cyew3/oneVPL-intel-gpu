@@ -1782,15 +1782,12 @@ mfxStatus CEncodingPipeline::AllocExtBuffers(sInputParams *pInParams)
         return sts;
     }
 
-    bufSet* tmpForInit   = NULL;
+    std::unique_ptr<bufSet> tmpForInit;
     mfxU16  numOfFields  = pInParams->nPicStruct != MFX_PICSTRUCT_PROGRESSIVE ? 2 : 1;
     mfxU16  numOfBuffers = pInParams->nGopRefDist * 2 + pInParams->nAsyncDepth + pInParams->nNumRefFrame + 1;
 
     for (int k = 0; k < numOfBuffers; k++)
     {
-        tmpForInit = new bufSet(numOfFields);
-        MSDK_CHECK_POINTER(tmpForInit, MFX_ERR_MEMORY_ALLOC);
-
         mfxExtAVCRoundingOffset* pAvcRoundingOffset = NULL;
         for (mfxU16 fieldId = 0; fieldId < numOfFields; fieldId++)
         {
@@ -1808,6 +1805,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers(sInputParams *pInParams)
             }
         }
 
+        tmpForInit.reset(new bufSet(numOfFields));
         if(enableRoundingOffset)
         {
             for (mfxU16 fieldId = 0; fieldId < numOfFields; fieldId++)
@@ -1816,7 +1814,7 @@ mfxStatus CEncodingPipeline::AllocExtBuffers(sInputParams *pInParams)
             }
         }
 
-        m_encExtBufs.AddSet(tmpForInit);
+        m_encExtBufs.AddSet(std::move(tmpForInit));
     }
 #endif
 
