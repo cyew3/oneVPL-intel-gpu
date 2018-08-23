@@ -47,7 +47,7 @@ H264_DXVA_SegmentDecoder::~H264_DXVA_SegmentDecoder()
 {
 }
 
-Status H264_DXVA_SegmentDecoder::Init(Ipp32s iNumber)
+Status H264_DXVA_SegmentDecoder::Init(int32_t iNumber)
 {
     return H264SegmentDecoderBase::Init(iNumber);
 }
@@ -58,7 +58,7 @@ void H264_DXVA_SegmentDecoder::Reset()
         m_Packer->Reset();
 }
 
-void H264_DXVA_SegmentDecoder::PackAllHeaders(H264DecoderFrame * pFrame, Ipp32s field)
+void H264_DXVA_SegmentDecoder::PackAllHeaders(H264DecoderFrame * pFrame, int32_t field)
 {
     if (!m_Packer.get())
     {
@@ -170,7 +170,7 @@ enum
 };
 
 
-void TaskBrokerSingleThreadDXVA::SetCompletedAndErrorStatus(Ipp8u uiStatus, H264DecoderFrameInfo * au)
+void TaskBrokerSingleThreadDXVA::SetCompletedAndErrorStatus(uint8_t uiStatus, H264DecoderFrameInfo * au)
 {
     switch (uiStatus)
     {
@@ -195,9 +195,9 @@ void TaskBrokerSingleThreadDXVA::SetCompletedAndErrorStatus(Ipp8u uiStatus, H264
 
 bool TaskBrokerSingleThreadDXVA::CheckCachedFeedbackAndComplete(H264DecoderFrameInfo * au)
 {
-    for (Ipp32u i = 0; i < m_reports.size(); i++)
+    for (uint32_t i = 0; i < m_reports.size(); i++)
     {
-        if ((m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index) && (au->IsBottom() == (m_reports[i].m_field != 0)))
+        if ((m_reports[i].m_index == (uint32_t)au->m_pFrame->m_index) && (au->IsBottom() == (m_reports[i].m_field != 0)))
         {
             SetCompletedAndErrorStatus(m_reports[i].m_status, au);
             m_reports.erase(m_reports.begin() + i);
@@ -257,7 +257,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
             dxva_sd->GetPacker()->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Status_H264)* NUMBER_OF_STATUS);
 
-            for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+            for (uint32_t i = 0; i < NUMBER_OF_STATUS; i++)
             {
                 if (pStatusReport[i].bStatus == 3)
                     throw h264_exception(UMC_ERR_DEVICE_FAILED);
@@ -266,7 +266,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
                     continue;
 
                 wasCompleted = true;
-                if ((pStatusReport[i].CurrPic.Index7Bits == (Ipp32u)au->m_pFrame->m_index) && (au->IsBottom() == (pStatusReport[i].CurrPic.AssociatedFlag != 0)))
+                if ((pStatusReport[i].CurrPic.Index7Bits == (uint32_t)au->m_pFrame->m_index) && (au->IsBottom() == (pStatusReport[i].CurrPic.AssociatedFlag != 0)))
                 {
                     SetCompletedAndErrorStatus(pStatusReport[i].bStatus, au);
                 }
@@ -294,12 +294,12 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
 
     if (!wasCompleted && m_FirstAU)
     {
-        Ipp64u currentCounter = (Ipp64u) vm_time_get_tick();
+        unsigned long long currentCounter = (unsigned long long) vm_time_get_tick();
 
         if (m_lastCounter == 0)
             m_lastCounter = currentCounter;
 
-        Ipp64u diff = (currentCounter - m_lastCounter);
+        unsigned long long diff = (currentCounter - m_lastCounter);
         if (diff >= m_counterFrequency)
         {
             Report::iterator iter = std::find(m_reports.begin(), m_reports.end(), ReportItem(m_FirstAU->m_pFrame->m_index, m_FirstAU->IsBottom(), 0));
@@ -328,7 +328,7 @@ bool TaskBrokerSingleThreadDXVA::GetNextTaskInternal(H264Task *)
         //skip second field for sync.
         bool skip = (prev && prev->m_pFrame == au->m_pFrame);
 
-        Ipp16u surfCorruption = 0;
+        uint16_t surfCorruption = 0;
 #if defined(SYNCHRONIZATION_BY_VA_SYNC_SURFACE)
         if (!skip)
         {

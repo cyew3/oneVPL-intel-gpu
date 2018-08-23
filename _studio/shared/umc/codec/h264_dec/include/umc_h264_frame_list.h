@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -40,9 +40,9 @@ public:
 
     void append(H264DecoderFrame *pFrame);
 
-    Ipp32s GetFreeIndex()
+    int32_t GetFreeIndex()
     {
-        for (Ipp32s i = 0; i < 127; i++)
+        for (int32_t i = 0; i < 127; i++)
         {
             H264DecoderFrame *pFrm;
 
@@ -86,9 +86,9 @@ public:
     // Mark all frames as not used as reference frames.
 
 
-    H264DecoderFrame * findLongTermRefIdx(Ipp32s LongTermFrameIdx);
+    H264DecoderFrame * findLongTermRefIdx(int32_t LongTermFrameIdx);
 
-    H264DecoderFrame * findOldLongTermRef(Ipp32s MaxLongTermFrameIdx);
+    H264DecoderFrame * findOldLongTermRef(int32_t MaxLongTermFrameIdx);
     // Mark any long-term reference frame with LongTermFrameIdx greater
     // than MaxLongTermFrameIdx as not used.
 
@@ -96,42 +96,42 @@ public:
 
     H264DecoderFrame * findOldestLongTermRef();
 
-    H264DecoderFrame *findShortTermPic(Ipp32s  picNum, Ipp32s * field);
+    H264DecoderFrame *findShortTermPic(int32_t  picNum, int32_t * field);
 
-    H264DecoderFrame *findLongTermPic(Ipp32s  picNum, Ipp32s * field);
+    H264DecoderFrame *findLongTermPic(int32_t  picNum, int32_t * field);
 
-    H264DecoderFrame *findInterViewRef(Ipp32s auIndex, Ipp32u bottomFieldFlag);
+    H264DecoderFrame *findInterViewRef(int32_t auIndex, uint32_t bottomFieldFlag);
 
-    Ipp32u countAllFrames();
+    uint32_t countAllFrames();
 
-    void countActiveRefs(Ipp32u &numShortTerm, Ipp32u &numLongTerm);
-    // Return number of active Ipp16s and long term reference frames.
+    void countActiveRefs(uint32_t &numShortTerm, uint32_t &numLongTerm);
+    // Return number of active int16_t and long term reference frames.
 
     H264DecoderFrame * findDisplayableByDPBDelay();
 
-    H264DecoderFrame *findOldestDisplayable(Ipp32s dbpSize);
+    H264DecoderFrame *findOldestDisplayable(int32_t dbpSize);
     // Search through the list for the oldest displayable frame.
 
-    Ipp32u countNumDisplayable();
+    uint32_t countNumDisplayable();
     // Return number of displayable frames.
 
     H264DecoderFrame * FindClosest(H264DecoderFrame * pFrame);
 
-    H264DecoderFrame * FindByIndex(Ipp32s index);
+    H264DecoderFrame * FindByIndex(int32_t index);
 
-    Ipp32s GetDPBSize() const
+    int32_t GetDPBSize() const
     {
         return m_dpbSize;
     }
 
-    void SetDPBSize(Ipp32s dpbSize)
+    void SetDPBSize(int32_t dpbSize)
     {
         m_dpbSize = dpbSize;
     }
 
-    Ipp32s GetRecoveryFrameCnt() const;
+    int32_t GetRecoveryFrameCnt() const;
 
-    void SetRecoveryFrameCnt(Ipp32s recovery_frame_cnt);
+    void SetRecoveryFrameCnt(int32_t recovery_frame_cnt);
 
     // Reset the buffer and reset every single frame of it
     void Reset(void);
@@ -141,11 +141,11 @@ public:
     // reference list functions
     void InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRefPicList);
     void InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRefPicList0, H264DecoderFrame **pRefPicList1, H264RefListInfo &rli);
-    void AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicList, ReferenceFlags *pFields, Ipp32u listNum, ViewList &views);
+    void AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicList, ReferenceFlags *pFields, uint32_t listNum, ViewList &views);
 
 protected:
-    Ipp32s m_dpbSize;
-    Ipp32s m_recovery_frame_cnt;
+    int32_t m_dpbSize;
+    int32_t m_recovery_frame_cnt;
     bool   m_wasRecoveryPointFound;
 };
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -46,7 +46,7 @@ namespace UMC
 */
 
 static
-Ipp32s total_zeros_map_1[] =
+int32_t total_zeros_map_1[] =
 {
 9, /* max bits */
 1,  /* total subtables */
@@ -106,7 +106,7 @@ Ipp32s total_zeros_map_1[] =
 */
 
 static
-Ipp32s total_zeros_map_2[] =
+int32_t total_zeros_map_2[] =
 {
 6, /* max bits */
 1,  /* total subtables */
@@ -155,7 +155,7 @@ Ipp32s total_zeros_map_2[] =
 */
 
 static
-Ipp32s total_zeros_map_3[] =
+int32_t total_zeros_map_3[] =
 {
 6, /* max bits */
 1,  /* total subtables */
@@ -201,7 +201,7 @@ Ipp32s total_zeros_map_3[] =
 */
 
 static
-Ipp32s total_zeros_map_4[] =
+int32_t total_zeros_map_4[] =
 {
 5, /* max bits */
 1,  /* total subtables */
@@ -243,7 +243,7 @@ Ipp32s total_zeros_map_4[] =
 */
 
 static
-Ipp32s total_zeros_map_5[] =
+int32_t total_zeros_map_5[] =
 {
 5, /* max bits */
 1,  /* total subtables */
@@ -286,7 +286,7 @@ Ipp32s total_zeros_map_5[] =
 */
 
 static
-Ipp32s total_zeros_map_6[] =
+int32_t total_zeros_map_6[] =
 {
 6, /* max bits */
 1,  /* total subtables */
@@ -332,7 +332,7 @@ Ipp32s total_zeros_map_6[] =
 */
 
 static
-Ipp32s total_zeros_map_7[] =
+int32_t total_zeros_map_7[] =
 {
 6, /* max bits */
 1,  /* total subtables */
@@ -379,7 +379,7 @@ Ipp32s total_zeros_map_7[] =
 */
 
 static
-Ipp32s total_zeros_map_8[] =
+int32_t total_zeros_map_8[] =
 {
 6, /* max bits */
 1,  /* total subtables */
@@ -423,7 +423,7 @@ Ipp32s total_zeros_map_8[] =
 */
 
 static
-Ipp32s total_zeros_map_9[] =
+int32_t total_zeros_map_9[] =
 {
 6, /* max bits */
 1,  /* total subtables */
@@ -465,7 +465,7 @@ Ipp32s total_zeros_map_9[] =
 */
 
 static
-Ipp32s total_zeros_map_10[] =
+int32_t total_zeros_map_10[] =
 {
 5, /* max bits */
 1,  /* total subtables */
@@ -503,7 +503,7 @@ Ipp32s total_zeros_map_10[] =
 */
 
 static
-Ipp32s total_zeros_map_11[] =
+int32_t total_zeros_map_11[] =
 {
 4, /* max bits */
 1,  /* total subtables */
@@ -538,7 +538,7 @@ Ipp32s total_zeros_map_11[] =
 */
 
 static
-Ipp32s total_zeros_map_12[] =
+int32_t total_zeros_map_12[] =
 {
 4, /* max bits */
 1,  /* total subtables */
@@ -574,7 +574,7 @@ Ipp32s total_zeros_map_12[] =
 */
 
 static
-Ipp32s total_zeros_map_13[] =
+int32_t total_zeros_map_13[] =
 {
 3, /* max bits */
 1,  /* total subtables */
@@ -603,7 +603,7 @@ Ipp32s total_zeros_map_13[] =
 */
 
 static
-Ipp32s total_zeros_map_14[] =
+int32_t total_zeros_map_14[] =
 {
 2, /* max bits */
 1,  /* total subtables */
@@ -627,7 +627,7 @@ Ipp32s total_zeros_map_14[] =
 */
 
 static
-Ipp32s total_zeros_map_15[] =
+int32_t total_zeros_map_15[] =
 {
 1, /* max bits */
 1,  /* total subtables */
@@ -649,7 +649,7 @@ Ipp32s total_zeros_map_15[] =
 */
 
 static
-Ipp32s total_zeros_map_cr1[] =
+int32_t total_zeros_map_cr1[] =
 {
 3, /* max bits */
 1, /* total subtables */
@@ -676,7 +676,7 @@ Ipp32s total_zeros_map_cr1[] =
 */
 
 static
-Ipp32s total_zeros_map_cr2[] =
+int32_t total_zeros_map_cr2[] =
 {
 2, /* max bits */
 1, /* total subtables */
@@ -699,7 +699,7 @@ Ipp32s total_zeros_map_cr2[] =
 */
 
 static
-Ipp32s total_zeros_map_cr3[] =
+int32_t total_zeros_map_cr3[] =
 {
 1, /* max bits */
 1, /* total subtables */
@@ -712,7 +712,7 @@ Ipp32s total_zeros_map_cr3[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_1[] =
+int32_t total_zeros_map_cr422_1[] =
 {
     5, /* max bits */
     1, /* total subtables */
@@ -734,7 +734,7 @@ Ipp32s total_zeros_map_cr422_1[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_2[] =
+int32_t total_zeros_map_cr422_2[] =
 {
     3, /* max bits */
     1, /* total subtables */
@@ -753,7 +753,7 @@ Ipp32s total_zeros_map_cr422_2[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_3[] =
+int32_t total_zeros_map_cr422_3[] =
 {
     3, /* max bits */
     1, /* total subtables */
@@ -771,7 +771,7 @@ Ipp32s total_zeros_map_cr422_3[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_4[] =
+int32_t total_zeros_map_cr422_4[] =
 {
     3, /* max bits */
     1, /* total subtables */
@@ -789,7 +789,7 @@ Ipp32s total_zeros_map_cr422_4[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_5[] =
+int32_t total_zeros_map_cr422_5[] =
 {
     2, /* max bits */
     1, /* total subtables */
@@ -806,7 +806,7 @@ Ipp32s total_zeros_map_cr422_5[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_6[] =
+int32_t total_zeros_map_cr422_6[] =
 {
     2, /* max bits */
     1, /* total subtables */
@@ -822,7 +822,7 @@ Ipp32s total_zeros_map_cr422_6[] =
 };
 
 static
-Ipp32s total_zeros_map_cr422_7[] =
+int32_t total_zeros_map_cr422_7[] =
 {
     1, /* max bits */
     1, /* total subtables */

@@ -27,9 +27,9 @@
 namespace UMC
 {
 
-static H264DecoderFrame *FindLastValidReference(H264DecoderFrame **pList, Ipp32s iLength)
+static H264DecoderFrame *FindLastValidReference(H264DecoderFrame **pList, int32_t iLength)
 {
-    Ipp32s i;
+    int32_t i;
     H264DecoderFrame *pLast = NULL;
 
     for (i = 0; i < iLength; i += 1)
@@ -44,22 +44,22 @@ static H264DecoderFrame *FindLastValidReference(H264DecoderFrame **pList, Ipp32s
 
 
 Status H264Slice::UpdateReferenceList(ViewList &views,
-                                      Ipp32s dIdIndex)
+                                      int32_t dIdIndex)
 {
     RefPicListReorderInfo *pReorderInfo_L0 = &ReorderInfoL0;
     RefPicListReorderInfo *pReorderInfo_L1 = &ReorderInfoL1;
     const H264SeqParamSet *sps = GetSeqParam();
-    Ipp32u uMaxFrameNum;
-    Ipp32u uMaxPicNum;
+    uint32_t uMaxFrameNum;
+    uint32_t uMaxPicNum;
     H264DecoderFrame *pFrm;
     H264DBPList *pDecoderFrameList = GetDPB(views, m_SliceHeader.nal_ext.mvc.view_id, dIdIndex);
     H264DecoderFrame *pHead = pDecoderFrameList->head();
-    //Ipp32u i;
+    //uint32_t i;
     H264DecoderFrame **pRefPicList0;
     H264DecoderFrame **pRefPicList1;
     ReferenceFlags *pFields0;
     ReferenceFlags *pFields1;
-    Ipp32u NumShortTermRefs, NumLongTermRefs;
+    uint32_t NumShortTermRefs, NumLongTermRefs;
     H264RefListInfo rli;
     H264DecoderFrame *pLastInList[2] = {NULL, NULL};
 
@@ -82,7 +82,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
         // update FrameNumWrap and picNum if frame number wrap occurred,
         // for short-term frames
         // TBD: modify for fields
-        pFrm->UpdateFrameNumWrap((Ipp32s)m_SliceHeader.frame_num,
+        pFrm->UpdateFrameNumWrap((int32_t)m_SliceHeader.frame_num,
             uMaxFrameNum,
             m_pCurrentFrame->m_PictureStructureForDec +
             m_SliceHeader.bottom_field_flag);
@@ -95,7 +95,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
                                    m_SliceHeader.bottom_field_flag);
     }
 
-    for (Ipp32u number = 0; number <= MAX_NUM_REF_FRAMES + 1; number++)
+    for (uint32_t number = 0; number <= MAX_NUM_REF_FRAMES + 1; number++)
     {
         pRefPicList0[number] = 0;
         pRefPicList1[number] = 0;
@@ -107,7 +107,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
 
     if ((m_SliceHeader.slice_type != INTRASLICE) && (m_SliceHeader.slice_type != S_INTRASLICE))
     {
-        Ipp32u NumInterViewRefs = 0;
+        uint32_t NumInterViewRefs = 0;
 
         // Detect and report no available reference frames
         pDecoderFrameList->countActiveRefs(NumShortTermRefs, NumLongTermRefs);
@@ -168,7 +168,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
                     (rli.m_iNumFramesInL0List > 1))
                 {
                     bool isNeedSwap = true;
-                    for (Ipp32s i = 0; i < rli.m_iNumFramesInL0List; i++)
+                    for (int32_t i = 0; i < rli.m_iNumFramesInL0List; i++)
                     {
                         if (pRefPicList1[i] != pRefPicList0[i] ||
                             pFields1[i].field != pFields0[i].field)
@@ -209,7 +209,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
         {
         FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
         fprintf(fl, "init - l0 - %d\n", kkkk);
-        for (Ipp32s k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
+        for (int32_t k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
         {
             if (!pRefPicList0[k1])
                 break;
@@ -217,7 +217,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
         }
 
         fprintf(fl, "l1 - %d\n", kkkk);
-        for (Ipp32s  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
+        for (int32_t  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
         {
             if (!pRefPicList1[k1])
                 break;
@@ -246,7 +246,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
         {kkkk++;
         FILE  * fl = fopen(LIST_TRACE_FILE_NAME, "a+");
         fprintf(fl, "reorder - l0 - %d\n", kkkk);
-        for (Ipp32s k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
+        for (int32_t k1 = 0; k1 < m_SliceHeader.num_ref_idx_l0_active; k1++)
         {
             if (!pRefPicList0[k1])
                 break;
@@ -254,7 +254,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
         }
 
         fprintf(fl, "l1 - %d\n", kkkk);
-        for (Ipp32s  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
+        for (int32_t  k1 = 0; k1 < m_SliceHeader.num_ref_idx_l1_active; k1++)
         {
             if (!pRefPicList1[k1])
                 break;
@@ -267,8 +267,8 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
 
         // set absent references
         {
-            Ipp32s i;
-            Ipp32s iCurField = 1;
+            int32_t i;
+            int32_t iCurField = 1;
 
             if (!pLastInList[0])
             {
@@ -303,7 +303,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
                 {
                     pRefPicList0[i] = pLastInList[0];
                     m_pCurrentFrame->AddReference(pLastInList[0]);
-                    pFields0[i].field = (Ipp8s) (iCurField ^= 1);
+                    pFields0[i].field = (int8_t) (iCurField ^= 1);
                     if (pRefPicList0[i])
                         pFields0[i].isShortReference = (pRefPicList0[i]->m_viewId == m_pCurrentFrame->m_viewId) ? 1 : 0;
                     else
@@ -335,7 +335,7 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
                     {
                         pRefPicList1[i] = pLastInList[1];
                         m_pCurrentFrame->AddReference(pLastInList[1]);
-                        pFields1[i].field = (Ipp8s) (iCurField ^= 1);
+                        pFields1[i].field = (int8_t) (iCurField ^= 1);
                         pFields1[i].isShortReference = 1;
                         if (pRefPicList1[i])
                             pFields1[i].isShortReference = (pRefPicList1[i]->m_viewId == m_pCurrentFrame->m_viewId) ? 1 : 0;
@@ -365,16 +365,16 @@ Status H264Slice::UpdateReferenceList(ViewList &views,
 
 } // Status H264Slice::UpdateRefPicList(H264DecoderFrameList *pDecoderFrameList)
 
-Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
+int32_t H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
                                           ReferenceFlags *pFields,
                                           H264RefListInfo &rli)
 {
     H264DecoderFrame *TempList[MAX_NUM_REF_FRAMES+1];
-    Ipp8u TempFields[MAX_NUM_REF_FRAMES+1];
+    uint8_t TempFields[MAX_NUM_REF_FRAMES+1];
     //walk through list and set correct indices
-    Ipp32s i=0,j=0,numSTR=0,numLTR=0;
-    Ipp32s num_same_parity = 0, num_opposite_parity = 0;
-    Ipp8s current_parity = m_SliceHeader.bottom_field_flag;
+    int32_t i=0,j=0,numSTR=0,numLTR=0;
+    int32_t num_same_parity = 0, num_opposite_parity = 0;
+    int8_t current_parity = m_SliceHeader.bottom_field_flag;
     //first scan the list to determine number of shortterm and longterm reference frames
     while ((numSTR < 16) && pRefPicList[numSTR] && pRefPicList[numSTR]->isShortTermRef()) numSTR++;
     while ((numSTR + numLTR < 16) && pRefPicList[numSTR+numLTR] && pRefPicList[numSTR+numLTR]->isLongTermRef()) numLTR++;
@@ -386,7 +386,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         {
             while (num_same_parity < numSTR)
             {
-                Ipp32s ref_field = pRefPicList[num_same_parity]->GetNumberByParity(current_parity);
+                int32_t ref_field = pRefPicList[num_same_parity]->GetNumberByParity(current_parity);
                 if (pRefPicList[num_same_parity]->isShortTermRef(ref_field))
                     break;
 
@@ -407,7 +407,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         {
             while (num_opposite_parity < numSTR)
             {
-                Ipp32s ref_field = pRefPicList[num_opposite_parity]->GetNumberByParity(!current_parity);
+                int32_t ref_field = pRefPicList[num_opposite_parity]->GetNumberByParity(!current_parity);
                 if (pRefPicList[num_opposite_parity]->isShortTermRef(ref_field))
                     break;
                 num_opposite_parity++;
@@ -423,7 +423,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         }
     }
 
-    rli.m_iNumShortEntriesInList = (Ipp8u) i;
+    rli.m_iNumShortEntriesInList = (uint8_t) i;
     num_same_parity = num_opposite_parity = 0;
     //now processing LongTermRef
     while(num_same_parity<numLTR ||  num_opposite_parity<numLTR)
@@ -433,7 +433,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         {
             while (num_same_parity < numLTR)
             {
-                Ipp32s ref_field = pRefPicList[num_same_parity+numSTR]->GetNumberByParity(current_parity);
+                int32_t ref_field = pRefPicList[num_same_parity+numSTR]->GetNumberByParity(current_parity);
                 if (pRefPicList[num_same_parity+numSTR]->isLongTermRef(ref_field))
                     break;
                 num_same_parity++;
@@ -451,7 +451,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         {
             while (num_opposite_parity < numLTR)
             {
-                Ipp32s ref_field = pRefPicList[num_opposite_parity+numSTR]->GetNumberByParity(!current_parity);
+                int32_t ref_field = pRefPicList[num_opposite_parity+numSTR]->GetNumberByParity(!current_parity);
 
                 if (pRefPicList[num_opposite_parity+numSTR]->isLongTermRef(ref_field))
                     break;
@@ -468,7 +468,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         }
     }
 
-    rli.m_iNumLongEntriesInList = (Ipp8u) (i - rli.m_iNumShortEntriesInList);
+    rli.m_iNumLongEntriesInList = (uint8_t) (i - rli.m_iNumShortEntriesInList);
     j = 0;
     while(j < i)//copy data back to list
     {
@@ -478,7 +478,7 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
         j++;
     }
 
-    while(j < (Ipp32s)MAX_NUM_REF_FRAMES)//fill remaining entries
+    while(j < (int32_t)MAX_NUM_REF_FRAMES)//fill remaining entries
     {
         pRefPicList[j] = NULL;
         pFields[j].field = 0;
@@ -487,29 +487,29 @@ Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList,
     }
 
     return i;
-} // Ipp32s H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList, Ipp8s *pFields)
+} // int32_t H264Slice::AdjustRefPicListForFields(H264DecoderFrame **pRefPicList, int8_t *pFields)
 
 void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
                                   ReferenceFlags *pFields,
                                   RefPicListReorderInfo *pReorderInfo,
-                                  Ipp32s MaxPicNum,
+                                  int32_t MaxPicNum,
                                   ViewList &views,
-                                  Ipp32s dIdIndex,
-                                  Ipp32u listNum)
+                                  int32_t dIdIndex,
+                                  uint32_t listNum)
 {
     bool bIsFieldSlice = (m_SliceHeader.field_pic_flag != 0);
-    Ipp32u NumRefActive = (0 == listNum) ?
+    uint32_t NumRefActive = (0 == listNum) ?
                           m_SliceHeader.num_ref_idx_l0_active :
                           m_SliceHeader.num_ref_idx_l1_active;
-    Ipp32u i;
-    Ipp32s picNumNoWrap;
-    Ipp32s picNum;
-    Ipp32s picNumPred;
-    Ipp32s picNumCurr;
-    Ipp32s picViewIdxLXPred = -1;
+    uint32_t i;
+    int32_t picNumNoWrap;
+    int32_t picNum;
+    int32_t picNumPred;
+    int32_t picNumCurr;
+    int32_t picViewIdxLXPred = -1;
     H264DBPList *pDecoderFrameList = GetDPB(views, m_SliceHeader.nal_ext.mvc.view_id, dIdIndex);
 
-    Ipp32s pocForce = bIsFieldSlice ? 0 : 3;
+    int32_t pocForce = bIsFieldSlice ? 0 : 3;
 
     // Reference: Reordering process for reference picture lists, 8.2.4.3
     picNumCurr = m_pCurrentFrame->PicNum(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag), pocForce);
@@ -538,10 +538,10 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             if (picNum > picNumCurr)
                 picNum -= MaxPicNum;
 
-            Ipp32s frameField;
+            int32_t frameField;
             H264DecoderFrame* pFrame = pDecoderFrameList->findShortTermPic(picNum, &frameField);
 
-            for (Ipp32u k = NumRefActive; k > i; k--)
+            for (uint32_t k = NumRefActive; k > i; k--)
             {
                 pRefPicList[k] = pRefPicList[k - 1];
                 pFields[k] = pFields[k - 1];
@@ -552,9 +552,9 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             pRefPicList[i] = pFrame;
             pFields[i].field = (char) ((pFrame && bIsFieldSlice) ? pFrame->m_bottom_field_flag[frameField] : 0);
             pFields[i].isShortReference = 1;
-            Ipp32s refIdxLX = i + 1;
+            int32_t refIdxLX = i + 1;
 
-            for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
+            for(uint32_t kk = i + 1; kk <= NumRefActive; kk++)
             {
                 if (pRefPicList[kk])
                 {
@@ -573,10 +573,10 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             // long term reorder
             picNum = pReorderInfo->reorder_value[i];
 
-            Ipp32s frameField;
+            int32_t frameField;
             H264DecoderFrame* pFrame = pDecoderFrameList->findLongTermPic(picNum, &frameField);
 
-            for (Ipp32u k = NumRefActive; k > i; k--)
+            for (uint32_t k = NumRefActive; k > i; k--)
             {
                 pRefPicList[k] = pRefPicList[k - 1];
                 pFields[k] = pFields[k - 1];
@@ -587,9 +587,9 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             pRefPicList[i] = pFrame;
             pFields[i].field = (char) ((pFrame && bIsFieldSlice) ? pFrame->m_bottom_field_flag[frameField] : 0);
             pFields[i].isShortReference = 0;
-            Ipp32s refIdxLX = i + 1;
+            int32_t refIdxLX = i + 1;
 
-            for(Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
+            for(uint32_t kk = i + 1; kk <= NumRefActive; kk++)
             {
                 if (pRefPicList[kk])
                 {
@@ -607,10 +607,10 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
         else if ((4 == pReorderInfo->reordering_of_pic_nums_idc[i]) ||
                     (5 == pReorderInfo->reordering_of_pic_nums_idc[i]))
         {
-            Ipp32s abs_diff_view_idx = pReorderInfo->reorder_value[i];
-            Ipp32s maxViewIdx;
-            Ipp32u currVOIdx = 0, viewIdx;
-            Ipp32s targetViewID;
+            int32_t abs_diff_view_idx = pReorderInfo->reorder_value[i];
+            int32_t maxViewIdx;
+            uint32_t currVOIdx = 0, viewIdx;
+            int32_t targetViewID;
 
             if (!m_pSeqParamSetMvcEx)
             {
@@ -618,9 +618,9 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
                 continue;
             }
 
-            Ipp32u picViewIdxLX;
+            uint32_t picViewIdxLX;
             H264DecoderFrame* pFrame = NULL;
-            Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag), pocForce);
+            int32_t curPOC = m_pCurrentFrame->PicOrderCnt(m_pCurrentFrame->GetNumberByParity(m_SliceHeader.bottom_field_flag), pocForce);
 
             // set current VO index
             for (viewIdx = 0; viewIdx <= m_pSeqParamSetMvcEx->num_views_minus1; viewIdx += 1)
@@ -693,7 +693,7 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
                 continue;
 
             // make some space to insert the reference
-            for (Ipp32u k = NumRefActive; k > i; k--)
+            for (uint32_t k = NumRefActive; k > i; k--)
             {
                 pRefPicList[k] = pRefPicList[k - 1];
                 pFields[k] = pFields[k - 1];
@@ -704,13 +704,13 @@ void H264Slice::ReOrderRefPicList(H264DecoderFrame **pRefPicList,
             pRefPicList[i] = pFrame;
             pFields[i].field = m_SliceHeader.bottom_field_flag;
             pFields[i].isShortReference = 1;
-            Ipp32u refIdxLX = i + 1;
+            uint32_t refIdxLX = i + 1;
 
-            for (Ipp32u kk = i + 1; kk <= NumRefActive; kk++)
+            for (uint32_t kk = i + 1; kk <= NumRefActive; kk++)
             {
                 if (pRefPicList[kk])
                 {
-                    Ipp32u refFieldIdx = pRefPicList[kk]->GetNumberByParity(m_SliceHeader.bottom_field_flag);
+                    uint32_t refFieldIdx = pRefPicList[kk]->GetNumberByParity(m_SliceHeader.bottom_field_flag);
 
                     if ((pRefPicList[kk]->m_viewId != targetViewID) ||
                         (pRefPicList[kk]->PicOrderCnt(refFieldIdx, pocForce) != curPOC))

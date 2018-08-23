@@ -158,13 +158,13 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
     }
 
     // id
-    Ipp32s sps_id = SeqParams.seq_parameter_set_id;
-    if (sps_id > (Ipp32s)(MAX_NUM_SEQ_PARAM_SETS - 1))
+    int32_t sps_id = SeqParams.seq_parameter_set_id;
+    if (sps_id > (int32_t)(MAX_NUM_SEQ_PARAM_SETS - 1))
     {
         return UMC_ERR_INVALID_STREAM;
     }
 
-    sps->seq_parameter_set_id = (Ipp8u)sps_id;
+    sps->seq_parameter_set_id = (uint8_t)sps_id;
 
     // see 7.3.2.1.1 "Sequence parameter set data syntax"
     // chapter of H264 standard for full list of profiles with chrominance
@@ -180,25 +180,25 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
         (H264VideoDecoderParams::H264_PROFILE_HIGH444_PRED == sps->profile_idc) ||
         (H264VideoDecoderParams::H264_PROFILE_CAVLC444_INTRA == sps->profile_idc))
     {
-        Ipp32u chroma_format_idc = SeqParams.sps_disp.chroma_format_idc;
+        uint32_t chroma_format_idc = SeqParams.sps_disp.chroma_format_idc;
 
         if (chroma_format_idc > 3)
             return UMC_ERR_INVALID_STREAM;
 
-        sps->chroma_format_idc = (Ipp8u)chroma_format_idc;
+        sps->chroma_format_idc = (uint8_t)chroma_format_idc;
         if (sps->chroma_format_idc==3)
         {
             sps->residual_colour_transform_flag = SeqParams.residual_colour_transform_flag;
         }
 
-        Ipp32u bit_depth_luma = SeqParams.bit_depth_luma_minus8 + 8;
-        Ipp32u bit_depth_chroma = SeqParams.bit_depth_chroma_minus8 + 8;
+        uint32_t bit_depth_luma = SeqParams.bit_depth_luma_minus8 + 8;
+        uint32_t bit_depth_chroma = SeqParams.bit_depth_chroma_minus8 + 8;
 
         if (bit_depth_luma > 16 || bit_depth_chroma > 16)
             return UMC_ERR_INVALID_STREAM;
 
-        sps->bit_depth_luma = (Ipp8u)bit_depth_luma;
-        sps->bit_depth_chroma = (Ipp8u)bit_depth_chroma;
+        sps->bit_depth_luma = (uint8_t)bit_depth_luma;
+        sps->bit_depth_chroma = (uint8_t)bit_depth_chroma;
 
         if (!chroma_format_idc)
             sps->bit_depth_chroma = sps->bit_depth_luma;
@@ -216,97 +216,97 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
             // 0
             if (SeqParams.seq_scaling_list_present_flag[0])
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[0],(Ipp8u*) SeqParams.ScalingList4x4[0]);
+                FillScalingList4x4(&sps->ScalingLists4x4[0],(uint8_t*) SeqParams.ScalingList4x4[0]);
                 sps->type_of_scaling_list_used[0] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[0],(Ipp8u*) default_intra_scaling_list4x4);
+                FillScalingList4x4(&sps->ScalingLists4x4[0],(uint8_t*) default_intra_scaling_list4x4);
                 sps->type_of_scaling_list_used[0] = SCLDEFAULT;
             }
             // 1
             if (SeqParams.seq_scaling_list_present_flag[1])
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[1],(Ipp8u*) SeqParams.ScalingList4x4[1]);
+                FillScalingList4x4(&sps->ScalingLists4x4[1],(uint8_t*) SeqParams.ScalingList4x4[1]);
                 sps->type_of_scaling_list_used[1] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[1],(Ipp8u*) sps->ScalingLists4x4[0].ScalingListCoeffs);
+                FillScalingList4x4(&sps->ScalingLists4x4[1],(uint8_t*) sps->ScalingLists4x4[0].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[1] = SCLDEFAULT;
             }
             // 2
             if (SeqParams.seq_scaling_list_present_flag[2])
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[2],(Ipp8u*) SeqParams.ScalingList4x4[2]);
+                FillScalingList4x4(&sps->ScalingLists4x4[2],(uint8_t*) SeqParams.ScalingList4x4[2]);
                 sps->type_of_scaling_list_used[2] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[2],(Ipp8u*) sps->ScalingLists4x4[1].ScalingListCoeffs);
+                FillScalingList4x4(&sps->ScalingLists4x4[2],(uint8_t*) sps->ScalingLists4x4[1].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[2] = SCLDEFAULT;
             }
             // 3
             if (SeqParams.seq_scaling_list_present_flag[3])
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[3],(Ipp8u*) SeqParams.ScalingList4x4[3]);
+                FillScalingList4x4(&sps->ScalingLists4x4[3],(uint8_t*) SeqParams.ScalingList4x4[3]);
                 sps->type_of_scaling_list_used[3] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[3],(Ipp8u*) default_inter_scaling_list4x4);
+                FillScalingList4x4(&sps->ScalingLists4x4[3],(uint8_t*) default_inter_scaling_list4x4);
                 sps->type_of_scaling_list_used[3] = SCLDEFAULT;
             }
             // 4
             if (SeqParams.seq_scaling_list_present_flag[4])
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[4],(Ipp8u*) SeqParams.ScalingList4x4[4]);
+                FillScalingList4x4(&sps->ScalingLists4x4[4],(uint8_t*) SeqParams.ScalingList4x4[4]);
                 sps->type_of_scaling_list_used[4] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[4],(Ipp8u*) sps->ScalingLists4x4[3].ScalingListCoeffs);
+                FillScalingList4x4(&sps->ScalingLists4x4[4],(uint8_t*) sps->ScalingLists4x4[3].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[4] = SCLDEFAULT;
             }
             // 5
             if (SeqParams.seq_scaling_list_present_flag[5])
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[5],(Ipp8u*) SeqParams.ScalingList4x4[5]);
+                FillScalingList4x4(&sps->ScalingLists4x4[5],(uint8_t*) SeqParams.ScalingList4x4[5]);
                 sps->type_of_scaling_list_used[5] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList4x4(&sps->ScalingLists4x4[5],(Ipp8u*) sps->ScalingLists4x4[4].ScalingListCoeffs);
+                FillScalingList4x4(&sps->ScalingLists4x4[5],(uint8_t*) sps->ScalingLists4x4[4].ScalingListCoeffs);
                 sps->type_of_scaling_list_used[5] = SCLDEFAULT;
             }
 
             // 0
             if (SeqParams.seq_scaling_list_present_flag[6])
             {
-                FillScalingList8x8(&sps->ScalingLists8x8[0],(Ipp8u*) SeqParams.ScalingList8x8[0]);
+                FillScalingList8x8(&sps->ScalingLists8x8[0],(uint8_t*) SeqParams.ScalingList8x8[0]);
                 sps->type_of_scaling_list_used[6] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList8x8(&sps->ScalingLists8x8[0],(Ipp8u*) default_intra_scaling_list8x8);
+                FillScalingList8x8(&sps->ScalingLists8x8[0],(uint8_t*) default_intra_scaling_list8x8);
                 sps->type_of_scaling_list_used[6] = SCLDEFAULT;
             }
             // 1
             if (SeqParams.seq_scaling_list_present_flag[7])
             {
-                FillScalingList8x8(&sps->ScalingLists8x8[1],(Ipp8u*) SeqParams.ScalingList8x8[1]);
+                FillScalingList8x8(&sps->ScalingLists8x8[1],(uint8_t*) SeqParams.ScalingList8x8[1]);
                 sps->type_of_scaling_list_used[7] = SCLREDEFINED;
             }
             else
             {
-                FillScalingList8x8(&sps->ScalingLists8x8[1],(Ipp8u*) default_inter_scaling_list8x8);
+                FillScalingList8x8(&sps->ScalingLists8x8[1],(uint8_t*) default_inter_scaling_list8x8);
                 sps->type_of_scaling_list_used[7] = SCLDEFAULT;
             }
 
         }
         else
         {
-            Ipp32s i;
+            int32_t i;
 
             for (i = 0; i < 6; i += 1)
             {
@@ -328,15 +328,15 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
     }
 
     // log2 max frame num (bitstream contains value - 4)
-    Ipp32u log2_max_frame_num = SeqParams.log2_max_frame_num_minus4 + 4;
-    sps->log2_max_frame_num = (Ipp8u)log2_max_frame_num;
+    uint32_t log2_max_frame_num = SeqParams.log2_max_frame_num_minus4 + 4;
+    sps->log2_max_frame_num = (uint8_t)log2_max_frame_num;
 
     if (log2_max_frame_num > 16 || log2_max_frame_num < 4)
         return UMC_ERR_INVALID_STREAM;
 
     // pic order cnt type (0..2)
-    Ipp32u pic_order_cnt_type = SeqParams.pic_order_cnt_type;
-    sps->pic_order_cnt_type = (Ipp8u)pic_order_cnt_type;
+    uint32_t pic_order_cnt_type = SeqParams.pic_order_cnt_type;
+    sps->pic_order_cnt_type = (uint8_t)pic_order_cnt_type;
     if (pic_order_cnt_type > 2)
     {
         return UMC_ERR_INVALID_STREAM;
@@ -345,8 +345,8 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
     if (sps->pic_order_cnt_type == 0)
     {
         // log2 max pic order count lsb (bitstream contains value - 4)
-        Ipp32u log2_max_pic_order_cnt_lsb = SeqParams.log2_max_pic_order_cnt_lsb_minus4 + 4;
-        sps->log2_max_pic_order_cnt_lsb = (Ipp8u)log2_max_pic_order_cnt_lsb;
+        uint32_t log2_max_pic_order_cnt_lsb = SeqParams.log2_max_pic_order_cnt_lsb_minus4 + 4;
+        sps->log2_max_pic_order_cnt_lsb = (uint8_t)log2_max_pic_order_cnt_lsb;
 
         if (log2_max_pic_order_cnt_lsb > 16 || log2_max_pic_order_cnt_lsb < 4)
             return UMC_ERR_INVALID_STREAM;
@@ -364,7 +364,7 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
             return UMC_ERR_INVALID_STREAM;
 
         // get offsets
-        for (Ipp32u i = 0; i < sps->num_ref_frames_in_pic_order_cnt_cycle; i++)
+        for (uint32_t i = 0; i < sps->num_ref_frames_in_pic_order_cnt_cycle; i++)
         {
             sps->poffset_for_ref_frame[i] = SeqParams.offset_for_ref_frame[i];
         }
@@ -408,33 +408,33 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
         sps->frame_cropping_rect_bottom_offset    = SeqParams.sps_disp.frame_crop_rect_bottom_offset;
 
         // check cropping parameters
-        Ipp32s cropX = SubWidthC[sps->chroma_format_idc] * sps->frame_cropping_rect_left_offset;
-        Ipp32s cropY = SubHeightC[sps->chroma_format_idc] * sps->frame_cropping_rect_top_offset * (2 - sps->frame_mbs_only_flag);
-        Ipp32s cropH = sps->frame_height_in_mbs * 16 -
+        int32_t cropX = SubWidthC[sps->chroma_format_idc] * sps->frame_cropping_rect_left_offset;
+        int32_t cropY = SubHeightC[sps->chroma_format_idc] * sps->frame_cropping_rect_top_offset * (2 - sps->frame_mbs_only_flag);
+        int32_t cropH = sps->frame_height_in_mbs * 16 -
             SubHeightC[sps->chroma_format_idc]*(2 - sps->frame_mbs_only_flag) *
             (sps->frame_cropping_rect_top_offset + sps->frame_cropping_rect_bottom_offset);
 
-        Ipp32s cropW = sps->frame_width_in_mbs * 16 - SubWidthC[sps->chroma_format_idc] *
+        int32_t cropW = sps->frame_width_in_mbs * 16 - SubWidthC[sps->chroma_format_idc] *
             (sps->frame_cropping_rect_left_offset + sps->frame_cropping_rect_right_offset);
 
         if (cropX < 0 || cropY < 0 || cropW < 0 || cropH < 0)
             return UMC_ERR_INVALID_STREAM;
 
-        if (cropX > (Ipp32s)sps->frame_width_in_mbs * 16)
+        if (cropX > (int32_t)sps->frame_width_in_mbs * 16)
             return UMC_ERR_INVALID_STREAM;
 
-        if (cropY > (Ipp32s)sps->frame_height_in_mbs * 16)
+        if (cropY > (int32_t)sps->frame_height_in_mbs * 16)
             return UMC_ERR_INVALID_STREAM;
 
-        if (cropX + cropW > (Ipp32s)sps->frame_width_in_mbs * 16)
+        if (cropX + cropW > (int32_t)sps->frame_width_in_mbs * 16)
             return UMC_ERR_INVALID_STREAM;
 
-        if (cropY + cropH > (Ipp32s)sps->frame_height_in_mbs * 16)
+        if (cropY + cropH > (int32_t)sps->frame_height_in_mbs * 16)
             return UMC_ERR_INVALID_STREAM;
 
     } // don't need else because we zeroid structure
 
-    sps->vui_parameters_present_flag = (Ipp8u)SeqParams.sps_disp.vui_parameters_present_flag;
+    sps->vui_parameters_present_flag = (uint8_t)SeqParams.sps_disp.vui_parameters_present_flag;
     if (sps->vui_parameters_present_flag)
     {
         H264VUI vui;
@@ -514,15 +514,15 @@ Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
     vui->pic_struct_present_flag  = SeqParams.sps_disp.vui_seq_parameters.pic_struct_present_flag;
     vui->bitstream_restriction_flag = SeqParams.sps_disp.vui_seq_parameters.bitstream_restriction_flag;
     if (vui->bitstream_restriction_flag) {
-        vui->num_reorder_frames = (Ipp8u)SeqParams.sps_disp.vui_seq_parameters.num_reorder_frames;
+        vui->num_reorder_frames = (uint8_t)SeqParams.sps_disp.vui_seq_parameters.num_reorder_frames;
 
-        Ipp32s value = SeqParams.sps_disp.vui_seq_parameters.max_dec_frame_buffering;
-        if (value < (Ipp32s)sps->num_ref_frames || value < 0)
+        int32_t value = SeqParams.sps_disp.vui_seq_parameters.max_dec_frame_buffering;
+        if (value < (int32_t)sps->num_ref_frames || value < 0)
         {
             return UMC_ERR_INVALID_STREAM;
         }
 
-        vui->max_dec_frame_buffering = (Ipp8u)value;
+        vui->max_dec_frame_buffering = (uint8_t)value;
         if (vui->max_dec_frame_buffering > 16)
         {
             return UMC_ERR_INVALID_STREAM;
@@ -534,21 +534,21 @@ Status DecryptParametersWrapper::GetVUIParam(H264SeqParamSet *sps, H264VUI *vui)
 
 Status DecryptParametersWrapper::GetHRDParam(H264SeqParamSet *, h264_hrd_param_set_t *hrd, H264VUI *vui)
 {
-    Ipp32s cpb_cnt = hrd->info.cpb_cnt_minus1 + 1;
+    int32_t cpb_cnt = hrd->info.cpb_cnt_minus1 + 1;
 
     if (cpb_cnt >= 32)
     {
         return UMC_ERR_INVALID_STREAM;
     }
 
-    vui->cpb_cnt = (Ipp8u)cpb_cnt;
+    vui->cpb_cnt = (uint8_t)cpb_cnt;
 
     vui->bit_rate_scale = hrd->info.bit_rate_scale;
     vui->cpb_size_scale = hrd->info.cpb_size_scale;
-    for( Ipp32s idx= 0; idx < vui->cpb_cnt; idx++ ) {
+    for( int32_t idx= 0; idx < vui->cpb_cnt; idx++ ) {
         vui->bit_rate_value[ idx ] = hrd->item[idx].bit_rate_value_minus1 + 1;
         vui->cpb_size_value[ idx ] = hrd->item[idx].cpb_size_value_minus1 + 1;
-        vui->cbr_flag[ idx ] = (Ipp8u)hrd->item[idx].cbr_flag;
+        vui->cbr_flag[ idx ] = (uint8_t)hrd->item[idx].cbr_flag;
     }
     vui->initial_cpb_removal_delay_length = hrd->info.initial_cpb_removal_delay_length_minus1 + 1;
     vui->cpb_removal_delay_length = hrd->info.cpb_removal_delay_length_minus1 + 1;
@@ -564,16 +564,16 @@ Status DecryptParametersWrapper::GetPictureParamSetPart1(H264PicParamSet *pps)
     pps->Reset();
 
     // id
-    Ipp32u pic_parameter_set_id = PicParams.pic_parameter_set_id;
-    pps->pic_parameter_set_id = (Ipp16u)pic_parameter_set_id;
+    uint32_t pic_parameter_set_id = PicParams.pic_parameter_set_id;
+    pps->pic_parameter_set_id = (uint16_t)pic_parameter_set_id;
     if (pic_parameter_set_id > MAX_NUM_PIC_PARAM_SETS-1)
     {
         return UMC_ERR_INVALID_STREAM;
     }
 
     // seq param set referred to by this pic param set
-    Ipp32u seq_parameter_set_id = PicParams.seq_parameter_set_id;
-    pps->seq_parameter_set_id = (Ipp8u)seq_parameter_set_id;
+    uint32_t seq_parameter_set_id = PicParams.seq_parameter_set_id;
+    pps->seq_parameter_set_id = (uint8_t)seq_parameter_set_id;
     if (seq_parameter_set_id > MAX_NUM_SEQ_PARAM_SETS-1)
     {
         return UMC_ERR_INVALID_STREAM;
@@ -597,8 +597,8 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
             return UMC_ERR_INVALID_STREAM;
         }
 
-        Ipp32u slice_group_map_type = PicParams.slice_group_map_type;
-        pps->SliceGroupInfo.slice_group_map_type = (Ipp8u)slice_group_map_type;
+        uint32_t slice_group_map_type = PicParams.slice_group_map_type;
+        pps->SliceGroupInfo.slice_group_map_type = (uint8_t)slice_group_map_type;
 
         if (slice_group_map_type > 6)
             return UMC_ERR_INVALID_STREAM;
@@ -609,7 +609,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
         //switch (pps->SliceGroupInfo.slice_group_map_type)
         //{
         //case 0:
-        //    for (Ipp32u slice_group = 0; slice_group < pps->num_slice_groups; slice_group++)
+        //    for (uint32_t slice_group = 0; slice_group < pps->num_slice_groups; slice_group++)
         //    {
         //        // run length, bitstream has value - 1
         //        pps->SliceGroupInfo.run_length[slice_group] = GetVLCElement(false) + 1;
@@ -619,7 +619,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
         //    // no additional info
         //    break;
         //case 2:
-        //    for (Ipp32u slice_group = 0; slice_group < (Ipp32u)(pps->num_slice_groups-1); slice_group++)
+        //    for (uint32_t slice_group = 0; slice_group < (uint32_t)(pps->num_slice_groups-1); slice_group++)
         //    {
         //        pps->SliceGroupInfo.t1.top_left[slice_group] = GetVLCElement(false);
         //        pps->SliceGroupInfo.t1.bottom_right[slice_group] = GetVLCElement(false);
@@ -650,18 +650,18 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
         //        // number of map units, bitstream has value - 1
         //        pps->SliceGroupInfo.t3.pic_size_in_map_units = GetVLCElement(false) + 1;
 
-        //        Ipp32s len = IPP_MAX(1, pps->SliceGroupInfo.t3.pic_size_in_map_units);
+        //        int32_t len = MFX_MAX(1, pps->SliceGroupInfo.t3.pic_size_in_map_units);
 
         //        pps->SliceGroupInfo.pSliceGroupIDMap.resize(len);
 
         //        // num_bits is Ceil(log2(num_groups)) - number of bits used to code each slice group id
-        //        Ipp32u num_bits = SGIdBits[pps->num_slice_groups - 2];
+        //        uint32_t num_bits = SGIdBits[pps->num_slice_groups - 2];
 
-        //        for (Ipp32u map_unit = 0;
+        //        for (uint32_t map_unit = 0;
         //             map_unit < pps->SliceGroupInfo.t3.pic_size_in_map_units;
         //             map_unit++)
         //        {
-        //            pps->SliceGroupInfo.pSliceGroupIDMap[map_unit] = (Ipp8u)GetBits(num_bits);
+        //            pps->SliceGroupInfo.pSliceGroupIDMap[map_unit] = (uint8_t)GetBits(num_bits);
         //        }
         //    }
         //    break;
@@ -685,21 +685,21 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
     pps->weighted_bipred_idc = PicParams.weighted_bipred_idc;
 
     // default slice QP, bitstream has value - 26
-    Ipp32s pic_init_qp = PicParams.pic_init_qp_minus26 + 26;
-    pps->pic_init_qp = (Ipp8s)pic_init_qp;
+    int32_t pic_init_qp = PicParams.pic_init_qp_minus26 + 26;
+    pps->pic_init_qp = (int8_t)pic_init_qp;
     if (pic_init_qp > QP_MAX)
     {
         //return UMC_ERR_INVALID_STREAM;
     }
 
     // default SP/SI slice QP, bitstream has value - 26
-    pps->pic_init_qs = (Ipp8u)(PicParams.pic_init_qs_minus26 + 26);
+    pps->pic_init_qs = (uint8_t)(PicParams.pic_init_qs_minus26 + 26);
     if (pps->pic_init_qs > QP_MAX)
     {
         //return UMC_ERR_INVALID_STREAM;
     }
 
-    pps->chroma_qp_index_offset[0] = (Ipp8s)PicParams.chroma_qp_index_offset;
+    pps->chroma_qp_index_offset[0] = (int8_t)PicParams.chroma_qp_index_offset;
     if ((pps->chroma_qp_index_offset[0] < -12) || (pps->chroma_qp_index_offset[0] > 12))
     {
         //return UMC_ERR_INVALID_STREAM;
@@ -716,12 +716,12 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
 
     if (pps->pic_scaling_matrix_present_flag)
     {
-        for (Ipp32s i = 0; i < 6; i++)
+        for (int32_t i = 0; i < 6; i++)
         {
             pps->pic_scaling_list_present_flag[i] = PicParams.pic_scaling_list_present_flag[i];
             if (pps->pic_scaling_list_present_flag[i])
             {
-                FillScalingList4x4(&scaling->ScalingLists4x4[i], (Ipp8u*) PicParams.ScalingList4x4[i]);
+                FillScalingList4x4(&scaling->ScalingLists4x4[i], (uint8_t*) PicParams.ScalingList4x4[i]);
                 pps->type_of_scaling_list_used[i] = SCLREDEFINED;
             }
             else
@@ -735,7 +735,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
             pps->pic_scaling_list_present_flag[6] = PicParams.pic_scaling_list_present_flag[6];
             if (pps->pic_scaling_list_present_flag[6])
             {
-                FillScalingList8x8(&scaling->ScalingLists8x8[0], (Ipp8u*) PicParams.ScalingList8x8[0]);
+                FillScalingList8x8(&scaling->ScalingLists8x8[0], (uint8_t*) PicParams.ScalingList8x8[0]);
                 pps->type_of_scaling_list_used[6] = SCLREDEFINED;
             }
             else
@@ -746,7 +746,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
             pps->pic_scaling_list_present_flag[7] = PicParams.pic_scaling_list_present_flag[7];
             if (pps->pic_scaling_list_present_flag[7])
             {
-                FillScalingList8x8(&scaling->ScalingLists8x8[1], (Ipp8u*) PicParams.ScalingList8x8[1]);
+                FillScalingList8x8(&scaling->ScalingLists8x8[1], (uint8_t*) PicParams.ScalingList8x8[1]);
             }
             else
             {
@@ -757,7 +757,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
         memcpy_s(&pps->scaling[1], sizeof(H264ScalingPicParams), &pps->scaling[0], sizeof(H264ScalingPicParams));
     }
 
-    pps->chroma_qp_index_offset[1] = (Ipp8s)PicParams.second_chroma_qp_index_offset;
+    pps->chroma_qp_index_offset[1] = (int8_t)PicParams.second_chroma_qp_index_offset;
 
     return UMC_OK;
 }    // GetPictureParamSet
@@ -765,7 +765,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
 
 Status DecryptParametersWrapper::GetSliceHeaderPart1(H264SliceHeader *hdr)
 {
-    Ipp32u val;
+    uint32_t val;
 
     hdr->nal_ref_idc = nal_ref_idc;
     hdr->IdrPicFlag = idr_flag;
@@ -799,8 +799,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart1(H264SliceHeader *hdr)
     if (NAL_UT_IDR_SLICE == hdr->nal_unit_type && hdr->slice_type != INTRASLICE)
         return UMC_ERR_INVALID_STREAM;
 
-    Ipp32u pic_parameter_set_id = PicParams.pic_parameter_set_id;
-    hdr->pic_parameter_set_id = (Ipp16u)pic_parameter_set_id;
+    uint32_t pic_parameter_set_id = PicParams.pic_parameter_set_id;
+    hdr->pic_parameter_set_id = (uint16_t)pic_parameter_set_id;
     if (pic_parameter_set_id > MAX_NUM_PIC_PARAM_SETS - 1)
     {
         return UMC_ERR_INVALID_STREAM;
@@ -828,7 +828,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
 
     //if (hdr->MbaffFrameFlag)
     //{
-    //    Ipp32u const first_mb_in_slice
+    //    uint32_t const first_mb_in_slice
     //        = hdr->first_mb_in_slice;
 
     //    if (first_mb_in_slice * 2 > INT_MAX)
@@ -840,7 +840,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
 
     //if (hdr->IdrPicFlag)
     //{
-    //    Ipp32s pic_id = hdr->idr_pic_id = GetVLCElement(false);
+    //    int32_t pic_id = hdr->idr_pic_id = GetVLCElement(false);
     //    if (pic_id < 0 || pic_id > 65535)
     //        return UMC_ERR_INVALID_STREAM;
     //}
@@ -864,13 +864,13 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
 
     //if (pps->redundant_pic_cnt_present_flag)
     //{
-    //    hdr->hw_wa_redundant_elimination_bits[0] = (Ipp32u)BitsDecoded();
+    //    hdr->hw_wa_redundant_elimination_bits[0] = (uint32_t)BitsDecoded();
     //    // redundant pic count
     //    hdr->redundant_pic_cnt = GetVLCElement(false);
     //    if (hdr->redundant_pic_cnt > 127)
     //        return UMC_ERR_INVALID_STREAM;
 
-    //    hdr->hw_wa_redundant_elimination_bits[1] = (Ipp32u)BitsDecoded();
+    //    hdr->hw_wa_redundant_elimination_bits[1] = (uint32_t)BitsDecoded();
     //}
 
     return UMC_OK;
@@ -888,8 +888,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
     const H264SeqParamSet * /*sps*/,
     const H264SeqParamSetSVCExtension * /*spsSvcExt*/)
 {
-    //Ipp8u ref_pic_list_reordering_flag_l0 = 0;
-    //Ipp8u ref_pic_list_reordering_flag_l1 = 0;
+    //uint8_t ref_pic_list_reordering_flag_l0 = 0;
+    //uint8_t ref_pic_list_reordering_flag_l1 = 0;
     //Status ps = UMC_OK;
 
     pReorderInfo_L0->num_entries = 0;
@@ -921,14 +921,14 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
         //    }
         //}    // ref idx override
 
-        //if (hdr->num_ref_idx_l0_active < 0 || hdr->num_ref_idx_l0_active > (Ipp32s)MAX_NUM_REF_FRAMES ||
-        //    hdr->num_ref_idx_l1_active < 0 || hdr->num_ref_idx_l1_active > (Ipp32s)MAX_NUM_REF_FRAMES)
+        //if (hdr->num_ref_idx_l0_active < 0 || hdr->num_ref_idx_l0_active > (int32_t)MAX_NUM_REF_FRAMES ||
+        //    hdr->num_ref_idx_l1_active < 0 || hdr->num_ref_idx_l1_active > (int32_t)MAX_NUM_REF_FRAMES)
         //    return UMC_ERR_INVALID_STREAM;
 
         //if (hdr->slice_type != INTRASLICE && hdr->slice_type != S_INTRASLICE)
         //{
-        //    Ipp32u reordering_of_pic_nums_idc;
-        //    Ipp32u reorder_idx;
+        //    uint32_t reordering_of_pic_nums_idc;
+        //    uint32_t reorder_idx;
 
         //    // Reference picture list reordering
         //    ref_pic_list_reordering_flag_l0 = Get1Bit();
@@ -942,7 +942,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
         //        // Get reorder idc,pic_num pairs until idc==3
         //        while (bOk)
         //        {
-        //          reordering_of_pic_nums_idc = (Ipp8u)GetVLCElement(false);
+        //          reordering_of_pic_nums_idc = (uint8_t)GetVLCElement(false);
         //          if (reordering_of_pic_nums_idc > 5)
         //            return UMC_ERR_INVALID_STREAM;
 
@@ -955,7 +955,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
         //            }
 
         //            pReorderInfo_L0->reordering_of_pic_nums_idc[reorder_idx] =
-        //                                        (Ipp8u)reordering_of_pic_nums_idc;
+        //                                        (uint8_t)reordering_of_pic_nums_idc;
         //            pReorderInfo_L0->reorder_value[reorder_idx]  =
         //                                                GetVLCElement(false);
         //          if (reordering_of_pic_nums_idc != 2)
@@ -994,7 +994,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
         //                }
 
         //                pReorderInfo_L1->reordering_of_pic_nums_idc[reorder_idx] =
-        //                                            (Ipp8u)reordering_of_pic_nums_idc;
+        //                                            (uint8_t)reordering_of_pic_nums_idc;
         //                pReorderInfo_L1->reorder_value[reorder_idx]  =
         //                                                    GetVLCElement(false);
         //                if (reordering_of_pic_nums_idc != 2)
@@ -1038,8 +1038,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
             {
                 //ps =  DecRefBasePicMarking(pAdaptiveMarkingInfo, hdr->adaptive_ref_pic_marking_mode_flag);
 
-                Ipp8u memory_management_control_operation;
-                Ipp32u num_entries = 0;
+                uint8_t memory_management_control_operation;
+                uint32_t num_entries = 0;
 
                 hdr->adaptive_ref_pic_marking_mode_flag = RefPicMarking.adaptive_ref_pic_marking_mode_flag;
 
@@ -1186,8 +1186,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
     //    else
     //    {
     //        // set filter offsets to max values to disable filter
-    //        hdr->slice_alpha_c0_offset = (Ipp8s)(0 - QP_MAX);
-    //        hdr->slice_beta_offset = (Ipp8s)(0 - QP_MAX);
+    //        hdr->slice_alpha_c0_offset = (int8_t)(0 - QP_MAX);
+    //        hdr->slice_beta_offset = (int8_t)(0 - QP_MAX);
     //    }
     //}
 
@@ -1195,10 +1195,10 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
     //    pps->SliceGroupInfo.slice_group_map_type >= 3 &&
     //    pps->SliceGroupInfo.slice_group_map_type <= 5)
     //{
-    //    Ipp32u num_bits;    // number of bits used to code slice_group_change_cycle
-    //    Ipp32u val;
-    //    Ipp32u pic_size_in_map_units;
-    //    Ipp32u max_slice_group_change_cycle=0;
+    //    uint32_t num_bits;    // number of bits used to code slice_group_change_cycle
+    //    uint32_t val;
+    //    uint32_t pic_size_in_map_units;
+    //    uint32_t max_slice_group_change_cycle=0;
 
     //    // num_bits is Ceil(log2(picsizeinmapunits/slicegroupchangerate + 1))
     //    pic_size_in_map_units = sps->frame_width_in_mbs * sps->frame_height_in_mbs;
@@ -1241,20 +1241,20 @@ void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, 
 
     //check for zero
     {
-        Ipp32s initial_cpb_removal_delay_nal_check_sum = 0;
-        for(Ipp32s i=0; i < MAX_CPB_CNT; i++)
+        int32_t initial_cpb_removal_delay_nal_check_sum = 0;
+        for(int32_t i=0; i < MAX_CPB_CNT; i++)
             initial_cpb_removal_delay_nal_check_sum += abs(SeiBufferingPeriod.initial_cpb_removal_delay_nal[i]);
 
-        Ipp32s initial_cpb_removal_delay_offset_nal_check_sum = 0;
-        for(Ipp32s i=0; i < MAX_CPB_CNT; i++)
+        int32_t initial_cpb_removal_delay_offset_nal_check_sum = 0;
+        for(int32_t i=0; i < MAX_CPB_CNT; i++)
             initial_cpb_removal_delay_offset_nal_check_sum += abs(SeiBufferingPeriod.initial_cpb_removal_delay_offset_nal[i]);
 
-        Ipp32s initial_cpb_removal_delay_offset_vcl_check_sum = 0;
-        for(Ipp32s i=0; i < MAX_CPB_CNT; i++)
+        int32_t initial_cpb_removal_delay_offset_vcl_check_sum = 0;
+        for(int32_t i=0; i < MAX_CPB_CNT; i++)
             initial_cpb_removal_delay_offset_vcl_check_sum += abs(SeiBufferingPeriod.initial_cpb_removal_delay_offset_vcl[i]);
 
-        Ipp32s initial_cpb_removal_delay_vcl_check_sum = 0;
-        for(Ipp32s i=0; i < MAX_CPB_CNT; i++)
+        int32_t initial_cpb_removal_delay_vcl_check_sum = 0;
+        for(int32_t i=0; i < MAX_CPB_CNT; i++)
             initial_cpb_removal_delay_vcl_check_sum += abs(SeiBufferingPeriod.initial_cpb_removal_delay_vcl[i]);
 
         if (!SeiBufferingPeriod.seq_param_set_id &&
@@ -1272,7 +1272,7 @@ void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, 
     spl->payLoadType = SEI_BUFFERING_PERIOD_TYPE;
     spl->isValid = 1;
 
-    Ipp32s seq_parameter_set_id = (Ipp8u) SeiBufferingPeriod.seq_param_set_id;
+    int32_t seq_parameter_set_id = (uint8_t) SeiBufferingPeriod.seq_param_set_id;
     if (seq_parameter_set_id == -1)
     {
         throw h264_exception(UMC_ERR_INVALID_STREAM);
@@ -1291,7 +1291,7 @@ void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, 
         if (csps->vui.cpb_cnt >= 32)
             throw h264_exception(UMC_ERR_INVALID_STREAM);
 
-        for(Ipp32s i=0; i < csps->vui.cpb_cnt; i++)
+        for(int32_t i=0; i < csps->vui.cpb_cnt; i++)
         {
             bps.initial_cpb_removal_delay[0][i] = SeiBufferingPeriod.initial_cpb_removal_delay_nal[i];//GetBits(csps->initial_cpb_removal_delay_length);
             bps.initial_cpb_removal_delay_offset[0][i] = SeiBufferingPeriod.initial_cpb_removal_delay_offset_nal[i];//GetBits(csps->initial_cpb_removal_delay_length);
@@ -1303,7 +1303,7 @@ void DecryptParametersWrapper::ParseSEIBufferingPeriod(const Headers & headers, 
         if (csps->vui.cpb_cnt >= 32)
             throw h264_exception(UMC_ERR_INVALID_STREAM);
 
-        for(Ipp32s i=0; i < csps->vui.cpb_cnt; i++)
+        for(int32_t i=0; i < csps->vui.cpb_cnt; i++)
         {
             bps.initial_cpb_removal_delay[1][i] = SeiBufferingPeriod.initial_cpb_removal_delay_vcl[i];//GetBits(csps->cpb_removal_delay_length);
             bps.initial_cpb_removal_delay_offset[1][i] = SeiBufferingPeriod.initial_cpb_removal_delay_offset_vcl[i];//GetBits(csps->cpb_removal_delay_length);
@@ -1330,7 +1330,7 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
     spl->payLoadType = SEI_PIC_TIMING_TYPE;
     spl->isValid = 1;
 
-    Ipp32s seq_parameter_set_id = headers.m_SeqParams.GetCurrentID();;
+    int32_t seq_parameter_set_id = headers.m_SeqParams.GetCurrentID();;
     if (seq_parameter_set_id == -1)
     {
         throw h264_exception(UMC_ERR_INVALID_STREAM);
@@ -1342,7 +1342,7 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
         throw h264_exception(UMC_ERR_INVALID_STREAM);
     }
 
-    //const Ipp8u NumClockTS[]={1,1,1,2,2,3,3,2,3};
+    //const uint8_t NumClockTS[]={1,1,1,2,2,3,3,2,3};
     H264SEIPayLoad::SEIMessages::PicTiming &pts = spl->SEI_messages.pic_timing;
 
     if (csps->vui.nal_hrd_parameters_present_flag || csps->vui.vcl_hrd_parameters_present_flag)
@@ -1358,50 +1358,50 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
 
     if (csps->vui.pic_struct_present_flag)
     {
-        Ipp8u picStruct = (Ipp8u)SeiPicTiming.pic_struct;
+        uint8_t picStruct = (uint8_t)SeiPicTiming.pic_struct;
 
         if (picStruct > 8)
             throw h264_exception(UMC_ERR_INVALID_STREAM);
 
         pts.pic_struct = (DisplayPictureStruct)picStruct;
 
-        //for (Ipp32s i = 0; i < NumClockTS[pts.pic_struct]; i++)
+        //for (int32_t i = 0; i < NumClockTS[pts.pic_struct]; i++)
         //{
-        //    pts.clock_timestamp_flag[i] = (Ipp8u)Get1Bit();
+        //    pts.clock_timestamp_flag[i] = (uint8_t)Get1Bit();
         //    if (pts.clock_timestamp_flag[i])
         //    {
-        //        pts.clock_timestamps[i].ct_type = (Ipp8u)GetBits(2);
-        //        pts.clock_timestamps[i].nunit_field_based_flag = (Ipp8u)Get1Bit();
-        //        pts.clock_timestamps[i].counting_type = (Ipp8u)GetBits(5);
-        //        pts.clock_timestamps[i].full_timestamp_flag = (Ipp8u)Get1Bit();
-        //        pts.clock_timestamps[i].discontinuity_flag = (Ipp8u)Get1Bit();
-        //        pts.clock_timestamps[i].cnt_dropped_flag = (Ipp8u)Get1Bit();
-        //        pts.clock_timestamps[i].n_frames = (Ipp8u)GetBits(8);
+        //        pts.clock_timestamps[i].ct_type = (uint8_t)GetBits(2);
+        //        pts.clock_timestamps[i].nunit_field_based_flag = (uint8_t)Get1Bit();
+        //        pts.clock_timestamps[i].counting_type = (uint8_t)GetBits(5);
+        //        pts.clock_timestamps[i].full_timestamp_flag = (uint8_t)Get1Bit();
+        //        pts.clock_timestamps[i].discontinuity_flag = (uint8_t)Get1Bit();
+        //        pts.clock_timestamps[i].cnt_dropped_flag = (uint8_t)Get1Bit();
+        //        pts.clock_timestamps[i].n_frames = (uint8_t)GetBits(8);
 
         //        if (pts.clock_timestamps[i].full_timestamp_flag)
         //        {
-        //            pts.clock_timestamps[i].seconds_value = (Ipp8u)GetBits(6);
-        //            pts.clock_timestamps[i].minutes_value = (Ipp8u)GetBits(6);
-        //            pts.clock_timestamps[i].hours_value = (Ipp8u)GetBits(5);
+        //            pts.clock_timestamps[i].seconds_value = (uint8_t)GetBits(6);
+        //            pts.clock_timestamps[i].minutes_value = (uint8_t)GetBits(6);
+        //            pts.clock_timestamps[i].hours_value = (uint8_t)GetBits(5);
         //        }
         //        else
         //        {
         //            if (Get1Bit())
         //            {
-        //                pts.clock_timestamps[i].seconds_value = (Ipp8u)GetBits(6);
+        //                pts.clock_timestamps[i].seconds_value = (uint8_t)GetBits(6);
         //                if (Get1Bit())
         //                {
-        //                    pts.clock_timestamps[i].minutes_value = (Ipp8u)GetBits(6);
+        //                    pts.clock_timestamps[i].minutes_value = (uint8_t)GetBits(6);
         //                    if (Get1Bit())
         //                    {
-        //                        pts.clock_timestamps[i].hours_value = (Ipp8u)GetBits(5);
+        //                        pts.clock_timestamps[i].hours_value = (uint8_t)GetBits(5);
         //                    }
         //                }
         //            }
         //        }
 
         //        if (csps->time_offset_length > 0)
-        //            pts.clock_timestamps[i].time_offset = (Ipp8u)GetBits(csps->time_offset_length);
+        //            pts.clock_timestamps[i].time_offset = (uint8_t)GetBits(csps->time_offset_length);
         //    }
         //}
     }
@@ -1429,11 +1429,11 @@ void DecryptParametersWrapper::ParseSEIRecoveryPoint(H264SEIPayLoad *spl)
 
     H264SEIPayLoad::SEIMessages::RecoveryPoint * recPoint = &(spl->SEI_messages.recovery_point);
 
-    recPoint->recovery_frame_cnt = (Ipp8u)SeiRecoveryPoint.recovery_frame_cnt;
+    recPoint->recovery_frame_cnt = (uint8_t)SeiRecoveryPoint.recovery_frame_cnt;
 
-    recPoint->exact_match_flag = (Ipp8u)SeiRecoveryPoint.exact_match_flag;
-    recPoint->broken_link_flag = (Ipp8u)SeiRecoveryPoint.broken_link_flag;
-    recPoint->changing_slice_group_idc = (Ipp8u)SeiRecoveryPoint.changing_slice_group_idc;
+    recPoint->exact_match_flag = (uint8_t)SeiRecoveryPoint.exact_match_flag;
+    recPoint->broken_link_flag = (uint8_t)SeiRecoveryPoint.broken_link_flag;
+    recPoint->changing_slice_group_idc = (uint8_t)SeiRecoveryPoint.changing_slice_group_idc;
 
     if (recPoint->changing_slice_group_idc > 2)
     {
@@ -1606,7 +1606,7 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
 
         *pDecryptParams = *pDecryptStatusReturned;
 
-        pSource->MoveDataPointer((Ipp32s)pSource->GetDataSize());
+        pSource->MoveDataPointer((int32_t)pSource->GetDataSize());
 
         m_bitstreamSubmitted = true;
     }

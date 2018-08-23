@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -19,7 +19,7 @@ namespace UMC
 {
 
 const
-Ipp8u pCodFBD[5][4] =
+uint8_t pCodFBD[5][4] =
 {
 //fwd
 {CodInBS, CodNone, CodInBS, CodNone},
@@ -34,14 +34,14 @@ Ipp8u pCodFBD[5][4] =
 };
 
 const
-Ipp8u pCodTemplate[16] =
+uint8_t pCodTemplate[16] =
 {
     CodNone, CodLeft, CodLeft, CodLeft,    CodAbov, CodLeft, CodLeft, CodLeft,
     CodAbov, CodLeft, CodLeft, CodLeft,    CodAbov, CodLeft, CodLeft, CodLeft
 };
 
 const
-Ipp32u sb_x[4][16] =
+uint32_t sb_x[4][16] =
 {
     {
         0, 1, 0, 1,
@@ -70,7 +70,7 @@ Ipp32u sb_x[4][16] =
 };
 
 const
-Ipp32u sb_y[4][16] =
+uint32_t sb_y[4][16] =
 {
     {
         0, 0, 1, 1,
@@ -99,7 +99,7 @@ Ipp32u sb_y[4][16] =
 };
 
 const
-Ipp32s sign_mask[2] =
+int32_t sign_mask[2] =
 {
     0, -1
 };
@@ -109,16 +109,16 @@ Ipp32s sign_mask[2] =
 //    get ref_idx and update info for all 4x4 blocks
 // ---------------------------------------------------------------------------
 
-void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
-                                              const Ipp8u* , //pBlkIdx,
-                                              const Ipp8u* pCodRIx,
-                                              Ipp32u ListNum)
+void H264SegmentDecoder::GetRefIdx4x4_CABAC(const uint32_t nActive,
+                                              const uint8_t* , //pBlkIdx,
+                                              const uint8_t* pCodRIx,
+                                              uint32_t ListNum)
 {
     RefIndexType *pRIx = m_cur_mb.GetReferenceIndexStruct(ListNum)->refIndexs;
 
-    for (Ipp32s i = 0; i < 4; i ++)
+    for (int32_t i = 0; i < 4; i ++)
     {
-        Ipp32s j = subblock_block_mapping[i];
+        int32_t j = subblock_block_mapping[i];
 
         switch (pCodRIx[j])
         {
@@ -129,9 +129,9 @@ void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
         case CodInBS:
             if (nActive > 1)
             {
-                Ipp8s refIdx;
-                refIdx = (Ipp8s) GetSE_RefIdx_CABAC(ListNum, i);
-                if (refIdx >= (Ipp8s) nActive || refIdx < 0)
+                int8_t refIdx;
+                refIdx = (int8_t) GetSE_RefIdx_CABAC(ListNum, i);
+                if (refIdx >= (int8_t) nActive || refIdx < 0)
                 {
                     throw h264_exception(UMC_ERR_INVALID_STREAM);
                 }
@@ -155,7 +155,7 @@ void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
             break;
         }
     }    // for i
-} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
+} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const uint32_t nActive,
 
 
 // ---------------------------------------------------------------------------
@@ -163,19 +163,19 @@ void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
 //    get ref_idx and update info for all 4x4 blocks
 // ---------------------------------------------------------------------------
 
-void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
-                                              const Ipp8u pCodRIx,
-                                              Ipp32u ListNum)
+void H264SegmentDecoder::GetRefIdx4x4_CABAC(const uint32_t nActive,
+                                              const uint8_t pCodRIx,
+                                              uint32_t ListNum)
 {
-    Ipp8s refIdx = 0;
+    int8_t refIdx = 0;
     if(pCodRIx == CodNone)
     {
         refIdx = -1;
     }
     else if (nActive > 1)
     {
-        refIdx = (Ipp8s) GetSE_RefIdx_CABAC(ListNum, 0);
-        if (refIdx >= (Ipp8s) nActive || refIdx < 0)
+        refIdx = (int8_t) GetSE_RefIdx_CABAC(ListNum, 0);
+        if (refIdx >= (int8_t) nActive || refIdx < 0)
         {
             throw h264_exception(UMC_ERR_INVALID_STREAM);
         }
@@ -189,11 +189,11 @@ void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
 
     fill_n<RefIndexType>(pRIx, 4, refIdx);
 
-} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
+} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const uint32_t nActive,
 
-void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const Ipp32u nActive,
-                                                   const Ipp8u* pCodRIx,
-                                                   Ipp32u ListNum)
+void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const uint32_t nActive,
+                                                   const uint8_t* pCodRIx,
+                                                   uint32_t ListNum)
 {
     RefIndexType *pRIx = m_cur_mb.GetReferenceIndexStruct(ListNum)->refIndexs;
 
@@ -208,14 +208,14 @@ void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const Ipp32u nActive,
     }
     else if (nActive > 1)
     {
-        refIdx = (Ipp8s) GetSE_RefIdx_CABAC(ListNum,0);
-        if (refIdx >= (Ipp8s) nActive || refIdx < 0)
+        refIdx = (int8_t) GetSE_RefIdx_CABAC(ListNum,0);
+        if (refIdx >= (int8_t) nActive || refIdx < 0)
         {
             throw h264_exception(UMC_ERR_INVALID_STREAM);
         }
     }
 
-    fill_n<Ipp8s>(pRIx, 2, refIdx);
+    fill_n<int8_t>(pRIx, 2, refIdx);
 
     if(pCodRIx[8] == CodNone)
     {
@@ -223,8 +223,8 @@ void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const Ipp32u nActive,
     }
     else if (nActive > 1)
     {
-        refIdx = (Ipp8s) GetSE_RefIdx_CABAC(ListNum, 2);
-        if (refIdx >= (Ipp8s) nActive || refIdx < 0)
+        refIdx = (int8_t) GetSE_RefIdx_CABAC(ListNum, 2);
+        if (refIdx >= (int8_t) nActive || refIdx < 0)
         {
             throw h264_exception(UMC_ERR_INVALID_STREAM);
         }
@@ -234,13 +234,13 @@ void H264SegmentDecoder::GetRefIdx4x4_16x8_CABAC(const Ipp32u nActive,
         refIdx = 0;
     }
 
-    fill_n<Ipp8s>(&pRIx[2], 2, refIdx);
+    fill_n<int8_t>(&pRIx[2], 2, refIdx);
 
-} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
+} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const uint32_t nActive,
 
-void H264SegmentDecoder::GetRefIdx4x4_8x16_CABAC(const Ipp32u nActive,
-                                                   const Ipp8u* pCodRIx,
-                                                   Ipp32u ListNum)
+void H264SegmentDecoder::GetRefIdx4x4_8x16_CABAC(const uint32_t nActive,
+                                                   const uint8_t* pCodRIx,
+                                                   uint32_t ListNum)
 {
     RefIndexType *pRIx = m_cur_mb.GetReferenceIndexStruct(ListNum)->refIndexs;
 
@@ -274,7 +274,7 @@ void H264SegmentDecoder::GetRefIdx4x4_8x16_CABAC(const Ipp32u nActive,
     {
         RefIndexType refIdx;
         refIdx = (RefIndexType) GetSE_RefIdx_CABAC(ListNum, 1);
-        if (refIdx >= (Ipp8s) nActive || refIdx < 0)
+        if (refIdx >= (int8_t) nActive || refIdx < 0)
         {
             throw h264_exception(UMC_ERR_INVALID_STREAM);
         }
@@ -284,37 +284,37 @@ void H264SegmentDecoder::GetRefIdx4x4_8x16_CABAC(const Ipp32u nActive,
     {
         pRIx[1] = pRIx[3] = 0;
     }
-} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const Ipp32u nActive,
+} // void H264SegmentDecoder::GetRefIdx4x4_CABAC(const uint32_t nActive,
 
-Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
-                                              Ipp32u block8x8)
+int32_t H264SegmentDecoder::GetSE_RefIdx_CABAC(uint32_t ListNum,
+                                              uint32_t block8x8)
 {
-    Ipp32u ctxIdxInc = 0;
-    Ipp32s ref_idx = 0;
+    uint32_t ctxIdxInc = 0;
+    int32_t ref_idx = 0;
 
     // new
     RefIndexType LeftRefIdx = 0;
     RefIndexType TopRefIdx = 0;
 
-    Ipp32s iTopMB = m_CurMBAddr, iLeftMB = m_CurMBAddr;
+    int32_t iTopMB = m_CurMBAddr, iLeftMB = m_CurMBAddr;
 
-    Ipp32s leftFlag = 0;
-    Ipp32s topFlag = 0;
+    int32_t leftFlag = 0;
+    int32_t topFlag = 0;
 
     if (!(block8x8 & 1)) // on left edge
     {
-        Ipp32s BlockNum = subblock_block_mapping[block8x8]; // MBAFF case: i.e. second 8x8 block can use first 8x8 block of left MB ()
+        int32_t BlockNum = subblock_block_mapping[block8x8]; // MBAFF case: i.e. second 8x8 block can use first 8x8 block of left MB ()
         iLeftMB = m_cur_mb.CurrentBlockNeighbours.mbs_left[BlockNum / 4].mb_num;
 
         if (0 <= iLeftMB)
         {
-            Ipp32s iNum;
+            int32_t iNum;
 
             iNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[BlockNum / 4].block_num;
 
             LeftRefIdx = GetReferenceIndex(m_gmbinfo, ListNum, iLeftMB, iNum);
 
-            Ipp32s left_block8x8 = block_subblock_mapping[iNum] / 4;
+            int32_t left_block8x8 = block_subblock_mapping[iNum] / 4;
 
             bool is_skip = (IS_INTRA_MBTYPE(m_gmbinfo->mbs[iLeftMB].mbtype)) ||
                 GetMBDirectSkipFlag(m_gmbinfo->mbs[iLeftMB]) ||
@@ -350,7 +350,7 @@ Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
 
     if (0 <= iLeftMB)
     {
-        Ipp8u lval = (Ipp8u) (pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo) <
+        uint8_t lval = (uint8_t) (pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo) <
                               GetMBFieldDecodingFlag(m_gmbinfo->mbs[iLeftMB]));
 
         if ((LeftRefIdx > lval) && leftFlag)
@@ -359,7 +359,7 @@ Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
 
     if (0 <= iTopMB)
     {
-        Ipp8u tval = (Ipp8u) (pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo) <
+        uint8_t tval = (uint8_t) (pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo) <
                               GetMBFieldDecodingFlag(m_gmbinfo->mbs[iTopMB]));
 
         if ((TopRefIdx > tval) && topFlag)
@@ -381,20 +381,20 @@ Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum,
 
     return ref_idx;
 
-} // Ipp32s H264SegmentDecoder::GetSE_RefIdx_CABAC(Ipp32u ListNum, Ipp32u BlockNum)
+} // int32_t H264SegmentDecoder::GetSE_RefIdx_CABAC(uint32_t ListNum, uint32_t BlockNum)
 
-H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp32u BlockNum)
+H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(uint32_t ListNum, uint32_t BlockNum)
 {
-    Ipp32u ctxIdxIncx = 0;
-    Ipp32u ctxIdxIncy = 0;
-    Ipp32s mvdx = 0,mvdy = 0;
-    Ipp32u lcode,k;
-    Ipp32u mv_y;
-    Ipp32s code;
-    Ipp32s iBlock;
+    uint32_t ctxIdxIncx = 0;
+    uint32_t ctxIdxIncy = 0;
+    int32_t mvdx = 0,mvdy = 0;
+    uint32_t lcode,k;
+    uint32_t mv_y;
+    int32_t code;
+    int32_t iBlock;
     const H264DecoderMotionVector *LeftMVd = 0;
     const H264DecoderMotionVector *TopMVd = 0;
-    Ipp32s iTopMB = m_CurMBAddr, iLeftMB = m_CurMBAddr;
+    int32_t iTopMB = m_CurMBAddr, iLeftMB = m_CurMBAddr;
 
     if (BLOCK_IS_ON_LEFT_EDGE(BlockNum))
     {
@@ -450,11 +450,11 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
 
     if (0 <= iLeftMB)
     {
-        Ipp32s sign = sign_mask[LeftMVd->mvx<0];
-        ctxIdxIncx += ((((Ipp32s)LeftMVd->mvx) ^ sign) - sign);
+        int32_t sign = sign_mask[LeftMVd->mvx<0];
+        ctxIdxIncx += ((((int32_t)LeftMVd->mvx) ^ sign) - sign);
 
         sign = sign_mask[LeftMVd->mvy<0];
-        mv_y = ((((Ipp32s)LeftMVd->mvy) ^ sign) - sign);
+        mv_y = ((((int32_t)LeftMVd->mvy) ^ sign) - sign);
 
         if (GetMBFieldDecodingFlag(m_gmbinfo->mbs[iLeftMB]) >
             pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo))
@@ -468,11 +468,11 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
 
     if (0 <= iTopMB)
     {
-        Ipp32s sign = sign_mask[TopMVd->mvx<0];
-        ctxIdxIncx += ((((Ipp32s)TopMVd->mvx) ^ sign) - sign);
+        int32_t sign = sign_mask[TopMVd->mvx<0];
+        ctxIdxIncx += ((((int32_t)TopMVd->mvx) ^ sign) - sign);
 
         sign = sign_mask[TopMVd->mvy<0];
-        mv_y = ((((Ipp32s)TopMVd->mvy) ^ sign) - sign);
+        mv_y = ((((int32_t)TopMVd->mvy) ^ sign) - sign);
 
         if (GetMBFieldDecodingFlag(m_gmbinfo->mbs[iTopMB]) >
             pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo))
@@ -514,7 +514,7 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
                     code += k;
                     k <<= 1;
                 }
-                Ipp32u symb = 0;
+                uint32_t symb = 0;
                 while(k >>=1)
                 {
                     if (m_pBitStream->DecodeBypass_CABAC())
@@ -556,7 +556,7 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
                     code += k;
                     k <<= 1;
                 }
-                Ipp32u symb = 0;
+                uint32_t symb = 0;
                 while(k >>=1)
                 {
                     if (m_pBitStream->DecodeBypass_CABAC())
@@ -571,20 +571,20 @@ H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32u ListNum, Ipp3
     }
 
     H264DecoderMotionVector mvd;
-    mvd.mvx = (Ipp16s) mvdx;
-    mvd.mvy = (Ipp16s) mvdy;
+    mvd.mvx = (int16_t) mvdx;
+    mvd.mvy = (int16_t) mvdy;
 
     return mvd;
 
-} // H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(Ipp32s ListNum, Ipp32s BlockNum)
+} // H264DecoderMotionVector H264SegmentDecoder::GetSE_MVD_CABAC(int32_t ListNum, int32_t BlockNum)
 
 void H264SegmentDecoder::DecodeMBQPDelta_CABAC(void)
 {
-    Ipp32u code;
+    uint32_t code;
 
     // decode QP delta
     {
-        Ipp32u ctxIdxInc;
+        uint32_t ctxIdxInc;
 
         // check for usual case of zero QP delta
         ctxIdxInc = (m_prev_dquant) ? (1) : (0);
@@ -610,18 +610,18 @@ void H264SegmentDecoder::DecodeMBQPDelta_CABAC(void)
 
     // calculate new QP
     {
-        Ipp32s qpdelta;
-        Ipp32s bitdepth_luma_qp_scale;
+        int32_t qpdelta;
+        int32_t bitdepth_luma_qp_scale;
 
-        qpdelta = (Ipp32s) ((code + 1) / 2);
-        // least significant bit is Ipp32s bit
+        qpdelta = (int32_t) ((code + 1) / 2);
+        // least significant bit is int32_t bit
         if (0 == (code & 0x01))
             qpdelta = -qpdelta;
 
-        m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) (m_cur_mb.LocalMacroblockInfo->QP + qpdelta);
+        m_cur_mb.LocalMacroblockInfo->QP = (int8_t) (m_cur_mb.LocalMacroblockInfo->QP + qpdelta);
 
         bitdepth_luma_qp_scale = 6 * (bit_depth_luma - 8);
-        m_cur_mb.LocalMacroblockInfo->QP  = (Ipp8s) (((m_cur_mb.LocalMacroblockInfo->QP +
+        m_cur_mb.LocalMacroblockInfo->QP  = (int8_t) (((m_cur_mb.LocalMacroblockInfo->QP +
                                                        52 +
                                                        2 * bitdepth_luma_qp_scale) %
                                                       (bitdepth_luma_qp_scale + 52)) -

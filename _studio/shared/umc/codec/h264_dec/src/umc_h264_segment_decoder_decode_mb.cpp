@@ -23,7 +23,7 @@ namespace UMC
 // a b e f
 
 const
-Ipp8u block2lin[16] =
+uint8_t block2lin[16] =
 {
      0, 1, 4, 5,
      2, 3, 6, 7,
@@ -31,21 +31,21 @@ Ipp8u block2lin[16] =
      10,11,14,15
 };
 
-void H264SegmentDecoder::ComputeMotionVectorPredictorsMBAFF(const Ipp8u ListNum,
-                                                       Ipp8s RefIndex, // reference index for this part
-                                                       const Ipp32s block, // block or subblock number, depending on mbtype
+void H264SegmentDecoder::ComputeMotionVectorPredictorsMBAFF(const uint8_t ListNum,
+                                                       int8_t RefIndex, // reference index for this part
+                                                       const int32_t block, // block or subblock number, depending on mbtype
                                                        H264DecoderMotionVector * mv)
 {
-    Ipp32s  px0, px1, px2;
-    Ipp32s  py0, py1, py2;
-    //    Ipp32s     diff;
-    Ipp32s  isRightUnavailable=false;
+    int32_t  px0, px1, px2;
+    int32_t  py0, py1, py2;
+    //    int32_t     diff;
+    int32_t  isRightUnavailable=false;
     // Indicates whether the (above) right block, subblock or
     // macroblock can be used for motion vector prediction.
     // This is not a true boolean, in that we use bitwise operations
     // so that any non-zero value, not just the value true,
     // is considered true.
-    Ipp32s  isLeftUnavailable=false;
+    int32_t  isLeftUnavailable=false;
     // Indicates whether the (above) left block, subblock or
     // macroblock can be used for motion vector prediction.
     // Only used when isRightUnavailable is non-zero.
@@ -59,7 +59,7 @@ void H264SegmentDecoder::ComputeMotionVectorPredictorsMBAFF(const Ipp8u ListNum,
     H264DecoderMotionVector *sonly = NULL; // pointer to only MV this ref
     H264DecoderMotionVector null = {0,0};
     RefIndexType nullRefIx = -1;
-    Ipp32u uSameRefPicCount = 3;
+    uint32_t uSameRefPicCount = 3;
     // To code the rule that if only one of the three reference MV is to
     // the same reference picture as the MV being computed, then that one
     // MV is used as the MV predictor. Initialize to all same, then decrement
@@ -67,7 +67,7 @@ void H264SegmentDecoder::ComputeMotionVectorPredictorsMBAFF(const Ipp8u ListNum,
     H264DecoderBlockLocation Left={-1,-1},Top={-1,-1},TopRight={-1,-1},TopLeft={-1,-1};
     H264DecoderMacroblockGlobalInfo * gmbs = m_gmbinfo->mbs;
 
-    Ipp32u lbls=0, lbrs=0, tbls=0, tbrs=0, rbls=0, rbrs=0;
+    uint32_t lbls=0, lbrs=0, tbls=0, tbrs=0, rbls=0, rbrs=0;
     switch (m_cur_mb.GlobalMacroblockInfo->mbtype)
     {
     case MBTYPE_FORWARD:
@@ -102,7 +102,7 @@ void H264SegmentDecoder::ComputeMotionVectorPredictorsMBAFF(const Ipp8u ListNum,
                     (((GetReferenceIndex(m_gmbinfo, ListNum, Top.mb_num, Top.block_num)<<tbls)>>tbrs) == RefIndex))
                 {
                     *mv = GetMV(m_gmbinfo, ListNum, Top.mb_num, Top.block_num);
-                    mv->mvy = (Ipp16s)(((mv->mvy+((mv->mvy < 0)&&tbls))<<tbrs)>>tbls);
+                    mv->mvy = (int16_t)(((mv->mvy+((mv->mvy < 0)&&tbls))<<tbrs)>>tbls);
                     return;
                 }
                 else
@@ -136,7 +136,7 @@ median16x8_0_aff:
                     (((GetReferenceIndex(m_gmbinfo, ListNum, Left.mb_num, Left.block_num)<<lbls)>>lbrs) == RefIndex))
                 {
                     *mv = GetMV(m_gmbinfo, ListNum, Left.mb_num, Left.block_num);
-                    mv->mvy = (Ipp16s)(((mv->mvy + ((mv->mvy < 0)&&lbls))<<lbrs)>>lbls);
+                    mv->mvy = (int16_t)(((mv->mvy + ((mv->mvy < 0)&&lbls))<<lbrs)>>lbls);
                     return;
                 }
                 else
@@ -178,7 +178,7 @@ median_16x8_1_aff:
                     (((GetReferenceIndex(m_gmbinfo, ListNum, Left.mb_num, Left.block_num)<<lbls)>>lbrs) == RefIndex))
                 {
                     *mv = GetMV(m_gmbinfo, ListNum, Left.mb_num, Left.block_num);
-                    mv->mvy = (Ipp16s)(((mv->mvy + ((mv->mvy < 0)&&lbls))<<lbrs)>>lbls);
+                    mv->mvy = (int16_t)(((mv->mvy + ((mv->mvy < 0)&&lbls))<<lbrs)>>lbls);
                     return;
                 }
                 else
@@ -228,7 +228,7 @@ median_8x16_0_aff:
                     (((GetReferenceIndex(m_gmbinfo, ListNum, TopRight.mb_num, TopRight.block_num)<<rbls)>>rbrs) == RefIndex))
                 {
                     *mv = GetMV(m_gmbinfo, ListNum, TopRight.mb_num, TopRight.block_num);
-                    mv->mvy = (Ipp16s)(((mv->mvy + ((mv->mvy < 0)&&rbls))<<rbrs)>>rbls);
+                    mv->mvy = (int16_t)(((mv->mvy + ((mv->mvy < 0)&&rbls))<<rbrs)>>rbls);
                     return;
                 }
             }
@@ -241,7 +241,7 @@ median_8x16_0_aff:
                     (((GetReferenceIndex(m_gmbinfo, ListNum, Top.mb_num, Top.block_num-1)<<tbls)>>tbrs) == RefIndex))
                 {
                     *mv = GetMV(m_gmbinfo, ListNum, Top.mb_num, Top.block_num-1);
-                    mv->mvy = (Ipp16s)(((mv->mvy + ((mv->mvy < 0)&&tbls))<<tbrs)>>tbls);
+                    mv->mvy = (int16_t)(((mv->mvy + ((mv->mvy < 0)&&tbls))<<tbrs)>>tbls);
                     return;
                 }
             }
@@ -268,7 +268,7 @@ median_8x16_0_aff:
             // subblock information:
             //  block 0..3, bits 2-3
             //  subblock 0..3, bits 0-1
-            Ipp32s  left_edge_block = 0, top_edge_block = 0, right_edge_block = 0;
+            int32_t  left_edge_block = 0, top_edge_block = 0, right_edge_block = 0;
 
             switch (m_cur_mb.GlobalMacroblockInfo->sbtype[block>>2])
             {
@@ -495,14 +495,14 @@ median_8x16_0_aff:
     {
         // return MV at sl
         mv->mvx = sl->mvx;
-        mv->mvy = (Ipp16s)(((sl->mvy+((sl->mvy<0)&&lbls))<<lbrs)>>lbls);
+        mv->mvy = (int16_t)(((sl->mvy+((sl->mvy<0)&&lbls))<<lbrs)>>lbls);
     }
     else
     {
         // Check for more than one predictor from different reference frame
         // If there is only one predictor from this ref frame, then sonly will
         // be pointing to it.
-        Ipp32s ls = 0, rs = 0;
+        int32_t ls = 0, rs = 0;
         if (((*pRefIxl<<lbls)>>lbrs) != RefIndex)
             uSameRefPicCount--;
         else
@@ -535,28 +535,28 @@ median_8x16_0_aff:
             px1 = sa->mvx;
             px2 = sr->mvx;
 
-#define MEDIAN_OF_3(a, b, c) (IPP_MIN((a),(b))) ^ (IPP_MIN((b),(c))) ^ (IPP_MIN((c),(a)))
+#define MEDIAN_OF_3(a, b, c) (MFX_MIN((a),(b))) ^ (MFX_MIN((b),(c))) ^ (MFX_MIN((c),(a)))
 
-            mv->mvx = (Ipp16s)(MEDIAN_OF_3(px0, px1, px2));
+            mv->mvx = (int16_t)(MEDIAN_OF_3(px0, px1, px2));
 
             py0 = ((sl->mvy+((sl->mvy<0)&&lbls))<<lbrs)>>lbls;
             py1 = ((sa->mvy+((sa->mvy<0)&&tbls))<<tbrs)>>tbls;
             py2 = ((sr->mvy+((sr->mvy<0)&&rbls))<<rbrs)>>rbls;
 
-            mv->mvy = (Ipp16s)(MEDIAN_OF_3(py0, py1, py2));
+            mv->mvy = (int16_t)(MEDIAN_OF_3(py0, py1, py2));
         }
         else
         {
             // return MV at sonly
             mv->mvx = sonly->mvx;
-            mv->mvy = (Ipp16s)(((sonly->mvy+((sonly->mvy<0)&&ls))<<rs)>>ls);
+            mv->mvy = (int16_t)(((sonly->mvy+((sonly->mvy<0)&&ls))<<rs)>>ls);
         }
     }
 }
 
-void H264SegmentDecoder::ComputeMotionVectorPredictors(const Ipp8u ListNum,
-                                                       Ipp8s RefIndex, // reference index for this part
-                                                       const Ipp32s block, // block or subblock number, depending on mbtype
+void H264SegmentDecoder::ComputeMotionVectorPredictors(const uint8_t ListNum,
+                                                       int8_t RefIndex, // reference index for this part
+                                                       const int32_t block, // block or subblock number, depending on mbtype
                                                        H264DecoderMotionVector * mv)
 {
     if (m_isMBAFF)
@@ -565,16 +565,16 @@ void H264SegmentDecoder::ComputeMotionVectorPredictors(const Ipp8u ListNum,
         return;
     }
 
-    Ipp32s  px0, px1, px2;
-    Ipp32s  py0, py1, py2;
-    //    Ipp32s     diff;
-    Ipp32s  isRightUnavailable=false;
+    int32_t  px0, px1, px2;
+    int32_t  py0, py1, py2;
+    //    int32_t     diff;
+    int32_t  isRightUnavailable=false;
     // Indicates whether the (above) right block, subblock or
     // macroblock can be used for motion vector prediction.
     // This is not a true boolean, in that we use bitwise operations
     // so that any non-zero value, not just the value true,
     // is considered true.
-    Ipp32s  isLeftUnavailable=false;
+    int32_t  isLeftUnavailable=false;
     // Indicates whether the (above) left block, subblock or
     // macroblock can be used for motion vector prediction.
     // Only used when isRightUnavailable is non-zero.
@@ -588,7 +588,7 @@ void H264SegmentDecoder::ComputeMotionVectorPredictors(const Ipp8u ListNum,
     H264DecoderMotionVector *sonly = NULL; // pointer to only MV this ref
     H264DecoderMotionVector null = {0,0};
     RefIndexType nullRefIx = -1;
-    Ipp32u uSameRefPicCount = 3;
+    uint32_t uSameRefPicCount = 3;
     // To code the rule that if only one of the three reference MV is to
     // the same reference picture as the MV being computed, then that one
     // MV is used as the MV predictor. Initialize to all same, then decrement
@@ -778,7 +778,7 @@ median_8x16_0:
             // subblock information:
             //  block 0..3, bits 2-3
             //  subblock 0..3, bits 0-1
-            Ipp32s  left_edge_block = 0, top_edge_block = 0, right_edge_block = 0;
+            int32_t  left_edge_block = 0, top_edge_block = 0, right_edge_block = 0;
 
             switch (m_cur_mb.GlobalMacroblockInfo->sbtype[block>>2])
             {
@@ -1030,15 +1030,15 @@ median_8x16_0:
             px1 = sa->mvx;
             px2 = sr->mvx;
 
-#define MEDIAN_OF_3(a, b, c) (IPP_MIN((a),(b))) ^ (IPP_MIN((b),(c))) ^ (IPP_MIN((c),(a)))
+#define MEDIAN_OF_3(a, b, c) (MFX_MIN((a),(b))) ^ (MFX_MIN((b),(c))) ^ (MFX_MIN((c),(a)))
 
-            mv->mvx = (Ipp16s)(MEDIAN_OF_3(px0, px1, px2));
+            mv->mvx = (int16_t)(MEDIAN_OF_3(px0, px1, px2));
 
             py0 = sl->mvy;
             py1 = sa->mvy;
             py2 = sr->mvy;
 
-            mv->mvy = (Ipp16s)(MEDIAN_OF_3(py0, py1, py2));
+            mv->mvy = (int16_t)(MEDIAN_OF_3(py0, py1, py2));
         }
         else
         {
@@ -1046,17 +1046,17 @@ median_8x16_0:
             *mv = *sonly;
         }
     }
-} // void H264SegmentDecoder::ComputeMotionVectorPredictors(const Ipp8u ListNum,
+} // void H264SegmentDecoder::ComputeMotionVectorPredictors(const uint8_t ListNum,
 
 // Used to obtain colocated motion vector and reference index for temporal
 // direct B. Called only when the colocated MB is not INTRA. Uses the
 // L0 and L1 reference indices of colocated MB to choose MV. Also translates
 // the colocated reference index to be used into the correct L0 index
 // for this slice.
-void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
-                                             Ipp32u ipos, // offset into MV and RefIndex storage
+void H264SegmentDecoder::GetDirectTemporalMV(int32_t MBCol,
+                                             uint32_t ipos, // offset into MV and RefIndex storage
                                              H264DecoderMotionVector  *&MVL0, // return colocated MV here
-                                             Ipp8s &RefIndexL0) // return ref index here
+                                             int8_t &RefIndexL0) // return ref index here
 {
     //I'm not sure about this function correctness
     VM_ASSERT(m_pRefPicList[1][0]);
@@ -1070,7 +1070,7 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
     // Set pointers to colocated list 0 ref index and MV
     pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
     pRefMVL0 = &GetMV(&firstRefBackFrame->m_mbinfo, 0, MBCol, 0);
-    Ipp16u uRefSliceNum=firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
+    uint16_t uRefSliceNum=firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
 
     VM_ASSERT(pRefRefIndexL0);
     VM_ASSERT(pRefMVL0);
@@ -1116,7 +1116,7 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
         return;
     }
 
-    Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
+    int32_t index = pRefRefPicList[RefIndexL0]->m_index;
 
     // find matching reference frame on current slice list 0
     RefIndexL0 = 0;
@@ -1131,12 +1131,12 @@ void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
     // can't happen
     RefIndexL0 = 0;
 
-} // void H264SegmentDecoder::GetDirectTemporalMV(Ipp32s MBCol,
+} // void H264SegmentDecoder::GetDirectTemporalMV(int32_t MBCol,
 
-void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
-                                                Ipp32u ipos, // offset into MV and RefIndex storage
+void H264SegmentDecoder::GetDirectTemporalMVFLD(int32_t MBCol,
+                                                uint32_t ipos, // offset into MV and RefIndex storage
                                                 H264DecoderMotionVector *& MVL0, // return colocated MV here
-                                                Ipp8s &RefIndexL0) // return ref index here
+                                                int8_t &RefIndexL0) // return ref index here
 {
     //I'm not sure about this function correctness
     VM_ASSERT(m_pRefPicList[1][0]);
@@ -1150,7 +1150,7 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     // Set pointers to colocated list 0 ref index and MV
     pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
     pRefMVL0 = &GetMV(&firstRefBackFrame->m_mbinfo, 0, MBCol, 0);
-    Ipp32s uRefSliceNum = firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
+    int32_t uRefSliceNum = firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
     ReferenceFlags *pRefFields;
     VM_ASSERT(pRefRefIndexL0);
     VM_ASSERT(pRefMVL0);
@@ -1189,8 +1189,8 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     // Translate the reference index of the colocated to current
     // L0 index to the same reference picture, using picNum or
     // LongTermPicNum as id criteria.
-    Ipp32s num_ref;
-    Ipp32s force_value;
+    int32_t num_ref;
+    int32_t force_value;
     if (firstRefBackFrame->m_PictureStructureForDec == FRM_STRUCTURE)
     {
         num_ref = m_field_index;
@@ -1200,7 +1200,7 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     {
         if (GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]))
         {
-            Ipp32s field_selector = RefIndexL0&1;
+            int32_t field_selector = RefIndexL0&1;
             RefIndexL0>>=1;
             num_ref = (field_selector^(MBCol & 1));
             force_value = 1;
@@ -1223,7 +1223,7 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
         return;
     }
 
-    Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
+    int32_t index = pRefRefPicList[RefIndexL0]->m_index;
 
     // find matching reference frame on current slice list 0
     RefIndexL0 = 0;
@@ -1239,12 +1239,12 @@ void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
     // can't happen
     RefIndexL0 = 0;
 
-} // void H264SegmentDecoder::GetDirectTemporalMVFLD(Ipp32s MBCol,
+} // void H264SegmentDecoder::GetDirectTemporalMVFLD(int32_t MBCol,
 
-void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
-                                                  Ipp32u ipos, // offset into MV and RefIndex storage
+void H264SegmentDecoder::GetDirectTemporalMVMBAFF(int32_t MBCol,
+                                                  uint32_t ipos, // offset into MV and RefIndex storage
                                                   H264DecoderMotionVector *& MVL0, // return colocated MV here
-                                                  Ipp8s &RefIndexL0) // return ref index here
+                                                  int8_t &RefIndexL0) // return ref index here
 {
     //I'm not sure about this function correctness
     VM_ASSERT(m_pRefPicList[1][0]);
@@ -1258,10 +1258,10 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
     // Set pointers to colocated list 0 ref index and MV
     pRefRefIndexL0 = GetReferenceIndexPtr(&firstRefBackFrame->m_mbinfo, 0, MBCol, ipos);
     pRefMVL0 = &GetMV(&firstRefBackFrame->m_mbinfo, 0, MBCol, 0);
-    Ipp16u uRefSliceNum=firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
-    Ipp32u scale_idx=GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]);
-    Ipp32u back_scale_idx=pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-    Ipp32u field_selector = 0;
+    uint16_t uRefSliceNum=firstRefBackFrame->m_mbinfo.mbs[MBCol].slice_id;
+    uint32_t scale_idx=GetMBFieldDecodingFlag(firstRefBackFrame->m_mbinfo.mbs[MBCol]);
+    uint32_t back_scale_idx=pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+    uint32_t field_selector = 0;
     ReferenceFlags *pFields;
 
     VM_ASSERT(pRefRefIndexL0);
@@ -1306,7 +1306,7 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
     }
     else if (firstRefBackFrame->m_PictureStructureForDec < FRM_STRUCTURE)
     {
-        Ipp8s ref1field = (MBCol >= firstRefBackFrame->totalMBs);
+        int8_t ref1field = (MBCol >= firstRefBackFrame->totalMBs);
         field_selector = (ref1field != GetReferenceField(pFields, RefIndexL0));
     }
 
@@ -1318,7 +1318,7 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
 
     VM_ASSERT(firstRefBackFrame->m_PictureStructureForDec != FRM_STRUCTURE);
 
-    Ipp32s index = pRefRefPicList[RefIndexL0]->m_index;
+    int32_t index = pRefRefPicList[RefIndexL0]->m_index;
 
     // find matching reference frame on current slice list 0
     RefIndexL0 = 0;
@@ -1327,7 +1327,7 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
         if (m_pRefPicList[0][RefIndexL0]->m_index == index)
         {
             RefIndexL0 <<= back_scale_idx;
-            RefIndexL0 = (Ipp8s)(RefIndexL0 | (field_selector&back_scale_idx));
+            RefIndexL0 = (int8_t)(RefIndexL0 | (field_selector&back_scale_idx));
             return;
         }
     }
@@ -1335,17 +1335,17 @@ void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
     // can't happen
     RefIndexL0 = 0;
 
-} // void H264SegmentDecoder::GetDirectTemporalMVMBAFF(Ipp32s MBCol,
+} // void H264SegmentDecoder::GetDirectTemporalMVMBAFF(int32_t MBCol,
 
-inline void GetScaledMV(Ipp32s pos,
+inline void GetScaledMV(int32_t pos,
                         H264DecoderMotionVector *directMVs,
-                        Ipp32s *pDistScaleFactorMV,
-                        Ipp32s RefIndexL0,
-                        Ipp32s scale,
-                        Ipp32s scale_idx,
+                        int32_t *pDistScaleFactorMV,
+                        int32_t RefIndexL0,
+                        int32_t scale,
+                        int32_t scale_idx,
                         H264DecoderMotionVector &pFwdMV,
                         H264DecoderMotionVector &pBwdMV,
-                        Ipp32s mvDistortion[2])
+                        int32_t mvDistortion[2])
 {
     H264DecoderMotionVector MV = directMVs[pos];
 
@@ -1359,10 +1359,10 @@ inline void GetScaledMV(Ipp32s pos,
         break;
     }
 
-    pFwdMV.mvx = (Ipp16s)((MV.mvx * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
-    pFwdMV.mvy = (Ipp16s)((MV.mvy * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
-    pBwdMV.mvx = (Ipp16s)(pFwdMV.mvx - MV.mvx);
-    pBwdMV.mvy = (Ipp16s)(pFwdMV.mvy - MV.mvy);
+    pFwdMV.mvx = (int16_t)((MV.mvx * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
+    pFwdMV.mvy = (int16_t)((MV.mvy * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
+    pBwdMV.mvx = (int16_t)(pFwdMV.mvx - MV.mvx);
+    pBwdMV.mvy = (int16_t)(pFwdMV.mvy - MV.mvy);
 
     if (pFwdMV.mvy > mvDistortion[0])
         mvDistortion[0] = pFwdMV.mvy;
@@ -1388,7 +1388,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
                 continue;
             }
 
-            Ipp32s sboffset = subblock_block_mapping[sb];
+            int32_t sboffset = subblock_block_mapping[sb];
             storeInformationInto8x8(&m_cur_mb.MVs[0]->MotionVectors[sboffset], zeroVector);
             storeInformationInto8x8(&m_cur_mb.MVs[1]->MotionVectors[sboffset], zeroVector);
             m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[sb] = 0;
@@ -1403,18 +1403,18 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
     }
 
     FactorArrayValue *pDistScaleFactorMV;
-    Ipp32u sb;
-    Ipp32s ref_mvoffset, sboffset = 0;
-    Ipp8s RefIndexL0 = 0, RefIndexL1 = 0;
+    uint32_t sb;
+    int32_t ref_mvoffset, sboffset = 0;
+    int8_t RefIndexL0 = 0, RefIndexL1 = 0;
     H264DecoderMotionVector  MV = {};
-    Ipp32s mvxf, mvyf, mvxb, mvyb;
+    int32_t mvxf, mvyf, mvxb, mvyb;
 
     // set up pointers to where MV and RefIndex will be stored
     H264DecoderMotionVector *pFwdMV = m_cur_mb.MVs[0]->MotionVectors;
     H264DecoderMotionVector *pBwdMV = m_cur_mb.MVs[1]->MotionVectors;
     RefIndexType *pRefIndexL0 = m_cur_mb.GetReferenceIndexStruct(0)->refIndexs;
     RefIndexType *pRefIndexL1 = m_cur_mb.GetReferenceIndexStruct(1)->refIndexs;
-    Ipp32u scale_idx = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+    uint32_t scale_idx = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
 
     bool isAll8x8Same = true;
     H264DecoderMotionVector * first_mv_fwd_all = &(pFwdMV[0]);
@@ -1449,8 +1449,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
             sboffset = 2 + 8;
             break;
         }
-        Ipp32s MBCol;
-        Ipp32s scale;
+        int32_t MBCol;
+        int32_t scale;
         MBCol = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), ref_mvoffset, &scale);
         bool bRefMBIsInter = IS_INTER_MBTYPE(firstRefBackFrame->m_mbinfo.mbs[MBCol].mbtype);
         RefIndexL1 = 0;
@@ -1476,8 +1476,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
 
             if (scale_idx)
             {
-                Ipp32s curfield = (m_CurMBAddr & 1);
-                Ipp32s ref0field = curfield ^ (RefIndexL0&1);
+                int32_t curfield = (m_CurMBAddr & 1);
+                int32_t ref0field = curfield ^ (RefIndexL0&1);
                 pDistScaleFactorMV = m_pSlice->GetDistScaleFactorMVAFF()->values[curfield][ref0field][curfield];
             }
             else
@@ -1494,10 +1494,10 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
                 break;
             }
             // Reference MV from outside corner 4x4
-            mvxf = Ipp32s
+            mvxf = int32_t
                 ((MV.mvx * pDistScaleFactorMV[RefIndexL0>>scale_idx] + 128) >> 8);
             mvxb = mvxf - MV.mvx;
-            mvyf = Ipp32s
+            mvyf = int32_t
                 ((MV.mvy * pDistScaleFactorMV[RefIndexL0>>scale_idx] + 128) >> 8);
             mvyb = mvyf - MV.mvy;
         }
@@ -1517,25 +1517,25 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
             m_MVDistortion[1] = mvyb;
 
         // Save MV to all 4 4x4's for this 8x8.
-        pFwdMV[sboffset].mvx = (Ipp16s) mvxf;
-        pFwdMV[sboffset].mvy = (Ipp16s) mvyf;
-        pBwdMV[sboffset].mvx = (Ipp16s) mvxb;
-        pBwdMV[sboffset].mvy = (Ipp16s) mvyb;
+        pFwdMV[sboffset].mvx = (int16_t) mvxf;
+        pFwdMV[sboffset].mvy = (int16_t) mvyf;
+        pBwdMV[sboffset].mvx = (int16_t) mvxb;
+        pBwdMV[sboffset].mvy = (int16_t) mvyb;
 
-        pFwdMV[sboffset+1].mvx = (Ipp16s) mvxf;
-        pFwdMV[sboffset+1].mvy = (Ipp16s) mvyf;
-        pBwdMV[sboffset+1].mvx = (Ipp16s) mvxb;
-        pBwdMV[sboffset+1].mvy = (Ipp16s) mvyb;
+        pFwdMV[sboffset+1].mvx = (int16_t) mvxf;
+        pFwdMV[sboffset+1].mvy = (int16_t) mvyf;
+        pBwdMV[sboffset+1].mvx = (int16_t) mvxb;
+        pBwdMV[sboffset+1].mvy = (int16_t) mvyb;
 
-        pFwdMV[sboffset+4].mvx = (Ipp16s) mvxf;
-        pFwdMV[sboffset+4].mvy = (Ipp16s) mvyf;
-        pBwdMV[sboffset+4].mvx = (Ipp16s) mvxb;
-        pBwdMV[sboffset+4].mvy = (Ipp16s) mvyb;
+        pFwdMV[sboffset+4].mvx = (int16_t) mvxf;
+        pFwdMV[sboffset+4].mvy = (int16_t) mvyf;
+        pBwdMV[sboffset+4].mvx = (int16_t) mvxb;
+        pBwdMV[sboffset+4].mvy = (int16_t) mvyb;
 
-        pFwdMV[sboffset+4+1].mvx = (Ipp16s) mvxf;
-        pFwdMV[sboffset+4+1].mvy = (Ipp16s) mvyf;
-        pBwdMV[sboffset+4+1].mvx = (Ipp16s) mvxb;
-        pBwdMV[sboffset+4+1].mvy = (Ipp16s) mvyb;
+        pFwdMV[sboffset+4+1].mvx = (int16_t) mvxf;
+        pFwdMV[sboffset+4+1].mvy = (int16_t) mvyf;
+        pBwdMV[sboffset+4+1].mvx = (int16_t) mvxb;
+        pBwdMV[sboffset+4+1].mvy = (int16_t) mvyb;
 
         pRefIndexL0[sb] = RefIndexL0;
         pRefIndexL1[sb] = RefIndexL1;
@@ -1569,11 +1569,11 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference()
 
 } // void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal_8x8Inference(H264DecoderFrame **pRefPicList0,
 
-void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
-                                                    Ipp32s *pRefIndexL1)
+void H264SegmentDecoder::ComputeDirectSpatialRefIdx(int32_t *pRefIndexL0,
+                                                    int32_t *pRefIndexL1)
 {
-    Ipp32s refIdxL0 = -1;
-    Ipp32s refIdxL1 = -1;
+    int32_t refIdxL0 = -1;
+    int32_t refIdxL1 = -1;
 
     // usual case
     if (false == m_isMBAFF)
@@ -1592,36 +1592,36 @@ void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
         mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above;
         if (0 <= mbAddr.mb_num)
         {
-            Ipp32u tmp;
+            uint32_t tmp;
 
             tmp = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
-            refIdxL0 = (((Ipp32u) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
+            refIdxL0 = (((uint32_t) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
             tmp = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
-            refIdxL1 = (((Ipp32u) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
+            refIdxL1 = (((uint32_t) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
         }
 
         // get above left (right) location
         mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above_right;
         if (0 <=  mbAddr.mb_num)
         {
-            Ipp32u tmp;
+            uint32_t tmp;
 
             tmp = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
-            refIdxL0 = (((Ipp32u) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
+            refIdxL0 = (((uint32_t) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
             tmp = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
-            refIdxL1 = (((Ipp32u) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
+            refIdxL1 = (((uint32_t) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
         }
         else
         {
             mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above_left;
             if (0 <= mbAddr.mb_num)
             {
-                Ipp32u tmp;
+                uint32_t tmp;
 
                 tmp = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
-                refIdxL0 = (((Ipp32u) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
+                refIdxL0 = (((uint32_t) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
                 tmp = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
-                refIdxL1 = (((Ipp32u) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
+                refIdxL1 = (((uint32_t) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
             }
         }
     }
@@ -1630,7 +1630,7 @@ void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
     {
         H264DecoderBlockLocation mbAddr;
         H264DecoderMacroblockGlobalInfo *pInfo;
-        Ipp32s cur_field;
+        int32_t cur_field;
 
         pInfo = m_gmbinfo->mbs;
         cur_field = GetMBFieldDecodingFlag(pInfo[m_CurMBAddr]);
@@ -1644,7 +1644,7 @@ void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
         mbAddr = m_cur_mb.CurrentBlockNeighbours.mbs_left[0];
         if (0 <= mbAddr.mb_num)
         {
-            Ipp32s neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
+            int32_t neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
 
             refIdxL0 = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
             refIdxL1 = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
@@ -1656,45 +1656,45 @@ void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
         mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above;
         if (0 <= mbAddr.mb_num)
         {
-            Ipp32u tmp;
-            Ipp32s neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
+            uint32_t tmp;
+            int32_t neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
 
             tmp = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
             tmp <<= (cur_field + neighbour_frame);
-            refIdxL0 = (((Ipp32u) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
+            refIdxL0 = (((uint32_t) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
             tmp = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
             tmp <<= (cur_field + neighbour_frame);
-            refIdxL1 = (((Ipp32u) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
+            refIdxL1 = (((uint32_t) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
         }
 
         // get above left (right) location
         mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above_right;
         if (0 <=  mbAddr.mb_num)
         {
-            Ipp32u tmp;
-            Ipp32s neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
+            uint32_t tmp;
+            int32_t neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
 
             tmp = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
             tmp <<= (cur_field + neighbour_frame);
-            refIdxL0 = (((Ipp32u) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
+            refIdxL0 = (((uint32_t) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
             tmp = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
             tmp <<= (cur_field + neighbour_frame);
-            refIdxL1 = (((Ipp32u) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
+            refIdxL1 = (((uint32_t) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
         }
         else
         {
             mbAddr = m_cur_mb.CurrentBlockNeighbours.mb_above_left;
             if (0 <= mbAddr.mb_num)
             {
-                Ipp32u tmp;
-                Ipp32s neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
+                uint32_t tmp;
+                int32_t neighbour_frame = GetMBFieldDecodingFlag(pInfo[mbAddr.mb_num]) ^ 1;
 
                 tmp = GetReferenceIndex(m_gmbinfo, 0, mbAddr.mb_num, mbAddr.block_num);
                 tmp <<= (cur_field + neighbour_frame);
-                refIdxL0 = (((Ipp32u) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
+                refIdxL0 = (((uint32_t) refIdxL0) <= tmp) ? (refIdxL0) : (tmp);
                 tmp = GetReferenceIndex(m_gmbinfo, 1, mbAddr.mb_num, mbAddr.block_num);
                 tmp <<= (cur_field + neighbour_frame);
-                refIdxL1 = (((Ipp32u) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
+                refIdxL1 = (((uint32_t) refIdxL1) <= tmp) ? (refIdxL1) : (tmp);
             }
         }
 
@@ -1707,18 +1707,18 @@ void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
     *pRefIndexL0 = refIdxL0;
     *pRefIndexL1 = refIdxL1;
 
-} // void H264SegmentDecoder::ComputeDirectSpatialRefIdx(Ipp32s *pRefIndexL0,
+} // void H264SegmentDecoder::ComputeDirectSpatialRefIdx(int32_t *pRefIndexL0,
 
 void H264SegmentDecoder::DecodeMBQPDelta_CAVLC(void)
 {
     // Update QP with delta from bitstream
-    Ipp32s qpdelta = m_pBitStream->GetVLCElement(true);
-    Ipp32s bitdepth_luma_qp_scale;
+    int32_t qpdelta = m_pBitStream->GetVLCElement(true);
+    int32_t bitdepth_luma_qp_scale;
 
-    m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s)(m_cur_mb.LocalMacroblockInfo->QP + qpdelta);
+    m_cur_mb.LocalMacroblockInfo->QP = (int8_t)(m_cur_mb.LocalMacroblockInfo->QP + qpdelta);
 
     bitdepth_luma_qp_scale = 6 * (bit_depth_luma - 8);
-    m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s)( ((m_cur_mb.LocalMacroblockInfo->QP +
+    m_cur_mb.LocalMacroblockInfo->QP = (int8_t)( ((m_cur_mb.LocalMacroblockInfo->QP +
                                                   52 +
                                                   2 * bitdepth_luma_qp_scale) %
                                                  (bitdepth_luma_qp_scale + 52)) -

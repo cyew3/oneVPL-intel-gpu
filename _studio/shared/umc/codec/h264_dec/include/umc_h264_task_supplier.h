@@ -68,8 +68,8 @@ public:
     }
 
 protected:
-    Ipp32s isSPSError;
-    Ipp32s isPPSError;
+    int32_t isSPSError;
+    int32_t isPPSError;
 
     ErrorStatus()
     {
@@ -98,7 +98,7 @@ public:
 
     bool IsUseDelayOutputValue() const;
 
-    Ipp32s GetDPBOutputDelay(H264SEIPayLoad * payload);
+    int32_t GetDPBOutputDelay(H264SEIPayLoad * payload);
 
     void OnNewSps(H264SeqParamSet * sps);
 
@@ -106,8 +106,8 @@ private:
 
     struct
     {
-        Ipp32u use_payload_sei_delay : 1;
-        Ipp32u use_pic_order_cnt_type : 1;
+        uint32_t use_payload_sei_delay : 1;
+        uint32_t use_pic_order_cnt_type : 1;
     } m_isUseFlags;
 };
 /****************************************************************************************************/
@@ -120,28 +120,28 @@ public:
     virtual ~Skipping();
 
     void PermanentDisableDeblocking(bool disable);
-    bool IsShouldSkipDeblocking(H264DecoderFrame * pFrame, Ipp32s field);
-    bool IsShouldSkipFrame(H264DecoderFrame * pFrame, Ipp32s field);
-    void ChangeVideoDecodingSpeed(Ipp32s& num);
+    bool IsShouldSkipDeblocking(H264DecoderFrame * pFrame, int32_t field);
+    bool IsShouldSkipFrame(H264DecoderFrame * pFrame, int32_t field);
+    void ChangeVideoDecodingSpeed(int32_t& num);
     void Reset();
 
     struct SkipInfo
     {
         bool isDeblockingTurnedOff;
-        Ipp32s numberOfSkippedFrames;
+        int32_t numberOfSkippedFrames;
     };
 
     SkipInfo GetSkipInfo() const;
 
 private:
 
-    Ipp32s m_VideoDecodingSpeed;
-    Ipp32s m_SkipCycle;
-    Ipp32s m_ModSkipCycle;
-    Ipp32s m_PermanentTurnOffDeblocking;
-    Ipp32s m_SkipFlag;
+    int32_t m_VideoDecodingSpeed;
+    int32_t m_SkipCycle;
+    int32_t m_ModSkipCycle;
+    int32_t m_PermanentTurnOffDeblocking;
+    int32_t m_SkipFlag;
 
-    Ipp32s m_NumberOfSkippedFrames;
+    int32_t m_NumberOfSkippedFrames;
 };
 
 /****************************************************************************************************/
@@ -154,32 +154,32 @@ public:
     POCDecoder();
 
     virtual ~POCDecoder();
-    virtual void DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_num);
+    virtual void DecodePictureOrderCount(const H264Slice *slice, int32_t frame_num);
 
-    Ipp32s DetectFrameNumGap(const H264Slice *slice, bool ignore_gaps_allowed_flag = false);
+    int32_t DetectFrameNumGap(const H264Slice *slice, bool ignore_gaps_allowed_flag = false);
 
     // Set the POCs when frame gap is processed
     void DecodePictureOrderCountFrameGap(H264DecoderFrame *pFrame,
                                          const H264SliceHeader *pSliceHeader,
-                                         Ipp32s frameNum);
+                                         int32_t frameNum);
     // Set the POCs when fake frames are imagined
     void DecodePictureOrderCountFakeFrames(H264DecoderFrame *pFrame,
                                            const H264SliceHeader *pSliceHeader);
     // Set the POCs when the frame is initialized
     void DecodePictureOrderCountInitFrame(H264DecoderFrame *pFrame,
-                                          Ipp32s fieldIdx);
+                                          int32_t fieldIdx);
 
-    void Reset(Ipp32s IDRFrameNum = 0);
+    void Reset(int32_t IDRFrameNum = 0);
 
 protected:
-    Ipp32s                     m_PrevFrameRefNum;
-    Ipp32s                     m_FrameNum;
-    Ipp32s                     m_PicOrderCnt;
-    Ipp32s                     m_PicOrderCntMsb;
-    Ipp32s                     m_PicOrderCntLsb;
-    Ipp32s                     m_FrameNumOffset;
-    Ipp32u                     m_TopFieldPOC;
-    Ipp32u                     m_BottomFieldPOC;
+    int32_t                     m_PrevFrameRefNum;
+    int32_t                     m_FrameNum;
+    int32_t                     m_PicOrderCnt;
+    int32_t                     m_PicOrderCntMsb;
+    int32_t                     m_PicOrderCntLsb;
+    int32_t                     m_FrameNumOffset;
+    uint32_t                     m_TopFieldPOC;
+    uint32_t                     m_BottomFieldPOC;
 };
 
 /****************************************************************************************************/
@@ -193,12 +193,12 @@ public:
     {
         size_t             msg_size;
         size_t             offset;
-        Ipp8u            * data;
-        Ipp64f             timestamp;
+        uint8_t            * data;
+        double             timestamp;
         SEI_TYPE           type;
-        Ipp32s             isUsed;
-        Ipp32s             auID;
-        Ipp32s             inputID;
+        int32_t             isUsed;
+        int32_t             auID;
+        int32_t             inputID;
         H264DecoderFrame * frame;
 
         SEI_Message()
@@ -227,12 +227,12 @@ public:
 
     void SetTimestamp(H264DecoderFrame * frame);
 
-    SEI_Message* AddMessage(UMC::MediaDataEx *nalUnit, SEI_TYPE type, Ipp32s auIndex);
+    SEI_Message* AddMessage(UMC::MediaDataEx *nalUnit, SEI_TYPE type, int32_t auIndex);
 
     const SEI_Message * GetPayloadMessage();
 
-    void SetFrame(H264DecoderFrame * frame, Ipp32s auIndex);
-    void SetAUID(Ipp32s auIndex);
+    void SetFrame(H264DecoderFrame * frame, int32_t auIndex);
+    void SetAUID(int32_t auIndex);
 
 private:
 
@@ -243,11 +243,11 @@ private:
         MAX_ELEMENTS = 128
     };
 
-    std::vector<Ipp8u>  m_data;
+    std::vector<uint8_t>  m_data;
     std::vector<SEI_Message> m_payloads;
 
     size_t m_offset;
-    Ipp32s m_lastUsed;
+    int32_t m_lastUsed;
 };
 
 /****************************************************************************************************/
@@ -267,7 +267,7 @@ struct ViewItem
     ~ViewItem();
 
     // Initialize th view, allocate resources
-    Status Init(Ipp32u view_id);
+    Status Init(uint32_t view_id);
 
     // Close the view and release all resources
     void Close(void);
@@ -276,20 +276,20 @@ struct ViewItem
     void Reset(void);
 
     // Reset the size of DPB for particular view item
-    void SetDPBSize(H264SeqParamSet *pSps, Ipp8u & level_idc);
+    void SetDPBSize(H264SeqParamSet *pSps, uint8_t & level_idc);
 
-    H264DBPList *GetDPBList(Ipp32s dIdRev = 0)
+    H264DBPList *GetDPBList(int32_t dIdRev = 0)
     {
         return pDPB[dIdRev].get();
     }
 
-    POCDecoder *GetPOCDecoder(Ipp32s dIdRev = 0)
+    POCDecoder *GetPOCDecoder(int32_t dIdRev = 0)
     {
         return pPOCDec[dIdRev].get();
     }
 
     // Keep view ID to identify initialized views
-    Ipp32s viewId;
+    int32_t viewId;
 
     // Pointer to the view's DPB
     mutable std::unique_ptr<H264DBPList> pDPB[MAX_NUM_LAYERS];
@@ -300,15 +300,15 @@ struct ViewItem
     bool m_isDisplayable;
 
     // Maximum number frames used semultaneously
-    Ipp32u maxDecFrameBuffering;
+    uint32_t maxDecFrameBuffering;
 
     // Maximum possible long term reference index
-    Ipp32s MaxLongTermFrameIdx[MAX_NUM_LAYERS];
+    int32_t MaxLongTermFrameIdx[MAX_NUM_LAYERS];
 
     // Pointer to the frame being processed
     H264DecoderFrame *pCurFrame;
 
-    Ipp64f localFrameTime;
+    double localFrameTime;
 };
 
 typedef std::list<ViewItem> ViewList;
@@ -330,36 +330,36 @@ public:
 
     virtual bool IsShouldSkipSlice(H264NalExtension *nal_ext);
 
-    Ipp32u GetLevelIDC() const;
+    uint32_t GetLevelIDC() const;
 
-    void SetTemporalId(Ipp32u temporalId);
+    void SetTemporalId(uint32_t temporalId);
 
-    Status SetViewList(const std::vector<Ipp32u> & targetView, const std::vector<Ipp32u> & dependencyList);
+    Status SetViewList(const std::vector<uint32_t> & targetView, const std::vector<uint32_t> & dependencyList);
 
-    ViewItem *FindView(Ipp32s viewId);
+    ViewItem *FindView(int32_t viewId);
 
-    ViewItem &GetView(Ipp32s viewId = -1);
+    ViewItem &GetView(int32_t viewId = -1);
 
-    ViewItem &GetViewByNumber(Ipp32s viewNum);
+    ViewItem &GetViewByNumber(int32_t viewNum);
 
-    void MoveViewToHead(Ipp32s view_id);
+    void MoveViewToHead(int32_t view_id);
 
-    Ipp32s GetViewCount() const;
+    int32_t GetViewCount() const;
 
     bool IncreaseCurrentView();
 
-    Ipp32s GetBaseViewId() const;
+    int32_t GetBaseViewId() const;
 
     bool IsExtension() const; // MVC or SVC
 
 protected:
-    Ipp32u m_temporal_id;
-    Ipp32u m_priority_id;
+    uint32_t m_temporal_id;
+    uint32_t m_priority_id;
 
-    Ipp8u  m_level_idc;
-    Ipp32u m_currentDisplayView;
+    uint8_t  m_level_idc;
+    uint32_t m_currentDisplayView;
 
-    Ipp32u m_currentView;
+    uint32_t m_currentView;
 
     enum DecodingMode
     {
@@ -371,15 +371,15 @@ protected:
 
     DecodingMode m_decodingMode;
 
-    typedef std::list<Ipp32u> ViewIDsList;
+    typedef std::list<uint32_t> ViewIDsList;
     ViewIDsList  m_viewIDsList;
 
     // Array of pointers to views and their components
     ViewList m_views;
 
-    void ChooseLevelIdc(const H264SeqParamSetMVCExtension * extension, Ipp8u baseViewLevelIDC, Ipp8u extensionLevelIdc);
+    void ChooseLevelIdc(const H264SeqParamSetMVCExtension * extension, uint8_t baseViewLevelIDC, uint8_t extensionLevelIdc);
     void AnalyzeDependencies(const H264SeqParamSetMVCExtension * extension);
-    Status AllocateView(Ipp32s view_id);
+    Status AllocateView(int32_t view_id);
     ViewItem & AllocateAndInitializeView(H264Slice * slice);
 };
 
@@ -398,12 +398,12 @@ public:
 
     virtual bool IsShouldSkipSlice(H264Slice * slice);
     virtual bool IsShouldSkipSlice(H264NalExtension *nal_ext);
-    void ChooseLevelIdc(const H264SeqParamSetSVCExtension * extension, Ipp8u baseViewLevelIDC, Ipp8u extensionLevelIdc);
-    void SetSVCTargetLayer(Ipp32u dependency_id, Ipp32u quality_id, Ipp32u temporal_id);
+    void ChooseLevelIdc(const H264SeqParamSetSVCExtension * extension, uint8_t baseViewLevelIDC, uint8_t extensionLevelIdc);
+    void SetSVCTargetLayer(uint32_t dependency_id, uint32_t quality_id, uint32_t temporal_id);
 
 protected:
-    Ipp32u m_dependency_id;
-    Ipp32u m_quality_id;
+    uint32_t m_dependency_id;
+    uint32_t m_quality_id;
 };
 
 /****************************************************************************************************/
@@ -415,20 +415,20 @@ public:
 
     DecReferencePictureMarking();
 
-    Status UpdateRefPicMarking(ViewItem &view, H264DecoderFrame * pFrame, H264Slice * pSlice, Ipp32s field_index);
+    Status UpdateRefPicMarking(ViewItem &view, H264DecoderFrame * pFrame, H264Slice * pSlice, int32_t field_index);
 
-    void SlideWindow(ViewItem &view, H264Slice * pSlice, Ipp32s field_index);
+    void SlideWindow(ViewItem &view, H264Slice * pSlice, int32_t field_index);
 
     void Reset();
 
     void CheckSEIRepetition(ViewItem &view, H264DecoderFrame * frame);
     Status CheckSEIRepetition(ViewItem &view, H264SEIPayLoad *payload);
 
-    Ipp32u  GetDPBError() const;
+    uint32_t  GetDPBError() const;
 
 protected:
 
-    Ipp32u  m_isDPBErrorFound;
+    uint32_t  m_isDPBErrorFound;
 
     enum ChangeItemFlags
     {
@@ -447,10 +447,10 @@ protected:
     {
         struct
         {
-            Ipp8u isShortTerm   : 1; // short or long
-            Ipp8u isSet         : 1; // set or free
-            Ipp8u isFrame       : 1; // full frame
-            Ipp8u isBottom      : 1; // if doesn't full frame is it top or bottom?
+            uint8_t isShortTerm   : 1; // short or long
+            uint8_t isSet         : 1; // set or free
+            uint8_t isFrame       : 1; // full frame
+            uint8_t isBottom      : 1; // if doesn't full frame is it top or bottom?
         } m_type;
 
         H264DecoderFrame *  m_pRefFrame;
@@ -459,10 +459,10 @@ protected:
 
     typedef std::list<DPBChangeItem> DPBCommandsList;
     DPBCommandsList m_commandsList;
-    Ipp32s   m_frameCount;
+    int32_t   m_frameCount;
 
-    DPBChangeItem* AddItem(DPBCommandsList & list, H264DecoderFrame * currentFrame, H264DecoderFrame * refFrame, Ipp32u flags);
-    DPBChangeItem* AddItemAndRun(H264DecoderFrame * currentFrame, H264DecoderFrame * refFrame, Ipp32u flags);
+    DPBChangeItem* AddItem(DPBCommandsList & list, H264DecoderFrame * currentFrame, H264DecoderFrame * refFrame, uint32_t flags);
+    DPBChangeItem* AddItemAndRun(H264DecoderFrame * currentFrame, H264DecoderFrame * refFrame, uint32_t flags);
 
     void Undo(const DPBChangeItem * item);
     void Redo(const DPBChangeItem * item);
@@ -534,7 +534,7 @@ public:
 
     bool IsWantToShowFrame(bool force = false);
 
-    H264DBPList *GetDPBList(Ipp32u viewId, Ipp32s dIdRev)
+    H264DBPList *GetDPBList(uint32_t viewId, int32_t dIdRev)
     {
         ViewItem *pView = FindView(viewId);
         if (!pView)
@@ -589,11 +589,11 @@ protected:
     void InitFrameCounter(H264DecoderFrame *pFrame, const H264Slice *pSlice);
 
     Status AddSlice(H264Slice * pSlice, bool force);
-    virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s m_field_index);
+    virtual Status CompleteFrame(H264DecoderFrame * pFrame, int32_t m_field_index);
     virtual void OnFullFrame(H264DecoderFrame * pFrame);
     virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame) = 0;
 
-    void DBPUpdate(H264DecoderFrame * pFrame, Ipp32s field);
+    void DBPUpdate(H264DecoderFrame * pFrame, int32_t field);
 
     virtual void AddFakeReferenceFrame(H264Slice * pSlice);
 
@@ -604,7 +604,7 @@ protected:
     virtual Status DecodeHeaders(NalUnit *nalUnit);
     virtual Status DecodeSEI(NalUnit *nalUnit);
 
-    Status ProcessFrameNumGap(H264Slice *slice, Ipp32s field, Ipp32s did, Ipp32s maxDid);
+    Status ProcessFrameNumGap(H264Slice *slice, int32_t field, int32_t did, int32_t maxDid);
 
     // Obtain free frame from queue
     virtual H264DecoderFrame *GetFreeFrame(const H264Slice *pSlice = NULL) = 0;
@@ -617,15 +617,15 @@ protected:
 
     Status AllocateNewFrame(const H264Slice *pSlice, H264DecoderFrame **frame);
 
-    Status InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame * pFrame, Ipp32s field);
+    Status InitializeLayers(AccessUnit *accessUnit, H264DecoderFrame * pFrame, int32_t field);
     void ApplyPayloadsToFrame(H264DecoderFrame * frame, H264Slice *slice, SeiPayloadArray * payloads);
 
     H264_Heap_Objects           m_ObjHeap;
 
     H264SegmentDecoderBase **m_pSegmentDecoder;
-    Ipp32u m_iThreadNum;
+    uint32_t m_iThreadNum;
 
-    Ipp64f      m_local_delta_frame_time;
+    double      m_local_delta_frame_time;
     bool        m_use_external_framerate;
 
     H264Slice * m_pLastSlice;
@@ -638,14 +638,14 @@ protected:
     // Keep track of which parameter set is in use.
     bool              m_WaitForIDR;
 
-    Ipp32u            m_DPBSizeEx;
-    Ipp32s            m_frameOrder;
+    uint32_t            m_DPBSizeEx;
+    int32_t            m_frameOrder;
 
     TaskBroker * m_pTaskBroker;
 
     VideoDecoderParams     m_initializationParams;
 
-    Ipp32s m_UIDFrameCounter;
+    int32_t m_UIDFrameCounter;
 
     H264SEIPayLoad m_UserData;
     SEI_Storer *m_sei_messages;
@@ -666,15 +666,15 @@ private:
 };
 
 // can increase level_idc to hold num_ref_frames
-inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, Ipp32u num_ref_frames)
+inline int32_t CalculateDPBSize(uint8_t & level_idc, int32_t width, int32_t height, uint32_t num_ref_frames)
 {
-    Ipp32u dpbSize;
+    uint32_t dpbSize;
 
-    num_ref_frames = IPP_MIN(16, num_ref_frames);
+    num_ref_frames = MFX_MIN(16, num_ref_frames);
 
     for (;;)
     {
-        Ipp32u MaxDPBMbs;
+        uint32_t MaxDPBMbs;
         // MaxDPB, per Table A-1, Level Limits
         switch (level_idc)
         {
@@ -726,8 +726,8 @@ inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, I
             throw h264_exception(UMC_ERR_INVALID_PARAMS);
         }
 
-        Ipp32u dpbLevel = MaxDPBMbs*256 / (width * height);
-        dpbSize = IPP_MIN(16, dpbLevel);
+        uint32_t dpbLevel = MaxDPBMbs*256 / (width * height);
+        dpbSize = MFX_MIN(16, dpbLevel);
 
         if (num_ref_frames <= dpbSize || level_idc == H264VideoDecoderParams::H264_LEVEL_MAX)
             break;
@@ -777,7 +777,7 @@ inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, I
 }
 
 
-inline H264DBPList *GetDPB(ViewList &views, Ipp32s viewId, Ipp32s dIdRev = 0)
+inline H264DBPList *GetDPB(ViewList &views, int32_t viewId, int32_t dIdRev = 0)
 {
     ViewList::iterator iter = views.begin();
     ViewList::iterator iter_end = views.end();
@@ -793,9 +793,9 @@ inline H264DBPList *GetDPB(ViewList &views, Ipp32s viewId, Ipp32s dIdRev = 0)
     throw h264_exception(UMC_ERR_FAILED);
 } // H264DBPList *GetDPB(ViewList &views)
 
-inline Ipp32u GetVOIdx(const H264SeqParamSetMVCExtension *pSeqParamSetMvc, Ipp32u viewId)
+inline uint32_t GetVOIdx(const H264SeqParamSetMVCExtension *pSeqParamSetMvc, uint32_t viewId)
 {
-    for (Ipp32u i = 0; i <= pSeqParamSetMvc->num_views_minus1; ++i)
+    for (uint32_t i = 0; i <= pSeqParamSetMvc->num_views_minus1; ++i)
     {
         if (pSeqParamSetMvc->viewInfo[i].view_id == viewId)
         {
@@ -805,13 +805,13 @@ inline Ipp32u GetVOIdx(const H264SeqParamSetMVCExtension *pSeqParamSetMvc, Ipp32
 
     return 0;
 
-} // Ipp32u GetVOIdx(const H264SeqParamSetMVCExtension *pSeqParamSetMvc, Ipp32u viewId)
+} // uint32_t GetVOIdx(const H264SeqParamSetMVCExtension *pSeqParamSetMvc, uint32_t viewId)
 
-inline Ipp32u GetInterViewFrameRefs(ViewList &views, Ipp32s viewId, Ipp32s auIndex, Ipp32u bottomFieldFlag)
+inline uint32_t GetInterViewFrameRefs(ViewList &views, int32_t viewId, int32_t auIndex, uint32_t bottomFieldFlag)
 {
     ViewList::iterator iter = views.begin();
     ViewList::iterator iter_end = views.end();
-    Ipp32u numInterViewRefs = 0;
+    uint32_t numInterViewRefs = 0;
 
     for (; iter != iter_end; ++iter)
     {

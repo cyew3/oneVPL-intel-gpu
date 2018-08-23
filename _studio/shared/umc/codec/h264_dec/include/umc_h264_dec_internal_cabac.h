@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -81,25 +81,25 @@ enum // Context block category
 
 // See table 9-11 of H.264 standard
 extern const
-Ipp32u ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER];
+uint32_t ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER];
 
 // See table 9-24 of H.264 standard
 extern const
-Ipp32u ctxIdxOffset4x4FrameCoded[SYNTAX_ELEMENT_NUMBER];
+uint32_t ctxIdxOffset4x4FrameCoded[SYNTAX_ELEMENT_NUMBER];
 
 extern const
-Ipp32u ctxIdxOffset8x8FrameCoded[SYNTAX_ELEMENT_NUMBER];
+uint32_t ctxIdxOffset8x8FrameCoded[SYNTAX_ELEMENT_NUMBER];
 
 // See table 9-24 of H.264 standard
 extern const
-Ipp32u ctxIdxOffset4x4FieldCoded[SYNTAX_ELEMENT_NUMBER];
+uint32_t ctxIdxOffset4x4FieldCoded[SYNTAX_ELEMENT_NUMBER];
 
 extern const
-Ipp32u ctxIdxOffset8x8FieldCoded[SYNTAX_ELEMENT_NUMBER];
+uint32_t ctxIdxOffset8x8FieldCoded[SYNTAX_ELEMENT_NUMBER];
 
 // See table 9-30 of H.264 standard
 extern const
-Ipp32u ctxIdxBlockCatOffset[SYNTAX_ELEMENT_NUMBER][BLOCK_CATEGORY_NUMBER];
+uint32_t ctxIdxBlockCatOffset[SYNTAX_ELEMENT_NUMBER][BLOCK_CATEGORY_NUMBER];
 
 } // namespace UMC
 

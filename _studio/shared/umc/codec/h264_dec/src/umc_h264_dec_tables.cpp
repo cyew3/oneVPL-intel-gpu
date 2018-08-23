@@ -18,28 +18,28 @@ namespace UMC_H264_DECODER
 {
 
 // Offset for 8x8 blocks
-const Ipp32u xoff8[4] = {0,8,0,8};
-const Ipp32u yoff8[4] = {0,0,8,8};
+const uint32_t xoff8[4] = {0,8,0,8};
+const uint32_t yoff8[4] = {0,0,8,8};
 
 // Offsets to advance from one luma subblock to the next, using 8x8
 // block ordering of subblocks (ie, subblocks 0..3 are the subblocks
 // in 8x8 block 0. Table is indexed by current subblock, containing a
 // pair of values for each. The first value is the x offset to be added,
 // the second value is the pitch multiplier to use to add the y offset.
-const Ipp32s xyoff[16][2] = {
+const int32_t xyoff[16][2] = {
     {4,0},{-4,4},{4,0},{4,-4},
     {4,0},{-4,4},{4,0},{-12,4},
     {4,0},{-4,4},{4,0},{4,-4},
     {4,0},{-4,4},{4,0},{-12,4}};
 
-const Ipp32s xyoff8[4][2]  =
+const int32_t xyoff8[4][2]  =
     {
         {8,0},{-8,8},{8,0},{0,0}
     };
 //////////////////////////////////////////////////////////
 // scan matrices, for Run Length Decoding
 
-const Ipp32s hp_scan4x4[2][4][16] =
+const int32_t hp_scan4x4[2][4][16] =
 {
     {
         {
@@ -95,7 +95,7 @@ const Ipp32s hp_scan4x4[2][4][16] =
     }
 };
 
-const Ipp32s hp_membership[2][64] =
+const int32_t hp_membership[2][64] =
 {
     //8x8 zigzag scan
     {
@@ -120,7 +120,7 @@ const Ipp32s hp_membership[2][64] =
         3,3,1,1,3,3,3,3
     }
 };
-const Ipp32s hp_CtxIdxInc_sig_coeff_flag[2][63] =
+const int32_t hp_CtxIdxInc_sig_coeff_flag[2][63] =
 {
     //8x8 zigzag scan
     {
@@ -146,7 +146,7 @@ const Ipp32s hp_CtxIdxInc_sig_coeff_flag[2][63] =
     }
 };
 
-const Ipp32s hp_CtxIdxInc_last_sig_coeff_flag[63] =
+const int32_t hp_CtxIdxInc_last_sig_coeff_flag[63] =
 {
     0,1,1,1,1,1,1,1,
     1,1,1,1,1,1,1,1,
@@ -159,7 +159,7 @@ const Ipp32s hp_CtxIdxInc_last_sig_coeff_flag[63] =
 };
 
 // chroma QP mapping
-const Ipp32u QPtoChromaQP[52] =
+const uint32_t QPtoChromaQP[52] =
     {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,
     20,21,22,23,24,25,26,27,28,29,29,30,31,32,32,33,
     34,34,35,35,36,36,37,37,37,38,38,38,39,39,39,39};
@@ -167,7 +167,7 @@ const Ipp32u QPtoChromaQP[52] =
 ///////////////////////////////////////
 // Tables for decoding CBP
 
-const Ipp32u dec_cbp_inter[2][48] =
+const uint32_t dec_cbp_inter[2][48] =
 {
     {
       0, 1, 2, 4, 8, 3, 5,10,
@@ -186,7 +186,7 @@ const Ipp32u dec_cbp_inter[2][48] =
      23,27,29,30,22,25,38,41
     }
 };
-const Ipp32u dec_cbp_intra[2][48] =
+const uint32_t dec_cbp_intra[2][48] =
 {
     {
      15, 0, 7,11,13,14, 3, 5,
@@ -209,13 +209,13 @@ const Ipp32u dec_cbp_intra[2][48] =
 
 // Mapping from 8x8 block number to 4x4 block number
 const
-Ipp32u block_subblock_mapping[16] =
+uint32_t block_subblock_mapping[16] =
 {
     0,1,4,5,2,3,6,7,8,9,12,13,10,11,14,15
 };
 /*
 const
-Ipp8u chroma_block_subblock_mapping[4][16] =
+uint8_t chroma_block_subblock_mapping[4][16] =
 {
     {0,1,4,5,2,3,6,7,8,9,12,13,10,11,14,15},
     {0,1,4,5,2,3,6,7,8,9,12,13,10,11,14,15},
@@ -224,7 +224,7 @@ Ipp8u chroma_block_subblock_mapping[4][16] =
 };*/
 
 const
-Ipp32u subblock_block_mapping[4] =
+uint32_t subblock_block_mapping[4] =
 {
     0,2,8,10
 };
@@ -264,43 +264,43 @@ Ipp32u subblock_block_mapping[4] =
 // Tables used for finding if a luma block is on the edge
 // of a macroblock. JVT CD block order
 // tab4, indexed by 8x8 block
-const Ipp32u left_edge_tab4[4]        = {1,0,1,0};
-const Ipp32u top_edge_tab4[4]         = {1,1,0,0};
-const Ipp32u right_edge_tab4[4]       = {0,1,0,1};
+const uint32_t left_edge_tab4[4]        = {1,0,1,0};
+const uint32_t top_edge_tab4[4]         = {1,1,0,0};
+const uint32_t right_edge_tab4[4]       = {0,1,0,1};
 // tab16, indexed by 4x4 subblock
-const Ipp32u left_edge_tab16[16]     = {1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0};
-const Ipp32u top_edge_tab16[16]      = {1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0};
-const Ipp32u right_edge_tab16[16]    = {0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1};
+const uint32_t left_edge_tab16[16]     = {1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0};
+const uint32_t top_edge_tab16[16]      = {1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0};
+const uint32_t right_edge_tab16[16]    = {0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1};
 // 8x4 and 4x8 tables, indexed by [8x8block*4 + subblock]
-const Ipp32u left_edge_tab16_8x4[16]     = {1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0};
-const Ipp32u top_edge_tab16_8x4[16]      = {1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0};
-const Ipp32u right_edge_tab16_8x4[16]    = {0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0};
-const Ipp32u left_edge_tab16_4x8[16]     = {1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0};
-const Ipp32u top_edge_tab16_4x8[16]      = {1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0};
-const Ipp32u right_edge_tab16_4x8[16]    = {0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0};
+const uint32_t left_edge_tab16_8x4[16]     = {1,1,0,0,0,0,0,0,1,1,0,0,0,0,0,0};
+const uint32_t top_edge_tab16_8x4[16]      = {1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0};
+const uint32_t right_edge_tab16_8x4[16]    = {0,0,0,0,1,1,0,0,0,0,0,0,1,1,0,0};
+const uint32_t left_edge_tab16_4x8[16]     = {1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0};
+const uint32_t top_edge_tab16_4x8[16]      = {1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0};
+const uint32_t right_edge_tab16_4x8[16]    = {0,0,0,0,0,1,0,0,0,0,0,0,0,1,0,0};
 
 // Tables for MV prediction to find if upper right predictor is
 // available, indexed by [8x8block*4 + subblock]
-const Ipp32u above_right_avail_8x4[16] = {0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0};
-const Ipp32u above_right_avail_4x8[16] = {0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0};
+const uint32_t above_right_avail_8x4[16] = {0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0};
+const uint32_t above_right_avail_4x8[16] = {0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,0};
 
 // Table for 4x4 intra prediction to find if a subblock can use predictors
 // from above right. Also used for motion vector prediction availability.
 // JVT CD block order.
-const Ipp32u above_right_avail_4x4[16] = {1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0};
-const Ipp32u above_right_avail_4x4_lin[16] = {
+const uint32_t above_right_avail_4x4[16] = {1,1,1,0,1,1,1,0,1,1,1,0,1,0,1,0};
+const uint32_t above_right_avail_4x4_lin[16] = {
     1,1,1,1,
     1,0,1,0,
     1,1,1,0,
     1,0,1,0
 };
-const Ipp32u subblock_block_membership[16] = {
+const uint32_t subblock_block_membership[16] = {
         0,0,1,1,
         0,0,1,1,
         2,2,3,3,
         2,2,3,3
 };
-const Ipp8s ClipQPTable[52*3]=
+const int8_t ClipQPTable[52*3]=
 {
          0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
         10,11,12,13,14,15,16,17,18,19,
@@ -321,8 +321,8 @@ const Ipp8s ClipQPTable[52*3]=
         40,41,42,43,44,45,46,47,48,49,
         50,51
 };
-const Ipp32u num_blocks[]={4,4,8,16};
-const Ipp32u x_pos_value[4][16]=
+const uint32_t num_blocks[]={4,4,8,16};
+const uint32_t x_pos_value[4][16]=
 {
     {//400
         0,1,
@@ -345,7 +345,7 @@ const Ipp32u x_pos_value[4][16]=
         0,1,2,3
     }
 };
-const Ipp32u y_pos_value[4][16]={
+const uint32_t y_pos_value[4][16]={
     {//400
         0,0,
         1,1
@@ -367,7 +367,7 @@ const Ipp32u y_pos_value[4][16]={
         3,3,3,3
     }
 };
-const Ipp32u block_y_values[4][4]=
+const uint32_t block_y_values[4][4]=
 {
     {
         0, 2, 0, 2
@@ -382,14 +382,14 @@ const Ipp32u block_y_values[4][4]=
         0, 4, 8, 12,
     }
 };
-const Ipp32s dec_values[]={20,20,24,32};
-const Ipp32u mb_c_width[]={2,2,2,4};
-const Ipp32u mb_c_height[]={2,2,4,4};
-const Ipp32u first_v_ac_block[]={23,23,27,35};
-const Ipp32u last_v_ac_block[]={26,26,34,50};
+const int32_t dec_values[]={20,20,24,32};
+const uint32_t mb_c_width[]={2,2,2,4};
+const uint32_t mb_c_height[]={2,2,4,4};
+const uint32_t first_v_ac_block[]={23,23,27,35};
+const uint32_t last_v_ac_block[]={26,26,34,50};
 
 const
-Ipp32u SbPartNumMinus1[2][17] =
+uint32_t SbPartNumMinus1[2][17] =
 {
     {
         3, // SBTYPE_DIRECT
@@ -431,7 +431,7 @@ Ipp32u SbPartNumMinus1[2][17] =
     }
 };
 
-const Ipp32s ChromaDC422RasterScan[8] =
+const int32_t ChromaDC422RasterScan[8] =
 {
     0,2,
     1,4,
@@ -440,7 +440,7 @@ const Ipp32s ChromaDC422RasterScan[8] =
 };
 
 
-const Ipp32u mask_[] = //(1 << (i >> 2))
+const uint32_t mask_[] = //(1 << (i >> 2))
 {
     1,1,1,1,
     2,2,2,2,
@@ -448,7 +448,7 @@ const Ipp32u mask_[] = //(1 << (i >> 2))
     8,8,8,8
 };
 
-const Ipp32u mask_bit[] =
+const uint32_t mask_bit[] =
 {
     1<< 0,1<< 1,1<< 2,1<< 3,
     1<< 4,1<< 5,1<< 6,1<< 7,
@@ -457,10 +457,10 @@ const Ipp32u mask_bit[] =
     1<<16,1<<17,1<<18,1<<19,
     1<<20,1<<21,1<<22,1<<23,
     1<<24,1<<25,1<<26,1<<27,
-    1<<28,1<<29,1<<30, (Ipp32u) 1<<31
+    1<<28,1<<29,1<<30, (uint32_t) 1<<31
 };
 
-const Ipp32s iLeftBlockMask[] =
+const int32_t iLeftBlockMask[] =
 {
     0x00040, 0x00002, 0x00100, 0x00008,
     0x00004, 0x00020, 0x00010, 0x00080,
@@ -468,7 +468,7 @@ const Ipp32s iLeftBlockMask[] =
     0x00400, 0x02000, 0x01000, 0x08000
 };
 
-const Ipp32s iTopBlockMask[] =
+const int32_t iTopBlockMask[] =
 {
     0x00800, 0x01000, 0x00002, 0x00004,
     0x08000, 0x10000, 0x00020, 0x00040,
@@ -478,7 +478,7 @@ const Ipp32s iTopBlockMask[] =
 
 // Lookup table to get the 4 bit positions for the 4x4 blocks in the
 // blockcbp from the coded bits in 8x8 bitstream cbp.
-const Ipp32u blockcbp_table[] =
+const uint32_t blockcbp_table[] =
 {
     (0xf<<1), (0xf0<<1), (0xf00<<1), (0xf000<<1), (0x30000<<1)
 };
@@ -486,10 +486,10 @@ const Ipp32u blockcbp_table[] =
 
 // Lookup table to obtain NumCoefToLeft index (0..7) from block number in
 // decodeCoefficients, block 0 is INTRA16 DC. Used for luma and chroma.
-const Ipp32u BlockNumToMBRowLuma[17] =
+const uint32_t BlockNumToMBRowLuma[17] =
 { 0,0,0,1,1,0,0,1,1,2,2,3,3,2,2,3,3};
 
-const Ipp32u BlockNumToMBRowChromaAC[4][32] =
+const uint32_t BlockNumToMBRowChromaAC[4][32] =
 {
     { 0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1},
     { 0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1},
@@ -499,10 +499,10 @@ const Ipp32u BlockNumToMBRowChromaAC[4][32] =
 
 // Lookup table to obtain NumCoefAbove index (0..7) from block number in
 // decodeCoefficients, block 0 is INTRA16 DC. Used for luma and chroma.
-const Ipp32u BlockNumToMBColLuma[17] =
+const uint32_t BlockNumToMBColLuma[17] =
 { 0,0,1,0,1,2,3,2,3,0,1,0,1,2,3,2,3};
 
-const Ipp32u BlockNumToMBColChromaAC[4][32] =
+const uint32_t BlockNumToMBColChromaAC[4][32] =
 {
     { 0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1},
     { 0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1},
@@ -511,7 +511,7 @@ const Ipp32u BlockNumToMBColChromaAC[4][32] =
 
 };
 
-const Ipp32s iBlockCBPMask[16] =
+const int32_t iBlockCBPMask[16] =
 {
     0x00002, 0x00004, 0x00020, 0x00040,
     0x00008, 0x00010, 0x00080, 0x00100,
@@ -520,7 +520,7 @@ const Ipp32s iBlockCBPMask[16] =
 };
 
 
-const Ipp32s iBlockCBPMaskChroma[8] =
+const int32_t iBlockCBPMaskChroma[8] =
 {
     0x00002, 0x00004,
     0x00008, 0x00010,

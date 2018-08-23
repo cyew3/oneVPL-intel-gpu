@@ -26,7 +26,7 @@ class H264Task
 {
 public:
     // Default constructor
-    H264Task(Ipp32s iThreadNumber)
+    H264Task(int32_t iThreadNumber)
         : m_iThreadNumber(iThreadNumber)
     {
         m_pSlice = NULL;
@@ -44,19 +44,19 @@ public:
         m_taskPreparingGuard = 0;
     }
 
-    CoeffsPtrCommon m_pBuffer;                                  // (Ipp16s *) pointer to working buffer
+    CoeffsPtrCommon m_pBuffer;                                  // (int16_t *) pointer to working buffer
     size_t          m_WrittenSize;
 
     H264SliceEx *m_pSlice;                                        // (H264Slice *) pointer to owning slice
     H264DecoderFrameInfo * m_pSlicesInfo;
     AutomaticUMCMutex    * m_taskPreparingGuard;
 
-    Ipp32s m_mvsDistortion;
-    Ipp32s m_iThreadNumber;                                     // (Ipp32s) owning thread number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) maximum MB number in owning slice
-    Ipp32s m_iMBToProcess;                                      // (Ipp32s) number of MB to processing
-    Ipp32s m_iTaskID;                                           // (Ipp32s) task identificator
+    int32_t m_mvsDistortion;
+    int32_t m_iThreadNumber;                                     // (int32_t) owning thread number
+    int32_t m_iFirstMB;                                          // (int32_t) first MB in slice
+    int32_t m_iMaxMB;                                            // (int32_t) maximum MB number in owning slice
+    int32_t m_iMBToProcess;                                      // (int32_t) number of MB to processing
+    int32_t m_iTaskID;                                           // (int32_t) task identificator
     bool m_bDone;                                               // (bool) task was done
     bool m_bError;                                              // (bool) there is a error
 };
@@ -71,25 +71,25 @@ public:
     LocalResources();
     virtual ~LocalResources();
 
-    Status Init(Ipp32s numberOfBuffers, MemoryAllocator *pMemoryAllocator);
+    Status Init(int32_t numberOfBuffers, MemoryAllocator *pMemoryAllocator);
 
     void Reset();
     void Close();
 
-    H264DecoderLocalMacroblockDescriptor & GetMBInfo(Ipp32s number);
-    IntraType * GetIntraTypes(Ipp32s number);
+    H264DecoderLocalMacroblockDescriptor & GetMBInfo(int32_t number);
+    IntraType * GetIntraTypes(int32_t number);
 
-    void AllocateMBInfo(Ipp32s number, Ipp32u iMBCount);
-    void AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber);
+    void AllocateMBInfo(int32_t number, uint32_t iMBCount);
+    void AllocateMBIntraTypes(int32_t iIndex, int32_t iMBNumber);
 
-    void AllocateBuffers(Ipp32s mb_count);
+    void AllocateBuffers(int32_t mb_count);
 
     bool LockFrameResource(H264DecoderFrame * frame);
     void UnlockFrameResource(H264DecoderFrame * frame);
 
-    H264DecoderFrame * IsBusyByFrame(Ipp32s number);
+    H264DecoderFrame * IsBusyByFrame(int32_t number);
 
-    Ipp32u GetCurrentResourceIndex();
+    uint32_t GetCurrentResourceIndex();
 
     H264DecoderMBAddr * GetDefaultMBMapTable() const;
 
@@ -97,7 +97,7 @@ public:
     void FreeCoeffBuffer(H264CoeffsBuffer *);
 
 public:
-    Ipp8u         *m_pMBMap;
+    uint8_t         *m_pMBMap;
     H264DecoderMBAddr **next_mb_tables;//0 linear scan, 1,.. - bitstream defined scan (slice groups)
 
 private:
@@ -106,14 +106,14 @@ private:
 
     H264DecoderLocalMacroblockDescriptor *m_pMBInfo;
 
-    Ipp32s m_numberOfBuffers;
+    int32_t m_numberOfBuffers;
     MemoryAllocator *m_pMemoryAllocator;
 
-    Ipp32s          m_parsedDataLength;
-    Ipp8u          *m_pParsedData;
+    int32_t          m_parsedDataLength;
+    uint8_t          *m_pParsedData;
     MemID           m_midParsedData;       // (MemID) mem id for allocated parsed data
 
-    Ipp32u          m_currentResourceIndex;
+    uint32_t          m_currentResourceIndex;
 
     H264_Heap_Objects  m_ObjHeap;
 
@@ -134,7 +134,7 @@ public:
     TaskBrokerSingleThread(TaskSupplier * pTaskSupplier);
 
 
-    virtual bool Init(Ipp32s iConsumerNumber);
+    virtual bool Init(int32_t iConsumerNumber);
     virtual void Reset();
     virtual void Release();
 
@@ -148,7 +148,7 @@ public:
 protected:
     LocalResources m_localResourses;
 
-    Ipp32s GetNumberOfTasks(bool details);
+    int32_t GetNumberOfTasks(bool details);
 
     virtual void CompleteFrame(H264DecoderFrame * frame);
 
@@ -168,7 +168,7 @@ public:
 
     TaskBrokerTwoThread(TaskSupplier * pTaskSupplier);
 
-    virtual bool Init(Ipp32s iConsumerNumber);
+    virtual bool Init(int32_t iConsumerNumber);
 
     virtual bool GetNextTaskManySlices(H264DecoderFrameInfo * info, H264Task *pTask);
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -66,7 +66,7 @@ void H264DecYUVBufferPadded::Init(const VideoDataInfo *info)
 {
     VM_ASSERT(info);
 
-    m_bpp = IPP_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
+    m_bpp = MFX_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
 
     m_color_format = info->GetColorFormat();
     m_chroma_format = GetH264ColorFormat(info->GetColorFormat());
@@ -98,11 +98,11 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
         m_frameData.m_locked = true;
 
     m_color_format = info->GetColorFormat();
-    m_bpp = IPP_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
+    m_bpp = MFX_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
 
     m_chroma_format = GetH264ColorFormat(info->GetColorFormat());
     m_lumaSize = info->GetPlaneInfo(0)->m_ippSize;
-    m_pitch_luma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneInfo(0)->m_iSampleSize;
+    m_pitch_luma = (int32_t)m_frameData.GetPlaneMemoryInfo(0)->m_pitch / info->GetPlaneInfo(0)->m_iSampleSize;
 
     m_pYPlane = m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
@@ -111,7 +111,7 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
         if (m_chroma_format == 0)
             info = frameData->GetInfo();
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
-        m_pitch_chroma = (Ipp32s)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneInfo(1)->m_iSampleSize;
+        m_pitch_chroma = (int32_t)m_frameData.GetPlaneMemoryInfo(1)->m_pitch / info->GetPlaneInfo(1)->m_iSampleSize;
 
         if (m_frameData.GetInfo()->GetNumPlanes() == 2)
         {

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifdef __APPLE__
@@ -251,14 +251,14 @@ public:
     
     struct nalStreamInfo    {
         
-        Ipp32u nalNumber;
-        Ipp32u nalType;
-        std::vector<Ipp8u> headerBytes;
+        uint32_t nalNumber;
+        uint32_t nalType;
+        std::vector<uint8_t> headerBytes;
     };
 
     virtual Status Init(BaseCodecParams *pInit);
     virtual void Close();
-    void SetBufferedFramesNumber(Ipp32u buffered);
+    void SetBufferedFramesNumber(uint32_t buffered);
     virtual Status AddSource(MediaData * pSource, MediaData *dst);
 
 protected:
@@ -296,9 +296,9 @@ protected:
     virtual Status DecodeSEI(MediaDataEx *nalUnit);
     virtual Status RunDecoding(bool force, H264DecoderFrame ** decoded = 0);
 
-    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc);
+    virtual Status AllocateFrameData(H264DecoderFrame * pFrame, mfxSize dimensions, int32_t bit_depth, ColorFormat chroma_format_idc);
 
-    virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field);
+    virtual Status CompleteFrame(H264DecoderFrame * pFrame, int32_t field);
 
     virtual H264DecoderFrame * GetFreeFrame(const H264Slice *pSlice = NULL);
 
@@ -307,11 +307,11 @@ protected:
     virtual Status DecodeHeaders(MediaDataEx *nalUnit);
 
 private:
-    Ipp32u m_bufferedFrameNumber;
+    uint32_t m_bufferedFrameNumber;
 
     H264DecoderFrame * m_pLastDecodedFrame;   //needed for cut and paste from VATaskSupplier::CompleteFrame
-    std::vector<Ipp8u> m_nals;
-    std::vector<Ipp8u> m_avcData;
+    std::vector<uint8_t> m_nals;
+    std::vector<uint8_t> m_avcData;
     unsigned int m_ppsCountIndex;
     std::queue<struct nalStreamInfo> m_prependDataQueue;
     unsigned int m_sizeField;
@@ -385,7 +385,7 @@ public:
                                        CMTime presentationTimeStamp,
                                        CMTime presentationDuration);
     
-    virtual void AddReportItem(Ipp32u index, Ipp32u field, Ipp8u status);
+    virtual void AddReportItem(uint32_t index, uint32_t field, uint8_t status);
 
 protected:
     virtual void AwakeThreads();
@@ -394,11 +394,11 @@ protected:
     class ReportItem
     {
     public:
-        Ipp32u  m_index;
-        Ipp32u  m_field;
-        Ipp8u   m_status;
+        uint32_t  m_index;
+        uint32_t  m_field;
+        uint8_t   m_status;
 
-        ReportItem(Ipp32u index, Ipp32u field, Ipp8u status)
+        ReportItem(uint32_t index, uint32_t field, uint8_t status)
             : m_index(index)
             , m_field(field)
             , m_status(status)
@@ -418,8 +418,8 @@ protected:
 
     typedef std::vector<ReportItem> Report;
     Report m_reports;
-    Ipp64u m_lastCounter;
-    Ipp64u m_counterFrequency;
+    unsigned long long m_lastCounter;
+    unsigned long long m_counterFrequency;
 };
 
 class H264_VDA_SegmentDecoder : public H264SegmentDecoderMultiThreaded

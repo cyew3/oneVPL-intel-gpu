@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,17 +23,17 @@ namespace UMC
 {
 
 inline
-bool IsItAllowedCode(Ipp32s iCode)
+bool IsItAllowedCode(int32_t iCode)
 {
     return ((NAL_UT_SLICE <= (iCode & NAL_UNITTYPE_BITS)) &&
         (NAL_UT_PPS >= (iCode & NAL_UNITTYPE_BITS)) &&
         (NAL_UT_SEI != (iCode & NAL_UNITTYPE_BITS))) ||
         (NAL_UT_SPS_EX == (iCode & NAL_UNITTYPE_BITS)) ||
         (NAL_UT_AUXILIARY == (iCode & NAL_UNITTYPE_BITS));
-} // bool IsItAllowedCode(Ipp32s iCode)
+} // bool IsItAllowedCode(int32_t iCode)
 
 inline
-bool IsHeaderCode(Ipp32s iCode)
+bool IsHeaderCode(int32_t iCode)
 {
     return (NAL_UT_SPS == (iCode & NAL_UNITTYPE_BITS)) ||
            (NAL_UT_SPS_EX == (iCode & NAL_UNITTYPE_BITS)) ||
@@ -42,7 +42,7 @@ bool IsHeaderCode(Ipp32s iCode)
 }
 
 inline
-bool IsVLCCode(Ipp32s iCode)
+bool IsVLCCode(int32_t iCode)
 {
     return ((NAL_UT_SLICE <= (iCode & NAL_UNITTYPE_BITS)) &&
            (NAL_UT_IDR_SLICE >= (iCode & NAL_UNITTYPE_BITS))) ||
@@ -82,10 +82,10 @@ class SwapperBase
 public:
     virtual ~SwapperBase() {}
 
-    virtual void SwapMemory(Ipp8u *pDestination, size_t &nDstSize, Ipp8u *pSource, size_t nSrcSize) = 0;
-    virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc, Ipp8u defaultValue = DEFAULT_NU_TAIL_VALUE) = 0;
+    virtual void SwapMemory(uint8_t *pDestination, size_t &nDstSize, uint8_t *pSource, size_t nSrcSize) = 0;
+    virtual void SwapMemory(H264MemoryPiece * pMemDst, H264MemoryPiece * pMemSrc, uint8_t defaultValue = DEFAULT_NU_TAIL_VALUE) = 0;
 
-    virtual void CopyBitStream(Ipp8u *pDestination, Ipp8u *pSource, size_t &nSrcSize) = 0;
+    virtual void CopyBitStream(uint8_t *pDestination, uint8_t *pSource, size_t &nSrcSize) = 0;
 };
 
 class StartCodeIteratorBase
@@ -105,16 +105,16 @@ public:
     {
     }
 
-    virtual Ipp32s Init(MediaData * pSource)
+    virtual int32_t Init(MediaData * pSource)
     {
-        m_pSourceBase = m_pSource = (Ipp8u *) pSource->GetDataPointer();
+        m_pSourceBase = m_pSource = (uint8_t *) pSource->GetDataPointer();
         m_nSourceBaseSize = m_nSourceSize = pSource->GetDataSize();
         return -1;
     }
 
-    Ipp32s GetCurrentOffset()
+    int32_t GetCurrentOffset()
     {
-        return (Ipp32s)(m_pSource - m_pSourceBase);
+        return (int32_t)(m_pSource - m_pSourceBase);
     }
 
     virtual void SetSuggestedSize(size_t size)
@@ -123,19 +123,19 @@ public:
             m_suggestedSize = size;
     }
 
-    virtual Ipp32s GetNext() = 0;
+    virtual int32_t GetNext() = 0;
 
-    virtual Ipp32s CheckNalUnitType(MediaData * pSource) = 0;
-    virtual Ipp32s MoveToStartCode(MediaData * pSource) = 0;
-    virtual Ipp32s GetNALUnit(MediaData * pSource, NalUnit * pDst) = 0;
+    virtual int32_t CheckNalUnitType(MediaData * pSource) = 0;
+    virtual int32_t MoveToStartCode(MediaData * pSource) = 0;
+    virtual int32_t GetNALUnit(MediaData * pSource, NalUnit * pDst) = 0;
 
     virtual void Reset() = 0;
 
 protected:
-    Ipp8u * m_pSource;
+    uint8_t * m_pSource;
     size_t  m_nSourceSize;
 
-    Ipp8u * m_pSourceBase;
+    uint8_t * m_pSourceBase;
     size_t  m_nSourceBaseSize;
 
     size_t  m_suggestedSize;
@@ -152,8 +152,8 @@ public:
     virtual void Init();
     virtual void Release();
 
-    virtual Ipp32s CheckNalUnitType(MediaData * pSource);
-    virtual Ipp32s MoveToStartCode(MediaData * pSource);
+    virtual int32_t CheckNalUnitType(MediaData * pSource);
+    virtual int32_t MoveToStartCode(MediaData * pSource);
     virtual NalUnit * GetNalUnits(MediaData * in);
 
     virtual void Reset();

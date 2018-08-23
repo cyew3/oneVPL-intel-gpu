@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -18,19 +18,19 @@
 namespace UMC
 {
 
-SegmentDecoderHPBase *CreateSD_ManyBits(Ipp32s bit_depth_luma,
-                                        Ipp32s bit_depth_chroma,
+SegmentDecoderHPBase *CreateSD_ManyBits(int32_t bit_depth_luma,
+                                        int32_t bit_depth_chroma,
                                         bool is_field,
-                                        Ipp32s color_format,
+                                        int32_t color_format,
                                         bool is_high_profile)
 {
     if (bit_depth_chroma > 8 || bit_depth_luma > 8)
     {
         if (is_field)
         {
-            return CreateSegmentDecoderWrapper<Ipp32s, Ipp16u, Ipp16u, true>::CreateSoftSegmentDecoder(color_format, is_high_profile);
+            return CreateSegmentDecoderWrapper<int32_t, uint16_t, uint16_t, true>::CreateSoftSegmentDecoder(color_format, is_high_profile);
         } else {
-            return CreateSegmentDecoderWrapper<Ipp32s, Ipp16u, Ipp16u, false>::CreateSoftSegmentDecoder(color_format, is_high_profile);
+            return CreateSegmentDecoderWrapper<int32_t, uint16_t, uint16_t, false>::CreateSoftSegmentDecoder(color_format, is_high_profile);
         }
     }
     else
@@ -41,12 +41,12 @@ SegmentDecoderHPBase *CreateSD_ManyBits(Ipp32s bit_depth_luma,
 
     return NULL;
 
-} // SegmentDecoderHPBase *CreateSD(Ipp32s bit_depth_luma,
+} // SegmentDecoderHPBase *CreateSD(int32_t bit_depth_luma,
 
 void InitializeSDCreator_ManyBits()
 {
-    CreateSegmentDecoderWrapper<Ipp32s, Ipp16u, Ipp16u, true>::CreateSoftSegmentDecoder(0, false);
-    CreateSegmentDecoderWrapper<Ipp32s, Ipp16u, Ipp16u, false>::CreateSoftSegmentDecoder(0, false);
+    CreateSegmentDecoderWrapper<int32_t, uint16_t, uint16_t, true>::CreateSoftSegmentDecoder(0, false);
+    CreateSegmentDecoderWrapper<int32_t, uint16_t, uint16_t, false>::CreateSoftSegmentDecoder(0, false);
 }
 
 } // namespace UMC

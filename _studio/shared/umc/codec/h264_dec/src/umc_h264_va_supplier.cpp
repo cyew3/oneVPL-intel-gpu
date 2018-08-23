@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -57,8 +57,8 @@ void LazyCopier::Remove(H264DecoderFrameInfo * info)
     if (!info)
         return;
 
-    Ipp32u count = info->GetSliceCount();
-    for (Ipp32u i = 0; i < count; i++)
+    uint32_t count = info->GetSliceCount();
+    for (uint32_t i = 0; i < count; i++)
     {
         H264Slice * slice = info->GetSlice(i);
         Remove(slice);
@@ -77,14 +77,14 @@ void LazyCopier::CopyAll()
         // update bs ptr !!!
         H264HeadersBitstream *pBitstream = slice->GetBitStream();
 
-        Ipp32u *pbsBase, *pbs;
-        Ipp32u size, bitOffset;
+        uint32_t *pbsBase, *pbs;
+        uint32_t size, bitOffset;
 
         pBitstream->GetOrg(&pbsBase, &size);
         pBitstream->GetState(&pbs, &bitOffset);
 
-        pBitstream->Reset(slice->m_pSource.GetPointer(), bitOffset, (Ipp32u)slice->m_pSource.GetDataSize());
-        pBitstream->SetState((Ipp32u*)slice->m_pSource.GetPointer() + (pbs - pbsBase), bitOffset);
+        pBitstream->Reset(slice->m_pSource.GetPointer(), bitOffset, (uint32_t)slice->m_pSource.GetDataSize());
+        pBitstream->SetState((uint32_t*)slice->m_pSource.GetPointer() + (pbs - pbsBase), bitOffset);
     }
 
     m_slices.clear();
@@ -128,13 +128,13 @@ void VATaskSupplier::CreateTaskBroker()
 {
     m_pTaskBroker = new TaskBrokerSingleThreadDXVA(this);
 
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    for (uint32_t i = 0; i < m_iThreadNum; i += 1)
     {
         m_pSegmentDecoder[i] = new H264_DXVA_SegmentDecoder(this);
     }
 }
 
-void VATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)
+void VATaskSupplier::SetBufferedFramesNumber(uint32_t buffered)
 {
     m_DPBSizeEx += buffered;
     m_bufferedFrameNumber = buffered;
@@ -184,7 +184,7 @@ Status VATaskSupplier::DecodeHeaders(NalUnit *nalUnit)
     if (sts != UMC_OK && sts != UMC_WRN_REPOSITION_INPROGRESS)
         return sts;
 
-    Ipp32u nal_unit_type = nalUnit->GetNalUnitType();
+    uint32_t nal_unit_type = nalUnit->GetNalUnitType();
     if (nal_unit_type == NAL_UT_SPS && m_firstVideoParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE &&
         isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va)
     {
@@ -239,7 +239,7 @@ H264DecoderFrame *VATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
     return pFrame;
 }
 
-Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
+Status VATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, int32_t field)
 {
     if (!pFrame)
         return UMC_OK;
@@ -319,7 +319,7 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
 
     notifier0<LazyCopier> memory_leak_preventing_slice(&m_lazyCopier, &LazyCopier::CopyAll);
 
-    Ipp32u const flags = pSource->GetFlags();
+    uint32_t const flags = pSource->GetFlags();
     if (flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
         return MFXTaskSupplier::AddSource(pSource);
 
@@ -355,7 +355,7 @@ Status VATaskSupplier::AddSource(MediaData * pSource)
 
 Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
 {
-    IppiSize dimensions = pFrame->lumaSize();
+    mfxSize dimensions = pFrame->lumaSize();
     VideoDataInfo info;
     info.Init(dimensions.width, dimensions.height, pFrame->GetColorFormat(), pFrame->m_bpp);
 
@@ -405,7 +405,7 @@ Status VATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
 H264Slice * VATaskSupplier::DecodeSliceHeader(NalUnit *nalUnit)
 {
     size_t dataSize = nalUnit->GetDataSize();
-    nalUnit->SetDataSize(IPP_MIN(1024, dataSize));
+    nalUnit->SetDataSize(MFX_MIN(1024, dataSize));
 
     H264Slice * slice = TaskSupplier::DecodeSliceHeader(nalUnit);
 
@@ -422,22 +422,22 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(NalUnit *nalUnit)
     else
     {
         slice->m_pSource.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-        MFX_INTERNAL_CPY(slice->m_pSource.GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
+        MFX_INTERNAL_CPY(slice->m_pSource.GetPointer(), nalUnit->GetDataPointer(), (uint32_t)nalUnit->GetDataSize());
         memset(slice->m_pSource.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
         slice->m_pSource.SetDataSize(nalUnit->GetDataSize());
         slice->m_pSource.SetTime(nalUnit->GetTime());
     }
 
-    Ipp32u* pbs;
-    Ipp32u bitOffset;
+    uint32_t* pbs;
+    uint32_t bitOffset;
 
     slice->GetBitStream()->GetState(&pbs, &bitOffset);
 
     size_t bytes = slice->GetBitStream()->BytesDecodedRoundOff();
 
     slice->GetBitStream()->Reset(slice->m_pSource.GetPointer(), bitOffset,
-        (Ipp32u)slice->m_pSource.GetDataSize());
-    slice->GetBitStream()->SetState((Ipp32u*)(slice->m_pSource.GetPointer() + bytes), bitOffset);
+        (uint32_t)slice->m_pSource.GetDataSize());
+    slice->GetBitStream()->SetState((uint32_t*)(slice->m_pSource.GetPointer() + bytes), bitOffset);
 
     return slice;
 }
@@ -445,9 +445,9 @@ H264Slice * VATaskSupplier::DecodeSliceHeader(NalUnit *nalUnit)
 // walk over all view's  DPB and find an index free index.
 // i.e. index not used by any frame in any view
 // returns free index or -1 if no free index found
-Ipp32s VATaskSupplier::GetFreeFrameIndex()
+int32_t VATaskSupplier::GetFreeFrameIndex()
 {
-    for (Ipp32s i = 0; i < 127; i++)
+    for (int32_t i = 0; i < 127; i++)
     {
         ViewList::iterator iter = m_views.begin();
         ViewList::iterator iter_end = m_views.end();

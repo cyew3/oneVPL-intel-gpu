@@ -93,9 +93,9 @@ namespace UMC_H264_DECODER
 #endif
 #endif
 
-extern void ConvertNV12ToYV12(const Ipp8u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, Ipp8u *pSrcDstUPlane, Ipp8u *pSrcDstVPlane, const Ipp32u _srcdstUStep, IppiSize roi)
+extern void ConvertNV12ToYV12(const uint8_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, uint8_t *pSrcDstUPlane, uint8_t *pSrcDstVPlane, const uint32_t _srcdstUStep, mfxSize roi)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for (j = 0; j < roi.height; j++)
     {
@@ -112,9 +112,9 @@ extern void ConvertNV12ToYV12(const Ipp8u *pSrcDstUVPlane, const Ipp32u _srcdstU
     }
 }
 
-extern void ConvertYV12ToNV12(const Ipp8u *pSrcDstUPlane, const Ipp8u *pSrcDstVPlane, const Ipp32u _srcdstUStep, Ipp8u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, IppiSize roi)
+extern void ConvertYV12ToNV12(const uint8_t *pSrcDstUPlane, const uint8_t *pSrcDstVPlane, const uint32_t _srcdstUStep, uint8_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, mfxSize roi)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for (j = 0; j < roi.height; j++)
     {
@@ -131,9 +131,9 @@ extern void ConvertYV12ToNV12(const Ipp8u *pSrcDstUPlane, const Ipp8u *pSrcDstVP
     }
 }
 
-void ConvertNV12ToYV12(const Ipp16u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, Ipp16u *pSrcDstUPlane, Ipp16u *pSrcDstVPlane, const Ipp32u _srcdstUStep, IppiSize roi)
+void ConvertNV12ToYV12(const uint16_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, uint16_t *pSrcDstUPlane, uint16_t *pSrcDstVPlane, const uint32_t _srcdstUStep, mfxSize roi)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for (j = 0; j < roi.height; j++)
     {
@@ -150,9 +150,9 @@ void ConvertNV12ToYV12(const Ipp16u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep,
     }
 }
 
-void ConvertYV12ToNV12(const Ipp16u *pSrcDstUPlane, const Ipp16u *pSrcDstVPlane, const Ipp32u _srcdstUStep, Ipp16u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, IppiSize roi)
+void ConvertYV12ToNV12(const uint16_t *pSrcDstUPlane, const uint16_t *pSrcDstVPlane, const uint32_t _srcdstUStep, uint16_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, mfxSize roi)
 {
-    Ipp32s i, j;
+    int32_t i, j;
 
     for (j = 0; j < roi.height; j++)
     {
@@ -172,7 +172,7 @@ void ConvertYV12ToNV12(const Ipp16u *pSrcDstUPlane, const Ipp16u *pSrcDstVPlane,
 ////////////////// pvch264huffman.c ///////////////////////////
 #define h264GetBits(current_data, offset, nbits, data) \
 { \
-    Ipp32u x; \
+    uint32_t x; \
     /*removeSCEBP(current_data, offset);*/ \
     offset -= (nbits); \
     if (offset >= 0) \
@@ -187,7 +187,7 @@ void ConvertYV12ToNV12(const Ipp16u *pSrcDstUPlane, const Ipp16u *pSrcDstVPlane,
     x += current_data[0] << (31 - offset); \
     current_data++; \
 } \
-    (data) = x & ((((Ipp32u) 0x01) << (nbits)) - 1); \
+    (data) = x & ((((uint32_t) 0x01) << (nbits)) - 1); \
 }
 
 #define h264GetBits1(current_data, offset, data) h264GetBits(current_data, offset,  1, data);
@@ -203,28 +203,28 @@ void ConvertYV12ToNV12(const Ipp16u *pSrcDstUPlane, const Ipp16u *pSrcDstVPlane,
     current_data--; \
 } \
 }
-static Ipp32s H264TotalCoeffTrailingOnesTab0[] = {
+static int32_t H264TotalCoeffTrailingOnesTab0[] = {
     0,  5, 10, 15,  4,  9, 19, 14, 23,  8, 13, 18, 27, 12, 17, 22,
     31, 16, 21, 26, 35, 20, 25, 30, 39, 24, 29, 34, 43, 28, 33, 38,
     32, 36, 37, 42, 47, 40, 41, 46, 51, 44, 45, 50, 55, 48, 49, 54,
     59, 53, 52, 57, 58, 63, 56, 61, 62, 67, 60, 65, 66, 64
 };
 
-static Ipp32s H264TotalCoeffTrailingOnesTab1[] = {
+static int32_t H264TotalCoeffTrailingOnesTab1[] = {
     0,  5, 10, 15, 19,  9, 23,  4, 13, 14, 27,  8, 17, 18, 31, 12,
     21, 22, 35, 16, 25, 26, 20, 24, 29, 30, 39, 28, 33, 34, 43, 32,
     37, 38, 47, 36, 41, 42, 51, 40, 45, 46, 44, 48, 49, 50, 55, 52,
     53, 54, 59, 56, 58, 63, 57, 60, 61, 62, 67, 64, 65, 66
 };
 
-static Ipp32s H264TotalCoeffTrailingOnesTab2[] = {
+static int32_t H264TotalCoeffTrailingOnesTab2[] = {
     0,  5, 10, 15, 19, 23, 27, 31,  9, 14, 35, 13, 18, 17, 22, 21,
     4, 25, 26, 39,  8, 29, 30, 12, 16, 33, 34, 43, 20, 38, 24, 28,
     32, 37, 42, 47, 36, 41, 46, 51, 40, 45, 50, 55, 44, 49, 54, 48,
     53, 52, 57, 58, 59, 56, 61, 62, 63, 60, 65, 66, 67, 64
 };
 
-static Ipp32s H264CoeffTokenIdxTab0[] = {
+static int32_t H264CoeffTokenIdxTab0[] = {
     0,  0,  0,  0,  4,  1,  0,  0,  9,  5,  2,  0, 13, 10,  7,  3,
     17, 14, 11,  6, 21, 18, 15,  8, 25, 22, 19, 12, 29, 26, 23, 16,
     32, 30, 27, 20, 33, 34, 31, 24, 37, 38, 35, 28, 41, 42, 39, 36,
@@ -232,7 +232,7 @@ static Ipp32s H264CoeffTokenIdxTab0[] = {
     61, 59, 60, 57
 };
 
-static Ipp32s H264CoeffTokenIdxTab1[] = {
+static int32_t H264CoeffTokenIdxTab1[] = {
     0,  0,  0,  0,  7,  1,  0,  0, 11,  5,  2,  0, 15,  8,  9,  3,
     19, 12, 13,  4, 22, 16, 17,  6, 23, 20, 21, 10, 27, 24, 25, 14,
     31, 28, 29, 18, 35, 32, 33, 26, 39, 36, 37, 30, 42, 40, 41, 34,
@@ -240,7 +240,7 @@ static Ipp32s H264CoeffTokenIdxTab1[] = {
     59, 60, 61, 58
 };
 
-static Ipp32s H264CoeffTokenIdxTab2[] = {
+static int32_t H264CoeffTokenIdxTab2[] = {
     0,  0,  0,  0, 16,  1,  0,  0, 20,  8,  2,  0, 23, 11,  9,  3,
     24, 13, 12,  4, 28, 15, 14,  5, 30, 17, 18,  6, 31, 21, 22,  7,
     32, 25, 26, 10, 36, 33, 29, 19, 40, 37, 34, 27, 44, 41, 38, 35,
@@ -248,7 +248,7 @@ static Ipp32s H264CoeffTokenIdxTab2[] = {
     61, 58, 59, 60
 };
 
-static Ipp32s* H264TotalCoeffTrailingOnesTab[] = {
+static int32_t* H264TotalCoeffTrailingOnesTab[] = {
     H264TotalCoeffTrailingOnesTab0,
     H264TotalCoeffTrailingOnesTab0,
     H264TotalCoeffTrailingOnesTab1,
@@ -259,7 +259,7 @@ static Ipp32s* H264TotalCoeffTrailingOnesTab[] = {
     H264TotalCoeffTrailingOnesTab2
 };
 
-static Ipp32s* H264CoeffTokenIdxTab[] = {
+static int32_t* H264CoeffTokenIdxTab[] = {
     H264CoeffTokenIdxTab0,
     H264CoeffTokenIdxTab0,
     H264CoeffTokenIdxTab1,
@@ -270,9 +270,9 @@ static Ipp32s* H264CoeffTokenIdxTab[] = {
     H264CoeffTokenIdxTab2
 };
 
-static const Ipp8u vlc_inc[] = {0,3,6,12,24,48};
+static const uint8_t vlc_inc[] = {0,3,6,12,24,48};
 
-static Ipp32s bitsToGetTbl16s[7][16] = /*[level][numZeros]*/
+static int32_t bitsToGetTbl16s[7][16] = /*[level][numZeros]*/
 {
     /*         0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15        */
     /*0*/    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 12, },
@@ -283,7 +283,7 @@ static Ipp32s bitsToGetTbl16s[7][16] = /*[level][numZeros]*/
     /*5*/    {5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 12, },
     /*6*/    {6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 12  }
 };
-static Ipp32s addOffsetTbl16s[7][16] = /*[level][numZeros]*/
+static int32_t addOffsetTbl16s[7][16] = /*[level][numZeros]*/
 {
     /*         0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15    */
     /*0*/    {1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  8,  16,},
@@ -294,54 +294,54 @@ static Ipp32s addOffsetTbl16s[7][16] = /*[level][numZeros]*/
     /*5*/    {1,  17, 33, 49, 65, 81, 97, 113,129,145,161,177,193,209,225,241,},
     /*6*/    {1,  33, 65, 97, 129,161,193,225,257,289,321,353,385,417,449,481,}
 };
-static Ipp32s sadd[7]={15,0,0,0,0,0,0};
+static int32_t sadd[7]={15,0,0,0,0,0,0};
 
 #ifndef imp_own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s
 #define imp_own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s
 
-IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStream,
-                                                     Ipp32s *pOffset,
-                                                     Ipp16s *pNumCoeff,
-                                                     Ipp16s **ppPosCoefbuf,
-                                                     Ipp32u uVLCSelect,
-                                                     Ipp16s uMaxNumCoeff,
-                                                     const Ipp32s **ppTblCoeffToken,
-                                                     const Ipp32s **ppTblTotalZeros,
-                                                     const Ipp32s **ppTblRunBefore,
-                                                     const Ipp32s *pScanMatrix,
-                                                     Ipp32s scanIdxStart,
-                                                     Ipp32s scanIdxEnd)) /* buffer to return up to 16 */
+IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (uint32_t **ppBitStream,
+                                                     int32_t *pOffset,
+                                                     int16_t *pNumCoeff,
+                                                     int16_t **ppPosCoefbuf,
+                                                     uint32_t uVLCSelect,
+                                                     int16_t uMaxNumCoeff,
+                                                     const int32_t **ppTblCoeffToken,
+                                                     const int32_t **ppTblTotalZeros,
+                                                     const int32_t **ppTblRunBefore,
+                                                     const int32_t *pScanMatrix,
+                                                     int32_t scanIdxStart,
+                                                     int32_t scanIdxEnd)) /* buffer to return up to 16 */
 {
-    Ipp16s        CoeffBuf[16];    /* Temp buffer to hold coeffs read from bitstream*/
-    Ipp32u        uVLCIndex        = 2;
-    Ipp32u        uCoeffIndex      = 0;
-    Ipp32s        sTotalZeros      = 0;
-    Ipp32s        sFirstPos        = scanIdxStart;
-    Ipp32s        coeffLimit = scanIdxEnd - scanIdxStart + 1;
-    Ipp32u        TrOneSigns = 0;        /* return sign bits (1==neg) in low 3 bits*/
-    Ipp32u        uTR1Mask;
-    Ipp32s        pos;
-    Ipp32s        sRunBefore;
-    Ipp16s        sNumTrailingOnes;
-    Ipp32s        sNumCoeff = 0;
-    Ipp32u        table_bits;
-    Ipp8u         code_len;
-    Ipp32s        i;
-    Ipp32u  table_pos;
-    Ipp32s  val;
+    int16_t        CoeffBuf[16];    /* Temp buffer to hold coeffs read from bitstream*/
+    uint32_t        uVLCIndex        = 2;
+    uint32_t        uCoeffIndex      = 0;
+    int32_t        sTotalZeros      = 0;
+    int32_t        sFirstPos        = scanIdxStart;
+    int32_t        coeffLimit = scanIdxEnd - scanIdxStart + 1;
+    uint32_t        TrOneSigns = 0;        /* return sign bits (1==neg) in low 3 bits*/
+    uint32_t        uTR1Mask;
+    int32_t        pos;
+    int32_t        sRunBefore;
+    int16_t        sNumTrailingOnes;
+    int32_t        sNumCoeff = 0;
+    uint32_t        table_bits;
+    uint8_t         code_len;
+    int32_t        i;
+    uint32_t  table_pos;
+    int32_t  val;
 
     /* check error(s) */
     IPP_BAD_PTR4_RET(ppBitStream,pOffset,ppPosCoefbuf,pNumCoeff)
     IPP_BAD_PTR4_RET(ppTblCoeffToken,ppTblTotalZeros,ppTblRunBefore,pScanMatrix)
     IPP_BAD_PTR2_RET(*ppBitStream, *ppPosCoefbuf)
-    IPP_BADARG_RET(((Ipp32s)uVLCSelect < 0), ippStsOutOfRangeErr)
+    IPP_BADARG_RET(((int32_t)uVLCSelect < 0), ippStsOutOfRangeErr)
 
     if (uVLCSelect > 7)
     {
         /* fixed length code 4 bits numCoeff and */
         /* 2 bits for TrailingOnes */
         h264GetNBits((*ppBitStream), (*pOffset), 6, sNumCoeff);
-        sNumTrailingOnes = (Ipp16s) (sNumCoeff & 3);
+        sNumTrailingOnes = (int16_t) (sNumCoeff & 3);
         sNumCoeff         = (sNumCoeff&0x3c)>>2;
         if (sNumCoeff == 0 && sNumTrailingOnes == 3)
             sNumTrailingOnes = 0;
@@ -352,9 +352,9 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
     }
     else
     {
-        Ipp32u*  tmp_pbs = *ppBitStream;
-        Ipp32s   tmp_offs = *pOffset;
-        const Ipp32s *pDecTable;
+        uint32_t*  tmp_pbs = *ppBitStream;
+        int32_t   tmp_offs = *pOffset;
+        const int32_t *pDecTable;
         /* Use one of 3 luma tables */
         if (uVLCSelect < 4)
             uVLCIndex = uVLCSelect>>1;
@@ -370,7 +370,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
         table_bits = *pDecTable;
         h264GetNBits((*ppBitStream), (*pOffset), table_bits, table_pos);
         val = pDecTable[table_pos + 1];
-        code_len = (Ipp8u) (val);
+        code_len = (uint8_t) (val);
 
         while (code_len & 0x80)
         {
@@ -378,7 +378,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
             table_bits = pDecTable[val];
             h264GetNBits((*ppBitStream), (*pOffset), table_bits, table_pos);
             val = pDecTable[table_pos + val + 1];
-            code_len = (Ipp8u) (val & 0xff);
+            code_len = (uint8_t) (val & 0xff);
         }
 
         h264UngetNBits((*ppBitStream), (*pOffset), code_len);
@@ -391,18 +391,18 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
              return ippStsH263VLCCodeErr;
         }
 
-        sNumTrailingOnes  = (Ipp16s) ((val >> 8) & 0xff);
+        sNumTrailingOnes  = (int16_t) ((val >> 8) & 0xff);
         sNumCoeff = (val >> 16) & 0xff;
     }
 
     if (coeffLimit < 16)
     {
-        Ipp32s *tmpTab = H264TotalCoeffTrailingOnesTab[uVLCSelect];
-        Ipp32s targetCoeffTokenIdx =
+        int32_t *tmpTab = H264TotalCoeffTrailingOnesTab[uVLCSelect];
+        int32_t targetCoeffTokenIdx =
             H264CoeffTokenIdxTab[uVLCSelect][sNumCoeff * 4 + sNumTrailingOnes];
-        Ipp32s minNumCoeff = coeffLimit+1;
-        Ipp32s minNumTrailingOnes = coeffLimit+1;
-        Ipp32s j;
+        int32_t minNumCoeff = coeffLimit+1;
+        int32_t minNumTrailingOnes = coeffLimit+1;
+        int32_t j;
 
         if (minNumTrailingOnes > 4)
             minNumTrailingOnes = 4;
@@ -410,17 +410,17 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
         for (j = 0, i = 0; i <= targetCoeffTokenIdx; j++)
         {
             sNumCoeff = tmpTab[j] >> 2;
-            sNumTrailingOnes = (Ipp16s)(tmpTab[j] & 3);
+            sNumTrailingOnes = (int16_t)(tmpTab[j] & 3);
 
             if ((sNumCoeff < minNumCoeff) && (sNumTrailingOnes < minNumTrailingOnes))
                 i++;
         }
 
         sNumCoeff = tmpTab[j-1] >> 2;
-        sNumTrailingOnes = (Ipp16s)(tmpTab[j-1] & 3);
+        sNumTrailingOnes = (int16_t)(tmpTab[j-1] & 3);
     }
 
-    *pNumCoeff = (Ipp16s) sNumCoeff;
+    *pNumCoeff = (int16_t) sNumCoeff;
 
     if (sNumTrailingOnes)
     {
@@ -428,7 +428,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
         uTR1Mask = 1 << (sNumTrailingOnes - 1);
         while (uTR1Mask)
         {
-            CoeffBuf[uCoeffIndex++] = (Ipp16s) ((TrOneSigns & uTR1Mask) == 0 ? 1 : -1);
+            CoeffBuf[uCoeffIndex++] = (int16_t) ((TrOneSigns & uTR1Mask) == 0 ? 1 : -1);
             uTR1Mask >>= 1;
         }
     }
@@ -447,21 +447,21 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
         {
             /*_GetBlockCoeffs_CAVLC(ppBitStream, pOffset,sNumCoeff,*/
             /*                             sNumTrailingOnes, &CoeffBuf[uCoeffIndex]); */
-            Ipp16u suffixLength = 0;        /* 0..6, to select coding method used for each coeff */
-            Ipp16s lCoeffIndex;
-            Ipp16u uCoeffLevel = 0;
-            Ipp32s NumZeros;
-            Ipp16u uBitsToGet;
-            Ipp16u uFirstAdjust;
-            Ipp16u uLevelOffset;
-            Ipp32s w;
-            Ipp16s    *lCoeffBuf = &CoeffBuf[uCoeffIndex];
+            uint16_t suffixLength = 0;        /* 0..6, to select coding method used for each coeff */
+            int16_t lCoeffIndex;
+            uint16_t uCoeffLevel = 0;
+            int32_t NumZeros;
+            uint16_t uBitsToGet;
+            uint16_t uFirstAdjust;
+            uint16_t uLevelOffset;
+            int32_t w;
+            int16_t    *lCoeffBuf = &CoeffBuf[uCoeffIndex];
 
             if ((sNumCoeff > 10) && (sNumTrailingOnes < 3))
                 suffixLength = 1;
 
             /* When NumTrOnes is less than 3, need to add 1 to level of first coeff */
-            uFirstAdjust = (Ipp16u) ((sNumTrailingOnes < 3) ? 1 : 0);
+            uFirstAdjust = (uint16_t) ((sNumTrailingOnes < 3) ? 1 : 0);
 
             /* read coeffs */
             for (lCoeffIndex = 0; lCoeffIndex<(sNumCoeff - sNumTrailingOnes); lCoeffIndex++)
@@ -485,33 +485,33 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
 
                 if (15 >= NumZeros)
                 {
-                    uBitsToGet = (Ipp16s) (bitsToGetTbl16s[suffixLength][NumZeros]);
-                    uLevelOffset = (Ipp16u) (addOffsetTbl16s[suffixLength][NumZeros]);
+                    uBitsToGet = (int16_t) (bitsToGetTbl16s[suffixLength][NumZeros]);
+                    uLevelOffset = (uint16_t) (addOffsetTbl16s[suffixLength][NumZeros]);
 
                     if (uBitsToGet)
                     {
                         h264GetNBits((*ppBitStream), (*pOffset), uBitsToGet, NumZeros);
                     }
 
-                    uCoeffLevel = (Ipp16u) ((NumZeros>>1) + uLevelOffset + uFirstAdjust);
+                    uCoeffLevel = (uint16_t) ((NumZeros>>1) + uLevelOffset + uFirstAdjust);
 
-                    lCoeffBuf[lCoeffIndex] = (Ipp16s) ((NumZeros & 1) ? (-((signed) uCoeffLevel)) : (uCoeffLevel));
+                    lCoeffBuf[lCoeffIndex] = (int16_t) ((NumZeros & 1) ? (-((signed) uCoeffLevel)) : (uCoeffLevel));
                 }
                 else
                 {
-                    Ipp32u level_suffix;
-                    Ipp32u levelSuffixSize = NumZeros - 3;
-                    Ipp32s levelCode;
+                    uint32_t level_suffix;
+                    uint32_t levelSuffixSize = NumZeros - 3;
+                    int32_t levelCode;
 
                     h264GetNBits((*ppBitStream), (*pOffset), levelSuffixSize, level_suffix);
-                    levelCode = (Ipp16u) ((min(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
-                    levelCode = (Ipp16u) (levelCode + (1 << (NumZeros - 3)) - 4096);
+                    levelCode = (uint16_t) ((min(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
+                    levelCode = (uint16_t) (levelCode + (1 << (NumZeros - 3)) - 4096);
 
-                    lCoeffBuf[lCoeffIndex] = (Ipp16s) ((levelCode & 1) ?
+                    lCoeffBuf[lCoeffIndex] = (int16_t) ((levelCode & 1) ?
                                                       ((-levelCode - 1) >> 1) :
                                                       ((levelCode + 2) >> 1));
 
-                    uCoeffLevel = (Ipp16u) ABS(lCoeffBuf[lCoeffIndex]);
+                    uCoeffLevel = (uint16_t) ABS(lCoeffBuf[lCoeffIndex]);
                 }
 
                 uFirstAdjust = 0;
@@ -524,8 +524,8 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
         {
             /*ippiVCHuffmanDecodeOne_1u32s(ppBitStream, pOffset,&sTotalZeros, */
             /*                                                ppTblTotalZeros[sNumCoeff]); */
-            Ipp32s tmpNumCoeff;
-            const Ipp32s *pDecTable;
+            int32_t tmpNumCoeff;
+            const int32_t *pDecTable;
 
             tmpNumCoeff = sNumCoeff;
             if (uMaxNumCoeff < 15)
@@ -559,7 +559,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
             h264GetNBits((*ppBitStream), (*pOffset), table_bits, table_pos)
 
             val = pDecTable[table_pos + 1];
-            code_len = (Ipp8u) (val & 0xff);
+            code_len = (uint8_t) (val & 0xff);
             val = val >> 8;
 
             while (code_len & 0x80)
@@ -568,7 +568,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
                 h264GetNBits((*ppBitStream), (*pOffset), table_bits, table_pos)
 
                 val = pDecTable[table_pos + val + 1];
-                code_len = (Ipp8u) (val & 0xff);
+                code_len = (uint8_t) (val & 0xff);
                 val = val >> 8;
             }
 
@@ -591,7 +591,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
             {
                 /*ippiVCHuffmanDecodeOne_1u32s(ppBitStream, pOffset,&sRunBefore, */
                 /*                                                ppTblRunBefore[sTotalZeros]); */
-                const Ipp32s *pDecTable = ppTblRunBefore[sTotalZeros];
+                const int32_t *pDecTable = ppTblRunBefore[sTotalZeros];
 
                 IPP_BAD_PTR1_RET(ppTblRunBefore[sTotalZeros]);
 
@@ -599,7 +599,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
                 h264GetNBits((*ppBitStream), (*pOffset), table_bits, table_pos)
 
                 val           = pDecTable[table_pos  + 1];
-                code_len   = (Ipp8u) (val & 0xff);
+                code_len   = (uint8_t) (val & 0xff);
                 val        = val >> 8;
 
 
@@ -609,7 +609,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
                     h264GetNBits((*ppBitStream), (*pOffset), table_bits, table_pos)
 
                     val           = pDecTable[table_pos + val + 1];
-                    code_len   = (Ipp8u) (val & 0xff);
+                    code_len   = (uint8_t) (val & 0xff);
                     val        = val >> 8;
                 }
 
@@ -643,7 +643,7 @@ IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStrea
     return ippStsNoErr;
 
 
-} /* IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStream, */
+} /* IPPFUN(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (uint32_t **ppBitStream, */
 
 #endif /* imp_own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s */
 

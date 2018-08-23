@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -28,7 +28,7 @@ Status FillVideoParamExtension(const UMC_H264_DECODER::H264SeqParamSetMVCExtensi
         return UMC_ERR_NULL_PTR;
 
     // calculate size
-    if ((Ipp32u)seqEx->num_level_values_signalled_minus1 + 1 != seqEx->levelInfo.Size())
+    if ((uint32_t)seqEx->num_level_values_signalled_minus1 + 1 != seqEx->levelInfo.Size())
     {
         return UMC_ERR_FAILED;
     }
@@ -41,7 +41,7 @@ Status FillVideoParamExtension(const UMC_H264_DECODER::H264SeqParamSetMVCExtensi
     {
         const H264LevelValueSignaled & levelSignal = seqEx->levelInfo[i];
 
-        if ((Ipp32u)levelSignal.num_applicable_ops_minus1 + 1 != levelSignal.opsInfo.Size())
+        if ((uint32_t)levelSignal.num_applicable_ops_minus1 + 1 != levelSignal.opsInfo.Size())
         {
             return UMC_ERR_FAILED;
         }
@@ -49,7 +49,7 @@ Status FillVideoParamExtension(const UMC_H264_DECODER::H264SeqParamSetMVCExtensi
         for (size_t j = 0; j < levelSignal.opsInfo.Size(); j++)
         {
             const H264ApplicableOp & ops = levelSignal.opsInfo[j];
-            if ((Ipp32u)ops.applicable_op_num_target_views_minus1 + 1 != ops.applicable_op_target_view_id.Size())
+            if ((uint32_t)ops.applicable_op_num_target_views_minus1 + 1 != ops.applicable_op_target_view_id.Size())
             {
                 return UMC_ERR_FAILED;
             }
@@ -77,7 +77,7 @@ Status FillVideoParamExtension(const UMC_H264_DECODER::H264SeqParamSetMVCExtensi
         dependency->NumAnchorRefsL0 = viewInfo.num_anchor_refs_lx[0];
         dependency->NumAnchorRefsL1 = viewInfo.num_anchor_refs_lx[1];
 
-        for (Ipp32u k = 0; k < 16; k++)
+        for (uint32_t k = 0; k < 16; k++)
         {
             dependency->AnchorRefL0[k] = viewInfo.anchor_refs_lx[0][k];
             dependency->AnchorRefL1[k] = viewInfo.anchor_refs_lx[1][k];
@@ -86,7 +86,7 @@ Status FillVideoParamExtension(const UMC_H264_DECODER::H264SeqParamSetMVCExtensi
         dependency->NumNonAnchorRefsL0 = viewInfo.num_non_anchor_refs_lx[0];
         dependency->NumNonAnchorRefsL1 = viewInfo.num_non_anchor_refs_lx[1];
 
-        for (Ipp32u k = 0; k < 16; k++)
+        for (uint32_t k = 0; k < 16; k++)
         {
             dependency->NonAnchorRefL0[k] = viewInfo.non_anchor_refs_lx[0][k];
             dependency->NonAnchorRefL1[k] = viewInfo.non_anchor_refs_lx[1][k];
@@ -112,7 +112,7 @@ Status FillVideoParamExtension(const UMC_H264_DECODER::H264SeqParamSetMVCExtensi
 
             for (size_t k = 0; k < ops.applicable_op_target_view_id.Size(); k++)
             {
-                Ipp16u targetView = ops.applicable_op_target_view_id[k];
+                uint16_t targetView = ops.applicable_op_target_view_id[k];
                 operationPoints->TargetViewId[k] = targetView;
             }
 

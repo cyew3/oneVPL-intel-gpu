@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifdef __APPLE__
@@ -453,7 +453,7 @@ void DecodedPictureReadyCallback(void * pApplicationContextInformation, void * p
             
             mfxU8 * pDestination = pFrame->m_pYPlane;
             DEBUG_VTB_PRINT(printf(" 420YpCbCr8BiPlanarVideoRange Y: height = %d, width = %d, bytes per row = %d, output pitch = %d, plane count = %d\n", bufferHeight, bufferWidth, bytesPerRow, pFrame->pitch_luma(), planeCount);)
-            IppiSize regionOfInterest;
+            mfxSize regionOfInterest;
             regionOfInterest.width = bufferWidth;
             regionOfInterest.height = bufferHeight;
             ippiCopyManaged_8u_C1R(pPixels, bytesPerRow, pDestination, pFrame->pitch_luma(), regionOfInterest, 2);
@@ -910,10 +910,10 @@ Status VDATaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
 {
     DEBUG_VTB_PRINT(printf("VDATaskSupplier::%s Entry\n", __FUNCTION__);)
     
-    Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
-    Ipp32u nalNumber = nalUnit->GetExData()->nalNumber;
+    uint32_t nal_unit_type = nalUnit->GetExData()->values[0];
+    uint32_t nalNumber = nalUnit->GetExData()->nalNumber;
     
-    Ipp8u * pSei = (Ipp8u*) nalUnit->GetDataPointer();
+    uint8_t * pSei = (uint8_t*) nalUnit->GetDataPointer();
     unsigned int seiLength = nalUnit->GetDataSize();
     
     try
@@ -924,11 +924,11 @@ Status VDATaskSupplier::DecodeSEI(MediaDataEx *nalUnit)
         nalInfo.nalType = nal_unit_type;
         
         //Need length of SEI
-        Ipp32u bigEndianSEILength32 = htonl(seiLength);
-        nalInfo.headerBytes.push_back((Ipp8u) (bigEndianSEILength32 & 0x00ff));         //LSB of SPS Length (expressed in network order)
-        nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSEILength32 >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
-        nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSEILength32 >> 16) & 0x00ff));  //MSB of SPS Length (expressed in network order)
-        nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSEILength32 >> 24) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+        uint32_t bigEndianSEILength32 = htonl(seiLength);
+        nalInfo.headerBytes.push_back((uint8_t) (bigEndianSEILength32 & 0x00ff));         //LSB of SPS Length (expressed in network order)
+        nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSEILength32 >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+        nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSEILength32 >> 16) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+        nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSEILength32 >> 24) & 0x00ff));  //MSB of SPS Length (expressed in network order)
 
         for(unsigned int index = 0; index < seiLength; index++)    {
             
@@ -1130,7 +1130,7 @@ Status VDATaskSupplier::Init(BaseCodecParams *pInit)
         return umsRes;
     }
 
-    Ipp32u i;
+    uint32_t i;
     for (i = 0; i < m_iThreadNum; i += 1)
     {
         delete m_pSegmentDecoder[i];
@@ -1258,7 +1258,7 @@ H264DecoderFrame *VDATaskSupplier::GetFreeFrame(const H264Slice * pSlice)
     return pFrame;
 }
     
-void VDATaskSupplier::SetBufferedFramesNumber(Ipp32u buffered)
+void VDATaskSupplier::SetBufferedFramesNumber(uint32_t buffered)
 {
     m_DPBSizeEx = 1 + buffered;
     m_bufferedFrameNumber = buffered;
@@ -1275,7 +1275,7 @@ Status VDATaskSupplier::RunDecoding(bool force, H264DecoderFrame ** decoded)
 Status VDATaskSupplier::AddSource(MediaData * pSource, MediaData *dst)
 {
     
-    Ipp32s iCode = m_pNALSplitter->CheckNalUnitType(pSource);
+    int32_t iCode = m_pNALSplitter->CheckNalUnitType(pSource);
     
     return MFXTaskSupplier::AddSource(pSource, dst);
 }
@@ -1323,13 +1323,13 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
     }
     
     // save sps/pps
-    static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
+    static uint8_t start_code_prefix[] = {0, 0, 0, 1};
     const int lengthPreamble = 4;
     RawHeader * hdr;
     size_t size;
-    Ipp32s id;
-    Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
-    Ipp32u nalNumber = nalUnit->GetExData()->nalNumber;
+    int32_t id;
+    uint32_t nal_unit_type = nalUnit->GetExData()->values[0];
+    uint32_t nalNumber = nalUnit->GetExData()->nalNumber;
     
 #ifdef USE_APPLEGVA
     unsigned char *pRawSPS;
@@ -1344,7 +1344,7 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
             id = m_Headers.m_SeqParams.GetCurrentID();
             hdr->Resize(id, size + sizeof(start_code_prefix));
             memcpy(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
-            memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), size);                   
+            memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (uint8_t*)nalUnit->GetDataPointer(), size);                   
             hdr->SetRBSPSize(size);                   
             m_isHaveSPS = true;
             if(true == m_isVDAInstantiated)    {
@@ -1359,15 +1359,15 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                 nalInfo.nalType = nal_unit_type;
                 
                 //Need length of SPS 
-                Ipp32u bigEndianSPSLength32 = htonl(spsLength);
-                nalInfo.headerBytes.push_back((Ipp8u) (bigEndianSPSLength32 & 0x00ff));         //LSB of SPS Length (expressed in network order)
-                nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSPSLength32 >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
-                nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSPSLength32 >> 16) & 0x00ff));  //MSB of SPS Length (expressed in network order)
-                nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSPSLength32 >> 24) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                uint32_t bigEndianSPSLength32 = htonl(spsLength);
+                nalInfo.headerBytes.push_back((uint8_t) (bigEndianSPSLength32 & 0x00ff));         //LSB of SPS Length (expressed in network order)
+                nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSPSLength32 >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSPSLength32 >> 16) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSPSLength32 >> 24) & 0x00ff));  //MSB of SPS Length (expressed in network order)
                 
                 //Copy raw bytes of SPS to this local nalStreamInfo
                 DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s Data for SPS in bitstream:", __FUNCTION__));
-                Ipp8u * pRawSPSBytes = pSPSHeader->GetPointer()+lengthPreamble;
+                uint8_t * pRawSPSBytes = pSPSHeader->GetPointer()+lengthPreamble;
                 for(unsigned int spsIndex = 0; spsIndex < spsLength; spsIndex++)    {
                     
                     nalInfo.headerBytes.push_back(pRawSPSBytes[spsIndex]);
@@ -1414,7 +1414,7 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
             id = m_Headers.m_PicParams.GetCurrentID();
             hdr->Resize(id, size + sizeof(start_code_prefix));
             memcpy(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
-            memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), size);                   
+            memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (uint8_t*)nalUnit->GetDataPointer(), size);                   
             hdr->SetRBSPSize(size);   
          
             m_isHavePPS = true;
@@ -1433,7 +1433,7 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
 
                     //Prepare the data for VDACreateDecoder
                     m_avcData.clear();
-                    m_avcData.push_back((Ipp8u) 0x01);                            //Version
+                    m_avcData.push_back((uint8_t) 0x01);                            //Version
                     m_avcData.push_back(decoderParams.profile);                   //AVC Profile
                     
                     //14496-15 says that the next byte is defined exactly the same as the byte which occurs
@@ -1442,24 +1442,24 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     m_avcData.push_back(*(pSPSHeader->GetPointer() + theByteAfterProfile));  //profile_compatibility
                     
                     m_avcData.push_back(decoderParams.level);                     //AVC Level
-                    m_avcData.push_back((Ipp8u) 0xff);                            //Length of Size minus one and 6 reserved bits. (4-1 = 3)
-                    m_avcData.push_back((Ipp8u) 0xe1);                            //Number of Sequence Parameter Sets (hard-coded to 1) and 3 reserved bits
+                    m_avcData.push_back((uint8_t) 0xff);                            //Length of Size minus one and 6 reserved bits. (4-1 = 3)
+                    m_avcData.push_back((uint8_t) 0xe1);                            //Number of Sequence Parameter Sets (hard-coded to 1) and 3 reserved bits
                     
                     //Length of SPS
                     int spsLength = pSPSHeader->GetRBSPSize();
-                    Ipp16u bigEndianSPSLength = htons(spsLength);
-                    m_avcData.push_back((Ipp8u) (bigEndianSPSLength & 0x00ff));         //LSB of SPS Length (expressed in network order)
-                    m_avcData.push_back((Ipp8u) ((bigEndianSPSLength >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                    uint16_t bigEndianSPSLength = htons(spsLength);
+                    m_avcData.push_back((uint8_t) (bigEndianSPSLength & 0x00ff));         //LSB of SPS Length (expressed in network order)
+                    m_avcData.push_back((uint8_t) ((bigEndianSPSLength >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
                     
-                    Ipp32u bigEndianSPSLength32 = htonl(spsLength);
-                    nalInfo.headerBytes.push_back((Ipp8u) (bigEndianSPSLength32 & 0x00ff));         //LSB of SPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSPSLength32 >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSPSLength32 >> 16) & 0x00ff));  //MSB of SPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianSPSLength32 >> 24) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                    uint32_t bigEndianSPSLength32 = htonl(spsLength);
+                    nalInfo.headerBytes.push_back((uint8_t) (bigEndianSPSLength32 & 0x00ff));         //LSB of SPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSPSLength32 >> 8) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSPSLength32 >> 16) & 0x00ff));  //MSB of SPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianSPSLength32 >> 24) & 0x00ff));  //MSB of SPS Length (expressed in network order)
                     
                     //Copy raw bytes of SPS to this local spot (avcData)
                     DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s Data for initial SPS:", __FUNCTION__));                    
-                    Ipp8u * pRawSPSBytes = pSPSHeader->GetPointer()+lengthPreamble;
+                    uint8_t * pRawSPSBytes = pSPSHeader->GetPointer()+lengthPreamble;
                     for(unsigned int spsIndex = 0; spsIndex < spsLength; spsIndex++)    {
                         
                         m_avcData.push_back(pRawSPSBytes[spsIndex]);
@@ -1469,12 +1469,12 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     DEBUG_VTB_PRINT(printf("\n"));
                     
 #ifdef USE_APPLEGVA
-                    std::vector<Ipp8u> sps_ppsBytes;
+                    std::vector<uint8_t> sps_ppsBytes;
                     unsigned int ppsIndex;
                     
                     sps_ppsBytes.clear();
                     DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s AppleGVA Data for initial SPS:", __FUNCTION__));
-                    Ipp8u * pAllRawSPSBytes = pSPSHeader->GetPointer();
+                    uint8_t * pAllRawSPSBytes = pSPSHeader->GetPointer();
                     for(unsigned int spsIndex = 0; spsIndex < spsLength+4; spsIndex++)    {
                         
                         sps_ppsBytes.push_back(pAllRawSPSBytes[spsIndex]);
@@ -1485,24 +1485,24 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     
 #endif
                     
-                    m_avcData.push_back((Ipp8u) 1);                                     //Number of Picture Parameter Sets (hard-coded to 1 here)
+                    m_avcData.push_back((uint8_t) 1);                                     //Number of Picture Parameter Sets (hard-coded to 1 here)
                     m_ppsCountIndex = m_avcData.size() - 1;                             //Save the offset to the number of PPS
                     
                     //Length of PPS
                     int ppsLength = size;
-                    Ipp16u bigEndianPPSLength = htons(ppsLength);
-                    m_avcData.push_back((Ipp8u) (bigEndianPPSLength & 0x00ff));         //LSB of PPS Length (expressed in network order)
-                    m_avcData.push_back((Ipp8u) ((bigEndianPPSLength >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    uint16_t bigEndianPPSLength = htons(ppsLength);
+                    m_avcData.push_back((uint8_t) (bigEndianPPSLength & 0x00ff));         //LSB of PPS Length (expressed in network order)
+                    m_avcData.push_back((uint8_t) ((bigEndianPPSLength >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
                     
-                    Ipp32u bigEndianPPSLength32 = htonl(ppsLength);
-                    nalInfo.headerBytes.push_back((Ipp8u) (bigEndianPPSLength32 & 0x00ff));         //LSB of PPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianPPSLength32 >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianPPSLength32 >> 16) & 0x00ff));  //MSB of PPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianPPSLength32 >> 24) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    uint32_t bigEndianPPSLength32 = htonl(ppsLength);
+                    nalInfo.headerBytes.push_back((uint8_t) (bigEndianPPSLength32 & 0x00ff));         //LSB of PPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianPPSLength32 >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianPPSLength32 >> 16) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianPPSLength32 >> 24) & 0x00ff));  //MSB of PPS Length (expressed in network order)
 
                     //Copy raw bytes of PPS to this local spot (avcData)
                     DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s Data for initial PPS:", __FUNCTION__));
-                    Ipp8u * pRawPPSBytes = hdr->GetPointer()+lengthPreamble;
+                    uint8_t * pRawPPSBytes = hdr->GetPointer()+lengthPreamble;
                     for(unsigned int ppsIndex = 0; ppsIndex < ppsLength; ppsIndex++)    {
                         
                         m_avcData.push_back(pRawPPSBytes[ppsIndex]);
@@ -1521,7 +1521,7 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     
 #ifdef USE_APPLEGVA
                     DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s AppleGVA Data for initial PPS:", __FUNCTION__));
-                    Ipp8u * pAllRawPPSBytes = hdr->GetPointer();
+                    uint8_t * pAllRawPPSBytes = hdr->GetPointer();
                     for(unsigned int i = 0; i < ppsLength+4; i++)    {
                         
                         sps_ppsBytes.push_back(pAllRawPPSBytes[i]);
@@ -1561,14 +1561,14 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     lastEntryPushed = nalNumber;
 #endif  //RMH_USE_ADDTONALQUEUE
                     
-                    Ipp8u avcData[1024];
+                    uint8_t avcData[1024];
                     memcpy(&avcData[0], m_avcData.data(), m_avcData.size());
                         
                     DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s initial m_avcData.size() = %d\n", __FUNCTION__, m_avcData.size());)
                     CFDataRef avcDataRef;
                     avcDataRef = CFDataCreate(kCFAllocatorDefault, avcData, m_avcData.size()/*index*/);
                     if(NULL == avcDataRef)    {
-                        DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s Error: could not create avcDataRef from avcData Ipp8u array\n", __FUNCTION__);)
+                        DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s Error: could not create avcDataRef from avcData uint8_t array\n", __FUNCTION__);)
                         throw h264_exception(UMC_ERR_DEVICE_FAILED);
                     }   
                     else    {
@@ -1935,18 +1935,18 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     
                     //Length of PPS
                     int ppsLength = size;
-                    Ipp16u bigEndianPPSLength = htons(ppsLength);
-//                    m_avcData.push_back((Ipp8u) (bigEndianPPSLength & 0x00ff));         //LSB of PPS Length (expressed in network order)
-//                    m_avcData.push_back((Ipp8u) ((bigEndianPPSLength >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    uint16_t bigEndianPPSLength = htons(ppsLength);
+//                    m_avcData.push_back((uint8_t) (bigEndianPPSLength & 0x00ff));         //LSB of PPS Length (expressed in network order)
+//                    m_avcData.push_back((uint8_t) ((bigEndianPPSLength >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
 
-                    Ipp32u bigEndianPPSLength32 = htonl(ppsLength);
-                    nalInfo.headerBytes.push_back((Ipp8u) (bigEndianPPSLength32 & 0x00ff));         //LSB of PPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianPPSLength32 >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianPPSLength32 >> 16) & 0x00ff));  //MSB of PPS Length (expressed in network order)
-                    nalInfo.headerBytes.push_back((Ipp8u) ((bigEndianPPSLength32 >> 24) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    uint32_t bigEndianPPSLength32 = htonl(ppsLength);
+                    nalInfo.headerBytes.push_back((uint8_t) (bigEndianPPSLength32 & 0x00ff));         //LSB of PPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianPPSLength32 >> 8) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianPPSLength32 >> 16) & 0x00ff));  //MSB of PPS Length (expressed in network order)
+                    nalInfo.headerBytes.push_back((uint8_t) ((bigEndianPPSLength32 >> 24) & 0x00ff));  //MSB of PPS Length (expressed in network order)
                     
                     //Copy raw bytes of PPS
-                    Ipp8u * pRawPPSBytes = hdr->GetPointer()+lengthPreamble;
+                    uint8_t * pRawPPSBytes = hdr->GetPointer()+lengthPreamble;
                     for(unsigned int ppsIndex = 0; ppsIndex < ppsLength; ppsIndex++)    {
                         
                         nalInfo.headerBytes.push_back(pRawPPSBytes[ppsIndex]);
@@ -1982,7 +1982,7 @@ Status VDATaskSupplier::DecodeHeaders(MediaDataEx *nalUnit)
                     lastEntryPushed = nalNumber;
 #endif //RMH_USE_ADDTONALQUEUE
                     
-//                    Ipp8u avcData[1024];
+//                    uint8_t avcData[1024];
 //                    memcpy(&avcData[0], m_avcData.data(), m_avcData.size());
                     
                     DEBUG_VTB_PRINT(printf(" VDATaskSupplier::%s updated m_avcData.size() = %d\n", __FUNCTION__, m_avcData.size());)
@@ -2088,7 +2088,7 @@ bool VDATaskSupplier::GetFrameToDisplay(MediaData *dst, bool force)
     }
 }*/
     
-Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
+Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, int32_t field)
 {
     
     static unsigned int counter = 0;
@@ -2120,10 +2120,10 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     }
         
     OSStatus status;
-    static Ipp32s frameCounter = 0;
+    static int32_t frameCounter = 0;
     
-    Ipp32s frameType = pFrame->m_FrameType;
-    Ipp32s frame_num = pFrame->m_FrameNum;
+    int32_t frameType = pFrame->m_FrameType;
+    int32_t frame_num = pFrame->m_FrameNum;
     
     char * pFrameTypeName;
     switch (frameType) {
@@ -2141,22 +2141,22 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
             break;
     }
     
-    Ipp32s nalType;
-    Ipp32s index = pFrame->m_index;
+    int32_t nalType;
+    int32_t index = pFrame->m_index;
     
     DEBUG_VTB_PRINT(printf("VDATaskSupplier::%s slice count = %d, field = %d, IsField = %d, IsBottom = %d\n", __FUNCTION__, sliceInfo->GetSliceCount(), field, sliceInfo->IsField(), sliceInfo->IsBottom());)
     
     unsigned int totalSizeEncodedBytes = 0;
     unsigned int gvaReturnValue;
     
-    static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
+    static uint8_t start_code_prefix[] = {0, 0, 0, 1};
     const int lengthStartCodePrefix = sizeof(start_code_prefix);
     
     //Frame or Field?
     if(sliceInfo->IsField())  {
         
-        Ipp8u *pNalUnit;    //ptr to first byte of start code
-        Ipp32u NalUnitSize; // size of NAL unit in bytes
+        uint8_t *pNalUnit;    //ptr to first byte of start code
+        uint32_t NalUnitSize; // size of NAL unit in bytes
         
         char pFieldType[16];
         if (sliceInfo->IsBottom()) {
@@ -2199,11 +2199,11 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 }
                 
                 //Put the second field into the nals vector
-                for (Ipp32u i = 0; i < sliceInfo->GetSliceCount(); i++)
+                for (uint32_t i = 0; i < sliceInfo->GetSliceCount(); i++)
                 {
                     H264Slice *pSlice = sliceInfo->GetSlice(i);
                     
-                    pSlice->GetBitStream()->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
+                    pSlice->GetBitStream()->GetOrg((uint32_t**)&pNalUnit, &NalUnitSize);
                     
                     //resize the vector if necessary
                     if (m_nals.size() < totalSizeEncodedBytes + NalUnitSize + sizeof(unsigned int)) {
@@ -2269,12 +2269,12 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 strcpy(pFieldType, "top");
             }
             
-            for (Ipp32u i = 0; i < sliceInfo->GetSliceCount(); i++)
+            for (uint32_t i = 0; i < sliceInfo->GetSliceCount(); i++)
             {
                 
                 H264Slice *pSlice = sliceInfo->GetSlice(i);
                 
-                pSlice->GetBitStream()->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
+                pSlice->GetBitStream()->GetOrg((uint32_t**)&pNalUnit, &NalUnitSize);
                 
                 //resize the vector if necessary
                 if (m_nals.size() < totalSizeEncodedBytes + NalUnitSize + sizeof(unsigned int)) {
@@ -2329,8 +2329,8 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
         struct _sliceInformation
         {
             H264Slice *pSlice;
-            Ipp8u *pNalUnit;    //ptr to first byte of start code
-            Ipp32u NalUnitSize; // size of NAL unit in bytes
+            uint8_t *pNalUnit;    //ptr to first byte of start code
+            uint32_t NalUnitSize; // size of NAL unit in bytes
             NALDescriptor * pNALDescriptor;
         };
         
@@ -2343,11 +2343,11 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
         NALDescriptor * nalDescriptors[sliceCount];
         
         //Calculate the total size of all NALs in this frame (and get pointers to their data)
-        for (Ipp32u i = 0; i < sliceCount; i++)
+        for (uint32_t i = 0; i < sliceCount; i++)
         {            
             
             sliceInformation[i].pSlice = sliceInfo->GetSlice(i);
-            sliceInformation[i].pSlice->GetBitStream()->GetOrg((Ipp32u**)&sliceInformation[i].pNalUnit, &sliceInformation[i].NalUnitSize);
+            sliceInformation[i].pSlice->GetBitStream()->GetOrg((uint32_t**)&sliceInformation[i].pNalUnit, &sliceInformation[i].NalUnitSize);
             if (sliceInformation[i].pSlice->IsField()) {
                 DEBUG_VTB_PRINT(printf("VDATaskSupplier::%s slice %d of frame %d IsField = %d, slice with field\n", __FUNCTION__, i, frame_num, sliceInfo->IsField());)
             }
@@ -2364,7 +2364,7 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
             }
             
             //Copy all the slices to the buffer
-            for (Ipp32u i = 0; i < sliceCount; i++)
+            for (uint32_t i = 0; i < sliceCount; i++)
             {
                 
                 //Move the NAL data to GVA's NAL buffer
@@ -2450,7 +2450,7 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
 }
 #else   //USE_APPLEGVA
     
-Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
+Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, int32_t field)
 {
     
     static unsigned int counter = 0;
@@ -2481,14 +2481,14 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     }
     
     OSStatus status;
-    static Ipp32s frameCounter = 0;
-    static Ipp8u mbaff = 255;
-    const Ipp32s initalDeltaValue = 65535;
-    static Ipp32s qp_delta = initalDeltaValue;
-    static Ipp32s qs_delta = initalDeltaValue;
+    static int32_t frameCounter = 0;
+    static uint8_t mbaff = 255;
+    const int32_t initalDeltaValue = 65535;
+    static int32_t qp_delta = initalDeltaValue;
+    static int32_t qs_delta = initalDeltaValue;
     
-    Ipp32s frameType = pFrame->m_FrameType;
-    Ipp32s frame_num = pFrame->m_FrameNum;
+    int32_t frameType = pFrame->m_FrameType;
+    int32_t frame_num = pFrame->m_FrameNum;
     
     char * pFrameTypeName;
     switch (frameType) {
@@ -2506,8 +2506,8 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
             break;
     }
     
-    Ipp32s nalType;
-    Ipp32s index = pFrame->m_index;
+    int32_t nalType;
+    int32_t index = pFrame->m_index;
     CFMutableDictionaryRef frameInfo = CFDictionaryCreateMutable(kCFAllocatorDefault,
                                                                  4,
                                                                  &kCFTypeDictionaryKeyCallBacks,
@@ -2524,8 +2524,8 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
     //Frame or Field?
     if(sliceInfo->IsField())  {
         
-        Ipp8u *pNalUnit;    //ptr to first byte of start code
-        Ipp32u NalUnitSize; // size of NAL unit in bytes
+        uint8_t *pNalUnit;    //ptr to first byte of start code
+        uint32_t NalUnitSize; // size of NAL unit in bytes
         
         char pFieldType[16];
         if (sliceInfo->IsBottom()) {
@@ -2568,11 +2568,11 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 }
                 
                 //Put the second field into the nals vector
-                for (Ipp32u i = 0; i < sliceInfo->GetSliceCount(); i++)
+                for (uint32_t i = 0; i < sliceInfo->GetSliceCount(); i++)
                 {
                     H264Slice *pSlice = sliceInfo->GetSlice(i);
                     
-                    pSlice->GetBitStream()->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
+                    pSlice->GetBitStream()->GetOrg((uint32_t**)&pNalUnit, &NalUnitSize);
                     
                     //resize the vector if necessary
                     if (m_nals.size() < totalSizeEncodedBytes + NalUnitSize + sizeof(unsigned int)) {
@@ -2638,12 +2638,12 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 strcpy(pFieldType, "top");
             }
             
-            for (Ipp32u i = 0; i < sliceInfo->GetSliceCount(); i++)
+            for (uint32_t i = 0; i < sliceInfo->GetSliceCount(); i++)
             {
                 
                 H264Slice *pSlice = sliceInfo->GetSlice(i);
                 
-                pSlice->GetBitStream()->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
+                pSlice->GetBitStream()->GetOrg((uint32_t**)&pNalUnit, &NalUnitSize);
                 
                 //resize the vector if necessary
                 if (m_nals.size() < totalSizeEncodedBytes + NalUnitSize + sizeof(unsigned int)) {
@@ -2695,7 +2695,7 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
             } while (!m_prependDataQueue.empty() && (nalInfo.nalType != NAL_UT_SLICE));
         }
         
-        for (Ipp32u i = 0; i < sliceInfo->GetSliceCount(); i++)
+        for (uint32_t i = 0; i < sliceInfo->GetSliceCount(); i++)
         {
             H264Slice *pSlice = sliceInfo->GetSlice(i);
 
@@ -2704,10 +2704,10 @@ Status VDATaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
                 DEBUG_VTB_PRINT(printf("VDATaskSupplier::%s slice %d of frame %d IsField = %d, slice with field\n", __FUNCTION__, i, frame_num, sliceInfo->IsField());)
             }
             
-            Ipp8u *pNalUnit;    //ptr to first byte of start code
-            Ipp32u NalUnitSize; // size of NAL unit in bytes
+            uint8_t *pNalUnit;    //ptr to first byte of start code
+            uint32_t NalUnitSize; // size of NAL unit in bytes
             
-            pSlice->GetBitStream()->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
+            pSlice->GetBitStream()->GetOrg((uint32_t**)&pNalUnit, &NalUnitSize);
             
             //resize the vector if necessary
             if (m_nals.size() < totalSizeEncodedBytes + NalUnitSize + sizeof(unsigned int)) {
@@ -2874,7 +2874,7 @@ inline bool isFreeFrame(H264DecoderFrame * pTmp)
         );
 }
 
-Status VDATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize dimensions, Ipp32s bit_depth, ColorFormat chroma_format_idc)
+Status VDATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, mfxSize dimensions, int32_t bit_depth, ColorFormat chroma_format_idc)
 {    
 
     VideoDataInfo info;
@@ -2906,7 +2906,7 @@ Status VDATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, IppiSize di
 H264Slice * VDATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
 {
     size_t dataSize = nalUnit->GetDataSize();
-    nalUnit->SetDataSize(IPP_MIN(1024, dataSize));
+    nalUnit->SetDataSize(MFX_MIN(1024, dataSize));
 
     H264Slice * slice = TaskSupplier::DecodeSliceHeader(nalUnit);
 
@@ -2923,8 +2923,8 @@ H264Slice * VDATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
     pMemCopy->SetDataSize(nalUnit->GetDataSize());
     pMemCopy->SetTime(nalUnit->GetTime());
 
-    Ipp32u* pbs;
-    Ipp32u bitOffset;
+    uint32_t* pbs;
+    uint32_t bitOffset;
 
     slice->m_BitStream.GetState(&pbs, &bitOffset);
 
@@ -2934,8 +2934,8 @@ H264Slice * VDATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
 
     slice->m_pSource = pMemCopy;
     slice->m_BitStream.Reset(slice->m_pSource->GetPointer(), bitOffset,
-        (Ipp32u)slice->m_pSource->GetDataSize());
-    slice->m_BitStream.SetState((Ipp32u*)(slice->m_pSource->GetPointer() + bytes), bitOffset);
+        (uint32_t)slice->m_pSource->GetDataSize());
+    slice->m_BitStream.SetState((uint32_t*)(slice->m_pSource->GetPointer() + bytes), bitOffset);
 
     memory_leak_preventing1.ClearNotification();
 
@@ -3053,7 +3053,7 @@ void TaskBrokerSingleThreadVDA::decoderOutputCallback(CFDictionaryRef frameInfo,
     }
         
     ViewItem &view = m_pTaskSupplier->GetViewByNumber(BASE_VIEW);
-    Ipp32s viewCount = m_pTaskSupplier->GetViewCount();
+    int32_t viewCount = m_pTaskSupplier->GetViewCount();
     
     H264DecoderFrame *pFrame = view.GetDPBList(0)->head();
     bool bFoundFrame = false;
@@ -3255,7 +3255,7 @@ void TaskBrokerSingleThreadVDA::decoderOutputCallback(CFDictionaryRef frameInfo,
             
             mfxU8 * pDestination = pFrame->m_pYPlane;
             DEBUG_VTB_PRINT(printf(" 420YpCbCr8BiPlanarVideoRange Y: height = %d, width = %d, bytes per row = %d, output pitch = %d, plane count = %d\n", bufferHeight, bufferWidth, bytesPerRow, pFrame->pitch_luma(), planeCount);)
-            IppiSize regionOfInterest;
+            mfxSize regionOfInterest;
             regionOfInterest.width = bufferWidth;
             regionOfInterest.height = bufferHeight;
             ippiCopyManaged_8u_C1R(pPixels, bytesPerRow, pDestination, pFrame->pitch_luma(), regionOfInterest, 2);
@@ -3382,7 +3382,7 @@ void TaskBrokerSingleThreadVDA::decoderOutputCallback(CFDictionaryRef frameInfo,
     }
 }
     
-void TaskBrokerSingleThreadVDA::AddReportItem(Ipp32u index, Ipp32u field, Ipp8u status)
+void TaskBrokerSingleThreadVDA::AddReportItem(uint32_t index, uint32_t field, uint8_t status)
 {
     AutomaticUMCMutex guard(m_mGuard);
 
@@ -3422,7 +3422,7 @@ bool TaskBrokerSingleThreadVDA::GetNextTaskInternal(H264Task *)
 
     if (m_reports.size() && m_FirstAU)
     {
-        Ipp32u i = 0;
+        uint32_t i = 0;
         H264DecoderFrameInfo * au = m_FirstAU;
         bool wasFound = false;
         while (au)
@@ -3430,7 +3430,7 @@ bool TaskBrokerSingleThreadVDA::GetNextTaskInternal(H264Task *)
             for (; i < m_reports.size(); i++)
             {
                 // find Frame
-                if ((m_reports[i].m_index == (Ipp32u)au->m_pFrame->m_index) && (au->IsBottom() == (m_reports[i].m_field != 0)))
+                if ((m_reports[i].m_index == (uint32_t)au->m_pFrame->m_index) && (au->IsBottom() == (m_reports[i].m_field != 0)))
                 {
 
                     switch (m_reports[i].m_status)
@@ -3471,12 +3471,12 @@ bool TaskBrokerSingleThreadVDA::GetNextTaskInternal(H264Task *)
 
     if (!wasCompleted && m_FirstAU)
     {
-        Ipp64u currentCounter = (Ipp64u) vm_time_get_tick();
+        unsigned long long currentCounter = (unsigned long long) vm_time_get_tick();
 
         if (m_lastCounter == 0)
             m_lastCounter = currentCounter;
 
-        Ipp64u diff = (currentCounter - m_lastCounter);
+        unsigned long long diff = (currentCounter - m_lastCounter);
         if (diff >= m_counterFrequency)
         {
                         

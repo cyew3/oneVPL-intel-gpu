@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -27,8 +27,8 @@ class H264DecYUVBufferPadded
 
 public:
 
-    Ipp32s  m_bpp;           // should be >= 8
-    Ipp32s  m_chroma_format; // AVC standard value chroma_format_idc
+    int32_t  m_bpp;           // should be >= 8
+    int32_t  m_chroma_format; // AVC standard value chroma_format_idc
 
     PlanePtrYCommon               m_pYPlane;
 
@@ -45,19 +45,19 @@ public:
     void allocate(const FrameData * frameData, const VideoDataInfo *info);
     void deallocate();
 
-    const IppiSize& lumaSize() const { return m_lumaSize; }
-    const IppiSize& chromaSize() const { return m_chromaSize; }
+    const mfxSize& lumaSize() const { return m_lumaSize; }
+    const mfxSize& chromaSize() const { return m_chromaSize; }
 
-    Ipp32u pitch_luma() const { return m_pitch_luma; }
-    Ipp32u pitch_chroma() const { return m_pitch_chroma; }
+    uint32_t pitch_luma() const { return m_pitch_luma; }
+    uint32_t pitch_chroma() const { return m_pitch_chroma; }
 
-    void setImageSize(IppiSize dimensions, Ipp32s chroma_format)
+    void setImageSize(mfxSize dimensions, int32_t chroma_format)
     {
         m_lumaSize.width = dimensions.width;
         m_lumaSize.height = dimensions.height;
 
-        dimensions.width = dimensions.width >> ((Ipp32s) (3 > chroma_format));
-        dimensions.height = dimensions.height >> ((Ipp32s) (2 > chroma_format));
+        dimensions.width = dimensions.width >> ((int32_t) (3 > chroma_format));
+        dimensions.height = dimensions.height >> ((int32_t) (2 > chroma_format));
 
         m_chromaSize.width = dimensions.width;
         m_chromaSize.height = dimensions.height;
@@ -72,11 +72,11 @@ public:
 
 protected:
 
-    IppiSize            m_lumaSize;
-    IppiSize            m_chromaSize;
+    mfxSize            m_lumaSize;
+    mfxSize            m_chromaSize;
 
-    Ipp32s  m_pitch_luma;
-    Ipp32s  m_pitch_chroma;
+    int32_t  m_pitch_luma;
+    int32_t  m_pitch_chroma;
 
     FrameData m_frameData;
 

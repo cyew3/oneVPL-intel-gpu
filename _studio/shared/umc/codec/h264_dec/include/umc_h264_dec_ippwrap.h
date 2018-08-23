@@ -33,21 +33,21 @@
 
 typedef struct _IppiBidir1_8u
 {
-    const Ipp8u * pSrc[2];
-    Ipp32s   srcStep[2];
-    Ipp8u*   pDst;
-    Ipp32s   dstStep;
-    IppiSize roiSize;
+    const uint8_t * pSrc[2];
+    int32_t   srcStep[2];
+    uint8_t*   pDst;
+    int32_t   dstStep;
+    mfxSize roiSize;
 } IppVCBidir1_8u;
 
 typedef struct _IppiBidir1_16u
 {
-    const Ipp16u * pSrc[2];
-    Ipp32s   srcStep[2];
-    Ipp16u*   pDst;
-    Ipp32s   dstStep;
-    IppiSize roiSize;
-    Ipp32s   bitDepth;
+    const uint16_t * pSrc[2];
+    int32_t   srcStep[2];
+    uint16_t*   pDst;
+    int32_t   dstStep;
+    mfxSize roiSize;
+    int32_t   bitDepth;
 } IppVCBidir1_16u;
 
 namespace UMC
@@ -95,31 +95,31 @@ namespace UMC
 
 
     template <typename Plane>
-    inline IppStatus SetPlane(Plane value, Plane* pDst, Ipp32s dstStep,
-                              IppiSize roiSize )
+    inline IppStatus SetPlane(Plane value, Plane* pDst, int32_t dstStep,
+                              mfxSize roiSize )
     {
         if (!pDst)
             return ippStsNullPtrErr;
 
-        return sizeof(Plane) == 1 ? ippiSet_8u_C1R((Ipp8u)value, (Ipp8u*)pDst, dstStep, roiSize) : ippiSet_16s_C1R((Ipp16u)value, (Ipp16s*)pDst, dstStep, roiSize);
+        return sizeof(Plane) == 1 ? ippiSet_8u_C1R((uint8_t)value, (uint8_t*)pDst, dstStep, roiSize) : ippiSet_16s_C1R((uint16_t)value, (int16_t*)pDst, dstStep, roiSize);
     }
 
     template <typename Plane>
-    inline IppStatus CopyPlane(const Plane* pSrc, Ipp32s srcStep, Plane* pDst, Ipp32s dstStep,
-                              IppiSize roiSize )
+    inline IppStatus CopyPlane(const Plane* pSrc, int32_t srcStep, Plane* pDst, int32_t dstStep,
+                              mfxSize roiSize )
     {
         if (!pSrc || !pDst)
             return ippStsNullPtrErr;
 
-        return sizeof(Plane) == 1 ? ippiCopy_8u_C1R((const Ipp8u*)pSrc, srcStep, (Ipp8u*)pDst, dstStep, roiSize) : ippiCopy_16s_C1R((const Ipp16s*)pSrc, srcStep, (Ipp16s*)pDst, dstStep,roiSize);
+        return sizeof(Plane) == 1 ? ippiCopy_8u_C1R((const uint8_t*)pSrc, srcStep, (uint8_t*)pDst, dstStep, roiSize) : ippiCopy_16s_C1R((const int16_t*)pSrc, srcStep, (int16_t*)pDst, dstStep,roiSize);
     }
 
-    inline IppStatus BiDirWeightBlock(Ipp8u * , IppVCBidir1_16u * info_,
-                                      Ipp32u ulog2wd,
-                                      Ipp32s iWeight1,
-                                      Ipp32s iOffset1,
-                                      Ipp32s iWeight2,
-                                      Ipp32s iOffset2)
+    inline IppStatus BiDirWeightBlock(uint8_t * , IppVCBidir1_16u * info_,
+                                      uint32_t ulog2wd,
+                                      int32_t iWeight1,
+                                      int32_t iOffset1,
+                                      int32_t iWeight2,
+                                      int32_t iOffset2)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
         return ippiBiDirWeightBlock_H264_8u_P3P1R(info->pSrc[0], info->pSrc[1], info->pDst,
@@ -127,9 +127,9 @@ namespace UMC
             ulog2wd, iWeight1, iOffset1, iWeight2, iOffset2, info->roiSize);
     }
 
-    inline IppStatus BiDirWeightBlockImplicit(Ipp8u * , IppVCBidir1_16u * info_,
-                                              Ipp32s iWeight1,
-                                              Ipp32s iWeight2)
+    inline IppStatus BiDirWeightBlockImplicit(uint8_t * , IppVCBidir1_16u * info_,
+                                              int32_t iWeight1,
+                                              int32_t iWeight2)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
         return ippiBiDirWeightBlockImplicit_H264_8u_P3P1R(info->pSrc[0],
@@ -143,7 +143,7 @@ namespace UMC
                                                           info->roiSize);
     }
 
-    inline IppStatus InterpolateBlock(Ipp8u * , IppVCBidir1_16u * info_)
+    inline IppStatus InterpolateBlock(uint8_t * , IppVCBidir1_16u * info_)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
         return ippiInterpolateBlock_H264_8u_P3P1R(info->pSrc[0], info->pSrc[1],
@@ -155,10 +155,10 @@ namespace UMC
                                                   info->dstStep);
     }
 
-    inline IppStatus UniDirWeightBlock(Ipp8u *, IppVCBidir1_16u * info_,
-                                       Ipp32u ulog2wd,
-                                       Ipp32s iWeight,
-                                       Ipp32s iOffset)
+    inline IppStatus UniDirWeightBlock(uint8_t *, IppVCBidir1_16u * info_,
+                                       uint32_t ulog2wd,
+                                       int32_t iWeight,
+                                       int32_t iOffset)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
         return ippiUniDirWeightBlock_H264_8u_C1R(info->pDst, info->dstStep,
@@ -166,14 +166,14 @@ namespace UMC
                                                  iOffset, info->roiSize);
     }
 
-    inline IppStatus ReconstructLumaIntraHalfMB(Ipp16s **ppSrcCoeff,
-                                                Ipp8u *pSrcDstYPlane,
-                                                Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntraHalfMB(int16_t **ppSrcCoeff,
+                                                uint8_t *pSrcDstYPlane,
+                                                int32_t srcdstYStep,
                                                 IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                                Ipp32u cbp4x2,
-                                                Ipp32s QP,
-                                                Ipp8u edgeType,
-                                                Ipp32s bit_depth = 8)
+                                                uint32_t cbp4x2,
+                                                int32_t QP,
+                                                uint8_t edgeType,
+                                                int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntraHalfMB_H264_16s8u_C1R(ppSrcCoeff,
                                                              pSrcDstYPlane,
@@ -184,14 +184,14 @@ namespace UMC
                                                              edgeType);
     }
 
-    inline IppStatus ReconstructLumaInter8x8MB(Ipp16s **ppSrcDstCoeff,
-                                               Ipp8u *pSrcDstYPlane,
-                                               Ipp32u srcdstYStep,
-                                               Ipp32u cbp8x8,
-                                               Ipp32s QP,
-                                               const Ipp16s *pQuantTable,
-                                               Ipp8u bypass_flag,
-                                               Ipp32s bit_depth = 8)
+    inline IppStatus ReconstructLumaInter8x8MB(int16_t **ppSrcDstCoeff,
+                                               uint8_t *pSrcDstYPlane,
+                                               uint32_t srcdstYStep,
+                                               uint32_t cbp8x8,
+                                               int32_t QP,
+                                               const int16_t *pQuantTable,
+                                               uint8_t bypass_flag,
+                                               int32_t bit_depth = 8)
     {
         return ippiReconstructLumaInter8x8MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                             pSrcDstYPlane,
@@ -202,14 +202,14 @@ namespace UMC
                                                             bypass_flag);
     }
 
-    inline IppStatus ReconstructLumaInter4x4MB(Ipp16s **ppSrcDstCoeff,
-                                               Ipp8u *pSrcDstYPlane,
-                                               Ipp32u srcdstYStep,
-                                               Ipp32u cbp4x4,
-                                               Ipp32s QP,
-                                               const Ipp16s *pQuantTable,
-                                               Ipp8u bypass_flag,
-                                               Ipp32s bit_depth = 8)
+    inline IppStatus ReconstructLumaInter4x4MB(int16_t **ppSrcDstCoeff,
+                                               uint8_t *pSrcDstYPlane,
+                                               uint32_t srcdstYStep,
+                                               uint32_t cbp4x4,
+                                               int32_t QP,
+                                               const int16_t *pQuantTable,
+                                               uint8_t bypass_flag,
+                                               int32_t bit_depth = 8)
     {
         return ippiReconstructLumaInter4x4MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                             pSrcDstYPlane,
@@ -221,16 +221,16 @@ namespace UMC
     }
 
 
-    inline IppStatus ReconstructLumaIntra_16x16MB(Ipp16s **ppSrcDstCoeff,
-                                                  Ipp8u *pSrcDstYPlane,
-                                                  Ipp32u srcdstYStep,
+    inline IppStatus ReconstructLumaIntra_16x16MB(int16_t **ppSrcDstCoeff,
+                                                  uint8_t *pSrcDstYPlane,
+                                                  uint32_t srcdstYStep,
                                                   IppIntra16x16PredMode_H264 intra_luma_mode,
-                                                  Ipp32u cbp4x4,
-                                                  Ipp32s QP,
-                                                  Ipp8u edge_type,
-                                                  const Ipp16s *pQuantTable,
-                                                  Ipp8u bypass_flag,
-                                                  Ipp32s bit_depth = 8)
+                                                  uint32_t cbp4x4,
+                                                  int32_t QP,
+                                                  uint8_t edge_type,
+                                                  const int16_t *pQuantTable,
+                                                  uint8_t bypass_flag,
+                                                  int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntra_16x16MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                                pSrcDstYPlane,
@@ -243,16 +243,16 @@ namespace UMC
                                                                bypass_flag);
     }
 
-    inline IppStatus ReconstructLumaIntraHalf8x8MB(Ipp16s **ppSrcDstCoeff,
-                                                   Ipp8u *pSrcDstYPlane,
-                                                   Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntraHalf8x8MB(int16_t **ppSrcDstCoeff,
+                                                   uint8_t *pSrcDstYPlane,
+                                                   int32_t srcdstYStep,
                                                    IppIntra8x8PredMode_H264 *pMBIntraTypes,
-                                                   Ipp32u cbp8x2,
-                                                   Ipp32s QP,
-                                                   Ipp8u edgeType,
-                                                   const Ipp16s *pQuantTable,
-                                                   Ipp8u bypass_flag,
-                                                   Ipp32s bit_depth = 8)
+                                                   uint32_t cbp8x2,
+                                                   int32_t QP,
+                                                   uint8_t edgeType,
+                                                   const int16_t *pQuantTable,
+                                                   uint8_t bypass_flag,
+                                                   int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntraHalf8x8MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                                 pSrcDstYPlane,
@@ -266,16 +266,16 @@ namespace UMC
     }
 
 
-    inline IppStatus ReconstructLumaIntraHalf4x4MB(Ipp16s **ppSrcDstCoeff,
-                                                   Ipp8u *pSrcDstYPlane,
-                                                   Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntraHalf4x4MB(int16_t **ppSrcDstCoeff,
+                                                   uint8_t *pSrcDstYPlane,
+                                                   int32_t srcdstYStep,
                                                    IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                                   Ipp32u cbp4x2,
-                                                   Ipp32s QP,
-                                                   Ipp8u edgeType,
-                                                   const Ipp16s *pQuantTable,
-                                                   Ipp8u bypass_flag,
-                                                   Ipp32s bit_depth = 8)
+                                                   uint32_t cbp4x2,
+                                                   int32_t QP,
+                                                   uint8_t edgeType,
+                                                   const int16_t *pQuantTable,
+                                                   uint8_t bypass_flag,
+                                                   int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntraHalf4x4MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                                 pSrcDstYPlane,
@@ -288,16 +288,16 @@ namespace UMC
                                                                 bypass_flag);
     }
 
-    inline IppStatus ReconstructLumaIntra8x8MB(Ipp16s **ppSrcDstCoeff,
-                                               Ipp8u *pSrcDstYPlane,
-                                               Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntra8x8MB(int16_t **ppSrcDstCoeff,
+                                               uint8_t *pSrcDstYPlane,
+                                               int32_t srcdstYStep,
                                                IppIntra8x8PredMode_H264 *pMBIntraTypes,
-                                               Ipp32u cbp8x8,
-                                               Ipp32s QP,
-                                               Ipp8u edgeType,
-                                               const Ipp16s *pQuantTable,
-                                               Ipp8u bypass_flag,
-                                               Ipp32s bit_depth = 8)
+                                               uint32_t cbp8x8,
+                                               int32_t QP,
+                                               uint8_t edgeType,
+                                               const int16_t *pQuantTable,
+                                               uint8_t bypass_flag,
+                                               int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntra8x8MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                             pSrcDstYPlane,
@@ -310,16 +310,16 @@ namespace UMC
                                                             bypass_flag);
     }
 
-    inline  IppStatus ReconstructLumaIntra4x4MB(Ipp16s **ppSrcDstCoeff,
-                                                Ipp8u *pSrcDstYPlane,
-                                                Ipp32s srcdstYStep,
+    inline  IppStatus ReconstructLumaIntra4x4MB(int16_t **ppSrcDstCoeff,
+                                                uint8_t *pSrcDstYPlane,
+                                                int32_t srcdstYStep,
                                                 IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                                Ipp32u cbp4x4,
-                                                Ipp32s QP,
-                                                Ipp8u edgeType,
-                                                const Ipp16s *pQuantTable,
-                                                Ipp8u bypass_flag,
-                                                Ipp32s bit_depth = 8)
+                                                uint32_t cbp4x4,
+                                                int32_t QP,
+                                                uint8_t edgeType,
+                                                const int16_t *pQuantTable,
+                                                uint8_t bypass_flag,
+                                                int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntra4x4MB_H264_16s8u_C1R(ppSrcDstCoeff,
                                                             pSrcDstYPlane,
@@ -332,14 +332,14 @@ namespace UMC
                                                             bypass_flag);
     }
 
-    inline IppStatus ReconstructLumaIntra16x16MB(Ipp16s **ppSrcCoeff,
-                                                 Ipp8u *pSrcDstYPlane,
-                                                 Ipp32u srcdstYStep,
+    inline IppStatus ReconstructLumaIntra16x16MB(int16_t **ppSrcCoeff,
+                                                 uint8_t *pSrcDstYPlane,
+                                                 uint32_t srcdstYStep,
                                                  const IppIntra16x16PredMode_H264 intra_luma_mode,
-                                                 const Ipp32u cbp4x4,
-                                                 const Ipp32s QP,
-                                                 const Ipp8u edge_type,
-                                                 Ipp32s bit_depth = 8)
+                                                 const uint32_t cbp4x4,
+                                                 const int32_t QP,
+                                                 const uint8_t edge_type,
+                                                 int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntra16x16MB_H264_16s8u_C1R(ppSrcCoeff,
                                                               pSrcDstYPlane,
@@ -350,14 +350,14 @@ namespace UMC
                                                               edge_type);
     }
 
-    inline IppStatus ReconstructLumaIntraMB(Ipp16s **ppSrcCoeff,
-                                            Ipp8u *pSrcDstYPlane,
-                                            Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntraMB(int16_t **ppSrcCoeff,
+                                            uint8_t *pSrcDstYPlane,
+                                            int32_t srcdstYStep,
                                             const IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                            const Ipp32u cbp4x4,
-                                            const Ipp32s QP,
-                                            const Ipp8u edgeType,
-                                            Ipp32s bit_depth = 8)
+                                            const uint32_t cbp4x4,
+                                            const int32_t QP,
+                                            const uint8_t edgeType,
+                                            int32_t bit_depth = 8)
     {
         return ippiReconstructLumaIntraMB_H264_16s8u_C1R(ppSrcCoeff,
                                                          pSrcDstYPlane,
@@ -368,12 +368,12 @@ namespace UMC
                                                          edgeType);
     }
 
-    inline IppStatus ReconstructLumaInterMB(Ipp16s **ppSrcCoeff,
-                                            Ipp8u *pSrcDstYPlane,
-                                            Ipp32u srcdstYStep,
-                                            Ipp32u cbp4x4,
-                                            Ipp32s QP,
-                                            Ipp32s bit_depth = 8)
+    inline IppStatus ReconstructLumaInterMB(int16_t **ppSrcCoeff,
+                                            uint8_t *pSrcDstYPlane,
+                                            uint32_t srcdstYStep,
+                                            uint32_t cbp4x4,
+                                            int32_t QP,
+                                            int32_t bit_depth = 8)
     {
         return ippiReconstructLumaInterMB_H264_16s8u_C1R(ppSrcCoeff,
                                                          pSrcDstYPlane,
@@ -391,26 +391,26 @@ namespace UMC
     info_temp[0].ppSrcDstCoeff = ppSrcDstCoeff;   \
     info_temp[0].pSrcDstPlane = pSrcDstUPlane;  \
     info_temp[0].srcDstStep = srcdstUVStep;    \
-    info_temp[0].cbp = (Ipp32u)cbpU;          \
+    info_temp[0].cbp = (uint32_t)cbpU;          \
     info_temp[0].qp = chromaQPU;               \
-    info_temp[0].pQuantTable = (Ipp16s *) pQuantTableU;  \
+    info_temp[0].pQuantTable = (int16_t *) pQuantTableU;  \
     info_temp[0].bypassFlag = bypass_flag;      \
     info_temp[1].ppSrcDstCoeff = ppSrcDstCoeff;   \
     info_temp[1].pSrcDstPlane = pSrcDstVPlane;  \
     info_temp[1].srcDstStep = srcdstUVStep;    \
-    info_temp[1].cbp = (Ipp32u)cbpV;          \
+    info_temp[1].cbp = (uint32_t)cbpV;          \
     info_temp[1].qp = chromaQPV;\
-    info_temp[1].pQuantTable = (Ipp16s *) pQuantTableV;\
+    info_temp[1].pQuantTable = (int16_t *) pQuantTableV;\
     info_temp[1].bypassFlag = bypass_flag;
 
     ///****************************************************************************************/
     // 16 bits functions
     ///****************************************************************************************/
 
-    inline IppStatus UniDirWeightBlock(Ipp16u *, IppVCBidir1_16u * info,
-                                       Ipp32u ulog2wd,
-                                       Ipp32s iWeight,
-                                       Ipp32s iOffset)
+    inline IppStatus UniDirWeightBlock(uint16_t *, IppVCBidir1_16u * info,
+                                       uint32_t ulog2wd,
+                                       int32_t iWeight,
+                                       int32_t iOffset)
     {
         return ippiUnidirWeight_H264_16u_IP2P1R(info->pDst, info->dstStep,
                                                  ulog2wd, iWeight,
@@ -425,59 +425,59 @@ namespace UMC
     info.srcDstStep = srcDstStep;\
     info.cbp = cbp;\
     info.qp = QP;\
-    info.pQuantTable = (Ipp16s *) pQuantTable;\
+    info.pQuantTable = (int16_t *) pQuantTable;\
     info.bypassFlag = bypass_flag;\
     info.bitDepth = bit_depth;
 
-    inline IppStatus ReconstructLumaIntraHalfMB(Ipp32s **ppSrcCoeff,
-                                                Ipp16u *pSrcDstYPlane,
-                                                Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntraHalfMB(int32_t **ppSrcCoeff,
+                                                uint16_t *pSrcDstYPlane,
+                                                int32_t srcdstYStep,
                                                 IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                                Ipp32u cbp4x2,
-                                                Ipp32s QP,
-                                                Ipp8u  edgeType,
-                                                Ipp32s bit_depth = 10)
+                                                uint32_t cbp4x2,
+                                                int32_t QP,
+                                                uint8_t  edgeType,
+                                                int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
     }
 
-    inline IppStatus ReconstructLumaInter8x8MB(Ipp32s **ppSrcDstCoeff,
-                                               Ipp16u *pSrcDstYPlane,
-                                               Ipp32u srcDstStep,
-                                               Ipp32u cbp,
-                                               Ipp32s QP,
-                                               const Ipp16s *pQuantTable,
-                                               Ipp8u  bypass_flag,
-                                               Ipp32s bit_depth)
+    inline IppStatus ReconstructLumaInter8x8MB(int32_t **ppSrcDstCoeff,
+                                               uint16_t *pSrcDstYPlane,
+                                               uint32_t srcDstStep,
+                                               uint32_t cbp,
+                                               int32_t QP,
+                                               const int16_t *pQuantTable,
+                                               uint8_t  bypass_flag,
+                                               int32_t bit_depth)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaInter8x8_H264High_32s16u_IP1R(&info);
     }
 
-    inline IppStatus ReconstructLumaInter4x4MB(Ipp32s **ppSrcDstCoeff,
-                                               Ipp16u *pSrcDstYPlane,
-                                               Ipp32u srcDstStep,
-                                               Ipp32u cbp,
-                                               Ipp32s QP,
-                                               const Ipp16s *pQuantTable,
-                                               Ipp8u  bypass_flag,
-                                               Ipp32s bit_depth)
+    inline IppStatus ReconstructLumaInter4x4MB(int32_t **ppSrcDstCoeff,
+                                               uint16_t *pSrcDstYPlane,
+                                               uint32_t srcDstStep,
+                                               uint32_t cbp,
+                                               int32_t QP,
+                                               const int16_t *pQuantTable,
+                                               uint8_t  bypass_flag,
+                                               int32_t bit_depth)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaInter4x4_H264High_32s16u_IP1R(&info);
     }
 
-    inline IppStatus ReconstructLumaIntra_16x16MB(Ipp32s **ppSrcDstCoeff,
-                                                  Ipp16u *pSrcDstYPlane,
-                                                  Ipp32u srcDstStep,
+    inline IppStatus ReconstructLumaIntra_16x16MB(int32_t **ppSrcDstCoeff,
+                                                  uint16_t *pSrcDstYPlane,
+                                                  uint32_t srcDstStep,
                                                   IppIntra16x16PredMode_H264 intra_luma_mode,
-                                                  Ipp32u cbp,
-                                                  Ipp32s QP,
-                                                  Ipp8u  edge_type,
-                                                  const Ipp16s *pQuantTable,
-                                                  Ipp8u  bypass_flag,
-                                                  Ipp32s bit_depth)
+                                                  uint32_t cbp,
+                                                  int32_t QP,
+                                                  uint8_t  edge_type,
+                                                  const int16_t *pQuantTable,
+                                                  uint8_t  bypass_flag,
+                                                  int32_t bit_depth)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaIntra16x16_H264High_32s16u_IP1R(&info,
@@ -485,16 +485,16 @@ namespace UMC
                                                                   edge_type);
     }
 
-    inline IppStatus ReconstructLumaIntraHalf8x8MB(Ipp32s **ppSrcDstCoeff,
-                                                   Ipp16u *pSrcDstYPlane,
-                                                   Ipp32s srcDstStep,
+    inline IppStatus ReconstructLumaIntraHalf8x8MB(int32_t **ppSrcDstCoeff,
+                                                   uint16_t *pSrcDstYPlane,
+                                                   int32_t srcDstStep,
                                                    IppIntra8x8PredMode_H264 *pMBIntraTypes,
-                                                   Ipp32u cbp,
-                                                   Ipp32s QP,
-                                                   Ipp8u  edgeType,
-                                                   const Ipp16s *pQuantTable,
-                                                   Ipp8u  bypass_flag,
-                                                   Ipp32s bit_depth = 10)
+                                                   uint32_t cbp,
+                                                   int32_t QP,
+                                                   uint8_t  edgeType,
+                                                   const int16_t *pQuantTable,
+                                                   uint8_t  bypass_flag,
+                                                   int32_t bit_depth = 10)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaIntraHalf8x8_H264High_32s16u_IP1R(&info,
@@ -502,16 +502,16 @@ namespace UMC
                                                                     edgeType);
     }
 
-    inline IppStatus ReconstructLumaIntraHalf4x4MB(Ipp32s **ppSrcDstCoeff,
-                                                   Ipp16u *pSrcDstYPlane,
-                                                   Ipp32s srcDstStep,
+    inline IppStatus ReconstructLumaIntraHalf4x4MB(int32_t **ppSrcDstCoeff,
+                                                   uint16_t *pSrcDstYPlane,
+                                                   int32_t srcDstStep,
                                                    IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                                   Ipp32u cbp,
-                                                   Ipp32s QP,
-                                                   Ipp8u  edgeType,
-                                                   const Ipp16s *pQuantTable,
-                                                   Ipp8u  bypass_flag,
-                                                   Ipp32s bit_depth = 10)
+                                                   uint32_t cbp,
+                                                   int32_t QP,
+                                                   uint8_t  edgeType,
+                                                   const int16_t *pQuantTable,
+                                                   uint8_t  bypass_flag,
+                                                   int32_t bit_depth = 10)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaIntraHalf4x4_H264High_32s16u_IP1R(&info,
@@ -519,16 +519,16 @@ namespace UMC
                                                                     edgeType);
     }
 
-    inline IppStatus ReconstructLumaIntra8x8MB(Ipp32s **ppSrcDstCoeff,
-                                               Ipp16u *pSrcDstYPlane,
-                                               Ipp32s srcDstStep,
+    inline IppStatus ReconstructLumaIntra8x8MB(int32_t **ppSrcDstCoeff,
+                                               uint16_t *pSrcDstYPlane,
+                                               int32_t srcDstStep,
                                                IppIntra8x8PredMode_H264 *pMBIntraTypes,
-                                               Ipp32u cbp,
-                                               Ipp32s QP,
-                                               Ipp8u  edgeType,
-                                               const Ipp16s *pQuantTable,
-                                               Ipp8u  bypass_flag,
-                                               Ipp32s bit_depth)
+                                               uint32_t cbp,
+                                               int32_t QP,
+                                               uint8_t  edgeType,
+                                               const int16_t *pQuantTable,
+                                               uint8_t  bypass_flag,
+                                               int32_t bit_depth)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaIntra8x8_H264High_32s16u_IP1R(&info,
@@ -536,16 +536,16 @@ namespace UMC
                                                                 edgeType);
     }
 
-    inline  IppStatus ReconstructLumaIntra4x4MB(Ipp32s **ppSrcDstCoeff,
-                                                Ipp16u *pSrcDstYPlane,
-                                                Ipp32s srcDstStep,
+    inline  IppStatus ReconstructLumaIntra4x4MB(int32_t **ppSrcDstCoeff,
+                                                uint16_t *pSrcDstYPlane,
+                                                int32_t srcDstStep,
                                                 IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                                Ipp32u cbp,
-                                                Ipp32s QP,
-                                                Ipp8u  edgeType,
-                                                const Ipp16s *pQuantTable,
-                                                Ipp8u  bypass_flag,
-                                                Ipp32s bit_depth)
+                                                uint32_t cbp,
+                                                int32_t QP,
+                                                uint8_t  edgeType,
+                                                const int16_t *pQuantTable,
+                                                uint8_t  bypass_flag,
+                                                int32_t bit_depth)
     {
         FILL_RECONSTRUCT_INFO;
         return ippiReconstructLumaIntra4x4_H264High_32s16u_IP1R(&info,
@@ -553,38 +553,38 @@ namespace UMC
                                                                 edgeType);
     }
 
-    inline IppStatus ReconstructLumaIntra16x16MB(Ipp32s **ppSrcCoeff,
-                                                 Ipp16u *pSrcDstYPlane,
-                                                 Ipp32u srcdstYStep,
+    inline IppStatus ReconstructLumaIntra16x16MB(int32_t **ppSrcCoeff,
+                                                 uint16_t *pSrcDstYPlane,
+                                                 uint32_t srcdstYStep,
                                                  const IppIntra16x16PredMode_H264 intra_luma_mode,
-                                                 const Ipp32u cbp4x4,
-                                                 const Ipp32s QP,
-                                                 const Ipp8u edge_type,
-                                                 Ipp32s bit_depth = 10)
+                                                 const uint32_t cbp4x4,
+                                                 const int32_t QP,
+                                                 const uint8_t edge_type,
+                                                 int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
     }
 
-    inline IppStatus ReconstructLumaIntraMB(Ipp32s **ppSrcCoeff,
-                                            Ipp16u *pSrcDstYPlane,
-                                            Ipp32s srcdstYStep,
+    inline IppStatus ReconstructLumaIntraMB(int32_t **ppSrcCoeff,
+                                            uint16_t *pSrcDstYPlane,
+                                            int32_t srcdstYStep,
                                             const IppIntra4x4PredMode_H264 *pMBIntraTypes,
-                                            const Ipp32u cbp4x4,
-                                            const Ipp32s QP,
-                                            const Ipp8u edgeType,
-                                            Ipp32s bit_depth = 10)
+                                            const uint32_t cbp4x4,
+                                            const int32_t QP,
+                                            const uint8_t edgeType,
+                                            int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
     }
 
-    inline IppStatus ReconstructLumaInterMB(Ipp32s **ppSrcCoeff,
-                                            Ipp16u *pSrcDstYPlane,
-                                            Ipp32u srcdstYStep,
-                                            Ipp32u cbp4x4,
-                                            Ipp32s QP,
-                                            Ipp32s bit_depth = 10)
+    inline IppStatus ReconstructLumaInterMB(int32_t **ppSrcCoeff,
+                                            uint16_t *pSrcDstYPlane,
+                                            uint32_t srcdstYStep,
+                                            uint32_t cbp4x4,
+                                            int32_t QP,
+                                            int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
@@ -598,17 +598,17 @@ namespace UMC
     info_temp[0].ppSrcDstCoeff = ppSrcDstCoeff;   \
     info_temp[0].pSrcDstPlane = pSrcDstUPlane;  \
     info_temp[0].srcDstStep = srcdstUVStep;    \
-    info_temp[0].cbp = (Ipp32u)cbpU;          \
+    info_temp[0].cbp = (uint32_t)cbpU;          \
     info_temp[0].qp = chromaQPU;               \
-    info_temp[0].pQuantTable = (Ipp16s *) pQuantTableU;  \
+    info_temp[0].pQuantTable = (int16_t *) pQuantTableU;  \
     info_temp[0].bypassFlag = bypass_flag;      \
     info_temp[0].bitDepth = bit_depth;            \
     info_temp[1].ppSrcDstCoeff = ppSrcDstCoeff;   \
     info_temp[1].pSrcDstPlane = pSrcDstVPlane;  \
     info_temp[1].srcDstStep = srcdstUVStep;    \
-    info_temp[1].cbp = (Ipp32u)cbpV;          \
+    info_temp[1].cbp = (uint32_t)cbpV;          \
     info_temp[1].qp = chromaQPV;\
-    info_temp[1].pQuantTable = (Ipp16s *) pQuantTableV;\
+    info_temp[1].pQuantTable = (int16_t *) pQuantTableV;\
     info_temp[1].bypassFlag = bypass_flag;\
     info_temp[1].bitDepth = bit_depth;
 
@@ -624,20 +624,20 @@ namespace UMC
         info.roiSize = info1->roiSize;\
         info.bitDepth = info1->bitDepth;
 
-    inline IppStatus BiDirWeightBlock(Ipp16u * , IppVCBidir1_16u * info1,
-                                      Ipp32u ulog2wd,
-                                      Ipp32s iWeight1,
-                                      Ipp32s iOffset1,
-                                      Ipp32s iWeight2,
-                                      Ipp32s iOffset2)
+    inline IppStatus BiDirWeightBlock(uint16_t * , IppVCBidir1_16u * info1,
+                                      uint32_t ulog2wd,
+                                      int32_t iWeight1,
+                                      int32_t iOffset1,
+                                      int32_t iWeight2,
+                                      int32_t iOffset2)
     {
         FILL_VC_BIDIR_INFO;
         return ippiBidirWeight_H264_16u_P2P1R(&info, ulog2wd, iWeight1, iOffset1, iWeight2, iOffset2);
     }
 
-    inline IppStatus BiDirWeightBlockImplicit(Ipp16u * , IppVCBidir1_16u * info1,
-                                              Ipp32s iWeight1,
-                                              Ipp32s iWeight2)
+    inline IppStatus BiDirWeightBlockImplicit(uint16_t * , IppVCBidir1_16u * info1,
+                                              int32_t iWeight1,
+                                              int32_t iWeight2)
     {
         FILL_VC_BIDIR_INFO;
         return ippiBidirWeightImplicit_H264_16u_P2P1R(&info,
@@ -645,7 +645,7 @@ namespace UMC
                                                       iWeight2);
     }
 
-    inline IppStatus InterpolateBlock(Ipp16u * , IppVCBidir1_16u * info1)
+    inline IppStatus InterpolateBlock(uint16_t * , IppVCBidir1_16u * info1)
     {
         FILL_VC_BIDIR_INFO
         return ippiBidir_H264_16u_P2P1R(&info);
@@ -653,15 +653,15 @@ namespace UMC
 
 
 // nv12 functions
-    inline IppStatus ReconstructChromaIntraMB_NV12(Ipp16s **ppSrcCoeff,
-                                              Ipp8u *pSrcDstUVPlane,
-                                              const Ipp32u srcdstUVStep,
+    inline IppStatus ReconstructChromaIntraMB_NV12(int16_t **ppSrcCoeff,
+                                              uint8_t *pSrcDstUVPlane,
+                                              const uint32_t srcdstUVStep,
                                               const IppIntraChromaPredMode_H264 intra_chroma_mode,
-                                              Ipp32u cbpU,
-                                              Ipp32u cbpV,
-                                              const Ipp32u ChromaQP,
-                                              const Ipp8u edge_type,
-                                              Ipp32s bit_depth = 8)
+                                              uint32_t cbpU,
+                                              uint32_t cbpV,
+                                              const uint32_t ChromaQP,
+                                              const uint8_t edge_type,
+                                              int32_t bit_depth = 8)
     {
         IppStatus sts = ippiReconstructChromaIntraMB_H264_16s8u_C2R(ppSrcCoeff,
                                                            pSrcDstUVPlane,
@@ -673,27 +673,27 @@ namespace UMC
         return sts;
     }
 
-    inline IppStatus ReconstructChromaIntraMB_NV12(Ipp32s **ppSrcCoeff,
-                                              Ipp16u *pSrcDstUPlane,
-                                              const Ipp32u srcdstUVStep,
+    inline IppStatus ReconstructChromaIntraMB_NV12(int32_t **ppSrcCoeff,
+                                              uint16_t *pSrcDstUPlane,
+                                              const uint32_t srcdstUVStep,
                                               const IppIntraChromaPredMode_H264 intra_chroma_mode,
-                                              Ipp32u cbpU,
-                                              Ipp32u cbpV,
-                                              const Ipp32u ChromaQP,
-                                              const Ipp8u edge_type,
-                                              Ipp32s bit_depth = 10)
+                                              uint32_t cbpU,
+                                              uint32_t cbpV,
+                                              const uint32_t ChromaQP,
+                                              const uint8_t edge_type,
+                                              int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
     }
 
-    inline IppStatus ReconstructChromaInterMB_NV12(Ipp16s **ppSrcCoeff,
-                                              Ipp8u *pSrcDstUVPlane,
-                                              const Ipp32u srcdstStep,
-                                              Ipp32u cbpU,
-                                              Ipp32u cbpV,
-                                              const Ipp32u ChromaQP,
-                                              Ipp32s bit_depth = 8)
+    inline IppStatus ReconstructChromaInterMB_NV12(int16_t **ppSrcCoeff,
+                                              uint8_t *pSrcDstUVPlane,
+                                              const uint32_t srcdstStep,
+                                              uint32_t cbpU,
+                                              uint32_t cbpV,
+                                              const uint32_t ChromaQP,
+                                              int32_t bit_depth = 8)
     {
         IppStatus sts = ippiReconstructChromaInterMB_H264_16s8u_C2R(ppSrcCoeff,
                                                            pSrcDstUVPlane,
@@ -703,13 +703,13 @@ namespace UMC
         return sts;
     }
 
-    inline IppStatus ReconstructChromaInterMB_NV12(Ipp32s **ppSrcCoeff,
-                                              Ipp16u *pSrcDstUVPlane,
-                                              const Ipp32u srcdstStep,
-                                              Ipp32u cbpU,
-                                              Ipp32u cbpV,
-                                              const Ipp32u ChromaQP,
-                                              Ipp32s bit_depth = 10)
+    inline IppStatus ReconstructChromaInterMB_NV12(int32_t **ppSrcCoeff,
+                                              uint16_t *pSrcDstUVPlane,
+                                              const uint32_t srcdstStep,
+                                              uint32_t cbpU,
+                                              uint32_t cbpV,
+                                              const uint32_t ChromaQP,
+                                              int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
@@ -725,7 +725,7 @@ namespace UMC
             MFX_H264_PP::GetH264Dispatcher()->InterpolateChromaBlock_16u(interpolateInfo);
     }
 
-    inline IppStatus InterpolateBlock_NV12(Ipp8u *pSrc1,
+    inline IppStatus InterpolateBlock_NV12(uint8_t *pSrc1,
                                       IppVCBidir1_16u * info_)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
@@ -738,7 +738,7 @@ namespace UMC
                                                   info->dstStep);
     }
 
-    inline IppStatus InterpolateBlock_NV12(Ipp16u *pSrc1,
+    inline IppStatus InterpolateBlock_NV12(uint16_t *pSrc1,
                                       IppVCBidir1_16u * info1)
     {
         FILL_VC_BIDIR_INFO
@@ -746,72 +746,72 @@ namespace UMC
         return ippiBidir_H264_16u_P2P1R(&info);
     }
 
-    inline void UniDirWeightBlock_NV12(Ipp8u *,
+    inline void UniDirWeightBlock_NV12(uint8_t *,
                                        IppVCBidir1_16u * info_,
-                                       Ipp32u ulog2wd,
-                                       Ipp32s iWeightU,
-                                       Ipp32s iOffsetU,
-                                       Ipp32s iWeightV,
-                                       Ipp32s iOffsetV)
+                                       uint32_t ulog2wd,
+                                       int32_t iWeightU,
+                                       int32_t iOffsetU,
+                                       int32_t iWeightV,
+                                       int32_t iOffsetV)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
         MFX_H264_PP::GetH264Dispatcher()->UniDirWeightBlock_NV12(info->pDst, info->dstStep, ulog2wd, iWeightU, iOffsetU, iWeightV, iOffsetV, info->roiSize, info_->bitDepth);
     }
 
-    inline void UniDirWeightBlock_NV12(Ipp16u *pSrcDst,
+    inline void UniDirWeightBlock_NV12(uint16_t *pSrcDst,
                                        IppVCBidir1_16u * info,
-                                       Ipp32u ulog2wd,
-                                       Ipp32s iWeightU,
-                                       Ipp32s iOffsetU,
-                                       Ipp32s iWeightV,
-                                       Ipp32s iOffsetV)
+                                       uint32_t ulog2wd,
+                                       int32_t iWeightU,
+                                       int32_t iOffsetU,
+                                       int32_t iWeightV,
+                                       int32_t iOffsetV)
     {
         MFX_H264_PP::GetH264Dispatcher()->UniDirWeightBlock_NV12(info->pDst, info->dstStep, ulog2wd, iWeightU, iOffsetU, iWeightV, iOffsetV, info->roiSize, info->bitDepth);
     }
 
-    inline void BiDirWeightBlock_NV12(const Ipp8u *pSrc1,
+    inline void BiDirWeightBlock_NV12(const uint8_t *pSrc1,
                                       IppVCBidir1_16u * info_,
-                                      Ipp32u ulog2wd,
-                                      Ipp32s iWeightU1,
-                                      Ipp32s iOffsetU1,
-                                      Ipp32s iWeightU2,
-                                      Ipp32s iOffsetU2,
-                                      Ipp32s iWeightV1,
-                                      Ipp32s iOffsetV1,
-                                      Ipp32s iWeightV2,
-                                      Ipp32s iOffsetV2)
+                                      uint32_t ulog2wd,
+                                      int32_t iWeightU1,
+                                      int32_t iOffsetU1,
+                                      int32_t iWeightU2,
+                                      int32_t iOffsetU2,
+                                      int32_t iWeightV1,
+                                      int32_t iOffsetV1,
+                                      int32_t iWeightV2,
+                                      int32_t iOffsetV2)
     {
         IppVCBidir1_8u * info = (IppVCBidir1_8u *)info_;
         MFX_H264_PP::GetH264Dispatcher()->BiDirWeightBlock_NV12(info->pSrc[0], info->srcStep[0], info->pSrc[1], info->srcStep[1], info->pDst, info->dstStep,
             ulog2wd, iWeightU1, iOffsetU1, iWeightU2, iOffsetU2, iWeightV1, iOffsetV1, iWeightV2, iOffsetV2, info->roiSize, info_->bitDepth);
     }
 
-    inline void BiDirWeightBlock_NV12(Ipp16u *pSrc1,
+    inline void BiDirWeightBlock_NV12(uint16_t *pSrc1,
                                       IppVCBidir1_16u * info,
-                                      Ipp32u ulog2wd,
-                                      Ipp32s iWeightU1,
-                                      Ipp32s iOffsetU1,
-                                      Ipp32s iWeightU2,
-                                      Ipp32s iOffsetU2,
-                                      Ipp32s iWeightV1,
-                                      Ipp32s iOffsetV1,
-                                      Ipp32s iWeightV2,
-                                      Ipp32s iOffsetV2)
+                                      uint32_t ulog2wd,
+                                      int32_t iWeightU1,
+                                      int32_t iOffsetU1,
+                                      int32_t iWeightU2,
+                                      int32_t iOffsetU2,
+                                      int32_t iWeightV1,
+                                      int32_t iOffsetV1,
+                                      int32_t iWeightV2,
+                                      int32_t iOffsetV2)
     {
         MFX_H264_PP::GetH264Dispatcher()->BiDirWeightBlock_NV12(info->pSrc[0], info->srcStep[0], info->pSrc[1], info->srcStep[1], info->pDst, info->dstStep,
             ulog2wd, iWeightU1, iOffsetU1, iWeightU2, iOffsetU2, iWeightV1, iOffsetV1, iWeightV2, iOffsetV2, info->roiSize, info->bitDepth);
     }
 
-    inline IppStatus ReconstructChromaIntraHalfsMB_NV12(Ipp16s **ppSrcCoeff,
-                                                   Ipp8u *pSrcDstUVPlane,
-                                                   Ipp32u srcdstUVStep,
+    inline IppStatus ReconstructChromaIntraHalfsMB_NV12(int16_t **ppSrcCoeff,
+                                                   uint8_t *pSrcDstUVPlane,
+                                                   uint32_t srcdstUVStep,
                                                    IppIntraChromaPredMode_H264 intra_chroma_mode,
-                                                   Ipp32u cbpU,
-                                                   Ipp32u cbpV,
-                                                   Ipp32u ChromaQP,
-                                                   Ipp8u edge_type_top,
-                                                   Ipp8u edge_type_bottom,
-                                                   Ipp32s bit_depth = 8)
+                                                   uint32_t cbpU,
+                                                   uint32_t cbpV,
+                                                   uint32_t ChromaQP,
+                                                   uint8_t edge_type_top,
+                                                   uint8_t edge_type_bottom,
+                                                   int32_t bit_depth = 8)
     {
         return ippiReconstructChromaIntraHalvesMB_H264_16s8u_C2R(ppSrcCoeff,
                                                                 pSrcDstUVPlane,
@@ -823,34 +823,34 @@ namespace UMC
                                                                 edge_type_bottom);
     }
 
-    inline IppStatus ReconstructChromaIntraHalfsMB_NV12(Ipp32s **ppSrcCoeff,
-                                                   Ipp16u *pSrcDstUVPlane,
-                                                   Ipp32u srcdstUVStep,
+    inline IppStatus ReconstructChromaIntraHalfsMB_NV12(int32_t **ppSrcCoeff,
+                                                   uint16_t *pSrcDstUVPlane,
+                                                   uint32_t srcdstUVStep,
                                                    IppIntraChromaPredMode_H264 intra_chroma_mode,
-                                                   Ipp32u cbpU,
-                                                   Ipp32u cbpV,
-                                                   Ipp32u ChromaQP,
-                                                   Ipp8u  edge_type_top,
-                                                   Ipp8u  edge_type_bottom,
-                                                   Ipp32s bit_depth = 10)
+                                                   uint32_t cbpU,
+                                                   uint32_t cbpV,
+                                                   uint32_t ChromaQP,
+                                                   uint8_t  edge_type_top,
+                                                   uint8_t  edge_type_bottom,
+                                                   int32_t bit_depth = 10)
     {
         VM_ASSERT(false);
         return ippStsNoErr;
     }
 
 
-    inline void ReconstructChromaIntraHalfs4x4MB_NV12(Ipp16s **ppSrcDstCoeff,
-                                                      Ipp8u *pSrcDstUVPlane,
-                                                      Ipp32u srcdstUVStep,
+    inline void ReconstructChromaIntraHalfs4x4MB_NV12(int16_t **ppSrcDstCoeff,
+                                                      uint8_t *pSrcDstUVPlane,
+                                                      uint32_t srcdstUVStep,
                                                       IppIntraChromaPredMode_H264 intra_chroma_mode,
-                                                      Ipp32u cbpU, Ipp32u cbpV,
-                                                      Ipp32u chromaQPU, Ipp32u chromaQPV,
-                                                      Ipp8u  edge_type_top, Ipp8u  edge_type_bottom,
-                                                      const Ipp16s *pQuantTableU, const Ipp16s *pQuantTableV,
-                                                      Ipp16s levelScaleDCU, Ipp16s levelScaleDCV,
-                                                      Ipp8u  bypass_flag,
-                                                      Ipp32s bit_depth,
-                                                      Ipp32u  chroma_format_idc)
+                                                      uint32_t cbpU, uint32_t cbpV,
+                                                      uint32_t chromaQPU, uint32_t chromaQPV,
+                                                      uint8_t  edge_type_top, uint8_t  edge_type_bottom,
+                                                      const int16_t *pQuantTableU, const int16_t *pQuantTableV,
+                                                      int16_t levelScaleDCU, int16_t levelScaleDCV,
+                                                      uint8_t  bypass_flag,
+                                                      int32_t bit_depth,
+                                                      uint32_t  chroma_format_idc)
     {
         MFX_H264_PP::GetH264Dispatcher()->ReconstructChromaIntraHalfs4x4MB_NV12(ppSrcDstCoeff,
                                                       pSrcDstUVPlane, srcdstUVStep,
@@ -863,18 +863,18 @@ namespace UMC
                                                       bypass_flag, bit_depth, chroma_format_idc);
     }
 
-    inline void ReconstructChromaIntraHalfs4x4MB_NV12(Ipp32s **ppSrcDstCoeff,
-                                                      Ipp16u *pSrcDstUVPlane,
-                                                      Ipp32u srcdstUVStep,
+    inline void ReconstructChromaIntraHalfs4x4MB_NV12(int32_t **ppSrcDstCoeff,
+                                                      uint16_t *pSrcDstUVPlane,
+                                                      uint32_t srcdstUVStep,
                                                       IppIntraChromaPredMode_H264 intra_chroma_mode,
-                                                      Ipp32u cbpU, Ipp32u cbpV,
-                                                      Ipp32u chromaQPU, Ipp32u chromaQPV,
-                                                      Ipp8u  edge_type_top, Ipp8u  edge_type_bottom,
-                                                      const Ipp16s *pQuantTableU, const Ipp16s *pQuantTableV,
-                                                      Ipp16s levelScaleDCU, Ipp16s levelScaleDCV,
-                                                      Ipp8u  bypass_flag,
-                                                      Ipp32s bit_depth,
-                                                      Ipp32u  chroma_format_idc)
+                                                      uint32_t cbpU, uint32_t cbpV,
+                                                      uint32_t chromaQPU, uint32_t chromaQPV,
+                                                      uint8_t  edge_type_top, uint8_t  edge_type_bottom,
+                                                      const int16_t *pQuantTableU, const int16_t *pQuantTableV,
+                                                      int16_t levelScaleDCU, int16_t levelScaleDCV,
+                                                      uint8_t  bypass_flag,
+                                                      int32_t bit_depth,
+                                                      uint32_t  chroma_format_idc)
     {
         MFX_H264_PP::GetH264Dispatcher()->ReconstructChromaIntraHalfs4x4MB_NV12(ppSrcDstCoeff,
                                                       pSrcDstUVPlane, srcdstUVStep,
@@ -890,14 +890,14 @@ namespace UMC
 
     template <typename Plane>
     void FilterDeblockingChromaEdge(Plane* pSrcDst,
-                                                Ipp32s  srcdstStep,
-                                                Ipp8u*  pAlpha,
-                                                Ipp8u*  pBeta,
-                                                Ipp8u*  pThresholds,
-                                                Ipp8u*  pBS,
-                                                Ipp32s  bit_depth,
-                                                Ipp32u  chroma_format_idc,
-                                                Ipp32u dir)
+                                                int32_t  srcdstStep,
+                                                uint8_t*  pAlpha,
+                                                uint8_t*  pBeta,
+                                                uint8_t*  pThresholds,
+                                                uint8_t*  pBS,
+                                                int32_t  bit_depth,
+                                                uint32_t  chroma_format_idc,
+                                                uint32_t dir)
     {
         MFX_H264_PP::GetH264Dispatcher()->FilterDeblockingChromaEdge(pSrcDst, srcdstStep,
                                                 pAlpha, pBeta,

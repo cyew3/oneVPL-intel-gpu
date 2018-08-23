@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -52,7 +52,7 @@ public:
     {
         Release();
 
-        m_pDataPointer = (Ipp8u*)out->GetDataPointer();
+        m_pDataPointer = (uint8_t*)out->GetDataPointer();
         m_nDataSize = out->GetDataSize();
         m_pts = out->GetTime();
     }
@@ -63,7 +63,7 @@ public:
             return;
 
         m_nSourceSize = m_nDataSize + DEFAULT_NU_TAIL_SIZE;
-        m_pSourceBuffer = h264_new_array_throw<Ipp8u>((Ipp32s)m_nSourceSize);
+        m_pSourceBuffer = h264_new_array_throw<uint8_t>((int32_t)m_nSourceSize);
         MFX_INTERNAL_CPY(m_pSourceBuffer, m_pDataPointer, m_nDataSize);
         m_pDataPointer = m_pSourceBuffer;
     }
@@ -74,7 +74,7 @@ public:
         Release();
 
         // allocate little more
-        m_pSourceBuffer = h264_new_array_throw<Ipp8u>((Ipp32s)nSize);
+        m_pSourceBuffer = h264_new_array_throw<uint8_t>((int32_t)nSize);
         m_pDataPointer = m_pSourceBuffer;
         m_nSourceSize = nSize;
         return true;
@@ -83,23 +83,23 @@ public:
     // Get next element
     H264MemoryPiece *GetNext(){return m_pNext;}
     // Obtain data pointer
-    Ipp8u *GetPointer(){return m_pDataPointer;}
+    uint8_t *GetPointer(){return m_pDataPointer;}
 
     size_t GetSize() const {return m_nSourceSize;}
 
     size_t GetDataSize() const {return m_nDataSize;}
     void SetDataSize(size_t dataSize) {m_nDataSize = dataSize;}
 
-    Ipp64f GetTime() const {return m_pts;}
-    void SetTime(Ipp64f pts) {m_pts = pts;}
+    double GetTime() const {return m_pts;}
+    void SetTime(double pts) {m_pts = pts;}
 
 protected:
-    Ipp8u *m_pSourceBuffer;                                     // (Ipp8u *) pointer to source memory
-    Ipp8u *m_pDataPointer;                                      // (Ipp8u *) pointer to source memory
+    uint8_t *m_pSourceBuffer;                                     // (uint8_t *) pointer to source memory
+    uint8_t *m_pDataPointer;                                      // (uint8_t *) pointer to source memory
     size_t m_nSourceSize;                                       // (size_t) allocated memory size
     size_t m_nDataSize;                                         // (size_t) data memory size
     H264MemoryPiece *m_pNext;                                   // (H264MemoryPiece *) pointer to next memory piece
-    Ipp64f   m_pts;
+    double   m_pts;
 
     void Reset()
     {
@@ -144,11 +144,11 @@ public:
 
     static Item * Allocate(H264_Heap_Objects * heap, size_t size, bool isTyped = false)
     {
-        Ipp8u * ppp = new Ipp8u[size + sizeof(Item)];
+        uint8_t * ppp = new uint8_t[size + sizeof(Item)];
         if (!ppp)
             throw h264_exception(UMC_ERR_ALLOC);
         Item * item = new (ppp) Item(heap, 0, size, isTyped);
-        item->m_Ptr = (Ipp8u*)ppp + sizeof(Item);
+        item->m_Ptr = (uint8_t*)ppp + sizeof(Item);
         return item;
     }
 
@@ -161,7 +161,7 @@ public:
         }
 
         item->~Item();
-        delete[] (Ipp8u*)item;
+        delete[] (uint8_t*)item;
     }
 };
 
@@ -254,7 +254,7 @@ public:
         if (!obj)
             return;
 
-        Item * item = (Item *) ((Ipp8u*)obj - sizeof(Item));
+        Item * item = (Item *) ((uint8_t*)obj - sizeof(Item));
 
         // check
         Item * temp = m_pFirstFree;
@@ -313,7 +313,7 @@ public:
     class Item : public HeapObject
     {
     public:
-        Item(T *item, Ipp32s pid)
+        Item(T *item, int32_t pid)
             : m_pNext(0)
             , m_Item(item)
             , m_pid(pid)
@@ -327,7 +327,7 @@ public:
 
         Item * m_pNext;
         T *m_Item;
-        Ipp32s m_pid;
+        int32_t m_pid;
     };
 
     H264_List(H264_Heap_Objects * pObjHeap)
@@ -382,7 +382,7 @@ public:
         VM_ASSERT(false);
     }
 
-    T * DetachItemByPid(Ipp32s pid)
+    T * DetachItemByPid(int32_t pid)
     {
         if (!m_pHead)
         {
@@ -429,7 +429,7 @@ public:
         return 0;
     }
 
-    T* FindByPid(Ipp32s pid)
+    T* FindByPid(int32_t pid)
     {
         for (Item *tmp = m_pHead; tmp; tmp = tmp->m_pNext)
         {
@@ -440,7 +440,7 @@ public:
         return 0;
     }
 
-    T* FindLastByPid(Ipp32s pid) const
+    T* FindLastByPid(int32_t pid) const
     {
         T *last = 0;
         for (Item *tmp = m_pHead; tmp; tmp = tmp->m_pNext)
@@ -452,7 +452,7 @@ public:
         return last;
     }
 
-    void AddItem(T *item, Ipp32s pid)
+    void AddItem(T *item, int32_t pid)
     {
         Item * buf = (Item*)m_pObjHeap->Allocate(sizeof(Item));
         Item *newItem = new(buf) Item(item, pid);
@@ -512,17 +512,17 @@ public:
     virtual ~H264CoeffsBuffer(void);
 
     // Initialize buffer
-    Status Init(Ipp32s numberOfItems, Ipp32s sizeOfItem);
+    Status Init(int32_t numberOfItems, int32_t sizeOfItem);
 
     bool IsInputAvailable() const;
     // Lock input buffer
-    Ipp8u* LockInputBuffer();
+    uint8_t* LockInputBuffer();
     // Unlock input buffer
     bool UnLockInputBuffer(size_t size);
 
     bool IsOutputAvailable() const;
     // Lock output buffer
-    bool LockOutputBuffer(Ipp8u *& pointer, size_t &size);
+    bool LockOutputBuffer(uint8_t *& pointer, size_t &size);
     // Unlock output buffer
     bool UnLockOutputBuffer();
     // Release object
@@ -533,20 +533,20 @@ public:
     virtual void Free();
 
 protected:
-    Ipp8u *m_pbAllocatedBuffer;       // (Ipp8u *) pointer to allocated unaligned buffer
-    size_t m_lAllocatedBufferSize;    // (Ipp32s) size of allocated buffer
+    uint8_t *m_pbAllocatedBuffer;       // (uint8_t *) pointer to allocated unaligned buffer
+    size_t m_lAllocatedBufferSize;    // (int32_t) size of allocated buffer
 
-    Ipp8u *m_pbBuffer;                // (Ipp8u *) pointer to allocated buffer
-    size_t m_lBufferSize;             // (Ipp32s) size of using buffer
+    uint8_t *m_pbBuffer;                // (uint8_t *) pointer to allocated buffer
+    size_t m_lBufferSize;             // (int32_t) size of using buffer
 
-    Ipp8u *m_pbFree;                  // (Ipp8u *) pointer to free space
-    size_t m_lFreeSize;               // (Ipp32s) size of free space
+    uint8_t *m_pbFree;                  // (uint8_t *) pointer to free space
+    size_t m_lFreeSize;               // (int32_t) size of free space
 
-    size_t m_lItemSize;               // (Ipp32s) size of output data portion
+    size_t m_lItemSize;               // (int32_t) size of output data portion
 
     struct BufferInfo
     {
-        Ipp8u * m_pPointer;
+        uint8_t * m_pPointer;
         size_t  m_Size;
         BufferInfo *m_pNext;
     };

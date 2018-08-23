@@ -82,7 +82,7 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
 
     ResetRefCounter();
 
-    m_ID[0] = (Ipp32s) ((Ipp8u *) this - (Ipp8u *) 0);
+    m_ID[0] = (int32_t) ((uint8_t *) this - (uint8_t *) 0);
     m_ID[1] = m_ID[0] + 1;
 
     m_PictureStructureForRef = FRM_STRUCTURE;
@@ -207,7 +207,7 @@ bool H264DecoderFrame::IsFullFrame() const
 
 void H264DecoderFrame::SetFullFrame(bool isFull)
 {
-    m_isFull = (Ipp8u) (isFull ? 1 : 0);
+    m_isFull = (uint8_t) (isFull ? 1 : 0);
 }
 
 bool H264DecoderFrame::IsDecoded() const
@@ -249,7 +249,7 @@ void H264DecoderFrame::OnDecodingCompleted()
     DecrementReference();
 }
 
-void H264DecoderFrame::SetisShortTermRef(bool isRef, Ipp32s WhichField)
+void H264DecoderFrame::SetisShortTermRef(bool isRef, int32_t WhichField)
 {
     if (isRef)
     {
@@ -279,7 +279,7 @@ void H264DecoderFrame::SetisShortTermRef(bool isRef, Ipp32s WhichField)
     }
 }
 
-void H264DecoderFrame::SetisLongTermRef(bool isRef, Ipp32s WhichField)
+void H264DecoderFrame::SetisLongTermRef(bool isRef, int32_t WhichField)
 {
     if (isRef)
     {
@@ -322,7 +322,7 @@ void H264DecoderFrame::Free()
         Reset();
 }
 
-H264DecoderRefPicList* H264DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32s list)
+H264DecoderRefPicList* H264DecoderFrame::GetRefPicList(int32_t sliceNumber, int32_t list)
 {
     H264DecoderRefPicList *pList;
     pList = GetAU(sliceNumber > m_TopSliceCount ? 1 : 0)->GetRefPicList(sliceNumber, list);
@@ -334,7 +334,7 @@ H264DecoderRefPicList* H264DecoderFrame::GetRefPicList(Ipp32s sliceNumber, Ipp32
 //  Updates m_FrameNumWrap and m_PicNum if the frame is a short-term
 //  reference and a frame number wrap has occurred.
 //////////////////////////////////////////////////////////////////////////////
-void H264DecoderFrame::UpdateFrameNumWrap(Ipp32s  CurrFrameNum, Ipp32s  MaxFrameNum, Ipp32s CurrPicStruct)
+void H264DecoderFrame::UpdateFrameNumWrap(int32_t  CurrFrameNum, int32_t  MaxFrameNum, int32_t CurrPicStruct)
 {
     if (isShortTermRef())
     {
@@ -372,7 +372,7 @@ void H264DecoderFrame::UpdateFrameNumWrap(Ipp32s  CurrFrameNum, Ipp32s  MaxFrame
 //  Updates m_LongTermPicNum for if long term reference, based upon
 //  m_LongTermFrameIdx.
 //////////////////////////////////////////////////////////////////////////////
-void H264DecoderFrame::UpdateLongTermPicNum(Ipp32s CurrPicStruct)
+void H264DecoderFrame::UpdateLongTermPicNum(int32_t CurrPicStruct)
 {
     if (isLongTermRef())
     {
@@ -404,7 +404,7 @@ void H264DecoderFrame::UpdateLongTermPicNum(Ipp32s CurrPicStruct)
 
 bool H264DecoderFrameInfo::CheckReferenceFrameError()
 {
-    Ipp32u checkedErrorMask = ERROR_FRAME_MINOR | ERROR_FRAME_MAJOR | ERROR_FRAME_REFERENCE_FRAME;
+    uint32_t checkedErrorMask = ERROR_FRAME_MINOR | ERROR_FRAME_MAJOR | ERROR_FRAME_REFERENCE_FRAME;
     for (size_t i = 0; i < m_refPicList.size(); i++)
     {
         H264DecoderRefPicList* list = &m_refPicList[i].m_refPicList[LIST_0];

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -33,21 +33,21 @@ public:
     // Reallocate m_pParsedFrameData, if necessary, and initialize the
     // various pointers that point into it.
 
-    size_t GetFrameDataSize(const IppiSize &lumaSize);
+    size_t GetFrameDataSize(const mfxSize &lumaSize);
 
     void deallocateParsedFrameData();
 
     H264DecoderGlobalMacroblocksDescriptor m_mbinfo; //Global MB Data
 
 protected:
-    Ipp8u                 *m_pParsedFrameDataNew;
+    uint8_t                 *m_pParsedFrameDataNew;
     // This points to a huge, monolithic buffer that contains data
     // derived from parsing the current frame.  It contains motion
     // vectors,  MB info, reference indices, and slice info for the
     // current frame, among other things. When B slices are used it
     // contains L0 and L1 motion vectors and reference indices.
 
-    IppiSize           m_paddedParsedFrameDataSize;
+    mfxSize           m_paddedParsedFrameDataSize;
 
     virtual void FreeResources();
 };

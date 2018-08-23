@@ -23,7 +23,7 @@ namespace UMC
 class POCDecoderWidevine : public POCDecoder
 {
 public:
-    void DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_num);
+    void DecodePictureOrderCount(const H264Slice *slice, int32_t frame_num);
 };
 
 
@@ -59,7 +59,7 @@ protected:
 
     virtual Status AddOneFrame(MediaData * pSource);
 
-    virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field);
+    virtual Status CompleteFrame(H264DecoderFrame * pFrame, int32_t field);
 
 private:
     WidevineTaskSupplier & operator = (WidevineTaskSupplier &)

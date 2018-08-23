@@ -28,7 +28,7 @@ namespace UMC
 #pragma warning(disable: 4127)
 #endif
 
-template <Ipp32s color_format, typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s is_field>
+template <int32_t color_format, typename Coeffs, typename PlaneY, typename PlaneUV, int32_t is_field>
 class ColorSpecific
 {
 public:
@@ -92,7 +92,7 @@ public:
         }
     }
 
-    static inline Ipp32u GetChromaAC()
+    static inline uint32_t GetChromaAC()
     {
         switch(color_format)
         {
@@ -112,28 +112,28 @@ public:
 
     virtual ~SegmentDecoderHPBase() {}
 
-    virtual Status DecodeSegmentCAVLC(Ipp32u curMB, Ipp32u nMaxMBNumber,
+    virtual Status DecodeSegmentCAVLC(uint32_t curMB, uint32_t nMaxMBNumber,
         H264SegmentDecoderMultiThreaded * sd) = 0;
 
-    virtual Status DecodeSegmentCAVLC_Single(Ipp32s curMB, Ipp32s nMacroBlocksToDecode,
+    virtual Status DecodeSegmentCAVLC_Single(int32_t curMB, int32_t nMacroBlocksToDecode,
         H264SegmentDecoderMultiThreaded * sd) = 0;
 
-    virtual Status DecodeSegmentCABAC(Ipp32u curMB, Ipp32u nMaxMBNumber, H264SegmentDecoderMultiThreaded * sd) = 0;
+    virtual Status DecodeSegmentCABAC(uint32_t curMB, uint32_t nMaxMBNumber, H264SegmentDecoderMultiThreaded * sd) = 0;
 
-    virtual Status DecodeSegmentCABAC_Single(Ipp32s curMB, Ipp32s nMacroBlocksToDecode,
+    virtual Status DecodeSegmentCABAC_Single(int32_t curMB, int32_t nMacroBlocksToDecode,
         H264SegmentDecoderMultiThreaded * sd) = 0;
 
-    virtual Status ReconstructSegment(Ipp32u curMB,Ipp32u nMaxMBNumber,
+    virtual Status ReconstructSegment(uint32_t curMB,uint32_t nMaxMBNumber,
         H264SegmentDecoderMultiThreaded * sd) = 0;
 
-    virtual Status Reconstruct_DXVA_Single(Ipp32s curMB, Ipp32s nMacroBlocksToDecode,
+    virtual Status Reconstruct_DXVA_Single(int32_t curMB, int32_t nMacroBlocksToDecode,
                                             H264SegmentDecoderMultiThreaded * sd) = 0;
 
-    virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264DecoderFrame *pRefFrame,
+    virtual void RestoreErrorRect(int32_t startMb, int32_t endMb, H264DecoderFrame *pRefFrame,
         const H264SegmentDecoderMultiThreaded * sd) = 0;
 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile>
+template <typename Coeffs, typename PlaneY, typename PlaneUV, int32_t color_format, int32_t is_field, bool is_high_profile>
 class MBDecoder :
     public ResidualDecoderCABAC<Coeffs, color_format, is_field>,
     public ResidualDecoderCAVLC<Coeffs, color_format, is_field>,
@@ -145,22 +145,22 @@ public:
     {
         // reset macroblock info
         memset(sd->m_cur_mb.LocalMacroblockInfo, 0, sizeof(H264DecoderMacroblockLocalInfo));
-        sd->m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) sd->m_QuantPrev;
-        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (Ipp16s) sd->m_iSliceNumber;
+        sd->m_cur_mb.LocalMacroblockInfo->QP = (int8_t) sd->m_QuantPrev;
+        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (int16_t) sd->m_iSliceNumber;
 
         // decode macroblock field flag
         if (sd->m_isMBAFF)
         {
             if (0 == (sd->m_CurMBAddr & 1))
             {
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
                 sd->DecodeMBFieldDecodingFlag_CABAC();
             }
         }
         else
         {
-            *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+            *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
             pSetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo, 0);
         }
 
@@ -184,25 +184,25 @@ public:
 
     void DecodeMacroblock_PSlice_CABAC(H264SegmentDecoderMultiThreaded *sd)
     {
-        Ipp32s iSkip;
+        int32_t iSkip;
 
         // reset macroblock info
         memset(sd->m_cur_mb.LocalMacroblockInfo->sbdir, 0, sizeof(sd->m_cur_mb.LocalMacroblockInfo->sbdir));
-        sd->m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) sd->m_QuantPrev;
-        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (Ipp16s) sd->m_iSliceNumber;
+        sd->m_cur_mb.LocalMacroblockInfo->QP = (int8_t) sd->m_QuantPrev;
+        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (int16_t) sd->m_iSliceNumber;
         memset((void *) sd->m_cur_mb.RefIdxs[1], -1, sizeof(H264DecoderMacroblockRefIdxs));
 
         if (sd->m_isMBAFF)
         {
             if (0 == (sd->m_CurMBAddr & 1))
             {
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
             }
         }
         else
         {
-            *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+            *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
         }
 
         // decode skip flag
@@ -298,24 +298,24 @@ public:
 
     void DecodeMacroblock_BSlice_CABAC(H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp32s iSkip;
+        int32_t iSkip;
 
         // reset macroblock info
         memset(sd->m_cur_mb.LocalMacroblockInfo->sbdir, 0, sizeof(sd->m_cur_mb.LocalMacroblockInfo->sbdir));
-        sd->m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) sd->m_QuantPrev;
-        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (Ipp16s) sd->m_iSliceNumber;
+        sd->m_cur_mb.LocalMacroblockInfo->QP = (int8_t) sd->m_QuantPrev;
+        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (int16_t) sd->m_iSliceNumber;
 
         if (sd->m_isMBAFF)
         {
             if (0 == (sd->m_CurMBAddr & 1))
             {
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
             }
         }
         else
         {
-            *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+            *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
         }
 
         // decode skip flag
@@ -422,22 +422,22 @@ public:
 
     void DecodeMacroblock_ISlice_CAVLC(H264SegmentDecoderMultiThreaded *sd)
     {
-        sd->m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) sd->m_QuantPrev;
-        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (Ipp16s) sd->m_iSliceNumber;
+        sd->m_cur_mb.LocalMacroblockInfo->QP = (int8_t) sd->m_QuantPrev;
+        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (int16_t) sd->m_iSliceNumber;
 
         // decode macroblock field flag
         if (sd->m_isMBAFF)
         {
             if (0 == (sd->m_CurMBAddr & 1))
             {
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
                 sd->DecodeMBFieldDecodingFlag_CAVLC();
             }
         }
         else
         {
-            *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+            *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
         }
 
         // update neighbouring addresses
@@ -459,8 +459,8 @@ public:
 
     void DecodeMacroblock_PSlice_CAVLC(H264SegmentDecoderMultiThreaded *sd)
     {
-        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (Ipp16s) sd->m_iSliceNumber;
-        sd->m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) sd->m_QuantPrev;
+        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (int16_t) sd->m_iSliceNumber;
+        sd->m_cur_mb.LocalMacroblockInfo->QP = (int8_t) sd->m_QuantPrev;
         memset(sd->m_cur_mb.LocalMacroblockInfo->sbdir, 0, sizeof(sd->m_cur_mb.LocalMacroblockInfo->sbdir));
         memset((void *) sd->m_cur_mb.RefIdxs[1], -1, sizeof(H264DecoderMacroblockRefIdxs));
 
@@ -468,13 +468,13 @@ public:
         {
             if (0 == (sd->m_CurMBAddr & 1))
             {
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
             }
         }
         else
         {
-            *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+            *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
         }
 
         // reset macroblock info
@@ -489,7 +489,7 @@ public:
             sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[0] = 0;
             sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[1] = 0;
 
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
             memset(pNumCoeffsArray, 0, sizeof(H264DecoderMacroblockCoeffsInfo));
 
             // reset macroblock variables
@@ -564,20 +564,20 @@ public:
     {
         // reset macroblock info
         memset(sd->m_cur_mb.LocalMacroblockInfo->sbdir, 0, sizeof(sd->m_cur_mb.LocalMacroblockInfo->sbdir));
-        sd->m_cur_mb.LocalMacroblockInfo->QP = (Ipp8s) sd->m_QuantPrev;
-        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (Ipp16s) sd->m_iSliceNumber;
+        sd->m_cur_mb.LocalMacroblockInfo->QP = (int8_t) sd->m_QuantPrev;
+        sd->m_cur_mb.GlobalMacroblockInfo->slice_id = (int16_t) sd->m_iSliceNumber;
 
         if (sd->m_isMBAFF)
         {
             if (0 == (sd->m_CurMBAddr & 1))
             {
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
-                *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+                *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockPairInfo->mbflags) = 0;
             }
         }
         else
         {
-            *((Ipp8u*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
+            *((uint8_t*)&sd->m_cur_mb.GlobalMacroblockInfo->mbflags) = 0;
         }
 
         if (0 == sd->m_MBSkipCount)
@@ -593,7 +593,7 @@ public:
 
             memset(sd->m_cur_mb.GlobalMacroblockInfo->sbtype, 0, sizeof(sd->m_cur_mb.GlobalMacroblockInfo->sbtype));
 
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
             memset(pNumCoeffsArray, 0, sizeof(H264DecoderMacroblockCoeffsInfo));
 
             // reset macroblock variables
@@ -692,21 +692,21 @@ public:
         if (is_high_profile)
             noSubMbPartSizeLessThan8x8Flag = false;
 
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (mbtype == MBTYPE_INTRA)
         {
-            Ipp8u transform_size_8x8_mode_flag = 0;
+            uint8_t transform_size_8x8_mode_flag = 0;
 
             if ((is_high_profile) &&
                 (sd->m_pPicParamSet->transform_8x8_mode_flag))
             {
-                Ipp32s left_inc = sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0?
+                int32_t left_inc = sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0?
                     GetMB8x8TSFlag(sd->m_gmbinfo->mbs[sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num]):0;
-                Ipp32s top_inc = sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0?
+                int32_t top_inc = sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0?
                     GetMB8x8TSFlag(sd->m_gmbinfo->mbs[sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num]):0;
-                Ipp32u ctxIdxInc = top_inc + left_inc;
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[TRANSFORM_SIZE_8X8_FLAG] + ctxIdxInc);
+                uint32_t ctxIdxInc = top_inc + left_inc;
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[TRANSFORM_SIZE_8X8_FLAG] + ctxIdxInc);
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo,transform_size_8x8_mode_flag);
             }
 
@@ -725,7 +725,7 @@ public:
         // decode CBP
         if (mbtype != MBTYPE_INTRA_16x16)
         {
-            sd->m_cur_mb.LocalMacroblockInfo->cbp = (Ipp8u) sd->DecodeCBP_CABAC(color_format);
+            sd->m_cur_mb.LocalMacroblockInfo->cbp = (uint8_t) sd->DecodeCBP_CABAC(color_format);
         }
 
         // decode delta QP
@@ -760,13 +760,13 @@ public:
         if (is_high_profile)
             noSubMbPartSizeLessThan8x8Flag = false;
 
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (is_high_profile)
         {
             if (mbtype==MBTYPE_INTER_8x8 || mbtype==MBTYPE_INTER_8x8_REF0)
             {
-                Ipp32s sum_partnum =
+                int32_t sum_partnum =
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[0]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[1]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[2]]+
@@ -782,7 +782,7 @@ public:
         // Motion Vector Computation
         sd->DecodeMotionVectors_CABAC();
         // cbp
-        sd->m_cur_mb.LocalMacroblockInfo->cbp = (Ipp8u) sd->DecodeCBP_CABAC(color_format);
+        sd->m_cur_mb.LocalMacroblockInfo->cbp = (uint8_t) sd->DecodeCBP_CABAC(color_format);
 
         if (0 == sd->m_cur_mb.LocalMacroblockInfo->cbp)
         {
@@ -792,14 +792,14 @@ public:
             if (is_high_profile && noSubMbPartSizeLessThan8x8Flag && sd->m_cur_mb.LocalMacroblockInfo->cbp&15 &&
                 sd->m_pPicParamSet->transform_8x8_mode_flag)
             {
-                Ipp8u transform_size_8x8_mode_flag = 0;
-                Ipp32u ctxIdxInc;
-                Ipp32s left_inc = sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0?
+                uint8_t transform_size_8x8_mode_flag = 0;
+                uint32_t ctxIdxInc;
+                int32_t left_inc = sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0?
                     GetMB8x8TSFlag(sd->m_gmbinfo->mbs[sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num]):0;
-                Ipp32s top_inc = sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0?
+                int32_t top_inc = sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0?
                     GetMB8x8TSFlag(sd->m_gmbinfo->mbs[sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num]):0;
                 ctxIdxInc = top_inc+left_inc;
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[TRANSFORM_SIZE_8X8_FLAG] + ctxIdxInc);
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[TRANSFORM_SIZE_8X8_FLAG] + ctxIdxInc);
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo,transform_size_8x8_mode_flag);
             }
 
@@ -826,7 +826,7 @@ public:
         if (is_high_profile)
             noSubMbPartSizeLessThan8x8Flag = false;
 
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (is_high_profile)
         {
@@ -834,7 +834,7 @@ public:
                 if (sd->m_IsUseDirect8x8Inference)
                     noSubMbPartSizeLessThan8x8Flag = true;
             } else if ((MBTYPE_INTER_8x8 == mbtype)/* || ((MBTYPE_DIRECT == mbtype)) */) {
-                Ipp32s sum_partnum =
+                int32_t sum_partnum =
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[0]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[1]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[2]]+
@@ -875,7 +875,7 @@ public:
         }
 
         // cbp
-        sd->m_cur_mb.LocalMacroblockInfo->cbp = (Ipp8u)sd->DecodeCBP_CABAC(color_format);
+        sd->m_cur_mb.LocalMacroblockInfo->cbp = (uint8_t)sd->DecodeCBP_CABAC(color_format);
 
         if (0 == sd->m_cur_mb.LocalMacroblockInfo->cbp)
         {
@@ -886,14 +886,14 @@ public:
             if (is_high_profile && noSubMbPartSizeLessThan8x8Flag && sd->m_cur_mb.LocalMacroblockInfo->cbp&15 &&
                 sd->m_pPicParamSet->transform_8x8_mode_flag)
             {
-                Ipp8u transform_size_8x8_mode_flag = 0;
-                Ipp32u ctxIdxInc;
-                Ipp32s left_inc = sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0?
+                uint8_t transform_size_8x8_mode_flag = 0;
+                uint32_t ctxIdxInc;
+                int32_t left_inc = sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0?
                     GetMB8x8TSFlag(sd->m_gmbinfo->mbs[sd->m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num]):0;
-                Ipp32s top_inc = sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0?
+                int32_t top_inc = sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0?
                     GetMB8x8TSFlag(sd->m_gmbinfo->mbs[sd->m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num]):0;
                 ctxIdxInc = top_inc+left_inc;
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[TRANSFORM_SIZE_8X8_FLAG] + ctxIdxInc);
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[TRANSFORM_SIZE_8X8_FLAG] + ctxIdxInc);
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo,transform_size_8x8_mode_flag);
             }
 
@@ -931,14 +931,14 @@ public:
         if (is_high_profile)
             noSubMbPartSizeLessThan8x8Flag = false;
 
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (mbtype == MBTYPE_INTRA)
         {
-            Ipp8u transform_size_8x8_mode_flag = 0;
+            uint8_t transform_size_8x8_mode_flag = 0;
             if (is_high_profile && sd->m_pPicParamSet->transform_8x8_mode_flag)
             {
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->Get1Bit();
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->Get1Bit();
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo,transform_size_8x8_mode_flag);
             }
 
@@ -951,7 +951,7 @@ public:
         if (color_format)
         {
             // Get chroma prediction mode
-            sd->m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode = (Ipp8u) sd->m_pBitStream->GetVLCElement(false);
+            sd->m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode = (uint8_t) sd->m_pBitStream->GetVLCElement(false);
             if (sd->m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode > 3)
                 throw h264_exception(UMC_ERR_INVALID_STREAM);
         }
@@ -961,15 +961,15 @@ public:
         // cbp
         if (mbtype != MBTYPE_INTRA_16x16)
         {
-            sd->m_cur_mb.LocalMacroblockInfo->cbp = (Ipp8u) sd->DecodeCBP_CAVLC(color_format);
+            sd->m_cur_mb.LocalMacroblockInfo->cbp = (uint8_t) sd->DecodeCBP_CAVLC(color_format);
         }
 
         if (sd->m_cur_mb.LocalMacroblockInfo->cbp || mbtype == MBTYPE_INTRA_16x16)
         {
-            Ipp8u transform_size_8x8_mode_flag = 0;
+            uint8_t transform_size_8x8_mode_flag = 0;
             if (is_high_profile && noSubMbPartSizeLessThan8x8Flag && sd->m_cur_mb.LocalMacroblockInfo->cbp&15
                 && sd->m_pPicParamSet->transform_8x8_mode_flag) {
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->Get1Bit();
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->Get1Bit();
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, transform_size_8x8_mode_flag);
             }
 
@@ -996,7 +996,7 @@ public:
         }
         else
         {
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
             memset(pNumCoeffsArray, 0, sizeof(H264DecoderMacroblockCoeffsInfo));
         }
     } // void DecodeMacroblock_I_CAVLC(H264SegmentDecoderMultiThreaded *sd)
@@ -1009,13 +1009,13 @@ public:
         if (is_high_profile)
             noSubMbPartSizeLessThan8x8Flag = false;
 
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (is_high_profile)
         {
             if (mbtype==MBTYPE_INTER_8x8 || mbtype==MBTYPE_INTER_8x8_REF0)
             {
-                Ipp32s sum_partnum =
+                int32_t sum_partnum =
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[0]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[1]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[2]]+
@@ -1033,19 +1033,19 @@ public:
         //sd->ReconstructMotionVectors();
 
         // cbp
-        sd->m_cur_mb.LocalMacroblockInfo->cbp = (Ipp8u) sd->DecodeCBP_CAVLC(color_format);
+        sd->m_cur_mb.LocalMacroblockInfo->cbp = (uint8_t) sd->DecodeCBP_CAVLC(color_format);
 
         if (0 == sd->m_cur_mb.LocalMacroblockInfo->cbp)
         {
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
             memset(pNumCoeffsArray, 0, sizeof(H264DecoderMacroblockCoeffsInfo));
         }
         else
         {
-            Ipp8u transform_size_8x8_mode_flag = 0;
+            uint8_t transform_size_8x8_mode_flag = 0;
             if (is_high_profile && noSubMbPartSizeLessThan8x8Flag && sd->m_cur_mb.LocalMacroblockInfo->cbp&15 &&
                 sd->m_pPicParamSet->transform_8x8_mode_flag) {
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->Get1Bit();
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->Get1Bit();
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, transform_size_8x8_mode_flag);
             }
 
@@ -1075,7 +1075,7 @@ public:
         if (is_high_profile)
             noSubMbPartSizeLessThan8x8Flag = false;
 
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (is_high_profile)
         {
@@ -1083,7 +1083,7 @@ public:
                 if (sd->m_IsUseDirect8x8Inference)
                     noSubMbPartSizeLessThan8x8Flag = true;
             } else if ((MBTYPE_INTER_8x8 == mbtype)/* || ((MBTYPE_DIRECT == mbtype))*/) {
-                Ipp32s sum_partnum =
+                int32_t sum_partnum =
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[0]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[1]]+
                     SbPartNumMinus1[sd->m_IsUseDirect8x8Inference][sd->m_cur_mb.GlobalMacroblockInfo->sbtype[2]]+
@@ -1127,19 +1127,19 @@ public:
         }
 
 
-        sd->m_cur_mb.LocalMacroblockInfo->cbp = (Ipp8u) sd->DecodeCBP_CAVLC(color_format);
+        sd->m_cur_mb.LocalMacroblockInfo->cbp = (uint8_t) sd->DecodeCBP_CAVLC(color_format);
 
         if (0 == sd->m_cur_mb.LocalMacroblockInfo->cbp)
         {
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
             memset(pNumCoeffsArray, 0, sizeof(H264DecoderMacroblockCoeffsInfo));
         }
         else
         {
-            Ipp8u transform_size_8x8_mode_flag = 0;
+            uint8_t transform_size_8x8_mode_flag = 0;
             if (is_high_profile && noSubMbPartSizeLessThan8x8Flag && sd->m_cur_mb.LocalMacroblockInfo->cbp&15 &&
                 sd->m_pPicParamSet->transform_8x8_mode_flag) {
-                transform_size_8x8_mode_flag  = (Ipp8u) sd->m_pBitStream->Get1Bit();
+                transform_size_8x8_mode_flag  = (uint8_t) sd->m_pBitStream->Get1Bit();
                 pSetMB8x8TSFlag(sd->m_cur_mb.GlobalMacroblockInfo, transform_size_8x8_mode_flag);
             }
 
@@ -1182,7 +1182,7 @@ public:
     } // void DecodeMacroblock_PCM(H264SegmentDecoderMultiThreaded *sd)
 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile>
+template <typename Coeffs, typename PlaneY, typename PlaneUV, int32_t color_format, int32_t is_field, bool is_high_profile>
 class MBNullDecoder //:
     /*public ResidualDecoderCABAC<Coeffs, color_format, is_field>,
     public ResidualDecoderCAVLC<Coeffs, color_format, is_field>,
@@ -1219,9 +1219,9 @@ public:
     } // void DecodeMacroblock_BSlice_CAVLC(
 };
 
-static const Ipp32s tcoeffs_scale_factors[6]  = { 8, 9, 10, 11, 13, 14 };
+static const int32_t tcoeffs_scale_factors[6]  = { 8, 9, 10, 11, 13, 14 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile>
+template <typename Coeffs, typename PlaneY, typename PlaneUV, int32_t color_format, int32_t is_field, bool is_high_profile>
 class MBReconstructor
 {
 public:
@@ -1240,31 +1240,31 @@ public:
 
     void ReconstructMacroblock_ISlice(H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         // per-macroblock variables
-        Ipp32s fdf = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
+        int32_t fdf = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
         // reconstruct Data
         IntraType *pMBIntraTypes = sd->m_pMBIntraTypes + sd->m_CurMBAddr*NUM_INTRA_TYPE_ELEMENTS;
 
-        Ipp32s mbXOffset = sd->m_CurMB_X * 16;
-        Ipp32s mbYOffset = sd->m_CurMB_Y * 16;
+        int32_t mbXOffset = sd->m_CurMB_X * 16;
+        int32_t mbYOffset = sd->m_CurMB_Y * 16;
         VM_ASSERT(mbXOffset < sd->m_pCurrentFrame->lumaSize().width);
         VM_ASSERT(mbYOffset < sd->m_pCurrentFrame->lumaSize().height);
 
         // reconstruct starts here
         // Perform motion compensation to reconstruct the YUV data
         //
-        Ipp32u offsetY = mbXOffset + (mbYOffset * sd->m_uPitchLuma);
-        Ipp32u offsetC = (mbXOffset >> width_chroma_div) +  ((mbYOffset >> height_chroma_div) * sd->m_uPitchChroma);
+        uint32_t offsetY = mbXOffset + (mbYOffset * sd->m_uPitchLuma);
+        uint32_t offsetC = (mbXOffset >> width_chroma_div) +  ((mbYOffset >> height_chroma_div) * sd->m_uPitchChroma);
 
-        Ipp32u rec_pitch_luma = sd->m_uPitchLuma; // !!! adjust rec_pitch to MBAFF
-        Ipp32u rec_pitch_chroma = sd->m_uPitchChroma; // !!! adjust rec_pitch to MBAFF
+        uint32_t rec_pitch_luma = sd->m_uPitchLuma; // !!! adjust rec_pitch to MBAFF
+        uint32_t rec_pitch_chroma = sd->m_uPitchChroma; // !!! adjust rec_pitch to MBAFF
 
         if (sd->m_isMBAFF)
         {
-            Ipp32s currmb_fdf = fdf;
-            Ipp32s currmb_bf = (sd->m_CurMBAddr & 1);
+            int32_t currmb_fdf = fdf;
+            int32_t currmb_bf = (sd->m_CurMBAddr & 1);
 
             if (currmb_fdf) //current mb coded as field MB
             {
@@ -1280,25 +1280,25 @@ public:
 
         if (mbtype != MBTYPE_PCM)
         {
-            Ipp32s special_MBAFF_case = 0; // !!!
-            Ipp8u edge_type = 0;
-            Ipp8u edge_type_2t = 0;
-            Ipp8u edge_type_2b = 0;
+            int32_t special_MBAFF_case = 0; // !!!
+            uint8_t edge_type = 0;
+            uint8_t edge_type_2t = 0;
+            uint8_t edge_type_2b = 0;
 
             if (sd->m_isMBAFF)
             {
                 special_MBAFF_case = 0; // adjust to MBAFF
 
                 sd->ReconstructEdgeType(edge_type_2t, edge_type_2b, special_MBAFF_case);
-                edge_type = (Ipp8u) (edge_type_2t | edge_type_2b);
+                edge_type = (uint8_t) (edge_type_2t | edge_type_2b);
             }
             else
             {
-                edge_type = (Ipp8u)sd->m_mbinfo.mbs[sd->m_CurMBAddr].IntraTypes.edge_type;
+                edge_type = (uint8_t)sd->m_mbinfo.mbs[sd->m_CurMBAddr].IntraTypes.edge_type;
             }
 
-            Ipp32s bitdepth_luma_qp_scale = 6*(sd->bit_depth_luma - 8);
-            Ipp32s lumaQP = sd->m_cur_mb.LocalMacroblockInfo->QP + bitdepth_luma_qp_scale;
+            int32_t bitdepth_luma_qp_scale = 6*(sd->bit_depth_luma - 8);
+            int32_t lumaQP = sd->m_cur_mb.LocalMacroblockInfo->QP + bitdepth_luma_qp_scale;
 
             // reconstruct luma block(s)
             if (mbtype == MBTYPE_INTRA_16x16)
@@ -1324,7 +1324,7 @@ public:
                         (PlanePtrY)sd->m_pYPlane + offsetY,
                         rec_pitch_luma,
                         (IppIntra16x16PredMode_H264) pMBIntraTypes[0],
-                        (Ipp32u) sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_luma,
+                        (uint32_t) sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_luma,
                         lumaQP,
                         edge_type,
                         sd->bit_depth_luma);
@@ -1455,23 +1455,23 @@ public:
 
             if (color_format)
             {
-                Ipp32s bitdepth_chroma_qp_scale = 6*(sd->bit_depth_chroma - 8
+                int32_t bitdepth_chroma_qp_scale = 6*(sd->bit_depth_chroma - 8
                     + sd->m_pSeqParamSet->residual_colour_transform_flag);
 
-                Ipp32s QPChromaU, QPChromaV;
-                Ipp32s QPChromaIndexU, QPChromaIndexV;
+                int32_t QPChromaU, QPChromaV;
+                int32_t QPChromaIndexU, QPChromaIndexV;
                 QPChromaIndexU = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[0];
 
-                QPChromaIndexU = IPP_MIN(QPChromaIndexU, (Ipp32s)QP_MAX);
-                QPChromaIndexU = IPP_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexU);
+                QPChromaIndexU = MFX_MIN(QPChromaIndexU, (int32_t)QP_MAX);
+                QPChromaIndexU = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexU);
                 QPChromaU = QPChromaIndexU < 0 ? QPChromaIndexU : QPtoChromaQP[QPChromaIndexU];
                 QPChromaU += bitdepth_chroma_qp_scale;
 
                 if (is_high_profile)
                 {
                     QPChromaIndexV = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[1];
-                    QPChromaIndexV = IPP_MIN(QPChromaIndexV, (Ipp32s)QP_MAX);
-                    QPChromaIndexV = IPP_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexV);
+                    QPChromaIndexV = MFX_MIN(QPChromaIndexV, (int32_t)QP_MAX);
+                    QPChromaIndexV = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexV);
                     QPChromaV = QPChromaIndexV < 0 ? QPChromaIndexV : QPtoChromaQP[QPChromaIndexV];
                     QPChromaV += bitdepth_chroma_qp_scale;
                 }
@@ -1567,7 +1567,7 @@ public:
     void ReconstructMacroblock_PSlice(H264SegmentDecoderMultiThreaded * sd)
     {
         // reconstruct Data
-        Ipp8u mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        uint8_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
         if (MBTYPE_PCM >= mbtype)
         {
@@ -1575,8 +1575,8 @@ public:
             return;
         }
 
-        Ipp32s mbXOffset = sd->m_CurMB_X * 16;
-        Ipp32s mbYOffset = sd->m_CurMB_Y * 16;
+        int32_t mbXOffset = sd->m_CurMB_X * 16;
+        int32_t mbYOffset = sd->m_CurMB_Y * 16;
 
         VM_ASSERT(mbXOffset <= sd->m_pCurrentFrame->lumaSize().width);
         VM_ASSERT(mbYOffset <= sd->m_pCurrentFrame->lumaSize().height);
@@ -1584,17 +1584,17 @@ public:
         // reconstruct starts here
         // Perform motion compensation to reconstruct the YUV data
         //
-        Ipp32u offsetY = mbXOffset + (mbYOffset * sd->m_uPitchLuma);
-        Ipp32u offsetC = (mbXOffset >> width_chroma_div) +  ((mbYOffset >> height_chroma_div) * sd->m_uPitchChroma);
+        uint32_t offsetY = mbXOffset + (mbYOffset * sd->m_uPitchLuma);
+        uint32_t offsetC = (mbXOffset >> width_chroma_div) +  ((mbYOffset >> height_chroma_div) * sd->m_uPitchChroma);
 
-        Ipp32s pitch_luma = sd->m_uPitchLuma;
-        Ipp32s pitch_chroma = sd->m_uPitchChroma;
+        int32_t pitch_luma = sd->m_uPitchLuma;
+        int32_t pitch_chroma = sd->m_uPitchChroma;
 
         if (sd->m_isMBAFF)
         {
-            Ipp32s fdf = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
-            Ipp32u offsetY_1 = offsetY;
-            Ipp32u offsetC_1 = offsetC;
+            int32_t fdf = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
+            uint32_t offsetY_1 = offsetY;
+            uint32_t offsetC_1 = offsetC;
             bool need_adjust = (sd->m_CurMBAddr & 1) && fdf;
             if (need_adjust)
             {
@@ -1661,8 +1661,8 @@ public:
 
         if (sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_luma & D_CBP_LUMA_AC)
         {
-            Ipp32s bitdepth_luma_qp_scale = 6*(sd->bit_depth_luma - 8);
-            Ipp32s lumaQP = sd->m_cur_mb.LocalMacroblockInfo->QP + bitdepth_luma_qp_scale;
+            int32_t bitdepth_luma_qp_scale = 6*(sd->bit_depth_luma - 8);
+            int32_t lumaQP = sd->m_cur_mb.LocalMacroblockInfo->QP + bitdepth_luma_qp_scale;
 
             if (is_high_profile)
             {
@@ -1705,22 +1705,22 @@ public:
 
         if (color_format && (sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[0] || sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[1]))
         {
-            Ipp32s bitdepth_chroma_qp_scale = 6*(sd->bit_depth_chroma - 8 + sd->m_pSeqParamSet->residual_colour_transform_flag);
+            int32_t bitdepth_chroma_qp_scale = 6*(sd->bit_depth_chroma - 8 + sd->m_pSeqParamSet->residual_colour_transform_flag);
 
-            Ipp32s QPChromaU, QPChromaV;
-            Ipp32s QPChromaIndexU, QPChromaIndexV;
+            int32_t QPChromaU, QPChromaV;
+            int32_t QPChromaIndexU, QPChromaIndexV;
             QPChromaIndexU = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[0];
 
-            QPChromaIndexU = IPP_MIN(QPChromaIndexU, (Ipp32s)QP_MAX);
-            QPChromaIndexU = IPP_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexU);
+            QPChromaIndexU = MFX_MIN(QPChromaIndexU, (int32_t)QP_MAX);
+            QPChromaIndexU = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexU);
             QPChromaU = QPChromaIndexU < 0 ? QPChromaIndexU : QPtoChromaQP[QPChromaIndexU];
             QPChromaU += bitdepth_chroma_qp_scale;
 
             if (is_high_profile)
             {
                 QPChromaIndexV = sd->m_cur_mb.LocalMacroblockInfo->QP + sd->m_pPicParamSet->chroma_qp_index_offset[1];
-                QPChromaIndexV = IPP_MIN(QPChromaIndexV, (Ipp32s)QP_MAX);
-                QPChromaIndexV = IPP_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexV);
+                QPChromaIndexV = MFX_MIN(QPChromaIndexV, (int32_t)QP_MAX);
+                QPChromaIndexV = MFX_MAX(-bitdepth_chroma_qp_scale, QPChromaIndexV);
                 QPChromaV = QPChromaIndexV < 0 ? QPChromaIndexV : QPtoChromaQP[QPChromaIndexV];
                 QPChromaV += bitdepth_chroma_qp_scale;
             } else {
@@ -1764,7 +1764,7 @@ public:
     }
 };
 
-template <class Decoder, class Reconstructor, typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field, bool is_high_profile>
+template <class Decoder, class Reconstructor, typename Coeffs, typename PlaneY, typename PlaneUV, int32_t color_format, int32_t is_field, bool is_high_profile>
 class SegmentDecoderHP : public SegmentDecoderHPBase,
     public Decoder,
     public Reconstructor
@@ -1777,14 +1777,14 @@ public:
     typedef UMC::SegmentDecoderHP<Decoder, Reconstructor, Coeffs,
         PlaneY, PlaneUV, color_format, is_field, is_high_profile> ThisClassType;
 
-    Status DecodeSegmentCAVLC(Ipp32u curMB,
-                              Ipp32u nBorder,
+    Status DecodeSegmentCAVLC(uint32_t curMB,
+                              uint32_t nBorder,
                               H264SegmentDecoderMultiThreaded * sd)
     {
         Status umcRes = UMC_OK;
         void (ThisClassType::*pDecFunc)(H264SegmentDecoderMultiThreaded *sd);
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
         if (is_field && sd->m_field_index)
             MBYAdjust  = sd->mb_height/2;
 
@@ -1816,9 +1816,9 @@ public:
         sd->m_pCoeffBlocksWrite = sd->GetCoefficientsBuffer();
 
         // set initial macroblock coordinates
-        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-        sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+        sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
 
         for (; curMB < nBorder; curMB += 1)
         {
@@ -1874,9 +1874,9 @@ public:
                     break;
                 }
                 if (sd->m_isMBAFF) {
-                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-                    sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+                    sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
                     sd->m_CurMB_Y += (sd->m_CurMBAddr&1);
                 } else {
                     sd->m_CurMB_X = (sd->m_CurMBAddr % sd->mb_width);
@@ -1889,14 +1889,14 @@ public:
         sd->m_pSlice->SetStateVariables(sd->m_MBSkipCount, sd->m_QuantPrev, sd->m_prev_dquant);
         return umcRes;
     }
-    virtual Status DecodeSegmentCAVLC_Single(Ipp32s curMB, Ipp32s nBorder,
+    virtual Status DecodeSegmentCAVLC_Single(int32_t curMB, int32_t nBorder,
                                              H264SegmentDecoderMultiThreaded * sd)
     {
         Status umcRes = UMC_OK;
         void (ThisClassType::*pDecFunc)(H264SegmentDecoderMultiThreaded *sd);
         void (ThisClassType::*pRecFunc)(H264SegmentDecoderMultiThreaded *sd);
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
         if (is_field && sd->m_field_index)
             MBYAdjust  = sd->mb_height/2;
 
@@ -1927,9 +1927,9 @@ public:
         };
 
         // set initial macroblock coordinates
-        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-        sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+        sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
 
         for (; curMB < nBorder; curMB += 1)
         {
@@ -1992,9 +1992,9 @@ public:
                     break;
                 }
                 if (sd->m_isMBAFF) {
-                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-                    sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+                    sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
                     sd->m_CurMB_Y += (sd->m_CurMBAddr&1);
                 } else {
                     sd->m_CurMB_X = (sd->m_CurMBAddr % sd->mb_width);
@@ -2009,12 +2009,12 @@ public:
         return umcRes;
     }
 
-    virtual Status Reconstruct_DXVA_Single(Ipp32s curMB, Ipp32s nBorder,
+    virtual Status Reconstruct_DXVA_Single(int32_t curMB, int32_t nBorder,
                                              H264SegmentDecoderMultiThreaded * sd)
     {
         void (ThisClassType::*pRecFunc)(H264SegmentDecoderMultiThreaded *sd);
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
         if (is_field && sd->m_field_index)
             MBYAdjust  = sd->mb_height/2;
 
@@ -2042,9 +2042,9 @@ public:
         };
 
         // set initial macroblock coordinates
-        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-        sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+        sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
 
         for (; curMB < nBorder; curMB += 1)
         {
@@ -2082,14 +2082,14 @@ public:
         return UMC_OK;
     }
 
-    Status DecodeSegmentCABAC(Ipp32u curMB,
-                              Ipp32u nBorder,
+    Status DecodeSegmentCABAC(uint32_t curMB,
+                              uint32_t nBorder,
                               H264SegmentDecoderMultiThreaded *sd)
     {
         Status umcRes = UMC_OK;
         void (ThisClassType::*pDecFunc)(H264SegmentDecoderMultiThreaded *sd);
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
         if (is_field && sd->m_field_index)
             MBYAdjust  = sd->mb_height / 2;
 
@@ -2121,9 +2121,9 @@ public:
         sd->m_pCoeffBlocksWrite = sd->GetCoefficientsBuffer();
 
         // set initial macroblock coordinates
-        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-        sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+        sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
 
         for (; curMB < nBorder; curMB += 1)
         {
@@ -2140,7 +2140,7 @@ public:
 
             // decode end of slice
             {
-                Ipp32s end_of_slice;
+                int32_t end_of_slice;
 
                 if ((0 == sd->m_isMBAFF) ||
                     (sd->m_CurMBAddr & 1))
@@ -2181,9 +2181,9 @@ public:
                 }
 
                 if (sd->m_isMBAFF) {
-                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-                    sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+                    sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
                     sd->m_CurMB_Y += (sd->m_CurMBAddr&1);
                 } else {
                     sd->m_CurMB_X = (sd->m_CurMBAddr % sd->mb_width);
@@ -2197,14 +2197,14 @@ public:
         return umcRes;
     }
 
-    virtual Status DecodeSegmentCABAC_Single(Ipp32s curMB, Ipp32s nBorder,
+    virtual Status DecodeSegmentCABAC_Single(int32_t curMB, int32_t nBorder,
                                              H264SegmentDecoderMultiThreaded * sd)
     {
         Status umcRes = UMC_OK;
         void (ThisClassType::*pDecFunc)(H264SegmentDecoderMultiThreaded *sd);
         void (ThisClassType::*pRecFunc)(H264SegmentDecoderMultiThreaded *sd);
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
         if (is_field && sd->m_field_index)
             MBYAdjust  = sd->mb_height / 2;
 
@@ -2235,9 +2235,9 @@ public:
         };
 
         // set initial macroblock coordinates
-        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-        sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+        sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
 
         for (; curMB < nBorder; curMB += 1)
         {
@@ -2262,7 +2262,7 @@ public:
 
             // decode end of slice
             {
-                Ipp32s end_of_slice;
+                int32_t end_of_slice;
 
                 if ((0 == sd->m_isMBAFF) ||
                     (sd->m_CurMBAddr & 1))
@@ -2303,9 +2303,9 @@ public:
                 }
 
                 if (sd->m_isMBAFF) {
-                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-                    sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+                    sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
                     sd->m_CurMB_Y += (sd->m_CurMBAddr&1);
                 } else {
                     sd->m_CurMB_X = (sd->m_CurMBAddr % sd->mb_width);
@@ -2320,13 +2320,13 @@ public:
         return umcRes;
     }
 
-    virtual Status ReconstructSegment(Ipp32u curMB, Ipp32u nBorder,
+    virtual Status ReconstructSegment(uint32_t curMB, uint32_t nBorder,
                                       H264SegmentDecoderMultiThreaded * sd)
     {
         Status umcRes = UMC_OK;
         void (ThisClassType::*pRecFunc)(H264SegmentDecoderMultiThreaded *sd);
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
         if (is_field && sd->m_field_index)
             MBYAdjust  = sd->mb_height/2;
 
@@ -2358,9 +2358,9 @@ public:
         };
 
         // set initial macroblock coordinates
-        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-        sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+        sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+        sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+        sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
 
         // reconstruct starts here
         for (;curMB < nBorder; curMB += 1)
@@ -2394,9 +2394,9 @@ public:
                 }
 
                 if (sd->m_isMBAFF) {
-                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) % sd->mb_width);
-                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (Ipp32s) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
-                    sd->m_CurMB_Y <<= (Ipp32s) sd->m_isMBAFF;
+                    sd->m_CurMB_X = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) % sd->mb_width);
+                    sd->m_CurMB_Y = ((sd->m_CurMBAddr >> (int32_t) sd->m_isMBAFF) / sd->mb_width) - MBYAdjust;
+                    sd->m_CurMB_Y <<= (int32_t) sd->m_isMBAFF;
                     sd->m_CurMB_Y += (sd->m_CurMBAddr&1);
                 } else {
                     sd->m_CurMB_X = (sd->m_CurMBAddr % sd->mb_width);
@@ -2408,15 +2408,15 @@ public:
         return umcRes;
     }
 
-    virtual void RestoreErrorPlane(PlanePtrY pRefPlane, PlanePtrY pCurrentPlane, Ipp32s pitch,
-        Ipp32s offsetX, Ipp32s offsetY, Ipp32s offsetXL, Ipp32s offsetYL,
-        Ipp32s mb_width, Ipp32s fieldOffset, IppiSize mbSize)
+    virtual void RestoreErrorPlane(PlanePtrY pRefPlane, PlanePtrY pCurrentPlane, int32_t pitch,
+        int32_t offsetX, int32_t offsetY, int32_t offsetXL, int32_t offsetYL,
+        int32_t mb_width, int32_t fieldOffset, mfxSize mbSize)
     {
-            IppiSize roiSize;
+            mfxSize roiSize;
 
             roiSize.height = mbSize.height;
             roiSize.width = mb_width * mbSize.width - offsetX;
-            Ipp32s offset = offsetX + offsetY*pitch;
+            int32_t offset = offsetX + offsetY*pitch;
 
             if (offsetYL == offsetY)
             {
@@ -2477,10 +2477,10 @@ public:
             }
     }
 
-    virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264DecoderFrame *pRefFrame,
+    virtual void RestoreErrorRect(int32_t startMb, int32_t endMb, H264DecoderFrame *pRefFrame,
         const H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp32s wasDecremented = 0;
+        int32_t wasDecremented = 0;
         if (startMb > 0)
         {
             startMb--;
@@ -2492,12 +2492,12 @@ public:
 
         H264DecoderFrame * pCurrentFrame = sd->m_pSlice->GetCurrentFrame();
 
-        Ipp32s pitch_luma = pCurrentFrame->pitch_luma();
-        Ipp32s pitch_chroma = pCurrentFrame->pitch_chroma();
+        int32_t pitch_luma = pCurrentFrame->pitch_luma();
+        int32_t pitch_chroma = pCurrentFrame->pitch_chroma();
 
-        Ipp32s fieldOffset = 0;
+        int32_t fieldOffset = 0;
 
-        Ipp32s MBYAdjust = 0;
+        int32_t MBYAdjust = 0;
 
         if (FRM_STRUCTURE > pCurrentFrame->m_PictureStructureForDec)
         {
@@ -2516,18 +2516,18 @@ public:
         for (int i = startMb + wasDecremented; i < endMb; i++)
         {
             sd->m_gmbinfo->mbs[i].mbtype = MBTYPE_PCM;
-            sd->m_gmbinfo->mbs[i].slice_id = (Ipp16s)sd->m_pSlice->GetSliceNum();
+            sd->m_gmbinfo->mbs[i].slice_id = (int16_t)sd->m_pSlice->GetSliceNum();
             //std::fill(sd->m_gmbinfo->mbs[i].refIdxs[0].refIndexs, sd->m_gmbinfo->mbs[i].refIdxs[0].refIndexs + 4, -1);
         }
 
-        Ipp32s offsetX, offsetY;
+        int32_t offsetX, offsetY;
         offsetX = (startMb % sd->mb_width) * 16;
         offsetY = ((startMb / sd->mb_width) - MBYAdjust) * 16;
 
-        Ipp32s offsetXL = ((endMb - 1) % sd->mb_width) * 16;
-        Ipp32s offsetYL = (((endMb - 1) / sd->mb_width) - MBYAdjust) * 16;
+        int32_t offsetXL = ((endMb - 1) % sd->mb_width) * 16;
+        int32_t offsetYL = (((endMb - 1) / sd->mb_width) - MBYAdjust) * 16;
 
-        IppiSize mbSize;
+        mfxSize mbSize;
 
         mbSize.width = 16;
         mbSize.height = 16;
@@ -2565,7 +2565,7 @@ public:
     }
 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV, bool is_field, Ipp32s color_format, bool is_high_profile>
+template <typename Coeffs, typename PlaneY, typename PlaneUV, bool is_field, int32_t color_format, bool is_high_profile>
 class CreateSoftSegmentDecoderWrapper
 {
 public:
@@ -2585,7 +2585,7 @@ class CreateSegmentDecoderWrapper
 {
 public:
 
-    static SegmentDecoderHPBase* CreateSoftSegmentDecoder(Ipp32s color_format, bool is_high_profile)
+    static SegmentDecoderHPBase* CreateSoftSegmentDecoder(int32_t color_format, bool is_high_profile)
     {
         static SegmentDecoderHPBase* global_sds_array[4][2] = {{0,0},{0,0},{0,0},{0,0}};
 
@@ -2615,16 +2615,16 @@ public:
 
 // declare functions for creating proper decoders
 extern
-SegmentDecoderHPBase* CreateSD(Ipp32s bit_depth_luma,
-                               Ipp32s bit_depth_chroma,
+SegmentDecoderHPBase* CreateSD(int32_t bit_depth_luma,
+                               int32_t bit_depth_chroma,
                                bool is_field,
-                               Ipp32s color_format,
+                               int32_t color_format,
                                bool is_high_profile);
 extern
-SegmentDecoderHPBase* CreateSD_ManyBits(Ipp32s bit_depth_luma,
-                                        Ipp32s bit_depth_chroma,
+SegmentDecoderHPBase* CreateSD_ManyBits(int32_t bit_depth_luma,
+                                        int32_t bit_depth_chroma,
                                         bool is_field,
-                                        Ipp32s color_format,
+                                        int32_t color_format,
                                         bool is_high_profile);
 
 } // end namespace UMC

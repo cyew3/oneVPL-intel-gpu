@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -47,7 +47,7 @@ void MFX_SW_TaskSupplier::CreateTaskBroker()
         break;
     };
 
-    for (Ipp32u i = 0; i < m_iThreadNum; i += 1)
+    for (uint32_t i = 0; i < m_iThreadNum; i += 1)
     {
         m_pSegmentDecoder[i] = new H264SegmentDecoderMultiThreaded(m_pTaskBroker);
     }
@@ -66,7 +66,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
     const H264PicParamSet *pps = slice->GetPicParam();
     VM_ASSERT(frame->m_iResourceNumber >= 0);
 
-    Ipp32s resource = frame->m_iResourceNumber;
+    int32_t resource = frame->m_iResourceNumber;
 
     if (pps->num_slice_groups == 1)
     {
@@ -74,21 +74,21 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
         return;
     }
 
-    Ipp32s additionalTable = resource + 1;
+    int32_t additionalTable = resource + 1;
     const H264SeqParamSet *sps = slice->GetSeqParam();
     const H264SliceHeader * sliceHeader = slice->GetSliceHeader();
 
-    Ipp32u PicWidthInMbs = slice->GetSeqParam()->frame_width_in_mbs;
-    Ipp32u PicHeightInMapUnits = slice->GetSeqParam()->frame_height_in_mbs;
+    uint32_t PicWidthInMbs = slice->GetSeqParam()->frame_width_in_mbs;
+    uint32_t PicHeightInMapUnits = slice->GetSeqParam()->frame_height_in_mbs;
     if (sliceHeader->field_pic_flag)
         PicHeightInMapUnits >>= 1;
 
-    Ipp32u PicSizeInMbs = PicWidthInMbs*PicHeightInMapUnits;
+    uint32_t PicSizeInMbs = PicWidthInMbs*PicHeightInMapUnits;
 
-    Ipp32s *mapUnitToSliceGroupMap = new Ipp32s[PicSizeInMbs];
-    Ipp32s *MbToSliceGroupMap = new Ipp32s[PicSizeInMbs];
+    int32_t *mapUnitToSliceGroupMap = new int32_t[PicSizeInMbs];
+    int32_t *MbToSliceGroupMap = new int32_t[PicSizeInMbs];
 
-    for (Ipp32u i = 0; i < PicSizeInMbs; i++)
+    for (uint32_t i = 0; i < PicSizeInMbs; i++)
         mapUnitToSliceGroupMap[i] = 0;
 
     switch (pps->SliceGroupInfo.slice_group_map_type)
@@ -97,10 +97,10 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
         {
             // interleaved slice groups: run_length for each slice group,
             // repeated until all MB's are assigned to a slice group
-            Ipp32u i = 0;
+            uint32_t i = 0;
             do
-                for(Ipp32u iGroup = 0; iGroup < pps->num_slice_groups && i < PicSizeInMbs; i += pps->SliceGroupInfo.run_length[iGroup++])
-                    for(Ipp32u j = 0; j < pps->SliceGroupInfo.run_length[iGroup] && i + j < PicSizeInMbs; j++)
+                for(uint32_t iGroup = 0; iGroup < pps->num_slice_groups && i < PicSizeInMbs; i += pps->SliceGroupInfo.run_length[iGroup++])
+                    for(uint32_t j = 0; j < pps->SliceGroupInfo.run_length[iGroup] && i + j < PicSizeInMbs; j++)
                         mapUnitToSliceGroupMap[i + j] = iGroup;
             while(i < PicSizeInMbs);
         }
@@ -109,7 +109,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
     case 1:
         {
             // dispersed
-            for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+            for(uint32_t i = 0; i < PicSizeInMbs; i++ )
                 mapUnitToSliceGroupMap[i] = (((i % PicWidthInMbs) + (((i / PicWidthInMbs) * pps->num_slice_groups) / 2)) % pps->num_slice_groups);
         }
         break;
@@ -120,18 +120,18 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
             // in a defined rectangle is in the leftover slice group, a MB within
             // more than one rectangle is in the lower-numbered slice group.
 
-            for(Ipp32u i = 0; i < PicSizeInMbs; i++)
+            for(uint32_t i = 0; i < PicSizeInMbs; i++)
                 mapUnitToSliceGroupMap[i] = (pps->num_slice_groups - 1);
 
-            for(Ipp32s iGroup = pps->num_slice_groups - 2; iGroup >= 0; iGroup--)
+            for(int32_t iGroup = pps->num_slice_groups - 2; iGroup >= 0; iGroup--)
             {
-                Ipp32u yTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] / PicWidthInMbs;
-                Ipp32u xTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] % PicWidthInMbs;
-                Ipp32u yBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] / PicWidthInMbs;
-                Ipp32u xBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] % PicWidthInMbs;
+                uint32_t yTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] / PicWidthInMbs;
+                uint32_t xTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] % PicWidthInMbs;
+                uint32_t yBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] / PicWidthInMbs;
+                uint32_t xBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] % PicWidthInMbs;
 
-                for(Ipp32u y = yTopLeft; y <= yBottomRight; y++)
-                    for(Ipp32u x = xTopLeft; x <= xBottomRight; x++)
+                for(uint32_t y = yTopLeft; y <= yBottomRight; y++)
+                    for(uint32_t x = xTopLeft; x <= xBottomRight; x++)
                         mapUnitToSliceGroupMap[y * PicWidthInMbs + x] = iGroup;
             }
         }
@@ -142,10 +142,10 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
             // Box-out, clockwise or counterclockwise. Result is two slice groups,
             // group 0 included by the box, group 1 excluded.
 
-            Ipp32s x, y, leftBound, rightBound, topBound, bottomBound;
-            Ipp32s mapUnitVacant = 0;
-            Ipp8s xDir, yDir;
-            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            int32_t x, y, leftBound, rightBound, topBound, bottomBound;
+            int32_t mapUnitVacant = 0;
+            int8_t xDir, yDir;
+            uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
 
             x = leftBound = rightBound = (PicWidthInMbs - dir_flag) / 2;
             y = topBound = bottomBound = (PicHeightInMapUnits - dir_flag) / 2;
@@ -153,12 +153,12 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
             xDir  = dir_flag - 1;
             yDir  = dir_flag;
 
-            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
 
-            for(Ipp32u i = 0; i < PicSizeInMbs; i++)
+            for(uint32_t i = 0; i < PicSizeInMbs; i++)
                 mapUnitToSliceGroupMap[i] = 1;
 
-            for(Ipp32u k = 0; k < uNumInGroup0; k += mapUnitVacant)
+            for(uint32_t k = 0; k < uNumInGroup0; k += mapUnitVacant)
             {
                 mapUnitVacant = (mapUnitToSliceGroupMap[y * PicWidthInMbs + x] == 1);
 
@@ -167,28 +167,28 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
                 if(xDir == -1 && x == leftBound)
                 {
-                    leftBound = IPP_MAX(leftBound - 1, 0);
+                    leftBound = MFX_MAX(leftBound - 1, 0);
                     x = leftBound;
                     xDir = 0;
                     yDir = 2 * dir_flag - 1;
                 }
                 else if(xDir == 1 && x == rightBound)
                 {
-                    rightBound = IPP_MIN(rightBound + 1, (Ipp32s)PicWidthInMbs - 1);
+                    rightBound = MFX_MIN(rightBound + 1, (int32_t)PicWidthInMbs - 1);
                     x = rightBound;
                     xDir = 0;
                     yDir = 1 - 2 * dir_flag;
                 }
                 else if(yDir == -1 && y == topBound)
                 {
-                    topBound = IPP_MAX(topBound - 1, 0);
+                    topBound = MFX_MAX(topBound - 1, 0);
                     y = topBound;
                     xDir = 1 - 2 * dir_flag;
                     yDir = 0;
                 }
                 else if(yDir == 1 && y == bottomBound)
                 {
-                    bottomBound = IPP_MIN(bottomBound + 1, (Ipp32s)PicHeightInMapUnits - 1);
+                    bottomBound = MFX_MIN(bottomBound + 1, (int32_t)PicHeightInMapUnits - 1);
                     y = bottomBound;
                     xDir = 2 * dir_flag - 1;
                     yDir = 0;
@@ -205,11 +205,11 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
     case 4:
         {
             // raster-scan: 2 slice groups
-            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
-            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
-            Ipp32u sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
+            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            uint32_t sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
 
-            for(Ipp32u i = 0; i < PicSizeInMbs; i++)
+            for(uint32_t i = 0; i < PicSizeInMbs; i++)
                 if(i < sizeOfUpperLeftGroup)
                     mapUnitToSliceGroupMap[i] = dir_flag;
                 else
@@ -225,13 +225,13 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
             //  L L L R R R R R R
             //  L L L R R R R R R
 
-            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
-            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
-            Ipp32u sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
+            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            uint32_t sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
 
-            Ipp32u k = 0;
-            for(Ipp32u j = 0; j < PicWidthInMbs; j++)
-                for(Ipp32u i = 0; i < PicHeightInMapUnits; i++)
+            uint32_t k = 0;
+            for(uint32_t j = 0; j < PicWidthInMbs; j++)
+                for(uint32_t i = 0; i < PicHeightInMapUnits; i++)
                     if(k++ < sizeOfUpperLeftGroup)
                         mapUnitToSliceGroupMap[i * PicWidthInMbs + j] = dir_flag;
                     else
@@ -243,7 +243,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
         {
             // explicit map read from bitstream, contains slice group id for
             // each map unit
-            for(Ipp32u i = 0; i < pps->SliceGroupInfo.pSliceGroupIDMap.size(); i++)
+            for(uint32_t i = 0; i < pps->SliceGroupInfo.pSliceGroupIDMap.size(); i++)
                 mapUnitToSliceGroupMap[i] = pps->SliceGroupInfo.pSliceGroupIDMap[i];
         }
         break;
@@ -257,21 +257,21 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
     if (sps->frame_mbs_only_flag || sliceHeader->field_pic_flag)
     {
-        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        for(uint32_t i = 0; i < PicSizeInMbs; i++ )
         {
             MbToSliceGroupMap[i] = mapUnitToSliceGroupMap[i];
         }
     }
     else if (sliceHeader->MbaffFrameFlag)
     {
-        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        for(uint32_t i = 0; i < PicSizeInMbs; i++ )
         {
             MbToSliceGroupMap[i] = mapUnitToSliceGroupMap[i/2];
         }
     }
     else if(sps->frame_mbs_only_flag == 0 && !sliceHeader->MbaffFrameFlag && !sliceHeader->field_pic_flag)
     {
-        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        for(uint32_t i = 0; i < PicSizeInMbs; i++ )
         {
             MbToSliceGroupMap[i] = mapUnitToSliceGroupMap[(i / (2 * PicWidthInMbs)) * PicWidthInMbs + ( i % PicWidthInMbs )];
         }
@@ -279,9 +279,9 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
     H264DecoderMBAddr * next_mb_tables = localRes->next_mb_tables[additionalTable];
 
-    for(Ipp32u n = 0; n < PicSizeInMbs; n++)
+    for(uint32_t n = 0; n < PicSizeInMbs; n++)
     {
-        Ipp32u i = n + 1;
+        uint32_t i = n + 1;
         while (i < PicSizeInMbs && MbToSliceGroupMap[i] != MbToSliceGroupMap[n])
             i++;
 
@@ -290,7 +290,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
     if (sliceHeader->field_pic_flag)
     {
-        for(Ipp32u i = 0; i < PicSizeInMbs; i++ )
+        for(uint32_t i = 0; i < PicSizeInMbs; i++ )
         {
             next_mb_tables[i + PicSizeInMbs] = (next_mb_tables[i] == -1) ? -1 : (next_mb_tables[i] + PicSizeInMbs);
         }
@@ -302,12 +302,12 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
     delete[] MbToSliceGroupMap;
 }
 
-void DefaultFill(H264DecoderFrame * frame, Ipp32s fields_mask, bool isChromaOnly, Ipp8u defaultValue = 128)
+void DefaultFill(H264DecoderFrame * frame, int32_t fields_mask, bool isChromaOnly, uint8_t defaultValue = 128)
 {
-    IppiSize roi;
+    mfxSize roi;
 
-    Ipp32s field_factor = fields_mask == 2 ? 0 : 1;
-    Ipp32s field = field_factor ? fields_mask : 0;
+    int32_t field_factor = fields_mask == 2 ? 0 : 1;
+    int32_t field = field_factor ? fields_mask : 0;
 
     if (!isChromaOnly)
     {
@@ -341,7 +341,7 @@ bool MFX_SW_TaskSupplier::ProcessNonPairedField(H264DecoderFrame * pFrame)
     if (MFXTaskSupplier::ProcessNonPairedField(pFrame))
     {
         H264Slice * pSlice = pFrame->GetAU(0)->GetSlice(0);
-        Ipp32s isBottom = pSlice->IsBottomField() ? 0 : 1;
+        int32_t isBottom = pSlice->IsBottomField() ? 0 : 1;
         DefaultFill(pFrame, isBottom, false);
         return true;
     }
@@ -361,7 +361,7 @@ void MFX_SW_TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
         return;
     }
 
-    Ipp32s frame_num = pSlice->GetSliceHeader()->frame_num;
+    int32_t frame_num = pSlice->GetSliceHeader()->frame_num;
     if (pSlice->GetSliceHeader()->field_pic_flag == 0)
     {
         pFrame->setPicNum(frame_num, 0);
@@ -385,8 +385,8 @@ void MFX_SW_TaskSupplier::AddFakeReferenceFrame(H264Slice * pSlice)
 
     if (pSlice->GetSeqParam()->pic_order_cnt_type != 0)
     {
-        Ipp32s tmp1 = sliceHeader->delta_pic_order_cnt[0];
-        Ipp32s tmp2 = sliceHeader->delta_pic_order_cnt[1];
+        int32_t tmp1 = sliceHeader->delta_pic_order_cnt[0];
+        int32_t tmp2 = sliceHeader->delta_pic_order_cnt[1];
         sliceHeader->delta_pic_order_cnt[0] = sliceHeader->delta_pic_order_cnt[1] = 0;
 
         view.GetPOCDecoder(0)->DecodePictureOrderCount(pSlice, frame_num);
@@ -419,7 +419,7 @@ void MFX_SW_TaskSupplier::OnFullFrame(H264DecoderFrame * pFrame)
 H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 {
     AutomaticUMCMutex guard(m_mGuard);
-    Ipp32u view_id = pSlice ? pSlice->GetSliceHeader()->nal_ext.mvc.view_id : 0;
+    uint32_t view_id = pSlice ? pSlice->GetSliceHeader()->nal_ext.mvc.view_id : 0;
     ViewItem &view = GetView(view_id);
 
     H264DBPList *pDPB = view.GetDPBList(0);
@@ -458,7 +458,7 @@ H264DecoderFrame * MFX_SW_TaskSupplier::GetFreeFrame(const H264Slice *pSlice)
 
 Status MFX_SW_TaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame)
 {
-    IppiSize dimensions = pFrame->lumaSize();
+    mfxSize dimensions = pFrame->lumaSize();
     VideoDataInfo info;
     info.Init(dimensions.width, dimensions.height, pFrame->GetColorFormat(), pFrame->m_bpp);
 

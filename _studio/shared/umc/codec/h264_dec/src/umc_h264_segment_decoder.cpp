@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -43,12 +43,12 @@ H264SegmentDecoder::~H264SegmentDecoder(void)
 void H264SegmentDecoder::Release(void)
 {
     if (m_pCoefficientsBuffer)
-        delete [] (Ipp32s*)m_pCoefficientsBuffer;
+        delete [] (int32_t*)m_pCoefficientsBuffer;
 
     m_pCoefficientsBuffer = NULL;
 } // void H264SegmentDecoder::Release(void)
 
-Status H264SegmentDecoder::Init(Ipp32s iNumber)
+Status H264SegmentDecoder::Init(int32_t iNumber)
 {
     // release object before initialization
     Release();
@@ -56,23 +56,23 @@ Status H264SegmentDecoder::Init(Ipp32s iNumber)
     // save ordinal number
     m_iNumber = iNumber;
 
-    m_pCoefficientsBuffer = (UMC::CoeffsCommon*)(new Ipp32s[COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE]);
+    m_pCoefficientsBuffer = (UMC::CoeffsCommon*)(new int32_t[COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE]);
 
     return UMC_OK;
 
-} // Status H264SegmentDecoder::Init(Ipp32s sNumber)
+} // Status H264SegmentDecoder::Init(int32_t sNumber)
 
-UMC::CoeffsPtrCommon H264SegmentDecoder::GetCoefficientsBuffer(Ipp32u nNum)
+UMC::CoeffsPtrCommon H264SegmentDecoder::GetCoefficientsBuffer(uint32_t nNum)
 {
     return align_pointer<UMC::CoeffsPtrCommon> (m_pCoefficientsBuffer +
                                      COEFFICIENTS_BUFFER_SIZE * nNum, DEFAULT_ALIGN_VALUE);
 
-} // Ipp16s *H264SegmentDecoder::GetCoefficientsBuffer(Ipp32u nNum)
+} // int16_t *H264SegmentDecoder::GetCoefficientsBuffer(uint32_t nNum)
 
-SegmentDecoderHPBase *CreateSD(Ipp32s bit_depth_luma,
-                               Ipp32s bit_depth_chroma,
+SegmentDecoderHPBase *CreateSD(int32_t bit_depth_luma,
+                               int32_t bit_depth_chroma,
                                bool is_field,
-                               Ipp32s color_format,
+                               int32_t color_format,
                                bool is_high_profile)
 {
     if (bit_depth_chroma > 8 || bit_depth_luma > 8)
@@ -87,19 +87,19 @@ SegmentDecoderHPBase *CreateSD(Ipp32s bit_depth_luma,
     {
         if (is_field)
         {
-            return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, true>::CreateSoftSegmentDecoder(color_format, is_high_profile);
+            return CreateSegmentDecoderWrapper<int16_t, uint8_t, uint8_t, true>::CreateSoftSegmentDecoder(color_format, is_high_profile);
         } else {
-            return CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, false>::CreateSoftSegmentDecoder(color_format, is_high_profile);
+            return CreateSegmentDecoderWrapper<int16_t, uint8_t, uint8_t, false>::CreateSoftSegmentDecoder(color_format, is_high_profile);
         }
     }
 
-} // SegmentDecoderHPBase *CreateSD(Ipp32s bit_depth_luma,
+} // SegmentDecoderHPBase *CreateSD(int32_t bit_depth_luma,
 
 static
 void InitializeSDCreator()
 {
-    CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, true>::CreateSoftSegmentDecoder(0, false);
-    CreateSegmentDecoderWrapper<Ipp16s, Ipp8u, Ipp8u, false>::CreateSoftSegmentDecoder(0, false);
+    CreateSegmentDecoderWrapper<int16_t, uint8_t, uint8_t, true>::CreateSoftSegmentDecoder(0, false);
+    CreateSegmentDecoderWrapper<int16_t, uint8_t, uint8_t, false>::CreateSoftSegmentDecoder(0, false);
 }
 
 class SDInitializer

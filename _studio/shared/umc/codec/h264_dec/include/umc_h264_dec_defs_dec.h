@@ -71,8 +71,8 @@ enum
 };
 
 // default plane & coeffs types:
-typedef Ipp8u PlaneYCommon;
-typedef Ipp8u PlaneUVCommon;
+typedef uint8_t PlaneYCommon;
+typedef uint8_t PlaneUVCommon;
 
 typedef PlaneYCommon * PlanePtrYCommon;
 typedef PlaneUVCommon * PlanePtrUVCommon;
@@ -245,21 +245,21 @@ enum
 
 struct H264ScalingList4x4
 {
-    Ipp8u ScalingListCoeffs[16];
+    uint8_t ScalingListCoeffs[16];
 };
 
 struct H264ScalingList8x8
 {
-    Ipp8u ScalingListCoeffs[64];
+    uint8_t ScalingListCoeffs[64];
 };
 
 struct H264WholeQPLevelScale4x4
 {
-    Ipp16s LevelScaleCoeffs[88]/*since we do not support 422 and 444*/[16];
+    int16_t LevelScaleCoeffs[88]/*since we do not support 422 and 444*/[16];
 };
 struct H264WholeQPLevelScale8x8
 {
-    Ipp16s LevelScaleCoeffs[88]/*since we do not support 422 and 444*/[64];
+    int16_t LevelScaleCoeffs[88]/*since we do not support 422 and 444*/[64];
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,10 +279,10 @@ public:
 
     void ResetRefCounter() {m_refCounter = 0;}
 
-    Ipp32u GetRefCounter() {return m_refCounter;}
+    uint32_t GetRefCounter() {return m_refCounter;}
 
 protected:
-    volatile mutable Ipp32s m_refCounter;
+    volatile mutable int32_t m_refCounter;
 
     virtual ~RefCounter()
     {
@@ -327,111 +327,111 @@ struct H264VUI
         *this = vui;
     }
 
-    Ipp8u        aspect_ratio_info_present_flag;
-    Ipp8u        aspect_ratio_idc;
-    Ipp16u       sar_width;
-    Ipp16u       sar_height;
-    Ipp8u        overscan_info_present_flag;
-    Ipp8u        overscan_appropriate_flag;
-    Ipp8u        video_signal_type_present_flag;
-    Ipp8u        video_format;
-    Ipp8u        video_full_range_flag;
-    Ipp8u        colour_description_present_flag;
-    Ipp8u        colour_primaries;
-    Ipp8u        transfer_characteristics;
-    Ipp8u        matrix_coefficients;
-    Ipp8u        chroma_loc_info_present_flag;
-    Ipp8u        chroma_sample_loc_type_top_field;
-    Ipp8u        chroma_sample_loc_type_bottom_field;
-    Ipp8u        timing_info_present_flag;
-    Ipp32u       num_units_in_tick;
-    Ipp32u       time_scale;
-    Ipp8u        fixed_frame_rate_flag;
-    Ipp8u        nal_hrd_parameters_present_flag;
-    Ipp8u        vcl_hrd_parameters_present_flag;
-    Ipp8u        low_delay_hrd_flag;
-    Ipp8u        pic_struct_present_flag;
-    Ipp8u        bitstream_restriction_flag;
-    Ipp8u        motion_vectors_over_pic_boundaries_flag;
-    Ipp8u        max_bytes_per_pic_denom;
-    Ipp8u        max_bits_per_mb_denom;
-    Ipp8u        log2_max_mv_length_horizontal;
-    Ipp8u        log2_max_mv_length_vertical;
-    Ipp8u        num_reorder_frames;
-    Ipp8u        max_dec_frame_buffering;
+    uint8_t        aspect_ratio_info_present_flag;
+    uint8_t        aspect_ratio_idc;
+    uint16_t       sar_width;
+    uint16_t       sar_height;
+    uint8_t        overscan_info_present_flag;
+    uint8_t        overscan_appropriate_flag;
+    uint8_t        video_signal_type_present_flag;
+    uint8_t        video_format;
+    uint8_t        video_full_range_flag;
+    uint8_t        colour_description_present_flag;
+    uint8_t        colour_primaries;
+    uint8_t        transfer_characteristics;
+    uint8_t        matrix_coefficients;
+    uint8_t        chroma_loc_info_present_flag;
+    uint8_t        chroma_sample_loc_type_top_field;
+    uint8_t        chroma_sample_loc_type_bottom_field;
+    uint8_t        timing_info_present_flag;
+    uint32_t       num_units_in_tick;
+    uint32_t       time_scale;
+    uint8_t        fixed_frame_rate_flag;
+    uint8_t        nal_hrd_parameters_present_flag;
+    uint8_t        vcl_hrd_parameters_present_flag;
+    uint8_t        low_delay_hrd_flag;
+    uint8_t        pic_struct_present_flag;
+    uint8_t        bitstream_restriction_flag;
+    uint8_t        motion_vectors_over_pic_boundaries_flag;
+    uint8_t        max_bytes_per_pic_denom;
+    uint8_t        max_bits_per_mb_denom;
+    uint8_t        log2_max_mv_length_horizontal;
+    uint8_t        log2_max_mv_length_vertical;
+    uint8_t        num_reorder_frames;
+    uint8_t        max_dec_frame_buffering;
     //hrd_parameters
-    Ipp8u        cpb_cnt;
-    Ipp8u        bit_rate_scale;
-    Ipp8u        cpb_size_scale;
-    Ipp32u       bit_rate_value[32];
-    Ipp32u       cpb_size_value[32];
-    Ipp8u        cbr_flag[32];
-    Ipp8u        initial_cpb_removal_delay_length;
-    Ipp8u        cpb_removal_delay_length;
-    Ipp8u        dpb_output_delay_length;
-    Ipp8u        time_offset_length;
+    uint8_t        cpb_cnt;
+    uint8_t        bit_rate_scale;
+    uint8_t        cpb_size_scale;
+    uint32_t       bit_rate_value[32];
+    uint32_t       cpb_size_value[32];
+    uint8_t        cbr_flag[32];
+    uint8_t        initial_cpb_removal_delay_length;
+    uint8_t        cpb_removal_delay_length;
+    uint8_t        dpb_output_delay_length;
+    uint8_t        time_offset_length;
 };
 
 // Sequence parameter set structure, corresponding to the H.264 bitstream definition.
 struct H264SeqParamSetBase
 {
-    Ipp8u        profile_idc;                        // baseline, main, etc.
-    Ipp8u        level_idc;
-    Ipp8u        constraint_set0_flag;
-    Ipp8u        constraint_set1_flag;
-    Ipp8u        constraint_set2_flag;
-    Ipp8u        constraint_set3_flag;
-    Ipp8u        constraint_set4_flag;
-    Ipp8u        constraint_set5_flag;
-    Ipp8u        chroma_format_idc;
-    Ipp8u        residual_colour_transform_flag;
-    Ipp8u        bit_depth_luma;
-    Ipp8u        bit_depth_chroma;
-    Ipp8u        qpprime_y_zero_transform_bypass_flag;
-    Ipp8u        type_of_scaling_list_used[8];
-    Ipp8u        seq_scaling_matrix_present_flag;
+    uint8_t        profile_idc;                        // baseline, main, etc.
+    uint8_t        level_idc;
+    uint8_t        constraint_set0_flag;
+    uint8_t        constraint_set1_flag;
+    uint8_t        constraint_set2_flag;
+    uint8_t        constraint_set3_flag;
+    uint8_t        constraint_set4_flag;
+    uint8_t        constraint_set5_flag;
+    uint8_t        chroma_format_idc;
+    uint8_t        residual_colour_transform_flag;
+    uint8_t        bit_depth_luma;
+    uint8_t        bit_depth_chroma;
+    uint8_t        qpprime_y_zero_transform_bypass_flag;
+    uint8_t        type_of_scaling_list_used[8];
+    uint8_t        seq_scaling_matrix_present_flag;
     H264ScalingList4x4 ScalingLists4x4[6];
     H264ScalingList8x8 ScalingLists8x8[2];
-    Ipp8u        gaps_in_frame_num_value_allowed_flag;
-    Ipp8u        frame_cropping_flag;
-    Ipp32u       frame_cropping_rect_left_offset;
-    Ipp32u       frame_cropping_rect_right_offset;
-    Ipp32u       frame_cropping_rect_top_offset;
-    Ipp32u       frame_cropping_rect_bottom_offset;
+    uint8_t        gaps_in_frame_num_value_allowed_flag;
+    uint8_t        frame_cropping_flag;
+    uint32_t       frame_cropping_rect_left_offset;
+    uint32_t       frame_cropping_rect_right_offset;
+    uint32_t       frame_cropping_rect_top_offset;
+    uint32_t       frame_cropping_rect_bottom_offset;
 
-    Ipp8u        seq_parameter_set_id;                // id of this sequence parameter set
-    Ipp8u        log2_max_frame_num;                  // Number of bits to hold the frame_num
-    Ipp8u        pic_order_cnt_type;                  // Picture order counting method
+    uint8_t        seq_parameter_set_id;                // id of this sequence parameter set
+    uint8_t        log2_max_frame_num;                  // Number of bits to hold the frame_num
+    uint8_t        pic_order_cnt_type;                  // Picture order counting method
 
-    Ipp8u        delta_pic_order_always_zero_flag;    // If zero, delta_pic_order_cnt fields are
+    uint8_t        delta_pic_order_always_zero_flag;    // If zero, delta_pic_order_cnt fields are
                                                       // present in slice header.
-    Ipp8u        frame_mbs_only_flag;                 // Nonzero indicates all pictures in sequence
+    uint8_t        frame_mbs_only_flag;                 // Nonzero indicates all pictures in sequence
                                                       // are coded as frames (not fields).
 
-    Ipp8u        mb_adaptive_frame_field_flag;        // Nonzero indicates frame/field switch
+    uint8_t        mb_adaptive_frame_field_flag;        // Nonzero indicates frame/field switch
                                                       // at macroblock level
-    Ipp8u        direct_8x8_inference_flag;           // Direct motion vector derivation method
-    Ipp8u        vui_parameters_present_flag;         // Zero indicates default VUI parameters
-    Ipp32u       log2_max_pic_order_cnt_lsb;          // Value of MaxPicOrderCntLsb.
-    Ipp32s       offset_for_non_ref_pic;
+    uint8_t        direct_8x8_inference_flag;           // Direct motion vector derivation method
+    uint8_t        vui_parameters_present_flag;         // Zero indicates default VUI parameters
+    uint32_t       log2_max_pic_order_cnt_lsb;          // Value of MaxPicOrderCntLsb.
+    int32_t       offset_for_non_ref_pic;
 
-    Ipp32s       offset_for_top_to_bottom_field;      // Expected pic order count difference from
+    int32_t       offset_for_top_to_bottom_field;      // Expected pic order count difference from
                                                       // top field to bottom field.
 
-    Ipp32u       num_ref_frames_in_pic_order_cnt_cycle;
-    Ipp32u       num_ref_frames;                      // total number of pics in decoded pic buffer
-    Ipp32u       frame_width_in_mbs;
-    Ipp32u       frame_height_in_mbs;
+    uint32_t       num_ref_frames_in_pic_order_cnt_cycle;
+    uint32_t       num_ref_frames;                      // total number of pics in decoded pic buffer
+    uint32_t       frame_width_in_mbs;
+    uint32_t       frame_height_in_mbs;
 
     // These fields are calculated from values above.  They are not written to the bitstream
-    Ipp32u       MaxPicOrderCntLsb;
+    uint32_t       MaxPicOrderCntLsb;
 
     // vui part
     H264VUI      vui;
 
-    Ipp32s       poffset_for_ref_frame[MAX_REF_FRAMES_IN_POC_CYCLE];  // for pic order cnt type 1
+    int32_t       poffset_for_ref_frame[MAX_REF_FRAMES_IN_POC_CYCLE];  // for pic order cnt type 1
 
-    Ipp8u        errorFlags;
+    uint8_t        errorFlags;
 
     void Reset()
     {
@@ -455,7 +455,7 @@ struct H264SeqParamSet : public HeapObject, public H264SeqParamSetBase
     {
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return seq_parameter_set_id;
     }
@@ -472,13 +472,13 @@ struct H264SeqParamSet : public HeapObject, public H264SeqParamSetBase
 // Sequence parameter set extension structure, corresponding to the H.264 bitstream definition.
 struct H264SeqParamSetExtension : public HeapObject
 {
-    Ipp8u       seq_parameter_set_id;
-    Ipp8u       aux_format_idc;
-    Ipp8u       bit_depth_aux;
-    Ipp8u       alpha_incr_flag;
-    Ipp8u       alpha_opaque_value;
-    Ipp8u       alpha_transparent_value;
-    Ipp8u       additional_extension_flag;
+    uint8_t       seq_parameter_set_id;
+    uint8_t       aux_format_idc;
+    uint8_t       bit_depth_aux;
+    uint8_t       alpha_incr_flag;
+    uint8_t       alpha_opaque_value;
+    uint8_t       alpha_transparent_value;
+    uint8_t       additional_extension_flag;
 
     H264SeqParamSetExtension()
     {
@@ -496,7 +496,7 @@ struct H264SeqParamSetExtension : public HeapObject
         additional_extension_flag = 0;
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return seq_parameter_set_id;
     }
@@ -506,27 +506,27 @@ struct H264SeqParamSetExtension : public HeapObject
 struct H264ViewRefInfo
 {
     // ue(v) specifies the view_id of the view with VOIdx equal to i.
-    Ipp32u view_id;
+    uint32_t view_id;
 
     // ue(v) specifies the number of view components for inter-view prediction
     // in the initialised RefPicListX in decoding anchor view components with
     // VOIdx equal to i. The value of num_anchor_refs_lx[ i ] shall not
     // be greater than 15.
-    Ipp8u num_anchor_refs_lx[2];
+    uint8_t num_anchor_refs_lx[2];
     // ue(v) specifies the view_id of the j-th view component for inter-view
     // prediction in the initialised RefPicListX in decoding anchor view
     // components with VOIdx equal to i.
-    Ipp16u anchor_refs_lx[2][H264_MAX_NUM_VIEW_REF];
+    uint16_t anchor_refs_lx[2][H264_MAX_NUM_VIEW_REF];
 
     // ue(v) specifies the number of view components for inter-view prediction
     // in the initialised RefPicListX in decoding non-anchor view components
     // with VOIdx equal to i. The value of num_non_anchor_refs_lx[ i ]
     // shall not be greater than 15
-    Ipp8u num_non_anchor_refs_lx[2];
+    uint8_t num_non_anchor_refs_lx[2];
     // ue(v) specifies the view_id of the j-th view component for inter-view
     // prediction in the initialised RefPicListX in decoding non-anchor view
     // components with VOIdx equal to i.
-    Ipp16u non_anchor_refs_lx[2][H264_MAX_NUM_VIEW_REF];
+    uint16_t non_anchor_refs_lx[2][H264_MAX_NUM_VIEW_REF];
 
 };
 
@@ -534,32 +534,32 @@ struct H264ApplicableOp
 {
     // u(3) specifies the temporal_id of the j-th operation point to which the
     // the level indicated by level_idc[ i ] applies.
-    Ipp8u applicable_op_temporal_id;
+    uint8_t applicable_op_temporal_id;
     // ue(v) plus 1 specifies the number of target output views for the j-th
     // operation point to which the level indicated by level_idc[ i ] applies.
     // The value of applicable_op_num_target_views_minus1[ i ][ j ] shall be in
     // the range of 0 to 1023, inclusive.
-    Ipp16u applicable_op_num_target_views_minus1;
+    uint16_t applicable_op_num_target_views_minus1;
     // ue(v) specifies the k-th target output view for the j-th operation point
     // to which the the level indicated by level_idc[ i ] applies. The value of
     // applicable_op_num_target_views_minus1[ i ][ j ] shall be in the
     // range of 0 to 1023, inclusive.
-    Array<Ipp16u> applicable_op_target_view_id;
+    Array<uint16_t> applicable_op_target_view_id;
     // ue(v) plus 1 specifies the number of views required for decoding the
     // target output views corresponding to the j-th operation point to which
     // the level indicated by level_idc[ i ] applies.
-    Ipp16u applicable_op_num_views_minus1;
+    uint16_t applicable_op_num_views_minus1;
 
 };
 
 struct H264LevelValueSignaled
 {
     // u(8) specifies the i-th level value signalled for the coded video sequence.
-    Ipp8u level_idc;
+    uint8_t level_idc;
     // ue(v) plus 1 specifies the number of operation points to which the level
     // indicated by level_idc[ i ] applies. The value of
     // num_applicable_ops_minus1[ i ] shall be in the range of 0 to 1023, inclusive.
-    Ipp16u num_applicable_ops_minus1;
+    uint16_t num_applicable_ops_minus1;
 
     // Array of applicable operation points for the current level value signalled
     Array<H264ApplicableOp> opsInfo;
@@ -572,7 +572,7 @@ struct H264SeqParamSetMVCExtension : public H264SeqParamSet
     // ue(v) plus 1 specifies the maximum number of coded views in the coded
     // video sequence. The value of num_view_minus1 shall be in the range of
     // 0 to 1023, inclusive
-    Ipp32u num_views_minus1;
+    uint32_t num_views_minus1;
 
     // Array of views reference info structures.
     Array<H264ViewRefInfo> viewInfo;
@@ -580,7 +580,7 @@ struct H264SeqParamSetMVCExtension : public H264SeqParamSet
     // ue(v) plus 1 specifies the number of level values signalled for
     // the coded video sequence. The value of num_level_values_signalled_minus1
     // shall be in the range of 0 to 63, inclusive.
-    Ipp32u num_level_values_signalled_minus1;
+    uint32_t num_level_values_signalled_minus1;
 
     // Array of level value signaled structures
     Array<H264LevelValueSignaled> levelInfo;
@@ -600,21 +600,21 @@ struct H264SeqParamSetMVCExtension : public H264SeqParamSet
 struct H264SeqParamSetSVCExtension : public H264SeqParamSet
 {
     /* For scalable stream */
-    Ipp8u inter_layer_deblocking_filter_control_present_flag;
-    Ipp8u extended_spatial_scalability;
-    Ipp8s chroma_phase_x;
-    Ipp8s chroma_phase_y;
-    Ipp8s seq_ref_layer_chroma_phase_x;
-    Ipp8s seq_ref_layer_chroma_phase_y;
+    uint8_t inter_layer_deblocking_filter_control_present_flag;
+    uint8_t extended_spatial_scalability;
+    int8_t chroma_phase_x;
+    int8_t chroma_phase_y;
+    int8_t seq_ref_layer_chroma_phase_x;
+    int8_t seq_ref_layer_chroma_phase_y;
 
-    Ipp8u seq_tcoeff_level_prediction_flag;
-    Ipp8u adaptive_tcoeff_level_prediction_flag;
-    Ipp8u slice_header_restriction_flag;
+    uint8_t seq_tcoeff_level_prediction_flag;
+    uint8_t adaptive_tcoeff_level_prediction_flag;
+    uint8_t slice_header_restriction_flag;
 
-    Ipp32s seq_scaled_ref_layer_left_offset;
-    Ipp32s seq_scaled_ref_layer_top_offset;
-    Ipp32s seq_scaled_ref_layer_right_offset;
-    Ipp32s seq_scaled_ref_layer_bottom_offset;
+    int32_t seq_scaled_ref_layer_left_offset;
+    int32_t seq_scaled_ref_layer_top_offset;
+    int32_t seq_scaled_ref_layer_right_offset;
+    int32_t seq_scaled_ref_layer_bottom_offset;
 
     virtual void Reset()
     {
@@ -656,79 +656,79 @@ struct H264PicParamSetBase
 
     struct SliceGroupInfoStruct
     {
-        Ipp8u        slice_group_map_type;                // 0..6
+        uint8_t        slice_group_map_type;                // 0..6
 
         // The additional slice group data depends upon map type
         union
         {
             // type 0
-            Ipp32u    run_length[MAX_NUM_SLICE_GROUPS];
+            uint32_t    run_length[MAX_NUM_SLICE_GROUPS];
 
             // type 2
             struct
             {
-                Ipp32u top_left[MAX_NUM_SLICE_GROUPS-1];
-                Ipp32u bottom_right[MAX_NUM_SLICE_GROUPS-1];
+                uint32_t top_left[MAX_NUM_SLICE_GROUPS-1];
+                uint32_t bottom_right[MAX_NUM_SLICE_GROUPS-1];
             }t1;
 
             // types 3-5
             struct
             {
-                Ipp8u  slice_group_change_direction_flag;
-                Ipp32u slice_group_change_rate;
+                uint8_t  slice_group_change_direction_flag;
+                uint32_t slice_group_change_rate;
             }t2;
 
             // type 6
             struct
             {
-                Ipp32u pic_size_in_map_units;     // number of macroblocks if no field coding
+                uint32_t pic_size_in_map_units;     // number of macroblocks if no field coding
             }t3;
         };
 
-        std::vector<Ipp8u> pSliceGroupIDMap;          // Id for each slice group map unit (for t3 struct of)
+        std::vector<uint8_t> pSliceGroupIDMap;          // Id for each slice group map unit (for t3 struct of)
     };    // SliceGroupInfoStruct
 
-    Ipp16u       pic_parameter_set_id;            // of this picture parameter set
-    Ipp8u        seq_parameter_set_id;            // of seq param set used for this pic param set
-    Ipp8u        entropy_coding_mode;             // zero: CAVLC, else CABAC
+    uint16_t       pic_parameter_set_id;            // of this picture parameter set
+    uint8_t        seq_parameter_set_id;            // of seq param set used for this pic param set
+    uint8_t        entropy_coding_mode;             // zero: CAVLC, else CABAC
 
-    Ipp8u        bottom_field_pic_order_in_frame_present_flag; // Zero indicates only delta_pic_order_cnt[0] is
+    uint8_t        bottom_field_pic_order_in_frame_present_flag; // Zero indicates only delta_pic_order_cnt[0] is
                                                   // present in slice header; nonzero indicates
                                                   // delta_pic_order_cnt[1] is also present.
 
-    Ipp8u        weighted_pred_flag;              // Nonzero indicates weighted prediction applied to
+    uint8_t        weighted_pred_flag;              // Nonzero indicates weighted prediction applied to
                                                   // P and SP slices
-    Ipp8u        weighted_bipred_idc;             // 0: no weighted prediction in B slices
+    uint8_t        weighted_bipred_idc;             // 0: no weighted prediction in B slices
                                                   // 1: explicit weighted prediction
                                                   // 2: implicit weighted prediction
-    Ipp8s        pic_init_qp;                     // default QP for I,P,B slices
-    Ipp8s        pic_init_qs;                     // default QP for SP, SI slices
+    int8_t        pic_init_qp;                     // default QP for I,P,B slices
+    int8_t        pic_init_qs;                     // default QP for SP, SI slices
 
-    Ipp8s        chroma_qp_index_offset[2];       // offset to add to QP for chroma
+    int8_t        chroma_qp_index_offset[2];       // offset to add to QP for chroma
 
-    Ipp8u        deblocking_filter_variables_present_flag;    // If nonzero, deblock filter params are
+    uint8_t        deblocking_filter_variables_present_flag;    // If nonzero, deblock filter params are
                                                   // present in the slice header.
-    Ipp8u        constrained_intra_pred_flag;     // Nonzero indicates constrained intra mode
+    uint8_t        constrained_intra_pred_flag;     // Nonzero indicates constrained intra mode
 
-    Ipp8u        redundant_pic_cnt_present_flag;  // Nonzero indicates presence of redundant_pic_cnt
+    uint8_t        redundant_pic_cnt_present_flag;  // Nonzero indicates presence of redundant_pic_cnt
                                                   // in slice header
-    Ipp32u       num_slice_groups;                // One: no FMO
-    Ipp32u       num_ref_idx_l0_active;           // num of ref pics in list 0 used to decode the picture
-    Ipp32u       num_ref_idx_l1_active;           // num of ref pics in list 1 used to decode the picture
-    Ipp8u        transform_8x8_mode_flag;
+    uint32_t       num_slice_groups;                // One: no FMO
+    uint32_t       num_ref_idx_l0_active;           // num of ref pics in list 0 used to decode the picture
+    uint32_t       num_ref_idx_l1_active;           // num of ref pics in list 1 used to decode the picture
+    uint8_t        transform_8x8_mode_flag;
 
-    Ipp8u pic_scaling_matrix_present_flag;
-    Ipp8u pic_scaling_list_present_flag[8];
+    uint8_t pic_scaling_matrix_present_flag;
+    uint8_t pic_scaling_list_present_flag[8];
 
-    Ipp8u        type_of_scaling_list_used[8];
+    uint8_t        type_of_scaling_list_used[8];
 
     SliceGroupInfoStruct SliceGroupInfo;    // Used only when num_slice_groups > 1
 
     H264ScalingPicParams scaling[2];
 
-    Ipp8u initialized[2];
+    uint8_t initialized[2];
 
-    Ipp8u errorFlags;
+    uint8_t errorFlags;
 
     void Reset()
     {
@@ -760,7 +760,7 @@ struct H264PicParamSet : public HeapObject, public H264PicParamSetBase
     {
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return pic_parameter_set_id;
     }
@@ -769,44 +769,44 @@ struct H264PicParamSet : public HeapObject, public H264PicParamSetBase
 
 struct RefPicListReorderInfo
 {
-    Ipp32u       num_entries;                 // number of currently valid idc,value pairs
-    Ipp8u        reordering_of_pic_nums_idc[MAX_NUM_REF_FRAMES];
-    Ipp32u       reorder_value[MAX_NUM_REF_FRAMES];    // abs_diff_pic_num or long_term_pic_num
+    uint32_t       num_entries;                 // number of currently valid idc,value pairs
+    uint8_t        reordering_of_pic_nums_idc[MAX_NUM_REF_FRAMES];
+    uint32_t       reorder_value[MAX_NUM_REF_FRAMES];    // abs_diff_pic_num or long_term_pic_num
 };
 
 struct AdaptiveMarkingInfo
 {
-    Ipp32u       num_entries;                 // number of currently valid mmco,value pairs
-    Ipp8u        mmco[MAX_NUM_REF_FRAMES];    // memory management control operation id
-    Ipp32u       value[MAX_NUM_REF_FRAMES*2]; // operation-dependent data, max 2 per operation
+    uint32_t       num_entries;                 // number of currently valid mmco,value pairs
+    uint8_t        mmco[MAX_NUM_REF_FRAMES];    // memory management control operation id
+    uint32_t       value[MAX_NUM_REF_FRAMES*2]; // operation-dependent data, max 2 per operation
 };
 
 struct PredWeightTable
 {
-    Ipp8u        luma_weight_flag;            // nonzero: luma weight and offset in bitstream
-    Ipp8u        chroma_weight_flag;          // nonzero: chroma weight and offset in bitstream
-    Ipp8s        luma_weight;                 // luma weighting factor
-    Ipp8s        luma_offset;                 // luma weighting offset
-    Ipp8s        chroma_weight[2];            // chroma weighting factor (Cb,Cr)
-    Ipp8s        chroma_offset[2];            // chroma weighting offset (Cb,Cr)
+    uint8_t        luma_weight_flag;            // nonzero: luma weight and offset in bitstream
+    uint8_t        chroma_weight_flag;          // nonzero: chroma weight and offset in bitstream
+    int8_t        luma_weight;                 // luma weighting factor
+    int8_t        luma_offset;                 // luma weighting offset
+    int8_t        chroma_weight[2];            // chroma weighting factor (Cb,Cr)
+    int8_t        chroma_offset[2];            // chroma weighting offset (Cb,Cr)
 };    // PredWeightTable
 
-typedef Ipp32s H264DecoderMBAddr;
+typedef int32_t H264DecoderMBAddr;
 // NAL unit SVC extension structure
 struct H264NalSvcExtension
 {
-    Ipp8u idr_flag;
-    Ipp8u priority_id;
-    Ipp8u no_inter_layer_pred_flag;
-    Ipp8u dependency_id;
-    Ipp8u quality_id;
-    Ipp8u temporal_id;
-    Ipp8u use_ref_base_pic_flag;
-    Ipp8u discardable_flag;
-    Ipp8u output_flag;
+    uint8_t idr_flag;
+    uint8_t priority_id;
+    uint8_t no_inter_layer_pred_flag;
+    uint8_t dependency_id;
+    uint8_t quality_id;
+    uint8_t temporal_id;
+    uint8_t use_ref_base_pic_flag;
+    uint8_t discardable_flag;
+    uint8_t output_flag;
 
-    Ipp8u store_ref_base_pic_flag;
-    Ipp8u adaptive_ref_base_pic_marking_mode_flag;
+    uint8_t store_ref_base_pic_flag;
+    uint8_t adaptive_ref_base_pic_marking_mode_flag;
     AdaptiveMarkingInfo adaptiveMarkingInfo;
 
     void Reset()
@@ -829,15 +829,15 @@ struct H264NalSvcExtension
 // NAL unit SVC extension structure
 struct H264NalMvcExtension
 {
-    Ipp8u non_idr_flag;
-    Ipp16u priority_id;
+    uint8_t non_idr_flag;
+    uint16_t priority_id;
     // view_id variable is duplicated to the slice header itself
-    Ipp16u view_id;
-    Ipp8u temporal_id;
-    Ipp8u anchor_pic_flag;
-    Ipp8u inter_view_flag;
+    uint16_t view_id;
+    uint8_t temporal_id;
+    uint8_t anchor_pic_flag;
+    uint8_t inter_view_flag;
 
-    Ipp8u padding[3];
+    uint8_t padding[3];
 
     void Reset()
     {
@@ -853,8 +853,8 @@ struct H264NalMvcExtension
 // NAL unit extension structure
 struct H264NalExtension
 {
-    Ipp8u extension_present;
-    Ipp8u svc_extension_flag; // equal to 1 specifies that NAL extension contains SVC related parameters
+    uint8_t extension_present;
+    uint8_t svc_extension_flag; // equal to 1 specifies that NAL extension contains SVC related parameters
 
     H264NalSvcExtension svc;
     H264NalMvcExtension mvc;
@@ -869,11 +869,11 @@ struct H264NalExtension
 struct H264SliceHeader
 {
     // flag equal 1 means that the slice belong to IDR or anchor access unit
-    Ipp32u IdrPicFlag;
+    uint32_t IdrPicFlag;
 
     // specified that NAL unit contains any information accessed from
     // the decoding process of other NAL units.
-    Ipp32u nal_ref_idc;
+    uint32_t nal_ref_idc;
     // specifies the type of RBSP data structure contained in the NAL unit as
     // specified in Table 7-1 of h264 standard
     NAL_Unit_Type nal_unit_type;
@@ -881,276 +881,276 @@ struct H264SliceHeader
     // NAL unit extension parameters
     H264NalExtension nal_ext;
 
-    Ipp16u        pic_parameter_set_id;                 // of pic param set used for this slice
-    Ipp8u         field_pic_flag;                       // zero: frame picture, else field picture
-    Ipp8u         MbaffFrameFlag;
-    Ipp8u         bottom_field_flag;                    // zero: top field, else bottom field
-    Ipp8u         direct_spatial_mv_pred_flag;          // zero: temporal direct, else spatial direct
-    Ipp8u         num_ref_idx_active_override_flag;     // nonzero: use ref_idx_active from slice header
+    uint16_t        pic_parameter_set_id;                 // of pic param set used for this slice
+    uint8_t         field_pic_flag;                       // zero: frame picture, else field picture
+    uint8_t         MbaffFrameFlag;
+    uint8_t         bottom_field_flag;                    // zero: top field, else bottom field
+    uint8_t         direct_spatial_mv_pred_flag;          // zero: temporal direct, else spatial direct
+    uint8_t         num_ref_idx_active_override_flag;     // nonzero: use ref_idx_active from slice header
                                                         // instead of those from pic param set
-    Ipp8u         no_output_of_prior_pics_flag;         // nonzero: remove previously decoded pictures
+    uint8_t         no_output_of_prior_pics_flag;         // nonzero: remove previously decoded pictures
                                                         // from decoded picture buffer
-    Ipp8u         long_term_reference_flag;             // How to set MaxLongTermFrameIdx
-    Ipp32u        cabac_init_idc;                      // CABAC initialization table index (0..2)
-    Ipp8u         adaptive_ref_pic_marking_mode_flag;   // Ref pic marking mode of current picture
-    Ipp32s        slice_qp_delta;                       // to calculate default slice QP
-    Ipp8u         sp_for_switch_flag;                   // SP slice decoding control
-    Ipp32s        slice_qs_delta;                       // to calculate default SP,SI slice QS
-    Ipp32u        disable_deblocking_filter_idc;       // deblock filter control, 0=filter all edges
-    Ipp32s        slice_alpha_c0_offset;               // deblock filter c0, alpha table offset
-    Ipp32s        slice_beta_offset;                   // deblock filter beta table offset
+    uint8_t         long_term_reference_flag;             // How to set MaxLongTermFrameIdx
+    uint32_t        cabac_init_idc;                      // CABAC initialization table index (0..2)
+    uint8_t         adaptive_ref_pic_marking_mode_flag;   // Ref pic marking mode of current picture
+    int32_t        slice_qp_delta;                       // to calculate default slice QP
+    uint8_t         sp_for_switch_flag;                   // SP slice decoding control
+    int32_t        slice_qs_delta;                       // to calculate default SP,SI slice QS
+    uint32_t        disable_deblocking_filter_idc;       // deblock filter control, 0=filter all edges
+    int32_t        slice_alpha_c0_offset;               // deblock filter c0, alpha table offset
+    int32_t        slice_beta_offset;                   // deblock filter beta table offset
     H264DecoderMBAddr first_mb_in_slice;
-    Ipp32s        frame_num;
+    int32_t        frame_num;
     EnumSliceCodType slice_type;
-    Ipp32u        idr_pic_id;                           // ID of an IDR picture
-    Ipp32s        pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
-    Ipp32s        delta_pic_order_cnt_bottom;           // Pic order count difference, top & bottom fields
-    Ipp32u        difference_of_pic_nums;               // Ref pic memory mgmt
-    Ipp32u        long_term_pic_num;                    // Ref pic memory mgmt
-    Ipp32u        long_term_frame_idx;                  // Ref pic memory mgmt
-    Ipp32u        max_long_term_frame_idx;              // Ref pic memory mgmt
-    Ipp32s        delta_pic_order_cnt[2];               // picture order count differences
-    Ipp32u        redundant_pic_cnt;                    // for redundant slices
-    Ipp32s        num_ref_idx_l0_active;                // num of ref pics in list 0 used to decode the slice,
+    uint32_t        idr_pic_id;                           // ID of an IDR picture
+    int32_t        pic_order_cnt_lsb;                    // picture order count (mod MaxPicOrderCntLsb)
+    int32_t        delta_pic_order_cnt_bottom;           // Pic order count difference, top & bottom fields
+    uint32_t        difference_of_pic_nums;               // Ref pic memory mgmt
+    uint32_t        long_term_pic_num;                    // Ref pic memory mgmt
+    uint32_t        long_term_frame_idx;                  // Ref pic memory mgmt
+    uint32_t        max_long_term_frame_idx;              // Ref pic memory mgmt
+    int32_t        delta_pic_order_cnt[2];               // picture order count differences
+    uint32_t        redundant_pic_cnt;                    // for redundant slices
+    int32_t        num_ref_idx_l0_active;                // num of ref pics in list 0 used to decode the slice,
                                                         // see num_ref_idx_active_override_flag
-    Ipp32s        num_ref_idx_l1_active;                // num of ref pics in list 1 used to decode the slice
+    int32_t        num_ref_idx_l1_active;                // num of ref pics in list 1 used to decode the slice
                                                         // see num_ref_idx_active_override_flag
-    Ipp32u        slice_group_change_cycle;             // for FMO
-    Ipp8u         luma_log2_weight_denom;               // luma weighting denominator
-    Ipp8u         chroma_log2_weight_denom;             // chroma weighting denominator
+    uint32_t        slice_group_change_cycle;             // for FMO
+    uint8_t         luma_log2_weight_denom;               // luma weighting denominator
+    uint8_t         chroma_log2_weight_denom;             // chroma weighting denominator
 
     bool          is_auxiliary;
 
     /* for scalable stream */
-    Ipp8u         scan_idx_start;
-    Ipp8u         scan_idx_end;
+    uint8_t         scan_idx_start;
+    uint8_t         scan_idx_end;
 
-    Ipp32u        hw_wa_redundant_elimination_bits[3]; // [0] - start redundant element, [1] - end redundant element [2] - header size in bits
+    uint32_t        hw_wa_redundant_elimination_bits[3]; // [0] - start redundant element, [1] - end redundant element [2] - header size in bits
 }; // H264SliceHeader
 
 typedef struct
 {
-    Ipp32u  layer_id;
-    Ipp8u   priority_id;
-    Ipp8u   discardable_flag;
-    Ipp8u   dependency_id;
-    Ipp8u   quality_id;
-    Ipp8u   temporal_id;
+    uint32_t  layer_id;
+    uint8_t   priority_id;
+    uint8_t   discardable_flag;
+    uint8_t   dependency_id;
+    uint8_t   quality_id;
+    uint8_t   temporal_id;
 
-    Ipp32u  frm_width_in_mbs;
-    Ipp32u  frm_height_in_mbs;
+    uint32_t  frm_width_in_mbs;
+    uint32_t  frm_height_in_mbs;
 
     // frm_rate_info_present_flag section
-    Ipp32u  constant_frm_rate_idc;
-    Ipp32u  avg_frm_rate;
+    uint32_t  constant_frm_rate_idc;
+    uint32_t  avg_frm_rate;
 
     // layer_dependency_info_present_flag
-    Ipp32u num_directly_dependent_layers;
-    Ipp32u directly_dependent_layer_id_delta_minus1[256];
-    Ipp32u layer_dependency_info_src_layer_id_delta;
+    uint32_t num_directly_dependent_layers;
+    uint32_t directly_dependent_layer_id_delta_minus1[256];
+    uint32_t layer_dependency_info_src_layer_id_delta;
 
 } scalability_layer_info;
 
 struct H264SEIPayLoadBase
 {
     SEI_TYPE payLoadType;
-    Ipp32u   payLoadSize;
-    Ipp8u    isValid;
+    uint32_t   payLoadSize;
+    uint8_t    isValid;
 
     union SEIMessages
     {
         struct BufferingPeriod
         {
-            Ipp32u initial_cpb_removal_delay[2][32];
-            Ipp32u initial_cpb_removal_delay_offset[2][32];
+            uint32_t initial_cpb_removal_delay[2][32];
+            uint32_t initial_cpb_removal_delay_offset[2][32];
         }buffering_period;
 
         struct PicTiming
         {
-            Ipp32s cbp_removal_delay;
-            Ipp32s dpb_output_delay;
+            int32_t cbp_removal_delay;
+            int32_t dpb_output_delay;
             DisplayPictureStruct pic_struct;
-            Ipp8u  clock_timestamp_flag[16];
+            uint8_t  clock_timestamp_flag[16];
             struct ClockTimestamps
             {
-                Ipp8u ct_type;
-                Ipp8u nunit_field_based_flag;
-                Ipp8u counting_type;
-                Ipp8u full_timestamp_flag;
-                Ipp8u discontinuity_flag;
-                Ipp8u cnt_dropped_flag;
-                Ipp8u n_frames;
-                Ipp8u seconds_value;
-                Ipp8u minutes_value;
-                Ipp8u hours_value;
-                Ipp8u time_offset;
+                uint8_t ct_type;
+                uint8_t nunit_field_based_flag;
+                uint8_t counting_type;
+                uint8_t full_timestamp_flag;
+                uint8_t discontinuity_flag;
+                uint8_t cnt_dropped_flag;
+                uint8_t n_frames;
+                uint8_t seconds_value;
+                uint8_t minutes_value;
+                uint8_t hours_value;
+                uint8_t time_offset;
             }clock_timestamps[16];
         }pic_timing;
 
         struct PanScanRect
         {
-            Ipp8u  pan_scan_rect_id;
-            Ipp8u  pan_scan_rect_cancel_flag;
-            Ipp8u  pan_scan_cnt;
-            Ipp32u pan_scan_rect_left_offset[32];
-            Ipp32u pan_scan_rect_right_offset[32];
-            Ipp32u pan_scan_rect_top_offset[32];
-            Ipp32u pan_scan_rect_bottom_offset[32];
-            Ipp8u  pan_scan_rect_repetition_period;
+            uint8_t  pan_scan_rect_id;
+            uint8_t  pan_scan_rect_cancel_flag;
+            uint8_t  pan_scan_cnt;
+            uint32_t pan_scan_rect_left_offset[32];
+            uint32_t pan_scan_rect_right_offset[32];
+            uint32_t pan_scan_rect_top_offset[32];
+            uint32_t pan_scan_rect_bottom_offset[32];
+            uint8_t  pan_scan_rect_repetition_period;
         }pan_scan_rect;
 
         struct UserDataRegistered
         {
-            Ipp8u itu_t_t35_country_code;
-            Ipp8u itu_t_t35_country_code_extension_byte;
+            uint8_t itu_t_t35_country_code;
+            uint8_t itu_t_t35_country_code_extension_byte;
         } user_data_registered;
 
         struct RecoveryPoint
         {
-            Ipp8u recovery_frame_cnt;
-            Ipp8u exact_match_flag;
-            Ipp8u broken_link_flag;
-            Ipp8u changing_slice_group_idc;
+            uint8_t recovery_frame_cnt;
+            uint8_t exact_match_flag;
+            uint8_t broken_link_flag;
+            uint8_t changing_slice_group_idc;
         }recovery_point;
 
         struct DecRefPicMarkingRepetition
         {
-            Ipp8u original_idr_flag;
-            Ipp8u original_frame_num;
-            Ipp8u original_field_pic_flag;
-            Ipp8u original_bottom_field_flag;
-            Ipp8u long_term_reference_flag;
+            uint8_t original_idr_flag;
+            uint8_t original_frame_num;
+            uint8_t original_field_pic_flag;
+            uint8_t original_bottom_field_flag;
+            uint8_t long_term_reference_flag;
             AdaptiveMarkingInfo adaptiveMarkingInfo;
         }dec_ref_pic_marking_repetition;
 
         struct SparePic
         {
-            Ipp32u target_frame_num;
-            Ipp8u  spare_field_flag;
-            Ipp8u  target_bottom_field_flag;
-            Ipp8u  num_spare_pics;
-            Ipp8u  delta_spare_frame_num[16];
-            Ipp8u  spare_bottom_field_flag[16];
-            Ipp8u  spare_area_idc[16];
-            Ipp8u  *spare_unit_flag[16];
-            Ipp8u  *zero_run_length[16];
+            uint32_t target_frame_num;
+            uint8_t  spare_field_flag;
+            uint8_t  target_bottom_field_flag;
+            uint8_t  num_spare_pics;
+            uint8_t  delta_spare_frame_num[16];
+            uint8_t  spare_bottom_field_flag[16];
+            uint8_t  spare_area_idc[16];
+            uint8_t  *spare_unit_flag[16];
+            uint8_t  *zero_run_length[16];
         }spare_pic;
 
         struct SceneInfo
         {
-            Ipp8u scene_info_present_flag;
-            Ipp8u scene_id;
-            Ipp8u scene_transition_type;
-            Ipp8u second_scene_id;
+            uint8_t scene_info_present_flag;
+            uint8_t scene_id;
+            uint8_t scene_transition_type;
+            uint8_t second_scene_id;
         }scene_info;
 
         struct SubSeqInfo
         {
-            Ipp8u sub_seq_layer_num;
-            Ipp8u sub_seq_id;
-            Ipp8u first_ref_pic_flag;
-            Ipp8u leading_non_ref_pic_flag;
-            Ipp8u last_pic_flag;
-            Ipp8u sub_seq_frame_num_flag;
-            Ipp8u sub_seq_frame_num;
+            uint8_t sub_seq_layer_num;
+            uint8_t sub_seq_id;
+            uint8_t first_ref_pic_flag;
+            uint8_t leading_non_ref_pic_flag;
+            uint8_t last_pic_flag;
+            uint8_t sub_seq_frame_num_flag;
+            uint8_t sub_seq_frame_num;
         }sub_seq_info;
 
         struct SubSeqLayerCharacteristics
         {
-            Ipp8u  num_sub_seq_layers;
-            Ipp8u  accurate_statistics_flag[16];
-            Ipp16u average_bit_rate[16];
-            Ipp16u average_frame_rate[16];
+            uint8_t  num_sub_seq_layers;
+            uint8_t  accurate_statistics_flag[16];
+            uint16_t average_bit_rate[16];
+            uint16_t average_frame_rate[16];
         }sub_seq_layer_characteristics;
 
         struct SubSeqCharacteristics
         {
-            Ipp8u  sub_seq_layer_num;
-            Ipp8u  sub_seq_id;
-            Ipp8u  duration_flag;
-            Ipp8u  sub_seq_duration;
-            Ipp8u  average_rate_flag;
-            Ipp8u  accurate_statistics_flag;
-            Ipp16u average_bit_rate;
-            Ipp16u average_frame_rate;
-            Ipp8u  num_referenced_subseqs;
-            Ipp8u  ref_sub_seq_layer_num[16];
-            Ipp8u  ref_sub_seq_id[16];
-            Ipp8u  ref_sub_seq_direction[16];
+            uint8_t  sub_seq_layer_num;
+            uint8_t  sub_seq_id;
+            uint8_t  duration_flag;
+            uint8_t  sub_seq_duration;
+            uint8_t  average_rate_flag;
+            uint8_t  accurate_statistics_flag;
+            uint16_t average_bit_rate;
+            uint16_t average_frame_rate;
+            uint8_t  num_referenced_subseqs;
+            uint8_t  ref_sub_seq_layer_num[16];
+            uint8_t  ref_sub_seq_id[16];
+            uint8_t  ref_sub_seq_direction[16];
         }sub_seq_characteristics;
 
         struct FullFrameFreeze
         {
-            Ipp32u full_frame_freeze_repetition_period;
+            uint32_t full_frame_freeze_repetition_period;
         }full_frame_freeze;
 
         struct FullFrameSnapshot
         {
-            Ipp8u snapshot_id;
+            uint8_t snapshot_id;
         }full_frame_snapshot;
 
         struct ProgressiveRefinementSegmentStart
         {
-            Ipp8u progressive_refinement_id;
-            Ipp8u num_refinement_steps;
+            uint8_t progressive_refinement_id;
+            uint8_t num_refinement_steps;
         }progressive_refinement_segment_start;
 
         struct MotionConstrainedSliceGroupSet
         {
-            Ipp8u num_slice_groups_in_set;
-            Ipp8u slice_group_id[8];
-            Ipp8u exact_sample_value_match_flag;
-            Ipp8u pan_scan_rect_flag;
-            Ipp8u pan_scan_rect_id;
+            uint8_t num_slice_groups_in_set;
+            uint8_t slice_group_id[8];
+            uint8_t exact_sample_value_match_flag;
+            uint8_t pan_scan_rect_flag;
+            uint8_t pan_scan_rect_id;
         }motion_constrained_slice_group_set;
 
         struct FilmGrainCharacteristics
         {
-            Ipp8u film_grain_characteristics_cancel_flag;
-            Ipp8u model_id;
-            Ipp8u separate_colour_description_present_flag;
-            Ipp8u film_grain_bit_depth_luma;
-            Ipp8u film_grain_bit_depth_chroma;
-            Ipp8u film_grain_full_range_flag;
-            Ipp8u film_grain_colour_primaries;
-            Ipp8u film_grain_transfer_characteristics;
-            Ipp8u film_grain_matrix_coefficients;
-            Ipp8u blending_mode_id;
-            Ipp8u log2_scale_factor;
-            Ipp8u comp_model_present_flag[3];
-            Ipp8u num_intensity_intervals[3];
-            Ipp8u num_model_values[3];
-            Ipp8u intensity_interval_lower_bound[3][256];
-            Ipp8u intensity_interval_upper_bound[3][256];
-            Ipp8u comp_model_value[3][3][256];
-            Ipp8u film_grain_characteristics_repetition_period;
+            uint8_t film_grain_characteristics_cancel_flag;
+            uint8_t model_id;
+            uint8_t separate_colour_description_present_flag;
+            uint8_t film_grain_bit_depth_luma;
+            uint8_t film_grain_bit_depth_chroma;
+            uint8_t film_grain_full_range_flag;
+            uint8_t film_grain_colour_primaries;
+            uint8_t film_grain_transfer_characteristics;
+            uint8_t film_grain_matrix_coefficients;
+            uint8_t blending_mode_id;
+            uint8_t log2_scale_factor;
+            uint8_t comp_model_present_flag[3];
+            uint8_t num_intensity_intervals[3];
+            uint8_t num_model_values[3];
+            uint8_t intensity_interval_lower_bound[3][256];
+            uint8_t intensity_interval_upper_bound[3][256];
+            uint8_t comp_model_value[3][3][256];
+            uint8_t film_grain_characteristics_repetition_period;
         }film_grain_characteristics;
 
         struct DeblockingFilterDisplayPreference
         {
-            Ipp8u deblocking_display_preference_cancel_flag;
-            Ipp8u display_prior_to_deblocking_preferred_flag;
-            Ipp8u dec_frame_buffering_constraint_flag;
-            Ipp8u deblocking_display_preference_repetition_period;
+            uint8_t deblocking_display_preference_cancel_flag;
+            uint8_t display_prior_to_deblocking_preferred_flag;
+            uint8_t dec_frame_buffering_constraint_flag;
+            uint8_t deblocking_display_preference_repetition_period;
         }deblocking_filter_display_preference;
 
         struct StereoVideoInfo
         {
-            Ipp8u field_views_flag;
-            Ipp8u top_field_is_left_view_flag;
-            Ipp8u current_frame_is_left_view_flag;
-            Ipp8u next_frame_is_second_view_flag;
-            Ipp8u left_view_self_contained_flag;
-            Ipp8u right_view_self_contained_flag;
+            uint8_t field_views_flag;
+            uint8_t top_field_is_left_view_flag;
+            uint8_t current_frame_is_left_view_flag;
+            uint8_t next_frame_is_second_view_flag;
+            uint8_t left_view_self_contained_flag;
+            uint8_t right_view_self_contained_flag;
         }stereo_video_info;
 
         struct ScalabilityInfo
         {
-            Ipp8u temporal_id_nesting_flag;
-            Ipp8u priority_layer_info_present_flag;
-            Ipp8u priority_id_setting_flag;
+            uint8_t temporal_id_nesting_flag;
+            uint8_t priority_layer_info_present_flag;
+            uint8_t priority_id_setting_flag;
 
-            Ipp32u num_layers;
+            uint32_t num_layers;
         } scalability_info;
 
     }SEI_messages;
@@ -1166,7 +1166,7 @@ struct H264SEIPayLoadBase
 
 struct H264SEIPayLoad : public HeapObject, public H264SEIPayLoadBase
 {
-    std::vector<Ipp8u> user_data; // for UserDataRegistered or UserDataUnRegistered
+    std::vector<uint8_t> user_data; // for UserDataRegistered or UserDataUnRegistered
 
     H264SEIPayLoad()
         : H264SEIPayLoadBase()
@@ -1179,7 +1179,7 @@ struct H264SEIPayLoad : public HeapObject, public H264SEIPayLoadBase
         user_data.clear();
     }
 
-    Ipp32s GetID() const
+    int32_t GetID() const
     {
         return payLoadType;
     }
@@ -1211,7 +1211,7 @@ struct ReferenceFlags // flags use for reference frames of slice
 class h264_exception
 {
 public:
-    h264_exception(Ipp32s status = -1)
+    h264_exception(int32_t status = -1)
         : m_Status(status)
     {
     }
@@ -1220,17 +1220,17 @@ public:
     {
     }
 
-    Ipp32s GetStatus() const
+    int32_t GetStatus() const
     {
         return m_Status;
     }
 
 private:
-    Ipp32s m_Status;
+    int32_t m_Status;
 };
 
 template <typename T>
-inline T * h264_new_array_throw(Ipp32s size)
+inline T * h264_new_array_throw(int32_t size)
 {
     T * t = new T[size];
     if (!t)
@@ -1247,7 +1247,7 @@ inline T * h264_new_throw()
     return t;
 }
 
-inline ColorFormat GetUMCColorFormat(Ipp32s color_format)
+inline ColorFormat GetUMCColorFormat(int32_t color_format)
 {
     ColorFormat format;
     switch(color_format)
@@ -1270,9 +1270,9 @@ inline ColorFormat GetUMCColorFormat(Ipp32s color_format)
     return format;
 }
 
-inline Ipp32s GetH264ColorFormat(ColorFormat color_format)
+inline int32_t GetH264ColorFormat(ColorFormat color_format)
 {
-    Ipp32s format;
+    int32_t format;
     switch(color_format)
     {
     case GRAY:
@@ -1324,8 +1324,8 @@ inline size_t CalculateSuggestedSize(const H264SeqParamSet * sps)
     return size;
 }
 
-extern const Ipp32u SubWidthC[4];
-extern const Ipp32u SubHeightC[4];
+extern const uint32_t SubWidthC[4];
+extern const uint32_t SubHeightC[4];
 
 } // end namespace UMC
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -100,7 +100,7 @@ namespace UMC
 */
 
 static
-Ipp32s coeff_token_map_02[] =
+int32_t coeff_token_map_02[] =
 {
 16, /* max bits */
 3,  /* total subtables */
@@ -174,7 +174,7 @@ Ipp32s coeff_token_map_02[] =
 #define SHIFT2 8//5//
 
 #undef TABLE_TYPE
-#define TABLE_TYPE Ipp32s //Ipp16u
+#define TABLE_TYPE int32_t //uint16_t
 */
 
 //Table 9 5 - coeff_token mapping to TotalCoeff( coeff_token )
@@ -256,7 +256,7 @@ Ipp32s coeff_token_map_02[] =
 */
 
 static
-Ipp32s coeff_token_map_24[] =
+int32_t coeff_token_map_24[] =
 {
 
 14, /* max bits */
@@ -386,7 +386,7 @@ Ipp32s coeff_token_map_24[] =
 */
 
 static
-Ipp32s coeff_token_map_48[] =
+int32_t coeff_token_map_48[] =
 {
 
 10, /* max bits */
@@ -455,7 +455,7 @@ Ipp32s coeff_token_map_48[] =
 */
 
 static
-Ipp32s coeff_token_map_cr[] =
+int32_t coeff_token_map_cr[] =
 {
 
 8, /* max bits */
@@ -488,7 +488,7 @@ Ipp32s coeff_token_map_cr[] =
 };
 
 static
-Ipp32s coeff_token_map_cr2[] =
+int32_t coeff_token_map_cr2[] =
 {
     13, /* max bits */
     2,  /* total subtables */

@@ -39,7 +39,7 @@ enum
     CHROMA_DC_AC_BLOCKS         = 0x30
 };
 
-template <typename Coeffs, Ipp32s color_format, Ipp32s is_field>
+template <typename Coeffs, int32_t color_format, int32_t is_field>
 class ResidualDecoderCAVLC
 {
 public:
@@ -49,21 +49,21 @@ public:
 
     void DecodeCoefficients8x8_CAVLC(H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp64u blockcbp;
-        Ipp32u u8x8block = 1;
-        Ipp32s uBlock;
-        Ipp32u uBlockBit;
+        unsigned long long blockcbp;
+        uint32_t u8x8block = 1;
+        int32_t uBlock;
+        uint32_t uBlockBit;
 
-        Ipp32u uNC;
-        Ipp32u uAboveIndex;
-        Ipp32u uLeftIndex;
+        uint32_t uNC;
+        uint32_t uAboveIndex;
+        uint32_t uLeftIndex;
         Coeffs TempCoeffs[16];
-        Ipp16s sNumCoeff;
-        Ipp32s bFieldDecodeFlag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
+        int16_t sNumCoeff;
+        int32_t bFieldDecodeFlag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
         CoeffsPtr pCurCoeffs;
         bool advance_to_next_block=false;
-        Ipp8u bf = sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE || bFieldDecodeFlag;
-        Ipp8u cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
+        uint8_t bf = sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE || bFieldDecodeFlag;
+        uint8_t cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
 
         // Initialize blockcbp bits from input cbp (from the bitstream)
         blockcbp = 0;   // no coeffs
@@ -119,7 +119,7 @@ public:
                                                     &pCurCoeffs,
                                                     bf);
                 //copy coeffs from tempbuffer
-                for (Ipp32s i=0;i<16;i++)
+                for (int32_t i=0;i<16;i++)
                 {
                     CoeffsPtr coeffsPtr = (CoeffsPtr)sd->m_pCoeffBlocksWrite;
                     coeffsPtr[hp_scan8x8[bf][((uBlock-1)&3)+i*4]] = TempCoeffs[mp_scan4x4[bf][i]];
@@ -135,7 +135,7 @@ public:
                 advance_to_next_block=false;
             }
             // Update num coeff storage for predicting future blocks
-            sd->m_cur_mb.GetNumCoeffs()->numCoeffs[uLeftIndex * 4 + uAboveIndex] = (Ipp8u) sNumCoeff;
+            sd->m_cur_mb.GetNumCoeffs()->numCoeffs[uLeftIndex * 4 + uAboveIndex] = (uint8_t) sNumCoeff;
 
             blockcbp >>= 1;
             uBlockBit <<= 1;
@@ -175,7 +175,7 @@ public:
                 if ((blockcbp == 0) && (uBlock == (FIRST_AC_CHROMA - 1)))
                 {
                     // no AC chroma coeffs, set chrroma NumCoef buffers to zero and exit
-                    Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+                    uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
 
                     switch (color_format)
                     {
@@ -197,7 +197,7 @@ public:
 
         uBlockBit = 2;
 
-        Ipp32s colorFactor;
+        int32_t colorFactor;
 
         switch(color_format)
         {
@@ -217,9 +217,9 @@ public:
 
         if (sd->m_pSliceHeader->scan_idx_end > 0)
         {
-            Ipp32s tmpx = sd->m_pSliceHeader->scan_idx_start;
-            Ipp32s tmpy = sd->m_pSliceHeader->scan_idx_end;
-            Ipp32s iMaxNum;
+            int32_t tmpx = sd->m_pSliceHeader->scan_idx_start;
+            int32_t tmpy = sd->m_pSliceHeader->scan_idx_end;
+            int32_t iMaxNum;
 
             if (tmpx < 1)
             {
@@ -241,7 +241,7 @@ public:
 
                 uAboveIndex = BlockNumToMBColChromaAC[color_format][uBlock-FIRST_AC_CHROMA];
                 uLeftIndex  = BlockNumToMBRowChromaAC[color_format][uBlock-FIRST_AC_CHROMA];
-                Ipp32u addval = uBlock >= (FIRST_AC_CHROMA + 4*colorFactor) ?
+                uint32_t addval = uBlock >= (FIRST_AC_CHROMA + 4*colorFactor) ?
                     (FIRST_AC_CHROMA + 4*colorFactor - 3) : 16;
                 sNumCoeff = 0;
                 if ((blockcbp & 1) != 0)
@@ -263,11 +263,11 @@ public:
                         throw h264_exception(UMC_ERR_INVALID_STREAM);
                     };
 
-                    Ipp32s scan_idx_start = sd->m_pSliceHeader->scan_idx_start;
+                    int32_t scan_idx_start = sd->m_pSliceHeader->scan_idx_start;
                     if (scan_idx_start < 1)
                         scan_idx_start = 1;
 
-                    Ipp32s maxNumCoeff = sd->m_pSliceHeader->scan_idx_end + 1 - scan_idx_start;
+                    int32_t maxNumCoeff = sd->m_pSliceHeader->scan_idx_end + 1 - scan_idx_start;
 
                     // Get CAVLC-code coefficient info from bitstream. Following call
                     // updates pbs, bitOffset, sNumCoeff, sNumTrOnes, TrOneSigns,
@@ -282,8 +282,8 @@ public:
                         |= (sNumCoeff ? uBlockBit : 0);
                 }
                 // Update num coeff storage for predicting future blocks
-                sd->m_cur_mb.GetNumCoeffs()->numCoeffs[uLeftIndex * 2 * (1 + (Ipp32s)(color_format == CHROMA_FORMAT_444))
-                    + uAboveIndex + addval] = (Ipp8u)sNumCoeff;
+                sd->m_cur_mb.GetNumCoeffs()->numCoeffs[uLeftIndex * 2 * (1 + (int32_t)(color_format == CHROMA_FORMAT_444))
+                    + uAboveIndex + addval] = (uint8_t)sNumCoeff;
 
                 blockcbp >>= 1;
                 uBlockBit <<= 1;
@@ -295,18 +295,18 @@ public:
 
 #define SET_TO_ZERO_COEFFS_NUMBER(x_pos, y_pos) \
     { \
-        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (Ipp8u) 0; \
-        pNumCoeffsArray[(y_pos) * 4 + x_pos + 1] = (Ipp8u) 0; \
-        pNumCoeffsArray[(y_pos + 1) * 4 + x_pos] = (Ipp8u) 0; \
-        pNumCoeffsArray[(y_pos + 1) * 4 + x_pos + 1] = (Ipp8u) 0; \
+        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (uint8_t) 0; \
+        pNumCoeffsArray[(y_pos) * 4 + x_pos + 1] = (uint8_t) 0; \
+        pNumCoeffsArray[(y_pos + 1) * 4 + x_pos] = (uint8_t) 0; \
+        pNumCoeffsArray[(y_pos + 1) * 4 + x_pos + 1] = (uint8_t) 0; \
     }
 
 #define DECODE_EXTERNAL_LUMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /*  to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVCLContext; \
+        int32_t iVCLContext; \
         iVCLContext = sd->GetBlocksLumaContextExternal(); \
         /* decode block coeffs */ \
         sd->m_pBitStream->GetCAVLCInfoLuma(iVCLContext, \
@@ -317,15 +317,15 @@ public:
         /* update final CBP */ \
         uFinalCBP |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_TOP_LUMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /*  to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVCLContext; \
+        int32_t iVCLContext; \
         iVCLContext = sd->GetBlocksLumaContextTop(x_pos, pNumCoeffsArray[x_pos - 1]); \
         /* decode block coeffs */ \
         sd->m_pBitStream->GetCAVLCInfoLuma(iVCLContext, \
@@ -336,15 +336,15 @@ public:
         /* update final CBP */ \
         uFinalCBP |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_LEFT_LUMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /*  to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVCLContext; \
+        int32_t iVCLContext; \
         iVCLContext = sd->GetBlocksLumaContextLeft(y_pos, pNumCoeffsArray[(y_pos - 1) * 4]); \
         /* decode block coeffs */ \
         sd->m_pBitStream->GetCAVLCInfoLuma(iVCLContext, \
@@ -355,15 +355,15 @@ public:
         /* update final CBP */ \
         uFinalCBP |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[(y_pos) * 4 + x_pos] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_INTERNAL_LUMA_BLOCK_CAVLC(block_num, raster_block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /*  to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVCLContext; \
+        int32_t iVCLContext; \
         iVCLContext = sd->GetBlocksLumaContextInternal(raster_block_num, pNumCoeffsArray); \
         /* decode block coeffs */ \
         sd->m_pBitStream->GetCAVLCInfoLuma(iVCLContext, \
@@ -374,12 +374,12 @@ public:
         /* update final CBP */ \
         uFinalCBP |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[raster_block_num] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[raster_block_num] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_CHROMA_DC_BLOCK_CAVLC(component) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /* decode chroma DC coefficients */ \
         switch (color_format) \
         { \
@@ -402,10 +402,10 @@ public:
 
 #define DECODE_EXTERNAL_CHROMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /* to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVLCContext; \
+        int32_t iVLCContext; \
         switch (color_format) \
         { \
         case CHROMA_FORMAT_420: \
@@ -428,15 +428,15 @@ public:
         /* update final CBP */ \
         uFinalCBP[iComponent] |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[block_num] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[block_num] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_TOP_CHROMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /* to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVLCContext; \
+        int32_t iVLCContext; \
         switch (color_format) \
         { \
         case CHROMA_FORMAT_420: \
@@ -461,15 +461,15 @@ public:
         /* update final CBP */ \
         uFinalCBP[iComponent] |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[block_num] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[block_num] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_LEFT_CHROMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /* to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVLCContext; \
+        int32_t iVLCContext; \
         switch (color_format) \
         { \
         case CHROMA_FORMAT_420: \
@@ -494,15 +494,15 @@ public:
         /* update final CBP */ \
         uFinalCBP[iComponent] |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[block_num] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[block_num] = (uint8_t) iCoeffsNumber; \
     }
 
 #define DECODE_INTERNAL_CHROMA_BLOCK_CAVLC(x_pos, y_pos, block_num) \
     { \
-        Ipp16s iCoeffsNumber; \
+        int16_t iCoeffsNumber; \
         /* to be honest, VLCContext is an average of coeffs numbers \
             of neighbouring blocks */ \
-        Ipp32s iVLCContext; \
+        int32_t iVLCContext; \
         switch (color_format) \
         { \
         case CHROMA_FORMAT_420: \
@@ -526,23 +526,23 @@ public:
         /* update final CBP */ \
         uFinalCBP[iComponent] |= (iCoeffsNumber) ? (1 << (block_num + 1)) : (0); \
         /* update a num coeff storage for a prediction of future blocks */ \
-        pNumCoeffsArray[block_num] = (Ipp8u) iCoeffsNumber; \
+        pNumCoeffsArray[block_num] = (uint8_t) iCoeffsNumber; \
     }
 
     void DecodeCoefficients16x16_CAVLC(H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp32u iDCCBP = 0;
+        uint32_t iDCCBP = 0;
 
         // set field flag
-        Ipp32s field_flag = (pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo) || is_field) ? 1 : 0;
-        Ipp8u scan_idx_start = sd->m_pSliceHeader->scan_idx_start;
-        Ipp8u scan_idx_end = sd->m_pSliceHeader->scan_idx_end;
+        int32_t field_flag = (pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo) || is_field) ? 1 : 0;
+        uint8_t scan_idx_start = sd->m_pSliceHeader->scan_idx_start;
+        uint8_t scan_idx_end = sd->m_pSliceHeader->scan_idx_end;
 
         // decode luma DC block
         if (scan_idx_start == 0)
         {
-            Ipp16s sNumCoeff;
-            Ipp32u uNC = 0;
+            int16_t sNumCoeff;
+            uint32_t uNC = 0;
 
             sd->m_pBitStream->SetIdx(0, 15);
 
@@ -569,18 +569,18 @@ public:
     } // void DecodeCoefficients16x16_CAVLC(H264SegmentDecoderMultiThreaded * sd)
 
     void DecodeCoefficients4x4_CAVLC(H264SegmentDecoderMultiThreaded * sd,
-                                       Ipp32s iMaxNum = 16)
+                                       int32_t iMaxNum = 16)
     {
-        Ipp32s bFieldDecodeFlag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
-        Ipp32s bf = sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE || bFieldDecodeFlag;
-        Ipp32u cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
+        int32_t bFieldDecodeFlag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo);
+        int32_t bf = sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE || bFieldDecodeFlag;
+        uint32_t cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
 
         //
         // decode luminance blocks
         //
         {
-            Ipp32u uFinalCBP;
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint32_t uFinalCBP;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
 
             if (iMaxNum == 16)
             {
@@ -591,7 +591,7 @@ public:
             }
             else
             {
-                Ipp32s scan_idx_start = sd->m_pSliceHeader->scan_idx_start;
+                int32_t scan_idx_start = sd->m_pSliceHeader->scan_idx_start;
                 if (scan_idx_start < 1)
                     scan_idx_start = 1;
 
@@ -657,7 +657,7 @@ public:
 
         if (color_format != CHROMA_FORMAT_400 && (cbp & CHROMA_DC_AC_BLOCKS))
         {
-            Ipp32u uFinalCBP[2];
+            uint32_t uFinalCBP[2];
 
             uFinalCBP[0] = uFinalCBP[1] = 0;
 
@@ -670,13 +670,13 @@ public:
 
             if ((cbp & CHROMA_AC_BLOCKS) && (sd->m_pSliceHeader->scan_idx_end > 0))
             {
-                Ipp32s iComponent;
+                int32_t iComponent;
 
                 //pNumCoeffsArray += iComponent * 4 + 16;
-                Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs + 16;
+                uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs + 16;
 
-                Ipp32s tmpx = sd->m_pSliceHeader->scan_idx_start;
-                Ipp32s tmpy = sd->m_pSliceHeader->scan_idx_end;
+                int32_t tmpx = sd->m_pSliceHeader->scan_idx_start;
+                int32_t tmpy = sd->m_pSliceHeader->scan_idx_end;
 
                 if (tmpx < 1)
                 {
@@ -736,7 +736,7 @@ public:
         // set zero values to a num coeffs storage
         if (color_format != CHROMA_FORMAT_400 && (0 == (cbp & CHROMA_AC_BLOCKS)) )
         {
-            Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
+            uint8_t *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
 
             switch (color_format)
             {
@@ -754,7 +754,7 @@ public:
     } // void DecodeCoefficients4x4_CAVLC(H264SegmentDecoderMultiThreaded * sd,
 };
 
-template <typename Coeffs, Ipp32s color_format, Ipp32s is_field>
+template <typename Coeffs, int32_t color_format, int32_t is_field>
 class ResidualDecoderCABAC
 {
 public:
@@ -764,18 +764,18 @@ public:
 
     void DecodeCoefficients8x8_CABAC(H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp8u cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
-        Ipp32u uBlockBit;
+        uint8_t cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
+        uint32_t uBlockBit;
         CoeffsPtr pPosCoefbuf = (CoeffsPtr)sd->m_pCoeffBlocksWrite;
 
-        Ipp32u i, j;
-        Ipp32s top_bit     = 1;
-        Ipp32s left_bit    = 1;
-        Ipp32s def_bit = sd->m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTRA;
-        const Ipp32u *ctxBase;
-        const Ipp32s *single_scan;
-        Ipp32s iMBAbove, iMBLeft;
-        Ipp32u ctxIdxInc, iCtxBase;
+        uint32_t i, j;
+        int32_t top_bit     = 1;
+        int32_t left_bit    = 1;
+        int32_t def_bit = sd->m_cur_mb.GlobalMacroblockInfo->mbtype == MBTYPE_INTRA;
+        const uint32_t *ctxBase;
+        const int32_t *single_scan;
+        int32_t iMBAbove, iMBLeft;
+        uint32_t ctxIdxInc, iCtxBase;
         bool field_flag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo) ||
             sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE;
         H264DecoderBlockNeighboursInfo* pN = &sd->m_cur_mb.CurrentBlockNeighbours;
@@ -790,7 +790,7 @@ public:
             single_scan = hp_scan8x8[0];
         }
 
-        Ipp32u &cbp4x4_luma = sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+        uint32_t &cbp4x4_luma = sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
         cbp4x4_luma = 0;
         sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[0] = 0;
         sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[1] = 0;
@@ -833,7 +833,7 @@ public:
             else
                 ctxBase = ctxIdxOffset4x4FrameCoded;
 
-            Ipp32u numOfCoeffs = 0;
+            uint32_t numOfCoeffs = 0;
             switch (color_format)
             {
             case CHROMA_FORMAT_400:
@@ -873,7 +873,7 @@ public:
 
                     if (sd->m_pBitStream->DecodeSingleBin_CABAC(iCtxBase + ctxIdxInc))
                     {
-                        const Ipp32s * sing_scan = 0;
+                        const int32_t * sing_scan = 0;
                         switch (color_format)
                         {
                         case CHROMA_FORMAT_400:
@@ -908,14 +908,14 @@ public:
 
                 for (j = 0; j < 2; j++)//plane
                 {
-                    Ipp32u &cbp4x4_chroma = sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[j];
-                    Ipp32u addition = 16 + numOfCoeffs*j;
+                    uint32_t &cbp4x4_chroma = sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[j];
+                    uint32_t addition = 16 + numOfCoeffs*j;
                     uBlockBit = 2;
                     for (i = 0; i < numOfCoeffs; i++, uBlockBit <<= 1)//block
                     {
-                        Ipp32s raster_order_block = block_subblock_mapping[i];
+                        int32_t raster_order_block = block_subblock_mapping[i];
 
-                        Ipp32s bit = i + 1;
+                        int32_t bit = i + 1;
 
                         top_bit     = def_bit;
                         left_bit    = def_bit;
@@ -989,23 +989,23 @@ public:
     }
 
     inline
-    Ipp32s CheckCBP(Ipp32s iCBP, Ipp32s iBlockNum)
+    int32_t CheckCBP(int32_t iCBP, int32_t iBlockNum)
     {
         return (iCBP & iBlockCBPMask[iBlockNum]) ? (1) : (0);
 
-    } // Ipp32s CheckCBP(Ipp32s iCBP, Ipp32s iBlockNum)
+    } // int32_t CheckCBP(int32_t iCBP, int32_t iBlockNum)
 
     inline
-    Ipp32s CheckCBPChroma(Ipp32s iCBP, Ipp32s iBlockNum)
+    int32_t CheckCBPChroma(int32_t iCBP, int32_t iBlockNum)
     {
         return (iCBP & iBlockCBPMaskChroma[iBlockNum]) ? (1) : (0);
 
-    } // Ipp32s CheckCBPChroma(Ipp32s iCBP, Ipp32s iBlockNum)
+    } // int32_t CheckCBPChroma(int32_t iCBP, int32_t iBlockNum)
 
 #define DECODE_EXTERNAL_LUMA_BLOCK_CABAC(x_pos, y_pos, block_number) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             H264DecoderBlockLocation mbAddrA; \
@@ -1050,8 +1050,8 @@ public:
 
 #define DECODE_TOP_LUMA_BLOCK_CABAC(x_pos, y_pos, block_number, left_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             condTermFlagA = (uFinalCBP & (1 << (left_block_num + 1))) ? \
@@ -1090,8 +1090,8 @@ public:
 
 #define DECODE_LEFT_LUMA_BLOCK_CABAC(x_pos, y_pos, block_number, top_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             H264DecoderBlockLocation mbAddrA; \
@@ -1129,8 +1129,8 @@ public:
 
 #define DECODE_INTERNAL_LUMA_BLOCK_CABAC(x_pos, y_pos, block_number, left_block_num, top_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             condTermFlagA = (uFinalCBP & (1 << (left_block_num + 1))) ? \
@@ -1162,9 +1162,9 @@ public:
 
 #define DECODE_CHROMA_DC_BLOCK_CABAC(component) \
     { \
-        Ipp32s iNumCoeffs = (4 << (3 & (color_format - 1))); \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t iNumCoeffs = (4 << (3 & (color_format - 1))); \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             H264DecoderBlockLocation mbAddrA; \
@@ -1187,7 +1187,7 @@ public:
         ctxIdxInc = condTermFlagA + 2 * condTermFlagB; \
         if (sd->m_pBitStream->DecodeSingleBin_CABAC(ctxCodedBlockFlag + ctxIdxInc)) \
         { \
-            const Ipp32s * pDCScan; \
+            const int32_t * pDCScan; \
             switch (color_format) \
             { \
             case CHROMA_FORMAT_422: \
@@ -1215,8 +1215,8 @@ public:
 
 #define DECODE_EXTERNAL_CHROMA_BLOCK_CABAC(x_pos, y_pos, block_number, top_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             H264DecoderBlockLocation mbAddrA; \
@@ -1261,8 +1261,8 @@ public:
 
 #define DECODE_TOP_CHROMA_BLOCK_CABAC(x_pos, y_pos, block_number, left_block_num, top_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             condTermFlagA = (uFinalCBP[iComponent] & (1 << (left_block_num + 1))) ? \
@@ -1301,8 +1301,8 @@ public:
 
 #define DECODE_LEFT_CHROMA_BLOCK_CABAC(x_pos, y_pos, block_number, top_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             H264DecoderBlockLocation mbAddrA; \
@@ -1340,8 +1340,8 @@ public:
 
 #define DECODE_INTERNAL_CHROMA_BLOCK_CABAC(x_pos, y_pos, block_number, left_block_num, top_block_num) \
     { \
-        Ipp32s ctxIdxInc; \
-        Ipp32s condTermFlagA, condTermFlagB; \
+        int32_t ctxIdxInc; \
+        int32_t condTermFlagA, condTermFlagB; \
         /* create flag for A macroblock */ \
         { \
             condTermFlagA = (uFinalCBP[iComponent] & (1 << (left_block_num + 1))) ? \
@@ -1373,10 +1373,10 @@ public:
 
     void DecodeCoefficients16x16_CABAC(H264SegmentDecoderMultiThreaded * sd)
     {
-        Ipp32u iDCCBP = 0;
+        uint32_t iDCCBP = 0;
 
-        const Ipp32u *ctxBase;
-        const Ipp32s *pScan;
+        const uint32_t *ctxBase;
+        const int32_t *pScan;
         bool field_flag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo) ||
                           sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE;
 
@@ -1397,22 +1397,22 @@ public:
         if (sd->m_pSliceHeader->scan_idx_start == 0)
         {
 
-            Ipp32s iMBAbove, iMBLeft;
-            Ipp32s condTermFlagA, condTermFlagB;
-            Ipp32u ctxIdxInc, ctxCodedBlockFlag;
+            int32_t iMBAbove, iMBLeft;
+            int32_t condTermFlagA, condTermFlagB;
+            uint32_t ctxIdxInc, ctxCodedBlockFlag;
 
             iMBAbove = pN->mb_above.mb_num;
             iMBLeft  = pN->mbs_left[0].mb_num;
 
             // create flag for A macroblock
             if (0 <= iMBLeft)
-                condTermFlagA = (Ipp32u) (sd->m_mbinfo.mbs[iMBLeft].cbp4x4_luma & 1);
+                condTermFlagA = (uint32_t) (sd->m_mbinfo.mbs[iMBLeft].cbp4x4_luma & 1);
             else
                 condTermFlagA = 1;
 
             // create flag for B macroblock
             if (0 <= iMBAbove)
-                condTermFlagB = (Ipp32u) (sd->m_mbinfo.mbs[iMBAbove].cbp4x4_luma & 1);
+                condTermFlagB = (uint32_t) (sd->m_mbinfo.mbs[iMBAbove].cbp4x4_luma & 1);
             else
                 condTermFlagB = 1;
 
@@ -1450,20 +1450,20 @@ public:
     } // void DecodeCoefficients16x16_CABAC(H264SegmentDecoderMultiThreaded * sd)
 
     void DecodeCoefficients4x4_CABAC(H264SegmentDecoderMultiThreaded * sd,
-                                       Ipp32s iMaxNum = 15)
+                                       int32_t iMaxNum = 15)
     {
         CoeffsPtr pPosCoefbuf = (CoeffsPtr)sd->m_pCoeffBlocksWrite;
 
-        Ipp32u cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
-        const Ipp32s *pScan;
+        uint32_t cbp = sd->m_cur_mb.LocalMacroblockInfo->cbp;
+        const int32_t *pScan;
         bool field_flag = pGetMBFieldDecodingFlag(sd->m_cur_mb.GlobalMacroblockInfo) ||
                           sd->m_pCurrentFrame->m_PictureStructureForDec<FRM_STRUCTURE;
         H264DecoderBlockNeighboursInfo *pN = &sd->m_cur_mb.CurrentBlockNeighbours;
 
-        Ipp32s defTermFlag;
-        const Ipp32u *ctxBase;
-        Ipp32u ctxBlockCat;
-        Ipp32u ctxCodedBlockFlag;
+        int32_t defTermFlag;
+        const uint32_t *ctxBase;
+        uint32_t ctxBlockCat;
+        uint32_t ctxCodedBlockFlag;
 
         // set default bit
         defTermFlag = (sd->m_cur_mb.GlobalMacroblockInfo->mbtype < MBTYPE_PCM) ? (1) : (0);
@@ -1494,7 +1494,7 @@ public:
         // decode luminance blocks
         //
         {
-            Ipp32u uFinalCBP = 0;
+            uint32_t uFinalCBP = 0;
 
             if (cbp & LUMA_BLOCK_8X8_0)
             {
@@ -1538,7 +1538,7 @@ public:
 
         if (cbp & CHROMA_DC_AC_BLOCKS)
         {
-            Ipp32u uFinalCBP[2];
+            uint32_t uFinalCBP[2];
 
             uFinalCBP[0] = uFinalCBP[1] = 0;
 
@@ -1556,7 +1556,7 @@ public:
 
             if ((cbp & CHROMA_AC_BLOCKS) && (sd->m_pSliceHeader->scan_idx_end > 0))
             {
-                Ipp32s iComponent;
+                int32_t iComponent;
 
                 // select new context
                 ctxCodedBlockFlag = ctxBase[CODED_BLOCK_FLAG] +
@@ -1564,7 +1564,7 @@ public:
 
                 for (iComponent = 0; iComponent < 2; iComponent += 1)
                 {
-                    Ipp32s iBlocksBefore = 16 + iComponent * (2 << color_format);
+                    int32_t iBlocksBefore = 16 + iComponent * (2 << color_format);
 
                     switch (color_format)
                     {
@@ -1608,7 +1608,7 @@ public:
     } // void DecodeCoefficients4x4_CABAC(H264SegmentDecoderMultiThreaded * sd)
 };
 
-template <typename Coeffs, typename PlaneY, typename PlaneUV, Ipp32s color_format, Ipp32s is_field>
+template <typename Coeffs, typename PlaneY, typename PlaneUV, int32_t color_format, int32_t is_field>
 class ResidualDecoderPCM
 {
 public:
@@ -1633,9 +1633,9 @@ public:
     // in m_pCoeffBlocksBuf.
     void DecodeCoefficients_PCM(H264SegmentDecoderMultiThreaded * sd)
     {
-        static const Ipp32u num_coeffs[4] = {256,384,512,768};
+        static const uint32_t num_coeffs[4] = {256,384,512,768};
 
-        Ipp32u length = num_coeffs[color_format];
+        uint32_t length = num_coeffs[color_format];
         // number of raw coeff bits
         // to write pointer to non-aligned m_pCoeffBlocksWrite
         sd->m_cur_mb.LocalMacroblockInfo->QP = 0;
@@ -1651,12 +1651,12 @@ public:
             sd->m_pBitStream->AlignPointerRight();
         }
 
-        for (Ipp32u i = 0; i < 256; i++)
+        for (uint32_t i = 0; i < 256; i++)
         {
             pCoeffBlocksWrite_Y[i] = (PlaneY) sd->m_pBitStream->GetBits(sd->bit_depth_luma);
         }
 
-        sd->m_pCoeffBlocksWrite = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksWrite +
+        sd->m_pCoeffBlocksWrite = (UMC::CoeffsPtrCommon)((uint8_t*)sd->m_pCoeffBlocksWrite +
                         256*sizeof(PlaneY));
 
         sd->m_pBitStream->CheckBSLeft();
@@ -1664,12 +1664,12 @@ public:
         if (color_format != CHROMA_FORMAT_400)
         {
             PlanePtrUV pCoeffBlocksWrite_UV = (PlanePtrUV) (sd->m_pCoeffBlocksWrite);
-            for (Ipp32u i = 0; i < length - 256; i++)
+            for (uint32_t i = 0; i < length - 256; i++)
             {
                 pCoeffBlocksWrite_UV[i] = (PlaneUV) sd->m_pBitStream->GetBits(sd->bit_depth_chroma);
             }
 
-            sd->m_pCoeffBlocksWrite = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksWrite +
+            sd->m_pCoeffBlocksWrite = (UMC::CoeffsPtrCommon)((uint8_t*)sd->m_pCoeffBlocksWrite +
                             (length - 256)*sizeof(PlaneUV));
         }
 
@@ -1683,7 +1683,7 @@ public:
         {
             sd->m_pBitStream->AlignPointerRight();
         }
-    } // void DecodeCoefficients_PCM(Ipp8u color_format)
+    } // void DecodeCoefficients_PCM(uint8_t color_format)
 };
 
 } // namespace UMC

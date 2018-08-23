@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -48,14 +48,14 @@ private:
 
     struct Stat
     {
-        Ipp32s mbtypes[20];
+        int32_t mbtypes[20];
 
-        Ipp32s subtype_8x8_Count;
-        Ipp32s subtype_8x4_Count;
-        Ipp32s subtype_4x8_Count;
-        Ipp32s subtype_4x4_Count;
+        int32_t subtype_8x8_Count;
+        int32_t subtype_8x4_Count;
+        int32_t subtype_4x8_Count;
+        int32_t subtype_4x4_Count;
 
-        Ipp32s zeroMVCount;
+        int32_t zeroMVCount;
 
         Stat()
             : zeroMVCount(0)
@@ -69,7 +69,7 @@ private:
 
         void Add(Stat & stat)
         {
-            for (Ipp32s i = 0; i < sizeof(mbtypes)/sizeof(mbtypes[0]); i++)
+            for (int32_t i = 0; i < sizeof(mbtypes)/sizeof(mbtypes[0]); i++)
             {
                 mbtypes[i] += stat.mbtypes[i];
             }
@@ -86,10 +86,10 @@ private:
     struct PictureInfo
     {
         Stat stat;
-        Ipp32s count;
-        Ipp32s bitSize;
-        Ipp32s type;
-        Ipp32s mbsCount;
+        int32_t count;
+        int32_t bitSize;
+        int32_t type;
+        int32_t mbsCount;
 
         PictureInfo()
             : count(0)
@@ -101,11 +101,11 @@ private:
 
     PictureInfo picturesStat[3];
 
-    void MBLayerStat(H264DecoderGlobalMacroblocksDescriptor &pGlobalInfo, Ipp32s mbNumber, Stat & stat);
-    void SBtype(Stat & stat, Ipp32s sbtype);
+    void MBLayerStat(H264DecoderGlobalMacroblocksDescriptor &pGlobalInfo, int32_t mbNumber, Stat & stat);
+    void SBtype(Stat & stat, int32_t sbtype);
 
-    Ipp32s CalculateFrameSize(H264DecoderFrame *m_pFrame);
-    void PrintStat(Stat &stat, Ipp32s type);
+    int32_t CalculateFrameSize(H264DecoderFrame *m_pFrame);
+    void PrintStat(Stat &stat, int32_t type);
 
     void PrintPictureStat(PictureInfo & picStat);
 

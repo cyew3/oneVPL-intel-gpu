@@ -56,9 +56,9 @@ public:
     ~H264_DXVA_SegmentDecoder();
 
     // Initialize object
-    virtual Status Init(Ipp32s iNumber);
+    virtual Status Init(int32_t iNumber);
 
-    void PackAllHeaders(H264DecoderFrame * pFrame, Ipp32s field);
+    void PackAllHeaders(H264DecoderFrame * pFrame, int32_t field);
 
     virtual Status ProcessSegment(void);
 
@@ -109,7 +109,7 @@ public:
             dxva_sd->Reset();
     }
 
-    void DecodePicture(H264DecoderFrame * pFrame, Ipp32s field)
+    void DecodePicture(H264DecoderFrame * pFrame, int32_t field)
     {
         if (!m_va)
             return;
@@ -121,7 +121,7 @@ public:
         H264_DXVA_SegmentDecoder * dxva_sd = (H264_DXVA_SegmentDecoder*)(m_Base->m_pSegmentDecoder[0]);
         VM_ASSERT(dxva_sd);
 
-        for (Ipp32u i = 0; i < m_Base->m_iThreadNum; i++)
+        for (uint32_t i = 0; i < m_Base->m_iThreadNum; i++)
         {
             ((H264_DXVA_SegmentDecoder *)m_Base->m_pSegmentDecoder[i])->SetVideoAccelerator(m_va);
         }
@@ -168,11 +168,11 @@ protected:
     class ReportItem
     {
     public:
-        Ipp32u  m_index;
-        Ipp32u  m_field;
-        Ipp8u   m_status;
+        uint32_t  m_index;
+        uint32_t  m_field;
+        uint8_t   m_status;
 
-        ReportItem(Ipp32u index, Ipp32u field, Ipp8u status)
+        ReportItem(uint32_t index, uint32_t field, uint8_t status)
             : m_index(index)
             , m_field(field)
             , m_status(status)
@@ -196,12 +196,12 @@ protected:
 
     // Mark frame as Completed and update Error stasus
     // according to uiStatus reported by driver
-    void SetCompletedAndErrorStatus(Ipp8u uiStatus, H264DecoderFrameInfo * au);
+    void SetCompletedAndErrorStatus(uint8_t uiStatus, H264DecoderFrameInfo * au);
 
     typedef std::vector<ReportItem> Report;
     Report m_reports;
-    Ipp64u m_lastCounter;
-    Ipp64u m_counterFrequency;
+    unsigned long long m_lastCounter;
+    unsigned long long m_counterFrequency;
 
     bool   m_useDXVAStatusReporting;
 };

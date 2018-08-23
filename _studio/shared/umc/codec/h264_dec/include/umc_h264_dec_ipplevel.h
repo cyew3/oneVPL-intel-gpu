@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -19,26 +19,26 @@
 namespace UMC_H264_DECODER
 {
 
-extern void ConvertNV12ToYV12(const Ipp8u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, Ipp8u *pSrcDstUPlane, Ipp8u *pSrcDstVPlane, const Ipp32u _srcdstUStep, IppiSize roi);
-extern void ConvertYV12ToNV12(const Ipp8u *pSrcDstUPlane, const Ipp8u *pSrcDstVPlane, const Ipp32u _srcdstUStep, Ipp8u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, IppiSize roi);
+extern void ConvertNV12ToYV12(const uint8_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, uint8_t *pSrcDstUPlane, uint8_t *pSrcDstVPlane, const uint32_t _srcdstUStep, mfxSize roi);
+extern void ConvertYV12ToNV12(const uint8_t *pSrcDstUPlane, const uint8_t *pSrcDstVPlane, const uint32_t _srcdstUStep, uint8_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, mfxSize roi);
 
-extern void ConvertNV12ToYV12(const Ipp16u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, Ipp16u *pSrcDstUPlane, Ipp16u *pSrcDstVPlane, const Ipp32u _srcdstUStep, IppiSize roi);
-extern void ConvertYV12ToNV12(const Ipp16u *pSrcDstUPlane, const Ipp16u *pSrcDstVPlane, const Ipp32u _srcdstUStep, Ipp16u *pSrcDstUVPlane, const Ipp32u _srcdstUVStep, IppiSize roi);
+extern void ConvertNV12ToYV12(const uint16_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, uint16_t *pSrcDstUPlane, uint16_t *pSrcDstVPlane, const uint32_t _srcdstUStep, mfxSize roi);
+extern void ConvertYV12ToNV12(const uint16_t *pSrcDstUPlane, const uint16_t *pSrcDstVPlane, const uint32_t _srcdstUStep, uint16_t *pSrcDstUVPlane, const uint32_t _srcdstUVStep, mfxSize roi);
 
 #define   IPPFUN(type,name,arg)   extern type __STDCALL name arg
 
-IPPAPI(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (Ipp32u **ppBitStream,
-    Ipp32s *pOffset,
-    Ipp16s *pNumCoeff,
-    Ipp16s **ppPosCoefbuf,
-    Ipp32u uVLCSelect,
-    Ipp16s uMaxNumCoeff,
-    const Ipp32s **ppTblCoeffToken,
-    const Ipp32s **ppTblTotalZeros,
-    const Ipp32s **ppTblRunBefore,
-    const Ipp32s *pScanMatrix,
-    Ipp32s scanIdxStart,
-    Ipp32s scanIdxEnd))
+IPPAPI(IppStatus, own_ippiDecodeCAVLCCoeffsIdxs_H264_1u16s, (uint32_t **ppBitStream,
+    int32_t *pOffset,
+    int16_t *pNumCoeff,
+    int16_t **ppPosCoefbuf,
+    uint32_t uVLCSelect,
+    int16_t uMaxNumCoeff,
+    const int32_t **ppTblCoeffToken,
+    const int32_t **ppTblTotalZeros,
+    const int32_t **ppTblRunBefore,
+    const int32_t *pScanMatrix,
+    int32_t scanIdxStart,
+    int32_t scanIdxEnd))
 
 
 }; // UMC_H264_DECODER

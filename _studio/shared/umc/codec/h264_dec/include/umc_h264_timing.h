@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -36,7 +36,7 @@ public:
 
     ~TimingInfo()
     {
-        Ipp64f cpu_freq = (Ipp64f)vm_time_get_frequency();
+        double cpu_freq = (double)vm_time_get_frequency();
         vm_string_printf(VM_STRING("decode_time - %.2f\t\n"), decode_time/cpu_freq);
         vm_string_printf(VM_STRING("reconstruction_time - %.2f\t\n"), reconstruction_time/cpu_freq);
         vm_string_printf(VM_STRING("deblocking_time - %.2f\t\n"), deblocking_time/cpu_freq);

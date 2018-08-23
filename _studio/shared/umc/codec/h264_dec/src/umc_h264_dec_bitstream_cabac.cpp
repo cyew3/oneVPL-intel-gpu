@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -32,25 +32,25 @@ T Clip3(T Min, T Max, T Value)
 } //T Clip3(T Min, T Max, T Value)
 
 static
-void InitializeContext(CABAC_CONTEXT *pContext, Ipp16s m, Ipp16s n, Ipp32s SliceQPy)
+void InitializeContext(CABAC_CONTEXT *pContext, int16_t m, int16_t n, int32_t SliceQPy)
 {
-    Ipp32s preCtxState;
+    int32_t preCtxState;
 
     preCtxState = Clip3(1, 126, ((m * SliceQPy) >> 4) + n);
     if (preCtxState <= 63)
     {
-        pContext->pStateIdxAndVal = Ipp8u((63 - preCtxState) * 2);
+        pContext->pStateIdxAndVal = uint8_t((63 - preCtxState) * 2);
     }
     else
     {
-        pContext->pStateIdxAndVal = Ipp8u((preCtxState - 64) * 2 + 1);
+        pContext->pStateIdxAndVal = uint8_t((preCtxState - 64) * 2 + 1);
     }
-} // void InitializeContext(CABAC_CONTEXT *pContext, Ipp8s m, Ipp8s n, Ipp8u SliceQPy)
+} // void InitializeContext(CABAC_CONTEXT *pContext, int8_t m, int8_t n, uint8_t SliceQPy)
 
 typedef struct INITIALIZE_VALUES
 {
-    Ipp16s m;
-    Ipp16s n;
+    int16_t m;
+    int16_t n;
 } INITIALIZE_VALUES;
 
 // See table 9-12 of H.264 standard
@@ -1056,11 +1056,11 @@ using namespace UMC_H264_DECODER;
 namespace UMC
 {
 
-void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
+void H264Bitstream::InitializeContextVariablesIntra_CABAC(int32_t SliceQPy)
 {
-    Ipp32s l;
+    int32_t l;
 
-    SliceQPy = IPP_MAX(0, SliceQPy);
+    SliceQPy = MFX_MAX(0, SliceQPy);
 
     // See subclause 9.3.1.1 of H.264 standard
 
@@ -1169,15 +1169,15 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
                           SliceQPy);
     }
 
-} // void H264Bitstream::InitializeContextVariablesIntra_CABAC(Ipp32s SliceQPy)
+} // void H264Bitstream::InitializeContextVariablesIntra_CABAC(int32_t SliceQPy)
 
-void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
-                                                          Ipp32s cabac_init_idc)
+void H264Bitstream::InitializeContextVariablesInter_CABAC(int32_t SliceQPy,
+                                                          int32_t cabac_init_idc)
 {
-    Ipp32s l;
+    int32_t l;
 
     // See subclause 9.3.1.1 of H.264 standard
-    SliceQPy = IPP_MAX(0, SliceQPy);
+    SliceQPy = MFX_MAX(0, SliceQPy);
 
     // Initialize context(s) for mb_skip_flag & mb_type (P & SP slices)
     // & sub_mb_pred (P & SP slices)
@@ -1316,7 +1316,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
                           SliceQPy);
     }
 
-} // void H264Bitstream::InitializeContextVariablesInter_CABAC(Ipp32s SliceQPy,
+} // void H264Bitstream::InitializeContextVariablesInter_CABAC(int32_t SliceQPy,
 
 void H264Bitstream::InitializeDecodingEngine_CABAC()
 {
@@ -1332,13 +1332,13 @@ void H264Bitstream::InitializeDecodingEngine_CABAC()
     m_lcodIRange = m_lcodIRange << CABAC_MAGIC_BITS;
     m_lcodIOffset = m_lcodIOffset << CABAC_MAGIC_BITS;
     {
-        Ipp32u nBits;
+        uint32_t nBits;
 
         m_iMagicBits = (m_bitOffset % 16) + 1;
         nBits = GetBits(m_iMagicBits);
         m_lcodIOffset |= nBits << (16 - m_iMagicBits);
 
-        m_pMagicBits = ((Ipp16u *) m_pbs) + ((15 == m_bitOffset) ? (1) : (0));
+        m_pMagicBits = ((uint16_t *) m_pbs) + ((15 == m_bitOffset) ? (1) : (0));
     }
 #endif // (CABAC_MAGIC_BITS > 0)
 
@@ -1348,8 +1348,8 @@ void H264Bitstream::UpdateCABACPointers(void)
 {
 #if (CABAC_MAGIC_BITS > 0)
     // restore source pointer
-    //m_pMagicBits = (Ipp16u*)m_pbs;
-    m_pbs = (Ipp32u *) (((size_t) m_pMagicBits) & -0x04);
+    //m_pMagicBits = (uint16_t*)m_pbs;
+    m_pbs = (uint32_t *) (((size_t) m_pMagicBits) & -0x04);
     m_bitOffset = (((size_t) m_pMagicBits) & 0x02) ? (15) : (31);
     ippiUngetNBits(m_pbs, m_bitOffset, m_iMagicBits);
 #endif
@@ -1359,7 +1359,7 @@ void H264Bitstream::TerminateDecode_CABAC(void)
 {
 #if (CABAC_MAGIC_BITS > 0)
     // restore source pointer
-    m_pbs = (Ipp32u *) (((size_t) m_pMagicBits) & -0x04);
+    m_pbs = (uint32_t *) (((size_t) m_pMagicBits) & -0x04);
     m_bitOffset = (((size_t) m_pMagicBits) & 0x02) ? (15) : (31);
     // return prereaded bits
     ippiUngetNBits(m_pbs, m_bitOffset, m_iMagicBits);

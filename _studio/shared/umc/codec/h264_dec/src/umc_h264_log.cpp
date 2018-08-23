@@ -85,7 +85,7 @@ void Logging::Trace(vm_char * format, ...)
     va_end(arglist);
 }
 
-void Logging::SBtype(Stat & stat, Ipp32s sbtype)
+void Logging::SBtype(Stat & stat, int32_t sbtype)
 {
     switch(sbtype)
     {
@@ -107,7 +107,7 @@ void Logging::SBtype(Stat & stat, Ipp32s sbtype)
     }
 }
 
-void Logging::MBLayerStat(H264DecoderGlobalMacroblocksDescriptor &pGlobalInfo, Ipp32s mbNumber, Stat & stat)
+void Logging::MBLayerStat(H264DecoderGlobalMacroblocksDescriptor &pGlobalInfo, int32_t mbNumber, Stat & stat)
 {
     H264DecoderMacroblockGlobalInfo &pMBInfo = pGlobalInfo.mbs[mbNumber];
 
@@ -150,7 +150,7 @@ void Logging::MBLayerStat(H264DecoderGlobalMacroblocksDescriptor &pGlobalInfo, I
     // mbtype stat
     stat.zeroMVCount++;
 
-    for (Ipp32s i = 0; i < 16; i++)
+    for (int32_t i = 0; i < 16; i++)
     {
         if (pGlobalInfo.MV[0][mbNumber].MotionVectors[i].mvx || pGlobalInfo.MV[0][mbNumber].MotionVectors[i].mvy)
         {
@@ -166,16 +166,16 @@ void Logging::MBLayerStat(H264DecoderGlobalMacroblocksDescriptor &pGlobalInfo, I
     }
 }
 
-Ipp32s Logging::CalculateFrameSize(H264DecoderFrame *m_pFrame)
+int32_t Logging::CalculateFrameSize(H264DecoderFrame *m_pFrame)
 {
     H264DecoderFrameInfo * slicesInfo = m_pFrame->GetAU(0);
 
-    Ipp32s size = 0;
+    int32_t size = 0;
 
-    for (Ipp32u i = 0; i < slicesInfo->GetSliceCount(); i++)
+    for (uint32_t i = 0; i < slicesInfo->GetSliceCount(); i++)
     {
         H264Slice * pSlice = slicesInfo->GetSlice(i);
-        size += (Ipp32s)pSlice->GetBitStream()->GetAllBitsCount();
+        size += (int32_t)pSlice->GetBitStream()->GetAllBitsCount();
     }
 
     return size;
@@ -186,7 +186,7 @@ void Logging::LogFrame(H264DecoderFrame * pFrame)
     m_pFrame = pFrame;
 
     Trace(VM_STRING("\n"));
-    Ipp32s bitSize = CalculateFrameSize(m_pFrame);
+    int32_t bitSize = CalculateFrameSize(m_pFrame);
     Trace(VM_STRING("frame type - %s, uid - %d, size - %d\n"), frameTypes[m_pFrame->m_FrameType], m_pFrame->m_UID, bitSize);
 
     LogRefFrame(m_pFrame);
@@ -195,10 +195,10 @@ void Logging::LogFrame(H264DecoderFrame * pFrame)
     H264DecoderFrameInfo * slicesInfo = m_pFrame->GetAU(0);
     const H264SeqParamSet *pSeqParam = slicesInfo->GetSlice(0)->GetSeqParam();
 
-    Ipp32s iMBCount = pSeqParam->frame_width_in_mbs * pSeqParam->frame_height_in_mbs;
+    int32_t iMBCount = pSeqParam->frame_width_in_mbs * pSeqParam->frame_height_in_mbs;
 
     Stat stat;
-    for (Ipp32s x = 0; x < iMBCount; ++x)
+    for (int32_t x = 0; x < iMBCount; ++x)
     {
         MBLayerStat(m_pFrame->m_mbinfo, x, stat);
     }
@@ -220,7 +220,7 @@ void Logging::LogRefFrame(H264DecoderFrame * pFrame)
     if (refPicList->m_RefPicList[0])
     {
         Trace(VM_STRING("\n ref list 0 \n"));
-        for (Ipp32s i = 0; refPicList->m_RefPicList[i]; i++)
+        for (int32_t i = 0; refPicList->m_RefPicList[i]; i++)
         {
             Trace(VM_STRING("ref frame uid - %d\n"), refPicList->m_RefPicList[i]->m_UID);
         }
@@ -231,7 +231,7 @@ void Logging::LogRefFrame(H264DecoderFrame * pFrame)
     if (refPicList->m_RefPicList[0])
     {
         Trace(VM_STRING("\n ref list 1 \n"));
-        for (Ipp32s i = 0; refPicList->m_RefPicList[i]; i++)
+        for (int32_t i = 0; refPicList->m_RefPicList[i]; i++)
         {
             Trace(VM_STRING("ref frame uid - %d\n"), refPicList->m_RefPicList[i]->m_UID);
         }
@@ -239,7 +239,7 @@ void Logging::LogRefFrame(H264DecoderFrame * pFrame)
     }
 }
 
-void Logging::PrintStat(Stat &stat, Ipp32s type)
+void Logging::PrintStat(Stat &stat, int32_t type)
 {
     Trace(VM_STRING("I16x16 - %d\n"), stat.mbtypes[MBTYPE_INTRA_16x16]);
     Trace(VM_STRING("I4x4 - %d\n"), stat.mbtypes[MBTYPE_INTRA]);

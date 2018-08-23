@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -35,7 +35,7 @@ public:
     {
     }
 
-    virtual UMC::Status Init(Ipp32s iNumber)
+    virtual UMC::Status Init(int32_t iNumber)
     {
         m_iNumber = iNumber;
         return UMC::UMC_OK;
@@ -44,12 +44,12 @@ public:
     // Decode slice's segment
     virtual UMC::Status ProcessSegment(void) = 0;
 
-    virtual void RestoreErrorRect(Ipp32s , Ipp32s , H264Slice * )
+    virtual void RestoreErrorRect(int32_t , int32_t , H264Slice * )
     {
     }
 
 protected:
-    Ipp32s m_iNumber;                                           // (Ipp32s) ordinal number of decoder
+    int32_t m_iNumber;                                           // (int32_t) ordinal number of decoder
     TaskBroker * m_pTaskBroker;
 };
 

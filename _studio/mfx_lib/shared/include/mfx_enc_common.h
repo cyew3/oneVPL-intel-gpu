@@ -5,13 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_ENC_COMMON_H_
 #define _MFX_ENC_COMMON_H_
 
-#include "ippdefs.h"
 #include "mfxdefs.h"
 #include "mfxstructures.h"
 #include "umc_structures.h"
@@ -69,20 +68,20 @@ public:
 };
 
 //----MFX data -> UMC data--------------------------------------------
-Ipp8u  CalculateMAXBFrames (mfxU8 GopRefDist);
-Ipp16u CalculateUMCGOPLength (mfxU16 GOPSize, mfxU8 targetUsage);
+mfxU8  CalculateMAXBFrames (mfxU8 GopRefDist);
+mfxU16 CalculateUMCGOPLength (mfxU16 GOPSize, mfxU8 targetUsage);
 
-bool SetPROParameters (mfxU8 TargetUsages,Ipp8u &MESpeed, bool &UseFB, bool &FastFB,
+bool SetPROParameters (mfxU8 TargetUsages,mfxU8 &MESpeed, bool &UseFB, bool &FastFB,
                        bool &bIntensityCompensation, bool &bChangeInterpolationType,
                        bool &bChangeVLCTables,
                        bool &bTrellisQuantization, bool &bUsePadding,
                        bool &bVSTransform, bool &deblocking, mfxU8 &smoothing, bool &fastUVMC);
-bool SetUFParameters(mfxU8 TargetUsages, bool& mixed,Ipp32u& twoRef );
+bool SetUFParameters(mfxU8 TargetUsages, bool& mixed,mfxU32& twoRef );
 
-Ipp32u CalculateUMCBitrate(mfxU16    TargetKbps);
+mfxU32 CalculateUMCBitrate(mfxU16    TargetKbps);
 
-Ipp64f CalculateUMCFramerate(mfxU32 FrameRateExtN, mfxU32 FrameRateExtD);
-void CalculateMFXFramerate(Ipp64f framerate, mfxU32* FrameRateExtN, mfxU32* FrameRateExtD);
+double CalculateUMCFramerate(mfxU32 FrameRateExtN, mfxU32 FrameRateExtD);
+void CalculateMFXFramerate(double framerate, mfxU32* FrameRateExtN, mfxU32* FrameRateExtD);
 void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &frame_rate_code, mfxI32 &frame_rate_extension_n, mfxI32 &frame_rate_extension_d);
 //void ConvertFrameRateMPEG2(mfxU32 FrameRateExtD, mfxU32 FrameRateExtN, mfxI32 &frame_rate_code, mfxI32 &frame_rate_extension_n, mfxI32 &frame_rate_extension_d);
 
@@ -134,7 +133,7 @@ inline mfxI32 min4(mfxI32 a, mfxI32 b,mfxI32 c,mfxI32 d)
 UMC::FrameType GetFrameType (mfxU16 FrameOrder, mfxInfoMFX* info);
 
 //----UMC data -> MFX data--------------------------------------------
-mfxU16 CalculateMFXGOPLength (Ipp16u GOPSize);
+mfxU16 CalculateMFXGOPLength (mfxU16 GOPSize);
 mfxU8 CalculateGopRefDist(mfxU8 BNum);
 
 inline bool isIntra(mfxU8 FrameType)

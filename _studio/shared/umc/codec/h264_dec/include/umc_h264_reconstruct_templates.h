@@ -34,9 +34,9 @@ enum
 
 template <typename PlaneY,
           typename PlaneUV,
-          Ipp32s color_format,
-          Ipp32s is_field,
-          Ipp32s is_weight>
+          int32_t color_format,
+          int32_t is_field,
+          int32_t is_weight>
 class ReconstructMB
 {
 public:
@@ -61,8 +61,8 @@ public:
     public:
         // prediction pointers
         H264DecoderMotionVector *(m_pMV[2]);                    // (H264DecoderMotionVector * []) array of pointers to motion vectors
-        Ipp32s m_iRefIndex[2];                                  // (Ipp32s) current reference index
-        Ipp8s *(m_pRefIndex[2]);                                // (Ipp8s * []) pointer to array of reference indexes
+        int32_t m_iRefIndex[2];                                  // (int32_t) current reference index
+        int8_t *(m_pRefIndex[2]);                                // (int8_t * []) pointer to array of reference indexes
 
         IppVCInterpolateBlock_16u m_lumaInterpolateInfo;
         IppVCInterpolateBlock_16u m_chromaInterpolateInfo;
@@ -71,19 +71,19 @@ public:
         IppVCBidir1_16u   m_bidirChroma[2];
 
         // current macroblock parameters
-        Ipp32s m_iOffsetLuma;                                   // (Ipp32s) luminance offset
-        Ipp32s m_iOffsetChroma;                                 // (Ipp32s) chrominance offset
-        Ipp32s m_iIntraMBLumaOffset;
-        Ipp32s m_iIntraMBChromaOffset;
-        Ipp32s m_iIntraMBLumaOffsetTmp;
-        Ipp32s m_iIntraMBChromaOffsetTmp;
+        int32_t m_iOffsetLuma;                                   // (int32_t) luminance offset
+        int32_t m_iOffsetChroma;                                 // (int32_t) chrominance offset
+        int32_t m_iIntraMBLumaOffset;
+        int32_t m_iIntraMBChromaOffset;
+        int32_t m_iIntraMBLumaOffsetTmp;
+        int32_t m_iIntraMBChromaOffsetTmp;
 
         H264SegmentDecoder *m_pSegDec;                          // (H264SegmentDecoder *) pointer to segment decoder
 
         // weighting parameters
-        Ipp32s luma_log2_weight_denom;                          // (Ipp32s)
-        Ipp32s chroma_log2_weight_denom;                        // (Ipp32s)
-        Ipp32s weighted_bipred_idc;                             // (Ipp32s)
+        int32_t luma_log2_weight_denom;                          // (int32_t)
+        int32_t chroma_log2_weight_denom;                        // (int32_t)
+        int32_t weighted_bipred_idc;                             // (int32_t)
         bool m_bBidirWeightMB;                                  // (bool) flag of bidirectional weighting
         bool m_bUnidirWeightMB;                                 // (bool) flag of unidirectional weighting
 
@@ -97,22 +97,22 @@ public:
     };
 
     inline
-    Ipp32s ChromaOffset(Ipp32s x, Ipp32s y, Ipp32s pitch)
+    int32_t ChromaOffset(int32_t x, int32_t y, int32_t pitch)
     {
         return (x >> width_chroma_div) + (y >> height_chroma_div) * pitch;
 
-    } // Ipp32s ChromaOffset(Ipp32s x, Ipp32s y, Ipp32s pitch)
+    } // int32_t ChromaOffset(int32_t x, int32_t y, int32_t pitch)
 
     // we can't use template instead implicit parameter's passing
     // couse we use slightly different types
     void CompensateMotionLumaBlock(ReconstructParams *pParams,
-                                   Ipp32s iDir,
-                                   Ipp32s iBlockNumber,
-                                   Ipp32s iUniDir)
+                                   int32_t iDir,
+                                   int32_t iBlockNumber,
+                                   int32_t iUniDir)
     {
         IppVCInterpolateBlock_16u * interpolateInfo = &pParams->m_lumaInterpolateInfo;
-        Ipp32s iRefIndex;
-        Ipp32s iRefFieldTop;
+        int32_t iRefIndex;
+        int32_t iRefFieldTop;
 
         // get reference index
         iRefIndex = (pParams->m_iRefIndex[iDir] = GetReferenceIndex(pParams->m_pRefIndex[iDir], iBlockNumber));
@@ -126,7 +126,7 @@ public:
 
             if (sizeof(PlaneY) == 1)
             {
-                ippiSet_8u_C1R(0, (Ipp8u*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+                ippiSet_8u_C1R(0, (uint8_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
             }
             else
             {
@@ -136,7 +136,7 @@ public:
         }
 
         // get reference frame & pitch
-        interpolateInfo->pSrc[0] = (Ipp16u*) pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane;
+        interpolateInfo->pSrc[0] = (uint16_t*) pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pYPlane;
 
         VM_ASSERT(interpolateInfo->pSrc[0]);
 
@@ -151,7 +151,7 @@ public:
                 iRefFieldTop = GetReferenceField(pParams->m_pSegDec->m_pFields[iDir], iRefIndex);
 
             if (iRefFieldTop)
-                interpolateInfo->pSrc[0] = (Ipp16u*)((PlanePtrY)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1 ));
+                interpolateInfo->pSrc[0] = (uint16_t*)((PlanePtrY)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1 ));
         }
 
         // create vectors & factors
@@ -170,19 +170,19 @@ public:
         }
         else
         {
-            Ipp32s iOffset = pParams->m_iOffsetLuma +
+            int32_t iOffset = pParams->m_iOffsetLuma +
                              pParams->m_iIntraMBLumaOffset;
 
             // save pointers for optimized interpolation
             if (0 == iUniDir)
             {
-                pParams->m_bidirLuma.pSrc[iDir] = (Ipp16u*)((PlanePtrY) (interpolateInfo->pSrc[0]) + iOffset);
+                pParams->m_bidirLuma.pSrc[iDir] = (uint16_t*)((PlanePtrY) (interpolateInfo->pSrc[0]) + iOffset);
                 pParams->m_bidirLuma.srcStep[iDir] = interpolateInfo->srcStep;
             }
             // we have to do interpolation for uni-direction motion
             else
             {
-                interpolateInfo->pSrc[0] = (Ipp16u*) ((PlanePtrY)(interpolateInfo->pSrc[0]) + iOffset);
+                interpolateInfo->pSrc[0] = (uint16_t*) ((PlanePtrY)(interpolateInfo->pSrc[0]) + iOffset);
                 ippiInterpolateLuma<PlaneY>(interpolateInfo);
 
                 // save pointers for optimized interpolation
@@ -193,13 +193,13 @@ public:
     } // void CompensateMotionLumaBlock(ReconstructParams *pParams,
 
     void CompensateMotionChromaBlock(ReconstructParams *pParams,
-                                     Ipp32s iDir,
-                                     Ipp32s iBlockNumber,
-                                     Ipp32s iUniDir)
+                                     int32_t iDir,
+                                     int32_t iBlockNumber,
+                                     int32_t iUniDir)
     {
         IppVCInterpolateBlock_16u * interpolateInfo = &pParams->m_chromaInterpolateInfo;
-        Ipp32s iRefIndex;
-        Ipp32s iRefFieldTop;
+        int32_t iRefIndex;
+        int32_t iRefFieldTop;
 
         // get reference index
         iRefIndex = (pParams->m_iRefIndex[iDir] = GetReferenceIndex(pParams->m_pRefIndex[iDir], iBlockNumber));
@@ -215,17 +215,17 @@ public:
 
             if (sizeof(PlaneUV) == 1)
             {
-                ippiSet_16u_C1R(0, (Ipp16u*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+                ippiSet_16u_C1R(0, (uint16_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
             }
             else
             {
-                ippiSet_32s_C1R(0, (Ipp32s*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
+                ippiSet_32s_C1R(0, (int32_t*)interpolateInfo->pDst[0], interpolateInfo->dstStep, interpolateInfo->sizeBlock);
             }
             return;
         }
 
         // get reference frame & pitch
-        interpolateInfo->pSrc[0] = (Ipp16u*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUVPlane;
+        interpolateInfo->pSrc[0] = (uint16_t*)pParams->m_pSegDec->m_pRefPicList[iDir][iRefIndex]->m_pUVPlane;
         VM_ASSERT(interpolateInfo->pSrc[0]);
 
         if (is_field)
@@ -240,7 +240,7 @@ public:
 
             if (iRefFieldTop)
             {
-                interpolateInfo->pSrc[0] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1));
+                interpolateInfo->pSrc[0] = (uint16_t*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + (interpolateInfo->srcStep >> 1));
             }
         }
 
@@ -269,8 +269,8 @@ public:
             (iUniDir))
         {
             // scale motion vector
-            interpolateInfo->pointVector.x <<= ((Ipp32s) (3 <= color_format));
-            interpolateInfo->pointVector.y <<= ((Ipp32s) (2 <= color_format));
+            interpolateInfo->pointVector.x <<= ((int32_t) (3 <= color_format));
+            interpolateInfo->pointVector.y <<= ((int32_t) (2 <= color_format));
 
             ippiInterpolateChromaBlockNV12<PlaneUV>(interpolateInfo);
 
@@ -280,11 +280,11 @@ public:
         }
         else
         {
-            Ipp32s iOffset = pParams->m_iOffsetChroma +
+            int32_t iOffset = pParams->m_iOffsetChroma +
                              pParams->m_iIntraMBChromaOffset;
 
             // save pointers for optimized interpolation
-            pParams->m_bidirChroma[0].pSrc[iDir] = (Ipp16u*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + iOffset);
+            pParams->m_bidirChroma[0].pSrc[iDir] = (uint16_t*)((PlanePtrUV)(interpolateInfo->pSrc[0]) + iOffset);
             pParams->m_bidirChroma[0].srcStep[iDir] = interpolateInfo->srcStep;
         }
 
@@ -334,15 +334,15 @@ public:
     } // void BiDirWeightMacroblock(ReconstructParams *pParams)
 
     inline
-    void BiDirWeightMacroblockImplicit(ReconstructParams *pParams, Ipp32s iBlockNumber)
+    void BiDirWeightMacroblockImplicit(ReconstructParams *pParams, int32_t iBlockNumber)
     {
         FactorArrayValue iDistScaleFactor;
 
         if (is_field && pParams->is_mbaff)
         {
-            Ipp32s curfield = pParams->is_bottom_mb;
-            Ipp32s ref0field = curfield ^ (GetReferenceIndex(pParams->m_pRefIndex[D_DIR_FWD], iBlockNumber) & 1);
-            Ipp32s ref1field = curfield ^ (GetReferenceIndex(pParams->m_pRefIndex[D_DIR_BWD], iBlockNumber) & 1);
+            int32_t curfield = pParams->is_bottom_mb;
+            int32_t ref0field = curfield ^ (GetReferenceIndex(pParams->m_pRefIndex[D_DIR_FWD], iBlockNumber) & 1);
+            int32_t ref1field = curfield ^ (GetReferenceIndex(pParams->m_pRefIndex[D_DIR_BWD], iBlockNumber) & 1);
 
             const FactorArrayValue *pDistScaleFactors = pParams->m_pSegDec->m_pSlice->GetDistScaleFactorAFF()->values[pParams->m_iRefIndex[D_DIR_BWD]][curfield][ref0field][ref1field];
             iDistScaleFactor = (FactorArrayValue) (pDistScaleFactors[pParams->m_iRefIndex[D_DIR_FWD]] >> 2);
@@ -373,7 +373,7 @@ public:
     } // void BiDirWeightMacroblockImplicit(ReconstructParams *pParams)
 
     inline
-    void UniDirWeightLuma(ReconstructParams *pParams, Ipp32s iDir)
+    void UniDirWeightLuma(ReconstructParams *pParams, int32_t iDir)
     {
         UniDirWeightBlock(pParams->m_pDstY,
                           &pParams->m_bidirLuma,
@@ -381,10 +381,10 @@ public:
                           pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].luma_weight,
                           pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].luma_offset);
 
-    } // void UniDirWeightLuma(ReconstructParams *params, Ipp32s iDir)
+    } // void UniDirWeightLuma(ReconstructParams *params, int32_t iDir)
 
     inline
-    void UniDirWeightChroma(ReconstructParams *pParams, Ipp32s iDir)
+    void UniDirWeightChroma(ReconstructParams *pParams, int32_t iDir)
     {
         UniDirWeightBlock_NV12(pParams->m_pDstUV,
                             &pParams->m_bidirChroma[0],
@@ -393,25 +393,25 @@ public:
                             pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[0],
                             pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_weight[1],
                             pParams->m_pSegDec->m_pPredWeight[iDir][pParams->m_iRefIndex[iDir]].chroma_offset[1]);
-    } // void UniDirWeightLuma(ReconstructParams *params, Ipp32s iDir)
+    } // void UniDirWeightLuma(ReconstructParams *params, int32_t iDir)
 
     void CompensateBiDirBlock(ReconstructParams &params,
                               PlanePtrY pDstY,
                               PlanePtrUV pDstUV,
-                              Ipp32s iPitchLuma,
-                              Ipp32s iPitchChroma,
-                              Ipp32s iBlockNumber)
+                              int32_t iPitchLuma,
+                              int32_t iPitchChroma,
+                              int32_t iBlockNumber)
     {
         if (GetReferenceIndex(params.m_pRefIndex[D_DIR_FWD], iBlockNumber) == -1 ||
             GetReferenceIndex(params.m_pRefIndex[D_DIR_BWD], iBlockNumber) == -1)
         {
-            Ipp32s iDir = GetReferenceIndex(params.m_pRefIndex[D_DIR_FWD], iBlockNumber) == -1 ? D_DIR_BWD : D_DIR_FWD;
+            int32_t iDir = GetReferenceIndex(params.m_pRefIndex[D_DIR_FWD], iBlockNumber) == -1 ? D_DIR_BWD : D_DIR_FWD;
             CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir, iBlockNumber);
             return;
         }
 
         // set the destination
-        params.m_lumaInterpolateInfo.pDst[0] = (Ipp16u*)(((PlanePtrY) params.m_pSegDec->m_pPredictionBuffer) +
+        params.m_lumaInterpolateInfo.pDst[0] = (uint16_t*)(((PlanePtrY) params.m_pSegDec->m_pPredictionBuffer) +
                          params.m_iIntraMBLumaOffsetTmp);
         params.m_lumaInterpolateInfo.dstStep = 16;
         // do forward prediction
@@ -419,7 +419,7 @@ public:
 
         if (color_format)
         {
-            params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)((PlanePtrUV) ((((PlanePtrY) params.m_pSegDec->m_pPredictionBuffer) + 16 * 16) +
+            params.m_chromaInterpolateInfo.pDst[0] = (uint16_t*)((PlanePtrUV) ((((PlanePtrY) params.m_pSegDec->m_pPredictionBuffer) + 16 * 16) +
                                           params.m_iIntraMBChromaOffsetTmp));
             params.m_chromaInterpolateInfo.dstStep = 16;
             // do forward prediction
@@ -427,10 +427,10 @@ public:
         }
 
         // set the destination
-        params.m_lumaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstY + params.m_iIntraMBLumaOffset);
+        params.m_lumaInterpolateInfo.pDst[0] = (uint16_t*)(pDstY + params.m_iIntraMBLumaOffset);
         params.m_lumaInterpolateInfo.dstStep = iPitchLuma;
 
-        params.m_bidirLuma.pDst = (Ipp16u*)((PlanePtrY)pDstY + params.m_iIntraMBLumaOffset);
+        params.m_bidirLuma.pDst = (uint16_t*)((PlanePtrY)pDstY + params.m_iIntraMBLumaOffset);
         params.m_bidirLuma.dstStep = iPitchLuma;
         params.m_bidirLuma.roiSize = params.m_lumaInterpolateInfo.sizeBlock;
 
@@ -439,7 +439,7 @@ public:
 
         if (color_format)
         {
-            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstUV + params.m_iIntraMBChromaOffset);
+            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (uint16_t*)(pDstUV + params.m_iIntraMBChromaOffset);
             params.m_bidirChroma[0].dstStep = params.m_chromaInterpolateInfo.dstStep = iPitchChroma;
             params.m_bidirChroma[0].roiSize = params.m_chromaInterpolateInfo.sizeBlock;
 
@@ -468,16 +468,16 @@ public:
     void CompensateUniDirBlock(ReconstructParams &params,
                                PlanePtrY pDstY,
                                PlanePtrUV pDstUV,
-                               Ipp32s iPitchLuma,
-                               Ipp32s iPitchChroma,
-                               Ipp32s iDir,
-                               Ipp32s iBlockNumber)
+                               int32_t iPitchLuma,
+                               int32_t iPitchChroma,
+                               int32_t iDir,
+                               int32_t iBlockNumber)
     {
         // set the destination
-        params.m_lumaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstY + params.m_iIntraMBLumaOffset);
+        params.m_lumaInterpolateInfo.pDst[0] = (uint16_t*)(pDstY + params.m_iIntraMBLumaOffset);
         params.m_lumaInterpolateInfo.dstStep = iPitchLuma;
 
-        params.m_bidirLuma.pDst = (Ipp16u*)((PlanePtrY)pDstY + params.m_iIntraMBLumaOffset);
+        params.m_bidirLuma.pDst = (uint16_t*)((PlanePtrY)pDstY + params.m_iIntraMBLumaOffset);
         params.m_bidirLuma.dstStep = iPitchLuma;
         params.m_bidirLuma.roiSize = params.m_lumaInterpolateInfo.sizeBlock;
 
@@ -486,7 +486,7 @@ public:
 
         if (color_format)
         {
-            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (Ipp16u*)(pDstUV + params.m_iIntraMBChromaOffset);
+            params.m_bidirChroma[0].pDst = params.m_chromaInterpolateInfo.pDst[0] = (uint16_t*)(pDstUV + params.m_iIntraMBChromaOffset);
             params.m_bidirChroma[0].dstStep = params.m_chromaInterpolateInfo.dstStep = iPitchChroma;
             params.m_bidirChroma[0].roiSize = params.m_chromaInterpolateInfo.sizeBlock;
 
@@ -512,12 +512,12 @@ public:
 
     void CompensateBlock8x8(PlanePtrY pDstY,
                             PlanePtrUV pDstUV,
-                            Ipp32s iPitchLuma,
-                            Ipp32s iPitchChroma,
+                            int32_t iPitchLuma,
+                            int32_t iPitchChroma,
                             ReconstructParams &params,
-                            Ipp32s iSubBlockType,
-                            Ipp32s iSubBlockDir,
-                            Ipp32s iSubBlockNumber)
+                            int32_t iSubBlockType,
+                            int32_t iSubBlockDir,
+                            int32_t iSubBlockNumber)
     {
         switch (iSubBlockType)
         {
@@ -542,7 +542,7 @@ public:
                 }
                 else
                 {
-                    Ipp32s iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
+                    int32_t iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
@@ -585,7 +585,7 @@ public:
                 }
                 else
                 {
-                    Ipp32s iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
+                    int32_t iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
@@ -637,7 +637,7 @@ public:
                 }
                 else
                 {
-                    Ipp32s iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
+                    int32_t iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
@@ -718,7 +718,7 @@ public:
                 }
                 else
                 {
-                    Ipp32s iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
+                    int32_t iDir = ((D_DIR_BWD == iSubBlockDir) || (D_DIR_DIRECT_SPATIAL_BWD == iSubBlockDir)) ?
                                    (D_DIR_BWD) :
                                    (D_DIR_FWD);
 
@@ -763,25 +763,25 @@ public:
 
     void CompensateMotionMacroBlock(PlanePtrY pDstY,
                                     PlanePtrUV pDstUV,
-                                    Ipp32u mbXOffset, // for edge clipping
-                                    Ipp32u mbYOffset,
-                                    Ipp32s offsetY,
-                                    Ipp32s offsetC,
-                                    Ipp32s pitch_luma,
-                                    Ipp32s pitch_chroma,
+                                    uint32_t mbXOffset, // for edge clipping
+                                    uint32_t mbYOffset,
+                                    int32_t offsetY,
+                                    int32_t offsetC,
+                                    int32_t pitch_luma,
+                                    int32_t pitch_chroma,
                                     H264SegmentDecoder *sd)
     {
-        Ipp32s mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
+        int32_t mbtype = sd->m_cur_mb.GlobalMacroblockInfo->mbtype;
 
-        Ipp8s *psbdir = sd->m_cur_mb.LocalMacroblockInfo->sbdir;
+        int8_t *psbdir = sd->m_cur_mb.LocalMacroblockInfo->sbdir;
 
         bool bBidirWeightMB = false;    // is bidir weighting in effect for the MB?
         bool bUnidirWeightMB = false;    // is explicit L0 weighting in effect for the MB?
 
         // Optional weighting vars
-        Ipp32u weighted_bipred_idc = 0;
-        Ipp32u luma_log2_weight_denom = 0;
-        Ipp32u chroma_log2_weight_denom = 0;
+        uint32_t weighted_bipred_idc = 0;
+        uint32_t luma_log2_weight_denom = 0;
+        uint32_t chroma_log2_weight_denom = 0;
 
         RefIndexType *pRefIndexL0 = 0;
         RefIndexType *pRefIndexL1 = 0;
@@ -855,8 +855,8 @@ public:
         params.m_bidirChroma[0].bitDepth = sd->bit_depth_chroma;
         params.m_bidirChroma[1].bitDepth = sd->bit_depth_chroma;
 
-        Ipp32s iPitchLuma = pitch_luma;
-        Ipp32s iPitchChroma = pitch_chroma;
+        int32_t iPitchLuma = pitch_luma;
+        int32_t iPitchChroma = pitch_chroma;
 
         params.m_pMV[0] = sd->m_cur_mb.MVs[0]->MotionVectors;
         params.m_pMV[1] = (BPREDSLICE == sd->m_pSliceHeader->slice_type) ? (sd->m_cur_mb.MVs[1]->MotionVectors) : (NULL);
@@ -903,7 +903,7 @@ public:
                     }
                     else
                     {
-                        Ipp32s iDir = ((D_DIR_BWD == psbdir[0]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[0])) ?
+                        int32_t iDir = ((D_DIR_BWD == psbdir[0]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[0])) ?
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
@@ -927,7 +927,7 @@ public:
                     }
                     else
                     {
-                        Ipp32s iDir = ((D_DIR_BWD == psbdir[1]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[1])) ?
+                        int32_t iDir = ((D_DIR_BWD == psbdir[1]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[1])) ?
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
@@ -956,7 +956,7 @@ public:
                     }
                     else
                     {
-                        Ipp32s iDir = ((D_DIR_BWD == psbdir[0]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[0])) ?
+                        int32_t iDir = ((D_DIR_BWD == psbdir[0]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[0])) ?
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
@@ -980,7 +980,7 @@ public:
                     }
                     else
                     {
-                        Ipp32s iDir = ((D_DIR_BWD == psbdir[1]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[1])) ?
+                        int32_t iDir = ((D_DIR_BWD == psbdir[1]) || (D_DIR_DIRECT_SPATIAL_BWD == psbdir[1])) ?
                                        (D_DIR_BWD) :
                                        (D_DIR_FWD);
 
@@ -1009,7 +1009,7 @@ public:
                     }
                     else
                     {
-                        Ipp32s iDir = (MBTYPE_BACKWARD == mbtype) ? (D_DIR_BWD) : (D_DIR_FWD);
+                        int32_t iDir = (MBTYPE_BACKWARD == mbtype) ? (D_DIR_BWD) : (D_DIR_FWD);
 
                         CompensateUniDirBlock(params, pDstY, pDstUV, iPitchLuma, iPitchChroma, iDir,
                                               0);
@@ -1020,8 +1020,8 @@ public:
         }
         else
         {
-            Ipp8s *pSubBlockType = sd->m_cur_mb.GlobalMacroblockInfo->sbtype;
-            Ipp8s *pSubBlockDir = sd->m_cur_mb.LocalMacroblockInfo->sbdir;
+            int8_t *pSubBlockType = sd->m_cur_mb.GlobalMacroblockInfo->sbtype;
+            int8_t *pSubBlockDir = sd->m_cur_mb.LocalMacroblockInfo->sbdir;
 
             // sub block 0
             CompensateBlock8x8(pDstY, pDstUV, iPitchLuma, iPitchChroma,
@@ -1071,7 +1071,7 @@ public:
     // Copy raw pixel values from the bitstream to the reconstructed frame for
     // all luma and chroma blocks of one macroblock.
     ////////////////////////////////////////////////////////////////////////////////
-    void ReconstructPCMMB(Ipp32u offsetY, Ipp32u offsetC, Ipp32s pitch_luma, Ipp32s pitch_chroma,
+    void ReconstructPCMMB(uint32_t offsetY, uint32_t offsetC, int32_t pitch_luma, int32_t pitch_chroma,
                           H264SegmentDecoder * sd)
     {
         // to retrieve non-aligned pointer from m_pCoeffBlocksRead
@@ -1080,10 +1080,10 @@ public:
 
         PlanePtrY pCoeffBlocksRead_Y = reinterpret_cast<PlanePtrY> (sd->m_pCoeffBlocksRead);
         // get pointer to raw bytes from m_pCoeffBlocksRead
-        for (Ipp32s i = 0; i<16; i++)
+        for (int32_t i = 0; i<16; i++)
             MFX_INTERNAL_CPY(pDstY + i * pitch_luma, pCoeffBlocksRead_Y + i * 16, 16*sizeof(PlaneY));
 
-        sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
+        sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((uint8_t*)sd->m_pCoeffBlocksRead +
                                  256*sizeof(PlaneY));
 
         if (color_format)
@@ -1096,18 +1096,18 @@ public:
             PlaneUV pSrcDstVPlane[iHeight * pitch];
 
             PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
-            for (Ipp32s i = 0; i < iHeight; i += 1)
+            for (int32_t i = 0; i < iHeight; i += 1)
                 MFX_INTERNAL_CPY(pSrcDstUPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
             pCoeffBlocksRead_UV += iWidth * iHeight * sizeof(PlaneUV);
 
-            for (Ipp32s i = 0; i < iHeight; i += 1)
+            for (int32_t i = 0; i < iHeight; i += 1)
                 MFX_INTERNAL_CPY(pSrcDstVPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
 
-            sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((Ipp8u*)sd->m_pCoeffBlocksRead +
+            sd->m_pCoeffBlocksRead = (UMC::CoeffsPtrCommon)((uint8_t*)sd->m_pCoeffBlocksRead +
                 2* iWidth * iHeight * sizeof(PlaneUV));
 
-            IppiSize roi = {8,8};
+            mfxSize roi = {8,8};
             ConvertYV12ToNV12(pSrcDstUPlane, pSrcDstVPlane, 8, pDstUV, pitch_chroma, roi);
         }
     } // void ReconstructPCMMB(

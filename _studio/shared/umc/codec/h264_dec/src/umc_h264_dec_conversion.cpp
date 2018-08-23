@@ -43,14 +43,14 @@ bool store_yuv(H264DecoderFrame *frame)
     bool res = true;
     if (yuv_file)
     {
-        Ipp32s pitch_luma = frame->pitch_luma();
-        Ipp32s pitch_chroma = frame->pitch_chroma();
-        Ipp32s width = frame->lumaSize().width;
-        Ipp32s height = frame->lumaSize().height;
+        int32_t pitch_luma = frame->pitch_luma();
+        int32_t pitch_chroma = frame->pitch_chroma();
+        int32_t width = frame->lumaSize().width;
+        int32_t height = frame->lumaSize().height;
 
         height = frame->lumaSize().height - frame->m_crop_bottom;
 
-        Ipp32s i;
+        int32_t i;
 
         T *y  = (T*)frame->m_pYPlane;
         T *u  = (T*)frame->m_pUPlane;
@@ -66,7 +66,7 @@ bool store_yuv(H264DecoderFrame *frame)
             //if (vm_string_strncmp((vm_char*)&diff_y[0], (vm_char*)y, width*sizeof(T)) != 0)
             if (res)
             {
-                for (Ipp32s k = 0; k < width; k++)
+                for (int32_t k = 0; k < width; k++)
                 {
                     if (diff_y[k] != y[k])
                     {
@@ -105,7 +105,7 @@ bool store_yuv(H264DecoderFrame *frame)
             //if (vm_string_strncmp((vm_char*)&diff_y[0], (vm_char*)u, width*sizeof(T)) != 0)
             if (res)
             {
-                for (Ipp32s k = 0; k < width; k++)
+                for (int32_t k = 0; k < width; k++)
                 {
                     if (diff_y[k] != u[k])
                     {
@@ -128,7 +128,7 @@ bool store_yuv(H264DecoderFrame *frame)
             //if (vm_string_strncmp((vm_char*)diff_y, (vm_char*)v, width*sizeof(T)) != 0)
             if (res)
             {
-                for (Ipp32s k = 0; k < width; k++)
+                for (int32_t k = 0; k < width; k++)
                 {
                     if (diff_y[k] != v[k])
                     {
@@ -152,9 +152,9 @@ bool CutPlanes(UMC::H264DecoderFrame * pDisplayFrame, UMC_H264_DECODER::H264SeqP
 {
     bool result = true;
     if (sps->bit_depth_luma == 8)
-        result = UMC::store_yuv<Ipp8u> (pDisplayFrame);
+        result = UMC::store_yuv<uint8_t> (pDisplayFrame);
     else
-        result = UMC::store_yuv<Ipp16u> (pDisplayFrame);
+        result = UMC::store_yuv<uint16_t> (pDisplayFrame);
 
     return result;
 }

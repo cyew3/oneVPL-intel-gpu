@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,20 +17,20 @@
 namespace UMC
 {
 
-Status H264SegmentDecoderMultiThreaded::DecodeMacroBlockCAVLC(Ipp32u nCurMBNumber,
-                                                              Ipp32u &nMaxMBNumber)
+Status H264SegmentDecoderMultiThreaded::DecodeMacroBlockCAVLC(uint32_t nCurMBNumber,
+                                                              uint32_t &nMaxMBNumber)
 {
     Status status = m_SD->DecodeSegmentCAVLC(nCurMBNumber, nMaxMBNumber, this);
     return status;
-} // Status H264SegmentDecoderMultiThreaded::DecodeMacroBlockCAVLC(Ipp32u nCurMBNumber,
+} // Status H264SegmentDecoderMultiThreaded::DecodeMacroBlockCAVLC(uint32_t nCurMBNumber,
 
-Status H264SegmentDecoderMultiThreaded::ReconstructMacroBlockCAVLC(Ipp32u nCurMBNumber,
-                                                                   Ipp32u nMaxMBNumber)
+Status H264SegmentDecoderMultiThreaded::ReconstructMacroBlockCAVLC(uint32_t nCurMBNumber,
+                                                                   uint32_t nMaxMBNumber)
 {
     Status status = m_SD->ReconstructSegment(nCurMBNumber, nMaxMBNumber, this);
     return status;
 }
-// Status H264SegmentDecoderMultiThreaded::ReconstructMacroBlockCAVLC(Ipp32u nCurMBNumber,
+// Status H264SegmentDecoderMultiThreaded::ReconstructMacroBlockCAVLC(uint32_t nCurMBNumber,
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

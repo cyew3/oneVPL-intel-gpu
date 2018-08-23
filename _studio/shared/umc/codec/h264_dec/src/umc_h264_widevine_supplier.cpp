@@ -23,7 +23,7 @@
 namespace UMC
 {
 
-void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s frame_num)
+void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, int32_t frame_num)
 {
     const H264SliceHeader *sliceHeader = slice->GetSliceHeader();
     const H264SeqParamSet* sps = slice->GetSeqParam();
@@ -34,8 +34,8 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
         m_TopFieldPOC = sliceHeader->pic_order_cnt_lsb;
         m_BottomFieldPOC = sliceHeader->pic_order_cnt_lsb + sliceHeader->delta_pic_order_cnt_bottom;
 
-        //Ipp32s CurrPicOrderCntMsb;
-        //Ipp32s MaxPicOrderCntLsb = sps->MaxPicOrderCntLsb;
+        //int32_t CurrPicOrderCntMsb;
+        //int32_t MaxPicOrderCntLsb = sps->MaxPicOrderCntLsb;
 
         //if ((sliceHeader->pic_order_cnt_lsb < m_PicOrderCntLsb) &&
         //     ((m_PicOrderCntLsb - sliceHeader->pic_order_cnt_lsb) >= (MaxPicOrderCntLsb >> 1)))
@@ -67,14 +67,14 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
 
         if ((sliceHeader->delta_pic_order_cnt[0] == 0))
         {
-            Ipp32u i;
-            Ipp32u uAbsFrameNum;    // frame # relative to last IDR pic
-            Ipp32u uPicOrderCycleCnt = 0;
-            Ipp32u uFrameNuminPicOrderCntCycle = 0;
-            Ipp32s ExpectedPicOrderCnt = 0;
-            Ipp32s ExpectedDeltaPerPicOrderCntCycle;
-            Ipp32u uNumRefFramesinPicOrderCntCycle = sps->num_ref_frames_in_pic_order_cnt_cycle;
-            Ipp32s uMaxFrameNum = (1<<sps->log2_max_frame_num);
+            uint32_t i;
+            uint32_t uAbsFrameNum;    // frame # relative to last IDR pic
+            uint32_t uPicOrderCycleCnt = 0;
+            uint32_t uFrameNuminPicOrderCntCycle = 0;
+            int32_t ExpectedPicOrderCnt = 0;
+            int32_t ExpectedDeltaPerPicOrderCntCycle;
+            uint32_t uNumRefFramesinPicOrderCntCycle = sps->num_ref_frames_in_pic_order_cnt_cycle;
+            int32_t uMaxFrameNum = (1<<sps->log2_max_frame_num);
 
             if (frame_num < m_FrameNum)
                 m_FrameNumOffset += uMaxFrameNum;
@@ -131,8 +131,8 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, Ipp32s 
     }
     else if (sps->pic_order_cnt_type == 2)
     {
-        Ipp32s iMaxFrameNum = (1<<sps->log2_max_frame_num);
-        Ipp32u uAbsFrameNum;    // frame # relative to last IDR pic
+        int32_t iMaxFrameNum = (1<<sps->log2_max_frame_num);
+        uint32_t uAbsFrameNum;    // frame # relative to last IDR pic
 
         if (frame_num < m_FrameNum)
             m_FrameNumOffset += iMaxFrameNum;
@@ -178,10 +178,10 @@ Status WidevineTaskSupplier::Init(VideoDecoderParams *pInit)
         m_pWidevineDecrypter->Init();
         m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
 
-        for (Ipp32s i = 0; i < MVC_Extension::GetViewCount(); i++)
+        for (int32_t i = 0; i < MVC_Extension::GetViewCount(); i++)
         {
             ViewItem &view = GetViewByNumber(i);
-            for (Ipp32u j = 0; j < MAX_NUM_LAYERS; j++)
+            for (uint32_t j = 0; j < MAX_NUM_LAYERS; j++)
             {
                 view.pPOCDec[j].reset(new POCDecoderWidevine());
             }
@@ -261,10 +261,10 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         //SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         //swapper->SwapMemory(pMem, &mem);
 
-        //bitStream.Reset((Ipp8u*)pMem->GetPointer(), (Ipp32u)pMem->GetDataSize());
+        //bitStream.Reset((uint8_t*)pMem->GetPointer(), (uint32_t)pMem->GetDataSize());
 
         //NAL_Unit_Type nal_unit_type;
-        //Ipp32u nal_ref_idc;
+        //uint32_t nal_ref_idc;
 
         //bitStream.GetNALUnitType(nal_unit_type, nal_ref_idc);
 
@@ -284,7 +284,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                     return UMC_ERR_INVALID_STREAM;
                 }
 
-                Ipp8u newDPBsize = (Ipp8u)CalculateDPBSize(sps.level_idc,
+                uint8_t newDPBsize = (uint8_t)CalculateDPBSize(sps.level_idc,
                                             sps.frame_width_in_mbs * 16,
                                             sps.frame_height_in_mbs * 16,
                                             sps.num_ref_frames);
@@ -321,7 +321,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 if (view)
                 {
                     view->SetDPBSize(&sps, m_level_idc);
-                    temp->vui.max_dec_frame_buffering = (Ipp8u)view->maxDecFrameBuffering;
+                    temp->vui.max_dec_frame_buffering = (uint8_t)view->maxDecFrameBuffering;
                 }
 
                 //m_pNALSplitter->SetSuggestedSize(CalculateSuggestedSize(&sps));
@@ -329,7 +329,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 if (!temp->vui.timing_info_present_flag || m_use_external_framerate)
                 {
                     temp->vui.num_units_in_tick = 90000;
-                    temp->vui.time_scale = (Ipp32u)(2*90000 / m_local_delta_frame_time);
+                    temp->vui.time_scale = (uint32_t)(2*90000 / m_local_delta_frame_time);
                 }
 
                 m_local_delta_frame_time = 1 / ((0.5 * temp->vui.time_scale) / temp->vui.num_units_in_tick);
@@ -371,7 +371,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
                 }
 
                 H264SeqParamSet *refSps = m_Headers.m_SeqParams.GetHeader(pps.seq_parameter_set_id);
-                Ipp32u prevActivePPS = m_Headers.m_PicParams.GetCurrentID();
+                uint32_t prevActivePPS = m_Headers.m_PicParams.GetCurrentID();
 
                 if (!refSps || refSps->seq_parameter_set_id >= MAX_NUM_SEQ_PARAM_SETS)
                 {
@@ -559,21 +559,21 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
     }
 //    {
 //        // save sps/pps
-//        Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
+//        uint32_t nal_unit_type = nalUnit->GetExData()->values[0];
 //        switch(nal_unit_type)
 //        {
 //            case NAL_UT_SPS:
 //            case NAL_UT_PPS:
 //                {
-//                    static Ipp8u start_code_prefix[] = {0, 0, 0, 1};
+//                    static uint8_t start_code_prefix[] = {0, 0, 0, 1};
 //
 //                    size_t size = nalUnit->GetDataSize();
 //                    bool isSPS = (nal_unit_type == NAL_UT_SPS);
 //                    RawHeader * hdr = isSPS ? GetSPS() : GetPPS();
-//                    Ipp32s id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
+//                    int32_t id = isSPS ? m_Headers.m_SeqParams.GetCurrentID() : m_Headers.m_PicParams.GetCurrentID();
 //                    hdr->Resize(id, size + sizeof(start_code_prefix));
 //                    memcpy(hdr->GetPointer(), start_code_prefix,  sizeof(start_code_prefix));
-//                    memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (Ipp8u*)nalUnit->GetDataPointer(), size);
+//                    memcpy(hdr->GetPointer() + sizeof(start_code_prefix), (uint8_t*)nalUnit->GetDataPointer(), size);
 //#ifdef __APPLE__
 //                    hdr->SetRBSPSize(size);
 //#endif
@@ -600,7 +600,7 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         //return UMC_WRN_REPOSITION_INPROGRESS;
     }
 
-    //Ipp32u nal_unit_type = nalUnit->GetExData()->values[0];
+    //uint32_t nal_unit_type = nalUnit->GetExData()->values[0];
     if (/*nal_unit_type == NAL_UT_SPS && */m_firstVideoParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE &&
         isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va && (m_va->m_HWPlatform >= MFX_HW_HSW))
     {
@@ -651,7 +651,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     //SwapperBase * swapper = m_pNALSplitter->GetSwapper();
     //swapper->SwapMemory(pMem, pMemCopy);
 
-    Ipp32s pps_pid = pDecryptParams->PicParams.pic_parameter_set_id;//pSlice->RetrievePicParamSetNumber(pMem->GetPointer(), pMem->GetSize());
+    int32_t pps_pid = pDecryptParams->PicParams.pic_parameter_set_id;//pSlice->RetrievePicParamSetNumber(pMem->GetPointer(), pMem->GetSize());
     if (pps_pid == -1)
     {
         ErrorStatus::isPPSError = 1;
@@ -674,7 +674,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         return 0;
     }
 
-    Ipp32s seq_parameter_set_id = pSlice->m_pPicParamSet->seq_parameter_set_id;
+    int32_t seq_parameter_set_id = pSlice->m_pPicParamSet->seq_parameter_set_id;
 
     //if (NAL_UT_CODED_SLICE_EXTENSION == pSlice->GetSliceHeader()->nal_unit_type)
     //{
@@ -742,10 +742,10 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     //if (!pSlice->Reset(&m_Headers.m_nalExtension))
     //bool H264Slice::Reset(H264NalExtension *pNalExt)
     {
-        Ipp32s iMBInFrame;
-        Ipp32s iFieldIndex;
+        int32_t iMBInFrame;
+        int32_t iFieldIndex;
 
-        //m_BitStream.Reset((Ipp8u *) pSource, (Ipp32u) nSourceSize);
+        //m_BitStream.Reset((uint8_t *) pSource, (uint32_t) nSourceSize);
 
         // decode slice header
         {
@@ -754,7 +754,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
             // was read and saved from the first slice header of the picture,
             // is not supposed to change within the picture, so can be
             // discarded when read again here.
-            Ipp32s iSQUANT;
+            int32_t iSQUANT;
 
             try
             {
@@ -826,12 +826,12 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
                     return 0;
 
                 // Set next MB.
-                if (pSlice->m_SliceHeader.first_mb_in_slice >= (Ipp32s) (pSlice->m_iMBWidth * pSlice->m_iMBHeight))
+                if (pSlice->m_SliceHeader.first_mb_in_slice >= (int32_t) (pSlice->m_iMBWidth * pSlice->m_iMBHeight))
                 {
                     return 0;
                 }
 
-                Ipp32s bit_depth_luma = pSlice->GetSeqParam()->bit_depth_luma;
+                int32_t bit_depth_luma = pSlice->GetSeqParam()->bit_depth_luma;
 
                 iSQUANT = pSlice->m_pPicParamSet->pic_init_qp +
                           pSlice->m_SliceHeader.slice_qp_delta;
@@ -841,7 +841,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
                     return 0;
                 }
 
-                //m_SliceHeader.hw_wa_redundant_elimination_bits[2] = (Ipp32u)m_BitStream.BitsDecoded();
+                //m_SliceHeader.hw_wa_redundant_elimination_bits[2] = (uint32_t)m_BitStream.BitsDecoded();
 
                 if (pSlice->m_pPicParamSet->entropy_coding_mode)
                     pSlice->m_BitStream.AlignPointerRight();
@@ -937,7 +937,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         {
             AllocateAndInitializeView(pSlice);
             ViewItem &view = GetView(pSlice->GetSliceHeader()->nal_ext.mvc.view_id);
-            Ipp32u recoveryFrameNum = (spl->SEI_messages.recovery_point.recovery_frame_cnt + pSlice->GetSliceHeader()->frame_num) % (1 << pSlice->m_pSeqParamSet->log2_max_frame_num);
+            uint32_t recoveryFrameNum = (spl->SEI_messages.recovery_point.recovery_frame_cnt + pSlice->GetSliceHeader()->frame_num) % (1 << pSlice->m_pSeqParamSet->log2_max_frame_num);
             view.GetDPBList(0)->SetRecoveryFrameCnt(recoveryFrameNum);
         }
 
@@ -961,7 +961,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     //if (nalUnit->GetFlags() & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
     //{
     //    slice->m_pSource.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-    //    MFX_INTERNAL_CPY(slice->m_pSource.GetPointer(), nalUnit->GetDataPointer(), (Ipp32u)nalUnit->GetDataSize());
+    //    MFX_INTERNAL_CPY(slice->m_pSource.GetPointer(), nalUnit->GetDataPointer(), (uint32_t)nalUnit->GetDataSize());
     //    memset(slice->m_pSource.GetPointer() + nalUnit->GetDataSize(), DEFAULT_NU_TAIL_VALUE, DEFAULT_NU_TAIL_SIZE);
     //    slice->m_pSource.SetDataSize(nalUnit->GetDataSize());
     //    slice->m_pSource.SetTime(nalUnit->GetTime());
@@ -971,16 +971,16 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     //    slice->m_pSource.SetData(nalUnit);
     //}
 
-    //Ipp32u* pbs;
-    //Ipp32u bitOffset;
+    //uint32_t* pbs;
+    //uint32_t bitOffset;
 
     //slice->GetBitStream()->GetState(&pbs, &bitOffset);
 
     //size_t bytes = slice->GetBitStream()->BytesDecodedRoundOff();
 
     //slice->GetBitStream()->Reset(slice->m_pSource.GetPointer(), bitOffset,
-    //    (Ipp32u)slice->m_pSource.GetDataSize());
-    //slice->GetBitStream()->SetState((Ipp32u*)(slice->m_pSource.GetPointer() + bytes), bitOffset);
+    //    (uint32_t)slice->m_pSource.GetDataSize());
+    //slice->GetBitStream()->SetState((uint32_t*)(slice->m_pSource.GetPointer() + bytes), bitOffset);
 
     return pSlice;
 }
@@ -1000,10 +1000,10 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
         //SwapperBase * swapper = m_pNALSplitter->GetSwapper();
         //swapper->SwapMemory(&swappedMem, &mem, DEFAULT_NU_HEADER_TAIL_VALUE);
 
-        //bitStream.Reset((Ipp8u*)pMem->GetPointer(), (Ipp32u)pMem->GetDataSize());
+        //bitStream.Reset((uint8_t*)pMem->GetPointer(), (uint32_t)pMem->GetDataSize());
 
         //NAL_Unit_Type nal_unit_type;
-        //Ipp32u nal_ref_idc;
+        //uint32_t nal_ref_idc;
 
         //bitStream.GetNALUnitType(nal_unit_type, nal_ref_idc);
 
@@ -1181,7 +1181,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData * pSource)
 
     DecryptParametersWrapper decryptParams;
     void* bsDataPointer = pSource ? pSource->GetDataPointer() : 0;
-    Ipp32s size = pSource ? (Ipp32s)pSource->GetDataSize() : 0;
+    int32_t size = pSource ? (int32_t)pSource->GetDataSize() : 0;
 
     {
         Status sts = DecryptWidevineHeaders(pSource, &decryptParams);
@@ -1193,7 +1193,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData * pSource)
 
     if (!decrypted && pSource)
     {
-        Ipp32u flags = pSource->GetFlags();
+        uint32_t flags = pSource->GetFlags();
 
         if (!(flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
         {
@@ -1246,7 +1246,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData * pSource)
     }
     else
     {
-        Ipp32u flags = pSource->GetFlags();
+        uint32_t flags = pSource->GetFlags();
 
         if (!(flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
         {
@@ -1257,7 +1257,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData * pSource)
     return UMC_ERR_NOT_ENOUGH_DATA;
 }
 
-Status WidevineTaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field)
+Status WidevineTaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, int32_t field)
 {
     Status sts = VATaskSupplier::CompleteFrame(pFrame, field);
 

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -26,8 +26,8 @@
 
 //#define TIME
 
-//static Ipp32s lock_failed = 0;
-//static Ipp32s sleep_count = 0;
+//static int32_t lock_failed = 0;
+//static int32_t sleep_count = 0;
 
 /*__declspec(naked)
 int TryRealGet(void *)
@@ -44,9 +44,9 @@ int TryRealGet(void *)
     }
 }
 
-Ipp32s TryToGet(void *p)
+int32_t TryToGet(void *p)
 {
-    Ipp32s res = TryRealGet(p);
+    int32_t res = TryRealGet(p);
     if (!res)
         lock_failed++;
     return res;
@@ -66,7 +66,7 @@ void PrintInfoStatus(H264DecoderFrameInfo * info)
     printf("POC - (%d, %d), \n", info->m_pFrame->m_PicOrderCnt[0], info->m_pFrame->m_PicOrderCnt[1]);
     printf("ViewId - (%d), \n", info->m_pFrame->m_viewId);
 
-    for (Ipp32u i = 0; i < info->GetSliceCount(); i++)
+    for (uint32_t i = 0; i < info->GetSliceCount(); i++)
     {
         printf("slice - %d\n", i);
         H264Slice * pSlice = info->GetSlice(i);
@@ -103,9 +103,9 @@ void PrintAllInfos(H264DecoderFrame * frame)
     printf("all info end\n");
 }*/
 
-static Ipp32s GetDecodingOffset(H264DecoderFrameInfo * curInfo, Ipp32s &readyCount)
+static int32_t GetDecodingOffset(H264DecoderFrameInfo * curInfo, int32_t &readyCount)
 {
-    Ipp32s offset = 0;
+    int32_t offset = 0;
 
     H264DecoderFrameInfo * refInfo = curInfo->GetRefAU();
     VM_ASSERT(refInfo);
@@ -157,7 +157,7 @@ TaskBrokerSingleThread::TaskBrokerSingleThread(TaskSupplier * pTaskSupplier)
 {
 }
 
-bool TaskBrokerSingleThread::Init(Ipp32s iConsumerNumber)
+bool TaskBrokerSingleThread::Init(int32_t iConsumerNumber)
 {
     Release();
     TaskBroker::Init(iConsumerNumber);
@@ -197,9 +197,9 @@ void TaskBrokerSingleThread::CompleteFrame(H264DecoderFrame * frame)
     TaskBroker::CompleteFrame(frame);
 }
 
-Ipp32s TaskBrokerSingleThread::GetNumberOfTasks(bool details)
+int32_t TaskBrokerSingleThread::GetNumberOfTasks(bool details)
 {
-    Ipp32s au_count = 0;
+    int32_t au_count = 0;
 
     H264DecoderFrameInfo * temp = m_FirstAU;
 
@@ -231,9 +231,9 @@ bool TaskBrokerSingleThread::IsEnoughForStartDecoding(bool force)
     AutomaticUMCMutex guard(m_mGuard);
 
     InitAUs();
-    Ipp32s au_count = GetNumberOfTasks(false);
+    int32_t au_count = GetNumberOfTasks(false);
 
-    Ipp32s additional_tasks = m_iConsumerNumber;
+    int32_t additional_tasks = m_iConsumerNumber;
     if (m_iConsumerNumber > 6)
         additional_tasks -= 1;
 
@@ -257,17 +257,17 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) slice dec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
             break;
         case TASK_DEC:
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) dec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()),  pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) dec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()),  pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
             break;
         case TASK_REC:
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) rec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) rec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
             break;
         case TASK_DEC_REC:
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) dec_rec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) dec_rec done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
             break;
         case TASK_DEB:
 #if defined(ECHO_DEB)
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) deb done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (m_viewId - %d) (%d) deb done % 4d to % 4d - error - %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess, pTask->m_bError));
 #else
         case TASK_DEB_FRAME:
         case TASK_DEB_FRAME_THREADED:
@@ -305,7 +305,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             // we can't relay on slice number cause of field pictures.
             if (pSlice->m_iAvailableMB)
             {
-                Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                int32_t pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                 VM_ASSERT(pos >= 0);
                 H264Slice * pNextSlice = info->GetSlice(pos + 1);
                 if (pNextSlice)
@@ -343,10 +343,10 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
     }
     else if (TASK_DEB_FRAME == pTask->m_iTaskID)
     {
-        Ipp32s sliceCount = m_FirstAU->GetSliceCount();
+        int32_t sliceCount = m_FirstAU->GetSliceCount();
 
         // frame is deblocked
-        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        for (int32_t i = 0; i < sliceCount; i += 1)
         {
             H264SliceEx *pTemp = (H264SliceEx *)m_FirstAU->GetSlice(i);
 
@@ -385,7 +385,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             {
                 if (isReadyIncrease)
                     info->m_iDecMBReady = pSlice->m_iMaxMB;
-                pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
+                pSlice->m_iMaxMB = MFX_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
             else
@@ -398,7 +398,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 pSlice->m_bDecVacant = 0;
                 if (isReadyIncrease)
                 {
-                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                    int32_t pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     if (pos >= 0)
                     {
                         H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(++pos);
@@ -416,7 +416,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 pSlice->m_bDecVacant = 1;
             }
 
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) dec ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), info->m_iDecMBReady));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) dec ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), info->m_iDecMBReady));
             }
             break;
 
@@ -440,7 +440,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                     info->m_iRecMBReady = pSlice->m_iMaxMB;
                 }
 
-                //pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
+                //pSlice->m_iMaxMB = MFX_MIN(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
 
@@ -452,7 +452,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             {
                 if (isReadyIncrease)
                 {
-                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                    int32_t pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     if (pos >= 0)
                     {
                         H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(pos + 1);
@@ -476,7 +476,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             {
                 pSlice->m_bRecVacant = 1;
             }
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) rec ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), info->m_iRecMBReady));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) rec ready %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), info->m_iRecMBReady));
             }
             break;
 
@@ -510,7 +510,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 if (isReadyIncreaseRec && pSlice->m_bDeblocked)
                     info->m_iRecMBReady = pSlice->m_iMaxMB;
 
-                pSlice->m_iMaxMB = IPP_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
+                pSlice->m_iMaxMB = MFX_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
                 pSlice->m_iCurMBToRec = pSlice->m_iCurMBToDec;
                 pSlice->m_bError = true;
             }
@@ -521,14 +521,14 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
 
                 if (isReadyIncreaseDec || isReadyIncreaseRec)
                 {
-                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                    int32_t pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     VM_ASSERT(pos >= 0);
                     H264SliceEx * pNextSlice = (H264SliceEx *)info->GetSlice(pos + 1);
                     if (pNextSlice)
                     {
                         if (isReadyIncreaseDec)
                         {
-                            Ipp32s pos1 = pos;
+                            int32_t pos1 = pos;
                             H264SliceEx * pTmpSlice = (H264SliceEx *)info->GetSlice(++pos1);
 
                             for (; pTmpSlice; pTmpSlice = (H264SliceEx *)info->GetSlice(++pos1))
@@ -562,7 +562,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 pSlice->m_bRecVacant = 1;
             }
 
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (%d) (viewId - %d) (%d) dec_rec ready %d %d\n"), pTask->m_iThreadNumber, (Ipp32s)(info != m_FirstAU), info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), info->m_iDecMBReady, info->m_iRecMBReady));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (%d) (viewId - %d) (%d) dec_rec ready %d %d\n"), pTask->m_iThreadNumber, (int32_t)(info != m_FirstAU), info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), info->m_iDecMBReady, info->m_iRecMBReady));
             }
             break;
 
@@ -590,7 +590,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             {
                 if (pSlice->m_bDecoded)
                 {
-                    Ipp32s pos = info->GetPositionByNumber(pSlice->GetSliceNum());
+                    int32_t pos = info->GetPositionByNumber(pSlice->GetSliceNum());
                     if (isReadyIncrease)
                     {
                         VM_ASSERT(pos >= 0);
@@ -618,7 +618,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 pSlice->m_bDebVacant = 1;
             }
 
-            DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) after deb ready %d %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), info->m_iDecMBReady, info->m_iRecMBReady));
+            DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) after deb ready %d %d\n"), pTask->m_iThreadNumber, info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), info->m_iDecMBReady, info->m_iRecMBReady));
             }
             break;
 #if 0
@@ -633,7 +633,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             m_DebTools.SetProcessedMB(pTask);
             if (m_DebTools.IsDeblockingDone())
             {
-                Ipp32s i;
+                int32_t i;
 
                 // frame is deblocked
                 for (i = 0; i < GetNumberOfSlicesFromCurrentFrame(); i += 1)
@@ -734,7 +734,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
     if (info == pFrame->GetAU(0))
     {
         VM_ASSERT(pFrame->m_iResourceNumber != -1);
-        Ipp32s iMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
+        int32_t iMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
 
         m_localResourses.AllocateBuffers(iMBCount);
     }
@@ -746,7 +746,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
         if (info == pFrame->GetAU(0))
         {
             VM_ASSERT(pFrame->m_iResourceNumber != -1);
-            Ipp32s iMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
+            int32_t iMBCount = pFrame->totalMBs << (pFrame->m_PictureStructureForDec < FRM_STRUCTURE ? 1 : 0);
 
             // allocate decoding data
             m_localResourses.AllocateMBInfo(pFrame->m_iResourceNumber, iMBCount);
@@ -755,8 +755,8 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
             m_localResourses.AllocateMBIntraTypes(pFrame->m_iResourceNumber, iMBCount);
 
             H264DecoderFrameInfo * slicesInfo = pFrame->GetAU(0);
-            Ipp32s sliceCount = slicesInfo->GetSliceCount();
-            for (Ipp32s i = 0; i < sliceCount; i++)
+            int32_t sliceCount = slicesInfo->GetSliceCount();
+            for (int32_t i = 0; i < sliceCount; i++)
             {
                 H264SliceEx * pSlice = (H264SliceEx *)slicesInfo->GetSlice(i);
                 pSlice->InitializeContexts();
@@ -775,7 +775,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
             {
                 if (slicesInfo->m_isBExist && slicesInfo->m_isPExist)
                 {
-                    for (Ipp32s i = 0; i < sliceCount; i++)
+                    for (int32_t i = 0; i < sliceCount; i++)
                     {
                         H264Slice * pSlice = slicesInfo->GetSlice(i);
                         if (pSlice->GetSliceHeader()->slice_type == PREDSLICE)
@@ -793,8 +793,8 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
         }
         else
         {
-            Ipp32s sliceCount = info->GetSliceCount();
-            for (Ipp32s i = 0; i < sliceCount; i++)
+            int32_t sliceCount = info->GetSliceCount();
+            for (int32_t i = 0; i < sliceCount; i++)
             {
                 H264SliceEx * pSlice = (H264SliceEx *)info->GetSlice(i);
                 pSlice->InitializeContexts();
@@ -804,7 +804,7 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
 
             if (!info->IsSliceGroups() && info->m_isBExist && info->m_isPExist)
             {
-                for (Ipp32s i = 0; i < sliceCount; i++)
+                for (int32_t i = 0; i < sliceCount; i++)
                 {
                     H264Slice * pSlice = info->GetSlice(i);
                     if (pSlice->GetSliceHeader()->slice_type == PREDSLICE)
@@ -817,8 +817,8 @@ bool TaskBrokerSingleThread::GetPreparationTask(H264DecoderFrameInfo * info)
     {
         Lock();
 
-        Ipp32s sliceCount = info->GetSliceCount();
-        for (Ipp32s i = 0; i < sliceCount; i++)
+        int32_t sliceCount = info->GetSliceCount();
+        for (int32_t i = 0; i < sliceCount; i++)
         {
             H264SliceEx * pSlice = (H264SliceEx *)info->GetSlice(i);
             pSlice->m_bInProcess = false;
@@ -892,14 +892,14 @@ void TaskBrokerSingleThread::InitTask(H264DecoderFrameInfo * info, H264Task *pTa
 bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info, H264Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-    Ipp32s i;
+    int32_t i;
     bool bDoDeblocking;
 
     // skip some slices, more suitable for first thread
     // and first slice is always reserved for first slice decoder
     /*if (pTask->m_iThreadNumber)
     {
-        i = IPP_MAX(1, GetNumberOfSlicesFromCurrentFrame() / m_iConsumerNumber);
+        i = MFX_MAX(1, GetNumberOfSlicesFromCurrentFrame() / m_iConsumerNumber);
         bDoDeblocking = false;
     }
     else
@@ -912,7 +912,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
     bDoDeblocking = false;
 
     // find first uncompressed slice
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t sliceCount = info->GetSliceCount();
     for (; i < sliceCount; i += 1)
     {
         H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
@@ -922,7 +922,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
         {
             InitTask(info, pTask, pSlice);
             pTask->m_iFirstMB = pSlice->m_iFirstMB;
-            pTask->m_iMBToProcess = IPP_MIN(pSlice->m_iMaxMB - pSlice->m_iFirstMB, pSlice->m_iAvailableMB);
+            pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iMaxMB - pSlice->m_iFirstMB, pSlice->m_iAvailableMB);
             pTask->m_iTaskID = TASK_PROCESS;
             pTask->m_pBuffer = NULL;
             // we can do deblocking only on independent slices or
@@ -950,7 +950,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
 bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * info, H264Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t sliceCount = info->GetSliceCount();
     H264Slice* slice = info->GetSlice(sliceCount - 1);
     VM_ASSERT(slice);
     if (!slice)
@@ -962,7 +962,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
     if (bSliceGroups)
     {
         bool isError = false;
-        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        for (int32_t i = 0; i < sliceCount; i += 1)
         {
             H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
@@ -974,7 +974,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
         }
 
         bool bNothingToDo = true;
-        for (Ipp32s i = 0; i < sliceCount; i += 1)
+        for (int32_t i = 0; i < sliceCount; i += 1)
         {
             H264Slice *pSlice = info->GetSlice(i);
 
@@ -994,7 +994,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
         InitTask(info, pTask, pSlice);
         pTask->m_bError = isError;
         pTask->m_iFirstMB = 0;
-        Ipp32s iMBInFrame = (pSlice->m_iMBWidth * pSlice->m_iMBHeight) /
+        int32_t iMBInFrame = (pSlice->m_iMBWidth * pSlice->m_iMBHeight) /
                             ((pSlice->GetSliceHeader()->field_pic_flag) ? (2) : (1));
         pTask->m_iMaxMB = iMBInFrame;
         pTask->m_iMBToProcess = iMBInFrame;
@@ -1011,7 +1011,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDeblocking(H264DecoderFrameInfo * inf
     }
     else
     {
-        Ipp32s i;
+        int32_t i;
         bool bPrevDeblocked = true;
 
         for (i = 0; i < sliceCount; i += 1)
@@ -1062,7 +1062,7 @@ TaskBrokerTwoThread::TaskBrokerTwoThread(TaskSupplier * pTaskSupplier)
 {
 }
 
-bool TaskBrokerTwoThread::Init(Ipp32s iConsumerNumber)
+bool TaskBrokerTwoThread::Init(int32_t iConsumerNumber)
 {
     if (!TaskBrokerSingleThread::Init(iConsumerNumber))
         return false;
@@ -1142,7 +1142,7 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
         pSlice->m_bDecVacant = 0;
 
         pTask->m_taskPreparingGuard->Unlock();
-        Ipp32s iMBWidth = pSlice->GetMBRowWidth();
+        int32_t iMBWidth = pSlice->GetMBRowWidth();
 
         // error handling
         /*if (0 >= ((signed) pSlice->m_BitStream.BytesLeft()))
@@ -1154,18 +1154,18 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = pSlice->m_iCurMBToDec;
         pTask->m_WrittenSize = 0;
-        pTask->m_iMBToProcess = IPP_MIN(pSlice->m_iCurMBToDec -
+        pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iCurMBToDec -
                                     (pSlice->m_iCurMBToDec % iMBWidth) +
                                     iMBWidth,
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToDec;
 
-        pTask->m_iMBToProcess = IPP_MIN(pTask->m_iMBToProcess, pSlice->m_iAvailableMB);
+        pTask->m_iMBToProcess = MFX_MIN(pTask->m_iMBToProcess, pSlice->m_iAvailableMB);
         pTask->m_iTaskID = TASK_DEC;
         pTask->m_pBuffer = (UMC::CoeffsPtrCommon)pSlice->GetCoeffsBuffers()->LockInputBuffer();
 
 #ifdef ECHO
         DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) dec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
-            info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
+            info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
 #endif // ECHO
 
         return true;
@@ -1185,24 +1185,24 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
         pSlice->m_bRecVacant = 0;
 
         pTask->m_taskPreparingGuard->Unlock();
-        Ipp32s iMBWidth = pSlice->GetMBRowWidth();
+        int32_t iMBWidth = pSlice->GetMBRowWidth();
 
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = pSlice->m_iCurMBToRec;
-        pTask->m_iMBToProcess = IPP_MIN(pSlice->m_iCurMBToRec -
+        pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iCurMBToRec -
                                     (pSlice->m_iCurMBToRec % iMBWidth) +
                                     iMBWidth,
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToRec;
 
         pTask->m_iTaskID = TASK_REC;
-        Ipp8u* pointer = NULL;
+        uint8_t* pointer = NULL;
         size_t size;
         pSlice->GetCoeffsBuffers()->LockOutputBuffer(pointer, size);
         pTask->m_pBuffer = ((UMC::CoeffsPtrCommon) pointer);
 
 #ifdef ECHO
         DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d)  (%d) rec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
-            info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
+            info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
 #endif // ECHO
 
         return true;
@@ -1224,12 +1224,12 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
         pSlice->m_bDecVacant = 0;
 
         pTask->m_taskPreparingGuard->Unlock();
-        Ipp32s iMBWidth = pSlice->GetMBRowWidth();
+        int32_t iMBWidth = pSlice->GetMBRowWidth();
 
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = pSlice->m_iCurMBToDec;
         pTask->m_WrittenSize = 0;
-        pTask->m_iMBToProcess = IPP_MIN(pSlice->m_iCurMBToDec -
+        pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iCurMBToDec -
                                     (pSlice->m_iCurMBToDec % iMBWidth) +
                                     iMBWidth,
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToDec;
@@ -1239,7 +1239,7 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
 
 #ifdef ECHO
         DEBUG_PRINT((VM_STRING("(%d) (%d) (viewId - %d) (%d) dec_rec - % 4d to % 4d\n"), pTask->m_iThreadNumber,
-            info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (Ipp32s)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
+            info->m_pFrame->m_PicOrderCnt[0], pSlice->GetSliceHeader()->nal_ext.mvc.view_id, (int32_t)(pSlice->IsBottomField()), pTask->m_iFirstMB, pTask->m_iFirstMB + pTask->m_iMBToProcess));
 #endif // ECHO
 
         return true;
@@ -1252,12 +1252,12 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
 bool TaskBrokerTwoThread::GetDecodingTask(H264DecoderFrameInfo * info, H264Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-    Ipp32s i;
+    int32_t i;
 
     H264DecoderFrameInfo * refAU = info->GetRefAU();
     bool is_need_check = refAU != 0;
-    Ipp32s readyCount = 0;
-    Ipp32s additionalLines = 0;
+    int32_t readyCount = 0;
+    int32_t additionalLines = 0;
 
     if (is_need_check)
     {
@@ -1272,7 +1272,7 @@ bool TaskBrokerTwoThread::GetDecodingTask(H264DecoderFrameInfo * info, H264Task 
         }
     }
 
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
         H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
@@ -1300,8 +1300,8 @@ bool TaskBrokerTwoThread::GetReconstructTask(H264DecoderFrameInfo * info, H264Ta
 
     H264DecoderFrameInfo * refAU = info->GetRefAU();
     bool is_need_check = refAU != 0;
-    Ipp32s readyCount = 0;
-    Ipp32s additionalLines = 0;
+    int32_t readyCount = 0;
+    int32_t additionalLines = 0;
 
     if (is_need_check)
     {
@@ -1316,8 +1316,8 @@ bool TaskBrokerTwoThread::GetReconstructTask(H264DecoderFrameInfo * info, H264Ta
         }
     }
 
-    Ipp32s i;
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t i;
+    int32_t sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
         H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
@@ -1333,8 +1333,8 @@ bool TaskBrokerTwoThread::GetReconstructTask(H264DecoderFrameInfo * info, H264Ta
 
         if (is_need_check)
         {
-            Ipp32s distortion = pSlice->m_MVsDistortion + (refAU->IsNeedDeblocking() ? 4 : 0);
-            Ipp32s k = ( (distortion + 15) / 16) + 1; // +2 - (1 - for padding, 2 - current line)
+            int32_t distortion = pSlice->m_MVsDistortion + (refAU->IsNeedDeblocking() ? 4 : 0);
+            int32_t k = ( (distortion + 15) / 16) + 1; // +2 - (1 - for padding, 2 - current line)
             if (pSlice->m_iCurMBToRec + (k + additionalLines)*pSlice->GetMBRowWidth() >= readyCount)
                 break;
         }
@@ -1355,8 +1355,8 @@ bool TaskBrokerTwoThread::GetDecRecTask(H264DecoderFrameInfo * info, H264Task *p
     if (info->GetRefAU() || info->GetSliceCount() == 1)
         return false;
 
-    Ipp32s i;
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t i;
+    int32_t sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
         H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
@@ -1378,17 +1378,17 @@ bool TaskBrokerTwoThread::GetDecRecTask(H264DecoderFrameInfo * info, H264Task *p
 bool TaskBrokerTwoThread::GetDeblockingTask(H264DecoderFrameInfo * info, H264Task *pTask)
 {
     // this is guarded function, safe to touch any variable
-    Ipp32s i;
+    int32_t i;
     bool bPrevDeblocked = true;
 
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t sliceCount = info->GetSliceCount();
     for (i = 0; i < sliceCount; i += 1)
     {
         H264SliceEx *pSlice = (H264SliceEx *)info->GetSlice(i);
 
-        Ipp32s iMBWidth = pSlice->GetMBRowWidth(); // DEBUG : always deblock two lines !!!
-        Ipp32s iAvailableToDeblock;
-        Ipp32s iDebUnit = (pSlice->GetSliceHeader()->MbaffFrameFlag) ? (2) : (1);
+        int32_t iMBWidth = pSlice->GetMBRowWidth(); // DEBUG : always deblock two lines !!!
+        int32_t iAvailableToDeblock;
+        int32_t iDebUnit = (pSlice->GetSliceHeader()->MbaffFrameFlag) ? (2) : (1);
 
         iAvailableToDeblock = pSlice->m_iCurMBToRec -
                               pSlice->m_iCurMBToDeb;
@@ -1405,11 +1405,11 @@ bool TaskBrokerTwoThread::GetDeblockingTask(H264DecoderFrameInfo * info, H264Tas
             pTask->m_iFirstMB = pSlice->m_iCurMBToDeb;
 
             {
-                pTask->m_iMBToProcess = IPP_MIN(iMBWidth - (pSlice->m_iCurMBToDeb % iMBWidth),
+                pTask->m_iMBToProcess = MFX_MIN(iMBWidth - (pSlice->m_iCurMBToDeb % iMBWidth),
                                             iAvailableToDeblock);
-                pTask->m_iMBToProcess = IPP_MAX(pTask->m_iMBToProcess,
+                pTask->m_iMBToProcess = MFX_MAX(pTask->m_iMBToProcess,
                                             iDebUnit);
-                pTask->m_iMBToProcess = align_value<Ipp32s> (pTask->m_iMBToProcess, iDebUnit);
+                pTask->m_iMBToProcess = align_value<int32_t> (pTask->m_iMBToProcess, iDebUnit);
             }
 
             pTask->m_iTaskID = TASK_DEB;
@@ -1504,15 +1504,15 @@ bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * 
     return false;
 #else
     // this is guarded function, safe to touch any variable
-    Ipp32s sliceCount = info->GetSliceCount();
+    int32_t sliceCount = info->GetSliceCount();
     H264Slice * firstSlice = info->GetSlice(0);
 
     if (m_bFirstDebThreadedCall)
     {
-        Ipp32s i;
-        Ipp32s iFirstMB = -1, iMaxMB = -1;
-        Ipp32s iMBWidth = firstSlice->GetMBRowWidth();
-        Ipp32s iDebUnit = (firstSlice->GetSliceHeader()->MbaffFrameFlag) ? (2) : (1);
+        int32_t i;
+        int32_t iFirstMB = -1, iMaxMB = -1;
+        int32_t iMBWidth = firstSlice->GetMBRowWidth();
+        int32_t iDebUnit = (firstSlice->GetSliceHeader()->MbaffFrameFlag) ? (2) : (1);
         bool bError = false;
 
         // check all other threads are sleep
@@ -1560,7 +1560,7 @@ bool TaskBrokerTwoThread::GetFrameDeblockingTaskThreaded(H264DecoderFrameInfo * 
 
     // correct task to slice range
     {
-        Ipp32s i;
+        int32_t i;
 
         for (i = 0; i < sliceCount; i += 1)
         {
@@ -1607,7 +1607,7 @@ LocalResources::~LocalResources()
     Close();
 }
 
-Status LocalResources::Init(Ipp32s numberOfBuffers, MemoryAllocator *pMemoryAllocator)
+Status LocalResources::Init(int32_t numberOfBuffers, MemoryAllocator *pMemoryAllocator)
 {
     Close();
 
@@ -1618,10 +1618,10 @@ Status LocalResources::Init(Ipp32s numberOfBuffers, MemoryAllocator *pMemoryAllo
     if (NULL == m_pMBInfo)
         return UMC_ERR_ALLOC;
 
-    m_ppMBIntraTypes = new Ipp32u *[numberOfBuffers];
+    m_ppMBIntraTypes = new uint32_t *[numberOfBuffers];
     if (NULL == m_ppMBIntraTypes)
         return UMC_ERR_ALLOC;
-    memset(m_ppMBIntraTypes, 0, sizeof(Ipp32u *)*numberOfBuffers);
+    memset(m_ppMBIntraTypes, 0, sizeof(uint32_t *)*numberOfBuffers);
 
     // allocate intra MB types array's sizes
     m_piMBIntraProp = new H264IntraTypesProp[numberOfBuffers];
@@ -1635,7 +1635,7 @@ Status LocalResources::Init(Ipp32s numberOfBuffers, MemoryAllocator *pMemoryAllo
 
 void LocalResources::Reset()
 {
-    for (Ipp32s i = 0; i < m_numberOfBuffers; i++)
+    for (int32_t i = 0; i < m_numberOfBuffers; i++)
     {
         m_pMBInfo[i].m_isBusy = false;
         m_pMBInfo[i].m_pFrame = 0;
@@ -1654,7 +1654,7 @@ void LocalResources::Close()
 
     if (m_piMBIntraProp)
     {
-        for (Ipp32s i = 0; i < m_numberOfBuffers; i++)
+        for (int32_t i = 0; i < m_numberOfBuffers; i++)
         {
             if (m_piMBIntraProp[i].m_nSize == 0)
                 continue;
@@ -1679,16 +1679,16 @@ void LocalResources::Close()
     m_currentResourceIndex = 0;
 }
 
-Ipp32u LocalResources::GetCurrentResourceIndex()
+uint32_t LocalResources::GetCurrentResourceIndex()
 {
-    Ipp32s index = m_currentResourceIndex % (m_numberOfBuffers);
+    int32_t index = m_currentResourceIndex % (m_numberOfBuffers);
     m_currentResourceIndex++;
     return index;
 }
 
 bool LocalResources::LockFrameResource(H264DecoderFrame * frame)
 {
-    Ipp32s number = frame->m_iResourceNumber;
+    int32_t number = frame->m_iResourceNumber;
     if (m_pMBInfo[number].m_isBusy)
         return m_pMBInfo[number].m_pFrame == frame;
 
@@ -1699,7 +1699,7 @@ bool LocalResources::LockFrameResource(H264DecoderFrame * frame)
 
 void LocalResources::UnlockFrameResource(H264DecoderFrame * frame)
 {
-    Ipp32s number = frame->m_iResourceNumber;
+    int32_t number = frame->m_iResourceNumber;
     if (number < 0 || m_pMBInfo[number].m_pFrame != frame)
         return;
 
@@ -1707,7 +1707,7 @@ void LocalResources::UnlockFrameResource(H264DecoderFrame * frame)
     m_pMBInfo[number].m_pFrame = 0;
 }
 
-H264DecoderFrame * LocalResources::IsBusyByFrame(Ipp32s number)
+H264DecoderFrame * LocalResources::IsBusyByFrame(int32_t number)
 {
     return m_pMBInfo[number].m_pFrame;
 }
@@ -1718,9 +1718,9 @@ H264CoeffsBuffer * LocalResources::AllocateCoeffBuffer(H264Slice * slice)
     coeffsBuffers->IncrementReference();
 
 
-    Ipp32s iMBRowSize = slice->GetMBRowWidth();
-    Ipp32s iMBRowBuffers;
-    Ipp32s bit_depth_luma, bit_depth_chroma;
+    int32_t iMBRowSize = slice->GetMBRowWidth();
+    int32_t iMBRowBuffers;
+    int32_t bit_depth_luma, bit_depth_chroma;
     if (slice->GetSliceHeader()->is_auxiliary)
     {
         bit_depth_luma = slice->GetSeqParamEx()->bit_depth_aux;
@@ -1730,13 +1730,13 @@ H264CoeffsBuffer * LocalResources::AllocateCoeffBuffer(H264Slice * slice)
         bit_depth_chroma = slice->GetSeqParam()->bit_depth_chroma;
     }
 
-    Ipp32s isU16Mode = (bit_depth_luma > 8 || bit_depth_chroma > 8) ? 2 : 1;
+    int32_t isU16Mode = (bit_depth_luma > 8 || bit_depth_chroma > 8) ? 2 : 1;
 
     // decide number of buffers
     if (slice->m_iMaxMB - slice->m_iFirstMB > iMBRowSize)
     {
         iMBRowBuffers = (slice->m_iMaxMB - slice->m_iFirstMB + iMBRowSize - 1) / iMBRowSize;
-        iMBRowBuffers = IPP_MIN(MINIMUM_NUMBER_OF_ROWS, iMBRowBuffers);
+        iMBRowBuffers = MFX_MIN(MINIMUM_NUMBER_OF_ROWS, iMBRowBuffers);
     }
     else
     {
@@ -1744,7 +1744,7 @@ H264CoeffsBuffer * LocalResources::AllocateCoeffBuffer(H264Slice * slice)
         iMBRowBuffers = 1;
     }
 
-    coeffsBuffers->Init(iMBRowBuffers, (Ipp32s)sizeof(Ipp16s) * isU16Mode * (iMBRowSize * COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE));
+    coeffsBuffers->Init(iMBRowBuffers, (int32_t)sizeof(int16_t) * isU16Mode * (iMBRowSize * COEFFICIENTS_BUFFER_SIZE + DEFAULT_ALIGN_VALUE));
     coeffsBuffers->Reset();
     return coeffsBuffers;
 }
@@ -1758,7 +1758,7 @@ void LocalResources::FreeCoeffBuffer(H264CoeffsBuffer *buffer)
     }
 }
 
-void LocalResources::AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber)
+void LocalResources::AllocateMBIntraTypes(int32_t iIndex, int32_t iMBNumber)
 {
     if ((0 == m_ppMBIntraTypes[iIndex]) ||
         (m_piMBIntraProp[iIndex].m_nSize < iMBNumber))
@@ -1778,23 +1778,23 @@ void LocalResources::AllocateMBIntraTypes(Ipp32s iIndex, Ipp32s iMBNumber)
                                                 nSize,
                                                 UMC_ALLOC_PERSISTENT))
             throw h264_exception(UMC_ERR_ALLOC);
-        m_piMBIntraProp[iIndex].m_nSize = (Ipp32s) iMBNumber;
-        m_ppMBIntraTypes[iIndex] = (Ipp32u *) m_pMemoryAllocator->Lock(m_piMBIntraProp[iIndex].m_mid);
+        m_piMBIntraProp[iIndex].m_nSize = (int32_t) iMBNumber;
+        m_ppMBIntraTypes[iIndex] = (uint32_t *) m_pMemoryAllocator->Lock(m_piMBIntraProp[iIndex].m_mid);
     }
 }
 
-H264DecoderLocalMacroblockDescriptor & LocalResources::GetMBInfo(Ipp32s number)
+H264DecoderLocalMacroblockDescriptor & LocalResources::GetMBInfo(int32_t number)
 {
     return m_pMBInfo[number];
 }
 
-void LocalResources::AllocateMBInfo(Ipp32s number, Ipp32u iMBCount)
+void LocalResources::AllocateMBInfo(int32_t number, uint32_t iMBCount)
 {
     if (!m_pMBInfo[number].Allocate(iMBCount, m_pMemoryAllocator))
         throw h264_exception(UMC_ERR_ALLOC);
 }
 
-IntraType * LocalResources::GetIntraTypes(Ipp32s number)
+IntraType * LocalResources::GetIntraTypes(int32_t number)
 {
     return m_ppMBIntraTypes[number];
 }
@@ -1804,10 +1804,10 @@ H264DecoderMBAddr * LocalResources::GetDefaultMBMapTable() const
     return next_mb_tables[0];
 }
 
-void LocalResources::AllocateBuffers(Ipp32s mb_count)
+void LocalResources::AllocateBuffers(int32_t mb_count)
 {
-    Ipp32s     next_mb_size = (Ipp32s)(mb_count*sizeof(H264DecoderMBAddr));
-    Ipp32s     totalSize = (m_numberOfBuffers + 1)*next_mb_size + mb_count + 128; // 128 used for alignments
+    int32_t     next_mb_size = (int32_t)(mb_count*sizeof(H264DecoderMBAddr));
+    int32_t     totalSize = (m_numberOfBuffers + 1)*next_mb_size + mb_count + 128; // 128 used for alignments
 
     // Reallocate our buffer if its size is not appropriate.
     if (m_parsedDataLength < totalSize)
@@ -1819,7 +1819,7 @@ void LocalResources::AllocateBuffers(Ipp32s mb_count)
                                       UMC_ALLOC_PERSISTENT))
             throw h264_exception(UMC_ERR_ALLOC);
 
-        m_pParsedData = (Ipp8u *) m_pMemoryAllocator->Lock(m_midParsedData);
+        m_pParsedData = (uint8_t *) m_pMemoryAllocator->Lock(m_midParsedData);
         ippsZero_8u(m_pParsedData, totalSize);
 
         m_parsedDataLength = totalSize;
@@ -1829,7 +1829,7 @@ void LocalResources::AllocateBuffers(Ipp32s mb_count)
 
     size_t     offset = 0;
 
-    m_pMBMap = align_pointer<Ipp8u *> (m_pParsedData);
+    m_pMBMap = align_pointer<uint8_t *> (m_pParsedData);
     offset += mb_count;
 
     if (offset & 0x7)
@@ -1837,12 +1837,12 @@ void LocalResources::AllocateBuffers(Ipp32s mb_count)
     next_mb_tables[0] = align_pointer<H264DecoderMBAddr *> (m_pParsedData + offset);
 
     //initialize first table
-    for (Ipp32s i = 0; i < mb_count; i++)
+    for (int32_t i = 0; i < mb_count; i++)
         next_mb_tables[0][i] = i + 1; // simple linear scan
 
     offset += next_mb_size;
 
-    for (Ipp32s i = 1; i <= m_numberOfBuffers; i++)
+    for (int32_t i = 1; i <= m_numberOfBuffers; i++)
     {
         if (offset & 0x7)
             offset = (offset + 7) & ~7;

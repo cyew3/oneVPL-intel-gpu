@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_H264_DEC_MFX_H
@@ -21,7 +21,7 @@
 namespace UMC
 {
 
-inline mfxU8 ConvertH264FrameTypeToMFX(Ipp32s slice_type)
+inline mfxU8 ConvertH264FrameTypeToMFX(int32_t slice_type)
 {
     mfxU8 mfx_type;
     switch(slice_type)

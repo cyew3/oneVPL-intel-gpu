@@ -54,7 +54,7 @@ protected:
     typedef std::vector<H264SEIPayLoad*> PayloadArray;
     PayloadArray m_payloads;
 
-    Ipp32s FindPayloadPos(SEI_TYPE type) const;
+    int32_t FindPayloadPos(SEI_TYPE type) const;
 };
 
 /****************************************************************************************************/
@@ -118,9 +118,9 @@ public:
 
     void CompleteLastLayer();
 
-    Ipp32s FindLayerByDependency(Ipp32s dependency);
+    int32_t FindLayerByDependency(int32_t dependency);
 
-    Ipp32u GetAUIndentifier() const;
+    uint32_t GetAUIndentifier() const;
 
     void SortforASO();
 
@@ -140,7 +140,7 @@ protected:
 
     bool m_isFullAU;
 
-    Ipp32u m_auCounter;
+    uint32_t m_auCounter;
 };
 
 class AU_Splitter

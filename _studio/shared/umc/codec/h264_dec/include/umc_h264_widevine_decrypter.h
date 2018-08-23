@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -34,7 +34,7 @@ public:
     Status GetPictureParamSetPart1(H264PicParamSet *pps);
     Status GetPictureParamSetPart2(H264PicParamSet *pps);
 
-    //Status GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u &nal_ref_idc);
+    //Status GetNALUnitType(NAL_Unit_Type &nal_unit_type, uint32_t &nal_ref_idc);
     Status GetSliceHeaderPart1(H264SliceHeader *pSliceHeader);
     Status GetSliceHeaderPart2(H264SliceHeader *pSliceHeader,
                                const H264PicParamSet *pps,
@@ -56,8 +56,8 @@ public:
     void ParseSEIPicTiming(const Headers & headers, H264SEIPayLoad *spl);
     void ParseSEIRecoveryPoint(H264SEIPayLoad *spl);
 
-    Ipp64f GetTime() const {return m_pts;}
-    void SetTime(Ipp64f pts) {m_pts = pts;}
+    double GetTime() const {return m_pts;}
+    void SetTime(double pts) {m_pts = pts;}
 
 private:
     Status GetVUIParam(H264SeqParamSet *sps, H264VUI *vui);
@@ -66,7 +66,7 @@ private:
     void CopyDecryptParams(const DECRYPT_QUERY_STATUS_PARAMS_AVC & pDecryptParameters);
 
 private:
-    Ipp64f m_pts;
+    double m_pts;
 };
 
 
@@ -118,7 +118,7 @@ public:
 protected:
     VideoAccelerator *m_va;
     bool m_bitstreamSubmitted;
-    Ipp16u m_PESPacketCounter;
+    uint16_t m_PESPacketCounter;
 
 #ifdef UMC_VA_DXVA
     IDirect3DSurface9* m_pDummySurface;

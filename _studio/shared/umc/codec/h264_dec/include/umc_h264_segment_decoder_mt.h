@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -32,48 +32,48 @@ public:
 
     // Initialize object
     virtual
-    Status Init(Ipp32s iNumber);
+    Status Init(int32_t iNumber);
 
     // Decode slice's segment
     virtual
     Status ProcessSegment(void);
 
     // asynchronous called functions
-    Status DecRecSegment(Ipp32s iCurMBNumber, Ipp32s &iMaxMBToDecRec);
-    Status DecodeSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToDecode);
-    Status ReconstructSegment(Ipp32s iCurMBNumber, Ipp32s &iMBToReconstruct);
-    virtual Status DeblockSegmentTask(Ipp32s iCurMBNumber, Ipp32s &iMBToDeblock);
+    Status DecRecSegment(int32_t iCurMBNumber, int32_t &iMaxMBToDecRec);
+    Status DecodeSegment(int32_t iCurMBNumber, int32_t &iMBToDecode);
+    Status ReconstructSegment(int32_t iCurMBNumber, int32_t &iMBToReconstruct);
+    virtual Status DeblockSegmentTask(int32_t iCurMBNumber, int32_t &iMBToDeblock);
 
     CoeffsPtrCommon GetCoefficientsBuffer(void)
     {
         return m_psBuffer;
     }
 
-    virtual Status ProcessSlice(Ipp32s iCurMBNumber, Ipp32s &iMBToProcess);
+    virtual Status ProcessSlice(int32_t iCurMBNumber, int32_t &iMBToProcess);
 
     virtual Status ProcessTask(H264Task *task);
 
-    virtual void RestoreErrorRect(Ipp32s startMb, Ipp32s endMb, H264Slice * pSlice);
+    virtual void RestoreErrorRect(int32_t startMb, int32_t endMb, H264Slice * pSlice);
 
     // Allocated more coefficients buffers
     void ReallocateCoefficientsBuffer(void);
 
-    Status DecodeMacroBlockCAVLC(Ipp32u nCurMBNumber, Ipp32u &nMaxMBNumber);
-    Status DecodeMacroBlockCABAC(Ipp32u nCurMBNumber, Ipp32u &nMaxMBNumber);
+    Status DecodeMacroBlockCAVLC(uint32_t nCurMBNumber, uint32_t &nMaxMBNumber);
+    Status DecodeMacroBlockCABAC(uint32_t nCurMBNumber, uint32_t &nMaxMBNumber);
 
-    Status ReconstructMacroBlockCAVLC(Ipp32u nCurMBNumber, Ipp32u nMaxMBNumber);
-    Status ReconstructMacroBlockCABAC(Ipp32u nCurMBNumber, Ipp32u nMaxMBNumber);
+    Status ReconstructMacroBlockCAVLC(uint32_t nCurMBNumber, uint32_t nMaxMBNumber);
+    Status ReconstructMacroBlockCABAC(uint32_t nCurMBNumber, uint32_t nMaxMBNumber);
 
     // Get direct motion vectors for block 4x4
-    void GetMVD4x4_CABAC(const Ipp8u *pBlkIdx,
-                           const Ipp8u *pCodMVd,
-                           Ipp32u ListNum);
-    void GetMVD4x4_16x8_CABAC(const Ipp8u *pCodMVd,
-                                Ipp32u ListNum);
-    void GetMVD4x4_8x16_CABAC(const Ipp8u *pCodMVd,
-                                Ipp32u ListNum);
-    void GetMVD4x4_CABAC(const Ipp8u pCodMVd,
-                           Ipp32u ListNum);
+    void GetMVD4x4_CABAC(const uint8_t *pBlkIdx,
+                           const uint8_t *pCodMVd,
+                           uint32_t ListNum);
+    void GetMVD4x4_16x8_CABAC(const uint8_t *pCodMVd,
+                                uint32_t ListNum);
+    void GetMVD4x4_8x16_CABAC(const uint8_t *pCodMVd,
+                                uint32_t ListNum);
+    void GetMVD4x4_CABAC(const uint8_t pCodMVd,
+                           uint32_t ListNum);
 
     // Reconstruct skipped motion vectors
     void ReconstructSkipMotionVectors();
@@ -86,90 +86,90 @@ public:
     // Reconstruct motion vectors
     void ReconstructMotionVectors(void);
 
-    void ReconstructMVsExternal(Ipp32s iListNum);
-    void ReconstructMVsTop(Ipp32s iListNum);
-    void ReconstructMVsLeft(Ipp32s iListNum);
-    void ReconstructMVsInternal(Ipp32s iListNum);
+    void ReconstructMVsExternal(int32_t iListNum);
+    void ReconstructMVsTop(int32_t iListNum);
+    void ReconstructMVsLeft(int32_t iListNum);
+    void ReconstructMVsInternal(int32_t iListNum);
 
-    void ReconstructMVs16x16(Ipp32s iListNum);
-    void ReconstructMVs16x8(Ipp32s iListNum, Ipp32s iSubBlockNum);
-    void ReconstructMVs8x16(Ipp32s iListNum, Ipp32s iSubBlockNum);
+    void ReconstructMVs16x16(int32_t iListNum);
+    void ReconstructMVs16x8(int32_t iListNum, int32_t iSubBlockNum);
+    void ReconstructMVs8x16(int32_t iListNum, int32_t iSubBlockNum);
 
-    void ReconstructMVs8x8External(Ipp32s iListNum);
-    void ReconstructMVs8x8Top(Ipp32s iListNum);
-    void ReconstructMVs8x8Left(Ipp32s iListNum);
-    void ReconstructMVs8x8Internal(Ipp32s iListNum);
+    void ReconstructMVs8x8External(int32_t iListNum);
+    void ReconstructMVs8x8Top(int32_t iListNum);
+    void ReconstructMVs8x8Left(int32_t iListNum);
+    void ReconstructMVs8x8Internal(int32_t iListNum);
 
-    void ReconstructMVs8x4External(Ipp32s iListNum);
-    void ReconstructMVs8x4Top(Ipp32s iListNum);
-    void ReconstructMVs8x4Left(Ipp32s iListNum, Ipp32s iRowNum);
-    void ReconstructMVs8x4Internal(Ipp32s iListNum, Ipp32s iSubBlockNum);
+    void ReconstructMVs8x4External(int32_t iListNum);
+    void ReconstructMVs8x4Top(int32_t iListNum);
+    void ReconstructMVs8x4Left(int32_t iListNum, int32_t iRowNum);
+    void ReconstructMVs8x4Internal(int32_t iListNum, int32_t iSubBlockNum);
 
-    void ReconstructMVs4x8External(Ipp32s iListNum);
-    void ReconstructMVs4x8Top(Ipp32s iListNum, Ipp32s iColumnNum);
-    void ReconstructMVs4x8Left(Ipp32s iListNum);
-    void ReconstructMVs4x8Internal(Ipp32s iListNum, Ipp32s iSubBlockNum, Ipp32s iAddrC);
+    void ReconstructMVs4x8External(int32_t iListNum);
+    void ReconstructMVs4x8Top(int32_t iListNum, int32_t iColumnNum);
+    void ReconstructMVs4x8Left(int32_t iListNum);
+    void ReconstructMVs4x8Internal(int32_t iListNum, int32_t iSubBlockNum, int32_t iAddrC);
 
-    void ReconstructMVs4x4External(Ipp32s iListNum);
-    void ReconstructMVs4x4Top(Ipp32s iListNum, Ipp32s iColumnNum);
-    void ReconstructMVs4x4Left(Ipp32s iListNum, Ipp32s iRowNum);
-    void ReconstructMVs4x4Internal(Ipp32s iListNum, Ipp32s iBlockNum, Ipp32s iAddrC);
-    void ReconstructMVs4x4InternalFewCheckRef(Ipp32s iListNum, Ipp32s iBlockNum, Ipp32s iAddrC);
-    void ReconstructMVs4x4InternalNoCheckRef(Ipp32s iListNum, Ipp32s iBlockNum);
+    void ReconstructMVs4x4External(int32_t iListNum);
+    void ReconstructMVs4x4Top(int32_t iListNum, int32_t iColumnNum);
+    void ReconstructMVs4x4Left(int32_t iListNum, int32_t iRowNum);
+    void ReconstructMVs4x4Internal(int32_t iListNum, int32_t iBlockNum, int32_t iAddrC);
+    void ReconstructMVs4x4InternalFewCheckRef(int32_t iListNum, int32_t iBlockNum, int32_t iAddrC);
+    void ReconstructMVs4x4InternalNoCheckRef(int32_t iListNum, int32_t iBlockNum);
 
-    void ResetMVs16x16(Ipp32s iListNum);
-    void ResetMVs16x8(Ipp32s iListNum, Ipp32s iVectorOffset);
-    void ResetMVs8x16(Ipp32s iListNum, Ipp32s iVectorOffset);
-    void ResetMVs8x8(Ipp32s iListNum, Ipp32s iVectorOffset);
-    void CopyMVs8x16(Ipp32s iListNum);
-    void ReconstructMVPredictorExternalBlock(Ipp32s iListNum,
+    void ResetMVs16x16(int32_t iListNum);
+    void ResetMVs16x8(int32_t iListNum, int32_t iVectorOffset);
+    void ResetMVs8x16(int32_t iListNum, int32_t iVectorOffset);
+    void ResetMVs8x8(int32_t iListNum, int32_t iVectorOffset);
+    void CopyMVs8x16(int32_t iListNum);
+    void ReconstructMVPredictorExternalBlock(int32_t iListNum,
                                              const H264DecoderBlockLocation &mbAddrC,
                                              H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorExternalBlockMBAFF(Ipp32s iListNum,
+    void ReconstructMVPredictorExternalBlockMBAFF(int32_t iListNum,
                                                   H264DecoderBlockLocation mbAddrC,
                                                   H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorTopBlock(Ipp32s iListNum,
-                                        Ipp32s iColumnNum,
+    void ReconstructMVPredictorTopBlock(int32_t iListNum,
+                                        int32_t iColumnNum,
                                         H264DecoderBlockLocation mbAddrC,
                                         H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorLeftBlock(Ipp32s iListNum,
-                                         Ipp32s iRowNum,
+    void ReconstructMVPredictorLeftBlock(int32_t iListNum,
+                                         int32_t iRowNum,
                                          H264DecoderBlockLocation mbAddrC,
                                          H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorLeftBlockFewCheckRef(Ipp32s iListNum,
-                                                    Ipp32s iRowNum,
+    void ReconstructMVPredictorLeftBlockFewCheckRef(int32_t iListNum,
+                                                    int32_t iRowNum,
                                                     H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorInternalBlock(Ipp32s iListNum,
-                                             Ipp32s iBlockNum,
-                                             Ipp32s iAddrC,
+    void ReconstructMVPredictorInternalBlock(int32_t iListNum,
+                                             int32_t iBlockNum,
+                                             int32_t iAddrC,
                                              H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorInternalBlockFewCheckRef(Ipp32s iListNum,
-                                                        Ipp32s iBlockNum,
-                                                        Ipp32s iAddrC,
+    void ReconstructMVPredictorInternalBlockFewCheckRef(int32_t iListNum,
+                                                        int32_t iBlockNum,
+                                                        int32_t iAddrC,
                                                         H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictorInternalBlockNoCheckRef(Ipp32s iListNum,
-                                                       Ipp32s iBlockNum,
+    void ReconstructMVPredictorInternalBlockNoCheckRef(int32_t iListNum,
+                                                       int32_t iBlockNum,
                                                        H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictor16x16(Ipp32s iListNum,
+    void ReconstructMVPredictor16x16(int32_t iListNum,
                                      H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictor16x8(Ipp32s iListNum,
-                                    Ipp32s iSubBlockNum,
+    void ReconstructMVPredictor16x8(int32_t iListNum,
+                                    int32_t iSubBlockNum,
                                     H264DecoderMotionVector *pPred);
-    void ReconstructMVPredictor8x16(Ipp32s iListNum,
-                                    Ipp32s iSubBlockNum,
+    void ReconstructMVPredictor8x16(int32_t iListNum,
+                                    int32_t iSubBlockNum,
                                     H264DecoderMotionVector *pPred);
 
     // Decode motion vectors
     void ReconstructDirectMotionVectorsSpatial(bool isDirectMB);
-    void ReconstructMotionVectors4x4(const Ipp8u pCodMVd,
-                                       Ipp32u ListNum);
-    void ReconstructMotionVectors4x4(const Ipp8u *pBlkIdx,
-                                       const Ipp8u* pCodMVd,
-                                       Ipp32u ListNum);
-    void ReconstructMotionVectors16x8(const Ipp8u *pCodMVd,
-                                        Ipp32u ListNum);
-    void ReconstructMotionVectors8x16(const Ipp8u *pCodMVd,
-                                        Ipp32u ListNum);
+    void ReconstructMotionVectors4x4(const uint8_t pCodMVd,
+                                       uint32_t ListNum);
+    void ReconstructMotionVectors4x4(const uint8_t *pBlkIdx,
+                                       const uint8_t* pCodMVd,
+                                       uint32_t ListNum);
+    void ReconstructMotionVectors16x8(const uint8_t *pCodMVd,
+                                        uint32_t ListNum);
+    void ReconstructMotionVectors8x16(const uint8_t *pCodMVd,
+                                        uint32_t ListNum);
 
     void DecodeDirectMotionVectors(bool isDirectMB);
 

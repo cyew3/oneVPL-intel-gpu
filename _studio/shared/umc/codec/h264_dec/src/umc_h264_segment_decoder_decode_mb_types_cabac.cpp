@@ -20,8 +20,8 @@ namespace UMC
 
 void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
 {
-    Ipp32s condTermFlagA = 0, condTermFlagB = 0;
-    Ipp32s mbAddr, ctxIdxInc;
+    int32_t condTermFlagA = 0, condTermFlagB = 0;
+    int32_t mbAddr, ctxIdxInc;
 
     // get left MB pair info
     mbAddr = m_CurMBAddr - 2;
@@ -38,7 +38,7 @@ void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
     // decode flag
     ctxIdxInc = condTermFlagA + condTermFlagB;
     {
-        Ipp32s binVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_FIELD_DECODING_FLAG] +
+        int32_t binVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_FIELD_DECODING_FLAG] +
                                                             ctxIdxInc);
 
         pSetPairMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo,
@@ -48,16 +48,16 @@ void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
 
 } // void H264SegmentDecoder::DecodeMBFieldDecodingFlag_CABAC(void)
 
-Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
+uint32_t H264SegmentDecoder::DecodeCBP_CABAC(uint32_t color_format)
 {
     H264DecoderMacroblockLocalInfo *pTop, *pLeft[2];
     H264DecoderMacroblockGlobalInfo *pGTop, *pGLeft[2];
-    Ipp32u cbp = 0;
+    uint32_t cbp = 0;
     bool bOk = true;
 
     // obtain pointers to neighbouring MBs
     {
-        Ipp32s nNum;
+        int32_t nNum;
 
         nNum = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num;
         if (0 <= nNum)
@@ -103,9 +103,9 @@ Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
         (MBTYPE_PCM != pGLeft[0]->mbtype) &&
         (MBTYPE_PCM != pGLeft[1]->mbtype))
     {
-        Ipp32u condTermFlagA, condTermFlagB;
-        Ipp32u ctxIdxInc;
-        Ipp32u mask;
+        uint32_t condTermFlagA, condTermFlagB;
+        uint32_t ctxIdxInc;
+        uint32_t mask;
 
         // decode first luma bit
         mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num <= 7) ? (2) : (8);
@@ -141,7 +141,7 @@ Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
         // decode chroma CBP
         if (color_format)
         {
-            Ipp32u bin;
+            uint32_t bin;
 
             condTermFlagA = (pLeft[0]->cbp & 0x30) ? (1) : (0);
             condTermFlagB = (pTop->cbp & 0x30) ? (1) : (0);
@@ -162,13 +162,13 @@ Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
     }
     else // some of macroblocks may be absent or have I_PCM type
     {
-        Ipp32u condTermFlagA, condTermFlagB;
-        Ipp32u ctxIdxInc;
+        uint32_t condTermFlagA, condTermFlagB;
+        uint32_t ctxIdxInc;
 
         // decode first luma bit
         if (pLeft[0])
         {
-            Ipp32u mask;
+            uint32_t mask;
             mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num <= 7) ? (2) : (8);
             condTermFlagA = (pLeft[0]->cbp & mask) ? (0) : (MBTYPE_PCM != pGLeft[0]->mbtype);
         }
@@ -195,7 +195,7 @@ Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
         // decode third luma bit
         if (pLeft[1])
         {
-            Ipp32u mask;
+            uint32_t mask;
             mask = (m_cur_mb.CurrentBlockNeighbours.mbs_left[2].block_num <= 7) ? (2) : (8);
             condTermFlagA = (pLeft[1]->cbp & mask) ? (0) : (MBTYPE_PCM != pGLeft[1]->mbtype);
         }
@@ -217,7 +217,7 @@ Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
         // decode chroma CBP
         if (color_format)
         {
-            Ipp32u bin;
+            uint32_t bin;
 
             if (pLeft[0])
                 condTermFlagA = (pLeft[0]->cbp & 0x30) ? (1) : (MBTYPE_PCM == pGLeft[0]->mbtype);
@@ -259,22 +259,22 @@ Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
 
     return cbp;
 
-} // Ipp32u H264SegmentDecoder::DecodeCBP_CABAC(Ipp32u color_format)
+} // uint32_t H264SegmentDecoder::DecodeCBP_CABAC(uint32_t color_format)
 
 void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, bool bUseConstrainedIntra)
 {
-    Ipp32u block;
+    uint32_t block;
     // Temp arrays for modes from above and left, initially filled from
     // outside the MB, then updated with modes within the MB
-    Ipp32s uModeAbove[4];
-    Ipp32s uModeLeft[4];
-    Ipp32s uPredMode;        // predicted mode for current 4x4 block
+    int32_t uModeAbove[4];
+    int32_t uModeLeft[4];
+    int32_t uPredMode;        // predicted mode for current 4x4 block
 
     IntraType *pRefIntraTypes;
-    Ipp32u uLeftIndex;      // indexes into mode arrays, dependent on 8x8 block
-    Ipp32u uAboveIndex;
+    uint32_t uLeftIndex;      // indexes into mode arrays, dependent on 8x8 block
+    uint32_t uAboveIndex;
     H264DecoderMacroblockGlobalInfo *gmbinfo=m_gmbinfo->mbs;
-    Ipp32u predictors=31;//5 lsb bits set
+    uint32_t predictors=31;//5 lsb bits set
 
     // above, left MB available only if they are INTRA
     if ((m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num<0) || ((!IS_INTRA_MBTYPE(gmbinfo[m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num].mbtype) && bUseConstrainedIntra)))
@@ -312,10 +312,10 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeAbove[0] = uModeAbove[1] = uModeAbove[2] = uModeAbove[3] = 0;
     }
 
-    Ipp32s mask = 2;
-    for(Ipp32s i = 0; i < 4; i++)
+    int32_t mask = 2;
+    for(int32_t i = 0; i < 4; i++)
     {
-        Ipp32s mb_num = m_cur_mb.CurrentBlockNeighbours.mbs_left[i].mb_num;
+        int32_t mb_num = m_cur_mb.CurrentBlockNeighbours.mbs_left[i].mb_num;
         if (predictors & mask)
         {
             if (gmbinfo[mb_num].mbtype  == MBTYPE_INTRA)
@@ -336,10 +336,10 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         mask = mask << 1;
     }
 
-    Ipp32s predModeValues[16];
-    Ipp32s flag_context = ctxIdxOffset[PREV_INTRA4X4_PRED_MODE_FLAG];
-    Ipp32s pred_context = ctxIdxOffset[REM_INTRA4X4_PRED_MODE];
-    for(Ipp32s i = 0; i < 16; i++)
+    int32_t predModeValues[16];
+    int32_t flag_context = ctxIdxOffset[PREV_INTRA4X4_PRED_MODE_FLAG];
+    int32_t pred_context = ctxIdxOffset[REM_INTRA4X4_PRED_MODE];
+    for(int32_t i = 0; i < 16; i++)
     {
         if (0 == m_pBitStream->DecodeSingleBin_CABAC(flag_context))
         {
@@ -363,7 +363,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         // Predicted mode is minimum of the above and left modes, or
         // mode 2 if above or left is outside slice, indicated by 0 in
         // mode array.
-        uPredMode = IPP_MIN(uModeLeft[uLeftIndex], uModeAbove[uAboveIndex]);
+        uPredMode = MFX_MIN(uModeLeft[uLeftIndex], uModeAbove[uAboveIndex]);
         if (uPredMode)
             uPredMode--;
         else
@@ -384,7 +384,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeAbove[uAboveIndex] = uPredMode + 1;
 
         // upper right 4x4
-        uPredMode = IPP_MIN(uPredMode+1, uModeAbove[uAboveIndex+1]);
+        uPredMode = MFX_MIN(uPredMode+1, uModeAbove[uAboveIndex+1]);
         if (uPredMode)
             uPredMode--;
         else
@@ -402,7 +402,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeLeft[uLeftIndex] = uPredMode + 1;
 
         // lower left 4x4
-        uPredMode = IPP_MIN(uModeLeft[uLeftIndex+1], uModeAbove[uAboveIndex]);
+        uPredMode = MFX_MIN(uModeLeft[uLeftIndex+1], uModeAbove[uAboveIndex]);
         if (uPredMode)
             uPredMode--;
         else
@@ -419,7 +419,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeAbove[uAboveIndex] = uPredMode + 1;
 
         // lower right 4x4 (above and left must always both be in slice)
-        uPredMode = IPP_MIN(uPredMode+1, uModeAbove[uAboveIndex+1]) - 1;
+        uPredMode = MFX_MIN(uPredMode+1, uModeAbove[uAboveIndex+1]) - 1;
 
         if(predModeValues[4*block + 3] != -1)
         {
@@ -435,19 +435,19 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         pMBIntraTypes += 4;
     }    // block
 
-} // void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(Ipp32u *pMBIntraTypes, bool bUseConstrainedIntra)
+} // void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(uint32_t *pMBIntraTypes, bool bUseConstrainedIntra)
 
 void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, bool bUseConstrainedIntra)
 {
-    Ipp32s uModeAbove[2];
-    Ipp32s uModeLeft[2];
-    Ipp32s uPredMode;        // predicted mode for current 4x4 block
+    int32_t uModeAbove[2];
+    int32_t uModeLeft[2];
+    int32_t uPredMode;        // predicted mode for current 4x4 block
 
     IntraType *pRefIntraTypes;
-    Ipp32s val;
+    int32_t val;
 
     H264DecoderMacroblockGlobalInfo *gmbinfo=m_gmbinfo->mbs;
-    Ipp32u predictors=7;//5 lsb bits set
+    uint32_t predictors=7;//5 lsb bits set
     //new version
     {
         // above, left MB available only if they are INTRA
@@ -482,8 +482,8 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
         uModeAbove[0] = uModeAbove[1]= 0;
     }
 
-    Ipp32s mask = 2;
-    for(Ipp32s i = 0; i < 2; i++)
+    int32_t mask = 2;
+    for(int32_t i = 0; i < 2; i++)
     {
         if (predictors & mask)
         {
@@ -511,7 +511,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     // Predicted mode is minimum of the above and left modes, or
     // mode 2 if above or left is outside slice, indicated by 0 in
     // mode array.
-    uPredMode = IPP_MIN(uModeLeft[0], uModeAbove[0]);
+    uPredMode = MFX_MIN(uModeLeft[0], uModeAbove[0]);
     if (uPredMode)
         uPredMode--;
     else
@@ -536,7 +536,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     uModeAbove[0] = uPredMode + 1;
 
     // upper right 8x8
-    uPredMode = IPP_MIN(uPredMode+1, uModeAbove[1]);
+    uPredMode = MFX_MIN(uPredMode+1, uModeAbove[1]);
     if (uPredMode)
         uPredMode--;
     else
@@ -560,7 +560,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     uModeAbove[1] = uPredMode + 1;
 
     // lower left 4x4
-    uPredMode = IPP_MIN(uModeLeft[1], uModeAbove[0]);
+    uPredMode = MFX_MIN(uModeLeft[1], uModeAbove[0]);
     if (uPredMode)
         uPredMode--;
     else
@@ -583,7 +583,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     uModeAbove[0] = uPredMode + 1;
 
     // lower right 4x4 (above and left must always both be in slice)
-    uPredMode = IPP_MIN(uPredMode+1, uModeAbove[1]) - 1;
+    uPredMode = MFX_MIN(uPredMode+1, uModeAbove[1]) - 1;
 
     if (0 == m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[PREV_INTRA8X8_PRED_MODE_FLAG]))
     {
@@ -605,15 +605,15 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     pMBIntraTypes[2] = pMBIntraTypes[8];
     pMBIntraTypes[3] = pMBIntraTypes[12];
 
-}  // void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC( Ipp32u *pMBIntraTypes,bool bUseConstrainedIntra)
+}  // void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC( uint32_t *pMBIntraTypes,bool bUseConstrainedIntra)
 
 void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
 {
-    Ipp32u ctxIdxInc;
+    uint32_t ctxIdxInc;
 
     {
-        Ipp32u condTermFlagA = 0, condTermFlagB = 0;
-        Ipp32s nNum;
+        uint32_t condTermFlagA = 0, condTermFlagB = 0;
+        int32_t nNum;
 
         // to obtain more details
         // see subclause 9.3.3.1.1.8 of the h264 standard
@@ -639,7 +639,7 @@ void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
 
     // decode chroma mode
     {
-        Ipp32u nVal;
+        uint32_t nVal;
 
         nVal = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[INTRA_CHROMA_PRED_MODE] +
                                                    ctxIdxInc);
@@ -658,15 +658,15 @@ void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
             nVal += 1;
         }
 
-        m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode = (Ipp8u) nVal;
+        m_cur_mb.LocalMacroblockInfo->IntraTypes.intra_chroma_mode = (uint8_t) nVal;
     }
 
 } // void H264SegmentDecoder::DecodeIntraPredChromaMode_CABAC(void)
 
-Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
+uint32_t H264SegmentDecoder::DecodeMBSkipFlag_CABAC(int32_t ctxIdx)
 {
-    Ipp32s mbAddrA = -1, mbAddrB = -1;
-    Ipp32s iFirstMB = m_iFirstSliceMb;
+    int32_t mbAddrA = -1, mbAddrB = -1;
+    int32_t iFirstMB = m_iFirstSliceMb;
 
     // obtain neigbouring blocks
     if (m_isSliceGroups)
@@ -695,7 +695,7 @@ Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
     }
     else
     {
-        Ipp32s iCurrentField = 0;
+        int32_t iCurrentField = 0;
 
         //
         // determine type of current macroblock
@@ -704,7 +704,7 @@ Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
 
         if (0 == (m_CurMBAddr & 1))
         {
-            Ipp32s mbAddr;
+            int32_t mbAddr;
 
             // try to get left MB pair info
             mbAddr = m_CurMBAddr - 2;
@@ -782,8 +782,8 @@ Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
 
     // decode skip flag
     {
-        Ipp32s condTermFlagA = 0, condTermFlagB = 0;
-        Ipp32s ctxIdxInc;
+        int32_t condTermFlagA = 0, condTermFlagB = 0;
+        int32_t ctxIdxInc;
 
         // obtain left macroblock info
         if ((0 <= mbAddrA) &&
@@ -800,20 +800,20 @@ Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
         return m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[ctxIdx] + ctxIdxInc);
     }
 
-} // Ipp32u H264SegmentDecoder::DecodeMBSkipFlag_CABAC(Ipp32s ctxIdx)
+} // uint32_t H264SegmentDecoder::DecodeMBSkipFlag_CABAC(int32_t ctxIdx)
 
 static
-Ipp32s SBTYPETBL[] =
+int32_t SBTYPETBL[] =
 {
     SBTYPE_8x8, SBTYPE_8x4, SBTYPE_4x8, SBTYPE_4x4
 };
 
 void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(void)
 {
-    Ipp32s condTermFlagA = 0, condTermFlagB = 0;
-    Ipp32s mbAddr;
-    Ipp32s ctxIdxInc;
-    Ipp32s mb_type;
+    int32_t condTermFlagA = 0, condTermFlagB = 0;
+    int32_t mbAddr;
+    int32_t ctxIdxInc;
+    int32_t mb_type;
 
     // get left macroblock type
     mbAddr = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
@@ -841,7 +841,7 @@ void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(void)
     {
         if (0 == m_pBitStream->DecodeSymbolEnd_CABAC())
         {
-            Ipp32u code;
+            uint32_t code;
 
             // luma CBP bit
             if (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_I] + 3))
@@ -891,9 +891,9 @@ void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(void)
         }
     }
 
-} // void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(Ipp32u *pMBIntraTypes,
+} // void H264SegmentDecoder::DecodeMBTypeISlice_CABAC(uint32_t *pMBIntraTypes,
 
-static Ipp8u MBTypesInPSlice[] =
+static uint8_t MBTypesInPSlice[] =
 {
     MBTYPE_FORWARD,
     MBTYPE_INTER_8x8,
@@ -906,7 +906,7 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CABAC(void)
     // macroblock has P type
     if (0 == m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_P_SP] + 0))
     {
-        Ipp32u code;
+        uint32_t code;
 
         code = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_P_SP] + 1);
         code = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_P_SP] + code + 2) +
@@ -914,13 +914,13 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CABAC(void)
 
         // See table 9-28 of H.264 standard
         // for translating bin string (code) to mb_type
-        m_cur_mb.GlobalMacroblockInfo->mbtype = (Ipp8u) MBTypesInPSlice[code];
+        m_cur_mb.GlobalMacroblockInfo->mbtype = (uint8_t) MBTypesInPSlice[code];
 
         // decode subblock types
         if (MBTYPE_INTER_8x8 == m_cur_mb.GlobalMacroblockInfo->mbtype)
         {
-            Ipp32s subblock;
-            Ipp32u uCodeNum;
+            int32_t subblock;
+            uint32_t uCodeNum;
 
             for (subblock = 0; subblock < 4; subblock++)
             {
@@ -935,7 +935,7 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CABAC(void)
                         uCodeNum = 1;
                 }
 
-                m_cur_mb.GlobalMacroblockInfo->sbtype[subblock] = (Ipp8u) SBTYPETBL[uCodeNum];
+                m_cur_mb.GlobalMacroblockInfo->sbtype[subblock] = (uint8_t) SBTYPETBL[uCodeNum];
             }
         }
     }
@@ -952,7 +952,7 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CABAC(void)
             // macroblock has I_16x16 type
             if (0 == m_pBitStream->DecodeSymbolEnd_CABAC())
             {
-                Ipp32u code, mb_type;
+                uint32_t code, mb_type;
 
                 // luma CBP bit
                 if (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_P_SP] + 4))
@@ -1007,7 +1007,7 @@ void H264SegmentDecoder::DecodeMBTypePSlice_CABAC(void)
 } // void H264SegmentDecoder::DecodeMBTypePSlice_CABAC(void)
 
 static
-Ipp8u LargeSubMBSubDirBSlice[][2] =
+uint8_t LargeSubMBSubDirBSlice[][2] =
 {
     {D_DIR_FWD, D_DIR_FWD},
     {D_DIR_BWD, D_DIR_BWD},
@@ -1022,10 +1022,10 @@ Ipp8u LargeSubMBSubDirBSlice[][2] =
 };
 
 static
-Ipp8u SmallSubMBSubDirBSlice[16] =
+uint8_t SmallSubMBSubDirBSlice[16] =
 {
-    (Ipp8u) -1,
-    (Ipp8u) -1,
+    (uint8_t) -1,
+    (uint8_t) -1,
     D_DIR_FWD,
     D_DIR_FWD,
     D_DIR_FWD,
@@ -1043,10 +1043,10 @@ Ipp8u SmallSubMBSubDirBSlice[16] =
 };
 
 static
-Ipp8u SmallSubMBSubDivBSlice[16] =
+uint8_t SmallSubMBSubDivBSlice[16] =
 {
-    (Ipp8u) -1,
-    (Ipp8u) -1,
+    (uint8_t) -1,
+    (uint8_t) -1,
     SBTYPE_8x4,
     SBTYPE_8x4,
     SBTYPE_4x8,
@@ -1065,12 +1065,12 @@ Ipp8u SmallSubMBSubDivBSlice[16] =
 
 void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
 {
-    Ipp32s ctxIdxInc;
+    int32_t ctxIdxInc;
 
     // calculate context index increment
     {
-        Ipp32s condTermFlagA = 0, condTermFlagB = 0;
-        Ipp32s nMBNum;
+        int32_t condTermFlagA = 0, condTermFlagB = 0;
+        int32_t nMBNum;
 
         // obtain left macroblock information
         nMBNum = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num;
@@ -1118,7 +1118,7 @@ void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
     }
     else
     {
-        Ipp32u code;
+        uint32_t code;
 
         // get next 4 bins
         code = m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_B] + 4);
@@ -1154,7 +1154,7 @@ void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
         }
         else if (15 == code)
         {
-            Ipp32s iSubBlock;
+            int32_t iSubBlock;
 
             // block has 8x8 subdivision
             m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTER_8x8;
@@ -1236,7 +1236,7 @@ void H264SegmentDecoder::DecodeMBTypeBSlice_CABAC(void)
             // macroblock has I_16x16 type
             else if (0 == m_pBitStream->DecodeSymbolEnd_CABAC())
             {
-                Ipp32u mb_type;
+                uint32_t mb_type;
 
                 // luma CBP bit
                 if (m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[MB_TYPE_B] + 6))

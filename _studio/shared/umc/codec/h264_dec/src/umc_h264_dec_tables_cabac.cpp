@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -18,7 +18,7 @@ namespace UMC
 {
 
 const
-Ipp8u rangeTabLPS[128][4]=
+uint8_t rangeTabLPS[128][4]=
 {
     { 128, 176, 208, 240},
     { 128, 176, 208, 240},
@@ -154,7 +154,7 @@ Ipp8u rangeTabLPS[128][4]=
     (val) * 2, (val) * 2 + 1
 
 const
-Ipp8u transIdxMPS[] =
+uint8_t transIdxMPS[] =
 {
     DECL( 1), DECL( 2), DECL( 3), DECL( 4), DECL( 5), DECL( 6), DECL( 7), DECL( 8),
     DECL( 9), DECL(10), DECL(11), DECL(12), DECL(13), DECL(14), DECL(15), DECL(16),
@@ -167,7 +167,7 @@ Ipp8u transIdxMPS[] =
 };
 
 const
-Ipp8u transIdxLPS[] =
+uint8_t transIdxLPS[] =
 {
     1,   0,   DECL( 0), DECL( 1), DECL( 2), DECL( 2), DECL( 4), DECL( 4), DECL( 5),
     DECL( 6), DECL( 7), DECL( 8), DECL( 9), DECL( 9), DECL(11), DECL(11), DECL(12),
@@ -180,13 +180,13 @@ Ipp8u transIdxLPS[] =
 };
 
 const
-Ipp32u NumBitsToGetTableSmall[4] =
+uint32_t NumBitsToGetTableSmall[4] =
 {
     2, 1, 0, 0
 };
 
 const
-Ipp8u NumBitsToGetTbl[512] =
+uint8_t NumBitsToGetTbl[512] =
 {
     0,                                                                 // 0
     8,                                                                 // 1
@@ -213,7 +213,7 @@ Ipp8u NumBitsToGetTbl[512] =
 
 // See table 9-11 of H.264 standard
 const
-Ipp32u ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER] =
+uint32_t ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER] =
 {
     11,
     24,
@@ -246,7 +246,7 @@ Ipp32u ctxIdxOffset[MAIN_SYNTAX_ELEMENT_NUMBER] =
 
 // See table 9-24 of H.264 standard
 const
-Ipp32u ctxIdxOffset4x4FrameCoded[SYNTAX_ELEMENT_NUMBER] =
+uint32_t ctxIdxOffset4x4FrameCoded[SYNTAX_ELEMENT_NUMBER] =
 {
     85,
     105,
@@ -255,7 +255,7 @@ Ipp32u ctxIdxOffset4x4FrameCoded[SYNTAX_ELEMENT_NUMBER] =
 };
 
 const
-Ipp32u ctxIdxOffset8x8FrameCoded[SYNTAX_ELEMENT_NUMBER] =
+uint32_t ctxIdxOffset8x8FrameCoded[SYNTAX_ELEMENT_NUMBER] =
 {
     85,//unused
     402,
@@ -265,7 +265,7 @@ Ipp32u ctxIdxOffset8x8FrameCoded[SYNTAX_ELEMENT_NUMBER] =
 
 // See table 9-24 of H.264 standard
 const
-Ipp32u ctxIdxOffset4x4FieldCoded[SYNTAX_ELEMENT_NUMBER] =
+uint32_t ctxIdxOffset4x4FieldCoded[SYNTAX_ELEMENT_NUMBER] =
 {
     85,
     277,
@@ -274,7 +274,7 @@ Ipp32u ctxIdxOffset4x4FieldCoded[SYNTAX_ELEMENT_NUMBER] =
 };
 
 const
-Ipp32u ctxIdxOffset8x8FieldCoded[SYNTAX_ELEMENT_NUMBER] =
+uint32_t ctxIdxOffset8x8FieldCoded[SYNTAX_ELEMENT_NUMBER] =
 {
     85,//unused
     436,
@@ -284,7 +284,7 @@ Ipp32u ctxIdxOffset8x8FieldCoded[SYNTAX_ELEMENT_NUMBER] =
 
 // See table 9-30 of H.264 standard
 const
-Ipp32u ctxIdxBlockCatOffset[SYNTAX_ELEMENT_NUMBER][BLOCK_CATEGORY_NUMBER] =
+uint32_t ctxIdxBlockCatOffset[SYNTAX_ELEMENT_NUMBER][BLOCK_CATEGORY_NUMBER] =
 {
    //BLOCK_LUMA_DC_LEVELS,
       //BLOCK_LUMA_AC_LEVELS

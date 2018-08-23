@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -80,12 +80,12 @@ inline void PRINT_CABAC_VALUES(int, int)
 
 #define ippiNextBits(current_data, bp, nbits, data) \
 { \
-    Ipp32u x; \
+    uint32_t x; \
  \
     VM_ASSERT((nbits) > 0 && (nbits) <= 32); \
     VM_ASSERT(nbits >= 0 && nbits <= 31); \
  \
-    Ipp32s offset = bp - (nbits); \
+    int32_t offset = bp - (nbits); \
  \
     if (offset >= 0) \
     { \
@@ -107,19 +107,19 @@ inline void PRINT_CABAC_VALUES(int, int)
 
 #define RefreshCABACBits(codOffset, pBits, iBits) \
 { \
-    Ipp16u *pRealPointer; \
+    uint16_t *pRealPointer; \
     /* we have to handle the bit pointer very thorougly. */ \
     /* this sophisticated logic is used to avoid compilers' warnings. */ \
     /* In two words we just select required word by the pointer */ \
-    pRealPointer = (Ipp16u *) (((Ipp8u *) 0) + \
-                               ((((Ipp8u *) pBits) - (Ipp8u *) 0) ^ 2)); \
+    pRealPointer = (uint16_t *) (((uint8_t *) 0) + \
+                               ((((uint8_t *) pBits) - (uint8_t *) 0) ^ 2)); \
     codOffset |= *(pRealPointer) << (-iBits); \
     pBits += 1; \
     iBits += 16; \
 }
 
 inline
-Ipp32u H264Bitstream::Peek1Bit()
+uint32_t H264Bitstream::Peek1Bit()
 {
     return h264Peek1Bit(m_pbs, m_bitOffset);
 } // H264Bitstream::GetBits()
@@ -133,8 +133,8 @@ void H264Bitstream::Drop1Bit()
 inline
 bool H264Bitstream::NextBit()
 {
-    Ipp32s bp;
-    Ipp32u w;
+    int32_t bp;
+    uint32_t w;
 
     bp = m_bitOffset - 1;
 
@@ -163,13 +163,13 @@ bool H264Bitstream::NextBit()
 }
 
 inline
-Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
+uint32_t H264Bitstream::DecodeSingleBin_CABAC(uint32_t ctxIdx)
 {
-    Ipp32u codIOffset = m_lcodIOffset;
-    Ipp32u codIRange = m_lcodIRange;
-    Ipp32u codIRangeLPS;
-    Ipp32u pState = context_array[ctxIdx].pStateIdxAndVal;
-    Ipp32u binVal;
+    uint32_t codIOffset = m_lcodIOffset;
+    uint32_t codIRange = m_lcodIRange;
+    uint32_t codIRangeLPS;
+    uint32_t pState = context_array[ctxIdx].pStateIdxAndVal;
+    uint32_t binVal;
 
     codIRangeLPS = rangeTabLPS[pState][(codIRange >> (6 + CABAC_MAGIC_BITS)) - 4];
     codIRange -= codIRangeLPS << CABAC_MAGIC_BITS;
@@ -187,7 +187,7 @@ Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
         // we take new bit with 50% probability.
 
         {
-            Ipp32s numBits = NumBitsToGetTableSmall[codIRange >> (CABAC_MAGIC_BITS + 7)];
+            int32_t numBits = NumBitsToGetTableSmall[codIRange >> (CABAC_MAGIC_BITS + 7)];
 
             codIRange <<= numBits;
             codIOffset <<= numBits;
@@ -196,7 +196,7 @@ Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
 #if (CABAC_MAGIC_BITS > 0)
             {
-                Ipp32s iMagicBits;
+                int32_t iMagicBits;
 
                 iMagicBits = m_iMagicBits - numBits;
                 // in most cases we don't require to refresh cabac variables.
@@ -237,14 +237,14 @@ Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
     // See subclause 9.3.3.2.2 of H.264
     //if (codIRange < (0x100<<(CABAC_MAGIC_BITS)))
     {
-        Ipp32s numBits = NumBitsToGetTbl[codIRange >> CABAC_MAGIC_BITS];
+        int32_t numBits = NumBitsToGetTbl[codIRange >> CABAC_MAGIC_BITS];
 
         codIRange <<= numBits;
         codIOffset <<= numBits;
 
 #if (CABAC_MAGIC_BITS > 0)
         {
-            Ipp32s iMagicBits;
+            int32_t iMagicBits;
 
             iMagicBits = m_iMagicBits - numBits;
 
@@ -270,14 +270,14 @@ Ipp32u H264Bitstream::DecodeSingleBin_CABAC(Ipp32u ctxIdx)
 
     return binVal;
 
-} //Ipp32s H264Bitstream::DecodeSingleBin_CABAC(Ipp32s ctxIdx)
+} //int32_t H264Bitstream::DecodeSingleBin_CABAC(int32_t ctxIdx)
 
 inline
-Ipp32u H264Bitstream::DecodeSymbolEnd_CABAC(void)
+uint32_t H264Bitstream::DecodeSymbolEnd_CABAC(void)
 {
-    Ipp32u binVal = 1;
-    Ipp32u codIOffset = m_lcodIOffset;
-    Ipp32u codIRange = m_lcodIRange;
+    uint32_t binVal = 1;
+    uint32_t codIOffset = m_lcodIOffset;
+    uint32_t codIRange = m_lcodIRange;
 
     // See subclause 9.3.3.2.4 of H.264 standard
     if (codIOffset < (codIRange - (2 << CABAC_MAGIC_BITS)))
@@ -307,13 +307,13 @@ Ipp32u H264Bitstream::DecodeSymbolEnd_CABAC(void)
 
     return binVal;
 
-} //Ipp32s H264Bitstream::DecodeSymbolEnd_CABAC(void)
+} //int32_t H264Bitstream::DecodeSymbolEnd_CABAC(void)
 
 inline
-Ipp32u H264Bitstream::DecodeBypass_CABAC(void)
+uint32_t H264Bitstream::DecodeBypass_CABAC(void)
 {
     // See subclause 9.3.3.2.3 of H.264 standard
-    Ipp32u binVal;
+    uint32_t binVal;
 #if (CABAC_MAGIC_BITS > 0)
     m_lcodIOffset = (m_lcodIOffset << 1);
 
@@ -336,13 +336,13 @@ Ipp32u H264Bitstream::DecodeBypass_CABAC(void)
 
     return binVal;
 
-} //Ipp32s H264Bitstream::DecodeBypass_CABAC(void)
+} //int32_t H264Bitstream::DecodeBypass_CABAC(void)
 
 inline
-Ipp32s H264Bitstream::DecodeBypassSign_CABAC(Ipp32s val)
+int32_t H264Bitstream::DecodeBypassSign_CABAC(int32_t val)
 {
     // See subclause 9.3.3.2.3 of H.264 standard
-    Ipp32s binVal;
+    int32_t binVal;
 
 #if (CABAC_MAGIC_BITS > 0)
     m_lcodIOffset = (m_lcodIOffset << 1);
@@ -366,7 +366,7 @@ Ipp32s H264Bitstream::DecodeBypassSign_CABAC(Ipp32s val)
 
     return binVal;
 
-} // Ipp32s H264Bitstream::DecodeBypassSign_CABAC()
+} // int32_t H264Bitstream::DecodeBypassSign_CABAC()
 
 } // namespace UMC
 

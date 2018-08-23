@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -20,19 +20,19 @@ namespace UMC
 {
 
 extern const
-Ipp8u rangeTabLPS[128][4];
+uint8_t rangeTabLPS[128][4];
 
 extern const
-Ipp8u transIdxMPS[128];
+uint8_t transIdxMPS[128];
 
 extern const
-Ipp8u transIdxLPS[128];
+uint8_t transIdxLPS[128];
 
 extern const
-Ipp32u NumBitsToGetTableSmall[4];
+uint32_t NumBitsToGetTableSmall[4];
 
 extern const
-Ipp8u NumBitsToGetTbl[512];
+uint8_t NumBitsToGetTbl[512];
 
 } // namespace UMC
 

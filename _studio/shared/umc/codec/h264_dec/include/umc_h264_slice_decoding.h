@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -25,11 +25,11 @@ namespace UMC
 {
 struct H264RefListInfo
 {
-    Ipp32s m_iNumShortEntriesInList;
-    Ipp32s m_iNumLongEntriesInList;
-    Ipp32s m_iNumFramesInL0List;
-    Ipp32s m_iNumFramesInL1List;
-    Ipp32s m_iNumFramesInLTList;
+    int32_t m_iNumShortEntriesInList;
+    int32_t m_iNumLongEntriesInList;
+    int32_t m_iNumFramesInL0List;
+    int32_t m_iNumFramesInL1List;
+    int32_t m_iNumFramesInLTList;
 
     H264RefListInfo()
         : m_iNumShortEntriesInList(0)
@@ -69,12 +69,12 @@ public:
     // Set slice source data
     virtual bool Reset(H264NalExtension *pNalExt);
     // Set current slice number
-    void SetSliceNumber(Ipp32s iSliceNumber);
+    void SetSliceNumber(int32_t iSliceNumber);
 
     virtual void FreeResources();
 
 
-    Ipp32s RetrievePicParamSetNumber();
+    int32_t RetrievePicParamSetNumber();
 
     //
     // method(s) to obtain slice specific information
@@ -86,21 +86,21 @@ public:
     // Obtain bit stream object
     H264HeadersBitstream *GetBitStream(void){return &m_BitStream;}
     // Obtain prediction weigth table
-    const PredWeightTable *GetPredWeigthTable(Ipp32s iNum) const {return m_PredWeight[iNum & 1];}
+    const PredWeightTable *GetPredWeigthTable(int32_t iNum) const {return m_PredWeight[iNum & 1];}
     // Obtain first MB number
-    Ipp32s GetFirstMBNumber(void) const {return m_iFirstMBFld;}
-    Ipp32s GetStreamFirstMB(void) const {return m_iFirstMB;}
-    void SetFirstMBNumber(Ipp32s x) {m_iFirstMB = x;}
+    int32_t GetFirstMBNumber(void) const {return m_iFirstMBFld;}
+    int32_t GetStreamFirstMB(void) const {return m_iFirstMB;}
+    void SetFirstMBNumber(int32_t x) {m_iFirstMB = x;}
     // Obtain MB width
-    Ipp32s GetMBWidth(void) const {return m_iMBWidth;}
+    int32_t GetMBWidth(void) const {return m_iMBWidth;}
     // Obtain MB row width
-    Ipp32s GetMBRowWidth(void) const {return (m_iMBWidth * (m_SliceHeader.MbaffFrameFlag + 1));}
+    int32_t GetMBRowWidth(void) const {return (m_iMBWidth * (m_SliceHeader.MbaffFrameFlag + 1));}
     // Obtain MB height
-    Ipp32s GetMBHeight(void) const {return m_iMBHeight;}
+    int32_t GetMBHeight(void) const {return m_iMBHeight;}
     // Obtain current picture parameter set number
-    Ipp32s GetPicParamSet(void) const {return m_pPicParamSet->pic_parameter_set_id;}
+    int32_t GetPicParamSet(void) const {return m_pPicParamSet->pic_parameter_set_id;}
     // Obtain current sequence parameter set number
-    Ipp32s GetSeqParamSet(void) const {return m_pSeqParamSet->seq_parameter_set_id;}
+    int32_t GetSeqParamSet(void) const {return m_pSeqParamSet->seq_parameter_set_id;}
     // Obtain current picture parameter set
     const H264PicParamSet *GetPicParam(void) const {return m_pPicParamSet;}
     void SetPicParam(const H264PicParamSet * pps) {m_pPicParamSet = pps;}
@@ -123,12 +123,12 @@ public:
     void SetCurrentFrame(H264DecoderFrame * pFrame){m_pCurrentFrame = pFrame;}
 
     // Obtain slice number
-    Ipp32s GetSliceNum(void) const {return m_iNumber;}
+    int32_t GetSliceNum(void) const {return m_iNumber;}
     // Obtain maximum of macroblock
-    Ipp32s GetMaxMB(void) const {return m_iMaxMB;}
-    void SetMaxMB(Ipp32s x) {m_iMaxMB = x;}
+    int32_t GetMaxMB(void) const {return m_iMaxMB;}
+    void SetMaxMB(int32_t x) {m_iMaxMB = x;}
 
-    Ipp32s GetMBCount() const { return m_iMaxMB - m_iFirstMB;}
+    int32_t GetMBCount() const { return m_iMaxMB - m_iFirstMB;}
 
     // Check field slice
     bool IsField() const {return m_SliceHeader.field_pic_flag != 0;}
@@ -144,7 +144,7 @@ public:
 
     // Update reference list
     virtual Status UpdateReferenceList(ViewList &views,
-        Ipp32s dIdIndex);
+        int32_t dIdIndex);
 
     //
     // Segment decoding mode's variables
@@ -166,7 +166,7 @@ public:
 public:
 
     H264MemoryPiece m_pSource;                                 // (H264MemoryPiece *) pointer to owning memory piece
-    Ipp64f m_dTime;                                             // (Ipp64f) slice's time stamp
+    double m_dTime;                                             // (double) slice's time stamp
 
 public:  // DEBUG !!!! should remove dependence
 
@@ -180,8 +180,8 @@ public:  // DEBUG !!!! should remove dependence
     bool DecodeSliceHeader(H264NalExtension *pNalExt);
 
     // Reference list(s) management functions & tools
-    Ipp32s AdjustRefPicListForFields(H264DecoderFrame **pRefPicList, ReferenceFlags *pFields, H264RefListInfo &rli);
-    void ReOrderRefPicList(H264DecoderFrame **pRefPicList, ReferenceFlags *pFields, RefPicListReorderInfo *pReorderInfo, Ipp32s MaxPicNum, ViewList &views, Ipp32s dIdIndex, Ipp32u listNum);
+    int32_t AdjustRefPicListForFields(H264DecoderFrame **pRefPicList, ReferenceFlags *pFields, H264RefListInfo &rli);
+    void ReOrderRefPicList(H264DecoderFrame **pRefPicList, ReferenceFlags *pFields, RefPicListReorderInfo *pReorderInfo, int32_t MaxPicNum, ViewList &views, int32_t dIdIndex, uint32_t listNum);
 
     RefPicListReorderInfo ReorderInfoL0;                        // (RefPicListReorderInfo) reference list 0 info
     RefPicListReorderInfo ReorderInfoL1;                        // (RefPicListReorderInfo) reference list 1 info
@@ -199,23 +199,23 @@ public:  // DEBUG !!!! should remove dependence
 
     H264DecoderFrame *m_pCurrentFrame;        // (H264DecoderFrame *) pointer to destination frame
 
-    Ipp32s m_iMBWidth;                                          // (Ipp32s) width in macroblock units
-    Ipp32s m_iMBHeight;                                         // (Ipp32s) height in macroblock units
+    int32_t m_iMBWidth;                                          // (int32_t) width in macroblock units
+    int32_t m_iMBHeight;                                         // (int32_t) height in macroblock units
 
-    Ipp32s m_iNumber;                                           // (Ipp32s) current slice number
-    Ipp32s m_iFirstMB;                                          // (Ipp32s) first MB number in slice
-    Ipp32s m_iMaxMB;                                            // (Ipp32s) last unavailable  MB number in slice
+    int32_t m_iNumber;                                           // (int32_t) current slice number
+    int32_t m_iFirstMB;                                          // (int32_t) first MB number in slice
+    int32_t m_iMaxMB;                                            // (int32_t) last unavailable  MB number in slice
 
-    Ipp32s m_iFirstMBFld;                                       // (Ipp32s) first MB number in slice
+    int32_t m_iFirstMBFld;                                       // (int32_t) first MB number in slice
 
-    Ipp32s m_iAvailableMB;                                      // (Ipp32s) available number of macroblocks (used in "unknown mode")
+    int32_t m_iAvailableMB;                                      // (int32_t) available number of macroblocks (used in "unknown mode")
 
     bool m_bFirstDebThreadedCall;                               // (bool) "first threaded deblocking call" flag
     bool m_bPermanentTurnOffDeblocking;                         // (bool) "disable deblocking" flag
     bool m_bError;                                              // (bool) there is an error in decoding
     bool m_isInitialized;
 
-    Ipp16u m_WidevineStatusReportNumber;
+    uint16_t m_WidevineStatusReportNumber;
 
     AdaptiveMarkingInfo     m_AdaptiveMarkingInfo;
     AdaptiveMarkingInfo     m_BaseAdaptiveMarkingInfo;
@@ -268,7 +268,7 @@ bool IsPictureTheSame(H264Slice *pSliceOne, H264Slice *pSliceTwo)
         return false;
 
     if ((pOne->nal_ref_idc != pTwo->nal_ref_idc) &&
-        (0 == IPP_MIN(pOne->nal_ref_idc, pTwo->nal_ref_idc)))
+        (0 == MFX_MIN(pOne->nal_ref_idc, pTwo->nal_ref_idc)))
         return false;
 
     if (0 == pSliceTwo->GetSeqParam()->pic_order_cnt_type)

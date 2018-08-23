@@ -61,7 +61,7 @@ Status Packer::SyncTask(H264DecoderFrame* pFrame, void * error)
     return m_va->SyncTask(pFrame->m_index, error);
 }
 
-Status Packer::QueryTaskStatus(Ipp32s index, void * status, void * error)
+Status Packer::QueryTaskStatus(int32_t index, void * status, void * error)
 {
     return m_va->QueryTaskStatus(index, status, error);
 }
@@ -126,16 +126,16 @@ Status PackerDXVA2::SyncTask(H264DecoderFrame* pFrame, void * error)
 
 Status PackerDXVA2::GetStatusReport(void * pStatusReport, size_t size)
 {
-    return m_va->ExecuteStatusReportBuffer(pStatusReport, (Ipp32u)size);
+    return m_va->ExecuteStatusReportBuffer(pStatusReport, (uint32_t)size);
 }
 
-void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, Ipp32s count_all)
+void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, int32_t first_slice, int32_t count_all)
 {
     if (!m_va || !count_all)
         return;
 
-    Ipp32u sliceStructSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Slice_H264_Long) : sizeof(DXVA_Slice_H264_Short);
-    Ipp32s numSlicesOfPrevField = first_slice;
+    uint32_t sliceStructSize = m_va->IsLongSliceControl() ? sizeof(DXVA_Slice_H264_Long) : sizeof(DXVA_Slice_H264_Short);
+    int32_t numSlicesOfPrevField = first_slice;
 
     first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
@@ -143,13 +143,13 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
     const H264ScalingPicParams * scaling = &slice->GetPicParam()->scaling[NAL_UT_CODED_SLICE_EXTENSION == slice->GetSliceHeader()->nal_unit_type ? 1 : 0];
     PackQmatrix(scaling);
 
-    Ipp32s chopping = CHOPPING_NONE;
+    int32_t chopping = CHOPPING_NONE;
 
     for ( ; count_all; )
     {
         PackPicParams(sliceInfo, slice);
 
-        Ipp32u partial_count = count_all;
+        uint32_t partial_count = count_all;
 
         UMCVACompBuffer* CompBuf;
         m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &CompBuf);
@@ -157,7 +157,7 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
         if (CompBuf->GetBufferSize() / sliceStructSize < partial_count)
             partial_count = CompBuf->GetBufferSize() / sliceStructSize;
 
-        for (Ipp32u i = 0; i < partial_count; i++)
+        for (uint32_t i = 0; i < partial_count; i++)
         {
             // put slice header
             H264Slice *pSlice = sliceInfo->GetSlice(first_slice + i);
@@ -169,13 +169,13 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
             }
         }
 
-        Ipp32u passedSliceNum = chopping == CHOPPING_SPLIT_SLICE_DATA ? partial_count + 1 : partial_count;
+        uint32_t passedSliceNum = chopping == CHOPPING_SPLIT_SLICE_DATA ? partial_count + 1 : partial_count;
         CompBuf->FirstMb = 0;
         CompBuf->NumOfMB = passedSliceNum;
         CompBuf->SetDataSize(passedSliceNum * sliceStructSize);
 
-        Ipp8u *pDXVA_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
-        Ipp32s AlignedNalUnitSize = align_value<Ipp32s>(CompBuf->GetDataSize(), 128);
+        uint8_t *pDXVA_BitStreamBuffer = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+        int32_t AlignedNalUnitSize = align_value<int32_t>(CompBuf->GetDataSize(), 128);
         pDXVA_BitStreamBuffer += CompBuf->GetDataSize();
         memset(pDXVA_BitStreamBuffer, 0, AlignedNalUnitSize - CompBuf->GetDataSize());
         CompBuf->SetDataSize(AlignedNalUnitSize);
@@ -198,22 +198,22 @@ void PackerDXVA2::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, I
 
         if (bs && bs->EncryptedData)
         {
-            Ipp32s count = sliceInfo->GetSliceCount();
+            int32_t count = sliceInfo->GetSliceCount();
             m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
         }
     }
 #endif
 }
 
-void PackerDXVA2::PackAU(const H264DecoderFrame *pFrame, Ipp32s field)
+void PackerDXVA2::PackAU(const H264DecoderFrame *pFrame, int32_t field)
 {
     H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(field));
-    Ipp32s count_all = sliceInfo->GetSliceCount();
+    int32_t count_all = sliceInfo->GetSliceCount();
 
     if (!count_all)
         return;
 
-    Ipp32s first_slice = field ? pFrame->GetAU(0)->GetSliceCount() : 0;
+    int32_t first_slice = field ? pFrame->GetAU(0)->GetSliceCount() : 0;
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (m_va && m_va->GetProtectedVA())
@@ -233,8 +233,8 @@ void PackerDXVA2::PackAU(const H264DecoderFrame *pFrame, Ipp32s field)
     PackAU(sliceInfo, first_slice, count_all);
 }
 
-void PackerDXVA2::AddReferenceFrame(DXVA_PicParams_H264 * pPicParams_H264, Ipp32s &pos,
-                       H264DecoderFrame * pFrame, Ipp32s reference)
+void PackerDXVA2::AddReferenceFrame(DXVA_PicParams_H264 * pPicParams_H264, int32_t &pos,
+                       H264DecoderFrame * pFrame, int32_t reference)
 {
     pPicParams_H264->RefFrameList[pos].Index7Bits = GetFrameIndex(pFrame).Index7Bits;
     pPicParams_H264->RefFrameList[pos].AssociatedFlag = reference > SHORT_TERM_REFERENCE ? 1 : 0;
@@ -284,14 +284,14 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
     H264PicParamSet *pps = const_cast<H264PicParamSet *>(slice->GetPicParam());
     H264SliceHeader * sliceHeader = slice->GetSliceHeader();
 
-    Ipp32u uNumSliceGroups = pps->num_slice_groups;
-    Ipp32u uNumMBCols = slice->GetSeqParam()->frame_width_in_mbs;
-    Ipp32u uNumMBRows = slice->GetSeqParam()->frame_height_in_mbs;
-    Ipp32u uNumMapUnits = uNumMBCols*uNumMBRows;
+    uint32_t uNumSliceGroups = pps->num_slice_groups;
+    uint32_t uNumMBCols = slice->GetSeqParam()->frame_width_in_mbs;
+    uint32_t uNumMBRows = slice->GetSeqParam()->frame_height_in_mbs;
+    uint32_t uNumMapUnits = uNumMBCols*uNumMBRows;
 
     UCHAR mapUnitToSliceGroupMap[810];
 
-    for(Ipp32u i = 0; i < 810; i++)
+    for(uint32_t i = 0; i < 810; i++)
         mapUnitToSliceGroupMap[i] = 0;
 
     if (!(uNumSliceGroups > 1))
@@ -304,10 +304,10 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             // interleaved slice groups: run_length for each slice group,
             // repeated until all MB's are assigned to a slice group
 
-            Ipp32u i = 0;
+            uint32_t i = 0;
             do
-                for(Ipp32u iGroup = 0; iGroup < uNumSliceGroups && i < uNumMapUnits; i += pps->SliceGroupInfo.run_length[iGroup++])
-                    for(Ipp32u j = 0; j < pps->SliceGroupInfo.run_length[iGroup] && i + j < uNumMapUnits; j++)
+                for(uint32_t iGroup = 0; iGroup < uNumSliceGroups && i < uNumMapUnits; i += pps->SliceGroupInfo.run_length[iGroup++])
+                    for(uint32_t j = 0; j < pps->SliceGroupInfo.run_length[iGroup] && i + j < uNumMapUnits; j++)
                         mapUnitToSliceGroupMap[i + j] = (UCHAR) iGroup;
             while(i < uNumMapUnits);
         }
@@ -316,7 +316,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
     case 1:
         {
             // dispersed
-            for(Ipp32u i = 0; i < uNumMapUnits; i++ )
+            for(uint32_t i = 0; i < uNumMapUnits; i++ )
                 mapUnitToSliceGroupMap[i] = (UCHAR) (((i % uNumMBCols) + (((i / uNumMBRows) * uNumSliceGroups) / 2)) % uNumSliceGroups);
         }
         break;
@@ -327,18 +327,18 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             // in a defined rectangle is in the leftover slice group, a MB within
             // more than one rectangle is in the lower-numbered slice group.
 
-            for(Ipp32u i = 0; i < uNumMapUnits; i++)
+            for(uint32_t i = 0; i < uNumMapUnits; i++)
                 mapUnitToSliceGroupMap[i] = (UCHAR) (uNumSliceGroups - 1);
 
-            for(Ipp32s iGroup = uNumSliceGroups - 2; iGroup >= 0; iGroup--)
+            for(int32_t iGroup = uNumSliceGroups - 2; iGroup >= 0; iGroup--)
             {
-                Ipp32u yTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] / uNumMBCols;
-                Ipp32u xTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] % uNumMBCols;
-                Ipp32u yBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] / uNumMBCols;
-                Ipp32u xBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] % uNumMBCols;
+                uint32_t yTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] / uNumMBCols;
+                uint32_t xTopLeft = pps->SliceGroupInfo.t1.top_left[iGroup] % uNumMBCols;
+                uint32_t yBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] / uNumMBCols;
+                uint32_t xBottomRight = pps->SliceGroupInfo.t1.bottom_right[iGroup] % uNumMBCols;
 
-                for(Ipp32u y = yTopLeft; y <= yBottomRight; y++)
-                    for(Ipp32u x = xTopLeft; x <= xBottomRight; x++)
+                for(uint32_t y = yTopLeft; y <= yBottomRight; y++)
+                    for(uint32_t x = xTopLeft; x <= xBottomRight; x++)
                         mapUnitToSliceGroupMap[y * uNumMBCols + x] = (UCHAR) iGroup;
             }
         }
@@ -349,10 +349,10 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             // Box-out, clockwise or counterclockwise. Result is two slice groups,
             // group 0 included by the box, group 1 excluded.
 
-            Ipp32u x, y, leftBound, rightBound, topBound, bottomBound;
-            Ipp32u mapUnitVacant = 0;
-            Ipp8s xDir, yDir;
-            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            uint32_t x, y, leftBound, rightBound, topBound, bottomBound;
+            uint32_t mapUnitVacant = 0;
+            int8_t xDir, yDir;
+            uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
 
             x = leftBound = rightBound = (uNumMBCols - dir_flag) / 2;
             y = topBound = bottomBound = (uNumMBRows - dir_flag) / 2;
@@ -360,12 +360,12 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             xDir  = dir_flag - 1;
             yDir  = dir_flag;
 
-            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
+            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
 
-            for(Ipp32u i = 0; i < uNumMapUnits; i++)
+            for(uint32_t i = 0; i < uNumMapUnits; i++)
                 mapUnitToSliceGroupMap[i] = 1;
 
-            for(Ipp32u k = 0; k < uNumInGroup0; k += mapUnitVacant)
+            for(uint32_t k = 0; k < uNumInGroup0; k += mapUnitVacant)
             {
                 mapUnitVacant = (mapUnitToSliceGroupMap[y * uNumMBCols + x] == 1);
 
@@ -374,28 +374,28 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
 
                 if(xDir == -1 && x == leftBound)
                 {
-                    leftBound = IPP_MAX(leftBound - 1, 0);
+                    leftBound = MFX_MAX(leftBound - 1, 0);
                     x = leftBound;
                     xDir = 0;
                     yDir = 2 * dir_flag - 1;
                 }
                 else if(xDir == 1 && x == rightBound)
                 {
-                    rightBound = IPP_MIN(rightBound + 1, uNumMBCols - 1);
+                    rightBound = MFX_MIN(rightBound + 1, uNumMBCols - 1);
                     x = rightBound;
                     xDir = 0;
                     yDir = 1 - 2 * dir_flag;
                 }
                 else if(yDir == -1 && y == topBound)
                 {
-                    topBound = IPP_MAX(topBound - 1, 0);
+                    topBound = MFX_MAX(topBound - 1, 0);
                     y = topBound;
                     xDir = 1 - 2 * dir_flag;
                     yDir = 0;
                 }
                 else if(yDir == 1 && y == bottomBound)
                 {
-                    bottomBound = IPP_MIN(bottomBound + 1, uNumMBRows - 1);
+                    bottomBound = MFX_MIN(bottomBound + 1, uNumMBRows - 1);
                     y = bottomBound;
                     xDir = 2 * dir_flag - 1;
                     yDir = 0;
@@ -413,11 +413,11 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
         {
             // raster-scan: 2 slice groups
 
-            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
-            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
-            Ipp32u sizeOfUpperLeftGroup = (dir_flag ? (uNumMapUnits - uNumInGroup0) : uNumInGroup0);
+            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
+            uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            uint32_t sizeOfUpperLeftGroup = (dir_flag ? (uNumMapUnits - uNumInGroup0) : uNumInGroup0);
 
-            for(Ipp32u i = 0; i < uNumMapUnits; i++)
+            for(uint32_t i = 0; i < uNumMapUnits; i++)
                 if(i < sizeOfUpperLeftGroup)
                     mapUnitToSliceGroupMap[i] = dir_flag;
                 else
@@ -433,13 +433,13 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             //  L L L R R R R R R
             //  L L L R R R R R R
 
-            Ipp32u uNumInGroup0 = IPP_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
-            Ipp8u dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
-            Ipp32u sizeOfUpperLeftGroup = (dir_flag ? (uNumMapUnits - uNumInGroup0) : uNumInGroup0);
+            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
+            uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
+            uint32_t sizeOfUpperLeftGroup = (dir_flag ? (uNumMapUnits - uNumInGroup0) : uNumInGroup0);
 
-            Ipp32u k = 0;
-            for(Ipp32u j = 0; j < uNumMBCols; j++)
-                for(Ipp32u i = 0; i < uNumMBRows; i++)
+            uint32_t k = 0;
+            for(uint32_t j = 0; j < uNumMBCols; j++)
+                for(uint32_t i = 0; i < uNumMBRows; i++)
                     if(k++ < sizeOfUpperLeftGroup)
                         mapUnitToSliceGroupMap[i * uNumMBCols + j] = dir_flag;
                     else
@@ -451,7 +451,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
         {
             // explicit map read from bitstream, contains slice group id for
             // each map unit
-            for(Ipp32u i = 0; i < pps->SliceGroupInfo.pSliceGroupIDMap.size(); i++)
+            for(uint32_t i = 0; i < pps->SliceGroupInfo.pSliceGroupIDMap.size(); i++)
                 mapUnitToSliceGroupMap[i] = pps->SliceGroupInfo.pSliceGroupIDMap[i];
         }
         break;
@@ -464,28 +464,28 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
     // Filling array groupMap as in H264 standart
     //if(pPicParams_H264->frame_mbs_only_flag == 1 || pPicParams_H264->field_pic_flag == 1)
     //{
-    //  for(Ipp32u i = 0; i < uNumMapUnits; i++ )
+    //  for(uint32_t i = 0; i < uNumMapUnits; i++ )
     //  {
     //      groupMap[i] = mapUnitToSliceGroupMap[i];
     //  }
     //}
     //else if(pPicParams_H264->MbaffFrameFlag == 1)
     //{
-    //  for(Ipp32u i = 0; i < uNumMapUnits; i++ )
+    //  for(uint32_t i = 0; i < uNumMapUnits; i++ )
     //  {
     //      groupMap[i] = mapUnitToSliceGroupMap[i/2];
     //  }
     //}
     //else if(pPicParams_H264->frame_mbs_only_flag == 0 && pPicParams_H264->MbaffFrameFlag == 0 && pPicParams_H264->field_pic_flag == 0)
     //{
-    //  for(Ipp32u i = 0; i < uNumMapUnits; i++ )
+    //  for(uint32_t i = 0; i < uNumMapUnits; i++ )
     //  {
     //      groupMap[i] = mapUnitToSliceGroupMap[(i / (2 * uNumMBCols)) * uNumMBCols + ( i % uNumMBCols )];
     //  }
     //}
 
     // Filling array groupMap as in MS DXVA for H264
-    for(Ipp32u i = 0; i < uNumMapUnits; i++ )
+    for(uint32_t i = 0; i < uNumMapUnits; i++ )
         groupMap[i>>1] = (UCHAR) (groupMap[i >> 1] + (mapUnitToSliceGroupMap[i] << (4 * (i & 1))));
 }
 
@@ -504,13 +504,13 @@ void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA
 
     if (pSliceHeader->nal_ext.mvc.view_id)
     {
-        Ipp32u VOIdx = GetVOIdx(pSlice->GetSeqMVCParam(), pSliceHeader->nal_ext.mvc.view_id);
+        uint32_t VOIdx = GetVOIdx(pSlice->GetSeqMVCParam(), pSliceHeader->nal_ext.mvc.view_id);
         const H264ViewRefInfo &refInfo = pSlice->GetSeqMVCParam()->viewInfo[VOIdx];
 
         pMVCPicParams_H264->NumInterViewRefsL0 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[0] : refInfo.num_non_anchor_refs_lx[0];
         pMVCPicParams_H264->NumInterViewRefsL1 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[1] : refInfo.num_non_anchor_refs_lx[1];
 
-        for (Ipp32u i = 0; i < sizeof(pMVCPicParams_H264->InterViewRefList[0])/sizeof(pMVCPicParams_H264->InterViewRefList[0][0]); i++)
+        for (uint32_t i = 0; i < sizeof(pMVCPicParams_H264->InterViewRefList[0])/sizeof(pMVCPicParams_H264->InterViewRefList[0][0]); i++)
         {
             if (i < pMVCPicParams_H264->NumInterViewRefsL0)
                 pMVCPicParams_H264->InterViewRefList[0][i] = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.anchor_refs_lx[0][i] : refInfo.non_anchor_refs_lx[0][i];
@@ -528,7 +528,7 @@ void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA
         pMVCPicParams_H264->NumInterViewRefsL0 = 0;
         pMVCPicParams_H264->NumInterViewRefsL1 = 0;
 
-        for (Ipp32u i = 0; i < sizeof(pMVCPicParams_H264->InterViewRefList[0])/sizeof(pMVCPicParams_H264->InterViewRefList[0][0]); i++)
+        for (uint32_t i = 0; i < sizeof(pMVCPicParams_H264->InterViewRefList[0])/sizeof(pMVCPicParams_H264->InterViewRefList[0][0]); i++)
         {
             pMVCPicParams_H264->InterViewRefList[0][i] = (USHORT)0xFFFF;
             pMVCPicParams_H264->InterViewRefList[1][i] = (USHORT)0xFFFF;
@@ -549,30 +549,30 @@ void PackerDXVA2::PackPicParamsMVC(const H264DecoderFrameInfo * pSliceInfo, DXVA
 
     pMVCPicParams_H264->num_views_minus1 = (UCHAR)pSlice->GetSeqMVCParam()->num_views_minus1;
 
-    for (Ipp32s view_id = 0; view_id < sizeof(pMVCPicParams_H264->view_id)/sizeof(pMVCPicParams_H264->view_id[0]); view_id++)
+    for (int32_t view_id = 0; view_id < sizeof(pMVCPicParams_H264->view_id)/sizeof(pMVCPicParams_H264->view_id[0]); view_id++)
     {
         pMVCPicParams_H264->view_id[view_id] = (USHORT)0xFFFF;
     }
 
-    for (Ipp32s view_id = 0; view_id <= pMVCPicParams_H264->num_views_minus1; view_id++)
+    for (int32_t view_id = 0; view_id <= pMVCPicParams_H264->num_views_minus1; view_id++)
     {
         const H264ViewRefInfo & refInfo = pSlice->GetSeqMVCParam()->viewInfo[view_id];
         pMVCPicParams_H264->view_id[view_id] = (USHORT)refInfo.view_id;
 
         pMVCPicParams_H264->num_anchor_refs_l0[view_id] = refInfo.num_anchor_refs_lx[0];
-        for (Ipp32u i = 0; i < 16; i++)
+        for (uint32_t i = 0; i < 16; i++)
             pMVCPicParams_H264->anchor_ref_l0[view_id][i] = refInfo.anchor_refs_lx[0][i];
 
         pMVCPicParams_H264->num_anchor_refs_l1[view_id] = refInfo.num_anchor_refs_lx[1];
-        for (Ipp32u i = 0; i < 16; i++)
+        for (uint32_t i = 0; i < 16; i++)
             pMVCPicParams_H264->anchor_ref_l1[view_id][i] = refInfo.anchor_refs_lx[1][i];
 
         pMVCPicParams_H264->num_non_anchor_refs_l0[view_id] = refInfo.num_non_anchor_refs_lx[0];
-        for (Ipp32u i = 0; i < 16; i++)
+        for (uint32_t i = 0; i < 16; i++)
             pMVCPicParams_H264->non_anchor_ref_l0[view_id][i] = refInfo.non_anchor_refs_lx[0][i];
 
         pMVCPicParams_H264->num_non_anchor_refs_l1[view_id] = refInfo.num_non_anchor_refs_lx[1];
-        for (Ipp32u i = 0; i < 16; i++)
+        for (uint32_t i = 0; i < 16; i++)
             pMVCPicParams_H264->non_anchor_ref_l1[view_id][i] = refInfo.non_anchor_refs_lx[1][i];
     }
 }
@@ -665,7 +665,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
     pPicParams_H264->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
 
     //create reference picture list
-    for (Ipp32s i = 0; i < 16; i++)
+    for (int32_t i = 0; i < 16; i++)
     {
         pPicParams_H264->RefFrameList[i].bPicEntry = 0xff;
     }
@@ -716,18 +716,18 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
 
     PackSliceGroups(pPicParams_H264, const_cast<H264DecoderFrame *>(pCurrentFrame));
 
-    Ipp32s j = 0;
+    int32_t j = 0;
 
     bool currViewVisited = false;
 
-    Ipp32s viewCount = m_supplier->GetViewCount();
-    for (Ipp32s i = 0; i < viewCount; i++)
+    int32_t viewCount = m_supplier->GetViewCount();
+    for (int32_t i = 0; i < viewCount; i++)
     {
         ViewItem & view = m_supplier->GetViewByNumber(i);
         H264DBPList * pDPBList = view.GetDPBList(0);
-        Ipp32s dpbSize = pDPBList->GetDPBSize();
+        int32_t dpbSize = pDPBList->GetDPBSize();
 
-        Ipp32s start = j;
+        int32_t start = j;
 
         /*if (m_va->IsMVCSupport() && view.viewId != pSliceHeader->nal_ext.mvc.view_id && picParamsMSMVC)
         {
@@ -747,7 +747,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
 
             VM_ASSERT(j < dpbSize + start);
 
-            Ipp32s reference = pFrm->isShortTermRef() ? SHORT_TERM_REFERENCE : (pFrm->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
+            int32_t reference = pFrm->isShortTermRef() ? SHORT_TERM_REFERENCE : (pFrm->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
             if (pFrm->m_viewId != pCurrentFrame->m_viewId && pFrm->m_auIndex == pCurrentFrame->m_auIndex)
             {
                 if (pFrm->GetAU(0)->GetStatus() == H264DecoderFrameInfo::STATUS_NONE || pFrm->GetAU(0)->GetStatus() == H264DecoderFrameInfo::STATUS_NOT_FILLED)
@@ -801,16 +801,16 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
 
     /*if (m_va->IsMVCSupport() && pSliceHeader->nal_ext.mvc.view_id && picParamsMSMVC)
     {
-        Ipp32u VOIdx = GetVOIdx(pSlice->m_pSeqParamSetMvcEx, pSliceHeader->nal_ext.mvc.view_id);
+        uint32_t VOIdx = GetVOIdx(pSlice->m_pSeqParamSetMvcEx, pSliceHeader->nal_ext.mvc.view_id);
         const H264ViewRefInfo &refInfo = pSlice->m_pSeqParamSetMvcEx->viewInfo[VOIdx];
 
-        Ipp32s numInterViewRefsL0 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[0] : refInfo.num_non_anchor_refs_lx[0];
-        Ipp32s numInterViewRefsL1 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[1] : refInfo.num_non_anchor_refs_lx[1];
+        int32_t numInterViewRefsL0 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[0] : refInfo.num_non_anchor_refs_lx[0];
+        int32_t numInterViewRefsL1 = pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.num_anchor_refs_lx[1] : refInfo.num_non_anchor_refs_lx[1];
 
-        for (Ipp32s i = 0; i < numInterViewRefsL0 + numInterViewRefsL1; i++)
+        for (int32_t i = 0; i < numInterViewRefsL0 + numInterViewRefsL1; i++)
         {
-            Ipp32s listNum = (i >= numInterViewRefsL0) ?  1 : 0;
-            Ipp32s refNum = listNum ? (i - numInterViewRefsL0) : i;
+            int32_t listNum = (i >= numInterViewRefsL0) ?  1 : 0;
+            int32_t refNum = listNum ? (i - numInterViewRefsL0) : i;
 
             ViewItem * view = m_supplier->GetView(pSliceHeader->nal_ext.mvc.anchor_pic_flag ? refInfo.anchor_refs_lx[listNum][refNum] : refInfo.non_anchor_refs_lx[listNum][refNum]);
 
@@ -822,7 +822,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
             if (!pFrm)
                 continue;
 
-            Ipp32s reference = INTERVIEW_TERM_REFERENCE;
+            int32_t reference = INTERVIEW_TERM_REFERENCE;
             AddReferenceFrame(pPicParams_H264, j, pFrm, reference);
 
             if (picParamsIntelMVC)
@@ -837,7 +837,7 @@ void PackerDXVA2::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * p
 }
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSlice)
+void PackerDXVA2::SendPAVPStructure(int32_t numSlicesOfPrevField, H264Slice *pSlice)
 {
     mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
     mfxEncryptedData * encryptedData = bs->EncryptedData;
@@ -847,12 +847,12 @@ void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSli
     // filled with 0xFF.
     // If assumption is not true introduce new field in mfxEncrypedSliceData
     // to store value for NalUnitSize variable to assign it here.
-    Ipp32u encryptedBufferSize = 0;
+    uint32_t encryptedBufferSize = 0;
 
-    Ipp32u ecnryptDataCount = 0;
+    uint32_t ecnryptDataCount = 0;
     if(encryptedData)
     {
-        for (Ipp32s i = 0; i < numSlicesOfPrevField; i++)
+        for (int32_t i = 0; i < numSlicesOfPrevField; i++)
         {
             if (!encryptedData)
                 throw h264_exception(UMC_ERR_INVALID_PARAMS);
@@ -865,9 +865,9 @@ void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSli
             int size = 0;
             if(temp->Next)
             {
-                Ipp64u counter1 = temp->CipherCounter.Count;
-                Ipp64u counter2 = temp->Next->CipherCounter.Count;
-                Ipp64u zero = 0xffffffffffffffff;
+                unsigned long long counter1 = temp->CipherCounter.Count;
+                unsigned long long counter2 = temp->Next->CipherCounter.Count;
+                unsigned long long zero = 0xffffffffffffffff;
                 if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
                 {
                     counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -880,9 +880,9 @@ void PackerDXVA2::SendPAVPStructure(Ipp32s numSlicesOfPrevField, H264Slice *pSli
                     counter2 = LITTLE_ENDIAN_SWAP64(counter2);
                 }
                 if(counter1 <= counter2)
-                    size = (Ipp32u)(counter2 - counter1) *16;
+                    size = (uint32_t)(counter2 - counter1) *16;
                 else
-                    size = (Ipp32u)(counter2 + (zero - counter1)) *16;
+                    size = (uint32_t)(counter2 + (zero - counter1)) *16;
             }
             else
             {
@@ -962,9 +962,9 @@ void PackerDXVA2::CheckData()
     {
         if(temp->Next)
         {
-            Ipp64u counter1 = temp->CipherCounter.Count;
-            Ipp64u counter2 = temp->Next->CipherCounter.Count;
-            Ipp64u zero = 0xffffffffffffffff;
+            unsigned long long counter1 = temp->CipherCounter.Count;
+            unsigned long long counter2 = temp->Next->CipherCounter.Count;
+            unsigned long long zero = 0xffffffffffffffff;
             if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
             {
                 counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -979,10 +979,10 @@ void PackerDXVA2::CheckData()
             //second slice offset starts after the first, there is no counter overall
             if(counter1 <= counter2)
             {
-                Ipp32u size = temp->DataLength + temp->DataOffset;
+                uint32_t size = temp->DataLength + temp->DataOffset;
                 if(size & 0xf)
                     size= size+(0x10 - (size & 0xf));
-                Ipp32u sizeCount = (Ipp32u)(counter2 - counter1) *16;
+                uint32_t sizeCount = (uint32_t)(counter2 - counter1) *16;
                 //if we have hole between slices
                 if(sizeCount > size)
                     throw h264_exception(UMC_ERR_INVALID_STREAM);
@@ -993,22 +993,22 @@ void PackerDXVA2::CheckData()
             else //there is counter overall or second slice offset starts earlier then the first one
             {
                 //length of the second slice offset in 16-bytes blocks
-                Ipp64u offsetCounter = (temp->Next->DataOffset + 15)/16;
+                unsigned long long offsetCounter = (temp->Next->DataOffset + 15)/16;
                 // no counter2 overall
                 if(zero - counter2 > offsetCounter)
                 {
-                    Ipp32u size = temp->DataLength + temp->DataOffset;
+                    uint32_t size = temp->DataLength + temp->DataOffset;
                     if(size & 0xf)
                         size= size+(0x10 - (size & 0xf));
-                    Ipp64u counter3 = size / 16;
+                    unsigned long long counter3 = size / 16;
                     // no zero during the first slice
                     if(zero - counter1 >= counter3)
                     {
                         //second slice offset contains the first slice with offset
                         if(counter2 + offsetCounter >= counter3)
                         {
-                            temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                            temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
+                            temp->Next->Data += (uint32_t)(counter1 - counter2) * 16;
+                            temp->Next->DataOffset -= (uint32_t)(counter1 - counter2) * 16;
                             temp->Next->CipherCounter = temp->CipherCounter;
                             //overlap between slices is different in different buffers
                             if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
@@ -1022,7 +1022,7 @@ void PackerDXVA2::CheckData()
                     else
                     {
                         //size of data between counters
-                        Ipp32u sizeCount = (Ipp32u)(counter2 + (zero - counter1)) *16;
+                        uint32_t sizeCount = (uint32_t)(counter2 + (zero - counter1)) *16;
                         //hole between slices
                         if(sizeCount > size)
                             throw h264_exception(UMC_ERR_INVALID_STREAM);
@@ -1033,8 +1033,8 @@ void PackerDXVA2::CheckData()
                 }
                 else
                 {
-                    temp->Next->Data += (Ipp32u)(counter1 - counter2) * 16;
-                    temp->Next->DataOffset -= (Ipp32u)(counter1 - counter2) * 16;
+                    temp->Next->Data += (uint32_t)(counter1 - counter2) * 16;
+                    temp->Next->DataOffset -= (uint32_t)(counter1 - counter2) * 16;
                     temp->Next->CipherCounter = temp->CipherCounter;
                     //overlap between slices is different in different buffers
                     if (memcmp(temp->Data, temp->Next->Data, temp->DataOffset + temp->DataLength))
@@ -1047,7 +1047,7 @@ void PackerDXVA2::CheckData()
 }
 #endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
-Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField)
+int32_t PackerDXVA2::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t chopping, int32_t numSlicesOfPrevField)
 {
     UMCVACompBuffer* pSliceCompBuf;
     DXVA_Slice_H264_Long* pDXVA_Slice_H264 = (DXVA_Slice_H264_Long*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &pSliceCompBuf);
@@ -1072,13 +1072,13 @@ DXVA_PicEntry_H264 PackerDXVA2::GetFrameIndex(const H264DecoderFrame * frame)
     return idx;
 }
 
-static void CopyWithRedundantElimination(const H264SliceHeader *sliceHdr, Ipp8u * dst, Ipp8u* src, Ipp32u srcSize)
+static void CopyWithRedundantElimination(const H264SliceHeader *sliceHdr, uint8_t * dst, uint8_t* src, uint32_t srcSize)
 {
-    Ipp32u first_bit = sliceHdr->hw_wa_redundant_elimination_bits[0];
-    Ipp32u end_bit = sliceHdr->hw_wa_redundant_elimination_bits[1];
+    uint32_t first_bit = sliceHdr->hw_wa_redundant_elimination_bits[0];
+    uint32_t end_bit = sliceHdr->hw_wa_redundant_elimination_bits[1];
 
-    Ipp32u first_byte = first_bit/8;
-    Ipp32u end_byte = end_bit/8;
+    uint32_t first_byte = first_bit/8;
+    uint32_t end_byte = end_bit/8;
 
     // copy first part:
     MFX_INTERNAL_CPY(dst, src, first_byte);
@@ -1095,7 +1095,7 @@ static void CopyWithRedundantElimination(const H264SliceHeader *sliceHdr, Ipp8u 
     src += end_byte - first_byte;
     srcSize -= end_byte - first_byte;
 
-    Ipp32u shift_bit_count = first_bit - end_bit;
+    uint32_t shift_bit_count = first_bit - end_bit;
 
     if (first_byte == end_byte)
     {
@@ -1118,28 +1118,28 @@ static void CopyWithRedundantElimination(const H264SliceHeader *sliceHdr, Ipp8u 
     }
 }
 
-Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s numSlicesOfPrevField, DXVA_Slice_H264_Long* sliceParams)
+int32_t PackerDXVA2::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t chopping, int32_t numSlicesOfPrevField, DXVA_Slice_H264_Long* sliceParams)
 {
-    static Ipp8u start_code_prefix[] = {0, 0, 1};
+    static uint8_t start_code_prefix[] = {0, 0, 1};
 
-    Ipp32s partial_data = CHOPPING_NONE;
+    int32_t partial_data = CHOPPING_NONE;
 
     const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
     H264DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
-    Ipp8u *pNalUnit; //ptr to first byte of start code
-    Ipp32u NalUnitSize; // size of NAL unit in byte
+    uint8_t *pNalUnit; //ptr to first byte of start code
+    uint32_t NalUnitSize; // size of NAL unit in byte
     H264HeadersBitstream *pBitstream = pSlice->GetBitStream();
 
-    pBitstream->GetOrg((Ipp32u**)&pNalUnit, &NalUnitSize);
+    pBitstream->GetOrg((uint32_t**)&pNalUnit, &NalUnitSize);
 
-    Ipp8u *pSliceData; //ptr to slice data
-    Ipp32u SliceDataOffset; //offset to first bit of slice data from first bit of slice header minus all 0x03
-    pBitstream->GetState((Ipp32u**)&pSliceData, &SliceDataOffset); //it is supposed that slice header was already parsed
+    uint8_t *pSliceData; //ptr to slice data
+    uint32_t SliceDataOffset; //offset to first bit of slice data from first bit of slice header minus all 0x03
+    pBitstream->GetState((uint32_t**)&pSliceData, &SliceDataOffset); //it is supposed that slice header was already parsed
 
     if (chopping == CHOPPING_SPLIT_SLICE_DATA)
     {
-        NalUnitSize = (Ipp32u)pBitstream->BytesLeft();
+        NalUnitSize = (uint32_t)pBitstream->BytesLeft();
         pNalUnit += pBitstream->BytesDecoded();
         sliceParams->wBadSliceChopping = 2;
     }
@@ -1151,7 +1151,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     if (!sliceParams->wBadSliceChopping)
         NalUnitSize += sizeof(start_code_prefix);
 
-    Ipp32u alignedSize = NalUnitSize;
+    uint32_t alignedSize = NalUnitSize;
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     mfxBitstream * bs = 0;
@@ -1166,7 +1166,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         if (bs->EncryptedData)
         {
             encryptedData = bs->EncryptedData;
-            for (Ipp32s i = 0; i < sliceNum + numSlicesOfPrevField; i++)
+            for (int32_t i = 0; i < sliceNum + numSlicesOfPrevField; i++)
             {
                 if (!encryptedData)
                     throw h264_exception(UMC_ERR_INVALID_PARAMS);
@@ -1193,9 +1193,9 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
 #endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
     UMCVACompBuffer* CompBuf;
-    Ipp8u *pDXVA_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
+    uint8_t *pDXVA_BitStreamBuffer = (uint8_t*)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &CompBuf);
 
-    if (CompBuf->GetBufferSize() < CompBuf->GetDataSize() + (Ipp32s)sizeof(start_code_prefix) + (Ipp32s)alignedSize)
+    if (CompBuf->GetBufferSize() < CompBuf->GetDataSize() + (int32_t)sizeof(start_code_prefix) + (int32_t)alignedSize)
     {
         if (sliceNum - numSlicesOfPrevField > 0)
         {
@@ -1204,7 +1204,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         else
         {
             alignedSize = CompBuf->GetBufferSize() - CompBuf->GetDataSize();
-            NalUnitSize = IPP_MIN(NalUnitSize, alignedSize);
+            NalUnitSize = MFX_MIN(NalUnitSize, alignedSize);
             pBitstream->SetDecodedBytes(pBitstream->BytesDecoded() + NalUnitSize);
             if (chopping == CHOPPING_NONE)
                 pBitstream->SetDecodedBytes(NalUnitSize - (sliceParams->wBadSliceChopping == 0 ? sizeof(start_code_prefix) : 0));
@@ -1217,7 +1217,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     pDXVA_BitStreamBuffer += sliceParams->BSNALunitDataLocation;
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-    Ipp32u diff = 0;
+    uint32_t diff = 0;
 
     if(encryptedData)
     {
@@ -1225,7 +1225,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         {
             m_pBuf = pDXVA_BitStreamBuffer;
         }
-        diff = (Ipp32u)(pDXVA_BitStreamBuffer - m_pBuf);
+        diff = (uint32_t)(pDXVA_BitStreamBuffer - m_pBuf);
         CompBuf->SetDataSize(sliceParams->BSNALunitDataLocation + (UINT)(alignedSize - diff));
     }
     else
@@ -1238,7 +1238,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     if (encryptedData)
     {
         PAVP_ENCRYPTION_TYPE encrType=(PAVP_ENCRYPTION_TYPE) m_va->GetProtectedVA()->GetEncryptionMode();
-        if ((Ipp32u)CompBuf->GetBufferSize() < alignedSize)
+        if ((uint32_t)CompBuf->GetBufferSize() < alignedSize)
             throw h264_exception(UMC_ERR_DEVICE_FAILED);
 
         //location of slice data in buffer
@@ -1249,9 +1249,9 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         //calculate position of next slice
         if(encryptedData->Next && (encrType == PAVP_ENCRYPTION_AES128_CTR))
         {
-            Ipp64u counter1 = encryptedData->CipherCounter.Count;
-            Ipp64u counter2 = encryptedData->Next->CipherCounter.Count;
-            Ipp64u zero = 0xffffffffffffffff;
+            unsigned long long counter1 = encryptedData->CipherCounter.Count;
+            unsigned long long counter2 = encryptedData->Next->CipherCounter.Count;
+            unsigned long long zero = 0xffffffffffffffff;
             if((m_va->GetProtectedVA())->GetCounterMode() == PAVP_COUNTER_TYPE_A)
             {
                 counter1 = LITTLE_ENDIAN_SWAP32((DWORD)(counter1 >> 32));
@@ -1265,11 +1265,11 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
             }
             if(counter2 < counter1)
             {
-                (unsigned char*)m_pBuf += (Ipp32u)(counter2 +(zero - counter1))*16;
+                (unsigned char*)m_pBuf += (uint32_t)(counter2 +(zero - counter1))*16;
             }
             else
             {
-                (unsigned char*)m_pBuf += (Ipp32u)(counter2 - counter1)*16;
+                (unsigned char*)m_pBuf += (uint32_t)(counter2 - counter1)*16;
             }
         }
 
@@ -1294,8 +1294,8 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
             MFX_INTERNAL_CPY(pDXVA_BitStreamBuffer, start_code_prefix, sizeof(start_code_prefix));
             if (!m_va->IsLongSliceControl() && pSlice->GetPicParam()->redundant_pic_cnt_present_flag && (NalUnitSize - sizeof(start_code_prefix) > 0))
             {
-                Ipp32u srcSize = NalUnitSize;
-                Ipp8u needToAdujstSize = 0;
+                uint32_t srcSize = NalUnitSize;
+                uint8_t needToAdujstSize = 0;
                 if (m_picParams->entropy_coding_mode_flag) // align slice header
                 {
                     srcSize = (pSliceHeader->hw_wa_redundant_elimination_bits[2] + 7) / 8;
@@ -1330,7 +1330,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
 
     SliceDataOffset = 31 - SliceDataOffset;
     pSliceData += SliceDataOffset/8;
-    SliceDataOffset = (Ipp32u)(SliceDataOffset%8 + 8 * (pSliceData - pNalUnit)); //from start code to slice data
+    SliceDataOffset = (uint32_t)(SliceDataOffset%8 + 8 * (pSliceData - pNalUnit)); //from start code to slice data
     SliceDataOffset -= 8;
 
     sliceParams->BitOffsetToSliceData = (USHORT)(SliceDataOffset);
@@ -1370,20 +1370,20 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     }
 
     //RefPicList
-    Ipp32s realSliceNum = pSlice->GetSliceNum();
+    int32_t realSliceNum = pSlice->GetSliceNum();
     H264DecoderFrame **pRefPicList0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_RefPicList;
     H264DecoderFrame **pRefPicList1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_RefPicList;
     ReferenceFlags *pFields0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_Flags;
     ReferenceFlags *pFields1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_Flags;
 
-    for (Ipp32s i = 0; i < 32; i++)
+    for (int32_t i = 0; i < 32; i++)
     {
         if (pRefPicList0[i] != NULL && i < pSliceHeader->num_ref_idx_l0_active)
         {
             DXVA_PicEntry_H264 idx = GetFrameIndex(pRefPicList0[i]);
-            Ipp16u frameNum = pFields0[i].isLongReference ? (Ipp16u)pRefPicList0[i]->m_LongTermFrameIdx : (Ipp16u)pRefPicList0[i]->m_FrameNum;;
+            uint16_t frameNum = pFields0[i].isLongReference ? (uint16_t)pRefPicList0[i]->m_LongTermFrameIdx : (uint16_t)pRefPicList0[i]->m_FrameNum;;
             bool isFound = false;
-            for(Ipp32s j = 0; j < 16; j++) //index in RefFrameList array
+            for(int32_t j = 0; j < 16; j++) //index in RefFrameList array
             {
                 if (idx.Index7Bits == m_picParams->RefFrameList[j].Index7Bits &&
                     m_picParams->FrameNumList[j] == frameNum)
@@ -1403,9 +1403,9 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         if (pRefPicList1[i] != NULL && i < pSliceHeader->num_ref_idx_l1_active)
         {
             DXVA_PicEntry_H264 idx = GetFrameIndex(pRefPicList1[i]);
-            Ipp16u frameNum = pFields1[i].isLongReference ? (Ipp16u)pRefPicList1[i]->m_LongTermFrameIdx : (Ipp16u)pRefPicList1[i]->m_FrameNum;;
+            uint16_t frameNum = pFields1[i].isLongReference ? (uint16_t)pRefPicList1[i]->m_LongTermFrameIdx : (uint16_t)pRefPicList1[i]->m_FrameNum;;
             bool isFound = false;
-            for (Ipp32s j = 0; j < 16; j++)   //index in RefFrameList array
+            for (int32_t j = 0; j < 16; j++)   //index in RefFrameList array
             {
                 if (idx.Index7Bits == m_picParams->RefFrameList[j].Index7Bits &&
                     m_picParams->FrameNumList[j] == frameNum)
@@ -1431,10 +1431,10 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
         pPredWeight[0] = pSlice->GetPredWeigthTable(0);
         pPredWeight[1] = pSlice->GetPredWeigthTable(1);
 
-        for(Ipp32s j = 0; j < 2; j++)
+        for(int32_t j = 0; j < 2; j++)
         {
-            Ipp32s active_number = j == 0 ? pSliceHeader->num_ref_idx_l0_active : pSliceHeader->num_ref_idx_l1_active;
-            for(Ipp32s i = 0; i < active_number; i++)
+            int32_t active_number = j == 0 ? pSliceHeader->num_ref_idx_l0_active : pSliceHeader->num_ref_idx_l1_active;
+            for(int32_t i = 0; i < active_number; i++)
             {
                 if (pPredWeight[j][i].luma_weight_flag)
                 {
@@ -1443,7 +1443,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
                 }
                 else
                 {
-                    sliceParams->Weights[j][i][0][0] = (Ipp8u)pPredWeight[j][i].luma_weight;
+                    sliceParams->Weights[j][i][0][0] = (uint8_t)pPredWeight[j][i].luma_weight;
                     sliceParams->Weights[j][i][0][1] = 0;
                 }
 
@@ -1456,9 +1456,9 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
                 }
                 else
                 {
-                    sliceParams->Weights[j][i][1][0] = (Ipp8u)pPredWeight[j][i].chroma_weight[0];
+                    sliceParams->Weights[j][i][1][0] = (uint8_t)pPredWeight[j][i].chroma_weight[0];
                     sliceParams->Weights[j][i][1][1] = 0;
-                    sliceParams->Weights[j][i][2][0] = (Ipp8u)pPredWeight[j][i].chroma_weight[1];
+                    sliceParams->Weights[j][i][2][0] = (uint8_t)pPredWeight[j][i].chroma_weight[1];
                     sliceParams->Weights[j][i][2][1] = 0;
                 }
             }
@@ -1480,7 +1480,7 @@ Ipp32s PackerDXVA2::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s c
     return partial_data;
 }
 
-void PackerDXVA2::BeginFrame(H264DecoderFrame*, Ipp32s)
+void PackerDXVA2::BeginFrame(H264DecoderFrame*, int32_t)
 {
     m_statusReportFeedbackCounter++;
     // WA: StatusReportFeedbackNumber - UINT, can't be 0 - reported status will be ignored
@@ -1501,7 +1501,7 @@ void PackerDXVA2::PackQmatrix(const H264ScalingPicParams * scaling)
 
     quantBuf->SetDataSize(sizeof(DXVA_Qmatrix_H264));
 
-    static Ipp32s inv_mp_scan4x4[16] =
+    static int32_t inv_mp_scan4x4[16] =
     {
         0,  1,  5,  6,
         2,  4,  7,  12,
@@ -1509,7 +1509,7 @@ void PackerDXVA2::PackQmatrix(const H264ScalingPicParams * scaling)
         9,  10, 14, 15
     };
 
-    static Ipp32s inv_hp[64] =
+    static int32_t inv_hp[64] =
     {
         0, 1, 5, 6, 14, 15, 27, 28,
         2, 4, 7, 13, 16, 26, 29, 42,
@@ -1521,17 +1521,17 @@ void PackerDXVA2::PackQmatrix(const H264ScalingPicParams * scaling)
         35, 36, 48, 49, 57, 58, 62, 63
     };
 
-    for(Ipp32s j = 0; j < 6; j++)
+    for(int32_t j = 0; j < 6; j++)
     {
-        for(Ipp32s i = 0; i < 16; i++)
+        for(int32_t i = 0; i < 16; i++)
         {
              pQmatrix_H264->bScalingLists4x4[j][inv_mp_scan4x4[i]] = scaling->ScalingLists4x4[j].ScalingListCoeffs[i];
         }
     }
 
-    for(Ipp32s j = 0; j < 2; j++)
+    for(int32_t j = 0; j < 2; j++)
     {
-        for(Ipp32s i = 0; i < 64; i++)
+        for(int32_t i = 0; i < 64; i++)
         {
              pQmatrix_H264->bScalingLists8x8[j][inv_hp[i]] = scaling->ScalingLists8x8[j].ScalingListCoeffs[i];
         }
@@ -1543,7 +1543,7 @@ PackerDXVA2_Widevine::PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier *
 {
 }
 
-void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first_slice, Ipp32s count_all)
+void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, int32_t first_slice, int32_t count_all)
 {
     if (!m_va || !count_all)
         return;
@@ -1555,7 +1555,7 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first
     {
         PackPicParams(sliceInfo, slice);
 
-        Ipp32u partial_count = count_all;
+        uint32_t partial_count = count_all;
 
         Status sts = m_va->Execute();
         if (sts != UMC_OK)
@@ -1574,7 +1574,7 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, Ipp32s first
 
         if (bs && bs->EncryptedData)
         {
-            Ipp32s count = sliceInfo->GetSliceCount();
+            int32_t count = sliceInfo->GetSliceCount();
             m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
         }
     }
@@ -1621,7 +1621,7 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
     pPicParams_H264->Reserved16Bits = pSlice->m_WidevineStatusReportNumber;
 
     //create reference picture list
-    for (Ipp32s i = 0; i < 16; i++)
+    for (int32_t i = 0; i < 16; i++)
     {
         pPicParams_H264->RefFrameList[i].bPicEntry = 0xff;
     }
@@ -1645,18 +1645,18 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
 
     pPicParams_H264->NonExistingFrameFlags = 0;
 
-    Ipp32s j = 0;
+    int32_t j = 0;
 
     bool currViewVisited = false;
 
-    Ipp32s viewCount = m_supplier->GetViewCount();
-    for (Ipp32s i = 0; i < viewCount; i++)
+    int32_t viewCount = m_supplier->GetViewCount();
+    for (int32_t i = 0; i < viewCount; i++)
     {
         ViewItem & view = m_supplier->GetViewByNumber(i);
         H264DBPList * pDPBList = view.GetDPBList(0);
-        Ipp32s dpbSize = pDPBList->GetDPBSize();
+        int32_t dpbSize = pDPBList->GetDPBSize();
 
-        Ipp32s start = j;
+        int32_t start = j;
 
         if (view.viewId == pSliceHeader->nal_ext.mvc.view_id)
             currViewVisited = true;
@@ -1671,7 +1671,7 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
 
             VM_ASSERT(j < dpbSize + start);
 
-            Ipp32s reference = pFrm->isShortTermRef() ? SHORT_TERM_REFERENCE : (pFrm->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
+            int32_t reference = pFrm->isShortTermRef() ? SHORT_TERM_REFERENCE : (pFrm->isLongTermRef() ? LONG_TERM_REFERENCE : NO_REFERENCE);
             if (pFrm->m_viewId != pCurrentFrame->m_viewId && pFrm->m_auIndex == pCurrentFrame->m_auIndex)
             {
                 if (pFrm->GetAU(0)->GetStatus() == H264DecoderFrameInfo::STATUS_NONE || pFrm->GetAU(0)->GetStatus() == H264DecoderFrameInfo::STATUS_NOT_FILLED)
@@ -1742,15 +1742,15 @@ Status PackerVA::GetStatusReport(void * pStatusReport, size_t size)
 }
 
 void PackerVA::FillFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
-                         Ipp32s field, Ipp32s reference, Ipp32s defaultIndex)
+                         int32_t field, int32_t reference, int32_t defaultIndex)
 {
-    Ipp32s index = pFrame->m_index;
+    int32_t index = pFrame->m_index;
 
     if (index == -1)
         index = defaultIndex;
 
     pic->picture_id = m_va->GetSurfaceID(index);
-    pic->frame_idx = pFrame->isLongTermRef() ? (Ipp16u)pFrame->m_LongTermFrameIdx : (Ipp16u)pFrame->m_FrameNum;
+    pic->frame_idx = pFrame->isLongTermRef() ? (uint16_t)pFrame->m_LongTermFrameIdx : (uint16_t)pFrame->m_FrameNum;
 
     int parityNum0 = pFrame->GetNumberByParity(0);
     if (parityNum0 >= 0 && parityNum0 < 2)
@@ -1792,16 +1792,16 @@ void PackerVA::FillFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
     }
 }
 
-Ipp32s PackerVA::FillRefFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
-                            ReferenceFlags flags, bool isField, Ipp32s defaultIndex)
+int32_t PackerVA::FillRefFrame(VAPictureH264 * pic, const H264DecoderFrame *pFrame,
+                            ReferenceFlags flags, bool isField, int32_t defaultIndex)
 {
-    Ipp32s index = pFrame->m_index;
+    int32_t index = pFrame->m_index;
 
     if (index == -1)
         index = defaultIndex;
 
     pic->picture_id = m_va->GetSurfaceID(index);
-    pic->frame_idx = pFrame->isLongTermRef() ? (Ipp16u)pFrame->m_LongTermFrameIdx : (Ipp16u)pFrame->m_FrameNum;
+    pic->frame_idx = pFrame->isLongTermRef() ? (uint16_t)pFrame->m_LongTermFrameIdx : (uint16_t)pFrame->m_FrameNum;
 
     int parityNum0 = pFrame->GetNumberByParity(0);
     if (parityNum0 >= 0 && parityNum0 < 2)
@@ -1867,7 +1867,7 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
 
     memset(pPicParams_H264, 0, sizeof(VAPictureParameterBufferH264));
 
-    Ipp32s reference = pCurrentFrame->isShortTermRef() ? 1 : (pCurrentFrame->isLongTermRef() ? 2 : 0);
+    int32_t reference = pCurrentFrame->isShortTermRef() ? 1 : (pCurrentFrame->isLongTermRef() ? 2 : 0);
 
     FillFrame(&(pPicParams_H264->CurrPic), pCurrentFrame, pSliceHeader->bottom_field_flag, reference, 0);
 
@@ -1938,23 +1938,23 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
 //    pPicParams_H264->num_ref_idx_l1_default_active_minus1 = (unsigned char)(pPicParamSet->num_ref_idx_l1_active-1);
 
     //create reference picture list
-    for (Ipp32s i = 0; i < 16; i++)
+    for (int32_t i = 0; i < 16; i++)
     {
         FillFrameAsInvalid(&(pPicParams_H264->ReferenceFrames[i]));
     }
 
-    Ipp32s referenceCount = 0;
-    Ipp32s j = 0;
+    int32_t referenceCount = 0;
+    int32_t j = 0;
 
-    Ipp32s viewCount = m_supplier->GetViewCount();
+    int32_t viewCount = m_supplier->GetViewCount();
 
-    for (Ipp32s i = 0; i < viewCount; i++)
+    for (int32_t i = 0; i < viewCount; i++)
     {
         ViewItem & view = m_supplier->GetViewByNumber(i);
         H264DBPList * pDPBList = view.GetDPBList(0);
-        Ipp32s dpbSize = pDPBList->GetDPBSize();
+        int32_t dpbSize = pDPBList->GetDPBSize();
 
-        Ipp32s start = j;
+        int32_t start = j;
 
         for (H264DecoderFrame * pFrm = pDPBList->head(); pFrm && (j < dpbSize + start); pFrm = pFrm->future())
         {
@@ -1965,14 +1965,14 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
             }
             VM_ASSERT(j < dpbSize + start);
 
-            Ipp32s defaultIndex = 0;
+            int32_t defaultIndex = 0;
 
             if ((0 == pCurrentFrame->m_index) && !pFrm->IsFrameExist())
             {
                 defaultIndex = 1;
             }
 
-            Ipp32s reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
+            int32_t reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
             if (!reference && pCurrentFrame != pFrm && (pFrm->isInterViewRef(0) || pFrm->isInterViewRef(1)) &&
                 (pFrm->PicOrderCnt(0, 3) == pCurrentFrame->PicOrderCnt(0, 3)) && pFrm->m_viewId < pCurrentFrame->m_viewId)
             { // interview reference
@@ -1986,7 +1986,7 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
             referenceCount ++;
-            Ipp32s field = pFrm->m_bottom_field_flag[0];
+            int32_t field = pFrm->m_bottom_field_flag[0];
             FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm,
                 field, reference, defaultIndex);
 
@@ -2007,7 +2007,7 @@ void PackerVA::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSli
 
 //returns both NAL unit size (in bytes) and bit offset from start to actual slice data
 inline
-Ipp8u* GetSliceStat(H264Slice* slice, Ipp32u* size, Ipp32u* offset)
+uint8_t* GetSliceStat(H264Slice* slice, uint32_t* size, uint32_t* offset)
 {
     VM_ASSERT(slice);
     VM_ASSERT(size);
@@ -2015,14 +2015,14 @@ Ipp8u* GetSliceStat(H264Slice* slice, Ipp32u* size, Ipp32u* offset)
     H264HeadersBitstream* bs = slice->GetBitStream();
     VM_ASSERT(bs);
 
-    Ipp8u* base;   //ptr to first byte of start code
-    bs->GetOrg(reinterpret_cast<Ipp32u**>(&base), size);
+    uint8_t* base;   //ptr to first byte of start code
+    bs->GetOrg(reinterpret_cast<uint32_t**>(&base), size);
 
     if (offset)
     {
-        Ipp8u* ptr;    //ptr to slice data
-        Ipp32u position;
-        bs->GetState(reinterpret_cast<Ipp32u**>(&ptr), &position);
+        uint8_t* ptr;    //ptr to slice data
+        uint32_t position;
+        bs->GetState(reinterpret_cast<uint32_t**>(&ptr), &position);
 
         VM_ASSERT(base != ptr &&
                   !"slice header should be already parsed here"
@@ -2041,7 +2041,7 @@ Ipp8u* GetSliceStat(H264Slice* slice, Ipp32u* size, Ipp32u* offset)
 
 void PackerVA::CreateSliceParamBuffer(H264DecoderFrameInfo * pSliceInfo)
 {
-    Ipp32s count = pSliceInfo->GetSliceCount();
+    int32_t count = pSliceInfo->GetSliceCount();
 
     UMCVACompBuffer *pSliceParamBuf;
     size_t sizeOfStruct = sizeof(VASliceParameterBufferH264);
@@ -2059,34 +2059,34 @@ void PackerVA::CreateSliceParamBuffer(H264DecoderFrameInfo * pSliceInfo)
 
 void PackerVA::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
 {
-    Ipp32s count = pSliceInfo->GetSliceCount();
+    int32_t count = pSliceInfo->GetSliceCount();
 
-    Ipp32u size = 0;
-    for (Ipp32s i = 0; i < count; i++)
+    uint32_t size = 0;
+    for (int32_t i = 0; i < count; i++)
     {
         H264Slice* pSlice = pSliceInfo->GetSlice(i);
-        Ipp32u NalUnitSize;
+        uint32_t NalUnitSize;
         GetSliceStat(pSlice, &NalUnitSize, 0);
 
         size += NalUnitSize;
     }
 
-    Ipp32u const AlignedNalUnitSize
-        = align_value<Ipp32u>(size, 128);
+    uint32_t const AlignedNalUnitSize
+        = align_value<uint32_t>(size, 128);
 
     UMCVACompBuffer* compBuf;
     m_va->GetCompBuffer(VASliceDataBufferType, &compBuf, AlignedNalUnitSize);
     if (!compBuf)
         throw h264_exception(UMC_ERR_FAILED);
 
-    memset((Ipp8u*)compBuf->GetPtr() + size, 0, AlignedNalUnitSize - size);
+    memset((uint8_t*)compBuf->GetPtr() + size, 0, AlignedNalUnitSize - size);
 
     compBuf->SetDataSize(0);
 }
 
-Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s )
+int32_t PackerVA::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t chopping, int32_t )
 {
-    Ipp32s partial_data = CHOPPING_NONE;
+    int32_t partial_data = CHOPPING_NONE;
     H264DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
     const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
 
@@ -2110,8 +2110,8 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         memset(pSlice_H264, 0, sizeof(VASliceParameterBufferBase));
     }
 
-    Ipp32u NalUnitSize, SliceDataOffset;
-    Ipp8u* pNalUnit = GetSliceStat(pSlice, &NalUnitSize, &SliceDataOffset);
+    uint32_t NalUnitSize, SliceDataOffset;
+    uint8_t* pNalUnit = GetSliceStat(pSlice, &NalUnitSize, &SliceDataOffset);
     if (SliceDataOffset >= NalUnitSize * 8)
         //no slice data, skipping
         return CHOPPING_SKIP_SLICE;
@@ -2124,11 +2124,11 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
     }
 
     UMCVACompBuffer* CompBuf;
-    Ipp8u *pVAAPI_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf);
+    uint8_t *pVAAPI_BitStreamBuffer = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &CompBuf);
     if (!pVAAPI_BitStreamBuffer)
         throw h264_exception(UMC_ERR_FAILED);
 
-    Ipp32s AlignedNalUnitSize = NalUnitSize;
+    int32_t AlignedNalUnitSize = NalUnitSize;
 
     pSlice_H264->slice_data_flag = chopping == CHOPPING_NONE ? VA_SLICE_DATA_FLAG_ALL : VA_SLICE_DATA_FLAG_END;
 
@@ -2214,7 +2214,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
         pPredWeight[0] = pSlice->GetPredWeigthTable(0);
         pPredWeight[1] = pSlice->GetPredWeigthTable(1);
 
-        Ipp32s  i;
+        int32_t  i;
         for(i=0; i < 32; i++)
         {
             if (pPredWeight[0][i].luma_weight_flag)
@@ -2224,7 +2224,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
             }
             else
             {
-                pSlice_H264->luma_weight_l0[i] = (Ipp8u)pPredWeight[0][i].luma_weight;
+                pSlice_H264->luma_weight_l0[i] = (uint8_t)pPredWeight[0][i].luma_weight;
                 pSlice_H264->luma_offset_l0[i] = 0;
             }
             if (pPredWeight[1][i].luma_weight_flag)
@@ -2234,7 +2234,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
             }
             else
             {
-                pSlice_H264->luma_weight_l1[i] = (Ipp8u)pPredWeight[1][i].luma_weight;
+                pSlice_H264->luma_weight_l1[i] = (uint8_t)pPredWeight[1][i].luma_weight;
                 pSlice_H264->luma_offset_l1[i] = 0;
             }
             if (pPredWeight[0][i].chroma_weight_flag)
@@ -2246,9 +2246,9 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
             }
             else
             {
-                pSlice_H264->chroma_weight_l0[i][0] = (Ipp8u)pPredWeight[0][i].chroma_weight[0];
+                pSlice_H264->chroma_weight_l0[i][0] = (uint8_t)pPredWeight[0][i].chroma_weight[0];
                 pSlice_H264->chroma_offset_l0[i][0] = 0;
-                pSlice_H264->chroma_weight_l0[i][1] = (Ipp8u)pPredWeight[0][i].chroma_weight[1];
+                pSlice_H264->chroma_weight_l0[i][1] = (uint8_t)pPredWeight[0][i].chroma_weight[1];
                 pSlice_H264->chroma_offset_l0[i][1] = 0;
             }
             if (pPredWeight[1][i].chroma_weight_flag)
@@ -2260,26 +2260,26 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
             }
             else
             {
-                pSlice_H264->chroma_weight_l1[i][0] = (Ipp8u)pPredWeight[1][i].chroma_weight[0];
+                pSlice_H264->chroma_weight_l1[i][0] = (uint8_t)pPredWeight[1][i].chroma_weight[0];
                 pSlice_H264->chroma_offset_l1[i][0] = 0;
-                pSlice_H264->chroma_weight_l1[i][1] = (Ipp8u)pPredWeight[1][i].chroma_weight[1];
+                pSlice_H264->chroma_weight_l1[i][1] = (uint8_t)pPredWeight[1][i].chroma_weight[1];
                 pSlice_H264->chroma_offset_l1[i][1] = 0;
             }
         }
     }
 
-    Ipp32s realSliceNum = pSlice->GetSliceNum();
+    int32_t realSliceNum = pSlice->GetSliceNum();
     H264DecoderFrame **pRefPicList0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_RefPicList;
     H264DecoderFrame **pRefPicList1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_RefPicList;
     ReferenceFlags *pFields0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_Flags;
     ReferenceFlags *pFields1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_Flags;
 
-    Ipp32s i;
+    int32_t i;
     for(i = 0; i < 32; i++)
     {
         if (pRefPicList0[i] != NULL && i < pSliceHeader->num_ref_idx_l0_active)
         {
-            Ipp32s defaultIndex = ((0 == pCurrentFrame->m_index) && !pRefPicList0[i]->IsFrameExist()) ? 1 : 0;
+            int32_t defaultIndex = ((0 == pCurrentFrame->m_index) && !pRefPicList0[i]->IsFrameExist()) ? 1 : 0;
 
             FillRefFrame(&(pSlice_H264->RefPicList0[i]), pRefPicList0[i],
                 pFields0[i], pSliceHeader->field_pic_flag, defaultIndex);
@@ -2297,7 +2297,7 @@ Ipp32s PackerVA::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chop
 
         if (pRefPicList1[i] != NULL && i < pSliceHeader->num_ref_idx_l1_active)
         {
-            Ipp32s defaultIndex = ((0 == pCurrentFrame->m_index) && !pRefPicList1[i]->IsFrameExist()) ? 1 : 0;
+            int32_t defaultIndex = ((0 == pCurrentFrame->m_index) && !pRefPicList1[i]->IsFrameExist()) ? 1 : 0;
 
             FillRefFrame(&(pSlice_H264->RefPicList1[i]), pRefPicList1[i],
                 pFields1[i], pSliceHeader->field_pic_flag, defaultIndex);
@@ -2344,7 +2344,7 @@ void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
         throw h264_exception(UMC_ERR_FAILED);
     quantBuf->SetDataSize(sizeof(VAIQMatrixBufferH264));
 
-    Ipp32s i, j;
+    int32_t i, j;
     //may be just use memcpy???
     for(j = 0; j < 6; j++)
     {
@@ -2363,7 +2363,7 @@ void PackerVA::PackQmatrix(const H264ScalingPicParams * scaling)
     }
 }
 
-void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
+void PackerVA::BeginFrame(H264DecoderFrame* pFrame, int32_t field)
 {
     FrameData* fd = pFrame->GetFrameData();
     VM_ASSERT(fd);
@@ -2410,7 +2410,7 @@ void PackerVA::BeginFrame(H264DecoderFrame* pFrame, Ipp32s field)
         if (!so)
             throw h264_exception(UMC_ERR_FAILED);
 
-        Ipp32u size = so->NumMBAlloc * sizeof(mfxFeiDecStreamOutMBCtrl);
+        uint32_t size = so->NumMBAlloc * sizeof(mfxFeiDecStreamOutMBCtrl);
         if (pFrame->GetAU(field)->IsField())
             size /= 2;
 
@@ -2428,16 +2428,16 @@ void PackerVA::EndFrame()
 {
 }
 
-void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
+void PackerVA::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
 {
     H264DecoderFrameInfo* sliceInfo =
         const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
 
-    Ipp32u const count_all = sliceInfo->GetSliceCount();
+    uint32_t const count_all = sliceInfo->GetSliceCount();
     if (!m_va || !count_all)
         return;
 
-    Ipp32u first_slice = 0;
+    uint32_t first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
     NAL_Unit_Type const type = slice->GetSliceHeader()->nal_unit_type;
@@ -2445,7 +2445,7 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
         &slice->GetPicParam()->scaling[type == NAL_UT_CODED_SLICE_EXTENSION ? 1 : 0];
     PackQmatrix(scaling);
 
-    Ipp32s chopping = CHOPPING_NONE;
+    int32_t chopping = CHOPPING_NONE;
 
     for ( ; first_slice < count_all; )
     {
@@ -2454,7 +2454,7 @@ void PackerVA::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
         CreateSliceParamBuffer(sliceInfo);
         CreateSliceDataBuffer(sliceInfo);
 
-        Ipp32u n = 0, count = 0;
+        uint32_t n = 0, count = 0;
         for (; n < count_all; ++n)
         {
             // put slice header
@@ -2516,16 +2516,16 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
         return UMC_ERR_FAILED;
 
     VM_ASSERT(!( pFrame->GetTotalMBs() < 0));
-    Ipp32u const count = pFrame->GetTotalMBs();
+    uint32_t const count = pFrame->GetTotalMBs();
 
     if (so->NumMBAlloc < count)
         return UMC_ERR_FAILED;
 
-    Ipp32u const size =
+    uint32_t const size =
         count * sizeof(mfxFeiDecStreamOutMBCtrl);
 
     //top field
-    Ipp32s const top = pFrame->GetNumberByParity(0);
+    int32_t const top = pFrame->GetNumberByParity(0);
     VAStreamOutBuffer* buffer = fei_va->QueryStreamOutBuffer(pFrame->m_index, top);
     if (!buffer || !buffer->GetPtr())
         return UMC_ERR_FAILED;
@@ -2537,7 +2537,7 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     mfxU8 const* src = reinterpret_cast<mfxU8 *>(buffer->GetPtr());
     VM_ASSERT(src);
 
-    Ipp32s const offset1 =  size * top;
+    int32_t const offset1 =  size * top;
     {
         MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "std::copy");
         std::copy(src, src + size, dst + offset1);
@@ -2548,7 +2548,7 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
     if (!pFrame->GetAU(top)->IsField())
         return UMC_OK;
 
-    Ipp32s const bottom = pFrame->GetNumberByParity(1);
+    int32_t const bottom = pFrame->GetNumberByParity(1);
     buffer = fei_va->QueryStreamOutBuffer(pFrame->m_index, bottom);
     if (!buffer || !buffer->GetPtr())
         return UMC_ERR_FAILED;
@@ -2587,27 +2587,27 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
 
     memset(pPicParams_H264, 0, sizeof(VAPictureParameterBufferH264));
 
-    Ipp32s reference = pCurrentFrame->isShortTermRef() ? 1 : (pCurrentFrame->isLongTermRef() ? 2 : 0);
+    int32_t reference = pCurrentFrame->isShortTermRef() ? 1 : (pCurrentFrame->isLongTermRef() ? 2 : 0);
 
     FillFrame(&(pPicParams_H264->CurrPic), pCurrentFrame, pSliceHeader->bottom_field_flag, reference, 0);
 
-    for (Ipp32s i = 0; i < 16; i++)
+    for (int32_t i = 0; i < 16; i++)
     {
         FillFrameAsInvalid(&(pPicParams_H264->ReferenceFrames[i]));
     }
 
-    Ipp32s referenceCount = 0;
-    Ipp32s j = 0;
+    int32_t referenceCount = 0;
+    int32_t j = 0;
 
-    Ipp32s viewCount = m_supplier->GetViewCount();
+    int32_t viewCount = m_supplier->GetViewCount();
 
-    for (Ipp32s i = 0; i < viewCount; i++)
+    for (int32_t i = 0; i < viewCount; i++)
     {
         ViewItem & view = m_supplier->GetViewByNumber(i);
         H264DBPList * pDPBList = view.GetDPBList(0);
-        Ipp32s dpbSize = pDPBList->GetDPBSize();
+        int32_t dpbSize = pDPBList->GetDPBSize();
 
-        Ipp32s start = j;
+        int32_t start = j;
 
         for (H264DecoderFrame * pFrm = pDPBList->head(); pFrm && (j < dpbSize + start); pFrm = pFrm->future())
         {
@@ -2618,14 +2618,14 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
             }
             VM_ASSERT(j < dpbSize + start);
 
-            Ipp32s defaultIndex = 0;
+            int32_t defaultIndex = 0;
 
             if ((0 == pCurrentFrame->m_index) && !pFrm->IsFrameExist())
             {
                 defaultIndex = 1;
             }
 
-            Ipp32s reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
+            int32_t reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
             if (!reference && pCurrentFrame != pFrm && (pFrm->isInterViewRef(0) || pFrm->isInterViewRef(1)) &&
                 (pFrm->PicOrderCnt(0, 3) == pCurrentFrame->PicOrderCnt(0, 3)) && pFrm->m_viewId < pCurrentFrame->m_viewId)
             { // interview reference
@@ -2637,7 +2637,7 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
             ++referenceCount;
-            Ipp32s field = pFrm->m_bottom_field_flag[0];
+            int32_t field = pFrm->m_bottom_field_flag[0];
             FillFrame(&(pPicParams_H264->ReferenceFrames[j]), pFrm, field, reference, defaultIndex);
 
             reference = pFrm->isShortTermRef() ? 1 : (pFrm->isLongTermRef() ? 2 : 0);
@@ -2663,22 +2663,22 @@ void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Sli
     pParamBuf->SetDataSize(sizeof(unsigned int));
 }
 
-void PackerVA_Widevine::PackAU(const H264DecoderFrame *pFrame, Ipp32s isTop)
+void PackerVA_Widevine::PackAU(const H264DecoderFrame *pFrame, int32_t isTop)
 {
     H264DecoderFrameInfo * sliceInfo = const_cast<H264DecoderFrameInfo *>(pFrame->GetAU(isTop));
-    Ipp32s count_all = sliceInfo->GetSliceCount();
+    int32_t count_all = sliceInfo->GetSliceCount();
 
     if (!m_va || !count_all)
         return;
 
-    Ipp32s first_slice = 0;
+    int32_t first_slice = 0;
     H264Slice* slice = sliceInfo->GetSlice(first_slice);
 
     for ( ; count_all; )
     {
         PackPicParams(sliceInfo, slice);
 
-        Ipp32u partial_count = count_all;
+        uint32_t partial_count = count_all;
         Status sts = m_va->Execute();
         if (sts != UMC_OK)
         {
@@ -2703,7 +2703,7 @@ void PackerVA_PAVP::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice *
 
 void PackerVA_PAVP::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
 {
-    Ipp32s count = pSliceInfo->GetSliceCount();
+    int32_t count = pSliceInfo->GetSliceCount();
     bool clear = 0;
 
     if (m_va->GetProtectedVA())
@@ -2715,7 +2715,7 @@ void PackerVA_PAVP::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
         {
             bool bIsLastSlice = false;
             mfxEncryptedData * encryptedData = bs->EncryptedData;
-            for (Ipp32s sliceNum = 0; sliceNum < count; ++sliceNum)
+            for (int32_t sliceNum = 0; sliceNum < count; ++sliceNum)
             {
                 if (!encryptedData)
                     throw h264_exception(UMC_ERR_INVALID_PARAMS);
@@ -2726,10 +2726,10 @@ void PackerVA_PAVP::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
 
                 encryptedData = encryptedData->Next;
             }
-            Ipp32s size = encryptedData->DataLength + encryptedData->DataOffset;
+            int32_t size = encryptedData->DataLength + encryptedData->DataOffset;
 
             UMCVACompBuffer* compBuf;
-            Ipp8u *pVAAPI_BitStreamBuffer = (Ipp8u*)m_va->GetCompBuffer(VASliceDataBufferType, &compBuf, size);
+            uint8_t *pVAAPI_BitStreamBuffer = (uint8_t*)m_va->GetCompBuffer(VASliceDataBufferType, &compBuf, size);
             if (!compBuf)
                 throw h264_exception(UMC_ERR_FAILED);
 
@@ -2743,7 +2743,7 @@ void PackerVA_PAVP::CreateSliceDataBuffer(H264DecoderFrameInfo * pSliceInfo)
         return PackerVA::CreateSliceDataBuffer(pSliceInfo);
 }
 
-Ipp32s PackerVA_PAVP::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s chopping, Ipp32s)
+int32_t PackerVA_PAVP::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t chopping, int32_t)
 {
     UMCVACompBuffer* compBuf;
     VASliceParameterBufferBase* pSlice_H264 = (VASliceParameterBufferBase*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBuf);
@@ -2763,7 +2763,7 @@ Ipp32s PackerVA_PAVP::PackSliceParams(H264Slice *pSlice, Ipp32s sliceNum, Ipp32s
         if (bs->EncryptedData)
         {
             encryptedData = bs->EncryptedData;
-            for (Ipp32s i = 0; i < sliceNum; i++)
+            for (int32_t i = 0; i < sliceNum; i++)
             {
                 if (!encryptedData)
                     throw h264_exception(UMC_ERR_INVALID_PARAMS);

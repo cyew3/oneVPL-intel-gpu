@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,13 +14,12 @@
 #ifndef __UMC_H264_BITSTREAM_HEADERS_H_
 #define __UMC_H264_BITSTREAM_HEADERS_H_
 
-#include "ippvc.h"
 #include "umc_structures.h"
 #include "umc_h264_dec_defs_dec.h"
 
 #define h264GetBits(current_data, offset, nbits, data) \
 { \
-    Ipp32u x; \
+    uint32_t x; \
     offset -= (nbits); \
     if (offset >= 0) \
     { \
@@ -77,16 +76,16 @@
 
 namespace UMC
 {
-extern const Ipp32u bits_data[];
-extern const Ipp32s mp_scan4x4[2][16];
-extern const Ipp32s hp_scan8x8[2][64];
+extern const uint32_t bits_data[];
+extern const int32_t mp_scan4x4[2][16];
+extern const int32_t hp_scan8x8[2][64];
 
-extern const Ipp16u SAspectRatio[17][2];
+extern const uint16_t SAspectRatio[17][2];
 
-extern const Ipp8u default_intra_scaling_list4x4[16];
-extern const Ipp8u default_inter_scaling_list4x4[16];
-extern const Ipp8u default_intra_scaling_list8x8[64];
-extern const Ipp8u default_inter_scaling_list8x8[64];
+extern const uint8_t default_intra_scaling_list4x4[16];
+extern const uint8_t default_inter_scaling_list4x4[16];
+extern const uint8_t default_intra_scaling_list8x8[64];
+extern const uint8_t default_inter_scaling_list8x8[64];
 
 class Headers;
 
@@ -95,20 +94,20 @@ class H264BaseBitstream
 public:
 
     H264BaseBitstream();
-    H264BaseBitstream(Ipp8u * const pb, const Ipp32u maxsize);
+    H264BaseBitstream(uint8_t * const pb, const uint32_t maxsize);
     virtual ~H264BaseBitstream();
 
     // Reset the bitstream with new data pointer
-    void Reset(Ipp8u * const pb, const Ipp32u maxsize);
-    void Reset(Ipp8u * const pb, Ipp32s offset, const Ipp32u maxsize);
+    void Reset(uint8_t * const pb, const uint32_t maxsize);
+    void Reset(uint8_t * const pb, int32_t offset, const uint32_t maxsize);
 
-    inline Ipp32u GetBits(const Ipp32u nbits);
+    inline uint32_t GetBits(const uint32_t nbits);
 
-    // Read one VLC Ipp32s or Ipp32u value from bitstream
-    inline Ipp32s GetVLCElement(bool bIsSigned);
+    // Read one VLC int32_t or uint32_t value from bitstream
+    inline int32_t GetVLCElement(bool bIsSigned);
 
     // Reads one bit from the buffer.
-    inline Ipp8u Get1Bit();
+    inline uint8_t Get1Bit();
 
     inline bool IsBSLeft(size_t sizeToRead = 0);
     inline void CheckBSLeft(size_t sizeToRead = 0);
@@ -123,24 +122,24 @@ public:
     // Align bitstream pointer to the right
     inline void AlignPointerRight();
 
-    void GetOrg(Ipp32u **pbs, Ipp32u *size);
-    void GetState(Ipp32u **pbs, Ipp32u *bitOffset);
-    void SetState(Ipp32u *pbs, Ipp32u bitOffset);
+    void GetOrg(uint32_t **pbs, uint32_t *size);
+    void GetState(uint32_t **pbs, uint32_t *bitOffset);
+    void SetState(uint32_t *pbs, uint32_t bitOffset);
 
     // Set current decoding position
     void SetDecodedBytes(size_t);
 
     size_t BytesDecodedRoundOff()
     {
-        return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase);
+        return static_cast<size_t>((uint8_t*)m_pbs - (uint8_t*)m_pbsBase);
     }
 
 protected:
 
-    Ipp32u *m_pbs;                                              // (Ipp32u *) pointer to the current position of the buffer.
-    Ipp32s m_bitOffset;                                         // (Ipp32s) the bit position (0 to 31) in the dword pointed by m_pbs.
-    Ipp32u *m_pbsBase;                                          // (Ipp32u *) pointer to the first byte of the buffer.
-    Ipp32u m_maxBsSize;                                         // (Ipp32u) maximum buffer size in bytes.
+    uint32_t *m_pbs;                                              // (uint32_t *) pointer to the current position of the buffer.
+    int32_t m_bitOffset;                                         // (int32_t) the bit position (0 to 31) in the dword pointed by m_pbs.
+    uint32_t *m_pbsBase;                                          // (uint32_t *) pointer to the first byte of the buffer.
+    uint32_t m_maxBsSize;                                         // (uint32_t) maximum buffer size in bytes.
 
 };
 
@@ -149,7 +148,7 @@ class H264HeadersBitstream : public H264BaseBitstream
 public:
 
     H264HeadersBitstream();
-    H264HeadersBitstream(Ipp8u * const pb, const Ipp32u maxsize);
+    H264HeadersBitstream(uint8_t * const pb, const uint32_t maxsize);
 
 
     // Decode sequence parameter set
@@ -167,7 +166,7 @@ public:
     Status GetPictureParamSetPart2(H264PicParamSet *pps, H264SeqParamSet const*);
 
     // Decode NAL unit prefix
-    Status GetNalUnitPrefix(H264NalExtension *pExt, Ipp32u NALRef_idc);
+    Status GetNalUnitPrefix(H264NalExtension *pExt, uint32_t NALRef_idc);
 
     // Decode NAL unit extension parameters
     Status GetNalUnitExtension(H264NalExtension *pExt);
@@ -192,28 +191,28 @@ public:
                                                                                // scalable extension NAL unit
 
 
-    Status GetNALUnitType(NAL_Unit_Type &nal_unit_type, Ipp32u &nal_ref_idc);
+    Status GetNALUnitType(NAL_Unit_Type &nal_unit_type, uint32_t &nal_ref_idc);
     // SEI part
-    Ipp32s ParseSEI(const Headers & headers, H264SEIPayLoad *spl);
-    Ipp32s sei_message(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl);
-    Ipp32s sei_payload(const Headers & headers, Ipp32s current_sps,H264SEIPayLoad *spl);
-    Ipp32s buffering_period(const Headers & headers, Ipp32s , H264SEIPayLoad *spl);
-    Ipp32s pic_timing(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl);
+    int32_t ParseSEI(const Headers & headers, H264SEIPayLoad *spl);
+    int32_t sei_message(const Headers & headers, int32_t current_sps, H264SEIPayLoad *spl);
+    int32_t sei_payload(const Headers & headers, int32_t current_sps,H264SEIPayLoad *spl);
+    int32_t buffering_period(const Headers & headers, int32_t , H264SEIPayLoad *spl);
+    int32_t pic_timing(const Headers & headers, int32_t current_sps, H264SEIPayLoad *spl);
     void user_data_registered_itu_t_t35(H264SEIPayLoad *spl);
     void recovery_point(H264SEIPayLoad *spl);
-    Ipp32s dec_ref_pic_marking_repetition(const Headers & headers, Ipp32s current_sps, H264SEIPayLoad *spl);
+    int32_t dec_ref_pic_marking_repetition(const Headers & headers, int32_t current_sps, H264SEIPayLoad *spl);
     void unparsed_sei_message(H264SEIPayLoad *spl);
     void scalability_info(H264SEIPayLoad *spl);
 
 protected:
 
     Status DecRefBasePicMarking(AdaptiveMarkingInfo *pAdaptiveMarkingInfo,
-        Ipp8u &adaptive_ref_pic_marking_mode_flag);
+        uint8_t &adaptive_ref_pic_marking_mode_flag);
 
     Status DecRefPicMarking(H264SliceHeader *hdr, AdaptiveMarkingInfo *pAdaptiveMarkingInfo);
 
-    void GetScalingList4x4(H264ScalingList4x4 *scl, Ipp8u *def, Ipp8u *scl_type);
-    void GetScalingList8x8(H264ScalingList8x8 *scl, Ipp8u *def, Ipp8u *scl_type);
+    void GetScalingList4x4(H264ScalingList4x4 *scl, uint8_t *def, uint8_t *scl_type);
+    void GetScalingList8x8(H264ScalingList8x8 *scl, uint8_t *def, uint8_t *scl_type);
 
     Status GetVUIParam(H264SeqParamSet *sps, H264VUI *vui);
     Status GetHRDParam(H264SeqParamSet *sps, H264VUI *vui);
@@ -227,38 +226,38 @@ void SetDefaultScalingLists(H264SeqParamSet * sps);
 inline
 void FillFlatScalingList4x4(H264ScalingList4x4 *scl)
 {
-    for (Ipp32s i=0;i<16;i++)
+    for (int32_t i=0;i<16;i++)
         scl->ScalingListCoeffs[i] = 16;
 }
 
 inline void FillFlatScalingList8x8(H264ScalingList8x8 *scl)
 {
-    for (Ipp32s i=0;i<64;i++)
+    for (int32_t i=0;i<64;i++)
         scl->ScalingListCoeffs[i] = 16;
 }
 
-inline void FillScalingList4x4(H264ScalingList4x4 *scl_dst, const Ipp8u *coefs_src)
+inline void FillScalingList4x4(H264ScalingList4x4 *scl_dst, const uint8_t *coefs_src)
 {
-    for (Ipp32s i=0;i<16;i++)
+    for (int32_t i=0;i<16;i++)
         scl_dst->ScalingListCoeffs[i] = coefs_src[i];
 }
 
-inline void FillScalingList8x8(H264ScalingList8x8 *scl_dst, const Ipp8u *coefs_src)
+inline void FillScalingList8x8(H264ScalingList8x8 *scl_dst, const uint8_t *coefs_src)
 {
-    for (Ipp32s i=0;i<64;i++)
+    for (int32_t i=0;i<64;i++)
         scl_dst->ScalingListCoeffs[i] = coefs_src[i];
 }
 
-inline bool DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
-                                                      Ipp32s *pBitOffset,
-                                                      Ipp32s *pDst,
-                                                      Ipp32s isSigned)
+inline bool DecodeExpGolombOne_H264_1u32s (uint32_t **ppBitStream,
+                                                      int32_t *pBitOffset,
+                                                      int32_t *pDst,
+                                                      int32_t isSigned)
 {
-    Ipp32u code;
-    Ipp32u info     = 0;
-    Ipp32s length   = 1;            /* for first bit read above*/
-    Ipp32u thisChunksLength = 0;
-    Ipp32u sval;
+    uint32_t code;
+    uint32_t info     = 0;
+    int32_t length   = 1;            /* for first bit read above*/
+    uint32_t thisChunksLength = 0;
+    uint32_t sval;
 
     /* check error(s) */
 
@@ -293,7 +292,7 @@ inline bool DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
     /* skipping very long codes, let's assume what the code is corrupted */
     if (32 <= length || 32 <= thisChunksLength)
     {
-        Ipp32u dwords;
+        uint32_t dwords;
         length -= (*pBitOffset + 1);
         dwords = length/32;
         length -= (32*dwords);
@@ -313,12 +312,12 @@ inline bool DecodeExpGolombOne_H264_1u32s (Ipp32u **ppBitStream,
     if (isSigned)
     {
         if (sval & 1)
-            *pDst = (Ipp32s) ((sval + 1) >> 1);
+            *pDst = (int32_t) ((sval + 1) >> 1);
         else
-            *pDst = -((Ipp32s) (sval >> 1));
+            *pDst = -((int32_t) (sval >> 1));
     }
     else
-        *pDst = (Ipp32s) sval;
+        *pDst = (int32_t) sval;
 
     return true;
 }
@@ -335,17 +334,17 @@ inline void H264BaseBitstream::CheckBSLeft(size_t sizeToRead)
         throw h264_exception(UMC_ERR_INVALID_STREAM);
 }
 
-inline Ipp32u H264BaseBitstream::GetBits(const Ipp32u nbits)
+inline uint32_t H264BaseBitstream::GetBits(const uint32_t nbits)
 {
-    Ipp32u w, n = nbits;
+    uint32_t w, n = nbits;
 
     h264GetBits(m_pbs, m_bitOffset, n, w);
     return(w);
 }
 
-inline Ipp32s H264BaseBitstream::GetVLCElement(bool bIsSigned)
+inline int32_t H264BaseBitstream::GetVLCElement(bool bIsSigned)
 {
-    Ipp32s sval = 0;
+    int32_t sval = 0;
 
     bool res = DecodeExpGolombOne_H264_1u32s(&m_pbs, &m_bitOffset, &sval, bIsSigned);
 
@@ -354,29 +353,29 @@ inline Ipp32s H264BaseBitstream::GetVLCElement(bool bIsSigned)
     return sval;
 }
 
-inline Ipp8u H264BaseBitstream::Get1Bit()
+inline uint8_t H264BaseBitstream::Get1Bit()
 {
-    Ipp32u w;
+    uint32_t w;
 
     GetBits1(m_pbs, m_bitOffset, w);
-    return (Ipp8u)w;
+    return (uint8_t)w;
 }
 
 inline size_t H264BaseBitstream::BytesDecoded()
 {
-    return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase) +
+    return static_cast<size_t>((uint8_t*)m_pbs - (uint8_t*)m_pbsBase) +
             ((31 - m_bitOffset) >> 3);
 }
 
 inline size_t H264BaseBitstream::BitsDecoded()
 {
-    return static_cast<size_t>((Ipp8u*)m_pbs - (Ipp8u*)m_pbsBase) * 8 +
+    return static_cast<size_t>((uint8_t*)m_pbs - (uint8_t*)m_pbsBase) * 8 +
         (31 - m_bitOffset);
 }
 
 inline size_t H264BaseBitstream::BytesLeft()
 {
-    return((Ipp32s)m_maxBsSize - (Ipp32s) BytesDecoded());
+    return((int32_t)m_maxBsSize - (int32_t) BytesDecoded());
 }
 
 inline void H264BaseBitstream::AlignPointerRight()

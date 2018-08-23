@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -56,7 +56,7 @@ enum
     TASK_DEC_REC
 };
 
-typedef Ipp16s FactorArrayValue;
+typedef int16_t FactorArrayValue;
 
 struct FactorArray
 {
@@ -114,19 +114,19 @@ public:
     IntraType *GetMBIntraTypes(void){return m_pMBIntraTypes;}
 
     // Obtain decoding state variables
-    void GetStateVariables(Ipp32s &iMBSkipFlag,  Ipp32s &iQuantPrev, Ipp32s &iPrevDQuant);
+    void GetStateVariables(int32_t &iMBSkipFlag,  int32_t &iQuantPrev, int32_t &iPrevDQuant);
     // Save decoding state variables
-    void SetStateVariables(Ipp32s iMBSkipCount, Ipp32s iQuantPrev, Ipp32s iPrevDQuant);
+    void SetStateVariables(int32_t iMBSkipCount, int32_t iQuantPrev, int32_t iPrevDQuant);
 
     // Obtain owning slice field index
-    Ipp32s GetFieldIndex(void) const {return m_field_index;}
+    int32_t GetFieldIndex(void) const {return m_field_index;}
 
     // Update reference list
     virtual Status UpdateReferenceList(ViewList &views,
-        Ipp32s dIdIndex);
+        int32_t dIdIndex);
 
-    void InitDistScaleFactor(Ipp32s NumL0RefActive,
-                                        Ipp32s NumL1RefActive,
+    void InitDistScaleFactor(int32_t NumL0RefActive,
+                                        int32_t NumL1RefActive,
                                         H264DecoderFrame **pRefPicList0,
                                         H264DecoderFrame **pRefPicList1,
                                         ReferenceFlags *pFields0,
@@ -150,44 +150,44 @@ public:
     IntraType *m_pMBIntraTypes;                                 // (IntraType *) array of macroblock intra types
 
     H264Bitstream   m_SliceDataBitStream;                           // (H264Bitstream) slice bit stream
-    Ipp32s m_MVsDistortion;
+    int32_t m_MVsDistortion;
 
-    Ipp32s m_iCurMBToDec;                                       // (Ipp32s) current MB number to decode
-    Ipp32s m_iCurMBToRec;                                       // (Ipp32s) current MB number to reconstruct
-    Ipp32s m_iCurMBToDeb;                                       // (Ipp32s *) current MB number to de-blocking
+    int32_t m_iCurMBToDec;                                       // (int32_t) current MB number to decode
+    int32_t m_iCurMBToRec;                                       // (int32_t) current MB number to reconstruct
+    int32_t m_iCurMBToDeb;                                       // (int32_t *) current MB number to de-blocking
 
     bool m_bInProcess;                                          // (bool) slice is under whole decoding
-    Ipp32s m_bDecVacant;                                        // (Ipp32s) decoding is vacant
-    Ipp32s m_bRecVacant;                                        // (Ipp32s) reconstruct is vacant
-    Ipp32s m_bDebVacant;                                        // (Ipp32s) de-blocking is vacant
+    int32_t m_bDecVacant;                                        // (int32_t) decoding is vacant
+    int32_t m_bRecVacant;                                        // (int32_t) reconstruct is vacant
+    int32_t m_bDebVacant;                                        // (int32_t) de-blocking is vacant
 
     // through-decoding variable(s)
-    Ipp32s m_nMBSkipCount;                                      // (Ipp32u) current count of skipped macro blocks
-    Ipp32s m_nQuantPrev;                                        // (Ipp32u) quantize value of previous macro block
-    Ipp32s m_prev_dquant;
-    Ipp32s m_field_index;                                       // (Ipp32s) current field index
+    int32_t m_nMBSkipCount;                                      // (uint32_t) current count of skipped macro blocks
+    int32_t m_nQuantPrev;                                        // (uint32_t) quantize value of previous macro block
+    int32_t m_prev_dquant;
+    int32_t m_field_index;                                       // (int32_t) current field index
     bool m_bNeedToCheckMBSliceEdges;                            // (bool) need to check inter-slice boundaries
 
     static FactorArrayAFF m_StaticFactorArrayAFF;
 };
 
 inline
-void H264SliceEx::GetStateVariables(Ipp32s &iMBSkipFlag, Ipp32s &iQuantPrev, Ipp32s &iPrevDQuant)
+void H264SliceEx::GetStateVariables(int32_t &iMBSkipFlag, int32_t &iQuantPrev, int32_t &iPrevDQuant)
 {
     iMBSkipFlag = m_nMBSkipCount;
     iQuantPrev = m_nQuantPrev;
     iPrevDQuant = m_prev_dquant;
 
-} // void H264Slice::GetStateVariables(Ipp32s &iMBSkipFlag, Ipp32s &iQuantPrev, bool &bSkipNextFDF, Ipp32s &iPrevDQuant)
+} // void H264Slice::GetStateVariables(int32_t &iMBSkipFlag, int32_t &iQuantPrev, bool &bSkipNextFDF, int32_t &iPrevDQuant)
 
 inline
-void H264SliceEx::SetStateVariables(Ipp32s iMBSkipFlag, Ipp32s iQuantPrev, Ipp32s iPrevDQuant)
+void H264SliceEx::SetStateVariables(int32_t iMBSkipFlag, int32_t iQuantPrev, int32_t iPrevDQuant)
 {
     m_nMBSkipCount = iMBSkipFlag;
     m_nQuantPrev = iQuantPrev;
     m_prev_dquant = iPrevDQuant;
 
-} // void H264Slice::SetStateVariables(Ipp32s iMBSkipFlag, Ipp32s iQuantPrev, bool bSkipNextFDF, Ipp32s iPrevDQuant)
+} // void H264Slice::SetStateVariables(int32_t iMBSkipFlag, int32_t iQuantPrev, bool bSkipNextFDF, int32_t iPrevDQuant)
 
 // Declare function to swapping memory
 extern void SwapMemoryAndRemovePreventingBytes(void *pDst, size_t &nDstSize, void *pSrc, size_t nSrcSize);

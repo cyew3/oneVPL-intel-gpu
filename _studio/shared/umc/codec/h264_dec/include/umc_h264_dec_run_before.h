@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -25,7 +25,7 @@ namespace UMC
 */
 
 static
-Ipp32s run_before_map_1[] =
+int32_t run_before_map_1[] =
 {
 1, /* max bits */
 1,  /* total subtables */
@@ -47,7 +47,7 @@ Ipp32s run_before_map_1[] =
 */
 
 static
-Ipp32s run_before_map_2[] =
+int32_t run_before_map_2[] =
 {
 2, /* max bits */
 1,  /* total subtables */
@@ -72,7 +72,7 @@ Ipp32s run_before_map_2[] =
 */
 
 static
-Ipp32s run_before_map_3[] =
+int32_t run_before_map_3[] =
 {
 2, /* max bits */
 1,  /* total subtables */
@@ -98,7 +98,7 @@ Ipp32s run_before_map_3[] =
 */
 
 static
-Ipp32s run_before_map_4[] =
+int32_t run_before_map_4[] =
 {
 3, /* max bits */
 1,  /* total subtables */
@@ -128,7 +128,7 @@ Ipp32s run_before_map_4[] =
 */
 
 static
-Ipp32s run_before_map_5[] =
+int32_t run_before_map_5[] =
 {
 3, /* max bits */
 1,  /* total subtables */
@@ -160,7 +160,7 @@ Ipp32s run_before_map_5[] =
 */
 
 static
-Ipp32s run_before_map_6[] =
+int32_t run_before_map_6[] =
 {
 3, /* max bits */
 1,  /* total subtables */
@@ -208,7 +208,7 @@ Ipp32s run_before_map_6[] =
 */
 
 static
-Ipp32s run_before_map_6p[] =
+int32_t run_before_map_6p[] =
 {
 11, /* max bits */
 1,  /* total subtables */

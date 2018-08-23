@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -22,8 +22,8 @@ namespace UMC
     ((4 <= abs(one.mvx - two.mvx)) || \
      (iMaxDiff <= abs(one.mvy - two.mvy))); \
     but the current code is equal and uses less comparisons */ \
-    ((7 <= (Ipp32u)((one).mvx - (two).mvx + 3)) || \
-     ((Ipp32u)(iMaxDiff * 2 - 1) <= (Ipp32u)((one).mvy - (two).mvy + iMaxDiff - 1)))
+    ((7 <= (uint32_t)((one).mvx - (two).mvx + 3)) || \
+     ((uint32_t)(iMaxDiff * 2 - 1) <= (uint32_t)((one).mvy - (two).mvy + iMaxDiff - 1)))
 
 void H264SegmentDecoder::PrepareDeblockingParametersISlice()
 {
@@ -64,7 +64,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersISlice()
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice()
 {
-    Ipp32s mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
+    int32_t mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
 
     // when this macroblock is intra coded
     if (IS_INTRA_MBTYPE(mbtype))
@@ -111,8 +111,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice()
 
     union
     {
-        Ipp8u *Strength;
-        Ipp32u *edge;
+        uint8_t *Strength;
+        uint32_t *edge;
     } u;
 
     u.Strength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
@@ -131,8 +131,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice()
 
 void H264SegmentDecoder::PrepareDeblockingParametersBSlice()
 {
-    Ipp32s mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
-    Ipp32s af = 0;
+    int32_t mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
+    int32_t af = 0;
 
     // when this macroblock is intra coded
     if (IS_INTRA_MBTYPE(mbtype))
@@ -176,8 +176,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice()
     if (af) {
         union
         {
-            Ipp8u *Strength;
-            Ipp32u *edge;
+            uint8_t *Strength;
+            uint32_t *edge;
         } u;
         u.Strength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
         if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING] && !(*u.edge))
@@ -211,7 +211,7 @@ enum
 };
 
 static
-Ipp8u InternalBlockDeblockingTable[2][16][4] =
+uint8_t InternalBlockDeblockingTable[2][16][4] =
 {
     // strength arrays for vertical deblocking
     {
@@ -259,15 +259,15 @@ void H264SegmentDecoder::PrepareDeblockingParametersIntern16x16Vert()
     //foo_internal(pParams, VERTICAL_DEBLOCKING);
     //return;
 
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
 
     //
     // internal edge(s)
     //
     if (cbp4x4_luma & 0x1fffe)
     {
-        Ipp32s a, b, res;
+        int32_t a, b, res;
 
         // set deblocking flag
         m_deblockingParams.DeblockingFlag[VERTICAL_DEBLOCKING] = 1;
@@ -304,15 +304,15 @@ void H264SegmentDecoder::PrepareDeblockingParametersIntern16x16Horz()
 {
     //foo_internal(pParams, HORIZONTAL_DEBLOCKING);
     //return;
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
 
     //
     // internal edge(s)
     //
     if (cbp4x4_luma & 0x1fffe)
     {
-        Ipp32s a, b, res;
+        int32_t a, b, res;
 
         // set deblocking flag
         m_deblockingParams.DeblockingFlag[HORIZONTAL_DEBLOCKING] |= 1;
@@ -345,16 +345,16 @@ void H264SegmentDecoder::PrepareDeblockingParametersIntern16x16Horz()
 
 } // void H264SegmentDecoder::PrepareDeblockingParametersIntern16x16Horz()
 
-inline void H264SegmentDecoder::foo_external_p(Ipp32s cbp4x4_luma, Ipp32s nNeighbour, Ipp32s dir,
-    Ipp32s idx,
+inline void H264SegmentDecoder::foo_external_p(int32_t cbp4x4_luma, int32_t nNeighbour, int32_t dir,
+    int32_t idx,
     H264DecoderFrame **pNRefPicList0,
     ReferenceFlags *pNFields0)
 {
-    Ipp32s blkQ, blkP;
-    Ipp32s blkQ2, blkP2;
+    int32_t blkQ, blkP;
+    int32_t blkQ2, blkP2;
 
     H264DecoderMacroblockLocalInfo *pNeighbour = &m_mbinfo.mbs[nNeighbour];
-    Ipp32s nBlock, nNeighbourBlock;
+    int32_t nBlock, nNeighbourBlock;
 
     blkQ = EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx];
     blkP = EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx];
@@ -393,7 +393,7 @@ inline void H264SegmentDecoder::foo_external_p(Ipp32s cbp4x4_luma, Ipp32s nNeigh
     // field coded image
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
-        Ipp32s index;
+        int32_t index;
 
         // select reference index for current block
         index = m_cur_mb.GetReferenceIndex(0, nBlock);
@@ -406,7 +406,7 @@ inline void H264SegmentDecoder::foo_external_p(Ipp32s cbp4x4_luma, Ipp32s nNeigh
     // frame coded image
     else
     {
-        Ipp32s index;
+        int32_t index;
 
         // select reference index for current block
         index = m_cur_mb.GetReferenceIndex(0, nBlock);
@@ -481,21 +481,21 @@ inline void H264SegmentDecoder::foo_external_p(Ipp32s cbp4x4_luma, Ipp32s nNeigh
     // when reference indexes are different
     else
     {
-        m_deblockingParams.Strength[dir][idx] = (Ipp8u) (1 + (is_first ? 1 : 0));
-        m_deblockingParams.Strength[dir][idx + 1] = (Ipp8u) (1 + (is_second ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx] = (uint8_t) (1 + (is_first ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx + 1] = (uint8_t) (1 + (is_second ? 1 : 0));
         m_deblockingParams.DeblockingFlag[dir] = 1;
     }
 }
 
-inline void H264SegmentDecoder::foo_internal_p(Ipp32s dir,
-    Ipp32s idx, Ipp32u cbp4x4_luma)
+inline void H264SegmentDecoder::foo_internal_p(int32_t dir,
+    int32_t idx, uint32_t cbp4x4_luma)
 {
     size_t iRefQFrw, iRefPFrw;
 
-    Ipp32s nBlock, nNeighbourBlock;
+    int32_t nBlock, nNeighbourBlock;
 
-    Ipp32s blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
-    Ipp32s blkQ2 = INTERNAL_BLOCKS_MASK[dir][idx - 3];
+    int32_t blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
+    int32_t blkQ2 = INTERNAL_BLOCKS_MASK[dir][idx - 3];
 
     if ((cbp4x4_luma & blkQ) && (cbp4x4_luma & blkQ2))
     {
@@ -520,7 +520,7 @@ inline void H264SegmentDecoder::foo_internal_p(Ipp32s dir,
     // field coded image
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
-        Ipp32s index;
+        int32_t index;
 
         index = m_cur_mb.GetReferenceIndex(0, nBlock);
         iRefQFrw = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(GetReferenceField(m_pFields[0], index)) : (size_t)-1;
@@ -529,7 +529,7 @@ inline void H264SegmentDecoder::foo_internal_p(Ipp32s dir,
     }
     else  // frame coded image
     {
-        Ipp32s index;
+        int32_t index;
 
         index = m_cur_mb.GetReferenceIndex(0, nBlock);
         iRefQFrw = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(0) : (size_t)-1;
@@ -600,17 +600,17 @@ inline void H264SegmentDecoder::foo_internal_p(Ipp32s dir,
     // when reference indexes are different
     else
     {
-        m_deblockingParams.Strength[dir][idx] = (Ipp8u) (1 + ((cbp4x4_luma & blkQ) ? 1 : 0));
-        m_deblockingParams.Strength[dir][idx + 1] = (Ipp8u) (1 + ((cbp4x4_luma & blkQ2) ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx] = (uint8_t) (1 + ((cbp4x4_luma & blkQ) ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx + 1] = (uint8_t) (1 + ((cbp4x4_luma & blkQ2) ? 1 : 0));
         m_deblockingParams.DeblockingFlag[dir] = 1;
     }
 }
 
-void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
+void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(uint32_t dir)
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[dir];
-    Ipp32s *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[dir];
+    int32_t *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
 
     //
     // external edge
@@ -619,7 +619,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
     if (m_deblockingParams.ExternalEdgeFlag[dir])
     {
         // select neighbour addres
-        Ipp32s nNeighbour = m_deblockingParams.nNeighbour[dir];
+        int32_t nNeighbour = m_deblockingParams.nNeighbour[dir];
 
         // when neighbour macroblock isn't intra
         if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nNeighbour].mbtype))
@@ -628,7 +628,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
             ReferenceFlags *pNFields0 = m_pCurrentFrame->GetRefPicList(m_gmbinfo->mbs[nNeighbour].slice_id, 0)->m_Flags;
 
             // cicle on blocks
-            for (Ipp32s idx = 0; idx < 4; idx += 2)
+            for (int32_t idx = 0; idx < 4; idx += 2)
             {
                 foo_external_p(cbp4x4_luma, nNeighbour, dir,
                     idx,
@@ -657,13 +657,13 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
     {
         // cicle of edge(s)
         // we do all edges in one cicle
-        for (Ipp32s idx = 4; idx < 16; idx += 2)
+        for (int32_t idx = 4; idx < 16; idx += 2)
         {
             foo_internal_p(dir,
                 idx, cbp4x4_luma);
         }
     }
-} // void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
+} // void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(uint32_t dir)
 
 #define SET_DEBLOCKING_STRENGTH_P_SLICE_VERTICAL(block_num0, block_num1) \
 { \
@@ -705,8 +705,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
     } \
     else \
     { \
-        pStrength[block_num0] = (Ipp8u) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
-        pStrength[block_num1] = (Ipp8u) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
+        pStrength[block_num0] = (uint8_t) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
+        pStrength[block_num1] = (uint8_t) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
         iDeblockingFlag = 1; \
     } \
 }
@@ -751,16 +751,16 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice4(Ipp32u dir)
     } \
     else \
     { \
-        pStrength[block_num0] = (Ipp8u) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
-        pStrength[block_num1] = (Ipp8u) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
+        pStrength[block_num0] = (uint8_t) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
+        pStrength[block_num1] = (uint8_t) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
         iDeblockingFlag = 1; \
     } \
 }
 
 inline
-size_t H264SegmentDecoder::GetReferencePSlice(Ipp32s iMBNum, Ipp32s iBlockNum)
+size_t H264SegmentDecoder::GetReferencePSlice(int32_t iMBNum, int32_t iBlockNum)
 {
-    Ipp32s index;
+    int32_t index;
     size_t ref;
 
     // select reference index for current block
@@ -769,7 +769,7 @@ size_t H264SegmentDecoder::GetReferencePSlice(Ipp32s iMBNum, Ipp32s iBlockNum)
     {
         H264DecoderFrame **pRefPicList;
         H264DecoderMacroblockGlobalInfo *pMBInfo;
-        Ipp32s iNum = 0;
+        int32_t iNum = 0;
 
         // obtain reference list
         pMBInfo = m_gmbinfo->mbs + iMBNum;
@@ -788,27 +788,27 @@ size_t H264SegmentDecoder::GetReferencePSlice(Ipp32s iMBNum, Ipp32s iBlockNum)
 
     return ref;
 
-} // Ipp32s H264SegmentDecoder::GetReferencePSlice(Ipp32s iMBNum, Ipp32s iBlockNum)
+} // int32_t H264SegmentDecoder::GetReferencePSlice(int32_t iMBNum, int32_t iBlockNum)
 
-inline void H264SegmentDecoder::GetReferencesBCurMB(Ipp32s iBlockNum, size_t *pReferences)
+inline void H264SegmentDecoder::GetReferencesBCurMB(int32_t iBlockNum, size_t *pReferences)
 {
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
-        Ipp32s index = m_cur_mb.GetReferenceIndex(0, iBlockNum);
+        int32_t index = m_cur_mb.GetReferenceIndex(0, iBlockNum);
         pReferences[0] = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(GetReferenceField(m_pFields[0], index)) : (size_t)-1;
         index = m_cur_mb.GetReferenceIndex(1, iBlockNum);
         pReferences[1] = m_pRefPicList[1][index] ? m_pRefPicList[1][index]->DeblockPicID(GetReferenceField(m_pFields[1], index)) : (size_t)-1;
     }
     else
     {
-        Ipp32s index = m_cur_mb.GetReferenceIndex(0, iBlockNum);
+        int32_t index = m_cur_mb.GetReferenceIndex(0, iBlockNum);
         pReferences[0] = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(0) : (size_t)-1;
         index = m_cur_mb.GetReferenceIndex(1, iBlockNum);
         pReferences[1] = m_pRefPicList[1][index] ? m_pRefPicList[1][index]->DeblockPicID(0) : (size_t)-1;
     }
 }
 
-inline void H264SegmentDecoder::GetReferencesBSlice(Ipp32s iMBNum, Ipp32s iBlockNum, size_t *pReferences)
+inline void H264SegmentDecoder::GetReferencesBSlice(int32_t iMBNum, int32_t iBlockNum, size_t *pReferences)
 {
     H264DecoderMacroblockGlobalInfo *pMBInfo = m_gmbinfo->mbs + iMBNum;
 
@@ -818,7 +818,7 @@ inline void H264SegmentDecoder::GetReferencesBSlice(Ipp32s iMBNum, Ipp32s iBlock
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
         ReferenceFlags *pFields = m_pCurrentFrame->GetRefPicList(pMBInfo->slice_id, 0)->m_Flags;
-        Ipp32s index = GetReferenceIndex(m_gmbinfo, 0, iMBNum, iBlockNum);
+        int32_t index = GetReferenceIndex(m_gmbinfo, 0, iMBNum, iBlockNum);
         pReferences[0] = pRefPicList0[index] ? pRefPicList0[index]->DeblockPicID(GetReferenceField(pFields, index)) : (size_t)-1;
 
         pFields = m_pCurrentFrame->GetRefPicList(pMBInfo->slice_id, 1)->m_Flags;
@@ -827,19 +827,19 @@ inline void H264SegmentDecoder::GetReferencesBSlice(Ipp32s iMBNum, Ipp32s iBlock
     }
     else
     {
-        Ipp32s index = GetReferenceIndex(m_gmbinfo, 0, iMBNum, iBlockNum);
+        int32_t index = GetReferenceIndex(m_gmbinfo, 0, iMBNum, iBlockNum);
         pReferences[0] = pRefPicList0[index] ? pRefPicList0[index]->DeblockPicID(0) : (size_t)-1;
 
         index = GetReferenceIndex(m_gmbinfo, 1, iMBNum, iBlockNum);
         pReferences[1] = pRefPicList1[index] ? pRefPicList1[index]->DeblockPicID(0) : (size_t)-1;
     }
-} // Ipp32s H264SegmentDecoder::GetReferencesBSlice(Ipp32s iMBNum, Ipp32s iBlockNum, Ipp32s *pReferences)
+} // int32_t H264SegmentDecoder::GetReferencesBSlice(int32_t iMBNum, int32_t iBlockNum, int32_t *pReferences)
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Vert()
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
-    Ipp32s iDeblockingFlag = 0;
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
+    int32_t iDeblockingFlag = 0;
 
     //
     // precalculating of reference numbers of current macroblock.
@@ -853,7 +853,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Vert()
     //
     if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[VERTICAL_DEBLOCKING];
@@ -862,7 +862,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Vert()
         if (!IS_INTRA_MBTYPE((m_gmbinfo->mbs + nNeighbour)->mbtype))
         {
             H264DecoderMacroblockLocalInfo *pNeighbour;
-            Ipp32u uMask;
+            uint32_t uMask;
 
             // select neighbour
             pNeighbour = m_mbinfo.mbs + nNeighbour;
@@ -905,16 +905,16 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Vert()
 
 void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Horz()
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
-    Ipp32s iDeblockingFlag = 0;
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
+    int32_t iDeblockingFlag = 0;
 
     //
     // external edge
     //
     if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING];
@@ -923,7 +923,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Horz()
         if (!IS_INTRA_MBTYPE((m_gmbinfo->mbs + nNeighbour)->mbtype))
         {
             H264DecoderMacroblockLocalInfo *pNeighbour;
-            Ipp32u uMask;
+            uint32_t uMask;
 
             // select neighbour
             pNeighbour = m_mbinfo.mbs + nNeighbour;
@@ -972,18 +972,18 @@ void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Horz()
 
 } // void H264SegmentDecoder::PrepareDeblockingParametersPSlice16x16Horz()
 
-inline void H264SegmentDecoder::EvaluateStrengthExternal(Ipp32s cbp4x4_luma, Ipp32s nNeighbour, Ipp32s dir,
-    Ipp32s idx,
+inline void H264SegmentDecoder::EvaluateStrengthExternal(int32_t cbp4x4_luma, int32_t nNeighbour, int32_t dir,
+    int32_t idx,
     H264DecoderFrame **pNRefPicList0,
     ReferenceFlags *pNFields0,
     H264DecoderFrame **pNRefPicList1,
     ReferenceFlags *pNFields1)
 {
-    Ipp32s blkQ, blkP;
-    Ipp32s blkQ2, blkP2;
+    int32_t blkQ, blkP;
+    int32_t blkQ2, blkP2;
 
     H264DecoderMacroblockLocalInfo *pNeighbour = &m_mbinfo.mbs[nNeighbour];
-    Ipp32s nBlock, nNeighbourBlock;
+    int32_t nBlock, nNeighbourBlock;
 
     blkQ = EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx];
     blkP = EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx];
@@ -1025,7 +1025,7 @@ inline void H264SegmentDecoder::EvaluateStrengthExternal(Ipp32s cbp4x4_luma, Ipp
     // field coded image
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
-        Ipp32s index;
+        int32_t index;
 
         // select reference index for previous block
         index = GetReferenceIndex(m_gmbinfo, 0, nNeighbour, nNeighbourBlock);
@@ -1036,7 +1036,7 @@ inline void H264SegmentDecoder::EvaluateStrengthExternal(Ipp32s cbp4x4_luma, Ipp
     // frame coded image
     else
     {
-        Ipp32s index;
+        int32_t index;
         // select reference index for previous block
         index = GetReferenceIndex(m_gmbinfo, 0, nNeighbour, nNeighbourBlock);
         iRefPFrw = pNRefPicList0[index] ? pNRefPicList0[index]->DeblockPicID(0) : (size_t)-1;
@@ -1159,21 +1159,21 @@ inline void H264SegmentDecoder::EvaluateStrengthExternal(Ipp32s cbp4x4_luma, Ipp
     // when reference indexes are different
     else
     {
-        m_deblockingParams.Strength[dir][idx] = (Ipp8u) (1 + (is_first ? 1 : 0));
-        m_deblockingParams.Strength[dir][idx + 1] = (Ipp8u) (1 + (is_second ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx] = (uint8_t) (1 + (is_first ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx + 1] = (uint8_t) (1 + (is_second ? 1 : 0));
         m_deblockingParams.DeblockingFlag[dir] = 1;
     }
 }
 
-inline void H264SegmentDecoder::foo_internal(Ipp32s dir,
-    Ipp32s idx, Ipp32u cbp4x4_luma)
+inline void H264SegmentDecoder::foo_internal(int32_t dir,
+    int32_t idx, uint32_t cbp4x4_luma)
 {
     size_t iRefQFrw, iRefQBck, iRefPFrw, iRefPBck;
 
-    Ipp32s nBlock, nNeighbourBlock;
+    int32_t nBlock, nNeighbourBlock;
 
-    Ipp32s blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
-    Ipp32s blkQ2 = INTERNAL_BLOCKS_MASK[dir][idx - 3];
+    int32_t blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
+    int32_t blkQ2 = INTERNAL_BLOCKS_MASK[dir][idx - 3];
 
     if ((cbp4x4_luma & blkQ) && (cbp4x4_luma & blkQ2))
     {
@@ -1198,7 +1198,7 @@ inline void H264SegmentDecoder::foo_internal(Ipp32s dir,
     // field coded image
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
-        Ipp32s index;
+        int32_t index;
 
         // select forward reference index for blocks
         index = m_cur_mb.GetReferenceIndex(0, nBlock);
@@ -1214,7 +1214,7 @@ inline void H264SegmentDecoder::foo_internal(Ipp32s dir,
     }
     else  // frame coded image
     {
-        Ipp32s index;
+        int32_t index;
 
         index = m_cur_mb.GetReferenceIndex(0, nBlock);
         iRefQFrw = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(0) : (size_t)-1;
@@ -1348,15 +1348,15 @@ inline void H264SegmentDecoder::foo_internal(Ipp32s dir,
     // when reference indexes are different
     else
     {
-        m_deblockingParams.Strength[dir][idx] = (Ipp8u) (1 + ((cbp4x4_luma & blkQ) ? 1 : 0));
-        m_deblockingParams.Strength[dir][idx + 1] = (Ipp8u) (1 + ((cbp4x4_luma & blkQ2) ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx] = (uint8_t) (1 + ((cbp4x4_luma & blkQ) ? 1 : 0));
+        m_deblockingParams.Strength[dir][idx + 1] = (uint8_t) (1 + ((cbp4x4_luma & blkQ2) ? 1 : 0));
         m_deblockingParams.DeblockingFlag[dir] = 1;
     }
 }
 
-inline Ipp8u H264SegmentDecoder::EvaluateStrengthInternal(Ipp32s dir, Ipp32s idx)
+inline uint8_t H264SegmentDecoder::EvaluateStrengthInternal(int32_t dir, int32_t idx)
 {
-    Ipp32s nBlock, nNeighbourBlock;
+    int32_t nBlock, nNeighbourBlock;
 
     // calc block and neighbour block number
     if (VERTICAL_DEBLOCKING == dir)
@@ -1429,9 +1429,9 @@ inline Ipp8u H264SegmentDecoder::EvaluateStrengthInternal(Ipp32s dir, Ipp32s idx
     }
 }
 
-inline Ipp8u H264SegmentDecoder::EvaluateStrengthInternal8x8(Ipp32s dir, Ipp32s idx)
+inline uint8_t H264SegmentDecoder::EvaluateStrengthInternal8x8(int32_t dir, int32_t idx)
 {
-    Ipp32s nBlock, nNeighbourBlock;
+    int32_t nBlock, nNeighbourBlock;
 
     // calc block and neighbour block number
     if (VERTICAL_DEBLOCKING == dir)
@@ -1489,9 +1489,9 @@ inline void H264SegmentDecoder::GetReferencesB8x8()
     // field coded image
     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
     {
-        for (Ipp32s i = 0; i < 4; i++)
+        for (int32_t i = 0; i < 4; i++)
         {
-            Ipp32s index = m_cur_mb.GetRefIdx(0, i);
+            int32_t index = m_cur_mb.GetRefIdx(0, i);
             m_deblockingParams.iReferences[i][0] = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(GetReferenceField(m_pFields[0], index)) : (size_t)-1;
 
             // select backward reference index for blocks
@@ -1501,9 +1501,9 @@ inline void H264SegmentDecoder::GetReferencesB8x8()
     }
     else  // frame coded image
     {
-        for (Ipp32s i = 0; i < 4; i++)
+        for (int32_t i = 0; i < 4; i++)
         {
-            Ipp32s index;
+            int32_t index;
 
             index = m_cur_mb.GetRefIdx(0, i);
             m_deblockingParams.iReferences[i][0] = m_pRefPicList[0][index] ? m_pRefPicList[0][index]->DeblockPicID(0) : (size_t)-1;
@@ -1514,9 +1514,9 @@ inline void H264SegmentDecoder::GetReferencesB8x8()
     }
 }
 
-inline void H264SegmentDecoder::SetStrength(Ipp32s dir, Ipp32s block_num, Ipp32u cbp4x4_luma, Ipp8u strength)
+inline void H264SegmentDecoder::SetStrength(int32_t dir, int32_t block_num, uint32_t cbp4x4_luma, uint8_t strength)
 {
-    Ipp32s blkQ = INTERNAL_BLOCKS_MASK[dir][block_num - 4];
+    int32_t blkQ = INTERNAL_BLOCKS_MASK[dir][block_num - 4];
     if (cbp4x4_luma & blkQ)
     {
         m_deblockingParams.Strength[dir][block_num] = 2;
@@ -1530,9 +1530,9 @@ inline void H264SegmentDecoder::SetStrength(Ipp32s dir, Ipp32s block_num, Ipp32u
 
 void H264SegmentDecoder::PrepareStrengthsInternal()
 {
-    Ipp32s mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
+    int32_t mbtype = m_cur_mb.GlobalMacroblockInfo->mbtype;
 
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
 
     switch (mbtype)
     {
@@ -1541,7 +1541,7 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
     case MBTYPE_BACKWARD:
     case MBTYPE_BIDIR:
         {
-            for (Ipp32s i = 4; i < 16; i++)
+            for (int32_t i = 4; i < 16; i++)
             {
                 SetStrength(VERTICAL_DEBLOCKING, i, cbp4x4_luma, 0);
                 SetStrength(HORIZONTAL_DEBLOCKING, i, cbp4x4_luma, 0);
@@ -1552,13 +1552,13 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
     case MBTYPE_INTER_8x16:
     case MBTYPE_INTER_16x8:
         {
-            for (Ipp32s i = 4; i < 8; i++)
+            for (int32_t i = 4; i < 8; i++)
             {
                 SetStrength(VERTICAL_DEBLOCKING, i, cbp4x4_luma, 0);
                 SetStrength(HORIZONTAL_DEBLOCKING, i, cbp4x4_luma, 0);
             }
 
-            Ipp8u strength_horz = 0, strength_vert = 0;
+            uint8_t strength_horz = 0, strength_vert = 0;
 
             if (mbtype == MBTYPE_INTER_8x16)
             {
@@ -1569,13 +1569,13 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
                 strength_horz = EvaluateStrengthInternal(HORIZONTAL_DEBLOCKING, 8);
             }
 
-            for (Ipp32s i = 8; i < 12; i++)
+            for (int32_t i = 8; i < 12; i++)
             {
                 SetStrength(VERTICAL_DEBLOCKING, i, cbp4x4_luma, strength_vert);
                 SetStrength(HORIZONTAL_DEBLOCKING, i, cbp4x4_luma, strength_horz);
             }
 
-            for (Ipp32s i = 12; i < 16; i++)
+            for (int32_t i = 12; i < 16; i++)
             {
                 SetStrength(VERTICAL_DEBLOCKING, i, cbp4x4_luma, 0);
                 SetStrength(HORIZONTAL_DEBLOCKING, i, cbp4x4_luma, 0);
@@ -1587,9 +1587,9 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
     case MBTYPE_INTER_8x8_REF0:
     default:
         {
-            Ipp8u strength;
+            uint8_t strength;
 
-            for (Ipp32s i = 8; i < 10; i++)
+            for (int32_t i = 8; i < 10; i++)
             {
                 strength = EvaluateStrengthInternal(VERTICAL_DEBLOCKING, i);
                 SetStrength(VERTICAL_DEBLOCKING, i, cbp4x4_luma, strength);
@@ -1597,7 +1597,7 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
                 SetStrength(HORIZONTAL_DEBLOCKING, i, cbp4x4_luma, strength);
             }
 
-            for (Ipp32s i = 10; i < 12; i++)
+            for (int32_t i = 10; i < 12; i++)
             {
                 strength = EvaluateStrengthInternal(VERTICAL_DEBLOCKING, i);
                 SetStrength(VERTICAL_DEBLOCKING, i, cbp4x4_luma, strength);
@@ -1605,11 +1605,11 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
                 SetStrength(HORIZONTAL_DEBLOCKING, i, cbp4x4_luma, strength);
             }
 
-            for (Ipp32s i = 0; i < 4; i++)
+            for (int32_t i = 0; i < 4; i++)
             {
-                Ipp32s start_8x8 = subblock_block_mapping[i];
-                Ipp32s start_block = start_8x8 + 4;
-                Ipp32s start_block_vertical = VERTICAL_DEBLOCKING_BLOCKS_MAP[start_8x8 + 1];
+                int32_t start_8x8 = subblock_block_mapping[i];
+                int32_t start_block = start_8x8 + 4;
+                int32_t start_block_vertical = VERTICAL_DEBLOCKING_BLOCKS_MAP[start_8x8 + 1];
                 switch (m_cur_mb.GlobalMacroblockInfo->sbtype[i])
                 {
                 case SBTYPE_8x8:
@@ -1663,11 +1663,11 @@ void H264SegmentDecoder::PrepareStrengthsInternal()
     }
 }
 
-void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
+void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(uint32_t dir)
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[dir];
-    Ipp32s *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[dir];
+    int32_t *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
 
     GetReferencesB8x8();
 
@@ -1676,7 +1676,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     //
     if (m_deblockingParams.ExternalEdgeFlag[dir])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[dir];
@@ -1684,7 +1684,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
         // when neighbour macroblock isn't intra
         if (!IS_INTRA_MBTYPE(m_gmbinfo->mbs[nNeighbour].mbtype))
         {
-            Ipp32s idx;
+            int32_t idx;
 
             H264DecoderFrame **pNRefPicList0 = m_pCurrentFrame->GetRefPicList(m_gmbinfo->mbs[nNeighbour].slice_id, 0)->m_RefPicList;
             ReferenceFlags *pNFields0 = m_pCurrentFrame->GetRefPicList(m_gmbinfo->mbs[nNeighbour].slice_id, 0)->m_Flags;
@@ -1716,7 +1716,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     }
 
 #if 1
-    // static Ipp8u temp[2][160];
+    // static uint8_t temp[2][160];
 
     if (dir == VERTICAL_DEBLOCKING)
     {
@@ -1737,11 +1737,11 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     // internal edge(s)
     //
     {
-        Ipp32s idx;
+        int32_t idx;
 
         /*for (idx = 4; idx < 16; idx += 1)
         {
-            Ipp32s blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
+            int32_t blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
             if (cbp4x4_luma & blkQ)
             {
                 m_deblockingParams.Strength[dir][idx] = 2;
@@ -1762,7 +1762,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
         }
     }
 
-    /*for (Ipp32s i = 4; i < 16; i++)
+    /*for (int32_t i = 4; i < 16; i++)
     {
         if (temp[dir][i] != m_deblockingParams.Strength[dir][i])
         {
@@ -1773,7 +1773,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     }*/
 #endif
 
-} // void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
+} // void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(uint32_t dir)
 
 #define SET_DEBLOCKING_STRENGTH_B_SLICE_VERTICAL(block_num0, block_num1) \
 { \
@@ -1869,8 +1869,8 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     } \
     else \
     { \
-        pStrength[block_num0] = (Ipp8u) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
-        pStrength[block_num1] = (Ipp8u) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
+        pStrength[block_num0] = (uint8_t) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
+        pStrength[block_num1] = (uint8_t) (1 + ((VERTICAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
         iDeblockingFlag = 1; \
     } \
 }
@@ -1970,17 +1970,17 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice4(Ipp32u dir)
     } \
     else \
     { \
-        pStrength[block_num0] = (Ipp8u) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
-        pStrength[block_num1] = (Ipp8u) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
+        pStrength[block_num0] = (uint8_t) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num0 & uMask) ? (1) : (0))); \
+        pStrength[block_num1] = (uint8_t) (1 + ((HORIZONTAL_OUTER_EDGE_BLOCK_##block_num1 & uMask) ? (1) : (0))); \
         iDeblockingFlag = 1; \
     } \
 }
 
 void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Vert()
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
-    Ipp32s iDeblockingFlag = 0;
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[VERTICAL_DEBLOCKING];
+    int32_t iDeblockingFlag = 0;
 
     //
     // precalculating of reference numbers of current macroblock.
@@ -1994,7 +1994,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Vert()
     //
     if (m_deblockingParams.ExternalEdgeFlag[VERTICAL_DEBLOCKING])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[VERTICAL_DEBLOCKING];
@@ -2006,7 +2006,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Vert()
             H264DecoderMacroblockLocalInfo *pNeighbour = &m_mbinfo.mbs[nNeighbour];
 
             // create special mask
-            Ipp32u uMask = cbp4x4_luma | (pNeighbour->cbp4x4_luma >> 5);
+            uint32_t uMask = cbp4x4_luma | (pNeighbour->cbp4x4_luma >> 5);
 
             // when at least one from a couple of blocks has coeffs
             if (VERTICAL_OUTER_EDGE_MASK != (uMask & VERTICAL_OUTER_EDGE_MASK))
@@ -2045,16 +2045,16 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Vert()
 
 void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Horz()
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
-    Ipp32s iDeblockingFlag = 0;
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[HORIZONTAL_DEBLOCKING];
+    int32_t iDeblockingFlag = 0;
 
     //
     // external edge
     //
     if (m_deblockingParams.ExternalEdgeFlag[HORIZONTAL_DEBLOCKING])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[HORIZONTAL_DEBLOCKING];
@@ -2066,7 +2066,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Horz()
             H264DecoderMacroblockLocalInfo *pNeighbour = &m_mbinfo.mbs[nNeighbour];
 
             // create special mask
-            Ipp32u uMask = cbp4x4_luma | (pNeighbour->cbp4x4_luma >> 10);
+            uint32_t uMask = cbp4x4_luma | (pNeighbour->cbp4x4_luma >> 10);
 
             // when at least one from a couple of blocks has coeffs
             if (HORIZONTAL_OUTER_EDGE_MASK != (uMask & HORIZONTAL_OUTER_EDGE_MASK))
@@ -2111,11 +2111,11 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Horz()
 
 } // void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x16Horz()
 
-void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
+void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(uint32_t dir)
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[dir];
-    Ipp32s *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[dir];
+    int32_t *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
     size_t iRefQFrw, iRefQBck;
 
     //
@@ -2128,7 +2128,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
         if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
         {
             H264DecoderFrame **pRefPicList;
-            Ipp32s index;
+            int32_t index;
             ReferenceFlags *pFields;
 
             // select reference index for current block
@@ -2157,7 +2157,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
         else
         {
             H264DecoderFrame **pRefPicList;
-            Ipp32s index;
+            int32_t index;
 
             // select reference index for current block
             index = m_cur_mb.GetRefIdx(0, 0);
@@ -2185,7 +2185,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
     // prepare deblocking parameter for external edge
     if (m_deblockingParams.ExternalEdgeFlag[dir])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[dir];
@@ -2194,7 +2194,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
         if (!IS_INTRA_MBTYPE((m_gmbinfo->mbs + nNeighbour)->mbtype))
         {
             H264DecoderMacroblockLocalInfo *pNeighbour;
-            Ipp32s idx;
+            int32_t idx;
 
             // select neighbour
             pNeighbour = m_mbinfo.mbs + nNeighbour;
@@ -2202,7 +2202,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
             // cicle on blocks
             for (idx = 0;idx < 4;idx += 1)
             {
-                Ipp32s blkQ, blkP;
+                int32_t blkQ, blkP;
 
                 blkQ = EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx];
                 blkP = EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx];
@@ -2217,7 +2217,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
                 // compare motion vectors & reference indexes
                 else
                 {
-                    Ipp32s nNeighbourBlock;
+                    int32_t nNeighbourBlock;
                     size_t iRefPFrw, iRefPBck;
 
                     // calc block and neighbour block number
@@ -2230,7 +2230,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
                     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
                     {
                         H264DecoderFrame **pRefPicList;
-                        Ipp32s index;
+                        int32_t index;
                         ReferenceFlags *pFields;
 
                         // select reference index for previous block
@@ -2259,7 +2259,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
                     else
                     {
                         H264DecoderFrame **pRefPicList;
-                        Ipp32s index;
+                        int32_t index;
 
                         // select reference index for previous block
                         index = GetReferenceIndex(m_gmbinfo, 0, nNeighbour, nNeighbourBlock);
@@ -2355,12 +2355,12 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
     // internal edge(s)
     //
     {
-        Ipp32s idx;
+        int32_t idx;
 
         // cicle of edge(s)
         for (idx = 4;idx < 8;idx += 1)
         {
-            Ipp32s blkQ;
+            int32_t blkQ;
 
             blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
 
@@ -2377,7 +2377,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
         // load reference indexes & motion vector for second half of current block
         {
             size_t iRefQFrw2, iRefQBck2;
-            Ipp32u nStrength;
+            uint32_t nStrength;
 
             // load reference indexes for current block
 
@@ -2385,7 +2385,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
             if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
             {
                 H264DecoderFrame **pRefPicList;
-                Ipp32s index;
+                int32_t index;
                 ReferenceFlags *pFields;
 
                 // select reference index for current block
@@ -2414,7 +2414,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
             else
             {
                 H264DecoderFrame **pRefPicList;
-                Ipp32s index;
+                int32_t index;
 
                 // select reference index for current block
                 index = m_cur_mb.GetRefIdx(0, 3);
@@ -2492,7 +2492,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
             // cicle of edge(s)
             for (idx = 8;idx < 12;idx += 1)
             {
-                Ipp32s blkQ;
+                int32_t blkQ;
 
                 blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
 
@@ -2503,14 +2503,14 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
                 }
                 // we have compared motion vectors
                 else
-                    pStrength[idx] = (Ipp8u) nStrength;
+                    pStrength[idx] = (uint8_t) nStrength;
             }
         }
 
         // cicle of edge(s)
         for (idx = 12;idx < 16;idx += 1)
         {
-            Ipp32s blkQ;
+            int32_t blkQ;
 
             blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
 
@@ -2525,20 +2525,20 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
         }
     }
 
-} // void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(Ipp32u dir)
+} // void H264SegmentDecoder::PrepareDeblockingParametersBSlice16x8(uint32_t dir)
 
-void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
+void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(uint32_t dir)
 {
-    Ipp32u cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
-    Ipp8u *pStrength = m_deblockingParams.Strength[dir];
-    Ipp32s *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
+    uint32_t cbp4x4_luma = m_cur_mb.LocalMacroblockInfo->cbp4x4_luma;
+    uint8_t *pStrength = m_deblockingParams.Strength[dir];
+    int32_t *pDeblockingFlag = &(m_deblockingParams.DeblockingFlag[dir]);
 
     //
     // external edge
     //
     if (m_deblockingParams.ExternalEdgeFlag[dir])
     {
-        Ipp32s nNeighbour;
+        int32_t nNeighbour;
 
         // select neighbour addres
         nNeighbour = m_deblockingParams.nNeighbour[dir];
@@ -2547,7 +2547,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
         if (!IS_INTRA_MBTYPE((m_gmbinfo->mbs + nNeighbour)->mbtype))
         {
             H264DecoderMacroblockLocalInfo *pNeighbour;
-            Ipp32s idx;
+            int32_t idx;
             size_t iRefQFrw[2], iRefQBck[2];
             H264DecoderMotionVector *(pVectorQFrw[2]), *(pVectorQBck[2]);
 
@@ -2561,7 +2561,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
                 if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
                 {
                     H264DecoderFrame **pRefPicList;
-                    Ipp32s index;
+                    int32_t index;
                     ReferenceFlags *pFields;
 
                     // select reference index for current block
@@ -2590,7 +2590,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
                 else
                 {
                     H264DecoderFrame **pRefPicList;
-                    Ipp32s index;
+                    int32_t index;
 
                     // select reference index for current block
                     index = m_cur_mb.GetReferenceIndex(0, idx * 16 - idx);
@@ -2622,7 +2622,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
             // cicle on blocks
             for (idx = 0;idx < 4;idx += 1)
             {
-                Ipp32s blkQ, blkP;
+                int32_t blkQ, blkP;
 
                 blkQ = EXTERNAL_BLOCK_MASK[dir][CURRENT_BLOCK][idx];
                 blkP = EXTERNAL_BLOCK_MASK[dir][NEIGHBOUR_BLOCK][idx];
@@ -2637,7 +2637,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
                 // compare motion vectors & reference indexes
                 else
                 {
-                    Ipp32s nNeighbourBlock;
+                    int32_t nNeighbourBlock;
                     size_t iRefPFrw, iRefPBck;
 
                     // calc block and neighbour block number
@@ -2650,7 +2650,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
                     if (FRM_STRUCTURE > m_pCurrentFrame->m_PictureStructureForDec)
                     {
                         H264DecoderFrame **pRefPicList;
-                        Ipp32s index;
+                        int32_t index;
                         ReferenceFlags *pFields;
 
                         // select reference index for previous block
@@ -2679,7 +2679,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
                     else
                     {
                         H264DecoderFrame **pRefPicList;
-                        Ipp32s index;
+                        int32_t index;
 
                         // select reference index for previous block
                         index = GetReferenceIndex(m_gmbinfo, 0, nNeighbour, nNeighbourBlock);
@@ -2780,7 +2780,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
     // internal edge(s)
     //
     {
-        Ipp32s idx;
+        int32_t idx;
 
         // reset all strengths
         SetEdgeStrength(pStrength + 4, 0);
@@ -2795,7 +2795,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
         // we do all edges in one cicle
         for (idx = 4;idx < 16;idx += 1)
         {
-            Ipp32s blkQ;
+            int32_t blkQ;
 
             blkQ = INTERNAL_BLOCKS_MASK[dir][idx - 4];
 
@@ -2804,7 +2804,7 @@ void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
         }
     }
 
-} // void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(Ipp32u dir)
+} // void H264SegmentDecoder::PrepareDeblockingParametersBSlice8x16(uint32_t dir)
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

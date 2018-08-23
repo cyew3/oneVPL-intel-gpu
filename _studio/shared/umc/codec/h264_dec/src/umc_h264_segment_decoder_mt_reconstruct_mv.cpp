@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,7 +17,7 @@
 namespace UMC
 {
 
-void H264SegmentDecoderMultiThreaded::ResetMVs16x16(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ResetMVs16x16(int32_t iListNum)
 {
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
 
@@ -27,10 +27,10 @@ void H264SegmentDecoderMultiThreaded::ResetMVs16x16(Ipp32s iListNum)
 
     memset(pMV, 0, 16 * sizeof(H264DecoderMotionVector));
 
-} // void H264SegmentDecoderMultiThreaded::ResetMVs16x16(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ResetMVs16x16(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ResetMVs16x8(Ipp32s iListNum,
-                                                   Ipp32s iVectorOffset)
+void H264SegmentDecoderMultiThreaded::ResetMVs16x8(int32_t iListNum,
+                                                   int32_t iVectorOffset)
 {
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors +
                                    iVectorOffset;
@@ -41,10 +41,10 @@ void H264SegmentDecoderMultiThreaded::ResetMVs16x8(Ipp32s iListNum,
 
     memset(pMV, 0, 8 * sizeof(H264DecoderMotionVector));
 
-} // void H264SegmentDecoderMultiThreaded::ResetMVs16x8(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ResetMVs16x8(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ResetMVs8x16(Ipp32s iListNum,
-                                                   Ipp32s iVectorOffset)
+void H264SegmentDecoderMultiThreaded::ResetMVs8x16(int32_t iListNum,
+                                                   int32_t iVectorOffset)
 {
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors +
                                    iVectorOffset;
@@ -55,10 +55,10 @@ void H264SegmentDecoderMultiThreaded::ResetMVs8x16(Ipp32s iListNum,
 
     memset(pMV, 0, 2 * sizeof(H264DecoderMotionVector));
 
-} // void H264SegmentDecoderMultiThreaded::ResetMVs8x16(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ResetMVs8x16(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ResetMVs8x8(Ipp32s iListNum,
-                                                  Ipp32s iVectorOffset)
+void H264SegmentDecoderMultiThreaded::ResetMVs8x8(int32_t iListNum,
+                                                  int32_t iVectorOffset)
 {
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors +
                                    iVectorOffset;
@@ -70,9 +70,9 @@ void H264SegmentDecoderMultiThreaded::ResetMVs8x8(Ipp32s iListNum,
     memset(pMV, 0, 2 * sizeof(H264DecoderMotionVector));
     memset(pMV + 4, 0, 2 * sizeof(H264DecoderMotionVector));
 
-} // void H264SegmentDecoderMultiThreaded::ResetMVs8x8(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ResetMVs8x8(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::CopyMVs8x16(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::CopyMVs8x16(int32_t iListNum)
 {
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
 
@@ -84,9 +84,9 @@ void H264SegmentDecoderMultiThreaded::CopyMVs8x16(Ipp32s iListNum)
     MFX_INTERNAL_CPY(pMV + 8, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
     MFX_INTERNAL_CPY(pMV + 12, pMV + 0, 4 * sizeof(H264DecoderMotionVector));
 
-} // void H264SegmentDecoderMultiThreaded::CopyMVs8x16(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::CopyMVs8x16(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
 
@@ -104,12 +104,12 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(Ipp32s iListNum)
 #endif // __ICL
 
         {
-            Ipp32s i;
+            int32_t i;
             H264DecoderMotionVector mv;
 
             // calculate new vector
-            mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-            mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+            mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+            mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
             if (mv.mvy > m_MVDistortion[iListNum])
                 m_MVDistortion[iListNum] = mv.mvy;
@@ -119,10 +119,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(Ipp32s iListNum)
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs16x16(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(Ipp32s iListNum,
-                                                         Ipp32s iSubBlockNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(int32_t iListNum,
+                                                         int32_t iSubBlockNum)
 {
     H264DecoderMotionVector mvPred;
 
@@ -142,12 +142,12 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(Ipp32s iListNum,
 #endif // __ICL
 
         {
-            Ipp32s i;
+            int32_t i;
             H264DecoderMotionVector mv;
 
             // calculate new vector
-            mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-            mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+            mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+            mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
             if (mv.mvy > m_MVDistortion[iListNum])
                 m_MVDistortion[iListNum] = mv.mvy;
@@ -157,10 +157,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(Ipp32s iListNum,
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs16x8(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(Ipp32s iListNum,
-                                                         Ipp32s iSubBlockNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(int32_t iListNum,
+                                                         int32_t iSubBlockNum)
 {
     H264DecoderMotionVector mvPred;
 
@@ -183,8 +183,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(Ipp32s iListNum,
             H264DecoderMotionVector mv;
 
             // calculate new vector
-            mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-            mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+            mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+            mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
             if (mv.mvy > m_MVDistortion[iListNum])
                 m_MVDistortion[iListNum] = mv.mvy;
@@ -194,11 +194,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(Ipp32s iListNum,
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x16(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVsExternal(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVsExternal(int32_t iListNum)
 {
-    Ipp8s *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
+    int8_t *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
 
     switch (pSBType[0])
     {
@@ -229,11 +229,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVsExternal(Ipp32s iListNum)
         break;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVsExternal(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVsExternal(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVsTop(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVsTop(int32_t iListNum)
 {
-    Ipp8s *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
+    int8_t *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
 
     switch (pSBType[1])
     {
@@ -264,11 +264,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVsTop(Ipp32s iListNum)
         break;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVsTop(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVsTop(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVsLeft(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVsLeft(int32_t iListNum)
 {
-    Ipp8s *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
+    int8_t *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
 
     switch (pSBType[2])
     {
@@ -299,11 +299,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVsLeft(Ipp32s iListNum)
         break;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVsLeft(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVsLeft(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVsInternal(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVsInternal(int32_t iListNum)
 {
-    Ipp8s *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
+    int8_t *pSBType = m_cur_mb.GlobalMacroblockInfo->sbtype;
 
     switch (pSBType[3])
     {
@@ -334,9 +334,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVsInternal(Ipp32s iListNum)
         break;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVsInternal(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVsInternal(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -363,8 +363,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -375,9 +375,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(Ipp32s iListNum)
         pMV[5] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8External(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -400,8 +400,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[2].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[2].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[2].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[2].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -412,9 +412,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(Ipp32s iListNum)
         pMV[7] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Top(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -438,8 +438,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[8].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[8].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[8].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[8].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -450,9 +450,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(Ipp32s iListNum)
         pMV[13] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Left(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -470,8 +470,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[10].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[10].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[10].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[10].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -482,9 +482,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(Ipp32s iListNum)
         pMV[15] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x8Internal(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderBlockLocation mbAddrC;
@@ -508,8 +508,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -518,9 +518,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(Ipp32s iListNum)
         pMV[1] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4External(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -543,8 +543,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[2].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[2].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[2].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[2].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -553,10 +553,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(Ipp32s iListNum)
         pMV[3] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Top(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(Ipp32s iListNum,
-                                                            Ipp32s iRowNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(int32_t iListNum,
+                                                            int32_t iRowNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -585,8 +585,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iRowNum * 4].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iRowNum * 4].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iRowNum * 4].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iRowNum * 4].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -595,10 +595,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(Ipp32s iListNum,
         pMV[iRowNum * 4 + 1] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Left(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(Ipp32s iListNum,
-                                                                Ipp32s iBlockNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(int32_t iListNum,
+                                                                int32_t iBlockNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -616,8 +616,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iBlockNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iBlockNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iBlockNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iBlockNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -626,9 +626,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(Ipp32s iListNum,
         pMV[iBlockNum + 1] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs8x4Internal(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -655,8 +655,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -665,10 +665,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(Ipp32s iListNum)
         pMV[4] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8External(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(Ipp32s iListNum,
-                                                           Ipp32s iColumnNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(int32_t iListNum,
+                                                           int32_t iColumnNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -697,8 +697,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iColumnNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iColumnNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iColumnNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iColumnNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -707,9 +707,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(Ipp32s iListNum,
         pMV[iColumnNum + 4] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Top(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Left(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Left(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -727,8 +727,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Left(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[8].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[8].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[8].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[8].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -737,11 +737,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Left(Ipp32s iListNum)
         pMV[12] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8LeftFewCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8LeftFewCheckRef(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(Ipp32s iListNum,
-                                                                Ipp32s iBlockNum,
-                                                                Ipp32s iAddrC)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(int32_t iListNum,
+                                                                int32_t iBlockNum,
+                                                                int32_t iAddrC)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -759,8 +759,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iBlockNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iBlockNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iBlockNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iBlockNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -769,9 +769,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(Ipp32s iListNum,
         pMV[iBlockNum + 4] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x8Internal(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(Ipp32s iListNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(int32_t iListNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderBlockLocation mbAddrC;
@@ -795,8 +795,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(Ipp32s iListNum)
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[0].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[0].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[0].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[0].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -804,10 +804,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(Ipp32s iListNum)
         pMV[0] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(Ipp32s iListNum)
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4External(int32_t iListNum)
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(Ipp32s iListNum,
-                                                           Ipp32s iColumnNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(int32_t iListNum,
+                                                           int32_t iColumnNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -836,8 +836,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iColumnNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iColumnNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iColumnNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iColumnNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -845,10 +845,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(Ipp32s iListNum,
         pMV[iColumnNum] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Top(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Left(Ipp32s iListNum,
-                                                            Ipp32s iRowNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Left(int32_t iListNum,
+                                                            int32_t iRowNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -866,8 +866,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Left(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iRowNum * 4].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iRowNum * 4].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iRowNum * 4].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iRowNum * 4].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -875,11 +875,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Left(Ipp32s iListNum,
         pMV[iRowNum * 4] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4LeftFewCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4LeftFewCheckRef(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(Ipp32s iListNum,
-                                                                Ipp32s iBlockNum,
-                                                                Ipp32s iAddrC)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(int32_t iListNum,
+                                                                int32_t iBlockNum,
+                                                                int32_t iAddrC)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -897,8 +897,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(Ipp32s iListNum,
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iBlockNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iBlockNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iBlockNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iBlockNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -906,11 +906,11 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(Ipp32s iListNum,
         pMV[iBlockNum] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4Internal(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(Ipp32s iListNum,
-                                                                           Ipp32s iBlockNum,
-                                                                           Ipp32s iAddrC)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(int32_t iListNum,
+                                                                           int32_t iBlockNum,
+                                                                           int32_t iAddrC)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -928,8 +928,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(Ipp32
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iBlockNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iBlockNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iBlockNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iBlockNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -937,10 +937,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(Ipp32
         pMV[iBlockNum] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalFewCheckRef(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(Ipp32s iListNum,
-                                                                          Ipp32s iBlockNum)
+void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(int32_t iListNum,
+                                                                          int32_t iBlockNum)
 {
     H264DecoderMotionVector mvPred;
     H264DecoderMotionVector *pMV = m_cur_mb.MVs[iListNum]->MotionVectors;
@@ -958,8 +958,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(Ipp32s
         H264DecoderMotionVector mv;
 
         // calculate new vector
-        mv.mvx = (Ipp16s) (mvPred.mvx + pMVd[iBlockNum].mvx);
-        mv.mvy = (Ipp16s) (mvPred.mvy + pMVd[iBlockNum].mvy);
+        mv.mvx = (int16_t) (mvPred.mvx + pMVd[iBlockNum].mvx);
+        mv.mvy = (int16_t) (mvPred.mvy + pMVd[iBlockNum].mvy);
 
         if (mv.mvy > m_MVDistortion[iListNum])
             m_MVDistortion[iListNum] = mv.mvy;
@@ -967,12 +967,12 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(Ipp32s
         pMV[iBlockNum] = mv;
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(int32_t iListNum,
 
 #define MEDIAN_OF_3(a, b, c) \
-    (Ipp16s) ((IPP_MIN((a),(b))) ^ (IPP_MIN((b),(c))) ^ (IPP_MIN((c),(a))))
+    (int16_t) ((MFX_MIN((a),(b))) ^ (MFX_MIN((b),(c))) ^ (MFX_MIN((c),(a))))
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(Ipp32s iListNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(int32_t iListNum,
                                                                           const H264DecoderBlockLocation &mbAddr,
                                                                           H264DecoderMotionVector *pPred)
 {
@@ -995,9 +995,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(Ipp32s
         // if one and only on of the reference indixes is equal to
         // the current reference index, use owning it partition
         {
-            Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
-            Ipp32s refIdxA, refIdxB, refIdxC;
-            Ipp32s iEqual;
+            int32_t curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
+            int32_t refIdxA, refIdxB, refIdxC;
+            int32_t iEqual;
 
             refIdxA = (-1 != mbAddrA.mb_num) ? (GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num)) : (-1);
             refIdxB = (-1 != mbAddrB.mb_num) ? (GetReferenceIndex(m_gmbinfo, iListNum, mbAddrB.mb_num, mbAddrB.block_num)) : (-1);
@@ -1036,9 +1036,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(Ipp32s
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(Ipp32s iListNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(int32_t iListNum,
                                                                                H264DecoderBlockLocation mbAddrC,
                                                                                H264DecoderMotionVector *pPred)
 {
@@ -1068,10 +1068,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(I
         // if one and only on of the reference indixes is equal to
         // the current reference index, use owning it partition
         {
-            Ipp32s curFldFlag = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-            Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
-            Ipp32s refIdxA, refIdxB, refIdxC;
-            Ipp32s iEqual;
+            int32_t curFldFlag = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+            int32_t curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
+            int32_t refIdxA, refIdxB, refIdxC;
+            int32_t iEqual;
 
             refIdxA = (-1 != mbAddrA.mb_num) ?
                       ((GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num) << curFldFlag) >> GetMBFieldDecodingFlag(m_gmbinfo->mbs[mbAddrA.mb_num])) :
@@ -1149,10 +1149,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(I
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlockMBAFF(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorTopBlock(Ipp32s iListNum,
-                                                                     Ipp32s iColumnNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorTopBlock(int32_t iListNum,
+                                                                     int32_t iColumnNum,
                                                                      H264DecoderBlockLocation mbAddrC,
                                                                      H264DecoderMotionVector *pPred)
 {
@@ -1178,9 +1178,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorTopBlock(Ipp32s iLis
         // if one and only on of the reference indixes is equal to
         // the current reference index, use owning it partition
         {
-            Ipp32s curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iColumnNum);
-            Ipp32s refIdxA, refIdxB, refIdxC;
-            Ipp32s iEqual;
+            int32_t curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iColumnNum);
+            int32_t refIdxA, refIdxB, refIdxC;
+            int32_t iEqual;
 
             refIdxA = m_cur_mb.GetReferenceIndex(iListNum, iColumnNum - 1);
             refIdxB = (-1 != mbAddrB.mb_num) ? (GetReferenceIndex(m_gmbinfo, iListNum, mbAddrB.mb_num, mbAddrB.block_num)) : (-1);
@@ -1219,10 +1219,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorTopBlock(Ipp32s iLis
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorTopBlock(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorTopBlock(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlock(Ipp32s iListNum,
-                                                                      Ipp32s iRowNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlock(int32_t iListNum,
+                                                                      int32_t iRowNum,
                                                                       H264DecoderBlockLocation mbAddrC,
                                                                       H264DecoderMotionVector *pPred)
 {
@@ -1236,9 +1236,9 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlock(Ipp32s iLi
     // if one and only on of the reference indixes is equal to
     // the current reference index, use owning it partition
     {
-        Ipp32s curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iRowNum * 4);
-        Ipp32s refIdxA, refIdxB, refIdxC;
-        Ipp32s iEqual;
+        int32_t curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iRowNum * 4);
+        int32_t refIdxA, refIdxB, refIdxC;
+        int32_t iEqual;
 
         refIdxA = (-1 != mbAddrA.mb_num) ? (GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num)) : (-1);
         refIdxB = m_cur_mb.GetReferenceIndex(iListNum, iRowNum * 4 - 4);
@@ -1275,10 +1275,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlock(Ipp32s iLi
         pPred->mvy = MEDIAN_OF_3(mvA.mvy, mvB.mvy, mvC.mvy);
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlock(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlock(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlockFewCheckRef(Ipp32s iListNum,
-                                                                                 Ipp32s iRowNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlockFewCheckRef(int32_t iListNum,
+                                                                                 int32_t iRowNum,
                                                                                  H264DecoderMotionVector *pPred)
 {
     H264DecoderBlockLocation mbAddrA;
@@ -1289,8 +1289,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlockFewCheckRef
     // if one and only on of the reference indixes is equal to
     // the current reference index, use owning it partition
     {
-        Ipp32s curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iRowNum * 4);
-        Ipp32s refIdxA, refIdxB;
+        int32_t curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iRowNum * 4);
+        int32_t refIdxA, refIdxB;
 
         refIdxA = (-1 != mbAddrA.mb_num) ? (GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num)) : (-1);
         refIdxB = m_cur_mb.GetReferenceIndex(iListNum, iRowNum * 4 - 4);
@@ -1319,19 +1319,19 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlockFewCheckRef
         pPred->mvy = MEDIAN_OF_3(mvA.mvy, mvB.mvy, mvC.mvy);
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlockFewCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorLeftBlockFewCheckRef(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlock(Ipp32s iListNum,
-                                                                          Ipp32s iBlockNum,
-                                                                          Ipp32s iAddrC,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlock(int32_t iListNum,
+                                                                          int32_t iBlockNum,
+                                                                          int32_t iAddrC,
                                                                           H264DecoderMotionVector *pPred)
 {
     // if one and only on of the reference indixes is equal to
     // the current reference index, use owning it partition
     {
-        Ipp32s curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum);
-        Ipp32s refIdxA, refIdxB, refIdxC;
-        Ipp32s iEqual;
+        int32_t curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum);
+        int32_t refIdxA, refIdxB, refIdxC;
+        int32_t iEqual;
 
         refIdxA = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum - 1);
         refIdxB = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum - 4);
@@ -1365,18 +1365,18 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlock(Ipp32s
         pPred->mvy = MEDIAN_OF_3(mvA.mvy, mvB.mvy, mvC.mvy);
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlock(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlock(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockFewCheckRef(Ipp32s iListNum,
-                                                                                     Ipp32s iBlockNum,
-                                                                                     Ipp32s iAddrC,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockFewCheckRef(int32_t iListNum,
+                                                                                     int32_t iBlockNum,
+                                                                                     int32_t iAddrC,
                                                                                      H264DecoderMotionVector *pPred)
 {
     // if one and only on of the reference indixes is equal to
     // the current reference index, use owning it partition
     {
-        Ipp32s curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum);
-        Ipp32s refIdxA, refIdxB;
+        int32_t curRefIdx = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum);
+        int32_t refIdxA, refIdxB;
 
         refIdxA = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum - 1);
         refIdxB = m_cur_mb.GetReferenceIndex(iListNum, iBlockNum - 4);
@@ -1401,10 +1401,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockFewChec
         pPred->mvy = MEDIAN_OF_3(mvA.mvy, mvB.mvy, mvC.mvy);
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockFewCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockFewCheckRef(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockNoCheckRef(Ipp32s iListNum,
-                                                                                    Ipp32s iBlockNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockNoCheckRef(int32_t iListNum,
+                                                                                    int32_t iBlockNum,
                                                                                     H264DecoderMotionVector *pPred)
 {
     H264DecoderMotionVector &mvA = m_cur_mb.GetMV(iListNum, iBlockNum - 1);
@@ -1414,16 +1414,16 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockNoCheck
     pPred->mvx = MEDIAN_OF_3(mvA.mvx, mvB.mvx, mvC.mvx);
     pPred->mvy = MEDIAN_OF_3(mvA.mvy, mvB.mvy, mvC.mvy);
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockNoCheckRef(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorInternalBlockNoCheckRef(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x16(Ipp32s iListNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x16(int32_t iListNum,
                                                                   H264DecoderMotionVector *pPred)
 {
     ReconstructMVPredictorExternalBlock(iListNum, m_cur_mb.CurrentBlockNeighbours.mb_above_right, pPred);
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x16(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x16(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(Ipp32s iListNum,
-                                                                 Ipp32s iSubBlockNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(int32_t iListNum,
+                                                                 int32_t iSubBlockNum,
                                                                  H264DecoderMotionVector *pPred)
 {
     // check the fast condition
@@ -1437,8 +1437,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(Ipp32s iListNum
 
             if (-1 != mbAddrB.mb_num)
             {
-                Ipp32s refIdxB = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrB.mb_num, mbAddrB.block_num);
-                Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
+                int32_t refIdxB = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrB.mb_num, mbAddrB.block_num);
+                int32_t curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
 
                 if (refIdxB == curRefIdx)
                 {
@@ -1463,8 +1463,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(Ipp32s iListNum
 
             if (-1 != mbAddrA.mb_num)
             {
-                Ipp32s refIdxA = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num);
-                Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 2);
+                int32_t refIdxA = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num);
+                int32_t curRefIdx = m_cur_mb.GetRefIdx(iListNum, 2);
 
                 if (refIdxA == curRefIdx)
                 {
@@ -1487,10 +1487,10 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(Ipp32s iListNum
         }
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor16x8(int32_t iListNum,
 
-void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(Ipp32s iListNum,
-                                                                 Ipp32s iSubBlockNum,
+void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(int32_t iListNum,
+                                                                 int32_t iSubBlockNum,
                                                                  H264DecoderMotionVector *pPred)
 {
     // check the fast condition
@@ -1504,8 +1504,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(Ipp32s iListNum
 
             if (-1 != mbAddrA.mb_num)
             {
-                Ipp32s refIdxA = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num);
-                Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
+                int32_t refIdxA = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrA.mb_num, mbAddrA.block_num);
+                int32_t curRefIdx = m_cur_mb.GetRefIdx(iListNum, 0);
 
                 if (refIdxA == curRefIdx)
                 {
@@ -1540,8 +1540,8 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(Ipp32s iListNum
 
         if (-1 != mbAddrC.mb_num)
         {
-            Ipp32s refIdxC = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrC.mb_num, mbAddrC.block_num);
-            Ipp32s curRefIdx = m_cur_mb.GetRefIdx(iListNum, 1);
+            int32_t refIdxC = GetReferenceIndex(m_gmbinfo, iListNum, mbAddrC.mb_num, mbAddrC.block_num);
+            int32_t curRefIdx = m_cur_mb.GetRefIdx(iListNum, 1);
 
             if (refIdxC == curRefIdx)
             {
@@ -1556,7 +1556,7 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(Ipp32s iListNum
                                        pPred);
     }
 
-} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(Ipp32s iListNum,
+} // void H264SegmentDecoderMultiThreaded::ReconstructMVPredictor8x16(int32_t iListNum,
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

@@ -5,10 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
-#include "ipps.h"
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
@@ -93,13 +92,13 @@ void H264Slice::Release()
     Reset();
 }
 
-Ipp32s H264Slice::RetrievePicParamSetNumber()
+int32_t H264Slice::RetrievePicParamSetNumber()
 {
     if (!m_pSource.GetDataSize())
         return -1;
 
     memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
-    m_BitStream.Reset((Ipp8u *) m_pSource.GetPointer(), (Ipp32u) m_pSource.GetDataSize());
+    m_BitStream.Reset((uint8_t *) m_pSource.GetPointer(), (uint32_t) m_pSource.GetDataSize());
 
     Status umcRes = UMC_OK;
 
@@ -128,10 +127,10 @@ void H264Slice::FreeResources()
 
 bool H264Slice::Reset(H264NalExtension *pNalExt)
 {
-    Ipp32s iMBInFrame;
-    Ipp32s iFieldIndex;
+    int32_t iMBInFrame;
+    int32_t iFieldIndex;
 
-    m_BitStream.Reset((Ipp8u *) m_pSource.GetPointer(), (Ipp32u) m_pSource.GetDataSize());
+    m_BitStream.Reset((uint8_t *) m_pSource.GetPointer(), (uint32_t) m_pSource.GetDataSize());
 
     // decode slice header
     if (m_pSource.GetDataSize() && false == DecodeSliceHeader(pNalExt))
@@ -181,7 +180,7 @@ bool H264Slice::Reset(H264NalExtension *pNalExt)
 
     return true;
 
-} // bool H264Slice::Reset(void *pSource, size_t nSourceSize, Ipp32s iNumber)
+} // bool H264Slice::Reset(void *pSource, size_t nSourceSize, int32_t iNumber)
 
 void H264Slice::SetSeqMVCParam(const H264SeqParamSetMVCExtension * sps)
 {
@@ -205,7 +204,7 @@ void H264Slice::SetSeqSVCParam(const H264SeqParamSetSVCExtension * sps)
         ((H264SeqParamSetSVCExtension*)temp)->DecrementReference();
 }
 
-void H264Slice::SetSliceNumber(Ipp32s iSliceNumber)
+void H264Slice::SetSliceNumber(int32_t iSliceNumber)
 {
     m_iNumber = iSliceNumber;
 }
@@ -222,7 +221,7 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
     // was read and saved from the first slice header of the picture,
     // is not supposed to change within the picture, so can be
     // discarded when read again here.
-    Ipp32s iSQUANT;
+    int32_t iSQUANT;
 
     try
     {
@@ -298,12 +297,12 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
             return false;
 
         // Set next MB.
-        if (m_SliceHeader.first_mb_in_slice >= (Ipp32s) (m_iMBWidth * m_iMBHeight))
+        if (m_SliceHeader.first_mb_in_slice >= (int32_t) (m_iMBWidth * m_iMBHeight))
         {
             return false;
         }
 
-        Ipp32s bit_depth_luma = m_SliceHeader.is_auxiliary ?
+        int32_t bit_depth_luma = m_SliceHeader.is_auxiliary ?
             GetSeqParamEx()->bit_depth_aux : GetSeqParam()->bit_depth_luma;
 
         iSQUANT = m_pPicParamSet->pic_init_qp +
@@ -314,7 +313,7 @@ bool H264Slice::DecodeSliceHeader(H264NalExtension *pNalExt)
             return false;
         }
 
-        m_SliceHeader.hw_wa_redundant_elimination_bits[2] = (Ipp32u)m_BitStream.BitsDecoded();
+        m_SliceHeader.hw_wa_redundant_elimination_bits[2] = (uint32_t)m_BitStream.BitsDecoded();
 
         if (m_pPicParamSet->entropy_coding_mode)
             m_BitStream.AlignPointerRight();

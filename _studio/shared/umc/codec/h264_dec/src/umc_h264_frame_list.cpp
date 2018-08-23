@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -185,7 +185,7 @@ bool H264DBPList::IsDisposableExist()
 
 bool H264DBPList::IsAlmostDisposableExist()
 {
-    Ipp32s count = 0;
+    int32_t count = 0;
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
         count++;
@@ -202,10 +202,10 @@ H264DecoderFrame * H264DBPList::findDisplayableByDPBDelay(void)
 {
     H264DecoderFrame *pCurr = m_pHead;
     H264DecoderFrame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32u  LargestRefPicListResetCount = 0;
+    int32_t  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
+    uint32_t  LargestRefPicListResetCount = 0;
 
-    Ipp32s count = 0;
+    int32_t count = 0;
     while (pCurr)
     {
         if (pCurr->IsFullFrame() && !pCurr->wasOutputted() && !pCurr->m_dpb_output_delay)
@@ -247,14 +247,14 @@ H264DecoderFrame * H264DBPList::findDisplayableByDPBDelay(void)
 // Search through the list for the oldest displayable frame. It must be
 // not disposable, not outputted, and have smallest PicOrderCnt.
 ///////////////////////////////////////////////////////////////////////////////
-H264DecoderFrame * H264DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
+H264DecoderFrame * H264DBPList::findOldestDisplayable(int32_t /*dbpSize*/ )
 {
     H264DecoderFrame *pCurr = m_pHead;
     H264DecoderFrame *pOldest = NULL;
-    Ipp32s  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
-    Ipp32u  LargestRefPicListResetCount = 0;
+    int32_t  SmallestPicOrderCnt = 0x7fffffff;    // very large positive
+    uint32_t  LargestRefPicListResetCount = 0;
 
-    Ipp32s count = 0;
+    int32_t count = 0;
     while (pCurr)
     {
         if (pCurr->IsFullFrame() && !pCurr->wasOutputted())
@@ -292,10 +292,10 @@ H264DecoderFrame * H264DBPList::findOldestDisplayable(Ipp32s /*dbpSize*/ )
 
 }    // findOldestDisplayable
 
-Ipp32u H264DBPList::countAllFrames()
+uint32_t H264DBPList::countAllFrames()
 {
     H264DecoderFrame *pCurr = head();
-    Ipp32u count = 0;
+    uint32_t count = 0;
 
     while (pCurr)
     {
@@ -306,10 +306,10 @@ Ipp32u H264DBPList::countAllFrames()
     return count;
 }
 
-Ipp32u H264DBPList::countNumDisplayable()
+uint32_t H264DBPList::countNumDisplayable()
 {
     H264DecoderFrame *pCurr = head();
-    Ipp32u NumDisplayable = 0;
+    uint32_t NumDisplayable = 0;
 
     while (pCurr)
     {
@@ -323,9 +323,9 @@ Ipp32u H264DBPList::countNumDisplayable()
 
 ///////////////////////////////////////////////////////////////////////////////
 // countActiveRefs
-//  Return number of active Ipp16s and long term reference frames.
+//  Return number of active int16_t and long term reference frames.
 ///////////////////////////////////////////////////////////////////////////////
-void H264DBPList::countActiveRefs(Ipp32u &NumShortTerm, Ipp32u &NumLongTerm)
+void H264DBPList::countActiveRefs(uint32_t &NumShortTerm, uint32_t &NumLongTerm)
 {
     H264DecoderFrame *pCurr = m_pHead;
     NumShortTerm = 0;
@@ -362,7 +362,7 @@ H264DecoderFrame * H264DBPList::findOldestShortTermRef()
 {
     H264DecoderFrame *pCurr = m_pHead;
     H264DecoderFrame *pOldest = 0;
-    Ipp32s  SmallestFrameNumWrap = 0x0fffffff;    // very large positive
+    int32_t  SmallestFrameNumWrap = 0x0fffffff;    // very large positive
 
     while (pCurr)
     {
@@ -381,7 +381,7 @@ H264DecoderFrame * H264DBPList::findOldestLongTermRef()
 {
     H264DecoderFrame *pCurr = m_pHead;
     H264DecoderFrame *pOldest = 0;
-    Ipp32s  SmallestFrameNumWrap = 0x0fffffff;    // very large positive
+    int32_t  SmallestFrameNumWrap = 0x0fffffff;    // very large positive
 
     while (pCurr)
     {
@@ -396,7 +396,7 @@ H264DecoderFrame * H264DBPList::findOldestLongTermRef()
     return pOldest;
 }    // findOldestLongTermRef
 
-H264DecoderFrame * H264DBPList::findLongTermRefIdx(Ipp32s LongTermFrameIdx)
+H264DecoderFrame * H264DBPList::findLongTermRefIdx(int32_t LongTermFrameIdx)
 {
     H264DecoderFrame *pCurr = m_pHead;
 
@@ -429,7 +429,7 @@ H264DecoderFrame * H264DBPList::findLongTermRefIdx(Ipp32s LongTermFrameIdx)
     return 0;
 }
 
-H264DecoderFrame * H264DBPList::findOldLongTermRef(Ipp32s MaxLongTermFrameIdx)
+H264DecoderFrame * H264DBPList::findOldLongTermRef(int32_t MaxLongTermFrameIdx)
 {
     H264DecoderFrame *pCurr = m_pHead;
 
@@ -448,7 +448,7 @@ H264DecoderFrame * H264DBPList::findOldLongTermRef(Ipp32s MaxLongTermFrameIdx)
 
 }
 
-H264DecoderFrame *H264DBPList::findShortTermPic(Ipp32s  picNum, Ipp32s * field)
+H264DecoderFrame *H264DBPList::findShortTermPic(int32_t  picNum, int32_t * field)
 {
     H264DecoderFrame *pCurr = m_pHead;
 
@@ -487,7 +487,7 @@ H264DecoderFrame *H264DBPList::findShortTermPic(Ipp32s  picNum, Ipp32s * field)
     return 0;
 }    // findShortTermPic
 
-H264DecoderFrame *H264DBPList::findLongTermPic(Ipp32s  picNum, Ipp32s * field)
+H264DecoderFrame *H264DBPList::findLongTermPic(int32_t  picNum, int32_t * field)
 {
     H264DecoderFrame *pCurr = m_pHead;
 
@@ -526,14 +526,14 @@ H264DecoderFrame *H264DBPList::findLongTermPic(Ipp32s  picNum, Ipp32s * field)
     return 0;
 }    // findLongTermPic
 
-H264DecoderFrame *H264DBPList::findInterViewRef(Ipp32s auIndex, Ipp32u bottomFieldFlag)
+H264DecoderFrame *H264DBPList::findInterViewRef(int32_t auIndex, uint32_t bottomFieldFlag)
 {
     H264DecoderFrame *pCurr = m_pHead;
     while (pCurr)
     {
         if (pCurr->m_auIndex == auIndex)
         {
-            Ipp32u fieldIdx = pCurr->GetNumberByParity(bottomFieldFlag);
+            uint32_t fieldIdx = pCurr->GetNumberByParity(bottomFieldFlag);
             return pCurr->isInterViewRef(fieldIdx) ? pCurr : 0;
         }
 
@@ -547,13 +547,13 @@ H264DecoderFrame *H264DBPList::findInterViewRef(Ipp32s auIndex, Ipp32u bottomFie
 
 H264DecoderFrame * H264DBPList::FindClosest(H264DecoderFrame * pFrame)
 {
-    Ipp32s originalPOC = pFrame->PicOrderCnt(0, 3);
-    Ipp32u originalResetCount = pFrame->RefPicListResetCount(0);
+    int32_t originalPOC = pFrame->PicOrderCnt(0, 3);
+    uint32_t originalResetCount = pFrame->RefPicListResetCount(0);
 
     H264DecoderFrame * pOldest = 0;
 
-    Ipp32s  SmallestPicOrderCnt = 0;    // very large positive
-    Ipp32u  SmallestRefPicListResetCount = 0x7fffffff;
+    int32_t  SmallestPicOrderCnt = 0;    // very large positive
+    uint32_t  SmallestRefPicListResetCount = 0x7fffffff;
 
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
@@ -602,7 +602,7 @@ H264DecoderFrame * H264DBPList::FindClosest(H264DecoderFrame * pFrame)
     return pOldest;
 }
 
-H264DecoderFrame * H264DBPList::FindByIndex(Ipp32s index)
+H264DecoderFrame * H264DBPList::FindByIndex(int32_t index)
 {
     for (H264DecoderFrame * pTmp = m_pHead; pTmp; pTmp = pTmp->future())
     {
@@ -613,12 +613,12 @@ H264DecoderFrame * H264DBPList::FindByIndex(Ipp32s index)
     return 0;
 }
 
-Ipp32s H264DBPList::GetRecoveryFrameCnt() const
+int32_t H264DBPList::GetRecoveryFrameCnt() const
 {
     return m_recovery_frame_cnt;
 }
 
-void H264DBPList::SetRecoveryFrameCnt(Ipp32s recovery_frame_cnt)
+void H264DBPList::SetRecoveryFrameCnt(int32_t recovery_frame_cnt)
 {
     if (m_wasRecoveryPointFound && recovery_frame_cnt != -1)
     {
@@ -650,11 +650,11 @@ void H264DBPList::Reset(void)
 
 void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRefPicList)
 {
-    Ipp32s j, k;
-    Ipp32s NumFramesInList;
+    int32_t j, k;
+    int32_t NumFramesInList;
     H264DecoderFrame *pHead = head();
     H264DecoderFrame *pFrm;
-    Ipp32s picNum;
+    int32_t picNum;
     bool bError = false;
     bool bIsFieldSlice = (slice->GetSliceHeader()->field_pic_flag != 0);
 
@@ -688,7 +688,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                        if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -723,7 +723,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                        if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -763,7 +763,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                        if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -798,7 +798,7 @@ void H264DBPList::InitPSliceRefPicList(H264Slice *slice, H264DecoderFrame **pRef
                     for (k=NumFramesInList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                        if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -821,18 +821,18 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                                       H264RefListInfo &rli)
 {
     bool bIsFieldSlice = (slice->GetSliceHeader()->field_pic_flag != 0);
-    Ipp32s i, j, k;
-    Ipp32s NumFramesInL0List;
-    Ipp32s NumFramesInL1List;
-    Ipp32s NumFramesInLTList;
+    int32_t i, j, k;
+    int32_t NumFramesInL0List;
+    int32_t NumFramesInL1List;
+    int32_t NumFramesInLTList;
     H264DecoderFrame *pHead = head();
     H264DecoderFrame *pFrm;
-    Ipp32s FrmPicOrderCnt;
+    int32_t FrmPicOrderCnt;
     H264DecoderFrame *LTRefPicList[MAX_NUM_REF_FRAMES];    // temp storage for long-term ordered list
-    Ipp32s LongTermPicNum;
+    int32_t LongTermPicNum;
     bool bError = false;
 
-    for (i=0; i<(Ipp32s)MAX_NUM_REF_FRAMES; i++)
+    for (i=0; i<(int32_t)MAX_NUM_REF_FRAMES; i++)
     {
         LTRefPicList[i] = 0;
     }
@@ -843,7 +843,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
 
     if (!bIsFieldSlice)
     {
-        Ipp32s CurrPicOrderCnt = slice->GetCurrentFrame()->PicOrderCnt(0);
+        int32_t CurrPicOrderCnt = slice->GetCurrentFrame()->PicOrderCnt(0);
         // Short term references:
         // Need L0 and L1 lists. Both contain 2 sets of reference frames ordered
         // by PicOrderCnt. The "previous" set contains the reference frames with
@@ -881,7 +881,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k = NumFramesInL0List; k > j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                            if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -909,7 +909,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k=NumFramesInL1List; k>j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                            if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -941,7 +941,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                     for (k=NumFramesInLTList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                        if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -999,7 +999,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
     }    // not field slice
     else
     {
-        Ipp32s CurrPicOrderCnt = slice->GetCurrentFrame()->PicOrderCnt(slice->GetCurrentFrame()->GetNumberByParity(slice->GetSliceHeader()->bottom_field_flag));
+        int32_t CurrPicOrderCnt = slice->GetCurrentFrame()->PicOrderCnt(slice->GetCurrentFrame()->GetNumberByParity(slice->GetSliceHeader()->bottom_field_flag));
         // Short term references:
         // Need L0 and L1 lists. Both contain 2 sets of reference frames ordered
         // by PicOrderCnt. The "previous" set contains the reference frames with
@@ -1037,7 +1037,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k = NumFramesInL0List; k > j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                            if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -1064,7 +1064,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                         for (k=NumFramesInL1List; k>j; k--)
                         {
                             // Avoid writing beyond end of list
-                            if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                            if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                             {
                                 VM_ASSERT(0);
                                 bError = true;
@@ -1096,7 +1096,7 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
                     for (k=NumFramesInLTList; k>j; k--)
                     {
                         // Avoid writing beyond end of list
-                        if (k > (Ipp32s)(MAX_NUM_REF_FRAMES-1))
+                        if (k > (int32_t)(MAX_NUM_REF_FRAMES-1))
                         {
                             VM_ASSERT(0);
                             bError = true;
@@ -1160,11 +1160,11 @@ void H264DBPList::InitBSliceRefPicLists(H264Slice *slice, H264DecoderFrame **pRe
 }
 
 void H264DBPList::AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicList,
-                                      ReferenceFlags *pFields, Ipp32u listNum, ViewList &views)
+                                      ReferenceFlags *pFields, uint32_t listNum, ViewList &views)
 {
-    Ipp32u curRefIdx = 0;
-    Ipp32u num_refs_lx;
-    const Ipp16u *refs_lx;
+    uint32_t curRefIdx = 0;
+    uint32_t num_refs_lx;
+    const uint16_t *refs_lx;
 
     // get the number of entries in the list
     while ((MAX_NUM_REF_FIELDS > curRefIdx) &&
@@ -1176,7 +1176,7 @@ void H264DBPList::AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicL
     // get the number of inter-view references and
     // corresponding view Id array
     {
-        Ipp32u VOIdx = GetVOIdx(slice->GetSeqMVCParam(), slice->GetSliceHeader()->nal_ext.mvc.view_id);
+        uint32_t VOIdx = GetVOIdx(slice->GetSeqMVCParam(), slice->GetSliceHeader()->nal_ext.mvc.view_id);
         const H264ViewRefInfo &refInfo = slice->GetSeqMVCParam()->viewInfo[VOIdx];
 
         if (slice->GetSliceHeader()->nal_ext.mvc.anchor_pic_flag)
@@ -1192,10 +1192,10 @@ void H264DBPList::AddInterViewRefs(H264Slice *slice, H264DecoderFrame **pRefPicL
     }
 
     // append inter-view references to ref list
-    for (Ipp32u j = 0; j < num_refs_lx; j += 1)
+    for (uint32_t j = 0; j < num_refs_lx; j += 1)
     {
         // get reference view Id
-        Ipp32u refViewIdx = refs_lx[j];
+        uint32_t refViewIdx = refs_lx[j];
         // get the corresponding view
         H264DBPList *pDPB = GetDPB(views, refViewIdx);
         if (pDPB)

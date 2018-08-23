@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -65,7 +65,7 @@ void H264DecoderLocalMacroblockDescriptor::Release(void)
     m_midAllocated = 0;
 } // void H264DecoderLocalMacroblockDescriptor::Release(void)
 
-bool H264DecoderLocalMacroblockDescriptor::Allocate(Ipp32s iMBCount, MemoryAllocator *pMemoryAllocator)
+bool H264DecoderLocalMacroblockDescriptor::Allocate(int32_t iMBCount, MemoryAllocator *pMemoryAllocator)
 {
     // check error(s)
     if (NULL == pMemoryAllocator)
@@ -88,9 +88,9 @@ bool H264DecoderLocalMacroblockDescriptor::Allocate(Ipp32s iMBCount, MemoryAlloc
                                                 nSize,
                                                 UMC_ALLOC_PERSISTENT))
             return false;
-        m_pAllocated = (Ipp8u *) m_pMemoryAllocator->Lock(m_midAllocated);
+        m_pAllocated = (uint8_t *) m_pMemoryAllocator->Lock(m_midAllocated);
 
-        ippsZero_8u(m_pAllocated, (Ipp32s)nSize);
+        ippsZero_8u(m_pAllocated, (int32_t)nSize);
         m_nAllocatedSize = nSize;
     }
 
@@ -103,7 +103,7 @@ bool H264DecoderLocalMacroblockDescriptor::Allocate(Ipp32s iMBCount, MemoryAlloc
 
     return true;
 
-} // bool H264DecoderLocalMacroblockDescriptor::Allocate(Ipp32s iMBCount)
+} // bool H264DecoderLocalMacroblockDescriptor::Allocate(int32_t iMBCount)
 
 H264DecoderLocalMacroblockDescriptor &H264DecoderLocalMacroblockDescriptor::operator = (H264DecoderLocalMacroblockDescriptor &Desc)
 {

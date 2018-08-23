@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -35,7 +35,7 @@ class TaskBroker
 public:
     TaskBroker(TaskSupplier * pTaskSupplier);
 
-    virtual bool Init(Ipp32s iConsumerNumber);
+    virtual bool Init(int32_t iConsumerNumber);
     virtual ~TaskBroker();
 
     virtual bool AddFrameToDecoding(H264DecoderFrame * pFrame);
@@ -71,7 +71,7 @@ protected:
     virtual void CompleteFrame(H264DecoderFrame * frame);
     void RemoveAU(H264DecoderFrameInfo * toRemove);
 
-    Ipp32s m_iConsumerNumber;
+    int32_t m_iConsumerNumber;
 
     H264DecoderFrameInfo * m_FirstAU;
 

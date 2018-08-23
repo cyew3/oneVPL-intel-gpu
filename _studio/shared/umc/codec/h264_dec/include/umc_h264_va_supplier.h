@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -58,7 +58,7 @@ public:
     virtual void Close();
     virtual void Reset();
 
-    void SetBufferedFramesNumber(Ipp32u buffered);
+    void SetBufferedFramesNumber(uint32_t buffered);
 
     virtual Status DecodeHeaders(NalUnit *nalUnit);
 
@@ -72,7 +72,7 @@ protected:
 
     virtual void InitFrameCounter(H264DecoderFrame * pFrame, const H264Slice *pSlice);
 
-    virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field);
+    virtual Status CompleteFrame(H264DecoderFrame * pFrame, int32_t field);
 
     virtual void AfterErrorRestore();
 
@@ -84,9 +84,9 @@ protected:
 
 protected:
 
-    virtual Ipp32s GetFreeFrameIndex();
+    virtual int32_t GetFreeFrameIndex();
 
-    Ipp32u m_bufferedFrameNumber;
+    uint32_t m_bufferedFrameNumber;
     LazyCopier m_lazyCopier;
 
 private:

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -56,18 +56,18 @@ H264SEIPayLoad* SeiPayloadArray::GetPayload(size_t pos) const
 
 H264SEIPayLoad* SeiPayloadArray::FindPayload(SEI_TYPE type) const
 {
-    Ipp32s pos = FindPayloadPos(type);
+    int32_t pos = FindPayloadPos(type);
     return (pos < 0) ? 0 : GetPayload(pos);
 }
 
-Ipp32s SeiPayloadArray::FindPayloadPos(SEI_TYPE type) const
+int32_t SeiPayloadArray::FindPayloadPos(SEI_TYPE type) const
 {
     size_t count = GetPayloadCount();
     for (size_t i = 0; i < count; i++)
     {
         H264SEIPayLoad* payload = GetPayload(i);
         if (payload->payLoadType == type)
-            return (Ipp32s)i;
+            return (int32_t)i;
     }
 
     return -1;
@@ -103,7 +103,7 @@ void SeiPayloadArray::AddPayload(H264SEIPayLoad* payload)
         return;
 
     payload->IncrementReference();
-    Ipp32s pos = FindPayloadPos(payload->payLoadType);
+    int32_t pos = FindPayloadPos(payload->payLoadType);
     if (pos >= 0) // always use last payload
     {
         m_payloads[pos]->DecrementReference();
@@ -229,7 +229,7 @@ void SetOfSlices::CleanUseless()
 
 void SetOfSlices::SortSlices()
 {
-    static Ipp32s MAX_MB_NUMBER = 0x7fffffff;
+    static int32_t MAX_MB_NUMBER = 0x7fffffff;
 
     if (GetSlice(0) && GetSlice(0)->IsSliceGroups())
         return;
@@ -238,7 +238,7 @@ void SetOfSlices::SortSlices()
     for (size_t sliceId = 0; sliceId < count; sliceId++)
     {
         H264Slice * curSlice = GetSlice(sliceId);
-        Ipp32s minFirst = MAX_MB_NUMBER;
+        int32_t minFirst = MAX_MB_NUMBER;
         size_t minSlice = 0;
 
         for (size_t j = sliceId; j < count; j++)
@@ -285,7 +285,7 @@ void SetOfSlices::SortSlices()
             m_pSliceQueue.resize(count);
             slice->DecrementReference();
 
-            sliceId = Ipp32u(-1);
+            sliceId = uint32_t(-1);
             continue;
         }
     }
@@ -305,7 +305,7 @@ AccessUnit::~AccessUnit()
 {
 }
 
-Ipp32u AccessUnit::GetAUIndentifier() const
+uint32_t AccessUnit::GetAUIndentifier() const
 {
     return m_auCounter;
 }
@@ -331,14 +331,14 @@ void AccessUnit::CleanUseless()
     }
 }
 
-Ipp32s AccessUnit::FindLayerByDependency(Ipp32s dependency)
+int32_t AccessUnit::FindLayerByDependency(int32_t dependency)
 {
     size_t count = GetLayersCount();
     for (size_t i = 0; i < count; i++)
     {
         SetOfSlices * set = GetLayer(i);
         if (set->GetSlice(0) && set->GetSlice(0)->GetSliceHeader()->nal_ext.svc.dependency_id == dependency)
-            return (Ipp32s)i;
+            return (int32_t)i;
     }
 
     return -1;

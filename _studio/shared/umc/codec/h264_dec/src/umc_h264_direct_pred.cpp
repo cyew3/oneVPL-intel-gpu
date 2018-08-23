@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -15,15 +15,15 @@
 
 namespace UMC
 {
-static inline void GetScaledMV(Ipp32s pos,
+static inline void GetScaledMV(int32_t pos,
                         H264DecoderMotionVector *directMVs,
                         FactorArrayValue *pDistScaleFactorMV,
-                        Ipp32s RefIndexL0,
-                        Ipp32s scale,
-                        Ipp32s scale_idx,
+                        int32_t RefIndexL0,
+                        int32_t scale,
+                        int32_t scale_idx,
                         H264DecoderMotionVector &pFwdMV,
                         H264DecoderMotionVector &pBwdMV,
-                        Ipp32s mvDistortion[2])
+                        int32_t mvDistortion[2])
 {
     H264DecoderMotionVector MV = directMVs[pos];
 
@@ -37,10 +37,10 @@ static inline void GetScaledMV(Ipp32s pos,
         break;
     }
 
-    pFwdMV.mvx = (Ipp16s)((MV.mvx * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
-    pFwdMV.mvy = (Ipp16s)((MV.mvy * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
-    pBwdMV.mvx = (Ipp16s)(pFwdMV.mvx - MV.mvx);
-    pBwdMV.mvy = (Ipp16s)(pFwdMV.mvy - MV.mvy);
+    pFwdMV.mvx = (int16_t)((MV.mvx * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
+    pFwdMV.mvy = (int16_t)((MV.mvy * pDistScaleFactorMV[RefIndexL0 >> scale_idx] + 128) >> 8);
+    pBwdMV.mvx = (int16_t)(pFwdMV.mvx - MV.mvx);
+    pBwdMV.mvy = (int16_t)(pFwdMV.mvy - MV.mvy);
 
     if (pFwdMV.mvy > mvDistortion[0])
         mvDistortion[0] = pFwdMV.mvy;
@@ -68,7 +68,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
                 continue;
             }
 
-            Ipp32s sboffset = subblock_block_mapping[sb];
+            int32_t sboffset = subblock_block_mapping[sb];
             storeInformationInto8x8(&m_cur_mb.MVs[0]->MotionVectors[sboffset], zeroVector);
             storeInformationInto8x8(&m_cur_mb.MVs[1]->MotionVectors[sboffset], zeroVector);
             m_cur_mb.GetReferenceIndexStruct(0)->refIndexs[sb] = 0;
@@ -84,10 +84,10 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
 
     FactorArrayValue *pDistScaleFactorMV;
 
-    Ipp8s RefIndexL0 = 0, RefIndexL1 = 0;
+    int8_t RefIndexL0 = 0, RefIndexL1 = 0;
 
     // set up pointers to where MV and RefIndex will be stored
-    Ipp32s scale_idx = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo) | (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE);
+    int32_t scale_idx = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo) | (m_pCurrentFrame->m_PictureStructureForDec < FRM_STRUCTURE);
     RefIndexL1 = 0;
 
     bool isAll8x8Same = true;
@@ -106,9 +106,9 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
 
     H264DecoderFrameEx *firstRefBackFrame = (H264DecoderFrameEx *)m_pRefPicList[1][0];
 
-    Ipp32s temp = 0;
-    Ipp32s scale;
-    Ipp32s MBCol = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), temp, &scale);
+    int32_t temp = 0;
+    int32_t scale;
+    int32_t MBCol = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), temp, &scale);
     bool isAll4x4RealSame1[4];
     bool isAll8x8RealSame = false;
     bool isAll8x8RealSame1 = false;
@@ -129,9 +129,9 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
     case MBTYPE_PCM:
         if (is_direct_mb)
         {
-            fill_n<Ipp8s>(&m_cur_mb.LocalMacroblockInfo->sbdir[0], 4, D_DIR_DIRECT);
-            fill_n<Ipp8s>(pRefIndexL0, 4, 0);
-            fill_n<Ipp8s>(pRefIndexL1, 4, 0);
+            fill_n<int8_t>(&m_cur_mb.LocalMacroblockInfo->sbdir[0], 4, D_DIR_DIRECT);
+            fill_n<int8_t>(pRefIndexL0, 4, 0);
+            fill_n<int8_t>(pRefIndexL1, 4, 0);
             fill_n<H264DecoderMotionVector>(pFwdMV, 16, zeroVector);
             fill_n<H264DecoderMotionVector>(pBwdMV, 16, zeroVector);
             m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_BIDIR;
@@ -167,8 +167,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
 
             if (pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo))
             {
-                Ipp32s curfield = (m_CurMBAddr & 1);
-                Ipp32s ref0field = curfield ^ (RefIndexL0&1);
+                int32_t curfield = (m_CurMBAddr & 1);
+                int32_t ref0field = curfield ^ (RefIndexL0&1);
                 pDistScaleFactorMV = m_pSlice->GetDistScaleFactorMVAFF()->values[curfield][ref0field][curfield];
             }
             else
@@ -182,11 +182,11 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
             GetScaledMV(0, directMVs, pDistScaleFactorMV,
                 RefIndexL0, scale, scale_idx, mvFwd, mvBwd, m_MVDistortion);
 
-            fill_n<Ipp8s>(&pRefIndexL0[0], 4, RefIndexL0);
-            fill_n<Ipp8s>(&pRefIndexL1[0], 4, RefIndexL1);
+            fill_n<int8_t>(&pRefIndexL0[0], 4, RefIndexL0);
+            fill_n<int8_t>(&pRefIndexL1[0], 4, RefIndexL1);
             fill_n<H264DecoderMotionVector>(&pFwdMV[0], 16, mvFwd);
             fill_n<H264DecoderMotionVector>(&pBwdMV[0], 16, mvBwd);
-            fill_n<Ipp8s>(&m_cur_mb.LocalMacroblockInfo->sbdir[0], 4, D_DIR_DIRECT);
+            fill_n<int8_t>(&m_cur_mb.LocalMacroblockInfo->sbdir[0], 4, D_DIR_DIRECT);
 
             m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_BIDIR;
             return;
@@ -194,7 +194,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
         break;
     };
 
-    Ipp32s sb;
+    int32_t sb;
     for (sb = 0; sb < 4; sb++)
     {
         if (m_cur_mb.GlobalMacroblockInfo->sbtype[sb] != SBTYPE_DIRECT)
@@ -204,10 +204,10 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
             continue;
         }
 
-        Ipp32s sboffset = subblock_block_mapping[sb];
+        int32_t sboffset = subblock_block_mapping[sb];
 
-        Ipp32s scaleValue;
-        Ipp32s MBColumn = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), sboffset, &scaleValue);
+        int32_t scaleValue;
+        int32_t MBColumn = GetColocatedLocation(firstRefBackFrame, GetReferenceField(m_pFields[1], 0), sboffset, &scaleValue);
 
         bool isAll4x4RealSame = isAll4x4RealSame1[sb];
 
@@ -238,8 +238,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
 
             if (pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo))
             {
-                Ipp32s curfield = (m_CurMBAddr & 1);
-                Ipp32s ref0field = curfield ^ (RefIndexL0&1);
+                int32_t curfield = (m_CurMBAddr & 1);
+                int32_t ref0field = curfield ^ (RefIndexL0&1);
                 pDistScaleFactorMV = m_pSlice->GetDistScaleFactorMVAFF()->values[curfield][ref0field][curfield];
             }
             else
@@ -257,8 +257,8 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
 
                 if (isAll8x8RealSame)
                 {
-                    fill_n<Ipp8s>(&pRefIndexL0[sb], 4, RefIndexL0);
-                    fill_n<Ipp8s>(&pRefIndexL1[sb], 4, RefIndexL1);
+                    fill_n<int8_t>(&pRefIndexL0[sb], 4, RefIndexL0);
+                    fill_n<int8_t>(&pRefIndexL1[sb], 4, RefIndexL1);
                     fill_struct_n<H264DecoderMotionVector>(&pFwdMV[sboffset], 16, mvFwd);
                     fill_struct_n<H264DecoderMotionVector>(&pBwdMV[sboffset], 16, mvBwd);
                     break;
@@ -271,7 +271,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
             }
             else
             {
-                Ipp32s sbtype = firstRefBackFrame->m_mbinfo.mbs[MBColumn].sbtype[sb];
+                int32_t sbtype = firstRefBackFrame->m_mbinfo.mbs[MBColumn].sbtype[sb];
 
                 switch (sbtype)
                 {
@@ -284,7 +284,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
                     break;
                 case SBTYPE_8x4:
                     {
-                    Ipp32s offset = sboffset;
+                    int32_t offset = sboffset;
                     GetScaledMV(offset, directMVs, pDistScaleFactorMV,
                         RefIndexL0, scaleValue, scale_idx, pFwdMV[offset], pBwdMV[offset], m_MVDistortion);
 
@@ -302,7 +302,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
                     break;
                 case SBTYPE_4x8:
                     {
-                    Ipp32s offset = sboffset;
+                    int32_t offset = sboffset;
                     GetScaledMV(offset, directMVs, pDistScaleFactorMV,
                         RefIndexL0, scaleValue, scale_idx, pFwdMV[offset], pBwdMV[offset], m_MVDistortion);
 
@@ -320,7 +320,7 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
                     break;
                 default: //SBTYPE_4x4
                     {
-                    Ipp32s offset = sboffset;
+                    int32_t offset = sboffset;
                     GetScaledMV(offset, directMVs, pDistScaleFactorMV,
                         RefIndexL0, scaleValue, scale_idx, pFwdMV[offset], pBwdMV[offset], m_MVDistortion);
 
@@ -375,18 +375,18 @@ void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(bool is_direct_mb)
     {
         m_cur_mb.GlobalMacroblockInfo->mbtype = MBTYPE_INTER_8x8;
     }
-} // void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(Ipp32u sboffset,
+} // void H264SegmentDecoder::DecodeDirectMotionVectorsTemporal(uint32_t sboffset,
 #endif
 
-inline bool CompareBlocks(H264DecoderMotionVector *pFwdMV, Ipp8s *pRefIndexL0,
-                                 Ipp32s pos1, Ipp32s pos2)
+inline bool CompareBlocks(H264DecoderMotionVector *pFwdMV, int8_t *pRefIndexL0,
+                                 int32_t pos1, int32_t pos2)
 {
     return !((pFwdMV[pos1].mvx ^ pFwdMV[pos2].mvx) |
                     (pFwdMV[pos1].mvy ^ pFwdMV[pos2].mvy) |
                     (pRefIndexL0[pos1] ^ pRefIndexL0[pos2]));
 }
 
-Ipp32s compare[10];
+int32_t compare[10];
 
 void H264SegmentDecoder::AdujstMvsAndType()
 {
@@ -397,13 +397,13 @@ void H264SegmentDecoder::AdujstMvsAndType()
 
     H264DecoderMotionVector *pFwdMV = &m_cur_mb.MVs[0]->MotionVectors[0];
     H264DecoderMotionVector *pBwdMV = &m_cur_mb.MVs[1]->MotionVectors[0];
-    Ipp8s *pRefIndexL0 = &m_cur_mb.RefIdxs[0]->RefIdxs[0];
-    //Ipp8s *pRefIndexL1 = &m_cur_mb.RefIdxs[1]->RefIdxs[0];
+    int8_t *pRefIndexL0 = &m_cur_mb.RefIdxs[0]->RefIdxs[0];
+    //int8_t *pRefIndexL1 = &m_cur_mb.RefIdxs[1]->RefIdxs[0];
 
     H264DecoderMotionVector * first_mv_fwd_all = &(pFwdMV[0]);
     //H264DecoderMotionVector * first_mv_bwd_all = &(pBwdMV[0]);
-    Ipp8s *first_refL0_all = &pRefIndexL0[0];
-    //Ipp8s *first_refL1_all = &pRefIndexL1[0];
+    int8_t *first_refL0_all = &pRefIndexL0[0];
+    //int8_t *first_refL1_all = &pRefIndexL1[0];
 
     //bool isAll8x8RealSame = false;
     //bool isAll8x8RealSame1 = false;
@@ -421,10 +421,10 @@ void H264SegmentDecoder::AdujstMvsAndType()
     case MBTYPE_INTER_8x8:
     case MBTYPE_INTER_8x8_REF0:
         {
-            /*for (Ipp32s sb = 1; sb < 4; sb++)
+            /*for (int32_t sb = 1; sb < 4; sb++)
             {
                 bool isAll4x4Same = true;
-                Ipp32s sboffset = subblock_block_mapping[sb];
+                int32_t sboffset = subblock_block_mapping[sb];
 
                 isAll8x8Same &= isAll4x4Same &
                     CompareBlocks(pFwdMV, pRefIndexL0, 0, sboffset);

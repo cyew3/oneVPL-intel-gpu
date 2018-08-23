@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "ipps.h"
@@ -147,7 +147,7 @@ bool H264SliceEx::Reset(H264NalExtension *pNalExt)
     return true;
 }
 
-Status H264SliceEx::UpdateReferenceList(ViewList &views, Ipp32s dIdIndex)
+Status H264SliceEx::UpdateReferenceList(ViewList &views, int32_t dIdIndex)
 {
     Status sts = H264Slice::UpdateReferenceList(views, dIdIndex);
     if (sts == UMC_OK)
@@ -185,18 +185,18 @@ Status H264SliceEx::UpdateReferenceList(ViewList &views, Ipp32s dIdIndex)
         }                                                                       \
         else                                                                    \
         {                                                                       \
-            tb = IPP_MAX(-128,tb);                                              \
-            tb = IPP_MIN(127,tb);                                               \
-            td = IPP_MAX(-128,td);                                              \
-            td = IPP_MIN(127,td);                                               \
+            tb = MFX_MAX(-128,tb);                                              \
+            tb = MFX_MIN(127,tb);                                               \
+            td = MFX_MAX(-128,td);                                              \
+            td = MFX_MIN(127,td);                                               \
                                                                                 \
             VM_ASSERT(td != 0);                                                 \
                                                                                 \
             tx = (16384 + abs(td/2))/td;                                        \
                                                                                 \
             DistScaleFactor = (tb*tx + 32)>>6;                                  \
-            DistScaleFactor = IPP_MAX(-1024, DistScaleFactor);                  \
-            DistScaleFactor = IPP_MIN(1023, DistScaleFactor);                   \
+            DistScaleFactor = MFX_MAX(-1024, DistScaleFactor);                  \
+            DistScaleFactor = MFX_MIN(1023, DistScaleFactor);                   \
                                                                                 \
             if (isL1LongTerm || DistScaleFactor < -256 || DistScaleFactor > 512)                \
                 value = 128;    /* equal weighting     */   \
@@ -206,25 +206,25 @@ Status H264SliceEx::UpdateReferenceList(ViewList &views, Ipp32s dIdIndex)
             value_mv = (FactorArrayValue)DistScaleFactor;                      \
         }
 
-void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
-                                    Ipp32s NumL1RefActive,
+void H264SliceEx::InitDistScaleFactor(int32_t NumL0RefActive,
+                                    int32_t NumL1RefActive,
                                     H264DecoderFrame **pRefPicList0,
                                     H264DecoderFrame **pRefPicList1,
                                     ReferenceFlags *pFields0,
                                     ReferenceFlags *pFields1)
 
 {
-    Ipp32s L0Index, L1Index;
-    Ipp32s picCntRef0;
-    Ipp32s picCntRef1;
-    Ipp32s picCntCur;
-    Ipp32s DistScaleFactor;
+    int32_t L0Index, L1Index;
+    int32_t picCntRef0;
+    int32_t picCntRef1;
+    int32_t picCntCur;
+    int32_t DistScaleFactor;
     FactorArrayValue *pDistScaleFactor;
     FactorArrayValue *pDistScaleFactorMV;
 
-    Ipp32s tb;
-    Ipp32s td;
-    Ipp32s tx;
+    int32_t tb;
+    int32_t td;
+    int32_t tx;
 
     VM_ASSERT(NumL0RefActive <= MAX_NUM_REF_FRAMES);
     VM_ASSERT(pRefPicList1[0]);
@@ -246,7 +246,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
         if (!pRefPicList1[L1Index])
             continue;
 
-        Ipp32s RefField = m_pCurrentFrame->m_PictureStructureForDec >= FRM_STRUCTURE ?
+        int32_t RefField = m_pCurrentFrame->m_PictureStructureForDec >= FRM_STRUCTURE ?
             0 : GetReferenceField(pFields1, L1Index);
 
         picCntRef1 = pRefPicList1[L1Index]->PicOrderCnt(pRefPicList1[L1Index]->GetNumberByParity(RefField));
@@ -257,7 +257,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
             if (!pRefPicList0[L0Index])
                 continue;
 
-            Ipp32s RefFieldTop = (m_pCurrentFrame->m_PictureStructureForDec >= FRM_STRUCTURE) ?
+            int32_t RefFieldTop = (m_pCurrentFrame->m_PictureStructureForDec >= FRM_STRUCTURE) ?
                 0 : GetReferenceField(pFields0, L0Index);
             picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(RefFieldTop));
 
@@ -296,7 +296,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 0;
+                int32_t RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
             }
@@ -309,7 +309,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 1;
+                int32_t RefFieldTop = 1;
 
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
@@ -326,7 +326,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 0;
+                int32_t RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
             }
@@ -339,7 +339,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 1;
+                int32_t RefFieldTop = 1;
 
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1),1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
@@ -358,7 +358,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 0;
+                int32_t RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
             }
@@ -370,7 +370,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 1;
+                int32_t RefFieldTop = 1;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
             }
@@ -386,7 +386,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 0;
+                int32_t RefFieldTop = 0;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(0), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
             }
@@ -398,7 +398,7 @@ void H264SliceEx::InitDistScaleFactor(Ipp32s NumL0RefActive,
                 if (!pRefPicList0[L0Index])
                     continue;
 
-                Ipp32s RefFieldTop = 1;
+                int32_t RefFieldTop = 1;
                 picCntRef0 = pRefPicList0[L0Index]->PicOrderCnt(pRefPicList0[L0Index]->GetNumberByParity(1), 1);
                 CalculateDSF(L0Index, pDistScaleFactor[L0Index], pDistScaleFactorMV[L0Index]);
             }

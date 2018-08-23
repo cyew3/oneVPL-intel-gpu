@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -33,7 +33,7 @@ namespace UMC
 {
 #define ABSOWN(x) ((x) > 0 ? (x) : (-(x)))
 
-typedef Ipp16s CoeffsCommon;
+typedef int16_t CoeffsCommon;
 typedef CoeffsCommon * CoeffsPtrCommon;
 
 // Macroblock type definitions
@@ -116,7 +116,7 @@ typedef enum {
 #define IS_INTER_MBTYPE(mbtype) ((mbtype) >= MBTYPE_INTER)
 
 
-typedef Ipp32u IntraType;
+typedef uint32_t IntraType;
 
 // This file defines some data structures and constants used by the decoder,
 // that are also needed by other classes, such as post filters and
@@ -142,31 +142,31 @@ enum Direction_t{
     D_DIR_DIRECT_SPATIAL_BIDIR = 6
 };
 
-inline bool IsForwardOnly(Ipp32s direction)
+inline bool IsForwardOnly(int32_t direction)
 {
     return (direction == D_DIR_FWD) || (direction == D_DIR_DIRECT_SPATIAL_FWD);
 }
 
-inline bool IsHaveForward(Ipp32s direction)
+inline bool IsHaveForward(int32_t direction)
 {
     return (direction == D_DIR_FWD) || (direction == D_DIR_BIDIR) ||
         (direction == D_DIR_DIRECT_SPATIAL_FWD) || (direction == D_DIR_DIRECT_SPATIAL_BIDIR) ||
          (direction == D_DIR_DIRECT);
 }
 
-inline bool IsBackwardOnly(Ipp32s direction)
+inline bool IsBackwardOnly(int32_t direction)
 {
     return (direction == D_DIR_BWD) || (direction == D_DIR_DIRECT_SPATIAL_BWD);
 }
 
-inline bool IsHaveBackward(Ipp32s direction)
+inline bool IsHaveBackward(int32_t direction)
 {
     return (direction == D_DIR_BWD) || (direction == D_DIR_BIDIR) ||
         (direction == D_DIR_DIRECT_SPATIAL_BWD) || (direction == D_DIR_DIRECT_SPATIAL_BIDIR) ||
         (direction == D_DIR_DIRECT);
 }
 
-inline bool IsBidirOnly(Ipp32s direction)
+inline bool IsBidirOnly(int32_t direction)
 {
     return (direction == D_DIR_BIDIR) || (direction == D_DIR_DIRECT_SPATIAL_BIDIR) ||
         (direction == D_DIR_DIRECT);
@@ -199,35 +199,35 @@ enum
 };
 
 inline
-Ipp32u CreateIPPCBPMask420(Ipp32u cbpU, Ipp32u cbpV)
+uint32_t CreateIPPCBPMask420(uint32_t cbpU, uint32_t cbpV)
 {
-    Ipp32u cbp4x4 = (((cbpU & D_CBP_CHROMA_DC) | ((cbpV & D_CBP_CHROMA_DC) << 1)) << D_CBP_1ST_CHROMA_DC_BITPOS) |
+    uint32_t cbp4x4 = (((cbpU & D_CBP_CHROMA_DC) | ((cbpV & D_CBP_CHROMA_DC) << 1)) << D_CBP_1ST_CHROMA_DC_BITPOS) |
                      ((cbpU & D_CBP_CHROMA_AC_420) << (D_CBP_1ST_CHROMA_AC_BITPOS - 1)) |
                      ((cbpV & D_CBP_CHROMA_AC_420) << (D_CBP_1ST_CHROMA_AC_BITPOS + 4 - 1));
     return cbp4x4;
 
-} // Ipp32u CreateIPPCBPMask420(Ipp32u nUCBP, Ipp32u nVCBP)
+} // uint32_t CreateIPPCBPMask420(uint32_t nUCBP, uint32_t nVCBP)
 
 inline
-Ipp64u CreateIPPCBPMask422(Ipp32u cbpU, Ipp32u cbpV)
+unsigned long long CreateIPPCBPMask422(uint32_t cbpU, uint32_t cbpV)
 {
-    Ipp64u cbp4x4 = (((cbpU & D_CBP_CHROMA_DC) | ((cbpV & D_CBP_CHROMA_DC) << 1)) << D_CBP_1ST_CHROMA_DC_BITPOS) |
-                    (((Ipp64u)cbpU & D_CBP_CHROMA_AC_422) << (D_CBP_1ST_CHROMA_AC_BITPOS - 1)) |
-                    (((Ipp64u)cbpV & D_CBP_CHROMA_AC_422) << (D_CBP_1ST_CHROMA_AC_BITPOS + 8 - 1));
+    unsigned long long cbp4x4 = (((cbpU & D_CBP_CHROMA_DC) | ((cbpV & D_CBP_CHROMA_DC) << 1)) << D_CBP_1ST_CHROMA_DC_BITPOS) |
+                    (((unsigned long long)cbpU & D_CBP_CHROMA_AC_422) << (D_CBP_1ST_CHROMA_AC_BITPOS - 1)) |
+                    (((unsigned long long)cbpV & D_CBP_CHROMA_AC_422) << (D_CBP_1ST_CHROMA_AC_BITPOS + 8 - 1));
 
     return cbp4x4;
 
-} // Ipp32u CreateIPPCBPMask422(Ipp32u nUCBP, Ipp32u nVCBP)
+} // uint32_t CreateIPPCBPMask422(uint32_t nUCBP, uint32_t nVCBP)
 
 inline
-Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
+unsigned long long CreateIPPCBPMask444(uint32_t cbpU, uint32_t cbpV)
 {
-    Ipp64u cbp4x4 = (((cbpU & D_CBP_CHROMA_DC) | ((cbpV & D_CBP_CHROMA_DC) << 1)) << D_CBP_1ST_CHROMA_DC_BITPOS) |
-                    (((Ipp64u)cbpU & D_CBP_CHROMA_AC_444) << (D_CBP_1ST_CHROMA_AC_BITPOS - 1)) |
-                    (((Ipp64u)cbpV & D_CBP_CHROMA_AC_444) << (D_CBP_1ST_CHROMA_AC_BITPOS + 16 - 1));
+    unsigned long long cbp4x4 = (((cbpU & D_CBP_CHROMA_DC) | ((cbpV & D_CBP_CHROMA_DC) << 1)) << D_CBP_1ST_CHROMA_DC_BITPOS) |
+                    (((unsigned long long)cbpU & D_CBP_CHROMA_AC_444) << (D_CBP_1ST_CHROMA_AC_BITPOS - 1)) |
+                    (((unsigned long long)cbpV & D_CBP_CHROMA_AC_444) << (D_CBP_1ST_CHROMA_AC_BITPOS + 16 - 1));
     return cbp4x4;
 
-} // Ipp32u CreateIPPCBPMask444(Ipp32u nUCBP, Ipp32u nVCBP)
+} // uint32_t CreateIPPCBPMask444(uint32_t nUCBP, uint32_t nVCBP)
 
 
 #define BLOCK_IS_ON_LEFT_EDGE(x) (!((x)&3))
@@ -254,24 +254,24 @@ Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
 #define SetMBSkippedFlag(x)  ((x).mbflags.isSkipped = 1);
 
 #define pSetMBFieldDecodingFlag(x,y)     \
-    (x->mbflags.fdf = (Ipp8u)y)
+    (x->mbflags.fdf = (uint8_t)y)
 
 #define SetMBFieldDecodingFlag(x,y)     \
-    (x.mbflags.fdf = (Ipp8u)y)
+    (x.mbflags.fdf = (uint8_t)y)
 
 #define pSetMB8x8TSFlag(x,y)            \
-    (x->mbflags.transform8x8 = (Ipp8u)y)
+    (x->mbflags.transform8x8 = (uint8_t)y)
 
 #define SetMB8x8TSFlag(x,y)             \
-    (x.mbflags.transform8x8 = (Ipp8u)y)
+    (x.mbflags.transform8x8 = (uint8_t)y)
 
 #define pSetPairMBFieldDecodingFlag(x1,x2,y)    \
-    (x1->mbflags.fdf = (Ipp8u)y);    \
-    (x2->mbflags.fdf = (Ipp8u)y)
+    (x1->mbflags.fdf = (uint8_t)y);    \
+    (x2->mbflags.fdf = (uint8_t)y)
 
 #define SetPairMBFieldDecodingFlag(x1,x2,y)     \
-    (x1.mbflags.fdf = (Ipp8u)y);    \
-    (x2.mbflags.fdf = (Ipp8u)y)
+    (x1.mbflags.fdf = (uint8_t)y);    \
+    (x2.mbflags.fdf = (uint8_t)y)
 
 ///////////////// New structures
 
@@ -279,11 +279,11 @@ Ipp64u CreateIPPCBPMask444(Ipp32u cbpU, Ipp32u cbpV)
 
 struct H264DecoderMotionVector
 {
-    Ipp16s mvx;
-    Ipp16s mvy;
+    int16_t mvx;
+    int16_t mvy;
 }; // 4 bytes
 
-typedef Ipp8s RefIndexType;
+typedef int8_t RefIndexType;
 
 struct H264DecoderMacroblockRefIdxs
 {
@@ -297,26 +297,26 @@ struct H264DecoderMacroblockMVs
 
 }; // 64 bytes
 
-typedef Ipp8u NumCoeffsType;
+typedef uint8_t NumCoeffsType;
 struct H264DecoderMacroblockCoeffsInfo
 {
-    NumCoeffsType numCoeffs[48];                                         // (Ipp8u) number of coefficients in each block in macroblock
+    NumCoeffsType numCoeffs[48];                                         // (uint8_t) number of coefficients in each block in macroblock
 
 }; // 24 bytes for YUV420. For YUV422, YUV444 support need to extend it
 
 struct H264MBFlags
 {
-    Ipp8u fdf : 1;
-    Ipp8u transform8x8 : 1;
-    Ipp8u isDirect : 1;
-    Ipp8u isSkipped : 1;
+    uint8_t fdf : 1;
+    uint8_t transform8x8 : 1;
+    uint8_t isDirect : 1;
+    uint8_t isSkipped : 1;
 };
 
 struct H264DecoderMacroblockGlobalInfo
 {
-    Ipp8s sbtype[4];                                            // (Ipp8u []) types of subblocks in macroblock
-    Ipp16s slice_id;                                            // (Ipp16s) number of slice
-    Ipp8s mbtype;                                               // (Ipp8u) type of macroblock
+    int8_t sbtype[4];                                            // (uint8_t []) types of subblocks in macroblock
+    int16_t slice_id;                                            // (int16_t) number of slice
+    int8_t mbtype;                                               // (uint8_t) type of macroblock
     H264MBFlags mbflags;
 
     H264DecoderMacroblockRefIdxs refIdxs[2];
@@ -324,35 +324,35 @@ struct H264DecoderMacroblockGlobalInfo
 
 struct H264DecoderMacroblockLocalInfo
 {
-    Ipp32u cbp4x4_luma;                                         // (Ipp32u) coded block pattern of luma blocks
-    Ipp32u cbp4x4_chroma[2];                                    // (Ipp32u []) coded block patterns of chroma blocks
-    Ipp8u cbp;
-    Ipp8s QP;
+    uint32_t cbp4x4_luma;                                         // (uint32_t) coded block pattern of luma blocks
+    uint32_t cbp4x4_chroma[2];                                    // (uint32_t []) coded block patterns of chroma blocks
+    uint8_t cbp;
+    int8_t QP;
 
     union
     {
-        Ipp8s sbdir[4];
+        int8_t sbdir[4];
         struct
         {
-            Ipp16u edge_type;
-            Ipp8u intra_chroma_mode;
+            uint16_t edge_type;
+            uint8_t intra_chroma_mode;
         } IntraTypes;
     };
 }; // 20 bytes
 
 struct H264DecoderBlockLocation
 {
-    Ipp32s mb_num;                                              // (Ipp32s) number of owning macroblock
-    Ipp32s block_num;                                           // (Ipp32s) number of block
+    int32_t mb_num;                                              // (int32_t) number of owning macroblock
+    int32_t block_num;                                           // (int32_t) number of block
 
 }; // 8 bytes
 
 struct H264DecoderMacroblockNeighboursInfo
 {
-    Ipp32s mb_A;                                                // (Ipp32s) number of left macroblock
-    Ipp32s mb_B;                                                // (Ipp32s) number of top macroblock
-    Ipp32s mb_C;                                                // (Ipp32s) number of right-top macroblock
-    Ipp32s mb_D;                                                // (Ipp32s) number of left-top macroblock
+    int32_t mb_A;                                                // (int32_t) number of left macroblock
+    int32_t mb_B;                                                // (int32_t) number of top macroblock
+    int32_t mb_C;                                                // (int32_t) number of right-top macroblock
+    int32_t mb_D;                                                // (int32_t) number of left-top macroblock
 
 }; // 32 bytes
 
@@ -364,15 +364,15 @@ struct H264DecoderBlockNeighboursInfo
     H264DecoderBlockLocation mb_above_left;
     H264DecoderBlockLocation mbs_left_chroma[2][4];
     H264DecoderBlockLocation mb_above_chroma[2];
-    Ipp32s m_bInited;
+    int32_t m_bInited;
 
 }; // 128 bytes
 
 struct H264DecoderMacroblockLayerInfo
 {
-    Ipp8s sbtype[4];
-    Ipp8s sbdir[4];
-    Ipp8s mbtype;
+    int8_t sbtype[4];
+    int8_t sbdir[4];
+    int8_t mbtype;
     H264MBFlags mbflags;
     H264DecoderMacroblockRefIdxs refIdxs[2];
 };
@@ -388,11 +388,11 @@ struct H264DecoderGlobalMacroblocksDescriptor
 
 struct H264DecoderBaseFrameDescriptor
 {
-    Ipp32s m_PictureStructureForDec;
-    Ipp32s m_PictureStructureForRef;
-    Ipp32s totalMBs;
-    Ipp32s m_PicOrderCnt[2];
-    Ipp32s m_bottom_field_flag[2];
+    int32_t m_PictureStructureForDec;
+    int32_t m_PictureStructureForRef;
+    int32_t totalMBs;
+    int32_t m_PicOrderCnt[2];
+    int32_t m_bottom_field_flag[2];
     bool m_isShortTermRef[2];
     bool m_isLongTermRef[2];
     bool m_isInterViewRef;
@@ -413,7 +413,7 @@ public:
     ~H264DecoderLocalMacroblockDescriptor(void);
 
     // Allocate decoding data
-    bool Allocate(Ipp32s iMBCount, MemoryAllocator *pMemoryAllocator);
+    bool Allocate(int32_t iMBCount, MemoryAllocator *pMemoryAllocator);
 
     H264DecoderMacroblockMVs *(MVDeltas[2]);                    // (H264DecoderMacroblockMVs * ([])) motionVectors Deltas L0 and L1
     H264DecoderMacroblockCoeffsInfo *MacroblockCoeffsInfo;      // (H264DecoderMacroblockCoeffsInfo *) info about num_coeffs in each block in the current  picture
@@ -430,7 +430,7 @@ protected:
     // Release object
     void Release(void);
 
-    Ipp8u *m_pAllocated;                                        // (Ipp8u *) pointer to allocated memory
+    uint8_t *m_pAllocated;                                        // (uint8_t *) pointer to allocated memory
     MemID m_midAllocated;                                       // (MemID) mem id of allocated memory
     size_t m_nAllocatedSize;                                    // (size_t) size of allocated memory
 
@@ -440,57 +440,57 @@ protected:
 #define INLINE inline
 // __forceinline
 
-INLINE H264DecoderMacroblockMVs * GetMVs(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum) {return &gmbinfo->MV[list][mbNum];}
+INLINE H264DecoderMacroblockMVs * GetMVs(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum) {return &gmbinfo->MV[list][mbNum];}
 
-INLINE H264DecoderMotionVector * GetMVDelta(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum) {return gmbinfo->MV[2 + list][mbNum].MotionVectors;}
+INLINE H264DecoderMotionVector * GetMVDelta(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum) {return gmbinfo->MV[2 + list][mbNum].MotionVectors;}
 
-INLINE H264DecoderMotionVector & GetMV(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum, Ipp32s blockNum) {return gmbinfo->MV[list][mbNum].MotionVectors[blockNum];}
-
-
-INLINE NumCoeffsType * GetNumCoeffs(H264DecoderLocalMacroblockDescriptor *lmbinfo, Ipp32s mbNum) {return lmbinfo->MacroblockCoeffsInfo[mbNum].numCoeffs;}
-
-INLINE const NumCoeffsType & GetNumCoeff(H264DecoderLocalMacroblockDescriptor *lmbinfo, Ipp32s mbNum, Ipp32s block) {return lmbinfo->MacroblockCoeffsInfo[mbNum].numCoeffs[block];}
+INLINE H264DecoderMotionVector & GetMV(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum, int32_t blockNum) {return gmbinfo->MV[list][mbNum].MotionVectors[blockNum];}
 
 
-INLINE RefIndexType * GetRefIdxs(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum) {return gmbinfo->mbs[mbNum].refIdxs[list].refIndexs;}
+INLINE NumCoeffsType * GetNumCoeffs(H264DecoderLocalMacroblockDescriptor *lmbinfo, int32_t mbNum) {return lmbinfo->MacroblockCoeffsInfo[mbNum].numCoeffs;}
 
-INLINE const RefIndexType & GetRefIdx(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum, Ipp32s block) {return gmbinfo->mbs[mbNum].refIdxs[list].refIndexs[block];}
+INLINE const NumCoeffsType & GetNumCoeff(H264DecoderLocalMacroblockDescriptor *lmbinfo, int32_t mbNum, int32_t block) {return lmbinfo->MacroblockCoeffsInfo[mbNum].numCoeffs[block];}
 
-INLINE const RefIndexType * GetReferenceIndexPtr(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum, Ipp32s block)
+
+INLINE RefIndexType * GetRefIdxs(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum) {return gmbinfo->mbs[mbNum].refIdxs[list].refIndexs;}
+
+INLINE const RefIndexType & GetRefIdx(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum, int32_t block) {return gmbinfo->mbs[mbNum].refIdxs[list].refIndexs[block];}
+
+INLINE const RefIndexType * GetReferenceIndexPtr(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum, int32_t block)
 {
     return &gmbinfo->mbs[mbNum].refIdxs[list].refIndexs[subblock_block_membership[block]];
 }
 
-INLINE const RefIndexType & GetReferenceIndex(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, Ipp32s list, Ipp32s mbNum, Ipp32s block)
+INLINE const RefIndexType & GetReferenceIndex(H264DecoderGlobalMacroblocksDescriptor *gmbinfo, int32_t list, int32_t mbNum, int32_t block)
 {
     return *GetReferenceIndexPtr(gmbinfo, list, mbNum, block);
 }
 
 
-INLINE RefIndexType GetReferenceIndex(RefIndexType *refIndxs, Ipp32s block)
+INLINE RefIndexType GetReferenceIndex(RefIndexType *refIndxs, int32_t block)
 {
     return refIndxs[subblock_block_membership[block]];
 }
 /*
-inline RefIndexType* GetReferenceIndexPtr(RefIndexType *refIndxs, Ipp32s block)
+inline RefIndexType* GetReferenceIndexPtr(RefIndexType *refIndxs, int32_t block)
 {
     return &(refIndxs[subblock_block_membership[block]]);
 }*/
 
 class Macroblock
 {
-    Macroblock(Ipp32u mbNum, H264DecoderGlobalMacroblocksDescriptor *gmbinfo, H264DecoderLocalMacroblockDescriptor *lmbinfo)
+    Macroblock(uint32_t mbNum, H264DecoderGlobalMacroblocksDescriptor *gmbinfo, H264DecoderLocalMacroblockDescriptor *lmbinfo)
     {
         GlobalMacroblockInfo = &gmbinfo->mbs[mbNum];
         LocalMacroblockInfo = &lmbinfo->mbs[mbNum];
         MacroblockCoeffsInfo = &lmbinfo->MacroblockCoeffsInfo[mbNum];
     }
 
-    inline H264DecoderMacroblockMVs * GetMV(Ipp32s list) {return MVs[list];}
+    inline H264DecoderMacroblockMVs * GetMV(int32_t list) {return MVs[list];}
 
-    inline H264DecoderMacroblockMVs * GetMVDelta(Ipp32s list) {return MVs[2 + list];}
+    inline H264DecoderMacroblockMVs * GetMVDelta(int32_t list) {return MVs[2 + list];}
 
-    inline H264DecoderMacroblockRefIdxs * GetRefIdx(Ipp32s list) {return RefIdxs[list];}
+    inline H264DecoderMacroblockRefIdxs * GetRefIdx(int32_t list) {return RefIdxs[list];}
 
     inline H264DecoderMacroblockGlobalInfo * GetGlobalInfo() {return GlobalMacroblockInfo;}
 
@@ -516,21 +516,21 @@ struct H264DecoderCurrentMacroblockDescriptor
     H264DecoderMacroblockLocalInfo *LocalMacroblockInfo;
     H264DecoderMacroblockLocalInfo *LocalMacroblockPairInfo;
 
-    H264DecoderMotionVector & GetMV(Ipp32s list, Ipp32s blockNum) {return MVs[list]->MotionVectors[blockNum];}
+    H264DecoderMotionVector & GetMV(int32_t list, int32_t blockNum) {return MVs[list]->MotionVectors[blockNum];}
 
-    H264DecoderMotionVector * GetMVPtr(Ipp32s list, Ipp32s blockNum) {return &MVs[list]->MotionVectors[blockNum];}
+    H264DecoderMotionVector * GetMVPtr(int32_t list, int32_t blockNum) {return &MVs[list]->MotionVectors[blockNum];}
 
-    INLINE const RefIndexType & GetRefIdx(Ipp32s list, Ipp32s block) const {return RefIdxs[list]->refIndexs[block];}
+    INLINE const RefIndexType & GetRefIdx(int32_t list, int32_t block) const {return RefIdxs[list]->refIndexs[block];}
 
-    INLINE const RefIndexType & GetReferenceIndex(Ipp32s list, Ipp32s block) const {return RefIdxs[list]->refIndexs[subblock_block_membership[block]];}
+    INLINE const RefIndexType & GetReferenceIndex(int32_t list, int32_t block) const {return RefIdxs[list]->refIndexs[subblock_block_membership[block]];}
 
-    INLINE H264DecoderMacroblockRefIdxs* GetReferenceIndexStruct(Ipp32s list)
+    INLINE H264DecoderMacroblockRefIdxs* GetReferenceIndexStruct(int32_t list)
     {
         return RefIdxs[list];
     }
 
     INLINE H264DecoderMacroblockCoeffsInfo * GetNumCoeffs() {return MacroblockCoeffsInfo;}
-    INLINE const NumCoeffsType & GetNumCoeff(Ipp32s block) {return MacroblockCoeffsInfo->numCoeffs[block];}
+    INLINE const NumCoeffsType & GetNumCoeff(int32_t block) {return MacroblockCoeffsInfo->numCoeffs[block];}
 
     H264DecoderMacroblockRefIdxs *RefIdxs[2];//RefIdx L0, L1
     H264DecoderMacroblockCoeffsInfo *MacroblockCoeffsInfo;
@@ -578,7 +578,7 @@ inline void fill_struct_n(T *first, size_t count, const T& val)
         *first = val;
 }
 
-inline Ipp32s GetReferenceField(ReferenceFlags *pFields, Ipp32s RefIndex)
+inline int32_t GetReferenceField(ReferenceFlags *pFields, int32_t RefIndex)
 {
     VM_ASSERT(pFields[RefIndex].field >= 0);
     return pFields[RefIndex].field;
@@ -591,7 +591,7 @@ struct H264IntraTypesProp
         Reset();
     }
 
-    Ipp32s m_nSize;                                             // (Ipp32s) size of allocated intra type array
+    int32_t m_nSize;                                             // (int32_t) size of allocated intra type array
     MemID m_mid;                                                // (MemID) mem id of allocated buffer for intra types
 
     void Reset(void)

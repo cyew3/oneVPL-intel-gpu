@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -17,7 +17,7 @@
 namespace UMC
 {
 
-Ipp8u VERTICAL_DEBLOCKING_BLOCKS_MAP[16] =
+uint8_t VERTICAL_DEBLOCKING_BLOCKS_MAP[16] =
 {
     0, 4, 8, 12,
     1, 5, 9, 13,
@@ -26,7 +26,7 @@ Ipp8u VERTICAL_DEBLOCKING_BLOCKS_MAP[16] =
 };
 
 // alpha table
-Ipp8u ALPHA_TABLE[52] =
+uint8_t ALPHA_TABLE[52] =
 {
     0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -38,7 +38,7 @@ Ipp8u ALPHA_TABLE[52] =
 };
 
 // beta table
-Ipp8u BETA_TABLE[52] =
+uint8_t BETA_TABLE[52] =
 {
     0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,
@@ -50,7 +50,7 @@ Ipp8u BETA_TABLE[52] =
 };
 
 // clipping table
-Ipp8u CLIP_TAB[52][5] =
+uint8_t CLIP_TAB[52][5] =
 {
     { 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},
     { 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},{ 0, 0, 0, 0, 0},
@@ -62,7 +62,7 @@ Ipp8u CLIP_TAB[52][5] =
 };
 
 // chroma scaling QP table
-Ipp8u QP_SCALE_CR[52] =
+uint8_t QP_SCALE_CR[52] =
 {
     0,  1,  2,  3,  4,  5,  6,  7,
     8,  9,  10, 11, 12, 13, 14, 15,
@@ -74,7 +74,7 @@ Ipp8u QP_SCALE_CR[52] =
 };
 
 // masks for external blocks pair "coded bits"
-Ipp32u EXTERNAL_BLOCK_MASK[NUMBER_OF_DIRECTION][2][4] =
+uint32_t EXTERNAL_BLOCK_MASK[NUMBER_OF_DIRECTION][2][4] =
 {
     // block mask for vertical deblocking
     {
@@ -91,7 +91,7 @@ Ipp32u EXTERNAL_BLOCK_MASK[NUMBER_OF_DIRECTION][2][4] =
 
 #define DECL(prev, cur) (2 << (prev) | 2 << (cur))
 // masks for internal blocks pair "coded bits"
-Ipp32u INTERNAL_BLOCKS_MASK[NUMBER_OF_DIRECTION][12] =
+uint32_t INTERNAL_BLOCKS_MASK[NUMBER_OF_DIRECTION][12] =
 {
     // blocks pair-mask for vertical deblocking
     {

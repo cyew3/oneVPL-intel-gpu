@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -54,7 +54,7 @@ void H264DecoderFrameEx::deallocateParsedFrameData()
     m_paddedParsedFrameDataSize.height = 0;
 }    // deallocateParsedFrameData
 
-size_t H264DecoderFrameEx::GetFrameDataSize(const IppiSize &lumaSize)
+size_t H264DecoderFrameEx::GetFrameDataSize(const mfxSize &lumaSize)
 {
     size_t nMBCount = (lumaSize.width >> 4) * (lumaSize.height >> 4) + 2;
 
@@ -87,7 +87,7 @@ Status H264DecoderFrameEx::allocateParsedFrameData()
         // allocate buffer
         size_t nMemSize = GetFrameDataSize(m_lumaSize);
 
-        m_pParsedFrameDataNew = m_pObjHeap->Allocate<Ipp8u>(nMemSize);
+        m_pParsedFrameDataNew = m_pObjHeap->Allocate<uint8_t>(nMemSize);
 
         const int ALIGN_VALUE = 16;
 

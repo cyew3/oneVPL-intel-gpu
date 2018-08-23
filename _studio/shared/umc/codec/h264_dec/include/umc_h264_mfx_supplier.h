@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -32,13 +32,13 @@ public:
 
     void Reset();
 
-    Ipp32s GetID() const;
+    int32_t GetID() const;
 
     size_t GetSize() const;
 
-    Ipp8u * GetPointer();
+    uint8_t * GetPointer();
 
-    void Resize(Ipp32s id, size_t newSize);
+    void Resize(int32_t id, size_t newSize);
 
 #ifdef __APPLE__
     size_t  GetRBSPSize();
@@ -46,9 +46,9 @@ public:
 #endif 
 
 protected:
-    typedef std::vector<Ipp8u> BufferType;
+    typedef std::vector<uint8_t> BufferType;
     BufferType  m_buffer;
-    Ipp32s      m_id;
+    int32_t      m_id;
 #ifdef __APPLE__
     size_t      m_rbspSize;
 #endif
@@ -87,7 +87,7 @@ public:
 
     virtual void Reset();
 
-    virtual Status CompleteFrame(H264DecoderFrame * pFrame, Ipp32s field);
+    virtual Status CompleteFrame(H264DecoderFrame * pFrame, int32_t field);
 
     virtual bool ProcessNonPairedField(H264DecoderFrame * pFrame);
 
@@ -114,7 +114,7 @@ private:
     } // MFXTaskSupplier & operator = (MFXTaskSupplier &)
 };
 
-inline Ipp32u ExtractProfile(mfxU32 profile)
+inline uint32_t ExtractProfile(mfxU32 profile)
 {
     return profile & 0xFF;
 }

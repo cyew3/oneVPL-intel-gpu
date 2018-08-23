@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -23,34 +23,34 @@ namespace UMC
 //
 
 inline
-Ipp32u BIT_CHECK(const Ipp32u value, Ipp32s n)
+uint32_t BIT_CHECK(const uint32_t value, int32_t n)
 {
-    return (Ipp32u)((value & mask_bit[n]) >> n);
+    return (uint32_t)((value & mask_bit[n]) >> n);
 }
 
 inline
-Ipp32u IsLeftBlockExist(Ipp32s iCBP, Ipp32s iBlock)
+uint32_t IsLeftBlockExist(int32_t iCBP, int32_t iBlock)
 {
-    return (((Ipp32u) -(iCBP & iLeftBlockMask[iBlock])) >> 31);
+    return (((uint32_t) -(iCBP & iLeftBlockMask[iBlock])) >> 31);
 
-} // Ipp32u IsLeftBlockExist(Ipp32s iCBP, Ipp32s iBlock)
+} // uint32_t IsLeftBlockExist(int32_t iCBP, int32_t iBlock)
 
 inline
-Ipp32u IsTopBlockExist(Ipp32s iCBP, Ipp32s iBlock)
+uint32_t IsTopBlockExist(int32_t iCBP, int32_t iBlock)
 {
-    return (((Ipp32u) -(iCBP & iTopBlockMask[iBlock])) >> 31);
-} // Ipp32u IsTopBlockExist(Ipp32s iCBP, Ipp32s iBlock)
+    return (((uint32_t) -(iCBP & iTopBlockMask[iBlock])) >> 31);
+} // uint32_t IsTopBlockExist(int32_t iCBP, int32_t iBlock)
 
 
 // Get context functions
 inline
-Ipp32u H264SegmentDecoder::GetDCBlocksLumaContext()
+uint32_t H264SegmentDecoder::GetDCBlocksLumaContext()
 {
     bool use_above = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0;
     bool use_left = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num>=0;
-    Ipp32u above_coeffs=use_above?
+    uint32_t above_coeffs=use_above?
         GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num, m_cur_mb.CurrentBlockNeighbours.mb_above.block_num) : 0;
-    Ipp32u left_coeffs=use_left?
+    uint32_t left_coeffs=use_left?
         GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num, m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num) : 0;
     if(use_above && use_left) return (above_coeffs+left_coeffs+1)/2;
     else if (use_above ) return above_coeffs;
@@ -60,15 +60,15 @@ Ipp32u H264SegmentDecoder::GetDCBlocksLumaContext()
 
 // an universal function for an every case of the live
 inline
-Ipp32u H264SegmentDecoder::GetBlocksLumaContext(Ipp32s x,Ipp32s y)
+uint32_t H264SegmentDecoder::GetBlocksLumaContext(int32_t x,int32_t y)
 {
     bool use_above = y || m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num>=0;
     bool use_left = x || m_cur_mb.CurrentBlockNeighbours.mbs_left[y].mb_num>=0;
-    Ipp8u above_coeffs=0;
+    uint8_t above_coeffs=0;
     if (use_above) above_coeffs= y==0?
         GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num, m_cur_mb.CurrentBlockNeighbours.mb_above.block_num+x):
         m_cur_mb.GetNumCoeff(y*4+x-4);
-    Ipp8u left_coeffs=0;
+    uint8_t left_coeffs=0;
     if (use_left)left_coeffs = x==0?
         GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mbs_left[y].mb_num, m_cur_mb.CurrentBlockNeighbours.mbs_left[y].block_num):
         m_cur_mb.GetNumCoeff(y*4+x-1);
@@ -81,15 +81,15 @@ Ipp32u H264SegmentDecoder::GetBlocksLumaContext(Ipp32s x,Ipp32s y)
 
 // a function for the first luma block in a macroblock
 inline
-Ipp32s H264SegmentDecoder::GetBlocksLumaContextExternal(void)
+int32_t H264SegmentDecoder::GetBlocksLumaContextExternal(void)
 {
     bool use_above = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num >= 0;
     bool use_left = m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num >= 0;
 
     if (use_above && use_left)
     {
-        Ipp32s above_coeffs = GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num, m_cur_mb.CurrentBlockNeighbours.mb_above.block_num);
-        Ipp32s left_coeffs = GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num, m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num);
+        int32_t above_coeffs = GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num, m_cur_mb.CurrentBlockNeighbours.mb_above.block_num);
+        int32_t left_coeffs = GetNumCoeff(&m_mbinfo, m_cur_mb.CurrentBlockNeighbours.mbs_left[0].mb_num, m_cur_mb.CurrentBlockNeighbours.mbs_left[0].block_num);
 
         return (above_coeffs + left_coeffs + 1) / 2;
     }
@@ -104,15 +104,15 @@ Ipp32s H264SegmentDecoder::GetBlocksLumaContextExternal(void)
     else
         return 0;
 
-} // Ipp32s GetBlocksLumaContextExternal(void)
+} // int32_t GetBlocksLumaContextExternal(void)
 
 // a function for a block on the upper edge of a macroblock,
 // but not for the first block
 inline
-Ipp32s H264SegmentDecoder::GetBlocksLumaContextTop(Ipp32s x, Ipp32s left_coeffs)
+int32_t H264SegmentDecoder::GetBlocksLumaContextTop(int32_t x, int32_t left_coeffs)
 {
     bool use_above = m_cur_mb.CurrentBlockNeighbours.mb_above.mb_num >= 0;
-    Ipp32s above_coeffs;
+    int32_t above_coeffs;
 
     if (use_above)
     {
@@ -122,15 +122,15 @@ Ipp32s H264SegmentDecoder::GetBlocksLumaContextTop(Ipp32s x, Ipp32s left_coeffs)
     else
         return left_coeffs;
 
-} // Ipp32s GetBlocksLumaContextTop(Ipp32s x, Ipp32s left_coeffs)
+} // int32_t GetBlocksLumaContextTop(int32_t x, int32_t left_coeffs)
 
 // a function for a block on the left edge of a macroblock,
 // but not for the first block
 inline
-Ipp32u H264SegmentDecoder::GetBlocksLumaContextLeft(Ipp32s y, Ipp32s above_coeffs)
+uint32_t H264SegmentDecoder::GetBlocksLumaContextLeft(int32_t y, int32_t above_coeffs)
 {
     bool use_left = m_cur_mb.CurrentBlockNeighbours.mbs_left[y].mb_num >= 0;
-    Ipp32s left_coeffs;
+    int32_t left_coeffs;
 
     if (use_left)
     {
@@ -140,23 +140,23 @@ Ipp32u H264SegmentDecoder::GetBlocksLumaContextLeft(Ipp32s y, Ipp32s above_coeff
     else
         return above_coeffs;
 
-} // Ipp32u GetBlocksLumaContextLeft(Ipp32s y, Ipp32s above_coeffs)
+} // uint32_t GetBlocksLumaContextLeft(int32_t y, int32_t above_coeffs)
 
 // a function for any internal block of a macroblock
 inline
-Ipp32u H264SegmentDecoder::GetBlocksLumaContextInternal(Ipp32s raster_block_num, Ipp8u *pNumCoeffsArray)
+uint32_t H264SegmentDecoder::GetBlocksLumaContextInternal(int32_t raster_block_num, uint8_t *pNumCoeffsArray)
 {
     return (pNumCoeffsArray[raster_block_num - 1] +
             pNumCoeffsArray[raster_block_num - 4] + 1) / 2;
 
-} // Ipp32u GetBlocksLumaContextInternal(Ipp32s x, Ipp32s y, Ipp8u *pNumCoeffsArray)
+} // uint32_t GetBlocksLumaContextInternal(int32_t x, int32_t y, uint8_t *pNumCoeffsArray)
 
 // an universal function for an every case of the live
 inline
-Ipp32u H264SegmentDecoder::GetBlocksChromaContextBMEH(Ipp32s x,Ipp32s y,Ipp32s component)
+uint32_t H264SegmentDecoder::GetBlocksChromaContextBMEH(int32_t x,int32_t y,int32_t component)
 {
-    Ipp8u above_coeffs=0;
-    Ipp8u left_coeffs=0;
+    uint8_t above_coeffs=0;
+    uint8_t left_coeffs=0;
     bool use_above;
     bool use_left;
     if (component)
@@ -194,11 +194,11 @@ Ipp32u H264SegmentDecoder::GetBlocksChromaContextBMEH(Ipp32s x,Ipp32s y,Ipp32s c
 
 // a function for the first block in a macroblock
 inline
-Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHExternal(Ipp32s iComponent)
+int32_t H264SegmentDecoder::GetBlocksChromaContextBMEHExternal(int32_t iComponent)
 {
     bool use_above = m_cur_mb.CurrentBlockNeighbours.mb_above_chroma[iComponent].mb_num >= 0;
     bool use_left = m_cur_mb.CurrentBlockNeighbours.mbs_left_chroma[iComponent][0].mb_num >= 0;
-    Ipp32s above_coeffs, left_coeffs;
+    int32_t above_coeffs, left_coeffs;
 
     if (use_above && use_left)
     {
@@ -219,15 +219,15 @@ Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHExternal(Ipp32s iComponent)
     else
         return 0;
 
-} // Ipp32s GetBlocksChromaContextBMEHExternal(Ipp32s iComponent)
+} // int32_t GetBlocksChromaContextBMEHExternal(int32_t iComponent)
 
 // a function for a block on the upper edge of a macroblock,
 // but not for the first block
 inline
-Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHTop(Ipp32s x, Ipp32s left_coeffs, Ipp32s iComponent)
+int32_t H264SegmentDecoder::GetBlocksChromaContextBMEHTop(int32_t x, int32_t left_coeffs, int32_t iComponent)
 {
     bool use_above = m_cur_mb.CurrentBlockNeighbours.mb_above_chroma[iComponent].mb_num >= 0;
-    Ipp32s above_coeffs;
+    int32_t above_coeffs;
 
     if (use_above)
     {
@@ -237,15 +237,15 @@ Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHTop(Ipp32s x, Ipp32s left_c
     else
         return left_coeffs;
 
-} // Ipp32s GetBlocksChromaContextBMEHTop(Ipp32s x, Ipp32s left_coeffs, Ipp32s iComponent)
+} // int32_t GetBlocksChromaContextBMEHTop(int32_t x, int32_t left_coeffs, int32_t iComponent)
 
 // a function for a block on the left edge of a macroblock,
 // but not for the first block
 inline
-Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHLeft(Ipp32s y, Ipp32s above_coeffs, Ipp32s iComponent)
+int32_t H264SegmentDecoder::GetBlocksChromaContextBMEHLeft(int32_t y, int32_t above_coeffs, int32_t iComponent)
 {
     bool use_left = m_cur_mb.CurrentBlockNeighbours.mbs_left_chroma[iComponent][0].mb_num >= 0;
-    Ipp32s left_coeffs;
+    int32_t left_coeffs;
 
     if (use_left)
     {
@@ -255,22 +255,22 @@ Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHLeft(Ipp32s y, Ipp32s above
     else
         return above_coeffs;
 
-} // Ipp32s GetBlocksChromaContextBMEHLeft(Ipp32s y, Ipp32s above_coeffs, Ipp32s iComponent)
+} // int32_t GetBlocksChromaContextBMEHLeft(int32_t y, int32_t above_coeffs, int32_t iComponent)
 
 // a function for any internal block of a macroblock
 inline
-Ipp32s H264SegmentDecoder::GetBlocksChromaContextBMEHInternal(Ipp32s raster_block_num, Ipp8u *pNumCoeffsArray)
+int32_t H264SegmentDecoder::GetBlocksChromaContextBMEHInternal(int32_t raster_block_num, uint8_t *pNumCoeffsArray)
 {
     return (pNumCoeffsArray[raster_block_num- 1] +
             pNumCoeffsArray[raster_block_num - 2] + 1) / 2;
 
-} // Ipp32s GetBlocksChromaContextBMEHInternal(Ipp32s x, Ipp32s y, Ipp8u *pNumCoeffsArray)
+} // int32_t GetBlocksChromaContextBMEHInternal(int32_t x, int32_t y, uint8_t *pNumCoeffsArray)
 
 inline
-Ipp32u H264SegmentDecoder::GetBlocksChromaContextH2(Ipp32s x,Ipp32s y,Ipp32s component)
+uint32_t H264SegmentDecoder::GetBlocksChromaContextH2(int32_t x,int32_t y,int32_t component)
 {
-    Ipp8u above_coeffs=0;
-    Ipp8u left_coeffs=0;
+    uint8_t above_coeffs=0;
+    uint8_t left_coeffs=0;
     bool use_above;
     bool use_left;
     if (component)
@@ -308,10 +308,10 @@ Ipp32u H264SegmentDecoder::GetBlocksChromaContextH2(Ipp32s x,Ipp32s y,Ipp32s com
 }
 
 inline
-Ipp32u H264SegmentDecoder::GetBlocksChromaContextH4(Ipp32s x,Ipp32s y,Ipp32s component)
+uint32_t H264SegmentDecoder::GetBlocksChromaContextH4(int32_t x,int32_t y,int32_t component)
 {
-    Ipp8u above_coeffs=0;
-    Ipp8u left_coeffs=0;
+    uint8_t above_coeffs=0;
+    uint8_t left_coeffs=0;
     bool use_above;
 bool use_left;
     if (component)
@@ -443,19 +443,19 @@ void H264SegmentDecoder::GetTopRightLocationForCurrentMBLumaNonMBAFF(H264Decoder
 } // void H264SegmentDecoder::GetTopRightLocationForCurrentMBLumaNonMBAFF(H264DecoderBlockLocation *Block)
 
 inline
-void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block,Ipp32s AdditionalDecrement)
+void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block,int32_t AdditionalDecrement)
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
 
-    Ipp32s MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
-    Ipp32s MB_N;
+    int32_t MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
+    int32_t MB_N;
         //luma
     if (BLOCK_IS_ON_LEFT_EDGE(Block->block_num))
     {
         if (MB_X>=0)
         {
-            Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+            uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
             if (curmbfff)
             {
                 if (curmbtf)
@@ -468,7 +468,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLo
                     else
                     {
                         // 1 1 0
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         yN*=4;
                         yN-=AdditionalDecrement;
                         yN/=2;
@@ -490,7 +490,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLo
                     else
                     {
                         // 1 0 0
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         yN*=4;
                         yN-=AdditionalDecrement;
                         yN+=16;
@@ -511,7 +511,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLo
                     if (xfff)
                     {
                         //0 1 1
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         yN*=4;
                         yN-=AdditionalDecrement;
                         yN*=2;
@@ -538,7 +538,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLo
                     if (xfff)
                     {
                         // 0 0 1
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         yN*=4;
                         yN-=AdditionalDecrement;
                         yN*=2;
@@ -579,16 +579,16 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLo
 
     return;
 
-} // void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block,Ipp32s AdditionalDecrement)
+} // void H264SegmentDecoder::GetLeftLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block,int32_t AdditionalDecrement)
 
 inline
-void H264SegmentDecoder::GetTopLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block, Ipp32s DeblockCalls)
+void H264SegmentDecoder::GetTopLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block, int32_t DeblockCalls)
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s pair_offset = (curmbtf) ? (1) : (-1);
-    Ipp32s MB_X;
-    Ipp32s MB_N;
+    int32_t pair_offset = (curmbtf) ? (1) : (-1);
+    int32_t MB_X;
+    int32_t MB_N;
     //luma
     if (BLOCK_IS_ON_TOP_EDGE(Block->block_num))
     {
@@ -602,7 +602,7 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBLumaMBAFF(H264DecoderBlockLoc
             MB_X = m_cur_mb.CurrentMacroblockNeighbours.mb_B;
             if (MB_X>=0)
             {
-                Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+                uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
                 MB_N=MB_X;
                 Block->block_num+=12;
                 if (curmbfff || !curmbtf || xfff)
@@ -627,7 +627,7 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBLumaMBAFF(H264DecoderBlockLoc
         return;
     }
 
-} // void H264SegmentDecoder::GetTopLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block,Ipp8u DeblockCalls)
+} // void H264SegmentDecoder::GetTopLocationForCurrentMBLumaMBAFF(H264DecoderBlockLocation *Block,uint8_t DeblockCalls)
 
 
 inline
@@ -635,8 +635,8 @@ void H264SegmentDecoder::GetTopLeftLocationForCurrentMBLumaMBAFF(H264DecoderBloc
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s MB_X;
-    Ipp32s MB_N;
+    int32_t MB_X;
+    int32_t MB_N;
     //luma
     if (BLOCK_IS_ON_LEFT_EDGE(Block->block_num) && BLOCK_IS_ON_TOP_EDGE(Block->block_num))
     {
@@ -717,8 +717,8 @@ void H264SegmentDecoder::GetTopRightLocationForCurrentMBLumaMBAFF(H264DecoderBlo
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s MB_X;
-    Ipp32s MB_N;
+    int32_t MB_X;
+    int32_t MB_N;
     //luma
     if (Block->block_num==3)
     {
@@ -892,15 +892,15 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFBMEH(H264DecoderB
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
-    Ipp32s MB_N;
+    int32_t MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
+    int32_t MB_N;
     Block->block_num-=16;
     //chroma
     if (CHROMA_BLOCK_IS_ON_LEFT_EDGE(Block->block_num,1))
     {
         if (MB_X>=0) //left mb addr vaild?
         {
-            Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+            uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
             if (curmbfff)
             {
                 if (curmbtf)
@@ -913,7 +913,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFBMEH(H264DecoderB
                     else
                     {
                         // 1 1 0
-                        Ipp32u yN = Block->block_num/2, xN=Block->block_num%2;
+                        uint32_t yN = Block->block_num/2, xN=Block->block_num%2;
                         yN/=2;
                         Block->block_num=yN*2+xN;
                         MB_N=MB_X;
@@ -929,7 +929,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFBMEH(H264DecoderB
                     else
                     {
                         // 1 0 0
-                        Ipp32u yN = Block->block_num/2, xN=Block->block_num%2;
+                        uint32_t yN = Block->block_num/2, xN=Block->block_num%2;
                         yN+=2;
                         yN/=2;
                         Block->block_num=yN*2+xN;
@@ -944,7 +944,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFBMEH(H264DecoderB
                     if (xfff)
                     {
                         //0 1 1
-                        Ipp32u yN = Block->block_num/2, xN=Block->block_num%2;
+                        uint32_t yN = Block->block_num/2, xN=Block->block_num%2;
                         if (yN<1)
                         {
                             yN*=2;
@@ -969,7 +969,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFBMEH(H264DecoderB
                     if (xfff)
                     {
                         // 0 0 1
-                        Ipp32u yN = Block->block_num/2, xN=Block->block_num%2;
+                        uint32_t yN = Block->block_num/2, xN=Block->block_num%2;
                         if (yN<1)
                         {
                             yN*=8;
@@ -1015,15 +1015,15 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH2(H264DecoderBlo
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
-    Ipp32s MB_N;
+    int32_t MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
+    int32_t MB_N;
     Block->block_num-=16;
     //chroma
     if (CHROMA_BLOCK_IS_ON_LEFT_EDGE(Block->block_num,2))
     {
         if (MB_X>=0)
         {
-            Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+            uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
             if (curmbfff)
             {
                 if (curmbtf)
@@ -1036,7 +1036,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH2(H264DecoderBlo
                     else
                     {
                         // 1 1 0
-                        Ipp32u yN = Block->block_num/2;
+                        uint32_t yN = Block->block_num/2;
                         yN/=2;
                         Block->block_num = yN*2;
                         MB_N=MB_X;
@@ -1052,7 +1052,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH2(H264DecoderBlo
                     else
                     {
                         // 1 0 0
-                        Ipp32u yN = Block->block_num/2;
+                        uint32_t yN = Block->block_num/2;
                         yN*=4;
                         yN+=16;
                         yN/=2;
@@ -1068,7 +1068,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH2(H264DecoderBlo
                     if (xfff)
                     {
                         //0 1 1
-                        Ipp32u yN = Block->block_num/2;
+                        uint32_t yN = Block->block_num/2;
                         yN*=4;
                         yN*=2;
                         if (yN<16)
@@ -1093,7 +1093,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH2(H264DecoderBlo
                     if (xfff)
                     {
                         // 0 0 1
-                        Ipp32u yN = Block->block_num/2;
+                        uint32_t yN = Block->block_num/2;
                         yN*=4;
                         yN*=2;
                         if (yN<16)
@@ -1139,15 +1139,15 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH4(H264DecoderBlo
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
-    Ipp32s MB_N;
+    int32_t MB_X=m_cur_mb.CurrentMacroblockNeighbours.mb_A;
+    int32_t MB_N;
     Block->block_num-=16;
     //chroma
     if (CHROMA_BLOCK_IS_ON_LEFT_EDGE(Block->block_num,3))
     {
         if (MB_X>=0) //left mb addr vaild?
         {
-            Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+            uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
             if (curmbfff)
             {
                 if (curmbtf)
@@ -1160,7 +1160,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH4(H264DecoderBlo
                     else
                     {
                         // 1 1 0
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         yN/=2;
                         Block->block_num=yN*4;
                         MB_N=MB_X;
@@ -1176,7 +1176,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH4(H264DecoderBlo
                     else
                     {
                         // 1 0 0
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         yN+=16;
                         yN/=2;
                         Block->block_num=yN*4;
@@ -1191,7 +1191,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH4(H264DecoderBlo
                     if (xfff)
                     {
                         //0 1 1
-                        Ipp32u yN = Block->block_num/4;
+                        uint32_t yN = Block->block_num/4;
                         if (yN<1)
                         {
                             yN*=2;
@@ -1216,7 +1216,7 @@ void H264SegmentDecoder::GetLeftLocationForCurrentMBChromaMBAFFH4(H264DecoderBlo
                     if (xfff)
                     {
                         // 0 0 1
-                        Ipp32u yN = Block->block_num/2;
+                        uint32_t yN = Block->block_num/2;
                         if (yN<1)
                         {
                             yN*=8;
@@ -1261,9 +1261,9 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFBMEH(H264DecoderBl
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s pair_offset = curmbtf? 1:-1;
-    Ipp32s MB_X;
-    Ipp32s MB_N;
+    int32_t pair_offset = curmbtf? 1:-1;
+    int32_t MB_X;
+    int32_t MB_N;
     //chroma
     if (CHROMA_BLOCK_IS_ON_TOP_EDGE(Block->block_num-16,1))
     {
@@ -1277,7 +1277,7 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFBMEH(H264DecoderBl
             MB_X = m_cur_mb.CurrentMacroblockNeighbours.mb_B;
             if (MB_X>=0)
             {
-                Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+                uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
                 if (!curmbfff && curmbtf && !xfff)
                 {
                     MB_N=MB_X;
@@ -1315,9 +1315,9 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFH2(H264DecoderBloc
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s pair_offset = curmbtf? 1:-1;
-    Ipp32s MB_X;
-    Ipp32s MB_N;
+    int32_t pair_offset = curmbtf? 1:-1;
+    int32_t MB_X;
+    int32_t MB_N;
     //chroma
     if (CHROMA_BLOCK_IS_ON_TOP_EDGE(Block->block_num-16,2))
     {
@@ -1331,7 +1331,7 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFH2(H264DecoderBloc
             MB_X = m_cur_mb.CurrentMacroblockNeighbours.mb_B;
             if (MB_X>=0)
             {
-                Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+                uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
                 if (!curmbfff && curmbtf && !xfff)
                 {
                     MB_N=MB_X;
@@ -1369,9 +1369,9 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFH4(H264DecoderBloc
 {
     bool curmbfff = !pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
     bool curmbtf  = !(m_CurMBAddr & 1);
-    Ipp32s pair_offset = curmbtf? 1:-1;
-    Ipp32s MB_X;
-    Ipp32s MB_N;
+    int32_t pair_offset = curmbtf? 1:-1;
+    int32_t MB_X;
+    int32_t MB_N;
     //chroma
     if (CHROMA_BLOCK_IS_ON_TOP_EDGE(Block->block_num-16,3))
     {
@@ -1385,7 +1385,7 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFH4(H264DecoderBloc
             MB_X = m_cur_mb.CurrentMacroblockNeighbours.mb_B;
             if (MB_X>=0)
             {
-                Ipp8u xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
+                uint8_t xfff=!GetMBFieldDecodingFlag(m_gmbinfo->mbs[MB_X]);
                 if (!curmbfff && curmbtf && !xfff)
                 {
                     MB_N=MB_X;
@@ -1415,7 +1415,7 @@ void H264SegmentDecoder::GetTopLocationForCurrentMBChromaMBAFFH4(H264DecoderBloc
 
 }
 
-void H264SegmentDecoder::UpdateNeighbouringBlocksBMEH(Ipp32s DeblockCalls)
+void H264SegmentDecoder::UpdateNeighbouringBlocksBMEH(int32_t DeblockCalls)
 {
     H264DecoderBlockNeighboursInfo * pN = &m_cur_mb.CurrentBlockNeighbours;
 
@@ -1463,7 +1463,7 @@ void H264SegmentDecoder::UpdateNeighbouringBlocksBMEH(Ipp32s DeblockCalls)
     pN->mb_above_chroma[1].block_num+=4;
 }
 
-void H264SegmentDecoder::UpdateNeighbouringBlocksH2(Ipp32s DeblockCalls)
+void H264SegmentDecoder::UpdateNeighbouringBlocksH2(int32_t DeblockCalls)
 {
     H264DecoderBlockNeighboursInfo * pN = &m_cur_mb.CurrentBlockNeighbours;
 
@@ -1521,7 +1521,7 @@ void H264SegmentDecoder::UpdateNeighbouringBlocksH2(Ipp32s DeblockCalls)
     pN->mb_above_chroma[1].block_num+=8;
 }
 
-void H264SegmentDecoder::UpdateNeighbouringBlocksH4(Ipp32s DeblockCalls)
+void H264SegmentDecoder::UpdateNeighbouringBlocksH4(int32_t DeblockCalls)
 {
     H264DecoderBlockNeighboursInfo * pN = &m_cur_mb.CurrentBlockNeighbours;
 
@@ -1587,8 +1587,8 @@ void H264SegmentDecoder::UpdateNeighbouringBlocksH4(Ipp32s DeblockCalls)
 inline
 void H264SegmentDecoder::UpdateCurrentMBInfo()
 {
-/*    if (0 == (((Ipp32s) m_isMBAFF) |
-              ((Ipp32s) m_isSliceGroups)) && m_cur_mb.isInited)
+/*    if (0 == (((int32_t) m_isMBAFF) |
+              ((int32_t) m_isSliceGroups)) && m_cur_mb.isInited)
     {
         m_cur_mb.GlobalMacroblockInfo++;
         m_cur_mb.LocalMacroblockInfo++;
@@ -1626,8 +1626,8 @@ void H264SegmentDecoder::UpdateCurrentMBInfo()
 inline
 void H264SegmentDecoder::UpdateNeighbouringAddresses()
 {
-    if (0 == (((Ipp32s) m_isMBAFF) |
-              ((Ipp32s) m_isSliceGroups)))
+    if (0 == (((int32_t) m_isMBAFF) |
+              ((int32_t) m_isSliceGroups)))
     {
         UpdateNeighbouringAddressesField();
     }
@@ -1637,10 +1637,10 @@ void H264SegmentDecoder::UpdateNeighbouringAddresses()
 
         if (m_isSliceGroups)
         {
-            if (!((Ipp32s)m_isMBAFF && (m_CurMBAddr & 1))) //update only if top mb recieved
+            if (!((int32_t)m_isMBAFF && (m_CurMBAddr & 1))) //update only if top mb recieved
             {
-                Ipp32s real_mb_width = mb_width*((Ipp32s)m_isMBAFF + 1);
-                Ipp32s mb_left_offset = (Ipp32s)m_isMBAFF + 1;
+                int32_t real_mb_width = mb_width*((int32_t)m_isMBAFF + 1);
+                int32_t mb_left_offset = (int32_t)m_isMBAFF + 1;
                 pN->mb_A = m_CurMB_X>0? m_CurMBAddr - mb_left_offset : -1;
                 pN->mb_B = m_CurMB_Y>0? m_CurMBAddr - real_mb_width :-1;
                 pN->mb_C = (m_CurMB_Y > 0 && m_CurMB_X < ((signed)mb_width) - 1) ? (m_CurMBAddr - real_mb_width + mb_left_offset) : (-1);
@@ -1663,10 +1663,10 @@ void H264SegmentDecoder::UpdateNeighbouringAddresses()
         }
         else
         {
-            if (!((Ipp32s)m_isMBAFF && (m_CurMBAddr & 1))) //update only if top mb recieved
+            if (!((int32_t)m_isMBAFF && (m_CurMBAddr & 1))) //update only if top mb recieved
             {
-                Ipp32s real_mb_width = mb_width*((Ipp32s)m_isMBAFF + 1);
-                Ipp32s mb_left_offset = (Ipp32s)m_isMBAFF + 1;
+                int32_t real_mb_width = mb_width*((int32_t)m_isMBAFF + 1);
+                int32_t mb_left_offset = (int32_t)m_isMBAFF + 1;
                 pN->mb_A = m_CurMB_X>0? m_CurMBAddr - mb_left_offset : -1;
                 pN->mb_B = m_CurMB_Y>0? m_CurMBAddr - real_mb_width :-1;
                 pN->mb_C = (m_CurMB_Y > 0 && m_CurMB_X < ((signed)mb_width) - 1) ? (m_CurMBAddr - real_mb_width + mb_left_offset) : (-1);
@@ -1689,14 +1689,14 @@ void H264SegmentDecoder::UpdateNeighbouringAddresses()
         m_cur_mb.LocalMacroblockPairInfo = &m_mbinfo.mbs[m_PairMBAddr];
     }
 
-} // void H264SegmentDecoder::UpdateNeighbouringAddresses(Ipp8u IgnoreSliceEdges)
+} // void H264SegmentDecoder::UpdateNeighbouringAddresses(uint8_t IgnoreSliceEdges)
 
 inline
 void H264SegmentDecoder::UpdateNeighbouringAddressesField(void)
 {
     H264DecoderMacroblockNeighboursInfo *pNInfo = &(m_cur_mb.CurrentMacroblockNeighbours);
-    Ipp32s iFirst = m_iFirstSliceMb;
-    Ipp32s iMBWidth = mb_width;
+    int32_t iFirst = m_iFirstSliceMb;
+    int32_t iMBWidth = mb_width;
 
     if (m_CurMB_X && m_CurMB_Y)
     {

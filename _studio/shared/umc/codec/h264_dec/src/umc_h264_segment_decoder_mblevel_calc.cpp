@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -16,16 +16,16 @@
 namespace UMC
 {
 
-Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
-                                                Ipp32s Field,
-                                                Ipp32s &block,
-                                                Ipp32s *scale)
+int32_t H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
+                                                int32_t Field,
+                                                int32_t &block,
+                                                int32_t *scale)
 {
-    Ipp32s location = -1;
-    Ipp32u cur_pic_struct = m_pCurrentFrame->m_PictureStructureForDec;
-    Ipp32u ref_pic_struct = pRefFrame->m_PictureStructureForDec;
-    Ipp32s xCol = block & 3;
-    Ipp32s yCol = block - xCol;
+    int32_t location = -1;
+    uint32_t cur_pic_struct = m_pCurrentFrame->m_PictureStructureForDec;
+    uint32_t ref_pic_struct = pRefFrame->m_PictureStructureForDec;
+    int32_t xCol = block & 3;
+    int32_t yCol = block - xCol;
 
     if (cur_pic_struct==FRM_STRUCTURE && ref_pic_struct != FLD_STRUCTURE)
     {
@@ -35,10 +35,10 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
     }
     else if (cur_pic_struct==AFRM_STRUCTURE && ref_pic_struct != FLD_STRUCTURE)
     {
-        Ipp32s preColMBAddr=m_CurMBAddr;
+        int32_t preColMBAddr=m_CurMBAddr;
         H264DecoderMacroblockGlobalInfo *preColMB = &pRefFrame->m_mbinfo.mbs[preColMBAddr];
-        Ipp32s cur_mbfdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-        Ipp32s ref_mbfdf = pGetMBFieldDecodingFlag(preColMB);
+        int32_t cur_mbfdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+        int32_t ref_mbfdf = pGetMBFieldDecodingFlag(preColMB);
 
         if (cur_mbfdf == ref_mbfdf)
         {
@@ -67,9 +67,9 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
         }
         else
         {
-            Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
-            Ipp32s topPOC = pRefFrame->PicOrderCnt(0,1);
-            Ipp32s bottomPOC = pRefFrame->PicOrderCnt(1,1);
+            int32_t curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
+            int32_t topPOC = pRefFrame->PicOrderCnt(0,1);
+            int32_t bottomPOC = pRefFrame->PicOrderCnt(1,1);
 
             preColMBAddr &= -2; // == (preColMBAddr/2)*2;
             if (abs(topPOC - curPOC) >= abs(bottomPOC - curPOC))
@@ -87,7 +87,7 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
     {
         if (scale)
             *scale = 0;
-        Ipp32s RefField = Field;
+        int32_t RefField = Field;
 
         if(RefField > m_field_index)
         {
@@ -98,8 +98,8 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
     }
     else if (cur_pic_struct == FLD_STRUCTURE && ref_pic_struct == FRM_STRUCTURE)
     {
-        Ipp32u PicWidthInMbs = mb_width;
-        Ipp32u CurrMbAddr = m_field_index ? m_CurMBAddr - m_pCurrentFrame->totalMBs : m_CurMBAddr;
+        uint32_t PicWidthInMbs = mb_width;
+        uint32_t CurrMbAddr = m_field_index ? m_CurMBAddr - m_pCurrentFrame->totalMBs : m_CurMBAddr;
         if(scale)
             *scale = 1;
         yCol = ((2*yCol)&15);
@@ -112,16 +112,16 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
         if (scale)
             *scale=-1;
 
-        Ipp32u PicWidthInMbs = mb_width;
-        Ipp32u CurrMbAddr = m_CurMBAddr;
+        uint32_t PicWidthInMbs = mb_width;
+        uint32_t CurrMbAddr = m_CurMBAddr;
         yCol = 8*((CurrMbAddr/PicWidthInMbs)&1) + 4 * (yCol/8);
         block = yCol+xCol;
 
-        Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
-        Ipp32s topPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(0), 1);
-        Ipp32s bottomPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(1), 1);
+        int32_t curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
+        int32_t topPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(0), 1);
+        int32_t bottomPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(1), 1);
 
-        Ipp32s add = 0;
+        int32_t add = 0;
         if (abs(curPOC - topPOC) >= abs(curPOC - bottomPOC))
         {
             add = pRefFrame->totalMBs;
@@ -131,14 +131,14 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
     }
     else if (cur_pic_struct == FLD_STRUCTURE && ref_pic_struct == AFRM_STRUCTURE)
     {
-        Ipp32u CurrMbAddr = m_CurMBAddr;
+        uint32_t CurrMbAddr = m_CurMBAddr;
         if (m_field_index)
             CurrMbAddr -= m_pCurrentFrame->totalMBs;
-        Ipp32s bottom_field_flag = m_field_index;
-        Ipp32s preColMBAddr = 2*CurrMbAddr;
+        int32_t bottom_field_flag = m_field_index;
+        int32_t preColMBAddr = 2*CurrMbAddr;
 
         H264DecoderMacroblockGlobalInfo *preColMB = &pRefFrame->m_mbinfo.mbs[preColMBAddr];
-        Ipp32s col_mbfdf = pGetMBFieldDecodingFlag(preColMB);
+        int32_t col_mbfdf = pGetMBFieldDecodingFlag(preColMB);
 
         if (!col_mbfdf)
         {
@@ -161,16 +161,16 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
     }
     else if (cur_pic_struct == AFRM_STRUCTURE && ref_pic_struct == FLD_STRUCTURE)
     {
-        Ipp32u CurrMbAddr = m_CurMBAddr;
-        Ipp32s preColMBAddr = CurrMbAddr;
+        uint32_t CurrMbAddr = m_CurMBAddr;
+        int32_t preColMBAddr = CurrMbAddr;
 
-        Ipp32s cur_mbfdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-        Ipp32s cur_mbbf = (m_CurMBAddr & 1);
-        Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
-        Ipp32s topPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(0), 1);
-        Ipp32s bottomPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(1), 1);
+        int32_t cur_mbfdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+        int32_t cur_mbbf = (m_CurMBAddr & 1);
+        int32_t curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
+        int32_t topPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(0), 1);
+        int32_t bottomPOC = pRefFrame->PicOrderCnt(pRefFrame->GetNumberByParity(1), 1);
 
-        Ipp32s bottom_field_flag = cur_mbfdf ? cur_mbbf :
+        int32_t bottom_field_flag = cur_mbfdf ? cur_mbbf :
                     abs(curPOC - topPOC) >= abs(curPOC - bottomPOC);
 
         if (cur_mbbf)
@@ -197,10 +197,10 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
     {
         VM_ASSERT(0);
 
-        Ipp32s preColMBAddr=m_CurMBAddr;
+        int32_t preColMBAddr=m_CurMBAddr;
         H264DecoderMacroblockGlobalInfo *preColMB = &pRefFrame->m_mbinfo.mbs[preColMBAddr];
-        Ipp32s cur_mbfdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
-        Ipp32s ref_mbfdf = pGetMBFieldDecodingFlag(preColMB);
+        int32_t cur_mbfdf = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+        int32_t ref_mbfdf = pGetMBFieldDecodingFlag(preColMB);
 
         if (cur_mbfdf == ref_mbfdf)
         {
@@ -229,9 +229,9 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
         }
         else
         {
-            Ipp32s curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
-            Ipp32s topPOC = pRefFrame->PicOrderCnt(0,1);
-            Ipp32s bottomPOC = pRefFrame->PicOrderCnt(1,1);
+            int32_t curPOC = m_pCurrentFrame->PicOrderCnt(0, 3);
+            int32_t topPOC = pRefFrame->PicOrderCnt(0,1);
+            int32_t bottomPOC = pRefFrame->PicOrderCnt(1,1);
 
             preColMBAddr &= -2; // == (preColMBAddr/2)*2;
             if (abs(topPOC - curPOC) >= abs(bottomPOC - curPOC))
@@ -248,9 +248,9 @@ Ipp32s H264SegmentDecoder::GetColocatedLocation(H264DecoderFrameEx *pRefFrame,
 
     return location;
 
-} // Ipp32s H264SegmentDecoder::GetColocatedLocation(DecodedFrame *pRefFrame, Ipp8u Field, Ipp32s &block, Ipp8s *scale)
+} // int32_t H264SegmentDecoder::GetColocatedLocation(DecodedFrame *pRefFrame, uint8_t Field, int32_t &block, int8_t *scale)
 
-void H264SegmentDecoder::AdjustIndex(Ipp32s ref_mb_is_bottom, Ipp32s ref_mb_is_field, Ipp8s &RefIdx)
+void H264SegmentDecoder::AdjustIndex(int32_t ref_mb_is_bottom, int32_t ref_mb_is_field, int8_t &RefIdx)
 {
     if (RefIdx<0)
     {
@@ -260,8 +260,8 @@ void H264SegmentDecoder::AdjustIndex(Ipp32s ref_mb_is_bottom, Ipp32s ref_mb_is_f
 
     if (ref_mb_is_field) //both are AFRM
     {
-        Ipp32s cur_mb_is_bottom = (m_CurMBAddr & 1);
-        Ipp32s cur_mb_is_field = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
+        int32_t cur_mb_is_bottom = (m_CurMBAddr & 1);
+        int32_t cur_mb_is_field = pGetMBFieldDecodingFlag(m_cur_mb.GlobalMacroblockInfo);
         if (cur_mb_is_field)
         {
             bool same_parity = (((RefIdx&1) ^ ref_mb_is_bottom) == cur_mb_is_bottom);
@@ -279,7 +279,7 @@ void H264SegmentDecoder::AdjustIndex(Ipp32s ref_mb_is_bottom, Ipp32s ref_mb_is_f
             RefIdx>>=1;
         }
     }
-} // void H264SegmentDecoder::AdjustIndex(Ipp8u ref_mb_is_bottom, Ipp8s ref_mb_is_field, Ipp8s &RefIdx)
+} // void H264SegmentDecoder::AdjustIndex(uint8_t ref_mb_is_bottom, int8_t ref_mb_is_field, int8_t &RefIdx)
 
 } // namespace UMC
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

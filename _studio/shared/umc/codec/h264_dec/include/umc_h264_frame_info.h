@@ -170,15 +170,15 @@ public:
     void FillDecRefPicMarking(H264Slice * pSlice)
     {
         H264SliceHeader *hdr = pSlice->GetSliceHeader();
-        decRefPicMarking.original_idr_flag          = (Ipp8u)hdr->IdrPicFlag;
+        decRefPicMarking.original_idr_flag          = (uint8_t)hdr->IdrPicFlag;
         decRefPicMarking.original_field_pic_flag    = hdr->field_pic_flag;
         decRefPicMarking.original_bottom_field_flag = hdr->bottom_field_flag;
-        decRefPicMarking.original_frame_num         = (Ipp8u)hdr->frame_num;
+        decRefPicMarking.original_frame_num         = (uint8_t)hdr->frame_num;
         decRefPicMarking.long_term_reference_flag   = hdr->long_term_reference_flag;
         MFX_INTERNAL_CPY(&decRefPicMarking.adaptiveMarkingInfo, pSlice->GetAdaptiveMarkingInfo(), sizeof(AdaptiveMarkingInfo));
     }
 
-    Ipp32u GetSliceCount() const
+    uint32_t GetSliceCount() const
     {
         return m_SliceCount;
     }
@@ -191,24 +191,24 @@ public:
         return slice;
     }
 
-    H264Slice* GetSlice(Ipp32s num) const
+    H264Slice* GetSlice(int32_t num) const
     {
         if (num < 0 || num >= m_SliceCount)
             return 0;
         return m_pSliceQueue[num];
     }
 
-    void SwapSlices(Ipp32u pos1, Ipp32u pos2)
+    void SwapSlices(uint32_t pos1, uint32_t pos2)
     {
         H264Slice* slice = m_pSliceQueue[pos2];
         m_pSliceQueue[pos2] = m_pSliceQueue[pos1];
         m_pSliceQueue[pos1] = slice;
     }
 
-    H264Slice* GetSliceByNumber(Ipp32s num) const
+    H264Slice* GetSliceByNumber(int32_t num) const
     {
         size_t count = m_pSliceQueue.size();
-        for (Ipp32u i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
         {
             if (m_pSliceQueue[i]->GetSliceNum() == num)
                 return m_pSliceQueue[i];
@@ -217,10 +217,10 @@ public:
         return 0;
     }
 
-    Ipp32s GetPositionByNumber(Ipp32s num) const
+    int32_t GetPositionByNumber(int32_t num) const
     {
         size_t count = m_pSliceQueue.size();
-        for (Ipp32u i = 0; i < count; i++)
+        for (uint32_t i = 0; i < count; i++)
         {
             if (m_pSliceQueue[i]->GetSliceNum() == num)
                 return i;
@@ -282,14 +282,14 @@ public:
         m_prepared = 0;
     }
 
-    void RemoveSlice(Ipp32s num)
+    void RemoveSlice(int32_t num)
     {
         H264Slice * pCurSlice = GetSlice(num);
 
         if (!pCurSlice) // nothing to do
             return;
 
-        for (Ipp32s i = num; i < m_SliceCount - 1; i++)
+        for (int32_t i = num; i < m_SliceCount - 1; i++)
         {
             m_pSliceQueue[i] = m_pSliceQueue[i + 1];
         }
@@ -307,7 +307,7 @@ public:
     {
         m_IsNeedDeblocking = false;
 
-        for (Ipp32s i = 0; i < m_SliceCount; i ++)
+        for (int32_t i = 0; i < m_SliceCount; i ++)
         {
             H264Slice *pSlice = m_pSliceQueue[i];
 
@@ -321,7 +321,7 @@ public:
         if (GetStatus() == H264DecoderFrameInfo::STATUS_COMPLETED)
             return true;
 
-        for (Ipp32s i = 0; i < m_SliceCount; i ++)
+        for (int32_t i = 0; i < m_SliceCount; i ++)
         {
             const H264Slice *pSlice = m_pSliceQueue[i];
 
@@ -362,7 +362,7 @@ public:
         m_IsReferenceAU = isReference;
     }
 
-    H264DecoderRefPicList* GetRefPicList(Ipp32u sliceNumber, Ipp32s list)
+    H264DecoderRefPicList* GetRefPicList(uint32_t sliceNumber, int32_t list)
     {
         VM_ASSERT(list <= LIST_1 && list >= 0);
 
@@ -384,10 +384,10 @@ public:
     void SetPrevAU(H264DecoderFrameInfo *au) {m_PrevAU = au;}
     void SetRefAU(H264DecoderFrameInfo *au) {m_RefAU = au;}
 
-    Ipp32s m_iDecMBReady;
-    Ipp32s m_iRecMBReady;
+    int32_t m_iDecMBReady;
+    int32_t m_iRecMBReady;
     H264DecoderFrame * m_pFrame;
-    Ipp32s m_prepared;
+    int32_t m_prepared;
 
     bool m_isBExist;
     bool m_isPExist;
@@ -401,7 +401,7 @@ public:
 private:
 
     FillnessStatus m_Status;
-    Ipp32s m_SliceCount;
+    int32_t m_SliceCount;
 
     bool m_IsNeedDeblocking;
     bool m_IsReferenceAU;

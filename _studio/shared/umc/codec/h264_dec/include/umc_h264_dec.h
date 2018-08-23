@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -94,13 +94,13 @@ public:
         m_cropArea.right = 0;
     }
 
-    Ipp32s m_entropy_coding_type;
-    Ipp32s m_DPBSize;
-    Ipp32s m_auxiliary_format_idc;
-    IppiSize m_fullSize;
+    int32_t m_entropy_coding_type;
+    int32_t m_DPBSize;
+    int32_t m_auxiliary_format_idc;
+    mfxSize m_fullSize;
     UMC::sRECT m_cropArea;
 
-    Ipp32s m_bufferedFrames;
+    int32_t m_bufferedFrames;
 };
 
 } // namespace UMC
