@@ -48,7 +48,7 @@ mfxU32 CalculateNumThread(mfxVideoParam *par, eMFXPlatform platform)
     if (!par->AsyncDepth)
         return numThread;
 
-    return IPP_MIN(par->AsyncDepth, numThread);
+    return MFX_MIN(par->AsyncDepth, numThread);
 }
 
 inline
@@ -252,7 +252,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
 #endif // defined (MFX_VA)
     }
 
-    Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
+    int32_t useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     if (m_vPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
@@ -371,7 +371,7 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
     UMC::VideoDecoderParams umcVideoParams;
     ConvertMFXParamsToUMC(&m_vFirstPar, &umcVideoParams);
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
-    umcVideoParams.info.bitrate = IPP_MAX(asyncDepth - umcVideoParams.numThreads, 0); // buffered frames
+    umcVideoParams.info.bitrate = MFX_MAX(asyncDepth - umcVideoParams.numThreads, 0); // buffered frames
 
 #if defined (MFX_VA)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
@@ -767,7 +767,7 @@ mfxStatus VideoDECODEH265::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
+    int32_t isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request);
@@ -825,7 +825,7 @@ mfxStatus VideoDECODEH265::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 
     mfxI32 dpbSize = 0;
 
-    Ipp32u level_idc = par->mfx.CodecLevel;
+    uint32_t level_idc = par->mfx.CodecLevel;
     if (hevcParam)
         dpbSize = CalculateDPBSize(par->mfx.CodecProfile, level_idc, hevcParam->PicWidthInLumaSamples, hevcParam->PicHeightInLumaSamples, 0);
     else
@@ -909,7 +909,7 @@ mfxStatus VideoDECODEH265::RunThread(void * params, mfxU32 threadNumber)
 
     if (!info->surface_out)
     {
-        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        for (int32_t i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
         {
             sts = m_pH265VideoDecoder->RunThread(threadNumber);
         }
@@ -1404,7 +1404,7 @@ mfxStatus VideoDECODEH265::DecodeFrame(mfxFrameSurface1 *surface_out, H265Decode
     }
 
     surface_out->Data.Corrupted = 0;
-    Ipp32s const error = pFrame->GetError();
+    int32_t const error = pFrame->GetError();
 
     if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
     {
@@ -1547,12 +1547,12 @@ mfxStatus VideoDECODEH265::SetSkipMode(mfxSkipMode mode)
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
-    Ipp32s test_num = 0;
+    int32_t test_num = 0;
     mfxStatus sts = m_pH265VideoDecoder->ChangeVideoDecodingSpeed(test_num);
     if (sts != MFX_ERR_NONE)
         return sts;
 
-    Ipp32s num = 0;
+    int32_t num = 0;
 
     switch(mode)
     {
@@ -1651,7 +1651,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
                 return false;
 
-            for (Ipp32u i = 0; i < opaqueNew->In.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
             {
                 if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
                     return false;
@@ -1663,7 +1663,7 @@ bool VideoDECODEH265::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
                 return false;
 
-            for (Ipp32u i = 0; i < opaqueNew->Out.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
             {
                 if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
                     return false;

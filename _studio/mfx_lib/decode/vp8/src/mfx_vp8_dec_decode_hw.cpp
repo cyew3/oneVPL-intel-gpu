@@ -234,7 +234,7 @@ static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
     if (newPar->Protected != oldPar->Protected)
         return false;
 
-    Ipp32s asyncDepth = IPP_MIN(newPar->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
+    int32_t asyncDepth = MFX_MIN(newPar->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
     if (asyncDepth != oldPar->AsyncDepth)
         return false;
 
@@ -538,7 +538,7 @@ mfxStatus VideoDECODEVP8_HW::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_
         p_out->DataLength = 0;
     }
 
-    p_out->Data = new Ipp8u[p_in->DataLength];
+    p_out->Data = new uint8_t[p_in->DataLength];
 
     std::copy(p_bs_start, p_bs_start + p_in->DataLength, p_out->Data);
 
@@ -838,37 +838,37 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurfac
 
 void VideoDECODEVP8_HW::UpdateSegmentation(MFX_VP8_BoolDecoder &dec)
 {
-    Ipp32u bits;
+    uint32_t bits;
 
-    Ipp32s i;
-    Ipp32s j;
-    Ipp32s res;
+    int32_t i;
+    int32_t j;
+    int32_t res;
 
     bits = dec.decode(2);
 
-    m_frame_info.updateSegmentMap  = (Ipp8u)bits >> 1;
-    m_frame_info.updateSegmentData = (Ipp8u)bits & 1;
+    m_frame_info.updateSegmentMap  = (uint8_t)bits >> 1;
+    m_frame_info.updateSegmentData = (uint8_t)bits & 1;
 
     if (m_frame_info.updateSegmentData)
     {
-        m_frame_info.segmentAbsMode = (Ipp8u)dec.decode();
+        m_frame_info.segmentAbsMode = (uint8_t)dec.decode();
         UMC_SET_ZERO(m_frame_info.segmentFeatureData);
 
         for (i = 0; i < VP8Defs::VP8_NUM_OF_MB_FEATURES; i++)
         {
             for (j = 0; j < VP8_MAX_NUM_OF_SEGMENTS; j++)
             {
-                bits = (Ipp8u)dec.decode();
+                bits = (uint8_t)dec.decode();
 
                 if (bits)
                 {
-                    bits = (Ipp8u)dec.decode(8 - i); // 7 bits for ALT_QUANT, 6 - for ALT_LOOP_FILTER; +sign
+                    bits = (uint8_t)dec.decode(8 - i); // 7 bits for ALT_QUANT, 6 - for ALT_LOOP_FILTER; +sign
                     res = bits >> 1;
 
                     if (bits & 1)
                         res = -res;
 
-                    m_frame_info.segmentFeatureData[i][j] = (Ipp8s)res;
+                    m_frame_info.segmentFeatureData[i][j] = (int8_t)res;
                 }
             }
         }
@@ -878,10 +878,10 @@ void VideoDECODEVP8_HW::UpdateSegmentation(MFX_VP8_BoolDecoder &dec)
     {
         for (i = 0; i < VP8_NUM_OF_SEGMENT_TREE_PROBS; i++)
         {
-            bits = (Ipp8u)dec.decode();
+            bits = (uint8_t)dec.decode();
 
             if (bits)
-                m_frame_info.segmentTreeProbabilities[i] = (Ipp8u)dec.decode(8);
+                m_frame_info.segmentTreeProbabilities[i] = (uint8_t)dec.decode(8);
             else
                 m_frame_info.segmentTreeProbabilities[i] = 255;
         }
@@ -890,21 +890,21 @@ void VideoDECODEVP8_HW::UpdateSegmentation(MFX_VP8_BoolDecoder &dec)
 
 void VideoDECODEVP8_HW::UpdateLoopFilterDeltas(MFX_VP8_BoolDecoder &dec)
 {
-  Ipp8u  bits;
-  Ipp32s i;
-  Ipp32s res;
+  uint8_t  bits;
+  int32_t i;
+  int32_t res;
 
     for (i = 0; i < VP8Defs::VP8_NUM_OF_REF_FRAMES; i++)
     {
         if (dec.decode())
         {
-            bits = (Ipp8u)dec.decode(7);
+            bits = (uint8_t)dec.decode(7);
             res = bits >> 1;
 
             if (bits & 1)
                 res = -res;
 
-            m_frame_info.refLoopFilterDeltas[i] = (Ipp8s)res;
+            m_frame_info.refLoopFilterDeltas[i] = (int8_t)res;
         }
     }
 
@@ -912,31 +912,31 @@ void VideoDECODEVP8_HW::UpdateLoopFilterDeltas(MFX_VP8_BoolDecoder &dec)
     {
         if (dec.decode())
         {
-            bits = (Ipp8u)dec.decode(7);
+            bits = (uint8_t)dec.decode(7);
             res = bits >> 1;
 
             if (bits & 1)
                 res = -res;
 
-            m_frame_info.modeLoopFilterDeltas[i] = (Ipp8s)res;
+            m_frame_info.modeLoopFilterDeltas[i] = (int8_t)res;
         }
     }
 } // VideoDECODEVP8_HW::UpdateLoopFilterDeltas()
 
 #define DECODE_DELTA_QP(dec, res, shift) \
 { \
-  Ipp32u mask = (1 << (shift - 1)); \
-  Ipp32s val; \
+  uint32_t mask = (1 << (shift - 1)); \
+  int32_t val; \
   if (bits & mask) \
   { \
     bits = (bits << 5) | dec.decode(5); \
-    val  = (Ipp32s)((bits >> shift) & 0xF); \
+    val  = (int32_t)((bits >> shift) & 0xF); \
     res  = (bits & mask) ? -val : val; \
   } \
 }
 
 #ifdef MFX_VA_WIN
-static const Ipp32s vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
+static const int32_t vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 
@@ -953,7 +953,7 @@ static const Ipp32s vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
 };
 
 
-static const Ipp32s vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
+static const int32_t vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
 {
   8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 
@@ -969,7 +969,7 @@ static const Ipp32s vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
   284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284*155/100, 284
 };
 
-static const Ipp32s vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
+static const int32_t vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 
@@ -985,7 +985,7 @@ static const Ipp32s vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
   157, 157, 157, 157, 157, 157, 157, 157, 157, 157, 157, 157, 157, 157, 157, 157
 };
 
-static const Ipp32s vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
+static const int32_t vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
 {
   4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2,
 
@@ -1002,7 +1002,7 @@ static const Ipp32s vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
 };
 
 
-static const Ipp32s vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
+static const int32_t vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 
@@ -1021,7 +1021,7 @@ static const Ipp32s vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
 
 void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
 {
-  m_quantInfo.yacQP = (Ipp32s)dec.decode(7);
+  m_quantInfo.yacQP = (int32_t)dec.decode(7);
 
   m_quantInfo.ydcDeltaQP  = 0;
   m_quantInfo.y2dcDeltaQP = 0;
@@ -1029,7 +1029,7 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
   m_quantInfo.uvdcDeltaQP = 0;
   m_quantInfo.uvacDeltaQP = 0;
 
-  Ipp32u bits = (Ipp8u)dec.decode(5);
+  uint32_t bits = (uint8_t)dec.decode(5);
 
   if (bits)
   {
@@ -1040,9 +1040,9 @@ void VideoDECODEVP8_HW::DecodeInitDequantization(MFX_VP8_BoolDecoder &dec)
     DECODE_DELTA_QP(dec, m_quantInfo.uvacDeltaQP, 1)
   }
 
-  Ipp32s qp;
+  int32_t qp;
 
-  for(Ipp32s segment_id = 0; segment_id < VP8_MAX_NUM_OF_SEGMENTS; segment_id++)
+  for(int32_t segment_id = 0; segment_id < VP8_MAX_NUM_OF_SEGMENTS; segment_id++)
   {
     if (m_frame_info.segmentationEnabled)
     {
@@ -1095,7 +1095,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     int width       = 0;
     int height      = 0;
 
-    data_in = (Ipp8u*)in->Data;
+    data_in = (uint8_t*)in->Data;
 
     if(!data_in)
         return MFX_ERR_NULL_PTR;
@@ -1165,8 +1165,8 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
         if (width != m_frame_info.frameWidth || height != m_frame_info.frameHeight)
         {
-            m_frame_info.frameWidth  = (Ipp16s)width;
-            m_frame_info.frameHeight = (Ipp16s)height;
+            m_frame_info.frameWidth  = (int16_t)width;
+            m_frame_info.frameHeight = (int16_t)height;
         }
 
         data_in += 7;
@@ -1199,14 +1199,14 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     }
 
-    m_boolDecoder[VP8_FIRST_PARTITION].init(data_in, (Ipp32s) (data_in_end - data_in));
+    m_boolDecoder[VP8_FIRST_PARTITION].init(data_in, (int32_t) (data_in_end - data_in));
 
     if (m_frame_info.frameType == I_PICTURE)  // if VP8_KEY_FRAME
     {
-        Ipp32u bits = m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+        uint32_t bits = m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
 
-        m_frame_info.color_space_type = (Ipp8u)(bits >> 1);
-        m_frame_info.clamping_type    = (Ipp8u)(bits & 1);
+        m_frame_info.color_space_type = (uint8_t)(bits >> 1);
+        m_frame_info.clamping_type    = (uint8_t)(bits & 1);
 
         // supported only color_space_type == 0
         // see "VP8 Data Format and Decoding Guide" ch.9.2
@@ -1214,7 +1214,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             return MFX_ERR_UNSUPPORTED;
     }
 
-    m_frame_info.segmentationEnabled = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
+    m_frame_info.segmentationEnabled = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode();
 
     if (m_frame_info.segmentationEnabled)
     {
@@ -1226,12 +1226,12 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         m_frame_info.updateSegmentMap  = 0;
     }
 
-    mfxU8 bits = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(7);
+    mfxU8 bits = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(7);
 
     m_frame_info.loopFilterType  = bits >> 6;
     m_frame_info.loopFilterLevel = bits & 0x3F;
 
-    bits = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(4);
+    bits = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(4);
 
     m_frame_info.sharpnessLevel     = bits >> 1;
     m_frame_info.mbLoopFilterAdjust = bits & 1;
@@ -1240,7 +1240,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     if (m_frame_info.mbLoopFilterAdjust)
     {
-        m_frame_info.modeRefLoopFilterDeltaUpdate = (Ipp8u)m_boolDecoder[VP8Defs::VP8_FIRST_PARTITION].decode();
+        m_frame_info.modeRefLoopFilterDeltaUpdate = (uint8_t)m_boolDecoder[VP8Defs::VP8_FIRST_PARTITION].decode();
         if (m_frame_info.modeRefLoopFilterDeltaUpdate)
         {
             UpdateLoopFilterDeltas(m_boolDecoder[VP8_FIRST_PARTITION]);
@@ -1249,7 +1249,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     mfxU32 partitions;
 
-    bits = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+    bits = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
 
     m_CodedCoeffTokenPartition = bits;
 
@@ -1264,9 +1264,9 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
     {
         m_frame_info.partitionStart[0] = pTokenPartition + (partitions - 1) * 3;
 
-        for (Ipp32u i = 0; i < partitions - 1; i++)
+        for (uint32_t i = 0; i < partitions - 1; i++)
         {
-            m_frame_info.partitionSize[i] = (Ipp32s)(pTokenPartition[0]) |
+            m_frame_info.partitionSize[i] = (int32_t)(pTokenPartition[0]) |
                                              (pTokenPartition[1] << 8) |
                                              (pTokenPartition[2] << 16);
             pTokenPartition += 3;
@@ -1284,7 +1284,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
         m_frame_info.partitionStart[0] = pTokenPartition;
     }
 
-    m_frame_info.partitionSize[partitions - 1] = Ipp32s(data_in_end - m_frame_info.partitionStart[partitions - 1]);
+    m_frame_info.partitionSize[partitions - 1] = int32_t(data_in_end - m_frame_info.partitionStart[partitions - 1]);
 
     m_boolDecoder[partitions].init(m_frame_info.partitionStart[partitions - 1], m_frame_info.partitionSize[partitions - 1]);
 
@@ -1292,29 +1292,29 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     if (m_frame_info.frameType != I_PICTURE) // data in header for non-KEY frames
     {
-        m_refresh_info.refreshRefFrame = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+        m_refresh_info.refreshRefFrame = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
 
         if (!(m_refresh_info.refreshRefFrame & 2))
-            m_refresh_info.copy2Golden = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+            m_refresh_info.copy2Golden = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
 
         if (!(m_refresh_info.refreshRefFrame & 1))
-            m_refresh_info.copy2Altref = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+            m_refresh_info.copy2Altref = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
 
-        Ipp8u bias = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
+        uint8_t bias = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(2);
 
         m_refresh_info.refFrameBiasTable[1] = (bias & 1)^(bias >> 1); // ALTREF and GOLD (3^2 = 1)
         m_refresh_info.refFrameBiasTable[2] = (bias & 1);             // ALTREF and LAST
         m_refresh_info.refFrameBiasTable[3] = (bias >> 1);            // GOLD and LAST
     }
 
-    m_refresh_info.refreshProbabilities = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
+    m_refresh_info.refreshProbabilities = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode();
 
     if (!m_refresh_info.refreshProbabilities)
         m_frameProbs_saved = m_frameProbs;
 
     if (m_frame_info.frameType != I_PICTURE)
     {
-        m_refresh_info.refreshLastFrame = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
+        m_refresh_info.refreshLastFrame = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode();
     }
     else
         m_refresh_info.refreshLastFrame = 1;
@@ -1328,26 +1328,26 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
                 for (int l = 0; l < VP8_NUM_COEFF_NODES; l++)
                 {
                     mfxU8 prob = vp8_coeff_update_probs[i][j][k][l];
-                    mfxU8 flag = (Ipp8u)m_boolDecoder[VP8Defs::VP8_FIRST_PARTITION].decode(1, prob);
+                    mfxU8 flag = (uint8_t)m_boolDecoder[VP8Defs::VP8_FIRST_PARTITION].decode(1, prob);
 
                     if (flag)
-                        m_frameProbs.coeff_probs[i][j][k][l] = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+                        m_frameProbs.coeff_probs[i][j][k][l] = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
                 }
             }
         }
     }
 
-    m_frame_info.mbSkipEnabled = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode();
+    m_frame_info.mbSkipEnabled = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode();
     m_frame_info.skipFalseProb = 0;
 
     if (m_frame_info.mbSkipEnabled)
-        m_frame_info.skipFalseProb = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+        m_frame_info.skipFalseProb = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
 
     if (m_frame_info.frameType != I_PICTURE)
     {
-        m_frame_info.intraProb = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
-        m_frame_info.lastProb  = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
-        m_frame_info.goldProb  = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+        m_frame_info.intraProb = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+        m_frame_info.lastProb  = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
+        m_frame_info.goldProb  = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(8);
 
         if (m_boolDecoder[VP8_FIRST_PARTITION].decode())
         {
@@ -1355,7 +1355,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
             do
             {
-                m_frameProbs.mbModeProbY[i] = Ipp8u(m_boolDecoder[VP8_FIRST_PARTITION].decode(8));
+                m_frameProbs.mbModeProbY[i] = uint8_t(m_boolDecoder[VP8_FIRST_PARTITION].decode(8));
             }
             while (++i < 4);
         }
@@ -1366,7 +1366,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
             do
             {
-                m_frameProbs.mbModeProbUV[i] = Ipp8u(m_boolDecoder[VP8_FIRST_PARTITION].decode(8));
+                m_frameProbs.mbModeProbUV[i] = uint8_t(m_boolDecoder[VP8_FIRST_PARTITION].decode(8));
             }
             while (++i < 3);
         }
@@ -1375,7 +1375,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
         do
         {
-            mfxU8 *up = (Ipp8u *)&vp8_mv_update_probs[i];
+            mfxU8 *up = (uint8_t *)&vp8_mv_update_probs[i];
             mfxU8 *p = m_frameProbs.mvContexts[i];
             mfxU8 *pstop = p + 19;
 
@@ -1383,7 +1383,7 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
             {
                 if (m_boolDecoder[VP8_FIRST_PARTITION].decode(1, *up++))
                 {
-                    const Ipp8u x = (Ipp8u)m_boolDecoder[VP8_FIRST_PARTITION].decode(7);
+                    const uint8_t x = (uint8_t)m_boolDecoder[VP8_FIRST_PARTITION].decode(7);
 
                     *p = x ? x << 1 : 1;
                 }

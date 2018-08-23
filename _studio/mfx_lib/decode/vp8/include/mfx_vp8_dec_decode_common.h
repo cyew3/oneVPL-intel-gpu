@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_VP8_DEC_DECODE_COMMON_H_
@@ -20,9 +20,9 @@ namespace VP8DecodeCommon
 
     typedef struct _IVF_FRAME
     {
-        Ipp32u frame_size;
-        Ipp64u time_stamp;
-        Ipp8u *p_frame_data;
+        uint32_t frame_size;
+        unsigned long long time_stamp;
+        uint8_t *p_frame_data;
 
     } IVF_FRAME;
 

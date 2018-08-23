@@ -198,18 +198,18 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
          prob_uv_table = m_frameProbs.mbModeProbUV;
      }
 
-     for (Ipp32u i = 0; i < VP8_NUM_MB_MODES_Y - 1; i += 1)
+     for (uint32_t i = 0; i < VP8_NUM_MB_MODES_Y - 1; i += 1)
      {
          picParams->y_mode_probs[i] = prob_y_table[i];
      }
 
-     for (Ipp32u i = 0; i < VP8_NUM_MB_MODES_UV - 1; i += 1)
+     for (uint32_t i = 0; i < VP8_NUM_MB_MODES_UV - 1; i += 1)
      {
          picParams->uv_mode_probs[i] = prob_uv_table[i];
      }
 
      //updated mv decoding probabilities and same as mv_probs in frame header
-     for (Ipp32u i = 0; i < VP8_NUM_MV_PROBS; i += 1)
+     for (uint32_t i = 0; i < VP8_NUM_MV_PROBS; i += 1)
      {
          picParams->mv_probs[0][i] = m_frameProbs.mvContexts[0][i];
          picParams->mv_probs[1][i] = m_frameProbs.mvContexts[1][i];
@@ -251,7 +251,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
      else
      {
 
-         for (Ipp32u i = 0; i < 4; i += 1)
+         for (uint32_t i = 0; i < 4; i += 1)
          {
              qmTable->quantization_index[i][1] = (unsigned char)m_quantInfo.ydcQ[i];
              qmTable->quantization_index[i][0] = (unsigned char)m_quantInfo.yacQ[i];
@@ -266,14 +266,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      //////////////////////////////////////////////////////////////////
 
-     Ipp32u offset = 0;
+     uint32_t offset = 0;
 
      if (I_PICTURE == m_frame_info.frameType)
          offset = 10;
      else
          offset = 3;
 
-     Ipp32s size = p_bistream->DataLength;
+     int32_t size = p_bistream->DataLength;
 
      UMCVACompBuffer* compBufSlice;
 
@@ -297,7 +297,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
                                                 bool_coder_ctx.count
 */
      // number of bytes in the slice data buffer for the partitions
-     sliceParams->slice_data_size = (Ipp32s)size - offset;
+     sliceParams->slice_data_size = (int32_t)size - offset;
 
      //offset to the first byte of partition data
      sliceParams->slice_data_offset = 0;
@@ -313,7 +313,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      sliceParams->partition_size[0] = m_frame_info.firstPartitionSize;
 
-     for (Ipp32s i = 1; i < m_frame_info.numPartitions + 1; i += 1)
+     for (int32_t i = 1; i < m_frame_info.numPartitions + 1; i += 1)
      {
          sliceParams->partition_size[i] = m_frame_info.partitionSize[i - 1];
      }
@@ -322,14 +322,14 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
      //////////////////////////////////////////////////////////////////
      UMCVACompBuffer* compBufBs;
-     Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(VASliceDataBufferType, &compBufBs, p_bistream->DataLength - offset);
+     uint8_t *bistreamData = (uint8_t *)m_p_video_accelerator->GetCompBuffer(VASliceDataBufferType, &compBufBs, p_bistream->DataLength - offset);
 
-     Ipp8u *pBuffer = (Ipp8u*) p_bistream->Data;
+     uint8_t *pBuffer = (uint8_t*) p_bistream->Data;
 
      std::copy(pBuffer + offset, pBuffer + size, bistreamData);
 
 
-     compBufBs->SetDataSize((Ipp32s)size - offset);
+     compBufBs->SetDataSize((int32_t)size - offset);
 
      return sts;
 

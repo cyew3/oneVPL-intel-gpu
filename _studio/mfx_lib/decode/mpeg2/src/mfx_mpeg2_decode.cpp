@@ -191,7 +191,7 @@ mfxU16 GetMfxPicStruct(mfxU32 progressiveSequence, mfxU32 progressiveFrame, mfxU
     return picStruct;
 }
 
-void SetSurfaceTimeCode(mfxFrameSurface1* surface, Ipp32s display_index, UMC::MPEG2VideoDecoderBase *implUmc)
+void SetSurfaceTimeCode(mfxFrameSurface1* surface, int32_t display_index, UMC::MPEG2VideoDecoderBase *implUmc)
 {
     if (!surface || !implUmc)
         return;
@@ -230,7 +230,7 @@ mfxU16 GetMfxFieldType(mfxU32 frameType)
     }
 }
 
-void SetSurfacePictureType(mfxFrameSurface1* surface, Ipp32s display_index, UMC::MPEG2VideoDecoderBase *implUmc)
+void SetSurfacePictureType(mfxFrameSurface1* surface, int32_t display_index, UMC::MPEG2VideoDecoderBase *implUmc)
 {
     if (!surface || !implUmc)
         return;
@@ -724,16 +724,16 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs,
     mfxI32 frame_rate_extension_d = 0;
     mfxI32 frame_rate_extension_n = 0;
     par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
-    Ipp32s W = 0, H = 0;
+    int32_t W = 0, H = 0;
 
     mfxU8 *pShStart = NULL;
     mfxU8 *pShEnd = NULL;
 
-    Ipp16u video_format = 5; // unspecified video format
-    Ipp16u colour_primaries = 1;
-    Ipp16u transfer_characteristics = 1;
-    Ipp16u matrix_coefficients = 1;
-    Ipp16u color_description_present = 0;
+    uint16_t video_format = 5; // unspecified video format
+    uint16_t colour_primaries = 1;
+    uint16_t transfer_characteristics = 1;
+    uint16_t matrix_coefficients = 1;
+    uint16_t color_description_present = 0;
 
     for (ptr = beg; ptr + 4 < end; ++ptr)
     {
@@ -778,7 +778,7 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs,
             // extensions section
 
             // get extension id
-            Ipp32u code = (ptr[4] & 0xf0);
+            uint32_t code = (ptr[4] & 0xf0);
 
             if (0x10 == code)
             {
@@ -795,11 +795,11 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs,
 
                 par->mfx.CodecProfile = GetMfxCodecProfile((code >> 24) & 0x7);
                 par->mfx.CodecLevel = GetMfxCodecLevel((code >> 20) & 0xf);
-                Ipp32u progr = (code >> 19) & 1;
+                uint32_t progr = (code >> 19) & 1;
                 progr != 0 ? par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE:
                              par->mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_UNKNOWN;
 
-                Ipp32s ChromaFormat = 1 << ((code >> 17) & ((1 << 2) - 1));
+                int32_t ChromaFormat = 1 << ((code >> 17) & ((1 << 2) - 1));
 
                 switch (ChromaFormat)
                 {
@@ -849,7 +849,7 @@ mfxStatus VideoDECODEMPEG2::DecodeHeader(VideoCORE * /*core*/, mfxBitstream *bs,
             {
                 // sequence display extension section
                 video_format = (ptr[4] >> 1) & 0x07;
-                Ipp8u colour_description = ptr[4] & 0x01;
+                uint8_t colour_description = ptr[4] & 0x01;
                 color_description_present = colour_description;
                 if (colour_description) // 4+24 bits skip
                 {
@@ -1744,7 +1744,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::Reset(mfxVideoParam *par)
 
         if (0 != frameRateD && 0 != frameRateN)
         {
-            m_vdPar.info.framerate = (Ipp64f) frameRateN / frameRateD;
+            m_vdPar.info.framerate = (double) frameRateN / frameRateD;
             m_isFrameRateFromInit = true;
         }
 
@@ -1855,8 +1855,8 @@ mfxStatus VideoDECODEMPEG2InternalBase::Init(mfxVideoParam *par, VideoCORE * cor
 
     Reset(par);
 
-    Ipp32u size = Ipp32u (par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height *3L/2);
-    Ipp32u MaxLength = 1024 * 500;
+    uint32_t size = uint32_t (par->mfx.FrameInfo.Width * par->mfx.FrameInfo.Height *3L/2);
+    uint32_t MaxLength = 1024 * 500;
 
     if (size > MaxLength)
     {
@@ -2096,7 +2096,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::UpdateCurrVideoParams(mfxFrameSurface1 *
         if(sh.aspect_ratio_w != m_vPar.mfx.FrameInfo.AspectRatioW || sh.aspect_ratio_h != m_vPar.mfx.FrameInfo.AspectRatioH)
             sts = MFX_WRN_VIDEO_PARAM_CHANGED;
 
-    if (m_isFrameRateFromInit == false && ((Ipp32u)sh.frame_rate_extension_d != m_vPar.mfx.FrameInfo.FrameRateExtD || (Ipp32u)sh.frame_rate_extension_n != m_vPar.mfx.FrameInfo.FrameRateExtN))
+    if (m_isFrameRateFromInit == false && ((uint32_t)sh.frame_rate_extension_d != m_vPar.mfx.FrameInfo.FrameRateExtD || (uint32_t)sh.frame_rate_extension_n != m_vPar.mfx.FrameInfo.FrameRateExtN))
     {
         sts = MFX_WRN_VIDEO_PARAM_CHANGED;
     }
@@ -2357,12 +2357,12 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
 
             if (eEXT == ptr[3])
             {
-                Ipp32u code = (ptr[4] & 0xf0);
+                uint32_t code = (ptr[4] & 0xf0);
 
                 if(0x10 == code)
                 {
                     code = (ptr[4] << 24) | (ptr[5] << 16) | (ptr[6] << 8) | ptr[7];
-                    Ipp32u progressive_seq = (code >> 19) & 1;
+                    uint32_t progressive_seq = (code >> 19) & 1;
 
                     CropW = (mfxU16)((CropW  & 0xfff) | ((code >> (15-12)) & 0x3000));
                     CropH = (mfxU16)((CropH & 0xfff) | ((code >> (13-12)) & 0x3000));
@@ -2474,7 +2474,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
 
                 if (MFX_BITSTREAM_COMPLETE_FRAME == in->DataFlag)
                 {
-                    Ipp32u len = in->DataLength;
+                    uint32_t len = in->DataLength;
 
                     head = in->Data + in->DataOffset;
                     curr = FindStartCode(head, tail);
@@ -2643,7 +2643,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
 
                     MoveBitstreamData(*in, 4);
 
-                    Ipp32u len = in->DataLength;
+                    uint32_t len = in->DataLength;
 
                     head = in->Data + in->DataOffset;
                     curr = FindStartCode(head, tail);
@@ -2658,7 +2658,7 @@ mfxStatus VideoDECODEMPEG2InternalBase::ConstructFrameImpl(mfxBitstream *in, mfx
                          curr[3] == eEND ||
                          curr[3] == eGROUP))
                     {
-                        len = (Ipp32u)(curr - head);
+                        len = (uint32_t)(curr - head);
                     }
 
                     MFX_CHECK(out->MaxLength >= out->DataLength, MFX_ERR_UNDEFINED_BEHAVIOR);
@@ -2839,7 +2839,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetVideoParam(mfxVideoParam *par)
 }
 
 
-mfxStatus VideoDECODEMPEG2Internal_HW::RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count)
+mfxStatus VideoDECODEMPEG2Internal_HW::RestoreDecoder(int32_t frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, int32_t task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count)
 {
     m_frame[frame_buffer_num].DataLength = 0;
     m_frame[frame_buffer_num].DataOffset = 0;
@@ -2896,7 +2896,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
         if (m_task_num >= DPB && !IsField)
         {
             int decrease_dec_field_count = dec_field_count % 2 == 0 ? 0 : 1;
-            Ipp32s previous_field = m_task_num - DPB;
+            int32_t previous_field = m_task_num - DPB;
             if (previous_field > DPB)
                 return MFX_ERR_UNKNOWN;
             MFX_CHECK_STS(RestoreDecoder(m_frame_curr, mid[previous_field], previous_field, NO_END_FRAME, REMOVE_LAST_2_FRAMES, decrease_dec_field_count))
@@ -3003,7 +3003,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
             return MFX_ERR_UNKNOWN;
         }
 
-        if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (Ipp32u)(m_implUmc->GetRetBufferLen())) ||
+        if ((false == m_isDecodedOrder && maxNumFrameBuffered <= (uint32_t)(m_implUmc->GetRetBufferLen())) ||
                 true == m_isDecodedOrder)
         {
             disp_index = m_implUmc->GetDisplayIndex();
@@ -3196,7 +3196,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::DecodeFrameCheck(mfxBitstream *bs,
                 }
                 else // I or P
                 {
-                    Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+                    int32_t p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
 
                     if (0 <= p_index)
                     {
@@ -3344,7 +3344,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
         "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
         GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
 
-    Ipp32s disp_index = parameters->display_index;
+    int32_t disp_index = parameters->display_index;
 
     if (0 <= disp_index)
     {
@@ -3360,7 +3360,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
         }
         else // I or P
         {
-            Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+            int32_t p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
 
             if (true == m_isDecodedOrder && 0 <= p_index)
             {
@@ -3390,7 +3390,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::CompleteTasks(void *pParam)
     return MFX_TASK_DONE;
 }
 
-mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_index, mfxU32 currIdx)
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(int32_t current_index, mfxU32 currIdx)
 {
 #ifdef MFX_VA_WIN
 
@@ -3482,7 +3482,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReportByIndex(Ipp32s current_ind
     return MFX_ERR_NONE;
 }
 
-mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC::FrameMemID surface_id)
+mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(int32_t current_index, UMC::FrameMemID surface_id)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::GetStatusReport");
 
@@ -3604,7 +3604,7 @@ mfxStatus VideoDECODEMPEG2Internal_HW::GetStatusReport(Ipp32s current_index, UMC
     return MFX_ERR_NONE;
 }
 
-void VideoDECODEMPEG2Internal_HW::TranslateCorruptionFlag(Ipp32s disp_index, mfxFrameSurface1 * surface)
+void VideoDECODEMPEG2Internal_HW::TranslateCorruptionFlag(int32_t disp_index, mfxFrameSurface1 * surface)
 {
     if (!surface)
     {
@@ -3612,8 +3612,8 @@ void VideoDECODEMPEG2Internal_HW::TranslateCorruptionFlag(Ipp32s disp_index, mfx
     }
 
     mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
-    Ipp32s fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
-    Ipp32s bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
+    int32_t fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+    int32_t bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
 
     surface->Data.Corrupted = 0;
 
@@ -3659,8 +3659,8 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "VideoDECODEMPEG2Internal_HW::PerformStatusCheck");
     MFX_CHECK_NULL_PTR1(pParam);
     MParam *parameters = (MParam *)pParam;
-    Ipp32s disp_index = parameters->display_index;
-    Ipp32s current_index = parameters->curr_index;
+    int32_t disp_index = parameters->display_index;
+    int32_t current_index = parameters->curr_index;
 
     if (disp_index < 0)
     {
@@ -3685,8 +3685,8 @@ mfxStatus VideoDECODEMPEG2Internal_HW::PerformStatusCheck(void *pParam)
     }
 
     mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
-    // Ipp32s fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
-    Ipp32s bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
+    // int32_t fwd_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+    int32_t bwd_index = m_implUmc->GetNextDecodingIndex(disp_index);
 
     switch (frameType)
     {
@@ -3946,7 +3946,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
             pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(0);
 
             m_out.SetPlanePointer(pInfo->m_planePtr, 0);
-            Ipp32s pitch = (Ipp32s)pInfo->m_pitch;
+            int32_t pitch = (int32_t)pInfo->m_pitch;
 
             pInfo = m_FrameData[curr_index]->GetPlaneMemoryInfo(1);
             m_out.SetPlanePointer(pInfo->m_planePtr, 1);
@@ -4001,7 +4001,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::DecodeFrameCheck(mfxBitstream *bs,
                 }
                 else //I or P
                 {
-                    Ipp32s p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+                    int32_t p_index = m_implUmc->GetPrevDecodingIndex(disp_index);
 
                     if (0 <= p_index)
                     {
@@ -4197,7 +4197,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::CompleteTasks(void *pParam)
         "(THREAD %x) CompleteTasks: task %x number, task num %d, curr thr idx %d, compl thr %d\n",
         GetCurrentThreadId(), pParam, parameters->task_num, parameters->m_curr_thread_idx, parameters->m_thread_completed)
 
-    Ipp32s disp_index = parameters->display_index;
+    int32_t disp_index = parameters->display_index;
 
 
     if (0 <= disp_index)
@@ -4217,7 +4217,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::CompleteTasks(void *pParam)
             bool isCorrupted = m_implUmc->GetCorruptionFlag(disp_index);
 
             mfxU32 frameType = m_implUmc->GetFrameType(disp_index);
-            Ipp32s previous_index = m_implUmc->GetPrevDecodingIndex(disp_index);
+            int32_t previous_index = m_implUmc->GetPrevDecodingIndex(disp_index);
 
             parameters->surface_out->Data.Corrupted = 0;
 
@@ -4273,7 +4273,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::TaskRoutine(void *pParam)
     MParam *parameters = (MParam *)pParam;
 
     UMC::Status res;
-    Ipp32s th_idx;
+    int32_t th_idx;
 
     UMC::AutomaticUMCMutex guard(m_guard);
 
@@ -4284,7 +4284,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::TaskRoutine(void *pParam)
     if (0 < parameters->last_frame_count && 0 == parameters->m_thread_completed)
     {
 
-        Ipp32s disp_index = parameters->display_index;
+        int32_t disp_index = parameters->display_index;
 
         if (0 <= disp_index)
         {
@@ -4341,7 +4341,7 @@ mfxStatus VideoDECODEMPEG2Internal_SW::TaskRoutine(void *pParam)
 
     if (parameters->m_thread_completed == parameters->NumThreads)
     {
-        Ipp32s disp_index = parameters->display_index;
+        int32_t disp_index = parameters->display_index;
 
         parameters->m_frame[parameters->m_frame_curr].DataLength = 0;
         parameters->m_frame[parameters->m_frame_curr].DataOffset = 0;

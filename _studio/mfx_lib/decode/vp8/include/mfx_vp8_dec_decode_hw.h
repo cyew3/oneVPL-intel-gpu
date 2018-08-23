@@ -32,24 +32,24 @@
 class MFX_VP8_BoolDecoder
 {
 private:
-    Ipp32u m_range;
-    Ipp32u m_value;
-    Ipp32s m_bitcount;
-    Ipp32u m_pos;
-    Ipp8u *m_input;
-    Ipp32s m_input_size;
+    uint32_t m_range;
+    uint32_t m_value;
+    int32_t m_bitcount;
+    uint32_t m_pos;
+    uint8_t *m_input;
+    int32_t m_input_size;
 
     static const int range_normalization_shift[64];
 
     int decode_bit(int probability)
     {
 
-        Ipp32u bit = 0;
-        Ipp32u split;
-        Ipp32u bigsplit;
-        Ipp32u count = this->m_bitcount;
-        Ipp32u range = this->m_range;
-        Ipp32u value = this->m_value;
+        uint32_t bit = 0;
+        uint32_t split;
+        uint32_t bigsplit;
+        uint32_t count = this->m_bitcount;
+        uint32_t range = this->m_range;
+        uint32_t value = this->m_value;
 
         split = 1 +  (((range - 1) * probability) >> 8);
         bigsplit = (split << 24);
@@ -78,7 +78,7 @@ private:
                 if (!--count)
                 {
                     count = 8;
-                    value |= static_cast<Ipp32u>(this->m_input[this->m_pos]);
+                    value |= static_cast<uint32_t>(this->m_input[this->m_pos]);
                     this->m_pos++;
                 }
              }
@@ -101,14 +101,14 @@ public:
         m_input_size(0)
     {}
 
-    MFX_VP8_BoolDecoder(Ipp8u *pBitStream, Ipp32s dataSize)
+    MFX_VP8_BoolDecoder(uint8_t *pBitStream, int32_t dataSize)
     {
         init(pBitStream, dataSize);
     }
 
-    void init(Ipp8u *pBitStream, Ipp32s dataSize)
+    void init(uint8_t *pBitStream, int32_t dataSize)
     {
-        dataSize = IPP_MIN(dataSize, 2);
+        dataSize = MFX_MIN(dataSize, 2);
         m_range = 255;
         m_bitcount = 8;
         m_pos = 0;
@@ -119,7 +119,7 @@ public:
         m_input_size = dataSize;
     }
 
-    Ipp32u decode(int bits = 1, int prob = 128)
+    uint32_t decode(int bits = 1, int prob = 128)
     {
         uint32_t z = 0;
         int bit;
@@ -130,27 +130,27 @@ public:
         return z;
     }
 
-    Ipp8u * input()
+    uint8_t * input()
     {
         return &m_input[m_pos];
     }
 
-    Ipp32u pos() const
+    uint32_t pos() const
     {
         return m_pos;
     }
 
-    Ipp32s bitcount() const
+    int32_t bitcount() const
     {
         return m_bitcount;
     }
 
-    Ipp32u range() const
+    uint32_t range() const
     {
         return m_range;
     }
 
-    Ipp32u value() const
+    uint32_t value() const
     {
         return m_value;
     }

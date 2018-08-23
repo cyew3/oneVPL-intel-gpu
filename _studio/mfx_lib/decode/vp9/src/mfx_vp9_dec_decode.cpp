@@ -15,7 +15,6 @@
 #include "mfx_common_decode_int.h"
 #include "mfx_vpx_dec_common.h"
 #include "mfx_enc_common.h"
-#include "ipps.h"
 
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE) || defined(MFX_ENABLE_VP9_VIDEO_DECODE_HW)
 
@@ -140,7 +139,7 @@ mfxStatus VideoDECODEVP9::Init(mfxVideoParam *params)
 
     m_FrameAllocator.reset(new mfx_UMC_FrameAllocator);
 
-    Ipp32s useInternal = (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY);
+    int32_t useInternal = (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) || (m_vInitPar.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY);
 
     // allocate memory
     memset(&m_request, 0, sizeof(m_request));
@@ -380,7 +379,7 @@ bool VideoDECODEVP9::IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldP
         return false;
     }
 
-    Ipp32s asyncDepth = IPP_MIN(newPar->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
+    int32_t asyncDepth = MFX_MIN(newPar->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
     if (asyncDepth != oldPar->AsyncDepth)
     {
         return false;
@@ -519,7 +518,7 @@ mfxStatus VideoDECODEVP9::QueryIOSurf(VideoCORE *core, mfxVideoParam *p_params, 
     mfxStatus sts = QueryIOSurfInternal(platform, &params, request);
     MFX_CHECK_STS(sts);
 
-    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
+    int32_t isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     if (isInternalManaging)
@@ -944,7 +943,7 @@ mfxStatus VideoDECODEVP9::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *s
             p_info = p_frame_data->GetPlaneMemoryInfo(0);
 
             video_data->SetPlanePointer(p_info->m_planePtr, 0);
-            Ipp32u pitch = (Ipp32u) p_info->m_pitch;
+            uint32_t pitch = (uint32_t) p_info->m_pitch;
 
             p_info = p_frame_data->GetPlaneMemoryInfo(1);
             video_data->SetPlanePointer(p_info->m_planePtr, 1);
@@ -1003,7 +1002,7 @@ mfxStatus VideoDECODEVP9::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out
         p_out->DataLength = 0;
     }
 
-    p_out->Data = new Ipp8u[p_in->DataLength];
+    p_out->Data = new uint8_t[p_in->DataLength];
 
     MFX_INTERNAL_CPY(p_out->Data, bs_start, p_in->DataLength);
     p_out->DataLength = p_in->DataLength;

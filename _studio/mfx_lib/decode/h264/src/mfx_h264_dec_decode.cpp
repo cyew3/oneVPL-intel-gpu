@@ -58,7 +58,7 @@ mfxU32 CalculateNumThread(eMFXPlatform platform, mfxVideoParam *par)
     if (!par->AsyncDepth)
         return numThread;
 
-    return IPP_MIN(par->AsyncDepth, numThread);
+    return MFX_MIN(par->AsyncDepth, numThread);
 }
 
 inline bool IsNeedToUseHWBuffering(eMFXHWType /*type*/)
@@ -105,9 +105,9 @@ enum
     ENABLE_DELAYED_DISPLAY_MODE = 1
 };
 
-typedef std::vector<Ipp32u> ViewIDsList;
+typedef std::vector<uint32_t> ViewIDsList;
 
-inline bool AddDependency(Ipp32u dependOnViewId, const ViewIDsList & targetList, ViewIDsList &dependencyList)
+inline bool AddDependency(uint32_t dependOnViewId, const ViewIDsList & targetList, ViewIDsList &dependencyList)
 {
     ViewIDsList::const_iterator view_iter = std::find(targetList.begin(), targetList.end(), dependOnViewId);
     if (view_iter == targetList.end())
@@ -178,7 +178,7 @@ mfxStatus Dependency(mfxExtMVCSeqDesc * mvcPoints, ViewIDsList & targetList, Vie
 mfxStatus Dependency(mfxExtMVCSeqDesc * mvcPoints, mfxExtMVCTargetViews * targetViews, ViewIDsList &targetList, ViewIDsList &dependencyList)
 {
     targetList.reserve(targetViews->NumView);
-    for (Ipp32u i = 0; i < targetViews->NumView; i++)
+    for (uint32_t i = 0; i < targetViews->NumView; i++)
     {
         targetList.push_back(targetViews->ViewId[i]);
     }
@@ -328,7 +328,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
 #endif
     }
 
-    Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
+    int32_t useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
@@ -466,7 +466,7 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
     UMC::H264VideoDecoderParams umcVideoParams;
     ConvertMFXParamsToUMC(&m_vFirstPar, &umcVideoParams);
     umcVideoParams.numThreads = m_vPar.mfx.NumThread;
-    umcVideoParams.m_bufferedFrames = IPP_MAX(asyncDepth - umcVideoParams.numThreads, 0);
+    umcVideoParams.m_bufferedFrames = MFX_MAX(asyncDepth - umcVideoParams.numThreads, 0);
 
 #if defined(MFX_VA)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
@@ -1013,7 +1013,7 @@ mfxStatus VideoDECODEH264::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxF
     if ((par->IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY) && (par->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
-    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
+    int32_t isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     mfxStatus sts = QueryIOSurfInternal(platform, type, &params, request);
@@ -1082,7 +1082,7 @@ mfxStatus VideoDECODEH264::QueryIOSurfInternal(eMFXPlatform platform, eMFXHWType
 
     if (IsMVCProfile(par->mfx.CodecProfile) && points && points->OP)
     {
-        level_idc = mfxU8 (IPP_MAX(level_idc, points->OP->LevelIdc));
+        level_idc = mfxU8 (MFX_MAX(level_idc, points->OP->LevelIdc));
     }
 
     mfxU32 asyncDepth = CalculateAsyncDepth(platform, par);
@@ -1170,7 +1170,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
 
     if (!info->surface_out)
     {
-        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        for (int32_t i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
         {
             sts = m_pH264VideoDecoder->RunThread(threadNumber);
         }
@@ -1204,7 +1204,7 @@ mfxStatus VideoDECODEH264::RunThread(void * params, mfxU32 threadNumber)
 
     if (!isDecoded)
     {
-        for (Ipp32s i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
+        for (int32_t i = 0; i < 2 && sts == MFX_TASK_WORKING; i++)
         {
             sts = m_pH264VideoDecoder->RunThread(threadNumber);
         }
@@ -1763,7 +1763,7 @@ mfxStatus VideoDECODEH264::DecodeFrame(mfxFrameSurface1 *surface_out, UMC::H264D
         }
     }
 
-    Ipp32s const error = pFrame->GetError();
+    int32_t const error = pFrame->GetError();
     if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
     {
         if (error == UMC::UMC_ERR_GPU_HANG)
@@ -1931,10 +1931,10 @@ mfxStatus VideoDECODEH264::SetSkipMode(mfxSkipMode mode)
     if (!m_isInit)
         return MFX_ERR_NOT_INITIALIZED;
 
-    Ipp32s test_num = 0;
+    int32_t test_num = 0;
     m_pH264VideoDecoder->ChangeVideoDecodingSpeed(test_num);
 
-    Ipp32s num = 0;
+    int32_t num = 0;
     switch (mode)
     {
         case MFX_SKIPMODE_NOSKIP:
@@ -2076,7 +2076,7 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
                 return false;
 
-            for (Ipp32u i = 0; i < opaqueNew->In.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
             {
                 if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
                     return false;
@@ -2088,7 +2088,7 @@ bool VideoDECODEH264::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * o
             if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
                 return false;
 
-            for (Ipp32u i = 0; i < opaqueNew->Out.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
             {
                 if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
                     return false;

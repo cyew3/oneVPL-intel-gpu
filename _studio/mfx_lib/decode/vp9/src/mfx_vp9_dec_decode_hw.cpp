@@ -507,7 +507,7 @@ static bool IsSameVideoParam(mfxVideoParam *newPar, mfxVideoParam *oldPar)
         return false;
     }
 
-    Ipp32s asyncDepth = IPP_MIN(newPar->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
+    int32_t asyncDepth = MFX_MIN(newPar->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
     if (asyncDepth != oldPar->AsyncDepth)
     {
         return false;
@@ -825,7 +825,7 @@ mfxStatus MFX_CDECL VP9DECODERoutine(void *p_state, void * /* pp_param */, mfxU3
     {
         UMC::AutomaticUMCMutex guard(decoder.m_mGuard);
 
-        for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+        for (uint32_t i = 0; i < NUMBER_OF_STATUS; i++)
         {
             if(pStatusReport[i].bStatus == 3)
                 return MFX_ERR_DEVICE_FAILED;
@@ -1372,7 +1372,7 @@ mfxStatus VideoDECODEVP9_HW::DecodeFrameHeader(mfxBitstream *in, VP9DecoderFrame
         if (0 == info.firstPartitionSize)
             return MFX_ERR_UNSUPPORTED;
 
-        info.frameHeaderLength = Ipp32u(bsReader.BitsDecoded() / 8 + (bsReader.BitsDecoded() % 8 > 0));
+        info.frameHeaderLength = uint32_t(bsReader.BitsDecoded() / 8 + (bsReader.BitsDecoded() % 8 > 0));
         info.frameDataSize = in->DataLength;
 
         // vp9_loop_filter_frame_init()

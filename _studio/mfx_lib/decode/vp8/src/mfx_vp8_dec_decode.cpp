@@ -191,7 +191,7 @@ mfxStatus VideoDECODEVP8::Init(mfxVideoParam *p_params)
 
     m_p_frame_allocator.reset(new mfx_UMC_FrameAllocator);
 
-    Ipp32s useInternal = m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
+    int32_t useInternal = m_on_init_video_params.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY;
 
     // allocate memory
     memset(&m_request, 0, sizeof(m_request));
@@ -586,7 +586,7 @@ mfxStatus VideoDECODEVP8::QueryIOSurf(VideoCORE *p_core, mfxVideoParam *p_params
     mfxStatus sts = QueryIOSurfInternal(platform, &params, p_request);
     MFX_CHECK_STS(sts);
 
-    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ? true : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+    int32_t isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ? true : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     if (isInternalManaging)
     {
@@ -860,7 +860,7 @@ mfxStatus VideoDECODEVP8::DecodeFrameCheck(mfxBitstream *p_bs, mfxFrameSurface1 
         p_info = p_frame_data->GetPlaneMemoryInfo(0);
 
         video_data->SetPlanePointer(p_info->m_planePtr, 0);
-        Ipp32u pitch = (Ipp32u) p_info->m_pitch;
+        uint32_t pitch = (uint32_t) p_info->m_pitch;
 
         p_info = p_frame_data->GetPlaneMemoryInfo(1);
         video_data->SetPlanePointer(p_info->m_planePtr, 1);
@@ -996,7 +996,7 @@ bool VideoDECODEVP8::IsSameVideoParam(mfxVideoParam *p_new_par, mfxVideoParam *p
         return false;
     }
 
-    Ipp32s asyncDepth = IPP_MIN(p_new_par->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
+    int32_t asyncDepth = MFX_MIN(p_new_par->AsyncDepth, MFX_MAX_ASYNC_DEPTH_VALUE);
     if (asyncDepth != p_old_par->AsyncDepth)
     {
         return false;
@@ -1047,7 +1047,7 @@ mfxStatus VideoDECODEVP8::ConstructFrame(mfxBitstream *p_in, mfxBitstream *p_out
         p_out->DataLength = 0;
     }
 
-    p_out->Data = new Ipp8u[p_in->DataLength];
+    p_out->Data = new uint8_t[p_in->DataLength];
 
     std::copy(p_bs_start, p_bs_start + p_in->DataLength, p_out->Data);
     p_out->DataLength = p_in->DataLength;

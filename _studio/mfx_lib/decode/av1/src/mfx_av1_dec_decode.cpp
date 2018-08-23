@@ -440,7 +440,7 @@ mfxStatus VideoDECODEAV1::DecodeFrame(mfxFrameSurface1 *surface_out, AV1DecoderF
     MFX_CHECK(frame, MFX_ERR_UNDEFINED_BEHAVIOR);
 
     surface_out->Data.Corrupted = 0;
-    Ipp32s const error = frame->GetError();
+    int32_t const error = frame->GetError();
 
     if (error & UMC::ERROR_FRAME_DEVICE_FAILURE)
     {

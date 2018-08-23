@@ -70,23 +70,23 @@ typedef struct _DisplayBuffer
 {
     int mid;
     int index;
-    Ipp64u timestamp;
+    unsigned long long timestamp;
 }DisplayBuffer;
 
 typedef struct _MParam
 {
-    Ipp32s m_curr_thread_idx;
-    Ipp32s m_thread_completed;
-    Ipp32s task_num;
-    Ipp32s NumThreads;
+    int32_t m_curr_thread_idx;
+    int32_t m_thread_completed;
+    int32_t task_num;
+    int32_t NumThreads;
     bool m_isDecodedOrder;
 
-    Ipp32s  m_frame_curr;
-    Ipp64u last_timestamp;
-    Ipp32s curr_index;
-    Ipp32s prev_index;
-    Ipp32s next_index;
-    Ipp32s last_frame_count;
+    int32_t  m_frame_curr;
+    unsigned long long last_timestamp;
+    int32_t curr_index;
+    int32_t prev_index;
+    int32_t next_index;
+    int32_t last_frame_count;
     int display_index;
     bool IsSWImpl;
 
@@ -95,7 +95,7 @@ typedef struct _MParam
     mfxFrameSurface1 *surface_work;
     mfx_UMC_FrameAllocator *m_FrameAllocator;
     mfxVideoParam m_vPar;
-    Ipp32s *mid;
+    int32_t *mid;
     mfxBitstream *m_frame;
     bool *m_frame_in_use;
 
@@ -142,15 +142,15 @@ public:
     virtual mfxStatus CompleteTasks(void *pParam) = 0;
 
 public:
-    Ipp32s display_frame_count;
-    Ipp32s cashed_frame_count;
-    Ipp32s skipped_frame_count;
-    Ipp32s dec_frame_count;
-    Ipp32s dec_field_count;
-    Ipp32s last_frame_count;
+    int32_t display_frame_count;
+    int32_t cashed_frame_count;
+    int32_t skipped_frame_count;
+    int32_t dec_frame_count;
+    int32_t dec_field_count;
+    int32_t last_frame_count;
 
-    Ipp32s m_NumThreads;
-    Ipp32u maxNumFrameBuffered;
+    int32_t m_NumThreads;
+    uint32_t maxNumFrameBuffered;
 
     bool m_isFrameRateFromInit;
     bool m_reset_done;
@@ -165,9 +165,9 @@ public:
 
     UMC::Mutex m_guard;
 
-    Ipp32s m_InitW;
-    Ipp32s m_InitH;
-    Ipp32s m_InitPicStruct;
+    int32_t m_InitW;
+    int32_t m_InitH;
+    int32_t m_InitPicStruct;
 
     std::unique_ptr<UMC::MPEG2VideoDecoderBase> m_implUmc;
 
@@ -201,25 +201,25 @@ protected:
     bool m_first_SH;
     bool m_new_bs;
 
-    Ipp8u m_last_bytes[NUM_REST_BYTES];
-    Ipp32s m_frame_curr;
-    Ipp32s m_frame_free;
+    uint8_t m_last_bytes[NUM_REST_BYTES];
+    int32_t m_frame_curr;
+    int32_t m_frame_free;
     bool m_frame_constructed;
 
     MParam m_task_param[2*DPB];
-    Ipp32s m_task_num;
-    Ipp32s m_prev_task_num;
+    int32_t m_task_num;
+    int32_t m_prev_task_num;
 
-    Ipp32s prev_index;
-    Ipp32s next_index;
-    Ipp32s curr_index;
-    Ipp32s display_index;
-    Ipp32s display_order;
-    Ipp64u last_timestamp;
+    int32_t prev_index;
+    int32_t next_index;
+    int32_t curr_index;
+    int32_t display_index;
+    int32_t display_order;
+    unsigned long long last_timestamp;
     mfxF64 last_good_timestamp;
     mfxU16 m_fieldsInCurrFrame; // first field or new frame if 3 or 0; 1 - only top etc
 
-    Ipp32s m_Protected;
+    int32_t m_Protected;
 
     void ResetFcState(FcState& state) { state.picStart = state.picHeader = 0; }
     mfxStatus UpdateCurrVideoParams(mfxFrameSurface1 *surface_work, int task_num);
@@ -294,11 +294,11 @@ protected:
 
     virtual mfxStatus ConstructFrame(mfxBitstream *bs, mfxFrameSurface1 *surface_work);
     mfxStatus PerformStatusCheck(void *pParam);
-    mfxStatus GetStatusReport(Ipp32s current_index, UMC::FrameMemID surface_id);
-    mfxStatus GetStatusReportByIndex(Ipp32s current_index, mfxU32 currIdx);
+    mfxStatus GetStatusReport(int32_t current_index, UMC::FrameMemID surface_id);
+    mfxStatus GetStatusReportByIndex(int32_t current_index, mfxU32 currIdx);
     virtual mfxStatus AllocFrames(mfxVideoParam *par);
-    mfxStatus RestoreDecoder(Ipp32s frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, Ipp32s task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
-    void TranslateCorruptionFlag(Ipp32s disp_index, mfxFrameSurface1 * surface_work);
+    mfxStatus RestoreDecoder(int32_t frame_buffer_num, UMC::FrameMemID mem_id_to_unlock, int32_t task_num_to_unlock, bool end_frame, bool remove_2frames, int decrease_dec_field_count);
+    void TranslateCorruptionFlag(int32_t disp_index, mfxFrameSurface1 * surface_work);
 };
 
 #endif // #if defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)
@@ -392,7 +392,7 @@ protected:
         SKIP_PB,
         SKIP_ALL
     };
-    Ipp32s m_SkipLevel;
+    int32_t m_SkipLevel;
 };
 
 #ifdef _MSVC_LANG

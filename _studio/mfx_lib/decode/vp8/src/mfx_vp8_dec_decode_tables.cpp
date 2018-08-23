@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -17,11 +17,11 @@
 namespace VP8Defs
 {
 
-const Ipp8u vp8_kf_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1]   = {145, 156, 163, 128};
-const Ipp8u vp8_kf_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1] = {142, 114, 183};
+const uint8_t vp8_kf_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1]   = {145, 156, 163, 128};
+const uint8_t vp8_kf_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1] = {142, 114, 183};
 
 
-const Ipp8u vp8_kf_block_mode_probs[VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES-1] = 
+const uint8_t vp8_kf_block_mode_probs[VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES-1] = 
 {
   {
     { 231, 120, 48, 89, 115, 113, 120, 152, 112},
@@ -145,16 +145,16 @@ const Ipp8u vp8_kf_block_mode_probs[VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLO
   }
 };
 
-const Ipp8u vp8_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1] = {112, 86, 140, 37};
+const uint8_t vp8_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1] = {112, 86, 140, 37};
 
-const Ipp8u vp8_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1] = {162, 101, 204};
+const uint8_t vp8_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1] = {162, 101, 204};
 
-const Ipp8u vp8_block_mode_probs [VP8_NUM_INTRA_BLOCK_MODES - 1] = {
+const uint8_t vp8_block_mode_probs [VP8_NUM_INTRA_BLOCK_MODES - 1] = {
   120, 90, 79, 133, 87, 85, 80, 111, 151
 };
 
 
-const Ipp8u vp8_default_coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES] =
+const uint8_t vp8_default_coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES] =
 {
   {
     {
@@ -326,7 +326,7 @@ const Ipp8u vp8_default_coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][V
   }
 };
 
-const Ipp8u vp8_coeff_update_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES] =
+const uint8_t vp8_coeff_update_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES] =
 {
   {
     {
@@ -499,27 +499,27 @@ const Ipp8u vp8_coeff_update_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP
 };
 
 
-const Ipp8s vp8_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)] =
+const int8_t vp8_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)] =
 {
   -VP8_MB_DC_PRED, 2, 4, 6,
   -VP8_MB_V_PRED, -VP8_MB_H_PRED, -VP8_MB_TM_PRED, -VP8_MB_B_PRED
 };
 
 
-const Ipp8s vp8_kf_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)] =
+const int8_t vp8_kf_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)] =
 {
   -VP8_MB_B_PRED, 2, 4, 6,
   -VP8_MB_DC_PRED, -VP8_MB_V_PRED, -VP8_MB_H_PRED, -VP8_MB_TM_PRED
 };
 
 
-const Ipp8s vp8_mb_mode_uv_tree[2*(VP8_NUM_MB_MODES_UV - 1)] =
+const int8_t vp8_mb_mode_uv_tree[2*(VP8_NUM_MB_MODES_UV - 1)] =
 {
   -VP8_MB_DC_PRED, 2, -VP8_MB_V_PRED, 4, -VP8_MB_H_PRED, -VP8_MB_TM_PRED
 };
 
 
-const Ipp8s vp8_block_mode_tree[2*(VP8_NUM_INTRA_BLOCK_MODES - 1)] =
+const int8_t vp8_block_mode_tree[2*(VP8_NUM_INTRA_BLOCK_MODES - 1)] =
 {
   -VP8_B_DC_PRED, 2,                 /* B_DC_PRED = "0" */
   -VP8_B_TM_PRED, 4,                 /* B_TM_PRED = "10" */
@@ -533,7 +533,7 @@ const Ipp8s vp8_block_mode_tree[2*(VP8_NUM_INTRA_BLOCK_MODES - 1)] =
 };
 
 
-const Ipp32u vp8_mbmode_2_blockmode_u32[VP8_NUM_MB_MODES_Y] =
+const uint32_t vp8_mbmode_2_blockmode_u32[VP8_NUM_MB_MODES_Y] =
 {
   (VP8_B_DC_PRED << 24) | (VP8_B_DC_PRED << 16)  | (VP8_B_DC_PRED << 8) | VP8_B_DC_PRED,
   (VP8_B_VE_PRED << 24) | (VP8_B_VE_PRED << 16)  | (VP8_B_VE_PRED << 8) | VP8_B_VE_PRED,
@@ -543,7 +543,7 @@ const Ipp32u vp8_mbmode_2_blockmode_u32[VP8_NUM_MB_MODES_Y] =
 };
 
 
-const Ipp8u vp8_mv_update_probs[2][VP8_NUM_MV_PROBS] =
+const uint8_t vp8_mv_update_probs[2][VP8_NUM_MV_PROBS] =
 {
   {
     237,
@@ -560,7 +560,7 @@ const Ipp8u vp8_mv_update_probs[2][VP8_NUM_MV_PROBS] =
 };
 
 
-const Ipp8u vp8_default_mv_contexts[2][VP8_NUM_MV_PROBS] =
+const uint8_t vp8_default_mv_contexts[2][VP8_NUM_MV_PROBS] =
 {
   { // y
     162, // is short
@@ -578,7 +578,7 @@ const Ipp8u vp8_default_mv_contexts[2][VP8_NUM_MV_PROBS] =
 
 
 //????
-const Ipp8u vp8_ClampTbl[768] =
+const uint8_t vp8_ClampTbl[768] =
 {
      0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00
     ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00 ,0x00

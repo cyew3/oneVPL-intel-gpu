@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -136,12 +136,12 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         picParams->loop_filter_level[3] = m_frame_info.loopFilterLevel;
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_OF_REF_FRAMES; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i += 1)
     {
         picParams->ref_lf_delta[i] = m_frame_info.refLoopFilterDeltas[i];
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_OF_MODE_LF_DELTAS; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_OF_MODE_LF_DELTAS; i += 1)
     {
         picParams->mode_lf_delta[i] = m_frame_info.modeLoopFilterDeltas[i];
     }
@@ -165,17 +165,17 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
         prob_uv_table = m_frameProbs.mbModeProbUV;
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_MB_MODES_Y - 1; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_MB_MODES_Y - 1; i += 1)
     {
         picParams->y_mode_probs[i] = prob_y_table[i];
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_MB_MODES_UV - 1; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_MB_MODES_UV - 1; i += 1)
     {
         picParams->uv_mode_probs[i] = prob_uv_table[i];
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_MV_PROBS; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_MV_PROBS; i += 1)
     {
         picParams->mv_update_prob[0][i] = m_frameProbs.mvContexts[0][i];
         picParams->mv_update_prob[1][i] = m_frameProbs.mvContexts[1][i];
@@ -188,7 +188,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     picParams->PartitionSize[0] = m_frame_info.firstPartitionSize;
 
-    for (Ipp32s i = 1; i < m_frame_info.numPartitions + 1; i += 1)
+    for (int32_t i = 1; i < m_frame_info.numPartitions + 1; i += 1)
     {
         picParams->PartitionSize[i] = m_frame_info.partitionSize[i - 1];
     }
@@ -197,7 +197,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
 
     ////////////////////////////////////////////////////////////////
     UMCVACompBuffer* compBufCp;
-    Ipp8u*coeffProbs = (Ipp8u*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
+    uint8_t*coeffProbs = (uint8_t*)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
     // [4][8][3][11]
     memcpy_s(coeffProbs, sizeof(m_frameProbs.coeff_probs), m_frameProbs.coeff_probs, sizeof(m_frameProbs.coeff_probs));
@@ -220,7 +220,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     }
     else
     {
-        for (Ipp32u i = 0; i < 4; i += 1)
+        for (uint32_t i = 0; i < 4; i += 1)
         {
             qmTable->Qvalue[i][0] = (USHORT)m_quantInfo.ydcQ[i];
             qmTable->Qvalue[i][1] = (USHORT)m_quantInfo.yacQ[i];
@@ -236,10 +236,10 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     //////////////////////////////////////////////////////////////////
 
     UMCVACompBuffer* compBufBs;
-    Ipp8u *bistreamData = (Ipp8u *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
-    Ipp8u *pBuffer = (Ipp8u*)p_bistream->Data;
-    Ipp32s size = p_bistream->DataLength;
-    Ipp32u offset = 0;
+    uint8_t *bistreamData = (uint8_t *)m_p_video_accelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
+    uint8_t *pBuffer = (uint8_t*)p_bistream->Data;
+    int32_t size = p_bistream->DataLength;
+    uint32_t offset = 0;
 
     if (m_frame_info.frameType == I_PICTURE)
     {
@@ -251,7 +251,7 @@ mfxStatus VideoDECODEVP8_HW::PackHeaders(mfxBitstream *p_bistream)
     }
 
     memcpy_s(bistreamData, size - offset, pBuffer + offset, size - offset);
-    compBufBs->SetDataSize((Ipp32s)size - offset);
+    compBufBs->SetDataSize((int32_t)size - offset);
 
     return MFX_ERR_NONE;
 

@@ -42,9 +42,9 @@ typedef struct
 
 typedef struct _IVF_FRAME_VP9
 {
-    Ipp32u frame_size;
-    Ipp64u time_stamp;
-    Ipp8u *p_frame_data;
+    uint32_t frame_size;
+    unsigned long long time_stamp;
+    uint8_t *p_frame_data;
 
 } IVF_FRAME_VP9;
 
