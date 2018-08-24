@@ -496,6 +496,9 @@ enum {
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
     /* AV1 Profiles */
+    MFX_PROFILE_AV1_MAIN                    = 1,
+    MFX_PROFILE_AV1_HIGH                    = 2,
+    MFX_PROFILE_AV1_PRO                     = 3,
     MFX_PROFILE_AV1_0                       = 1,
     MFX_PROFILE_AV1_1                       = 2,
     MFX_PROFILE_AV1_2                       = 3,

@@ -7352,7 +7352,7 @@ The `CodecProfile` enumerator itemizes codec profiles for all codecs.
 `MFX_PROFILE_VC1_SIMPLE`,<br>`MFX_PROFILE_VC1_MAIN`,<br>`MFX_PROFILE_VC1_ADVANCED`,<br> | VC-1 profiles
 `MFX_PROFILE_HEVC_MAIN`,<br>`MFX_PROFILE_HEVC_MAIN10`,<br>`MFX_PROFILE_HEVC_MAINSP`,<br>`MFX_PROFILE_HEVC_REXT`,<br>`MFX_PROFILE_HEVC_SCC`,<br> | HEVC profiles
 `MFX_PROFILE_VP9_0`,<br>`MFX_PROFILE_VP9_1`,<br>`MFX_PROFILE_VP9_2`,<br>`MFX_PROFILE_VP9_3` | VP9 profiles
-`MFX_PROFILE_AV1_0`,<br>`MFX_PROFILE_AV1_1`,<br>`MFX_PROFILE_AV1_2`,<br>`MFX_PROFILE_AV1_3` | AV1 profiles
+`MFX_PROFILE_AV1_MAIN`,<br>`MFX_PROFILE_AV1_HIGH`,<br>`MFX_PROFILE_AV1_PRO` | AV1 profiles
 
 **Change History**
 
