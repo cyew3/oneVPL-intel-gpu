@@ -407,8 +407,19 @@ void H265Slice::CopyFromBaseSlice(const H265Slice * s)
 UMC::Status H265Slice::UpdateReferenceList(H265DBPList *pDecoderFrameList, H265DecoderFrame* curr_ref)
 {
     UMC::Status ps = UMC::UMC_OK;
-    H265DecoderRefPicList::ReferenceInformation* pRefPicList0 = m_pCurrentFrame->GetRefPicList(m_iNumber, 0)->m_refPicList;
-    H265DecoderRefPicList::ReferenceInformation* pRefPicList1 = m_pCurrentFrame->GetRefPicList(m_iNumber, 1)->m_refPicList;
+    H265DecoderRefPicList::ReferenceInformation* pRefPicList0 = NULL;
+    H265DecoderRefPicList::ReferenceInformation* pRefPicList1 = NULL;
+    const H265DecoderRefPicList* pPicList0 = m_pCurrentFrame->GetRefPicList(m_iNumber, 0);
+    const H265DecoderRefPicList* pPicList1 = m_pCurrentFrame->GetRefPicList(m_iNumber, 1);
+    if(pPicList0 && pPicList1)
+    {
+        pRefPicList0 = pPicList0->m_refPicList;
+        pRefPicList1 = pPicList1->m_refPicList;
+    }
+    else
+    {
+        return UMC::UMC_ERR_NULL_PTR;
+    }
 
     H265SliceHeader* header = GetSliceHeader();
     VM_ASSERT(header);
