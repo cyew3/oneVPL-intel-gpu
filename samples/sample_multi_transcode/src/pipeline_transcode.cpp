@@ -4476,8 +4476,8 @@ mfxStatus CTranscodingPipeline::AllocateSufficientBuffer(mfxBitstream* pBS)
     if (0 != par.mfx.BufferSizeInKB)
     {
         //--- If value calculated basing on par.mfx.BufferSizeInKB is too low, just double the buffer size
-        new_size = par.mfx.BufferSizeInKB * 1000u > pBS->MaxLength ? 
-            par.mfx.BufferSizeInKB * 1000u : 
+        new_size = par.mfx.BufferSizeInKB * 1000u > pBS->MaxLength ?
+            par.mfx.BufferSizeInKB * 1000u :
             pBS->MaxLength*2;
     }
     else
@@ -4509,20 +4509,26 @@ mfxStatus CTranscodingPipeline::Run()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
+    msdk_char buffer[10] = {};
+    GetSessionText(buffer, 10);
+
     if (m_bDecodeEnable && m_bEncodeEnable)
     {
         sts = Transcode();
-        MSDK_CHECK_STATUS(sts, "CTranscodingPipeline::Run::Transcode() failed");
+        msdk_string msg = MSDK_STRING("CTranscodingPipeline::Run::Transcode() [") + msdk_string(buffer) + MSDK_STRING("] failed");
+        MSDK_CHECK_STATUS(sts, msg);
     }
     else if (m_bDecodeEnable)
     {
         sts = Decode();
-        MSDK_CHECK_STATUS(sts, "CTranscodingPipeline::Run::Decode() failed");
+        msdk_string msg = MSDK_STRING("CTranscodingPipeline::Run::Decode() [") + msdk_string(buffer) + MSDK_STRING("] failed");
+        MSDK_CHECK_STATUS(sts, msg);
     }
     else if (m_bEncodeEnable)
     {
         sts = Encode();
-        MSDK_CHECK_STATUS(sts, "CTranscodingPipeline::Run::Encode() failed");
+        msdk_string msg = MSDK_STRING("CTranscodingPipeline::Run::Encode() [") + msdk_string(buffer) + MSDK_STRING("] failed");
+        MSDK_CHECK_STATUS(sts, msg);
     }
     else
         return MFX_ERR_UNSUPPORTED;

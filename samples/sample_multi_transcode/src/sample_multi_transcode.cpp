@@ -136,7 +136,7 @@ mfxStatus Launcher::Init(int argc, msdk_char *argv[])
         D3D11AllocatorParams *pD3D11Params = dynamic_cast<D3D11AllocatorParams*>(m_pAllocParam.get());
         pD3D11Params->pDevice =(ID3D11Device*)hdl;
 
-        // All sessions use same allocator parameters, so we'll take settings for the 0 session and use it for all 
+        // All sessions use same allocator parameters, so we'll take settings for the 0 session and use it for all
         // (bSingleTexture is set for all sessions of for no one in VerifyCrossSessionsOptions())
         pD3D11Params->bUseSingleTexture = m_InputParamsArray[0].bSingleTexture;
 
@@ -554,6 +554,8 @@ mfxStatus Launcher::ProcessResult()
 
     mfxStatus FinalSts = MFX_ERR_NONE;
     msdk_printf(MSDK_STRING("-------------------------------------------------------------------------------\n"));
+
+    msdk_char buffer[10] = {};
     for (mfxU32 i = 0; i < m_pSessionArray.size(); i++)
     {
         mfxStatus _sts = m_pSessionArray[i]->transcodingSts;
@@ -564,8 +566,9 @@ mfxStatus Launcher::ProcessResult()
         msdk_string SessionStsStr = _sts ? msdk_string(MSDK_STRING("FAILED"))
             : msdk_string((MSDK_STRING("PASSED")));
 
+        m_pSessionArray[i]->pPipeline->GetSessionText(buffer, 10);
         msdk_stringstream ss;
-        ss << MSDK_STRING("*** session ") << i << MSDK_STRING(" ") << SessionStsStr <<MSDK_STRING(" (") << StatusToString(_sts) << MSDK_STRING(") ")
+        ss << MSDK_STRING("*** session ") << i << MSDK_STRING(" [") << msdk_string(buffer) << MSDK_STRING("] ") << SessionStsStr <<MSDK_STRING(" (") << StatusToString(_sts) << MSDK_STRING(") ")
             << m_pSessionArray[i]->working_time << MSDK_STRING(" sec, ") << m_pSessionArray[i]->numTransFrames << MSDK_STRING(" frames") << std::endl
             << m_parser.GetLine(i) << std::endl << std::endl;
 
