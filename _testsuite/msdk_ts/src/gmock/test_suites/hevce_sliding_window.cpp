@@ -57,6 +57,7 @@ namespace hevce_sliding_window
 
     const TestSuite::tc_struct TestSuite::test_case[] =
     {
+    // Wrong WinBRCSize = 15, should be 30/1 = 30. Error expected
     {/*00*/ { MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET, {
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 15 },
@@ -68,6 +69,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     }   },
 
+    // WinBRCSize and other params are OK. No errors expected 
     {/*01*/ { MFX_ERR_NONE,  MFX_ERR_NONE, MFX_ERR_NONE },
     QUERY | INIT | RESET, {
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -79,7 +81,8 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     }   },
 
-    {/*02*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
+    // FrameRates are not set. Not an error
+    {/*02*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
     QUERY | INIT | RESET, {
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 5000 },
@@ -90,6 +93,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     }   },
 
+    // WinBRCMaxAvgKbps < MaxKbps. Error expected
     {/*03*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -101,6 +105,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     } },
 
+    // MaxKbps is not set. Error expected
     {/*04*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -112,6 +117,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     } },
 
+    // WinBRCMaxAvgKbps < TargetKbps. Error expected
     {/*05*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM },
     QUERY | INIT ,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -123,6 +129,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 6000 }
     } },
 
+    // WinBRCMaxAvgKbps is not set. Error expected
     {/*06*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -136,6 +143,7 @@ namespace hevce_sliding_window
 
 #if !defined(LINUX_TARGET_PLATFORM_BXT) && !defined (LINUX_TARGET_PLATFORM_BXTMIN) && !defined (LINUX_TARGET_PLATFORM_CFL)
 
+    // Wrong WinBRCSize = 15, should be 30/1 = 30. Error expected
     {/*07*/ { MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET, {
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 15 },
@@ -147,6 +155,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     }   },
 
+    // WinBRCSize and other params are OK. No errors expected 
     {/*08*/ { MFX_ERR_NONE,  MFX_ERR_NONE, MFX_ERR_NONE },
     QUERY | INIT | RESET, {
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -158,7 +167,8 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     }   },
 
-    {/*09*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
+    // FrameRates are not set. Not an error
+    {/*09*/{ MFX_ERR_NONE, MFX_ERR_NONE, MFX_ERR_NONE },
     QUERY | INIT | RESET, {
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCMaxAvgKbps, 5000 },
@@ -169,6 +179,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     }   },
 
+    // WinBRCMaxAvgKbps < MaxKbps. Error expected
     {/*10*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -180,6 +191,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     } },
 
+    // MaxKbps is not set. Error expected
     {/*11*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -191,6 +203,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 2000 }
     } },
 
+    // WinBRCMaxAvgKbps < TargetKbps. Error expected
     {/*12*/{ MFX_ERR_UNSUPPORTED, MFX_ERR_INVALID_VIDEO_PARAM },
     QUERY | INIT ,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
@@ -202,6 +215,7 @@ namespace hevce_sliding_window
         { MFXVPAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, 6000 }
     } },
 
+    // WinBRCMaxAvgKbps is not set. Error expected
     {/*13*/{ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM },
     QUERY | INIT | RESET,{
         { CO3, &tsStruct::mfxExtCodingOption3.WinBRCSize, 30 },
