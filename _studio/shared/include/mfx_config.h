@@ -405,6 +405,10 @@
 #endif
 
 #ifdef OPEN_SOURCE
+#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE)
+    #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+#endif
+
 #if defined(MFX_ENABLE_VP9_VIDEO_DECODE)
 #define MFX_ENABLE_VP9_VIDEO_DECODE_HW
 #endif
