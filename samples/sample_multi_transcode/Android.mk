@@ -19,7 +19,6 @@ LOCAL_CFLAGS := \
     $(MFX_CFLAGS_LIBVA)
 
 LOCAL_STATIC_LIBRARIES := \
-    libsample_rotate_cpu \
     libsample_vpp_plugin \
     libmfx \
     libsample_common
