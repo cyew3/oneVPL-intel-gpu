@@ -279,7 +279,7 @@ int main(int argc, msdk_char *argv[])
     CTimeStatistics     statTimer;
 
     sFrameProcessor     frameProcessor;
-    sMemoryAllocator    allocator;
+    sMemoryAllocator    allocator{};
 
     sInputParams        Params;
     mfxVideoParam       mfxParamsVideo;
@@ -366,7 +366,6 @@ int main(int argc, msdk_char *argv[])
 
     //reset pointers to the all internal resources
     MSDK_ZERO_MEMORY(Resources);
-    MSDK_ZERO_MEMORY(allocator);
     MSDK_ZERO_MEMORY(realFrameInfoIn);
     MSDK_ZERO_MEMORY(realFrameInfoOut);
 
