@@ -1287,7 +1287,7 @@ mfxStatus MFXVideoDECODEVC1::PostProcessFrameHW(mfxFrameSurface1 *surface_work, 
     FrameMemID memIDdisp = -1;
     bool isSkip = false;
     mfxFrameSurface1 *surface_out;
-    mfxU16 Corrupted;
+    mfxU16 Corrupted = 0;
 
     if (m_DisplayListAsync.size() && m_bIsBuffering)
     {
@@ -1321,7 +1321,7 @@ mfxStatus MFXVideoDECODEVC1::PostProcessFrameHW(mfxFrameSurface1 *surface_work, 
     }
     m_pVC1VideoDecoder->UnlockSurfaces();
 
-    if (m_bTakeBufferedFrame)
+    if (m_bTakeBufferedFrame && memID > -1)
         surface_out->Data.Corrupted = Corrupted;
 
     if (m_DisplayListAsync.size())
