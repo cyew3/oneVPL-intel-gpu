@@ -14,6 +14,8 @@
 using namespace UMC;
 
 TrackIndex::TrackIndex()
+    : m_FragmentList(),
+      m_ActiveFrag()
 {
     m_uiTotalEntries = 0;
     m_iFirstEntryPos = 0;
