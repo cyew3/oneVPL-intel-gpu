@@ -2654,6 +2654,12 @@ MFX_IOPATTERN_IN_VIDEO_MEMORY : MFX_IOPATTERN_IN_SYSTEM_MEMORY);
     }
 #endif
 
+    if (pInParams->GPB)
+    {
+        m_CodingOption3.GPB = pInParams->GPB;
+        addCodingOpt3 = true;
+    }
+
     if (pInParams->bDisableQPOffset)
     {
         m_CodingOption3.EnableQPOffset = MFX_CODINGOPTION_OFF;

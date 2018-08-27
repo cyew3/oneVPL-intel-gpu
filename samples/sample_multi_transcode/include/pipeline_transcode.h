@@ -243,6 +243,7 @@ namespace TranscodingSample
         mfxU16 NumRefFrame;
         mfxU16 nBRefType;
         mfxU16 RepartitionCheckMode;
+        mfxU16 GPB;
 
         mfxU16 CodecLevel;
         mfxU16 CodecProfile;
