@@ -153,6 +153,8 @@ struct _mfxSession
         return (NULL == m_pSchedulerAllocated);
     }
     
+    template<class T>
+    T* Create(mfxVideoParam& par);
 
 protected:
     // Release the object

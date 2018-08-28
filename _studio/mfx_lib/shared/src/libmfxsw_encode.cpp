@@ -84,36 +84,33 @@
 #pragma warning(disable:4065)
 #endif
 
-// declare static file section
-
 #if !defined (MFX_RT)
-VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session, mfxVideoParam *par)
+template<>
+VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 {
-#if !defined(MFX_VA) || \
-    (!defined(MFX_ENABLE_H264_VIDEO_ENCODE) && !defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE) && !defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE))
-    (void)session;
-#endif
-
     VideoENCODE *pENCODE = nullptr;
+    VideoCORE* core = m_pCORE.get();
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
+    mfxU32 CodecId = par.mfx.CodecId;
 #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
     bool * feiEnabled = nullptr;//required to check FEI plugin registration.
 #endif
+
     // create a codec instance
     switch (CodecId)
     {
 #if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
     case MFX_CODEC_AVC:
 #if defined(MFX_VA) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
-        if (session->m_bIsHWENCSupport)
+        if (m_bIsHWENCSupport)
         {
-            pENCODE = CreateMFXHWVideoENCODEH264(core, &mfxRes);
+            pENCODE = new MFXHWVideoENCODEH264(core, &mfxRes);
         }
 #ifndef OPEN_SOURCE
         else
         {
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-            if(par && (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
+            if(par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
                 pENCODE = new MFXVideoENCODEMVC(core, &mfxRes);
             else
 #else // MFX_ENABLE_MVC_VIDEO_ENCODE
@@ -126,7 +123,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #else //MFX_VA
 
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-        if(par && (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH))
+        if(par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
             pENCODE = new MFXVideoENCODEMVC(core, &mfxRes);
         else
 #else // MFX_ENABLE_MVC_VIDEO_ENCODE
@@ -141,7 +138,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
     case MFX_CODEC_MPEG2:
 #if defined(MFX_VA)
-        if (session->m_bIsHWENCSupport)
+        if (m_bIsHWENCSupport)
         {
             pENCODE = new MFXVideoENCODEMPEG2_HW(core, &mfxRes);
         }
@@ -160,7 +157,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
     case MFX_CODEC_JPEG:
 #if defined(MFX_VA)
-        if (session->m_bIsHWENCSupport)
+        if (m_bIsHWENCSupport)
         {
             pENCODE = new MFXVideoENCODEMJPEG_HW(core, &mfxRes);
         }
@@ -179,17 +176,17 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
     case MFX_CODEC_HEVC:
-        if (session->m_bIsHWENCSupport)
+        if (m_bIsHWENCSupport)
         {
 #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
             feiEnabled = (bool*)core->QueryCoreInterface(MFXIFEIEnabled_GUID);
             if (feiEnabled == nullptr)
                 return nullptr;
             else if(*feiEnabled)
-                pENCODE = new MfxHwH265FeiEncode::H265FeiEncode_HW(&session->m_coreInt, &mfxRes);
+                pENCODE = new MfxHwH265FeiEncode::H265FeiEncode_HW(&m_coreInt, &mfxRes);
             else
 #endif
-            pENCODE = new MfxHwH265Encode::MFXVideoENCODEH265_HW(&session->m_coreInt, &mfxRes);
+            pENCODE = new MfxHwH265Encode::MFXVideoENCODEH265_HW(&m_coreInt, &mfxRes);
         }
         else
         {
@@ -200,9 +197,9 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
 
 #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
     case MFX_CODEC_VP9:
-        if (session->m_bIsHWENCSupport)
+        if (m_bIsHWENCSupport)
         {
-            pENCODE = new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(&session->m_coreInt, &mfxRes);
+            pENCODE = new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(&m_coreInt, &mfxRes);
         }
         else
         {
@@ -635,7 +632,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
         {
             // create a new instance
             session->m_bIsHWENCSupport = true;
-            session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
+            session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif
@@ -647,7 +644,7 @@ mfxStatus MFXVideoENCODE_Init(mfxSession session, mfxVideoParam *par)
             session->m_bIsHWENCSupport = false;
 #ifndef OPEN_SOURCE
 #if !defined (MFX_RT)
-            session->m_pENCODE.reset(CreateENCODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session, par));
+            session->m_pENCODE.reset(session->Create<VideoENCODE>(*par));
             MFX_CHECK(session->m_pENCODE.get(), MFX_ERR_NULL_PTR);
             mfxRes = session->m_pENCODE->Init(par);
 #endif

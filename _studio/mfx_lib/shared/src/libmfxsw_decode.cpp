@@ -68,12 +68,13 @@
 #endif
 
 #if !defined (MFX_RT)
-VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session)
+template<>
+VideoDECODE* _mfxSession::Create<VideoDECODE>(mfxVideoParam& par)
 {
-    (void)session;
-
-    VideoDECODE *pDECODE = (VideoDECODE *) 0;
+    VideoDECODE* pDECODE = nullptr;
+    VideoCORE* core = m_pCORE.get();
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
+    mfxU32 CodecId = par.mfx.CodecId;
 
     // create a codec instance
     switch (CodecId)
@@ -146,12 +147,12 @@ VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
     if (MFX_ERR_NONE != mfxRes)
     {
         delete pDECODE;
-        pDECODE = (VideoDECODE *) 0;
+        pDECODE = nullptr;
     }
 
     return pDECODE;
 
-} // VideoDECODE *CreateDECODESpecificClass(mfxU32 CodecId, VideoCORE *core)
+}
 #endif
 
 mfxStatus MFXVideoDECODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
@@ -459,7 +460,7 @@ mfxStatus MFXVideoDECODE_Init(mfxSession session, mfxVideoParam *par)
         if (!session->m_pDECODE.get())
         {
             // create a new instance
-            session->m_pDECODE.reset(CreateDECODESpecificClass(par->mfx.CodecId, session->m_pCORE.get(), session));
+            session->m_pDECODE.reset(session->Create<VideoDECODE>(*par));
             MFX_CHECK(session->m_pDECODE.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif

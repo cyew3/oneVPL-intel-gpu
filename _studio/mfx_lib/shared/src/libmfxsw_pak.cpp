@@ -32,21 +32,13 @@
 #endif
 
 #if !defined (MFX_RT)
-VideoPAK *CreatePAKSpecificClass(mfxVideoParam *par, mfxU32 codecProfile, VideoCORE *pCore)
+template<>
+VideoPAK* _mfxSession::Create<VideoPAK>(mfxVideoParam& par)
 {
-    (void)codecProfile;
-
-#if !defined(MFX_ENABLE_H264_VIDEO_PAK) && \
-    (!defined(MFX_VA_LINUX) || !defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) || !defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)) && \
-    !defined(MFX_ENABLE_MPEG2_VIDEO_PAK)
-
-    (void)pCore;
-#endif
-
-    VideoPAK *pPAK = (VideoPAK *) 0;
+    VideoPAK* pPAK = nullptr;
+    VideoCORE* pCore = m_pCORE.get();
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-
-    mfxU32 codecId = par->mfx.CodecId;
+    mfxU32 codecId = par.mfx.CodecId;
 
     switch (codecId)
     {
@@ -57,7 +49,7 @@ VideoPAK *CreatePAKSpecificClass(mfxVideoParam *par, mfxU32 codecProfile, VideoC
 #endif // MFX_ENABLE_H264_VIDEO_PAK
 #if defined(MFX_VA_LINUX) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW) && defined(MFX_ENABLE_H264_VIDEO_FEI_PAK)
     case MFX_CODEC_AVC:
-        if (bEnc_PAK(par))
+        if (bEnc_PAK(&par))
             pPAK = (VideoPAK*) new VideoPAK_PAK(pCore, &mfxRes);
         break;
 #endif // MFX_ENABLE_H264_VIDEO_FEI_PAK
@@ -75,12 +67,12 @@ VideoPAK *CreatePAKSpecificClass(mfxVideoParam *par, mfxU32 codecProfile, VideoC
     if (MFX_ERR_NONE != mfxRes)
     {
         delete pPAK;
-        pPAK = (VideoPAK *) 0;
+        pPAK = nullptr;
     }
 
     return pPAK;
 
-} // VideoPAK *CreatePAKSpecificClass(mfxU32 codecId, mfxU32 codecProfile, VideoCORE *pCore)
+}
 #endif
 
 mfxStatus MFXVideoPAK_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
@@ -186,9 +178,7 @@ mfxStatus MFXVideoPAK_Init(mfxSession session, mfxVideoParam *par)
 
 #if !defined (MFX_RT)
         // create a new instance
-        session->m_pPAK.reset(CreatePAKSpecificClass(par,
-                                                     par->mfx.CodecProfile,
-                                                     session->m_pCORE.get()));
+        session->m_pPAK.reset(session->Create<VideoPAK>(*par));
         MFX_CHECK(session->m_pPAK.get(), MFX_ERR_INVALID_VIDEO_PARAM);
 #endif
         mfxRes = session->m_pPAK->Init(par);

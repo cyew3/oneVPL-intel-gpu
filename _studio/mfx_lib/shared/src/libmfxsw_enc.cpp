@@ -54,11 +54,14 @@
 
 #endif //MFX_VA
 
-VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
+template<>
+VideoENC* _mfxSession::Create<VideoENC>(mfxVideoParam& par)
 {
-    VideoENC *pENC = (VideoENC *) 0;
+    VideoENC* pENC = nullptr;
+#if defined (MFX_ENABLE_H264_VIDEO_ENC) && !defined (MFX_VA) || (defined (MFX_ENABLE_H264_VIDEO_ENC_HW) || defined(MFX_ENABLE_LA_H264_VIDEO_HW) || defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC) || defined(MFX_ENABLE_H264_VIDEO_FEI_ENC))&& defined (MFX_VA) || defined(MFX_ENABLE_MPEG2_VIDEO_ENC) && !defined(MFX_VA)
+    VideoCORE* pCore = m_pCORE.get();
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-    mfxU32 codecId = par->mfx.CodecId;
+    mfxU32 codecId = par.mfx.CodecId;
 
     switch (codecId)
     {
@@ -69,15 +72,15 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
         pENC = new MFXHWVideoENCH264(pCore, &mfxRes);
 #endif
 #if defined(MFX_ENABLE_LA_H264_VIDEO_HW)
-        if (bEnc_LA(par))
+        if (bEnc_LA(&par))
             pENC = (VideoENC*) new VideoENC_LA(pCore, &mfxRes);
 #endif
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_PREENC)
-        if (bEnc_PREENC(par))
+        if (bEnc_PREENC(&par))
             pENC = (VideoENC*) new VideoENC_PREENC(pCore, &mfxRes);
 #endif
 #if defined(MFX_ENABLE_H264_VIDEO_FEI_ENC) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
-        if (bEnc_ENC(par))
+        if (bEnc_ENC(&par))
             pENC = (VideoENC*) new VideoENC_ENC(pCore, &mfxRes);
 #endif
 #else //MFX_VA
@@ -98,7 +101,6 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
         break;
 #endif
 
-    case 0: (void)pCore;
     default:
         break;
     }
@@ -107,12 +109,14 @@ VideoENC *CreateENCSpecificClass(mfxVideoParam *par, VideoCORE *pCore)
     if (MFX_ERR_NONE != mfxRes)
     {
         delete pENC;
-        pENC = (VideoENC *) 0;
+        pENC = nullptr;
     }
+#else
+    (void)par;
+#endif
 
     return pENC;
-
-} // VideoENC *CreateENCSpecificClass(mfxU32 codecId, VideoCORE *pCore)
+}
 
 mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
 {
@@ -272,7 +276,7 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
         {
             // create a new instance
             session->m_bIsHWENCSupport = true;
-            session->m_pENC.reset(CreateENCSpecificClass(par, session->m_pCORE.get()));
+            session->m_pENC.reset(session->Create<VideoENC>(*par));
             MFX_CHECK(session->m_pENC.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif
@@ -283,7 +287,7 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
         if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
         {
             session->m_bIsHWENCSupport = false;
-            session->m_pENC.reset(CreateENCSpecificClass(par, session->m_pCORE.get()));
+            session->m_pENC.reset(session->Create<VideoENC>(*par));
             MFX_CHECK(session->m_pENC.get(), MFX_ERR_NULL_PTR);
             mfxRes = session->m_pENC->Init(par);
         }
