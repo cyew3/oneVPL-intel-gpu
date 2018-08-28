@@ -75,7 +75,7 @@ enum
     MFX_CURRENT_USER_KEY        = 0,
     MFX_LOCAL_MACHINE_KEY       = 1,
     MFX_APP_FOLDER              = 2,
-#if !defined(OPEN_SOURCE) && defined(MEDIASDK_DX_LOADER)
+#if !defined(OPEN_SOURCE) && (defined(MEDIASDK_DX_LOADER) || defined(MEDIASDK_DFP_LOADER))
     MFX_DX_LOADER                  ,
 #endif
 
@@ -85,7 +85,7 @@ enum
     MFX_PATH_MSDK_FOLDER           ,
     MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
     MFX_STORAGE_ID_LAST     = MFX_PATH_MSDK_FOLDER
-#elif defined(MEDIASDK_DFP_LOADER)
+#elif defined(MEDIASDK_DFP_LOADER) || defined(MEDIASDK_DX_LOADER)
     MFX_STORAGE_ID_FIRST = MFX_DX_LOADER,
     MFX_STORAGE_ID_LAST = MFX_DX_LOADER
 #else
