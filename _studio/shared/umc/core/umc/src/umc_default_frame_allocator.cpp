@@ -53,7 +53,8 @@ private:
 
 FrameInformation::FrameInformation()
     : m_locks(0)
-    , m_referenceCounter(0)    
+    , m_referenceCounter(0)
+    , m_frame()
     , m_ptr(0)
     , m_type(0)
     , m_flags(0)
