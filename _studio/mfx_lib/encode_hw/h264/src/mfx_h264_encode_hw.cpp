@@ -2547,6 +2547,7 @@ mfxStatus ImplementationAvc::SCD_Get_FrameType(DdiTask & task)
             mfxI32 idist = (mfxI32)(task.m_frameOrder - m_frameOrderIntraInDisplayOrder);
             mfxI32 idrdist = (mfxI32)(task.m_frameOrder - m_frameOrderIdrInDisplayOrder);
             mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+            MFX_CHECK_NULL_PTR1(extDdi);
             mfxI32 numRef = IPP_MIN(extDdi->NumActiveRefP, m_video.mfx.NumRefFrame);
 
             mfxI32 minPDist = numRef * m_video.mfx.GopRefDist;

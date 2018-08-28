@@ -1514,7 +1514,7 @@ namespace
 
 namespace
 {
-    void CreateAdditionalDpbCommands(
+    mfxStatus CreateAdditionalDpbCommands(
         MfxVideoParam const & video,
         DdiTask &             task)
     {
@@ -1563,6 +1563,7 @@ namespace
         else if (refPicFlag && IsAdaptiveLtrOn(video))
         {
             mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(video);
+            MFX_CHECK_NULL_PTR1(extDdi);
             mfxU32 numActiveRefL0 = (task.m_type[0] & MFX_FRAMETYPE_P)
                 ? extDdi->NumActiveRefP
                 : extDdi->NumActiveRefBL0;
@@ -1646,6 +1647,7 @@ namespace
                 }
             }
         }
+        return MFX_ERR_NONE;
     }
 };
 
@@ -2453,11 +2455,11 @@ void MfxHwH264Encode::ConfigureTask(
         {
         case MFX_CODINGOPTION_OFF:
             // Favor Speed
-            task.m_RepartitionCheck = 2; // 2: FORCE_DISABLE – Disable this feature totally for all cases.
+            task.m_RepartitionCheck = 2; // 2: FORCE_DISABLE (Disable this feature totally for all cases)
             break;
         case MFX_CODINGOPTION_ON:
             // Favor Quality
-            task.m_RepartitionCheck = 1;  //1: FORCE_ENABLE – Enable this feature totally for all cases.
+            task.m_RepartitionCheck = 1;  //1: FORCE_ENABLE (Enable this feature totally for all cases)
             break;
         case MFX_CODINGOPTION_ADAPTIVE:
             // keep design to driver
