@@ -418,11 +418,13 @@ namespace hevce_default_ref_lists
 
                 if (isPPyramid)
                 {
-                    mfxU16 & nMaxRefL0 = CO3.NumRefActiveP[0];
+                    constexpr mfxU16 DEFAULT_PPYR_INTERVAL = 3; // same as in hevce_hw\h265\include\mfx_h265_encode_hw_utils.h
+                    mfxI32 PPyrInterval = (m_emuPar.mfx.NumRefFrame > 0) ?
+                        std::min(DEFAULT_PPYR_INTERVAL, m_emuPar.mfx.NumRefFrame) :
+                        DEFAULT_PPYR_INTERVAL;
 
-                    mfxI32 idx = std::abs(( frame.poc >> bIsFieldCoding) - (m_anchorPOC >> bIsFieldCoding) ) % nMaxRefL0;
-                    static const mfxU16 pattern[4] = {0,2,1,2};
-                    frame.PLayer = pattern[idx];
+                    mfxI32 idx = std::abs(( frame.poc >> bIsFieldCoding) - (m_anchorPOC >> bIsFieldCoding) ) % PPyrInterval;
+                    frame.PLayer = (idx != 0); // strong STR to PLayer==0
                 }
 
                 frame.nalType  = (mfxU8)-1;
