@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -99,7 +99,7 @@ JERRCODE CBitStreamInput::FillBuffer(int nMinBytes)
 
   if(remainder && !m_eod)
   {
-    memmove(m_pData, &m_pData[m_currPos], remainder);
+    memmove(m_pData, &m_pData[m_currPos], (unsigned int)remainder);
     m_currPos = 0;
   }
 
