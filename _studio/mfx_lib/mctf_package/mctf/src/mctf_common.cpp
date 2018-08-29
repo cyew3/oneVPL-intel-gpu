@@ -174,7 +174,7 @@ inline mfxStatus CMC::SetupMeControl(const mfxFrameInfo& FrameInfo, mfxU16 th, m
         0x20,0x11,0xCF,0xF1,0x05,0x11,//45
         0x00,0x00,0x00,0x00,0x00,0x00,//51
     };
-    memcpy(p_ctrl->searchPath.sp, Diamond, MIN(sizeof(Diamond), sizeof(p_ctrl->searchPath.sp)));
+    memcpy_s(p_ctrl->searchPath.sp, sizeof(Diamond), Diamond, sizeof(p_ctrl->searchPath.sp));
     p_ctrl->searchPath.lenSp = 16;
     p_ctrl->searchPath.maxNumSu = 57;
 
@@ -936,6 +936,7 @@ mfxStatus CMC::GEN_NoiseSURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, Surfac
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     *p_Sys = CM_ALIGNED_MALLOC(surfNoiseSize, 0x1000);
+    MFX_CHECK(*p_Sys, MFX_ERR_NULL_PTR);
     memset(*p_Sys, 0, surfNoiseSize);
 //    res = device->CreateSurface2DUP(DIVUP(p_ctrl->width, 16) * sizeof(spatialNoiseAnalysis), DIVUP(p_ctrl->height, 16), CM_SURFACE_FORMAT_A8, *p_Sys, *p_Surface);
     res = device->CreateSurface2DUP(DIVUP(p_ctrl->CropW, 16) * sizeof(spatialNoiseAnalysis), DIVUP(p_ctrl->CropH, 16), CM_SURFACE_FORMAT_A8, *p_Sys, *p_Surface);
@@ -950,6 +951,7 @@ mfxStatus CMC::GEN_SURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, SurfaceInde
     res = device->GetSurface2DInfo(ov_width_bl * sizeof(mfxI16Pair), ov_height_bl, CM_SURFACE_FORMAT_A8, surfPitch, surfSize);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     *p_Sys = CM_ALIGNED_MALLOC(surfSize, 0x1000);
+    MFX_CHECK(*p_Sys, MFX_ERR_NULL_PTR);
     memset(*p_Sys, 0, surfSize);
     res = device->CreateSurface2DUP(ov_width_bl * sizeof(mfxI16Pair), ov_height_bl, CM_SURFACE_FORMAT_A8, *p_Sys, *p_Surface);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
@@ -2015,17 +2017,19 @@ mfxI32 CMC::MCTF_RUN_ME_MRE(
 
 void CMC::GET_DISTDATA() {
     for (int y = 0; y < ov_height_bl; y++)
-        memcpy(distRef.data() + y * ov_width_bl, (char *)distSys + y * surfPitch, sizeof(mfxU32) * ov_width_bl);
+        memcpy_s(distRef.data() + y * ov_width_bl, sizeof(mfxU32) * ov_width_bl * ov_height_bl,(char *)distSys + y * surfPitch, sizeof(mfxU32) * ov_width_bl);
+
 }
 
 void CMC::GET_DISTDATA_H() {
     for (int y = 0; y < ov_height_bl / 2; y++)
-        memcpy(distRef.data() + y * ov_width_bl, (char *)distSys + y * surfPitch, sizeof(mfxU32) * ov_width_bl);
+        memcpy_s(distRef.data() + y * ov_width_bl, sizeof(mfxU32) * ov_width_bl * ov_height_bl, (char *)distSys + y * surfPitch, sizeof(mfxU32) * ov_width_bl);
 }
 
 void CMC::GET_NOISEDATA() {
+    int var_sc_area = DIVUP(p_ctrl->CropW, 16) * DIVUP(p_ctrl->CropH, 16);
     for (int y = 0; y < DIVUP(p_ctrl->CropH, 16); y++)
-        memcpy(var_sc.data() + y * DIVUP(p_ctrl->CropW, 16), (char *)noiseAnalysisSys + y * surfNoisePitch, sizeof(spatialNoiseAnalysis) * DIVUP(p_ctrl->CropW, 16));
+        memcpy_s(var_sc.data() + y * DIVUP(p_ctrl->CropW, 16), var_sc_area, (char *)noiseAnalysisSys + y * surfNoisePitch, sizeof(spatialNoiseAnalysis) * DIVUP(p_ctrl->CropW, 16));
 }
 
 mfxF64 CMC::GET_TOTAL_SAD() {
