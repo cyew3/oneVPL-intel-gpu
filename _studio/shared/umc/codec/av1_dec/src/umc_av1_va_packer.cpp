@@ -445,6 +445,11 @@ namespace UMC_AV1_DECODER
 #if AV1D_DDI_VERSION >= 21
         if (info.uniformTileSpacingFlag)
         {
+            picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
+            picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
+        }
+        else
+        {
             picParam->tile_cols = (USHORT)info.tileCols;
             picParam->tile_rows = (USHORT)info.tileRows;
 
@@ -459,11 +464,6 @@ namespace UMC_AV1_DECODER
                 picParam->height_in_sbs_minus_1[i] =
                     (USHORT)(info.tileRowStartSB[i + 1] - info.tileRowStartSB[i]);
             }
-        }
-        else
-        {
-            picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
-            picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
         }
 #else
         picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
