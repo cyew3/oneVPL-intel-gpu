@@ -393,9 +393,7 @@
 #define MFX_ENABLE_H264_ROUNDING_OFFSET
 #endif
 
-// NB: the line below HAS to be changed to MFX_VERSION >= 1026
-// after THE API is switched to 1.26
-#if ((MFX_VERSION >= MFX_VERSION_NEXT) && (!AS_CAMERA_PLUGIN))
+#if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
 #define MFX_ENABLE_MCTF
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 #define MFX_ENABLE_MCTF_EXT // extended MCTF interface

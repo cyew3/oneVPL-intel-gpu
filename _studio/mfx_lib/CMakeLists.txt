@@ -296,6 +296,12 @@ list( APPEND sources ${srcs})
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map" )
 
+if( API_VERSION VERSION_GREATER 1.25 )
+  set(MCTF_LIB "mctf_hw")
+else()
+  set(MCTF_LIB "")
+endif()
+
 foreach( variant sw )
   if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( mfxlibname mfxaudio${variant}64 )
@@ -313,7 +319,7 @@ foreach( variant sw )
     pak
     decode_${variant}
     asc
-    mctf_hw
+    ${MCTF_LIB}
     vpp_${variant}
     cmrt_cross_platform_hw
     genx_h264_encode_embeded
