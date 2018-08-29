@@ -453,7 +453,6 @@ _studio/shared/umc/core/vm/include/vm_semaphore.h
 _studio/shared/umc/core/vm/include/vm_shared_object.h
 _studio/shared/umc/core/vm/include/vm_strings.h
 _studio/shared/umc/core/vm/include/vm_sys_info.h
-_studio/shared/umc/core/vm/include/vm_thread.h
 _studio/shared/umc/core/vm/include/vm_time.h
 _studio/shared/umc/core/vm/include/vm_types.h
 _studio/shared/umc/core/vm/include/sys/vm_file_unix.h
@@ -477,8 +476,6 @@ _studio/shared/umc/core/vm/src/vm_shared_object_win32.c
 _studio/shared/umc/core/vm/src/vm_strings_unix.c
 _studio/shared/umc/core/vm/src/vm_sys_info_linux32.c
 _studio/shared/umc/core/vm/src/vm_sys_info_win32.c
-_studio/shared/umc/core/vm/src/vm_thread_linux32.c
-_studio/shared/umc/core/vm/src/vm_thread_win32.c
 _studio/shared/umc/core/vm/src/vm_time_linux32.c
 _studio/shared/umc/core/vm/src/vm_time_win32.c
 _studio/shared/umc/core/vm_plus/CMakeLists.txt

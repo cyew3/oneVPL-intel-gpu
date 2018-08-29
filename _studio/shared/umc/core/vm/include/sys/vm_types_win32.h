@@ -81,6 +81,7 @@ typedef struct vm_semaphore
 } vm_semaphore;
 
 /* vm_thread.h */
+#ifndef OPEN_SOURCE
 typedef struct vm_thread
 {
     vm_handle handle;
@@ -91,6 +92,7 @@ typedef struct vm_thread
     void *protected_arg;
 
 } vm_thread;
+#endif
 
 #if defined(_SOCKET_SUPPORT)
 /* vm_socket.h */

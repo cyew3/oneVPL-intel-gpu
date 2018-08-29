@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -14,7 +14,6 @@
 #ifndef __UMC_H265_MFX_SUPPLIER_H
 #define __UMC_H265_MFX_SUPPLIER_H
 
-#include "vm_thread.h"
 #include "umc_h265_task_supplier.h"
 #include "umc_media_data_ex.h"
 
