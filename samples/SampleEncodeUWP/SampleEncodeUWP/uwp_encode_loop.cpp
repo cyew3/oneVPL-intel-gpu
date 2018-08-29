@@ -157,6 +157,8 @@ CEncoder::CEncoder():
     , m_mfxEncParams({ 0 })
     , m_EncResponse({ 0 })
     , m_encCtrl({ 0 })
+	,m_pmfxAllocatorParams(nullptr)
+	,m_pmfxENC(nullptr)
     , _CTS(cancellation_token_source())
 {
 }

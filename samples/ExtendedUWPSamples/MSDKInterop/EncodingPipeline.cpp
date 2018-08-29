@@ -89,6 +89,9 @@ CEncodingPipeline::CEncodingPipeline() :
 	, m_mfxEncParams({ 0 })
 	, m_encCtrl({ 0 })
 	, pluginsManager(m_mfxSession)
+	, m_pMFXAllocator(nullptr)
+	, m_pmfxAllocatorParams(nullptr)
+	, m_pmfxENC(nullptr)
 	, _CTS(cancellation_token_source())
 {
 }

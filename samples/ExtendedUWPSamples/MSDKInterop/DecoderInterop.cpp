@@ -157,7 +157,7 @@ void MSDKInterop::DecoderInterop::OnSampleRequested(MediaStreamSource ^ sender, 
 MediaStreamSample ^ DecoderInterop::GetNextSample()
 {
     MediaStreamSample^ sample;
-    CMfxFrameSurfaceExt* pSurf;
+    CMfxFrameSurfaceExt* pSurf=nullptr;
     LONGLONG ulTimeSpan = 0;
     LONGLONG pts = 0; //crude pts
     DataWriter^ dataWriter = ref new DataWriter();

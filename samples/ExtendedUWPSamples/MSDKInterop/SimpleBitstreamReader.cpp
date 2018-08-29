@@ -44,6 +44,9 @@ CSimpleBitstreamReader::CSimpleBitstreamReader()
     m_bInited = false;
     fileSize = 0;
     bytesCompleted = 0;
+	stream = nullptr;
+	dataReader = nullptr;
+	MSDK_ZERO_MEMORY(BitStream);
 }
 
 CSimpleBitstreamReader::~CSimpleBitstreamReader()
@@ -87,8 +90,8 @@ mfxStatus CSimpleBitstreamReader::Init(Windows::Storage::StorageFile^ fileSource
 
 		auto task = concurrency::create_task(fileSource->OpenReadAsync());
 		task.wait();
-
-		Windows::Storage::Streams::IRandomAccessStreamWithContentType^ stream = task.get();
+        
+		stream = task.get();
 		fileSize = stream->Size;
 		m_bInited = true;
 

@@ -63,7 +63,6 @@ bool CDecodingPipeline::OnStart()
         return false;
     }
     // Decoding bitstream header to get params
-    int i = 0;
     mfxStatus sts = MFX_ERR_MORE_BITSTREAM;
 
     //--- Decoding Stream Header 
@@ -257,8 +256,6 @@ mfxStatus CDecodingPipeline::InitSession()
     initPar.Version.Minor = 0;
 
     initPar.GPUCopy = true;
-
-    bool needInitExtPar = false;
 
     //--- Init session
     if (IsHWLib)

@@ -186,13 +186,16 @@ bool CDecodingPipeline::RunOnce()
         MSDK_CHECK_STATUS_BOOL(sts, "DecodeFrameAsync failed");
 
         //--- Putting "decoding request" into queue (at this moment surface does not contain decoded data yet, it's just an empty container)
-        if (pOutSurface)
-        {
-            CMfxFrameSurfaceExt* pOutSurfExt = surfacesPool.GetExtSurface(pOutSurface);
-            pOutSurfExt->LinkedSyncPoint = syncPoint;
-			pOutSurfExt->UserLock = true;
-            decodingSurfaces.push_back(pOutSurfExt);
-        }
+		if (pOutSurface)
+		{
+			CMfxFrameSurfaceExt* pOutSurfExt = surfacesPool.GetExtSurface(pOutSurface);
+			if (pOutSurfExt)
+			{
+				pOutSurfExt->LinkedSyncPoint = syncPoint;
+				pOutSurfExt->UserLock = true;
+				decodingSurfaces.push_back(pOutSurfExt);
+			}
+		}
     }
     
     return SyncOneSurface()>=MFX_ERR_NONE;
@@ -269,8 +272,6 @@ mfxStatus CDecodingPipeline::InitSession()
     initPar.Version.Minor = 0;
 
     initPar.GPUCopy = true;
-
-    bool needInitExtPar = false;
 
     //--- Init session
     if (IsHWLib)

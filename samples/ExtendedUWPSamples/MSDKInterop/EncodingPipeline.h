@@ -71,8 +71,6 @@ protected:
 	// external parameters for each component are stored in a vector
 	std::vector<mfxExtBuffer*> m_EncExtParams;
 
-	mfxU32 m_nFramesRead;
-
 	mfxEncodeCtrl m_encCtrl;
 
 	mfxStatus SetEncParams(mfxVideoParam& pParams);

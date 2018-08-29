@@ -266,7 +266,6 @@ void CUWPRenderer::SetPlay(bool isPlaying)
 void CUWPRenderer::ClearQueue()
 {
     std::unique_lock <std::mutex> lock(cs);
-    CMfxFrameSurfaceExt* retVal = NULL;
     for(auto surf : outputSurfaces)
     {
         surf->UserLock = false;

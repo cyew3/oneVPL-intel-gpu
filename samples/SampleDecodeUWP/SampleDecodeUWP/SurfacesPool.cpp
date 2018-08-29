@@ -118,8 +118,6 @@ mfxStatus CSurfacesPool::AddSurfaces(mfxMemId* mids, mfxU32 midsCount, mfxU32 al
     }
     this->memType |= (memType & 0xFF00);
 
-    size_t oldCount = surfaces.size();
-
     // Filling internal surfaces buffer
     for (mfxU32 i = 0; i < midsCount; i++)
     {
@@ -144,7 +142,8 @@ mfxFrameAllocResponse CSurfacesPool::GenerateAllocResponse()
     MSDK_ZERO_MEMORY(response);
     response.AllocId=allocID;
     response.mids = new mfxMemId[surfaces.size()];
-    int i = 0;
+
+	int i = 0;
     for(std::map<mfxMemId, CMfxFrameSurfaceExt>::iterator it = surfaces.begin(); it!=surfaces.end(); it++, i++)
     {
         response.mids[i]=it->second.Data.MemId;

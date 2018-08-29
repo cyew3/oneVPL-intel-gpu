@@ -46,7 +46,6 @@ protected:
     std::atomic<bool>      m_bInited;
     std::atomic<mfxU64> fileSize;
     std::atomic<mfxU64> bytesCompleted;
-    Windows::Storage::StorageFile^ fs;
 
 private:
 };

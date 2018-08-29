@@ -118,8 +118,6 @@ mfxStatus CSurfacesPool::AddSurfaces(mfxMemId* mids, mfxU32 midsCount, mfxU32 al
     }
     this->memType |= (memType & 0xFF00);
 
-    size_t oldCount = surfaces.size();
-
     // Filling internal surfaces buffer
     for (mfxU32 i = 0; i < midsCount; i++)
     {
