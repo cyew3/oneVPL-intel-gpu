@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_default_frame_allocator.h"
@@ -25,9 +25,9 @@ public:
     FrameInformation();
     virtual ~FrameInformation();
 
-    Ipp32s GetType() const;
+    int32_t GetType() const;
 
-    void ApplyMemory(Ipp8u * ptr, size_t pitch);
+    void ApplyMemory(uint8_t * ptr, size_t pitch);
 
     size_t CalculateSize(size_t pitch);
 
@@ -35,12 +35,12 @@ public:
 
 private:
 
-    Ipp32s m_locks;
-    Ipp32s m_referenceCounter;
+    int32_t m_locks;
+    int32_t m_referenceCounter;
     FrameData  m_frame;
-    Ipp8u*  m_ptr;
-    Ipp32s  m_type;
-    Ipp32s  m_flags;
+    uint8_t*  m_ptr;
+    int32_t  m_type;
+    int32_t  m_flags;
 
     friend class DefaultFrameAllocator;
 
@@ -71,7 +71,7 @@ void FrameInformation::Reset()
     m_locks = 0;
 }
 
-Ipp32s FrameInformation::GetType() const
+int32_t FrameInformation::GetType() const
 {
     return m_type;
 }
@@ -83,7 +83,7 @@ size_t FrameInformation::CalculateSize(size_t pitch)
     const VideoDataInfo * info = m_frame.GetInfo();
 
     // set correct width & height to planes
-    for (Ipp32u i = 0; i < info->GetNumPlanes(); i += 1)
+    for (uint32_t i = 0; i < info->GetNumPlanes(); i += 1)
     {
         const VideoDataInfo::PlaneInfo * planeInfo = info->GetPlaneInfo(i);
         size_t planePitch = pitch * planeInfo->m_iSamples * planeInfo->m_iSampleSize >> planeInfo->m_iWidthScale;
@@ -93,16 +93,16 @@ size_t FrameInformation::CalculateSize(size_t pitch)
     return sz + 128;
 }
 
-void FrameInformation::ApplyMemory(Ipp8u * ptr, size_t pitch)
+void FrameInformation::ApplyMemory(uint8_t * ptr, size_t pitch)
 {
     const VideoDataInfo * info = m_frame.GetInfo();
     size_t offset = 0;
 
-    Ipp8u* ptr1 = align_pointer<Ipp8u*>(ptr, 64);
+    uint8_t* ptr1 = align_pointer<uint8_t*>(ptr, 64);
     offset = ptr1 - ptr;
 
     // set correct width & height to planes
-    for (Ipp32u i = 0; i < info->GetNumPlanes(); i += 1)
+    for (uint32_t i = 0; i < info->GetNumPlanes(); i += 1)
     {
         const VideoDataInfo::PlaneInfo * planeInfo = info->GetPlaneInfo(i);
         size_t planePitch = pitch * planeInfo->m_iSamples * planeInfo->m_iSampleSize >> planeInfo->m_iWidthScale;
@@ -162,7 +162,7 @@ Status DefaultFrameAllocator::Reset()
     return UMC_OK;
 }
 
-Status DefaultFrameAllocator::Alloc(FrameMemID *pNewMemID, const VideoDataInfo * frameInfo, Ipp32u flags)
+Status DefaultFrameAllocator::Alloc(FrameMemID *pNewMemID, const VideoDataInfo * frameInfo, uint32_t flags)
 {
     FrameMemID idx = 0;
     if (!pNewMemID || !frameInfo)
@@ -190,10 +190,10 @@ Status DefaultFrameAllocator::Alloc(FrameMemID *pNewMemID, const VideoDataInfo *
     size_t pitch = align_value<size_t>(frameInfo->GetWidth(), 64);
     size_t size = frameMID->CalculateSize(pitch);
 
-    frameMID->m_ptr = new Ipp8u[size];
+    frameMID->m_ptr = new uint8_t[size];
     frameMID->m_flags = flags;
 
-    Ipp8u *ptr = frameMID->m_ptr;
+    uint8_t *ptr = frameMID->m_ptr;
     frameMID->ApplyMemory(ptr, pitch);
 
     frameMID->m_referenceCounter = 1;

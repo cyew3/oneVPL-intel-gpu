@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <string.h>
@@ -37,7 +37,7 @@ void Splitter::DeprecatedSplitter()
   //ippsSet_8u(0xFF, pVideoTrTbl, 32); // TEMPORAL !!!
 }
 
-Status Splitter::GetNextAudioData(MediaData* data, Ipp32u num)
+Status Splitter::GetNextAudioData(MediaData* data, uint32_t num)
 {
   Status umcRes;
   if (!pNewSplInfo)
@@ -50,7 +50,7 @@ Status Splitter::GetNextAudioData(MediaData* data, Ipp32u num)
   return umcRes;
 }
 
-Status Splitter::CheckNextAudioData(MediaData* data, Ipp32u num)
+Status Splitter::CheckNextAudioData(MediaData* data, uint32_t num)
 {
   Status umcRes;
   if (!pNewSplInfo)
@@ -68,7 +68,7 @@ Status Splitter::GetNextAudioData(MediaData* data)
     return GetNextAudioData(data, 0);
 }
 
-Status Splitter::GetNextVideoData(MediaData* data, Ipp32u num)
+Status Splitter::GetNextVideoData(MediaData* data, uint32_t num)
 {
   Status umcRes;
 
@@ -82,7 +82,7 @@ Status Splitter::GetNextVideoData(MediaData* data, Ipp32u num)
   return umcRes;
 }
 
-Status Splitter::CheckNextVideoData(MediaData* data, Ipp32u num)
+Status Splitter::CheckNextVideoData(MediaData* data, uint32_t num)
 {
   Status umcRes;
   if (!pNewSplInfo)
@@ -102,7 +102,7 @@ Status Splitter::GetNextVideoData(MediaData* data)
 
 Status Splitter::GetBaseNextData(
     MediaData* data,
-    Ipp32u nTrack,
+    uint32_t nTrack,
     bool bCheck) // TEMPORAL !!!
 {
   if (!pFirstFrame[nTrack] && pNewSplInfo) {
@@ -117,7 +117,7 @@ Status Splitter::GetBaseNextData(
 
 Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
   Status umcRes;
-  Ipp32u i;
+  uint32_t i;
 
   umcRes = GetInfo((SplitterInfo **)&pNewSplInfo);
   UMC_CHECK_STATUS(umcRes)
@@ -134,10 +134,10 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
     }
     if (pNewSplInfo->m_ppTrackInfo[i]->m_isSelected) {
       if(pNewSplInfo->m_ppTrackInfo[i]->m_Type & TRACK_ANY_AUDIO) {
-        pAudioTrTbl[pInfo->number_audio_tracks] = (Ipp8u)i;
+        pAudioTrTbl[pInfo->number_audio_tracks] = (uint8_t)i;
         pInfo->number_audio_tracks++;
       } else if(pNewSplInfo->m_ppTrackInfo[i]->m_Type & TRACK_ANY_VIDEO) {
-        pVideoTrTbl[pInfo->number_video_tracks] = (Ipp8u)i;
+        pVideoTrTbl[pInfo->number_video_tracks] = (uint8_t)i;
         pInfo->number_video_tracks++;
       }
     }
@@ -149,8 +149,8 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
       pInfo->m_splitter_flags = pNewSplInfo->m_splitter_flags &= ~VIDEO_SPLITTER;
 
   if ((pInfo->number_audio_tracks > 0) && (pNewSplInfo->m_splitter_flags & AUDIO_SPLITTER)) {
-    Ipp32u num = 0;
-    Ipp32u uiPin = pAudioTrTbl[num];
+    uint32_t num = 0;
+    uint32_t uiPin = pAudioTrTbl[num];
 
     pInfo->m_audio_info = *((AudioStreamInfo*)pNewSplInfo->m_ppTrackInfo[uiPin]->m_pStreamInfo);
 
@@ -161,7 +161,7 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
         pInfo->m_audio_info_aux = NULL;
       }
 
-      Ipp32u buff_size = (pInfo->number_audio_tracks - 1) * sizeof(sAudioStreamInfo);
+      uint32_t buff_size = (pInfo->number_audio_tracks - 1) * sizeof(sAudioStreamInfo);
       pInfo->m_audio_info_aux = (sAudioStreamInfo*)malloc(buff_size);
 
       if(pInfo->m_audio_info_aux) {
@@ -171,7 +171,7 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
         return UMC_ERR_FAILED;
       }
 
-      for (i = 0; i < (Ipp32u)pInfo->number_audio_tracks - 1; i++) {
+      for (i = 0; i < (uint32_t)pInfo->number_audio_tracks - 1; i++) {
         num++;
         uiPin = pAudioTrTbl[num];
         pInfo->m_audio_info_aux[i] = *((AudioStreamInfo *)pNewSplInfo->m_ppTrackInfo[uiPin]->m_pStreamInfo);
@@ -181,8 +181,8 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
 
   if ((pInfo->number_video_tracks > 0) && (pNewSplInfo->m_splitter_flags & VIDEO_SPLITTER)) {
 
-    Ipp32u num = 0;
-    Ipp32u uiPin = pVideoTrTbl[num];
+    uint32_t num = 0;
+    uint32_t uiPin = pVideoTrTbl[num];
 
     pInfo->m_video_info = *((VideoStreamInfo *)pNewSplInfo->m_ppTrackInfo[uiPin]->m_pStreamInfo);
 
@@ -193,7 +193,7 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
           free(pInfo->m_video_info_aux);
       }
 
-      Ipp32u buff_size = (pInfo->number_video_tracks - 1) * sizeof(sVideoStreamInfo);
+      uint32_t buff_size = (pInfo->number_video_tracks - 1) * sizeof(sVideoStreamInfo);
       pInfo->m_video_info_aux = (sVideoStreamInfo*)malloc(buff_size);
       if (pInfo->m_video_info_aux) {
           memset(pInfo->m_video_info_aux, 0, buff_size);
@@ -202,7 +202,7 @@ Status Splitter::GetInfo(SplitterInfo* pInfo) { // DEPRECATED !!!
         return UMC_ERR_FAILED;
       }
 
-      for (i = 0; i < (Ipp32u)pInfo->number_video_tracks - 1; i++) {
+      for (i = 0; i < (uint32_t)pInfo->number_video_tracks - 1; i++) {
         num++;
         uiPin = pVideoTrTbl[num];
         pInfo->m_video_info_aux[i] = *((VideoStreamInfo *)pNewSplInfo->m_ppTrackInfo[uiPin]->m_pStreamInfo);

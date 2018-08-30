@@ -5,13 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
-#include "ippdefs.h"
 #include "umc_media_data.h"
 #include "umc_defs.h"
-#include <ipps.h>
 
 #include <algorithm>
 
@@ -34,7 +32,7 @@ MediaData::MediaData(size_t length)
 
     if (length)
     {
-        m_pBufferPointer = new Ipp8u[length];
+        m_pBufferPointer = new uint8_t[length];
         m_pDataPointer     = m_pBufferPointer;
         m_nBufferSize      = length;
         m_bMemoryAllocated = 1;
@@ -72,7 +70,7 @@ Status MediaData::Alloc(size_t length)
 
     if (length)
     {
-        m_pBufferPointer = new Ipp8u[length];
+        m_pBufferPointer = new uint8_t[length];
         m_pDataPointer     = m_pBufferPointer;
         m_nBufferSize      = length;
         m_bMemoryAllocated = 1;
@@ -119,7 +117,7 @@ Status MediaData::SetDataSize(size_t bytes)
 // Set the pointer to a buffer allocated by the user
 // bytes define the size of buffer
 // size of data is equal to buffer size after this call
-Status MediaData::SetBufferPointer(Ipp8u *ptr, size_t size)
+Status MediaData::SetBufferPointer(uint8_t *ptr, size_t size)
 {
     // release object
     MediaData::Close();
@@ -132,7 +130,7 @@ Status MediaData::SetBufferPointer(Ipp8u *ptr, size_t size)
 
     return UMC_OK;
 
-} // Status MediaData::SetBufferPointer(Ipp8u *ptr, size_t size)
+} // Status MediaData::SetBufferPointer(uint8_t *ptr, size_t size)
 
 void MediaData::SetAuxInfo(void* ptr, size_t size, int type)
 {
@@ -164,7 +162,7 @@ MediaData::AuxInfo const* MediaData::GetAuxInfo(int type) const
         i != m_AuxInfo.end() ? &(*i) : 0;
 } // MediaData::AuxInfo const* MediaData::GetAuxInfo(int type) const
 
-Status MediaData::SetTime(Ipp64f start, Ipp64f end)
+Status MediaData::SetTime(double start, double end)
 {
  //   if (start < 0  && start != -1.0)
  //       return UMC_ERR_FAILED;
@@ -174,18 +172,18 @@ Status MediaData::SetTime(Ipp64f start, Ipp64f end)
 
     return UMC_OK;
 
-} // Status MediaData::SetTime(Ipp64f start, Ipp64f end)
+} // Status MediaData::SetTime(double start, double end)
 
-Status MediaData::GetTime(Ipp64f& start, Ipp64f& end) const
+Status MediaData::GetTime(double& start, double& end) const
 {
     start = m_pts_start;
     end = m_pts_end;
 
     return UMC_OK;
 
-} // Status MediaData::GetTime(Ipp64f& start, Ipp64f& end)
+} // Status MediaData::GetTime(double& start, double& end)
 
-Status MediaData::MoveDataPointer(Ipp32s bytes)
+Status MediaData::MoveDataPointer(int32_t bytes)
 {
     if (bytes >= 0 && m_nDataSize >= (size_t)bytes) {
         m_pDataPointer   += bytes;
@@ -200,7 +198,7 @@ Status MediaData::MoveDataPointer(Ipp32s bytes)
     }
 
     return UMC_ERR_FAILED;
-} // Status MediaData::MovePointer(Ipp32s bytes)
+} // Status MediaData::MovePointer(int32_t bytes)
 
 Status MediaData::Reset()
 {
@@ -242,8 +240,8 @@ MediaData& MediaData::operator = (const MediaData& src)
 Status MediaData::MoveDataTo(MediaData* dst)
 {
     MediaData *src;
-    Ipp8u *pDataEnd;
-    Ipp8u *pBufferEnd;
+    uint8_t *pDataEnd;
+    uint8_t *pBufferEnd;
     size_t size;
 
     // check error(s)
@@ -261,7 +259,7 @@ Status MediaData::MoveDataTo(MediaData* dst)
     src = this;
     pDataEnd = dst->m_pDataPointer + dst->m_nDataSize;
     pBufferEnd = dst->m_pBufferPointer + dst->m_nBufferSize;
-    size = IPP_MIN(src->m_nDataSize, (size_t) (pBufferEnd - pDataEnd));
+    size = MFX_MIN(src->m_nDataSize, (size_t) (pBufferEnd - pDataEnd));
 
     if (size)
     {
@@ -269,7 +267,7 @@ Status MediaData::MoveDataTo(MediaData* dst)
     }
 
     dst->m_nDataSize += size;
-    src->MoveDataPointer((Ipp32s)size);
+    src->MoveDataPointer((int32_t)size);
 
     dst->m_pts_start = src->m_pts_start;
     dst->m_pts_end   = src->m_pts_end;

@@ -5,11 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
-#include "umc_va_base.h"
 #include "umc_defs.h"
+#include "umc_va_base.h"
 
 using namespace UMC;
 
@@ -25,17 +25,17 @@ Status VideoAccelerator::Reset(void)
     return UMC_OK;
 }
 
-void UMCVACompBuffer::SetDataSize(Ipp32s size)
+void UMCVACompBuffer::SetDataSize(int32_t size)
 {
     DataSize = size;
     VM_ASSERT(DataSize <= BufferSize);
 }
 
-void UMCVACompBuffer::SetNumOfItem(Ipp32s )
+void UMCVACompBuffer::SetNumOfItem(int32_t )
 {
 }
 
-Status UMCVACompBuffer::SetPVPState(void *buf, Ipp32u size)
+Status UMCVACompBuffer::SetPVPState(void *buf, uint32_t size)
 {
     if (16 < size)
         return UMC_ERR_ALLOC;

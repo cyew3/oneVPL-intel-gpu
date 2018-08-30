@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_par_reader.h"
@@ -77,7 +77,7 @@ ParamList::~ParamList()
 const vm_char* ParamList::getBaseName(const vm_char* name)
 {
   const OptionInfo* info;
-  Ipp32s index;
+  int32_t index;
 
   if(name == 0 /*|| name[0] == 0*/)
     return 0;
@@ -102,7 +102,7 @@ const ParamList::OptionInfo* ParamList::findOptionInfo(const vm_char* name)
 {
   const OptionInfo* info;
   const vm_char* basename;
-  Ipp32s index;
+  int32_t index;
 
   basename = getBaseName(name);
   if(basename == 0) // unknown name
@@ -190,19 +190,19 @@ ParamList::Parameter* ParamList::addParam(const vm_char* name)
 // should not be called before readCLine or second time
 // Examples:
 //  -property h263 # comment:encoder to be used
-//   smth = 2.54,  1e-2  -7 ;0 # 4 Ipp32f values
+//   smth = 2.54,  1e-2  -7 ;0 # 4 float values
 // # completely commented line
 
 Status ParamList::readPFile(const vm_char * fname, const vm_char * codec)
 {
   vm_file*    InputFile;
   vm_char* pfdata;
-  Ipp32s   filelen;
+  int32_t   filelen;
 
-  Ipp32s p, t, endl, endt, next;
-  Ipp32s comment;
-  Ipp32s wrong_section = 0;
-  Ipp32s narg;
+  int32_t p, t, endl, endt, next;
+  int32_t comment;
+  int32_t wrong_section = 0;
+  int32_t narg;
   Parameter* rec;
   Status ret;
 
@@ -213,7 +213,7 @@ Status ParamList::readPFile(const vm_char * fname, const vm_char * codec)
   if(InputFile == 0)
     return UMC_ERR_NOT_FOUND;
   vm_file_fseek( InputFile, 0, VM_FILE_SEEK_END);
-  filelen = (Ipp32s)vm_file_ftell(InputFile);
+  filelen = (int32_t)vm_file_ftell(InputFile);
   if(filelen <= 0 || filelen > MAX_PARFILE_SIZE) {
     vm_file_fclose(InputFile);
     return UMC_ERR_INVALID_STREAM;
@@ -260,7 +260,7 @@ Status ParamList::readPFile(const vm_char * fname, const vm_char * codec)
     // Skip to next if doesn't match codec name
     if( !vm_string_strcmp(pfdata + t, CODEC_SECTION_TITLE)) {
       for(t = endt+1; t<endl && (isspace(pfdata[t]) || pfdata[t]=='='); t++); // start 1st token
-      endt = (Ipp32s)vm_string_strcspn(pfdata+t, DELIMITER);
+      endt = (int32_t)vm_string_strcspn(pfdata+t, DELIMITER);
       endt+=t;
       pfdata[endt] = 0;
       // check if no codec name or if it matches
@@ -290,7 +290,7 @@ Status ParamList::readPFile(const vm_char * fname, const vm_char * codec)
     for(t = endt+1; t<endl && (isspace(pfdata[t]) || pfdata[t]=='='); t++); // start 1st token
     // now fill the record
     for(narg = 0; ;narg++) {
-      endt = (Ipp32s)vm_string_strcspn(pfdata+t, DELIMITER);
+      endt = (int32_t)vm_string_strcspn(pfdata+t, DELIMITER);
       if(endt==0)
         break; // no token
       endt+=t;
@@ -305,7 +305,7 @@ Status ParamList::readPFile(const vm_char * fname, const vm_char * codec)
       else { // unknown parameter name - just remember
         rec->appendValue(pfdata+t);
       }
-      t = endt+1+(Ipp32s)vm_string_strspn(pfdata+endt+1, DELIMITER);
+      t = endt+1+(int32_t)vm_string_strspn(pfdata+endt+1, DELIMITER);
     }
   }
   return UMC_OK;
@@ -319,9 +319,9 @@ Status ParamList::readPFile(const vm_char * fname, const vm_char * codec)
 // Examples:
 //   -codec h263 -smth  2.54  1e-2  -7 0
 
-Status ParamList::readCLine(vm_char ** cline, Ipp32s argc)
+Status ParamList::readCLine(vm_char ** cline, int32_t argc)
 {
-  Ipp32s arg, narg;
+  int32_t arg, narg;
   Parameter* rec;
   Status ret;
 
@@ -374,7 +374,7 @@ Status ParamList::readCLine(vm_char ** cline, Ipp32s argc)
 //   UMC_ERR_NO_ARG if no such argument
 // else sets *val and return UMC_OK if record type matches or
 //   UMC_WRN_TYPE_MISMATCH otherwise
-Status ParamList::getValue(const vm_char* name, Ipp32s* val, Ipp32s vnum)
+Status ParamList::getValue(const vm_char* name, int32_t* val, int32_t vnum)
 {
   const vm_char* argstr;
   Parameter *rec = findParam(name);
@@ -397,7 +397,7 @@ Status ParamList::getValue(const vm_char* name, Ipp32s* val, Ipp32s vnum)
 //   UMC_ERR_NO_ARG if no such argument
 // else sets *val and return UMC_OK if record type matches or
 //   UMC_WRN_TYPE_MISMATCH otherwise
-Status ParamList::getValue(const vm_char* name, Ipp64f* val, Ipp32s vnum)
+Status ParamList::getValue(const vm_char* name, double* val, int32_t vnum)
 {
   const vm_char* argstr;
   Parameter *rec = findParam(name);
@@ -420,7 +420,7 @@ Status ParamList::getValue(const vm_char* name, Ipp64f* val, Ipp32s vnum)
 //   UMC_ERR_NO_ARG if no such argument
 // else sets *val and return UMC_OK if record type matches or
 //   UMC_WRN_TYPE_MISMATCH otherwise
-Status ParamList::getValue(const vm_char* name, Ipp32f* val, Ipp32s vnum)
+Status ParamList::getValue(const vm_char* name, float* val, int32_t vnum)
 {
   const vm_char* argstr;
   Parameter *rec = findParam(name);
@@ -443,7 +443,7 @@ Status ParamList::getValue(const vm_char* name, Ipp32f* val, Ipp32s vnum)
 //   UMC_ERR_NO_ARG if no such argument
 // else sets *val and return UMC_OK if record type matches or
 //   UMC_WRN_TYPE_MISMATCH otherwise
-Status ParamList::getValue(const vm_char* name, const vm_char** val, Ipp32s vnum)
+Status ParamList::getValue(const vm_char* name, const vm_char** val, int32_t vnum)
 {
   Parameter *rec = findParam(name);
   if(rec == 0)
@@ -483,7 +483,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
 {
   const OptionInfo* rec;
   OptionInfoGroup* entry;
-  Ipp32s count;
+  int32_t count;
   const vm_char* ptr;
 
   if(descr == 0 || descr->name == 0 /*|| descr->name[0] == 0*/)
@@ -499,7 +499,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
   for(rec = descr, count = 0;
     rec->name != 0 /*&& rec->name[0] != 0*/; rec++, count++)
   {
-    Ipp32s i;
+    int32_t i;
     // check if name exists
     const OptionInfo* old = findOptionInfo(rec->name);
     if(old != 0)
@@ -508,7 +508,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
       if(rec->synonym[0] == 0)
         return UMC_ERR_INVALID_STREAM;
       if(0 == findOptionInfo(rec->synonym)) {
-        Ipp32s found = 0;
+        int32_t found = 0;
         for(i=0; descr[i].name != 0 /*&& descr[i].name[0] != 0*/; i++) {
           if(0 == vm_string_strcmp(descr[i].name, rec->synonym)) {
             found = 1;
@@ -534,7 +534,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
         ptr += vm_string_strspn(ptr, DELIMITER);
       }
       if(argInt == rec->argType) {
-        Ipp32s imin, imax;
+        int32_t imin, imax;
         if(1 != vm_string_sscanf(rec->limits, VM_STRING("%d"), (int*)&imin))
           return UMC_ERR_INVALID_STREAM;
         if(rec->checkType == checkMinMax) {
@@ -542,7 +542,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
             return UMC_ERR_INVALID_STREAM;
         }
       } else if(argFlt == rec->argType) {
-        Ipp64f dmin, dmax;
+        double dmin, dmax;
         if(1 != vm_string_sscanf(rec->limits, VM_STRING("%lf"), &dmin))
           return UMC_ERR_INVALID_STREAM;
         if(rec->checkType == checkMinMax) {
@@ -557,11 +557,11 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
         return UMC_ERR_INVALID_STREAM; // must be at least 1 entry
       do {
         if(argInt == rec->argType) {
-          Ipp32s ival;
+          int32_t ival;
           if(1 != vm_string_sscanf(ptr,VM_STRING("%d"),(int*)&ival))
             return UMC_ERR_INVALID_STREAM;
         } else if(argFlt == rec->argType) {
-          Ipp64f dval;
+          double dval;
           if(1 != vm_string_sscanf(ptr,VM_STRING("%lf"),&dval))
             return UMC_ERR_INVALID_STREAM;
         } else
@@ -591,7 +591,7 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
     if(ppar->m_info == 0) {
       pInfo = findOptionInfo(ppar->m_name);
       if(pInfo != 0 && ppar->m_nargs == pInfo->numArgs) {
-        Ipp32s i;
+        int32_t i;
         for(i=0; i<ppar->m_nargs; i++) {
           if(UMC_OK != ppar->checkValue(ppar->getValue(i)))
             break;
@@ -610,10 +610,10 @@ Status ParamList::addOptionInfo(const vm_char* group_name, const OptionInfo* des
 
 // return description by index
 // used for access to accumulated descriptions
-const ParamList::OptionInfo* ParamList::getOptionInfo(Ipp32s index)
+const ParamList::OptionInfo* ParamList::getOptionInfo(int32_t index)
 {
   OptionInfoGroup* dentry = m_listOptionInfo;
-  Ipp32s numrec = m_numOptionInfo;
+  int32_t numrec = m_numOptionInfo;
   if(index >= m_numOptionInfo)
     return 0;
 
@@ -670,7 +670,7 @@ Status ParamList::dumpHelp(vm_file* out)
       if(entry->numArgs > 0)
         vm_string_fprintf(out, VM_STRING("%s)"),
          (entry->argType == argInt)?VM_STRING("integer") :
-        ((entry->argType == argFlt)?VM_STRING("Ipp32f"  ) :
+        ((entry->argType == argFlt)?VM_STRING("float"  ) :
         ((entry->argType == argStr)?VM_STRING("str"):VM_STRING("unknown"))));
       if(entry->comment)
         vm_string_fprintf(out, VM_STRING(" %s"), entry->comment);
@@ -693,7 +693,7 @@ Status ParamList::dumpParams(vm_file* out)
 
   Parameter* ppar = m_plist;
   while(ppar != 0) {
-    Ipp32s i;
+    int32_t i;
     vm_string_fprintf(out, VM_STRING("%11s "), ppar->m_name);
     for(i=0; i<ppar->m_nargs; i++) {
       if(i>0)
@@ -722,7 +722,7 @@ ParamList::Parameter::~Parameter()
 Status ParamList::Parameter::appendValue(const vm_char* value)
 {
   ValueChain* ptr = m_values;
-  Ipp32s numcheck = 0;
+  int32_t numcheck = 0;
   Status ret = UMC_OK;
   if(ptr != 0)
     for(numcheck=1; ptr->next != 0; ptr = ptr->next) {
@@ -749,7 +749,7 @@ Status ParamList::Parameter::appendValue(const vm_char* value)
   m_nargs++;
   return ret;
 }
-const vm_char* ParamList::Parameter::getValue(Ipp32s index)
+const vm_char* ParamList::Parameter::getValue(int32_t index)
 {
   ValueChain* ptr = m_values;
   if(index>=m_nargs)
@@ -768,7 +768,7 @@ const vm_char* ParamList::Parameter::getValue(Ipp32s index)
 // UMC_ERR_INVALID_STREAM otherwise
 Status ParamList::Parameter::checkValue(const vm_char* value)
 {
-  Ipp32s res;
+  int32_t res;
 
   if(m_info != 0)
   switch(m_info->checkType) {
@@ -785,7 +785,7 @@ Status ParamList::Parameter::checkValue(const vm_char* value)
         switch(m_info->argType) {
           case argFlt:
             {
-              Ipp64f dval, dmin, dmax;
+              double dval, dmin, dmax;
               //dval = atof(value);
               res = vm_string_sscanf(value, VM_STRING("%lf"), &dval);
               if(res != 1) {
@@ -808,7 +808,7 @@ Status ParamList::Parameter::checkValue(const vm_char* value)
             } break;
           case argInt:
             {
-              Ipp32s ival, imin, imax;
+              int32_t ival, imin, imax;
               //ival = vm_string_atoi(value);
               res = vm_string_sscanf(value, VM_STRING("%d"), (int*)&ival);
               if(res != 1) {
@@ -850,11 +850,11 @@ Status ParamList::Parameter::checkValue(const vm_char* value)
             break;
           case argFlt:
             {
-              Ipp64f dval;// = atof(value);
+              double dval;// = atof(value);
               if(1 != vm_string_sscanf(value, VM_STRING("%lf"), &dval))
                 break;
               for(; *wrd != 0; ) {
-                Ipp64f dchk; // = atof(wrd);
+                double dchk; // = atof(wrd);
                 vm_string_sscanf(wrd, VM_STRING("%lf"), &dchk);
                 if(dchk == dval)
                   break;
@@ -864,11 +864,11 @@ Status ParamList::Parameter::checkValue(const vm_char* value)
             } break;
           case argInt:
             {
-              Ipp32s ival; // = vm_string_atoi(value);
+              int32_t ival; // = vm_string_atoi(value);
               if(1 != vm_string_sscanf(value, VM_STRING("%d"), (int*)&ival))
                 break;
               for(; *wrd != 0; ) {
-                Ipp32s ichk; // = vm_string_atoi(wrd);
+                int32_t ichk; // = vm_string_atoi(wrd);
                 vm_string_sscanf(wrd, VM_STRING("%d"), (int*)&ichk);
                 if(ichk == ival)
                   break;

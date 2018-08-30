@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VIDEO_ENCODER_H__
@@ -47,10 +47,10 @@ public:
     }
 
     VideoStreamInfo info;               // (VideoStreamInfo) compressed video info
-    Ipp32s          numEncodedFrames;   // (Ipp32s) number of encoded frames
+    int32_t          numEncodedFrames;   // (int32_t) number of encoded frames
 
     // additional controls
-    Ipp32s qualityMeasure;      // per cent, represent quantization precision
+    int32_t qualityMeasure;      // per cent, represent quantization precision
 };
 
 /******************************************************************************/

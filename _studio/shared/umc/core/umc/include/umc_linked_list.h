@@ -5,13 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_LINKED_LIST_H__
 #define __UMC_LINKED_LIST_H__
 
-#include "ippdefs.h"
 #include "umc_structures.h"
 
 namespace UMC
@@ -76,7 +75,7 @@ public:
     };
 
     // Returns number of elements in the list
-    virtual Ipp32u Size() const
+    virtual uint32_t Size() const
     {
         return m_iSize;
     }
@@ -144,7 +143,7 @@ public:
     // Function to get element at a specified position in the list
     // returns UMC_OK if succeeds (updates m_pLastReturned)
     // returns UMC_ERR_FAILED if specified position is wrong
-    virtual Status Get(T &data, Ipp32s index)
+    virtual Status Get(T &data, int32_t index)
     {
         if (index < 0 || index >= m_iSize)
             return UMC_ERR_FAILED;
@@ -193,7 +192,7 @@ public:
     // returns UMC_OK if succeeds
     // returns UMC_ERR_FAILED if specified position is wrong
     // returns UMC_ERR_ALLOC if failed to allocate new element
-    virtual Status Add(T &data, Ipp32s index)
+    virtual Status Add(T &data, int32_t index)
     {
         if (index < 0 || index > m_iSize)
             return UMC_ERR_FAILED;
@@ -263,7 +262,7 @@ public:
     // Function to remove element at the specified position in the list
     // returns UMC_OK if succeeds
     // returns UMC_ERR_FAILED if specified position is wrong
-    virtual Status Remove(Ipp32s index)
+    virtual Status Remove(int32_t index)
     {
         if (index < 0 || index >= m_iSize)
             return UMC_ERR_FAILED;
@@ -297,7 +296,7 @@ public:
     // Function to modify element at the specified position in the list
     // returns UMC_OK if succeeds
     // returns UMC_ERR_FAILED if specified position is wrong
-    virtual Status Modify(T &data, Ipp32s index)
+    virtual Status Modify(T &data, int32_t index)
     {
         if (index < 0 || index >= m_iSize)
             return UMC_ERR_FAILED;
@@ -311,7 +310,7 @@ protected:
 
     // Returns element at a specified position
     // Param 'index' is not checked
-    ListElement *GetElement(Ipp32s index)
+    ListElement *GetElement(int32_t index)
     {
         ListElement *pElem;
         if (index < m_iSize / 2)
@@ -343,7 +342,7 @@ protected:
     ListElement *m_pHeap;
 
     // The number of elements in the list
-    Ipp32s m_iSize;
+    int32_t m_iSize;
 
 private:
     LinkedList(const LinkedList<T>&);

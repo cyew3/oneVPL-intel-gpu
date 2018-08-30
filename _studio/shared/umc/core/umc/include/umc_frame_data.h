@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FRAME_DATA_H__
 #define __UMC_FRAME_DATA_H__
 
-#include "ippdefs.h"
+#include "umc_defs.h"
 #include "umc_structures.h"
 #include "umc_dynamic_cast.h"
 
@@ -75,45 +75,45 @@ public:
 
     struct PlaneInfo
     {
-        IppiSize m_ippSize;        // width and height of the plane
-        Ipp32s   m_iSampleSize;    // sample size (in bytes)
-        Ipp32s   m_iSamples;       // number of samples per plane element
-        Ipp32s   m_iBitDepth;      // number of significant bits per sample (should be <= 8*m_iSampleSize)
-        Ipp32s   m_iWidthScale;    // Horizontal downsampling factor
-        Ipp32s   m_iHeightScale;   // Vertical downsampling factor
+        mfxSize   m_ippSize;        // width and height of the plane
+        int32_t   m_iSampleSize;    // sample size (in bytes)
+        int32_t   m_iSamples;       // number of samples per plane element
+        int32_t   m_iBitDepth;      // number of significant bits per sample (should be <= 8*m_iSampleSize)
+        int32_t   m_iWidthScale;    // Horizontal downsampling factor
+        int32_t   m_iHeightScale;   // Vertical downsampling factor
     };
 
     VideoDataInfo(void);
     virtual ~VideoDataInfo(void);
 
     // Initialize. Only remembers image characteristics for future.
-    virtual Status Init(Ipp32s iWidth,
-                Ipp32s iHeight,
+    virtual Status Init(int32_t iWidth,
+                int32_t iHeight,
                 ColorFormat cFormat,
-                Ipp32s iBitDepth = 8);
+                int32_t iBitDepth = 8);
 
     void Close();
 
-    inline Ipp32s GetPlaneBitDepth(Ipp32u iPlaneNumber) const;
+    inline int32_t GetPlaneBitDepth(uint32_t iPlaneNumber) const;
 
-    Status SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32u iPlaneNumber);
-    inline Ipp32u GetPlaneSampleSize(Ipp32u iPlaneNumber) const;
+    Status SetPlaneSampleSize(int32_t iSampleSize, uint32_t iPlaneNumber);
+    inline uint32_t GetPlaneSampleSize(uint32_t iPlaneNumber) const;
 
     inline ColorFormat GetColorFormat() const;
 
-    inline Status SetAspectRatio(Ipp32s iHorzAspect, Ipp32s iVertAspect);
-    inline Status GetAspectRatio(Ipp32s *piHorzAspect, Ipp32s *piVertAspect) const;
+    inline Status SetAspectRatio(int32_t iHorzAspect, int32_t iVertAspect);
+    inline Status GetAspectRatio(int32_t *piHorzAspect, int32_t *piVertAspect) const;
 
     inline Status SetPictureStructure(PictureStructure picStructure);
     inline PictureStructure GetPictureStructure() const;
 
-    inline Ipp32u GetNumPlanes() const;
-    inline Ipp32u GetWidth() const;
-    inline Ipp32u GetHeight() const;
+    inline uint32_t GetNumPlanes() const;
+    inline uint32_t GetWidth() const;
+    inline uint32_t GetHeight() const;
 
     size_t GetSize() const;
 
-    const PlaneInfo* GetPlaneInfo(Ipp32u iPlaneNumber) const;
+    const PlaneInfo* GetPlaneInfo(uint32_t iPlaneNumber) const;
 
     void SetPadding();
     void GetPadding() const;
@@ -126,27 +126,27 @@ protected:
     };
 
     PlaneInfo        m_pPlaneData[NUM_PLANES]; // pointer to allocated planes info
-    Ipp32u           m_iPlanes;       // number of initialized planes
+    uint32_t           m_iPlanes;       // number of initialized planes
 
-    IppiSize         m_ippSize;       // dimension of the image
+    mfxSize         m_ippSize;       // dimension of the image
 
     ColorFormat      m_ColorFormat;   // color format of image
     PictureStructure m_picStructure;  // variants: progressive frame, top first, bottom first, only top, only bottom
 
-    Ipp32s           m_iHorzAspect;   // aspect ratio: pixel width/height proportion
-    Ipp32s           m_iVertAspect;   // default 1,1 - square pixels
+    int32_t           m_iHorzAspect;   // aspect ratio: pixel width/height proportion
+    int32_t           m_iVertAspect;   // default 1,1 - square pixels
 
     // Set color format and planes' information
     Status SetColorFormat(ColorFormat cFormat);
 
-    Status Init(Ipp32s iWidth,
-                       Ipp32s iHeight,
-                       Ipp32s iPlanes,
-                       Ipp32s iBitDepth);
+    Status Init(int32_t iWidth,
+                       int32_t iHeight,
+                       int32_t iPlanes,
+                       int32_t iBitDepth);
 
 };
 
-inline Ipp32s VideoDataInfo::GetPlaneBitDepth(Ipp32u iPlaneNumber) const
+inline int32_t VideoDataInfo::GetPlaneBitDepth(uint32_t iPlaneNumber) const
 {
     // check error(s)
     if (NUM_PLANES <= iPlaneNumber)
@@ -156,7 +156,7 @@ inline Ipp32s VideoDataInfo::GetPlaneBitDepth(Ipp32u iPlaneNumber) const
 
 }
 
-inline Ipp32u VideoDataInfo::GetPlaneSampleSize(Ipp32u iPlaneNumber) const
+inline uint32_t VideoDataInfo::GetPlaneSampleSize(uint32_t iPlaneNumber) const
 {
     // check error(s)
     if (NUM_PLANES <= iPlaneNumber)
@@ -171,7 +171,7 @@ inline ColorFormat VideoDataInfo::GetColorFormat(void) const
     return m_ColorFormat;
 }
 
-inline Status VideoDataInfo::SetAspectRatio(Ipp32s iHorzAspect, Ipp32s iVertAspect)
+inline Status VideoDataInfo::SetAspectRatio(int32_t iHorzAspect, int32_t iVertAspect)
 {
     if ((1 > iHorzAspect) || (1 > iVertAspect))
         return UMC_ERR_INVALID_STREAM;
@@ -182,7 +182,7 @@ inline Status VideoDataInfo::SetAspectRatio(Ipp32s iHorzAspect, Ipp32s iVertAspe
     return UMC_OK;
 }
 
-inline Status VideoDataInfo::GetAspectRatio(Ipp32s *piHorzAspect, Ipp32s *piVertAspect) const
+inline Status VideoDataInfo::GetAspectRatio(int32_t *piHorzAspect, int32_t *piVertAspect) const
 {
     if ((NULL == piHorzAspect) ||
         (NULL == piVertAspect))
@@ -213,17 +213,17 @@ inline VideoDataInfo::PictureStructure VideoDataInfo::GetPictureStructure() cons
     return m_picStructure;
 }
 
-inline Ipp32u VideoDataInfo::GetNumPlanes() const
+inline uint32_t VideoDataInfo::GetNumPlanes() const
 {
     return m_iPlanes;
 }
 
-inline Ipp32u VideoDataInfo::GetWidth() const
+inline uint32_t VideoDataInfo::GetWidth() const
 {
     return m_ippSize.width;
 }
 
-inline Ipp32u VideoDataInfo::GetHeight() const
+inline uint32_t VideoDataInfo::GetHeight() const
 {
     return m_ippSize.height;
 }
@@ -241,17 +241,17 @@ public:
     virtual void Reset();
 
     // return time stamp of media data
-    virtual Ipp64f GetTime(void) const         { return m_pts_start; }
+    virtual double GetTime(void) const         { return m_pts_start; }
 
     // return time stamp of media data, start and end
-    virtual Status GetTime(Ipp64f& start, Ipp64f& end) const;
+    virtual Status GetTime(double& start, double& end) const;
 
     //  Set time stamp of media data block;
-    virtual Status SetTime(Ipp64f start, Ipp64f end = 0);
+    virtual Status SetTime(double start, double end = 0);
 
 private:
-    Ipp64f m_pts_start;        // (Ipp64f) start media PTS
-    Ipp64f m_pts_end;          // (Ipp64f) finish media PTS
+    double m_pts_start;        // (double) start media PTS
+    double m_pts_end;          // (double) finish media PTS
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -263,7 +263,7 @@ public:
 
     struct PlaneMemoryInfo
     {
-        Ipp8u* m_planePtr;
+        uint8_t* m_planePtr;
         size_t m_pitch;
     };
 
@@ -284,7 +284,7 @@ public:
 
     const VideoDataInfo * GetInfo() const;
 
-    const PlaneMemoryInfo * GetPlaneMemoryInfo(Ipp32u plane) const;
+    const PlaneMemoryInfo * GetPlaneMemoryInfo(uint32_t plane) const;
 
     void Init(const VideoDataInfo * info, FrameMemID memID = FRAME_MID_INVALID, FrameAllocator * frameAlloc = 0);
 
@@ -294,7 +294,7 @@ public:
 
     FrameMemID Release();
 
-    void SetPlanePointer(Ipp8u* planePtr, Ipp32u plane, size_t pitch);
+    void SetPlanePointer(uint8_t* planePtr, uint32_t plane, size_t pitch);
 
     void SetAuxInfo(void* ptr, size_t size, int type);
     void ClearAuxInfo(int type);

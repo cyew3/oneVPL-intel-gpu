@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_DATA_WRITER_H__
@@ -58,16 +58,16 @@ public:
     virtual Status Reset(void) = 0;
 
     // Write data to output stream
-    virtual Status PutData(void *data, Ipp32s &nsize) = 0;
+    virtual Status PutData(void *data, int32_t &nsize) = 0;
 
     // Set current position in destination media
-    virtual Status SetPosition(Ipp32u /* nPosLow */,
-                               Ipp32u * /* pnPosHigh */,
-                               Ipp32u /* nMethod */)
+    virtual Status SetPosition(uint32_t /* nPosLow */,
+                               uint32_t * /* pnPosHigh */,
+                               uint32_t /* nMethod */)
     {   return UMC_ERR_FAILED;    }
 
     // Get current position in destination media
-    virtual Status GetPosition(Ipp32u * /* pnPosLow */, Ipp32u * /* pnPosHigh */)
+    virtual Status GetPosition(uint32_t * /* pnPosLow */, uint32_t * /* pnPosHigh */)
     {   return UMC_ERR_FAILED;    }
 };
 

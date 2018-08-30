@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_VIDEO_DECODER_H__
@@ -32,7 +32,7 @@ public:
     virtual ~VideoDecoderParams();
 
     VideoStreamInfo         info;                           // (VideoStreamInfo) compressed video info
-    Ipp32u                  lFlags;                         // (Ipp32u) decoding flag(s)
+    uint32_t                  lFlags;                         // (uint32_t) decoding flag(s)
 
     BaseCodec               *pPostProcessing;               // (BaseCodec*) pointer to post processing
 
@@ -64,9 +64,9 @@ public:
     // Reset skip frame counter
     virtual Status ResetSkipCount() = 0;
     // Increment skip frame counter
-    virtual Status SkipVideoFrame(Ipp32s) = 0;
+    virtual Status SkipVideoFrame(int32_t) = 0;
     // Get skip frame counter statistic
-    virtual Ipp32u GetNumOfSkippedFrames() = 0;
+    virtual uint32_t GetNumOfSkippedFrames() = 0;
 
     // returns closed capture data
     virtual Status GetUserData(MediaData* /*pCC*/)

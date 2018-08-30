@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_SPLITTER_EX_H__
@@ -19,8 +19,8 @@ namespace UMC
 
     typedef struct
     {
-        Ipp64s position;
-        Ipp64s size;
+        long long position;
+        long long size;
     } sInfo_sample;
 
     class MpegSplitterParams : public SplitterParams

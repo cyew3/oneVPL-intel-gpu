@@ -27,14 +27,14 @@ enum
 struct ColorFormatInfo
 {
     ColorFormat m_cFormat;
-    Ipp32s m_iPlanes;        // Number of planes
-    Ipp32s m_iMinBitDepth;   // Minimum bitdepth
-    Ipp32s m_iMinAlign;      // Minimal required alignment in bytes
+    int32_t m_iPlanes;        // Number of planes
+    int32_t m_iMinBitDepth;   // Minimum bitdepth
+    int32_t m_iMinAlign;      // Minimal required alignment in bytes
     struct {
-        Ipp32s m_iWidthDiv;  // Horizontal downsampling factor
-        Ipp32s m_iHeightDiv; // Vertical downsampling factor
-        Ipp32s m_iChannels;  // Number of merged channels in the plane
-        Ipp32s m_iAlignMult; // Alignment value multiplier
+        int32_t m_iWidthDiv;  // Horizontal downsampling factor
+        int32_t m_iHeightDiv; // Vertical downsampling factor
+        int32_t m_iChannels;  // Number of merged channels in the plane
+        int32_t m_iAlignMult; // Alignment value multiplier
     } m_PlaneFormatInfo[MAX_PLANE_NUMBER];
 };
 
@@ -70,7 +70,7 @@ ColorFormatInfo FormatInfo[] =
 // Number of entries in the FormatInfo table
 static
 const
-Ipp32s iNumberOfFormats = sizeof(FormatInfo) / sizeof(FormatInfo[0]);
+int32_t iNumberOfFormats = sizeof(FormatInfo) / sizeof(FormatInfo[0]);
 
 // returns pointer to color format description table for cFormat
 // or NULL if cFormat is not described (unknown color format).
@@ -79,7 +79,7 @@ const
 ColorFormatInfo *GetColorFormatInfo(ColorFormat cFormat)
 {
     const ColorFormatInfo *pReturn = NULL;
-    Ipp32s i;
+    int32_t i;
 
     // find required format
     for (i = 0; i < iNumberOfFormats; i += 1)
@@ -135,7 +135,7 @@ Status VideoData::Close(void)
 // Release image memory if it was owned
 Status VideoData::ReleaseImage(void)
 {
-    Ipp32s i;
+    int32_t i;
     for (i = 0; i < m_iPlanes; i++)
         m_pPlaneData[i].m_pPlane = NULL;
 
@@ -151,12 +151,12 @@ Status VideoData::ReleaseImage(void)
 // Initializes image dimensions and bitdepth.
 // Has to be followed by SetColorFormat call.
 // Planes' information is initialized to invalid values
-Status VideoData::Init(Ipp32s iWidth,
-                       Ipp32s iHeight,
-                       Ipp32s iPlanes,
-                       Ipp32s iBitDepth)
+Status VideoData::Init(int32_t iWidth,
+                       int32_t iHeight,
+                       int32_t iPlanes,
+                       int32_t iBitDepth)
 {
-    Ipp32s i;
+    int32_t i;
 
     // check error(s)
     if ((0 >= iWidth) ||
@@ -193,14 +193,14 @@ Status VideoData::Init(Ipp32s iWidth,
 
     return UMC_OK;
 
-} // Status VideoData::Init(Ipp32s iWidth,
+} // Status VideoData::Init(int32_t iWidth,
 
 // Completely sets image information, without allocation or linking to
 // image memory.
-Status VideoData::Init(Ipp32s iWidth,
-                       Ipp32s iHeight,
+Status VideoData::Init(int32_t iWidth,
+                       int32_t iHeight,
                        ColorFormat cFormat,
-                       Ipp32s iBitDepth)
+                       int32_t iBitDepth)
 {
     Status umcRes;
     const ColorFormatInfo* pFormat;
@@ -224,14 +224,14 @@ Status VideoData::Init(Ipp32s iWidth,
 
     return UMC_OK;
 
-} // Status VideoData::Init(Ipp32s iWidth,
+} // Status VideoData::Init(int32_t iWidth,
 
 // Sets or change Color format information for image, only when it has
 // specified size, number of planes and bitdepth. Number of planes in cFormat must
 // be not greater than specified in image.
 Status VideoData::SetColorFormat(ColorFormat cFormat)
 {
-    Ipp32s i;
+    int32_t i;
     const ColorFormatInfo *pFormat;
 
     // check error(s)
@@ -248,7 +248,7 @@ Status VideoData::SetColorFormat(ColorFormat cFormat)
     // set correct width & height to planes
     for (i = 0; i < m_iPlanes; i += 1)
     {
-        Ipp32s align, bpp;
+        int32_t align, bpp;
         if(i>0) {
             m_pPlaneData[i].m_nOffset =
                 m_pPlaneData[i-1].m_nOffset + m_pPlaneData[i-1].m_nMemSize;
@@ -276,10 +276,10 @@ Status VideoData::SetColorFormat(ColorFormat cFormat)
             m_pPlaneData[i].m_ippSize.height = m_ippSize.height;
         }
         bpp = m_pPlaneData[i].m_iSampleSize * m_pPlaneData[i].m_iSamples;
-        align = IPP_MAX(m_iAlignment, bpp);
+        align = MFX_MAX(m_iAlignment, bpp);
         if (i < pFormat->m_iPlanes) {
             // sometimes dimension of image may be not aligned to native size
-            align = IPP_MAX(align, pFormat->m_iMinAlign);
+            align = MFX_MAX(align, pFormat->m_iMinAlign);
             align *= pFormat->m_PlaneFormatInfo[i].m_iAlignMult;
         }
         m_pPlaneData[i].m_nPitch =
@@ -301,10 +301,10 @@ Status VideoData::SetColorFormat(ColorFormat cFormat)
 
 
 // Set common Alignment
-Status VideoData::SetAlignment(Ipp32s iAlignment)
+Status VideoData::SetAlignment(int32_t iAlignment)
 {
     // check alignment
-    Ipp32s i;
+    int32_t i;
     if(iAlignment <= 0)
         return UMC_ERR_INVALID_STREAM;
     for (i = 1; i < (1 << 16); i <<= 1) {
@@ -338,7 +338,7 @@ Status VideoData::Alloc(size_t requiredSize)
         return UMC_ERR_INVALID_STREAM;
 
     // allocate buffer
-    m_pbAllocated = new Ipp8u[nSize + m_iAlignment - 1];
+    m_pbAllocated = new uint8_t[nSize + m_iAlignment - 1];
 
     // set pointer to image
     return SetBufferPointer(m_pbAllocated, nSize);
@@ -347,11 +347,11 @@ Status VideoData::Alloc(size_t requiredSize)
 
 // Links to provided image memory
 // Image must be described before
-Status VideoData::SetBufferPointer(Ipp8u *pbBuffer, size_t nSize)
+Status VideoData::SetBufferPointer(uint8_t *pbBuffer, size_t nSize)
 {
-    Ipp32s i;
+    int32_t i;
     size_t mapsize;
-    Ipp8u *ptr = align_pointer<Ipp8u *>(pbBuffer, m_iAlignment);
+    uint8_t *ptr = align_pointer<uint8_t *>(pbBuffer, m_iAlignment);
 
     // check error(s)
     if (NULL == m_pPlaneData) {
@@ -368,7 +368,7 @@ Status VideoData::SetBufferPointer(Ipp8u *pbBuffer, size_t nSize)
     // set new plane pointers
     if (m_pPlaneData)
     {
-        Ipp8u *tmp = ptr;
+        uint8_t *tmp = ptr;
         for(i=0; i<m_iPlanes; i++) {
             m_pPlaneData[i].m_pPlane = tmp;
             tmp += m_pPlaneData[i].m_nMemSize;
@@ -379,16 +379,16 @@ Status VideoData::SetBufferPointer(Ipp8u *pbBuffer, size_t nSize)
     MediaData::SetBufferPointer(pbBuffer, nSize);
     // set valid data size
     SetDataSize(mapsize + (ptr - pbBuffer));
-    MoveDataPointer((Ipp32s)(ptr - pbBuffer));
+    MoveDataPointer((int32_t)(ptr - pbBuffer));
 
     return UMC_OK;
 
-} // Status VideoData::SetBufferPointer(Ipp8u *pbBuffer, size_t nSize)
+} // Status VideoData::SetBufferPointer(uint8_t *pbBuffer, size_t nSize)
 
 // Returns required image memory size according to alignment and current image description
 size_t VideoData::GetMappingSize() const
 {
-    Ipp32s i;
+    int32_t i;
     size_t size = 0;
 
     UMC_CHECK(m_pPlaneData, 0);
@@ -399,11 +399,11 @@ size_t VideoData::GetMappingSize() const
 
     return size;
 
-} // size_t VideoData::GetMappingSize(Ipp32s iAlignment)
+} // size_t VideoData::GetMappingSize(int32_t iAlignment)
 
 // Set pointer for specified plane. Should be used for additional planes,
 // or when image layout is different.
-Status VideoData::SetPlanePointer(void *pDest, Ipp32s iPlaneNumber)
+Status VideoData::SetPlanePointer(void *pDest, int32_t iPlaneNumber)
 {
     // check error(s)
     if ((m_iPlanes <= iPlaneNumber) ||
@@ -411,13 +411,13 @@ Status VideoData::SetPlanePointer(void *pDest, Ipp32s iPlaneNumber)
         (NULL == m_pPlaneData))
         return UMC_ERR_FAILED;
 
-    m_pPlaneData[iPlaneNumber].m_pPlane = (Ipp8u *) pDest;
+    m_pPlaneData[iPlaneNumber].m_pPlane = (uint8_t *) pDest;
 
     return UMC_OK;
 
-} // Status VideoData::SetPlanePointer(void *pDest, Ipp32s iPlaneNumber)
+} // Status VideoData::SetPlanePointer(void *pDest, int32_t iPlaneNumber)
 
-Status VideoData::SetImageSize(Ipp32s width, Ipp32s height)
+Status VideoData::SetImageSize(int32_t width, int32_t height)
 {
     // check error(s)
     if (NULL == m_pPlaneData)
@@ -431,7 +431,7 @@ Status VideoData::SetImageSize(Ipp32s width, Ipp32s height)
 
 // Set pitch for specified plane. Should be used for additional planes,
 // or when image layout is different.
-Status VideoData::SetPlanePitch(size_t nPitch, Ipp32s iPlaneNumber)
+Status VideoData::SetPlanePitch(size_t nPitch, int32_t iPlaneNumber)
 {
     // check error(s)
     if ((m_iPlanes <= iPlaneNumber) ||
@@ -444,11 +444,11 @@ Status VideoData::SetPlanePitch(size_t nPitch, Ipp32s iPlaneNumber)
 
     return UMC_OK;
 
-} // Status VideoData::SetPlanePitch(size_t nPitch, Ipp32s iPlaneNumber)
+} // Status VideoData::SetPlanePitch(size_t nPitch, int32_t iPlaneNumber)
 
 // Set bitdepth for specified plane, usually additional or when bitdepth differs
 // for main planes
-Status VideoData::SetPlaneBitDepth(Ipp32s iBitDepth, Ipp32s iPlaneNumber)
+Status VideoData::SetPlaneBitDepth(int32_t iBitDepth, int32_t iPlaneNumber)
 {
     // check error(s)
     if ((m_iPlanes <= iPlaneNumber) ||
@@ -462,11 +462,11 @@ Status VideoData::SetPlaneBitDepth(Ipp32s iBitDepth, Ipp32s iPlaneNumber)
 
     return UMC_OK;
 
-} // Status VideoData::SetPlaneBitDepth(Ipp32s iBitDepth, Ipp32s iPlaneNumber)
+} // Status VideoData::SetPlaneBitDepth(int32_t iBitDepth, int32_t iPlaneNumber)
 
 // Set sample size for specified plane, usually additional or when bitdepth differs
 // for main planes
-Status VideoData::SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32s iPlaneNumber)
+Status VideoData::SetPlaneSampleSize(int32_t iSampleSize, int32_t iPlaneNumber)
 {
     // check error(s)
     if ((m_iPlanes <= iPlaneNumber) ||
@@ -480,7 +480,7 @@ Status VideoData::SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32s iPlaneNumber)
 
     return UMC_OK;
 
-} // Status VideoData::SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32s iPlaneNumber)
+} // Status VideoData::SetPlaneSampleSize(int32_t iSampleSize, int32_t iPlaneNumber)
 
 // Links plane pointers to surface using provided pitch.
 // All pitches and plane info are updated according to current
@@ -505,12 +505,12 @@ Status VideoData::SetSurface(void* ptr, size_t nPitch)
         m_pPlaneData[i].m_nPitch /= m_pPlaneData[i].m_iWidthDiv*m_pPlaneData[0].m_iSamples;
         m_pPlaneData[i].m_nOffset = m_pPlaneData[i - 1].m_nOffset + m_pPlaneData[i - 1].m_nMemSize;
       }
-      m_pPlaneData[i].m_pPlane = (Ipp8u*)ptr + m_pPlaneData[i].m_nOffset;
+      m_pPlaneData[i].m_pPlane = (uint8_t*)ptr + m_pPlaneData[i].m_nOffset;
       m_pPlaneData[i].m_nMemSize = m_pPlaneData[i].m_nPitch * m_pPlaneData[i].m_ippSize.height;
       size += m_pPlaneData[i].m_nMemSize;
     }
 
-    MediaData::SetBufferPointer((Ipp8u*)ptr, size);
+    MediaData::SetBufferPointer((uint8_t*)ptr, size);
 
     return MediaData::SetDataSize(size);
 }
@@ -584,7 +584,7 @@ Status VideoData::ConvertPictureStructure(PictureStructure newPicStructure)
 }
 
 // fills PlaneInfo structure
-Status VideoData::GetPlaneInfo(PlaneInfo* pInfo, Ipp32s iPlaneNumber)
+Status VideoData::GetPlaneInfo(PlaneInfo* pInfo, int32_t iPlaneNumber)
 {
     // check error(s)
     if (NULL == pInfo)
@@ -597,22 +597,22 @@ Status VideoData::GetPlaneInfo(PlaneInfo* pInfo, Ipp32s iPlaneNumber)
     *pInfo = m_pPlaneData[iPlaneNumber];
     return UMC_OK;
 
-} // Status VideoData::GetPlaneInfo(PlaneInfo* pInfo, Ipp32s iPlaneNumber)
+} // Status VideoData::GetPlaneInfo(PlaneInfo* pInfo, int32_t iPlaneNumber)
 
 // converts display aspect ratio to pixel AR
 // or vise versa with exchanged width and height
-Status DARtoPAR(Ipp32s width, Ipp32s height, Ipp32s dar_h, Ipp32s dar_v,
-                Ipp32s *par_h, Ipp32s *par_v)
+Status DARtoPAR(int32_t width, int32_t height, int32_t dar_h, int32_t dar_v,
+                int32_t *par_h, int32_t *par_v)
 {
   // (width*par_h) / (height*par_v) == dar_h/dar_v =>
   // par_h / par_v == dar_h * height / (dar_v * width)
-  Ipp32s simple_tab[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59};
-  Ipp32s denom;
+  int32_t simple_tab[] = {2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59};
+  int32_t denom;
   size_t i;
 
   // suppose no overflow of 32s
-  Ipp32s h = dar_h * height;
-  Ipp32s v = dar_v * width;
+  int32_t h = dar_h * height;
+  int32_t v = dar_v * width;
   // remove common multipliers
   while( ((h|v)&1) == 0 ) {
     h>>=1;

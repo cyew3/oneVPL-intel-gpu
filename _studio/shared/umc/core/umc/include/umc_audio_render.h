@@ -59,17 +59,17 @@ public:
     virtual Status Pause(bool pause) = 0;
 
     // Volume manipulating
-    virtual Ipp32f SetVolume(Ipp32f volume) = 0;
-    virtual Ipp32f GetVolume(void) = 0;
+    virtual float SetVolume(float volume) = 0;
+    virtual float GetVolume(void) = 0;
 
     // Audio Reference Clock
-    virtual Ipp64f GetTime(void) = 0;
+    virtual double GetTime(void) = 0;
 
     // Estimated value of device latency
-    virtual Ipp64f GetDelay(void) = 0;
+    virtual double GetDelay(void) = 0;
 
     virtual Status SetParams(MediaReceiverParams *pMedia,
-                             Ipp32u  trickModes = UMC_TRICK_MODES_NO)
+                             uint32_t  trickModes = UMC_TRICK_MODES_NO)
     {
         (void)pMedia;
         (void)trickModes;

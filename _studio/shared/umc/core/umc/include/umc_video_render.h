@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef ___UMC_VIDEO_RENDER_H___
@@ -46,7 +46,7 @@ public:
 
     UMC::sRECT   disp;               // (UMC::sRECT) display position
     UMC::sRECT   range;              // (UMC::sRECT) range of source video to display
-    Ipp32u      lFlags;             // (Ipp32u) video render flag(s)
+    uint32_t      lFlags;             // (uint32_t) video render flag(s)
 };
 
 class VideoRender: public MediaReceiver
@@ -63,8 +63,8 @@ public:
 
     struct sCaps
     {
-        Ipp64f min_stretch;
-        Ipp64f max_stretch;
+        double min_stretch;
+        double max_stretch;
         bool   overlay_support;
         bool   colorkey_support;
     };
@@ -75,7 +75,7 @@ public:
     // VideoRender interface extension above MediaReceiver
 
     // Peek presentation of next frame, return presentation time
-    virtual Status GetRenderFrame(Ipp64f *time) = 0;
+    virtual Status GetRenderFrame(double *time) = 0;
 
     // Rendering the current frame
     virtual Status RenderFrame() = 0;
@@ -98,8 +98,8 @@ public:
     {return UMC_OK;};
 
 protected:
-    virtual Ipp32s LockSurface(Ipp8u **vidmem) = 0;
-    virtual Ipp32s UnlockSurface(Ipp8u**vidmem) = 0;
+    virtual int32_t LockSurface(uint8_t **vidmem) = 0;
+    virtual int32_t UnlockSurface(uint8_t**vidmem) = 0;
 
     VideoData  m_OutDataTemplate;
 };

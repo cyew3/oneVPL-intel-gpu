@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2011 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_video_render.h"
@@ -32,19 +32,19 @@ VideoRenderParams::VideoRenderParams(void)
 
 void UMCRect2Rect(UMC::sRECT& umcRect, ::RECT& rect)
 {
-    rect.bottom = (Ipp32s) umcRect.bottom;
-    rect.top = (Ipp32s) umcRect.top;
-    rect.left = (Ipp32s) umcRect.left;
-    rect.right = (Ipp32s) umcRect.right;
+    rect.bottom = (int32_t) umcRect.bottom;
+    rect.top = (int32_t) umcRect.top;
+    rect.left = (int32_t) umcRect.left;
+    rect.right = (int32_t) umcRect.right;
 
 } //void UMCRect2Rect(UMC::sRECT& umcRect, ::RECT& rect)
 
 void Rect2UMCRect(::RECT& rect, UMC::sRECT& umcRect)
 {
-    umcRect.bottom = (Ipp16s) rect.bottom;
-    umcRect.top = (Ipp16s) rect.top;
-    umcRect.left = (Ipp16s) rect.left;
-    umcRect.right = (Ipp16s) rect.right;
+    umcRect.bottom = (int16_t) rect.bottom;
+    umcRect.top = (int16_t) rect.top;
+    umcRect.left = (int16_t) rect.left;
+    umcRect.right = (int16_t) rect.right;
 
 } //void Rect2UMCRect(::RECT& rect, UMC::sRECT& umcRect)
 

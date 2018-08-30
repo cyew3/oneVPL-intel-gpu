@@ -5,13 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_FRAME_ALLOCATOR_H__
 #define __UMC_FRAME_ALLOCATOR_H__
 
-#include "ippdefs.h"
 #include "umc_structures.h"
 #include "umc_dynamic_cast.h"
 #include "umc_mutex.h"
@@ -24,7 +23,7 @@ namespace UMC
 class VideoDataInfo;
 class FrameData;
 
-typedef Ipp32s FrameMemID;
+typedef int32_t FrameMemID;
 
 enum
 {
@@ -64,7 +63,7 @@ public:
 
     // Allocates or reserves physical memory and returns unique ID
     // Sets lock counter to 0
-    virtual Status Alloc(FrameMemID *pNewMemID, const VideoDataInfo * info, Ipp32u Flags) = 0;
+    virtual Status Alloc(FrameMemID *pNewMemID, const VideoDataInfo * info, uint32_t Flags) = 0;
 
     virtual Status GetFrameHandle(UMC::FrameMemID MID, void * handle) = 0;
 

@@ -5,10 +5,8 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
-
-#include <ipps.h>
 
 #include "umc_audio_codec.h"
 #include "umc_base_codec.h"

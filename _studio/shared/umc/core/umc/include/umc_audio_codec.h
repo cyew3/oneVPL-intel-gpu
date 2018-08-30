@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_AUDIO_CODEC_H__
@@ -27,7 +27,7 @@ public:
     AudioStreamInfo m_info_in;                                  // (AudioStreamInfo) original audio stream info
     AudioStreamInfo m_info_out;                                 // (AudioStreamInfo) output audio stream info
 
-    Ipp32u m_frame_num;                                         // (Ipp32u) keeps number of processed frames
+    uint32_t m_frame_num;                                         // (uint32_t) keeps number of processed frames
 };
 
 /******************************************************************************/
@@ -43,15 +43,15 @@ public:
     // Destructor
     virtual ~AudioCodec(void){};
 
-    virtual Status GetDuration(Ipp32f *p_duration)
+    virtual Status GetDuration(float *p_duration)
     {
-        p_duration[0] = (Ipp32f)-1.0;
+        p_duration[0] = (float)-1.0;
         return UMC_ERR_NOT_IMPLEMENTED;
     }
 
 protected:
 
-    Ipp32u m_frame_num;                                         // (Ipp32u) keeps number of processed frames.
+    uint32_t m_frame_num;                                         // (uint32_t) keeps number of processed frames.
 };
 
 /******************************************************************************/

@@ -251,8 +251,8 @@ public:
     virtual ~VideoAcceleratorParams(void){}
 
     VideoStreamInfo *m_pVideoStreamInfo;
-    Ipp32s          m_iNumberSurfaces;
-    Ipp32s          m_protectedVA;
+    int32_t          m_iNumberSurfaces;
+    int32_t          m_protectedVA;
     bool            m_needVideoProcessingVA;
 
     FrameAllocator  *m_allocator;
@@ -293,31 +293,31 @@ public:
     virtual Status Close(void);
     virtual Status Reset(void);
 
-    virtual Status BeginFrame   (Ipp32s  index) = 0; // Begin decoding for specified index
+    virtual Status BeginFrame   (int32_t  index) = 0; // Begin decoding for specified index
 
     // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
     // By default just calls BeginFrame(index). must be overridden by child class
-    virtual Status BeginFrame(Ipp32s  index, Ipp32u fieldId )
+    virtual Status BeginFrame(int32_t  index, uint32_t fieldId )
     {
         // by default just calls BeginFrame(index)
         (void)fieldId;
         return BeginFrame(index);
     }
-    virtual void*  GetCompBuffer(Ipp32s            buffer_type,
+    virtual void*  GetCompBuffer(int32_t            buffer_type,
                                  UMCVACompBuffer** buf   = NULL,
-                                 Ipp32s            size  = -1,
-                                 Ipp32s            index = -1) = 0; // request buffer
+                                 int32_t            size  = -1,
+                                 int32_t            index = -1) = 0; // request buffer
     virtual Status Execute      (void) = 0;          // execute decoding
     virtual Status ExecuteExtensionBuffer(void * buffer) = 0;
-    virtual Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size) = 0;
-    virtual Status SyncTask(Ipp32s index, void * error = NULL) = 0;
-    virtual Status QueryTaskStatus(Ipp32s index, void * status, void * error) = 0;
-    virtual Status ReleaseBuffer(Ipp32s type) = 0;   // release buffer
+    virtual Status ExecuteStatusReportBuffer(void * buffer, int32_t size) = 0;
+    virtual Status SyncTask(int32_t index, void * error = NULL) = 0;
+    virtual Status QueryTaskStatus(int32_t index, void * status, void * error) = 0;
+    virtual Status ReleaseBuffer(int32_t type) = 0;   // release buffer
     virtual Status EndFrame     (void * handle = 0) = 0;          // end frame
 
     virtual bool IsIntelCustomGUID() const = 0;
     /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
-    virtual Ipp32s GetSurfaceID(Ipp32s idx) { return idx; }
+    virtual int32_t GetSurfaceID(int32_t idx) { return idx; }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     virtual ProtectedVA * GetProtectedVA() {return m_protectedVA;}
@@ -339,7 +339,7 @@ public:
     bool IsUseStatusReport() { return m_isUseStatuReport; }
     void SetStatusReportUsing(bool isUseStatuReport) { m_isUseStatuReport = isUseStatuReport; }
 
-    Ipp32s ScalingListScanOrder() const
+    int32_t ScalingListScanOrder() const
     { return m_H265ScalingListScanOrder; }
 
     virtual void GetVideoDecoder(void **handle) = 0;
@@ -360,7 +360,7 @@ protected:
     bool            m_bH264ShortSlice;
     bool            m_bH264MVCSupport;
     bool            m_isUseStatuReport;
-    Ipp32s          m_H265ScalingListScanOrder; //0 - up-right, 1 - raster . Default is 1 (raster).
+    int32_t          m_H265ScalingListScanOrder; //0 - up-right, 1 - raster . Default is 1 (raster).
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -383,36 +383,36 @@ public:
     virtual ~UMCVACompBuffer(){}
 
     // Set
-    virtual Status SetBufferPointer(Ipp8u *_ptr, size_t bytes)
+    virtual Status SetBufferPointer(uint8_t *_ptr, size_t bytes)
     {
         ptr = _ptr;
-        BufferSize = (Ipp32s)bytes;
+        BufferSize = (int32_t)bytes;
         return UMC_OK;
     }
-    virtual void SetDataSize(Ipp32s size);
-    virtual void SetNumOfItem(Ipp32s num);
-    virtual Status SetPVPState(void *buf, Ipp32u size);
+    virtual void SetDataSize(int32_t size);
+    virtual void SetNumOfItem(int32_t num);
+    virtual Status SetPVPState(void *buf, uint32_t size);
 
     // Get
-    Ipp32s  GetType()       const { return type; }
+    int32_t  GetType()       const { return type; }
     void*   GetPtr()        const { return ptr; }
-    Ipp32s  GetBufferSize() const { return BufferSize; }
-    Ipp32s  GetDataSize()   const { return DataSize; }
+    int32_t  GetBufferSize() const { return BufferSize; }
+    int32_t  GetDataSize()   const { return DataSize; }
     void*   GetPVPStatePtr()const { return PVPState; }
-    Ipp32s   GetPVPStateSize()const { return (NULL == PVPState ? 0 : sizeof(PVPStateBuf)); }
+    int32_t   GetPVPStateSize()const { return (NULL == PVPState ? 0 : sizeof(PVPStateBuf)); }
 
     // public fields
-    Ipp32s      FirstMb;
-    Ipp32s      NumOfMB;
-    Ipp32s      FirstSlice;
-    Ipp32s      type;
+    int32_t      FirstMb;
+    int32_t      NumOfMB;
+    int32_t      FirstSlice;
+    int32_t      type;
 
 protected:
-    Ipp8u       PVPStateBuf[16];
+    uint8_t       PVPStateBuf[16];
     void*       ptr;
     void*       PVPState;
-    Ipp32s      BufferSize;
-    Ipp32s      DataSize;
+    int32_t      BufferSize;
+    int32_t      DataSize;
 };
 
 } // namespace UMC

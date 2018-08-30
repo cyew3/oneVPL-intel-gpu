@@ -5,13 +5,13 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MEMORY_ALLOCATOR_H__
 #define __UMC_MEMORY_ALLOCATOR_H__
 
-#include "ippdefs.h"
+#include "umc_defs.h"
 #include "umc_structures.h"
 #include "umc_dynamic_cast.h"
 #include "umc_mutex.h"
@@ -54,7 +54,7 @@ public:
 
     // Allocates or reserves physical memory and returns unique ID
     // Sets lock counter to 0
-    virtual Status Alloc(MemID *pNewMemID, size_t Size, Ipp32u Flags, Ipp32u Align = 16) = 0;
+    virtual Status Alloc(MemID *pNewMemID, size_t Size, uint32_t Flags, uint32_t Align = 16) = 0;
 
     // Lock() provides pointer from ID. If data is not in memory (swapped)
     // prepares (restores) it. Increases lock counter

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2010 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_PAR_READER_H__
@@ -75,7 +75,7 @@ class ParamList {
     struct OptionInfo {
       const vm_char* name;      //!< Base name when synonym == 0
       const vm_char* synonym;   //!< Nonzero value means the option is synonym to pointed  base name
-      Ipp32s         numArgs;   //!< Number of option arguments
+      int32_t         numArgs;   //!< Number of option arguments
       ArgType        argType;   //!< Type of the option arguments
       CheckType      checkType; //!< Check modes for option arguments
       const vm_char* limits;    //!< Min, max or set of possible values
@@ -90,13 +90,13 @@ class ParamList {
 
     /** \overload
     */
-    Status getValue(const vm_char* name, Ipp32s* val, Ipp32s vnum=0);
+    Status getValue(const vm_char* name, int32_t* val, int32_t vnum=0);
     /*! \overload
     */
-    Status getValue(const vm_char* name, Ipp64f* val, Ipp32s vnum=0);
+    Status getValue(const vm_char* name, double* val, int32_t vnum=0);
     /*! \overload
     */
-    Status getValue(const vm_char* name, Ipp32f* val, Ipp32s vnum=0);
+    Status getValue(const vm_char* name, float* val, int32_t vnum=0);
     //! Writes vnum argument of option name to the address pointed by val.
     /*!
     If argument type doesn't match, returns string representation.
@@ -108,7 +108,7 @@ class ParamList {
        UMC_ERR_NOT_FOUND if no record,
        UMC_ERR_NO_ARG when \a vnum is grater than argument count.
     */
-    Status getValue(const vm_char* name, const vm_char** val, Ipp32s vnum=0);
+    Status getValue(const vm_char* name, const vm_char** val, int32_t vnum=0);
     /** \overload
     \return UMC_OK if the option is met. UMC_WRN_TYPE_MISMATCH if it has arguments.
     UMC_ERR_NOT_FOUND if there was no such option
@@ -129,7 +129,7 @@ class ParamList {
     \param argc number of options to read
     \return UMC_OK on success
     */
-    Status readCLine(vm_char ** cline, Ipp32s argc);
+    Status readCLine(vm_char ** cline, int32_t argc);
     //! Reads parameter file.
     /*!
     Loads parameters from the parameter file. Arguments in recognized parameters are checked
@@ -146,7 +146,7 @@ class ParamList {
     Examples:\n
     bitrate 1500000\n
     -property h263    # comment: h263 specific\n
-      smth = 2.54,  1e-2  -7 ;0 # 4 Ipp32f values\n
+      smth = 2.54,  1e-2  -7 ;0 # 4 float values\n
      property = mpeg2 # mpeg2 specific params\n
       interlaced\n
      property         # common again\n
@@ -201,13 +201,13 @@ class ParamList {
 
       const vm_char    *m_name;  //!< Base option name
       const OptionInfo *m_info;  //!< Pointer to option description, if non-zero
-      Ipp32s            m_nargs; //!< Number of arguments read
+      int32_t            m_nargs; //!< Number of arguments read
       Parameter        *m_next;  //!< Pointer to next parameter
 
       //! Appends next value to the parameter.
       Status appendValue(const vm_char* value);
       //! Returns pointer to argument.
-      const vm_char* getValue(Ipp32s index);
+      const vm_char* getValue(int32_t index);
       //! Verifies argument value according to check type.
       Status checkValue(const vm_char* value);
 
@@ -220,9 +220,9 @@ class ParamList {
       ValueChain *m_values;      //!< Pointer to the beginning of the value chain
     };
 
-    Ipp32s m_numParams;             //!< Number of parameters read
+    int32_t m_numParams;             //!< Number of parameters read
     Parameter *m_plist;          //!< Head of list of parameters read
-    Ipp32s   m_parfile_size;     //!< Size of loaded parameter file
+    int32_t   m_parfile_size;     //!< Size of loaded parameter file
     vm_char *m_parfile_data;     //!< Loaded parameter file
 
     //! \brief Adds new Parameter.
@@ -242,18 +242,18 @@ class ParamList {
     //! \return description for parameter \a name or 0 if the name is unknown
     const OptionInfo* findOptionInfo(const vm_char* name);
 
-    Ipp32s m_numOptionInfo;           //!< Total number of descriptions
+    int32_t m_numOptionInfo;           //!< Total number of descriptions
 
     //! List of description groups, linked to chain
     struct OptionInfoGroup {
       const vm_char    *groupName; //!< Name for the option description group
       const OptionInfo *entry;     //!< Pointer to the beginning of array (the group)
-      Ipp32s            count;     //!< Number of descriptions in the group
+      int32_t            count;     //!< Number of descriptions in the group
       OptionInfoGroup  *next;      //!< Next group or 0 when last
     } *m_listOptionInfo;           //!< Beginning of the list
 
     //! Returns option description by index. Is used for access to accumulated descriptions.
-    const OptionInfo* getOptionInfo(Ipp32s index);
+    const OptionInfo* getOptionInfo(int32_t index);
 
 private:
     // Declare private copy constructor to avoid accidental assignment

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_AUDIO_DATA_H__
@@ -28,7 +28,7 @@ public:
     virtual ~AudioData(void);
 
     // Initialize. Only remembers audio characteristics for future.
-    virtual Status Init(Ipp32u iChannels, Ipp32u iSampleFrequency, Ipp32u iBitPerSample);
+    virtual Status Init(uint32_t iChannels, uint32_t iSampleFrequency, uint32_t iBitPerSample);
 
     // Initialize. Only copy audio characteristics from existing data for future.
     virtual Status Init(AudioData *pData);
@@ -40,10 +40,10 @@ public:
     virtual Status Close(void);
 
     // Set buffer pointer, assign all pointers. Inherited.
-    virtual Status SetBufferPointer(Ipp8u *pBuffer, size_t nSize);
+    virtual Status SetBufferPointer(uint8_t *pBuffer, size_t nSize);
 
     // Set common Alignment
-    Status SetAlignment(Ipp32u iAlignment);
+    Status SetAlignment(uint32_t iAlignment);
 
      // Copy actual audio data
     Status Copy(AudioData *pDstData);
@@ -52,13 +52,13 @@ public:
     void operator=(const AudioData& par);
 
 public:
-    Ipp32u m_iChannels;         // number of audio channels
-    Ipp32u m_iSampleFrequency;  // sample rate in Hz
-    Ipp32u m_iBitPerSample;     // 0 if compressed
-    Ipp32u m_iChannelMask;      // channel mask
+    uint32_t m_iChannels;         // number of audio channels
+    uint32_t m_iSampleFrequency;  // sample rate in Hz
+    uint32_t m_iBitPerSample;     // 0 if compressed
+    uint32_t m_iChannelMask;      // channel mask
 
 protected:
-    Ipp32u m_iAlignment;        // default 1
+    uint32_t m_iAlignment;        // default 1
 
 };
 

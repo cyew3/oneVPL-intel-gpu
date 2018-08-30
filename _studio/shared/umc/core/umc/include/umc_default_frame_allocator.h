@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_DEFAULT_FRAME_ALLOCATOR_H__
@@ -39,7 +39,7 @@ public:
 
     // Allocates or reserves physical memory and returns unique ID
     // Sets lock counter to 0
-    virtual Status Alloc(FrameMemID *pNewMemID, const VideoDataInfo * info, Ipp32u flags);
+    virtual Status Alloc(FrameMemID *pNewMemID, const VideoDataInfo * info, uint32_t flags);
 
     virtual Status GetFrameHandle(UMC::FrameMemID mid, void * handle);
 

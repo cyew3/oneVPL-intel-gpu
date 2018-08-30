@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_DEFAULT_MEMORY_ALLOCATOR_H__
@@ -35,7 +35,7 @@ public:
 
     // Allocates or reserves physical memory and return unique ID
     // Sets lock counter to 0
-    virtual Status Alloc(MemID *pNewMemID, size_t Size, Ipp32u Flags, Ipp32u Align = 16);
+    virtual Status Alloc(MemID *pNewMemID, size_t Size, uint32_t Flags, uint32_t Align = 16);
 
     // Lock() provides pointer from ID. If data is not in memory (swapped)
     // prepares (restores) it. Increases lock counter
@@ -52,8 +52,8 @@ public:
 
 protected:
     MemoryInfo* memInfo;  // memory blocks descriptors
-    Ipp32s      memCount; // number of allocated descriptors
-    Ipp32s      memUsed;  // number of used descriptors
+    int32_t      memCount; // number of allocated descriptors
+    int32_t      memUsed;  // number of used descriptors
     MemID       lastMID;  // last value assigned to descriptor
 };
 

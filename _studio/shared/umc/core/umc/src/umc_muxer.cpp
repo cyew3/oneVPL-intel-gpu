@@ -5,13 +5,12 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2006-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2006-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #include "vm_debug.h"
 #include "umc_muxer.h"
-#include <ipps.h>
 
 using namespace UMC;
 
@@ -36,7 +35,7 @@ MuxerParams::~MuxerParams()
 
 void MuxerParams::Close()
 {
-    for (Ipp32s i = 0; i < m_nNumberOfTracks; i++)
+    for (int32_t i = 0; i < m_nNumberOfTracks; i++)
     {
         if (pTrackParams[i].type == VIDEO_TRACK)
         {
@@ -64,7 +63,7 @@ MuxerParams & MuxerParams::operator=(const MuxerParams & p)
 
     TrackParams * new_pTrackParams = new TrackParams[p.m_nNumberOfTracks];
 
-    for (Ipp32s i = 0; i < p.m_nNumberOfTracks; i++)
+    for (int32_t i = 0; i < p.m_nNumberOfTracks; i++)
     {
         pTrackParams[i].bufferParams = p.pTrackParams[i].bufferParams;
         pTrackParams[i].type         = p.pTrackParams[i].type;
@@ -104,7 +103,7 @@ Muxer::~Muxer()
 
 Status Muxer::CopyMuxerParams(MuxerParams *lpInit)
 {
-  Ipp32u i;
+  uint32_t i;
 
   UMC_CHECK_PTR(lpInit);
   if (!m_pParams) {
@@ -121,7 +120,7 @@ Status Muxer::CopyMuxerParams(MuxerParams *lpInit)
   for (i = 0; i < m_uiTotalNumStreams; i++) {
     UMC_CHECK_PTR(lpInit->pTrackParams[i].info.undef);
     if (!m_pTrackParams[i].bufferParams.m_prefInputBufferSize) {
-      Ipp32s bitrate = 4000000;
+      int32_t bitrate = 4000000;
       if (m_pTrackParams[i].type == VIDEO_TRACK) {
         bitrate = m_pTrackParams[i].info.video->bitrate;
         if (0 == bitrate) {
@@ -155,7 +154,7 @@ Status Muxer::CopyMuxerParams(MuxerParams *lpInit)
 Status Muxer::Close()
 {
   if (m_ppBuffers) {
-    Ipp32u i;
+    uint32_t i;
     for (i = 0; i < m_uiTotalNumStreams; i++) {
       UMC_DELETE(m_ppBuffers[i]);
     }
@@ -167,14 +166,14 @@ Status Muxer::Close()
   return UMC_OK;
 }
 
-Ipp32s Muxer::GetTrackIndex(MuxerTrackType type, Ipp32s index)
+int32_t Muxer::GetTrackIndex(MuxerTrackType type, int32_t index)
 {
-  Ipp32u i;
+  uint32_t i;
   for (i = 0; i < m_uiTotalNumStreams; i++) {
     if (m_pTrackParams[i].type == type) {
       if (index <= 0) {
-        vm_debug_trace2(VM_DEBUG_PROGRESS, VM_STRING("GetTrackIndex: type = %d, index = %d\n"), (Ipp32s)type, i);
-        return (Ipp32s)i;
+        vm_debug_trace2(VM_DEBUG_PROGRESS, VM_STRING("GetTrackIndex: type = %d, index = %d\n"), (int32_t)type, i);
+        return (int32_t)i;
       }
       index--;
     }
@@ -182,26 +181,26 @@ Ipp32s Muxer::GetTrackIndex(MuxerTrackType type, Ipp32s index)
   return -1;
 }
 
-Status Muxer::LockBuffer(MediaData *lpData, Ipp32s iTrack)
+Status Muxer::LockBuffer(MediaData *lpData, int32_t iTrack)
 {
   UMC_CHECK_PTR(lpData);
   UMC_CHECK(iTrack >= 0, UMC_ERR_INVALID_PARAMS);
-  UMC_CHECK((Ipp32u)iTrack < m_uiTotalNumStreams, UMC_ERR_INVALID_PARAMS);
+  UMC_CHECK((uint32_t)iTrack < m_uiTotalNumStreams, UMC_ERR_INVALID_PARAMS);
   UMC_CHECK(m_ppBuffers, UMC_ERR_NOT_INITIALIZED);
 
   UMC_CALL(m_ppBuffers[iTrack]->LockInputBuffer(lpData));
   return UMC_OK;
-} //Status Muxer::LockBuffer(MediaData *lpData, Ipp32u iTrack)
+} //Status Muxer::LockBuffer(MediaData *lpData, uint32_t iTrack)
 
-Status Muxer::UnlockBuffer(MediaData *lpData, Ipp32s iTrack)
+Status Muxer::UnlockBuffer(MediaData *lpData, int32_t iTrack)
 {
   UMC_CHECK_PTR(lpData);
   UMC_CHECK(iTrack >= 0, UMC_ERR_INVALID_PARAMS);
-  UMC_CHECK((Ipp32u)iTrack < m_uiTotalNumStreams, UMC_ERR_INVALID_PARAMS);
+  UMC_CHECK((uint32_t)iTrack < m_uiTotalNumStreams, UMC_ERR_INVALID_PARAMS);
   UMC_CHECK(m_ppBuffers, UMC_ERR_NOT_INITIALIZED);
 
 #ifdef VM_DEBUG
-  Ipp64f pts, dts;
+  double pts, dts;
   lpData->GetTime(pts, dts);
   vm_debug_trace1(VM_DEBUG_PROGRESS, VM_STRING("Try to unlock buffer #%d with:"), iTrack);
   vm_debug_trace1(VM_DEBUG_PROGRESS, VM_STRING("    data_size = %d"), lpData->GetDataSize());
@@ -210,9 +209,9 @@ Status Muxer::UnlockBuffer(MediaData *lpData, Ipp32s iTrack)
 
   UMC_CALL(m_ppBuffers[iTrack]->UnLockInputBuffer(lpData));
   return UMC_OK;
-} //Status Muxer::UnlockBuffer(MediaData *lpData, Ipp32u iTrack)
+} //Status Muxer::UnlockBuffer(MediaData *lpData, uint32_t iTrack)
 
-Status Muxer::PutData(MediaData *lpData, Ipp32s iTrack)
+Status Muxer::PutData(MediaData *lpData, int32_t iTrack)
 {
   MediaData data;
   size_t dataSize = lpData->GetDataSize();
@@ -222,10 +221,10 @@ Status Muxer::PutData(MediaData *lpData, Ipp32s iTrack)
 
   // copy data
   UMC_CHECK(dataSize <= data.GetBufferSize(), UMC_ERR_NOT_ENOUGH_BUFFER);
-  MFX_INTERNAL_CPY_S((Ipp8u*)data.GetDataPointer(), (Ipp32s)data.GetDataSize(), (Ipp8u*)pData, (Ipp32s)dataSize);
+  MFX_INTERNAL_CPY_S((uint8_t*)data.GetDataPointer(), (int32_t)data.GetDataSize(), (uint8_t*)pData, (int32_t)dataSize);
 
   // copy time & frame type
-  Ipp64f dPTS, dDTS;
+  double dPTS, dDTS;
   lpData->GetTime(dPTS, dDTS);
   data.SetTime(dPTS, dDTS);
   data.SetDataSize(dataSize);
@@ -233,39 +232,39 @@ Status Muxer::PutData(MediaData *lpData, Ipp32s iTrack)
 
   UMC_CALL(UnlockBuffer(&data, iTrack));
   return UMC_OK;
-} //Status Muxer::PutData(MediaData *lpData, Ipp32u iTrack)
+} //Status Muxer::PutData(MediaData *lpData, uint32_t iTrack)
 
-Status Muxer::PutEndOfStream(Ipp32s iTrack)
+Status Muxer::PutEndOfStream(int32_t iTrack)
 {
   UMC_CHECK(m_ppBuffers, UMC_ERR_NOT_INITIALIZED);
   UMC_CHECK(iTrack >= 0, UMC_ERR_INVALID_PARAMS);
-  UMC_CHECK((Ipp32u)iTrack < m_uiTotalNumStreams, UMC_ERR_INVALID_PARAMS);
+  UMC_CHECK((uint32_t)iTrack < m_uiTotalNumStreams, UMC_ERR_INVALID_PARAMS);
 
   UMC_CALL(m_ppBuffers[iTrack]->UnLockInputBuffer(NULL, UMC_ERR_END_OF_STREAM));
   return UMC_OK;
-} //Status Muxer::PutEndOfStream(Ipp32u iTrack)
+} //Status Muxer::PutEndOfStream(uint32_t iTrack)
 
-Status Muxer::PutVideoData(MediaData *lpData, Ipp32s index)
+Status Muxer::PutVideoData(MediaData *lpData, int32_t index)
 {
   UMC_CALL(PutData(lpData, GetTrackIndex(VIDEO_TRACK, index)));
   return UMC_OK;
 } //Status Muxer::PutVideoData(MediaData *lpData)
 
-Status Muxer::PutAudioData(MediaData *lpData, Ipp32s index)
+Status Muxer::PutAudioData(MediaData *lpData, int32_t index)
 {
   UMC_CALL(PutData(lpData, GetTrackIndex(AUDIO_TRACK, index)));
   return UMC_OK;
 } //Status Muxer::PutAudioData(MediaData *lpData)
 
-Status Muxer::GetStreamToWrite(Ipp32s &rStreamNumber, bool bFlushMode)
+Status Muxer::GetStreamToWrite(int32_t &rStreamNumber, bool bFlushMode)
 {
-  static const Ipp64f MAXIMUM_DOUBLE = 1.7E+308;
+  static const double MAXIMUM_DOUBLE = 1.7E+308;
 
   Status umcRes;
-  Ipp32u streamNum, minNum = 0;
-  Ipp64f streamTime, minTime = MAXIMUM_DOUBLE;
+  uint32_t streamNum, minNum = 0;
+  double streamTime, minTime = MAXIMUM_DOUBLE;
 
-  for (streamNum = 0; streamNum < (Ipp32u)m_uiTotalNumStreams; streamNum++)
+  for (streamNum = 0; streamNum < (uint32_t)m_uiTotalNumStreams; streamNum++)
   {
     umcRes = GetOutputTime(streamNum, streamTime);
     if (UMC_ERR_NOT_ENOUGH_DATA == umcRes && !bFlushMode)
@@ -294,4 +293,4 @@ Status Muxer::GetStreamToWrite(Ipp32s &rStreamNumber, bool bFlushMode)
   rStreamNumber = minNum;
   vm_debug_trace2(VM_DEBUG_PROGRESS, VM_STRING("Ordering of elementary streams... stream #%d has min time (%.4f sec)"), minNum, minTime);
   return UMC_OK;
-} //Status Muxer::GetStreamToWrite(Ipp32s &rStreamNumber, bool bFlushMode)
+} //Status Muxer::GetStreamToWrite(int32_t &rStreamNumber, bool bFlushMode)

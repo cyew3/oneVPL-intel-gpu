@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_SPLITTER_H__
@@ -30,10 +30,10 @@ public:
     // Destructor
     virtual ~SplitterParams();
 
-    Ipp32u m_lFlags;                                       // (Ipp32u) splitter's flags
+    uint32_t m_lFlags;                                       // (uint32_t) splitter's flags
     DataReader *m_pDataReader;                             // (DataReader *) pointer to data reader
-    Ipp32u m_uiSelectedVideoPID;                           // ID for video stream chosen by user
-    Ipp32u m_uiSelectedAudioPID;                           // ID for audio stream chosen by user
+    uint32_t m_uiSelectedVideoPID;                           // ID for video stream chosen by user
+    uint32_t m_uiSelectedAudioPID;                           // ID for audio stream chosen by user
     MemoryAllocator *m_pMemoryAllocator;                   // (MemoryAllocator *) pointer to memory allocator object
 };
 
@@ -100,8 +100,8 @@ struct TrackInfo
     virtual ~TrackInfo() {}
 
     TrackType     m_Type;                 // common type (all audio/video/other in one enum)
-    Ipp32u        m_PID;                  //
-    Ipp32s        m_isSelected;           // if Track is on or off
+    uint32_t        m_PID;                  //
+    int32_t        m_isSelected;           // if Track is on or off
     MediaData    *m_pDecSpecInfo;         // Keeps DecSpecInfo and its length
     StreamInfo   *m_pStreamInfo;          // Base for AudioStreamInfo, VideoStreamInfo, etc
 };
@@ -117,11 +117,11 @@ public:
     virtual ~SplitterInfo();
 
     // common fields
-    Ipp32u              m_splitter_flags;
+    uint32_t              m_splitter_flags;
     SystemStreamType    m_SystemType;       // system type (MPEG4, MPEG2, AVI, pure)
-    Ipp32u              m_nOfTracks;        // number of tracks detected
-    Ipp64f              m_dRate;            // current playback rate
-    Ipp64f              m_dDuration;        // duration of stream
+    uint32_t              m_nOfTracks;        // number of tracks detected
+    double              m_dRate;            // current playback rate
+    double              m_dDuration;        // duration of stream
     TrackInfo         **m_ppTrackInfo;      // array of pointers to TrackInfo(s)
     /******************* below is DEPRECATED fields ***********************/
     void DeprecatedSplitterInfo(); //DEPRECATED!!!
@@ -135,8 +135,8 @@ public:
     AudioStreamInfo *m_audio_info_aux;  // DEPRECATED!!! auxilary audio tracks 1..
     VideoStreamInfo *m_video_info_aux;  // DEPRECATED!!! auxilary video tracks 1..
 
-    Ipp32s number_audio_tracks;         // DEPRECATED!!!  (Ipp32s) number of available audio tracks
-    Ipp32s number_video_tracks;         // DEPRECATED!!!  (Ipp32s) number of available video tracks
+    int32_t number_audio_tracks;         // DEPRECATED!!!  (int32_t) number of available audio tracks
+    int32_t number_video_tracks;         // DEPRECATED!!!  (int32_t) number of available video tracks
 };
 
 /*
@@ -170,25 +170,25 @@ public:
     virtual Status Close() = 0;
 
     // Get next data, unlocks previously returned
-    virtual Status GetNextData(MediaData* /*data*/, Ipp32u /*nTrack*/)
+    virtual Status GetNextData(MediaData* /*data*/, uint32_t /*nTrack*/)
     {
       return UMC_ERR_NOT_IMPLEMENTED;
     }
 
     // Get next data without moving DataReader
-    virtual Status CheckNextData(MediaData* /*data*/, Ipp32u /*nTrack*/)
+    virtual Status CheckNextData(MediaData* /*data*/, uint32_t /*nTrack*/)
     {
       return UMC_ERR_NOT_IMPLEMENTED;
     }
 
     // Set time position
-    virtual Status SetTimePosition(Ipp64f /*timePos*/)
+    virtual Status SetTimePosition(double /*timePos*/)
     {
       return UMC_ERR_NOT_IMPLEMENTED;
     }
 
     // Get time position
-    virtual Status GetTimePosition(Ipp64f& timePos)
+    virtual Status GetTimePosition(double& timePos)
         {timePos = 0; return UMC_ERR_NOT_IMPLEMENTED;}
 
     // Get splitter info
@@ -198,14 +198,14 @@ public:
     }
 
     // Set playback rate
-    virtual Status SetRate(Ipp64f /*rate*/)
+    virtual Status SetRate(double /*rate*/)
     {
       return UMC_ERR_NOT_IMPLEMENTED;
     }
 
     // changes state of track
     // iState = 0 means disable, iState = 1 means enable
-    virtual Status EnableTrack(Ipp32u /*nTrack*/, Ipp32s /*iState*/)
+    virtual Status EnableTrack(uint32_t /*nTrack*/, int32_t /*iState*/)
     {
         return UMC_ERR_NOT_IMPLEMENTED;
     }
@@ -228,31 +228,31 @@ protected:
 public:
     void DeprecatedSplitter();
     //  DEPRECATED!!! Get next video data from track
-    virtual Status GetNextVideoData(MediaData* data, Ipp32u track_idx);
+    virtual Status GetNextVideoData(MediaData* data, uint32_t track_idx);
     //  DEPRECATED!!! Get next audio data from track
-    virtual Status GetNextAudioData(MediaData* data, Ipp32u track_idx);
+    virtual Status GetNextAudioData(MediaData* data, uint32_t track_idx);
     //  DEPRECATED!!! Get next video data
     virtual Status GetNextVideoData(MediaData* data);
     //  DEPRECATED!!! Get next audio data
     virtual Status GetNextAudioData(MediaData* data);
     //  DEPRECATED!!! Get next video data
-    virtual Status CheckNextVideoData(MediaData* data,Ipp32u track_idx=0);
+    virtual Status CheckNextVideoData(MediaData* data,uint32_t track_idx=0);
     //  DEPRECATED!!! Get next audio data
-    virtual Status CheckNextAudioData(MediaData* data,Ipp32u track_idx=0);
+    virtual Status CheckNextAudioData(MediaData* data,uint32_t track_idx=0);
     //  DEPRECATED!!! Set position
-    virtual Status SetPosition(Ipp64f) { return UMC_OK; }
+    virtual Status SetPosition(double) { return UMC_OK; }
     //  DEPRECATED!!! Get position
-    virtual Status GetPosition(Ipp64f) { return UMC_OK; }
+    virtual Status GetPosition(double) { return UMC_OK; }
     //  DEPRECATED!!! Get splitter info
     virtual Status GetInfo(SplitterInfo* pInfo);
     //  DEPRECATED!!!
     virtual Status PrepareForRePosition() { return UMC_OK; }
 
 protected:
-    Status GetBaseNextData(MediaData* data, Ipp32u nTrack, bool bCheck);  // !!! TEMPORAL
-    Ipp8u pFirstFrame[32];  // !!! TEMPORAL
-    Ipp8u pAudioTrTbl[32];
-    Ipp8u pVideoTrTbl[32];
+    Status GetBaseNextData(MediaData* data, uint32_t nTrack, bool bCheck);  // !!! TEMPORAL
+    uint8_t pFirstFrame[32];  // !!! TEMPORAL
+    uint8_t pAudioTrTbl[32];
+    uint8_t pVideoTrTbl[32];
     SplitterInfo *pNewSplInfo;
 };
 

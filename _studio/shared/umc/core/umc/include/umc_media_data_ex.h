@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MEDIA_DATA_EX_H__
@@ -24,12 +24,12 @@ public:
     class _MediaDataEx{
         DYNAMIC_CAST_DECL_BASE(_MediaDataEx)
         public:
-        Ipp32u count;
-        Ipp32u index;
-        Ipp64u bstrm_pos;
-        Ipp32u *offsets;
-        Ipp32u *values;
-        Ipp32u limit;
+        uint32_t count;
+        uint32_t index;
+        unsigned long long bstrm_pos;
+        uint32_t *offsets;
+        uint32_t *values;
+        uint32_t limit;
 
         _MediaDataEx()
         {
@@ -37,8 +37,8 @@ public:
             index = 0;
             bstrm_pos = 0;
             limit   = 2000;
-            offsets = (Ipp32u*)malloc(sizeof(Ipp32u)*limit);
-            values  = (Ipp32u*)malloc(sizeof(Ipp32u)*limit);
+            offsets = (uint32_t*)malloc(sizeof(uint32_t)*limit);
+            values  = (uint32_t*)malloc(sizeof(uint32_t)*limit);
         }
 
         virtual ~_MediaDataEx()

@@ -36,9 +36,12 @@
 #include <vector>
 #include <list>
 #include <assert.h>
-#ifndef OPEN_SOURCE // MFX_MIN/MFX_MAX defined in umc_defs.h which is used in Open Source
-#define MFX_MIN(x,y) ((x) < (y) ? (x) : (y))
-#define MFX_MAX(x,y) ((x) > (y) ? (x) : (y))
+
+#ifndef MFX_MAX
+#define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#endif
+#ifndef MFX_MIN
+#define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
 #endif
 
 #define MFX_SORT_COMMON(_AR, _SZ, _COND)\

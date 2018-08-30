@@ -5,12 +5,11 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
 #include "umc_frame_data.h"
-#include "ipps.h"
 
 #include <algorithm>
 
@@ -30,13 +29,13 @@ enum
 struct ColorFormatInfo
 {
     ColorFormat m_cFormat;
-    Ipp32u m_iPlanes;        // Number of planes
-    Ipp32s m_iMinBitDepth;   // Minimum bitdepth
+    uint32_t m_iPlanes;        // Number of planes
+    int32_t m_iMinBitDepth;   // Minimum bitdepth
 
     struct {
-        Ipp32s m_iWidthScale;  // Horizontal downsampling factor
-        Ipp32s m_iHeightScale; // Vertical downsampling factor
-        Ipp32s m_iChannels;  // Number of merged channels in the plane
+        int32_t m_iWidthScale;  // Horizontal downsampling factor
+        int32_t m_iHeightScale; // Vertical downsampling factor
+        int32_t m_iChannels;  // Number of merged channels in the plane
     } m_PlaneFormatInfo[MAX_PLANE_NUMBER];
 };
 
@@ -83,7 +82,7 @@ ColorFormatInfo FormatInfo[] =
 // Number of entries in the FormatInfo table
 static
 const
-Ipp32s iNumberOfFormats = sizeof(FormatInfo) / sizeof(FormatInfo[0]);
+int32_t iNumberOfFormats = sizeof(FormatInfo) / sizeof(FormatInfo[0]);
 
 // returns pointer to color format description table for cFormat
 // or NULL if cFormat is not described (unknown color format).
@@ -92,7 +91,7 @@ const
 ColorFormatInfo *GetColorFormatInfo(ColorFormat cFormat)
 {
     const ColorFormatInfo *pReturn = NULL;
-    Ipp32s i;
+    int32_t i;
 
     // find required format
     for (i = 0; i < iNumberOfFormats; i += 1)
@@ -135,12 +134,12 @@ void VideoDataInfo::Close()
 // Initializes image dimensions and bitdepth.
 // Has to be followed by SetColorFormat call.
 // Planes' information is initialized to invalid values
-Status VideoDataInfo::Init(Ipp32s iWidth,
-                       Ipp32s iHeight,
-                       Ipp32s iPlanes,
-                       Ipp32s iBitDepth)
+Status VideoDataInfo::Init(int32_t iWidth,
+                       int32_t iHeight,
+                       int32_t iPlanes,
+                       int32_t iBitDepth)
 {
-    Ipp32s i;
+    int32_t i;
 
     if ((0 >= iWidth) ||
         (0 >= iHeight) ||
@@ -164,14 +163,14 @@ Status VideoDataInfo::Init(Ipp32s iWidth,
 
     return UMC_OK;
 
-} // Status VideoDataInfo::Init(Ipp32s iWidth,
+} // Status VideoDataInfo::Init(int32_t iWidth,
 
 // Completely sets image information, without allocation or linking to
 // image memory.
-Status VideoDataInfo::Init(Ipp32s iWidth,
-                       Ipp32s iHeight,
+Status VideoDataInfo::Init(int32_t iWidth,
+                       int32_t iHeight,
                        ColorFormat cFormat,
-                       Ipp32s iBitDepth)
+                       int32_t iBitDepth)
 {
     Status umcRes;
     const ColorFormatInfo* pFormat;
@@ -195,7 +194,7 @@ Status VideoDataInfo::Init(Ipp32s iWidth,
 
     return UMC_OK;
 
-} // Status VideoDataInfo::Init(Ipp32s iWidth,
+} // Status VideoDataInfo::Init(int32_t iWidth,
 
 // Sets or change Color format information for image, only when it has
 // specified size, number of planes and bitdepth. Number of planes in cFormat must
@@ -215,7 +214,7 @@ Status VideoDataInfo::SetColorFormat(ColorFormat cFormat)
     m_ColorFormat = cFormat;
 
     // set correct width & height to planes
-    for (Ipp32u i = 0; i < m_iPlanes; i += 1)
+    for (uint32_t i = 0; i < m_iPlanes; i += 1)
     {
         if (i < pFormat->m_iPlanes)
         {
@@ -238,7 +237,7 @@ Status VideoDataInfo::SetColorFormat(ColorFormat cFormat)
 
 // Set sample size for specified plane, usually additional or when bitdepth differs
 // for main planes
-Status VideoDataInfo::SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32u iPlaneNumber)
+Status VideoDataInfo::SetPlaneSampleSize(int32_t iSampleSize, uint32_t iPlaneNumber)
 {
     // check error(s)
     if (m_iPlanes <= iPlaneNumber)
@@ -251,7 +250,7 @@ Status VideoDataInfo::SetPlaneSampleSize(Ipp32s iSampleSize, Ipp32u iPlaneNumber
     return UMC_OK;
 }
 
-const VideoDataInfo::PlaneInfo* VideoDataInfo::GetPlaneInfo(Ipp32u plane) const
+const VideoDataInfo::PlaneInfo* VideoDataInfo::GetPlaneInfo(uint32_t plane) const
 {
     // check error(s)
     if (m_iPlanes <= plane)
@@ -264,7 +263,7 @@ size_t VideoDataInfo::GetSize() const
 {
     size_t sz = 0;
 
-    for (Ipp32u i = 0; i < m_iPlanes; i++)
+    for (uint32_t i = 0; i < m_iPlanes; i++)
     {
         sz += m_pPlaneData[i].m_ippSize.width * m_pPlaneData[i].m_ippSize.height * m_pPlaneData[i].m_iSampleSize * m_pPlaneData[i].m_iSamples;
     }
@@ -286,14 +285,14 @@ void FrameTime::Reset()
     m_pts_end = -1;
 }
 
-Status FrameTime::GetTime(Ipp64f& start, Ipp64f& end) const
+Status FrameTime::GetTime(double& start, double& end) const
 {
     start = m_pts_start;
     end = m_pts_end;
     return UMC_OK;
 }
 
-Status FrameTime::SetTime(Ipp64f start, Ipp64f end)
+Status FrameTime::SetTime(double start, double end)
 {
     m_pts_start = start;
     m_pts_end = end;
@@ -409,7 +408,7 @@ void FrameData::Close()
     m_AuxInfo.clear();
 }
 
-const FrameData::PlaneMemoryInfo * FrameData::GetPlaneMemoryInfo(Ipp32u plane) const
+const FrameData::PlaneMemoryInfo * FrameData::GetPlaneMemoryInfo(uint32_t plane) const
 {
     if (plane >= m_Info.GetNumPlanes())
         return 0;
@@ -417,7 +416,7 @@ const FrameData::PlaneMemoryInfo * FrameData::GetPlaneMemoryInfo(Ipp32u plane) c
     return &(m_PlaneInfo[plane]);
 }
 
-void FrameData::SetPlanePointer(Ipp8u* planePtr, Ipp32u plane, size_t pitch)
+void FrameData::SetPlanePointer(uint8_t* planePtr, uint32_t plane, size_t pitch)
 {
     if (plane >= m_Info.GetNumPlanes())
         return;

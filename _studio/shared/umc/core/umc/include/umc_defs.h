@@ -133,20 +133,29 @@ namespace UMC
     #define UMC_ENABLE_H264_SPLITTER
 
 #include "ipps.h"
-#define MFX_INTERNAL_CPY(dst, src, size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), (int)size)
-#define MFX_INTERNAL_CPY_S(dst, dstsize, src, src_size) ippsCopy_8u((const Ipp8u *)(src), (Ipp8u *)(dst), (int)dstsize)
-#else
+#endif
+
 #include <stdint.h>
 
 #ifdef __cplusplus
 #include <algorithm>
 #endif //__cplusplus
 
-#define MFX_INTERNAL_CPY_S(dst, dstsize, src, src_size) memcpy_s((Ipp8u *)(dst), (uint8_t)(dstsize), (const Ipp8u *)(src), (int)src_size)
-#define MFX_INTERNAL_CPY(dst, src, size) std::copy((const uint8_t *)(src), (const uint8_t *)(src) + (int)(size), (uint8_t *)(dst))
+#define MFX_INTERNAL_CPY_S(dst, dstsize, src, src_size) memcpy_s((uint8_t *)(dst), (size_t)(dstsize), (const uint8_t *)(src), (size_t)(src_size))
+#define MFX_INTERNAL_CPY(dst, src, size) memcpy((uint8_t *)(dst), (const uint8_t *)(src), (int)(size))
+#define MFX_INTERNAL_ZERO(dst, size) memset((uint8_t *)(dst), 0, (int)(size))
 
+#ifndef MFX_MAX
 #define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
+#endif
+
+#ifndef MFX_MIN
 #define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
+#endif
+
+#ifndef MFX_ABS
+#define MFX_ABS( a )    ((a) >= 0 ? (a) : -(a))
+#endif
 
 #define MFX_MAX_32S    ( 2147483647 )
 #define MFX_MAXABS_64F ( 1.7976931348623158e+308 )
@@ -158,10 +167,14 @@ namespace UMC
   #define MFX_MAX_64S  ( 9223372036854775807LL )
 #endif
 
+#ifndef OPEN_SOURCE
+typedef IppiSize mfxSize;
+#else
 typedef struct {
     int width;
     int height;
 } mfxSize;
+#endif
 
 #if defined( _WIN32 ) || defined ( _WIN64 )
   #define __STDCALL  __stdcall
@@ -169,8 +182,6 @@ typedef struct {
 #else
   #define __STDCALL
   #define __CDECL
-#endif
-
 #endif
 
 #if defined(_WIN32) || defined(_WIN64)

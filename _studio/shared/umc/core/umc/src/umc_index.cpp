@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_index.h"
@@ -45,11 +45,11 @@ TrackIndex::~TrackIndex()
         vm_mutex_destroy(&m_Mutex);
 } // TrackIndex::~TrackIndex()
 
-Ipp32u TrackIndex::NOfEntries(void)
+uint32_t TrackIndex::NOfEntries(void)
 {
     AutomaticMutex guard(m_Mutex);
     return m_uiTotalEntries;
-} // Ipp32u TrackIndex::NOfEntries(void)
+} // uint32_t TrackIndex::NOfEntries(void)
 
 Status TrackIndex::First(IndexEntry &entry)
 {
@@ -162,11 +162,11 @@ Status TrackIndex::Get(IndexEntry &entry)
     return UMC_OK;
 } // Status TrackIndex::Get(IndexEntry &entry)
 
-Status TrackIndex::Get(IndexEntry &entry, Ipp32s pos)
+Status TrackIndex::Get(IndexEntry &entry, int32_t pos)
 {
     AutomaticMutex guard(m_Mutex);
 
-    if (pos < 0 || pos >= (Ipp32s)m_uiTotalEntries)
+    if (pos < 0 || pos >= (int32_t)m_uiTotalEntries)
         return UMC_ERR_FAILED;
 
     // init search session if not inited
@@ -188,9 +188,9 @@ Status TrackIndex::Get(IndexEntry &entry, Ipp32s pos)
 
     entry = *pEntryToGet;
     return UMC_OK;
-} // Status TrackIndex::Get(IndexEntry &entry, Ipp32s pos)
+} // Status TrackIndex::Get(IndexEntry &entry, int32_t pos)
 
-Status TrackIndex::Get(IndexEntry &entry, Ipp64f time)
+Status TrackIndex::Get(IndexEntry &entry, double time)
 {
     AutomaticMutex guard(m_Mutex);
 
@@ -216,7 +216,7 @@ Status TrackIndex::Get(IndexEntry &entry, Ipp64f time)
 
     entry = *pEntryToGet;
     return UMC_OK;
-} // Status TrackIndex::Get(IndexEntry &entry, Ipp64f time)
+} // Status TrackIndex::Get(IndexEntry &entry, double time)
 
 Status TrackIndex::Add(IndexFragment &newFrag)
 {
@@ -291,7 +291,7 @@ IndexEntry *TrackIndex::PrevEntry(void)
     return &m_ActiveFrag.pEntryArray[m_iLastReturned];
 } // IndexEntry *TrackIndex::PrevEntry(void)
 
-IndexEntry *TrackIndex::GetEntry(Ipp32s pos)
+IndexEntry *TrackIndex::GetEntry(int32_t pos)
 {
     // if needed entry is located before active fragment
     while (pos < m_iFirstEntryPos)
@@ -318,9 +318,9 @@ IndexEntry *TrackIndex::GetEntry(Ipp32s pos)
     // requested fragment have been found
     m_iLastReturned = pos - m_iFirstEntryPos;
     return &m_ActiveFrag.pEntryArray[m_iLastReturned];
-} // IndexEntry *TrackIndex::GetEntry(Ipp32s pos)
+} // IndexEntry *TrackIndex::GetEntry(int32_t pos)
 
-IndexEntry *TrackIndex::GetEntry(Ipp64f time)
+IndexEntry *TrackIndex::GetEntry(double time)
 {
     // if needed entry is located before active fragment
     while (time < m_ActiveFrag.pEntryArray[0].GetTimeStamp())
@@ -351,13 +351,13 @@ IndexEntry *TrackIndex::GetEntry(Ipp64f time)
     }
 
     // requested fragment have been found
-    Ipp32s nOfEntries = m_ActiveFrag.iNOfEntries;
+    int32_t nOfEntries = m_ActiveFrag.iNOfEntries;
     IndexEntry *pEntryArray = m_ActiveFrag.pEntryArray;
-    Ipp64f dStartTime = pEntryArray[0].GetTimeStamp();
-    Ipp64f dEndTime = pEntryArray[nOfEntries - 1].GetTimeStamp();
+    double dStartTime = pEntryArray[0].GetTimeStamp();
+    double dEndTime = pEntryArray[nOfEntries - 1].GetTimeStamp();
 
     // approximate position of requested entry
-    m_iLastReturned = (Ipp32s)(nOfEntries * (time - dStartTime) / (dEndTime - dStartTime));
+    m_iLastReturned = (int32_t)(nOfEntries * (time - dStartTime) / (dEndTime - dStartTime));
 
     if (pEntryArray[m_iLastReturned].GetTimeStamp() < time)
         while (m_iLastReturned + 1 < nOfEntries && pEntryArray[m_iLastReturned + 1].GetTimeStamp() < time)
@@ -368,7 +368,7 @@ IndexEntry *TrackIndex::GetEntry(Ipp64f time)
 
 
     return &m_ActiveFrag.pEntryArray[m_iLastReturned];
-} // IndexEntry *TrackIndex::GetEntry(Ipp64f time)
+} // IndexEntry *TrackIndex::GetEntry(double time)
 
 /*
  * These functions are not necessary for AVI and MPEG4 splitters,
@@ -385,7 +385,7 @@ Status TrackIndex::Modify(IndexEntry &entry)
     return UMC_OK;
 } // Status TrackIndex::Modify(IndexEntry &entry)
 
-Status TrackIndex::Modify(IndexEntry &entry, Ipp32s pos)
+Status TrackIndex::Modify(IndexEntry &entry, int32_t pos)
 {
     AutomaticMutex guard(m_Mutex);
 
@@ -408,5 +408,5 @@ Status TrackIndex::Modify(IndexEntry &entry, Ipp32s pos)
 
     *pEntryToModify = entry;
     return UMC_OK;
-} // Status TrackIndex::Modify(IndexEntry &entry, Ipp32s pos)
+} // Status TrackIndex::Modify(IndexEntry &entry, int32_t pos)
 */

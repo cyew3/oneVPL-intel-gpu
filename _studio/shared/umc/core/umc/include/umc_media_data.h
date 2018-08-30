@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MEDIA_DATA_H__
@@ -74,23 +74,23 @@ public:
     // Set the pointer to a buffer allocated by an user.
     // The bytes variable defines the size of the buffer.
     // Size of valid data is set to zero
-    virtual Status SetBufferPointer(Ipp8u* ptr, size_t bytes);
+    virtual Status SetBufferPointer(uint8_t* ptr, size_t bytes);
 
     // Set size of valid data in the buffer.
     // Valid data is supposed to be placed from the beginning of the buffer.
     virtual Status SetDataSize(size_t bytes);
 
     //  Move data pointer inside and decrease or increase data size
-    virtual Status MoveDataPointer(Ipp32s bytes);
+    virtual Status MoveDataPointer(int32_t bytes);
 
     // return time stamp of media data
-    virtual Ipp64f GetTime(void) const         { return m_pts_start; }
+    virtual double GetTime(void) const         { return m_pts_start; }
 
     // return time stamp of media data, start and end
-    virtual Status GetTime(Ipp64f& start, Ipp64f& end) const;
+    virtual Status GetTime(double& start, double& end) const;
 
     //  Set time stamp of media data block;
-    virtual Status SetTime(Ipp64f start, Ipp64f end = 0);
+    virtual Status SetTime(double start, double end = 0);
 
     void SetAuxInfo(void* ptr, size_t size, int type);
     void ClearAuxInfo(int type);
@@ -109,9 +109,9 @@ public:
     inline FrameType GetFrameType(void) const;
 
     // Set Invalid state
-    inline void SetInvalid(Ipp32s isInvalid) { m_isInvalid = isInvalid; }
+    inline void SetInvalid(int32_t isInvalid) { m_isInvalid = isInvalid; }
     // Get Invalid state
-    inline Ipp32s GetInvalid(void) const           { return m_isInvalid; }
+    inline int32_t GetInvalid(void) const           { return m_isInvalid; }
 
     //  Set data pointer to beginning of buffer and data size to zero
     virtual Status Reset();
@@ -121,28 +121,28 @@ public:
     //  Move data to another MediaData
     virtual Status MoveDataTo(MediaData* dst);
 
-    inline void SetFlags(Ipp32u flags);
-    inline Ipp32u GetFlags() const;
+    inline void SetFlags(uint32_t flags);
+    inline uint32_t GetFlags() const;
 
 protected:
 
-    Ipp64f m_pts_start;        // (Ipp64f) start media PTS
-    Ipp64f m_pts_end;          // (Ipp64f) finish media PTS
+    double m_pts_start;        // (double) start media PTS
+    double m_pts_end;          // (double) finish media PTS
     size_t m_nBufferSize;      // (size_t) size of buffer
     size_t m_nDataSize;        // (size_t) quantity of data in buffer
 
-    Ipp8u* m_pBufferPointer;
-    Ipp8u* m_pDataPointer;
+    uint8_t* m_pBufferPointer;
+    uint8_t* m_pDataPointer;
 
     FrameType m_frameType;     // type of the frame
-    Ipp32s    m_isInvalid;     // data is invalid when set
+    int32_t    m_isInvalid;     // data is invalid when set
 
-    Ipp32u      m_flags;
+    uint32_t      m_flags;
 
     // Actually this variable should has type bool.
     // But some compilers generate poor executable code.
-    // On count of this, we use type Ipp32u.
-    Ipp32u m_bMemoryAllocated; // (Ipp32u) is memory owned by object
+    // On count of this, we use type uint32_t.
+    uint32_t m_bMemoryAllocated; // (uint32_t) is memory owned by object
 
     std::list<AuxInfo> m_AuxInfo;
 };
@@ -166,12 +166,12 @@ inline FrameType MediaData::GetFrameType(void) const
 } // VideoData::GetFrameType()
 
 
-inline void MediaData::SetFlags(Ipp32u flags)
+inline void MediaData::SetFlags(uint32_t flags)
 {
     m_flags = flags;
 }
 
-inline Ipp32u MediaData::GetFlags() const
+inline uint32_t MediaData::GetFlags() const
 {
     return m_flags;
 }

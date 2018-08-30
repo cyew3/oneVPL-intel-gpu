@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2009 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_INDEX_H__
@@ -30,7 +30,7 @@ struct IndexEntry
     }
 
     // Returns DTS if present otherwise PTS
-    inline Ipp64f GetTimeStamp(void)
+    inline double GetTimeStamp(void)
     {
         return dDts < 0.0 ? dPts : dDts;
     }
@@ -39,16 +39,16 @@ struct IndexEntry
     size_t stPosition;
 
     // Presentation time stamp in seconds
-    Ipp64f dPts;
+    double dPts;
 
     // Decoding time stamp in seconds
-    Ipp64f dDts;
+    double dDts;
 
     // Sample size in byte
-    Ipp32u uiSize;
+    uint32_t uiSize;
 
     // Flags (frame type for video samples)
-    Ipp32u uiFlags;
+    uint32_t uiFlags;
 };
 
 struct IndexFragment
@@ -64,7 +64,7 @@ struct IndexFragment
     IndexEntry *pEntryArray;
 
     // number of entries in the array
-    Ipp32s iNOfEntries;
+    int32_t iNOfEntries;
 
 };
 
@@ -76,7 +76,7 @@ public:
     ~TrackIndex();
 
     // Returns number of entries in ALL fragments
-    Ipp32u NOfEntries(void);
+    uint32_t NOfEntries(void);
 
     // Provides FIRST entry from the FIRST fragment
     Status First(IndexEntry &entry);
@@ -108,10 +108,10 @@ public:
     Status Get(IndexEntry &entry);
 
     // Provides entry at the specified position (through ALL fragments)
-    Status Get(IndexEntry &entry, Ipp32s pos);
+    Status Get(IndexEntry &entry, int32_t pos);
 
     // Provides entry with timestamp is less or equal to specified (through ALL fragments)
-    Status Get(IndexEntry &entry, Ipp64f time);
+    Status Get(IndexEntry &entry, double time);
 
     // Add whole fragment to the end of index
     Status Add(IndexFragment &newFrag);
@@ -127,7 +127,7 @@ public:
     Status Modify(IndexEntry &entry);
 
     // Modifies entry at the specified position
-    Status Modify(IndexEntry &entry, Ipp32s pos);
+    Status Modify(IndexEntry &entry, int32_t pos);
 */
 
 protected:
@@ -149,30 +149,30 @@ protected:
     // Returns element at a specified position
     // Input parameter and current state are not checked
     // State variables will be modified
-    IndexEntry *GetEntry(Ipp32s pos);
+    IndexEntry *GetEntry(int32_t pos);
 
     // Returns element with timestamp is less or equal to specified
     // Input parameter and current state are not checked
     // State variables will be modified
-    IndexEntry *GetEntry(Ipp64f time);
+    IndexEntry *GetEntry(double time);
 
     // Linked list of index fragments
     LinkedList<IndexFragment> m_FragmentList;
 
     // Total number of entries in all fragments
-    Ipp32u m_uiTotalEntries;
+    uint32_t m_uiTotalEntries;
 
     // Copy of fragment which contains last returned entry
     IndexFragment m_ActiveFrag;
 
     // absolute position in index of the first entry of active fragment
-    Ipp32s m_iFirstEntryPos;
+    int32_t m_iFirstEntryPos;
 
     // absolute position in index of the last entry of active fragment
-    Ipp32s m_iLastEntryPos;
+    int32_t m_iLastEntryPos;
 
     // relative position inside active fragment of the last returned entry
-    Ipp32s m_iLastReturned;
+    int32_t m_iLastReturned;
 
     // synchro object
     vm_mutex m_Mutex;

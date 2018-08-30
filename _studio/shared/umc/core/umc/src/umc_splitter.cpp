@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <string.h>
@@ -59,7 +59,7 @@ Splitter::Splitter():
 
 SystemStreamType Splitter::GetStreamType(DataReader* dr)
 {
-    Ipp32u long_code;
+    uint32_t long_code;
     Status umcSts = UMC_OK;
 
     if (NULL == dr)
@@ -74,7 +74,7 @@ SystemStreamType Splitter::GetStreamType(DataReader* dr)
     // it can be either avs or mpeg4 format
     if (long_code == 0x000001B0)
     {
-        Ipp8u oneByte;
+        uint8_t oneByte;
 
         // the header of avs standard is 18 bytes long.
         // the one of mpeg4 standard is only one byte long.
@@ -88,7 +88,7 @@ SystemStreamType Splitter::GetStreamType(DataReader* dr)
 
     if (0x80000001 == long_code)
     {
-        Ipp8u oneByte;
+        uint8_t oneByte;
 
         // it is known bug of avs reference encoder -
         // it adds extra 0x080 byte at the beginning.

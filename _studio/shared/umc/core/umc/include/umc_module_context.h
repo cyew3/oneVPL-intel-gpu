@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2008 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MODULE_CONTEXT_H__
@@ -66,8 +66,8 @@ public:
         m_transmissionMode = 0;
     }
 
-    Ipp32u m_uiPortNumber;        // listening port number
-    Ipp32u m_transmissionMode;    // choosed type of transmission;
+    uint32_t m_uiPortNumber;        // listening port number
+    uint32_t m_transmissionMode;    // choosed type of transmission;
 
     vm_char m_szServerName[UMC::MAXIMUM_PATH];     // IP addres string
 };

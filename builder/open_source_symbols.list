@@ -599,3 +599,6 @@ target_gen7_5
 COMPLEX_BIDIR
 CMUT_IO_GENX_H
 target_gen10
+MFX_MIN
+MFX_MAX
+MFX_ABS

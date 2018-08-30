@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2014 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MUXER_H__
@@ -73,8 +73,8 @@ public:
     MuxerParams & operator = (const MuxerParams & p);
 
     SystemStreamType m_SystemType;      // type of media stream
-    Ipp32s      m_lFlags;               // muxer flag(s)
-    Ipp32s      m_nNumberOfTracks;      // number of tracks
+    int32_t      m_lFlags;               // muxer flag(s)
+    int32_t      m_nNumberOfTracks;      // number of tracks
     TrackParams *pTrackParams;          // track parameters
     DataWriter  *m_lpDataWriter;        // pointer to data writer
 
@@ -107,28 +107,28 @@ public:
     virtual Status Init(MuxerParams *lpInit) = 0;
 
     // Locks input buffer
-    virtual Status LockBuffer(MediaData *lpData, Ipp32s iTrack);
+    virtual Status LockBuffer(MediaData *lpData, int32_t iTrack);
 
     // Unlocks input buffer
-    virtual Status UnlockBuffer(MediaData *lpData, Ipp32s iTrack);
+    virtual Status UnlockBuffer(MediaData *lpData, int32_t iTrack);
 
     // Try to lock input buffer, copies user data into it and unlocks
-    virtual Status PutData(MediaData *lpData, Ipp32s iTrack);
+    virtual Status PutData(MediaData *lpData, int32_t iTrack);
 
     // Deliver EOS
-    virtual Status PutEndOfStream(Ipp32s iTrack);
+    virtual Status PutEndOfStream(int32_t iTrack);
 
     // Copy video sample to input buffer
-    virtual Status PutVideoData(MediaData *lpData, Ipp32s iVideoIndex = 0);
+    virtual Status PutVideoData(MediaData *lpData, int32_t iVideoIndex = 0);
 
     // Copy audio sample to input buffer
-    virtual Status PutAudioData(MediaData *lpData, Ipp32s iAudioIndex = 0);
+    virtual Status PutAudioData(MediaData *lpData, int32_t iAudioIndex = 0);
 
     // Flushes all data from buffers to output stream
     virtual Status Flush(void) = 0;
 
     // Get index of track of specified type
-    virtual Ipp32s GetTrackIndex(MuxerTrackType type, Ipp32s index = 0);
+    virtual int32_t GetTrackIndex(MuxerTrackType type, int32_t index = 0);
 
 protected:
     // Copy input parameters to m_pParams, m_uiTotalNumStreams, m_pTrackParams
@@ -138,16 +138,16 @@ protected:
     // Provides time of first output sample
     // Returns UMC_ERR_NOT_ENOUGH_DATA when buffer is empty
     // Returns UMC_ERR_END_OF_STREAM when buffer is empty and EOS was received
-    virtual Status GetOutputTime(Ipp32s iTrack, Ipp64f &dTime) = 0;
+    virtual Status GetOutputTime(int32_t iTrack, double &dTime) = 0;
 
     // Find stream with minimum time of first output sample
     // In flush mode it disregards empty buffers (if at least one buffer is not empty)
     // In non-flush mode it returns UMC_ERR_NOT_ENOUGH_DATA if one of buffer is empty
-    Status GetStreamToWrite(Ipp32s &rStreamNumber, bool bFlushMode);
+    Status GetStreamToWrite(int32_t &rStreamNumber, bool bFlushMode);
 
 protected:
     MuxerParams  *m_pParams; // pointer to params
-    Ipp32u        m_uiTotalNumStreams; // number of tracks
+    uint32_t        m_uiTotalNumStreams; // number of tracks
     TrackParams  *m_pTrackParams; // pointer to track params [m_uiTotalNumStreams]
     MediaBuffer **m_ppBuffers; // array of pointers [m_uiTotalNumStreams] to media buffers
 };

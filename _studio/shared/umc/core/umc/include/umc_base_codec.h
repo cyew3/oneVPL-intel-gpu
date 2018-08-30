@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_BASE_CODEC_H__
@@ -31,13 +31,13 @@ public:
     MediaData *m_pData;
     MemoryAllocator *lpMemoryAllocator; // (MemoryAllocator *) pointer to memory allocator object
 
-    Ipp32u m_SuggestedInputSize;   //max suggested frame size of input stream
-    Ipp32u m_SuggestedOutputSize;  //max suggested frame size of output stream
+    uint32_t m_SuggestedInputSize;   //max suggested frame size of input stream
+    uint32_t m_SuggestedOutputSize;  //max suggested frame size of output stream
 
-    Ipp32s             numThreads; // maximum number of threads to use
+    int32_t             numThreads; // maximum number of threads to use
 
-    Ipp32s  profile; // profile
-    Ipp32s  level;  // level
+    int32_t  profile; // profile
+    int32_t  level;  // level
 };
 
 class BaseCodec

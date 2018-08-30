@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2007 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MEDIA_BUFFER_H__
@@ -28,7 +28,7 @@ public:
     MediaBufferParams(void);
 
     size_t m_prefInputBufferSize;                               // (size_t) preferable size of input potion(s)
-    Ipp32u m_numberOfFrames;                                    // (Ipp32u) minimum number of data potion in buffer
+    uint32_t m_numberOfFrames;                                    // (uint32_t) minimum number of data potion in buffer
     size_t m_prefOutputBufferSize;                              // (size_t) preferable size of output potion(s)
 
     MemoryAllocator *m_pMemoryAllocator;                        // (MemoryAllocator *) pointer to memory allocator object
