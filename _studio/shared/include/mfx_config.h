@@ -108,6 +108,10 @@
 #if defined(_WIN32) || defined(_WIN64) || !defined(ANDROID) && !defined(OPEN_SOURCE)
     #define MFX_ENABLE_KERNELS
 
+    #if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
+    #define MFX_ENABLE_MCTF
+    #endif
+
     #define MFX_ENABLE_MPEG2_VIDEO_DECODE
     #define MFX_ENABLE_MJPEG_VIDEO_DECODE
     #if defined(MFX_VA)
@@ -437,13 +441,6 @@
     #endif //defined (AS_VPP_SCD_PLUGIN)
 #endif //defined (AS_VPP_SCD_PLUGIN) || defined (AS_ENC_SCD_PLUGIN)
 
-#if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
-#define MFX_ENABLE_MCTF
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
-#undef MFX_ENABLE_MCTF_EXT // extended MCTF interface
-#endif
-#endif
-
 #if defined(_WIN32) || defined(_WIN64)
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC
     #define MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H264D
@@ -466,6 +463,10 @@
 #endif
 
 #endif//#if defined(_WIN32) || defined(_WIN64)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && defined(MFX_ENABLE_MCTF)
+    #define MFX_ENABLE_MCTF_EXT // extended MCTF interface
+#endif
 
 #if MFX_VERSION >= 1028
     #define MFX_ENABLE_RGBP
