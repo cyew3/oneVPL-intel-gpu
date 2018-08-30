@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" xmlns:uap6="http://schemas.microsoft.com/appx/manifest/uap/windows10/6" IgnorableNamespaces="uap mp build uap5 rescap uap6">
-  <Identity Name="5ae232e0-99c1-4896-a514-5dc13f2eb088" Publisher="CN=developer" Version="1.0.6.0" />
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5" xmlns:uap6="http://schemas.microsoft.com/appx/manifest/uap/windows10/6" IgnorableNamespaces="uap mp build uap5 uap6">
+  <Identity Name="5ae232e0-99c1-4896-a514-5dc13f2eb088" Publisher="CN=developer" Version="1.0.4.0" />
   <mp:PhoneIdentity PhoneProductId="5ae232e0-99c1-4896-a514-5dc13f2eb088" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>PlayerSample</DisplayName>
@@ -9,7 +9,7 @@
   </Properties>
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.0.0" MaxVersionTested="10.0.0.0" />
-    <PackageDependency Name="Intel.MediaSDK" MinVersion="1.0.0.0" Publisher="CN=Intel Corporation - pGFX, O=Intel Corporation, L=Santa Clara, S=CA, C=US" uap6:Optional="true" />
+    <PackageDependency Name="AppUp.IntelMediaSDKDFP" MinVersion="1.0.0.0" Publisher="CN=EB51A5DA-0E72-4863-82E4-EA21C1F8DFE3" uap6:Optional="true" />
   </Dependencies>
   <Resources>
     <Resource Language="x-generate" />

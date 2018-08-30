@@ -246,7 +246,7 @@ void CDecodingPipeline::OnClose()
 mfxStatus CDecodingPipeline::InitSession()
 {
     mfxInitParam initPar;
-    mfxVersion version;     // real API version with which library is initialized
+	mfxVersion version = {};     // real API version with which library is initialized
     mfxStatus sts = MFX_ERR_NONE;
 
     MSDK_ZERO_MEMORY(initPar);
