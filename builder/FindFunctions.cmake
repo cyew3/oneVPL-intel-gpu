@@ -225,6 +225,10 @@ function( make_library name variant type )
       target_link_libraries( ${target} ${lib} )
     endforeach()
 
+    if( Linux )
+      target_link_libraries( ${target} "-Xlinker --end-group" )
+    endif()
+
     set_target_properties( ${target} PROPERTIES LINK_INTERFACE_LIBRARIES "" )
   endif()
 
@@ -242,7 +246,7 @@ function( make_library name variant type )
   set_target_properties( ${target} PROPERTIES ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE} FOLDER ${folder} )
 
   if( Linux )
-    target_link_libraries( ${target} "-Xlinker --end-group -lgcc" )
+    target_link_libraries( ${target} "-lgcc" )
   endif()
 
   set( target ${target} PARENT_SCOPE )
