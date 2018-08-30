@@ -915,7 +915,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     }
     if (p.CodeName >= MFX_PLATFORM_CANNONLAKE)
     {
-        if(IsOn(par.mfx.LowPower)) //CNL + VDENC => LCUSizeSupported = 4
+        if(vaParams.entrypoint == VAEntrypointEncSliceLP) //CNL + VDENC => LCUSizeSupported = 4
         {
             m_caps.LCUSizeSupported = (64 >> 4);
         }
