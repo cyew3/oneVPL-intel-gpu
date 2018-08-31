@@ -134,7 +134,7 @@ template <class T> mfxU32 BPyrReorder(std::vector<T> brefs, bool bField)
     mfxU32 num = (mfxU32)brefs.size();
     if (brefs[0]->m_bpo == (mfxU32)MFX_FRAMEORDER_UNKNOWN)
     {
-        bool bRef = false;     
+        bool bRef = false;
         if (!bField)
         {
             for (mfxU32 i = 0; i < num; i++)
@@ -151,12 +151,12 @@ template <class T> mfxU32 BPyrReorder(std::vector<T> brefs, bool bField)
                 brefs[2*i]->m_bpo = 2*GetBiFrameLocation(i, num/2, bRef, brefs[2*i]->m_level);
                 brefs[2 * i]->m_level = 2 * brefs[2 * i]->m_level;
                 brefs[2*i]->m_frameType |= MFX_FRAMETYPE_REF; // the first field is always reference
-               
+
                  // second field is exist
                 if ((2 * i + 1) < num)
                 {
                     brefs[2 * i + 1]->m_bpo = 2*GetBiFrameLocation(i, num / 2, bRef, brefs[2*i +1]->m_level);
-                    brefs[2 * i + 1]->m_level = 2 * brefs[2 * i + 1]->m_level; 
+                    brefs[2 * i + 1]->m_level = 2 * brefs[2 * i + 1]->m_level;
                     if (bRef)
                         brefs[2 * i + 1]->m_frameType |= MFX_FRAMETYPE_REF;
                 }
@@ -3036,9 +3036,9 @@ mfxU32 WeightForBPyrForw(
 
     for (int i = 0; i < MAX_DPB_SIZE; i++)
     {
-        if (DPB[i].m_poc >= 0 && 
+        if (DPB[i].m_poc >= 0 &&
             DPB[i].m_level == refFrame.m_level &&
-            DPB[i].m_poc < cur_poc && 
+            DPB[i].m_poc < cur_poc &&
             GetFrameNum(par.isField(), refFrame.m_poc, refFrame.m_secondField) < GetFrameNum(par.isField(), DPB[i].m_poc, DPB[i].m_secondField))
             return 16;
     }
@@ -3059,7 +3059,7 @@ void ConstructRPL(
     bool isB,
     mfxI32 poc,
     mfxU8  tid,
-    mfxU32 level,
+    mfxU32 /*level*/,
     bool  bSecondField,
     bool  bBottomField,
     mfxU8 (&RPL)[2][MAX_DPB_SIZE],
@@ -3142,19 +3142,19 @@ void ConstructRPL(
                 if (par.isField())
                 {
 #if (HEVCE_FIELD_MODE == 0)
-                    bSecondField; bBottomField; level
+                    (void)bSecondField;
+                    (void)bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], Abs(DPB[RPL[0][_i]].m_poc - poc) < Abs(DPB[RPL[0][_j]].m_poc - poc));
 #elif (HEVCE_FIELD_MODE == 1)
-                    bBottomField; level
+                    (void)bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc / 2 - poc / 2) * 2 + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 1)) < (Abs(DPB[RPL[0][_j]].m_poc / 2 - poc / 2) * 2 + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 1)));
 #elif (HEVCE_FIELD_MODE == 2)
-                    bBottomField; level
+                    (void)bBottomField;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], (Abs(DPB[RPL[0][_i]].m_poc / 2 - poc / 2) + ((DPB[RPL[0][_i]].m_secondField == bSecondField) ? 0 : 16)) < (Abs(DPB[RPL[0][_j]].m_poc / 2 - poc / 2) + ((DPB[RPL[0][_j]].m_secondField == bSecondField) ? 0 : 16)));
 #elif (HEVCE_FIELD_MODE == 3)
-                    level;
                     MFX_SORT_COMMON(RPL[0], numRefActive[0], FieldDistancePolarity(poc, bSecondField, bBottomField, DPB[RPL[0][_i]]) < FieldDistancePolarity(poc, bSecondField, bBottomField, DPB[RPL[0][_j]]));
 #elif (HEVCE_FIELD_MODE == 4)
-                    MFX_SORT_COMMON(RPL[0], numRefActive[0], FieldDistancePolarity(poc, bSecondField, bBottomField, DPB[RPL[0][_i]] + WeightForBPyrForw(par, DPB, poc, cur_level, bSecondField, DPB[RPL[0][_i])) < (FieldDistancePolarity(poc, bSecondField, bBottomField, DPB[RPL[0][_j]] + WeightForBPyrForw(par, DPB, poc, cur_level, bSecondField, DPB[RPL[0][_j]))));                  
+                    MFX_SORT_COMMON(RPL[0], numRefActive[0], FieldDistancePolarity(poc, bSecondField, bBottomField, DPB[RPL[0][_i]] + WeightForBPyrForw(par, DPB, poc, cur_level, bSecondField, DPB[RPL[0][_i])) < (FieldDistancePolarity(poc, bSecondField, bBottomField, DPB[RPL[0][_j]] + WeightForBPyrForw(par, DPB, poc, cur_level, bSecondField, DPB[RPL[0][_j]))));
 #endif
                 }
                 else
@@ -3668,7 +3668,7 @@ void ConfigureTask(
         {
             task.m_qpY += 1;
         }
- 
+
 
         if (task.m_ctrl.QP)
             task.m_qpY = (mfxI8)task.m_ctrl.QP;

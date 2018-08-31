@@ -219,7 +219,6 @@ mfxU32 ModifyLoopFilterLevelQPBased(mfxU32 QP, mfxU32 loopFilterLevel)
 
 mfxStatus InitVp9SeqLevelParam(VP9MfxVideoParam const &video, VP9SeqLevelParam &param)
 {
-    video;
     Zero(param);
 
     param.profile = (mfxU8)(video.mfx.CodecProfile - 1);

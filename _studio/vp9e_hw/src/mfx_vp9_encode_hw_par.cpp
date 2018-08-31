@@ -119,9 +119,8 @@ if (pSrc)\
     COPY_PAR_IF_ZERO(pDst, pSrc, PTR); \
 }\
 
-inline void SetOrCopy(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxInfoMFX *pDst, mfxInfoMFX const *pSrc = 0, bool /*zeroDst*/ = true)
 {
-    zeroDst;
     SET_OR_COPY_PAR(FrameInfo.Width);
     SET_OR_COPY_PAR(FrameInfo.Height);
     SET_OR_COPY_PAR(FrameInfo.CropW);
@@ -162,17 +161,6 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
 
     SET_OR_COPY_PAR(WriteIVFHeaders);
 
-    /*
-    for (mfxU8 i = 0; i < MAX_REF_LF_DELTAS; i++)
-    {
-        SET_OR_COPY_PAR(LoopFilterRefDelta[i]);
-    }
-    for (mfxU8 i = 0; i < MAX_MODE_LF_DELTAS; i++)
-    {
-        SET_OR_COPY_PAR(LoopFilterModeDelta[i]);
-    }
-    */
-
     SET_OR_COPY_PAR(QIndexDeltaLumaDC);
     SET_OR_COPY_PAR(QIndexDeltaChromaAC);
     SET_OR_COPY_PAR(QIndexDeltaChromaDC);
@@ -183,15 +171,13 @@ inline void SetOrCopy(mfxExtVP9Param *pDst, mfxExtVP9Param const *pSrc = 0, bool
 #endif
 }
 
-inline void SetOrCopy(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtCodingOption2 *pDst, mfxExtCodingOption2 const *pSrc = 0, bool /*zeroDst*/ = true)
 {
-    zeroDst;
     SET_OR_COPY_PAR(MBBRC);
 }
 
-inline void SetOrCopy(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtCodingOption3 *pDst, mfxExtCodingOption3 const *pSrc = 0, bool /*zeroDst*/ = true)
 {
-    pSrc; pDst; zeroDst;
 #if (MFX_VERSION >= 1027)
     SET_OR_COPY_PAR(TargetChromaFormatPlus1);
     SET_OR_COPY_PAR(TargetBitDepthLuma);
@@ -225,9 +211,8 @@ inline void SetOrCopy(mfxExtVP9TemporalLayers *pDst, mfxExtVP9TemporalLayers con
     }
 }
 
-inline void SetOrCopy(mfxExtCodingOptionDDI *pDst, mfxExtCodingOptionDDI const *pSrc = 0, bool zeroDst = true)
+inline void SetOrCopy(mfxExtCodingOptionDDI *pDst, mfxExtCodingOptionDDI const *pSrc = 0, bool /*zeroDst*/ = true)
 {
-    zeroDst;
     SET_OR_COPY_PAR(RefreshFrameContext);
     SET_OR_COPY_PAR(ChangeFrameContextIdxForTS);
     SET_OR_COPY_PAR(SuperFrameForTS);
@@ -540,7 +525,7 @@ bool CheckFourcc(mfxU32 fourcc, ENCODE_CAPS_VP9 const &caps)
 #if (MFX_VERSION >= 1027)
             || (fourcc == MFX_FOURCC_Y410 && caps.YUV444ReconSupport)
 #endif
-            )); 
+            ));
 }
 
 mfxU16 MapTUToSupportedRange(mfxU16 tu)
@@ -1507,21 +1492,20 @@ inline mfxU32 GetDefaultBufferSize(VP9MfxVideoParam const &par)
     else
     {
         const mfxExtVP9Param& extPar = GetExtBufferRef(par);
-        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 
+        if (par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010
 #if (MFX_VERSION >= 1027)
             || par.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
 #endif
             ) {
             return (extPar.FrameWidth * extPar.FrameHeight * 3) / 1000; // size of two uncompressed 420 8bit frames in KB
         }
-        else 
+        else
             return (extPar.FrameWidth * extPar.FrameHeight * 3) / 2 / 1000;  // size of uncompressed 420 8bit frame in KB
     }
 }
 
-inline mfxU16 GetDefaultAsyncDepth(VP9MfxVideoParam const &par)
+inline mfxU16 GetDefaultAsyncDepth(VP9MfxVideoParam const &/*par*/)
 {
-    par;
     return 2;
 }
 
@@ -1556,9 +1540,8 @@ void SetDefailtsForProfileAndFrameInfo(VP9MfxVideoParam& par)
 mfxStatus SetDefaults(
     VP9MfxVideoParam &par,
     ENCODE_CAPS_VP9 const &caps,
-    mfxPlatform const & platform)
+    mfxPlatform const & /*platform*/)
 {
-    platform;
     SetDefault(par.AsyncDepth, GetDefaultAsyncDepth(par));
 
     // mfxInfoMfx
@@ -1833,8 +1816,6 @@ mfxStatus CheckAndFixCtrl(
     mfxEncodeCtrl & ctrl,
     ENCODE_CAPS_VP9 const & caps)
 {
-    video;
-
     mfxStatus checkSts = MFX_ERR_NONE;
 
     // check mfxEncodeCtrl for correct parameters

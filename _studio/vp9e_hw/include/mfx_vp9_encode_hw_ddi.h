@@ -196,7 +196,7 @@ typedef struct tagENCODE_CAPS_VP9
 
     inline ENCODE_PACKEDHEADER_DATA MakePackedByteBuffer(mfxU8 * data, mfxU32 size)
     {
-        ENCODE_PACKEDHEADER_DATA desc = { 0 };
+        ENCODE_PACKEDHEADER_DATA desc = {};
         desc.pData = data;
         desc.BufferSize = size;
         desc.DataLength = size;

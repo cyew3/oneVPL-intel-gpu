@@ -82,7 +82,7 @@ namespace MfxHwVP9Encode
 
     mfxStatus FillPpsBuffer(
         Task const & task,
-        mfxVideoParam const & par,
+        mfxVideoParam const & /*par*/,
         VAEncPictureParameterBufferVP9 & pps,
         std::vector<ExtVASurface> const & reconQueue,
         BitOffsets const &offsets)
@@ -197,7 +197,7 @@ namespace MfxHwVP9Encode
 
     mfxStatus FillSegMap(
         Task const & task,
-        mfxVideoParam const & par,
+        mfxVideoParam const & /*par*/,
         mfxCoreInterface *    pCore,
         VAEncMiscParameterTypeVP9PerSegmantParam & segPar)
     {
@@ -206,7 +206,7 @@ namespace MfxHwVP9Encode
         if (task.m_frameParam.segmentation == 0)
             return MFX_ERR_NONE; // segment map isn't required
 
-        mfxFrameData segMap = { 0 };
+        mfxFrameData segMap = {};
 
         FrameLocker lock(pCore, segMap, task.m_pSegmentMap->pSurface->Data.MemId);
         mfxU8 *pBuf = segMap.Y;
@@ -857,12 +857,9 @@ mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 } // mfxStatus VAAPIEncoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 
 
-mfxStatus VAAPIEncoder::Register(mfxMemId memId, D3DDDIFORMAT type)
+mfxStatus VAAPIEncoder::Register(mfxMemId /*memId*/, D3DDDIFORMAT /*type*/)
 {
     VP9_LOG(" \nRegister");
-    memId;
-    type;
-
     return MFX_ERR_UNSUPPORTED;
 
 } // mfxStatus VAAPIEncoder::Register(mfxMemId memId, D3DDDIFORMAT type)
@@ -875,9 +872,7 @@ mfxStatus VAAPIEncoder::Execute(
     VP9_LOG("\nVAAPIEncoder::Execute");
 
     VASurfaceID *inputSurface = (VASurfaceID*)pair.first;
-    VASurfaceID reconSurface;
     VABufferID  codedBuffer;
-    mfxU32 i;
 
     std::vector<VABufferID> configBuffers;
     configBuffers.resize(MAX_CONFIG_BUFFERS_COUNT);
