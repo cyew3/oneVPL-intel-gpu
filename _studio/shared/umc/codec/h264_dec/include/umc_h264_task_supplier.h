@@ -721,7 +721,7 @@ inline Ipp32s CalculateDPBSize(Ipp8u & level_idc, Ipp32s width, Ipp32s height, I
             break;
         }
 
-        if (width == 0 && height == 0)
+        if (width == 0 || height == 0)
         {
             throw h264_exception(UMC_ERR_INVALID_PARAMS);
         }
