@@ -4509,8 +4509,8 @@ mfxStatus CTranscodingPipeline::Run()
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    msdk_char buffer[10] = {};
-    GetSessionText(buffer, 10);
+    msdk_char buffer[11] = {};
+    GetSessionText(buffer, 11);
 
     if (m_bDecodeEnable && m_bEncodeEnable)
     {
