@@ -7026,7 +7026,7 @@ Structure specifies instructions for the SDK encoder provided by external BRC af
 
 | | |
 --- | ---
-`MinFrameSize` | Size in bytes the coded frame must be padded to when `BRCStatus` is `MFX_BRC_PANIC_SMALL_FRAME`
+`MinFrameSize` | Size in bits the coded frame must be padded to when `BRCStatus` is `MFX_BRC_PANIC_SMALL_FRAME`
 `BRCStatus`    | See the [BRCStatus](#BRCStatus) enumerator
 
 **Change History**
