@@ -671,7 +671,8 @@ namespace UMC
         ERROR_FRAME_RECOVERY                = 0x00000010,  // major artifacts at recovery point
         ERROR_FRAME_TOP_FIELD_ABSENT        = 0x00000020,
         ERROR_FRAME_BOTTOM_FIELD_ABSENT     = 0x00000040,
-        ERROR_FRAME_DEVICE_FAILURE          = 0x80000000   //if this bit is set, this means the error is [UMC::Status] code
+        ERROR_FRAME_SHORT_TERM_STUCK        = 0x00000100,  // used to mark ST which potentially can get stuck in DPB due to frame gaps
+        ERROR_FRAME_DEVICE_FAILURE          = 0x80000000   // if this bit is set, this means the error is [UMC::Status] code
     };
 
     // template to align a pointer

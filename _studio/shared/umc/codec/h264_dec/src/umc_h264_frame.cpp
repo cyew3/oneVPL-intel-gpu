@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -75,6 +75,7 @@ H264DecoderFrame::H264DecoderFrame(MemoryAllocator *pMemoryAllocator, H264_Heap_
     m_LongTermPicNum[0] = m_PicNum[1] = -1;
     m_PicOrderCnt[0] = m_PicOrderCnt[1] = 0;
     m_bIDRFlag = false;
+    m_bIFlag = false;
 
     // set memory managment tools
     m_pMemoryAllocator = pMemoryAllocator;
@@ -150,6 +151,7 @@ void H264DecoderFrame::Reset()
 
     post_procces_complete = false;
     m_bIDRFlag = false;
+    m_bIFlag = false;
 
     m_RefPicListResetCount[0] = m_RefPicListResetCount[1] = 0;
     m_PicNum[0] = m_PicNum[1] = -1;
