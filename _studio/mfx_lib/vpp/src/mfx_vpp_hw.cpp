@@ -3151,13 +3151,14 @@ mfxStatus VideoVPPHW::VppFrameCheck(
 #endif
     MFX_CHECK_STS(sts);
 
+    pTask->bRunTimeCopyPassThrough = (true == m_config.m_bCopyPassThroughEnable && false == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf));
+
     if (VPP_SYNC_WORKLOAD == m_workloadMode)
     {
         // submit task
         SyncTaskSubmission(pTask);
 
-        if (false == m_config.m_bCopyPassThroughEnable ||
-            (true == m_config.m_bCopyPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
+        if (false == pTask->bRunTimeCopyPassThrough)
         {
             // configure entry point
             pEntryPoint[0].pRoutine = VideoVPPHW::QueryTaskRoutine;
@@ -3171,8 +3172,7 @@ mfxStatus VideoVPPHW::VppFrameCheck(
     }
     else
     {
-        if (false == m_config.m_bCopyPassThroughEnable ||
-            (true == m_config.m_bCopyPassThroughEnable && true == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf)))
+        if (false == pTask->bRunTimeCopyPassThrough)
         {
             // configure entry point
             pEntryPoint[1].pRoutine = VideoVPPHW::QueryTaskRoutine;
@@ -3823,8 +3823,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 #ifdef MFX_ENABLE_MCTF
     if (pTask->outputForApp.pSurf)
     {
-        if (true == m_config.m_bCopyPassThroughEnable &&
-            false == IsRoiDifferent(pTask->input.pSurf, pTask->outputForApp.pSurf))
+        if (true == pTask->bRunTimeCopyPassThrough)
         {
             sts = CopyPassThrough(pTask->input.pSurf, pTask->outputForApp.pSurf);
             m_taskMngr.CompleteTask(pTask);
@@ -3840,8 +3839,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 #else
-    if (true == m_config.m_bCopyPassThroughEnable &&
-        false == IsRoiDifferent(pTask->input.pSurf, pTask->output.pSurf))
+    if (true == pTask->bRunTimeCopyPassThrough)
     {
         sts = CopyPassThrough(pTask->input.pSurf, pTask->output.pSurf);
         m_taskMngr.CompleteTask(pTask);
