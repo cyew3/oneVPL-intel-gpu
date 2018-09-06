@@ -229,7 +229,7 @@ function( make_library name variant type )
       target_link_libraries( ${target} "-Xlinker --end-group" )
     endif()
 
-    set_target_properties( ${target} PROPERTIES LINK_INTERFACE_LIBRARIES "" )
+#    set_target_properties( ${target} PROPERTIES LINK_INTERFACE_LIBRARIES "" )
   endif()
 
   configure_build_variant( ${target} ${ARGV1} )
