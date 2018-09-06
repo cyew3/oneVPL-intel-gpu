@@ -34,6 +34,7 @@ mfxSchedulerCore::mfxSchedulerCore(void)
     , m_timeWaitPeriod(vm_time_get_frequency() / 1000)
 #endif // defined(_MSC_VER)
     , m_hwWakeUpThread()
+    , m_occupancyTable()
 {
     memset(&m_param, 0, sizeof(m_param));
     m_refCounter = 1;
