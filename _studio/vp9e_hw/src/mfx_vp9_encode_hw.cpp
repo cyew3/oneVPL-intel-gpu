@@ -134,6 +134,7 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(mfxCoreInterface *core, mfxVideoPara
 
 #define ALIGN64(X) (((mfxU32)((X)+63)) & (~ (mfxU32)63))
 
+#if (MFX_VERSION >= 1027)
 void SetReconInfo(VP9MfxVideoParam const & par, mfxFrameInfo& fi)
 {
     mfxExtCodingOption3 opt3 = GetExtBufferRef(par);
@@ -172,6 +173,7 @@ void SetReconInfo(VP9MfxVideoParam const & par, mfxFrameInfo& fi)
     fi.BitDepthLuma = depth;
     fi.BitDepthChroma = depth;
 }
+#endif
 
 mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 {

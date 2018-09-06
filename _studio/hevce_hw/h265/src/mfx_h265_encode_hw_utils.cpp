@@ -2972,6 +2972,7 @@ void UpdateDPB(
 }
 
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
 {
     report.DPBSize = 0;
@@ -2986,6 +2987,7 @@ void ReportDPB(DpbArray const & DPB, mfxExtDPB& report)
         report.DPB[i].PicType = MFX_PICTYPE_FRAME;
     }
 }
+#endif
 #endif
 
 bool isLTR(

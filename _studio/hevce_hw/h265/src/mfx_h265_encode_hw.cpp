@@ -1274,10 +1274,12 @@ mfxStatus MFXVideoENCODEH265_HW::Execute(mfxThreadTask thread_task, mfxU32 /*uid
         MFX_CHECK_STS(sts);
 
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         mfxExtDPB*  pDPBReport = (mfxExtDPB*)ExtBuffer::Get(*bs) ;
 
         if (pDPBReport)
             ReportDPB(taskForQuery->m_dpb[TASK_DPB_AFTER], *pDPBReport);
+#endif
 #endif
 
        ENCODE_PACKEDHEADER_DATA* pSEI = m_ddi->PackHeader(*taskForQuery, SUFFIX_SEI_NUT);

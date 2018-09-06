@@ -563,13 +563,14 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 
     m_caps.CodingLimitSet = 1;
     m_caps.Color420Only =  1; // See DDI
-
+#if (MFX_VERSION >= 1027)
     if (m_platform.CodeName >= MFX_PLATFORM_ICELAKE)
     {
         m_caps.Color420Only = 0;
         m_caps.MaxEncodedBitDepth = 1; //0: 8bit, 1: 8 and 10 bit;
         m_caps.NumScalablePipesMinus1 = 1;
     }
+#endif
     if (attrs[idx_map[VAConfigAttribRTFormat]].value != VA_ATTRIB_NOT_SUPPORTED)
     {
         m_caps.YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV422 ? 1 : 0;

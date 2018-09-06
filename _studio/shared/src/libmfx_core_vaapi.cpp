@@ -394,6 +394,7 @@ VAAPIVideoCORE::GetHandle(
     UMC::AutomaticUMCMutex guard(m_guard);
 
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (MFX_HANDLE_VA_CONTEXT_ID == (mfxU32)type )
     {
         if (m_VAContextHandle != (mfxHDL)VA_INVALID_ID)
@@ -406,6 +407,7 @@ VAAPIVideoCORE::GetHandle(
             return MFX_ERR_NOT_FOUND;
     }
     else
+#endif
 #endif
         return CommonCORE::GetHandle(type, handle);
 
@@ -423,6 +425,7 @@ VAAPIVideoCORE::SetHandle(
         switch ((mfxU32)type)
         {
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE) && !defined (MFX_ADAPTIVE_PLAYBACK_DISABLE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_HANDLE_VA_CONFIG_ID:
             // if device manager already set
             if (m_VAConfigHandle != (mfxHDL)VA_INVALID_ID)
@@ -439,6 +442,7 @@ VAAPIVideoCORE::SetHandle(
             m_VAContextHandle = hdl;
             m_KeepVAState = true;
             break;
+#endif
 #endif
         default:
             mfxStatus sts = CommonCORE::SetHandle(type, hdl);
@@ -676,9 +680,12 @@ VAAPIVideoCORE::CreateVA(
         {
             profile |= VA_PROFILE_REXT;
         }
-        if ((param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010) ||
-            (param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) ||
-            (param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410) )
+        if ((param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+#if (MFX_VERSION >= 1027)
+            || (param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210)
+            || (param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+#endif
+        )
         {
             profile |= VA_PROFILE_10;
         }
@@ -702,9 +709,11 @@ VAAPIVideoCORE::CreateVA(
         case MFX_FOURCC_AYUV:
             profile |= VA_PROFILE_444;
             break;
+#if (MFX_VERSION >= 1027)
         case MFX_FOURCC_Y410:
             profile |= VA_PROFILE_10 | VA_PROFILE_444;
             break;
+#endif
         }
         break;
     case MFX_CODEC_JPEG:

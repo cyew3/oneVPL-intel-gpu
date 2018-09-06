@@ -356,11 +356,16 @@ mfxU32 CalculateFourcc(mfxU16 codecProfile, mfxFrameInfo const* frameInfo)
         { MFX_FOURCC_NV12, MFX_FOURCC_P010, MFX_FOURCC_P016, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210, MFX_FOURCC_Y216, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410, MFX_FOURCC_Y416, 0 }  //444
-#else //Gen11-
+#elif (MFX_VERSION >= 1027)
         {               0,               0,               0, 0 }, //400
         { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
         { MFX_FOURCC_YUY2, MFX_FOURCC_Y210,               0, 0 }, //422
         { MFX_FOURCC_AYUV, MFX_FOURCC_Y410,               0, 0 }  //444
+#else
+        {               0,               0,               0, 0 }, //400
+        { MFX_FOURCC_NV12, MFX_FOURCC_P010,               0, 0 }, //420
+        {               0,               0,               0, 0 }, //422
+        {               0,               0,               0, 0 }  //444
 #endif
     };
 

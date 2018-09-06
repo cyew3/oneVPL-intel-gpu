@@ -456,7 +456,9 @@ namespace ExtBuffer
          MFX_EXTBUFF_HEVC_TILES,
          MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION,
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
          MFX_EXTBUFF_DPB,
+#endif
 #endif
          MFX_EXTBUFF_AVC_REFLISTS,
          MFX_EXTBUFF_CODING_OPTION,
@@ -502,7 +504,9 @@ namespace ExtBuffer
         EXTBUF(mfxExtHEVCTiles,             MFX_EXTBUFF_HEVC_TILES);
         EXTBUF(mfxExtOpaqueSurfaceAlloc,    MFX_EXTBUFF_OPAQUE_SURFACE_ALLOCATION);
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         EXTBUF(mfxExtDPB,                   MFX_EXTBUFF_DPB);
+#endif
 #endif
         EXTBUF(mfxExtAVCRefLists,           MFX_EXTBUFF_AVC_REFLISTS);
         EXTBUF(mfxExtCodingOption,          MFX_EXTBUFF_CODING_OPTION);
@@ -1175,7 +1179,9 @@ void Decrement(
 #endif
 
 #ifndef MFX_EXT_DPB_HEVC_DISABLE
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 void ReportDPB(DpbArray const & DPB, mfxExtDPB& report);
+#endif
 #endif
 
 bool IsFrameToSkip(

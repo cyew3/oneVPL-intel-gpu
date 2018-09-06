@@ -89,11 +89,12 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_P010;
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
          return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
-
+#endif
     default:
         VM_ASSERT(!"unsupported fourcc");
         return 0;
@@ -140,9 +141,12 @@ mfxDefaultAllocatorVAAPI::AllocFramesHW(
                        (VA_FOURCC_P208   != va_fourcc) &&
                        (VA_FOURCC_P010   != va_fourcc) &&
                        (VA_FOURCC_R5G6B5 != va_fourcc) &&
-                       (VA_FOURCC_AYUV   != va_fourcc) &&
-                       (VA_FOURCC_Y210   != va_fourcc) &&
-                       (VA_FOURCC_Y410   != va_fourcc)))
+                       (VA_FOURCC_AYUV   != va_fourcc)
+#if (MFX_VERSION >= 1027)
+                       && (VA_FOURCC_Y210   != va_fourcc)
+                       && (VA_FOURCC_Y410   != va_fourcc)
+#endif
+                      ))
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -504,6 +508,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         }
         else mfx_res = MFX_ERR_LOCK_MEMORY;
         break;
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         if (mfx_fourcc == MFX_FOURCC_Y210)
         {
@@ -525,6 +530,7 @@ mfxStatus mfxDefaultAllocatorVAAPI::SetFrameData(const VAImage &va_image, mfxU32
         }
         else mfx_res = MFX_ERR_LOCK_MEMORY;
         break;
+#endif
 #ifndef OPEN_SOURCE
     case MFX_FOURCC_VP8_SEGMAP:
         if (mfx_fourcc == MFX_FOURCC_P8)
