@@ -752,6 +752,36 @@ typedef enum _CM_STATUS
     CM_STATUS_STARTED = 3
 } CM_STATUS;
 
+enum CM_QUEUE_TYPE
+{
+    CM_QUEUE_TYPE_NONE = 0,
+    CM_QUEUE_TYPE_RENDER = 1,
+    CM_QUEUE_TYPE_COMPUTE = 2,
+    CM_QUEUE_TYPE_VEBOX = 3
+};
+
+enum CM_QUEUE_SSEU_USAGE_HINT_TYPE
+{
+    CM_QUEUE_SSEU_USAGE_HINT_DEFAULT = 0,
+    CM_QUEUE_SSEU_USAGE_HINT_VME = 1
+};
+struct CM_QUEUE_CREATE_OPTION
+{
+    CM_QUEUE_TYPE QueueType : 3;
+    bool RunAloneMode : 1;
+    unsigned int Reserved0 : 3;
+    bool UserGPUContext : 1;
+    unsigned int GPUContext : 8; // 11 - MOS_GPU_CONTEXT_RENDER3 for default, 12 - MOS_GPU_CONTEXT_RENDER4 for customer.
+    CM_QUEUE_SSEU_USAGE_HINT_TYPE SseuUsageHint : 3;
+    unsigned int Reserved2 : 13;
+};
+//**********************************************************************
+// Constants
+//**********************************************************************
+const CM_QUEUE_CREATE_OPTION CM_DEFAULT_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x0, CM_QUEUE_SSEU_USAGE_HINT_DEFAULT, 0x0 };
+const CM_QUEUE_CREATE_OPTION CM_VME_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x0, CM_QUEUE_SSEU_USAGE_HINT_VME, 0x0 };
+
+
 typedef struct _CM_SAMPLER_STATE
 {
     CM_TEXTURE_FILTER_TYPE minFilterType;
@@ -1630,6 +1660,7 @@ namespace CmDx9
         CM_RT_API virtual INT SetVmeSurfaceStateParam(SurfaceIndex* pVmeIndex, CM_VME_SURFACE_STATE_PARAM *pSSParam) = 0;
 
         CM_RT_API virtual int32_t GetVISAVersion(uint32_t& majorVersion, uint32_t& minorVersion) = 0;
+        CM_RT_API virtual int32_t CreateQueueEx(CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION) = 0;
         //adding new functions in the bottom is a must
     };
 }
@@ -1726,6 +1757,7 @@ namespace CmDx11
         CM_RT_API virtual INT SetVmeSurfaceStateParam(SurfaceIndex* pVmeIndex, CM_VME_SURFACE_STATE_PARAM *pSSParam) = 0;
 
         CM_RT_API virtual int32_t GetVISAVersion(uint32_t& majorVersion, uint32_t& minorVersion) = 0;
+        CM_RT_API virtual int32_t CreateQueueEx(CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION) = 0;
         //adding new functions in the bottom is a must
     };
 }
@@ -1820,6 +1852,7 @@ namespace CmLinux
         CM_RT_API virtual INT SetVmeSurfaceStateParam(SurfaceIndex* pVmeIndex, CM_VME_SURFACE_STATE_PARAM *pSSParam) = 0;
 
         CM_RT_API virtual int32_t GetVISAVersion(uint32_t& majorVersion, uint32_t& minorVersion) = 0;
+        CM_RT_API virtual int32_t CreateQueueEx(CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION) = 0;
         //adding new functions in the bottom is a must
     };
 }
@@ -1878,6 +1911,7 @@ public:
     CM_RT_API virtual INT FlushPrintBuffer() = 0;
     CM_RT_API virtual INT CreateSurface2DSubresource(AbstractSurfaceHandle pD3D11Texture2D, UINT subresourceCount, CmSurface2D** ppSurfaces, UINT& createdSurfaceCount, UINT option = 0) = 0;
     CM_RT_API virtual INT CreateSurface2DbySubresourceIndex(AbstractSurfaceHandle pD3D11Texture2D, UINT FirstArraySlice, UINT FirstMipSlice, CmSurface2D* &pSurface) = 0;
+    CM_RT_API virtual int32_t CreateQueueEx(CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION) = 0;
 };
 
 #if defined(CM_WIN)

@@ -311,6 +311,7 @@ public:
 #endif
     IMPL_FOR_ALL(INT, InitPrintBuffer, (size_t printbufsize), (printbufsize));
     IMPL_FOR_ALL(INT, FlushPrintBuffer, (), ());
+    IMPL_FOR_ALL(int32_t, CreateQueueEx, (CmQueue *&pQueue, CM_QUEUE_CREATE_OPTION QueueCreateOption = CM_DEFAULT_QUEUE_CREATE_OPTION), (pQueue, QueueCreateOption));
 };
 
 #ifdef CM_WIN
