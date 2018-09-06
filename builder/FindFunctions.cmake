@@ -1,5 +1,5 @@
 ##******************************************************************************
-##  Copyright(C) 2012-2016 Intel Corporation. All Rights Reserved.
+##  Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 ##
 ##  The source code, information  and  material ("Material") contained herein is
 ##  owned  by Intel Corporation or its suppliers or licensors, and title to such
@@ -32,17 +32,17 @@ set_property( GLOBAL PROPERTY PROP_PLUGINS_EVAL_CFG "" )
 
 # .....................................................
 function( collect_oses )
-  if( ${CMAKE_SYSTEM_NAME} MATCHES Windows )
+  if( CMAKE_SYSTEM_NAME MATCHES Windows )
     set( Windows    true PARENT_SCOPE )
     set( NotLinux   true PARENT_SCOPE )
     set( NotDarwin  true PARENT_SCOPE )
 
-  elseif( ${CMAKE_SYSTEM_NAME} MATCHES Linux )
+  elseif( CMAKE_SYSTEM_NAME MATCHES Linux )
     set( Linux      true PARENT_SCOPE )
     set( NotDarwin  true PARENT_SCOPE )
     set( NotWindows true PARENT_SCOPE )
 
-  elseif( ${CMAKE_SYSTEM_NAME} MATCHES Darwin )
+  elseif( CMAKE_SYSTEM_NAME MATCHES Darwin )
     set( Darwin     true PARENT_SCOPE )
     set( NotLinux   true PARENT_SCOPE )
     set( NotWindows true PARENT_SCOPE )
