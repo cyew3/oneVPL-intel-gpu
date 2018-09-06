@@ -284,8 +284,6 @@ function( make_executable name variant )
     list( APPEND sources ${sources.plus} )
   endif()
 
-  project( ${target} )
-
   add_executable( ${target} ${include} ${sources} )
 
   if( defs )
