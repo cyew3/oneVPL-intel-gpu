@@ -62,6 +62,7 @@ _studio/vp9e_hw/src/mfx_vp9_encode_hw_par.cpp
 _studio/vp9e_hw/src/mfx_vp9_encode_hw_utils.cpp
 _studio/vp9e_hw/src/mfx_vp9_encode_hw_vaapi.cpp
 _studio/mfx_lib/libmfx.map
+_studio/mfx_lib/pkg-config.pc.cmake
 _studio/mfx_lib/cmut/cmassert.h
 _studio/mfx_lib/cmut/cmbenchmark.h
 _studio/mfx_lib/cmut/cmbufferex.h

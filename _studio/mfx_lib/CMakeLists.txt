@@ -91,16 +91,22 @@ endforeach()
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map" )
 
+get_mfx_version(mfx_version_major mfx_version_minor)
+
 foreach( variant
          sw
          hw )
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set( mfxlibname mfx${variant}64 )
+  if( DEFINED MFX_LIBNAME )
+    set( mfxlibname "${MFX_LIBNAME}")
   else()
-    set( mfxlibname mfx${variant}32 )
-  endif()
-  if( CMAKE_BUILD_TYPE MATCHES debug )
-    set( mfxlibname ${mfxlibname}_d )
+    if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+      set( mfxlibname mfx${variant}64 )
+    else()
+      set( mfxlibname mfx${variant}32 )
+    endif()
+    if( CMAKE_BUILD_TYPE MATCHES debug )
+      set( mfxlibname ${mfxlibname}_d )
+    endif()
   endif()
 
   set( LIBS "" )
@@ -166,7 +172,24 @@ foreach( variant
   make_library( ${mfxlibname} ${variant} shared)
   make_library( mfx${variant}_static ${variant} static)
 
-  msdk_install( "${mfxlibname}" "${MFX_MODULES_DIR}" )
+  set_target_properties(${mfxlibname} PROPERTIES   VERSION ${mfx_version_major}.${mfx_version_minor})
+  set_target_properties(${mfxlibname} PROPERTIES SOVERSION ${mfx_version_major})
+
+  install(TARGETS ${mfxlibname} LIBRARY DESTINATION ${MFX_MODULES_DIR})
+
+  set( PKG_CONFIG_FNAME "${CMAKE_LIB_DIR}/${CMAKE_BUILD_TYPE}/lib${mfxlibname}.pc")
+  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/pkg-config.pc.cmake" ${PKG_CONFIG_FNAME} @ONLY)
+  install( FILES ${PKG_CONFIG_FNAME} DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig )
+
+  if (NOT DEFINED MFX_LIBNAME)
+    # compatibility staff which we definitely don't need if user manually
+    # specified library name
+    install( CODE "execute_process(
+      COMMAND ${CMAKE_COMMAND} -E create_symlink
+      ${MFX_MODULES_DIR}/lib${mfxlibname}.so.${mfx_version_major}.${mfx_version_minor}
+      ${MFX_MODULES_DIR}/lib${mfxlibname}-p.so.${mfx_version_major}.${mfx_version_minor} )"
+    )
+  endif()
 
   set( defs "" )
   #message( STATUS "xxxxxxxxxxxxxxx __ARCH: "${__ARCH}, "mfxlibname: "${mfxlibname}, "variant: "${variant})
