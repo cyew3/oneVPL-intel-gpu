@@ -51,6 +51,12 @@ ifeq ($(MFX_VERSION),)
   MFX_VERSION = "6.0.010"
 endif
 
+# We need to freeze Media SDK API to 1.26 on Android O MR1
+# because there is used old version of LibVA 2.0
+ifeq ($(MFX_ANDROID_VERSION),MFX_O_MR1)
+  MFX_CFLAGS += -DMFX_VERSION=1026
+endif
+
 MFX_CFLAGS += \
   -DMFX_FILE_VERSION=\"`echo $(MFX_VERSION) | cut -f 1 -d.``date +.%-y.%-m.%-d`\" \
   -DMFX_PRODUCT_VERSION=\"$(MFX_VERSION)\"
