@@ -57,9 +57,6 @@ foreach( variant hw )
   else()
     set( plugin_name mfx_vp8e_${variant}32 )
   endif()
-  if( CMAKE_BUILD_TYPE MATCHES debug )
-    set( plugin_name ${plugin_name}_d )
-  endif()
 
   set (description_name ${${variant}_VP8_ENCODER_DESCRIPTION})
 
