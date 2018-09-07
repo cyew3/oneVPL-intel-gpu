@@ -891,25 +891,6 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
 #if MFX_VERSION >= 1022
     eMFXHWType platform = m_core->GetHWType();
 
-    if (platform >= MFX_HW_SCL)
-    {
-        m_caps.Color420Only       = 1;
-        m_caps.BitDepth8Only      = 1;
-        m_caps.MaxEncodedBitDepth = 0;
-        m_caps.YUV422ReconSupport = 0;
-        m_caps.YUV444ReconSupport = 0;
-    }
-    if (platform >= MFX_HW_KBL)
-    {
-        m_caps.BitDepth8Only      = 0;
-        m_caps.MaxEncodedBitDepth = 1;
-    }
-    if ((platform >= MFX_HW_ICL))
-    {
-        m_caps.Color420Only = 0;
-        m_caps.YUV422ReconSupport = 1;
-        m_caps.YUV444ReconSupport = 1;
-    }
     if (platform >= MFX_HW_CNL)
     {
         if(vaParams.entrypoint == VAEntrypointEncSliceLP) //CNL + VDENC => LCUSizeSupported = 4
@@ -937,6 +918,26 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     m_caps.MBBRCSupport            = 1;
     m_caps.MbQpDataSupport         = 1;
     m_caps.TUSupport               = 73;
+    if(attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV420_12)
+    {
+        m_caps.MaxEncodedBitDepth = 2;
+    }
+    else if(attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV420_10)
+    {
+        m_caps.MaxEncodedBitDepth = 1;
+    }
+    else if(attrs[idx_map[VAConfigAttribRTFormat]].value & VA_RT_FORMAT_YUV420)
+    {
+        m_caps.MaxEncodedBitDepth = 0;
+    }
+    m_caps.Color420Only = (attrs[idx_map[VAConfigAttribRTFormat]].value &
+        (VA_RT_FORMAT_YUV422 | VA_RT_FORMAT_YUV444)) ? 0 : 1;
+    m_caps.BitDepth8Only = (attrs[idx_map[VAConfigAttribRTFormat]].value &
+        (VA_RT_FORMAT_YUV420_10 | VA_RT_FORMAT_YUV420_12)) ? 0 : 1;
+    m_caps.YUV422ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
+        VA_RT_FORMAT_YUV422 ? 1 : 0;
+    m_caps.YUV444ReconSupport = attrs[idx_map[VAConfigAttribRTFormat]].value &
+        VA_RT_FORMAT_YUV444 ? 1 : 0;
 
 
     if ((attrs[ idx_map[VAConfigAttribMaxPictureWidth] ].value != VA_ATTRIB_NOT_SUPPORTED) &&
