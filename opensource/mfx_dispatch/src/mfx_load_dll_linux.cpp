@@ -1,6 +1,6 @@
 /* ****************************************************************************** *\
 
-Copyright (C) 2012-2014 Intel Corporation.  All rights reserved.
+Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,6 @@ File Name: mfx_load_dll_linux.cpp
 #include "mfx_dispatcher.h"
 #include <dlfcn.h>
 #include <string.h>
-
-#if !defined(_DEBUG)
 
 #if defined(LINUX64)
 const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64.so",
@@ -74,49 +72,7 @@ const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32.so",
 
 const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw.so",
                                                   "libmfxplugin32_sw.so"};
-#endif // (defined(WIN64))
-
-#else // defined(_DEBUG)
-
-#if defined(LINUX64)
-const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64_d.so",
-                                            "libmfxsw64_d.so"};
-const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.so",
-                                            "libmfxaudiosw64_d.so"};
-
-const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin64_hw_d.so",
-                                                  "libmfxplugin64_sw_d.so"};
-#elif defined(__APPLE__)
-#ifdef __i386__
-const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.dylib",
-                                            "libmfxsw32_d.dylib"};
-const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.dylib",
-                                            "libmfxaudiosw32_d.dylib"};
-
-const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw_d.dylib",
-                                                  "libmfxplugin32_sw_d.dylib"};
-
-#else
-const msdk_disp_char * defaultDLLName[2] = {"libmfxhw64_d.dylib",
-                                            "libmfxsw64_d.dylib"};
-const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw64_d.dylib",
-                                            "libmfxaudiosw64_d.dylib"};
-
-const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin64_hw_d.dylib",
-                                                  "libmfxplugin64_sw_d.dylib"};
-#endif // #ifdef __i386__ for __APPLE__
-
-#else // for Linux32 and Android
-const msdk_disp_char * defaultDLLName[2] = {"libmfxhw32_d.so",
-                                            "libmfxsw32_d.so"};
-const msdk_disp_char * defaultAudioDLLName[2] = {"libmfxaudiosw32_d.so",
-                                            "libmfxaudiosw32_d.so"};
-
-const msdk_disp_char * defaultPluginDLLName[2] = {"libmfxplugin32_hw_d.so",
-                                                  "libmfxplugin32_sw_d.so"};
-#endif // (defined(WIN64))
-
-#endif // !defined(_DEBUG)
+#endif // defined(LINUX64)
 
 namespace MFX
 {
