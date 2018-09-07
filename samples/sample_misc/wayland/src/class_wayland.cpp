@@ -1,5 +1,5 @@
 /******************************************************************************\
-Copyright (c) 2005-2018, Intel Corporation
+Copyright (c) 2005-2019, Intel Corporation
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -54,13 +54,13 @@ Wayland::Wayland()
     , m_surface(NULL)
     , m_shell_surface(NULL)
     , m_callback(NULL)
-    , m_shm_pool(NULL)
     , m_event_queue(NULL)
-    , m_fd(-1)
+    , m_pending_frame(0)
+    , m_shm_pool(NULL)
     , m_display_fd(-1)
+    , m_fd(-1)
     , m_bufmgr(NULL)
     , m_device_name(NULL)
-    , m_pending_frame(0)
     , m_x(0), m_y(0)
     , m_perf_mode(false)
 {
