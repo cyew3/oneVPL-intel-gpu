@@ -73,11 +73,19 @@
 #include "mfx_vp9_encode_hw.h"
 #endif
 
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+#if defined(MFX_VA)
+#include "mfx_h265_fei_encode_hw.h"
+#include <libmfx_core_interface.h>
+#endif
+#endif
+
 #if defined (MFX_RT)
 #pragma warning(disable:4065)
 #endif
 
 // declare static file section
+
 #if !defined (MFX_RT)
 VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSession session, mfxVideoParam *par)
 {
@@ -86,9 +94,11 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
     (void)session;
 #endif
 
-    VideoENCODE *pENCODE = (VideoENCODE *) 0;
+    VideoENCODE *pENCODE = nullptr;
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
-
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+    bool * feiEnabled = nullptr;//required to check FEI plugin registration.
+#endif
     // create a codec instance
     switch (CodecId)
     {
@@ -171,6 +181,14 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
     case MFX_CODEC_HEVC:
         if (session->m_bIsHWENCSupport)
         {
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+            feiEnabled = (bool*)core->QueryCoreInterface(MFXIFEIEnabled_GUID);
+            if (feiEnabled == nullptr)
+                return nullptr;
+            else if(*feiEnabled)
+                pENCODE = new MfxHwH265FeiEncode::H265FeiEncode_HW(&session->m_coreInt, &mfxRes);
+            else
+#endif
             pENCODE = new MfxHwH265Encode::MFXVideoENCODEH265_HW(&session->m_coreInt, &mfxRes);
         }
         else
@@ -200,7 +218,7 @@ VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core, mfxSessi
     if (MFX_ERR_NONE != mfxRes)
     {
         delete pENCODE;
-        pENCODE = (VideoENCODE *) 0;
+        pENCODE = nullptr;
     }
 
     return pENCODE;
@@ -230,6 +248,9 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, in);
 
     bool bIsHWENCSupport = false;
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+    bool * feiEnabled = nullptr;//required to check FEI plugin registration.
+#endif
 
     try
     {
@@ -335,6 +356,14 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
         case MFX_CODEC_HEVC:
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+            feiEnabled = (bool*)session->m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID);
+            if (feiEnabled == nullptr)
+                return MFX_ERR_NULL_PTR;
+            else if(*feiEnabled)
+                mfxRes = MfxHwH265FeiEncode::H265FeiEncode_HW::Query(&session->m_coreInt, in, out);
+            else
+#endif
             mfxRes = MfxHwH265Encode::MFXVideoENCODEH265_HW::Query(&session->m_coreInt, in, out);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
@@ -420,6 +449,9 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     bool bIsHWENCSupport = false;
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+    bool * feiEnabled = nullptr;//required to check FEI plugin registration.
+#endif
 
     try
     {
@@ -523,7 +555,15 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
         case MFX_CODEC_HEVC:
-            mfxRes = MfxHwH265Encode::MFXVideoENCODEH265_HW::QueryIOSurf(&session->m_coreInt, par, request);
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+            feiEnabled = (bool*)session->m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID);
+            if (feiEnabled == nullptr)
+                return MFX_ERR_NULL_PTR;
+            else if(*feiEnabled)
+                mfxRes = MfxHwH265FeiEncode::H265FeiEncode_HW::QueryIOSurf(&session->m_coreInt, par, request);
+            else
+#endif
+                mfxRes = MfxHwH265Encode::MFXVideoENCODEH265_HW::QueryIOSurf(&session->m_coreInt, par, request);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
                 mfxRes = MFX_ERR_UNSUPPORTED;

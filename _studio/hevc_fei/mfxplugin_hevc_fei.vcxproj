@@ -265,6 +265,7 @@
     <ClInclude Include="..\mfx_lib\shared\include\mfx_brc_common.h" />
     <ClInclude Include="..\shared\include\auxiliary_device.h" />
     <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_hw.h" />
+    <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_plugin_hw.h" />
     <ClInclude Include="h265_fei\include\mfx_h265_fei_encode_vaapi.h" />
   </ItemGroup>
   <ItemGroup>

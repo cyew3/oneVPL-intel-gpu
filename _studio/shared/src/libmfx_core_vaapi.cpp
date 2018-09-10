@@ -360,6 +360,7 @@ VAAPIVideoCORE::VAAPIVideoCORE(
           , m_bCmCopy(false)
           , m_bCmCopyAllowed(false)
 #endif
+          , m_bHEVCFEIEnabled(false)
 {
 } // VAAPIVideoCORE::VAAPIVideoCORE(...)
 
@@ -1431,10 +1432,16 @@ void* VAAPIVideoCORE::QueryCoreInterface(const MFX_GUID &guid)
         return (void*) &m_encode_mbprocrate;
     }
     else if (MFXIEXTERNALLOC_GUID == guid && m_bSetExtFrameAlloc)
+    {
         return &m_FrameAllocator.frameAllocator;
+    }
     else if (MFXICORE_API_1_19_GUID == guid)
     {
         return &m_API_1_19;
+    }
+    else if (MFXIFEIEnabled_GUID == guid)
+    {
+        return &m_bHEVCFEIEnabled;
     }
     else
     {

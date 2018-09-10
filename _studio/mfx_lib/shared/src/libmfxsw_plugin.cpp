@@ -13,7 +13,7 @@
 #include <mfx_task.h>
 #include <mfx_user_plugin.h>
 #include <mfx_utils.h>
-
+#include <libmfx_core_interface.h>
 // static section of the file
 namespace
 {
@@ -163,7 +163,10 @@ const mfxPluginUID NativePlugins[] =
     MFX_PLUGINID_VP8D_HW,
     MFX_PLUGINID_VP9D_HW,
     MFX_PLUGINID_HEVCE_HW,
-    MFX_PLUGINID_VP9E_HW
+    MFX_PLUGINID_VP9E_HW,
+#if MFX_VERSION >= 1027
+    MFX_PLUGINID_HEVC_FEI_ENCODE
+#endif
 };
 
 mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
@@ -195,7 +198,21 @@ mfxStatus MFXVideoUSER_Register(mfxSession session, mfxU32 type,
         //check is this plugin was included into MSDK lib as a native component
         mfxRes = par->GetPluginParam(par->pthis, &pluginParam);
         MFX_CHECK_STS(mfxRes);
-
+#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
+        if (!memcmp(&MFX_PLUGINID_HEVC_FEI_ENCODE, &pluginParam.PluginUID, sizeof(MFX_PLUGINID_HEVC_FEI_ENCODE)))
+        {
+            //WA!! to keep backward compatibility with FEI plugin, need to save it's registration
+            //so able to select between HEVC FEI and regular HEVC encode
+            //main issue for FEI plugin - it doesn't need any specific buffers at initialization
+            //the same time it is separate class inherited from regular encode.
+            bool * enableFEI = (bool*)(session->m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID));
+            if(enableFEI != nullptr)
+                *enableFEI = true;
+            else
+                return MFX_ERR_NULL_PTR;
+            return MFX_ERR_NONE;
+        }
+#endif
         for (auto& uid : NativePlugins)
         {
             if (!memcmp(&uid, &pluginParam.PluginUID, sizeof(uid)))

@@ -46,8 +46,6 @@ if( Linux OR Darwin )
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
   string( SUBSTRING ${hevc_version} 0 1 ver )
-
-  set(HEVCE_HW_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
   set(HEVCE_FEI_HW_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
 endif( )
 
@@ -61,22 +59,11 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 include_directories( ${MFX_ROOTDIR}/shared/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
 include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/cmrt_cross_platform/include )
-#include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/include )
-#include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/src )
 
 # =============================================================================
 
 set( sources "" )
 set( sources.plus "" )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/include )
-
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
 
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\" ${HEVCE_HW_version_defs}" )
 
@@ -94,13 +81,9 @@ set( sources.plus "" )
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib/plugin/libmfxsw_plugin.map" )
 
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/include )
 
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
+  list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/h265_fei/src/export.cpp)
 
   set( LIBS "" )
   list( APPEND LIBS

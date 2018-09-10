@@ -42,6 +42,7 @@ _studio/hevce_hw/h265/src/mfx_h265_encode_hw_utils.cpp
 _studio/hevce_hw/h265/src/mfx_h265_encode_vaapi.cpp
 _studio/hevc_fei/CMakeLists.txt
 _studio/hevc_fei/h265_fei/include/mfx_h265_fei_encode_hw.h
+_studio/hevc_fei/h265_fei/include/mfx_h265_fei_encode_plugin_hw.h
 _studio/hevc_fei/h265_fei/include/mfx_h265_fei_encode_vaapi.h
 _studio/hevc_fei/h265_fei/src/export.cpp
 _studio/hevc_fei/h265_fei/src/mfx_h265_fei_encode_hw.cpp
