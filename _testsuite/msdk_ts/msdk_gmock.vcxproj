@@ -531,6 +531,7 @@
     <ClCompile Include="src\gmock\test_suites\vpp_uyvy.cpp" />
     <ClCompile Include="src\gmock\test_suites\avce_oversized_surfaces.cpp" />
     <ClCompile Include="src\gmock\test_suites\fei_encode_oversized_surfaces.cpp" />
+    <ClCompile Include="src\gmock\test_suites\hevce_big_resolution.cpp" />
     <ClCompile Include="src\gmock\ts_alloc.cpp" />
     <ClCompile Include="src\gmock\ts_aux_dev.cpp" />
     <ClCompile Include="src\gmock\ts_bitstream.cpp" />
