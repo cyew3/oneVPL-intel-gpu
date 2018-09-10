@@ -771,15 +771,15 @@ struct CM_QUEUE_CREATE_OPTION
     bool RunAloneMode : 1;
     unsigned int Reserved0 : 3;
     bool UserGPUContext : 1;
-    unsigned int GPUContext : 8; // 11 - MOS_GPU_CONTEXT_RENDER3 for default, 12 - MOS_GPU_CONTEXT_RENDER4 for customer.
+    unsigned int GPUContext : 8; // 11 - MOS_GPU_CONTEXT_RENDER3 for default, 12 - MOS_GPU_CONTEXT_RENDER4 for second render context handle.
     CM_QUEUE_SSEU_USAGE_HINT_TYPE SseuUsageHint : 3;
     unsigned int Reserved2 : 13;
 };
 //**********************************************************************
 // Constants
 //**********************************************************************
-const CM_QUEUE_CREATE_OPTION CM_DEFAULT_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x0, CM_QUEUE_SSEU_USAGE_HINT_DEFAULT, 0x0 };
-const CM_QUEUE_CREATE_OPTION CM_VME_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x0, CM_QUEUE_SSEU_USAGE_HINT_VME, 0x0 };
+const CM_QUEUE_CREATE_OPTION CM_DEFAULT_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x11, CM_QUEUE_SSEU_USAGE_HINT_DEFAULT, 0x0 };
+const CM_QUEUE_CREATE_OPTION CM_VME_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x12, CM_QUEUE_SSEU_USAGE_HINT_VME, 0x0 };
 
 
 typedef struct _CM_SAMPLER_STATE
