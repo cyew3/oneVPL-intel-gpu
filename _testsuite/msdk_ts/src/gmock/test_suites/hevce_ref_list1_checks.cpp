@@ -344,7 +344,8 @@ namespace hevce_ref_list1_checks
             {
                 stream = g_tsStreamPool.Get("YUV8bit444/Kimono1_1920x1080_24_ayuv.yuv");
                 m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 1920;
-                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 1080;
+                m_par.mfx.FrameInfo.Height = 1088;
+                m_par.mfx.FrameInfo.CropH = 1080;
             }
         }
         else if (fourcc_id == MFX_FOURCC_Y410)
