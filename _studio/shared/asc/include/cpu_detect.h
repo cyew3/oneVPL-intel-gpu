@@ -20,10 +20,6 @@
 // 2) each stub configures a function pointer on first call
 //
 
-#ifdef _MSVC_LANG
-#pragma warning(disable:4505)
-#endif
-
 static inline mfxI32 CpuFeature_SSE41() {
 #if defined(_WIN32) || defined(_WIN64)
     mfxI32 info[4], mask = (1 << 19);    // SSE41
@@ -33,8 +29,9 @@ static inline mfxI32 CpuFeature_SSE41() {
     return((__builtin_cpu_supports("sse4.1")));
 #endif
 }
+
 #if defined(__AVX2__) && (defined(_WIN32) || defined(_WIN64))
-static mfxI32 CpuFeature_AVX() {
+static inline mfxI32 CpuFeature_AVX() {
 #if defined(_WIN32)
     mfxI32 info[4], mask = (1 << 27) | (1 << 28);    // OSXSAVE,AVX
     __cpuidex(info, 0x1, 0);
@@ -63,10 +60,6 @@ static inline mfxI32 CpuFeature_AVX2() {
     return 0;
 #endif //defined(__AVX2__)
 }
-
-#ifdef _MSVC_LANG
-#pragma warning(default:4505)
-#endif
 
 //
 // end Dispatcher
