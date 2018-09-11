@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -162,6 +162,12 @@ else()
   set(MCTF_LIB "")
 endif()
 
+if( MFX_ENABLE_ASC )
+  set(ASC_LIB "asc")
+else()
+  set(ASC_LIB "")
+endif()
+
 if( MFX_ENABLE_KERNELS )
   set(GENX_LIB "genx")
 else()
@@ -197,7 +203,7 @@ list( APPEND LIBS
   ${GENX_LIB}
   mfx_common
   mfx_common_hw
-  asc
+  ${ASC_LIB}
   ${MCTF_LIB}
   vpp_hw
   h264_common

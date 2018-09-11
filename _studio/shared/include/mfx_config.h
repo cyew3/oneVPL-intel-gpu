@@ -464,6 +464,10 @@
 
 #endif//#if defined(_WIN32) || defined(_WIN64)
 
+#if defined(MFX_ENABLE_ASC)
+    #define MFX_ENABLE_SCENE_CHANGE_DETECTION_VPP
+#endif
+
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && defined(MFX_ENABLE_MCTF)
     #define MFX_ENABLE_MCTF_EXT // extended MCTF interface
 #endif
