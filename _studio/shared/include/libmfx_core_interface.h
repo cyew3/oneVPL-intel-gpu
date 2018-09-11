@@ -107,7 +107,6 @@ static const MFX_GUID MFXMFEDDIENCODER_SEARCH_GUID =
 static const MFX_GUID MFXICORE_GT_CONFIG_GUID =
 { 0xd53ef10e, 0xd4cf, 0x41a7,{ 0xb1, 0xc2, 0xd3, 0xf, 0xab, 0x30, 0xbb, 0x64 } };
 
-
 // {7DF28D19-889A-45C1-AA05-A4F7EFAE9528}
 static const
 MFX_GUID MFXIFEIEnabled_GUID =

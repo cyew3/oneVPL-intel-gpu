@@ -59,10 +59,6 @@ foreach( prefix ${MSDK_LIB_ROOT}/shared/src )
     )
 endforeach()
 
-set( hevce_fei_hw_dir ${MSDK_STUDIO_ROOT}/hevc_fei/h265_fei/src )
-file( GLOB_RECURSE srcs "${hevce_fei_hw_dir}/*.c" "${hevce_fei_hw_dir}/*.cpp" )
-list( APPEND sources ${srcs} )
-
 set( defs "${WARNING_FLAGS}" )
 make_library( encode hw static )
 set( defs "" )

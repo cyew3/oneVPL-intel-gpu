@@ -41,11 +41,6 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
     )
 endforeach()
 
-list( APPEND sources.plus
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevc_fei/h265_fei/src/mfx_h265_fei_encode_hw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../hevc_fei/h265_fei/src/mfx_h265_fei_encode_vaapi.cpp
-    )
-
 set( LIBS "" )
   list( APPEND LIBS
   asc
