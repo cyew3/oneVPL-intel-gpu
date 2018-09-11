@@ -843,7 +843,7 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
     GUID guid,
     mfxU32 width,
     mfxU32 height,
-    MfxVideoParam const & par)
+    MfxVideoParam const & /*par*/)
 {
     MFX_CHECK_WITH_ASSERT(core != 0, MFX_ERR_NULL_PTR);
     m_core = core;
