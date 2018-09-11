@@ -48,6 +48,8 @@ namespace UMC_AV1_DECODER
         size_t Submit(Ipp8u*, size_t, size_t, TileLayout&);
         Ipp32u GetTileCount() const
         { return static_cast<Ipp32u>(layout.size()); }
+        size_t GetSize() const
+        { return source.GetDataSize(); }
 
     private:
         UMC::MediaData source;
@@ -55,7 +57,25 @@ namespace UMC_AV1_DECODER
         bool submitted = false;
     };
 
-    Ipp32u CalcTilesInTileSets(std::vector<TileSet> const&);
+#if UMC_AV1_DECODER_REV >= 5000
+    inline Ipp32u CalcTilesInTileSets(std::vector<TileSet> const& tileSets)
+    {
+        Ipp32u numTiles = 0;
+        for (auto& tileSet : tileSets)
+            numTiles += tileSet.GetTileCount();
+
+        return numTiles;
+    }
+
+    inline size_t CalcSizeOfTileSets(std::vector<TileSet> const& tileSets)
+    {
+        size_t size = 0;
+        for (auto& tileSet : tileSets)
+            size += tileSet.GetSize();
+
+        return size;
+    }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
     class AV1DecoderFrame : public RefCounter
     {

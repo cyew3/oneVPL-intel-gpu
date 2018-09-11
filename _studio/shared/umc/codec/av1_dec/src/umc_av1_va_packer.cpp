@@ -521,6 +521,60 @@ namespace UMC_AV1_DECODER
     void PackerVA::BeginFrame() {}
     void PackerVA::EndFrame() {}
 
+#if UMC_AV1_DECODER_REV >= 5000
+    void PackerVA::PackAU(std::vector<TileSet>& tileSets, AV1DecoderFrame const* info, bool firstSubmission)
+    {
+        if (firstSubmission)
+        {
+            // it's first submission for current frame - need to fill and submit picture parameters
+            UMC::UMCVACompBuffer* compBufPic = nullptr;
+            VADecPictureParameterBufferAV1 *picParam =
+                (VADecPictureParameterBufferAV1*)m_va->GetCompBuffer(VAPictureParameterBufferType, &compBufPic, sizeof(VADecPictureParameterBufferAV1));
+
+            if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < static_cast<Ipp32s>(sizeof(VADecPictureParameterBufferAV1))))
+                throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+            compBufPic->SetDataSize(sizeof(VADecPictureParameterBufferAV1));
+            memset(picParam, 0, sizeof(VADecPictureParameterBufferAV1));
+            PackPicParams(picParam, info);
+        }
+
+        UMC::UMCVACompBuffer* compBufBs = nullptr;
+        Ipp8u* const bitstreamData = (mfxU8 *)m_va->GetCompBuffer(VASliceDataBufferType, &compBufBs, CalcSizeOfTileSets(tileSets));
+        if (!bitstreamData || !compBufBs)
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        std::vector<VABitStreamParameterBufferAV1> tileControlParams;
+
+        for (auto& tileSet : tileSets)
+        {
+            const size_t offsetInBuffer = compBufBs->GetDataSize();
+            const size_t spaceInBuffer = compBufBs->GetBufferSize() - offsetInBuffer;
+            TileLayout layout;
+            const size_t bytesSubmitted = tileSet.Submit(bitstreamData, spaceInBuffer, offsetInBuffer, layout);
+
+            if (bytesSubmitted)
+            {
+                compBufBs->SetDataSize(static_cast<Ipp32u>(offsetInBuffer + bytesSubmitted));
+
+                for (auto& loc : layout)
+                {
+                    tileControlParams.emplace_back();
+                    PackTileControlParams(&tileControlParams.back(), loc);
+                }
+            }
+        }
+
+        UMCVACompBuffer* compBufTile = nullptr;
+        const Ipp32s tileControlInfoSize = static_cast<Ipp32s>(sizeof(VABitStreamParameterBufferAV1) * tileControlParams.size());
+        VABitStreamParameterBufferAV1 *tileControlParam = (VABitStreamParameterBufferAV1*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBufTile, tileControlInfoSize);
+        if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
+            throw av1_exception(MFX_ERR_MEMORY_ALLOC);
+
+        memcpy_s(tileControlParam, compBufTile->GetBufferSize(), tileControlParams.data(), tileControlInfoSize);
+        compBufTile->SetDataSize(tileControlInfoSize);
+    }
+#else
     void PackerVA::PackAU(UMC_VP9_DECODER::VP9Bitstream* bs, AV1DecoderFrame const* info)
     {
         if (!bs || !info)
@@ -559,6 +613,7 @@ namespace UMC_AV1_DECODER
         mfx_memcpy(bistreamData, length, data + offset, length);
         pCompBuf->SetDataSize(length);
     }
+#endif // UMC_AV1_DECODER_REV >= 5000
 
     void PackerVA::PackPicParams(VADecPictureParameterBufferAV1* picParam, AV1DecoderFrame const* frame)
     {
@@ -567,6 +622,199 @@ namespace UMC_AV1_DECODER
         FrameHeader const& info =
             frame->GetFrameHeader();
 
+#if UMC_AV1_DECODER_REV >= 5000
+        picParam->frame_width_minus1 = (uint16_t)info.width - 1;
+        picParam->frame_height_minus1 = (uint16_t)info.height - 1;
+
+        // fill seq parameters
+        picParam->profile = (uint8_t)sh.profile;
+
+        auto& seqInfo = picParam->seq_info_fields.fields;
+
+        seqInfo.still_picture = 0;
+        seqInfo.sb_size_128x128 = (sh.sb_size == BLOCK_128X128) ? 1 : 0;
+        seqInfo.enable_filter_intra = info.allowFilterIntra;
+        seqInfo.enable_intra_edge_filter = info.enableIntraEdgeFilter;
+        seqInfo.enable_interintra_compound = info.allowInterIntraCompound;
+        seqInfo.enable_masked_compound = info.allowMaskedCompound;
+        seqInfo.enable_dual_filter = sh.enable_dual_filter;
+        seqInfo.enable_order_hint = sh.enable_order_hint;
+        seqInfo.enable_jnt_comp = sh.enable_jnt_comp;
+        seqInfo.enable_cdef = 1;
+        seqInfo.enable_restoration = 1;
+        seqInfo.mono_chrome = sh.monochrome;
+        seqInfo.color_range = sh.color_range;
+        seqInfo.subsampling_x = sh.subsampling_x;
+        seqInfo.subsampling_y = sh.subsampling_y;
+        seqInfo.chroma_sample_position = sh.chroma_sample_position;
+        seqInfo.film_grain_params_present = sh.film_grain_param_present;
+
+        picParam->bit_depth_idx = (sh.bit_depth == 10) ? 1 :
+            (sh.bit_depth == 12) ? 2 : 0;
+        picParam->order_hint_bits_minus_1 = sh.order_hint_bits_minus1;
+
+        // fill pic params
+        auto& picInfo = picParam->pic_info_fields.bits;
+
+        picInfo.frame_type = info.frameType;
+        picInfo.show_frame = info.showFrame;
+        picInfo.showable_frame = info.showableFrame;
+        picInfo.error_resilient_mode = info.errorResilientMode;
+        picInfo.disable_cdf_update = info.disableCdfUpdate;
+        picInfo.allow_screen_content_tools = info.allowScreenContentTools;
+        picInfo.force_integer_mv = info.curFrameForceIntegerMV;
+        picInfo.allow_intrabc = info.allowIntraBC;
+        picInfo.use_superres = (info.superresScaleDenominator == SCALE_NUMERATOR) ? 0 : 1;
+        picInfo.allow_high_precision_mv = info.allowHighPrecisionMv;
+        picInfo.is_motion_mode_switchable = info.switchableMotionMode;
+        picInfo.use_ref_frame_mvs = info.usePrevMVs;
+        picInfo.disable_frame_end_update_cdf = (info.refreshFrameContext == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
+        picInfo.uniform_tile_spacing_flag = info.uniformTileSpacingFlag;
+        picInfo.allow_warped_motion = 0;
+        picInfo.refresh_frame_context = info.refreshFrameContext;
+        picInfo.large_scale_tile = info.largeScaleTile;
+
+        picParam->order_hint = (uint8_t)info.orderHint;
+        picParam->superres_scale_denominator = (uint8_t)info.superresScaleDenominator;
+
+        picParam->interp_filter = (uint8_t)info.interpFilter;
+
+        // fill segmentation params and map
+        auto& seg = picParam->seg_info;
+        seg.segment_info_fields.bits.enabled = info.segmentation.enabled;;
+        seg.segment_info_fields.bits.temporal_update = info.segmentation.temporalUpdate;
+        seg.segment_info_fields.bits.update_map = info.segmentation.updateMap;
+        memset(&seg.feature_data, 0, sizeof(seg.feature_data)); // TODO: [Global] implement proper setting
+        memset(&seg.feature_mask, 0, sizeof(seg.feature_mask)); // TODO: [Global] implement proper setting
+
+        // set current and reference frames
+        picParam->current_frame = (VASurfaceID)m_va->GetSurfaceID(frame->GetMemID());
+        picParam->current_display_picture = (VASurfaceID)m_va->GetSurfaceID(frame->GetMemID());
+
+        for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        {
+            seg.feature_mask[i] = (uint8_t)info.segmentation.featureMask[i];
+            for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
+                seg.feature_data[i][j] = (int16_t)info.segmentation.featureData[i][j];
+        }
+
+        if (KEY_FRAME == info.frameType)
+        {
+            for (int i = 0; i < NUM_REF_FRAMES; i++)
+            {
+                picParam->ref_frame_map[i] = VA_INVALID_SURFACE;
+            }
+        }
+        else
+        {
+            for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+                picParam->ref_frame_map[ref] = (VASurfaceID)m_va->GetSurfaceID(frame->frame_dpb[ref]->GetMemID());
+
+            for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
+            {
+                const Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
+                picParam->ref_frame_idx[ref_idx] = idxInDPB;
+            }
+        }
+
+        picParam->primary_ref_frame = (uint8_t)info.primaryRefFrame;
+
+        // fill loop filter params
+        picParam->filter_level[0] = (uint8_t)info.lf.filterLevel[0];
+        picParam->filter_level[1] = (uint8_t)info.lf.filterLevel[1];
+        picParam->filter_level_u = (uint8_t)info.lf.filterLevelU;
+        picParam->filter_level_v = (uint8_t)info.lf.filterLevelV;
+
+        auto& lfInfo = picParam->loop_filter_info_fields.bits;
+        lfInfo.sharpness_level = (uint8_t)info.lf.sharpnessLevel;
+        lfInfo.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
+        lfInfo.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
+
+
+        for (Ipp8u i = 0; i < TOTAL_REFS; i++)
+        {
+            picParam->ref_deltas[i] = info.lf.refDeltas[i];
+        }
+        for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
+        {
+            picParam->mode_deltas[i] = info.lf.modeDeltas[i];
+        }
+
+        // fill quantization params
+        picParam->base_qindex = (int16_t)info.baseQIndex;
+        picParam->y_dc_delta_q = (int8_t)info.yDcDeltaQ;
+        picParam->u_dc_delta_q = (int8_t)info.uDcDeltaQ;
+        picParam->v_dc_delta_q = (int8_t)info.vDcDeltaQ;
+        picParam->u_ac_delta_q = (int8_t)info.uAcDeltaQ;
+        picParam->v_ac_delta_q = (int8_t)info.vAcDeltaQ;
+
+        // fill CDEF
+        picParam->cdef_damping_minus_3 = (uint8_t)(info.cdefPriDamping - 3);
+        picParam->cdef_bits = (uint8_t)info.cdefBits;
+
+        for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        {
+            picParam->cdef_y_strengths[i] = (uint8_t)info.cdefStrength[i];
+            picParam->cdef_uv_strengths[i] = (uint8_t)info.cdefUVStrength[i];
+        }
+
+        // fill quantization matrix params
+        auto& qmFlags = picParam->qmatrix_fields.bits;
+        qmFlags.using_qmatrix = info.useQMatrix;
+        qmFlags.qm_y = info.qmY;
+        qmFlags.qm_u = info.qmU;
+        qmFlags.qm_v = info.qmV;
+
+
+        auto& modeCtrl = picParam->mode_control_fields.bits;
+        modeCtrl.delta_q_present_flag = info.deltaQPresentFlag;
+        modeCtrl.log2_delta_q_res = CeilLog2(info.deltaQRes);
+        modeCtrl.delta_lf_present_flag = info.deltaLFPresentFlag;
+        modeCtrl.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
+        modeCtrl.delta_lf_multi = info.deltaLFMulti;
+        modeCtrl.tx_mode = info.txMode;
+        modeCtrl.reference_mode = info.referenceMode;
+        modeCtrl.reduced_tx_set_used = info.reducedTxSetUsed;
+
+        // fill loop restoration params
+        auto& lrInfo = picParam->loop_restoration_fields.bits;
+        lrInfo.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
+        lrInfo.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
+        lrInfo.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
+        lrInfo.lr_unit_shift = info.lrUnitShift;
+        lrInfo.lr_uv_shift = info.lrUVShift;
+
+        // fill global motion params
+        for (Ipp8u i = 0; i < INTER_REFS; i++)
+        {
+            picParam->wm[i].wmtype = static_cast<VATransformationType>(info.globalMotion[i + 1].wmtype);
+            for (Ipp8u j = 0; j < 8; j++)
+            {
+                picParam->wm[i].wmmat[j] = info.globalMotion[i + 1].wmmat[j];
+                // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
+            }
+        }
+
+        // fill tile params
+        picParam->tile_cols = (uint16_t)info.tileCols;
+        picParam->tile_rows = (uint16_t)info.tileRows;
+
+        if (!info.uniformTileSpacingFlag)
+        {
+            for (Ipp32u i = 0; i < picParam->tile_cols; i++)
+            {
+                picParam->width_in_sbs_minus_1[i] =
+                    (uint16_t)(info.tileColStartSB[i + 1] - info.tileColStartSB[i]);
+            }
+
+            for (int i = 0; i < picParam->tile_rows; i++)
+            {
+                picParam->height_in_sbs_minus_1[i] =
+                    (uint16_t)(info.tileRowStartSB[i + 1] - info.tileRowStartSB[i]);
+            }
+        }
+
+#else // UMC_AV1_DECODER_REV >= 5000
         picParam->frame_width_minus1 = (uint16_t)info.width - 1;
         picParam->frame_height_minus1 = (uint16_t)info.height - 1;
 
@@ -595,10 +843,12 @@ namespace UMC_AV1_DECODER
         picParam->pic_fields.bits.frame_context_idx = info.frameContextIdx;
 
         if (KEY_FRAME == info.frameType)
+        {
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
                 picParam->ref_frame_map[i] = VA_INVALID_SURFACE;
             }
+        }
         else
         {
             for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
@@ -626,7 +876,7 @@ namespace UMC_AV1_DECODER
 
         picParam->profile = (uint8_t)info.profile;
         picParam->log2_bit_depth_minus8 = (uint8_t)(info.bit_depth - 8); // DDI for Rev 0.25.2 uses bit_depth instead of log2 - 8
-                                                                       // TODO: fix when va_dec_av1.h will be fixed
+                                                                         // TODO: fix when va_dec_av1.h will be fixed
 
         picParam->pic_fields.bits.subsampling_x = (uint8_t)info.subsamplingX;
         picParam->pic_fields.bits.subsampling_y = (uint8_t)info.subsamplingY;
@@ -691,8 +941,22 @@ namespace UMC_AV1_DECODER
         picParam->tile_rows = (uint16_t)info.tileRows;
 
         picParam->tile_size_bytes = (uint8_t)info.tileSizeBytes;
+#endif // UMC_AV1_DECODER_REV >= 5000
     }
 
+#if UMC_AV1_DECODER_REV >= 5000
+    void PackerVA::PackTileControlParams(VABitStreamParameterBufferAV1* tileControlParam, TileLocation const& loc)
+    {
+        tileControlParam->bit_stream_data_offset = (uint32_t)loc.offset;
+        tileControlParam->bit_stream_data_size = (uint32_t)loc.size;
+        tileControlParam->bit_stream_data_flag = 0;
+        tileControlParam->tile_row = (uint16_t)loc.row;
+        tileControlParam->tile_column = (uint16_t)loc.col;
+        tileControlParam->start_tile_idx = (uint16_t)loc.startIdx;
+        tileControlParam->end_tile_idx = (uint16_t)loc.endIdx;
+        tileControlParam->anchor_frame_idx = 0;
+    }
+#else
     void PackerVA::PackBitstreamControlParams(VABitStreamParameterBufferAV1* bsControlParam, AV1DecoderFrame const* frame)
     {
         FrameHeader const& info = frame->GetFrameHeader();
@@ -701,6 +965,7 @@ namespace UMC_AV1_DECODER
         bsControlParam->bit_stream_data_size = info.frameDataSize - info.frameHeaderLength;
         bsControlParam->bit_stream_data_flag = 0;
     }
+#endif // UMC_AV1_DECODER_REV >= 5000
 #endif // UMC_VA_LINUX
 
 } // namespace UMC_AV1_DECODER

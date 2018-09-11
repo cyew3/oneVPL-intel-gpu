@@ -60,15 +60,6 @@ namespace UMC_AV1_DECODER
         return length;
     }
 
-    Ipp32u CalcTilesInTileSets(std::vector<TileSet> const& tileSets)
-    {
-        Ipp32u numTiles = 0;
-        for (auto& tileSet : tileSets)
-            numTiles += tileSet.GetTileCount();
-
-        return numTiles;
-    }
-
     AV1DecoderFrame::AV1DecoderFrame()
         : locked(0)
         , data(new UMC::FrameData{})

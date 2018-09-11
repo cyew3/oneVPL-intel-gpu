@@ -119,12 +119,20 @@ public:
     void BeginFrame();
     void EndFrame();
 
-    void PackAU(UMC_VP9_DECODER::VP9Bitstream*, AV1DecoderFrame const*);
+#if UMC_AV1_DECODER_REV >= 5000
+    void PackAU(std::vector<TileSet>&, AV1DecoderFrame const*, bool) override;
+#else
+    void PackAU(UMC_VP9_DECODER::VP9Bitstream*, AV1DecoderFrame const*) override;
+#endif
 
  private:
 
     void PackPicParams(VADecPictureParameterBufferAV1*, AV1DecoderFrame const*);
+#if UMC_AV1_DECODER_REV >= 5000
+    void PackTileControlParams(VABitStreamParameterBufferAV1*, TileLocation const&);
+#else
     void PackBitstreamControlParams(VABitStreamParameterBufferAV1*, AV1DecoderFrame const*);
+#endif
 };
 
 #endif // UMC_VA_LINUX
