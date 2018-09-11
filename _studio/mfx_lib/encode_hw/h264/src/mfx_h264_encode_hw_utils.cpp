@@ -62,16 +62,16 @@ namespace MfxHwH264Encode
             }
             else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
             {
-                mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-                numFrameMin = IsOn(extDdi->RefRaw)
+                mfxExtCodingOptionDDI & extDdi = GetExtBufferRef(par);
+                numFrameMin = IsOn(extDdi.RefRaw)
                     ? par.mfx.GopRefDist + par.mfx.NumRefFrame
                     : par.mfx.GopRefDist;
             }
 
             numFrameMin = numFrameMin + par.AsyncDepth - 1;
 
-            mfxExtMVCSeqDesc * extMvc = GetExtBuffer(par);
-            numFrameMin = mfxU16(IPP_MIN(0xffff, numFrameMin       * extMvc->NumView));
+            mfxExtMVCSeqDesc & extMvc = GetExtBufferRef(par);
+            numFrameMin = mfxU16(IPP_MIN(0xffff, numFrameMin       * extMvc.NumView));
         }
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (IsSvcProfile(par.mfx.CodecProfile))//SVC
@@ -82,8 +82,8 @@ namespace MfxHwH264Encode
             }
             else // MFX_IOPATTERN_IN_VIDEO_MEMORY || MFX_IOPATTERN_IN_OPAQUE_MEMORY
             {
-                mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-                numFrameMin = IsOn(extDdi->RefRaw)
+                mfxExtCodingOptionDDI & extDdi = GetExtBufferRef(par);
+                numFrameMin = IsOn(extDdi.RefRaw)
                     ? par.mfx.GopRefDist + par.mfx.NumRefFrame
                     : par.mfx.GopRefDist;
             }
@@ -111,8 +111,8 @@ namespace MfxHwH264Encode
             {
                 numFrameMin = (mfxU16)AsyncRoutineEmulator(par).GetTotalGreediness() + par.AsyncDepth - 1;
 
-                mfxExtCodingOptionDDI * extDdi = GetExtBuffer(par);
-                numFrameMin += IsOn(extDdi->RefRaw)
+                mfxExtCodingOptionDDI & extDdi = GetExtBufferRef(par);
+                numFrameMin += IsOn(extDdi.RefRaw)
                     ? par.mfx.NumRefFrame
                     : 0;
 
@@ -183,10 +183,10 @@ namespace MfxHwH264Encode
         MfxVideoParam const & video,
         mfxU16                runtPs)
     {
-        mfxExtCodingOption const * extOpt = GetExtBuffer(video);
+        mfxExtCodingOption const & extOpt = GetExtBufferRef(video);
         mfxU16 initPs   = video.mfx.FrameInfo.PicStruct;
-        mfxU16 framePic = extOpt->FramePicture;
-        mfxU16 fieldOut = extOpt->FieldOutput;
+        mfxU16 framePic = extOpt.FramePicture;
+        mfxU16 fieldOut = extOpt.FieldOutput;
 
         static mfxU16 const PRG  = MFX_PICSTRUCT_PROGRESSIVE;
         static mfxU16 const TFF  = MFX_PICSTRUCT_FIELD_TFF;
@@ -2588,11 +2588,11 @@ void MfxHwH264Encode::PrepareSeiMessage(
     MfxVideoParam const &   par,
     mfxExtAvcSeiRecPoint &  msg)
 {
-    mfxExtCodingOption2 * extOpt2 = GetExtBuffer(par);
+    mfxExtCodingOption2 & extOpt2 = GetExtBufferRef(par);
     mfxU32 numTL = par.calcParam.numTemporalLayer;
-    if (extOpt2->IntRefType)
+    if (extOpt2.IntRefType)
         // following calculation assumes that for multiple temporal layers last layer is always non-reference
-        msg.recovery_frame_cnt = (extOpt2->IntRefCycleSize - 1) << (numTL > 2 ? (numTL >> 1) : 0);
+        msg.recovery_frame_cnt = (extOpt2.IntRefCycleSize - 1) << (numTL > 2 ? (numTL >> 1) : 0);
     else
         msg.recovery_frame_cnt = par.mfx.GopPicSize;
     msg.exact_match_flag = 1;
@@ -2795,11 +2795,11 @@ mfxStatus UmcBrc::Init(MfxVideoParam  & video)
         video.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
         video.mfx.RateControlMethod == MFX_RATECONTROL_AVBR);
 
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
-    m_lookAhead = extOpt2->LookAheadDepth;
+    mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
+    m_lookAhead = extOpt2.LookAheadDepth;
 
     mfxVideoParam tmpVideo = video;
-    tmpVideo.mfx.GopRefDist = (extOpt2->LookAheadDepth >= 5) ? 1 : tmpVideo.mfx.GopRefDist;
+    tmpVideo.mfx.GopRefDist = (extOpt2.LookAheadDepth >= 5) ? 1 : tmpVideo.mfx.GopRefDist;
 
     UMC::VideoBrcParams umcBrcParams;
     mfxStatus sts = ConvertVideoParam_Brc(&tmpVideo, &umcBrcParams);
@@ -2959,9 +2959,9 @@ using namespace MfxHwH264EncodeHW;
 
 mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
 {
-    mfxExtCodingOptionDDI const &  extDdi   = GetExtBufferRef(video);
-    mfxExtCodingOption2 const &    extOpt2  = GetExtBufferRef(video);
-    mfxExtCodingOption3  const &   extOpt3  = GetExtBufferRef(video);
+    mfxExtCodingOptionDDI const & extDdi  = GetExtBufferRef(video);
+    mfxExtCodingOption2   const & extOpt2 = GetExtBufferRef(video);
+    mfxExtCodingOption3   const & extOpt3 = GetExtBufferRef(video);
 
 
     m_lookAhead     = extOpt2.LookAheadDepth - extDdi.LookAheadDependency;
@@ -3024,9 +3024,9 @@ void LookAheadBrc2::Close()
 
 mfxStatus VMEBrc::Init(MfxVideoParam  & video)
 {
-    mfxExtCodingOptionDDI const &   extDdi    = GetExtBufferRef(video);
-    mfxExtCodingOption2  const &    extOpt2   = GetExtBufferRef(video);
-    mfxExtCodingOption3  const &    extOpt3   = GetExtBufferRef(video);
+    mfxExtCodingOptionDDI const & extDdi  = GetExtBufferRef(video);
+    mfxExtCodingOption2   const & extOpt2 = GetExtBufferRef(video);
+    mfxExtCodingOption3   const & extOpt3 = GetExtBufferRef(video);
 
 
     m_LaScaleFactor = LaDSenumToFactor(extOpt2.LookAheadDS);
@@ -3693,7 +3693,7 @@ mfxU8 VMEBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
 
 mfxStatus LookAheadCrfBrc::Init(MfxVideoParam  & video)
 {
-    mfxExtCodingOption2 const &extOpt2 = GetExtBufferRef(video);
+    mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(video);
 
     m_lookAhead  = extOpt2.LookAheadDepth;
     m_crfQuality = video.mfx.ICQQuality;
@@ -3790,8 +3790,8 @@ void Hrd::Setup(MfxVideoParam const & par)
 
 // MVC BD {
     // for ViewOutput mode HRD should be controlled for every view separately
-    mfxExtCodingOption * opts = GetExtBuffer(par);
-    if (IsMvcProfile(par.mfx.CodecProfile) && opts->ViewOutput == MFX_CODINGOPTION_ON)
+    mfxExtCodingOption & opts = GetExtBufferRef(par);
+    if (IsMvcProfile(par.mfx.CodecProfile) && opts.ViewOutput == MFX_CODINGOPTION_ON)
     {
         m_bitrate  = GetMaxBitrateValue(par.calcParam.mvcPerViewPar.maxKbps) << (6 + SCALE_FROM_DRIVER);
         m_hrdIn90k = mfxU32(8000.0 * par.calcParam.mvcPerViewPar.bufferSizeInKB / m_bitrate * 90000.0);
@@ -3806,7 +3806,7 @@ void Hrd::Setup(MfxVideoParam const & par)
 
     m_taf_prv = 0.0;
 // MVC BD {
-    if (IsMvcProfile(par.mfx.CodecProfile) && opts->ViewOutput == MFX_CODINGOPTION_ON)
+    if (IsMvcProfile(par.mfx.CodecProfile) && opts.ViewOutput == MFX_CODINGOPTION_ON)
         m_trn_cur = double(8000) * par.calcParam.mvcPerViewPar.initialDelayInKB / m_bitrate;
     else
         m_trn_cur = double(8000) * par.calcParam.initialDelayInKB / m_bitrate;
@@ -4412,7 +4412,7 @@ void MfxHwH264Encode::PutSeiMessage(
     if (needBufferingPeriod == 0 && needPicTimingSei == 0 && fillerSize == 0)
         return;
 
-    mfxExtMVCSeqDesc * extMvc = GetExtBuffer(video);
+    mfxExtMVCSeqDesc & extMvc = GetExtBufferRef(video);
 
     mfxU32 dataSizeInBytes = 2; // hardcoded 2 bytes for MVC nested SEI syntax prior sei_messages (1 view in op)
 
@@ -4440,7 +4440,7 @@ void MfxHwH264Encode::PutSeiMessage(
 
     bs.PutBit(1); // put operation_point_flag = 1
     bs.PutUe(0); // put num_view_components_op_minus1 = 0
-    bs.PutBits(extMvc->View[1].ViewId, 10); // put sei_op_view_id[0]
+    bs.PutBits(extMvc.View[1].ViewId, 10); // put sei_op_view_id[0]
     bs.PutBits(0, 3); // sei_op_temporal_id
     bs.PutBits(0, 1); // put sei_nesting_zero_bits
 
@@ -4980,9 +4980,9 @@ mfxStatus MfxHwH264Encode::CheckEncodeFrameParam(
         else
         {
             // FEI frame control buffer is mandatory for encoding
-            mfxExtFeiParam const * feiParam = GetExtBuffer(video);
+            mfxExtFeiParam const & feiParam = GetExtBufferRef(video);
             // FEI encoding without any extension buffers provided is impossible
-            MFX_CHECK(feiParam->Func != MFX_FEI_FUNCTION_ENCODE, MFX_ERR_UNDEFINED_BEHAVIOR);
+            MFX_CHECK(feiParam.Func != MFX_FEI_FUNCTION_ENCODE, MFX_ERR_UNDEFINED_BEHAVIOR);
         }
 
         mfxExtOpaqueSurfaceAlloc & extOpaq = GetExtBufferRef(video);
@@ -5390,8 +5390,8 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
     DdiTask const &       task,
     mfxU32                fieldId)
 {
-    mfxExtSpsHeader * extSps = GetExtBuffer(par);
-    mfxExtPpsHeader * extPps = GetExtBuffer(par);
+    mfxExtSpsHeader & extSps = GetExtBufferRef(par);
+    mfxExtPpsHeader & extPps = GetExtBufferRef(par);
 
     mfxU32 num_ref_idx_l0_active_minus1     = 0;
     mfxU32 num_ref_idx_l1_active_minus1     = 0;
@@ -5401,7 +5401,7 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
 
     mfxU32 tmp = 0;
 
-    if (extPps->entropyCodingModeFlag == 0)
+    if (extPps.entropyCodingModeFlag == 0)
     {
         // remove start code emulation prevention bytes when doing full repack for CAVLC
         mfxU32 zeroCount = 0;
@@ -5421,17 +5421,17 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
         }
     }
 
-    InputBitstream  reader(sbegin, send, true, extPps->entropyCodingModeFlag == 1);
+    InputBitstream  reader(sbegin, send, true, extPps.entropyCodingModeFlag == 1);
     OutputBitstream writer(dbegin, dend);
 
     writer.PutUe(reader.GetUe());                               // first_mb_in_slice
     writer.PutUe(sliceType = reader.GetUe());                   // slice_type
     writer.PutUe(reader.GetUe());                               // pic_parameter_set_id
 
-    mfxU32 log2MaxFrameNum = extSps->log2MaxFrameNumMinus4 + 4;
+    mfxU32 log2MaxFrameNum = extSps.log2MaxFrameNumMinus4 + 4;
     writer.PutBits(reader.GetBits(log2MaxFrameNum), log2MaxFrameNum);
 
-    if (!extSps->frameMbsOnlyFlag)
+    if (!extSps.frameMbsOnlyFlag)
     {
         writer.PutBit(fieldPicFlag = reader.GetBit());          // field_pic_flag
         if (fieldPicFlag)
@@ -5441,9 +5441,9 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
     if (task.m_type[fieldId] & MFX_FRAMETYPE_IDR)
         writer.PutUe(reader.GetUe());                           // idr_pic_id
 
-    if (extSps->picOrderCntType == 0)
+    if (extSps.picOrderCntType == 0)
     {
-        mfxU32 log2MaxPicOrderCntLsb = extSps->log2MaxPicOrderCntLsbMinus4 + 4;
+        mfxU32 log2MaxPicOrderCntLsb = extSps.log2MaxPicOrderCntLsbMinus4 + 4;
         writer.PutBits(reader.GetBits(log2MaxPicOrderCntLsb), log2MaxPicOrderCntLsb);
     }
 
@@ -5465,8 +5465,8 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
         }
         else
         {
-            num_ref_idx_l0_active_minus1 = extPps->numRefIdxL0DefaultActiveMinus1;
-            num_ref_idx_l1_active_minus1 = extPps->numRefIdxL1DefaultActiveMinus1;
+            num_ref_idx_l0_active_minus1 = extPps.numRefIdxL0DefaultActiveMinus1;
+            num_ref_idx_l1_active_minus1 = extPps.numRefIdxL1DefaultActiveMinus1;
         }
     }
 
@@ -5504,7 +5504,7 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
         WriteDecRefPicMarking(writer, task.m_decRefPicMrk[fieldId], idrPicFlag);
     }
 
-    if (extPps->entropyCodingModeFlag && (sliceType % 5 != 2))
+    if (extPps.entropyCodingModeFlag && (sliceType % 5 != 2))
         writer.PutUe(reader.GetUe());                           // cabac_init_idc
 
     writer.PutSe(reader.GetSe());                               // slice_qp_delta
@@ -5519,7 +5519,7 @@ mfxU8 * MfxHwH264Encode::RePackSlice(
         }
     }
 
-    if (extPps->entropyCodingModeFlag)
+    if (extPps.entropyCodingModeFlag)
     {
         while (reader.NumBitsRead() % 8)
             reader.GetBit();                                    // cabac_alignment_one_bit
@@ -5577,10 +5577,10 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     mfxU32                fieldId,
     PreAllocatedVector &  sei)
 {
-    mfxExtCodingOption const *     extOpt =  GetExtBuffer(video);
-    mfxExtSpsHeader const *        extSps =  GetExtBuffer(video);
-    mfxExtCodingOption2 const *    extOpt2 = GetExtBuffer(video);
-    mfxExtPictureTimingSEI const * extPt  = SelectPicTimingSei(video, task);
+    mfxExtCodingOption const     & extOpt  = GetExtBufferRef(video);
+    mfxExtSpsHeader const        & extSps  = GetExtBufferRef(video);
+    mfxExtCodingOption2 const    & extOpt2 = GetExtBufferRef(video);
+    mfxExtPictureTimingSEI const * extPt   = SelectPicTimingSei(video, task);
 
     mfxU32 fillerSize         = task.m_fillerSize[fieldId];
     mfxU32 fieldPicFlag       = (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE);
@@ -5592,26 +5592,26 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         task.m_ctrl.NumPayload,
         GetPayloadLayout(fieldPicFlag, secondFieldPicFlag));
 
-    mfxU32 needRecoveryPointSei = (extOpt->RecoveryPointSEI == MFX_CODINGOPTION_ON &&
-        ((extOpt2->IntRefType && task.m_IRState.firstFrameInCycle && task.m_IRState.IntraLocation == 0) ||
-        (extOpt2->IntRefType == 0 && isIPicture)));
+    mfxU32 needRecoveryPointSei = (extOpt.RecoveryPointSEI == MFX_CODINGOPTION_ON &&
+        ((extOpt2.IntRefType && task.m_IRState.firstFrameInCycle && task.m_IRState.IntraLocation == 0) ||
+        (extOpt2.IntRefType == 0 && isIPicture)));
 
     mfxU32 needCpbRemovalDelay = idrPicFlag || recoveryPoint || needRecoveryPointSei ||
-        (isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME);
+        (isIPicture && extOpt2.BufferingPeriodSEI == MFX_BPSEI_IFRAME);
 
     mfxU32 needMarkingRepetitionSei =
-        IsOn(extOpt->RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
+        IsOn(extOpt.RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
 
     mfxU32 needBufferingPeriod =
-        (IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay) ||
-        (IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay) ||
-        (IsOn(extOpt->PicTimingSEI) &&
-        (idrPicFlag || (isIPicture && extOpt2->BufferingPeriodSEI == MFX_BPSEI_IFRAME))); // to activate sps
+        (IsOn(extOpt.VuiNalHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt.VuiVclHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt.PicTimingSEI) &&
+        (idrPicFlag || (isIPicture && extOpt2.BufferingPeriodSEI == MFX_BPSEI_IFRAME))); // to activate sps
 
     mfxU32 needPicTimingSei =
-        IsOn(extOpt->VuiNalHrdParameters) ||
-        IsOn(extOpt->VuiVclHrdParameters) ||
-        IsOn(extOpt->PicTimingSEI);
+        IsOn(extOpt.VuiNalHrdParameters) ||
+        IsOn(extOpt.VuiVclHrdParameters) ||
+        IsOn(extOpt.PicTimingSEI);
 
     if (video.calcParam.cqpHrdMode)
         needBufferingPeriod = needPicTimingSei = 0; // in CQP HRD mode application inserts BP and PT SEI itself
@@ -5626,29 +5626,29 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     OutputBitstream writer(sei.Buffer(), sei.Capacity());
 
     mfxU8 const SEI_STARTCODE[5] = { 0, 0, 0, 1, 6 };
-    if (needAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
+    if (needAtLeastOneSei && IsOn(extOpt.SingleSeiNalUnit))
         writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
 
     mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = {};
     {
         mfxExtAvcSeiPicTiming msgPicTiming;
 
-        mfxU32 sps_id = extSps->seqParameterSetId;
+        mfxU32 sps_id = extSps.seqParameterSetId;
         sps_id = ((sps_id + !!task.m_viewIdx) & 0x1f);  // use appropriate sps id for dependent views
 
         if (needBufferingPeriod)
         {
             PrepareSeiMessage(
                 task,
-                IsOn(extOpt->VuiNalHrdParameters),
-                IsOn(extOpt->VuiVclHrdParameters),
+                IsOn(extOpt.VuiNalHrdParameters),
+                IsOn(extOpt.VuiVclHrdParameters),
                 sps_id,
                 msgBufferingPeriod);
 
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
             PutSeiMessage(writer, msgBufferingPeriod);
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
         }
 
@@ -5657,13 +5657,13 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
             PrepareSeiMessage(
                 task,
                 fieldId,
-                IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters),
+                IsOn(extOpt.VuiNalHrdParameters) || IsOn(extOpt.VuiVclHrdParameters),
                 msgPicTiming);
 
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
             PutSeiMessage(writer, *extPt, msgPicTiming);
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
         }
     }
@@ -5672,11 +5672,11 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     {
         if (task.m_ctrl.Payload[i] != 0)
         {
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
             for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
                 writer.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
         }
     }
@@ -5688,10 +5688,10 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         mfxExtAvcSeiDecRefPicMrkRep decRefPicMrkRep;
         PrepareSeiMessage(task, fieldId, frameMbsOnlyFlag, decRefPicMrkRep);
 
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writer, decRefPicMrkRep);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutTrailingBits();
     }
 
@@ -5699,10 +5699,10 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     {
         mfxExtAvcSeiRecPoint msgPicTiming;
         PrepareSeiMessage(video, msgPicTiming);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writer, msgPicTiming);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutTrailingBits();
     }
 
@@ -5711,15 +5711,15 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         // how many bytes takes to encode payloadSize depends on size of sei message
         // need to compensate it
         fillerSize -= fillerSize / 256;
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiHeader(writer, SEI_TYPE_FILLER_PAYLOAD, fillerSize);
         writer.PutFillerBytes(0xff, fillerSize);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutTrailingBits();
     }
 
-    if (needAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
+    if (needAtLeastOneSei && IsOn(extOpt.SingleSeiNalUnit))
         writer.PutTrailingBits();
 
     // add repack compensation to the end of last sei NALu.
@@ -5741,8 +5741,8 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     mfxU32                fieldId,
     PreAllocatedVector &  sei)
 {
-    mfxExtCodingOption const *     extOpt = GetExtBuffer(video);
-    mfxExtSpsHeader const *        extSps = GetExtBuffer(video);
+    mfxExtCodingOption const     & extOpt = GetExtBufferRef(video);
+    mfxExtSpsHeader const        & extSps = GetExtBufferRef(video);
     mfxExtPictureTimingSEI const * extPt  = SelectPicTimingSei(video, task);
 
     mfxU32 fillerSize         = task.m_fillerSize[fieldId];
@@ -5757,26 +5757,26 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     mfxU32 needCpbRemovalDelay = idrPicFlag || recoveryPoint;
 
     mfxU32 needMarkingRepetitionSei =
-        IsOn(extOpt->RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
+        IsOn(extOpt.RefPicMarkRep) && task.m_decRefPicMrkRep[fieldId].presentFlag;
 
     mfxU32 needBufferingPeriod =
-        (IsOn(extOpt->VuiNalHrdParameters) && needCpbRemovalDelay) ||
-        (IsOn(extOpt->VuiVclHrdParameters) && needCpbRemovalDelay) ||
-        (IsOn(extOpt->PicTimingSEI)        && idrPicFlag); // to activate sps
+        (IsOn(extOpt.VuiNalHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt.VuiVclHrdParameters) && needCpbRemovalDelay) ||
+        (IsOn(extOpt.PicTimingSEI)        && idrPicFlag); // to activate sps
 
     mfxU32 needPicTimingSei =
-        IsOn(extOpt->VuiNalHrdParameters) ||
-        IsOn(extOpt->VuiVclHrdParameters) ||
-        IsOn(extOpt->PicTimingSEI);
+        IsOn(extOpt.VuiNalHrdParameters) ||
+        IsOn(extOpt.VuiVclHrdParameters) ||
+        IsOn(extOpt.PicTimingSEI);
 
     mfxU32 needMvcNestingSei = needBufferingPeriod || needPicTimingSei;
     // for BD/AVCHD compatible encoding filler SEI should have MVC nesting wrapper
-    if (IsOn(extOpt->ViewOutput))
+    if (IsOn(extOpt.ViewOutput))
         needMvcNestingSei |= (fillerSize != 0);
 
     mfxU32 needNotNestingSei =
         (task.m_ctrl.Payload && task.m_ctrl.NumPayload > 0) ||
-        (fillerSize > 0 && IsOff(extOpt->ViewOutput)) ||
+        (fillerSize > 0 && IsOff(extOpt.ViewOutput)) ||
         needMarkingRepetitionSei;
 
     OutputBitstream writer(sei.Buffer(), sei.Capacity());
@@ -5786,7 +5786,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
 // MVC BD {
     mfxExtAvcSeiBufferingPeriod msgBufferingPeriod = {};
     mfxExtAvcSeiPicTiming msgPicTiming;
-    mfxU32 sps_id = extSps->seqParameterSetId;
+    mfxU32 sps_id = extSps.seqParameterSetId;
     sps_id = ((sps_id + !!task.m_viewIdx) & 0x1f);  // use appropriate sps id for dependent views
 // MVC BD }
 
@@ -5796,8 +5796,8 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         {
             PrepareSeiMessage(
                 task,
-                IsOn(extOpt->VuiNalHrdParameters),
-                IsOn(extOpt->VuiVclHrdParameters),
+                IsOn(extOpt.VuiNalHrdParameters),
+                IsOn(extOpt.VuiVclHrdParameters),
                 sps_id,
                 msgBufferingPeriod);
 
@@ -5812,7 +5812,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
             PrepareSeiMessage(
                 task,
                 fieldId,
-                IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters),
+                IsOn(extOpt.VuiNalHrdParameters) || IsOn(extOpt.VuiVclHrdParameters),
                 msgPicTiming);
 
             // write NAL unit with MVC nesting SEI for PT
@@ -5830,7 +5830,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         }
     }
 
-    if (needNotNestingSei && IsOn(extOpt->SingleSeiNalUnit))
+    if (needNotNestingSei && IsOn(extOpt.SingleSeiNalUnit))
         writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
 
     // user-defined messages
@@ -5838,11 +5838,11 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     {
         if (task.m_ctrl.Payload[i] != 0)
         {
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
             for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
                 writer.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
         }
     }
@@ -5854,27 +5854,27 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         mfxExtAvcSeiDecRefPicMrkRep decRefPicMrkRep;
         PrepareSeiMessage(task, fieldId, frameMbsOnlyFlag, decRefPicMrkRep);
 
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writer, decRefPicMrkRep);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutTrailingBits();
     }
 
-    if (fillerSize > 0 && IsOff(extOpt->ViewOutput))
+    if (fillerSize > 0 && IsOff(extOpt.ViewOutput))
     {
         // how many bytes takes to encode payloadSize depends on size of sei message
         // need to compensate it
         fillerSize -= fillerSize / 256;
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiHeader(writer, SEI_TYPE_FILLER_PAYLOAD, fillerSize);
         writer.PutFillerBytes(0xff, fillerSize);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writer.PutTrailingBits();
     }
 
-    if (needNotNestingSei && IsOn(extOpt->SingleSeiNalUnit))
+    if (needNotNestingSei && IsOn(extOpt.SingleSeiNalUnit))
         writer.PutTrailingBits();
 
     // w/a for SNB/IVB: padd sei buffer to compensate re-pack  of AVC headers to MVC
@@ -5897,22 +5897,22 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
 
     OutputBitstream writerAVC(&sei[0], sei.Capacity());
 
-    if (needAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
+    if (needAtLeastOneSei && IsOn(extOpt.SingleSeiNalUnit))
         writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
 
     if (needBufferingPeriod)
     {
         PrepareSeiMessage(
             task,
-            IsOn(extOpt->VuiNalHrdParameters),
-            IsOn(extOpt->VuiVclHrdParameters),
+            IsOn(extOpt.VuiNalHrdParameters),
+            IsOn(extOpt.VuiVclHrdParameters),
             sps_id,
             msgBufferingPeriod);
 
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writerAVC, msgBufferingPeriod);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutTrailingBits();
     }
 
@@ -5921,13 +5921,13 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         PrepareSeiMessage(
             task,
             fieldId,
-            IsOn(extOpt->VuiNalHrdParameters) || IsOn(extOpt->VuiVclHrdParameters),
+            IsOn(extOpt.VuiNalHrdParameters) || IsOn(extOpt.VuiVclHrdParameters),
             msgPicTiming);
 
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writerAVC, *extPt, msgPicTiming);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutTrailingBits();
     }
 
@@ -5936,11 +5936,11 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     {
         if (task.m_ctrl.Payload[i] != 0)
         {
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
             for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
                 writerAVC.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
-            if (IsOff(extOpt->SingleSeiNalUnit))
+            if (IsOff(extOpt.SingleSeiNalUnit))
                 writerAVC.PutTrailingBits();
         }
     }
@@ -5952,10 +5952,10 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         mfxExtAvcSeiDecRefPicMrkRep decRefPicMrkRep;
         PrepareSeiMessage(task, fieldId, frameMbsOnlyFlag, decRefPicMrkRep);
 
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiMessage(writerAVC, decRefPicMrkRep);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutTrailingBits();
     }
 
@@ -5964,15 +5964,15 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         // how many bytes takes to encode payloadSize depends on size of sei message
         // need to compensate it
         fillerSize -= fillerSize / 256;
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
         PutSeiHeader(writerAVC, SEI_TYPE_FILLER_PAYLOAD, fillerSize);
         writerAVC.PutFillerBytes(0xff, fillerSize);
-        if (IsOff(extOpt->SingleSeiNalUnit))
+        if (IsOff(extOpt.SingleSeiNalUnit))
             writerAVC.PutTrailingBits();
     }
 
-    if (needAtLeastOneSei && IsOn(extOpt->SingleSeiNalUnit))
+    if (needAtLeastOneSei && IsOn(extOpt.SingleSeiNalUnit))
         writerAVC.PutTrailingBits();
 
     // add repack compensation to the end of last sei NALu.
@@ -5993,29 +5993,30 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
 #endif // AVC_BS
 }
 // MVC BD }
+
 bool MfxHwH264Encode::IsInplacePatchNeeded(
     MfxVideoParam const & par,
     DdiTask const &       task,
     mfxU32                fieldId)
 {
-    mfxExtSpsHeader const * extSps = GetExtBuffer(par);
-    mfxExtPpsHeader const * extPps = GetExtBuffer(par);
+    mfxExtSpsHeader const & extSps = GetExtBufferRef(par);
+    mfxExtPpsHeader const & extPps = GetExtBufferRef(par);
 
     mfxU8 constraintFlags =
-        (extSps->constraints.set0 << 7) | (extSps->constraints.set1 << 6) |
-        (extSps->constraints.set2 << 5) | (extSps->constraints.set3 << 4) |
-        (extSps->constraints.set4 << 3) | (extSps->constraints.set5 << 2) |
-        (extSps->constraints.set6 << 1) | (extSps->constraints.set7 << 0);
+        (extSps.constraints.set0 << 7) | (extSps.constraints.set1 << 6) |
+        (extSps.constraints.set2 << 5) | (extSps.constraints.set3 << 4) |
+        (extSps.constraints.set4 << 3) | (extSps.constraints.set5 << 2) |
+        (extSps.constraints.set6 << 1) | (extSps.constraints.set7 << 0);
 
     if (task.m_nalRefIdc[fieldId] > 1)
         return true;
 
     return
-        constraintFlags   != 0 ||
-        extSps->nalRefIdc != 1 ||
-        extPps->nalRefIdc != 1 ||
-        extSps->gapsInFrameNumValueAllowedFlag == 1 ||
-        (extSps->maxNumRefFrames & 1);
+        constraintFlags  != 0 ||
+        extSps.nalRefIdc != 1 ||
+        extPps.nalRefIdc != 1 ||
+        extSps.gapsInFrameNumValueAllowedFlag == 1 ||
+        (extSps.maxNumRefFrames & 1);
 }
 
 bool MfxHwH264Encode::IsSlicePatchNeeded(
@@ -6114,14 +6115,14 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
     mfxU8 *               dbegin,
     mfxU8 *               dend)
 {
-    mfxExtSpsHeader const * extSps = GetExtBuffer(video);
-    mfxExtPpsHeader const * extPps = GetExtBuffer(video);
+    mfxExtSpsHeader const & extSps = GetExtBufferRef(video);
+    mfxExtPpsHeader const & extPps = GetExtBufferRef(video);
 
     mfxU8 constraintFlags =
-        (extSps->constraints.set0 << 7) | (extSps->constraints.set1 << 6) |
-        (extSps->constraints.set2 << 5) | (extSps->constraints.set3 << 4) |
-        (extSps->constraints.set4 << 3) | (extSps->constraints.set5 << 2) |
-        (extSps->constraints.set6 << 1) | (extSps->constraints.set7 << 0);
+        (extSps.constraints.set0 << 7) | (extSps.constraints.set1 << 6) |
+        (extSps.constraints.set2 << 5) | (extSps.constraints.set3 << 4) |
+        (extSps.constraints.set4 << 3) | (extSps.constraints.set5 << 2) |
+        (extSps.constraints.set6 << 1) | (extSps.constraints.set7 << 0);
 
     bool copy = (sbegin != dbegin);
 
@@ -6137,15 +6138,15 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
         if (nalu->type == 7)
         {
             mfxU8 * spsBegin = dbegin;
-            if (extSps->gapsInFrameNumValueAllowedFlag || (extSps->maxNumRefFrames & 1))
+            if (extSps.gapsInFrameNumValueAllowedFlag || (extSps.maxNumRefFrames & 1))
             {
                 assert(copy);
                 InputBitstream reader(nalu->begin + nalu->numZero + 1, nalu->end);
                 mfxExtSpsHeader spsHead = { };
                 ReadSpsHeader(reader, spsHead);
 
-                spsHead.gapsInFrameNumValueAllowedFlag = extSps->gapsInFrameNumValueAllowedFlag;
-                spsHead.maxNumRefFrames                = extSps->maxNumRefFrames;
+                spsHead.gapsInFrameNumValueAllowedFlag = extSps.gapsInFrameNumValueAllowedFlag;
+                spsHead.maxNumRefFrames                = extSps.maxNumRefFrames;
 
                 OutputBitstream writer(dbegin, dend);
                 dbegin += WriteSpsHeader(writer, spsHead) / 8;
@@ -6161,7 +6162,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
             // if nal_ref_idc from mfxExtCodingOptionSPSPPS differs from value hardcoded in driver (1)
             // it needs to be patched
             spsBegin[nalu->numZero + 1] &= ~0x30;
-            spsBegin[nalu->numZero + 1] |= extSps->nalRefIdc << 5;
+            spsBegin[nalu->numZero + 1] |= extSps.nalRefIdc << 5;
 
             // snb and ivb driver doesn't provide controls for constraint flags in sps header
             // if any of them were set via mfxExtCodingOptionSPSPPS
@@ -6184,7 +6185,7 @@ mfxU8 * MfxHwH264Encode::PatchBitstream(
                 // if nal_ref_idc from mfxExtCodingOptionSPSPPS differs from value hardcoded in driver (1)
                 // it needs to be patched
                 ppsBegin[nalu->numZero + 1] &= ~0x30;
-                ppsBegin[nalu->numZero + 1] |= extPps->nalRefIdc << 5;
+                ppsBegin[nalu->numZero + 1] |= extPps.nalRefIdc << 5;
             }
         }
         else if (nalu->type == 9)
@@ -6321,9 +6322,9 @@ mfxU32 MfxHwH264Encode::CalcBiWeight(
 
 BrcIface * MfxHwH264Encode::CreateBrc(MfxVideoParam const & video)
 {
-    mfxExtCodingOption2 const * ext = GetExtBuffer(video);
+    mfxExtCodingOption2 const & ext = GetExtBufferRef(video);
 
-    if (ext->MaxSliceSize && video.mfx.LowPower != MFX_CODINGOPTION_ON)
+    if (ext.MaxSliceSize && video.mfx.LowPower != MFX_CODINGOPTION_ON)
         return new UmcBrc;
 
     switch (video.mfx.RateControlMethod)

@@ -1151,7 +1151,7 @@ mfxStatus CmContext::QueryVme(
 
 
     { MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Convert mb data");
-        mfxExtPpsHeader const * extPps = GetExtBuffer(m_video);
+        mfxExtPpsHeader const & extPps = GetExtBufferRef(m_video);
 
         cur->intraCost = 0;
         cur->interCost = 0;
@@ -1165,7 +1165,7 @@ mfxStatus CmContext::QueryVme(
             cur->mb[i].mbType        = cmMb[i].MbType5Bits;
             cur->mb[i].subMbShape    = cmMb[i].SubMbShape;
             cur->mb[i].subMbPredMode = cmMb[i].SubMbPredMode;
-            cur->mb[i].w1            = mfxU8(extPps->weightedBipredIdc == 2 ? CalcBiWeight(task, 0, 0) : 32);
+            cur->mb[i].w1            = mfxU8(extPps.weightedBipredIdc == 2 ? CalcBiWeight(task, 0, 0) : 32);
             cur->mb[i].w0            = mfxU8(64 - cur->mb[i].w1);
             cur->mb[i].costCenter0.x = cmMb[i].costCenter0X;
             cur->mb[i].costCenter0.y = cmMb[i].costCenter0Y;
@@ -1458,8 +1458,8 @@ void CmContext::SetCurbeData(
     DdiTask const &   task,
     mfxU32            qp)
 {
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(m_video);
+    mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(m_video);
+    mfxExtCodingOption2 const & extOpt2 = GetExtBufferRef(m_video);
     //mfxExtCodingOption const *    extOpt = GetExtBuffer(m_video);
 
     mfxU32 interSad       = 2; // 0-sad,2-haar
@@ -1499,7 +1499,7 @@ void CmContext::SetCurbeData(
     curbeData.EarlyImeStop          = 0;
     //DW1
     curbeData.MaxNumMVs             = (GetMaxMvsPer2Mb(m_video.mfx.CodecLevel) >> 1) & 0x3F;
-    curbeData.BiWeight              = ((task.m_type[ffid] & MFX_FRAMETYPE_B) && extDdi->WeightedBiPredIdc == 2) ? CalcBiWeight(task, 0, 0) : 32;
+    curbeData.BiWeight              = ((task.m_type[ffid] & MFX_FRAMETYPE_B) && extDdi.WeightedBiPredIdc == 2) ? CalcBiWeight(task, 0, 0) : 32;
     curbeData.UniMixDisable         = 0;
     //DW2
     curbeData.MaxNumSU              = 57;
@@ -1684,7 +1684,7 @@ void CmContext::SetCurbeData(
     curbeData.HMERefWindowsCombiningThreshold = (task.m_type[ffid] & MFX_FRAMETYPE_B) ? 8 : 16; //  0;  (should be =8 for B frames)
     curbeData.CheckAllFractionalEnable        = 0;
     //DW37
-    curbeData.CurLayerDQId                    = LaDSenumToFactor(extOpt2->LookAheadDS);  // 0; use 8 bit as LaScaleFactor
+    curbeData.CurLayerDQId                    = LaDSenumToFactor(extOpt2.LookAheadDS);  // 0; use 8 bit as LaScaleFactor
     curbeData.TemporalId                      = 0;
     curbeData.NoInterLayerPredictionFlag      = 1;
     curbeData.AdaptivePredictionFlag          = 0;
@@ -1694,7 +1694,7 @@ void CmContext::SetCurbeData(
     curbeData.AdaptiveMotionPredictionFlag    = 0;
     curbeData.DefaultMotionPredictionFlag     = 0;
     curbeData.TcoeffLevelPredictionFlag       = 0;
-    curbeData.UseHMEPredictor                 = 0;  //!!IsOn(extDdi->Hme);
+    curbeData.UseHMEPredictor                 = 0;  //!!IsOn(extDdi.Hme);
     curbeData.SpatialResChangeFlag            = 0;
     curbeData.isFwdFrameShortTermRef          = task.m_list0[ffid].Size() > 0 && !task.m_dpb[ffid][task.m_list0[ffid][0] & 127].m_longterm;
     //DW38
@@ -1714,7 +1714,7 @@ void CmContext::SetCurbeData(
     mfxU32 biWeight)
 {
 
-    mfxExtCodingOptionDDI const * extDdi = GetExtBuffer(m_video);
+    mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(m_video);
     //mfxExtCodingOption const *    extOpt = GetExtBuffer(m_video);
 
     mfxU32 interSad       = 2; // 0-sad,2-haar
@@ -1751,7 +1751,7 @@ void CmContext::SetCurbeData(
     curbeData.EarlyImeStop          = 0;
     //DW1
     curbeData.MaxNumMVs             = (GetMaxMvsPer2Mb(m_video.mfx.CodecLevel) >> 1) & 0x3F;
-    curbeData.BiWeight              = ((frameType & MFX_FRAMETYPE_B) && extDdi->WeightedBiPredIdc == 2) ? biWeight : 32;
+    curbeData.BiWeight              = ((frameType & MFX_FRAMETYPE_B) && extDdi.WeightedBiPredIdc == 2) ? biWeight : 32;
     curbeData.UniMixDisable         = 0;
     //DW2
     curbeData.MaxNumSU              = 57;
