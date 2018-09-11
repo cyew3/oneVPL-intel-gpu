@@ -46,17 +46,15 @@
 #define SCD_BLOCK_PIXEL_WIDTH   32
 #define SCD_BLOCK_HEIGHT        8
 
-#ifdef _DEBUG
+//#define ASC_DEBUG
+
+#if defined(ASC_DEBUG)
     #define ASC_PRINTF(...)     printf(__VA_ARGS__)
     #define ASC_FPRINTF(...)    fprintf(__VA_ARGS__)
     #define ASC_FFLUSH(x)       fflush(x)
-#elif defined(ANDROID)
+#else
     #define ASC_PRINTF(...)
     #define ASC_FPRINTF(...)
-    #define ASC_FFLUSH(x)
-#else
-    #define ASC_PRINTF(...)     __VA_ARGS__
-    #define ASC_FPRINTF(...)    __VA_ARGS__
     #define ASC_FFLUSH(x)
 #endif
 

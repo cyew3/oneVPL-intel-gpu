@@ -663,7 +663,8 @@ INT DestroyCmDevice(CmDevice *& pD)
 int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len)
 {
 #ifdef CMRT_EMU
-    buffer; len;
+    (void)buffer;
+    (void)len;
     return device->LoadProgram(0, 0, program, "nojitter");
 #else //CMRT_EMU
     return device->LoadProgram((void *)buffer, len, program, "nojitter");
@@ -673,7 +674,8 @@ int ReadProgram(CmDevice * device, CmProgram *& program, const unsigned char * b
 int ReadProgramJit(CmDevice * device, CmProgram *& program, const unsigned char * buffer, unsigned int len)
 {
 #ifdef CMRT_EMU
-    buffer; len;
+    (void)buffer;
+    (void)len;
     return device->LoadProgram(0, 0, program);
 #else //CMRT_EMU
     return device->LoadProgram((void *)buffer, len, program);

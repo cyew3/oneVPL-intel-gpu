@@ -2059,6 +2059,9 @@ mfxStatus MFXVideoDECODEVC1::IsDisplayFrameReady(mfxFrameSurface1 **surface_disp
 }
 bool MFXVideoDECODEVC1::IsBufferMode(VideoCORE *pCore, mfxVideoParam *par)
 {
+    (void)pCore;
+    (void)par;
+
 #if defined(MFX_VA_LINUX)
     if ((IsHWSupported(pCore, par) &&
         (MFX_PLATFORM_HARDWARE == pCore->GetPlatformType())&&
@@ -2067,9 +2070,6 @@ bool MFXVideoDECODEVC1::IsBufferMode(VideoCORE *pCore, mfxVideoParam *par)
         1 != par->AsyncDepth))
         return true;
     else
-#else
-    (void)pCore;
-    (void)par;
 #endif
         return false;
 }

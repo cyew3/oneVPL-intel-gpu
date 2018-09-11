@@ -261,11 +261,14 @@ mfxF64 CMC::CatchTime(const char* message, int print)
         timeval = 0.0;
 //    timeval = TimeMeasurement(pTimer->tStart, pTimer->tStop, pTimer->tFrequency);
     if (print)
+    {
         ASC_PRINTF("%s %0.3f ms.\n", message, timeval);
+    }
     return timeval;
 }
 
 mfxF64 CMC::CatchTime(int indexInit, int indexEnd, const char* message, int print) {
+    (void)message;
 #if defined (_WIN32) || defined(_WIN64)
     mfxF64
         timeval = 0.0;
@@ -274,12 +277,13 @@ mfxF64 CMC::CatchTime(int indexInit, int indexEnd, const char* message, int prin
     indexEnd = indexEnd;
     indexInit = indexInit;
     if (print)
+    {
         ASC_PRINTF("%s %0.3f ms.\r", message, timeval);
+    }
     return timeval;
 #else
     (void)indexInit;
     (void)indexEnd;
-    (void)message;
     (void)print;
 
     return 0.0;

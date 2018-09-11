@@ -42,6 +42,7 @@ __AVX2__
 ARCH64
 __ppc64__
 __x86_64__
+ASC_DEBUG
 _ASC_H_
 _ASC_AVX2_IMPL_H_
 _ASC_C_IMPL_H_

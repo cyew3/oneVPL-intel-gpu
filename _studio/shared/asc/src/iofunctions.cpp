@@ -41,9 +41,7 @@ void TimeStop(ASCTime* timer) {
 
 mfxF64 CatchTime(ASCTime *timer, const char* message)
 {
-#if defined(ANDROID)
     (void)message;
-#endif
 
     mfxF64
         timeval = 0.0;
@@ -53,6 +51,7 @@ mfxF64 CatchTime(ASCTime *timer, const char* message)
 }
 
 mfxF64 CatchTime(ASCTime *timer, int index, const char* message) {
+    (void)message;
 #if defined (_WIN32) || (_WIN64)
     mfxF64
         timeval = 0.0;
@@ -63,13 +62,13 @@ mfxF64 CatchTime(ASCTime *timer, int index, const char* message) {
 #else
     (void)timer;
     (void)index;
-    (void)message;
 
     return 0.0;
 #endif
 }
 
 mfxF64 CatchTime(ASCTime *timer, int indexInit, int indexEnd, const char* message) {
+    (void)message;
 #if defined (_WIN32) || (_WIN64)
     mfxF64
         timeval = 0.0;
@@ -81,7 +80,6 @@ mfxF64 CatchTime(ASCTime *timer, int indexInit, int indexEnd, const char* messag
     (void)timer;
     (void)indexInit;
     (void)indexEnd;
-    (void)message;
 
     return 0.0;
 #endif
