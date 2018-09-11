@@ -1523,7 +1523,7 @@ namespace UMC_AV1_DECODER
 
     void AV1Bitstream::ReadTile(FrameHeader const* fh, size_t& reportedSize, size_t& actualSize)
     {
-        actualSize = reportedSize = GetLE(fh->tileSizeBytes);
+        actualSize = reportedSize = static_cast<size_t>(GetLE(fh->tileSizeBytes));
 
         if (BytesLeft() < reportedSize)
             actualSize = BytesLeft();
