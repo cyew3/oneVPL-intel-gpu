@@ -778,8 +778,8 @@ struct CM_QUEUE_CREATE_OPTION
 //**********************************************************************
 // Constants
 //**********************************************************************
-const CM_QUEUE_CREATE_OPTION CM_DEFAULT_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x11, CM_QUEUE_SSEU_USAGE_HINT_DEFAULT, 0x0 };
-const CM_QUEUE_CREATE_OPTION CM_VME_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 0x12, CM_QUEUE_SSEU_USAGE_HINT_VME, 0x0 };
+const CM_QUEUE_CREATE_OPTION CM_DEFAULT_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 11, CM_QUEUE_SSEU_USAGE_HINT_DEFAULT, 0x0 };
+const CM_QUEUE_CREATE_OPTION CM_VME_QUEUE_CREATE_OPTION = { CM_QUEUE_TYPE_RENDER, false, 0x0, false, 12, CM_QUEUE_SSEU_USAGE_HINT_VME, 0x0 };
 
 
 typedef struct _CM_SAMPLER_STATE
