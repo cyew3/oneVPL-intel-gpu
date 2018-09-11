@@ -15,7 +15,7 @@
     $(MSDK_STUDIO_ROOT)\shared\include;
     $(MSDK_STUDIO_ROOT)\mfx_lib\shared\include;
     </MfxIncludes>
-    <MfxDefinitions>AS_VP9D_PLUGIN;MFX_VA;UMC_AV1_DECODER_REV=2520;MFX_D3D11_ENABLED;</MfxDefinitions>
+    <MfxDefinitions>AS_VP9D_PLUGIN;MFX_VA;UMC_AV1_DECODER_REV=2520;NOMINMAX;MFX_D3D11_ENABLED;</MfxDefinitions>
     <MfxLibraries></MfxLibraries>
     <MfxLibraryDir></MfxLibraryDir>
   </PropertyGroup>

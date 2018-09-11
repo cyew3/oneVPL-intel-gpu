@@ -11,6 +11,7 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
+#include <algorithm>
 #include "vm_debug.h"
 
 #include "umc_structures.h"
@@ -486,9 +487,9 @@ namespace UMC_AV1_DECODER
 
         if (numPlanes > 1) {
 #if UMC_AV1_DECODER_REV >= 5000
-            int s = IPP_MIN(sh->subsampling_x, sh->subsampling_y);
+            int s = std::min(sh->subsampling_x, sh->subsampling_y);
 #else
-            int s = IPP_MIN(fh->subsamplingX, fh->subsamplingY);
+            int s = std::min(fh->subsamplingX, fh->subsamplingY);
 #endif
             if (s && !chromaNone) {
                 fh->rstInfo[1].restorationUnitSize =
@@ -850,10 +851,10 @@ namespace UMC_AV1_DECODER
         limits->maxTileAreaInSB = MAX_TILE_AREA >> (2 * sbSizeLog2);
 
         limits->minLog2TileCols = av1_tile_log2(limits->maxTileWidthSB,fh->widthSB);
-        limits->maxLog2TileCols = av1_tile_log2(1, IPP_MIN(fh->widthSB, MAX_TILE_COLS));
-        limits->maxLog2TileRows = av1_tile_log2(1, IPP_MIN(fh->heightSB, MAX_TILE_ROWS));
+        limits->maxLog2TileCols = av1_tile_log2(1, std::min(fh->widthSB, MAX_TILE_COLS));
+        limits->maxLog2TileRows = av1_tile_log2(1, std::min(fh->heightSB, MAX_TILE_ROWS));
         limits->minLog2Tiles = av1_tile_log2(limits->maxTileAreaInSB, fh->widthSB * fh->heightSB);
-        limits->minLog2Tiles = IPP_MAX(limits->minLog2Tiles, limits->minLog2TileCols);
+        limits->minLog2Tiles = std::max(limits->minLog2Tiles, limits->minLog2TileCols);
     }
 
     static void av1_calculate_tile_cols(FrameHeader* fh, TileLimits* limits)
@@ -873,7 +874,7 @@ namespace UMC_AV1_DECODER
             }
             fh->tileCols = i;
             fh->tileColStartSB[i] = fh->widthSB;
-            limits->minLog2TileRows = IPP_MAX(static_cast<Ipp32s>(limits->minLog2Tiles - fh->log2TileCols), 0);
+            limits->minLog2TileRows = std::max(static_cast<Ipp32s>(limits->minLog2Tiles - fh->log2TileCols), 0);
             limits->maxTileHeightSB = fh->heightSB >> limits->minLog2TileRows;
         }
         else
@@ -884,11 +885,11 @@ namespace UMC_AV1_DECODER
             for (i = 0; i < fh->tileCols; i++)
             {
                 Ipp32u sizeSB = fh->tileColStartSB[i + 1] - fh->tileColStartSB[i];
-                widestTileSB = IPP_MAX(widestTileSB, sizeSB);
+                widestTileSB = std::max(widestTileSB, sizeSB);
             }
             if (limits->minLog2Tiles)
                 limits->maxTileAreaInSB >>= (limits->minLog2Tiles + 1);
-            limits->maxTileHeightSB = IPP_MAX(limits->maxTileAreaInSB / widestTileSB, 1);
+            limits->maxTileHeightSB = std::max(limits->maxTileAreaInSB / widestTileSB, 1u);
         }
     }
 
@@ -941,7 +942,7 @@ namespace UMC_AV1_DECODER
             for (i = 0, startSB = 0; widthSB > 0 && i < MAX_TILE_COLS; i++)
             {
                 const Ipp32u sizeInSB =
-                    1 + read_uniform(bs, IPP_MIN(widthSB, limits.maxTileWidthSB));
+                    1 + read_uniform(bs, std::min(widthSB, limits.maxTileWidthSB));
                 fh->tileColStartSB[i] = startSB;
                 startSB += sizeInSB;
                 widthSB -= sizeInSB;
@@ -970,7 +971,7 @@ namespace UMC_AV1_DECODER
             for (i = 0, startSB = 0; heightSB > 0 && i < MAX_TILE_ROWS; i++)
             {
                 const Ipp32u sizeSB =
-                    1 + read_uniform(bs, IPP_MIN(heightSB, limits.maxTileHeightSB));
+                    1 + read_uniform(bs, std::min(heightSB, limits.maxTileHeightSB));
                 fh->tileRowStartSB[i] = startSB;
                 startSB += sizeSB;
                 heightSB -= sizeSB;
