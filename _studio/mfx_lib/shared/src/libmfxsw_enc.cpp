@@ -275,33 +275,12 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
         if (!session->m_pENC.get())
         {
             // create a new instance
-            session->m_bIsHWENCSupport = true;
             session->m_pENC.reset(session->Create<VideoENC>(*par));
             MFX_CHECK(session->m_pENC.get(), MFX_ERR_INVALID_VIDEO_PARAM);
         }
 #endif
 
         mfxRes = session->m_pENC->Init(par);
-
-#if !defined (MFX_RT)
-        if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-        {
-            session->m_bIsHWENCSupport = false;
-            session->m_pENC.reset(session->Create<VideoENC>(*par));
-            MFX_CHECK(session->m_pENC.get(), MFX_ERR_NULL_PTR);
-            mfxRes = session->m_pENC->Init(par);
-        }
-        else if (mfxRes >= MFX_ERR_NONE)
-            session->m_bIsHWENCSupport = true;
-#endif
-
-        // SW fallback if EncodeGUID is absence
-        if (MFX_PLATFORM_HARDWARE == session->m_currentPlatform &&
-            !session->m_bIsHWENCSupport &&
-            MFX_ERR_NONE <= mfxRes)
-        {
-            mfxRes = MFX_WRN_PARTIAL_ACCELERATION;
-        } 
     }
     // handle error(s)
     catch(MFX_CORE_CATCH_TYPE)
