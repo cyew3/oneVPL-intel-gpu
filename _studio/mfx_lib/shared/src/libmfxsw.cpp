@@ -155,9 +155,11 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     }
 #endif
 
+    // if user did not specify MFX_IMPL_VIA_* treat it as MFX_IMPL_VIA_ANY
+    if (!implInterface)
+        implInterface = MFX_IMPL_VIA_ANY;
 
     if (!(implInterface & MFX_IMPL_AUDIO) &&
-        (0 != implInterface) &&
 #if defined(MFX_VA_WIN)
         !(implInterface & MFX_IMPL_EXTERNAL_THREADING)&&
         (MFX_IMPL_VIA_D3D11 != implInterface) &&
@@ -169,7 +171,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     {
         return MFX_ERR_UNSUPPORTED;
     }
-
 
     // set the adapter number
     switch (impl)
