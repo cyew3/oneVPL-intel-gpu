@@ -20,9 +20,15 @@
 #include "vm_time.h"
 #include "mfx_session.h"
 
+//#define DUMP_AVC_ENC_DEBUG_INFO
+
 using namespace MfxHwH264Encode;
 
+#ifdef DUMP_AVC_ENC_DEBUG_INFO
+
 void Dump(ENCODE_EXECUTE_PARAMS const & params, GUID guid);
+
+#endif // DUMP_AVC_ENC_DEBUG_INFO
 
 mfxU8 ConvertProfileMfx2Ddi(mfxU32 profile)
 {
@@ -1422,6 +1428,8 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     return MFX_ERR_NONE;
 }
 
+#ifdef DUMP_AVC_ENC_DEBUG_INFO
+
 namespace
 {
     char FrameTypeToChar(mfxU32 type)
@@ -1455,6 +1463,8 @@ namespace
         printf("\n");
     }
 };
+
+#endif // DUMP_AVC_ENC_DEBUG_INFO
 
 mfxStatus D3D9Encoder::ExecuteImpl(
     mfxHDLPair                 pair,
@@ -2135,6 +2145,8 @@ mfxStatus D3D9SvcEncoder::Register(mfxFrameAllocResponse & response, D3DDDIFORMA
 
     return MFX_ERR_NONE;
 }
+
+#ifdef DUMP_AVC_ENC_DEBUG_INFO
 
 namespace
 {
@@ -2976,6 +2988,8 @@ namespace
         }
     }
 };
+
+#endif // DUMP_AVC_ENC_DEBUG_INFO
 
 mfxStatus D3D9SvcEncoder::Execute(
     mfxHDLPair                 pair,
