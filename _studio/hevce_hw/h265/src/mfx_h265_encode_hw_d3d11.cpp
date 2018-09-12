@@ -23,7 +23,7 @@ namespace MfxHwH265Encode
 {
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D11Encoder()
-    : m_core(0)
+    : m_core(nullptr)
     , m_guid()
     , m_width(0)
     , m_height(0)
@@ -54,7 +54,7 @@ D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::~D3D11Encoder()
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
-    MFXCoreInterface * core,
+    VideoCORE * core,
     GUID        guid,
     mfxU32      width,
     mfxU32      height,
@@ -62,8 +62,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::CreateAuxilliaryDevice");
     m_core = core;
+    MFX_CHECK_NULL_PTR1(m_core);
     mfxStatus sts = MFX_ERR_NONE;
-    ID3D11Device* device;
     D3D11_VIDEO_DECODER_DESC    desc = {};
     D3D11_VIDEO_DECODER_CONFIG  config = {};
     HRESULT hr;
@@ -76,20 +76,13 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     // [0] Get device/context
     if (!m_vcontext)
     {
-        sts = core->GetHandle(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&device);
+        D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(core);
+        MFX_CHECK(pD3d11, MFX_ERR_DEVICE_FAILED)
 
-        if (sts == MFX_ERR_NOT_FOUND)
-            sts = core->CreateAccelerationDevice(MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&device);
-
-        MFX_CHECK_STS(sts);
-        MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
-
-        device->GetImmediateContext(&m_context);
-        MFX_CHECK(m_context, MFX_ERR_DEVICE_FAILED);
-
-        m_vdevice  = device;
-        m_vcontext = m_context;
+        m_vdevice = pD3d11->GetD3D11VideoDevice();
         MFX_CHECK(m_vdevice, MFX_ERR_DEVICE_FAILED);
+
+        m_vcontext = pD3d11->GetD3D11VideoContext();
         MFX_CHECK(m_vcontext, MFX_ERR_DEVICE_FAILED);
     }
     if(guid != DXVA2_Intel_MFE)
@@ -450,7 +443,6 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
 {
     MFX_CHECK_WITH_ASSERT(m_core, MFX_ERR_NOT_INITIALIZED);
 
-    mfxFrameAllocator & fa = m_core->FrameAllocator();
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue : m_reconQueue;
 
     queue.resize(response.NumFrameActual);
@@ -459,7 +451,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
     {
         mfxHDLPair handlePair = {};
 
-        mfxStatus sts = fa.GetHDL(fa.pthis, response.mids[i], (mfxHDL*)&handlePair);
+        mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL*)&handlePair);
         MFX_CHECK_STS(sts);
 
         queue[i] = handlePair;

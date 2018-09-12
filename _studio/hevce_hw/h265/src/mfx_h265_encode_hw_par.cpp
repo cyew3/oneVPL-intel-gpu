@@ -120,7 +120,7 @@ mfxU32 GetMaxDpbSize(mfxU32 PicSizeInSamplesY, mfxU32 MaxLumaPs, mfxU32 maxDpbPi
     return maxDpbPicBuf;
 }
 
-mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
+mfxStatus CheckProfile(mfxVideoParam& par, eMFXHWType platform)
 {
     mfxStatus sts = MFX_ERR_NONE;
 
@@ -144,7 +144,7 @@ mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
 
 #if defined(MFX_ENABLE_HEVCE_SCC)
     case MFX_PROFILE_HEVC_SCC:
-        if (platform < MFX_PLATFORM_TIGERLAKE)
+        if (platform < MFX_HW_TGL_LP)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (pHevcPar)
@@ -161,7 +161,7 @@ mfxStatus CheckProfile(mfxVideoParam& par, mfxU16 platform)
         break;
 #endif
     case MFX_PROFILE_HEVC_REXT:
-        if (platform < MFX_PLATFORM_ICELAKE)
+        if (platform < MFX_HW_ICL)
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         if (pHevcPar)
@@ -508,16 +508,12 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         Fewer slices than tiles is illegal (e.g. 3 slice, 2x2 tiles)
         More slices than tiles is legal as long as the slices do not cross tile boundaries; the app needs to use the slice segment address and number of LCUs in the slice to define the slices within the tiles.
     */
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (par.m_platform.CodeName < MFX_PLATFORM_TIGERLAKE)
-#else
-    if (par.m_platform.CodeName <= MFX_PLATFORM_ICELAKE)
-#endif
+    if (par.m_platform <= MFX_HW_ICL)
     {
         nSlice = Max(nSlice, nTile);
     }
 
-    if (par.m_platform.CodeName >= MFX_PLATFORM_ICELAKE && IsOn(par.mfx.LowPower)) {
+    if (par.m_platform >= MFX_HW_ICL && IsOn(par.mfx.LowPower)) {
         if (nTile == 1)
             SliceStructure = 2;
     }
@@ -865,9 +861,9 @@ mfxU32 GetDefaultLCUSize(MfxVideoParam const & par,
 
 #if (MFX_VERSION >= 1025)
 
-    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE) {
+    if (par.m_platform >= MFX_HW_CNL) {
         if (IsOn(par.mfx.LowPower))
-            LCUSize = 64;
+            LCUSize = 64;//HW limitation only 64x64 LCU is supported
         else
             LCUSize = (1 << (CeilLog2(hwCaps.LCUSizeSupported + 1) + 3)); // set max supported
     }
@@ -949,26 +945,30 @@ bool CheckLCUSize(mfxU32 LCUSizeSupported, mfxU16& LCUSize)
 
 mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
 {
-    switch (par.m_platform.CodeName)
+    switch (par.m_platform)
     {
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
-    case MFX_PLATFORM_LAKEFIELD:    // VDENC only
+    case MFX_HW_LKF:    // VDENC only
         {
+            //limited VDEnc support without HME and StreamIn 3rd reference
             mfxU16 maxNumRefsL0L1[7] = { 2, 2, 2, 2, 2, 1, 1 };
             return  maxNumRefsL0L1[par.mfx.TargetUsage - 1];
         }
         break;
 #endif
-    case MFX_PLATFORM_CANNONLAKE:
-    case MFX_PLATFORM_ICELAKE:
-#if defined (PRE_SI_TARGET_PLATFORM_GEN12)
-    case MFX_PLATFORM_TIGERLAKE:
+    case MFX_HW_CNL:
+    case MFX_HW_ICL:
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+    case MFX_HW_TGL_LP:
+    case MFX_HW_TGL_HP:
 #endif
     default:
         if (IsOn(par.mfx.LowPower)) {   // VDENC
+            //2 references support by VDEnc HW and 3rd one picked via StreamIn interface
             mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
             return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
         } else {   // VME
+            //HW limitation to suport only 2 forward references Max, enabled only at High quality TUs L0 Can be more, but 4 references can cover any cases
             mfxU16 maxNumRefsL0[7] = { 4, 4, 4, 4, 4, 1, 1 };
             mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
             return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
@@ -1208,7 +1208,6 @@ void InheritDefaultValues(
     InheritOption(extHEVCInit->SampleAdaptiveOffset, extHEVCReset->SampleAdaptiveOffset);
     InheritOption(extHEVCInit->LCUSize, extHEVCReset->LCUSize);
 #endif
-
     mfxExtHEVCTiles const * extHEVCTilInit  = &parInit.m_ext.HEVCTiles;
     mfxExtHEVCTiles *       extHEVCTilReset = &parReset.m_ext.HEVCTiles;
 
@@ -1353,12 +1352,12 @@ inline bool isSAOSupported(MfxVideoParam const & par)
     /* On Gen10 VDEnc, this flag should be set to 0 when SliceSizeControl flag is on.
     On Gen10/CNL both VDEnc and VME, this flag should be set to 0 for 10-bit encoding.
     On CNL+, this flag should be set to 0 for max LCU size is 16x16 */
-    if (   par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
-        || (par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED && par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE)
+    if (   par.m_platform < MFX_HW_CNL
+        || (par.mfx.TargetUsage == MFX_TARGETUSAGE_BEST_SPEED && par.m_platform == MFX_HW_CNL)
         || par.m_ext.CO3.WeightedPred == MFX_WEIGHTED_PRED_EXPLICIT
         || par.m_ext.CO3.WeightedBiPred == MFX_WEIGHTED_PRED_EXPLICIT
         || par.LCUSize == 16
-        || (   par.m_platform.CodeName == MFX_PLATFORM_CANNONLAKE
+        || (   par.m_platform == MFX_HW_CNL
             && (
 #if (MFX_VERSION >= 1027)
                    (par.m_ext.CO3.TargetBitDepthLuma == 10)
@@ -1914,7 +1913,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif //#if (MFX_VERSION >= 1027)
 
     if (CO3.LowDelayBRC == MFX_CODINGOPTION_ON) {
-        if ((par.m_platform.CodeName < MFX_PLATFORM_ICELAKE) ||
+        if ((par.m_platform < MFX_HW_ICL) ||
             (par.mfx.RateControlMethod != MFX_RATECONTROL_VBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_QVBR &&
             par.mfx.RateControlMethod != MFX_RATECONTROL_VCM)) {
@@ -2014,7 +2013,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         if (caps.NumScalablePipesMinus1 > 0) {
             MaxTileColumns = (mfxU16)caps.NumScalablePipesMinus1 + 1;
         }
-        else if (par.m_platform.CodeName == MFX_PLATFORM_ICELAKE && IsOn(par.mfx.LowPower) && par.m_ext.HEVCTiles.NumTileColumns > 1 && par.m_ext.HEVCTiles.NumTileRows > 1) {
+        else if (par.m_platform == MFX_HW_ICL && IsOn(par.mfx.LowPower) && par.m_ext.HEVCTiles.NumTileColumns > 1 && par.m_ext.HEVCTiles.NumTileRows > 1) {
             // for ICL VDEnc only 1xN or Nx1 configurations are allowed for single pipe
             // we ignore "Rows" condition
             changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, 1);
@@ -2533,7 +2532,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         mfxU16 maxBackward = Min<mfxU16>(caps.MaxNum_Reference1, maxDPB);
 
 #if (MFX_VERSION >= 1025)
-        if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+        if (par.m_platform >= MFX_HW_CNL)
         {
             maxForward  = Min<mfxU16>(maxForward,  GetMaxNumRef(par, true));
             maxBackward = Min<mfxU16>(maxBackward, GetMaxNumRef(par, false));
@@ -2559,7 +2558,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #if (MFX_VERSION >= 1026)
     changed += CheckTriStateOption(CO3.TransformSkip);
 
-    if (IsOn(CO3.TransformSkip) && par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE)
+    if (IsOn(CO3.TransformSkip) && par.m_platform < MFX_HW_CNL)
     {
         CO3.TransformSkip = 0;
         changed++;
@@ -2705,7 +2704,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         );
         //On Gen10+ VDEnc SAO for only Luma/Chroma in CQP mode isn't supported by driver until real customer usage
         //For TU 1 and TU 4 SAO isn't supported due to HuC restrictions, for TU 7 SAO isn't supported at all
-        if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE &&
+        if (par.m_platform >= MFX_HW_CNL &&
             par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
             par.mfx.LowPower == MFX_CODINGOPTION_ON &&
             (par.m_ext.HEVCParam.SampleAdaptiveOffset == (mfxU16)MFX_SAO_ENABLE_LUMA || par.m_ext.HEVCParam.SampleAdaptiveOffset == (mfxU16)MFX_SAO_ENABLE_CHROMA))
@@ -2735,7 +2734,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         , caps.NoWeightedPred ? 0 : MFX_WEIGHTED_PRED_EXPLICIT);
 
 #if defined(MFX_ENABLE_HEVCE_FADE_DETECTION)
-    if (caps.NoWeightedPred || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+    if (caps.NoWeightedPred || par.m_platform < MFX_HW_ICL)
     {
         changed += CheckOption(CO3.FadeDetection
             , (mfxU16)MFX_CODINGOPTION_UNKNOWN
@@ -2749,7 +2748,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
 #endif //defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
 
 #if (MFX_VERSION >= 1027)
-    if (par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+    if (par.m_platform < MFX_HW_ICL)
         changed += CheckOption(par.m_ext.HEVCParam.GeneralConstraintFlags, 0);
 #endif // MFX_VERSION >= 1027
 
@@ -2760,7 +2759,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         changed += CheckOption(CO3.EnableNalUnitType, MFX_CODINGOPTION_OFF, MFX_CODINGOPTION_UNKNOWN);
 #endif
 
-    sts = CheckProfile(par, par.m_platform.CodeName);
+    sts = CheckProfile(par, par.m_platform);
 
     if (sts >= MFX_ERR_NONE && par.mfx.CodecLevel > 0)  // QueryIOSurf, Init or Reset
     {
@@ -2861,7 +2860,7 @@ void SetDefaults(
     {
         maxQP += 6 * (CO3.TargetBitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower) || par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+        if (IsOn(par.mfx.LowPower) || par.m_platform < MFX_HW_ICL)
             minQP += 6 * (CO3.TargetBitDepthLuma - 8);
     }
 
@@ -2950,11 +2949,11 @@ void SetDefaults(
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower) || (par.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
+        if (IsOn(par.mfx.LowPower) || par.m_platform >= MFX_HW_KBL
 #if (MFX_VERSION >= 1025)
-            && par.m_platform.CodeName < MFX_PLATFORM_CANNONLAKE
+            && par.m_platform < MFX_HW_CNL
 #endif
-            ))
+            )
             minQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif
@@ -3095,7 +3094,7 @@ void SetDefaults(
                 par.mfx.NumRefFrame ? Min<mfxU16>(hwCaps.MaxNum_Reference1, par.mfx.NumRefFrame) : hwCaps.MaxNum_Reference1;
 
 #if (MFX_VERSION >= 1025)
-        if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+        if (par.m_platform >= MFX_HW_CNL)
         {
             RefActiveP = Min(RefActiveP, GetMaxNumRef(par, true));
             RefActiveBL0 = Min(RefActiveBL0, GetMaxNumRef(par, true));
@@ -3265,7 +3264,7 @@ void SetDefaults(
     }
 
 #if (MFX_VERSION >= 1027)
-    if (   (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT && !par.m_ext.HEVCParam.GeneralConstraintFlags)
+    if ( (par.mfx.CodecProfile == MFX_PROFILE_HEVC_REXT && !par.m_ext.HEVCParam.GeneralConstraintFlags)
 #if defined(MFX_ENABLE_HEVCE_SCC)
         || (par.mfx.CodecProfile == MFX_PROFILE_HEVC_SCC && !par.m_ext.HEVCParam.GeneralConstraintFlags)
 #endif

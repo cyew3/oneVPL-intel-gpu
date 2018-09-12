@@ -130,8 +130,6 @@ const GUID GuidTable[3][3][3] =
         },
         // BitDepthLuma = 12
         {
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
- #endif
         }
     },
 #if defined(MFX_ENABLE_HEVCE_SCC)
@@ -154,12 +152,13 @@ const GUID GuidTable[3][3][3] =
         {
         }
     }
+
 #endif
 };
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-MFEDXVAEncoder* CreatePlatformMFEEncoder(MFXCoreInterface* core);
+MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core);
 #endif
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* pCore);
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* pCore);
 
 class DriverEncoder;
 
@@ -169,12 +168,12 @@ typedef enum tagENCODER_TYPE
     , ENCODER_REXT
 } ENCODER_TYPE;
 
-DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE type = ENCODER_DEFAULT);
-mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par);
+DriverEncoder* CreatePlatformH265Encoder(VideoCORE* core, ENCODER_TYPE type = ENCODER_DEFAULT);
+mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par);
 mfxStatus CheckHeaders(MfxVideoParam const & par, ENCODE_CAPS_HEVC const & caps);
 
 #if MFX_EXTBUFF_CU_QP_ENABLE
-mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core, mfxFrameInfo &CUQPFrameInfo);
+mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, VideoCORE& core, mfxFrameInfo &CUQPFrameInfo);
 #endif
 
 enum
@@ -190,7 +189,7 @@ public:
 
     virtual
     mfxStatus CreateAuxilliaryDevice(
-                    MFXCoreInterface * core,
+                    VideoCORE * core,
                     GUID        guid,
                     mfxU32      width,
                     mfxU32      height,

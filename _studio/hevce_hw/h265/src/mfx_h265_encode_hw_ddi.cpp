@@ -10,7 +10,7 @@
 #include "mfx_common.h"
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE)
 
-#include "mfx_common.h"
+#include "libmfx_core_interface.h"
 
 #include "mfx_h265_encode_hw_ddi.h"
 #if defined (MFX_VA_WIN)
@@ -43,7 +43,7 @@ GUID GetGUID(MfxVideoParam const & par)
 
     cfId = Clip3<mfxU16>(MFX_CHROMAFORMAT_YUV420, MFX_CHROMAFORMAT_YUV444, par.m_ext.CO3.TargetChromaFormatPlus1 - 1) - MFX_CHROMAFORMAT_YUV420;
 
-    if (par.m_platform.CodeName && par.m_platform.CodeName < MFX_PLATFORM_ICELAKE)
+    if (par.m_platform && par.m_platform < MFX_HW_ICL)
         cfId = 0; // platforms below ICL do not support Main422/Main444 profile, using Main instead.
 #else
     if (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAIN10 || par.mfx.FrameInfo.BitDepthLuma == 10 || par.mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
@@ -51,7 +51,7 @@ GUID GetGUID(MfxVideoParam const & par)
 
      cfId = 0;
 #endif
-    if (par.m_platform.CodeName && par.m_platform.CodeName < MFX_PLATFORM_KABYLAKE)
+    if (par.m_platform && par.m_platform < MFX_HW_KBL)
         bdId = 0;
 
     mfxU16 cFamily = IsOn(par.mfx.LowPower);
@@ -66,71 +66,58 @@ GUID GetGUID(MfxVideoParam const & par)
     return guid;
 }
 
-DriverEncoder* CreatePlatformH265Encoder(MFXCoreInterface* core, ENCODER_TYPE type)
+DriverEncoder* CreatePlatformH265Encoder(VideoCORE* core, ENCODER_TYPE type)
 {
     (void)type;
 
     if (core)
     {
-        mfxCoreParam par = {};
-
-        if (core->GetCoreParam(&par))
-            return 0;
-
-        switch(par.Impl & 0xF00)
+        switch(core->GetVAType())
         {
 #if defined (MFX_VA_WIN)
-        case MFX_IMPL_VIA_D3D9:
+        case MFX_HW_D3D9:
             if (type == ENCODER_REXT)
                 return new D3D9EncoderREXT;
             return new D3D9EncoderDefault;
-        case MFX_IMPL_VIA_D3D11:
+        case MFX_HW_D3D11:
             if (type == ENCODER_REXT)
                 return new D3D11EncoderREXT;
             return new D3D11EncoderDefault;
 #elif defined (MFX_VA_LINUX)
-        case MFX_IMPL_VIA_VAAPI:
+        case MFX_HW_VAAPI:
             return new VAAPIEncoder;
 #endif
         default:
-            return 0;
+            return nullptr;
         }
     }
 
-    return 0;
+    return nullptr;
 }
 
 #if defined(MFX_ENABLE_MFE) && defined(MFX_VA_WIN)
-MFEDXVAEncoder* CreatePlatformMFEEncoder(MFXCoreInterface* core)
+MFEDXVAEncoder* CreatePlatformMFEEncoder(VideoCORE* core)
 {
 
     if (core)
     {
-        mfxCoreParam par = {};
+        ComPtrCore<MFEDXVAEncoder> *pVideoEncoder = QueryCoreInterface<ComPtrCore<MFEDXVAEncoder> >(core, MFXMFEDDIENCODER_SEARCH_GUID);
+        if (!pVideoEncoder) return nullptr;
+        if (!pVideoEncoder->get())
+            *pVideoEncoder = new MFEDXVAEncoder;
 
-        if (core->GetCoreParam(&par))
-            return NULL;
-        MFEDXVAEncoder * mfe_adapter = NULL;
-        switch (par.Impl & 0xF00)
-        {
-        case MFX_IMPL_VIA_D3D11:
-            //to be switched to QueryCoreInterface directly when encoder moved to library.
-            core->GetHandle((mfxHandleType)9, ((mfxHDL*)&mfe_adapter));
-            return mfe_adapter;
-        case MFX_IMPL_VIA_D3D9:
-        default:
-            return NULL;
-        }
+        return pVideoEncoder->get();
     }
 
-    return NULL;
+    return nullptr;
 }
 #endif
 
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
-mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
+mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, VideoCORE* core)
 {
     mfxStatus sts = MFX_ERR_NONE;
+    MFX_CHECK_NULL_PTR1(core);
     if (!caps.BitDepth8Only && !caps.MaxEncodedBitDepth)
         caps.MaxEncodedBitDepth = 1;
     if (!caps.Color420Only && !(caps.YUV444ReconSupport || caps.YUV422ReconSupport))
@@ -141,23 +128,21 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
     caps.MaxEncodedBitDepth = 2;
 #endif
 #if (MFX_VERSION >= 1025)
-    mfxPlatform pltfm;
-    sts = core->QueryPlatform(&pltfm);
-    MFX_CHECK_STS(sts);
+    eMFXHWType platform = core->GetHWType();
 
-    if (pltfm.CodeName < MFX_PLATFORM_CANNONLAKE)
+    if (platform < MFX_HW_CNL)
     {   // not set until CNL now
         caps.LCUSizeSupported = 0b10;   // 32x32 lcu is only supported
         caps.BlockSize = 0b10; // 32x32
     }
 
-    if (pltfm.CodeName < MFX_PLATFORM_ICELAKE)
+    if (platform < MFX_HW_ICL)
         caps.NegativeQPSupport = 0;
     else
         caps.NegativeQPSupport = 1; // driver should set it for Gen11+ VME only
 
 #if defined(MFX_ENABLE_HEVCE_WEIGHTED_PREDICTION)
-    if (pltfm.CodeName >= MFX_PLATFORM_ICELAKE)
+    if (platform >= MFX_HW_ICL)
     {
         if (caps.NoWeightedPred)
             caps.NoWeightedPred = 0;
@@ -183,10 +168,11 @@ mfxStatus HardcodeCaps(ENCODE_CAPS_HEVC& caps, MFXCoreInterface* core)
     return sts;
 }
 
-mfxStatus QueryHwCaps(MFXCoreInterface* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par)
+mfxStatus QueryHwCaps(VideoCORE* core, GUID guid, ENCODE_CAPS_HEVC & caps, MfxVideoParam const & par)
 {
     std::unique_ptr<DriverEncoder> ddi;
 
+    MFX_CHECK_NULL_PTR1(core);
     ddi.reset(CreatePlatformH265Encoder(core));
     MFX_CHECK(ddi.get(), MFX_ERR_UNSUPPORTED);
 
@@ -209,7 +195,7 @@ mfxStatus CheckHeaders(
         && par.m_sps.pcm_enabled_flag == 0);
 
 #if (MFX_VERSION >= 1025)
-    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    if (par.m_platform >= MFX_HW_CNL)
     {
         MFX_CHECK_COND(par.m_sps.amp_enabled_flag == 1);
     }
@@ -414,15 +400,10 @@ ENCODE_PACKEDHEADER_DATA* DDIHeaderPacker::PackSkippedSlice(Task const & task, m
     return &*m_cur;
 }
 #if MFX_EXTBUFF_CU_QP_ENABLE
-mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, MFXCoreInterface& core, mfxFrameInfo &CUQPFrameInfo)
+mfxStatus FillCUQPDataDDI(Task& task, MfxVideoParam &par, VideoCORE& core, mfxFrameInfo &CUQPFrameInfo)
 {
     mfxStatus mfxSts = MFX_ERR_NONE;
-    mfxCoreParam coreParams = {};
-
-    if (core.GetCoreParam(&coreParams))
-       return  MFX_ERR_UNSUPPORTED;
-
-    if (!task.m_bCUQPMap || ((coreParams.Impl & 0xF00) == MFX_IMPL_VIA_VAAPI))
+    if (!task.m_bCUQPMap || (core.GetVAType() == MFX_HW_VAAPI))
         return MFX_ERR_NONE;
 
     mfxExtMBQP *mbqp = ExtBuffer::Get(task.m_ctrl);
@@ -854,7 +835,7 @@ void FillSpsBuffer(
     }
 
 #if (MFX_VERSION >= 1025)
-    if (par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    if (par.m_platform >= MFX_HW_CNL)
     {
         if (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP)
         {
@@ -920,8 +901,6 @@ void FillPpsBuffer(
 
     pps.num_ref_idx_l0_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l0_default_active_minus1;
     pps.num_ref_idx_l1_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l1_default_active_minus1;
-
-
 
     pps.LcuMaxBitsizeAllowed       = 0;
     pps.bUseRawPicForRef           = 0;

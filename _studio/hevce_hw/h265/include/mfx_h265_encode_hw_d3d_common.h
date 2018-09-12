@@ -43,7 +43,7 @@ namespace MfxHwH265Encode
 
         // Init
         virtual
-        mfxStatus Init(MFXCoreInterface *pCore);
+        mfxStatus Init(VideoCORE *pCore);
 
         // Destroy
         virtual

@@ -23,15 +23,12 @@ mfxStatus H265FeiEncode_HW::ExtraParametersCheck(mfxEncodeCtrl *ctrl, mfxFrameSu
 
     MFX_CHECK(ctrl, MFX_ERR_INVALID_VIDEO_PARAM);
 
-    mfxPlatform p = {};
-
-    mfxStatus sts = m_core.QueryPlatform(&p);
-    MFX_CHECK_STS(sts);
+    eMFXHWType platform = m_core->GetHWType();
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
-    bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = p.CodeName >= MFX_PLATFORM_ICELAKE;
+    bool isSKL = platform == MFX_HW_SCL, isICLplus = platform >= MFX_HW_ICL;
 #else
-    bool isSKL = p.CodeName == MFX_PLATFORM_SKYLAKE, isICLplus = false;
+    bool isSKL = platform == MFX_HW_SCL, isICLplus = false;
 #endif
 
 

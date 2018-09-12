@@ -31,7 +31,7 @@ public:
 
     virtual
     mfxStatus CreateAuxilliaryDevice(
-        MFXCoreInterface * core,
+        VideoCORE * core,
         GUID        guid,
         mfxU32      width,
         mfxU32      height,
@@ -80,7 +80,7 @@ protected:
         mfxHDLPair surface);
 
 private:
-    MFXCoreInterface*              m_core;
+    VideoCORE*              m_core;
     std::auto_ptr<AuxiliaryDevice> m_auxDevice;
 
     GUID                 m_guid;

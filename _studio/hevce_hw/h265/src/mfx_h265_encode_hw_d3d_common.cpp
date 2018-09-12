@@ -24,19 +24,8 @@ using namespace MfxHwH265Encode;
 
 #define DEFAULT_TIMEOUT_H265_HW 60000
 
-// Wrapper for MFXCoreInterface class to get access to mfxCoreInterface object
-class MFXCoreInterface2 : public MFXCoreInterface
-{
-public:
-    MFXCoreInterface2(MFXCoreInterface &toCopy) : MFXCoreInterface(toCopy) {}
-    mfxCoreInterface& GetMfxCoreInterface()
-    {
-        return m_core;
-    }
-};
-
 D3DXCommonEncoder::D3DXCommonEncoder()
-    :pSheduler(NULL)
+    :pSheduler(nullptr)
     ,m_bSingleThreadMode(false)
 {
 }
@@ -47,13 +36,12 @@ D3DXCommonEncoder::~D3DXCommonEncoder()
 }
 
 // Init
-mfxStatus D3DXCommonEncoder::Init(MFXCoreInterface *pCore)
+mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore)
 {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    MFXCoreInterface2 wrapper(*pCore);
-    mfxSession sess = (mfxSession)wrapper.GetMfxCoreInterface().pthis;
-    if(sess)
-        pSheduler = (MFXIScheduler2 *)sess->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
+
+    MFX_CHECK_NULL_PTR1(pCore);
+    pSheduler = (MFXIScheduler2 *)pCore->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
 
     if (pSheduler == NULL)
         return MFX_ERR_UNDEFINED_BEHAVIOR;

@@ -14,6 +14,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
+#include "libmfx_core_interface.h"
 #include "auxiliary_device.h"
 #include "mfx_h265_encode_hw_ddi.h"
 #include <d3d11.h>
@@ -34,7 +35,7 @@ public:
 
     virtual
     mfxStatus CreateAuxilliaryDevice(
-        MFXCoreInterface * core,
+        VideoCORE * core,
         GUID        guid,
         mfxU32      width,
         mfxU32      height,
@@ -83,7 +84,7 @@ protected:
         mfxHDLPair surface);
 
 private:
-    MFXCoreInterface*                           m_core;
+    VideoCORE *                                 m_core;
     GUID                                        m_guid;
     mfxU32                                      m_width;
     mfxU32                                      m_height;

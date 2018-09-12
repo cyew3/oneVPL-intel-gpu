@@ -310,48 +310,41 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
 
 void MfxFrameAllocResponse::Free()
 {
-    if (m_core == 0)
+    if (m_core == nullptr)
         return;
 
-    mfxFrameAllocator & fa = m_core->FrameAllocator();
-    mfxCoreParam par = {};
-
-    m_core->GetCoreParam(&par);
-
-    if ((par.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    if (m_core->GetVAType() == MFX_HW_D3D11)
     {
         for (size_t i = 0; i < m_responseQueue.size(); i++)
         {
-            fa.Free(fa.pthis, &m_responseQueue[i]);
+            m_core->FreeFrames(&m_responseQueue[i]);
         }
-        m_responseQueue.resize(0);
+        m_responseQueue.clear();
     }
     else
     {
         if (mids)
         {
             NumFrameActual = m_numFrameActualReturnedByAllocFrames;
-            fa.Free(fa.pthis, this);
+            m_core->FreeFrames(this);
             mids = 0;
         }
     }
-    m_core = NULL;
+
+    m_core = nullptr;
 }
 
 mfxStatus MfxFrameAllocResponse::Alloc(
-    MFXCoreInterface *     core,
+    VideoCORE *     core,
     mfxFrameAllocRequest & req,
-    bool                   /*isCopyRequired*/)
+    bool      isCopyRequired)
 {
-    mfxFrameAllocator & fa = core->FrameAllocator();
-    mfxCoreParam par = {};
-    mfxFrameAllocResponse & response = *(mfxFrameAllocResponse*)this;
-
-    core->GetCoreParam(&par);
+    MFX_CHECK_NULL_PTR1(core);
+    eMFXVAType va = core->GetVAType();
 
     req.NumFrameSuggested = req.NumFrameMin;
 
-    if ((par.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    if (va == MFX_HW_D3D11)
     {
         mfxFrameAllocRequest tmp = req;
         tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
@@ -377,7 +370,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
         for (int i = 0; i < req.NumFrameMin; i++)
         {
-            mfxStatus sts = fa.Alloc(fa.pthis, &tmp, &m_responseQueue[i]);
+            mfxStatus sts = core->AllocFrames(&tmp, &m_responseQueue[i], isCopyRequired);
             MFX_CHECK_STS(sts);
             m_mids[i] = m_responseQueue[i].mids[0];
         }
@@ -387,9 +380,39 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     }
     else
     {
-        mfxStatus sts = fa.Alloc(fa.pthis, &req, &response);
+        mfxStatus sts = core->AllocFrames(&req, this, isCopyRequired);
         MFX_CHECK_STS(sts);
     }
+
+    if (NumFrameActual < req.NumFrameMin)
+        return MFX_ERR_MEMORY_ALLOC;
+
+    m_locked.resize(req.NumFrameMin, 0);
+    std::fill(m_locked.begin(), m_locked.end(), 0);
+
+    m_flag.resize(req.NumFrameMin, 0);
+    std::fill(m_flag.begin(), m_flag.end(), 0);
+
+    m_core = core;
+    m_numFrameActualReturnedByAllocFrames = NumFrameActual;
+    NumFrameActual = req.NumFrameMin;
+    m_info = req.Info;
+    m_isExternal = false;
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus MfxFrameAllocResponse::Alloc(
+    VideoCORE *            core,
+    mfxFrameAllocRequest & req,
+    mfxFrameSurface1 **    opaqSurf,
+    mfxU32                 numOpaqSurf)
+{
+    req.NumFrameSuggested = req.NumFrameMin;
+
+    MFX_CHECK_NULL_PTR1(core);
+    mfxStatus sts = core->AllocFrames(&req, this, opaqSurf, numOpaqSurf);
+    MFX_CHECK_STS(sts);
 
     if (NumFrameActual < req.NumFrameMin)
         return MFX_ERR_MEMORY_ALLOC;
@@ -531,38 +554,33 @@ void ReleaseResource(
 }
 
 mfxStatus GetNativeHandleToRawSurface(
-    MFXCoreInterface &    core,
+    VideoCORE &    core,
     MfxVideoParam const & video,
     Task const &          task,
     mfxHDLPair &          handle)
 {
     mfxStatus sts = MFX_ERR_NONE;
-    mfxFrameAllocator & fa = core.FrameAllocator();
-    mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
     mfxFrameSurface1 * surface = task.m_surf_real;
+    mfxExtOpaqueSurfaceAlloc const & opaq = video.m_ext.Opaque;
 
     Zero(handle);
     mfxHDL * nativeHandle = &handle.first;
 
-    if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
-        || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
-        sts = fa.GetHDL(fa.pthis, task.m_midRaw, nativeHandle);
-    else if (   video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY
-             || video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-    {
-        if (task.m_midRaw == NULL)
-            sts = core.GetFrameHandle(&surface->Data, nativeHandle);
-        else
-            sts = fa.GetHDL(fa.pthis, task.m_midRaw, nativeHandle);
-    }
+    if (video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+        (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+        sts = core.GetFrameHDL(task.m_midRaw, nativeHandle);
+    else if (video.IOPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        sts = core.GetExternalFrameHDL(surface->Data.MemId, nativeHandle);
+    else if (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
+        sts = core.GetFrameHDL(surface->Data.MemId, nativeHandle);
     else
-        return (MFX_ERR_UNDEFINED_BEHAVIOR);
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     return sts;
 }
 
 mfxStatus CopyRawSurfaceToVideoMemory(
-    MFXCoreInterface &    core,
+    VideoCORE &    core,
     MfxVideoParam const & video,
     Task const &          task)
 {
@@ -573,11 +591,9 @@ mfxStatus CopyRawSurfaceToVideoMemory(
     if (   video.IOPattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY
         || (video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)))
     {
-        mfxFrameAllocator & fa = core.FrameAllocator();
         mfxFrameData d3dSurf = {};
         mfxFrameData sysSurf = surface->Data;
         d3dSurf.MemId = task.m_midRaw;
-        bool needUnlock = false;
 
         mfxFrameSurface1 surfSrc = { {}, video.mfx.FrameInfo, sysSurf };
         mfxFrameSurface1 surfDst = { {}, video.mfx.FrameInfo, d3dSurf };
@@ -589,26 +605,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
             )
             surfDst.Info.Shift = 1; // convert to native shift in core.CopyFrame() if required
 
-        if (!sysSurf.Y)
-        {
-            sts = fa.Lock(fa.pthis, sysSurf.MemId, &surfSrc.Data);
-            MFX_CHECK_STS(sts);
-            needUnlock = true;
-        }
-
-        //sts = fa.Lock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
-        //MFX_CHECK_STS(sts);
-
-        sts = core.CopyFrame(&surfDst, &surfSrc);
-
-        if (needUnlock)
-        {
-            sts = fa.Unlock(fa.pthis, sysSurf.MemId, &surfSrc.Data);
-            MFX_CHECK_STS(sts);
-        }
-
-        //sts = fa.Unlock(fa.pthis, d3dSurf.MemId, &surfDst.Data);
-        //MFX_CHECK_STS(sts);
+        sts = core.DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_D3D_INT, &surfSrc, MFX_MEMTYPE_SYS_EXT);
     }
 
     return sts;
@@ -695,7 +692,8 @@ namespace ExtBuffer
 };
 
 MfxVideoParam::MfxVideoParam()
-    : BufferSizeInKB    (0)
+    : m_platform(MFX_HW_UNKNOWN)
+    , BufferSizeInKB    (0)
     , InitialDelayInKB  (0)
     , TargetKbps        (0)
     , MaxKbps           (0)
@@ -715,7 +713,6 @@ MfxVideoParam::MfxVideoParam()
 #endif
 {
     Zero(*(mfxVideoParam*)this);
-    Zero(m_platform);
 }
 
 MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
@@ -723,7 +720,7 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
     , bFieldReord(false)
     , bNonStandardReord(false)
 {
-     Copy(m_platform, par.m_platform);
+     m_platform = par.m_platform;
      Construct(par);
 
      Copy(m_vps, par.m_vps);
@@ -733,8 +730,9 @@ MfxVideoParam::MfxVideoParam(MfxVideoParam const & par)
      CopyCalcParams(par);
 }
 
-MfxVideoParam::MfxVideoParam(mfxVideoParam const & par, mfxPlatform const & platform)
-    : BufferSizeInKB    (0)
+MfxVideoParam::MfxVideoParam(mfxVideoParam const & par, eMFXHWType const & platform)
+    : m_platform(platform)
+    , BufferSizeInKB    (0)
     , InitialDelayInKB  (0)
     , TargetKbps        (0)
     , MaxKbps           (0)
@@ -752,7 +750,6 @@ MfxVideoParam::MfxVideoParam(mfxVideoParam const & par, mfxPlatform const & plat
 #endif
 {
     Zero(*(mfxVideoParam*)this);
-    Copy(m_platform, platform);
     Construct(par);
     SyncVideoToCalculableParam();
 }
@@ -782,7 +779,7 @@ void MfxVideoParam::CopyCalcParams(MfxVideoParam const & par)
 
 MfxVideoParam& MfxVideoParam::operator=(MfxVideoParam const & par)
 {
-    Copy(m_platform, par.m_platform);
+    m_platform = par.m_platform;
     Construct(par);
     CopyCalcParams(par);
 
@@ -809,7 +806,7 @@ void MfxVideoParam::Construct(mfxVideoParam const & par)
     base.NumExtParam = 0;
     base.ExtParam = m_ext.m_extParam;
 
-    CodedPicAlignment = GetAlignmentByPlatform(m_platform.CodeName);
+    CodedPicAlignment = GetAlignmentByPlatform(m_platform);
     ExtBuffer::Construct(par, m_ext.HEVCParam, m_ext.m_extParam, base.NumExtParam, CodedPicAlignment);
     ExtBuffer::Construct(par, m_ext.HEVCTiles, m_ext.m_extParam, base.NumExtParam);
     ExtBuffer::Construct(par, m_ext.Opaque, m_ext.m_extParam, base.NumExtParam);
@@ -1587,7 +1584,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_sps.max_transform_hierarchy_depth_intra      = 2;
     m_sps.scaling_list_enabled_flag                = 0;
 #if (MFX_VERSION >= 1025)
-    if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    if (m_platform >= MFX_HW_CNL)
     {
         m_sps.amp_enabled_flag = 1; // only 1
         m_sps.sample_adaptive_offset_enabled_flag = !(m_ext.HEVCParam.SampleAdaptiveOffset & MFX_SAO_DISABLE);
@@ -1900,7 +1897,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     m_pps.constrained_intra_pred_flag           = 0;
 
 #if (MFX_VERSION >= 1025)
-    if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    if (m_platform >= MFX_HW_CNL)
         m_pps.transform_skip_enabled_flag = IsOn(m_ext.CO3.TransformSkip);
     else
 #endif
@@ -1918,7 +1915,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         m_pps.cu_qp_delta_enabled_flag = 1;
 
 #if (MFX_VERSION >= 1025)
-    if ((m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE))
+    if ((m_platform >= MFX_HW_CNL))
     {
         if (IsOn(mfx.LowPower))
             m_pps.diff_cu_qp_delta_depth = 3;
@@ -1980,7 +1977,7 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
     }
 
 #if (MFX_VERSION >= 1025)
-    if (m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE)
+    if (m_platform >= MFX_HW_CNL)
         m_pps.loop_filter_across_slices_enabled_flag = 1;
     else
 #endif //(MFX_VERSION >= 1025)
@@ -3675,9 +3672,10 @@ void ConfigureTask(
 
         task.m_qpY -= 6 * par.m_sps.bit_depth_luma_minus8;
 
-        if (task.m_qpY < 0 && (IsOn(par.mfx.LowPower) || (par.m_platform.CodeName >= MFX_PLATFORM_KABYLAKE
+
+        if (task.m_qpY < 0 && (IsOn(par.mfx.LowPower) || (par.m_platform >= MFX_HW_KBL
 #if (MFX_VERSION >= 1025)
-            && par.m_platform.CodeName <= MFX_PLATFORM_CANNONLAKE
+            && par.m_platform <= MFX_HW_CNL
 #endif
             )))
             task.m_qpY = 0;
@@ -3854,7 +3852,7 @@ bool IsFrameToSkip(Task&  task, MfxFrameAllocResponse & poolRec, bool bSWBRC)
     return false;
 }
 
-mfxStatus CodeAsSkipFrame(     MFXCoreInterface &            core,
+mfxStatus CodeAsSkipFrame(     VideoCORE &            core,
                                MfxVideoParam const &  video,
                                Task&       task,
                                MfxFrameAllocResponse & poolSkip,
@@ -3896,13 +3894,15 @@ mfxStatus CodeAsSkipFrame(     MFXCoreInterface &            core,
         MFX_CHECK(ind < 15, MFX_ERR_UNDEFINED_BEHAVIOR);
 
         DpbFrame& refFrame = task.m_dpb[0][ind];
-        FrameLocker lock_dst(&core, task.m_midRaw);
-        FrameLocker lock_src(&core, refFrame.m_midRec);
+        mfxFrameData dst{};
+        mfxFrameData src{};
+        dst.MemId = task.m_midRaw;
+        src.MemId = refFrame.m_midRec;
 
-        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, lock_src };
-        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, lock_dst };
+        mfxFrameSurface1 surfSrc = { {0,}, video.mfx.FrameInfo, src };
+        mfxFrameSurface1 surfDst = { {0,}, video.mfx.FrameInfo, dst };
 
-        sts = core.CopyFrame(&surfDst, &surfSrc);
+        sts = core.DoFastCopyWrapper(&surfDst, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_INTERNAL_FRAME | MFX_MEMTYPE_DXVA2_DECODER_TARGET | MFX_MEMTYPE_FROM_ENCODE);
         MFX_CHECK_STS(sts);
 
         //poolRec.SetFlag(refFrame.m_idxRec, 1);

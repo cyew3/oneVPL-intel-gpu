@@ -189,7 +189,7 @@ mfxStatus SetSkipFrame(
 
         virtual
         mfxStatus CreateAuxilliaryDevice(
-            MFXCoreInterface * core,
+            VideoCORE * core,
             GUID       guid,
             mfxU32     width,
             mfxU32     height,
@@ -244,7 +244,7 @@ mfxStatus SetSkipFrame(
         VAEntrypoint GetVAEntryPoint(MfxVideoParam const & par)
         {
 #if (MFX_VERSION >= 1025)
-            return (IsOn(par.mfx.LowPower) && par.m_platform.CodeName >= MFX_PLATFORM_CANNONLAKE) ?
+            return (IsOn(par.mfx.LowPower) && par.m_platform >= MFX_HW_CNL) ?
                     VAEntrypointEncSliceLP : VAEntrypointEncSlice;
 #else
             return VAEntrypointEncSlice;
@@ -269,7 +269,7 @@ mfxStatus SetSkipFrame(
 
         void FillSps(MfxVideoParam const & par, VAEncSequenceParameterBufferHEVC & sps);
 
-        MFXCoreInterface*    m_core;
+        VideoCORE*    m_core;
         MfxVideoParam m_videoParam;
         mfxU8  m_numSkipFrames;
         mfxU32 m_sizeSkipFrames;

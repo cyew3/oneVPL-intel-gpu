@@ -13,7 +13,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 
-#include "mfx_common.h"
+#include "libmfx_core_interface.h"
 #include "mfx_h265_encode_hw_d3d9.h"
 
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
@@ -22,7 +22,7 @@ namespace MfxHwH265Encode
 {
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::D3D9Encoder()
-    : m_core(0)
+    : m_core(nullptr)
     , m_auxDevice(0)
     , m_guid()
     , m_width(0)
@@ -49,7 +49,7 @@ D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::~D3D9Encoder()
 
 template<class DDI_SPS, class DDI_PPS, class DDI_SLICE>
 mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
-    MFXCoreInterface * core,
+    VideoCORE * core,
     GUID        guid,
     mfxU32      width,
     mfxU32      height,
@@ -57,8 +57,9 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::CreateAuxilliaryDevice");
     mfxStatus sts = MFX_ERR_NONE;
-    m_core = core;
 
+    m_core = core;
+    MFX_CHECK_NULL_PTR1(m_core);
 #ifdef HEADER_PACKING_TEST
     m_guid      = guid;
     m_width     = width;
@@ -98,13 +99,10 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAuxilliaryDevice(
     m_caps.MaxNum_WeightedPredL1 = 3;
 #else
     IDirect3DDeviceManager9 *device = 0;
+    D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(m_core, MFXICORED3D_GUID);
+    MFX_CHECK_WITH_ASSERT(pID3D != nullptr, MFX_ERR_DEVICE_FAILED);
 
-    sts = core->GetHandle(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
-
-    if (sts == MFX_ERR_NOT_FOUND)
-        sts = core->CreateAccelerationDevice(MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
-
-    MFX_CHECK_STS(sts);
+    device = pID3D->GetD3D9DeviceManager();
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
 
     std::auto_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
@@ -300,7 +298,6 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
 #ifndef HEADER_PACKING_TEST
     MFX_CHECK_WITH_ASSERT(m_auxDevice.get(), MFX_ERR_NOT_INITIALIZED);
 
-    mfxFrameAllocator & fa = m_core->FrameAllocator();
     EmulSurfaceRegister surfaceReg = {};
     surfaceReg.type = type;
     surfaceReg.num_surf = response.NumFrameActual;
@@ -309,7 +306,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
 
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
     {
-        mfxStatus sts = fa.GetHDL(fa.pthis, response.mids[i], (mfxHDL *)&surfaceReg.surface[i]);
+        mfxStatus sts = m_core->GetFrameHDL(response.mids[i], (mfxHDL *)&surfaceReg.surface[i]);
         MFX_CHECK_STS(sts);
         MFX_CHECK(surfaceReg.surface[i], MFX_ERR_UNSUPPORTED);
     }
@@ -667,6 +664,7 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Destroy()
 template class D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC, ENCODE_SET_PICTURE_PARAMETERS_HEVC, ENCODE_SET_SLICE_HEADER_HEVC>;
 
 template class D3D9Encoder<ENCODE_SET_SEQUENCE_PARAMETERS_HEVC_REXT, ENCODE_SET_PICTURE_PARAMETERS_HEVC_REXT, ENCODE_SET_SLICE_HEADER_HEVC_REXT>;
+
 }; // namespace MfxHwH265Encode
 
 #endif // #if defined(_WIN32) || defined(_WIN64)
