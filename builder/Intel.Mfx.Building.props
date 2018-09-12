@@ -81,6 +81,17 @@
     <Link Condition="'$(MfxConfigurationType)'=='Application'">
       <SubSystem>Console</SubSystem>
     </Link>
+
+    <!-- Iterator Debug Level Mismatch HotFix
+         This fix is needed because after adding usage of std::thread Visual Studio try to use libcpmt.lib
+         for linking and it causes an error "Iterator Debug Level Mismatch".
+         Looks like it is Visual Studio problem, but this HotFix fix this problem.
+    -->
+    <Link Condition="'$(IntelDebugConf)'=='true'">
+      <IgnoreSpecificDefaultLibraries>libcpmt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+    <!-- End of Iterator Debug Level Mismatch HotFix Hotfix -->
+
   </ItemDefinitionGroup>
 
 </Project>
