@@ -296,7 +296,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->FileInputFourCC = MFX_FOURCC_P010;
             pParams->EncodeFourCC = MFX_FOURCC_P010;
         }
-        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::p010")))
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ayuv")))
+		{
+			pParams->FileInputFourCC = MFX_FOURCC_AYUV;
+			pParams->EncodeFourCC = MFX_FOURCC_AYUV;
+		}
+#if (MFX_VERSION >= 1027)
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y410")))
+		{
+			pParams->FileInputFourCC = MFX_FOURCC_Y410;
+			pParams->EncodeFourCC = MFX_FOURCC_Y410;
+		}
+#endif
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-a2rgb10")))
+		{
+			pParams->FileInputFourCC = MFX_FOURCC_A2RGB10;
+			pParams->EncodeFourCC = MFX_FOURCC_A2RGB10;
+		}
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::p010")))
         {
             pParams->EncodeFourCC = MFX_FOURCC_P010;
         }
