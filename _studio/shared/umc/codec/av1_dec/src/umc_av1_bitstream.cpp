@@ -771,8 +771,6 @@ namespace UMC_AV1_DECODER
             fh->segmentation.updateData = (Ipp8u)bs->GetBit();
             if (fh->segmentation.updateData)
             {
-                fh->segmentation.absDelta = (Ipp8u)bs->GetBit();
-
                 ClearAllSegFeatures(fh->segmentation);
 
                 for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
@@ -1809,7 +1807,7 @@ namespace UMC_AV1_DECODER
                 if (IsSegFeatureActive(fh->segmentation, i, SEG_LVL_ALT_Q))
                 {
                     const Ipp32s data = GetSegData(fh->segmentation, i, SEG_LVL_ALT_Q);
-                    segQIndex = UMC_VP9_DECODER::clamp(fh->segmentation.absDelta == UMC_VP9_DECODER::SEGMENT_ABSDATA ? data : fh->baseQIndex + data, 0, UMC_VP9_DECODER::MAXQ);
+                    segQIndex = UMC_VP9_DECODER::clamp(fh->baseQIndex + data, 0, UMC_VP9_DECODER::MAXQ);
                 }
                 if (segQIndex)
                 {
@@ -1854,6 +1852,8 @@ namespace UMC_AV1_DECODER
             fh->cdefStrength[i] = prev_fh->cdefStrength[i];
             fh->cdefUVStrength[i] = prev_fh->cdefUVStrength[i];
         }
+
+        memcpy_s(&fh->segmentation, sizeof(AV1Segmentation), &prev_fh->segmentation, sizeof(AV1Segmentation));
     }
 
     inline void GetRefFramesHeaders(std::vector<FrameHeader const*>* headers, DPBType const* dpb)
@@ -2368,49 +2368,6 @@ namespace UMC_AV1_DECODER
         fh->frameHeaderLength = Ipp32u(BitsDecoded() / 8 + (BitsDecoded() % 8 > 0));
         fh->frameDataSize = m_maxBsSize; // TODO: [Global] check if m_maxBsSize can represent more than one frame and fix the code respectively if it can
 #endif
-
-        // code below isn't used so far. Need to refactor it based on new filter_level syntax/semantics in AV1 uncompressed header.
-        // TODO: [Global] modify and uncomment code below once driver will have support of multiple filter levels.
-        /*
-        if (fh->lf.filterLevel)
-        {
-            const Ipp32s scale = 1 << (fh->lf.filterLevel >> 5);
-
-            LoopFilterInfo & lf_info = fh->lf_info;
-
-            for (Ipp8u segmentId = 0; segmentId < VP9_MAX_NUM_OF_SEGMENTS; ++segmentId)
-            {
-                Ipp32s segmentFilterLevel = fh->lf.filterLevel;
-                if (IsSegFeatureActive(fh->segmentation, segmentId, SEG_LVL_ALT_LF))
-                {
-                    const Ipp32s data = GetSegData(fh->segmentation, segmentId, SEG_LVL_ALT_LF);
-                    segmentFilterLevel = clamp(fh->segmentation.absDelta == SEGMENT_ABSDATA ? data : fh->lf.filterLevel + data,
-                        0,
-                        MAX_LOOP_FILTER);
-                }
-
-                if (!fh->lf.modeRefDeltaEnabled)
-                {
-                    memset(lf_info.level[segmentId], segmentFilterLevel, sizeof(lf_info.level[segmentId]) );
-                }
-                else
-                {
-                    const Ipp32s intra_lvl = segmentFilterLevel + fh->lf.refDeltas[INTRA_FRAME] * scale;
-                    lf_info.level[segmentId][INTRA_FRAME][0] = (Ipp8u)clamp(intra_lvl, 0, MAX_LOOP_FILTER);
-
-                    for (Ipp8u ref = LAST_FRAME; ref < MAX_REF_FRAMES; ++ref)
-                    {
-                        for (Ipp8u mode = 0; mode < MAX_MODE_LF_DELTAS; ++mode)
-                        {
-                            const Ipp32s inter_lvl = segmentFilterLevel + fh->lf.refDeltas[ref] * scale
-                                + fh->lf.modeDeltas[mode] * scale;
-                            lf_info.level[segmentId][ref][mode] = (Ipp8u)clamp(inter_lvl, 0, MAX_LOOP_FILTER);
-                        }
-                    }
-                }
-            }
-        }
-        */
 
         AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }

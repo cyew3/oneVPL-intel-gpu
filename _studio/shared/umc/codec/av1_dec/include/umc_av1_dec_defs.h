@@ -203,6 +203,9 @@ namespace UMC_AV1_DECODER
         SEG_LVL_ALT_LF_V,    // Use alternate loop filter value on v plane
         SEG_LVL_REF_FRAME,   // Optional Segment reference frame
         SEG_LVL_SKIP,        // Optional Segment (0,0) + skip mode
+#if UMC_AV1_DECODER_REV >= 5000
+        SEG_LVL_GLOBALMV,
+#endif
         SEG_LVL_MAX
     };
 
@@ -217,7 +220,6 @@ namespace UMC_AV1_DECODER
         Ipp8u enabled;
         Ipp8u updateMap;
         Ipp8u updateData;
-        Ipp8u absDelta;
         Ipp8u temporalUpdate;
 
         Ipp32s featureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];

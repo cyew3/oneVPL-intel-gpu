@@ -33,7 +33,6 @@ namespace UMC_AV1_DECODER
         // Features disabled, 0, with delta coding (Default state).
 
         ClearAllSegFeatures(info.segmentation);
-        info.segmentation.absDelta = UMC_VP9_DECODER::SEGMENT_DELTADATA;
 
         // set_default_lf_deltas()
         info.lf.modeRefDeltaEnabled = 1;
