@@ -281,10 +281,9 @@ namespace hevce_ref_list1_checks
             }
             else
             {
-                //
-                stream = g_tsStreamPool.Get("AMT/422/CrowdRun_422_1280x720_50_nv16.yuv");
-                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 1280;
-                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 720;
+                stream = g_tsStreamPool.Get("YUV8bit422/Kimono1_704x576_24_yuy2.yuv");
+                m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 704;
+                m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
             }
         }
         else if (fourcc_id == MFX_FOURCC_Y210)
