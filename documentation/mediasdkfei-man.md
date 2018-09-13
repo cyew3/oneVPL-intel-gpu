@@ -100,6 +100,14 @@ Complexity of this mode follows from its strengths. Direct control other referen
 <br>
 <img src="./pic/encpak.png" width="810" height="250" align=center />
 <br>
+### <a id='_DSO followed by PAK'>DSO followed by PAK</a>
+
+This is the fast transrating model. The decoder is enabled with one FEI extension to deliver a so-called "decode stream out" (DSO). DSO consists of MVs from source stream, plus MB level syntax elements. Afterwards, this DSO is repacked into a PAK object which, along with output raw YUV frames and MVs, is fed to PAK.
+
+Fast transrating outperforms conventional transcoding in the trans-rate use case if the bitrate difference between source and destination is moderate. It also has significantly better subjective visual quality on low bitrates for streams with steady global motion in the regions with uniform textures like water or grass. More details, please refer to the [whitepaper](https://software.intel.com/sites/default/files/FastTransrating-whitepaper-0418.pdf).
+<br>
+<img src="./pic/dsopak.png" width="810" height="250" align=center />
+<br>
 ## Versioning
 
 One of the major benefits of the SDK is its backward compatibility. Any application that uses SDK can work on future platforms without any changes. Unfortunately, it is not true for the FEI part of the SDK. Each application that uses FEI should be recompiled and probably updated and tuned for each new version of driver, HW or operation system. In other words, application should be built and later used only with header files, SDK library and driver from the same package.
@@ -313,6 +321,15 @@ AVC | 00 //buffering_period<br>01 //pic_timing<br>02 //pan_scan_rect<br>03 //fil
 Before using **PAK** the application should properly initialize this component by calling **MFXVideoPAK_Init** function. **PAK** has only one usage model, but still, for future extensions, it is required to attach **mfxExtFeiParam** extension buffer to **mfxVideoParam** structure and set **Func** variable to **MFX_FEI_FUNCTION_PAK**.
 
 After successful initialization, the application can call **MFXVideoPAK_ProcessFrameAsync** function for each encoded frame. Each call of this function is independent from the others, i.e. no internal states are changed during the call, so application can call this function several times for the same frame.
+
+
+##DSO
+
+This is the first step of “DSO followed by PAK” usage model. The application uses **MFXVideoDECODE** class of functions to generate MB level parameters as called “decode stream out” (DSO) in **mfxExtFeiDecStreamOut** structure. Then application repacks the DSO into a PAK object which, along with output raw YUV frames and MVs, is fed to PAK.
+
+“DSO“ usage model is like the general decoding process, during the initialization, applicatin should attach **mfxExtFeiParam** extension buffer to **mfxVideoParam** structure and set **Func** variable to **MFX_FEI_FUNCTION_DEC**, during the runtime, attach **mfxExtFeiDecStreamOut** to **mfxFrameSurface1**.
+
+The repacking of DSO to PAK object is necessary. The MVs from DSO are for 8x8 blocks, but not for 4x4 blocks. And DirectMB and skip conditions have to be re-computed as MV are changed. All CBP (Coding Block Patterns) and related vars are set, to let PAK decide on CBP. And after MV elimination some splits can be enlarged. More details about the repacking, please refer to the sample source code in FEI sample (sample_fei). 
 
 <div STYLE="page-break-after: always;"></div>
 # Function Reference
@@ -1784,6 +1801,7 @@ The `mfxFeiFunction` enumerator specifies FEI usage models of **ENCODE**, **ENC*
 `MFX_FEI_FUNCTION_ENCODE` | ENOCDE usage model. It performs conventional encoding process with additional configuration parameters, as described in “[ENCODE](#_ENCODE)” chapter.
 `MFX_FEI_FUNCTION_ENC` | ENC usage model. It performs motion estimation and mode decision, as described in “[ENC followed by PAK](#_ENC followed by PAK)” chapter.
 `MFX_FEI_FUNCTION_PAK` | PAK usage model. It performs packing of MB control data to the encoded bitstream, as described in “[ENC followed by PAK](#_ENC followed by PAK)” chapter.
+`MFX_FEI_FUNCTION_DEC` | DSO usage model. It performs output of MB level parameters and MVs from source bitstream, as described in “[DSO followed by PAK](#_DSO followed by PAK)” chapter.
 
 **Change History**
 
