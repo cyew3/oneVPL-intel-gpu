@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFXUTILS_H__
@@ -86,6 +86,18 @@ mfxU64 GetMfxTimeStamp(mfxF64 ts)
     return ts < 0.0 ? MFX_TIME_STAMP_INVALID : (mfxU64)(ts * MFX_TIME_STAMP_FREQUENCY + .5);
 }
 
+inline
+bool LumaIsNull(const mfxFrameSurface1 * surf)
+{
+    if (surf->Info.FourCC == MFX_FOURCC_Y410)
+    {
+        return !surf->Data.Y && !surf->Data.Y410;
+    }
+    else
+    {
+        return !surf->Data.Y;
+    }
+}
 
 #define MFX_ZERO_MEM(_X)    memset(&_X, 0, sizeof(_X))
 
