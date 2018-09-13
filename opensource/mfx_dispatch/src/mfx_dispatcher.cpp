@@ -50,6 +50,7 @@ File Name: mfx_dispatcher.cpp
 MFX_DISP_HANDLE::MFX_DISP_HANDLE(const mfxVersion requiredVersion) :
     _mfxSession()
     ,apiVersion(requiredVersion)
+    ,pluginHive()
     ,pluginFactory((mfxSession)this)
 {
     actualApiVersion.Version = 0;

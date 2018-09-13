@@ -191,7 +191,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
         }
         TRACE_HIVE_INFO(alignStr()" : %s\n", DefaultKeyName, descriptionRecord.Default ? "true" : "false");
 
-        mfxU32 version;
+        mfxU32 version = 0;
         if (!QueryKey(subKey, PlgVerKeyName, version))
         {
             continue;
@@ -207,7 +207,7 @@ MFX::MFXPluginsInHive::MFXPluginsInHive(int mfxStorageID, const msdk_disp_char *
             TRACE_HIVE_INFO(alignStr()" : %d\n", PlgVerKeyName, descriptionRecord.PluginVersion);
         }
 
-        mfxU32 APIVersion;
+        mfxU32 APIVersion = 0;
         if (!QueryKey(subKey, APIVerKeyName, APIVersion))
         {
             continue;

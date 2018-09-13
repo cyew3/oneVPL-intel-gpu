@@ -138,6 +138,9 @@ mfxStatus SelectImplementationType(const mfxU32 adapterNum, mfxIMPL *pImplInterf
 }
 
 MFXLibraryIterator::MFXLibraryIterator(void)
+#if (defined(_WIN32) || defined(_WIN64)) && (defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)))
+    : m_baseRegKey()
+#endif
 {
     m_implType = MFX_LIB_PSEUDO;
     m_implInterface = MFX_IMPL_UNSUPPORTED;
