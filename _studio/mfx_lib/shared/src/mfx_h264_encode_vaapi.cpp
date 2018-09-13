@@ -208,8 +208,8 @@ mfxStatus SetRateControl(
 
 #if defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
     // Activate frame tolerance sliding window mode
-    mfxExtCodingOption3 const * extOpt3 = GetExtBuffer(par);
-    if (extOpt3->WinBRCSize) {
+    mfxExtCodingOption3 const & extOpt3 = GetExtBufferRef(par);
+    if (extOpt3.WinBRCSize) {
         rate_param->rc_flags.bits.frame_tolerance_mode = 1;
     }
 #endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
@@ -1044,10 +1044,9 @@ void FillPWT(
         mfxU32 idxToPickBuffer = task.m_singleFieldMode ? 0 : task.m_fid[fieldId];
 
         mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
-        mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
+        mfxExtCodingOption2   & extOpt2     = GetExtBufferRef(par);
         mfxExtFeiSliceHeader  const & extFeiSlice = GetExtBufferRef(par, idxToPickBuffer);
         assert(extDdi      != 0);
-        assert(extOpt2     != 0);
 
         mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, idxToPickBuffer);
         if (!pPWT)
@@ -1119,7 +1118,7 @@ void FillPWT(
             slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
             slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-            slice[i].disable_deblocking_filter_idc = (extFeiSlice.Slice ? extFeiSlice.Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
+            slice[i].disable_deblocking_filter_idc = (extFeiSlice.Slice ? extFeiSlice.Slice[i].DisableDeblockingFilterIdc : extOpt2.DisableDeblockingIdc);
             slice[i].slice_alpha_c0_offset_div2    = (extFeiSlice.Slice ? extFeiSlice.Slice[i].SliceAlphaC0OffsetDiv2     : 0);
             slice[i].slice_beta_offset_div2        = (extFeiSlice.Slice ? extFeiSlice.Slice[i].SliceBetaOffsetDiv2        : 0);
 
@@ -1145,10 +1144,9 @@ void UpdateSliceSizeLimited(
     mfxU32 idx = 0, ref = 0;
 
     mfxExtCodingOptionDDI * extDdi      = GetExtBuffer(par);
-    mfxExtCodingOption2   * extOpt2     = GetExtBuffer(par);
+    mfxExtCodingOption2   & extOpt2     = GetExtBufferRef(par);
     mfxExtFeiSliceHeader  const & extFeiSlice = GetExtBufferRef(par, task.m_fid[fieldId]);
     assert(extDdi      != 0);
-    assert(extOpt2     != 0);
 
     mfxExtPredWeightTable const * pPWT = GetExtBuffer(task.m_ctrl, task.m_fid[fieldId]);
     if (!pPWT)
@@ -1225,7 +1223,7 @@ void UpdateSliceSizeLimited(
         slice[i].cabac_init_idc                     = extDdi ? (mfxU8)extDdi->CabacInitIdcPlus1 - 1 : 0;
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.pic_init_qp);
 
-        slice[i].disable_deblocking_filter_idc = (extFeiSlice.Slice ? extFeiSlice.Slice[i].DisableDeblockingFilterIdc : extOpt2->DisableDeblockingIdc);
+        slice[i].disable_deblocking_filter_idc = (extFeiSlice.Slice ? extFeiSlice.Slice[i].DisableDeblockingFilterIdc : extOpt2.DisableDeblockingIdc);
         slice[i].slice_alpha_c0_offset_div2    = (extFeiSlice.Slice ? extFeiSlice.Slice[i].SliceAlphaC0OffsetDiv2     : 0);
         slice[i].slice_beta_offset_div2        = (extFeiSlice.Slice ? extFeiSlice.Slice[i].SliceBetaOffsetDiv2        : 0);
 
