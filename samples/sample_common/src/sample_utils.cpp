@@ -71,11 +71,12 @@ mfxStatus CopyBitstream2(mfxBitstream *dest, mfxBitstream *src)
 CSmplYUVReader::CSmplYUVReader()
 {
     m_bInited = false;
-    m_ColorFormat = MFX_FOURCC_YV12;
-    shouldShiftP010High  = false;
+    m_ColorFormat 
+		= MFX_FOURCC_YV12;
+	shouldShift10BitsHigh = false;
 }
 
-mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool shouldShiftP010)
+mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat, bool enableShifting)
 {
     Close();
 
@@ -86,14 +87,21 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
         MFX_FOURCC_RGB4 != ColorFormat &&
         MFX_FOURCC_BGR4 != ColorFormat &&
         MFX_FOURCC_P010 != ColorFormat &&
-        MFX_FOURCC_P210 != ColorFormat)
+        MFX_FOURCC_P210 != ColorFormat &&
+		MFX_FOURCC_AYUV != ColorFormat &&
+		MFX_FOURCC_A2RGB10 != ColorFormat
+#if (MFX_VERSION >= 1027)
+		&& MFX_FOURCC_Y210 != ColorFormat
+		&& MFX_FOURCC_Y410 != ColorFormat
+#endif
+		)
     {
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if(MFX_FOURCC_P010 == ColorFormat)
+    if(MFX_FOURCC_P010 == ColorFormat || MFX_FOURCC_P210 == ColorFormat || MFX_FOURCC_Y210 == ColorFormat)
     {
-        shouldShiftP010High = shouldShiftP010;
+		shouldShift10BitsHigh = enableShifting;
     }
 
     if (!inputs.size())
@@ -170,16 +178,15 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
         h = pInfo.Height;
     }
 
-    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010 || pInfo.FourCC == MFX_FOURCC_P210) ? 2 : 1;
+    mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010 || pInfo.FourCC == MFX_FOURCC_P210 ) ? 2 : 1;
 
-    if (MFX_FOURCC_YUY2 == pInfo.FourCC || MFX_FOURCC_RGB4 == pInfo.FourCC || MFX_FOURCC_BGR4 == pInfo.FourCC)
+    if (MFX_FOURCC_YUY2 == pInfo.FourCC || MFX_FOURCC_RGB4 == pInfo.FourCC || MFX_FOURCC_BGR4 == pInfo.FourCC || pInfo.FourCC == MFX_FOURCC_Y210 || pInfo.FourCC == MFX_FOURCC_Y410)
     {
         //Packed format: Luminance and chrominance are on the same plane
         switch (m_ColorFormat)
         {
         case MFX_FOURCC_RGB4:
         case MFX_FOURCC_BGR4:
-
             pitch = pData.Pitch;
             ptr = MSDK_MIN( MSDK_MIN(pData.R, pData.G), pData.B);
             ptr = ptr + pInfo.CropX + pInfo.CropY * pData.Pitch;
@@ -196,19 +203,61 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             break;
         case MFX_FOURCC_YUY2:
             pitch = pData.Pitch;
-            ptr = pData.Y + pInfo.CropX + pInfo.CropY * pData.Pitch;
+            ptr = pData.Y + pInfo.CropX*2 + pInfo.CropY * pData.Pitch;
 
             for(i = 0; i < h; i++)
             {
-                nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 2*w, m_files[vid]);
+                nBytesRead = (mfxU32)fread(ptr + i * pitch, 2, w, m_files[vid]);
 
-                if ((mfxU32)2*w != nBytesRead)
+                if ((mfxU32)w != nBytesRead)
                 {
                     return MFX_ERR_MORE_DATA;
                 }
             }
             break;
-        default:
+		case MFX_FOURCC_AYUV:
+			pitch = pData.Pitch;
+			ptr = pData.Y + pInfo.CropX*4 + pInfo.CropY * pData.Pitch;
+
+			for (i = 0; i < h; i++)
+			{
+				nBytesRead = (mfxU32)fread(ptr + i * pitch, 4, w, m_files[vid]);
+
+				if ((mfxU32)w != nBytesRead)
+				{
+					return MFX_ERR_MORE_DATA;
+				}
+			}
+			break;
+
+#if (MFX_VERSION >= 1027)
+		case MFX_FOURCC_Y210:
+		case MFX_FOURCC_Y410:
+			pitch = pData.Pitch;
+			ptr = ((pInfo.FourCC== MFX_FOURCC_Y210)  ? pData.Y : (mfxU8*)pData.Y410) + pInfo.CropX*4 + pInfo.CropY * pData.Pitch;
+
+			for (i = 0; i < h; i++)
+			{
+				nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 4 * w, m_files[vid]);
+
+				if ((mfxU32)2 * w != nBytesRead)
+				{
+					return MFX_ERR_MORE_DATA;
+				}
+
+				if (MFX_FOURCC_Y210 == pInfo.FourCC && shouldShift10BitsHigh)
+				{
+					mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
+					for (int idx = 0; idx < w*2; idx++)
+					{
+						shortPtr[idx] <<= 6;
+					}
+				}
+
+			}
+			break;
+#endif
+		default:
             return MFX_ERR_UNSUPPORTED;
         }
     }
@@ -228,7 +277,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
             }
 
             // Shifting data if required
-            if((MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC) && shouldShiftP010High)
+            if((MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC) && shouldShift10BitsHigh)
             {
                 mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
                 for(int idx = 0; idx < w; idx++)
@@ -351,7 +400,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
                 }
 
                 // Shifting data if required
-                if((MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC) && shouldShiftP010High)
+                if((MFX_FOURCC_P010 == pInfo.FourCC || MFX_FOURCC_P210 == pInfo.FourCC) && shouldShift10BitsHigh)
                 {
                     mfxU16* shortPtr = (mfxU16*)(ptr + i * pitch);
                     for(int idx = 0; idx < w; idx++)
@@ -810,8 +859,36 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
 		}
 		break;
 #if (MFX_VERSION >= 1027)
-	case MFX_FOURCC_Y410:
 	case MFX_FOURCC_Y210:
+	{
+		for (i = 0; i < pInfo.CropH; i++)
+		{
+			mfxU8* pBuffer = ((mfxU8*)pData.Y) + (pInfo.CropY * pData.Pitch + pInfo.CropX * 4) + i * pData.Pitch;
+			if (pInfo.Shift)
+			{
+				tmp.resize(pInfo.CropW * 2);
+
+				for (int idx = 0; idx < pInfo.CropW*2; idx++)
+				{
+					tmp[idx] = ((mfxU16*)pBuffer)[idx] >> 6;
+				}
+
+				MSDK_CHECK_NOT_EQUAL(
+					fwrite(((const mfxU8*)tmp.data()), 4, pInfo.CropW, dstFile),
+					pInfo.CropW, MFX_ERR_UNDEFINED_BEHAVIOR);
+			}
+			else
+			{
+				MSDK_CHECK_NOT_EQUAL(
+					fwrite(pBuffer, 4, pInfo.CropW, dstFile),
+					pInfo.CropW, MFX_ERR_UNDEFINED_BEHAVIOR);
+			}
+		}
+		return MFX_ERR_NONE;
+	}
+	break;
+
+	case MFX_FOURCC_Y410:
 	case MFX_FOURCC_Y216:
 	{
 		mfxU8* pBuffer = pInfo.FourCC == MFX_FOURCC_Y410 ? (mfxU8*)pData.Y410 : (mfxU8*)pData.Y;
@@ -1994,6 +2071,7 @@ bool IsEncodeCodecSupported(mfxU32 codecFormat)
         case CODEC_MVC:
         case MFX_CODEC_VP8:
         case MFX_CODEC_JPEG:
+		case MFX_CODEC_VP9:
         break;
     default:
         return false;

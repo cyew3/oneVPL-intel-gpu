@@ -73,7 +73,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
 #ifdef MOD_ENC
     MOD_ENC_PRINT_HELP;
 #endif
-    msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010|rgb4] - input color format (by default YUV420 is expected). YUY2 is for JPEG encode only.\n"));
+    msdk_printf(MSDK_STRING("   [-nv12|yuy2|p010|rgb4|vp9] - input color format (by default YUV420 is expected). YUY2 is for JPEG encode only.\n"));
     msdk_printf(MSDK_STRING("   [-ec::p010] - force usage of P010 surfaces for encoder (conversion will be made if necessary). Use for 10 bit HEVC encoding\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -301,7 +301,17 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
 			pParams->FileInputFourCC = MFX_FOURCC_AYUV;
 			pParams->EncodeFourCC = MFX_FOURCC_AYUV;
 		}
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
+		{
+			pParams->FileInputFourCC = MFX_FOURCC_YUY2;
+			pParams->EncodeFourCC = MFX_FOURCC_YUY2;
+		}
 #if (MFX_VERSION >= 1027)
+		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y210")))
+		{
+			pParams->FileInputFourCC = MFX_FOURCC_Y210;
+			pParams->EncodeFourCC = MFX_FOURCC_Y210;
+		}
 		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y410")))
 		{
 			pParams->FileInputFourCC = MFX_FOURCC_Y410;
@@ -1014,23 +1024,24 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
     if (MFX_CODEC_MPEG2 != pParams->CodecId &&
         MFX_CODEC_AVC != pParams->CodecId &&
         MFX_CODEC_JPEG != pParams->CodecId &&
-        MFX_CODEC_HEVC != pParams->CodecId)
+        MFX_CODEC_HEVC != pParams->CodecId && 
+		MFX_CODEC_VP9 != pParams->CodecId)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_CODEC_JPEG != pParams->CodecId &&
+    if (MFX_CODEC_JPEG != pParams->CodecId && MFX_CODEC_HEVC != pParams->CodecId &&
         pParams->FileInputFourCC == MFX_FOURCC_YUY2 &&
         !pParams->isV4L2InputEnabled)
     {
-        PrintHelp(strInput[0], MSDK_STRING("-yuy2 option is supported only for JPEG encoder"));
+        PrintHelp(strInput[0], MSDK_STRING("-yuy2 option is supported only for JPEG or HEVC encoder"));
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if (MFX_CODEC_HEVC != pParams->CodecId && (pParams->EncodeFourCC == MFX_FOURCC_P010) )
+    if (MFX_CODEC_HEVC != pParams->CodecId && MFX_CODEC_VP9 != pParams->CodecId && (pParams->EncodeFourCC == MFX_FOURCC_P010) )
     {
-        PrintHelp(strInput[0], MSDK_STRING("P010 surfaces are supported only for HEVC encoder"));
+        PrintHelp(strInput[0], MSDK_STRING("P010 surfaces are supported only for HEVC and VP9 encoder"));
         return MFX_ERR_UNSUPPORTED;
     }
 
