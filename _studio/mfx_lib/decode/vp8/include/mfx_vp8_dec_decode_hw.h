@@ -156,8 +156,6 @@ public:
     }
 };
 
-static inline mfxStatus MFX_CDECL VP8DECODERoutine(void *p_state, void *pp_param, mfxU32 thread_number, mfxU32);
-
 class VideoDECODEVP8_HW : public VideoDECODE, public MfxCriticalErrorHandler
 {
 public:
