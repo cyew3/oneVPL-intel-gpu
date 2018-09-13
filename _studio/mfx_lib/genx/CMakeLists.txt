@@ -79,7 +79,7 @@ if(MFX_ENABLE_KERNELS)
     ${prefix}/genx_skl_simple_me_isa.cpp
   )
 
-  if( API_VERSION VERSION_GREATER 1.25 )
+  if( MFX_ENABLE_KERNELS )
     set( prefix ${MSDK_GENX_ROOT}/mctf/isa )
     list( APPEND sources
       ${prefix}/mctf_mc_gen8_isa.cpp

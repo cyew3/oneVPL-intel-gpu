@@ -311,7 +311,7 @@ list( APPEND sources ${srcs})
 set( USE_STRICT_NAME TRUE )
 set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfxaudio.map" )
 
-if( API_VERSION VERSION_GREATER 1.25 )
+if( MFX_ENABLE_KERNELS )
   set(MCTF_LIB "mctf_hw")
 else()
   set(MCTF_LIB "")

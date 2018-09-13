@@ -1,4 +1,4 @@
-if( API_VERSION VERSION_GREATER 1.25 )
+if( MFX_ENABLE_KERNELS )
     set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
     mfx_include_dirs( )
