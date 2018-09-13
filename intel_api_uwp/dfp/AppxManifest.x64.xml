@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:build="http://schemas.microsoft.com/developer/appx/2015/build" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" IgnorableNamespaces="uap build mp">
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:build="http://schemas.microsoft.com/developer/appx/2015/build" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest" xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5" IgnorableNamespaces="uap build mp uap5">
   <Identity Name="AppUp.IntelMediaSDKDFP" ProcessorArchitecture="x64" Publisher="CN=EB51A5DA-0E72-4863-82E4-EA21C1F8DFE3" Version="1.0.0.0" />
   <Properties>
     <Framework>true</Framework>
@@ -12,6 +12,11 @@
     <Resource Language="en-US" />
   </Resources>
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.10042.0" MaxVersionTested="10.0.17081.0" />
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17723.0" MaxVersionTested="10.0.17723.0" />
+    <uap5:DriverDependency>
+      <uap5:DriverConstraint Name="Intel_Corporation-iigd_dc_base.inf" MinVersion="24.20.100.6341" />
+      <uap5:DriverConstraint Name="Intel_Corporation-iigd_dch_base.inf" MinVersion="24.20.100.6341" />
+      <uap5:DriverConstraint Name="Intel_Corporation-igdlh64.inf" MinVersion="24.20.100.6341" />
+    </uap5:DriverDependency>
   </Dependencies>
 </Package>
