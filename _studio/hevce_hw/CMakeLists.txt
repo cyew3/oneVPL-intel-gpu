@@ -1,85 +1,58 @@
-set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
+set( MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
-set(HEVC_Encoder_HW_GUID "6fadc791a0c2eb479ab6dcd5ea9da347")
+mfx_include_dirs()
+
+set( HEVC_Encoder_HW_GUID "6fadc791a0c2eb479ab6dcd5ea9da347" )
 
 # Plugin version info
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
-  set (HEVCE_HW_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (HEVCE_HW_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Hardware Encode Plug-in")
-else()
-  set (HEVCE_HW_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - HEVC Decode and Encode")
-  set (HEVCE_HW_DESCRIPTION "Intel(R) Media Server Studio 2018 - HEVC Hardware Encode Plug-in")
-endif()
+set( HEVCE_HW_PRODUCT_NAME "Intel(R) Media SDK" )
+set( HEVCE_HW_DESCRIPTION "Intel(R) Media SDK HEVCe plugin" )
 
 if( NOT DEFINED ENV{MFX_HEVC_VERSION} )
   set( hevc_version 0.0.000.0000 )
-else( )
+else()
   set( hevc_version $ENV{MFX_HEVC_VERSION} )
-endif( )
+endif()
 
-if( Linux OR Darwin )
-  execute_process(
-    COMMAND echo
-    COMMAND cut -f 1 -d.
-    COMMAND date "+.%-y.%-m.%-d"
-    OUTPUT_VARIABLE cur_date
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-  string( SUBSTRING ${hevc_version} 0 1 ver )
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set( plugin_name mfx_hevce_hw64 )
+else()
+  set( plugin_name mfx_hevce_hw32 )
+endif()
 
-  set(HEVCE_HW_version_defs  "-DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\" -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${hevc_version}\"\\\"")
-endif( )
+set_file_and_product_version( ${hevc_version} version_defs )
 
-# =============================================================================
-
-mfx_include_dirs( )
-
-set(MFX_ROOTDIR "${CMAKE_CURRENT_SOURCE_DIR}/..")
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
-include_directories( ${MFX_ROOTDIR}/shared/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/plugin/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/scheduler/include )
-include_directories( ${MFX_ROOTDIR}/mfx_lib/cmrt_cross_platform/include )
-#include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/include )
-#include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/genx/src )
-
-# =============================================================================
-
-#shared lib
 set( sources "" )
 set( sources.plus "" )
+set( LIBS "" )
+set( defs "" )
+
+include_directories( ${MSDK_STUDIO_ROOT}/hevce_hw/include )
+include_directories( ${MSDK_STUDIO_ROOT}/hevce_hw/h265/include )
+set( dir ${MSDK_STUDIO_ROOT}/hevce_hw/h265/src )
+file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
+list( APPEND sources ${srcs} )
+
+list( APPEND LIBS
+  mfx_common_hw
+  media_buffers
+  umc_io
+  umc_va_elk_hw
+  umc
+  vm
+  vm_plus
+  ${ITT_LIBS}
+  pthread
+  dl
+  ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
+)
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib/plugin/libmfxsw_plugin.map" )
-
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
-
-foreach( dir ${CMAKE_CURRENT_SOURCE_DIR}/h265/src )
-  file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-  list( APPEND sources ${srcs})
-endforeach()
-
-  set( LIBS "" )
-  list( APPEND LIBS
-    mfx_common_hw
-    media_buffers
-    umc_io
-    umc_va_elk_hw
-    umc
-    vm
-    vm_plus
-    ${ITT_LIBS}
-    pthread
-    dl
-    ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-  )
-
-set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\" ${HEVCE_HW_version_defs}" )
-
-gen_plugins_cfg("HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} "mfx_hevce_hw64" "02" "HEVC")
-
-set( defs " -DAS_HEVCE_PLUGIN ${API_FLAGS} ${WARNING_FLAGS} ${defs}" )
-make_library( mfx_hevce_hw64 hw shared )
-msdk_install( mfx_hevce_hw64 ${MFX_PLUGINS_DIR} )
-set( defs "" )
+set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map" )
+set( defs "${defs} -DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${HEVCE_HW_PRODUCT_NAME}\"\\\"" )
+set( defs "${defs} -DMFX_FILE_DESCRIPTION=\"\\\"${HEVCE_HW_DESCRIPTION}\"\\\"" )
+set( defs "${defs} ${version_defs}" )
+set( defs "-DAS_HEVCE_PLUGIN ${defs} " )
+gen_plugins_cfg( "HEVC_Encoder_HW" ${HEVC_Encoder_HW_GUID} ${plugin_name} "02" "HEVC" )
+make_library( ${plugin_name} hw shared )
+install( TARGETS ${plugin_name} LIBRARY DESTINATION ${MFX_PLUGINS_DIR} )
