@@ -191,8 +191,8 @@ namespace vp9e_init
         //encoded order [currently the feature is not supported and treated as non-configurable]
         {/*28*/ MFX_ERR_NONE, NONE, NONE,{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.EncodedOrder, 1 } },
 
-        //native
-        {/*29*/ MFX_ERR_INVALID_VIDEO_PARAM, NOT_LOAD_PLUGIN, NONE, {} },
+        //currently plugin only required as a proxy
+        {/*29*/ MFX_ERR_NONE, NOT_LOAD_PLUGIN, NONE, {} },
 
         //call query
         {/*30*/ MFX_ERR_NONE, CALL_QUERY, NONE, {} },
