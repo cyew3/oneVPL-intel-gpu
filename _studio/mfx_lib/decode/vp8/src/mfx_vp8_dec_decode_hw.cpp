@@ -1401,10 +1401,11 @@ mfxStatus VideoDECODEVP8_HW::DecodeFrameHeader(mfxBitstream *in)
 
     #else
 
-    m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 3*8 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
+    // Header info consumed bits
+    m_frame_info.entropyDecSize = m_boolDecoder[VP8_FIRST_PARTITION].pos() * 8 - 3 * 8 - m_boolDecoder[VP8_FIRST_PARTITION].bitcount();
 
-    mfxU32 remaining_bits = m_boolDecoder[VP8_FIRST_PARTITION].bitcount() & 0x7;
-    m_frame_info.firstPartitionSize = first_partition_size - (m_boolDecoder[VP8_FIRST_PARTITION].pos() - 3 + (remaining_bits ? 1 : 0) );
+    // Subtract completely consumed bytes + current byte. Current is completely consumed if bitcount is 8.
+    m_frame_info.firstPartitionSize = first_partition_size - ((m_frame_info.entropyDecSize + 7) >> 3);
 
     #endif
 
