@@ -1137,9 +1137,9 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
 {
     eMFXPlatform platform = core->GetPlatformType();
 
-    if(platform != MFX_PLATFORM_SOFTWARE)
+    if (platform != MFX_PLATFORM_SOFTWARE)
     {
-        if (par && IsNeedPartialAcceleration(core, par))
+        if (IsNeedPartialAcceleration(core, par))
         {
             return MFX_PLATFORM_SOFTWARE;
         }
@@ -1157,8 +1157,8 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
 #endif
 
         bool needVpp = false;
-        if(par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF ||
-           par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
+        if (par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_TFF ||
+            par->mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_FIELD_BFF)
         {
             needVpp = true;
         }
@@ -1169,7 +1169,7 @@ eMFXPlatform MFX_JPEG_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par
 
         VideoDECODEMJPEGBase_HW::AdjustFourCC(&request.Info, &par->mfx, core->GetHWType(), core->GetVAType(), &needVpp);
 
-        if(needVpp)
+        if (needVpp)
         {
 
             if (MFX_ERR_NONE != VideoDECODEMJPEGBase_HW::CheckVPPCaps(core, par))
