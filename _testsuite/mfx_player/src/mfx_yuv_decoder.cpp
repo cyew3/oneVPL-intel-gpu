@@ -13,6 +13,7 @@ File Name: .h
 #include "mfx_pipeline_defs.h"
 #include "mfx_yuv_decoder.h"
 #include "mfx_io_utils.h"
+#include "shared_utils.h"
 #include "outline_factory.h"
 
 MFXYUVDecoder::MFXYUVDecoder(IVideoSession* session,
@@ -125,7 +126,7 @@ mfxStatus MFXYUVDecoder::DecodeFrame(mfxBitstream * bs, mfxFrameSurface1 *surfac
     mfxStatus    sts   = MFX_ERR_NONE;
 
     MFXFrameAllocatorRW* pAlloc = NULL;
-    if (!surface->Data.Y)
+    if (LumaIsNull(surface))
     {
         pAlloc = m_session->GetFrameAllocator();
         MFX_CHECK_POINTER(pAlloc); // no allocator means we can't get YUV pointers, so report an error

@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2008-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -279,6 +279,19 @@ inline mfxStatus InitMFXEncPak(sFrameEncoderEx* pEncoder,
 }
 
 #endif // defined(_ENABLE_ENC_PAK_FUNCTIONS)
+
+inline
+bool LumaIsNull(const mfxFrameSurface1 * surf)
+{
+    if (surf->Info.FourCC == MFX_FOURCC_Y410)
+    {
+        return !surf->Data.Y && !surf->Data.Y410;
+    }
+    else
+    {
+        return !surf->Data.Y;
+    }
+}
 
 void WipeMfxDecoder(sFrameDecoder* pDecoder);
 void WipeMFXSliceParams(mfxSliceParam *pSliceParams);
