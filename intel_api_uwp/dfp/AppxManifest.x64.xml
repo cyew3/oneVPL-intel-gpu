@@ -3,7 +3,7 @@
   <Identity Name="AppUp.IntelMediaSDKDFP" ProcessorArchitecture="x64" Publisher="CN=EB51A5DA-0E72-4863-82E4-EA21C1F8DFE3" Version="1.0.0.0" />
   <Properties>
     <Framework>true</Framework>
-    <DisplayName>Intel MediaSDK UWP Runtime Package</DisplayName>
+    <DisplayName>Intel Media SDK DFP</DisplayName>
     <PublisherDisplayName>INTEL CORP</PublisherDisplayName>
     <Description>Intel MediaSDK UWP Runtime support for native applications</Description>
     <Logo>logo.png</Logo>
@@ -14,8 +14,12 @@
   <Dependencies>
     <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17723.0" MaxVersionTested="10.0.17723.0" />
     <uap5:DriverDependency>
+      <uap5:DriverConstraint Name="Intel_Corporation-iigd_base.inf" MinVersion="24.20.100.6341" />
       <uap5:DriverConstraint Name="Intel_Corporation-iigd_dc_base.inf" MinVersion="24.20.100.6341" />
       <uap5:DriverConstraint Name="Intel_Corporation-iigd_dch_base.inf" MinVersion="24.20.100.6341" />
+      <uap5:DriverConstraint Name="Intel_Corporation-iigd_dc.inf" MinVersion="24.20.100.6341" />
+      <uap5:DriverConstraint Name="Intel_Corporation-iigd_dch.inf" MinVersion="24.20.100.6341" />
+      <uap5:DriverConstraint Name="Intel_Corporation-iigd_oc.inf" MinVersion="24.20.100.6341" />
       <uap5:DriverConstraint Name="Intel_Corporation-igdlh64.inf" MinVersion="24.20.100.6341" />
     </uap5:DriverDependency>
   </Dependencies>
