@@ -235,7 +235,7 @@ H264DecoderFrame * H264DBPList::findDisplayableByDPBDelay(void)
                 SmallestPicOrderCnt = pCurr->PicOrderCnt(0,3);
             }
 
-            if (!pOldest->IsFrameExist() && pCurr->IsFrameExist())
+            if (pOldest && !pOldest->IsFrameExist() && pCurr->IsFrameExist())
             {
                 if (pCurr->PicOrderCnt(0,3) == SmallestPicOrderCnt &&
                     pCurr->RefPicListResetCount(0) == LargestRefPicListResetCount)
@@ -284,7 +284,7 @@ H264DecoderFrame * H264DBPList::findOldestDisplayable(int32_t /*dbpSize*/ )
                 SmallestPicOrderCnt = pCurr->PicOrderCnt(0,3);
             }
 
-            if (!pOldest->IsFrameExist() && pCurr->IsFrameExist())
+            if (pOldest && !pOldest->IsFrameExist() && pCurr->IsFrameExist())
             {
                 if (pCurr->PicOrderCnt(0,3) == SmallestPicOrderCnt &&
                     pCurr->RefPicListResetCount(0) == LargestRefPicListResetCount)
