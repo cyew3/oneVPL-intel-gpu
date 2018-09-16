@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2011-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2011-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -733,6 +733,8 @@ namespace MfxHwVideoProcessing
             mfxU32 frameIndex,
             std::vector<UINT> &variance);
 
+        mfxStatus GetEventHandle(HANDLE * pHandle);
+
     private:
 
         /* KW fixes: deny copy constructor and = in order to eliminate possible double memory freeing */
@@ -767,8 +769,6 @@ namespace MfxHwVideoProcessing
 #ifndef MFX_FUTURE_FEATURE_DISABLE
         mfxStatus SetStreamChromaSiting(UINT StreamIndex, VPE_VPREP_CHROMASITING_PARAM param);
 #endif
-
-        mfxStatus GetEventHandle(HANDLE * pHandle);
 
         void SetOutputTargetRect(BOOL Enable, RECT *pRect);
         void SetOutputBackgroundColor(BOOL YCbCr, D3D11_VIDEO_COLOR *pColor);

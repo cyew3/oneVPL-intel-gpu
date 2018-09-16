@@ -107,7 +107,12 @@ public:
                                       mfxFrameAllocResponse *response, bool isNeedCopy = true);
     virtual void          GetVA(mfxHDL* phdl, mfxU16 type) 
     {
-        (type & MFX_MEMTYPE_FROM_DECODE)?(*phdl = m_pAccelerator.get()):(*phdl = 0);
+        if (type & MFX_MEMTYPE_FROM_DECODE)
+            (*phdl = m_pAccelerator.get());
+        else if ((type & MFX_MEMTYPE_FROM_VPPIN) || (type & MFX_MEMTYPE_FROM_VPPOUT))
+            (*phdl = &m_vpp_hw_resmng);
+        else
+            (*phdl = 0);
     };
     
     virtual eMFXPlatform  GetPlatformType() {return  MFX_PLATFORM_HARDWARE;}
