@@ -870,9 +870,6 @@ namespace MFX_HEVC_PP
 
     void h265_PredictIntra_DC_ChromaNV12_8u(Ipp8u* PredPel, Ipp8u* pDst, Ipp32s dstStride, Ipp32s blkSize)
     {
-        Ipp32s k;
-        Ipp32s l;
-
         Ipp32s dc1, dc2;
         Ipp32s Sum1 = 0, Sum2 = 0;
 
