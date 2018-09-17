@@ -5586,7 +5586,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
     mfxU32 fieldPicFlag       = (task.GetPicStructForEncode() != MFX_PICSTRUCT_PROGRESSIVE);
     mfxU32 secondFieldPicFlag = (task.GetFirstField() != fieldId);
     mfxU32 idrPicFlag         = (task.m_type[fieldId] & MFX_FRAMETYPE_IDR);
-    mfxU32 isIPicture = (task.m_type[fieldId] & MFX_FRAMETYPE_I);
+    mfxU32 isIPicture         = (task.m_type[fieldId] & MFX_FRAMETYPE_I);
     mfxU32 recoveryPoint      = IsRecoveryPointSeiMessagePresent(
         task.m_ctrl.Payload,
         task.m_ctrl.NumPayload,
@@ -5667,21 +5667,22 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
                 writer.PutTrailingBits();
         }
     }
+
     // user-defined messages
     if (task.m_ctrl.Payload != nullptr)
     {
-    for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
-    {
-            if (task.m_ctrl.Payload[i] != nullptr)
+        for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
         {
-            if (IsOff(extOpt.SingleSeiNalUnit))
-                writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
-            for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
-                writer.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
-            if (IsOff(extOpt.SingleSeiNalUnit))
-                writer.PutTrailingBits();
+            if (task.m_ctrl.Payload[i] != nullptr)
+            {
+                if (IsOff(extOpt.SingleSeiNalUnit))
+                    writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
+                for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
+                    writer.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
+                if (IsOff(extOpt.SingleSeiNalUnit))
+                    writer.PutTrailingBits();
+            }
         }
-    }
     }
 
     if (needMarkingRepetitionSei)
@@ -5839,18 +5840,18 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     // user-defined messages
     if (task.m_ctrl.Payload != nullptr)
     {
-    for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
-    {
-            if (task.m_ctrl.Payload[i] != nullptr)
+        for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
         {
-            if (IsOff(extOpt.SingleSeiNalUnit))
-                writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
-            for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
-                writer.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
-            if (IsOff(extOpt.SingleSeiNalUnit))
-                writer.PutTrailingBits();
+            if (task.m_ctrl.Payload[i] != nullptr)
+            {
+                if (IsOff(extOpt.SingleSeiNalUnit))
+                    writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
+                for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
+                    writer.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
+                if (IsOff(extOpt.SingleSeiNalUnit))
+                    writer.PutTrailingBits();
+            }
         }
-    }
     }
 
     if (needMarkingRepetitionSei)
@@ -5938,16 +5939,19 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
     }
 
     // user-defined messages
-    for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
+    if (task.m_ctrl.Payload != nullptr)
     {
-        if (task.m_ctrl.Payload[i] != 0)
+        for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
         {
-            if (IsOff(extOpt.SingleSeiNalUnit))
-                writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
-            for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
-                writerAVC.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
-            if (IsOff(extOpt.SingleSeiNalUnit))
-                writerAVC.PutTrailingBits();
+            if (task.m_ctrl.Payload[i] != nullptr)
+            {
+                if (IsOff(extOpt.SingleSeiNalUnit))
+                    writerAVC.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
+                for (mfxU32 b = 0; b < task.m_ctrl.Payload[i]->NumBit / 8; b++)
+                    writerAVC.PutBits(task.m_ctrl.Payload[i]->Data[b], 8);
+                if (IsOff(extOpt.SingleSeiNalUnit))
+                    writerAVC.PutTrailingBits();
+            }
         }
     }
 
