@@ -508,7 +508,7 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
         Fewer slices than tiles is illegal (e.g. 3 slice, 2x2 tiles)
         More slices than tiles is legal as long as the slices do not cross tile boundaries; the app needs to use the slice segment address and number of LCUs in the slice to define the slices within the tiles.
     */
-    if (par.m_platform <= MFX_HW_ICL)
+    if (par.m_platform <= MFX_HW_ICL_LP)
     {
         nSlice = Max(nSlice, nTile);
     }
@@ -958,6 +958,7 @@ mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
 #endif
     case MFX_HW_CNL:
     case MFX_HW_ICL:
+    case MFX_HW_ICL_LP:
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
     case MFX_HW_TGL_LP:
     case MFX_HW_TGL_HP:
@@ -2013,7 +2014,7 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         if (caps.NumScalablePipesMinus1 > 0) {
             MaxTileColumns = (mfxU16)caps.NumScalablePipesMinus1 + 1;
         }
-        else if (par.m_platform == MFX_HW_ICL && IsOn(par.mfx.LowPower) && par.m_ext.HEVCTiles.NumTileColumns > 1 && par.m_ext.HEVCTiles.NumTileRows > 1) {
+        else if ((par.m_platform == MFX_HW_ICL || par.m_platform == MFX_HW_ICL_LP) && IsOn(par.mfx.LowPower) && par.m_ext.HEVCTiles.NumTileColumns > 1 && par.m_ext.HEVCTiles.NumTileRows > 1) {
             // for ICL VDEnc only 1xN or Nx1 configurations are allowed for single pipe
             // we ignore "Rows" condition
             changed += CheckMax(par.m_ext.HEVCTiles.NumTileRows, 1);
