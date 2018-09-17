@@ -217,13 +217,13 @@ namespace UMC_AV1_DECODER
 
     struct AV1Segmentation
     {
-        Ipp8u enabled;
-        Ipp8u updateMap;
-        Ipp8u updateData;
-        Ipp8u temporalUpdate;
+        Ipp8u segmentation_enabled;
+        Ipp8u segmentation_update_map;
+        Ipp8u segmentation_temporal_update;
+        Ipp8u segmentation_update_data;
 
-        Ipp32s featureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
-        Ipp32u featureMask[VP9_MAX_NUM_OF_SEGMENTS];
+        Ipp32s FeatureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
+        Ipp32u FeatureMask[VP9_MAX_NUM_OF_SEGMENTS];
 
     };
 
@@ -300,59 +300,52 @@ namespace UMC_AV1_DECODER
 
     struct SequenceHeader
     {
-#if UMC_AV1_DECODER_REV >= 5000
-        Ipp32u profile;
-        Ipp32u num_bits_width;
-        Ipp32u num_bits_height;
+        //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in sequence_header_obu()
+        Ipp32u seq_profile;
+        Ipp32u timing_info_present_flag;
+        Ipp32u frame_width_bits;
+        Ipp32u frame_height_bits;
         Ipp32u max_frame_width;
         Ipp32u max_frame_height;
-        Ipp32u sb_size;
+        Ipp32u frame_id_numbers_present_flag;
+        Ipp32u delta_frame_id_length;
+        Ipp32u idLen;
+        Ipp32u sbSize;
         Ipp32u enable_dual_filter;
         Ipp32u enable_order_hint;
         Ipp32u enable_jnt_comp;
-        Ipp32u force_screen_content_tools;
-        Ipp32u force_integer_mv;
+        Ipp32u seq_force_screen_content_tools;
+        Ipp32u seq_force_integer_mv;
         Ipp32s order_hint_bits_minus1;
 
-        Ipp32u bit_depth;
-        Ipp32u use_highbitdepth;
-        Ipp32u monochrome;
+        Ipp32u BitDepth;
+        Ipp32u mono_chrome;
         Ipp32u color_primaries;
         Ipp32u transfer_characteristics;
         Ipp32u matrix_coefficients;
         Ipp32u color_range;
         Ipp32u chroma_sample_position;
-        Ipp32u separate_uv_delta_q;
         Ipp32u subsampling_x;
         Ipp32u subsampling_y;
-
-        Ipp32u timing_info_present;
+        Ipp32u separate_uv_delta_q;
 
         Ipp32u film_grain_param_present;
-#endif // UMC_AV1_DECODER_REV >= 5000
-
-        int frame_id_numbers_present_flag;
-        int frame_id_length;
-        int delta_frame_id_length;
     };
 
     struct Loopfilter
     {
-        Ipp32s filterLevel[2];
-        Ipp32s filterLevelU;
-        Ipp32s filterLevelV;
+        Ipp32s loop_filter_level[4];
 
-        Ipp32s sharpnessLevel;
-        Ipp32s lastSharpnessLevel;
+        Ipp32s loop_filter_sharpness;
 
-        Ipp8u modeRefDeltaEnabled;
-        Ipp8u modeRefDeltaUpdate;
+        Ipp8u loop_filter_delta_enabled;
+        Ipp8u loop_filter_delta_update;
 
-        // 0 = Intra, Last, Last2, Last3, GF, Bwd, ARF
-        Ipp8s refDeltas[TOTAL_REFS];
+        // 0 = Intra, Last, Last2, Last3, GF, BWD, ARF
+        Ipp8s loop_filter_ref_deltas[TOTAL_REFS];
 
         // 0 = ZERO_MV, MV
-        Ipp8s modeDeltas[MAX_MODE_LF_DELTAS];
+        Ipp8s loop_filter_mode_deltas[MAX_MODE_LF_DELTAS];
     };
 
     struct WarpedMotionParams {
@@ -424,7 +417,7 @@ namespace UMC_AV1_DECODER
 
         Ipp32s clip_to_restricted_range;
 
-        Ipp32s bit_depth;  // video bit depth
+        Ipp32s BitDepth;  // video bit depth
 
         Ipp32s chroma_scaling_from_luma;
 
@@ -434,142 +427,129 @@ namespace UMC_AV1_DECODER
     };
 
     struct  SizeOfFrame{
-        Ipp32u width;
-        Ipp32u height;
+        Ipp32u FrameWidth;
+        Ipp32u FrameHeight;
     };
 
     struct FrameHeader
     {
-        FRAME_TYPE frameType;
-        Ipp32u intraOnly;
+        //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in uncompressed_header()
+        Ipp32u show_existing_frame;
+        Ipp32u frame_to_show_map_idx;
+        Ipp32u display_frame_id;
+        FRAME_TYPE frame_type;
+        Ipp32u show_frame;
+        Ipp32u showable_frame;
+        Ipp32u error_resilient_mode;
+        Ipp32u disable_cdf_update;
+        Ipp32u allow_screen_content_tools;
+        Ipp32u seq_force_integer_mv;
+        Ipp32u current_frame_id;
+        Ipp32u frame_size_override_flag;
+        Ipp32u order_hint;
+        Ipp32u primary_ref_frame;
 
-        Ipp32u showFrame;
-        Ipp32u showExistingFrame;
-        Ipp32u frameToShow;
+        Ipp8u refresh_frame_flags;
 
-        Ipp32u baseQIndex;
+        Ipp32u FrameWidth;
+        Ipp32u FrameHeight;
+        Ipp32u SuperresDenom;
+        Ipp32u UpscaledWidth;
+        Ipp32u MiCols;
+        Ipp32u MiRows;
+        Ipp32u RenderWidth;
+        Ipp32u RenderHeight;
 
-        Ipp32u width;
-        Ipp32u height;
+        Ipp32u allow_intrabc;
+        Ipp32s ref_frame_idx[INTER_REFS];
+        Ipp32u allow_high_precision_mv;
+        INTERP_FILTER interpolation_filter;
+        Ipp32u is_motion_mode_switchable;
+        Ipp32u use_ref_frame_mvs;
 
-        Ipp32u displayWidth;
-        Ipp32u displayHeight;
+        Ipp32u sbCols;
+        Ipp32u sbRows;
+        Ipp32u sbSize;
+        Ipp32u uniform_tile_spacing_flag;
+        Ipp32u TileColsLog2;
+        Ipp32u TileRowsLog2;
+        Ipp32u TileCols;
+        Ipp32u TileRows;
+        Ipp32u SbColStarts[MAX_TILE_COLS + 1];  // valid for 0 <= i <= TileCols
+        Ipp32u SbRowStarts[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= TileRows
+        Ipp32u TileSizeBytes;
+
+        Ipp32u base_q_idx;
+        Ipp32s DeltaQYDc;
+        Ipp32s DeltaQUDc;
+        Ipp32s DeltaQUAc;
+        Ipp32s DeltaQVDc;
+        Ipp32s DeltaQVac;
+        Ipp32u using_qmatrix;
+        Ipp32u qm_y;
+        Ipp32u qm_u;
+        Ipp32u qm_v;
+
+        AV1Segmentation segmentation_params;
+
+        Ipp32u delta_q_present;
+        Ipp32u delta_q_res;
+
+        Ipp32u delta_lf_present;
+        Ipp32u delta_lf_res;
+        Ipp32u delta_lf_multi;
 
         Ipp32u lossless;
-        Ipp32u errorResilientMode;
-        Ipp32u allowHighPrecisionMv;
 
-        Ipp32u displayFrameId;
-        Ipp32u currentFrameId;
+        Loopfilter loop_filter_params;
 
-        Ipp8u refreshFrameFlags;
+        Ipp32u cdef_damping;
+        Ipp32u cdef_bits;
+        Ipp32u cdef_y_strength[CDEF_MAX_STRENGTHS];
+        Ipp32u cdef_uv_strength[CDEF_MAX_STRENGTHS];
 
-        Ipp32u resetFrameContext;
-        Ipp32u refreshFrameContext;
-        Ipp32u frameContextIdx;
+        RestorationType lr_type[MAX_MB_PLANE];
+        Ipp32u lr_unit_shift;
+        Ipp32u lr_uv_shift;
 
-        Ipp32u frameIdsRefFrame[NUM_REF_FRAMES];
-        Ipp32s refFrameIdx[INTER_REFS];
-        Ipp32u refFrameSignBias[INTER_REFS];
-        Ipp32u allowScreenContentTools;
-        Ipp32u loopFilterAcrossTilesEnabled;
-        Ipp32u usePrevMVs;
-        INTERP_FILTER interpFilter;
-        TX_MODE txMode;
-        Ipp32u reducedTxSetUsed;
-        Ipp32u referenceMode;
+        TX_MODE TxMode;
+        Ipp32u reference_mode;
+        Ipp32u skipModeAllowed;
+        Ipp32u reduced_tx_set;
 
-        Ipp32u deltaQPresentFlag;
-        Ipp32u deltaQRes;
-        Ipp32u deltaLFPresentFlag;
-        Ipp32u deltaLFRes;
+        WarpedMotionParams global_motion_params[TOTAL_REFS];
 
-        Ipp32u deltaLFMulti;
+        FilmGrain film_grain_params;
 
-        Ipp32u cdefPriDamping;
-        Ipp32u cdefSecDamping;
-        Ipp32u cdefBits;
-        Ipp32u cdefStrength[CDEF_MAX_STRENGTHS];
-        Ipp32u cdefUVStrength[CDEF_MAX_STRENGTHS];
+        Ipp32u NumPlanes;
 
-        Ipp32u allowInterIntraCompound;
-        Ipp32u allowMaskedCompound;
-        Ipp32u globalMotionType;
+        Ipp32u large_scale_tile;
 
-        Ipp32u useQMatrix;
-        Ipp32u minQMLevel;
-        Ipp32u maxQMLevel;
+        //Rev 0.5 parameters
+        Ipp32u refresh_frame_context;
+        Ipp32u loop_filter_across_tiles_v_enabled;
+        Ipp32u loop_filter_across_tiles_h_enabled;
+        Ipp32u enable_interintra_compound;
+        Ipp32u enable_masked_compound;
+        Ipp32u enable_intra_edge_filter;
+        Ipp32u enable_filter_intra;
 
-        WarpedMotionParams globalMotion[TOTAL_REFS];
-
-        Ipp32u log2TileCols;
-        Ipp32u log2TileRows;
-        Ipp32u tileCols;
-        Ipp32u tileRows;
-
-        Ipp32u tileSizeBytes;
-
-        Loopfilter lf;
-
-        Ipp32u tileGroupBitOffset;
-
-        Ipp32u sbSize;
-        RestorationInfo rstInfo[MAX_MB_PLANE];
-
-        AV1Segmentation segmentation;
-
-        Ipp32s yDcDeltaQ;
-        Ipp32s uDcDeltaQ;
-        Ipp32s uAcDeltaQ;
-        Ipp32s vDcDeltaQ;
-        Ipp32s vAcDeltaQ;
-
-        Ipp32u lrUnitShift;
-        Ipp32u lrUVShift;
-
-        Ipp32u enableIntraEdgeFilter;
-        Ipp32u allowFilterIntra;
-        Ipp32u disableCdfUpdate;
-        Ipp32u frameSizeOverrideFlag;
-        Ipp32u curFrameForceIntegerMV;
-        Ipp32u orderHint;
-        Ipp32u superresUpscaledWidth;
-        Ipp32u superresUpscaledHeight;
-        Ipp32u superresScaleDenominator;
-        Ipp32u allowIntraBC;
-        Ipp32u frameRefsShortSignalling;
-        Ipp32u switchableMotionMode;
-        Ipp32u primaryRefFrame;
-        Ipp32u skipModeFlag;
-        Ipp32u showableFrame;
-        Ipp32u qmY;
-        Ipp32u qmU;
-        Ipp32u qmV;
-        Ipp32u numPlanes;
-
-        FilmGrain filmGrainParams;
-
-        Ipp32u loopFilterAcrossTilesVEnabled;
-        Ipp32u loopFilterAcrossTilesHEnabled;
-
-        Ipp32u uniformTileSpacingFlag;
-
-        Ipp32u tileColStartSB[MAX_TILE_COLS + 1];  // valid for 0 <= i <= tileCols
-        Ipp32u tileRowStartSB[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= tileRows
-
-        Ipp32u miCols;
-        Ipp32u miRows;
-        Ipp32u widthSB;
-        Ipp32u heightSB;
-
-        Ipp32u largeScaleTile;
-
-//#if UMC_AV1_DECODER_REV < 5000
-        // this part is for Rev0.25.2 only
+        // Rev0.25.2 parameters
         Ipp32u profile;
-        Ipp32u bitDepth;
-        Ipp32u subsamplingX;
-        Ipp32u subsamplingY;
+        Ipp32u BitDepth;
+        Ipp32u subsampling_x;
+        Ipp32u subsampling_y;
+        Ipp32u intra_only;
+        Ipp32u reset_frame_context;
+        Ipp32u frame_context_idx;
+        Ipp32u ref_frame_sign_bias[INTER_REFS];
+        Ipp32u loop_filter_across_tiles_enabled;
+        Ipp32u cdef_sec_damping;
+        Ipp32u min_qmlevel;
+        Ipp32u max_qmlevel;
+        Ipp32u tile_group_bit_offset;
+
+        // internal parameters - will be removed together with Rev0.25.2
         Ipp32u frameHeaderLength;
         Ipp32u frameDataSize;
 //#endif // UMC_AV1_DECODER_REV < 5000
@@ -578,9 +558,9 @@ namespace UMC_AV1_DECODER
 #if UMC_AV1_DECODER_REV >= 5000
     struct OBUHeader
     {
-        AV1_OBU_TYPE type;
-        Ipp32u temporalLayerId;
-        Ipp32u enhancementLayerId;
+        AV1_OBU_TYPE obu_type;
+        Ipp32u temporal_id;
+        Ipp32u spatial_id;
     };
 
     struct OBUInfo

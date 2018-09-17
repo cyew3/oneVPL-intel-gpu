@@ -84,10 +84,10 @@ namespace UMC_AV1_DECODER
 
                 OBUInfo info;
                 bs.ReadOBUHeader(&info);
-                VM_ASSERT(CheckOBUType(info.header.type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+                VM_ASSERT(CheckOBUType(info.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
                 size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
 
-                switch (info.header.type)
+                switch (info.header.obu_type)
                 {
                 case OBU_SEQUENCE_HEADER:
                     bs.GetSequenceHeader(&sh);
@@ -184,7 +184,7 @@ namespace UMC_AV1_DECODER
 
         for (Ipp8u i = 0; i < NUM_REF_FRAMES; i++)
         {
-            if ((fh.refreshFrameFlags >> i) & 1)
+            if ((fh.refresh_frame_flags >> i) & 1)
             {
                 if (!prevFrameDPB.empty() && prevFrameDPB[i])
                     prevFrameDPB[i]->DecrementReference();
@@ -209,8 +209,8 @@ namespace UMC_AV1_DECODER
     {
         // calculate tile row and column
         const Ipp32u idxInFrame = tgInfo->startTileIdx + idxInTG;
-        loc->row = idxInFrame / fh->tileCols;
-        loc->col = idxInFrame - loc->row * fh->tileCols;
+        loc->row = idxInFrame / fh->TileCols;
+        loc->col = idxInFrame - loc->row * fh->TileCols;
 
         size_t tileOffsetInTG = bs->BytesDecoded();
 
@@ -218,7 +218,7 @@ namespace UMC_AV1_DECODER
             loc->size = OBUSize - tileOffsetInTG;  // tile is last in tile group - no explicit size signaling
         else
         {
-            tileOffsetInTG += fh->tileSizeBytes;
+            tileOffsetInTG += fh->TileSizeBytes;
 
             // read tile size
             size_t reportedSize;
@@ -259,7 +259,7 @@ namespace UMC_AV1_DECODER
 
         curr_frame->SetSeqHeader(*sequence_header.get());
 
-        if (fh.refreshFrameFlags)
+        if (fh.refresh_frame_flags)
             curr_frame->SetRefValid(true);
 
         curr_frame->frame_dpb = frameDPB;
@@ -298,7 +298,7 @@ namespace UMC_AV1_DECODER
 
             OBUInfo info;
             bs.ReadOBUHeader(&info);
-            VM_ASSERT(CheckOBUType(info.header.type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+            VM_ASSERT(CheckOBUType(info.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
             const size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
 
             if (tmp.GetDataSize() < OBUTotalSize)
@@ -306,14 +306,14 @@ namespace UMC_AV1_DECODER
                                                      // we return error because there is no support for chopped tile_group_obu() submission so far
                                                      // TODO: [Global] Add support for submission of incomplete tile group OBUs
 
-            if (curr_frame && info.header.type != OBU_TILE_GROUP)
+            if (curr_frame && info.header.obu_type != OBU_TILE_GROUP)
             {
                 VM_ASSERT("Series of tile_group_obu() was interrupted unexpectedly!");
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
                 // TODO: [robust] add support for cases when series of tile_group_obu() interrupted by other OBU type before end of frame was reached
             }
 
-            switch (info.header.type)
+            switch (info.header.obu_type)
             {
             case OBU_SEQUENCE_HEADER:
                 if (!sequence_header.get())
@@ -327,7 +327,7 @@ namespace UMC_AV1_DECODER
                 bs.GetFrameHeaderPart1(&fh, sequence_header.get());
                 bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
                 gotFrameHeader = true;
-                if (info.header.type == OBU_FRAME)
+                if (info.header.obu_type == OBU_FRAME)
                 {
                     // TODO: [Rev0.5] Add support for case when tile_group_obu() is transmitted inside frame_obu()
                     VM_ASSERT("No support for frame_obu()!");
@@ -457,7 +457,7 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
         return FindFrame(
             [id](AV1DecoderFrame const* f)
-            { return f->GetFrameHeader().displayFrameId == id; }
+            { return f->GetFrameHeader().display_frame_id == id; }
         );
     }
 
@@ -469,8 +469,8 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
             [](AV1DecoderFrame const* f1, AV1DecoderFrame const* f2)
             {
                 FrameHeader const& h1 = f1->GetFrameHeader(); FrameHeader const& h2 = f2->GetFrameHeader();
-                Ipp32u const id1 = h1.showFrame && !f1->Displayed() ? h1.displayFrameId : (std::numeric_limits<Ipp32u>::max)();
-                Ipp32u const id2 = h2.showFrame && !f2->Displayed() ? h2.displayFrameId : (std::numeric_limits<Ipp32u>::max)();
+                Ipp32u const id1 = h1.show_frame && !f1->Displayed() ? h1.display_frame_id : (std::numeric_limits<Ipp32u>::max)();
+                Ipp32u const id2 = h2.show_frame && !f2->Displayed() ? h2.display_frame_id : (std::numeric_limits<Ipp32u>::max)();
 
                 return  id1 < id2;
             }
@@ -481,7 +481,7 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
 
         AV1DecoderFrame* frame = *i;
         return
-            frame->GetFrameHeader().showFrame ? frame : nullptr;
+            frame->GetFrameHeader().show_frame ? frame : nullptr;
     }
 
 #if UMC_AV1_DECODER_REV >= 5000
@@ -490,7 +490,7 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         VM_ASSERT(par);
 
         par->info.stream_type = UMC::AV1_VIDEO;
-        par->info.profile = sh.profile;
+        par->info.profile = sh.seq_profile;
 
         par->info.clip_info = { Ipp32s(sh.max_frame_width), Ipp32s(sh.max_frame_height) };
         par->info.disp_clip_info = par->info.clip_info;
@@ -502,9 +502,9 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         else if (sh.subsampling_x && sh.subsampling_y)
             par->info.color_format = UMC::NV12;
 
-        if (sh.bit_depth == 8 && par->info.color_format == UMC::YUV444)
+        if (sh.BitDepth == 8 && par->info.color_format == UMC::YUV444)
             par->info.color_format = UMC::AYUV;
-        if (sh.bit_depth == 10)
+        if (sh.BitDepth == 10)
         {
             switch (par->info.color_format)
             {
@@ -517,7 +517,7 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
                 return UMC::UMC_ERR_UNSUPPORTED;
             }
         }
-        else if (sh.bit_depth == 12)
+        else if (sh.BitDepth == 12)
         {
             switch (par->info.color_format)
             {
@@ -545,17 +545,17 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         par->info.stream_type = UMC::AV1_VIDEO;
         par->info.profile     = fh.profile;
 
-        par->info.clip_info = { Ipp32s(fh.width), Ipp32s(fh.height) };
+        par->info.clip_info = { Ipp32s(fh.FrameWidth), Ipp32s(fh.FrameHeight) };
         par->info.disp_clip_info = par->info.clip_info;
 
-        if (!fh.subsamplingX && !fh.subsamplingY)
+        if (!fh.subsampling_x && !fh.subsampling_y)
             par->info.color_format = UMC::YUV444;
-        else if (fh.subsamplingX && !fh.subsamplingY)
+        else if (fh.subsampling_x && !fh.subsampling_y)
             par->info.color_format = UMC::YUY2;
-        else if (fh.subsamplingX && fh.subsamplingY)
+        else if (fh.subsampling_x && fh.subsampling_y)
             par->info.color_format = UMC::NV12;
 
-        if (fh.bitDepth == 10)
+        if (fh.BitDepth == 10)
         {
             switch (par->info.color_format)
             {
@@ -568,7 +568,7 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
                     return UMC::UMC_ERR_UNSUPPORTED;
             }
         }
-        else if (fh.bitDepth == 12)
+        else if (fh.BitDepth == 12)
         {
             switch (par->info.color_format)
             {
@@ -644,9 +644,9 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         // increase ref counter when we get empty frame from DPB
         frame->IncrementReference();
 
-        if (fh.showExistingFrame)
+        if (fh.show_existing_frame)
         {
-            AV1DecoderFrame* existing_frame =  FindFrameByDispID(fh.displayFrameId);
+            AV1DecoderFrame* existing_frame =  FindFrameByDispID(fh.display_frame_id);
             if (!existing_frame)
             {
                 VM_ASSERT(!"Existing frame is not found");

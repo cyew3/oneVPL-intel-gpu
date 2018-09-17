@@ -92,7 +92,7 @@ namespace UMC_AV1_DECODER
 
         memset(seq_header.get(), 0, sizeof(SequenceHeader));
         memset(header.get(), 0, sizeof(FrameHeader));
-        header->displayFrameId = (std::numeric_limits<Ipp32u>::max)();
+        header->display_frame_id = (std::numeric_limits<Ipp32u>::max)();
         // TODO: [Global] Restore work with below fields if required
         //header->currFrame = -1;
         //header->frameCountInBS = 0;
@@ -189,12 +189,12 @@ namespace UMC_AV1_DECODER
 
     void AV1DecoderFrame::UpdateReferenceList()
     {
-        if (header->frameType == KEY_FRAME)
+        if (header->frame_type == KEY_FRAME)
             return;
 
         for (Ipp8u i = 0; i < INTER_REFS; ++i)
         {
-            Ipp32s refIdx = header->refFrameIdx[i];
+            Ipp32s refIdx = header->ref_frame_idx[i];
             AddReferenceFrame(frame_dpb[refIdx]);
         }
     }
@@ -209,14 +209,14 @@ namespace UMC_AV1_DECODER
     Ipp32u AV1DecoderFrame::GetUpscaledWidth() const
     {
 #if UMC_AV1_DECODER_REV >= 5000
-        return header->superresUpscaledWidth;
+        return header->UpscaledWidth;
 #else
-        return header->width;
+        return header->FrameWidth;
 #endif
     }
     Ipp32u AV1DecoderFrame::GetHeight() const
     {
-        return header->height;
+        return header->FrameHeight;
     }
 
 }

@@ -195,31 +195,31 @@ namespace UMC_AV1_DECODER
         FrameHeader const& info =
             frame->GetFrameHeader();
 
-        picParam->frame_width_minus1 = (USHORT)info.width - 1;
-        picParam->frame_height_minus1 = (USHORT)info.height - 1;
+        picParam->frame_width_minus1 = (USHORT)info.FrameWidth - 1;
+        picParam->frame_height_minus1 = (USHORT)info.FrameHeight - 1;
 
 #if AV1D_DDI_VERSION >= 21
         // fill seq parameters
-        picParam->profile = (UCHAR)sh.profile;
+        picParam->profile = (UCHAR)sh.seq_profile;
 
         auto& ddiSeqParam = picParam->dwSeqInfoFlags.fields;
 
         ddiSeqParam.still_picture = 0;
-        ddiSeqParam.sb_size_128x128 = (sh.sb_size == BLOCK_128X128) ? 1 : 0;
-        ddiSeqParam.enable_filter_intra = info.allowFilterIntra;
-        ddiSeqParam.enable_intra_edge_filter = info.enableIntraEdgeFilter;
+        ddiSeqParam.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
+        ddiSeqParam.enable_filter_intra = info.enable_filter_intra;
+        ddiSeqParam.enable_intra_edge_filter = info.enable_intra_edge_filter;
 
-        ddiSeqParam.enable_interintra_compound = info.allowInterIntraCompound;
-        ddiSeqParam.enable_masked_compound = info.allowMaskedCompound;
+        ddiSeqParam.enable_interintra_compound = info.enable_interintra_compound;
+        ddiSeqParam.enable_masked_compound = info.enable_masked_compound;
 
         ddiSeqParam.enable_dual_filter = sh.enable_dual_filter;
         ddiSeqParam.enable_order_hint = sh.enable_order_hint;
         ddiSeqParam.enable_jnt_comp = sh.enable_jnt_comp;
         ddiSeqParam.enable_cdef = 1;
         ddiSeqParam.enable_restoration = 1;
-        ddiSeqParam.BitDepthIdx = (sh.bit_depth == 10) ? 1 :
-            (sh.bit_depth == 12) ? 2 : 0;
-        ddiSeqParam.mono_chrome = sh.monochrome;
+        ddiSeqParam.BitDepthIdx = (sh.BitDepth == 10) ? 1 :
+            (sh.BitDepth == 12) ? 2 : 0;
+        ddiSeqParam.mono_chrome = sh.mono_chrome;
         ddiSeqParam.color_range = sh.color_range;
         ddiSeqParam.subsampling_x = sh.subsampling_x;
         ddiSeqParam.subsampling_y = sh.subsampling_y;
@@ -232,64 +232,64 @@ namespace UMC_AV1_DECODER
         // fill pic params
         auto& ddiPicParam = picParam->dwPicInfoFlags.fields;
 
-        ddiPicParam.frame_type = info.frameType;
-        ddiPicParam.show_frame = info.showFrame;
-        ddiPicParam.showable_frame = info.showableFrame;
-        ddiPicParam.error_resilient_mode = info.errorResilientMode;
-        ddiPicParam.disable_cdf_update = info.disableCdfUpdate;
-        ddiPicParam.allow_screen_content_tools = info.allowScreenContentTools;
-        ddiPicParam.force_integer_mv = info.curFrameForceIntegerMV;
-        ddiPicParam.allow_intrabc = info.allowIntraBC;
-        ddiPicParam.use_superres = (info.superresScaleDenominator == SCALE_NUMERATOR) ? 0 : 1;
-        ddiPicParam.allow_high_precision_mv = info.allowHighPrecisionMv;
-        ddiPicParam.is_motion_mode_switchable = info.switchableMotionMode;
-        ddiPicParam.use_ref_frame_mvs = info.usePrevMVs;
-        ddiPicParam.disable_frame_end_update_cdf = (info.refreshFrameContext == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
-        ddiPicParam.uniform_tile_spacing_flag = info.uniformTileSpacingFlag;
+        ddiPicParam.frame_type = info.frame_type;
+        ddiPicParam.show_frame = info.show_frame;
+        ddiPicParam.showable_frame = info.showable_frame;
+        ddiPicParam.error_resilient_mode = info.error_resilient_mode;
+        ddiPicParam.disable_cdf_update = info.disable_cdf_update;
+        ddiPicParam.allow_screen_content_tools = info.allow_screen_content_tools;
+        ddiPicParam.force_integer_mv = info.seq_force_integer_mv;
+        ddiPicParam.allow_intrabc = info.allow_intrabc;
+        ddiPicParam.use_superres = (info.SuperresDenom == SCALE_NUMERATOR) ? 0 : 1;
+        ddiPicParam.allow_high_precision_mv = info.allow_high_precision_mv;
+        ddiPicParam.is_motion_mode_switchable = info.is_motion_mode_switchable;
+        ddiPicParam.use_ref_frame_mvs = info.use_ref_frame_mvs;
+        ddiPicParam.disable_frame_end_update_cdf = (info.refresh_frame_context == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
+        ddiPicParam.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
         ddiPicParam.allow_warped_motion = 0;
-        ddiPicParam.refresh_frame_context = info.refreshFrameContext;
-        ddiPicParam.large_scale_tile = info.largeScaleTile;
+        ddiPicParam.refresh_frame_context = info.refresh_frame_context;
+        ddiPicParam.large_scale_tile = info.large_scale_tile;
 
-        picParam->order_hint = (UCHAR)info.orderHint;
-        picParam->superres_scale_denominator = (UCHAR)info.superresScaleDenominator;
+        picParam->order_hint = (UCHAR)info.order_hint;
+        picParam->superres_scale_denominator = (UCHAR)info.SuperresDenom;
 #else // AV1D_DDI_VERSION >= 21
         picParam->profile = (UCHAR)info.profile;
 
         picParam->dwFormatAndPictureInfoFlags.fields.frame_id_numbers_present_flag = sh.frame_id_numbers_present_flag;
         picParam->dwFormatAndPictureInfoFlags.fields.use_reference_buffer = sh.frame_id_numbers_present_flag;
 
-        picParam->dwFormatAndPictureInfoFlags.fields.frame_type = info.frameType;
-        picParam->dwFormatAndPictureInfoFlags.fields.show_frame = info.showFrame;
-        picParam->dwFormatAndPictureInfoFlags.fields.error_resilient_mode = info.errorResilientMode;
-        picParam->dwFormatAndPictureInfoFlags.fields.intra_only = info.intraOnly;
+        picParam->dwFormatAndPictureInfoFlags.fields.frame_type = info.frame_type;
+        picParam->dwFormatAndPictureInfoFlags.fields.show_frame = info.show_frame;
+        picParam->dwFormatAndPictureInfoFlags.fields.error_resilient_mode = info.error_resilient_mode;
+        picParam->dwFormatAndPictureInfoFlags.fields.intra_only = info.intra_only;
         picParam->dwFormatAndPictureInfoFlags.fields.extra_plane = 0;
 
-        picParam->dwFormatAndPictureInfoFlags.fields.allow_high_precision_mv = info.allowHighPrecisionMv;
+        picParam->dwFormatAndPictureInfoFlags.fields.allow_high_precision_mv = info.allow_high_precision_mv;
         picParam->dwFormatAndPictureInfoFlags.fields.sb_size_128x128 = (info.sbSize == BLOCK_128X128) ? 1 : 0;
 
-        picParam->dwFormatAndPictureInfoFlags.fields.reset_frame_context = info.resetFrameContext;
-        picParam->dwFormatAndPictureInfoFlags.fields.refresh_frame_context = info.refreshFrameContext;
-        picParam->dwFormatAndPictureInfoFlags.fields.frame_context_idx = info.frameContextIdx;
+        picParam->dwFormatAndPictureInfoFlags.fields.reset_frame_context = info.reset_frame_context;
+        picParam->dwFormatAndPictureInfoFlags.fields.refresh_frame_context = info.refresh_frame_context;
+        picParam->dwFormatAndPictureInfoFlags.fields.frame_context_idx = info.frame_context_idx;
 
-        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)info.subsamplingX;
-        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)info.subsamplingY;
+        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_x = (UCHAR)info.subsampling_x;
+        picParam->dwFormatAndPictureInfoFlags.fields.subsampling_y = (UCHAR)info.subsampling_y;
 #endif // AV1D_DDI_VERSION >= 21
 
-        picParam->frame_interp_filter = (UCHAR)info.interpFilter;
+        picParam->frame_interp_filter = (UCHAR)info.interpolation_filter;
 
-        picParam->stAV1Segments.enabled = info.segmentation.enabled;
-        picParam->stAV1Segments.temporal_update = info.segmentation.temporalUpdate;
-        picParam->stAV1Segments.update_map = info.segmentation.updateMap;
+        picParam->stAV1Segments.enabled = info.segmentation_params.segmentation_enabled;
+        picParam->stAV1Segments.temporal_update = info.segmentation_params.segmentation_temporal_update;
+        picParam->stAV1Segments.update_map = info.segmentation_params.segmentation_update_map;
         picParam->stAV1Segments.Reserved4Bits = 0;
 
         for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
         {
-            picParam->stAV1Segments.feature_mask[i] = (UCHAR)info.segmentation.featureMask[i];
+            picParam->stAV1Segments.feature_mask[i] = (UCHAR)info.segmentation_params.FeatureMask[i];
             for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
-                picParam->stAV1Segments.feature_data[i][j] = (SHORT)info.segmentation.featureData[i][j];
+                picParam->stAV1Segments.feature_data[i][j] = (SHORT)info.segmentation_params.FeatureData[i][j];
         }
 
-        if (KEY_FRAME == info.frameType)
+        if (KEY_FRAME == info.frame_type)
         {
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
@@ -311,13 +311,13 @@ namespace UMC_AV1_DECODER
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
+                Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
 #if AV1D_DDI_VERSION >= 21
                 picParam->ref_frame_idx[ref_idx] = idxInDPB;
-                picParam->ref_order_hint[ref_idx] = (UCHAR)frame->frame_dpb[idxInDPB]->GetFrameHeader().orderHint;
+                picParam->ref_order_hint[ref_idx] = (UCHAR)frame->frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
 #else
                 picParam->ref_frame_idx[ref_idx].bPicEntry = idxInDPB;
-                picParam->ref_frame_sign_bias[ref_idx + 1] = (UCHAR)info.refFrameSignBias[ref_idx];
+                picParam->ref_frame_sign_bias[ref_idx + 1] = (UCHAR)info.ref_frame_sign_bias[ref_idx];
 #endif
             }
         }
@@ -325,26 +325,26 @@ namespace UMC_AV1_DECODER
 #if AV1D_DDI_VERSION >= 21
         picParam->CurrPic.wPicEntry = (USHORT)frame->GetMemID();
         picParam->CurrDisplayPic.wPicEntry = (USHORT)frame->GetMemID();
-        picParam->primary_ref_frame = (UCHAR)info.primaryRefFrame;
+        picParam->primary_ref_frame = (UCHAR)info.primary_ref_frame;
 #else
         picParam->CurrPic.bPicEntry = (UCHAR)frame->GetMemID();
 #endif
 
-        picParam->filter_level[0] = (UCHAR)info.lf.filterLevel[0];
-        picParam->filter_level[1] = (UCHAR)info.lf.filterLevel[1];
-        picParam->filter_level_u = (UCHAR)info.lf.filterLevelU;
-        picParam->filter_level_v = (UCHAR)info.lf.filterLevelV;
+        picParam->filter_level[0] = (UCHAR)info.loop_filter_params.loop_filter_level[0];
+        picParam->filter_level[1] = (UCHAR)info.loop_filter_params.loop_filter_level[1];
+        picParam->filter_level_u = (UCHAR)info.loop_filter_params.loop_filter_level[2];
+        picParam->filter_level_v = (UCHAR)info.loop_filter_params.loop_filter_level[3];
 
 #if AV1D_DDI_VERSION >= 21
         auto& ddiLFInfoFlags = picParam->cLoopFilterInfoFlags.fields;
-        ddiLFInfoFlags.sharpness_level = (UCHAR)info.lf.sharpnessLevel;
-        ddiLFInfoFlags.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
-        ddiLFInfoFlags.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
+        ddiLFInfoFlags.sharpness_level = (UCHAR)info.loop_filter_params.loop_filter_sharpness;
+        ddiLFInfoFlags.mode_ref_delta_enabled = info.loop_filter_params.loop_filter_delta_enabled;
+        ddiLFInfoFlags.mode_ref_delta_update = info.loop_filter_params.loop_filter_delta_update;
 #else
-        picParam->sharpness_level = (UCHAR)info.lf.sharpnessLevel;
-        picParam->wControlInfoFlags.fields.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
-        picParam->wControlInfoFlags.fields.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
-        picParam->wControlInfoFlags.fields.use_prev_frame_mvs = info.usePrevMVs;
+        picParam->sharpness_level = (UCHAR)info.loop_filter_params.loop_filter_sharpness;
+        picParam->wControlInfoFlags.fields.mode_ref_delta_enabled = info.loop_filter_params.loop_filter_delta_enabled;
+        picParam->wControlInfoFlags.fields.mode_ref_delta_update = info.loop_filter_params.loop_filter_delta_update;
+        picParam->wControlInfoFlags.fields.use_prev_frame_mvs = info.use_ref_frame_mvs;
 
         picParam->UncompressedHeaderLengthInBytes = (UCHAR)info.frameHeaderLength;
         picParam->BSBytesInBuffer = info.frameDataSize;
@@ -353,126 +353,126 @@ namespace UMC_AV1_DECODER
         picParam->StatusReportFeedbackNumber = ++m_report_counter;
 
 #ifdef DDI_HACKS_FOR_REV_252
-        picParam->BitDepthMinus8 = (UCHAR)info.bitDepth - 8;
+        picParam->BitDepthMinus8 = (UCHAR)info.BitDepth - 8;
 #endif
         for (Ipp8u i = 0; i < TOTAL_REFS; i++)
         {
-            picParam->ref_deltas[i] = info.lf.refDeltas[i];
+            picParam->ref_deltas[i] = info.loop_filter_params.loop_filter_ref_deltas[i];
         }
         for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
         {
-            picParam->mode_deltas[i] = info.lf.modeDeltas[i];
+            picParam->mode_deltas[i] = info.loop_filter_params.loop_filter_mode_deltas[i];
         }
 
-        picParam->base_qindex = (SHORT)info.baseQIndex;
-        picParam->y_dc_delta_q = (CHAR)info.yDcDeltaQ;
-        picParam->u_dc_delta_q = (CHAR)info.uDcDeltaQ;
-        picParam->v_dc_delta_q = (CHAR)info.vDcDeltaQ;
-        picParam->u_ac_delta_q = (CHAR)info.uAcDeltaQ;
-        picParam->v_ac_delta_q = (CHAR)info.vAcDeltaQ;
+        picParam->base_qindex = (SHORT)info.base_q_idx;
+        picParam->y_dc_delta_q = (CHAR)info.DeltaQYDc;
+        picParam->u_dc_delta_q = (CHAR)info.DeltaQUDc;
+        picParam->v_dc_delta_q = (CHAR)info.DeltaQVDc;
+        picParam->u_ac_delta_q = (CHAR)info.DeltaQUAc;
+        picParam->v_ac_delta_q = (CHAR)info.DeltaQVac;
 
         memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
 
 #if AV1D_DDI_VERSION >= 21
-        picParam->cdef_damping_minus_3 = (UCHAR)(info.cdefPriDamping - 3);
+        picParam->cdef_damping_minus_3 = (UCHAR)(info.cdef_damping - 3);
 #else
-        picParam->cdef_pri_damping = (UCHAR)info.cdefPriDamping;
-        picParam->cdef_sec_damping = (UCHAR)info.cdefSecDamping;
+        picParam->cdef_pri_damping = (UCHAR)info.cdef_damping;
+        picParam->cdef_sec_damping = (UCHAR)info.cdef_sec_damping;
 #endif
-        picParam->cdef_bits = (UCHAR)info.cdefBits;
+        picParam->cdef_bits = (UCHAR)info.cdef_bits;
 
         for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            picParam->cdef_y_strengths[i] = (UCHAR)info.cdefStrength[i];
-            picParam->cdef_uv_strengths[i] = (UCHAR)info.cdefUVStrength[i];
+            picParam->cdef_y_strengths[i] = (UCHAR)info.cdef_y_strength[i];
+            picParam->cdef_uv_strengths[i] = (UCHAR)info.cdef_uv_strength[i];
         }
 
 #if AV1D_DDI_VERSION >= 21
         auto& ddiQMFlags = picParam->wQMatrixFlags.fields;
-        ddiQMFlags.using_qmatrix = info.useQMatrix;
-        ddiQMFlags.qm_y = info.qmY;
-        ddiQMFlags.qm_u = info.qmU;;
-        ddiQMFlags.qm_v = info.qmV;;
+        ddiQMFlags.using_qmatrix = info.using_qmatrix;
+        ddiQMFlags.qm_y = info.qm_y;
+        ddiQMFlags.qm_u = info.qm_u;;
+        ddiQMFlags.qm_v = info.qm_v;;
 #else
-        picParam->dwModeControlFlags.fields.using_qmatrix = info.useQMatrix;
-        picParam->dwModeControlFlags.fields.min_qmlevel = info.minQMLevel;
-        picParam->dwModeControlFlags.fields.max_qmlevel = info.maxQMLevel;
-        picParam->dwModeControlFlags.fields.allow_interintra_compound = info.allowInterIntraCompound;
-        picParam->dwModeControlFlags.fields.allow_masked_compound = info.allowMaskedCompound;
-        picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
-        picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allowScreenContentTools;
+        picParam->dwModeControlFlags.fields.using_qmatrix = info.using_qmatrix;
+        picParam->dwModeControlFlags.fields.min_qmlevel = info.min_qmlevel;
+        picParam->dwModeControlFlags.fields.max_qmlevel = info.max_qmlevel;
+        picParam->dwModeControlFlags.fields.allow_interintra_compound = info.enable_interintra_compound;
+        picParam->dwModeControlFlags.fields.allow_masked_compound = info.enable_masked_compound;
+        picParam->dwModeControlFlags.fields.loop_filter_across_tiles_enabled = info.loop_filter_across_tiles_enabled;
+        picParam->dwModeControlFlags.fields.allow_screen_content_tools = info.allow_screen_content_tools;
 #endif
-        picParam->dwModeControlFlags.fields.delta_q_present_flag = info.deltaQPresentFlag;
-        picParam->dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.deltaQRes);
-        picParam->dwModeControlFlags.fields.delta_lf_present_flag = info.deltaLFPresentFlag;
-        picParam->dwModeControlFlags.fields.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
-        picParam->dwModeControlFlags.fields.delta_lf_multi = info.deltaLFMulti;
-        picParam->dwModeControlFlags.fields.tx_mode = info.txMode;
-        picParam->dwModeControlFlags.fields.reference_mode = info.referenceMode;
-        picParam->dwModeControlFlags.fields.reduced_tx_set_used = info.reducedTxSetUsed;
+        picParam->dwModeControlFlags.fields.delta_q_present_flag = info.delta_q_present;
+        picParam->dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.delta_q_res);
+        picParam->dwModeControlFlags.fields.delta_lf_present_flag = info.delta_lf_present;
+        picParam->dwModeControlFlags.fields.log2_delta_lf_res = CeilLog2(info.delta_lf_res);
+        picParam->dwModeControlFlags.fields.delta_lf_multi = info.delta_lf_multi;
+        picParam->dwModeControlFlags.fields.tx_mode = info.TxMode;
+        picParam->dwModeControlFlags.fields.reference_mode = info.reference_mode;
+        picParam->dwModeControlFlags.fields.reduced_tx_set_used = info.reduced_tx_set;
         picParam->dwModeControlFlags.fields.ReservedField = 0;
 
-        picParam->LoopRestorationFlags.fields.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
-        picParam->LoopRestorationFlags.fields.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
-        picParam->LoopRestorationFlags.fields.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
-        picParam->LoopRestorationFlags.fields.lr_unit_shift = info.lrUnitShift;
-        picParam->LoopRestorationFlags.fields.lr_uv_shift = info.lrUVShift;
+        picParam->LoopRestorationFlags.fields.yframe_restoration_type = info.lr_type[0];
+        picParam->LoopRestorationFlags.fields.cbframe_restoration_type = info.lr_type[1];
+        picParam->LoopRestorationFlags.fields.crframe_restoration_type = info.lr_type[2];
+        picParam->LoopRestorationFlags.fields.lr_unit_shift = info.lr_unit_shift;
+        picParam->LoopRestorationFlags.fields.lr_uv_shift = info.lr_uv_shift;
 
 #if AV1D_DDI_VERSION >= 21
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
-            picParam->wm[i].wmtype = info.globalMotion[i + 1].wmtype;
+            picParam->wm[i].wmtype = info.global_motion_params[i + 1].wmtype;
             for (Ipp8u j = 0; j < 8; j++)
             {
-                picParam->wm[i].wmmat[j] = info.globalMotion[i + 1].wmmat[j];
+                picParam->wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
                 // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
             }
         }
 #else // AV1D_DDI_VERSION >= 21
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
-            picParam->gm_type[i] = (UCHAR)info.globalMotion[i + 1].wmtype;
+            picParam->gm_type[i] = (UCHAR)info.global_motion_params[i + 1].wmtype;
             for (Ipp8u j = 0; j < 6; j++) // why only 6?
             {
-                picParam->gm_params[i][j] = info.globalMotion[i + 1].wmmat[j];
+                picParam->gm_params[i][j] = info.global_motion_params[i + 1].wmmat[j];
             }
         }
 #endif // AV1D_DDI_VERSION >= 21
 
-        picParam->tg_size_bit_offset = info.tileGroupBitOffset;
+        picParam->tg_size_bit_offset = info.tile_group_bit_offset;
 
 #if AV1D_DDI_VERSION >= 21
-        if (info.uniformTileSpacingFlag)
+        if (info.uniform_tile_spacing_flag)
         {
-            picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
-            picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
+            picParam->log2_tile_rows = (UCHAR)info.TileRowsLog2;
+            picParam->log2_tile_cols = (UCHAR)info.TileColsLog2;
         }
         else
         {
-            picParam->tile_cols = (USHORT)info.tileCols;
-            picParam->tile_rows = (USHORT)info.tileRows;
+            picParam->tile_cols = (USHORT)info.TileCols;
+            picParam->tile_rows = (USHORT)info.TileRows;
 
             for (Ipp32u i = 0; i < picParam->tile_cols; i++)
             {
                 picParam->width_in_sbs_minus_1[i] =
-                    (USHORT)(info.tileColStartSB[i + 1] - info.tileColStartSB[i]);
+                    (USHORT)(info.SbColStarts[i + 1] - info.SbColStarts[i]);
             }
 
             for (int i = 0; i < picParam->tile_rows; i++)
             {
                 picParam->height_in_sbs_minus_1[i] =
-                    (USHORT)(info.tileRowStartSB[i + 1] - info.tileRowStartSB[i]);
+                    (USHORT)(info.SbRowStarts[i + 1] - info.SbRowStarts[i]);
             }
         }
 #else
-        picParam->log2_tile_rows = (UCHAR)info.log2TileRows;
-        picParam->log2_tile_cols = (UCHAR)info.log2TileCols;
+        picParam->log2_tile_rows = (UCHAR)info.TileRowsLog2;
+        picParam->log2_tile_cols = (UCHAR)info.TileColsLog2;
 
-        picParam->tile_cols = (USHORT)info.tileCols;
-        picParam->tile_rows = (USHORT)info.tileRows;
+        picParam->tile_cols = (USHORT)info.TileCols;
+        picParam->tile_rows = (USHORT)info.TileRows;
 
-        picParam->tile_size_bytes = (UCHAR)info.tileSizeBytes;
+        picParam->tile_size_bytes = (UCHAR)info.TileSizeBytes;
 #endif
     }
 
@@ -623,67 +623,67 @@ namespace UMC_AV1_DECODER
             frame->GetFrameHeader();
 
 #if UMC_AV1_DECODER_REV >= 5000
-        picParam->frame_width_minus1 = (uint16_t)info.width - 1;
-        picParam->frame_height_minus1 = (uint16_t)info.height - 1;
+        picParam->frame_width_minus1 = (uint16_t)info.FrameWidth - 1;
+        picParam->frame_height_minus1 = (uint16_t)info.FrameHeight - 1;
 
         // fill seq parameters
-        picParam->profile = (uint8_t)sh.profile;
+        picParam->profile = (uint8_t)sh.seq_profile;
 
         auto& seqInfo = picParam->seq_info_fields.fields;
 
         seqInfo.still_picture = 0;
-        seqInfo.sb_size_128x128 = (sh.sb_size == BLOCK_128X128) ? 1 : 0;
-        seqInfo.enable_filter_intra = info.allowFilterIntra;
-        seqInfo.enable_intra_edge_filter = info.enableIntraEdgeFilter;
-        seqInfo.enable_interintra_compound = info.allowInterIntraCompound;
-        seqInfo.enable_masked_compound = info.allowMaskedCompound;
+        seqInfo.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
+        seqInfo.enable_filter_intra = info.enable_filter_intra;
+        seqInfo.enable_intra_edge_filter = info.enable_intra_edge_filter;
+        seqInfo.enable_interintra_compound = info.enable_interintra_compound;
+        seqInfo.enable_masked_compound = info.enable_masked_compound;
         seqInfo.enable_dual_filter = sh.enable_dual_filter;
         seqInfo.enable_order_hint = sh.enable_order_hint;
         seqInfo.enable_jnt_comp = sh.enable_jnt_comp;
         seqInfo.enable_cdef = 1;
         seqInfo.enable_restoration = 1;
-        seqInfo.mono_chrome = sh.monochrome;
+        seqInfo.mono_chrome = sh.mono_chrome;
         seqInfo.color_range = sh.color_range;
         seqInfo.subsampling_x = sh.subsampling_x;
         seqInfo.subsampling_y = sh.subsampling_y;
         seqInfo.chroma_sample_position = sh.chroma_sample_position;
         seqInfo.film_grain_params_present = sh.film_grain_param_present;
 
-        picParam->bit_depth_idx = (sh.bit_depth == 10) ? 1 :
-            (sh.bit_depth == 12) ? 2 : 0;
+        picParam->bit_depth_idx = (sh.BitDepth == 10) ? 1 :
+            (sh.BitDepth == 12) ? 2 : 0;
         picParam->order_hint_bits_minus_1 = sh.order_hint_bits_minus1;
 
         // fill pic params
         auto& picInfo = picParam->pic_info_fields.bits;
 
-        picInfo.frame_type = info.frameType;
-        picInfo.show_frame = info.showFrame;
-        picInfo.showable_frame = info.showableFrame;
-        picInfo.error_resilient_mode = info.errorResilientMode;
-        picInfo.disable_cdf_update = info.disableCdfUpdate;
-        picInfo.allow_screen_content_tools = info.allowScreenContentTools;
-        picInfo.force_integer_mv = info.curFrameForceIntegerMV;
-        picInfo.allow_intrabc = info.allowIntraBC;
-        picInfo.use_superres = (info.superresScaleDenominator == SCALE_NUMERATOR) ? 0 : 1;
-        picInfo.allow_high_precision_mv = info.allowHighPrecisionMv;
-        picInfo.is_motion_mode_switchable = info.switchableMotionMode;
-        picInfo.use_ref_frame_mvs = info.usePrevMVs;
-        picInfo.disable_frame_end_update_cdf = (info.refreshFrameContext == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
-        picInfo.uniform_tile_spacing_flag = info.uniformTileSpacingFlag;
+        picInfo.frame_type = info.frame_type;
+        picInfo.show_frame = info.show_frame;
+        picInfo.showable_frame = info.showable_frame;
+        picInfo.error_resilient_mode = info.error_resilient_mode;
+        picInfo.disable_cdf_update = info.disable_cdf_update;
+        picInfo.allow_screen_content_tools = info.allow_screen_content_tools;
+        picInfo.force_integer_mv = info.seq_force_integer_mv;
+        picInfo.allow_intrabc = info.allow_intrabc;
+        picInfo.use_superres = (info.SuperresDenom == SCALE_NUMERATOR) ? 0 : 1;
+        picInfo.allow_high_precision_mv = info.allow_high_precision_mv;
+        picInfo.is_motion_mode_switchable = info.is_motion_mode_switchable;
+        picInfo.use_ref_frame_mvs = info.use_ref_frame_mvs;
+        picInfo.disable_frame_end_update_cdf = (info.refresh_frame_context == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
+        picInfo.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
         picInfo.allow_warped_motion = 0;
-        picInfo.refresh_frame_context = info.refreshFrameContext;
-        picInfo.large_scale_tile = info.largeScaleTile;
+        picInfo.refresh_frame_context = info.refresh_frame_context;
+        picInfo.large_scale_tile = info.large_scale_tile;
 
-        picParam->order_hint = (uint8_t)info.orderHint;
-        picParam->superres_scale_denominator = (uint8_t)info.superresScaleDenominator;
+        picParam->order_hint = (uint8_t)info.order_hint;
+        picParam->superres_scale_denominator = (uint8_t)info.SuperresDenom;
 
-        picParam->interp_filter = (uint8_t)info.interpFilter;
+        picParam->interp_filter = (uint8_t)info.interpolation_filter;
 
         // fill segmentation params and map
         auto& seg = picParam->seg_info;
-        seg.segment_info_fields.bits.enabled = info.segmentation.enabled;;
-        seg.segment_info_fields.bits.temporal_update = info.segmentation.temporalUpdate;
-        seg.segment_info_fields.bits.update_map = info.segmentation.updateMap;
+        seg.segment_info_fields.bits.enabled = info.segmentation_params.segmentation_enabled;;
+        seg.segment_info_fields.bits.temporal_update = info.segmentation_params.segmentation_temporal_update;
+        seg.segment_info_fields.bits.update_map = info.segmentation_params.segmentation_update_map;
         memset(&seg.feature_data, 0, sizeof(seg.feature_data)); // TODO: [Global] implement proper setting
         memset(&seg.feature_mask, 0, sizeof(seg.feature_mask)); // TODO: [Global] implement proper setting
 
@@ -693,12 +693,12 @@ namespace UMC_AV1_DECODER
 
         for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
         {
-            seg.feature_mask[i] = (uint8_t)info.segmentation.featureMask[i];
+            seg.feature_mask[i] = (uint8_t)info.segmentation_params.FeatureMask[i];
             for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
-                seg.feature_data[i][j] = (int16_t)info.segmentation.featureData[i][j];
+                seg.feature_data[i][j] = (int16_t)info.segmentation_params.FeatureData[i][j];
         }
 
-        if (KEY_FRAME == info.frameType)
+        if (KEY_FRAME == info.frame_type)
         {
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
@@ -712,137 +712,137 @@ namespace UMC_AV1_DECODER
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                const Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
+                const Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
                 picParam->ref_frame_idx[ref_idx] = idxInDPB;
             }
         }
 
-        picParam->primary_ref_frame = (uint8_t)info.primaryRefFrame;
+        picParam->primary_ref_frame = (uint8_t)info.primary_ref_frame;
 
         // fill loop filter params
-        picParam->filter_level[0] = (uint8_t)info.lf.filterLevel[0];
-        picParam->filter_level[1] = (uint8_t)info.lf.filterLevel[1];
-        picParam->filter_level_u = (uint8_t)info.lf.filterLevelU;
-        picParam->filter_level_v = (uint8_t)info.lf.filterLevelV;
+        picParam->filter_level[0] = (uint8_t)info.loop_filter_params.loop_filter_level[0];
+        picParam->filter_level[1] = (uint8_t)info.loop_filter_params.loop_filter_level[1];
+        picParam->filter_level_u = (uint8_t)info.loop_filter_params.loop_filter_level[2];
+        picParam->filter_level_v = (uint8_t)info.loop_filter_params.loop_filter_level[3];
 
         auto& lfInfo = picParam->loop_filter_info_fields.bits;
-        lfInfo.sharpness_level = (uint8_t)info.lf.sharpnessLevel;
-        lfInfo.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
-        lfInfo.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
+        lfInfo.sharpness_level = (uint8_t)info.loop_filter_params.loop_filter_sharpness;
+        lfInfo.mode_ref_delta_enabled = info.loop_filter_params.loop_filter_delta_enabled;
+        lfInfo.mode_ref_delta_update = info.loop_filter_params.loop_filter_delta_update;
 
 
         for (Ipp8u i = 0; i < TOTAL_REFS; i++)
         {
-            picParam->ref_deltas[i] = info.lf.refDeltas[i];
+            picParam->ref_deltas[i] = info.loop_filter_params.loop_filter_ref_deltas[i];
         }
         for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
         {
-            picParam->mode_deltas[i] = info.lf.modeDeltas[i];
+            picParam->mode_deltas[i] = info.loop_filter_params.loop_filter_mode_deltas[i];
         }
 
         // fill quantization params
-        picParam->base_qindex = (int16_t)info.baseQIndex;
-        picParam->y_dc_delta_q = (int8_t)info.yDcDeltaQ;
-        picParam->u_dc_delta_q = (int8_t)info.uDcDeltaQ;
-        picParam->v_dc_delta_q = (int8_t)info.vDcDeltaQ;
-        picParam->u_ac_delta_q = (int8_t)info.uAcDeltaQ;
-        picParam->v_ac_delta_q = (int8_t)info.vAcDeltaQ;
+        picParam->base_qindex = (int16_t)info.base_q_idx;
+        picParam->y_dc_delta_q = (int8_t)info.DeltaQYDc;
+        picParam->u_dc_delta_q = (int8_t)info.DeltaQUDc;
+        picParam->v_dc_delta_q = (int8_t)info.DeltaQVDc;
+        picParam->u_ac_delta_q = (int8_t)info.DeltaQUAc;
+        picParam->v_ac_delta_q = (int8_t)info.DeltaQVac;
 
         // fill CDEF
-        picParam->cdef_damping_minus_3 = (uint8_t)(info.cdefPriDamping - 3);
-        picParam->cdef_bits = (uint8_t)info.cdefBits;
+        picParam->cdef_damping_minus_3 = (uint8_t)(info.cdef_damping - 3);
+        picParam->cdef_bits = (uint8_t)info.cdef_bits;
 
         for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            picParam->cdef_y_strengths[i] = (uint8_t)info.cdefStrength[i];
-            picParam->cdef_uv_strengths[i] = (uint8_t)info.cdefUVStrength[i];
+            picParam->cdef_y_strengths[i] = (uint8_t)info.cdef_y_strength[i];
+            picParam->cdef_uv_strengths[i] = (uint8_t)info.cdef_uv_strength[i];
         }
 
         // fill quantization matrix params
         auto& qmFlags = picParam->qmatrix_fields.bits;
-        qmFlags.using_qmatrix = info.useQMatrix;
-        qmFlags.qm_y = info.qmY;
-        qmFlags.qm_u = info.qmU;
-        qmFlags.qm_v = info.qmV;
+        qmFlags.using_qmatrix = info.using_qmatrix;
+        qmFlags.qm_y = info.qm_y;
+        qmFlags.qm_u = info.qm_u;
+        qmFlags.qm_v = info.qm_v;
 
 
         auto& modeCtrl = picParam->mode_control_fields.bits;
-        modeCtrl.delta_q_present_flag = info.deltaQPresentFlag;
-        modeCtrl.log2_delta_q_res = CeilLog2(info.deltaQRes);
-        modeCtrl.delta_lf_present_flag = info.deltaLFPresentFlag;
-        modeCtrl.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
-        modeCtrl.delta_lf_multi = info.deltaLFMulti;
-        modeCtrl.tx_mode = info.txMode;
-        modeCtrl.reference_mode = info.referenceMode;
-        modeCtrl.reduced_tx_set_used = info.reducedTxSetUsed;
+        modeCtrl.delta_q_present_flag = info.delta_q_present;
+        modeCtrl.log2_delta_q_res = CeilLog2(info.delta_q_res);
+        modeCtrl.delta_lf_present_flag = info.delta_lf_present;
+        modeCtrl.log2_delta_lf_res = CeilLog2(info.delta_lf_res);
+        modeCtrl.delta_lf_multi = info.delta_lf_multi;
+        modeCtrl.tx_mode = info.TxMode;
+        modeCtrl.reference_mode = info.reference_mode;
+        modeCtrl.reduced_tx_set_used = info.reduced_tx_set;
 
         // fill loop restoration params
         auto& lrInfo = picParam->loop_restoration_fields.bits;
-        lrInfo.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
-        lrInfo.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
-        lrInfo.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
-        lrInfo.lr_unit_shift = info.lrUnitShift;
-        lrInfo.lr_uv_shift = info.lrUVShift;
+        lrInfo.yframe_restoration_type = info.lr_type[0];
+        lrInfo.cbframe_restoration_type = info.lr_type[1];
+        lrInfo.crframe_restoration_type = info.lr_type[2];;
+        lrInfo.lr_unit_shift = info.lr_unit_shift;
+        lrInfo.lr_uv_shift = info.lr_uv_shift;
 
         // fill global motion params
         for (Ipp8u i = 0; i < INTER_REFS; i++)
         {
-            picParam->wm[i].wmtype = static_cast<VATransformationType>(info.globalMotion[i + 1].wmtype);
+            picParam->wm[i].wmtype = static_cast<VATransformationType>(info.global_motion_params[i + 1].wmtype);
             for (Ipp8u j = 0; j < 8; j++)
             {
-                picParam->wm[i].wmmat[j] = info.globalMotion[i + 1].wmmat[j];
+                picParam->wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
                 // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
             }
         }
 
         // fill tile params
-        picParam->tile_cols = (uint16_t)info.tileCols;
-        picParam->tile_rows = (uint16_t)info.tileRows;
+        picParam->tile_cols = (uint16_t)info.TileCols;
+        picParam->tile_rows = (uint16_t)info.TileRows;
 
-        if (!info.uniformTileSpacingFlag)
+        if (!info.uniform_tile_spacing_flag)
         {
             for (Ipp32u i = 0; i < picParam->tile_cols; i++)
             {
                 picParam->width_in_sbs_minus_1[i] =
-                    (uint16_t)(info.tileColStartSB[i + 1] - info.tileColStartSB[i]);
+                    (uint16_t)(info.SbColStarts[i + 1] - info.SbColStarts[i]);
             }
 
             for (int i = 0; i < picParam->tile_rows; i++)
             {
                 picParam->height_in_sbs_minus_1[i] =
-                    (uint16_t)(info.tileRowStartSB[i + 1] - info.tileRowStartSB[i]);
+                    (uint16_t)(info.SbRowStarts[i + 1] - info.SbRowStarts[i]);
             }
         }
 
 #else // UMC_AV1_DECODER_REV >= 5000
-        picParam->frame_width_minus1 = (uint16_t)info.width - 1;
-        picParam->frame_height_minus1 = (uint16_t)info.height - 1;
+        picParam->frame_width_minus1 = (uint16_t)info.FrameWidth - 1;
+        picParam->frame_height_minus1 = (uint16_t)info.FrameHeight - 1;
 
-        picParam->pic_fields.bits.frame_type = info.frameType;
-        picParam->pic_fields.bits.show_frame = info.showFrame;
-        picParam->pic_fields.bits.error_resilient_mode = info.errorResilientMode;
-        picParam->pic_fields.bits.intra_only = info.intraOnly;
+        picParam->pic_fields.bits.frame_type = info.frame_type;
+        picParam->pic_fields.bits.show_frame = info.show_frame;
+        picParam->pic_fields.bits.error_resilient_mode = info.error_resilient_mode;
+        picParam->pic_fields.bits.intra_only = info.intra_only;
         picParam->pic_fields.bits.extra_plane = 0;
 
-        picParam->pic_fields.bits.allow_high_precision_mv = info.allowHighPrecisionMv;
-        picParam->pic_fields.bits.sb_size_128x128 = (info.sbSize == BLOCK_128x128) ? 1 : 0;
-        picParam->interp_filter = (uint8_t)info.interpFilter;
-        picParam->seg_info.segment_info_fields.bits.enabled = info.segmentation.enabled;;
-        picParam->seg_info.segment_info_fields.bits.temporal_update = info.segmentation.temporalUpdate;
-        picParam->seg_info.segment_info_fields.bits.update_map = info.segmentation.updateMap;
+        picParam->pic_fields.bits.allow_high_precision_mv = info.allow_high_precision_mv;
+        picParam->pic_fields.bits.sb_size_128x128 = (info.sbSize == BLOCK_128X128) ? 1 : 0;
+        picParam->interp_filter = (uint8_t)info.interpolation_filter;
+        picParam->seg_info.segment_info_fields.bits.segmentation_enabled = info.segmentation_params.segmentation_enabled;
+        picParam->seg_info.segment_info_fields.bits.temporal_update = info.segmentation_params.segmentation_temporal_update;
+        picParam->seg_info.segment_info_fields.bits.update_map = info.segmentation_params.segmentation_update_map;
 
         for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
         {
-            picParam->seg_info.feature_mask[i] = (uint8_t)info.segmentation.featureMask[i];
+            picParam->seg_info.feature_mask[i] = (uint8_t)info.segmentation_params.FeatureMask[i];
             for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
-                picParam->seg_info.feature_data[i][j] = (int16_t)info.segmentation.featureData[i][j];
+                picParam->seg_info.feature_data[i][j] = (int16_t)info.segmentation_params.FeatureData[i][j];
         }
 
-        picParam->pic_fields.bits.reset_frame_context = info.resetFrameContext;
-        picParam->pic_fields.bits.refresh_frame_context = info.refreshFrameContext;
-        picParam->pic_fields.bits.frame_context_idx = info.frameContextIdx;
+        picParam->pic_fields.bits.reset_frame_context = info.reset_frame_context;
+        picParam->pic_fields.bits.refresh_frame_context = info.refresh_frame_context;
+        picParam->pic_fields.bits.frame_context_idx = info.frame_context_idx;
 
-        if (KEY_FRAME == info.frameType)
+        if (KEY_FRAME == info.frame_type)
         {
             for (int i = 0; i < NUM_REF_FRAMES; i++)
             {
@@ -856,91 +856,91 @@ namespace UMC_AV1_DECODER
 
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                Ipp8u idxInDPB = (Ipp8u)info.refFrameIdx[ref_idx];
+                Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
                 picParam->ref_frame_idx[ref_idx] = idxInDPB;
-                picParam->ref_frame_sign_bias[ref_idx + 1] = (uint8_t)info.refFrameSignBias[ref_idx];
+                picParam->ref_frame_sign_bias[ref_idx + 1] = (uint8_t)info.ref_frame_sign_bias[ref_idx];
             }
         }
 
         picParam->current_frame = (VASurfaceID)m_va->GetSurfaceID(frame->GetMemID());
 
-        picParam->filter_level[0] = (uint8_t)info.lf.filterLevel[0];
-        picParam->filter_level[1] = (uint8_t)info.lf.filterLevel[1];
-        picParam->filter_level_u = (uint8_t)info.lf.filterLevelU;
-        picParam->filter_level_v = (uint8_t)info.lf.filterLevelV;
+        picParam->filter_level[0] = (uint8_t)info.loop_filter_params.loop_filter_level[0];
+        picParam->filter_level[1] = (uint8_t)info.loop_filter_params.loop_filter_level[1];
+        picParam->filter_level_u = (uint8_t)info.loop_filter_params.loop_filter_level[2];
+        picParam->filter_level_v = (uint8_t)info.loop_filter_params.loop_filter_level[3];
 
-        picParam->sharpness_level = (uint8_t)info.lf.sharpnessLevel;
+        picParam->sharpness_level = (uint8_t)info.loop_filter_params.loop_filter_sharpness;
         picParam->uncompressed_frame_header_length_in_bytes = (uint8_t)info.frameHeaderLength;
 
         picParam->bit_stream_bytes_in_buffer = info.frameDataSize;
 
         picParam->profile = (uint8_t)info.profile;
-        picParam->log2_bit_depth_minus8 = (uint8_t)(info.bit_depth - 8); // DDI for Rev 0.25.2 uses bit_depth instead of log2 - 8
+        picParam->log2_bit_depth_minus8 = (uint8_t)(info.BitDepth - 8); // DDI for Rev 0.25.2 uses BitDepth instead of log2 - 8
                                                                          // TODO: fix when va_dec_av1.h will be fixed
 
-        picParam->pic_fields.bits.subsampling_x = (uint8_t)info.subsamplingX;
-        picParam->pic_fields.bits.subsampling_y = (uint8_t)info.subsamplingY;
+        picParam->pic_fields.bits.subsampling_x = (uint8_t)info.subsampling_x;
+        picParam->pic_fields.bits.subsampling_y = (uint8_t)info.subsampling_y;
 
-        picParam->ref_fields.bits.mode_ref_delta_enabled = info.lf.modeRefDeltaEnabled;
-        picParam->ref_fields.bits.mode_ref_delta_update = info.lf.modeRefDeltaUpdate;
+        picParam->ref_fields.bits.mode_ref_delta_enabled = info.loop_filter_params.loop_filter_delta_enabled;
+        picParam->ref_fields.bits.mode_ref_delta_update = info.loop_filter_params.loop_filter_delta_update;
         for (Ipp8u i = 0; i < TOTAL_REFS; i++)
         {
-            picParam->ref_deltas[i] = info.lf.refDeltas[i];
+            picParam->ref_deltas[i] = info.loop_filter_params.loop_filter_ref_deltas[i];
         }
         for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
         {
-            picParam->mode_deltas[i] = info.lf.modeDeltas[i];
+            picParam->mode_deltas[i] = info.loop_filter_params.loop_filter_mode_deltas[i];
         }
 
-        picParam->ref_fields.bits.use_prev_frame_mvs = info.usePrevMVs;
+        picParam->ref_fields.bits.use_prev_frame_mvs = info.use_ref_frame_mvs;
 
-        picParam->base_qindex = (int16_t)info.baseQIndex;
-        picParam->y_dc_delta_q = (int8_t)info.yDcDeltaQ;
-        picParam->u_dc_delta_q = (int8_t)info.uDcDeltaQ;
-        picParam->v_dc_delta_q = (int8_t)info.vDcDeltaQ;
-        picParam->u_ac_delta_q = (int8_t)info.uAcDeltaQ;
-        picParam->v_ac_delta_q = (int8_t)info.vAcDeltaQ;
+        picParam->base_qindex = (int16_t)info.base_q_idx;
+        picParam->y_dc_delta_q = (int8_t)info.DeltaQYDc;
+        picParam->u_dc_delta_q = (int8_t)info.DeltaQUDc;
+        picParam->v_dc_delta_q = (int8_t)info.DeltaQVDc;
+        picParam->u_ac_delta_q = (int8_t)info.DeltaQUAc;
+        picParam->v_ac_delta_q = (int8_t)info.DeltaQVac;
 
         memset(&picParam->seg_info.feature_data, 0, sizeof(picParam->seg_info.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->seg_info.feature_mask, 0, sizeof(picParam->seg_info.feature_mask)); // TODO: [Global] implement proper setting
 
-        picParam->cdef_pri_damping = (uint8_t)info.cdefPriDamping;
-        picParam->cdef_sec_damping = (uint8_t)info.cdefSecDamping;
-        picParam->cdef_bits = (uint8_t)info.cdefBits;
+        picParam->cdef_pri_damping = (uint8_t)info.cdef_damping;
+        picParam->cdef_sec_damping = (uint8_t)info.cdef_sec_damping;
+        picParam->cdef_bits = (uint8_t)info.cdef_bits;
 
         for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            picParam->cdef_strengths[i] = (uint8_t)info.cdefStrength[i];
-            picParam->cdef_uv_strengths[i] = (uint8_t)info.cdefUVStrength[i];
+            picParam->cdef_strengths[i] = (uint8_t)info.cdef_y_strength[i];
+            picParam->cdef_uv_strengths[i] = (uint8_t)info.cdef_uv_strength[i];
         }
-        picParam->mode_fields.bits.using_qmatrix = info.useQMatrix;
-        picParam->mode_fields.bits.min_qmlevel = info.minQMLevel;
-        picParam->mode_fields.bits.max_qmlevel = info.maxQMLevel;
-        picParam->mode_fields.bits.delta_q_present_flag = info.deltaQPresentFlag;
-        picParam->mode_fields.bits.log2_delta_q_res = CeilLog2(info.deltaQRes);
-        picParam->mode_fields.bits.delta_lf_present_flag = info.deltaLFPresentFlag;
-        picParam->mode_fields.bits.log2_delta_lf_res = CeilLog2(info.deltaLFRes);
-        picParam->mode_fields.bits.tx_mode = info.txMode;
-        picParam->mode_fields.bits.reference_mode = info.referenceMode;
-        picParam->mode_fields.bits.reduced_tx_set_used = info.reducedTxSetUsed;
-        picParam->mode_fields.bits.loop_filter_across_tiles_enabled = info.loopFilterAcrossTilesEnabled;
-        picParam->mode_fields.bits.allow_screen_content_tools = info.allowScreenContentTools;
+        picParam->mode_fields.bits.using_qmatrix = info.using_qmatrix;
+        picParam->mode_fields.bits.min_qmlevel = info.min_qmlevel;
+        picParam->mode_fields.bits.max_qmlevel = info.max_qmlevel;
+        picParam->mode_fields.bits.delta_q_present_flag = info.delta_q_present;
+        picParam->mode_fields.bits.log2_delta_q_res = CeilLog2(info.delta_q_res);
+        picParam->mode_fields.bits.delta_lf_present_flag = info.delta_lf_present;
+        picParam->mode_fields.bits.log2_delta_lf_res = CeilLog2(info.delta_lf_res);
+        picParam->mode_fields.bits.tx_mode = info.TxMode;
+        picParam->mode_fields.bits.reference_mode = info.reference_mode;
+        picParam->mode_fields.bits.reduced_tx_set_used = info.reduced_tx_set;
+        picParam->mode_fields.bits.loop_filter_across_tiles_enabled = info.loop_filter_across_tiles_enabled;
+        picParam->mode_fields.bits.allow_screen_content_tools = info.allow_screen_content_tools;
 
-        picParam->loop_restoration_fields.bits.yframe_restoration_type = info.rstInfo[0].frameRestorationType;
-        picParam->loop_restoration_fields.bits.cbframe_restoration_type = info.rstInfo[1].frameRestorationType;
-        picParam->loop_restoration_fields.bits.crframe_restoration_type = info.rstInfo[2].frameRestorationType;
-        picParam->loop_restoration_fields.bits.lr_unit_shift = info.lrUnitShift;
-        picParam->loop_restoration_fields.bits.lr_uv_shift = info.lrUVShift;
+        picParam->loop_restoration_fields.bits.yframe_restoration_type = info.lr_type[0];
+        picParam->loop_restoration_fields.bits.cbframe_restoration_type = info.lr_type[1];
+        picParam->loop_restoration_fields.bits.crframe_restoration_type = info.lr_type[2];
+        picParam->loop_restoration_fields.bits.lr_unit_shift = info.lr_unit_shift;
+        picParam->loop_restoration_fields.bits.lr_uv_shift = info.lr_uv_shift;
 
-        picParam->tile_size_bit_offset = info.tileGroupBitOffset;
+        picParam->tile_size_bit_offset = info.tile_group_bit_offset;
 
-        picParam->log2_tile_rows = (uint8_t)info.log2TileRows;
-        picParam->log2_tile_cols = (uint8_t)info.log2TileCols;
+        picParam->log2_tile_rows = (uint8_t)info.TileRowsLog2;
+        picParam->log2_tile_cols = (uint8_t)info.TileColsLog2;
         // TODO: [Global] add proper calculation of tile_rows/tile_cols during read of uncompressed header
-        picParam->tile_cols = (uint16_t)info.tileCols;
-        picParam->tile_rows = (uint16_t)info.tileRows;
+        picParam->tile_cols = (uint16_t)info.TileCols;
+        picParam->tile_rows = (uint16_t)info.TileRows;
 
-        picParam->tile_size_bytes = (uint8_t)info.tileSizeBytes;
+        picParam->tile_size_bytes = (uint8_t)info.TileSizeBytes;
 #endif // UMC_AV1_DECODER_REV >= 5000
     }
 

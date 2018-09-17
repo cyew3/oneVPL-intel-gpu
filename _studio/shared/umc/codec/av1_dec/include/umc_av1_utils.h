@@ -30,20 +30,20 @@ namespace UMC_AV1_DECODER
     Ipp32s GetSegData(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
     {
         return
-            seg.featureData[segmentId][featureId];
+            seg.FeatureData[segmentId][featureId];
     }
 
     inline
     bool IsSegFeatureActive(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
     {
         return
-            seg.enabled && (seg.featureMask[segmentId] & (1 << featureId));
+            seg.segmentation_enabled && (seg.FeatureMask[segmentId] & (1 << featureId));
     }
 
     inline
     void EnableSegFeature(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
     {
-        seg.featureMask[segmentId] |= 1 << featureId;
+        seg.FeatureMask[segmentId] |= 1 << featureId;
     }
 
     inline
@@ -56,20 +56,20 @@ namespace UMC_AV1_DECODER
     inline
         void ClearAllSegFeatures(AV1Segmentation & seg)
     {
-        memset(&seg.featureData, 0, sizeof(seg.featureData));
-        memset(&seg.featureMask, 0, sizeof(seg.featureMask));
+        memset(&seg.FeatureData, 0, sizeof(seg.FeatureData));
+        memset(&seg.FeatureMask, 0, sizeof(seg.FeatureMask));
     }
 
     void SetupPastIndependence(FrameHeader & info);
 
     inline bool IsFrameIntraOnly(FrameHeader const * fh)
     {
-        return (fh->frameType == KEY_FRAME || fh->intraOnly);
+        return (fh->frame_type == KEY_FRAME || fh->intra_only);
     }
 
     inline bool IsFrameResilent(FrameHeader const * fh)
     {
-        return IsFrameIntraOnly(fh) || fh->errorResilientMode;
+        return IsFrameIntraOnly(fh) || fh->error_resilient_mode;
     }
 
     inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
@@ -79,7 +79,7 @@ namespace UMC_AV1_DECODER
 
     inline Ipp32u NumTiles(FrameHeader const & fh)
     {
-        return fh.tileCols * fh.tileRows;
+        return fh.TileCols * fh.TileRows;
     }
 }
 

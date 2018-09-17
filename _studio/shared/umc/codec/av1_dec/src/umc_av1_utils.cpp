@@ -24,7 +24,7 @@ namespace UMC_AV1_DECODER
             VM_ASSERT(-seg_data <= SEG_FEATURE_DATA_MAX[featureId]);
         }
 
-        seg.featureData[segmentId][featureId] = seg_data;
+        seg.FeatureData[segmentId][featureId] = seg_data;
     }
 
     void SetupPastIndependence(FrameHeader & info)
@@ -32,23 +32,23 @@ namespace UMC_AV1_DECODER
         // Reset the segment feature data to the default stats:
         // Features disabled, 0, with delta coding (Default state).
 
-        ClearAllSegFeatures(info.segmentation);
+        ClearAllSegFeatures(info.segmentation_params);
 
         // set_default_lf_deltas()
-        info.lf.modeRefDeltaEnabled = 1;
-        info.lf.modeRefDeltaUpdate = 1;
+        info.loop_filter_params.loop_filter_delta_enabled = 1;
+        info.loop_filter_params.loop_filter_delta_update = 1;
 
-        info.lf.refDeltas[INTRA_FRAME] = 1;
-        info.lf.refDeltas[LAST_FRAME] = 0;
-        info.lf.refDeltas[LAST2_FRAME] = info.lf.refDeltas[LAST_FRAME];
-        info.lf.refDeltas[LAST3_FRAME] = info.lf.refDeltas[LAST_FRAME];
-        info.lf.refDeltas[BWDREF_FRAME] = info.lf.refDeltas[LAST_FRAME];
-        info.lf.refDeltas[GOLDEN_FRAME] = -1;
-        info.lf.refDeltas[ALTREF2_FRAME] = -1;
-        info.lf.refDeltas[ALTREF_FRAME] = -1;
+        info.loop_filter_params.loop_filter_ref_deltas[INTRA_FRAME] = 1;
+        info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME] = 0;
+        info.loop_filter_params.loop_filter_ref_deltas[LAST2_FRAME] = info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME];
+        info.loop_filter_params.loop_filter_ref_deltas[LAST3_FRAME] = info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME];
+        info.loop_filter_params.loop_filter_ref_deltas[BWDREF_FRAME] = info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME];
+        info.loop_filter_params.loop_filter_ref_deltas[GOLDEN_FRAME] = -1;
+        info.loop_filter_params.loop_filter_ref_deltas[ALTREF2_FRAME] = -1;
+        info.loop_filter_params.loop_filter_ref_deltas[ALTREF_FRAME] = -1;
 
-        info.lf.modeDeltas[0] = 0;
-        info.lf.modeDeltas[1] = 0;
+        info.loop_filter_params.loop_filter_mode_deltas[0] = 0;
+        info.loop_filter_params.loop_filter_mode_deltas[1] = 0;
     }
 }
 
