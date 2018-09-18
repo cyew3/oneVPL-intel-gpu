@@ -350,9 +350,24 @@ function( set_file_and_product_version input_version version_defs )
       )
     string( SUBSTRING ${input_version} 0 1 ver )
 
-    set( version_defs " -DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}\"\\\""
-                  " -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${input_version}\"\\\""
-                  PARENT_SCOPE )
+    set( git_commit "" )
+    git_describe( git_commit )
+
+    set( version_defs " -DMFX_PLUGIN_FILE_VERSION=\"\\\"${ver}${cur_date}${git_commit}\"\\\"" )
+    set( version_defs "${version_defs} -DMFX_PLUGIN_PRODUCT_VERSION=\"\\\"${input_version}\"\\\"" PARENT_SCOPE )
+
+  endif()
+endfunction()
+
+function( git_describe git_commit )
+  execute_process(
+    COMMAND git rev-parse --short HEAD
+    OUTPUT_VARIABLE git_commit
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  )
+  if( NOT ${git_commit} MATCHES "^$" )
+    set( git_commit ".${git_commit}" PARENT_SCOPE )
   endif()
 endfunction()
 

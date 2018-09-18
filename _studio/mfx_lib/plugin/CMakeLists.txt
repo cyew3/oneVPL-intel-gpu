@@ -147,19 +147,11 @@ else( )
   set( hevc_version $ENV{MFX_HEVC_VERSION} )
 endif( )
 
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
-  set (HEVC_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Software Decode Plug-in")
-  set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Hardware Decode Plug-in")
-  set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC Software Encode Plug-in")
-  set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - HEVC GPU Accelerated Encode Plug-in")
-else()
-  set (HEVC_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - HEVC Decode and Encode")
-  set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - HEVC Software Decode Plug-in")
-  set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - HEVC Hardware Decode Plug-in")
-  set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - HEVC Software Encode Plug-in")
-  set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - HEVC GPU Accelerated Encode Plug-in")
-endif()
+  set (HEVC_PRODUCT_NAME "Intel(R) Media SDK")
+  set (sw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Decode Plug-in")
+  set (hw_HEVC_DECODER_DESCRIPTION "Intel(R) Media SDK - HEVC Hardware Decode Plug-in")
+  set (sw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC Software Encode Plug-in")
+  set (hw_HEVC_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC GPU Accelerated Encode Plug-in")
 
   if( Linux OR Darwin )
     execute_process(
@@ -395,13 +387,8 @@ set( defs "" )
 # 1toN Lookahead
 # =============================================================================
 
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
-  set (H264LA_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK Advanced AVC Hardware Encode Plug-in")
-else()
-  set (H264LA_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - SDK Advanced AVC Encode Pack")
-  set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - SDK Advanced AVC Hardware Encode Plug-in")
-endif()
+  set (H264LA_PRODUCT_NAME "Intel(R) Media SDK")
+  set (hw_H264LA_ENCODER_DESCRIPTION "Intel(R) Media SDK - Advanced AVCe Plug-in")
 
   if( NOT DEFINED ENV{MFX_H264LA_VERSION} )
     set( h264la_version 0.0.000.0000 )
@@ -537,8 +524,8 @@ endforeach()
 # H265FEI
 
 if( ENABLE_HEVC_FEI )
-  set (H265FEI_PRODUCT_NAME "Intel(R) Media Server Studio 2018")
-  set (hw_H265FEI_ENCODER_DESCRIPTION "HEVC GPU Assist APIs Plug-in")
+  set (H265FEI_PRODUCT_NAME "Intel(R) Media SDK")
+  set (hw_H265FEI_ENCODER_DESCRIPTION "Intel(R) Media SDK - HEVC GPU Assist APIs Plug-in")
 
   if( NOT DEFINED ENV{MFX_H265FEI_VERSION} )
     set( h265fei_version 0.0.000.0000 )
@@ -635,15 +622,9 @@ set( defs "" )
 # =============================================================================
 # VP8
 # =============================================================================
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
-  set (VP8_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP8 Software Decode Plug-in")
-  set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP8 Hardware Decode Plug-in")
-else()
-  set (VP8_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - SDK VP8 Pack")
-  set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - SDK VP8 Software Decode Plug-in")
-  set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - SDK VP8 Hardware Decode Plug-in")
-endif()
+  set (VP8_PRODUCT_NAME "Intel(R) Media SDK")
+  set (sw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK - VP8 Software Decode Plug-in")
+  set (hw_VP8_DECODER_DESCRIPTION "Intel(R) Media SDK - VP8 Hardware Decode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP8_VERSION} )
     set( vp8_version 0.0.000.0000 )
@@ -771,15 +752,9 @@ set( defs "" )
 # =============================================================================
 # VP9
 # =============================================================================
-if( __TARGET_PLATFORM STREQUAL "BXTMIN" OR __TARGET_PLATFORM STREQUAL "BXT" )
-  set (VP9_PRODUCT_NAME "Intel(R) Media SDK 2017 for Embedded Linux")
-  set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP9 Software Decode Plug-in")
-  set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK 2017 for Embedded Linux - SDK VP9 Hardware Decode Plug-in")
-else()
-  set (VP9_PRODUCT_NAME "Intel(R) Media Server Studio 2018 - SDK VP9 Pack")
-  set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - SDK VP9 Software Decode Plug-in")
-  set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media Server Studio 2018 - SDK VP9 Hardware Decode Plug-in")
-endif()
+  set (VP9_PRODUCT_NAME "Intel(R) Media SDK")
+  set (sw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK - VP9 Software Decode Plug-in")
+  set (hw_VP9_DECODER_DESCRIPTION "Intel(R) Media SDK - VP9 Hardware Decode Plug-in")
 
   if( NOT DEFINED ENV{MFX_VP9_VERSION} )
     set( vp9_version 0.0.000.0000 )
