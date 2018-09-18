@@ -136,7 +136,9 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
     , m_extEncoderCapability(new mfxExtEncoderCapability())
     , m_extEncoderReset(new mfxExtEncoderResetOption())
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     , m_extTemporalLayers(new mfxExtTemporalLayers())
+#endif
     , m_EncParams()
     , m_ExtBuffers(new MFXExtBufferVector())
     , m_bCreateDecode()
@@ -335,8 +337,10 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_VP9_PARAM(QIndexDeltaLumaDC,   OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaAC, OPT_INT_16, ""),
         HANDLE_VP9_PARAM(QIndexDeltaChromaDC, OPT_INT_16, ""),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         HANDLE_VP9_PARAM(NumTileRows,         OPT_INT_16, "number of tile rows (1 - default)"),
         HANDLE_VP9_PARAM(NumTileColumns,      OPT_INT_16, "number of tile columns (1 - default)"),
+#endif
 
         // mfxExtCodingOption2
         HANDLE_EXT_OPTION2(IntRefType,             OPT_UINT_16,   ""),
@@ -391,9 +395,11 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         HANDLE_EXT_OPTION3(MaxFrameSizeI,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(MaxFrameSizeP,              OPT_UINT_32,   ""),
         HANDLE_EXT_OPTION3(TransformSkip,              OPT_TRI_STATE, "HEVC transform_skip_enabled_flag"),
+#if (MFX_VERSION >= 1027)
         HANDLE_EXT_OPTION3(TargetChromaFormatPlus1,    OPT_UINT_32,   "Encoding target chroma format + 1 (by default is source chroma format + 1)"),
         HANDLE_EXT_OPTION3(TargetBitDepthLuma,         OPT_UINT_32,   "Encoding target bit depth for luma samples (by default same as source one)"),
         HANDLE_EXT_OPTION3(TargetBitDepthChroma,       OPT_UINT_32,   "Encoding target bit depth for chroma samples (by default same as source one)"),
+#endif
         HANDLE_EXT_OPTION3(BRCPanicMode,               OPT_TRI_STATE, "BRC panic mode control"),
         HANDLE_EXT_OPTION3(LowDelayBRC,                OPT_TRI_STATE, ""),
         HANDLE_EXT_OPTION3(AdaptiveMaxFrameSize,       OPT_TRI_STATE, ""),
@@ -1386,6 +1392,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
             {
                 mfxExtVP9Param *pExt = NULL;
@@ -1409,6 +1416,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 m_ExtBuffers.get()->push_back(pExt);
             }
             else
+#endif
             {
                 mfxExtHEVCTiles *pExt = NULL;
 
@@ -1439,6 +1447,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             MFX_CHECK(1 + argv != argvEnd);
             MFX_PARSE_INT(val, argv[1]);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             if (m_EncParams.mfx.CodecId == MFX_CODEC_VP9)
             {
                 mfxExtVP9Param *pExt = NULL;
@@ -1462,6 +1471,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 m_ExtBuffers.get()->push_back(pExt);
             }
             else
+#endif
             {
                 mfxExtHEVCTiles *pExt = NULL;
 
@@ -1696,6 +1706,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 m_ExtBuffers.get()->push_back(pExt);
             }
         }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (m_OptProc.Check(argv[0], VM_STRING("-temporallayers"), VM_STRING("add mfxExtTemporalLayers buffer to mfxVideoParam"), OPT_SPECIAL, VM_STRING("")))
         {
             if (!m_bResetParamsStart) {
@@ -1720,6 +1731,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 m_ExtBuffers.get()->push_back(pExt);
             }
         }
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
         else if (m_OptProc.Check(argv[0], VM_STRING("-LoopFilterLevel"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(4 + argv < argvEnd);
@@ -2038,13 +2050,22 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
     // set enc:shift if it is not set explicitly
     if (m_components[eREN].m_params.mfx.FrameInfo.Shift == (mfxU16)-1)
     {
-        if ((m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) ||
-            (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216) ||
-            (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416) ||
-            (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P016))
+#if (MFX_VERSION >= 1027)
+        if (   (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            || (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216)
+            || (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
+            || (m_components[eREN].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P016)
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
+           )
+        {
             m_components[eREN].m_params.mfx.FrameInfo.Shift = 1;
+        }
         else
+#endif // #if (MFX_VERSION >= 1027)
+        {
             m_components[eREN].m_params.mfx.FrameInfo.Shift = 0;
+        }
     }
 
     return MFX_ERR_NONE;
@@ -2396,8 +2417,10 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
     if (!m_extEncoderReset.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderReset);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!m_extTemporalLayers.IsZero())
         m_components[eREN].m_extParams.push_back(m_extTemporalLayers);
+#endif
 
     switch (pMFXParams->mfx.CodecId)
     {
