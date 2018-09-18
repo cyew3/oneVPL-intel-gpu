@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -160,16 +160,22 @@ IBitstreamConverterFactory * MFXPipelineFactory::CreateBitstreamCVTFactory( IPip
     fac->Register(new BSConvert<MFX_FOURCC_RGB3, MFX_FOURCC_RGB3>());
     fac->Register(new BSConvert<MFX_FOURCC_YUY2, MFX_FOURCC_YUY2>());
     fac->Register(new BSConvert<MFX_FOURCC_P010, MFX_FOURCC_P010>());
-    fac->Register(new BSConvert<MFX_FOURCC_NV16, MFX_FOURCC_NV16>());
     fac->Register(new BSConvert<MFX_FOURCC_P210, MFX_FOURCC_P210>());
-    fac->Register(new BSConvert<MFX_FOURCC_Y210, MFX_FOURCC_Y210>());
+    fac->Register(new BSConvert<MFX_FOURCC_NV16, MFX_FOURCC_NV16>());
+
     fac->Register(new BSConvert<MFX_FOURCC_YUV444_8, MFX_FOURCC_AYUV>());
-    fac->Register(new BSConvert<MFX_FOURCC_AYUV, MFX_FOURCC_AYUV>());
+    fac->Register(new BSConvert<MFX_FOURCC_AYUV,     MFX_FOURCC_AYUV>());
+    fac->Register(new BSConvert<MFX_FOURCC_A2RGB10,  MFX_FOURCC_A2RGB10>());
+
+#if (MFX_VERSION >= 1027)
+    fac->Register(new BSConvert<MFX_FOURCC_Y210, MFX_FOURCC_Y210>());
     fac->Register(new BSConvert<MFX_FOURCC_Y410, MFX_FOURCC_Y410>());
-    fac->Register(new BSConvert<MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10>());
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     fac->Register(new BSConvert<MFX_FOURCC_P016, MFX_FOURCC_P016>());
     fac->Register(new BSConvert<MFX_FOURCC_Y216, MFX_FOURCC_Y216>());
     fac->Register(new BSConvert<MFX_FOURCC_Y416, MFX_FOURCC_Y416>());
+#endif
 
     return fac.release();
 }

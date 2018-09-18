@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2018 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -269,6 +269,7 @@ namespace Formater
 
     class TemporalLayersFormater
     {
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         //to make 1:1 relation to mfx_structures
         void _unused()
         {
@@ -276,6 +277,7 @@ namespace Formater
             layers;
             STATIC_ASSERT(sizeof(layers.Layer[0]) == sizeof(TemporalLayerElement), c1);
         }
+#endif
     public:
         struct TemporalLayerElement {
             mfxU16   Scale;

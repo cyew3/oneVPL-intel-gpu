@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2010-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2010-2018 Intel Corporation. All Rights Reserved.
 
 File Name: mfxstructures.h
 
@@ -834,6 +834,7 @@ protected:
     virtual void ConstructValues() const;
 };
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 template<>
 class MFXStructureRef <mfxExtTemporalLayers>
     : public MFXStructureBase<mfxExtTemporalLayers>
@@ -847,6 +848,7 @@ public:
 protected:
     virtual void ConstructValues() const;
 };
+#endif
 
 template<>
 class MFXStructureRef <IppiRect>

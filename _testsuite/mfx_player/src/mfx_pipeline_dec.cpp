@@ -505,48 +505,69 @@ mfxStatus MFXDecPipeline::BuildPipeline()
     }
 
     m_components[eDEC].m_params.mfx.CodecId = m_inParams.InputCodecType;
-    if ( MFX_FOURCC_P010 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_P016 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_YUY2 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y416 == m_inParams.FrameInfo.FourCC ||
+    if ( MFX_FOURCC_P010    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_YUY2    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_P210    == m_inParams.FrameInfo.FourCC ||
+#if (MFX_VERSION >= 1027)
+         MFX_FOURCC_Y210    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_Y410    == m_inParams.FrameInfo.FourCC ||
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+         MFX_FOURCC_P016    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_Y216    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_Y416    == m_inParams.FrameInfo.FourCC ||
+#endif
          MFX_FOURCC_A2RGB10 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_AYUV == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_NV16 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC) {
+         MFX_FOURCC_AYUV    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_NV16    == m_inParams.FrameInfo.FourCC ||
+         MFX_FOURCC_R16     == m_inParams.FrameInfo.FourCC)
+    {
         m_components[eDEC].m_params.mfx.FrameInfo.FourCC = m_inParams.FrameInfo.FourCC;
     }
 
     if ( MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
+#if (MFX_VERSION >= 1027)
          MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC ||
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
          MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_NV16 == m_inParams.FrameInfo.FourCC) {
+#endif
+         MFX_FOURCC_NV16 == m_inParams.FrameInfo.FourCC)
+    {
          m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
     }
-    if ( MFX_FOURCC_YUY2 == m_inParams.FrameInfo.FourCC) {
+    if ( MFX_FOURCC_YUY2 == m_inParams.FrameInfo.FourCC)
+    {
         if (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat != MFX_CHROMAFORMAT_YUV422V)
             // not to overwrite explicitly set to yuy2:v (e.g. for mjpeg)
             m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
     }
 
-    if ( MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y416 == m_inParams.FrameInfo.FourCC ||
+    if (
+#if (MFX_VERSION >= 1027)
+         MFX_FOURCC_Y410    == m_inParams.FrameInfo.FourCC ||
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+         MFX_FOURCC_Y416    == m_inParams.FrameInfo.FourCC ||
+#endif
          MFX_FOURCC_A2RGB10 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_AYUV == m_inParams.FrameInfo.FourCC) {
+         MFX_FOURCC_AYUV    == m_inParams.FrameInfo.FourCC)
+    {
          m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
     }
 
-    if ( MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC ||
-         MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC )
+    if (    MFX_FOURCC_R16  == m_inParams.FrameInfo.FourCC
+         || MFX_FOURCC_P210 == m_inParams.FrameInfo.FourCC
+#if (MFX_VERSION >= 1027)
+         || MFX_FOURCC_Y210 == m_inParams.FrameInfo.FourCC
+         || MFX_FOURCC_Y410 == m_inParams.FrameInfo.FourCC
+#endif
+       )
     {
         m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma = m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = 10;
     }
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (MFX_FOURCC_P016 == m_inParams.FrameInfo.FourCC ||
         MFX_FOURCC_Y216 == m_inParams.FrameInfo.FourCC ||
         MFX_FOURCC_Y416 == m_inParams.FrameInfo.FourCC)
@@ -554,6 +575,7 @@ mfxStatus MFXDecPipeline::BuildPipeline()
         m_components[eDEC].m_params.mfx.FrameInfo.BitDepthLuma = m_inParams.FrameInfo.BitDepthLuma;
         m_components[eDEC].m_params.mfx.FrameInfo.BitDepthChroma = m_inParams.FrameInfo.BitDepthChroma;
     }
+#endif
 
     if (MFX_ERR_NONE == res && m_inParams.InputCodecType != MFX_CODEC_CAPTURE)
     {
@@ -1883,13 +1905,18 @@ mfxStatus MFXDecPipeline::CreateRender()
         if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_AYUV)
             m_inParams.outFrameInfo.FourCC = MFX_FOURCC_AYUV;
 
-        if (m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 ||
-            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210 ||
-            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P016 ||
-            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210 ||
-            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216 ||
-            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410 ||
-            m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416)
+        if (   m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P010
+            || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P210
+#if (MFX_VERSION >= 1027)
+            || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+            || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_P016
+            || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y216
+            || m_components[eDEC].m_params.mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
+#endif
+        )
         {
             switch (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat)
             {

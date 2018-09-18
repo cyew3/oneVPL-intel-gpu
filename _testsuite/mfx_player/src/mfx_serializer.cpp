@@ -207,16 +207,22 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_POD_ARRAY(NumRefActiveP, 8);
     SERIALIZE_POD_ARRAY(NumRefActiveBL0, 8);
     SERIALIZE_POD_ARRAY(NumRefActiveBL1, 8);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     SERIALIZE_INT(ConstrainedIntraPredFlag);
+#endif
     SERIALIZE_INT(TransformSkip);
     SERIALIZE_INT(AdaptiveMaxFrameSize);
+#if (MFX_VERSION >= 1027)
     SERIALIZE_INT(TargetChromaFormatPlus1);
     SERIALIZE_INT(TargetBitDepthLuma);
     SERIALIZE_INT(TargetBitDepthChroma);
+#endif
     SERIALIZE_INT(ExtBrcAdaptiveLTR);
 
+#if (MFX_VERSION >= 1027)
     if (m_pStruct->TargetChromaFormatPlus1)
         m_values_map[VM_STRING("TargetChromaFormatPlus1")] = GetMFXChromaString(m_pStruct->TargetChromaFormatPlus1 - 1) + VM_STRING(" + 1");
+#endif
     SERIALIZE_INT(BRCPanicMode);
 }
 
@@ -393,15 +399,19 @@ void MFXStructureRef <mfxExtVP9Param>::ConstructValues() const
     SERIALIZE_INT(FrameHeight);
     SERIALIZE_INT(WriteIVFHeaders);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     SERIALIZE_POD_ARRAY(LoopFilterRefDelta, 4);
     SERIALIZE_POD_ARRAY(LoopFilterModeDelta, 2);
+#endif
 
     SERIALIZE_INT(QIndexDeltaLumaDC);
     SERIALIZE_INT(QIndexDeltaChromaAC);
     SERIALIZE_INT(QIndexDeltaChromaDC);
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     SERIALIZE_INT(NumTileRows);
     SERIALIZE_INT(NumTileColumns);
+#endif
 }
 
 void MFXStructureRef <mfxFrameInfo>::ConstructValues () const
@@ -801,6 +811,7 @@ void MFXStructureRef <mfxExtVP9TemporalLayers>::ConstructValues() const
     SerializeArrayOfPODs(VM_STRING("Layer"), (VP9TemporalLayersFormater::VP9TemporalLayerElement*)m_pStruct->Layer, MFX_ARRAY_SIZE(m_pStruct->Layer), VP9TemporalLayersFormater());
 }
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 bool MFXStructureRef <mfxExtTemporalLayers>::DeSerialize(const tstring & refStr, int *nPosition)
 {
     tstringstream input_strm;
@@ -831,7 +842,7 @@ void MFXStructureRef <mfxExtTemporalLayers>::ConstructValues() const
 {
     SerializeArrayOfPODs(VM_STRING("Layer"), (TemporalLayersFormater::TemporalLayerElement*)m_pStruct->Layer, MFX_ARRAY_SIZE(m_pStruct->Layer), TemporalLayersFormater());
 }
-
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
 
 bool MFXStructureRef <IppiRect>::DeSerialize(const tstring & refStr, int *nPosition)
 {
@@ -1089,10 +1100,12 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
             SerializeStruct(VM_STRING("ENC_FRAME_INFO."), *(mfxExtAVCEncodedFrameInfo*)m_pStruct);
             break;
         }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case MFX_EXTBUFF_TEMPORAL_LAYERS: {
             SerializeStruct(VM_STRING("TL."), *(mfxExtTemporalLayers*)m_pStruct);
             break;
         }
+#endif
         case MFX_EXTBUFF_VP9_TEMPORAL_LAYERS: {
             SerializeStruct(VM_STRING("VP9TL."), *(mfxExtVP9TemporalLayers*)m_pStruct);
             break;

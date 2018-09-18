@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2018 Intel Corporation. All Rights Reserved.
 
 File Name: mfx_extended_buffer_id.h
 
@@ -126,7 +126,9 @@ DECL_BUFFER_TYPE(mfxExtVP9TemporalLayers, MFX_EXTBUFF_VP9_TEMPORAL_LAYERS);
 DECL_BUFFER_TYPE(mfxExtSVCRateControl, MFX_EXTBUFF_SVC_RATE_CONTROL);
 DECL_BUFFER_TYPE(mfxExtSVCSeqDesc, MFX_EXTBUFF_SVC_SEQ_DESC);
 DECL_BUFFER_TYPE(mfxExtSvcTargetLayer, MFX_EXTBUFF_SVC_TARGET_LAYER);
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 DECL_BUFFER_TYPE(mfxExtTemporalLayers, MFX_EXTBUFF_TEMPORAL_LAYERS);
+#endif
 
 DECL_BUFFER_TYPE(mfxExtPAVPOption, MFX_EXTBUFF_PAVP_OPTION);
 DECL_BUFFER_TYPE(mfxExtDecVideoProcessing, MFX_EXTBUFF_DEC_VIDEO_PROCESSING);

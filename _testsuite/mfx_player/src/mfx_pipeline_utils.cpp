@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -57,12 +57,16 @@ static CodeStringTable StringsOfFourcc[] =
     { MFX_FOURCC_ARGB16,             VM_STRING("ARGB16")  },
     { MFX_FOURCC_NV16,               VM_STRING("NV16")  },
     { MFX_FOURCC_P210,               VM_STRING("P210")  },
+#if (MFX_VERSION >= 1027)
     { MFX_FOURCC_Y210,               VM_STRING("Y210")  },
     { MFX_FOURCC_Y410,               VM_STRING("Y410")  },
+#endif
     { MFX_FOURCC_AYUV,               VM_STRING("AYUV")  },
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     { MFX_FOURCC_P016,               VM_STRING("P016")  },
     { MFX_FOURCC_Y216,               VM_STRING("Y216")  },
     { MFX_FOURCC_Y416,               VM_STRING("Y416")  },
+#endif
 };
 
 #define DEFINE_ERR_CODE(code)\
@@ -861,6 +865,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         }
+#if (MFX_VERSION >= 1027)
         case 17:
         {
             info.FourCC = MFX_FOURCC_Y410;
@@ -873,12 +878,15 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         }
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case 19:
         {
             info.FourCC = MFX_FOURCC_Y216;
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         }
+#endif
         case 20:
         {
             info.FourCC = MFX_FOURCC_YUV444_8;
@@ -891,6 +899,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV422;
             break;
         }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         case 22:
         {
             info.FourCC = MFX_FOURCC_P016;
@@ -903,6 +912,7 @@ mfxStatus GetMFXFrameInfoFromFOURCCPatternIdx(int idx_in_pattern, mfxFrameInfo &
             info.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
             break;
         }
+#endif
         case 24:
         {
             info.FourCC = MFX_FOURCC_BGR4;

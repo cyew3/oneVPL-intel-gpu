@@ -5,7 +5,7 @@
 //  This software is supplied under the terms of a license  agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in  accordance  with the terms of that agreement.
-//        Copyright (c) 2012-2017 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 //
 */
@@ -746,41 +746,19 @@ protected:
     {
         mfxFrameData &data = surface->Data;
         mfxFrameInfo &info = surface->Info;
-        
+
         mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
 
         return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };
 
+#if (MFX_VERSION >= 1027)
 template <>
 class BSConvert<MFX_FOURCC_Y210, MFX_FOURCC_Y210>
     : public BSConverterPacketedCopy<MFX_FOURCC_Y210, MFX_FOURCC_Y210>
 {
     IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y210 MFX_PP_COMMA() MFX_FOURCC_Y210>);
-public:
-    BSConvert()
-    {
-        m_sample_size = 4;
-    }
-
-protected:
-    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
-    {
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
-        
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
-    }
-};
-
-template <>
-class BSConvert<MFX_FOURCC_Y216, MFX_FOURCC_Y216>
-    : public BSConverterPacketedCopy<MFX_FOURCC_Y216, MFX_FOURCC_Y216>
-{
-    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y216 MFX_PP_COMMA() MFX_FOURCC_Y216>);
 public:
     BSConvert()
     {
@@ -821,29 +799,7 @@ protected:
         return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
     }
 };
-
-template <>
-class BSConvert<MFX_FOURCC_Y416, MFX_FOURCC_Y416>
-    : public BSConverterPacketedCopy<MFX_FOURCC_Y416, MFX_FOURCC_Y416>
-{
-    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y416 MFX_PP_COMMA() MFX_FOURCC_Y416>);
-public:
-    BSConvert()
-    {
-        m_sample_size = 8;
-    }
-
-protected:
-    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
-    {
-        mfxFrameData &data = surface->Data;
-        mfxFrameInfo &info = surface->Info;
-
-        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
-
-        return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
-    }
-};
+#endif // #if (MFX_VERSION >= 1027)
 
 template <>
 class BSConvert<MFX_FOURCC_A2RGB10, MFX_FOURCC_A2RGB10>
@@ -891,6 +847,7 @@ protected:
     }
 };
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 template <>
 class BSConvert<MFX_FOURCC_P016, MFX_FOURCC_P016>
     : public BSConvertBase<MFX_FOURCC_P016, MFX_FOURCC_P016>
@@ -931,3 +888,50 @@ public:
         return MFX_ERR_NONE;
     }
 };
+
+template <>
+class BSConvert<MFX_FOURCC_Y216, MFX_FOURCC_Y216>
+    : public BSConverterPacketedCopy<MFX_FOURCC_Y216, MFX_FOURCC_Y216>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y216 MFX_PP_COMMA() MFX_FOURCC_Y216>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 4;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return data.Y + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+
+template <>
+class BSConvert<MFX_FOURCC_Y416, MFX_FOURCC_Y416>
+    : public BSConverterPacketedCopy<MFX_FOURCC_Y416, MFX_FOURCC_Y416>
+{
+    IMPLEMENT_CLONE(BSConvert<MFX_FOURCC_Y416 MFX_PP_COMMA() MFX_FOURCC_Y416>);
+public:
+    BSConvert()
+    {
+        m_sample_size = 8;
+    }
+
+protected:
+    virtual mfxU8* start_pointer(mfxFrameSurface1 *surface)
+    {
+        mfxFrameData &data = surface->Data;
+        mfxFrameInfo &info = surface->Info;
+
+        mfxU32 pitch = data.PitchLow + ((mfxU32)data.PitchHigh << 16);
+
+        return (mfxU8*)surface->Data.Y410 + info.CropX * m_sample_size + info.CropY * pitch;
+    }
+};
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
