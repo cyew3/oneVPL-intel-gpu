@@ -3,7 +3,7 @@
 //  This software is supplied under the terms of a license agreement or
 //  nondisclosure agreement with Intel Corporation and may not be copied
 //  or disclosed except in accordance with the terms of that agreement.
-//        Copyright (c) 2005-2016 Intel Corporation. All Rights Reserved.
+//        Copyright (c) 2005-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "common_utils.h"
@@ -15,7 +15,7 @@
 mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr, mfxU16 pitch, mfxU16 offset, FILE* fSource)
 {
     mfxU32 nBytesRead;
-    for (mfxU16 i = 0; i < h; i++) 
+    for (mfxU16 i = 0; i < h; i++)
     {
         nBytesRead = (mfxU32)fread(buf, 1, w, fSource);
         if (w != nBytesRead)
@@ -29,15 +29,15 @@ mfxStatus ReadPlaneData(mfxU16 w, mfxU16 h, mfxU8 *buf, mfxU8 *ptr, mfxU16 pitch
 mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, mfxU16 height, bool /*bSim*/)
 {/*
     if(bSim) {
-        // Simulate instantaneous access to 1000 "empty" frames. 
+        // Simulate instantaneous access to 1000 "empty" frames.
         static int frameCount = 0;
         if(1000 == frameCount++) return MFX_ERR_MORE_DATA;
-        else return MFX_ERR_NONE;   
+        else return MFX_ERR_NONE;
     }
     */
     mfxStatus sts = MFX_ERR_NONE;
     mfxU32 nBytesRead;
-    mfxU16 w, h, i, pitch; 
+    mfxU16 w, h, i, pitch;
     mfxU8 *ptr;
     mfxFrameInfo* pInfo = &pSurface->Info;
     mfxFrameData* pData = &pSurface->Data;
@@ -59,13 +59,57 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, 
         return MFX_ERR_NONE;
     }
 
+    if (pInfo->FourCC == MFX_FOURCC_P010)
+    {
+        //ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
+        ptr = pData->Y;
+
+        // read luminance plane
+        for(i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)fread(ptr + i * pData->Pitch, 2, w, fSource);
+
+            if (w != nBytesRead)
+            {
+                return MFX_ERR_MORE_DATA;
+            }
+        }
+
+        //ptr  = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
+        ptr  = pData->UV;
+        for(i = 0; i < h/2; i++)
+        {
+            nBytesRead = (mfxU32)fread(ptr + i * pData->Pitch, 2, w, fSource);
+
+            if (w != nBytesRead)
+            {
+                return MFX_ERR_MORE_DATA;
+            }
+        }
+        return MFX_ERR_NONE;
+    }
+
+    /* IF we have YUY2 input*/
+    if (pInfo->FourCC == MFX_FOURCC_YUY2)
+    {
+        ptr = pData->Y;
+        //ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
+        for(i = 0; i < h; i++)
+        {
+            nBytesRead = (mfxU32)fread(ptr + i * pSurface->Data.Pitch, 1, w*2, fSource);
+            if ((mfxU32) w*2 != nBytesRead)
+                return MFX_ERR_MORE_DATA;
+        }
+        return MFX_ERR_NONE;
+    }
+
     /* ELSE we have NV12 or YV12 format*/
     pitch = pData->Pitch;
     //ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
     ptr = pData->Y;
 
     // read luminance plane
-    for(i = 0; i < h; i++) 
+    for(i = 0; i < h; i++)
     {
         nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, w, fSource);
         if (w != nBytesRead)
@@ -108,14 +152,14 @@ mfxStatus LoadRawFrame(mfxFrameSurface1* pSurface, FILE* fSource, mfxU16 width, 
 mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
 {
     if(bSim) {
-        // Simulate instantaneous access to 1000 "empty" frames. 
+        // Simulate instantaneous access to 1000 "empty" frames.
         static int frameCount = 0;
         if(1000 == frameCount++) return MFX_ERR_MORE_DATA;
-        else return MFX_ERR_NONE;   
+        else return MFX_ERR_NONE;
     }
 
     size_t nBytesRead;
-    mfxU16 w, h; 
+    mfxU16 w, h;
     mfxFrameInfo* pInfo = &pSurface->Info;
 
 //    if (pInfo->CropH > 0 && pInfo->CropW > 0) {
@@ -127,18 +171,18 @@ mfxStatus LoadRawRGBFrame(mfxFrameSurface1* pSurface, FILE* fSource, bool bSim)
         h = pInfo->Height;
 //    }
 
-    for(mfxU16 i = 0; i < h; i++) 
+    for(mfxU16 i = 0; i < h; i++)
     {
         nBytesRead = (mfxU32)fread(pSurface->Data.B + i * pSurface->Data.Pitch, 1, w*4, fSource);
         if ((mfxU32) w*4 != nBytesRead)
             return MFX_ERR_MORE_DATA;
     }
 
-    return MFX_ERR_NONE;   
+    return MFX_ERR_NONE;
 }
 
 mfxStatus WriteBitStreamFrame(mfxBitstream *pMfxBitstream, FILE* fSink)
-{    
+{
     mfxU32 nBytesWritten = (mfxU32)fwrite(pMfxBitstream->Data + pMfxBitstream->DataOffset, 1, pMfxBitstream->DataLength, fSink);
     if(nBytesWritten != pMfxBitstream->DataLength)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -157,7 +201,7 @@ mfxStatus ReadBitStreamData(mfxBitstream *pBS, FILE* fSource)
     if (0 == nBytesRead)
         return MFX_ERR_MORE_DATA;
 
-    pBS->DataLength += nBytesRead;    
+    pBS->DataLength += nBytesRead;
 
     return MFX_ERR_NONE;
 }
@@ -188,8 +232,6 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
         for(i = 0; i < h; i++)
         {
             size_t nBytesWrite;
-            //if (w*4 != nBytesRead)
-            //    return MFX_ERR_MORE_DATA;
             mfxU8* ptr = TESTCOMP_MIN( TESTCOMP_MIN(pData->R, pData->G), pData->B );
             ptr = ptr + pInfo->CropX + pInfo->CropY * pData->Pitch;
 
@@ -199,6 +241,52 @@ mfxStatus WriteRawFrame(mfxFrameSurface1 *pSurface, FILE* fSink)
                 if (w*4 != nBytesWrite)
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
             }
+        }
+        return MFX_ERR_NONE;
+    }
+
+    /* IF we have YUY2 output*/
+    if (pInfo->FourCC == MFX_FOURCC_YUY2)
+    {
+        h = pInfo->CropH;
+        w = pInfo->CropW;
+
+        for(i = 0; i < h; i++)
+        {
+            size_t nBytesWrite;
+            mfxU8* ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
+
+            for(i = 0; i < h; i++)
+            {
+                nBytesWrite = fwrite(ptr + i * pData->Pitch, 1, 2*w, fSink);
+                if (w*2 != nBytesWrite)
+                    return MFX_ERR_UNDEFINED_BEHAVIOR;
+            }
+        }
+        return MFX_ERR_NONE;
+    }
+
+    // IF we have P010 output
+    if (pInfo->FourCC == MFX_FOURCC_P010)
+    {
+        h = pInfo->CropH;
+        w = pInfo->CropW;
+        for (i = 0; i < h; i++)
+        {
+            size_t nBytesWrite;
+            mfxU8* ptr = pData->Y + pInfo->CropY * pData->Pitch + pInfo->CropX;
+            nBytesWrite = fwrite(ptr + i * pData->Pitch, 1, w*2, fSink);
+            if (w*2 != nBytesWrite)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        for (i = 0; i < h/2; i++)
+        {
+            size_t nBytesWrite;
+            mfxU8* ptr = pData->UV + pInfo->CropY * pData->Pitch / 2 + pInfo->CropX;
+            nBytesWrite = fwrite(ptr + i * pData->Pitch, 1, w*2, fSink);
+            if (w*2 != nBytesWrite)
+                return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
         return MFX_ERR_NONE;
     }
