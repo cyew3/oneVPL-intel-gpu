@@ -249,7 +249,7 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 } // mfxStatus  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-Status MFXD3D11Accelerator::RegisterGpuEvent(DdiEvent &ev)
+Status MFXD3D11Accelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
 {
     HRESULT hr = S_OK;
 

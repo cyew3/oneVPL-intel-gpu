@@ -19,7 +19,8 @@
 #define AVC_DDI_VERSION_0952
 #define REPARTITION_CHECK
 
-//#include "d3dumddi.h"
+#include "mfx_ext_ddi.h"
+
 namespace
 {
     HRESULT DecoderExtension(
@@ -502,33 +503,6 @@ enum
     SUB_MB_PRED_MODE_L1     = 1,
     SUB_MB_PRED_MODE_Bi     = 2,
 };
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-// KMD Event prototype
-// D3DDDIFMT_INTELENCODE_SYNCOBJECT
-//typedef struct tagGPU_SYNC_EVENT_HANDLE
-//{
-//    HANDLE   gpuSyncEvent;
-//} GPU_SYNC_EVENT_HANDLE, *PGPU_SYNC_EVENT_HANDLE;
-
-enum GPU_COMPONENT_ID
-{
-    GPU_COMPONENT_VP,
-    GPU_COMPONENT_CM,
-    GPU_COMPONENT_DECODE,
-    GPU_COMPONENT_ENCODE,
-    MAX_GPU_COMPONENT_IDS
-};
-
-typedef struct _GPU_SYNC_EVENT_HANDLE
-{
-    uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID
-    HANDLE          gpuSyncEvent;
-} GPU_SYNC_EVENT_HANDLE, *PGPU_SYNC_EVENT_HANDLE;
-
-#define DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE 0x11
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // this structure is used to define the control structure for VME.

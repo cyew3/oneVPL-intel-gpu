@@ -99,10 +99,7 @@ Status DXAccelerator::BeginFrame(int32_t  index, uint32_t fieldId)
     if (IsGPUSyncEventDisable())
         return sts;
 
-    DdiEvent ev;
-    const uint8_t GPU_COMPONENT_DECODE_ID = 2;
-    ev.m_gpuComponentId = GPU_COMPONENT_DECODE_ID; // GPU_COMPONENT_DECODE
-
+    GPU_SYNC_EVENT_HANDLE ev{ GPU_COMPONENT_DECODE };
     ev.gpuSyncEvent = m_EventsMap.GetFreeEventAndMap( index, fieldId);
 
     if (ev.gpuSyncEvent == INVALID_HANDLE_VALUE)
@@ -481,7 +478,7 @@ Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
 }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-Status DXVA2Accelerator::RegisterGpuEvent(DdiEvent &ev)
+Status DXVA2Accelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
 {
     DXVA2_DecodeExecuteParams executeParams;
     DXVA2_DecodeExtensionData extensionData;

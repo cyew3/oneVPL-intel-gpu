@@ -71,7 +71,7 @@ public:
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 protected:
-    virtual UMC::Status RegisterGpuEvent(DdiEvent &ev);
+    virtual UMC::Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev);
 #endif
 private:
 

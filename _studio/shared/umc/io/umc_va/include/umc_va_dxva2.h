@@ -23,6 +23,8 @@
 #include "umc_mvc_ddi.h"
 #include "umc_hevc_ddi.h"
 
+#include "mfx_ext_ddi.h"
+
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 #include "umc_win_event_cache.h"
 #endif
@@ -196,15 +198,9 @@ protected:
     std::vector<int32_t>     m_bufferOrder;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    struct DdiEvent
-    {
-        uint8_t         m_gpuComponentId;   //GPU_COMPONENT_ID
-        HANDLE          gpuSyncEvent;
-    };
-
     UMC::EventCache m_EventsMap;
 protected:
-    virtual Status RegisterGpuEvent(DdiEvent &ev) = 0;
+    virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev) = 0;
 #endif
 };
 
@@ -251,7 +247,7 @@ protected:
                           int                           cNumberSurfaces);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    virtual Status RegisterGpuEvent(DdiEvent &ev);
+    virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev);
 #endif
 private:
 
