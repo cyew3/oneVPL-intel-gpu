@@ -63,6 +63,8 @@ namespace hevcd_decode_order
             g_tsStatus.expect(MFX_ERR_NONE);
 
             dec.DecodeFrameAsync();
+            if(MFX_WRN_VIDEO_PARAM_CHANGED == g_tsStatus.get())
+                continue;
             g_tsStatus.check();
             dec.m_update_bs = true;
 
