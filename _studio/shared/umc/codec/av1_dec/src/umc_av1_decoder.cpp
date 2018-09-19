@@ -495,16 +495,16 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         par->info.clip_info = { Ipp32s(sh.max_frame_width), Ipp32s(sh.max_frame_height) };
         par->info.disp_clip_info = par->info.clip_info;
 
-        if (!sh.subsampling_x && !sh.subsampling_y)
+        if (!sh.color_config.subsampling_x && !sh.color_config.subsampling_y)
             par->info.color_format = UMC::YUV444;
-        else if (sh.subsampling_x && !sh.subsampling_y)
+        else if (sh.color_config.subsampling_x && !sh.color_config.subsampling_y)
             par->info.color_format = UMC::YUY2;
-        else if (sh.subsampling_x && sh.subsampling_y)
+        else if (sh.color_config.subsampling_x && sh.color_config.subsampling_y)
             par->info.color_format = UMC::NV12;
 
-        if (sh.BitDepth == 8 && par->info.color_format == UMC::YUV444)
+        if (sh.color_config.BitDepth == 8 && par->info.color_format == UMC::YUV444)
             par->info.color_format = UMC::AYUV;
-        if (sh.BitDepth == 10)
+        if (sh.color_config.BitDepth == 10)
         {
             switch (par->info.color_format)
             {
@@ -517,7 +517,7 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
                 return UMC::UMC_ERR_UNSUPPORTED;
             }
         }
-        else if (sh.BitDepth == 12)
+        else if (sh.color_config.BitDepth == 12)
         {
             switch (par->info.color_format)
             {

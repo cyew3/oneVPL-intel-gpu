@@ -217,13 +217,13 @@ namespace UMC_AV1_DECODER
         ddiSeqParam.enable_jnt_comp = sh.enable_jnt_comp;
         ddiSeqParam.enable_cdef = 1;
         ddiSeqParam.enable_restoration = 1;
-        ddiSeqParam.BitDepthIdx = (sh.BitDepth == 10) ? 1 :
-            (sh.BitDepth == 12) ? 2 : 0;
-        ddiSeqParam.mono_chrome = sh.mono_chrome;
-        ddiSeqParam.color_range = sh.color_range;
-        ddiSeqParam.subsampling_x = sh.subsampling_x;
-        ddiSeqParam.subsampling_y = sh.subsampling_y;
-        ddiSeqParam.chroma_sample_position = sh.chroma_sample_position;
+        ddiSeqParam.BitDepthIdx = (sh.color_config.BitDepth == 10) ? 1 :
+            (sh.color_config.BitDepth == 12) ? 2 : 0;
+        ddiSeqParam.mono_chrome = sh.color_config.mono_chrome;
+        ddiSeqParam.color_range = sh.color_config.color_range;
+        ddiSeqParam.subsampling_x = sh.color_config.subsampling_x;
+        ddiSeqParam.subsampling_y = sh.color_config.subsampling_y;
+        ddiSeqParam.chroma_sample_position = sh.color_config.chroma_sample_position;
         ddiSeqParam.film_grain_params_present = sh.film_grain_param_present;
 #ifdef DDI_HACKS_FOR_REV_5
         ddiSeqParam.order_hint_bits_minus1 = sh.order_hint_bits_minus1;
@@ -642,15 +642,15 @@ namespace UMC_AV1_DECODER
         seqInfo.enable_jnt_comp = sh.enable_jnt_comp;
         seqInfo.enable_cdef = 1;
         seqInfo.enable_restoration = 1;
-        seqInfo.mono_chrome = sh.mono_chrome;
-        seqInfo.color_range = sh.color_range;
-        seqInfo.subsampling_x = sh.subsampling_x;
-        seqInfo.subsampling_y = sh.subsampling_y;
-        seqInfo.chroma_sample_position = sh.chroma_sample_position;
+        seqInfo.mono_chrome = sh.color_config.mono_chrome;
+        seqInfo.color_range = sh.color_config.color_range;
+        seqInfo.subsampling_x = sh.color_config.subsampling_x;
+        seqInfo.subsampling_y = sh.color_config.subsampling_y;
+        seqInfo.chroma_sample_position = sh.color_config.chroma_sample_position;
         seqInfo.film_grain_params_present = sh.film_grain_param_present;
 
-        picParam->bit_depth_idx = (sh.BitDepth == 10) ? 1 :
-            (sh.BitDepth == 12) ? 2 : 0;
+        picParam->bit_depth_idx = (sh.color_config.BitDepth == 10) ? 1 :
+            (sh.color_config.BitDepth == 12) ? 2 : 0;
         picParam->order_hint_bits_minus_1 = sh.order_hint_bits_minus1;
 
         // fill pic params

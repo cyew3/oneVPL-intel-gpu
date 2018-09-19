@@ -81,6 +81,10 @@ namespace UMC_AV1_DECODER
 
     const Ipp8u WARPEDMODEL_PREC_BITS         = 16;
 
+    const Ipp8u MAX_NUM_TEMPORAL_LAYERS       = 8;
+    const Ipp8u MAX_NUM_SPATIAL_LAYERS        = 4;
+    const Ipp8u MAX_NUM_OPERATING_POINTS      = MAX_NUM_TEMPORAL_LAYERS * MAX_NUM_SPATIAL_LAYERS;
+
 #if UMC_AV1_DECODER_REV >= 5000
     enum AV1_OBU_TYPE
     {
@@ -298,26 +302,31 @@ namespace UMC_AV1_DECODER
         MAX_REF_FRAMES = 8
     };
 
-    struct SequenceHeader
+    struct TimingInfo
     {
-        //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in sequence_header_obu()
-        Ipp32u seq_profile;
-        Ipp32u timing_info_present_flag;
-        Ipp32u frame_width_bits;
-        Ipp32u frame_height_bits;
-        Ipp32u max_frame_width;
-        Ipp32u max_frame_height;
-        Ipp32u frame_id_numbers_present_flag;
-        Ipp32u delta_frame_id_length;
-        Ipp32u idLen;
-        Ipp32u sbSize;
-        Ipp32u enable_dual_filter;
-        Ipp32u enable_order_hint;
-        Ipp32u enable_jnt_comp;
-        Ipp32u seq_force_screen_content_tools;
-        Ipp32u seq_force_integer_mv;
-        Ipp32s order_hint_bits_minus1;
+        Ipp32u num_units_in_display_tick;
+        Ipp32u time_scale;
+        Ipp32u equal_picture_interval;
+        Ipp32u num_ticks_per_picture_minus_1;
+    };
 
+    struct DecoderModelInfo
+    {
+        Ipp32u buffer_delay_length_minus_1;
+        Ipp32u num_units_in_decoding_tick;
+        Ipp32u buffer_removal_time_length_minus_1;
+        Ipp32u frame_presentation_time_length_minus_1;
+    };
+
+    struct OperatingParametersInfo
+    {
+        Ipp32u decoder_buffer_delay;
+        Ipp32u encoder_buffer_delay;
+        Ipp32u low_delay_mode_flag;
+    };
+
+    struct ColorConfig
+    {
         Ipp32u BitDepth;
         Ipp32u mono_chrome;
         Ipp32u color_primaries;
@@ -328,6 +337,48 @@ namespace UMC_AV1_DECODER
         Ipp32u subsampling_x;
         Ipp32u subsampling_y;
         Ipp32u separate_uv_delta_q;
+    };
+
+    struct SequenceHeader
+    {
+        //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in sequence_header_obu()
+        Ipp32u seq_profile;
+        Ipp32u still_picture;
+        Ipp32u reduced_still_picture_header;
+
+        Ipp32u timing_info_present_flag;
+        TimingInfo timing_info;
+
+        Ipp32u decoder_model_info_present_flag;
+        DecoderModelInfo decoder_model_info;
+
+        OperatingParametersInfo operating_parameters_info[MAX_NUM_OPERATING_POINTS];
+
+        Ipp32u frame_width_bits;
+        Ipp32u frame_height_bits;
+        Ipp32u max_frame_width;
+        Ipp32u max_frame_height;
+        Ipp32u frame_id_numbers_present_flag;
+        Ipp32u delta_frame_id_length;
+        Ipp32u idLen;
+        Ipp32u sbSize;
+        Ipp32u enable_filter_intra;
+        Ipp32u enable_intra_edge_filter;
+        Ipp32u enable_interintra_compound;
+        Ipp32u enable_masked_compound;
+        Ipp32u enable_warped_motion;
+        Ipp32u enable_dual_filter;
+        Ipp32u enable_order_hint;
+        Ipp32u enable_jnt_comp;
+        Ipp32u enable_ref_frame_mvs;
+        Ipp32u seq_force_screen_content_tools;
+        Ipp32u seq_force_integer_mv;
+        Ipp32s order_hint_bits_minus1;
+        Ipp32u enable_superres;
+        Ipp32u enable_cdef;
+        Ipp32u enable_restoration;
+
+        ColorConfig color_config;
 
         Ipp32u film_grain_param_present;
     };

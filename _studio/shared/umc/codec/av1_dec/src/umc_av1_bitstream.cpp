@@ -73,73 +73,73 @@ namespace UMC_AV1_DECODER
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
 
-        sh->BitDepth = bs->GetBit() ? 10 : 8;
-        if (sh->seq_profile >= 2 && sh->BitDepth != 8)
-            sh->BitDepth = bs->GetBit() ? 12 : 10;
+        sh->color_config.BitDepth = bs->GetBit() ? 10 : 8;
+        if (sh->seq_profile >= 2 && sh->color_config.BitDepth != 8)
+            sh->color_config.BitDepth = bs->GetBit() ? 12 : 10;
 
-        sh->mono_chrome = sh->seq_profile != 1 ? bs->GetBit() : 0;
+        sh->color_config.mono_chrome = sh->seq_profile != 1 ? bs->GetBit() : 0;
 
         Ipp32u color_description_present_flag = bs->GetBit();
         if (color_description_present_flag)
         {
-            sh->color_primaries = bs->GetBits(8);
-            sh->transfer_characteristics = bs->GetBits(8);
-            sh->matrix_coefficients = bs->GetBits(8);
+            sh->color_config.color_primaries = bs->GetBits(8);
+            sh->color_config.transfer_characteristics = bs->GetBits(8);
+            sh->color_config.matrix_coefficients = bs->GetBits(8);
         }
         else
         {
-            sh->color_primaries = AOM_CICP_CP_UNSPECIFIED;
-            sh->transfer_characteristics = AOM_CICP_TC_UNSPECIFIED;
-            sh->matrix_coefficients = AOM_CICP_MC_UNSPECIFIED;
+            sh->color_config.color_primaries = AOM_CICP_CP_UNSPECIFIED;
+            sh->color_config.transfer_characteristics = AOM_CICP_TC_UNSPECIFIED;
+            sh->color_config.matrix_coefficients = AOM_CICP_MC_UNSPECIFIED;
         }
 
-        if (sh->mono_chrome)
+        if (sh->color_config.mono_chrome)
         {
-            sh->color_range = AOM_CR_FULL_RANGE;
-            sh->subsampling_y = sh->subsampling_x = 1;
-            sh->chroma_sample_position = AOM_CSP_UNKNOWN;
-            sh->separate_uv_delta_q = 0;
+            sh->color_config.color_range = AOM_CR_FULL_RANGE;
+            sh->color_config.subsampling_y = sh->color_config.subsampling_x = 1;
+            sh->color_config.chroma_sample_position = AOM_CSP_UNKNOWN;
+            sh->color_config.separate_uv_delta_q = 0;
             return;
         }
 
-        if (sh->color_primaries == AOM_CICP_CP_BT_709 &&
-            sh->transfer_characteristics == AOM_CICP_TC_SRGB &&
-            sh->matrix_coefficients == AOM_CICP_MC_IDENTITY)
+        if (sh->color_config.color_primaries == AOM_CICP_CP_BT_709 &&
+            sh->color_config.transfer_characteristics == AOM_CICP_TC_SRGB &&
+            sh->color_config.matrix_coefficients == AOM_CICP_MC_IDENTITY)
         {
-            sh->subsampling_y = sh->subsampling_x = 0;
-            if (!(sh->seq_profile == 1 || (sh->seq_profile == 2 && sh->BitDepth == 12)))
+            sh->color_config.subsampling_y = sh->color_config.subsampling_x = 0;
+            if (!(sh->seq_profile == 1 || (sh->seq_profile == 2 && sh->color_config.BitDepth == 12)))
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
         else
         {
             // [16,235] (including xvycc) vs [0,255] range
-            sh->color_range = bs->GetBit();
+            sh->color_config.color_range = bs->GetBit();
             if (sh->seq_profile == 0) // 420 only
-                sh->subsampling_x = sh->subsampling_y = 1;
+                sh->color_config.subsampling_x = sh->color_config.subsampling_y = 1;
             else if (sh->seq_profile == 1) // 444 only
-                sh->subsampling_x = sh->subsampling_y = 0;
+                sh->color_config.subsampling_x = sh->color_config.subsampling_y = 0;
             else if (sh->seq_profile == 2)
             {
-                if (sh->BitDepth == 12)
+                if (sh->color_config.BitDepth == 12)
                 {
-                    sh->subsampling_x = bs->GetBit();
-                    if (sh->subsampling_x == 0)
-                        sh->subsampling_y = 0;  // 444
+                    sh->color_config.subsampling_x = bs->GetBit();
+                    if (sh->color_config.subsampling_x == 0)
+                        sh->color_config.subsampling_y = 0;  // 444
                     else
-                        sh->subsampling_y = bs->GetBit();  // 422 or 420
+                        sh->color_config.subsampling_y = bs->GetBit();  // 422 or 420
                 }
                 else
                 {
                     // 422
-                    sh->subsampling_x = 1;
-                    sh->subsampling_y = 0;
+                    sh->color_config.subsampling_x = 1;
+                    sh->color_config.subsampling_y = 0;
                 }
             }
-            if (sh->subsampling_x == 1 && sh->subsampling_y == 1)
-                sh->chroma_sample_position = bs->GetBits(2);
+            if (sh->color_config.subsampling_x == 1 && sh->color_config.subsampling_y == 1)
+                sh->color_config.chroma_sample_position = bs->GetBits(2);
         }
 
-        sh->separate_uv_delta_q = bs->GetBit();
+        sh->color_config.separate_uv_delta_q = bs->GetBit();
 
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
@@ -407,7 +407,7 @@ namespace UMC_AV1_DECODER
     inline
     Ipp8u av1_num_planes(SequenceHeader const * sh)
     {
-        return sh->mono_chrome ? 1 : MAX_MB_PLANE;
+        return sh->color_config.mono_chrome ? 1 : MAX_MB_PLANE;
     }
 #endif
 
@@ -484,7 +484,7 @@ namespace UMC_AV1_DECODER
 
         if (NumPlanes > 1) {
 #if UMC_AV1_DECODER_REV >= 5000
-            int s = std::min(sh->subsampling_x, sh->subsampling_y);
+            int s = std::min(sh->color_config.subsampling_x, sh->color_config.subsampling_y);
 #else
             int s = std::min(fh->subsampling_x, fh->subsampling_y);
 #endif
@@ -692,7 +692,7 @@ namespace UMC_AV1_DECODER
         if (fh->NumPlanes > 1)
         {
             Ipp32s diffUVDelta = 0;
-            if (sh->separate_uv_delta_q)
+            if (sh->color_config.separate_uv_delta_q)
                 diffUVDelta = bs->GetBit();
 
             fh->DeltaQUDc = av1_read_q_delta(bs);
@@ -729,7 +729,7 @@ namespace UMC_AV1_DECODER
             fh->qm_y = bs->GetBits(QM_LEVEL_BITS);
             fh->qm_u = bs->GetBits(QM_LEVEL_BITS);
 
-            if (!sh->separate_uv_delta_q)
+            if (!sh->color_config.separate_uv_delta_q)
                 fh->qm_v = fh->qm_u;
             else
                 fh->qm_v = bs->GetBits(QM_LEVEL_BITS);
@@ -1308,10 +1308,10 @@ namespace UMC_AV1_DECODER
             params->scaling_points_y[i][1] = bs->GetBits(8);
         }
 
-        if (!sh->mono_chrome)
+        if (!sh->color_config.mono_chrome)
             params->chroma_scaling_from_luma = bs->GetBit();
 
-        if (sh->mono_chrome || params->chroma_scaling_from_luma)
+        if (sh->color_config.mono_chrome || params->chroma_scaling_from_luma)
         {
             params->num_cb_points = 0;
             params->num_cr_points = 0;
@@ -2357,7 +2357,7 @@ namespace UMC_AV1_DECODER
             else
                 memset(&fh->film_grain_params, 0, sizeof(fh->film_grain_params));
 
-            fh->film_grain_params.BitDepth = sh->BitDepth;
+            fh->film_grain_params.BitDepth = sh->color_config.BitDepth;
         }
 
         av1_read_tile_info(this, fh, sh->sbSize);
