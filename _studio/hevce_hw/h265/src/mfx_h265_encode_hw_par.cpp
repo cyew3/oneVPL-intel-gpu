@@ -2240,10 +2240,10 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
         invalid ++;
     }
 
-    changed += CheckMax(par.mfx.NumRefFrame, maxDPB);
+    changed += CheckMax(par.mfx.NumRefFrame, maxDPB - 1);
 
     if (par.mfx.NumRefFrame)
-        maxDPB = par.mfx.NumRefFrame;
+        maxDPB = par.mfx.NumRefFrame + 1;
 
 
     if (   (par.mfx.RateControlMethod == MFX_RATECONTROL_VBR
@@ -2523,8 +2523,8 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     //check Active Reference
 
     {
-        mfxU16 maxForward  = Min<mfxU16>(caps.MaxNum_Reference0, maxDPB);
-        mfxU16 maxBackward = Min<mfxU16>(caps.MaxNum_Reference1, maxDPB);
+        mfxU16 maxForward  = Min<mfxU16>(caps.MaxNum_Reference0, maxDPB - 1);
+        mfxU16 maxBackward = Min<mfxU16>(caps.MaxNum_Reference1, maxDPB - 1);
 
 #if (MFX_VERSION >= 1025)
         if (par.m_platform >= MFX_HW_CNL)
@@ -3147,8 +3147,8 @@ void SetDefaults(
             {
                 par.mfx.NumRefFrame = (Max(RefActiveP, RefActiveBL0) + (par.mfx.GopRefDist > 1) * RefActiveBL0)*k;
             }
-            par.mfx.NumRefFrame = Max(mfxU16(par.NumTL() - 1), par.mfx.NumRefFrame);
-            par.mfx.NumRefFrame = Min(maxDPB, par.mfx.NumRefFrame);
+            par.mfx.NumRefFrame = Max<mfxU16>(par.NumTL() - 1, par.mfx.NumRefFrame);
+            par.mfx.NumRefFrame = Min<mfxU16>(maxDPB - 1, par.mfx.NumRefFrame);
         }
      }
 #if !defined(MFX_EXT_BRC_DISABLE)
