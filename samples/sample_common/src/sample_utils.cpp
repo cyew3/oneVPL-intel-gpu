@@ -935,8 +935,10 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
 	}
 	case MFX_FOURCC_RGB4:
 	case 100: //DXGI_FORMAT_AYUV
+	case MFX_FOURCC_AYUV:
 	case MFX_FOURCC_A2RGB10:
-		// Implementation for RGB4 and A2RGB10 in the next switch below
+	case MFX_FOURCC_YUY2:
+		// Implementation for these formats is in the next switch below
 		break;
 
 	default:
@@ -965,7 +967,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
 		for (i = 0; i < (mfxU32)pInfo.CropH / 2; i++)
 		{
 			MSDK_CHECK_NOT_EQUAL(
-				fwrite(pData.UV + (pInfo.CropY * pData.Pitch / 2 + pInfo.CropX / 2) + i * pData.Pitch, 1, pInfo.CropW, dstFile),
+				fwrite(pData.UV + (pInfo.CropY * pData.Pitch + pInfo.CropX) + i * pData.Pitch, 1, pInfo.CropW, dstFile),
 				pInfo.CropW, MFX_ERR_UNDEFINED_BEHAVIOR);
 		}
 		break;
@@ -977,7 +979,7 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
 
 		for (i = 0; i < height; i++)
 		{
-			mfxU16* shortPtr = (mfxU16*)(pData.UV + (pInfo.CropY * pData.Pitch / 2 + pInfo.CropX) + i * pData.Pitch);
+			mfxU16* shortPtr = (mfxU16*)(pData.UV + (pInfo.CropY * pData.Pitch + pInfo.CropX*2) + i * pData.Pitch);
 			if (pInfo.Shift)
 			{
 				// Convert MS-P010 to P010 and write
@@ -1005,18 +1007,20 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
 
 	case MFX_FOURCC_RGB4:
 	case 100: //DXGI_FORMAT_AYUV
+	case MFX_FOURCC_AYUV:
+	case MFX_FOURCC_YUY2:
 	case MFX_FOURCC_A2RGB10:
 	{
 		mfxU8* ptr;
 
 		if (pInfo.CropH > 0 && pInfo.CropW > 0)
 		{
-			w = pInfo.CropW;
+			w = pInfo.FourCC==MFX_FOURCC_YUY2 ? pInfo.CropW/2 : pInfo.CropW;
 			h = pInfo.CropH;
 		}
 		else
 		{
-			w = pInfo.Width;
+			w = pInfo.FourCC == MFX_FOURCC_YUY2 ? pInfo.Width / 2 : pInfo.Width;
 			h = pInfo.Height;
 		}
 

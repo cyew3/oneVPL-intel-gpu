@@ -1005,8 +1005,9 @@ mfxStatus CDecodingPipeline::AllocFrames()
 
     mfxU16 nSurfNum = 0; // number of surfaces for decoder
     mfxU16 nVppSurfNum = 0; // number of surfaces for vpp
-
+		
     MSDK_ZERO_MEMORY(Request);
+
     MSDK_ZERO_MEMORY(VppRequest[0]);
     MSDK_ZERO_MEMORY(VppRequest[1]);
 
@@ -1015,7 +1016,7 @@ mfxStatus CDecodingPipeline::AllocFrames()
     MSDK_CHECK_STATUS(sts, "m_pmfxDEC->Query failed");
 
 	// Workaround for VP9 codec
-	if (m_mfxVideoParams.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_mfxVideoParams.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210)
+	if ((m_mfxVideoParams.mfx.FrameInfo.FourCC == MFX_FOURCC_P010 || m_mfxVideoParams.mfx.FrameInfo.FourCC == MFX_FOURCC_Y210) && m_mfxVideoParams.mfx.CodecId==MFX_CODEC_VP9)
 	{
 		m_mfxVideoParams.mfx.FrameInfo.Shift = 1;
 	}
