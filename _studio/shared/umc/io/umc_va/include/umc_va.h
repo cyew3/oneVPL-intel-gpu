@@ -42,11 +42,6 @@ public:
         ptr = Ptr;
     }
 
-    VACompBuffer(const VACompBuffer &copy)
-    {
-        *this = copy;
-    }
-
     void SetNumOfItem(int32_t num) { NumOfItem = num; };
 
     bool operator==(const VACompBuffer& right) const
@@ -57,33 +52,6 @@ public:
     void    Lock() { locked = true; }
     void    UnLock() { locked = false; }
     bool    IsLocked() const { return locked; }
-
-    class Allocate {
-    public:
-        void operator ( ) ( VACompBuffer & x )
-        {
-           x.ptr = malloc(x.BufferSize);
-        }
-    };
-
-    class Free
-    {
-    public:
-        void operator ( ) ( VACompBuffer & x )
-        {
-            free(x.ptr);
-            x.ptr=NULL;
-        }
-    };
-
-    class Release
-    {
-    public:
-        void operator ( ) ( VACompBuffer & x )
-        {
-            x.locked=false;
-        }
-    };
 };
 
 class VideoAcceleratorExt : public VideoAccelerator

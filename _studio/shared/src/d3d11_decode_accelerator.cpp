@@ -251,30 +251,13 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 Status MFXD3D11Accelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
 {
-    HRESULT hr = S_OK;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteStatusReportBuffer");
 
-    // [2.4] send to driver
-    D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
-    decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
-    decoderExtParams.pPrivateInputData = &(ev);
-    decoderExtParams.PrivateInputDataSize = sizeof(ev);
-    decoderExtParams.pPrivateOutputData = NULL;
-    decoderExtParams.PrivateOutputDataSize = 0;
-    decoderExtParams.ResourceCount = 0;
-    decoderExtParams.ppResourceList = NULL;
+    D3D11_VIDEO_DECODER_EXTENSION ext { DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE };
+    ext.pPrivateInputData =  &ev;
+    ext.PrivateInputDataSize = sizeof(ev);
 
-    {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "RegisterGpuEventHandle");
-        hr = m_pVideoContext->DecoderExtension(m_pDecoder, &decoderExtParams);
-    }
-#ifdef _DEBUG
-    MFX_TRACE_1("RegisterGpuEvent"," HR = %d\n", hr);
-#endif
-
-    if SUCCEEDED(hr)
-        return UMC_OK;
-
-    return UMC_ERR_DEVICE_FAILED;
+    return ExecuteExtensionBuffer(&ext);
 }
 #endif
 
@@ -401,27 +384,32 @@ Status MFXD3D11Accelerator::Execute()
 Status MFXD3D11Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteStatusReportBuffer");
+
+    UMC_CHECK_PTR(buffer);
+
+    D3D11_VIDEO_DECODER_EXTENSION ext { DXVA2_GET_STATUS_REPORT };
+    ext.pPrivateOutputData =  buffer;
+    ext.PrivateOutputDataSize = size;
+
+    return ExecuteExtensionBuffer(&ext);
+}
+
+Status MFXD3D11Accelerator::ExecuteExtensionBuffer(void * buffer)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteExtensionBuffer");
+
+    UMC_CHECK_PTR(buffer);
+
     HRESULT hr;
-    D3D11_VIDEO_DECODER_EXTENSION dec_ext;
-    
-    memset(&dec_ext, 0, sizeof(D3D11_VIDEO_DECODER_EXTENSION));
-
-    dec_ext.Function = 7;
-    dec_ext.ppResourceList = 0;
-    dec_ext.PrivateInputDataSize = 0;
-    dec_ext.pPrivateOutputData =  buffer;
-    dec_ext.PrivateOutputDataSize = size;
-    dec_ext.ppResourceList = 0;
-
     {
-        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DecoderExtension");
-        hr = m_pVideoContext->DecoderExtension(m_pDecoder, &dec_ext);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "ExecuteExtensionBuffer");
+
+        auto ext = reinterpret_cast<D3D11_VIDEO_DECODER_EXTENSION*>(buffer);
+        hr = m_pVideoContext->DecoderExtension(m_pDecoder, ext);
     }
 
-    if (FAILED(hr))
-        return UMC::UMC_ERR_DEVICE_FAILED;
-
-    return UMC_OK;
+    return
+        SUCCEEDED(hr) ? UMC_OK : UMC_ERR_DEVICE_FAILED;
 }
 
 Status MFXD3D11Accelerator::Close()

@@ -265,6 +265,7 @@ public:
 class VideoAccelerator
 {
     DYNAMIC_CAST_DECL_BASE(VideoAccelerator);
+
 public:
     VideoAccelerator() :
         m_Profile(UNKNOWN),
@@ -290,8 +291,8 @@ public:
     }
 
     virtual Status Init(VideoAcceleratorParams* pInfo) = 0; // Initilize and allocate all resources
-    virtual Status Close(void);
-    virtual Status Reset(void);
+    virtual Status Close();
+    virtual Status Reset();
 
     virtual Status BeginFrame   (int32_t  index) = 0; // Begin decoding for specified index
 
@@ -307,7 +308,7 @@ public:
                                  UMCVACompBuffer** buf   = NULL,
                                  int32_t            size  = -1,
                                  int32_t            index = -1) = 0; // request buffer
-    virtual Status Execute      (void) = 0;          // execute decoding
+    virtual Status Execute      () = 0;          // execute decoding
     virtual Status ExecuteExtensionBuffer(void * buffer) = 0;
     virtual Status ExecuteStatusReportBuffer(void * buffer, int32_t size) = 0;
     virtual Status SyncTask(int32_t index, void * error = NULL) = 0;
@@ -317,7 +318,7 @@ public:
 
     virtual bool IsIntelCustomGUID() const = 0;
     /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
-    virtual int32_t GetSurfaceID(int32_t idx) { return idx; }
+    virtual int32_t GetSurfaceID(int32_t idx) const { return idx; }
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     virtual ProtectedVA * GetProtectedVA() {return m_protectedVA;}
@@ -325,8 +326,9 @@ public:
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
 #endif
+
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    bool IsGPUSyncEventDisable()
+    bool IsGPUSyncEventDisable() const
     {
         VideoAccelerationProfile codec = (VideoAccelerationProfile)(m_Profile & VA_CODEC);
         VideoAccelerationProfile profile = (VideoAccelerationProfile)(m_Profile & VA_PROFILE);
@@ -336,7 +338,7 @@ public:
 
     bool IsLongSliceControl() const { return (!m_bH264ShortSlice); };
     bool IsMVCSupport() const {return m_bH264MVCSupport; };
-    bool IsUseStatusReport() { return m_isUseStatuReport; }
+    bool IsUseStatusReport() const { return m_isUseStatuReport; }
     void SetStatusReportUsing(bool isUseStatuReport) { m_isUseStatuReport = isUseStatuReport; }
 
     int32_t ScalingListScanOrder() const

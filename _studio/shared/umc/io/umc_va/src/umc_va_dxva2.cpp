@@ -39,37 +39,6 @@ namespace UMC
     }
 }
 
-extern void DeleteVideoAccelerator(void* acc)
-{
-    if(acc!=NULL){
-        delete (DXVA2Accelerator*)acc;
-    }
-}
-
-template <typename T>
-class auto_deleter_stdcall_void
-{
-public:
-
-    typedef void (__stdcall * deleter_func)(T *);
-
-    auto_deleter_stdcall_void(T * ptr, deleter_func func)
-    {
-        m_ptr = ptr;
-        m_func = func;
-    }
-
-    ~auto_deleter_stdcall_void()
-    {
-        if (m_ptr)
-            m_func(m_ptr);
-    }
-
-private:
-    T * m_ptr;
-    deleter_func m_func;
-};
-
 DXAccelerator::DXAccelerator()
 {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
@@ -82,9 +51,8 @@ DXAccelerator::~DXAccelerator()
     Close();
 }
 
-UMC::Status DXAccelerator::Close(void)
+UMC::Status DXAccelerator::Close()
 {
-
     return VideoAccelerator::Close();
 }
 
@@ -256,8 +224,6 @@ UMCVACompBuffer* DXAccelerator::FindBuffer(int32_t type)
 
 DXVA2Accelerator::DXVA2Accelerator():
     m_pDirect3DDeviceManager9(NULL),
-    m_pDecoderService(NULL),
-    m_pDXVAVideoDecoder(NULL),
     m_hDevice(INVALID_HANDLE_VALUE),
     m_bInitilized(FALSE),
     m_guidDecoder(GUID_NULL),
@@ -270,17 +236,18 @@ DXVA2Accelerator::DXVA2Accelerator():
 //////////////////////////////////////////////////////////////
 
 
-Status DXVA2Accelerator::CloseDirectXDecoder()
+void DXVA2Accelerator::CloseDirectXDecoder()
 {
-    SAFE_RELEASE(m_pDXVAVideoDecoder);
+    m_pDXVAVideoDecoder.Release();
+    m_pDecoderService.Release();
+
     m_bInitilized = FALSE;
-    SAFE_RELEASE(m_pDecoderService);
+
     if (m_pDirect3DDeviceManager9 && m_hDevice != INVALID_HANDLE_VALUE)
     {
         m_pDirect3DDeviceManager9->CloseDeviceHandle(m_hDevice);
         m_hDevice = INVALID_HANDLE_VALUE;
     }
-    return UMC_OK;
 }
 
 DXVA2Accelerator::~DXVA2Accelerator()
@@ -299,24 +266,24 @@ Status DXVA2Accelerator::BeginFrame(int32_t index)
     if (sts != UMC_OK)
         return sts;
 
-    HRESULT hr = S_OK;
-    for (uint32_t i = 0; i < 200; i++)
+    HRESULT hr;
     {
-        hr = m_pDXVAVideoDecoder->BeginFrame(surface, NULL);
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "BeginFrame");
 
-        if (E_PENDING != hr)
-            break;
+        for (uint32_t i = 0; i < 200; i++)
+        {
+            hr = m_pDXVAVideoDecoder->BeginFrame(surface, nullptr);
 
-        // sleep some time
-        vm_time_sleep(5);
+            if (E_PENDING != hr)
+                break;
+
+            // sleep some time
+            vm_time_sleep(5);
+        }
     }
 
-    if (FAILED(hr))
-    {
-        return UMC::UMC_ERR_DEVICE_FAILED;
-    }
-
-    return UMC::UMC_OK;
+    return
+        SUCCEEDED(hr) ? UMC_OK: UMC_ERR_DEVICE_FAILED;
 }
 
 //////////////////////////////////////////////////////////////
@@ -330,35 +297,21 @@ Status DXVA2Accelerator::EndFrame(void * handle)
 
     m_bufferOrder.clear();
 
-    HRESULT hr = m_pDXVAVideoDecoder->EndFrame((HANDLE*)handle);
-    if (FAILED(hr))
-        return UMC::UMC_ERR_DEVICE_FAILED;
+    HRESULT hr;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "BeginFrame");
+        hr = m_pDXVAVideoDecoder->EndFrame(reinterpret_cast<HANDLE*>(handle));
+    }
 
-    CHECK_HR(hr);
-    return UMC::UMC_OK;
+    return
+        SUCCEEDED(hr) ? UMC_OK: UMC_ERR_DEVICE_FAILED;
 }
 
 //////////////////////////////////////////////////////////////
-
-#if 0
-static int frame_n = 0;
-static void dumpFile(void *pData, int size, int n)
-{
-    return;
-    char file_name[256];
-    FILE *f;
-    if (frame_n > 30) return;
-    sprintf(file_name, "\\x_frame%02d_%d.bin", frame_n, n);
-    f = fopen(file_name, "wb");
-    fwrite(pData, 1, size, f);
-    fclose(f);
-}
-#endif
-
 Status DXVA2Accelerator::Execute()
 {
     DXVA2_DecodeBufferDesc pBufferDesc[MAX_BUFFER_TYPES];
-    DXVA2_DecodeExecuteParams pExecuteParams[1];
+    DXVA2_DecodeExecuteParams executeParams{};
     int n = 0;
 
     ZeroMemory(pBufferDesc, sizeof(pBufferDesc));
@@ -388,26 +341,21 @@ Status DXVA2Accelerator::Execute()
         pBufferDesc[n].pvPVPState = pCompBuffer->GetPVPStatePtr();
         n++;
 
-        //dumpFile(pCompBuffer->GetPtr(), pCompBuffer->GetDataSize(), n);
-
         ReleaseBuffer(type);
     }
 
-    pExecuteParams->NumCompBuffers = n;
-    pExecuteParams->pCompressedBuffers = pBufferDesc;
-    pExecuteParams->pExtensionData = NULL;
+    executeParams.NumCompBuffers = n;
+    executeParams.pCompressedBuffers = pBufferDesc;
+    executeParams.pExtensionData = nullptr;
 
     m_bufferOrder.clear();
-
-    //dumpFile(pBufferDesc, n*sizeof(DXVA2_DecodeBufferDesc), 0);
-    //frame_n++;
 
     HRESULT hr = E_FRAME_LOCKED;
     mfxU32 counter = 0;
     while (E_FRAME_LOCKED == hr && counter++ < 4) // 20 ms should be enough
     {
         //MFX_AUTO_LTRACE_WITHID(MFX_TRACE_LEVEL_EXTCALL, "DXVA2_DecodeExecute");
-        hr = m_pDXVAVideoDecoder->Execute(pExecuteParams);
+        hr = m_pDXVAVideoDecoder->Execute(&executeParams);
 
         if (hr != 0)
         {
@@ -423,6 +371,7 @@ Status DXVA2Accelerator::Execute()
         if (E_FRAME_LOCKED == hr)
             Sleep(5); //lets wait 5 ms
     }
+
     if (hr == E_FRAME_LOCKED)
         return UMC::UMC_ERR_FRAME_LOCKED;
 
@@ -435,74 +384,46 @@ Status DXVA2Accelerator::Execute()
 
 Status DXVA2Accelerator::ExecuteExtensionBuffer(void * buffer)
 {
-    DXVA2_DecodeExecuteParams executeParams;
+    UMC_CHECK_PTR(buffer);
+
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVA2Accelerator::ExecuteExtensionBuffer");
+
+    DXVA2_DecodeExecuteParams ext{};
+    ext.pExtensionData = reinterpret_cast<DXVA2_DecodeExtensionData*>(buffer);
+
     HRESULT hr;
+    {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "Execute");
+        hr = m_pDXVAVideoDecoder->Execute(&ext);
+    }
 
-    executeParams.NumCompBuffers = 0;
-    executeParams.pCompressedBuffers = 0;
-    executeParams.pExtensionData = (DXVA2_DecodeExtensionData *)buffer;
-
-    hr = m_pDXVAVideoDecoder->Execute(&executeParams);
-    vm_trace_x(hr);
-
-    if (FAILED(hr))
-        return UMC::UMC_ERR_DEVICE_FAILED;
-
-    CHECK_HR(hr);
-    return UMC_OK;
+    return
+        SUCCEEDED(hr) ? UMC_OK: UMC_ERR_DEVICE_FAILED;
 }
+
 Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
 {
-    DXVA2_DecodeExecuteParams executeParams;
-    DXVA2_DecodeExtensionData extensionData;
-    HRESULT hr;
+    UMC_CHECK_PTR(buffer);
 
-    memset(&executeParams, 0, sizeof(DXVA2_DecodeExecuteParams));
-    memset(&extensionData, 0, sizeof(DXVA2_DecodeExtensionData));
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVA2Accelerator::ExecuteStatusReportBuffer");
 
-    executeParams.NumCompBuffers = 0;
-    executeParams.pCompressedBuffers = 0;
-    executeParams.pExtensionData = &extensionData;
-    extensionData.Function = 7;
-    extensionData.pPrivateOutputData = (PVOID)buffer;
-    extensionData.PrivateOutputDataSize = size;
+    DXVA2_DecodeExtensionData ext{ DXVA2_GET_STATUS_REPORT };
+    ext.pPrivateOutputData = buffer;
+    ext.PrivateOutputDataSize = size;
 
-    hr = m_pDXVAVideoDecoder->Execute(&executeParams);
-    vm_trace_x(hr);
-
-    if (FAILED(hr))
-        return UMC::UMC_ERR_DEVICE_FAILED;
-
-    CHECK_HR(hr);
-    return UMC_OK;
+    return ExecuteExtensionBuffer(&ext);
 }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 Status DXVA2Accelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
 {
-    DXVA2_DecodeExecuteParams executeParams;
-    DXVA2_DecodeExtensionData extensionData;
-    HRESULT hr;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVA2Accelerator::RegisterGpuEvent");
 
-    memset(&executeParams, 0, sizeof(DXVA2_DecodeExecuteParams));
-    memset(&extensionData, 0, sizeof(DXVA2_DecodeExtensionData));
+    DXVA2_DecodeExtensionData ext{ DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE };
+    ext.pPrivateInputData = &ev;
+    ext.PrivateInputDataSize = sizeof(ev);
 
-    executeParams.NumCompBuffers = 0;
-    executeParams.pCompressedBuffers = 0;
-    executeParams.pExtensionData = &extensionData;
-    extensionData.Function = 0x11; //DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE
-    extensionData.pPrivateInputData = &ev;
-    extensionData.PrivateInputDataSize = sizeof(ev);
-
-    hr = m_pDXVAVideoDecoder->Execute(&executeParams);
-
-#ifdef  _DEBUG
-    MFX_TRACE_1("RegisterGpuEvent"," HR = %d", hr);
-#endif
-    if (FAILED(hr))
-        return UMC::UMC_ERR_DEVICE_FAILED;
-
-    return UMC_OK;
+    return ExecuteExtensionBuffer(&ext);
 }
 #endif
 
@@ -725,9 +646,6 @@ Status ConvertVideoInfo2DVXA2Desc(VideoStreamInfo   *pVideoInfo,
 Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 {
     HRESULT hr = S_OK;
-    UINT    cDecoderGuids = 0;
-    GUID    *pDecoderGuids = NULL; // [cDecoderGuids] must be cleaned up at the end
-
     // Close decoder if opened
     CloseDirectXDecoder();
     bool bInitilized = false;
@@ -752,6 +670,8 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
     }
 
     // Get the decoder GUIDs.
+    UINT    cDecoderGuids = 0;
+    CComHeapPtr<GUID> pDecoderGuids;
     if (SUCCEEDED(hr))
     {
         HRESULT hr2 = m_pDecoderService->GetDecoderDeviceGuids(&cDecoderGuids, &pDecoderGuids);
@@ -760,8 +680,6 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
             cDecoderGuids = 0;
         }
     }
-
-    auto_deleter_stdcall_void<VOID> automatic2(pDecoderGuids, &CoTaskMemFree);
 
     if (SUCCEEDED(hr))
     {
@@ -798,8 +716,8 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
             MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Find DXVA2 decode configuration");
             MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, k);
 
-            D3DFORMAT *pFormats = NULL; // size = cFormats
             UINT cFormats = 0;
+            CComHeapPtr<D3DFORMAT> pFormats;
 
             // Find the valid render target formats for this decoder GUID.
             hr = m_pDecoderService->GetDecoderRenderTargets(
@@ -813,13 +731,11 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                 continue;
             }
 
-            auto_deleter_stdcall_void<VOID> automatic0(pFormats, &CoTaskMemFree);
-
             // Look for a format that matches our output format.
             for (UINT iFormat = 0; iFormat < cFormats;  iFormat++)
             {
-                DXVA2_ConfigPictureDecode *pConfig = NULL; // size = cConfigurations
                 UINT cConfigurations = 0;
+                CComHeapPtr<DXVA2_ConfigPictureDecode> pConfig;
 
                 m_videoDesc.Format = pFormats[iFormat];
 
@@ -829,10 +745,9 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
                     &m_videoDesc,
                     NULL, // Reserved.
                     &cConfigurations,
-                    &pConfig
-                    );
-
-                auto_deleter_stdcall_void<VOID> automatic1(pConfig, &CoTaskMemFree);
+                    &pConfig);
+                if (FAILED(hr))
+                    continue;
 
                 bool isHEVCGUID = (m_Profile & 0xf) == VA_H265;
 

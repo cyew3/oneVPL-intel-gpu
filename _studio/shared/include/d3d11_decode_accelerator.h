@@ -22,14 +22,6 @@
 #include "umc_va_dxva2.h"
 #include "mfxvideo.h"
 
-struct ID3D11VideoDevice;
-struct ID3D11VideoContext;
-struct ID3D11VideoDecoder;
-
-
-struct D3D11_VIDEO_DECODER_DESC;
-struct D3D11_VIDEO_DECODER_CONFIG;
-
 class  D3D11VideoCORE;
 class mfx_UMC_FrameAllocator;
 
@@ -46,21 +38,23 @@ public:
     };
 
     // I/F between core and accelerator
-    virtual UMC::Status Init(UMC::VideoAcceleratorParams *pParams) {pParams; return UMC::UMC_ERR_UNSUPPORTED;};
-
-    // Will use this function instead of previos two: FindConfiguration, Init
-    mfxStatus CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator);
+    UMC::Status Init(UMC::VideoAcceleratorParams*) override
+    { return UMC::UMC_ERR_UNSUPPORTED; };
 
     // I/F between UMC decoders and accelerator
-    virtual UMC::Status BeginFrame(Ipp32s index);
-    virtual UMC::Status Execute();
-    virtual UMC::Status ExecuteExtensionBuffer(void * buffer){buffer;return UMC::UMC_ERR_UNSUPPORTED;};
-    virtual HRESULT GetVideoDecoderDriverHandle(HANDLE *pDriverHandle) {return m_pDecoder->GetDriverHandle(pDriverHandle);};
-    virtual UMC::Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size);
-    virtual UMC::Status QueryTaskStatus(Ipp32s , void *, void *) { return UMC::UMC_ERR_UNSUPPORTED;}
-    virtual UMC::Status EndFrame(void * handle = 0);
+    UMC::Status BeginFrame(Ipp32s index) override;
+    UMC::Status Execute() override;
+    UMC::Status ExecuteExtensionBuffer(void * buffer) override;
+    UMC::Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size) override;
+    UMC::Status QueryTaskStatus(Ipp32s , void *, void *) override
+    { return UMC::UMC_ERR_UNSUPPORTED;}
+    UMC::Status EndFrame(void * handle = 0) override;
 
-    virtual bool IsIntelCustomGUID() const;
+    bool IsIntelCustomGUID() const override;
+
+    HRESULT GetVideoDecoderDriverHandle(HANDLE *pDriverHandle) {return m_pDecoder->GetDriverHandle(pDriverHandle);};
+    // Will use this function instead of previos two: FindConfiguration, Init
+    mfxStatus CreateVideoAccelerator(mfxU32 hwProfile, const mfxVideoParam *param, UMC::FrameAllocator *allocator);
 
     void GetVideoDecoder(void **handle)
     {
@@ -71,8 +65,10 @@ public:
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
 protected:
-    virtual UMC::Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev);
+
+    UMC::Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev) override;
 #endif
+
 private:
 
     mfxStatus GetSuitVideoDecoderConfig(const mfxVideoParam            *param,        //in
@@ -83,8 +79,8 @@ private:
     D3D11_VIDEO_DECODER_BUFFER_TYPE MapDXVAToD3D11BufType(const Ipp32s DXVABufType) const;
 
 
-    UMC::Status GetCompBufferInternal(UMC::UMCVACompBuffer*);
-    UMC::Status ReleaseBufferInternal(UMC::UMCVACompBuffer*);
+    UMC::Status GetCompBufferInternal(UMC::UMCVACompBuffer*) override;
+    UMC::Status ReleaseBufferInternal(UMC::UMCVACompBuffer*) override;
 
 private:
 

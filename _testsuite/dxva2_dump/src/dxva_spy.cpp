@@ -12,6 +12,7 @@
 #include <iostream>
 #include <initguid.h>
 #include <stdio.h>
+#include <cguid.h>
 
 #include "umc_va_dxva2.h"
 

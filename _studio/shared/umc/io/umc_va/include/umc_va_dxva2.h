@@ -15,6 +15,7 @@
 #ifdef UMC_VA_DXVA
 
 #include <vector>
+#include <atlbase.h>
 
 #include "umc_jpeg_ddi.h"
 #include "umc_svc_ddi.h"
@@ -172,34 +173,40 @@ class DXAccelerator : public VideoAccelerator
     DYNAMIC_CAST_DECL(DXAccelerator, VideoAccelerator);
 
 public:
+
     DXAccelerator();
     virtual ~DXAccelerator();
-    virtual Status Close(void);
 
-    void* GetCompBuffer(int32_t type, UMCVACompBuffer **buf = NULL, int32_t size = -1, int32_t index = -1);
+    Status Close() override;
+
+    void* GetCompBuffer(int32_t type, UMCVACompBuffer **buf = nullptr, int32_t size = -1, int32_t index = -1);
     Status ReleaseBuffer(int32_t type);
 
     virtual Status BeginFrame(int32_t  index) = 0; // Begin decoding for specified index
     // Begin decoding for specified index, keep in mind fieldId to sync correctly on task in next SyncTask call.
-    virtual Status BeginFrame(int32_t  index, uint32_t fieldId);
+    Status BeginFrame(int32_t  index, uint32_t fieldId) override;
 
-    virtual Status SyncTask(int32_t index, void * error = NULL);
+    Status SyncTask(int32_t index, void * error = nullptr) override;
+
 private:
 
     virtual Status GetCompBufferInternal(UMCVACompBuffer*) = 0;
     virtual Status ReleaseBufferInternal(UMCVACompBuffer*) = 0;
+
 protected:
 
     UMCVACompBuffer* FindBuffer(int32_t type);
 
 protected:
 
-    UMCVACompBuffer         m_pCompBuffer[MAX_BUFFER_TYPES];
+    UMCVACompBuffer          m_pCompBuffer[MAX_BUFFER_TYPES];
     std::vector<int32_t>     m_bufferOrder;
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     UMC::EventCache m_EventsMap;
+
 protected:
+
     virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev) = 0;
 #endif
 };
@@ -209,28 +216,28 @@ class DXVA2Accelerator : public DXAccelerator
     DYNAMIC_CAST_DECL(DXVA2Accelerator, DXAccelerator);
 
 public:
+
     DXVA2Accelerator();
     virtual ~DXVA2Accelerator();
 
-    virtual Status Init(VideoAcceleratorParams *pParams);
-    virtual Status CloseDirectXDecoder();
+    Status Init(VideoAcceleratorParams *pParams) override;
+    Status Close() override;
 
-    virtual Status Close(void);
+    Status BeginFrame(int32_t index) override;
+    Status Execute() override;
+    Status ExecuteExtensionBuffer(void * buffer) override;
+    Status ExecuteStatusReportBuffer(void * buffer, int32_t size) override;
+    Status QueryTaskStatus(int32_t , void *, void * ) override { return UMC_ERR_UNSUPPORTED;}
+    Status EndFrame(void * handle = 0) override;
 
-    virtual Status BeginFrame(int32_t index);
-    virtual Status Execute();
-    virtual Status ExecuteExtensionBuffer(void * buffer);
-    virtual Status ExecuteStatusReportBuffer(void * buffer, int32_t size);
-    virtual Status QueryTaskStatus(int32_t , void *, void * ) { return UMC_ERR_UNSUPPORTED;}
-    virtual Status EndFrame(void * handle = 0);
-
-    virtual bool IsIntelCustomGUID() const;
+    bool IsIntelCustomGUID() const override;
 
     void SetDeviceManager(IDirect3DDeviceManager9 *dm)
     {
         m_bIsExtManager = true;
         m_pDirect3DDeviceManager9=dm;
     };
+
     void GetVideoDecoder(void **handle)
     {
         *handle = m_pDXVAVideoDecoder;
@@ -238,21 +245,17 @@ public:
 
 protected:
 
+    void CloseDirectXDecoder();
     Status FindConfiguration(VideoStreamInfo *pVideoInfo);
 
-    HRESULT CreateDecoder(IDirectXVideoDecoderService   *m_pDecoderService,
-                          GUID                          guid,
-                          DXVA2_VideoDesc               *pVideoDesc,
-                          DXVA2_ConfigPictureDecode     *pDecoderConfig,
-                          int                           cNumberSurfaces);
-
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev);
+    Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE&) override;
 #endif
+
 private:
 
-    Status GetCompBufferInternal(UMCVACompBuffer*);
-    Status ReleaseBufferInternal(UMCVACompBuffer*);
+    Status GetCompBufferInternal(UMCVACompBuffer*) override;
+    Status ReleaseBufferInternal(UMCVACompBuffer*) override;
 
 protected:
 
@@ -262,8 +265,10 @@ protected:
     DXVA2_VideoDesc         m_videoDesc;
 
     IDirect3DDeviceManager9 *m_pDirect3DDeviceManager9;
-    IDirectXVideoDecoderService *m_pDecoderService;
-    IDirectXVideoDecoder    *m_pDXVAVideoDecoder;
+
+    CComPtr<IDirectXVideoDecoderService> m_pDecoderService;
+    CComPtr<IDirectXVideoDecoder>        m_pDXVAVideoDecoder;
+
     HANDLE                  m_hDevice;
 
     bool    m_bIsExtManager;
