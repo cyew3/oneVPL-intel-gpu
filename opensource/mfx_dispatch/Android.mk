@@ -33,6 +33,8 @@ LOCAL_CFLAGS_64 := \
     $(MFX_CFLAGS_INTERNAL_64) \
     -DMFX_MODULES_DIR=\"/system/vendor/lib64\"
 
+LOCAL_HEADER_LIBRARIES := liblog_headers
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx
 
@@ -73,6 +75,8 @@ LOCAL_CFLAGS_32 := \
 LOCAL_CFLAGS_64 := \
     $(MFX_CFLAGS_INTERNAL_64) \
     -DMFX_MODULES_DIR=\"/system/vendor/lib64\"
+
+LOCAL_HEADER_LIBRARIES := liblog_headers
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libdispatch_trace
