@@ -83,6 +83,8 @@ ifeq ($(MFX_IMPL_HW), true)
   LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
   LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
+  LOCAL_HEADER_LIBRARIES := liblog_headers
+
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libumc_codecs_merged_hw
 
@@ -106,6 +108,8 @@ ifeq ($(MFX_IMPL_SW), true)
   LOCAL_CFLAGS := $(MFX_CFLAGS_INTERNAL)
   LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
   LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+
+  LOCAL_HEADER_LIBRARIES := liblog_headers
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libumc_codecs_merged_sw
