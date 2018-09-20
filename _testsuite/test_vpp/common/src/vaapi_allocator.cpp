@@ -38,11 +38,12 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_P010;
     case MFX_FOURCC_AYUV:
         return VA_FOURCC_AYUV;
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return VA_FOURCC_Y210;
     case MFX_FOURCC_Y410:
         return VA_FOURCC_Y410;
-
+#endif
     default:
         assert(!"unsupported fourcc");
         return 0;
@@ -361,6 +362,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
+#if (MFX_VERSION >= 1027)
             case MFX_FOURCC_Y210:
                 if (vaapi_mid->m_fourcc == MFX_FOURCC_Y210)
                 {
@@ -384,6 +386,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
+#endif
             default:
                 mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;

@@ -79,16 +79,20 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("UYVY");
     case MFX_FOURCC_AYUV:
         return VM_STRING("AYUV");
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return VM_STRING("Y210");
     case MFX_FOURCC_Y410:
         return VM_STRING("Y410");
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
         return VM_STRING("P016");
     case MFX_FOURCC_Y216:
         return VM_STRING("Y216");
     case MFX_FOURCC_Y416:
         return VM_STRING("Y416");
+#endif
     default:
         return VM_STRING("Unknown");
     }
@@ -1231,12 +1235,16 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_P010 || pInfo->FourCC == MFX_FOURCC_P016 )
+    else if(   pInfo->FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            || pInfo->FourCC == MFX_FOURCC_P016
+#endif
+           )
     {
         ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w * 2, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
@@ -1361,7 +1369,12 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
-    else if (pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y216)
+#if (MFX_VERSION >= 1027)
+    else if (   pInfo->FourCC == MFX_FOURCC_Y210
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+             || pInfo->FourCC == MFX_FOURCC_Y216
+#endif
+            )
     {
         ptr = (mfxU8*)pData->Y16 + pInfo->CropX + pInfo->CropY * pitch;
 
@@ -1381,6 +1394,8 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
+#endif // #if (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
         ptr = (mfxU8*)pData->U16 + pInfo->CropX + pInfo->CropY * pitch;
@@ -1391,6 +1406,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 8*w, MFX_ERR_MORE_DATA);
         }
     }
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
     else
     {
         return MFX_ERR_UNSUPPORTED;
@@ -1871,8 +1887,11 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, w);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_P010 ||
-             pInfo->FourCC == MFX_FOURCC_P016)
+    else if(    pInfo->FourCC == MFX_FOURCC_P010
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+             || pInfo->FourCC == MFX_FOURCC_P016
+#endif
+           )
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
 
@@ -1966,12 +1985,16 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
-    else if( pInfo->FourCC == MFX_FOURCC_Y210 ||
-             pInfo->FourCC == MFX_FOURCC_Y216 )
+#if (MFX_VERSION >= 1027)
+    else if(    pInfo->FourCC == MFX_FOURCC_Y210
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+             || pInfo->FourCC == MFX_FOURCC_Y216
+#endif
+           )
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, 4*w);
         }
@@ -1985,6 +2008,8 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 4*w);
         }
     }
+#endif // #if (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
         ptr = (mfxU8*)pData->U + pInfo->CropX * 8 + pInfo->CropY * pitch;
@@ -1994,6 +2019,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
             WriteLine(ptr + i * pitch, 8*w);
         }
     }
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
     else
     {
         return MFX_ERR_UNSUPPORTED;

@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -126,7 +126,9 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->Pitch = 4 * Width2;
         break;
     case MFX_FOURCC_P010: // tmp kta!!!
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
+#endif
    // case MFX_FOURCC_R16:
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->U = ptr->Y + Width2 * Height2 * 2;
@@ -146,8 +148,11 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->A = ptr->V + 3;
         ptr->Pitch = 4 * Width2;
         break;
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
+#endif
         ptr->Y16 = (mfxU16 *)ptr->B;
         ptr->U16 = ptr->Y16 + 1;
         ptr->V16 = ptr->Y16 + 3;
@@ -157,6 +162,8 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->U = ptr->V = ptr->A = ptr->Y;
         ptr->Pitch = 4 * Width2;
         break;
+#endif // #if (MFX_VERSION >= 1027)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         ptr->PitchHigh = (mfxU16)(8 * Width2 / (1 << 16));
         ptr->PitchLow  = (mfxU16)(8 * Width2 % (1 << 16));
@@ -165,6 +172,7 @@ mfxStatus SysMemFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
         ptr->V16 = ptr->Y16 + 1;
         ptr->A   = (mfxU8 *)ptr->V16 + 1;
         break;
+#endif // #if (MFX_VERSION >= MFX_VERSION_NEXT)
     default:
         return MFX_ERR_UNSUPPORTED;
     }
@@ -239,26 +247,35 @@ mfxStatus SysMemFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFram
     case MFX_FOURCC_RGB4:
     case MFX_FOURCC_A2RGB10:
     case MFX_FOURCC_AYUV:
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y410:
         nbytes = Width2*Height2 + Width2*Height2 + Width2*Height2 + Width2*Height2;
         break;
+#endif
     case MFX_FOURCC_YUY2:
         nbytes = Width2*Height2 + (Width2>>1)*(Height2) + (Width2>>1)*(Height2);
         break;
     case MFX_FOURCC_P010: // tmp!!! kta
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_P016:
+#endif
 //    case MFX_FOURCC_R16:
         nbytes = 3*Width2*Height2;
         break;
     case MFX_FOURCC_P210:
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
+#endif
         nbytes = 4*Width2*Height2;
         break;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y416:
         nbytes = 8*Width2*Height2;
         break;
-
+#endif
     default:
         return MFX_ERR_UNSUPPORTED;
     }

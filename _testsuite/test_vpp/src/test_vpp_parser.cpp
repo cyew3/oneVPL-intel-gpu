@@ -232,10 +232,12 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_P010;
     }
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p016")) ) 
     {
         fourcc = MFX_FOURCC_P016;
     }
+#endif
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p210")) ) 
     {
         fourcc = MFX_FOURCC_P210;
@@ -256,23 +258,26 @@ mfxU32 Str2FourCC( vm_char* strInput )
     {
         fourcc = MFX_FOURCC_AYUV;
     }
+#if (MFX_VERSION >= 1027)
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y210")) )
     {
         fourcc = MFX_FOURCC_Y210;
-    }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y216")) )
-    {
-        fourcc = MFX_FOURCC_Y216;
     }
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y410")) )
     {
         fourcc = MFX_FOURCC_Y410;
     }
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y216")) )
+    {
+        fourcc = MFX_FOURCC_Y216;
+    }
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("y416")) )
     {
         fourcc = MFX_FOURCC_Y416;
     }
-
+#endif
     return fourcc;
 
 } // mfxU32 Str2FourCC( vm_char* strInput )
