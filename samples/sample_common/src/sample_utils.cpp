@@ -99,7 +99,12 @@ mfxStatus CSmplYUVReader::Init(std::list<msdk_string> inputs, mfxU32 ColorFormat
         return MFX_ERR_UNSUPPORTED;
     }
 
-    if(MFX_FOURCC_P010 == ColorFormat || MFX_FOURCC_P210 == ColorFormat || MFX_FOURCC_Y210 == ColorFormat)
+    if (   MFX_FOURCC_P010 == ColorFormat
+        || MFX_FOURCC_P210 == ColorFormat
+#if (MFX_VERSION >= 1027)
+        || MFX_FOURCC_Y210 == ColorFormat
+#endif
+    )
     {
 		shouldShift10BitsHigh = enableShifting;
     }
@@ -180,7 +185,14 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 
     mfxU32 nBytesPerPixel = (pInfo.FourCC == MFX_FOURCC_P010 || pInfo.FourCC == MFX_FOURCC_P210 ) ? 2 : 1;
 
-    if (MFX_FOURCC_YUY2 == pInfo.FourCC || MFX_FOURCC_RGB4 == pInfo.FourCC || MFX_FOURCC_BGR4 == pInfo.FourCC || pInfo.FourCC == MFX_FOURCC_Y210 || pInfo.FourCC == MFX_FOURCC_Y410)
+    if (   MFX_FOURCC_YUY2 == pInfo.FourCC
+        || MFX_FOURCC_RGB4 == pInfo.FourCC
+        || MFX_FOURCC_BGR4 == pInfo.FourCC
+#if (MFX_VERSION >= 1027)
+        || MFX_FOURCC_Y210 == pInfo.FourCC
+        || MFX_FOURCC_Y410 == pInfo.FourCC
+#endif
+    )
     {
         //Packed format: Luminance and chrominance are on the same plane
         switch (m_ColorFormat)
