@@ -61,6 +61,9 @@ uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
     case MFX_RATECONTROL_CBR:  return VA_RC_CBR;
     case MFX_RATECONTROL_VBR:  return VA_RC_VBR;
     case MFX_RATECONTROL_AVBR: return VA_RC_VBR;
+#ifdef MFX_ENABLE_QVBR
+    case MFX_RATECONTROL_QVBR: return VA_RC_QVBR;
+#endif
     case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
     case MFX_RATECONTROL_ICQ:  return VA_RC_ICQ;
     default: assert(!"Unsupported RateControl"); return 0;
@@ -173,6 +176,7 @@ mfxStatus SetRateControl(
     VAStatus vaSts;
     VAEncMiscParameterBuffer *misc_param;
     VAEncMiscParameterRateControl *rate_param;
+    mfxExtCodingOption3 const & extOpt3 = GetExtBufferRef(par);
 
     mfxStatus mfxSts = CheckAndDestroyVAbuffer(vaDisplay, rateParamBuf_id);
     MFX_CHECK_STS(mfxSts);
@@ -202,6 +206,10 @@ mfxStatus SetRateControl(
 
     if (par.mfx.RateControlMethod == MFX_RATECONTROL_ICQ)
         rate_param->ICQ_quality_factor = par.mfx.ICQQuality;
+#ifdef MFX_ENABLE_QVBR
+    else if (par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR)
+        rate_param->quality_factor = extOpt3.QVBRQuality;
+#endif
 
     if(par.calcParam.maxKbps)
         rate_param->target_percentage = (unsigned int)(100.0 * (mfxF64)par.calcParam.targetKbps / (mfxF64)par.calcParam.maxKbps);
@@ -214,10 +222,8 @@ mfxStatus SetRateControl(
     }
 #endif  // defined(LINUX_TARGET_PLATFORM_BXTMIN) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_CFL)
 
-/*
- * MBBRC control
- * Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved
- */
+    //  MBBRC control
+    // Control VA_RC_MB 0: default, 1: enable, 2: disable, other: reserved
     rate_param->rc_flags.bits.mb_rate_control = mbbrc & 0xf;
     rate_param->rc_flags.bits.reset = isBrcResetRequired;
 
@@ -1457,6 +1463,10 @@ mfxStatus VAAPIEncoder::CreateAuxilliaryDevice(
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_VCM) ? 1 : 0; //Video conference mode
     m_caps.ICQBRCSupport =
         (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_ICQ) ? 1 : 0;
+#ifdef MFX_ENABLE_QVBR
+    m_caps.QVBRBRCSupport =
+        (attrs[idx_map[VAConfigAttribRateControl]].value & VA_RC_QVBR) ? 1 : 0;
+#endif
     m_caps.TrelisQuantization =
         (attrs[idx_map[VAConfigAttribEncQuantization]].value & (~VA_ATTRIB_NOT_SUPPORTED)) ? 1 : 0;
     m_caps.vaTrellisQuantization =
