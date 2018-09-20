@@ -499,8 +499,11 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespo
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    m_EventCache.reset(new EventCache());
-    m_EventCache->Init(response.NumFrameActual);
+    if (m_bIsBlockingTaskSyncEnabled)
+    {
+        m_EventCache.reset(new EventCache());
+        m_EventCache->Init(response.NumFrameActual);
+    }
 #endif
 
     return MFX_ERR_NONE;
@@ -732,6 +735,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & ta
 #else
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        if(m_bIsBlockingTaskSyncEnabled)
         {
             // allocate the event
             Task & task1 = const_cast<Task &>(task);
@@ -905,6 +909,10 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        if (m_bIsBlockingTaskSyncEnabled)
+            return MFX_ERR_GPU_HANG;
+#endif
         return MFX_WRN_DEVICE_BUSY;
 
     case ENCODE_NOTAVAILABLE:

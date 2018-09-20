@@ -45,6 +45,9 @@ D3D11VideoCORE::D3D11VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsA
     ,   m_bCmCopyAllowed(true)
     ,   m_VideoDecoderConfigCount(0)
     ,   m_Configs()
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    ,   m_bIsBlockingTaskSyncEnabled(false)
+#endif
 {
 }
 
@@ -259,7 +262,6 @@ mfxStatus D3D11VideoCORE::InitializeDevice(bool isTemporal)
     {
         m_hdl = (mfxHDL)m_pD11Device;
     }
-
     return MFX_ERR_NONE;
 }
 
@@ -673,7 +675,13 @@ void* D3D11VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return &m_API_1_19;
     }
-
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    else if (MFXBlockingTaskSyncEnabled_GUID == guid)
+    {
+        m_bIsBlockingTaskSyncEnabled = m_HWType > MFX_HW_SCL;
+        return &m_bIsBlockingTaskSyncEnabled;
+    }
+#endif
     return NULL;
 }
 

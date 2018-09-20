@@ -67,6 +67,7 @@ namespace MfxHwH265Encode
 
         MFXIScheduler2 *pSheduler;
         bool m_bSingleThreadMode;
+        bool m_bIsBlockingTaskSyncEnabled;
     private:
         D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation
         D3DXCommonEncoder & operator =(D3DXCommonEncoder const &); // no implementation

@@ -27,6 +27,7 @@ using namespace MfxHwH265Encode;
 D3DXCommonEncoder::D3DXCommonEncoder()
     :pSheduler(nullptr)
     ,m_bSingleThreadMode(false)
+    ,m_bIsBlockingTaskSyncEnabled(false)
 {
 }
 
@@ -39,19 +40,20 @@ D3DXCommonEncoder::~D3DXCommonEncoder()
 mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore)
 {
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-
     MFX_CHECK_NULL_PTR1(pCore);
     pSheduler = (MFXIScheduler2 *)pCore->GetSession()->m_pScheduler->QueryInterface(MFXIScheduler2_GUID);
-
     if (pSheduler == NULL)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
 
     MFX_SCHEDULER_PARAM schedule_Param;
     mfxStatus paramsts = pSheduler->GetParam(&schedule_Param);
     if (paramsts == MFX_ERR_NONE && schedule_Param.flags == MFX_SINGLE_THREAD)
-    {
         m_bSingleThreadMode = true;
-    }
+
+    bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
+    if (eventsEnabled)
+        m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
+
 #else
     pCore;
 #endif
@@ -64,6 +66,7 @@ mfxStatus D3DXCommonEncoder::Destroy()
     if (pSheduler != NULL)
     {
         m_bSingleThreadMode = false;
+        m_bIsBlockingTaskSyncEnabled = false;
         pSheduler->Release();
         pSheduler = NULL;
     }
@@ -144,13 +147,8 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
         m_EventCache->ReturnEvent(task.m_GpuEvent.gpuSyncEvent);
         task.m_GpuEvent.gpuSyncEvent = INVALID_HANDLE_VALUE;
     }
-    // If the task was skipped or blocking sync call is succeded try to get the current task status
+    // Get the current task status
     sts = QueryStatusAsync(task);
-    if (sts == MFX_WRN_DEVICE_BUSY)
-    {
-        MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "ERROR !!! QueryStatus", "(ReportNumber==%d) => sts == MFX_WRN_DEVICE_BUSY", task.m_statusReportNumber);
-        sts = MFX_ERR_GPU_HANG;
-    }
 
 #else
     sts = QueryStatusAsync(task);

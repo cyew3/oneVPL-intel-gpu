@@ -103,6 +103,12 @@ static const
 MFX_GUID MFXIFEIEnabled_GUID =
 { 0x7df28d19, 0x889a, 0x45c1,{ 0xaa, 0x5, 0xa4, 0xf7, 0xef, 0xae, 0x95, 0x28 } };
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+// {D1CF0B87-6D92-45E1-AA6D-85DAEB15183D}
+static const MFX_GUID MFXBlockingTaskSyncEnabled_GUID =
+{ 0xd1cf0b87, 0x6d92, 0x45e1,{ 0xaa, 0x6d, 0x85, 0xda, 0xeb, 0x15, 0x18, 0x3d } };
+#endif
+
 // Try to obtain required interface
 // Declare a template to query an interface
 template <class T> inline

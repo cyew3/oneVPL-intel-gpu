@@ -216,7 +216,6 @@ public:
     virtual mfxU16 GetAutoAsyncDepth() {return MFX_AUTO_ASYNC_DEPTH_VALUE;};//it can be platform based
     
     virtual bool IsCompatibleForOpaq();
-        
 
 protected:
     
@@ -272,6 +271,9 @@ private:
     s_ptr<CMEnabledCoreAdapter, true>     m_pCmAdapter;
 
     D3D9DllCallHelper m_d3d9hlp;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    bool m_bIsBlockingTaskSyncEnabled;
+#endif
 };
 
 #endif

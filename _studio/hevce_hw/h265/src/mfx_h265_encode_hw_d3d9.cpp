@@ -334,8 +334,11 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::Register(mfxFrameAllocRespon
     }
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-    m_EventCache.reset(new EventCache());
-    m_EventCache->Init(response.NumFrameActual);
+    if (m_bIsBlockingTaskSyncEnabled)
+    {
+        m_EventCache.reset(new EventCache());
+        m_EventCache->Init(response.NumFrameActual);
+    }
 #endif
 
     return MFX_ERR_NONE;
@@ -519,13 +522,16 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::ExecuteImpl(Task const & tas
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
-        // allocate the event
-        Task & task1 = const_cast<Task &>(task);
-        task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
-        m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            // allocate the event
+            Task & task1 = const_cast<Task &>(task);
+            task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
 
-        hr = Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent, (void*)0);
-        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+            hr = Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent, (void*)0);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
 #endif
 
         {
@@ -652,6 +658,10 @@ mfxStatus D3D9Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & task
         return MFX_ERR_NONE;
 
     case ENCODE_NOTREADY:
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        if (m_bIsBlockingTaskSyncEnabled)
+            return MFX_ERR_GPU_HANG;
+#endif
         return MFX_WRN_DEVICE_BUSY;
 
     case ENCODE_NOTAVAILABLE:

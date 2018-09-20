@@ -281,6 +281,9 @@ D3D9VideoCORE::D3D9VideoCORE(const mfxU32 adapterNum, const mfxU32 numThreadsAva
 , m_bCmCopy(false)
 , m_bCmCopySwap(false)
 , m_bCmCopyAllowed(true)
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+, m_bIsBlockingTaskSyncEnabled(false)
+#endif
 {
     m_pAdapter.reset(new D3D9Adapter(this));
 }
@@ -1222,7 +1225,13 @@ void* D3D9VideoCORE::QueryCoreInterface(const MFX_GUID &guid)
     {
         return &m_API_1_19;
     }
-
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    else if (MFXBlockingTaskSyncEnabled_GUID == guid)
+    {
+        m_bIsBlockingTaskSyncEnabled = m_HWType > MFX_HW_SCL;
+        return &m_bIsBlockingTaskSyncEnabled;
+    }
+#endif
     return NULL;
 }
 
