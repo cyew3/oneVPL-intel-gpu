@@ -88,6 +88,7 @@ protected:
     MFXExtBufferPtr<mfxExtHEVCParam> m_extHEVCParam;
     MFXExtBufferPtr<mfxExtVP8CodingOption>  m_extVP8CodingOptions;
     MFXExtBufferPtr<mfxExtVP9Param>  m_extVP9Param;
+    MFXExtBufferPtr<mfxExtVP9Segmentation>  m_extVP9Segmentation;
     MFXExtBufferPtr<mfxExtEncoderROI>  m_extEncoderRoi;
     MFXExtBufferPtr<mfxExtDirtyRect>  m_extDirtyRect;
     MFXExtBufferPtr<mfxExtMoveRect>  m_extMoveRect;

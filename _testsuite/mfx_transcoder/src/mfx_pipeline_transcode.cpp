@@ -123,6 +123,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_extHEVCParam(new mfxExtHEVCParam())
     , m_extVP8CodingOptions(new mfxExtVP8CodingOption())
     , m_extVP9Param(new mfxExtVP9Param())
+    , m_extVP9Segmentation(new mfxExtVP9Segmentation())
     , m_extEncoderRoi(new mfxExtEncoderROI())
     , m_extDirtyRect(new mfxExtDirtyRect())
     , m_extMoveRect(new mfxExtMoveRect())
@@ -503,6 +504,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
 
 MFXTranscodingPipeline::~MFXTranscodingPipeline()
 {
+    delete[] m_extVP9Segmentation->SegmentId;
     std::for_each(m_ExtBufferVectorsContainer.begin(), m_ExtBufferVectorsContainer.end(),
         deleter<MFXExtBufferVector *>());
     m_ExtBufferVectorsContainer.clear();
@@ -1831,7 +1833,59 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             }
             argv--;
         }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-vp9SegmentationBlockSize"), VM_STRING("Set size of block (NxN) for segmentation map: 8, 16, 32, 64"), OPT_SPECIAL, VM_STRING("integer")))
+        {
+            MFX_CHECK(++argv != argvEnd);
+            MFX_PARSE_INT(m_extVP9Segmentation->SegmentIdBlockSize, argv[0]);
+            if (!m_extVP9Segmentation->SegmentIdBlockSize)
+                return MFX_ERR_UNKNOWN;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-vp9SegmentationQIDelta"), VM_STRING("Array of 8 digits containing quantization index deltas for 8 possible segments, each value [-255..255], 0 - disabled"), OPT_SPECIAL, VM_STRING("")))
+        {
+            const mfxU16 VP9E_MAX_SUPPORTED_SEGMENTS = 8;
 
+            MFX_CHECK(VP9E_MAX_SUPPORTED_SEGMENTS + argv < argvEnd);
+            m_extVP9Segmentation->NumSegments = 1;
+
+            for (mfxU16 i = 0; i < VP9E_MAX_SUPPORTED_SEGMENTS; i++)
+            {
+                argv++;
+                MFX_PARSE_INT(m_extVP9Segmentation->Segment[i].QIndexDelta, argv[0]);
+                m_extVP9Segmentation->Segment[i].FeatureEnabled = MFX_VP9_SEGMENT_FEATURE_QINDEX;
+                if (m_extVP9Segmentation->Segment[i].QIndexDelta)
+                    m_extVP9Segmentation->NumSegments = i + 1;
+
+            }
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-vp9SegmentationMap"), VM_STRING("File with segmentation map containing byte-aligned segment IDs [0..7] for each segment provided in raster order"), OPT_FILENAME, VM_STRING("filename")))
+        {
+            MFX_CHECK(++argv != argvEnd);
+            vm_file* par_file = vm_file_fopen(argv[0], VM_STRING("r"));
+            MFX_CHECK(par_file != 0);
+
+            int map_width = (m_inParams.FrameInfo.Width + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
+            int map_height = (m_inParams.FrameInfo.Height + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
+            m_extVP9Segmentation->NumSegmentIdAlloc = map_width * map_height;
+
+            m_extVP9Segmentation->SegmentId = new mfxU8[m_extVP9Segmentation->NumSegmentIdAlloc];
+
+            for (mfxU32 i = 0; i < map_height; ++i)
+            {
+                vm_char sbuf[256], *pStr;
+
+                pStr = vm_file_fgets(sbuf, sizeof(sbuf), par_file);
+                if (!pStr)
+                    break;
+
+                for (mfxU32 j = 0; j < map_width; ++j)
+                {
+                    m_extVP9Segmentation->SegmentId[i * map_width + j] = pStr[j] - '0';
+                    if (m_extVP9Segmentation->SegmentId[i * map_width + j] >= m_extVP9Segmentation->NumSegments)
+                        return MFX_ERR_UNKNOWN;
+                }
+            }
+
+        }
         else if (m_OptProc.Check(argv[0], VM_STRING("-dirty_rect"), VM_STRING(""), OPT_SPECIAL, VM_STRING("")))
         {
             MFX_CHECK(1 + argv < argvEnd);
@@ -2383,6 +2437,9 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extVP9Param.IsZero())
         m_components[eREN].m_extParams.push_back(m_extVP9Param);
+
+    if (!m_extVP9Segmentation.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extVP9Segmentation);
 
     if (!m_extEncoderRoi.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderRoi);
