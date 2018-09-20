@@ -221,8 +221,8 @@ namespace UMC_AV1_DECODER
             tileOffsetInTG += fh->TileSizeBytes;
 
             // read tile size
-            size_t reportedSize;
-            size_t actualSize;
+            size_t reportedSize = 0;
+            size_t actualSize = 0;
             bs->ReadTile(fh, reportedSize, actualSize);
             if (actualSize != reportedSize)
             {
