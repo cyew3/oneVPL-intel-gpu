@@ -1147,6 +1147,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     switch (refFourcc)
     {
     case MFX_FOURCC_RGB4:
+#ifdef MFX_ENABLE_RGBP
+    case MFX_FOURCC_RGBP:
+#endif
+#if (MFX_VERSION >= 1028)
+    case MFX_FOURCC_RGB565:
+#endif
         m_pipelineParam[0].surface_color_standard = VAProcColorStandardNone;
         ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].input_color_properties.color_range = VA_SOURCE_RANGE_FULL);
         break;
@@ -1161,6 +1167,12 @@ mfxStatus VAAPIVideoProcessing::Execute(mfxExecuteParams *pParams)
     switch (targetFourcc)
     {
     case MFX_FOURCC_RGB4:
+#ifdef MFX_ENABLE_RGBP
+    case MFX_FOURCC_RGBP:
+#endif
+#if (MFX_VERSION >= 1028)
+    case MFX_FOURCC_RGB565:
+#endif
         m_pipelineParam[0].output_color_standard = VAProcColorStandardNone;
         ENABLE_VPP_VIDEO_SIGNAL(m_pipelineParam[0].output_color_properties.color_range = VA_SOURCE_RANGE_FULL);
         break;

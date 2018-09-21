@@ -48,7 +48,7 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_UYVY;
     case MFX_FOURCC_YV12:
         return VA_FOURCC_YV12;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
     case MFX_FOURCC_RGB565:
         return VA_FOURCC_R5G6B5;
 #endif
@@ -169,7 +169,7 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
                        (VA_FOURCC_YV12 != va_fourcc) &&
                        (VA_FOURCC_YUY2 != va_fourcc) &&
                        (VA_FOURCC_UYVY != va_fourcc) &&
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
                        (VA_FOURCC_R5G6B5 != va_fourcc) &&
 #endif
                        (VA_FOURCC_ARGB != va_fourcc) &&
@@ -480,7 +480,7 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#if (MFX_VERSION >= 1028)
             case VA_FOURCC_R5G6B5:
                 if (mfx_fourcc == MFX_FOURCC_RGB565)
                 {
