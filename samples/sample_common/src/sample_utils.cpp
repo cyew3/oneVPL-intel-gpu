@@ -240,7 +240,7 @@ mfxStatus CSmplYUVReader::LoadNextFrame(mfxFrameSurface1* pSurface)
 			{
 				nBytesRead = (mfxU32)fread(ptr + i * pitch, 1, 4 * w, m_files[vid]);
 
-				if ((mfxU32)2 * w != nBytesRead)
+				if ((mfxU32)4 * w != nBytesRead)
 				{
 					return MFX_ERR_MORE_DATA;
 				}
@@ -1567,7 +1567,15 @@ const msdk_char* ColorFormatToStr(mfxU32 format)
        return MSDK_STRING("UYVY");
     case MFX_FOURCC_P010:
        return MSDK_STRING("P010");
-    default:
+	case MFX_FOURCC_P210:
+		return MSDK_STRING("P210");
+#if (MFX_VERSION >= 1027)
+	case MFX_FOURCC_Y210:
+		return MSDK_STRING("Y210");
+	case MFX_FOURCC_Y410:
+		return MSDK_STRING("Y410");
+#endif
+	default:
         return MSDK_STRING("unsupported");
     }
 }

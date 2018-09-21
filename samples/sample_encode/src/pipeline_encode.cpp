@@ -1388,6 +1388,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     if (bVpp)
     {
+		msdk_printf(MSDK_STRING("Note: VPP is enabled.\n"));
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
     }
