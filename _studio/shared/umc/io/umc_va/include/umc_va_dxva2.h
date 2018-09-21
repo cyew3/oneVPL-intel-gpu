@@ -197,6 +197,11 @@ public:
     Status BeginFrame(int32_t  index, uint32_t fieldId) override;
 
     Status SyncTask(int32_t index, void * error = nullptr) override;
+    Status ExecuteStatusReportBuffer(void * buffer, int32_t size) override;
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+    virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE&);
+#endif
 
 private:
 
@@ -214,11 +219,22 @@ protected:
 
 #ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
     UMC::EventCache m_EventsMap;
-
-protected:
-
-    virtual Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev) = 0;
 #endif
+};
+
+class DXVA2AcceleratorParams
+    : public VideoAcceleratorParams
+{
+
+public:
+
+    DYNAMIC_CAST_DECL(DXVA2AcceleratorParams, VideoAcceleratorParams)
+
+    DXVA2AcceleratorParams()
+        : m_device_manager(nullptr)
+    {}
+
+    IDirect3DDeviceManager9* m_device_manager;
 };
 
 class DXVA2Accelerator : public DXAccelerator
@@ -236,31 +252,22 @@ public:
     Status BeginFrame(int32_t index) override;
     Status Execute() override;
     Status ExecuteExtensionBuffer(void * buffer) override;
-    Status ExecuteStatusReportBuffer(void * buffer, int32_t size) override;
     Status QueryTaskStatus(int32_t , void *, void * ) override { return UMC_ERR_UNSUPPORTED;}
     Status EndFrame(void * handle = 0) override;
 
     bool IsIntelCustomGUID() const override;
-
-    void SetDeviceManager(IDirect3DDeviceManager9 *dm)
-    {
-        m_bIsExtManager = true;
-        m_pDirect3DDeviceManager9=dm;
-    };
 
     void GetVideoDecoder(void **handle)
     {
         *handle = m_pDXVAVideoDecoder;
     };
 
+    Status ExecuteExtension(int, ExtensionData const&) override;
+
 protected:
 
     void CloseDirectXDecoder();
-    Status FindConfiguration(VideoStreamInfo *pVideoInfo);
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-    Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE&) override;
-#endif
+    Status FindConfiguration(VideoStreamInfo const*);
 
 private:
 
@@ -274,19 +281,12 @@ protected:
     DXVA2_ConfigPictureDecode m_Config;
     DXVA2_VideoDesc         m_videoDesc;
 
-    IDirect3DDeviceManager9 *m_pDirect3DDeviceManager9;
-
+    CComPtr<IDirect3DDeviceManager9>     m_pDirect3DDeviceManager9;
     CComPtr<IDirectXVideoDecoderService> m_pDecoderService;
     CComPtr<IDirectXVideoDecoder>        m_pDXVAVideoDecoder;
 
     HANDLE                  m_hDevice;
-
-    bool    m_bIsExtManager;
 };
-
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(x) if (x) { x->Release(); x = NULL; }
-#endif
 
 #define UMC_CHECK_HRESULT(hr, DESCRIPTION)  \
 {                                           \
@@ -298,7 +298,7 @@ protected:
 #define CHECK_HR(hr)  UMC_CHECK_HRESULT(hr, #hr)
 
 template <typename T>
-bool CheckDXVAConfig(int32_t profile_flags, T *config, ProtectedVA * protectedVA)
+bool CheckDXVAConfig(int32_t profile_flags, T const* config, ProtectedVA * protectedVA)
 {
     int32_t const profile = 
         (profile_flags & (VA_ENTRY_POINT | VA_CODEC));

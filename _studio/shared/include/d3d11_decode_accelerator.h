@@ -50,12 +50,12 @@ public:
     // I/F between core and accelerator
     UMC::Status Init(UMC::VideoAcceleratorParams*) override
     { return UMC::UMC_ERR_UNSUPPORTED; };
+    UMC::Status Close() override;
 
     // I/F between UMC decoders and accelerator
     UMC::Status BeginFrame(Ipp32s index) override;
     UMC::Status Execute() override;
     UMC::Status ExecuteExtensionBuffer(void * buffer) override;
-    UMC::Status ExecuteStatusReportBuffer(void * buffer, Ipp32s size) override;
     UMC::Status QueryTaskStatus(Ipp32s , void *, void *) override
     { return UMC::UMC_ERR_UNSUPPORTED;}
     UMC::Status EndFrame(void * handle = 0) override;
@@ -71,13 +71,7 @@ public:
         *handle = m_pDecoder;
     };
 
-    virtual UMC::Status Close();
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-protected:
-
-    UMC::Status RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev) override;
-#endif
+    UMC::Status ExecuteExtension(int, ExtensionData const&) override;
 
 private:
 
@@ -103,7 +97,7 @@ private:
     // current decoder
     GUID                              m_DecoderGuid;
 
-    ID3D11VideoDecoderOutputView *m_pVDOView;
+    CComPtr<ID3D11VideoDecoderOutputView> m_pVDOView;
 };
 
 

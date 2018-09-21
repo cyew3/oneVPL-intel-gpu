@@ -740,25 +740,24 @@ mfxStatus D3D9VideoCORE::CreateVideoAccelerator(mfxVideoParam * param, int NumOf
     sts = GetD3DService(pInfo->Width, pInfo->Height);
     MFX_CHECK_STS(sts);
 
-    m_pVA->SetDeviceManager(m_pDirect3DDeviceManager);
+    //m_pVA->SetDeviceManager(m_pDirect3DDeviceManager);
 
-    UMC::VideoAcceleratorParams params;
-
-    params.m_protectedVA = param->Protected;
-
-    mfxU32 profile = ChooseProfile(param, GetHWType());
+    mfxU32 const profile = ChooseProfile(param, GetHWType());
 
     UMC::VideoStreamInfo VideoInfo;
     ConvertMFXParamsToUMC(param, &VideoInfo);
 
     m_pVA->m_Platform = UMC::VA_DXVA2;
-    m_pVA->m_Profile = (VideoAccelerationProfile)profile;
+    m_pVA->m_Profile = static_cast<VideoAccelerationProfile>(profile);
 
     // Init Accelerator
+    UMC::DXVA2AcceleratorParams params;
+    params.m_protectedVA = param->Protected;
     params.m_pVideoStreamInfo = &VideoInfo;
     params.m_iNumberSurfaces = NumOfRenderTarget;
     params.m_surf = (void **)RenderTargets;
     params.m_allocator = allocator;
+    params.m_device_manager = m_pDirect3DDeviceManager;
 
     if (UMC_OK != m_pVA->Init(&params))
     {

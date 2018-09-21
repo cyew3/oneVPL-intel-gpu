@@ -210,6 +210,29 @@ Status DXAccelerator::ReleaseBuffer(int32_t type)
     return ReleaseBufferInternal(buffer);
 }
 
+Status DXAccelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXAccelerator::ExecuteStatusReportBuffer");
+
+    UMC_CHECK_PTR(buffer);
+
+
+    ExtensionData ext{};
+    ext.output = std::make_pair(buffer, size);
+    return ExecuteExtension(DXVA2_GET_STATUS_REPORT, ext);
+}
+
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
+Status DXAccelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
+{
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXAccelerator::RegisterGpuEvent");
+
+    ExtensionData ext{};
+    ext.input = std::make_pair(&ev, sizeof(ev));
+    return ExecuteExtension(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, ext);
+}
+#endif
+
 inline
 int32_t GetBufferIndex(int32_t buffer_type)
 {
@@ -225,19 +248,17 @@ UMCVACompBuffer* DXAccelerator::FindBuffer(int32_t type)
 {
     int32_t const buffer_index = GetBufferIndex(type);
 
-    UMC_CHECK(buffer_index >= 0, NULL);
-    UMC_CHECK(buffer_index < MAX_BUFFER_TYPES, NULL);
+    UMC_CHECK(buffer_index >= 0, nullptr);
+    UMC_CHECK(buffer_index < MAX_BUFFER_TYPES, nullptr);
 
     return
         &m_pCompBuffer[buffer_index];
 }
 
-DXVA2Accelerator::DXVA2Accelerator():
-    m_pDirect3DDeviceManager9(NULL),
-    m_hDevice(INVALID_HANDLE_VALUE),
-    m_bInitilized(FALSE),
-    m_guidDecoder(GUID_NULL),
-    m_bIsExtManager(false)
+DXVA2Accelerator::DXVA2Accelerator()
+    : m_hDevice(INVALID_HANDLE_VALUE)
+    , m_bInitilized(FALSE)
+    , m_guidDecoder(GUID_NULL)
 {
     memset(&m_videoDesc, 0, sizeof(m_videoDesc));
     memset(&m_Config, 0, sizeof(m_Config));
@@ -253,8 +274,10 @@ void DXVA2Accelerator::CloseDirectXDecoder()
 
     m_bInitilized = FALSE;
 
-    if (m_pDirect3DDeviceManager9 && m_hDevice != INVALID_HANDLE_VALUE)
+    if (m_hDevice != INVALID_HANDLE_VALUE)
     {
+        VM_ASSERT(m_pDirect3DDeviceManager9);
+
         m_pDirect3DDeviceManager9->CloseDeviceHandle(m_hDevice);
         m_hDevice = INVALID_HANDLE_VALUE;
     }
@@ -263,8 +286,8 @@ void DXVA2Accelerator::CloseDirectXDecoder()
 DXVA2Accelerator::~DXVA2Accelerator()
 {
     CloseDirectXDecoder();
-    if (!m_bIsExtManager)
-        SAFE_RELEASE(m_pDirect3DDeviceManager9);
+
+    m_pDirect3DDeviceManager9.Release();
 }
 
 //////////////////////////////////////////////////////////////
@@ -411,31 +434,16 @@ Status DXVA2Accelerator::ExecuteExtensionBuffer(void * buffer)
         SUCCEEDED(hr) ? UMC_OK: UMC_ERR_DEVICE_FAILED;
 }
 
-Status DXVA2Accelerator::ExecuteStatusReportBuffer(void * buffer, int32_t size)
+Status DXVA2Accelerator::ExecuteExtension(int function, ExtensionData const& data)
 {
-    UMC_CHECK_PTR(buffer);
-
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVA2Accelerator::ExecuteStatusReportBuffer");
-
-    DXVA2_DecodeExtensionData ext{ DXVA2_GET_STATUS_REPORT };
-    ext.pPrivateOutputData = buffer;
-    ext.PrivateOutputDataSize = size;
+    DXVA2_DecodeExtensionData ext{ UINT(function) };
+    ext.pPrivateInputData     = data.input.first;
+    ext.PrivateInputDataSize  = UINT(data.input.second);
+    ext.pPrivateOutputData    = data.output.first;
+    ext.PrivateOutputDataSize = UINT(data.output.second);
 
     return ExecuteExtensionBuffer(&ext);
 }
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-Status DXVA2Accelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "DXVA2Accelerator::RegisterGpuEvent");
-
-    DXVA2_DecodeExtensionData ext{ DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE };
-    ext.pPrivateInputData = &ev;
-    ext.PrivateInputDataSize = sizeof(ev);
-
-    return ExecuteExtensionBuffer(&ext);
-}
-#endif
 
 Status DXVA2Accelerator::GetCompBufferInternal(UMCVACompBuffer* buffer)
 {
@@ -624,193 +632,176 @@ bool DXVA2Accelerator::IsIntelCustomGUID() const
 }
 
 //////////////////////////////////////////////////////////////
-Status ConvertVideoInfo2DVXA2Desc(VideoStreamInfo   *pVideoInfo,
-                                  DXVA2_VideoDesc   *pVideoDesc)
+inline
+Status ConvertVideoInfo2DVXA2Desc(VideoStreamInfo const* pVideoInfo, DXVA2_VideoDesc* pVideoDesc)
 {
-    int width  = pVideoInfo->clip_info.width;
-    int height = pVideoInfo->clip_info.height;
+    VM_ASSERT(pVideoInfo);
+    VM_ASSERT(pVideoDesc);
 
     // Fill in the SampleFormat.
-    DXVA2_ExtendedFormat sf;
-    sf.SampleFormat = DXVA2_SampleUnknown; //DXVA2_SampleProgressiveFrame;//DXVA2_SampleUnknown ;
+    DXVA2_ExtendedFormat sf{};
+    sf.SampleFormat           = DXVA2_SampleUnknown; //Unknown format. Default to DXVA2_SampleProgressiveFrame
     sf.VideoChromaSubsampling = DXVA2_VideoChromaSubsampling_Unknown;
-    sf.NominalRange = DXVA2_NominalRange_Unknown; //DXVA2_NominalRange_Normal;
-    sf.VideoTransferMatrix = DXVA2_VideoTransferMatrix_Unknown;
-    sf.VideoLighting = DXVA2_VideoLighting_Unknown;
-    sf.VideoPrimaries = DXVA2_VideoPrimaries_Unknown;
-    sf.VideoTransferFunction = DXVA2_VideoTransFunc_Unknown;
+    sf.NominalRange           = DXVA2_NominalRange_Unknown;
+    sf.VideoTransferMatrix    = DXVA2_VideoTransferMatrix_Unknown;
+    sf.VideoLighting          = DXVA2_VideoLighting_Unknown;
+    sf.VideoPrimaries         = DXVA2_VideoPrimaries_Unknown;
+    sf.VideoTransferFunction  = DXVA2_VideoTransFunc_Unknown;
 
     // Fill in the video description.
+    pVideoDesc->SampleWidth   = pVideoInfo->clip_info.width;
+    pVideoDesc->SampleHeight  = pVideoInfo->clip_info.height;
+    pVideoDesc->SampleFormat  = sf;
 
-    pVideoDesc->SampleWidth  = width;
-    pVideoDesc->SampleHeight = height;
-
-    pVideoDesc->SampleFormat = sf;
-    //pVideoDesc->Format = pFormats[iFormat];
-    pVideoDesc->InputSampleFreq.Numerator = 0; //(int)frame_rate;
+    pVideoDesc->InputSampleFreq.Numerator   = 0;
     pVideoDesc->InputSampleFreq.Denominator = 1;
-    pVideoDesc->OutputFrameFreq.Numerator = 0; //(int)frame_rate;
+    pVideoDesc->OutputFrameFreq.Numerator   = 0;
     pVideoDesc->OutputFrameFreq.Denominator = 1;
-    pVideoDesc->UABProtectionLevel = 1; //FALSE;
-    pVideoDesc->Reserved = 0;
 
-    return S_OK;
+    pVideoDesc->UABProtectionLevel          = 1; //FALSE, video is not required to be protected;
+    pVideoDesc->Reserved                    = 0;
+
+    return UMC_OK;
 }
 
-Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
+Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo const* pVideoInfo)
 {
-    HRESULT hr = S_OK;
+    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Find DXVA2 decode configuration");
+
     // Close decoder if opened
     CloseDirectXDecoder();
     bool bInitilized = false;
 
-    UMC_CHECK_PTR(pVideoInfo);
-
     ConvertVideoInfo2DVXA2Desc(pVideoInfo, &m_videoDesc);
 
-    // Two options to get the video decoder service.
-    if (m_pDirect3DDeviceManager9)
+    HRESULT hr = S_OK;
+    if (!m_pDirect3DDeviceManager9)
+        return UMC_ERR_FAILED;
+    else
     {
         // Open a new device handle.
         hr = m_pDirect3DDeviceManager9->OpenDeviceHandle(&m_hDevice);
-        if (SUCCEEDED(hr)) // Get the video decoder service.
-        {
-            hr = m_pDirect3DDeviceManager9->GetVideoService(m_hDevice, __uuidof(IDirectXVideoDecoderService), (void**)&m_pDecoderService);
-        }
+        if (FAILED(hr))
+            return UMC_ERR_FAILED;
+
+        hr = m_pDirect3DDeviceManager9->GetVideoService(m_hDevice, __uuidof(IDirectXVideoDecoderService), (void**)&m_pDecoderService);
+        if (FAILED(hr))
+            return UMC_ERR_FAILED;
     }
-    else
+
+    if (!m_pDecoderService)
     {
-        return E_FAIL;
+        VM_ASSERT(FAILED(hr) && !"[GetVideoService] returned OK, but service is NULL");
+        return UMC_ERR_FAILED;
     }
 
     // Get the decoder GUIDs.
-    UINT    cDecoderGuids = 0;
+    UINT cDecoderGuids = 0;
     CComHeapPtr<GUID> pDecoderGuids;
-    if (SUCCEEDED(hr))
-    {
-        HRESULT hr2 = m_pDecoderService->GetDecoderDeviceGuids(&cDecoderGuids, &pDecoderGuids);
-        if (FAILED(hr2))
-        {
-            cDecoderGuids = 0;
-        }
-    }
+    hr = m_pDecoderService->GetDecoderDeviceGuids(&cDecoderGuids, &pDecoderGuids);
+    if (FAILED(hr))
+        return UMC_ERR_FAILED;
 
-    if (SUCCEEDED(hr))
+    for (uint32_t k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
     {
-        for (uint32_t k = 0; k < GuidProfile::GetGuidProfileSize(); k++)
-        {
-            if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC))!= (GuidProfile::GetGuidProfile(k)->profile & (VA_ENTRY_POINT | VA_CODEC)))
-                continue;
+        if ((m_Profile & (VA_ENTRY_POINT | VA_CODEC))!= (GuidProfile::GetGuidProfile(k)->profile & (VA_ENTRY_POINT | VA_CODEC)))
+            continue;
 
 #ifndef OPEN_SOURCE
-    {
-        if ((m_Profile & VA_PRIVATE_DDI_MODE) &&
-            !GuidProfile::GetGuidProfile(k)->IsIntelCustomGUID())
-            continue;
-    }
-#endif
-            m_guidDecoder = GuidProfile::GetGuidProfile(k)->guid;
-            vm_trace_GUID(m_guidDecoder);
-
-            if (cDecoderGuids)
-            { // Look for the decoder GUID we want.
-                UINT iGuid;
-                for (iGuid = 0; iGuid < cDecoderGuids; iGuid++)
-                {
-                    if (pDecoderGuids[iGuid] == m_guidDecoder)
-                        break;
-                }
-                if (iGuid >= cDecoderGuids)
-                {
-                    continue;
-                }
-                MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "DXVA GUID found");
-            }
-
-            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_INTERNAL, "Find DXVA2 decode configuration");
-            MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, k);
-
-            UINT cFormats = 0;
-            CComHeapPtr<D3DFORMAT> pFormats;
-
-            // Find the valid render target formats for this decoder GUID.
-            hr = m_pDecoderService->GetDecoderRenderTargets(
-                m_guidDecoder,
-                &cFormats,
-                &pFormats
-                );
-            if (FAILED(hr))
-            {
-                MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "GetDecoderRenderTargets failed");
+        {
+            if ((m_Profile & VA_PRIVATE_DDI_MODE) &&
+                !GuidProfile::GetGuidProfile(k)->IsIntelCustomGUID())
                 continue;
+        }
+#endif
+
+        MFX_LTRACE_I(MFX_TRACE_LEVEL_PARAMS, k);
+
+        auto const& candidate = GuidProfile::GetGuidProfile(k)->guid;
+        vm_trace_GUID(candidate);
+
+        auto i = std::find_if(pDecoderGuids.m_pData, pDecoderGuids.m_pData + cDecoderGuids,
+            [&candidate](REFGUID g) { return candidate == g; }
+        );
+
+        if (i == pDecoderGuids.m_pData + cDecoderGuids)
+            //Registered [GuidProfile] candidate is not in list of actually supported GUIDs
+            continue;
+
+        MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "DXVA GUID found");
+
+        UINT cFormats = 0;
+        CComHeapPtr<D3DFORMAT> pFormats;
+        // Find the valid render target formats for this decoder GUID.
+        hr = m_pDecoderService->GetDecoderRenderTargets(candidate, &cFormats, &pFormats);
+        if (FAILED(hr))
+        {
+            MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "GetDecoderRenderTargets failed");
+            continue;
+        }
+
+        // Look for a format that matches our output format.
+        for (UINT iFormat = 0; iFormat < cFormats;  iFormat++)
+        {
+            UINT cConfigurations = 0;
+            CComHeapPtr<DXVA2_ConfigPictureDecode> pConfig;
+
+            DXVA2_VideoDesc vd = m_videoDesc;
+            vd.Format = pFormats[iFormat];
+
+            // Get the available configurations.
+            hr = m_pDecoderService->GetDecoderConfigurations(candidate, &vd, NULL, &cConfigurations, &pConfig);
+            if (FAILED(hr))
+                continue;
+
+            bool isHEVCGUID = (m_Profile & 0xf) == VA_H265;
+            int idxConfig = -1;
+            for (UINT iConfig = 0; iConfig < cConfigurations; iConfig++)
+            {
+                if (!CheckDXVAConfig<DXVA2_ConfigPictureDecode>(m_Profile, &pConfig[iConfig], GetProtectedVA()))
+                {
+                    MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "CheckDXVAConfig failed");
+                    continue;
+                }
+
+                MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "Found DXVA configuration");
+                bInitilized = true;
+
+                if (idxConfig == -1)
+                    idxConfig = iConfig;
+
+                bool isShort = GuidProfile::isShortFormat(isHEVCGUID, pConfig[iConfig].ConfigBitstreamRaw);
+                if (GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE)
+                {
+                    if (!isShort)
+                    {
+                        idxConfig = iConfig;
+                    }
+                }
+                else
+                {
+                    if (isShort)
+                        idxConfig = iConfig;
+                }
             }
 
-            // Look for a format that matches our output format.
-            for (UINT iFormat = 0; iFormat < cFormats;  iFormat++)
-            {
-                UINT cConfigurations = 0;
-                CComHeapPtr<DXVA2_ConfigPictureDecode> pConfig;
+            m_guidDecoder = candidate;
+            m_videoDesc.Format = vd.Format;
 
-                m_videoDesc.Format = pFormats[iFormat];
+            m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_guidDecoder);
+            m_Config = pConfig[idxConfig];
+            m_bH264ShortSlice = GuidProfile::isShortFormat(isHEVCGUID, m_Config.ConfigBitstreamRaw);
+            m_H265ScalingListScanOrder = (m_Config.Config4GroupedCoefs & 0x80000000) ? 0 : 1;
 
-                // Get the available configurations.
-                hr = m_pDecoderService->GetDecoderConfigurations(
-                    m_guidDecoder,
-                    &m_videoDesc,
-                    NULL, // Reserved.
-                    &cConfigurations,
-                    &pConfig);
-                if (FAILED(hr))
-                    continue;
-
-                bool isHEVCGUID = (m_Profile & 0xf) == VA_H265;
-
-                // Find a supported configuration.
-                int idxConfig = -1;
-                for (UINT iConfig = 0; iConfig < cConfigurations; iConfig++)
-                {
-                    if (!CheckDXVAConfig<DXVA2_ConfigPictureDecode>(m_Profile, &pConfig[iConfig], GetProtectedVA()))
-                    {
-                        MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "CheckDXVAConfig failed");
-                        continue;
-                    }
-
-                    MFX_LTRACE_S(MFX_TRACE_LEVEL_PARAMS, "Found DXVA configuration");
-                    bInitilized = true;
-
-                    if (idxConfig == -1)
-                        idxConfig = iConfig;
-
-                    bool isShort = GuidProfile::isShortFormat(isHEVCGUID, pConfig[iConfig].ConfigBitstreamRaw);
-                    if (GuidProfile::GetGuidProfile(k)->profile & VA_LONG_SLICE_MODE)
-                    {
-                        if (!isShort)
-                        {
-                            idxConfig = iConfig;
-                        }
-                    }
-                    else
-                    {
-                        if (isShort)
-                            idxConfig = iConfig;
-                    }
-                }
-
-                m_bH264MVCSupport = GuidProfile::IsMVCGUID(m_guidDecoder);
-                m_Config = pConfig[idxConfig];
-                m_bH264ShortSlice = GuidProfile::isShortFormat(isHEVCGUID, m_Config.ConfigBitstreamRaw);
-                m_H265ScalingListScanOrder = (m_Config.Config4GroupedCoefs & 0x80000000) ? 0 : 1;
-
-                if (bInitilized)
-                {
-                    break;
-                }
-            } // End of formats loop.
-
-            if (FAILED(hr) || bInitilized)
+            if (bInitilized)
             {
                 break;
             }
+        } // End of formats loop.
+
+        if (FAILED(hr) || bInitilized)
+        {
+            break;
         }
     }
 
@@ -835,7 +826,7 @@ Status DXVA2Accelerator::FindConfiguration(VideoStreamInfo *pVideoInfo)
 
 Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 {
-    HRESULT hr = S_OK;
+    UMC_CHECK_PTR(pParams);
 
     if (m_bInitilized)
     {
@@ -843,9 +834,7 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     }
 
     m_allocator = pParams->m_allocator;
-
-    if (!m_allocator)
-        return UMC_ERR_NULL_PTR;
+    UMC_CHECK_PTR(m_allocator);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_ANY(pParams->m_protectedVA))
@@ -854,29 +843,31 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
     }
 #endif
 
+    UMC_CHECK_PTR(pParams->m_pVideoStreamInfo);
+
+    auto dxva_params = DynamicCast<DXVA2AcceleratorParams>(pParams);
+    UMC_CHECK(dxva_params, UMC_ERR_INVALID_PARAMS);
+
+    //[CComPtr] increments incoming reference int its assignment operator
+    m_pDirect3DDeviceManager9 = dxva_params->m_device_manager;
+
     UMC_CALL(FindConfiguration(pParams->m_pVideoStreamInfo));
-
-    // Number of surfaces
-    uint32_t numberSurfaces = pParams->m_iNumberSurfaces;
-
-    // check surface width&height
-    if (pParams->m_pVideoStreamInfo)
-    {
-        UMC_CHECK(m_videoDesc.SampleWidth  >= (UINT)(pParams->m_pVideoStreamInfo->clip_info.width), UMC_ERR_INVALID_PARAMS);
-        UMC_CHECK(m_videoDesc.SampleHeight >= (UINT)(pParams->m_pVideoStreamInfo->clip_info.height), UMC_ERR_INVALID_PARAMS);
-    }
-
     vm_trace_fourcc(m_videoDesc.Format);
 
+    UMC_CHECK(m_videoDesc.SampleWidth  >= UINT(pParams->m_pVideoStreamInfo->clip_info.width),  UMC_ERR_INVALID_PARAMS);
+    UMC_CHECK(m_videoDesc.SampleHeight >= UINT(pParams->m_pVideoStreamInfo->clip_info.height), UMC_ERR_INVALID_PARAMS);
+
     // Create DXVA decoder
-    if (SUCCEEDED(hr))
+    HRESULT hr;
     {
+        MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "CreateVideoDecoder");
+
         hr = m_pDecoderService->CreateVideoDecoder(
             m_guidDecoder,
             &m_videoDesc,
             &m_Config,
             (IDirect3DSurface9**)&pParams->m_surf[0],
-            numberSurfaces,
+            pParams->m_iNumberSurfaces,
             &m_pDXVAVideoDecoder);
     }
 
@@ -887,6 +878,7 @@ Status DXVA2Accelerator::Init(VideoAcceleratorParams *pParams)
 
     m_isUseStatuReport = true;
     m_bInitilized = TRUE;
+
     return UMC_OK;
 }
 

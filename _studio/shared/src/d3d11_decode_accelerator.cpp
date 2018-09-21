@@ -44,12 +44,11 @@ using namespace UMC;
 
 
 
-MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice, 
-                                         ID3D11VideoContext *pVideoContext):m_pVideoDevice(pVideoDevice),
-                                                                               m_pVideoContext(pVideoContext),
-                                                                               m_pVDOView(0),
-                                                                               m_pDecoder(0),
-                                                                               m_DecoderGuid(GUID_NULL)
+MFXD3D11Accelerator::MFXD3D11Accelerator(ID3D11VideoDevice  *pVideoDevice, ID3D11VideoContext *pVideoContext)
+    : m_pVideoDevice(pVideoDevice)
+    , m_pVideoContext(pVideoContext)
+    , m_pVDOView(0)
+    , m_DecoderGuid(GUID_NULL)
 {
 } //MFXD3D11Accelerator::MFXD3D11Accelerator
 
@@ -236,7 +235,7 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
     OutputDesc.DecodeProfile = m_DecoderGuid;
     OutputDesc.ViewDimension = D3D11_VDOV_DIMENSION_TEXTURE2D;
     OutputDesc.Texture2D.ArraySlice = (UINT)(size_t)Pair.second;
-    SAFE_RELEASE(m_pVDOView);
+    m_pVDOView.Release();
 
 
     hr = m_pVideoDevice->CreateVideoDecoderOutputView((ID3D11Resource *)Pair.first, 
@@ -257,19 +256,6 @@ Status  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
     return UMC_ERR_DEVICE_FAILED;
 
 } // mfxStatus  MFXD3D11Accelerator::BeginFrame(Ipp32s index)
-
-#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC_DECODE
-Status MFXD3D11Accelerator::RegisterGpuEvent(GPU_SYNC_EVENT_HANDLE &ev)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteStatusReportBuffer");
-
-    D3D11_VIDEO_DECODER_EXTENSION ext { DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE };
-    ext.pPrivateInputData =  &ev;
-    ext.PrivateInputDataSize = sizeof(ev);
-
-    return ExecuteExtensionBuffer(&ext);
-}
-#endif
 
 Status MFXD3D11Accelerator::EndFrame(void *handle)
 {
@@ -390,20 +376,6 @@ Status MFXD3D11Accelerator::Execute()
 
 } // Status MFXD3D11Accelerator::Execute()
 
-
-Status MFXD3D11Accelerator::ExecuteStatusReportBuffer(void * buffer, Ipp32s size)
-{
-    MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteStatusReportBuffer");
-
-    UMC_CHECK_PTR(buffer);
-
-    D3D11_VIDEO_DECODER_EXTENSION ext { DXVA2_GET_STATUS_REPORT };
-    ext.pPrivateOutputData =  buffer;
-    ext.PrivateOutputDataSize = size;
-
-    return ExecuteExtensionBuffer(&ext);
-}
-
 Status MFXD3D11Accelerator::ExecuteExtensionBuffer(void * buffer)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFXD3D11Accelerator::ExecuteExtensionBuffer");
@@ -424,7 +396,7 @@ Status MFXD3D11Accelerator::ExecuteExtensionBuffer(void * buffer)
 
 Status MFXD3D11Accelerator::Close()
 {
-    SAFE_RELEASE(m_pVDOView);
+    m_pVDOView.Release();
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     delete m_protectedVA;
@@ -444,6 +416,18 @@ bool MFXD3D11Accelerator::IsIntelCustomGUID() const
     return GuidProfile::IsIntelCustomGUID(m_DecoderGuid);
 }
 
+Status MFXD3D11Accelerator::ExecuteExtension(int function, ExtensionData const& data)
+{
+    D3D11_VIDEO_DECODER_EXTENSION ext{ UINT(function) };
+    ext.pPrivateInputData     = data.input.first;
+    ext.PrivateInputDataSize  = UINT(data.input.second);
+    ext.pPrivateOutputData    = data.output.first;
+    ext.PrivateOutputDataSize = UINT(data.output.second);
+    ext.ResourceCount         = UINT(data.resources.size());
+    ext.ppResourceList        = ext.ResourceCount ? (ID3D11Resource**)data.resources.data() : nullptr;
+
+    return ExecuteExtensionBuffer(&ext);
+}
 
 #endif
 #endif

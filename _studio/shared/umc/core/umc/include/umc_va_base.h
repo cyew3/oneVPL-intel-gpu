@@ -248,29 +248,29 @@ class FrameAllocator;
 class VideoAcceleratorParams
 {
     DYNAMIC_CAST_DECL_BASE(VideoAcceleratorParams);
+
 public:
 
-    VideoAcceleratorParams(void)
-    {
-        m_pVideoStreamInfo = NULL;
-        m_iNumberSurfaces  = 0; // 0 means use default value
-        m_protectedVA = 0;
-        m_needVideoProcessingVA = false;
-        m_surf = 0;
-        m_allocator = 0;
-    }
+    VideoAcceleratorParams()
+        : m_pVideoStreamInfo(nullptr)
+        , m_iNumberSurfaces(0)
+        , m_protectedVA(0)
+        , m_needVideoProcessingVA(false)
+        , m_allocator(nullptr)
+        , m_surf(nullptr)
+    {}
 
-    virtual ~VideoAcceleratorParams(void){}
+    virtual ~VideoAcceleratorParams(){}
 
     VideoStreamInfo *m_pVideoStreamInfo;
     int32_t          m_iNumberSurfaces;
     int32_t          m_protectedVA;
-    bool            m_needVideoProcessingVA;
+    bool             m_needVideoProcessingVA;
 
     FrameAllocator  *m_allocator;
 
     // if extended surfaces exist
-    void** m_surf;
+    void*           *m_surf;
 };
 
 
@@ -320,13 +320,14 @@ public:
                                  UMCVACompBuffer** buf   = NULL,
                                  int32_t            size  = -1,
                                  int32_t            index = -1) = 0; // request buffer
-    virtual Status Execute      () = 0;          // execute decoding
+
+    virtual Status Execute      () = 0;                  // execute decoding
     virtual Status ExecuteExtensionBuffer(void * buffer) = 0;
     virtual Status ExecuteStatusReportBuffer(void * buffer, int32_t size) = 0;
     virtual Status SyncTask(int32_t index, void * error = NULL) = 0;
     virtual Status QueryTaskStatus(int32_t index, void * status, void * error) = 0;
-    virtual Status ReleaseBuffer(int32_t type) = 0;   // release buffer
-    virtual Status EndFrame     (void * handle = 0) = 0;          // end frame
+    virtual Status ReleaseBuffer(int32_t type) = 0;      // release buffer
+    virtual Status EndFrame     (void * handle = 0) = 0; // end frame
 
     virtual bool IsIntelCustomGUID() const = 0;
     /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
@@ -358,23 +359,36 @@ public:
 
     virtual void GetVideoDecoder(void **handle) = 0;
 
+    /* Contains private data for the [ExecuteExtension] method */
+    struct ExtensionData
+    {
+        std::pair<void*, size_t> input;      //Pointer & size (in bytes) to private input data passed to the driver.
+        std::pair<void*, size_t> output;     //Pointer & size (in bytes) to private output data reveived from the driver.
+        std::vector<void*>       resources;  //Array of resource pointers passed to the driver
+    };
+
+    /* Executes an extended <function> operation on the current frame. */
+    virtual Status ExecuteExtension(int function, ExtensionData const&) = 0;
+
     VideoAccelerationProfile    m_Profile;          // entry point
     VideoAccelerationPlatform   m_Platform;         // DXVA, LinuxVA, etc
     eMFXHWType                  m_HWPlatform;
 
 protected:
+
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     ProtectedVA       *  m_protectedVA;
 #endif
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     VideoProcessingVA *  m_videoProcessingVA;
 #endif
+
     FrameAllocator    *  m_allocator;
 
-    bool            m_bH264ShortSlice;
-    bool            m_bH264MVCSupport;
-    bool            m_isUseStatuReport;
-    int32_t          m_H265ScalingListScanOrder; //0 - up-right, 1 - raster . Default is 1 (raster).
+    bool                 m_bH264ShortSlice;
+    bool                 m_bH264MVCSupport;
+    bool                 m_isUseStatuReport;
+    int32_t              m_H265ScalingListScanOrder; //0 - up-right, 1 - raster . Default is 1 (raster).
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -409,11 +423,11 @@ public:
 
     // Get
     int32_t  GetType()       const { return type; }
-    void*   GetPtr()        const { return ptr; }
+    void*    GetPtr()        const { return ptr; }
     int32_t  GetBufferSize() const { return BufferSize; }
     int32_t  GetDataSize()   const { return DataSize; }
-    void*   GetPVPStatePtr()const { return PVPState; }
-    int32_t   GetPVPStateSize()const { return (NULL == PVPState ? 0 : sizeof(PVPStateBuf)); }
+    void*    GetPVPStatePtr()const { return PVPState; }
+    int32_t  GetPVPStateSize()const { return (NULL == PVPState ? 0 : sizeof(PVPStateBuf)); }
 
     // public fields
     int32_t      FirstMb;

@@ -107,28 +107,35 @@ public:
     virtual ~LinuxVideoAccelerator(void);
 
     // VideoAccelerator methods
-    virtual Status Init         (VideoAcceleratorParams* pInfo);
-    virtual Status Close        (void);
-    virtual Status BeginFrame   (int32_t FrameBufIndex);
+    Status Init         (VideoAcceleratorParams* pInfo) override;
+    Status Close        () override;
+
+    Status BeginFrame   (int32_t FrameBufIndex) override;
     // gets buffer from cache if it exists or HW otherwise, buffers will be released in EndFrame
-    virtual void* GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index);
-    virtual Status Execute      (void);
-    virtual Status EndFrame     (void*);
-    virtual int32_t GetSurfaceID (int32_t idx) const;
-
-    // NOT implemented functions:
-    virtual Status ReleaseBuffer(int32_t /*type*/)
+    void* GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index) override;
+    Status Execute      (void) override;
+    Status ExecuteExtensionBuffer(void*) override
+    { return UMC_ERR_UNSUPPORTED; }
+    Status ExecuteStatusReportBuffer(void*, int32_t /*size*/) override
+    { return UMC_ERR_UNSUPPORTED; }
+    Status SyncTask(int32_t index, void * error = NULL) override;
+    Status QueryTaskStatus(int32_t index, void * status, void * error) override;
+    Status ReleaseBuffer(int32_t /*type*/) override
     { return UMC_OK; };
+    Status EndFrame     (void*) override;
 
-    virtual Status ExecuteExtensionBuffer(void* /*x*/) { return UMC_ERR_UNSUPPORTED;}
-    virtual Status ExecuteStatusReportBuffer(void* /*x*/, int32_t /*y*/)  { return UMC_ERR_UNSUPPORTED;}
-    virtual Status SyncTask(int32_t index, void * error = NULL);
-    virtual Status QueryTaskStatus(int32_t index, void * status, void * error);
-    virtual bool IsIntelCustomGUID() const { return false;}
-    virtual GUID GetDecoderGuid(){return m_guidDecoder;};
-    virtual void GetVideoDecoder(void** /*handle*/) {};
+    bool IsIntelCustomGUID() const override
+    { return false; }
+    int32_t GetSurfaceID (int32_t idx) const override;
+
+    void GetVideoDecoder(void** /*handle*/) override
+    {};
+
+    Status ExecuteExtension(int, ExtensionData const&) override
+    { return UMC_ERR_UNSUPPORTED; }
 
 protected:
+
     // VideoAcceleratorExt methods
     virtual Status AllocCompBuffers(void);
     virtual VACompBuffer* GetCompBufferHW(int32_t type, int32_t size, int32_t index = -1);
@@ -139,6 +146,7 @@ protected:
     void SetTraceStrings(uint32_t umc_codec);
 
 protected:
+
     VADisplay     m_dpy;
     VAConfigID*   m_pConfigId;
     VAContextID*  m_pContext;
