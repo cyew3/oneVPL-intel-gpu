@@ -2004,9 +2004,9 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
 
     if (IsMvcProfile(par.mfx.CodecProfile))
     {
-        mfxExtCodingOption * extOpt = GetExtBuffer(par);
+        mfxExtCodingOption & extOpt = GetExtBufferRef(par);
         mfxExtMVCSeqDesc * extMvc   = GetExtBuffer(par);
-        sts = CheckAndFixMVCSeqDesc(extMvc, extOpt->ViewOutput == MFX_CODINGOPTION_ON);
+        sts = CheckAndFixMVCSeqDesc(extMvc, extOpt.ViewOutput == MFX_CODINGOPTION_ON);
         if (MFX_WRN_INCOMPATIBLE_VIDEO_PARAM == sts)
         {
             checkSts = sts;
@@ -5472,17 +5472,17 @@ void MfxHwH264Encode::InheritDefaultValues(
 
 #if !defined(MFX_EXT_BRC_DISABLE)
 
-    mfxExtBRC*   extBRCInit       = GetExtBuffer(parInit);
-    mfxExtBRC*   extBRCReset      = GetExtBuffer(parReset);
+    mfxExtBRC & extBRCInit  = GetExtBufferRef(parInit);
+    mfxExtBRC & extBRCReset = GetExtBufferRef(parReset);
 
-    if (!extBRCReset->pthis &&
-        !extBRCReset->Init &&
-        !extBRCReset->Reset &&
-        !extBRCReset->Close &&
-        !extBRCReset->GetFrameCtrl &&
-        !extBRCReset->Update)
+    if (!extBRCReset.pthis &&
+        !extBRCReset.Init &&
+        !extBRCReset.Reset &&
+        !extBRCReset.Close &&
+        !extBRCReset.GetFrameCtrl &&
+        !extBRCReset.Update)
     {
-        *extBRCReset = *extBRCInit;
+        extBRCReset = extBRCInit;
     }
 
 #endif
@@ -9435,10 +9435,10 @@ namespace
 #endif
         std::vector<mfxExtPpsHeader> &      pps)
     {
-        mfxExtSpsHeader const *  extSps = GetExtBuffer(par);
-        mfxExtPpsHeader const *  extPps = GetExtBuffer(par);
+        mfxExtSpsHeader const & extSps = GetExtBufferRef(par);
+        mfxExtPpsHeader const & extPps = GetExtBufferRef(par);
 
-        mfxU16 numViews             = extSps->profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
+        mfxU16 numViews             = extSps.profileIdc == MFX_PROFILE_AVC_STEREO_HIGH ? 2 : 1;
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         mfxU32 numDep               = par.calcParam.numDependencyLayer;
         mfxU32 firstDid             = par.calcParam.did[0];
@@ -9447,10 +9447,10 @@ namespace
         mfxExtSVCSeqDesc const * extSvc = GetExtBuffer(par);
         mfxU32 numQualityAtLastDep  = extSvc->DependencyLayer[lastDid].QualityNum;
 #endif
-        mfxU16 heightMul = 2 - extSps->frameMbsOnlyFlag;
+        mfxU16 heightMul = 2 - extSps.frameMbsOnlyFlag;
 
         // prepare sps for base layer
-        sps[0] = *extSps;
+        sps[0] = extSps;
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         if (IsSvcProfile(par.mfx.CodecProfile)) // force SPS id to 0 for SVC profile only. For other profiles should be able to encode custom SPS id
             sps[0].seqParameterSetId         = 0;
@@ -9471,8 +9471,8 @@ namespace
             // Second SPS will be re-packed to SubsetSPS after return from driver.
             for (mfxU16 view = 0; view < numViews; view++)
             {
-                sps[view] = *extSps;
-                pps[view] = *extPps;
+                sps[view] = extSps;
+                pps[view] = extPps;
 
                 if (numViews > 1 && view == 0) // MVC base view
                     sps[view].profileIdc = MFX_PROFILE_AVC_HIGH;
@@ -9492,7 +9492,7 @@ namespace
             if (i == 0 && extSvc->DependencyLayer[did].QualityNum == 1)
                 continue; // don't need a subset sps for did = 0
 
-            sps[spsidx] = *extSps;
+            sps[spsidx] = extSps;
             sps[spsidx].nalUnitType               = 15;
             sps[spsidx].profileIdc                = mfxU8(par.mfx.CodecProfile & MASK_PROFILE_IDC);
             sps[spsidx].seqParameterSetId         = mfxU8(i);
@@ -9516,7 +9516,7 @@ namespace
         }
 #endif // #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
 
-        pps[0] = *extPps;
+        pps[0] = extPps;
 
 #ifdef MFX_ENABLE_SVC_VIDEO_ENCODE_HW
         // prepare pps for base and enhanced spatial layers
@@ -9528,7 +9528,7 @@ namespace
                 IsOff(extSvc->DependencyLayer[did].MotionPred) &&
                 IsOff(extSvc->DependencyLayer[did].ResidualPred) ? 1 : 0;
 
-            pps[i] = *extPps;
+            pps[i] = extPps;
             if (IsSvcProfile(par.mfx.CodecProfile)) // force SPS/PPS id to 0 for SVC profile only. For other profiles should be able to encode custom SPS/PPS
             {
                 pps[i].seqParameterSetId = mfxU8(i);
@@ -9541,7 +9541,7 @@ namespace
         // pack pps for enhanced quality layer of highest spatial layer if exists
         if (numQualityAtLastDep > 1)
         {
-            pps.back() = *extPps;
+            pps.back() = extPps;
             pps.back().seqParameterSetId        = mfxU8(numDep - 1);
             pps.back().picParameterSetId        = mfxU8(numDep);
             pps.back().constrainedIntraPredFlag = 0;
