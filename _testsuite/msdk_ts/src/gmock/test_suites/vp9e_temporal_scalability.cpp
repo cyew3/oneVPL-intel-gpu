@@ -44,6 +44,7 @@ namespace vp9e_temporal_scalability
         CHECK_TEMP_SCAL_ON_FRAME = 0x1 << 9,
         CHECK_PSNR = 0x1 << 10,
         CHECK_MULTICONTEXT_AND_REFRESH = 0x1 << 11,
+        CHECK_NO_IVF_HEADER = 0x1 << 12,
     };
 
     struct tc_struct
@@ -58,7 +59,7 @@ namespace vp9e_temporal_scalability
         } set_par[MAX_NPARS];
     };
 
-    class TestSuite : tsVideoEncoder, BS_VP9_parser
+    class TestSuite : tsVideoEncoder
     {
     private:
         void EncodingCycle(const tc_struct& tc, const mfxU32& frames_count);
@@ -604,6 +605,19 @@ namespace vp9e_temporal_scalability
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
             }
         },
+
+        // check temporal encoding w/o IVF-header, should work with DDI 0.973+
+        {/*42*/ MFX_ERR_NONE, CHECK_QUERY | CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR | CHECK_NO_IVF_HEADER,
+            {
+                { MFX_PAR, &tsStruct::mfxExtVP9Param.WriteIVFHeaders, MFX_CODINGOPTION_OFF },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetUsage, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
     };
 
     const unsigned int TestSuite::n_cases = sizeof(test_case) / sizeof(tc_struct);
@@ -615,7 +629,7 @@ namespace vp9e_temporal_scalability
         std::map<mfxU32, mfxFrameSurface1*>* m_pInputSurfaces;
         bool m_CheckPsnr;
     public:
-        BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr = false);
+        BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr, bool check_no_ivf);
         mfxStatus ProcessBitstream(mfxBitstream& bs, mfxU32 nFrames);
         mfxU32 m_AllFramesSize;
         mfxU32 m_DecodedFramesCount;
@@ -623,8 +637,9 @@ namespace vp9e_temporal_scalability
         mfxU32 m_ChunkCount;
     };
 
-    BitstreamChecker::BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr)
+    BitstreamChecker::BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr, bool check_no_ivf)
         : tsVideoDecoder(MFX_CODEC_VP9)
+        , tsParserVP9(check_no_ivf ? BS_VP9::ELEMENTARY_STREAM : BS_VP9::IVF)
         , m_TestPtr(testPtr)
         , m_pInputSurfaces(pSurfaces)
         , m_CheckPsnr(check_psnr)
@@ -1206,7 +1221,7 @@ namespace vp9e_temporal_scalability
         m_par.mfx.InitialDelayInKB = m_par.mfx.TargetKbps = m_par.mfx.MaxKbps = 0;
         m_par.mfx.RateControlMethod = MFX_RATECONTROL_CBR;
 
-        BitstreamChecker bs_checker(this, &inputSurfaces, tc.type & CHECK_PSNR ? true : false);
+        BitstreamChecker bs_checker(this, &inputSurfaces, tc.type & CHECK_PSNR ? true : false, tc.type & CHECK_NO_IVF_HEADER ? true : false);
         m_bs_processor = &bs_checker;
 
         SETPARS(m_par, MFX_PAR);
