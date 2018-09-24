@@ -103,7 +103,7 @@ public:
     CmDevice* GetCmDevice(D3DAbstract *pD3D)
     {
         cmStatus cmSts = CM_SUCCESS;
-        mfxU32 version;
+        mfxU32 version = 0;
 
         if (m_pCmDevice)
             return m_pCmDevice;
