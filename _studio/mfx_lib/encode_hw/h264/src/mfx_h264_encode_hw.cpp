@@ -3447,6 +3447,7 @@ mfxStatus ImplementationAvc::AsyncRoutine(mfxBitstream * bs)
                     task->m_initCpbRemoval = hrd.GetInitCpbRemovalDelay();
                     task->m_initCpbRemovalOffset = hrd.GetInitCpbRemovalDelayOffset();
                     bRecoding = true;
+                    task->m_repackForBsDataLength++ ;
                 }
                 if (extOpt2->MaxSliceSize)
                 {
