@@ -713,6 +713,7 @@ namespace UMC_AV1_DECODER
             for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
                 const Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
+                picParam->ref_order_hint[ref_idx] = frame->frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
                 picParam->ref_frame_idx[ref_idx] = idxInDPB;
             }
         }
