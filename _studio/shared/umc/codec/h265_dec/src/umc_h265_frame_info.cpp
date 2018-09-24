@@ -223,7 +223,7 @@ void H265DecoderFrameInfo::EliminateErrors()
     // Remove slices with duplicated slice_segment_address syntax
     for (uint32_t sliceId = 0; sliceId < GetSliceCount(); sliceId++)
     {
-        H265Slice * slice = GetSlice(sliceId);
+        H265Slice * slice     = m_pSliceQueue[sliceId];
         H265Slice * nextSlice = GetSlice(sliceId + 1);
 
         if (!nextSlice)
@@ -258,16 +258,16 @@ void H265DecoderFrameInfo::EliminateASO()
     if (!GetSlice(0))
         return;
 
-    uint32_t count = GetSliceCount();
+    uint32_t count = m_SliceCount;
     for (uint32_t sliceId = 0; sliceId < count; sliceId++)
     {
-        H265Slice * curSlice = GetSlice(sliceId);
+        H265Slice * curSlice = m_pSliceQueue[sliceId];
         int32_t minFirst = MAX_MB_NUMBER;
         uint32_t minSlice = 0;
 
         for (uint32_t j = sliceId; j < count; j++)
         {
-            H265Slice * slice = GetSlice(j);
+            H265Slice * slice = m_pSliceQueue[j];
             if (slice->GetFirstMB() < curSlice->GetFirstMB() && minFirst > slice->GetFirstMB())
             {
                 minFirst = slice->GetFirstMB();
@@ -285,7 +285,7 @@ void H265DecoderFrameInfo::EliminateASO()
 
     for (uint32_t sliceId = 0; sliceId < count; sliceId++)
     {
-        H265Slice * slice = GetSlice(sliceId);
+        H265Slice * slice     = m_pSliceQueue[sliceId];
         H265Slice * nextSlice = GetSlice(sliceId + 1);
 
         if (!nextSlice)
