@@ -27,25 +27,8 @@ set( sources.plus "" )
 set( LIBS "" )
 set( defs "" )
 
-include_directories( ${MSDK_STUDIO_ROOT}/hevce_hw/include )
-include_directories( ${MSDK_STUDIO_ROOT}/hevce_hw/h265/include )
-set( dir ${MSDK_STUDIO_ROOT}/hevce_hw/h265/src )
-file( GLOB_RECURSE srcs "${dir}/*.c" "${dir}/*.cpp" )
-list( APPEND sources ${srcs} )
-
-list( APPEND LIBS
-  mfx_common_hw
-  media_buffers
-  umc_io
-  umc_va_elk_hw
-  umc
-  vm
-  vm_plus
-  ${ITT_LIBS}
-  pthread
-  dl
-  ippmsdk_l ippj_l ippvc_l ippcc_l ippcv_l ippi_l ipps_l ippcore_l
-)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/h265/include )
+list( APPEND sources ${CMAKE_CURRENT_SOURCE_DIR}/h265/src/export.cpp )
 
 set( USE_STRICT_NAME TRUE )
 set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_STUDIO_ROOT}/mfx_lib/plugin/libmfxsw_plugin.map" )
