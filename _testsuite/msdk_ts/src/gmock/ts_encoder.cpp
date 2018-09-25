@@ -1490,18 +1490,23 @@ mfxStatus tsVideoEncoder::InitAndSetAllocator()
     mfxHDL hdl;
     mfxHandleType type;
 
+    bool bNeedSystemMemory = (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
+                             || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY);
     if (!GetAllocator())
     {
-        UseDefaultAllocator(
-            (m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-            || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
-            );
+        if (!bNeedSystemMemory && m_pVAHandle != nullptr)
+        {
+            SetAllocator(m_pVAHandle, true); // This allocator stems from the tsSession::MFXInit,
+                                             // so it is external to the tsVideoEncoder
+        }
+        else
+        {
+            UseDefaultAllocator(bNeedSystemMemory);
+        }
     }
 
     //set handle
-    if (!((m_par.IOPattern & MFX_IOPATTERN_IN_SYSTEM_MEMORY)
-        || (m_request.Type & MFX_MEMTYPE_SYSTEM_MEMORY))
-        && (!m_pVAHandle))
+    if (!bNeedSystemMemory && m_pVAHandle == nullptr)
     {
         m_pFrameAllocator = GetAllocator();
         SetFrameAllocator();
