@@ -26,7 +26,7 @@ namespace UMC_AV1_DECODER
     #define AV1D_DDI_VERSION 18
     #define DDI_HACKS_FOR_REV_252 // Rev 0.25.2 uses some minor DDI changes in comparison with 0.18
                                   // such changes are handled by macro DDI_HACKS_FOR_REV_252
-#elif UMC_AV1_DECODER_REV == 5000 // Rev 0.5
+#elif UMC_AV1_DECODER_REV >= 5000 // Rev 0.5
     #define AV1D_DDI_VERSION 21
     #define DDI_HACKS_FOR_REV_5 // Rev 0.5 uses some essential DDI changes in comparison with 0.21
                                 // such changes are handled by macro DDI_HACKS_FOR_REV_252
