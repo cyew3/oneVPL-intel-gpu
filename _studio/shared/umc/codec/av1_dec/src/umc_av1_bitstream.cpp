@@ -1451,9 +1451,16 @@ namespace UMC_AV1_DECODER
         OBUHeader header;
 
         header.obu_type = (AV1_OBU_TYPE)bs->GetBits(4);
+#if UMC_AV1_DECODER_REV >= 8500
+        const int obu_extension_flag = bs->GetBit();
+        header.obu_has_size_field = bs->GetBit();
+        bs->GetBit();  // reserved
+#else
         bs->GetBits(2);  // reserved
+        const int obu_extension_flag = bs->GetBit();
+#endif
 
-        if (bs->GetBits(1)) // if has extension
+        if (obu_extension_flag) // if has extension
         {
             header.temporal_id = bs->GetBits(3);
             header.spatial_id = bs->GetBits(2);
@@ -1463,10 +1470,27 @@ namespace UMC_AV1_DECODER
         return header;
     }
 
-    void AV1Bitstream::ReadOBUHeader(OBUInfo* info)
+    void AV1Bitstream::ReadOBUInfo(OBUInfo* info)
     {
-        av1_read_obu_size(this, &info->size, &info->sizeFieldLength);
+        size_t sizeFieldLength = 0;
+        size_t obu_size = 0;
+
+#if UMC_AV1_DECODER_REV >= 8500
+        const size_t start = BytesDecoded();
         info->header = av1_read_obu_header(this);
+        size_t headerSize = BytesDecoded() - start;
+
+        if (info->header.obu_has_size_field)
+            av1_read_obu_size(this, &obu_size, &sizeFieldLength);
+        else if (info->header.obu_type != OBU_TEMPORAL_DELIMITER)
+            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED); // no support for OBUs w/o size field so far
+
+        info->size = headerSize + sizeFieldLength + obu_size;
+#else
+        av1_read_obu_size(this, &obu_size, &sizeFieldLength);
+        info->size = obu_size + sizeFieldLength;
+        info->header = av1_read_obu_header(this);
+#endif
     }
 
     void AV1Bitstream::ReadByteAlignment()

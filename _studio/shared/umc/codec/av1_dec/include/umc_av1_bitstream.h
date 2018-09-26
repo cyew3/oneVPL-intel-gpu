@@ -29,7 +29,7 @@ namespace UMC_AV1_DECODER
     public:
 
 #if UMC_AV1_DECODER_REV >= 5000
-        void ReadOBUHeader(OBUInfo*);
+        void ReadOBUInfo(OBUInfo*);
         void ReadTileGroupHeader(FrameHeader const*, TileGroupInfo*);
         void ReadTile(FrameHeader const*, size_t&, size_t&);
         void ReadByteAlignment();

@@ -82,12 +82,11 @@ namespace UMC_AV1_DECODER
                 const auto src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
                 AV1Bitstream bs(src, Ipp32u(in->GetDataSize()));
 
-                OBUInfo info;
-                bs.ReadOBUHeader(&info);
-                VM_ASSERT(CheckOBUType(info.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
-                size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
+                OBUInfo obuInfo;
+                bs.ReadOBUInfo(&obuInfo);
+                VM_ASSERT(CheckOBUType(obuInfo.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
 
-                switch (info.header.obu_type)
+                switch (obuInfo.header.obu_type)
                 {
                 case OBU_SEQUENCE_HEADER:
                     bs.GetSequenceHeader(&sh);
@@ -99,7 +98,7 @@ namespace UMC_AV1_DECODER
                         break; // bypass frame header if there is no active seq header
                     // let's read frame header to check compatibility with sequence header
                     bs.GetFrameHeaderPart1(&fh, &sh);
-                    in->MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
+                    in->MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
 
                     if (FillVideoParam(sh, par) == UMC::UMC_OK)
                         return UMC::UMC_OK;
@@ -107,7 +106,7 @@ namespace UMC_AV1_DECODER
                     break;
                 }
 
-                in->MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
+                in->MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
             }
             catch (av1_exception const& e)
             {
@@ -296,24 +295,23 @@ namespace UMC_AV1_DECODER
             const auto src = reinterpret_cast<Ipp8u*>(tmp.GetDataPointer());
             AV1Bitstream bs(src, Ipp32u(tmp.GetDataSize()));
 
-            OBUInfo info;
-            bs.ReadOBUHeader(&info);
-            VM_ASSERT(CheckOBUType(info.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
-            const size_t OBUTotalSize = static_cast<Ipp32s>(info.size + info.sizeFieldLength);
+            OBUInfo obuInfo;
+            bs.ReadOBUInfo(&obuInfo);
+            VM_ASSERT(CheckOBUType(obuInfo.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
 
-            if (tmp.GetDataSize() < OBUTotalSize)
+            if (tmp.GetDataSize() < obuInfo.size)
                 return UMC::UMC_ERR_NOT_ENOUGH_DATA; // not enough data in the buffer to hold full OBU unit
                                                      // we return error because there is no support for chopped tile_group_obu() submission so far
                                                      // TODO: [Global] Add support for submission of incomplete tile group OBUs
 
-            if (curr_frame && info.header.obu_type != OBU_TILE_GROUP)
+            if (curr_frame && obuInfo.header.obu_type != OBU_TILE_GROUP)
             {
                 VM_ASSERT("Series of tile_group_obu() was interrupted unexpectedly!");
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
                 // TODO: [robust] add support for cases when series of tile_group_obu() interrupted by other OBU type before end of frame was reached
             }
 
-            switch (info.header.obu_type)
+            switch (obuInfo.header.obu_type)
             {
             case OBU_SEQUENCE_HEADER:
                 if (!sequence_header.get())
@@ -327,7 +325,7 @@ namespace UMC_AV1_DECODER
                 bs.GetFrameHeaderPart1(&fh, sequence_header.get());
                 bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
                 gotFrameHeader = true;
-                if (info.header.obu_type == OBU_FRAME)
+                if (obuInfo.header.obu_type == OBU_FRAME)
                 {
                     // TODO: [Rev0.5] Add support for case when tile_group_obu() is transmitted inside frame_obu()
                     VM_ASSERT("No support for frame_obu()!");
@@ -356,7 +354,7 @@ namespace UMC_AV1_DECODER
                     for (; idxInLayout < layout.size(); idxInLayout++, idxInTG++)
                     {
                         TileLocation& loc = layout[idxInLayout];
-                        GetTileLocation(&bs, pFH, &tgInfo, idxInTG, OBUTotalSize, OBUOffset, &loc);
+                        GetTileLocation(&bs, pFH, &tgInfo, idxInTG, obuInfo.size, OBUOffset, &loc);
                     }
 
                     gotTileGroup = true;
@@ -370,8 +368,8 @@ namespace UMC_AV1_DECODER
                 }
             }
 
-            OBUOffset += static_cast<Ipp32u>(OBUTotalSize);
-            tmp.MoveDataPointer(static_cast<Ipp32s>(OBUTotalSize));
+            OBUOffset += static_cast<Ipp32u>(obuInfo.size);
+            tmp.MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
         }
 
         if (!gotTileGroup)

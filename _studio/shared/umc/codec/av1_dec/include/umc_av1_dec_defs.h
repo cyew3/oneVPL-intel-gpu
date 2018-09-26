@@ -610,6 +610,9 @@ namespace UMC_AV1_DECODER
     struct OBUHeader
     {
         AV1_OBU_TYPE obu_type;
+#if UMC_AV1_DECODER_REV >= 8500
+        Ipp32u obu_has_size_field;
+#endif
         Ipp32u temporal_id;
         Ipp32u spatial_id;
     };
@@ -617,7 +620,6 @@ namespace UMC_AV1_DECODER
     struct OBUInfo
     {
         OBUHeader header;
-        size_t sizeFieldLength;
         size_t size;
     };
 
