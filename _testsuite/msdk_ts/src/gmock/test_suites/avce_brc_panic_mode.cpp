@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 File Name: avce_brc_panic_mode.cpp
 
@@ -76,10 +76,10 @@ namespace avce_brc_panic_mode
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CQP },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
-        {/*08*/ MFX_ERR_UNSUPPORTED, /* ICQ is unsupported in AVCe on Linux */
+        {/*08*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
                 { EXT_COD3, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_OFF }} },
-        {/*09*/ MFX_ERR_UNSUPPORTED, /* ICQ is unsupported in AVCe on Linux */
+        {/*09*/ MFX_ERR_NONE,
             {{ MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_ICQ },
                 { MFX_PAR, &tsStruct::mfxExtCodingOption3.BRCPanicMode, MFX_CODINGOPTION_ON }} },
 
