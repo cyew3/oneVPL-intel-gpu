@@ -588,13 +588,15 @@ public:
         Ipp32s numOfCoeffs = 0;
         switch (color_format)
         {
-        case 1:
+        case CHROMA_FORMAT_400:
+            break;
+        case CHROMA_FORMAT_420:
             numOfCoeffs = 4;
             break;
-        case 2:
+        case CHROMA_FORMAT_422:
             numOfCoeffs = 8;
             break;
-        case 3:
+        case CHROMA_FORMAT_444:
             numOfCoeffs = 16;
             break;
         };

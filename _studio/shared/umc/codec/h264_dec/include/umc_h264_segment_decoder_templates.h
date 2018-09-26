@@ -2594,14 +2594,14 @@ public:
 #undef INIT
 #define INIT(cf, hp) global_sds_array[cf][hp] = CreateSoftSegmentDecoderWrapper<Coeffs, PlaneY, PlaneUV, is_field, cf, hp>::CreateSegmentDecoder();
 
-            INIT(3, true);
-            INIT(2, true);
-            INIT(1, true);
-            INIT(0, true);
-            INIT(3, false);
-            INIT(2, false);
-            INIT(1, false);
-            INIT(0, false);
+            INIT(CHROMA_FORMAT_444, true);
+            INIT(CHROMA_FORMAT_422, true);
+            INIT(CHROMA_FORMAT_420, true);
+            INIT(CHROMA_FORMAT_400, true);
+            INIT(CHROMA_FORMAT_444, false);
+            INIT(CHROMA_FORMAT_422, false);
+            INIT(CHROMA_FORMAT_420, false);
+            INIT(CHROMA_FORMAT_400, false);
         }
 
         return global_sds_array[color_format][is_high_profile];

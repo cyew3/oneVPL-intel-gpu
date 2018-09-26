@@ -78,13 +78,15 @@ public:
         {
             switch(color_format)
             {
-            case 1:
+            case CHROMA_FORMAT_400:
+                break;
+            case CHROMA_FORMAT_420:
                 blockcbp |= CONST_LL(0x3ff0000) << 1;
                 break;
-            case 2:
+            case CHROMA_FORMAT_422:
                 blockcbp |= CONST_LL(0x3ffff0000) << 1;
                 break;
-            case 3:
+            case CHROMA_FORMAT_444:
                 blockcbp |= CONST_LL(0x3ffffffff0000) << 1;
                 break;
             }
@@ -139,7 +141,7 @@ public:
             uBlockBit <<= 1;
         }   // uBlock
 
-        if (!color_format)
+        if (color_format == CHROMA_FORMAT_400)
             return;
 
         sd->m_cur_mb.LocalMacroblockInfo->cbp4x4_chroma[0] = 0;
@@ -153,10 +155,10 @@ public:
                 {
                     switch(color_format)
                     {
-                    case 1:
+                    case CHROMA_FORMAT_420:
                         sd->m_pBitStream->GetCAVLCInfoChroma0(sNumCoeff, (CoeffsPtr*)&sd->m_pCoeffBlocksWrite);
                         break;
-                    case 2:
+                    case CHROMA_FORMAT_422:
                         sd->m_pBitStream->GetCAVLCInfoChroma2(sNumCoeff, (CoeffsPtr*)&sd->m_pCoeffBlocksWrite);
                         break;
                     default:
@@ -199,13 +201,13 @@ public:
 
         switch(color_format)
         {
-        case 1:
+        case CHROMA_FORMAT_420:
             colorFactor = 1;
             break;
-        case 2:
+        case CHROMA_FORMAT_422:
             colorFactor = 2;
             break;
-        case 3:
+        case CHROMA_FORMAT_444:
             colorFactor = 4;
             break;
         default:
@@ -246,13 +248,13 @@ public:
                 {
                     switch(color_format)
                     {
-                    case 1:
+                    case CHROMA_FORMAT_420:
                         uNC = sd->GetBlocksChromaContextBMEH(uAboveIndex, uLeftIndex, uBlock >= (FIRST_AC_CHROMA + 4*colorFactor));
                         break;
-                    case 2:
+                    case CHROMA_FORMAT_422:
                         uNC = sd->GetBlocksChromaContextH2(uAboveIndex, uLeftIndex, uBlock >= (FIRST_AC_CHROMA + 4*colorFactor));
                         break;
-                    case 3:
+                    case CHROMA_FORMAT_444:
                         uNC = sd->GetBlocksChromaContextH4(uAboveIndex, uLeftIndex, uBlock >= (FIRST_AC_CHROMA + 4*colorFactor));
                         break;
                     default:
@@ -280,7 +282,7 @@ public:
                         |= (sNumCoeff ? uBlockBit : 0);
                 }
                 // Update num coeff storage for predicting future blocks
-                sd->m_cur_mb.GetNumCoeffs()->numCoeffs[uLeftIndex * 2 * (1 + (Ipp32s)(color_format == 3))
+                sd->m_cur_mb.GetNumCoeffs()->numCoeffs[uLeftIndex * 2 * (1 + (Ipp32s)(color_format == CHROMA_FORMAT_444))
                     + uAboveIndex + addval] = (Ipp8u)sNumCoeff;
 
                 blockcbp >>= 1;
@@ -653,7 +655,7 @@ public:
         // decode chrominance blocks
         //
 
-        if (color_format && (cbp & CHROMA_DC_AC_BLOCKS))
+        if (color_format != CHROMA_FORMAT_400 && (cbp & CHROMA_DC_AC_BLOCKS))
         {
             Ipp32u uFinalCBP[2];
 
@@ -732,7 +734,7 @@ public:
         }
 
         // set zero values to a num coeffs storage
-        if (color_format && (0 == (cbp & CHROMA_AC_BLOCKS)) )
+        if (color_format != CHROMA_FORMAT_400 && (0 == (cbp & CHROMA_AC_BLOCKS)) )
         {
             Ipp8u *pNumCoeffsArray = sd->m_cur_mb.GetNumCoeffs()->numCoeffs;
 
@@ -834,13 +836,15 @@ public:
             Ipp32u numOfCoeffs = 0;
             switch (color_format)
             {
-            case 1:
+            case CHROMA_FORMAT_400:
+                break;
+            case CHROMA_FORMAT_420:
                 numOfCoeffs = 4;
                 break;
-            case 2:
+            case CHROMA_FORMAT_422:
                 numOfCoeffs = 8;
                 break;
-            case 3:
+            case CHROMA_FORMAT_444:
                 numOfCoeffs = 16;
                 break;
             };
@@ -872,13 +876,15 @@ public:
                         const Ipp32s * sing_scan = 0;
                         switch (color_format)
                         {
-                        case 1:
+                        case CHROMA_FORMAT_400:
+                            break;
+                        case CHROMA_FORMAT_420:
                             sing_scan = 0;
                             break;
-                        case 2:
+                        case CHROMA_FORMAT_422:
                             sing_scan = ChromaDC422RasterScan;
                             break;
-                        case 3:
+                        case CHROMA_FORMAT_444:
                             sing_scan = mp_scan4x4[0];
                             break;
                         }
@@ -895,7 +901,7 @@ public:
             }
 
             // chroma AC coeff, all zero from start_scan
-            if (cbp > 31  && (sd->m_pSliceHeader->scan_idx_end > 0) && color_format)
+            if (cbp > 31  && (sd->m_pSliceHeader->scan_idx_end > 0) && color_format != CHROMA_FORMAT_400)
             {
                 iCtxBase = ctxBase[CODED_BLOCK_FLAG] +
                             ctxIdxBlockCatOffset[CODED_BLOCK_FLAG][BLOCK_CHROMA_AC_LEVELS];
@@ -917,7 +923,7 @@ public:
                         //--- get bits from neighbouring blocks ---
                         if (sb_y[color_format][i])
                         {
-                            if (color_format == 3)
+                            if (color_format == CHROMA_FORMAT_444)
                                 top_bit = BIT_CHECK(cbp4x4_chroma, block_subblock_mapping[raster_order_block - 4] + 1);
                             else
                                 top_bit = BIT_CHECK(cbp4x4_chroma, bit - 2);
@@ -928,7 +934,7 @@ public:
 
                             if (0 <= iMBAbove)
                             {
-                                if (color_format == 3)
+                                if (color_format == CHROMA_FORMAT_444)
                                     top_bit = BIT_CHECK(sd->m_mbinfo.mbs[iMBAbove].cbp4x4_chroma[j],
                                         block_subblock_mapping[pN->mb_above_chroma[j].block_num + sb_x[3][i] - addition] + 1);
                                 else
@@ -939,7 +945,7 @@ public:
 
                         if (sb_x[color_format][i])
                         {
-                            if (color_format == 3)
+                            if (color_format == CHROMA_FORMAT_444)
                                 left_bit = BIT_CHECK(cbp4x4_chroma, block_subblock_mapping[raster_order_block - 1] + 1);
                             else
                                 left_bit = BIT_CHECK(cbp4x4_chroma, bit - 1);
@@ -950,7 +956,7 @@ public:
 
                             if (0 <= iMBLeft)
                             {
-                                if (color_format == 3)
+                                if (color_format == CHROMA_FORMAT_444)
                                     left_bit = BIT_CHECK(sd->m_mbinfo.mbs[iMBLeft].cbp4x4_chroma[j],
                                         block_subblock_mapping[pN->mbs_left_chroma[j][sb_y[3][i]].block_num - addition] + 1);
                                 else
@@ -1184,10 +1190,10 @@ public:
             const Ipp32s * pDCScan; \
             switch (color_format) \
             { \
-            case 2: \
+            case CHROMA_FORMAT_422: \
                 pDCScan = ChromaDC422RasterScan; \
                 break; \
-            case 3: \
+            case CHROMA_FORMAT_444: \
                 pDCScan = mp_scan4x4[0]; \
                 break; \
             default: \
@@ -1655,7 +1661,7 @@ public:
 
         sd->m_pBitStream->CheckBSLeft();
 
-        if (color_format)
+        if (color_format != CHROMA_FORMAT_400)
         {
             PlanePtrUV pCoeffBlocksWrite_UV = (PlanePtrUV) (sd->m_pCoeffBlocksWrite);
             for (Ipp32u i = 0; i < length - 256; i++)
