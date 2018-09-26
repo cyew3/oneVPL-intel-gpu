@@ -357,7 +357,8 @@ tsTrace& tsTrace::operator<<(const mfxExtEncoderROI& p)
     STRUCT_BODY(mfxExtEncoderROI,
         FIELD_S(mfxExtBuffer, Header)
         FIELD_T(mfxU16  , NumROI  )
-        for(mfxU32 i = 0; i < p.NumROI; ++i)
+        // Max supported NumROI = 256
+        for(mfxU32 i = 0; i < (p.NumROI <= 256 ? p.NumROI : 256); ++i)
         {
             FIELD_S(mfxExtEncoderROI_Entry, ROI[i])
         }
