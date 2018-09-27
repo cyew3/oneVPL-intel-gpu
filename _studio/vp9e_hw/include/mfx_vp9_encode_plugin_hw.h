@@ -137,10 +137,11 @@ namespace MfxHwVP9Encode
 
     protected:
         explicit Plugin(bool CreateByDispatcher)
-            : m_pmfxCore(nullptr)
-            , m_PluginParam()
-            , m_createdByDispatcher(CreateByDispatcher)
-            , m_adapter(this)
+             : MFXEncoderPlugin()
+             , m_pmfxCore(nullptr)
+             , m_PluginParam()
+             , m_createdByDispatcher(CreateByDispatcher)
+             , m_adapter(this)
         {
             m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
             m_PluginParam.MaxThreadNum = 1;

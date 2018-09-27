@@ -1615,9 +1615,9 @@ void MfxVideoParam::SyncMfxToHeadersParam(mfxU32 numSlicesForSTRPSOpt)
         mfxI32 STDist = Min<mfxI32>(mfx.GopPicSize, 128);
         bool moreLTR = !!LTRInterval;
         mfxI32 lastIPoc = 0;
-        bool isSCC = false;
 
 #if defined(MFX_ENABLE_HEVCE_SCC)
+        bool isSCC = false;
         isSCC = (mfx.CodecProfile == MFX_PROFILE_HEVC_SCC);
         if(isSCC)
             STDist += STDist;
