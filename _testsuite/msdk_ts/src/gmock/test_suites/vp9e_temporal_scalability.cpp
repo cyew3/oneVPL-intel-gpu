@@ -638,8 +638,8 @@ namespace vp9e_temporal_scalability
     };
 
     BitstreamChecker::BitstreamChecker(TestSuite *testPtr, std::map<mfxU32, mfxFrameSurface1*>* pSurfaces, bool check_psnr, bool check_no_ivf)
-        : tsVideoDecoder(MFX_CODEC_VP9)
-        , tsParserVP9(check_no_ivf ? BS_VP9::ELEMENTARY_STREAM : BS_VP9::IVF)
+        : tsParserVP9(check_no_ivf ? BS_VP9::ELEMENTARY_STREAM : BS_VP9::IVF)
+        , tsVideoDecoder(MFX_CODEC_VP9)
         , m_TestPtr(testPtr)
         , m_pInputSurfaces(pSurfaces)
         , m_CheckPsnr(check_psnr)
