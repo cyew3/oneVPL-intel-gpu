@@ -6232,6 +6232,8 @@ void MfxHwH264Encode::SetDefaults(
                         ? GetMaxCodedFrameSizeInKB(par)
                         : bufferSizeInBits / 8000;
             }
+            par.calcParam.bufferSizeInKB = IPP_MAX(par.calcParam.bufferSizeInKB, par.calcParam.initialDelayInKB);
+
         }
 
         if (par.calcParam.mvcPerViewPar.bufferSizeInKB == 0)
@@ -6243,6 +6245,8 @@ void MfxHwH264Encode::SetDefaults(
             par.calcParam.mvcPerViewPar.bufferSizeInKB = !IsHRDBasedBRCMethod(par.mfx.RateControlMethod)
                     ? GetMaxCodedFrameSizeInKB(par)
                     : bufferSizeInBits / 8000;
+
+            par.calcParam.mvcPerViewPar.bufferSizeInKB = IPP_MAX(par.calcParam.mvcPerViewPar.bufferSizeInKB, par.calcParam.mvcPerViewPar.initialDelayInKB);
         }
 
         if (par.calcParam.initialDelayInKB == 0 && IsHRDBasedBRCMethod(par.mfx.RateControlMethod))
