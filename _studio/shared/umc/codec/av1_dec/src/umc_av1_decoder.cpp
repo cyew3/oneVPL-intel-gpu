@@ -236,6 +236,33 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
+    static bool ReadTileGroup(TileLayout& layout, AV1Bitstream& bs, FrameHeader const& fh, AV1DecoderFrame* curr_frame, size_t obuOffset, size_t obuSize)
+    {
+        TileGroupInfo tgInfo = {};
+        bs.ReadTileGroupHeader(&fh, &tgInfo);
+
+        if (!CheckTileGroup(static_cast<Ipp32u>(layout.size()), &fh, &tgInfo))
+            throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+        Ipp32u idxInLayout = static_cast<Ipp32u>(layout.size());
+
+        layout.resize(layout.size() + tgInfo.numTiles,
+            { tgInfo.startTileIdx, tgInfo.endTileIdx });
+
+        for (int idxInTG = 0; idxInLayout < layout.size(); idxInLayout++, idxInTG++)
+        {
+            TileLocation& loc = layout[idxInLayout];
+            GetTileLocation(&bs, &fh, &tgInfo, idxInTG, obuSize, obuOffset, &loc);
+        }
+
+        const Ipp32u numTilesAccumulated = static_cast<Ipp32u>(layout.size()) +
+            (curr_frame ? CalcTilesInTileSets(curr_frame->GetTileSets()) : 0);
+        if (numTilesAccumulated == NumTiles(fh))
+            return true;
+
+        return false;
+    }
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
         FrameHeader fh = {};
@@ -255,7 +282,6 @@ namespace UMC_AV1_DECODER
         UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
         Ipp32u OBUOffset = 0;
         TileLayout layout;
-        Ipp32u idxInLayout = 0;
 
         while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false)
         {
@@ -292,13 +318,9 @@ namespace UMC_AV1_DECODER
                 bs.GetFrameHeaderPart1(&fh, sequence_header.get());
                 bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
                 gotFrameHeader = true;
-                if (obuInfo.header.obu_type == OBU_FRAME)
-                {
-                    // TODO: [Rev0.5] Add support for case when tile_group_obu() is transmitted inside frame_obu()
-                    VM_ASSERT("No support for frame_obu()!");
-                    throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
-                }
-                break;
+                if (obuInfo.header.obu_type == OBU_FRAME_HEADER)
+                    break;
+                bs.ReadByteAlignment();
             case OBU_TILE_GROUP:
                 FrameHeader const* pFH = nullptr;
                 if (curr_frame)
@@ -308,29 +330,8 @@ namespace UMC_AV1_DECODER
 
                 if (pFH) // bypass tile group if there is no respective frame header
                 {
-                    TileGroupInfo tgInfo = {};
-                    bs.ReadTileGroupHeader(pFH, &tgInfo);
-
-                    if (!CheckTileGroup(static_cast<Ipp32u>(layout.size()), pFH, &tgInfo))
-                        throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-                    layout.resize(layout.size() + tgInfo.numTiles,
-                        { tgInfo.startTileIdx, tgInfo.endTileIdx });
-
-                    Ipp32u idxInTG = 0;
-                    for (; idxInLayout < layout.size(); idxInLayout++, idxInTG++)
-                    {
-                        TileLocation& loc = layout[idxInLayout];
-                        GetTileLocation(&bs, pFH, &tgInfo, idxInTG, obuInfo.size, OBUOffset, &loc);
-                    }
-
+                    gotFullFrame = ReadTileGroup(layout, bs, *pFH, curr_frame, OBUOffset, obuInfo.size);
                     gotTileGroup = true;
-
-                    const Ipp32u numTilesAccumulated = static_cast<Ipp32u>(layout.size()) +
-                        (curr_frame ? CalcTilesInTileSets(curr_frame->GetTileSets()) : 0);
-                    if (numTilesAccumulated == NumTiles(*pFH))
-                        gotFullFrame = true;
-
                     break;
                 }
             }
