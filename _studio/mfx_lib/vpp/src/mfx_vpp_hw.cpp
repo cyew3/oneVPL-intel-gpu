@@ -662,7 +662,12 @@ mfxStatus ResMngr::DoMode30i60p(
         if(input)
         {
             m_EOS = false;
-            if(0 == m_inputIndex)
+            // in cases where m_core-> GetVAType () returns value equal to MFX_HW_VAAPI, this is Linux
+            if ((0 == m_inputIndex && m_core->GetVAType() == MFX_HW_VAAPI) || // Linux condition
+                /* this additional check is required to use BOB in Windows.
+                   with its help, m_outputIndexCountPerCycle = 2, but m_bkwdRefCount = 0
+                   what allows you to take two surfaces and change odd / even frames to compensate for driver behavior */
+                (0 == m_inputIndex && m_core->GetVAType() <= MFX_HW_D3D11 && m_bRefFrameEnable)) // Windows condition
             {
                 *intSts = MFX_ERR_NONE;
                 m_outputIndexCountPerCycle = 3; //was 3
@@ -902,7 +907,8 @@ mfxStatus ResMngr::FillTaskForMode30i60p(
             actualNumber++; // increase for BOB as there are no reference frame
             if ((pTask->taskIndex % 2) == 0)
             {
-                pTask->input = m_surfQueue[CURRENT_INPUT];
+                //in the case of work in Windows to BOB [PREVIOUS_INPUT] used instead of [CURRENT_INPUT] because of the characteristics of the driver
+                pTask->input = m_core->GetVAType() <= MFX_HW_D3D11 ? m_surfQueue[PREVIOUS_INPUT] : m_surfQueue[CURRENT_INPUT];
             }
         }
 
