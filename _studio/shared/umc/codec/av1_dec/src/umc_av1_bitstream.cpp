@@ -52,93 +52,110 @@ namespace UMC_AV1_DECODER
         return profile;
     }
 
-    inline
-    void av1_timing_info(AV1Bitstream* bs, SequenceHeader* sh)
+#if UMC_AV1_DECODER_REV >= 8500
+    inline void av1_decoder_model_info(AV1Bitstream* bs, DecoderModelInfo* info)
     {
-        sh->timing_info_present_flag = bs->GetBit();  // timing info present flag
-
-        if (sh->timing_info_present_flag)
-        {
-            bs->GetBits(32); // num_units_in_tick
-            bs->GetBits(32); // time_scale
-
-            const Ipp32u equalPictureInterval = bs->GetBit();
-            if (equalPictureInterval)
-                read_uvlc(bs); // num_ticks_per_picture
-        }
+        info->buffer_delay_length_minus_1 = bs->GetBits(5);
+        info->num_units_in_decoding_tick = bs->GetBits(32);
+        info->buffer_removal_time_length_minus_1 = bs->GetBits(5);
+        info->frame_presentation_time_length_minus_1 = bs->GetBits(5);
     }
 
-    static void av1_bitdepth_colorspace_sampling(AV1Bitstream* bs, SequenceHeader* sh)
+    inline void av1_operating_parameters_info(AV1Bitstream* bs, OperatingParametersInfo* info, Ipp32u length)
+    {
+        info->decoder_buffer_delay = bs->GetBits(length);
+        info->encoder_buffer_delay = bs->GetBits(length);
+        info->low_delay_mode_flag = bs->GetBit();
+    }
+#endif
+
+    inline void av1_timing_info(AV1Bitstream* bs, TimingInfo* info)
+    {
+        info->num_units_in_display_tick = bs->GetBits(32);
+        info->time_scale = bs->GetBits(32);
+        info->equal_picture_interval = bs->GetBit();
+        if (info->equal_picture_interval)
+            info->num_ticks_per_picture_minus_1 = read_uvlc(bs);
+    }
+
+    static void av1_color_config(AV1Bitstream* bs, ColorConfig* config, Ipp32u profile)
     {
         AV1D_LOG("[+]: %d", (mfxU32)bs->BitsDecoded());
 
-        sh->color_config.BitDepth = bs->GetBit() ? 10 : 8;
-        if (sh->seq_profile >= 2 && sh->color_config.BitDepth != 8)
-            sh->color_config.BitDepth = bs->GetBit() ? 12 : 10;
+        config->BitDepth = bs->GetBit() ? 10 : 8;
+        if (profile == 2 && config->BitDepth != 8)
+            config->BitDepth = bs->GetBit() ? 12 : 10;
 
-        sh->color_config.mono_chrome = sh->seq_profile != 1 ? bs->GetBit() : 0;
+        config->mono_chrome = profile != 1 ? bs->GetBit() : 0;
 
         Ipp32u color_description_present_flag = bs->GetBit();
         if (color_description_present_flag)
         {
-            sh->color_config.color_primaries = bs->GetBits(8);
-            sh->color_config.transfer_characteristics = bs->GetBits(8);
-            sh->color_config.matrix_coefficients = bs->GetBits(8);
+            config->color_primaries = bs->GetBits(8);
+            config->transfer_characteristics = bs->GetBits(8);
+            config->matrix_coefficients = bs->GetBits(8);
         }
         else
         {
-            sh->color_config.color_primaries = AOM_CICP_CP_UNSPECIFIED;
-            sh->color_config.transfer_characteristics = AOM_CICP_TC_UNSPECIFIED;
-            sh->color_config.matrix_coefficients = AOM_CICP_MC_UNSPECIFIED;
+            config->color_primaries = AOM_CICP_CP_UNSPECIFIED;
+            config->transfer_characteristics = AOM_CICP_TC_UNSPECIFIED;
+            config->matrix_coefficients = AOM_CICP_MC_UNSPECIFIED;
         }
 
-        if (sh->color_config.mono_chrome)
+        if (config->mono_chrome)
         {
-            sh->color_config.color_range = AOM_CR_FULL_RANGE;
-            sh->color_config.subsampling_y = sh->color_config.subsampling_x = 1;
-            sh->color_config.chroma_sample_position = AOM_CSP_UNKNOWN;
-            sh->color_config.separate_uv_delta_q = 0;
+#if UMC_AV1_DECODER_REV >= 8500
+            config->color_range = bs->GetBit();
+#else
+            config->color_range = AOM_CR_FULL_RANGE;
+#endif
+            config->subsampling_y = config->subsampling_x = 1;
+            config->chroma_sample_position = AOM_CSP_UNKNOWN;
+            config->separate_uv_delta_q = 0;
             return;
         }
 
-        if (sh->color_config.color_primaries == AOM_CICP_CP_BT_709 &&
-            sh->color_config.transfer_characteristics == AOM_CICP_TC_SRGB &&
-            sh->color_config.matrix_coefficients == AOM_CICP_MC_IDENTITY)
+        if (config->color_primaries == AOM_CICP_CP_BT_709 &&
+            config->transfer_characteristics == AOM_CICP_TC_SRGB &&
+            config->matrix_coefficients == AOM_CICP_MC_IDENTITY)
         {
-            sh->color_config.subsampling_y = sh->color_config.subsampling_x = 0;
-            if (!(sh->seq_profile == 1 || (sh->seq_profile == 2 && sh->color_config.BitDepth == 12)))
+#if UMC_AV1_DECODER_REV >= 8500
+            config->color_range = AOM_CR_FULL_RANGE;
+#endif
+            config->subsampling_y = config->subsampling_x = 0;
+            if (!(profile == 1 || (profile == 2 && config->BitDepth == 12)))
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
         else
         {
             // [16,235] (including xvycc) vs [0,255] range
-            sh->color_config.color_range = bs->GetBit();
-            if (sh->seq_profile == 0) // 420 only
-                sh->color_config.subsampling_x = sh->color_config.subsampling_y = 1;
-            else if (sh->seq_profile == 1) // 444 only
-                sh->color_config.subsampling_x = sh->color_config.subsampling_y = 0;
-            else if (sh->seq_profile == 2)
+            config->color_range = bs->GetBit();
+            if (profile == 0) // 420 only
+                config->subsampling_x = config->subsampling_y = 1;
+            else if (profile == 1) // 444 only
+                config->subsampling_x = config->subsampling_y = 0;
+            else if (profile == 2)
             {
-                if (sh->color_config.BitDepth == 12)
+                if (config->BitDepth == 12)
                 {
-                    sh->color_config.subsampling_x = bs->GetBit();
-                    if (sh->color_config.subsampling_x == 0)
-                        sh->color_config.subsampling_y = 0;  // 444
+                    config->subsampling_x = bs->GetBit();
+                    if (config->subsampling_x == 0)
+                        config->subsampling_y = 0;  // 444
                     else
-                        sh->color_config.subsampling_y = bs->GetBit();  // 422 or 420
+                        config->subsampling_y = bs->GetBit();  // 422 or 420
                 }
                 else
                 {
                     // 422
-                    sh->color_config.subsampling_x = 1;
-                    sh->color_config.subsampling_y = 0;
+                    config->subsampling_x = 1;
+                    config->subsampling_y = 0;
                 }
             }
-            if (sh->color_config.subsampling_x == 1 && sh->color_config.subsampling_y == 1)
-                sh->color_config.chroma_sample_position = bs->GetBits(2);
+            if (config->subsampling_x == 1 && config->subsampling_y == 1)
+                config->chroma_sample_position = bs->GetBits(2);
         }
 
-        sh->color_config.separate_uv_delta_q = bs->GetBit();
+        config->separate_uv_delta_q = bs->GetBit();
 
         AV1D_LOG("[-]: %d", (mfxU32)bs->BitsDecoded());
     }
@@ -1229,12 +1246,60 @@ namespace UMC_AV1_DECODER
     {
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
 
+#if UMC_AV1_DECODER_REV >= 8500
+        sh->seq_profile = GetBits(3);
+        sh->still_picture = GetBit();
+        sh->reduced_still_picture_header = GetBit();
+
+        if (sh->reduced_still_picture_header)
+            GetBits(5); // seq_level_idx[0]
+        else
+        {
+            sh->timing_info_present_flag = GetBit();
+            if (sh->timing_info_present_flag)
+            {
+                av1_timing_info(this, &sh->timing_info);
+                sh->decoder_model_info_present_flag = GetBit();
+                if (sh->decoder_model_info_present_flag)
+                    av1_decoder_model_info(this, &sh->decoder_model_info);
+            }
+
+            const int initial_display_delay_present_flag = GetBit();
+            sh->operating_points_cnt_minus_1 = GetBits(5);
+            for (unsigned int i = 0; i <= sh->operating_points_cnt_minus_1; i++)
+            {
+                sh->operating_point_idc[i] = GetBits(12);
+                sh->seq_level_idx[i] = GetBits(5);
+                if (sh->seq_level_idx[i] > 7)
+                    sh->seq_tier[i] = GetBit();
+
+                if (sh->decoder_model_info_present_flag)
+                {
+                    sh->decoder_model_present_for_this_op[i] = GetBit();
+                    if (sh->decoder_model_present_for_this_op[i])
+                        av1_operating_parameters_info(this,
+                            &sh->operating_parameters_info[i],
+                            sh->decoder_model_info.buffer_delay_length_minus_1 + 1);
+                }
+
+                const int BufferPoolMaxSize = 10; // av1 spec E.2
+                sh->initial_display_delay_minus_1[i] = BufferPoolMaxSize - 1;
+                if (initial_display_delay_present_flag)
+                {
+                    if (GetBit()) // initial_display_delay_present_for_this_op[i]
+                        sh->initial_display_delay_minus_1[i] = GetBits(4);
+                }
+            }
+
+        }
+#else // UMC_AV1_DECODER_REV >= 8500
         sh->seq_profile = GetBits(2);
         GetBits(4); // level
 
         Ipp32u elayers_cnt = GetBits(2);
         for (Ipp32u i = 1; i <= elayers_cnt; i++)
             GetBits(4); // level for each enhancement layer
+#endif // UMC_AV1_DECODER_REV >= 8500
 
         sh->frame_width_bits = GetBits(4) + 1;
         sh->frame_height_bits = GetBits(4) + 1;
@@ -1249,33 +1314,64 @@ namespace UMC_AV1_DECODER
         }
 
         sh->sbSize = GetBit() ? BLOCK_128X128 : BLOCK_64X64;
-        sh->enable_dual_filter = GetBit();
-        sh->enable_order_hint = GetBit();
 
-        sh->enable_jnt_comp =
-            sh->enable_order_hint ? GetBit() : 0;
+#if UMC_AV1_DECODER_REV >= 8500
+        sh->enable_filter_intra = GetBit();
+        sh->enable_intra_edge_filter = GetBit();
 
-        if (GetBit())
-            sh->seq_force_screen_content_tools = 2;
-        else
-            sh->seq_force_screen_content_tools = GetBit();
-
-        if (sh->seq_force_screen_content_tools > 0)
+        if (sh->reduced_still_picture_header)
         {
-            if (GetBit())
-                sh->seq_force_integer_mv = 2;
-            else
-                sh->seq_force_integer_mv = GetBit();
+            sh->seq_force_screen_content_tools = SELECT_SCREEN_CONTENT_TOOLS;
+            sh->seq_force_integer_mv = SELECT_INTEGER_MV;
         }
         else
-            sh->seq_force_integer_mv = 2;
+        {
+            sh->enable_interintra_compound = GetBit();
+            sh->enable_masked_compound = GetBit();
+            sh->enable_warped_motion = GetBit();
+#endif // UMC_AV1_DECODER_REV >= 8500
+            sh->enable_dual_filter = GetBit();
+            sh->enable_order_hint = GetBit();
+            if (sh->enable_order_hint)
+            {
+                sh->enable_jnt_comp = GetBit();
+#if UMC_AV1_DECODER_REV >= 8500
+                sh->enable_ref_frame_mvs = GetBit();
+#endif
+            }
 
-        sh->order_hint_bits_minus1 =
-            sh->enable_order_hint ? GetBits(3) : -1;
+            if (GetBit()) // seq_choose_screen_content_tools
+                sh->seq_force_screen_content_tools = SELECT_SCREEN_CONTENT_TOOLS;
+            else
+                sh->seq_force_screen_content_tools = GetBit();
 
-        av1_bitdepth_colorspace_sampling(this, sh);
+            if (sh->seq_force_screen_content_tools > 0)
+            {
+                if (GetBit()) // seq_choose_integer_mv
+                    sh->seq_force_integer_mv = 2;
+                else
+                    sh->seq_force_integer_mv = GetBit();
+            }
+            else
+                sh->seq_force_integer_mv = 2;
 
-        av1_timing_info(this, sh);
+            sh->order_hint_bits_minus1 =
+                sh->enable_order_hint ? GetBits(3) : -1;
+#if UMC_AV1_DECODER_REV >= 8500
+        }
+
+        sh->enable_superres = GetBit();
+        sh->enable_cdef = GetBit();
+        sh->enable_restoration = GetBit();
+#endif
+
+        av1_color_config(this, &sh->color_config, sh->seq_profile);
+
+#if UMC_AV1_DECODER_REV == 5000
+        sh->timing_info_present_flag = GetBit();
+        if (sh->timing_info_present_flag)
+            av1_timing_info(this, &sh->timing_info);
+#endif
 
         sh->film_grain_param_present = GetBit();
 

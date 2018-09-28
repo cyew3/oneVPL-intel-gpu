@@ -76,6 +76,8 @@ namespace UMC_AV1_DECODER
     const Ipp8u MAX_NUM_TEMPORAL_LAYERS       = 8;
     const Ipp8u MAX_NUM_SPATIAL_LAYERS        = 4;
     const Ipp8u MAX_NUM_OPERATING_POINTS      = MAX_NUM_TEMPORAL_LAYERS * MAX_NUM_SPATIAL_LAYERS;
+    const Ipp8u SELECT_SCREEN_CONTENT_TOOLS   = 2;
+    const Ipp8u SELECT_INTEGER_MV             = 2;
 
     enum AV1_OBU_TYPE
     {
@@ -330,7 +332,13 @@ namespace UMC_AV1_DECODER
         Ipp32u decoder_model_info_present_flag;
         DecoderModelInfo decoder_model_info;
 
+        Ipp32u operating_points_cnt_minus_1;
+        Ipp32u operating_point_idc[MAX_NUM_OPERATING_POINTS];
+        Ipp32u seq_level_idx[MAX_NUM_OPERATING_POINTS];
+        Ipp32u seq_tier[MAX_NUM_OPERATING_POINTS];
+        Ipp32u decoder_model_present_for_this_op[MAX_NUM_OPERATING_POINTS];
         OperatingParametersInfo operating_parameters_info[MAX_NUM_OPERATING_POINTS];
+        Ipp32u initial_display_delay_minus_1[MAX_NUM_OPERATING_POINTS];
 
         Ipp32u frame_width_bits;
         Ipp32u frame_height_bits;
