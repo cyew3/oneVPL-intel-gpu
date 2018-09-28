@@ -655,6 +655,7 @@ mfxStatus MFXVideoENCODEH265_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVi
         }
 
         sts = CheckInputParam(in, out);
+        MFX_CHECK_STS(sts);
 
         mfxStatus lpsts = SetLowpowerDefault(tmp);
 
