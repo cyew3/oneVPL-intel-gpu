@@ -114,11 +114,7 @@ namespace UMC_AV1_DECODER
 
     protected:
 
-#if UMC_AV1_DECODER_REV >= 5000
         static UMC::Status FillVideoParam(SequenceHeader const&, UMC::VideoDecoderParams*);
-#else
-        static UMC::Status FillVideoParam(FrameHeader const&, UMC::VideoDecoderParams*);
-#endif
 
         virtual void SetDPBSize(Ipp32u);
         virtual AV1DecoderFrame* GetFreeFrame();
@@ -126,7 +122,6 @@ namespace UMC_AV1_DECODER
 
         virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) = 0;
         virtual void CompleteDecodedFrames();
-        virtual UMC::Status CompleteFrame(AV1DecoderFrame* pFrame) = 0;
         virtual UMC::Status SubmitTiles(AV1DecoderFrame*, bool) = 0;
 
     private:

@@ -28,7 +28,6 @@ namespace UMC_AV1_DECODER
             return literal - (1 << bits); // if negative: complement to literal with respect to 2^bits
     }
 
-#if UMC_AV1_DECODER_REV >= 5000
     inline Ipp32s read_uniform(AV1Bitstream* bs, Ipp32u n)
     {
         const Ipp32u l = UMC_VP9_DECODER::GetUnsignedBits(n);
@@ -52,7 +51,6 @@ namespace UMC_AV1_DECODER
         const Ipp32u value = bs->GetBits(leading_zeros);
         return base + value;
     }
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     inline Ipp16u inv_recenter_non_neg(Ipp16u r, Ipp16u v) {
         if (v >(r << 1))

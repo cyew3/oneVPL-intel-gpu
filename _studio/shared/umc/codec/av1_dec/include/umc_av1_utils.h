@@ -62,14 +62,19 @@ namespace UMC_AV1_DECODER
 
     void SetupPastIndependence(FrameHeader & info);
 
-    inline bool IsFrameIntraOnly(FrameHeader const * fh)
+    inline bool FrameIsIntraOnly(FrameHeader const * fh)
     {
-        return (fh->frame_type == KEY_FRAME || fh->intra_only);
+        return fh->frame_type == INTRA_ONLY_FRAME;
     }
 
-    inline bool IsFrameResilent(FrameHeader const * fh)
+    inline bool FrameIsIntra(FrameHeader const * fh)
     {
-        return IsFrameIntraOnly(fh) || fh->error_resilient_mode;
+        return (fh->frame_type == KEY_FRAME || FrameIsIntraOnly(fh));
+    }
+
+    inline bool FrameIsResilient(FrameHeader const * fh)
+    {
+        return FrameIsIntra(fh) || fh->error_resilient_mode;
     }
 
     inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)

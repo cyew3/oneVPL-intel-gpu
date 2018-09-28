@@ -28,19 +28,13 @@ namespace UMC_AV1_DECODER
     {
     public:
 
-#if UMC_AV1_DECODER_REV >= 5000
         void ReadOBUInfo(OBUInfo*);
         void ReadTileGroupHeader(FrameHeader const*, TileGroupInfo*);
         void ReadTile(FrameHeader const*, size_t&, size_t&);
         void ReadByteAlignment();
         Ipp64u GetLE(Ipp32u);
-#endif
         void GetSequenceHeader(SequenceHeader*);
-#if UMC_AV1_DECODER_REV >= 5000
         void GetFrameHeaderPart1(FrameHeader*, SequenceHeader const*);
-#else
-        void GetFrameHeaderPart1(FrameHeader*, SequenceHeader*);
-#endif
         void GetFrameHeaderFull(FrameHeader*, SequenceHeader const*, FrameHeader const*, DPBType const&);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
@@ -51,9 +45,6 @@ namespace UMC_AV1_DECODER
         }
 
     protected:
-#if UMC_AV1_DECODER_REV < 5000
-        Ipp8u ReadSuperFrameIndex(Ipp32u sizes[8]);
-#endif
     };
 }
 

@@ -55,7 +55,6 @@ namespace UMC_AV1_DECODER
 
     UMC::Status AV1DecoderVA::SubmitTiles(AV1DecoderFrame* frame, bool firstSubmission)
     {
-#if UMC_AV1_DECODER_REV >= 5000
         if (!frame)
             return UMC::UMC_ERR_FAILED;;
 
@@ -87,45 +86,6 @@ namespace UMC_AV1_DECODER
             sts = va->EndFrame();
 
         return sts;
-#else // UMC_AV1_DECODER_REV >= 5000
-        frame; firstSubmission;
-        return UMC::UMC_ERR_NOT_IMPLEMENTED;
-#endif // UMC_AV1_DECODER_REV >= 5000
-    }
-
-    UMC::Status AV1DecoderVA::CompleteFrame(AV1DecoderFrame* frame)
-    {
-#if UMC_AV1_DECODER_REV >= 5000
-        frame;
-        return UMC::UMC_ERR_NOT_IMPLEMENTED;
-#else // UMC_AV1_DECODER_REV >= 5000
-        if (!frame)
-            return UMC::UMC_ERR_FAILED;;
-
-        VM_ASSERT(va);
-        UMC::Status sts = UMC::UMC_OK;
-
-        sts = va->BeginFrame(frame->GetMemID());
-        if (sts != UMC::UMC_OK)
-            return sts;
-
-        VM_ASSERT(packer);
-        packer->BeginFrame();
-
-        UMC::MediaData* in = frame->GetSource();
-        VM_ASSERT(in);
-
-        Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
-        AV1Bitstream bs(src, Ipp32u(in->GetDataSize()));
-        packer->PackAU(&bs, frame);
-
-        packer->EndFrame();
-
-        sts = va->Execute();
-        sts = va->EndFrame();
-
-        return sts;
-#endif // UMC_AV1_DECODER_REV >= 5000
     }
 
     void AV1DecoderVA::AllocateFrameData(UMC::VideoDataInfo const& info, UMC::FrameMemID id, AV1DecoderFrame* frame)
@@ -215,11 +175,7 @@ namespace UMC_AV1_DECODER
                         continue;
 
                     bool wasFound = false;
-#if AV1D_DDI_VERSION >= 21
                     const Ipp16u& index = pStatusReport[i].current_picture.Index15Bits;
-#else
-                    const Ipp8u& index = pStatusReport[i].current_picture.Index7Bits;
-#endif
                     if (index == frame.GetMemID()) // report for the frame was found in new reports
                     {
                         SetError(&frame, pStatusReport[i].bStatus);
@@ -241,7 +197,7 @@ namespace UMC_AV1_DECODER
                 }
             }
 
-#if UMC_AV1_DECODER_REV <= 5000
+#if UMC_AV1_DECODER_REV <= 8500
             // so far driver doesn't support status reporting for AV1 decoder
             // workaround by marking frame as decoding_completed and setting wasCompleted to true
             frame.CompleteDecoding();

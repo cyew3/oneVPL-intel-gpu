@@ -57,7 +57,6 @@ namespace UMC_AV1_DECODER
         bool submitted = false;
     };
 
-#if UMC_AV1_DECODER_REV >= 5000
     inline Ipp32u CalcTilesInTileSets(std::vector<TileSet> const& tileSets)
     {
         Ipp32u numTiles = 0;
@@ -75,7 +74,6 @@ namespace UMC_AV1_DECODER
 
         return size;
     }
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     class AV1DecoderFrame : public RefCounter
     {

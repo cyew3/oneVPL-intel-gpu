@@ -25,16 +25,10 @@ namespace UMC_AV1_DECODER
 {
     AV1Decoder::AV1Decoder()
         : allocator(nullptr)
-#if UMC_AV1_DECODER_REV >= 5000
         , sequence_header(nullptr)
-#else
-        , sequence_header(new SequenceHeader{})
-#endif
         , counter(0)
         , prev_frame(nullptr)
-#if UMC_AV1_DECODER_REV >= 5000
         , curr_frame(nullptr)
-#endif
     {
     }
 
@@ -45,7 +39,6 @@ namespace UMC_AV1_DECODER
         );
     }
 
-#if UMC_AV1_DECODER_REV >= 5000
     inline bool CheckOBUType(AV1_OBU_TYPE type)
     {
         switch (type)
@@ -62,14 +55,12 @@ namespace UMC_AV1_DECODER
             return false;
         }
     }
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     UMC::Status AV1Decoder::DecodeHeader(UMC::MediaData* in, UMC::VideoDecoderParams* par)
     {
         if (!in)
             return UMC::UMC_ERR_NULL_PTR;
 
-#if UMC_AV1_DECODER_REV >= 5000
         bool gotSeqHeader = false;
 
         SequenceHeader sh = {};
@@ -113,29 +104,6 @@ namespace UMC_AV1_DECODER
                 return e.GetStatus();
             }
         }
-#else
-        auto src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
-        AV1Bitstream bs(src, Ipp32u(in->GetDataSize()));
-        while (in->GetDataSize() >= MINIMAL_DATA_SIZE)
-        {
-            try
-            {
-                SequenceHeader sh = {};
-                FrameHeader fh = {};
-                bs.GetFrameHeaderPart1(&fh, &sh);
-                in->MoveDataPointer(fh.frameHeaderLength);
-
-                if (FillVideoParam(fh, par) == UMC::UMC_OK)
-                    return UMC::UMC_OK;
-            }
-            catch (av1_exception const& e)
-            {
-                auto sts = e.GetStatus();
-                if (sts != UMC::UMC_ERR_INVALID_STREAM)
-                    return sts;
-            }
-        }
-#endif
 
         return UMC::UMC_ERR_NOT_ENOUGH_DATA;
     }
@@ -196,7 +164,6 @@ namespace UMC_AV1_DECODER
         return updatedFrameDPB;
     }
 
-#if UMC_AV1_DECODER_REV >= 5000
     static void GetTileLocation(
         AV1Bitstream* bs,
         FrameHeader const* fh,
@@ -399,49 +366,6 @@ namespace UMC_AV1_DECODER
 
         return umcRes;
     }
-#else // UMC_AV1_DECODER_REV >= 5000
-UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
-{
-    DPBType updated_refs;
-    FrameHeader const* prev_fh = 0;
-    if (prev_frame)
-    {
-        updated_refs = DPBUpdate(prev_frame);
-        prev_fh = &(prev_frame->GetFrameHeader());
-    }
-
-    Ipp32u const size = Ipp32u(in->GetDataSize());
-    Ipp8u* src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
-    if (size < MINIMAL_DATA_SIZE)
-        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-
-    AV1Bitstream bs(src, size);
-
-    FrameHeader fh = {};
-
-    bs.GetFrameHeaderPart1(&fh, sequence_header.get());
-    bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
-
-    AV1DecoderFrame* frame = GetFrameBuffer(fh);
-    if (!frame)
-        return UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
-
-    frame->SetSeqHeader(*sequence_header.get());
-
-    frame->AddSource(in);
-    in->MoveDataPointer(size);
-
-    frame->frame_dpb = updated_refs;
-    frame->UpdateReferenceList();
-    prev_frame = frame;
-
-    UMC::Status umcRes = CompleteFrame(frame);
-
-    frame->StartDecoding();
-
-    return umcRes;
-}
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     AV1DecoderFrame* AV1Decoder::FindFrameByMemID(UMC::FrameMemID id)
     {
@@ -482,7 +406,6 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
             frame->GetFrameHeader().show_frame ? frame : nullptr;
     }
 
-#if UMC_AV1_DECODER_REV >= 5000
     UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC::VideoDecoderParams* par)
     {
         VM_ASSERT(par);
@@ -535,58 +458,6 @@ UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
         par->lFlags = 0;
         return UMC::UMC_OK;
     }
-#else
-    UMC::Status AV1Decoder::FillVideoParam(FrameHeader const& fh, UMC::VideoDecoderParams* par)
-    {
-        VM_ASSERT(par);
-
-        par->info.stream_type = UMC::AV1_VIDEO;
-        par->info.profile     = fh.profile;
-
-        par->info.clip_info = { Ipp32s(fh.FrameWidth), Ipp32s(fh.FrameHeight) };
-        par->info.disp_clip_info = par->info.clip_info;
-
-        if (!fh.subsampling_x && !fh.subsampling_y)
-            par->info.color_format = UMC::YUV444;
-        else if (fh.subsampling_x && !fh.subsampling_y)
-            par->info.color_format = UMC::YUY2;
-        else if (fh.subsampling_x && fh.subsampling_y)
-            par->info.color_format = UMC::NV12;
-
-        if (fh.BitDepth == 10)
-        {
-            switch (par->info.color_format)
-            {
-                case UMC::NV12:   par->info.color_format = UMC::P010; break;
-                case UMC::YUY2:   par->info.color_format = UMC::Y210; break;
-                case UMC::YUV444: par->info.color_format = UMC::Y410; break;
-
-                default:
-                    VM_ASSERT(!"Unknown subsampling");
-                    return UMC::UMC_ERR_UNSUPPORTED;
-            }
-        }
-        else if (fh.BitDepth == 12)
-        {
-            switch (par->info.color_format)
-            {
-                case UMC::NV12:   par->info.color_format = UMC::P016; break;
-                case UMC::YUY2:   par->info.color_format = UMC::Y216; break;
-                case UMC::YUV444: par->info.color_format = UMC::Y416; break;
-
-                default:
-                    VM_ASSERT(!"Unknown subsampling");
-                    return UMC::UMC_ERR_UNSUPPORTED;
-            }
-        }
-
-        par->info.interlace_type = UMC::PROGRESSIVE;
-        par->info.aspect_ratio_width = par->info.aspect_ratio_height = 1;
-
-        par->lFlags = 0;
-        return UMC::UMC_OK;
-    }
-#endif
 
     void AV1Decoder::SetDPBSize(Ipp32u size)
     {

@@ -44,22 +44,14 @@ namespace UMC_AV1_DECODER
 
     const Ipp8u CDEF_MAX_STRENGTHS            = 8;
 
-#if UMC_AV1_DECODER_REV >= 5000
     const Ipp8u CDEF_STRENGTH_BITS            = 6;
-#else
-    const Ipp8u CDEF_STRENGTH_BITS            = 7;
-#endif
 
     const Ipp8u  MAX_MB_PLANE                 = 3;
     const Ipp8u MAX_LEB128_SIZE               = 8;
     const Ipp8u LEB128_BYTE_MASK              = 0x7f;
     const Ipp8u MAX_SB_SIZE_LOG2              = 7;
 
-#if UMC_AV1_DECODER_REV >= 5000
     const Ipp16u RESTORATION_UNITSIZE_MAX     = 256;
-#else
-    const Ipp16u RESTORATION_TILESIZE_MAX     = 256;
-#endif
 
     const Ipp8u MI_SIZE_LOG2 = 2;
     const Ipp8u MAX_MIB_SIZE_LOG2 = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
@@ -85,7 +77,6 @@ namespace UMC_AV1_DECODER
     const Ipp8u MAX_NUM_SPATIAL_LAYERS        = 4;
     const Ipp8u MAX_NUM_OPERATING_POINTS      = MAX_NUM_TEMPORAL_LAYERS * MAX_NUM_SPATIAL_LAYERS;
 
-#if UMC_AV1_DECODER_REV >= 5000
     enum AV1_OBU_TYPE
     {
         OBU_SEQUENCE_HEADER = 1,
@@ -179,7 +170,6 @@ namespace UMC_AV1_DECODER
         AOM_CSP_COLOCATED = 2,        /**< Co-located with luma(0, 0) sample */
         AOM_CSP_RESERVED = 3          /**< Reserved value */
     };
-#endif
 
     enum FRAME_TYPE
     {
@@ -207,9 +197,7 @@ namespace UMC_AV1_DECODER
         SEG_LVL_ALT_LF_V,    // Use alternate loop filter value on v plane
         SEG_LVL_REF_FRAME,   // Optional Segment reference frame
         SEG_LVL_SKIP,        // Optional Segment (0,0) + skip mode
-#if UMC_AV1_DECODER_REV >= 5000
         SEG_LVL_GLOBALMV,
-#endif
         SEG_LVL_MAX
     };
 
@@ -250,13 +238,7 @@ namespace UMC_AV1_DECODER
 
     enum TX_MODE{
         ONLY_4X4 = 0,     // only 4x4 transform used
-#if UMC_AV1_DECODER_REV >= 5000
         TX_MODE_LARGEST,  // transform size is the largest possible for pu size
-#else
-        ALLOW_8X8 = 1,    // allow block transform size up to 8x8
-        ALLOW_16X16 = 2,  // allow block transform size up to 16x16
-        ALLOW_32X32 = 3,  // allow block transform size up to 32x32
-#endif
         TX_MODE_SELECT,   // transform specified for each block
         TX_MODES,
     };
@@ -269,11 +251,7 @@ namespace UMC_AV1_DECODER
     };
 
     enum REFRESH_FRAME_CONTEXT_MODE {
-#if UMC_AV1_DECODER_REV >= 5000
         REFRESH_FRAME_CONTEXT_DISABLED,
-#else
-        REFRESH_FRAME_CONTEXT_FORWARD,
-#endif
         REFRESH_FRAME_CONTEXT_BACKWARD,
     };
 
@@ -584,29 +562,8 @@ namespace UMC_AV1_DECODER
         Ipp32u enable_masked_compound;
         Ipp32u enable_intra_edge_filter;
         Ipp32u enable_filter_intra;
-
-        // Rev0.25.2 parameters
-        Ipp32u profile;
-        Ipp32u BitDepth;
-        Ipp32u subsampling_x;
-        Ipp32u subsampling_y;
-        Ipp32u intra_only;
-        Ipp32u reset_frame_context;
-        Ipp32u frame_context_idx;
-        Ipp32u ref_frame_sign_bias[INTER_REFS];
-        Ipp32u loop_filter_across_tiles_enabled;
-        Ipp32u cdef_sec_damping;
-        Ipp32u min_qmlevel;
-        Ipp32u max_qmlevel;
-        Ipp32u tile_group_bit_offset;
-
-        // internal parameters - will be removed together with Rev0.25.2
-        Ipp32u frameHeaderLength;
-        Ipp32u frameDataSize;
-//#endif // UMC_AV1_DECODER_REV < 5000
     };
 
-#if UMC_AV1_DECODER_REV >= 5000
     struct OBUHeader
     {
         AV1_OBU_TYPE obu_type;
@@ -629,7 +586,6 @@ namespace UMC_AV1_DECODER
         Ipp32u startTileIdx;
         Ipp32u endTileIdx;
     };
-#endif // UMC_AV1_DECODER_REV >= 5000
 
     class av1_exception
         : public std::runtime_error
