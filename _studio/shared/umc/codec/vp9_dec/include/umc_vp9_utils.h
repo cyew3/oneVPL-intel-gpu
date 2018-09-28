@@ -18,15 +18,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+
+#ifndef __UMC_VP9_UTILS_H_
+#define __UMC_VP9_UTILS_H_
 
 #include "umc_defs.h"
+#include "mfxstructures.h"
+
 #if defined(UMC_ENABLE_VP9_VIDEO_DECODER) || defined(UMC_ENABLE_AV1_VIDEO_DECODER)
 
 #include "umc_vp9_dec_defs.h"
 
-#ifndef __UMC_VP9_UTILS_H_
-#define __UMC_VP9_UTILS_H_
 
 #define ALIGN_POWER_OF_TWO(value, n) \
     (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
@@ -104,6 +106,13 @@ namespace UMC_VP9_DECODER
             numValues > 0 ? GetMostSignificantBit(numValues) + 1 : 0;
     }
 
+    inline mfxU16 GetMinProfile(mfxU16 depth, mfxU16 format)
+    {
+        return MFX_PROFILE_VP9_0 +
+            (depth > 8) * 2 +
+            (format > MFX_CHROMAFORMAT_YUV420);
+    }
+
     int32_t GetQIndex(VP9Segmentation const & seg, uint8_t segmentId, int32_t baseQIndex);
 
     void InitDequantizer(VP9DecoderFrame* info);
@@ -116,5 +125,5 @@ namespace UMC_VP9_DECODER
 
 } //UMC_VP9_DECODER
 
-#endif //__UMC_VP9_UTILS_H_
 #endif //UMC_ENABLE_VP9_VIDEO_DECODER
+#endif //__UMC_VP9_UTILS_H_
