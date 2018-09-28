@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 #include "ts_encoder.h"
@@ -85,14 +85,11 @@ namespace avce_default_lowpower
                 break;
             }
 
-            if (g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+            if ((g_tsOSFamily == MFX_OS_FAMILY_WINDOWS && g_tsHWtype >= MFX_HW_SKL)
+                || (g_tsOSFamily == MFX_OS_FAMILY_LINUX && g_tsHWtype >= MFX_HW_ICL))
+            // Low power supporting for Linux on SKL and above (before ICL) should be added in future
             {
-                //Linux doesn't support KBL and above and doesn't support LowPower on SKL.
-                //So this check is a Windows specific
-                if (g_tsHWtype >= MFX_HW_SKL)
-                {
-                    ret |= LOWPOWER_SUPPORTED;
-                }
+                ret |= LOWPOWER_SUPPORTED;
             }
 
             if (g_tsHWtype == MFX_HW_LKF)
@@ -191,7 +188,7 @@ namespace avce_default_lowpower
         MFXInit();
         m_session = tsSession::m_session;
 
-        if ( (getPlatfromFlags() & tc.mask ) != tc.target)
+        if ( (getPlatfromFlags() & tc.mask ) != tc.target) // Different platforms, which support and which nonsupport DP or LP should run different cases
         {
             g_tsLog << "\n\nWARNING: SKIP test unsupported platform\n\n";
             throw tsSKIP;
