@@ -607,9 +607,17 @@ public:
         mfxU8* surfaceBuffersIn[MAX_INPUT_STREAMS] = {0}; // 1 primary stream + max 63 substreams
         mfxU8  bitsPerPixel = 12;  // NV12 format is a 12 bits per pixel format
 
-        /* IF RGB4/AYUV/Y210/Y410/YUY2/P010 case */
-        if (m_Arguments->dcc == kRGB4 || m_Arguments->dcc == kAYUV || m_Arguments->dcc == kY210 || m_Arguments->dcc == kY410 || m_Arguments->dcc == kYUY2 || m_Arguments->dcc == kP010)
+        /* IF RGB4/AYUV/Y210/Y410 case */
+        if (m_Arguments->dcc == kRGB4 || m_Arguments->dcc == kAYUV || m_Arguments->dcc == kY210 || m_Arguments->dcc == kY410)
             bitsPerPixel = 32;
+
+        /* IF YUY2 case */
+        if (m_Arguments->dcc == kYUY2)
+            bitsPerPixel = 16;
+
+        /* IF P010 case */
+        if (m_Arguments->dcc == kP010)
+            bitsPerPixel = 24;
 
         for (int i = 0; i < m_nVPPSurfNumIn; i++)
         {
