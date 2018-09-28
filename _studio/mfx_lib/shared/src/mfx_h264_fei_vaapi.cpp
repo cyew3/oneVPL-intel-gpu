@@ -907,9 +907,6 @@ mfxStatus VAAPIFEIENCEncoder::CreateENCAccelerationService(MfxVideoParam const &
 
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VAProfile profile = ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile);
-    //mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
-    /* Working only with RC_CPQ */
-    //vaRCType = VA_RC_CQP;
     VAEntrypoint entrypoints[5];
     int num_entrypoints, slice_entrypoint;
     VAConfigAttrib attrib[4];
@@ -1872,11 +1869,6 @@ mfxStatus VAAPIFEIPAKEncoder::CreatePAKAccelerationService(MfxVideoParam const &
 
     VAStatus vaSts = VA_STATUS_SUCCESS;
     VAProfile profile = ConvertProfileTypeMFX2VAAPI(m_videoParam.mfx.CodecProfile);
-
-    //mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
-    /* Working only with RC_CPQ */
-    //vaRCType = VA_RC_CQP;
-
     VAEntrypoint entrypoints[5];
     int num_entrypoints, slice_entrypoint;
     VAConfigAttrib attrib[4];

@@ -39,7 +39,7 @@ namespace MfxHwVP9Encode
         }
     }
 
-    mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
+    uint32_t ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
     {
         VP9_LOG("ConvertRateControlMFX2VAAPI \n");
         switch (rateControl)
@@ -50,7 +50,7 @@ namespace MfxHwVP9Encode
             case MFX_RATECONTROL_CQP:  return VA_RC_CQP;
             default: assert(!"Unsupported RateControl"); return 0;
         }
-    } // mfxU8 ConvertRateControlMFX2VAAPI(mfxU8 rateControl)
+    }
 
     mfxU16 ConvertSegmentRefControlToVAAPI(mfxU16 refFrameControl)
     {
@@ -695,7 +695,7 @@ mfxStatus VAAPIEncoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     if ((attrib[0].value & vaRTFormat) == 0)
         return MFX_ERR_DEVICE_FAILED;
 
-    mfxU8 vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
+    uint32_t vaRCType = ConvertRateControlMFX2VAAPI(par.mfx.RateControlMethod);
 
     if ((attrib[1].value & vaRCType) == 0)
         return MFX_ERR_DEVICE_FAILED;
