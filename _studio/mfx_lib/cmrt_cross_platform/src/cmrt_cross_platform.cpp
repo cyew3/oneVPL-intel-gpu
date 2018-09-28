@@ -47,6 +47,10 @@ const vm_char * DLL_NAME_LINUX = VM_STRING("igfxcmrt32.so");
 #error "undefined configuration"
 #endif
 
+#if defined(ANDROID)
+const vm_char * DLL_NAME_ANDROID = VM_STRING("libigfxcmrt.so");
+#endif
+
 #ifdef CMRT_EMU
     const char * FUNC_NAME_CREATE_CM_DEVICE  = "CreateCmDeviceEmu";
     const char * FUNC_NAME_CREATE_CM_DEVICE_EX  = "CreateCmDeviceEmu";
@@ -590,7 +594,13 @@ INT CreateCmDevice(CmDevice *& pD, UINT & version, VADisplay va_dpy, UINT mode)
     CmDeviceImpl * device = new CmDeviceImpl;
 
     device->m_platform = VAAPI;
+#if defined (ANDROID)
+    device->m_dll = vm_so_load(DLL_NAME_ANDROID);
+    if (device->m_dll == 0)
+        device->m_dll = vm_so_load(DLL_NAME_LINUX);
+#else
     device->m_dll = vm_so_load(DLL_NAME_LINUX);
+#endif
     if (device->m_dll == 0)
     {
         delete device;
