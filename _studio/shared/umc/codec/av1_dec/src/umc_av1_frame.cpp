@@ -46,7 +46,7 @@ namespace UMC_AV1_DECODER
         Ipp8u* data = static_cast<Ipp8u*>(source.GetDataPointer());
         const size_t length = std::min<size_t>(source.GetDataSize(), spaceInBuffer);
 
-        mfx_memcpy(bsBuffer + offsetInBuffer, length, data, length);
+        MFX_INTERNAL_CPY_S(bsBuffer + offsetInBuffer, length, data, length);
         source.Close();
 
         for (auto& loc : layout)

@@ -77,11 +77,6 @@ namespace UMC_AV1_DECODER
         return FrameIsIntra(fh) || fh->error_resilient_mode;
     }
 
-    inline void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
-    {
-        memcpy_s(dst, dstLen, src, len);
-    }
-
     inline Ipp32u NumTiles(FrameHeader const & fh)
     {
         return fh.TileCols * fh.TileRows;
