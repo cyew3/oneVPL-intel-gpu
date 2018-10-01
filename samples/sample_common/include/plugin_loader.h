@@ -96,11 +96,11 @@ private:
             return MSDK_STRING("Intel (R) Media SDK PTIR plugin (HW)");
         else if (AreGuidsEqual(guid, MFX_PLUGINID_HEVCE_GACC))
             return MSDK_STRING("Intel (R) Media SDK GPU-Accelerated plugin for HEVC ENCODE");
-		else if (AreGuidsEqual(guid, MFX_PLUGINID_VP9D_HW))
-			return MSDK_STRING("Intel (R) Media SDK HW plugin for VP9 DECODE");
-		else if (AreGuidsEqual(guid, MFX_PLUGINID_VP9E_HW))
-			return MSDK_STRING("Intel (R) Media SDK HW plugin for VP9 ENCODE");
-		else
+        else if (AreGuidsEqual(guid, MFX_PLUGINID_VP9D_HW))
+            return MSDK_STRING("Intel (R) Media SDK HW plugin for VP9 DECODE");
+        else if (AreGuidsEqual(guid, MFX_PLUGINID_VP9E_HW))
+            return MSDK_STRING("Intel (R) Media SDK HW plugin for VP9 ENCODE");
+        else
 #if (MFX_VERSION >= 1027) && !defined(_WIN32) && !defined(_WIN64)
         if (AreGuidsEqual(guid, MFX_PLUGINID_HEVC_FEI_ENCODE))
             return MSDK_STRING("Intel (R) Media SDK HW plugin for HEVC FEI ENCODE");

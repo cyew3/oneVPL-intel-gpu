@@ -1388,27 +1388,27 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
 
     if (bVpp)
     {
-		msdk_printf(MSDK_STRING("Note: VPP is enabled.\n"));
+        msdk_printf(MSDK_STRING("Note: VPP is enabled.\n"));
         m_pmfxVPP = new MFXVideoVPP(m_mfxSession);
         MSDK_CHECK_POINTER(m_pmfxVPP, MFX_ERR_MEMORY_ALLOC);
     }
     // Determine if we should shift P010 surfaces
-	bool readerShift = false;
-	if (pParams->FileInputFourCC == MFX_FOURCC_P010 || pParams->FileInputFourCC == MFX_FOURCC_P210 || pParams->FileInputFourCC == MFX_FOURCC_Y210)
-	{
-		if (pParams->IsSourceMSB)
-		{
-			pParams->shouldUseShifted10BitVPP = true;
-			pParams->shouldUseShifted10BitEnc = true;
-		}
-		else
-		{
-			pParams->shouldUseShifted10BitVPP = m_pmfxVPP && pParams->memType != SYSTEM_MEMORY;
+    bool readerShift = false;
+    if (pParams->FileInputFourCC == MFX_FOURCC_P010 || pParams->FileInputFourCC == MFX_FOURCC_P210 || pParams->FileInputFourCC == MFX_FOURCC_Y210)
+    {
+        if (pParams->IsSourceMSB)
+        {
+            pParams->shouldUseShifted10BitVPP = true;
+            pParams->shouldUseShifted10BitEnc = true;
+        }
+        else
+        {
+            pParams->shouldUseShifted10BitVPP = m_pmfxVPP && pParams->memType != SYSTEM_MEMORY;
 
-			pParams->shouldUseShifted10BitEnc = (pParams->memType != SYSTEM_MEMORY && AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW)) || pParams->CodecId == MFX_CODEC_VP9;
-			readerShift = m_pmfxVPP ? pParams->shouldUseShifted10BitVPP : pParams->shouldUseShifted10BitEnc;
-		}
-	}
+            pParams->shouldUseShifted10BitEnc = (pParams->memType != SYSTEM_MEMORY && AreGuidsEqual(pParams->pluginParams.pluginGuid, MFX_PLUGINID_HEVCE_HW)) || pParams->CodecId == MFX_CODEC_VP9;
+            readerShift = m_pmfxVPP ? pParams->shouldUseShifted10BitVPP : pParams->shouldUseShifted10BitEnc;
+        }
+    }
 
     if(readerShift)
     {

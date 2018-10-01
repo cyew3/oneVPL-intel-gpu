@@ -74,7 +74,7 @@ void PrintHelp(msdk_char *strAppName, const msdk_char *strErrorMessage, ...)
     MOD_ENC_PRINT_HELP;
 #endif
     msdk_printf(MSDK_STRING("   [-nv12|yuy2|ayuv|rgb4|p010|y210|y410|a2rgb10] - input color format (by default YUV420 is expected).\n"));
-	msdk_printf(MSDK_STRING("   [-msb10] - 10-bit color format is expected to have data in Most Significant Bits of words.\n                 (LSB data placement is expected by default).\n                 This option also disables data shifting during file reading.\n"));
+    msdk_printf(MSDK_STRING("   [-msb10] - 10-bit color format is expected to have data in Most Significant Bits of words.\n                 (LSB data placement is expected by default).\n                 This option also disables data shifting during file reading.\n"));
     msdk_printf(MSDK_STRING("   [-ec::p010] - force usage of P010 surfaces for encoder (conversion will be made if necessary). Use for 10 bit HEVC encoding\n"));
     msdk_printf(MSDK_STRING("   [-tff|bff] - input stream is interlaced, top|bottom fielf first, if not specified progressive is expected\n"));
     msdk_printf(MSDK_STRING("   [-bref] - arrange B frames in B pyramid reference structure\n"));
@@ -297,34 +297,34 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
             pParams->FileInputFourCC = MFX_FOURCC_P010;
             pParams->EncodeFourCC = MFX_FOURCC_P010;
         }
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ayuv")))
-		{
-			pParams->FileInputFourCC = MFX_FOURCC_AYUV;
-			pParams->EncodeFourCC = MFX_FOURCC_AYUV;
-		}
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
-		{
-			pParams->FileInputFourCC = MFX_FOURCC_YUY2;
-			pParams->EncodeFourCC = MFX_FOURCC_YUY2;
-		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ayuv")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_AYUV;
+            pParams->EncodeFourCC = MFX_FOURCC_AYUV;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-yuy2")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_YUY2;
+            pParams->EncodeFourCC = MFX_FOURCC_YUY2;
+        }
 #if (MFX_VERSION >= 1027)
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y210")))
-		{
-			pParams->FileInputFourCC = MFX_FOURCC_Y210;
-			pParams->EncodeFourCC = MFX_FOURCC_Y210;
-		}
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y410")))
-		{
-			pParams->FileInputFourCC = MFX_FOURCC_Y410;
-			pParams->EncodeFourCC = MFX_FOURCC_Y410;
-		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y210")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_Y210;
+            pParams->EncodeFourCC = MFX_FOURCC_Y210;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-y410")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_Y410;
+            pParams->EncodeFourCC = MFX_FOURCC_Y410;
+        }
 #endif
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-a2rgb10")))
-		{
-			pParams->FileInputFourCC = MFX_FOURCC_A2RGB10;
-			pParams->EncodeFourCC = MFX_FOURCC_A2RGB10;
-		}
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::p010")))
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-a2rgb10")))
+        {
+            pParams->FileInputFourCC = MFX_FOURCC_A2RGB10;
+            pParams->EncodeFourCC = MFX_FOURCC_A2RGB10;
+        }
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-ec::p010")))
         {
             pParams->EncodeFourCC = MFX_FOURCC_P010;
         }
@@ -352,10 +352,10 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
                 return MFX_ERR_UNSUPPORTED;
             }
         }
-		else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-msb10")))
-		{
-			pParams->IsSourceMSB = true;
-		}
+        else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-msb10")))
+        {
+            pParams->IsSourceMSB = true;
+        }
         else if (0 == msdk_strcmp(strInput[i], MSDK_STRING("-angle")))
         {
             VAL_CHECK(i+1 >= nArgNum, i, strInput[i]);
@@ -1030,7 +1030,7 @@ mfxStatus ParseInputString(msdk_char* strInput[], mfxU8 nArgNum, sInputParams* p
         MFX_CODEC_AVC != pParams->CodecId &&
         MFX_CODEC_JPEG != pParams->CodecId &&
         MFX_CODEC_HEVC != pParams->CodecId && 
-		MFX_CODEC_VP9 != pParams->CodecId)
+        MFX_CODEC_VP9 != pParams->CodecId)
     {
         PrintHelp(strInput[0], MSDK_STRING("Unknown codec"));
         return MFX_ERR_UNSUPPORTED;

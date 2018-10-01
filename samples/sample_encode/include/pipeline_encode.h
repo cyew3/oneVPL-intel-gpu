@@ -167,7 +167,7 @@ struct sInputParams
     bool bUncut;
     bool shouldUseShifted10BitEnc;
     bool shouldUseShifted10BitVPP;
-	bool IsSourceMSB;
+    bool IsSourceMSB;
 
     bool bSingleTexture;
 
