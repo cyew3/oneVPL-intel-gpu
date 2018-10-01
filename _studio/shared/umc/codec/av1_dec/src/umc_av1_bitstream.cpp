@@ -36,6 +36,8 @@
 #define AV1D_LOG(string, ...)
 #endif
 
+using UMC_VP9_DECODER::AlignPowerOfTwo;
+
 namespace UMC_AV1_DECODER
 {
     inline
@@ -175,15 +177,15 @@ namespace UMC_AV1_DECODER
     inline void av1_set_mi_and_sb_size(FrameHeader& fh, SequenceHeader const& sh)
     {
         // set frame width and heignt in MI
-        const uint32_t alignedWidth = ALIGN_POWER_OF_TWO(fh.FrameWidth, 3);
-        const int alignedHeight = ALIGN_POWER_OF_TWO(fh.FrameHeight, 3);
+        const Ipp32u alignedWidth = AlignPowerOfTwo(fh.FrameWidth, 3);
+        const int alignedHeight = AlignPowerOfTwo(fh.FrameHeight, 3);
         fh.MiCols = alignedWidth >> MI_SIZE_LOG2;
         fh.MiRows = alignedHeight >> MI_SIZE_LOG2;
 
         // set frame width and height in SB
         const uint32_t mibSizeLog2 = sh.sbSize == BLOCK_64X64 ? 4 : 5;
-        const uint32_t widthMI = ALIGN_POWER_OF_TWO(fh.MiCols, mibSizeLog2);
-        const uint32_t heightMI = ALIGN_POWER_OF_TWO(fh.MiRows, mibSizeLog2);
+        const Ipp32u widthMI = AlignPowerOfTwo(fh.MiCols, mibSizeLog2);
+        const Ipp32u heightMI = AlignPowerOfTwo(fh.MiRows, mibSizeLog2);
         fh.sbCols = widthMI >> mibSizeLog2;
         fh.sbRows = heightMI >> mibSizeLog2;
     }
@@ -837,7 +839,7 @@ namespace UMC_AV1_DECODER
         if (info.uniform_tile_spacing_flag)
         {
             uint32_t startSB;
-            uint32_t sizeSB = ALIGN_POWER_OF_TWO(fh.sbCols, info.TileColsLog2);
+            Ipp32u sizeSB = AlignPowerOfTwo(fh.sbCols, info.TileColsLog2);
             sizeSB >>= info.TileColsLog2;
             VM_ASSERT(sizeSB > 0);
             for (i = 0, startSB = 0; startSB < fh.sbCols; i++)
@@ -874,7 +876,7 @@ namespace UMC_AV1_DECODER
 
         if (info.uniform_tile_spacing_flag)
         {
-            sizeSB = ALIGN_POWER_OF_TWO(fh.sbRows, info.TileRowsLog2);
+            sizeSB = AlignPowerOfTwo(fh.sbRows, info.TileRowsLog2);
             sizeSB >>= info.TileRowsLog2;
             VM_ASSERT(sizeSB > 0);
             for (i = 0, startSB = 0; startSB < fh.sbRows; i++)

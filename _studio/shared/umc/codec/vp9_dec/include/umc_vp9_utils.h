@@ -30,12 +30,15 @@
 #include "umc_vp9_dec_defs.h"
 
 
-#define ALIGN_POWER_OF_TWO(value, n) \
-    (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1))
-
 namespace UMC_VP9_DECODER
 {
+    constexpr auto VP9_INVALID_REF_FRAME = -1;
     class VP9DecoderFrame;
+
+    inline uint32_t AlignPowerOfTwo(uint32_t value, uint32_t n)
+    {
+        return (((value) + ((1 << (n)) - 1)) & ~((1 << (n)) - 1));
+    }
 
     inline
     int32_t clamp(int32_t value, int32_t low, int32_t high)
