@@ -107,19 +107,20 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*11*/ MFX_ERR_NONE, 0, {{Width, 1920}, {Height, 1088}}},
     {/*12*/ MFX_ERR_NONE, 0, {{Width, 3840}, {Height, 2160}}},
     {/*13*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{Width, 0}, {Height, 0}}},
-    {/*14*/ MFX_ERR_NONE, 0, {{CropX, 65535}, {CropY, 2160}, {CropW, 23}, {CropH, 15}}}, //should be ignored during init
-    {/*15*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}}, //should be ignored during init
-    {/*16*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},
-    {/*17*/ MFX_ERR_NONE, 0, {{AspectRatioW, 16}, {AspectRatioH, 9}}},
+    {/*14*/ MFX_ERR_NONE, 0, {{CropX, 65535}, {CropY, 2160}, {CropW, 23}, {CropH, 15}}}, // should be ignored during init
+    {/*15*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}}, // should be ignored during init
+    {/*16*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},                // Note that these are sample aspect ratios (SAR),
+    {/*17*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{AspectRatioW, 1}, {AspectRatioH, 2}}}, // not frame aspect ratios (frame width : frame height)!
     {/*18*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{AspectRatioW, 0}, {AspectRatioH, 15}}},
-    {/*19*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
-    {/*20*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},
-    {/*21*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FrameRateExtN, 100}, {FrameRateExtD, 0}}},
-    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y210} }},
-    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_UYVY} }},
-    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_RGB4} }},
-    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_AES128_CTR} }, },
-    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_WIDEVINE_GOOGLE_DASH} }, },
+    {/*19*/ MFX_ERR_NONE, 0, {{AspectRatioW, 1}, {AspectRatioH, 15}}},
+    {/*20*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
+    {/*21*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},
+    {/*22*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FrameRateExtN, 100}, {FrameRateExtD, 0}}},
+    {/*23*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_Y210} }},
+    {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_UYVY} }},
+    {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_RGB4} }},
+    {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_AES128_CTR} }, },
+    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_WIDEVINE_GOOGLE_DASH} }, },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 
