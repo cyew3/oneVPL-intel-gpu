@@ -53,6 +53,9 @@ wchar_t libNames[5][32] =
 };
 #endif
 
+void VerifyMediaSDKDecoder(progress_reporter<String^> reporter, bool hevc = false);
+void DoMediaSDKDecode(progress_reporter<String^> reporter, IRandomAccessStream^ outputStream, Array<unsigned char>^ inputStream, bool hevc = false);
+
 //Contains command line arguments
 extern Platform::String^ RunArgs;
 //Flags from command line
@@ -329,315 +332,270 @@ catch(const std::exception &e) \
     size_t exStrSize = 256; \
     wchar_t *exStr = new wchar_t[exStrSize]; \
     swprintf_s(exStr, exStrSize, L"%s, line %d thrown std::exception %S", L#expr, __LINE__, e.what()); \
-    LogMsg(exStr); \
+    reporter.report(ref new String(exStr)); \
 } \
 catch(...) \
 { \
     size_t exStrSize = 256; \
     wchar_t *exStr = new wchar_t[exStrSize]; \
     swprintf_s(exStr, exStrSize, L"%s thrown unknown exception", L#expr); \
-    LogMsg(exStr); \
-}
+    reporter.report(ref new String(exStr)); \
+} \
+
+#define MFX_CHECK(sts) \
+if(sts != MFX_ERR_NONE) \
+{ \
+    reporter.report("DECODE: ERROR"); \
+    return; \
+} \
 
 
-bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
+void VerifyMediaSDKDecoder(progress_reporter<String^> reporter, bool hevc)
 {
     String^ sourcePath;
-    String^ ifl = nullptr;
-    String^ ofl = nullptr;
+    String^ inFileName = nullptr;
+    String^ outFileName = nullptr;
 
     if (hevc)
     {
-        ifl = L"input.h265";
-        ofl = L"mfx_h265_decode_nv12.mfxresult";
-        LogMsg(L"Decoding HEVC");
+        inFileName = L"input.h265";
+        outFileName = L"mfx_h265_decode_nv12.mfxresult";
+        reporter.report(L"Decoding HEVC");
     }
     else
     {
-        ifl = L"input.h264";
-        ofl = L"mfx_h264_decode_nv12.mfxresult";
-        LogMsg(L"Decoding AVC");
+        inFileName = L"input.h264";
+        outFileName = L"mfx_h264_decode_nv12.mfxresult";
+        reporter.report(L"Decoding AVC");
     }
 
+    reporter.report(ref new String(L"Output folder: ") + (DestinationFolder->IsEmpty() ? L"Documents" : DestinationFolder));
+
     sourcePath = Windows::ApplicationModel::Package::Current->InstalledLocation->Path + L"\\Assets";
-    std::shared_ptr<IRandomAccessStream^> outputStream = std::make_shared<IRandomAccessStream^>(nullptr);
-    std::shared_ptr<String^> toWrite = std::make_shared<String^>(nullptr);
-    std::shared_ptr<StorageFolder^> outputDir = std::make_shared<StorageFolder^>(nullptr);
+    reporter.report(ref new String(L"Application folder: ") + sourcePath);
 
-    this->LogMsg(ref new String(L"Output folder: ") + (DestinationFolder->IsEmpty() ? L"Documents":DestinationFolder));
+    IRandomAccessStream^ outputStream;
+    StorageFolder^ outputDir;
+    Array<unsigned char>^ bytes;
 
-    /* Opening file in Documents folder for writing. As result - saving stream in outputStream shared_ptr */
-    create_task(DestinationFolder->IsEmpty() ? KnownFolders::GetFolderForUserAsync(nullptr, KnownFolderId::DocumentsLibrary) : StorageFolder::GetFolderFromPathAsync(DestinationFolder))
-        .then([ofl, outputDir](StorageFolder^ folder)
+    /* Opening output file */
+    try
     {
-        *outputDir = folder;
-        return create_task((*outputDir)->CreateFileAsync(ofl, CreationCollisionOption::ReplaceExisting));
-    })
-        .then([](StorageFile^ file)
-    {
-        return create_task(file->OpenAsync(FileAccessMode::ReadWrite));
-    })
-        .then([outputStream](IRandomAccessStream^ stream)
-    {
-        *outputStream = stream;
-    })
-    /* Opening file in Application folder for reading. */
-        .then([sourcePath]()
-    {
-        return create_task(StorageFolder::GetFolderFromPathAsync(sourcePath));
-    })
-        .then([ifl](StorageFolder^ folder)
-    {
-        return create_task(folder->GetFileAsync(ifl));
-    })
-        .then([](StorageFile^ file)
-    {
-        return create_task(file->OpenAsync(FileAccessMode::Read));
-    })
-    /* Reading all file content into Array (idea - file is small) */
-        .then([this](IRandomAccessStream^ stream)
-    {
-        DataReader^ dataReader = ref new DataReader(stream);
-        unsigned int sSize = static_cast<unsigned int>(stream->Size);
-                
-        return create_task(dataReader->LoadAsync(sSize))
-        .then([this, dataReader](unsigned int bytesLoaded)
+        outputStream = create_task(DestinationFolder->IsEmpty() ? KnownFolders::GetFolderForUserAsync(nullptr, KnownFolderId::DocumentsLibrary) : StorageFolder::GetFolderFromPathAsync(DestinationFolder))
+            .then([outFileName](StorageFolder^ folder)
         {
-            Array<unsigned char>^ bytes = nullptr;
-            try
+            return create_task(folder->CreateFileAsync(outFileName, CreationCollisionOption::ReplaceExisting));
+        })
+            .then([](StorageFile^ file)
+        {
+            return create_task(file->OpenAsync(FileAccessMode::ReadWrite));
+        })
+            .then([](IRandomAccessStream^ stream)
+        {
+            return stream;
+        })
+            .get();
+    }
+    catch (...)
+    {
+        reporter.report("Cannot open output file. Check file for existence. Probably application doesn't have FileSystem access rights.");
+        return;
+    }
+
+    try
+    {
+        bytes = create_task(StorageFolder::GetFolderFromPathAsync(sourcePath))
+            .then([inFileName](StorageFolder^ folder)
+        {
+            return create_task(folder->GetFileAsync(inFileName));
+        })
+            .then([](StorageFile^ file)
+        {
+            return create_task(file->OpenAsync(FileAccessMode::Read));
+        })
+            .then([reporter](IRandomAccessStream^ stream)
+        {
+            DataReader^ dataReader = ref new DataReader(stream);
+            unsigned int sSize = static_cast<unsigned int>(stream->Size);
+
+            return create_task(dataReader->LoadAsync(sSize))
+                .then([dataReader, reporter](unsigned int bytesLoaded)
             {
-                bytes = ref new Array<unsigned char>(bytesLoaded);
-            }
-            catch (...)
-            {
-                this->LogMsg(L"Couldn't allocate memory for reading input bitstream");
-                cancel_current_task();
+                Array<unsigned char>^ bytes = nullptr;
+                try
+                {
+                    bytes = ref new Array<unsigned char>(bytesLoaded);
+                }
+                catch (...)
+                {
+                    reporter.report(L"Cannot allocate memory for input file.");
+                    return bytes;
+                }
+                dataReader->ReadBytes(bytes);
                 return bytes;
-            }
-            dataReader->ReadBytes(bytes);
-            return bytes;
-        });
-    })
-    /* Decoding procedure */
-        .then([&, outputStream, hevc](Array<unsigned char>^ bytes)
+            });
+        }).get();
+    }
+    catch (...)
     {
-        /* Global definitions */
-        mfxStatus sts = MFX_ERR_NONE;
-        mfxBitstream inputBS = { 0 }, outputBS = { 0 };
-        mfxVideoParam vParams = { 0 };
-        mfxFrameAllocRequest allocRequest = { 0 };
-        mfxFrameSurface1 *frames = NULL,
-            *displayOrderFrame = NULL,
-            *freeFrame = NULL;
-        mfxU8 **framesMemory = NULL;
-        mfxSyncPoint syncPoint = NULL;
-        
-        /* MediaSDK Initialization */
-        mfxVersion minVersion = { 0, 1 };
-        mfxSession session = { 0 };
-        
-        /* For making messages */
-        size_t strSize = 256;
-        wchar_t *str = new wchar_t[strSize];
+        reporter.report("Cannot open input file.");
+        return;
+    }
 
-        /* For writing an output bitstream */
-        DataWriter^ dataWriter = ref new DataWriter((*outputStream));
+    DoMediaSDKDecode(reporter, outputStream, bytes, hevc);
+}
 
-        /* MediaSDK initialization */
-        EX_HANDLER(sts = MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11, &minVersion, &session););
-        swprintf_s(str, strSize, L"MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11) returned status: %X", sts);
-        LogMsg(str);
-        if (sts != MFX_ERR_NONE) goto error;
-        if (hevc)
+void DoMediaSDKDecode(progress_reporter<String^> reporter, IRandomAccessStream^ outputStream, Array<unsigned char>^ inputStream, bool hevc)
+{
+    /* Global definitions */
+    mfxStatus sts = MFX_ERR_NONE;
+    mfxBitstream inputBS = { 0 }, outputBS = { 0 };
+    mfxVideoParam vParams = { 0 };
+    mfxFrameAllocRequest allocRequest = { 0 };
+    std::vector<mfxFrameSurface1> frames(0);
+    mfxFrameSurface1
+        *displayOrderFrame = NULL,
+        *freeFrame = NULL;
+    std::vector<std::shared_ptr<mfxU8>> framesMemory(0);
+    mfxSyncPoint syncPoint = NULL;
+
+    /* MediaSDK Initialization */
+    mfxVersion minVersion = { 0, 1 };
+    mfxSession session = { 0 };
+
+    /* For making messages */
+    size_t strSize = 256;
+    std::shared_ptr<wchar_t> strKeeper(new wchar_t[strSize], std::default_delete<wchar_t[]>());
+    wchar_t *str = &(*strKeeper);
+
+    /* For writing an output bitstream */
+    DataWriter^ dataWriter = ref new DataWriter(outputStream);
+    std::vector<mfxU8> streamData(0);
+
+    /* MediaSDK initialization */
+    EX_HANDLER(sts = MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11, &minVersion, &session););
+    swprintf_s(str, strSize, L"MFXInit(MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11) returned status: %X", sts);
+    reporter.report(ref new String(str));
+    MFX_CHECK(sts);
+
+    if (hevc)
+    {
+        EX_HANDLER(sts = MFXVideoUSER_Load(session, &MFX_PLUGINID_HEVCD_HW, 0););
+        swprintf_s(str, strSize, L"MFXVideoUSER_Load(MFX_PLUGINID_HEVCD_HW) returned status: %X", sts);
+        reporter.report(ref new String(str));
+        if (sts != MFX_ERR_NONE)
         {
-            EX_HANDLER(sts = MFXVideoUSER_Load(session, &MFX_PLUGINID_HEVCD_HW, 0););
-            swprintf_s(str, strSize, L"MFXVideoUSER_Load(MFX_PLUGINID_HEVCD_HW) returned status: %X", sts);
-            LogMsg(str);
-            if (sts != MFX_ERR_NONE)
-            {
-                LogMsg(ref new String(L"Possible HEVC is placed in libmfxhw, trying to use it without plugin loading"));
-            }
-         }
-        if (hevc)
-        {
-            vParams.mfx.CodecId = MFX_CODEC_HEVC;
+            reporter.report(ref new String(L"Possible HEVC is placed in libmfxhw, trying to use it without plugin loading"));
         }
-        else
-        {
-            vParams.mfx.CodecId = MFX_CODEC_AVC;
+    }
+    if (hevc)
+    {
+        vParams.mfx.CodecId = MFX_CODEC_HEVC;
+    }
+    else
+    {
+        vParams.mfx.CodecId = MFX_CODEC_AVC;
+    }
+
+    /* Read input file */
+    inputBS.MaxLength = inputBS.DataLength = 0;
+    try
+    {
+        streamData.resize(inputStream->Length);
+        inputBS.Data = streamData.data();
+    }
+    catch (...)
+    {
+        reporter.report(L"Couldn't allocate memory for input mfxBitstream->Data");
+        MFX_CHECK(MFX_ERR_MEMORY_ALLOC);
+    }
+    memcpy(inputBS.Data, inputStream->begin(), inputStream->Length);
+    inputBS.DataLength = inputBS.MaxLength = inputStream->Length;
+
+    /* Decoding header of bitstream */
+    EX_HANDLER(sts = MFXVideoDECODE_DecodeHeader(session, &inputBS, &vParams););
+    swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeHeader returned status: %X", sts);
+    reporter.report(ref new String(str));
+    MFX_CHECK(sts);
+
+    /* Important! We need set IOPattern before working with functions below */
+    if (hevc)
+    {
+        vParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
+    else
+    {
+        vParams.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+    }
+
+    /* Decoder initialization */
+    EX_HANDLER(sts = MFXVideoDECODE_QueryIOSurf(session, &vParams, &allocRequest););
+    swprintf_s(str, strSize, L"MFXVideoDECODE_QueryIOSurf returned status: %X", sts);
+    reporter.report(ref new String(str));
+    MFX_CHECK(sts);
+
+    EX_HANDLER(sts = MFXVideoDECODE_Init(session, &vParams););
+    swprintf_s(str, strSize, L"MFXVideoDECODE_Init returned status: %X", sts);
+    reporter.report(ref new String(str));
+    MFX_CHECK(sts);
+
+    /* Allocating output frames */
+    try
+    {
+        frames.resize(allocRequest.NumFrameSuggested);
+    }
+    catch (...)
+    {
+        reporter.report(L"Cannot allocate memory for mfxFrameSurface1 array.");
+        MFX_CHECK(MFX_ERR_MEMORY_ALLOC);
+    }
+
+    memset(frames.data(), 0, sizeof(mfxFrameSurface1) * allocRequest.NumFrameSuggested);
+
+    try
+    {
+        framesMemory.resize(allocRequest.NumFrameSuggested);
+        for (mfxU16 i = 0; i < allocRequest.NumFrameSuggested; i++) {
+            frames[i].Info = allocRequest.Info;
+            frames[i].Data.Locked = false;
+
+            /* Count size of aligned row */
+            frames[i].Data.Pitch = (allocRequest.Info.Width + 0xF) & (~0xF);
+
+            /* We are allocating memory for following alignment */
+            framesMemory[i].reset(new mfxU8[frames[i].Data.Pitch * frames[i].Info.Height * 3 + 0x10]);
+            mfxU8 *memPtr = &(*framesMemory[i]);
+
+            /* Align start address to 16 */
+            frames[i].Data.Y = reinterpret_cast<mfxU8*>((reinterpret_cast<ptrdiff_t>(memPtr) + 0xF) & (~0xF));
+            frames[i].Data.UV = frames[i].Data.Y + frames[i].Data.Pitch * allocRequest.Info.Height;
         }
+    }
+    catch (...)
+    {
+        reporter.report(L"Couldn't allocate memory for frames.\nDECODE: ERROR");
+        return;
+    }
 
-        /* Read input file */
+    reporter.report(L"Starting decode process, please, wait...");
 
-        inputBS.MaxLength = inputBS.DataLength = 0;
-        try
-        {
-            inputBS.Data = new mfxU8[bytes->Length];
-        }
-        catch (...)
-        {
-            this->LogMsg(L"Couldn't allocate memory for input mfxBitstream->Data");
-            goto error;
-        }
-        memcpy(inputBS.Data, bytes->begin(), bytes->Length);
-        inputBS.DataLength = inputBS.MaxLength = bytes->Length;
+    mfxU32 decodedFrameCount = 0, passedFrameCount = 0;
+    bool decodingError = false;
+    LARGE_INTEGER perfStart, perfFreq, perfEnd, perfElapsed, diskStart, diskEnd, diskElapsed;
 
-        /* Decoding header of bitstream */
-        EX_HANDLER(sts = MFXVideoDECODE_DecodeHeader(session, &inputBS, &vParams););
-        swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeHeader returned status: %X", sts);
-        LogMsg(str);
-        if (sts != MFX_ERR_NONE) goto error;
-        /* Important! We need set IOPattern before working with functions below */
-        if (hevc)
-        {
-            vParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-        }
-        else
-        {
-            vParams.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-        }
+    diskElapsed.QuadPart = 0;
+    QueryPerformanceFrequency(&perfFreq);
+    perfFreq.QuadPart /= 1000;
+    QueryPerformanceCounter(&perfStart);
 
-        /* Decoder initialization */
-        EX_HANDLER(sts = MFXVideoDECODE_QueryIOSurf(session, &vParams, &allocRequest););
-        swprintf_s(str, strSize, L"MFXVideoDECODE_QueryIOSurf returned status: %X", sts);
-        LogMsg(str);
-        if (sts != MFX_ERR_NONE) goto error;
+    //
+    // Stage 1: Main decoding loop
+    //
+    while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_SURFACE == sts) {
+        if (MFX_WRN_DEVICE_BUSY == sts)
+            _sleep(10);  // Wait if device is busy, then repeat the same call to DecodeFrameAsync
 
-        EX_HANDLER(sts = MFXVideoDECODE_Init(session, &vParams););
-        swprintf_s(str, strSize, L"MFXVideoDECODE_Init returned status: %X", sts);
-        LogMsg(str);
-        if (sts != MFX_ERR_NONE) goto error;
-        /* Allocating output frames */
-        try
-        {
-            frames = new mfxFrameSurface1[allocRequest.NumFrameSuggested];
-            memset(frames, 0, sizeof(mfxFrameSurface1) * allocRequest.NumFrameSuggested);
-            framesMemory = new mfxU8*[allocRequest.NumFrameSuggested];
-            for (mfxU16 i = 0; i < allocRequest.NumFrameSuggested; i++) {
-                frames[i].Info = allocRequest.Info;
-                frames[i].Data.Locked = false;
-
-                /* Count size of aligned row */
-                frames[i].Data.Pitch = (allocRequest.Info.Width + 0xF) & (~0xF);
-
-                /* We are allocating memory for following alignment */
-                framesMemory[i] = new mfxU8[frames[i].Data.Pitch * frames[i].Info.Height * 3 + 0x10];
-
-                /* Align start address to 16 */
-                frames[i].Data.Y = reinterpret_cast<mfxU8*>((reinterpret_cast<ptrdiff_t>(framesMemory[i]) + 0xF) & (~0xF));
-                frames[i].Data.UV = frames[i].Data.Y + frames[i].Data.Pitch * allocRequest.Info.Height;
-            }
-        }
-        catch (...)
-        {
-            LogMsg(L"Couldn't allocate memory for frames");
-            goto error;
-        }
-
-        LogMsg(L"Starting decode process, please, wait...");
-
-        mfxU32 decodedFrameCount = 0, passedFrameCount = 0;
-        bool decodingError = false;
-        LARGE_INTEGER perfStart, perfFreq, perfEnd, perfElapsed, diskStart, diskEnd, diskElapsed;
-
-        diskElapsed.QuadPart = 0;
-        QueryPerformanceFrequency(&perfFreq);
-        perfFreq.QuadPart /= 1000;
-        QueryPerformanceCounter(&perfStart);
-
-        //
-        // Stage 1: Main decoding loop
-        //
-        while (MFX_ERR_NONE <= sts || MFX_ERR_MORE_DATA == sts || MFX_ERR_MORE_SURFACE == sts) {
-            if (MFX_WRN_DEVICE_BUSY == sts)
-                _sleep(10);  // Wait if device is busy, then repeat the same call to DecodeFrameAsync
-
-            if (MFX_ERR_MORE_SURFACE == sts || MFX_ERR_NONE == sts) {
-                freeFrame = NULL;
-                for (mfxU16 i = 0; i < allocRequest.NumFrameSuggested; i++) {
-                    if (!frames[i].Data.Locked) {
-                        freeFrame = &frames[i];
-                        break;
-                    }
-                }
-                if (!freeFrame) {
-                    _sleep(10);
-                    continue;
-                }
-            }
-
-            //break if no data on input
-            if (inputBS.DataLength == 0) break;
-
-            // Decode a frame asychronously (returns immediately)
-            //  - If input bitstream contains multiple frames DecodeFrameAsync will start decoding multiple frames, and remove them from bitstream
-            EX_HANDLER(sts = MFXVideoDECODE_DecodeFrameAsync(session, &inputBS, freeFrame, &displayOrderFrame, &syncPoint););
-            if (sts != MFX_ERR_NONE)
-            {
-                swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeFrameAsync returned status: %X", sts);
-                LogMsg(str);
-            }
-
-            // Ignore warnings if output is available,
-            // if no output and no action required just repeat the DecodeFrameAsync call
-            if (MFX_ERR_NONE < sts && syncPoint)
-                sts = MFX_ERR_NONE;
-
-            if (sts == MFX_ERR_NONE) {
-                EX_HANDLER(sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE););
-                decodedFrameCount++;
-                if (sts != MFX_ERR_NONE)
-                {
-                    swprintf_s(str, strSize, L"Frame# %d MFXVideoCORE_SyncOperation returned status: %X", decodedFrameCount, sts);
-                    LogMsg(str);
-                    if (sts < MFX_ERR_NONE)
-                    {
-                        decodingError = true;
-                        break;
-                    }
-                }
-                QueryPerformanceCounter(&diskStart);
-
-                Array<unsigned char>^ outbytes = ref new Array<unsigned char>(displayOrderFrame->Info.CropW);
-
-                /* We are writing Y-component */
-                for (mfxU32 row = 0; row < displayOrderFrame->Info.CropH; row++)
-                {
-                    memcpy(outbytes->begin(), displayOrderFrame->Data.Y + row*displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
-                    dataWriter->WriteBytes(outbytes);
-                }
-                /* We are writing UV-component */
-                for (mfxU32 row = 0; row < mfxU32(displayOrderFrame->Info.CropH / 2); row++)
-                {
-                    memcpy(outbytes->begin(), displayOrderFrame->Data.U + row*displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
-                    dataWriter->WriteBytes(outbytes);
-                }
-                /* To do wait() you need start task with task_continuation_context::use_arbitrary(), look after this lambda's body */
-                create_task(dataWriter->StoreAsync()).wait();
-                create_task((*outputStream)->FlushAsync()).wait();
-                QueryPerformanceCounter(&diskEnd);
-
-                diskElapsed.QuadPart += diskEnd.QuadPart - diskStart.QuadPart;
-            }
-        }
-
-        // MFX_ERR_MORE_DATA means that file has ended, need to go to buffering loop, exit in case of other errors
-        if (sts == MFX_ERR_MORE_DATA)
-        {
-            sts = MFX_ERR_NONE;
-        }
-        else if(sts < MFX_ERR_NONE)
-        {
-            decodingError = true;
-        }
-
-        //
-        // Stage 2: Retrieve the buffered decoded frames
-        //
-        while (!decodingError && (MFX_ERR_NONE <= sts || MFX_ERR_MORE_SURFACE == sts)) {
-            if (MFX_WRN_DEVICE_BUSY == sts)
-                _sleep(10);  // Wait if device is busy, then repeat the same call to DecodeFrameAsync
-
+        if (MFX_ERR_MORE_SURFACE == sts || MFX_ERR_NONE == sts) {
             freeFrame = NULL;
             for (mfxU16 i = 0; i < allocRequest.NumFrameSuggested; i++) {
                 if (!frames[i].Data.Locked) {
@@ -649,101 +607,193 @@ bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
                 _sleep(10);
                 continue;
             }
+        }
 
-            // Decode a frame asychronously (returns immediately)
-            EX_HANDLER(sts = MFXVideoDECODE_DecodeFrameAsync(session, NULL, freeFrame, &displayOrderFrame, &syncPoint););
+        //break if no data on input
+        if (inputBS.DataLength == 0) break;
+
+        // Decode a frame asychronously (returns immediately)
+        //  - If input bitstream contains multiple frames DecodeFrameAsync will start decoding multiple frames, and remove them from bitstream
+        EX_HANDLER(sts = MFXVideoDECODE_DecodeFrameAsync(session, &inputBS, freeFrame, &displayOrderFrame, &syncPoint););
+        if (sts != MFX_ERR_NONE)
+        {
+            swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeFrameAsync returned status: %X", sts);
+            reporter.report(ref new String(str));
+        }
+
+        // Ignore warnings if output is available,
+        // if no output and no action required just repeat the DecodeFrameAsync call
+        if (MFX_ERR_NONE < sts && syncPoint)
+            sts = MFX_ERR_NONE;
+
+        if (sts == MFX_ERR_NONE) {
+            EX_HANDLER(sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE););
+            decodedFrameCount++;
             if (sts != MFX_ERR_NONE)
             {
-                swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeFrameAsync returned status: %X", sts);
-                LogMsg(str);
+                swprintf_s(str, strSize, L"Frame# %d MFXVideoCORE_SyncOperation returned status: %X", decodedFrameCount, sts);
+                reporter.report(ref new String(str));
+                if (sts < MFX_ERR_NONE)
+                {
+                    decodingError = true;
+                    break;
+                }
             }
+            QueryPerformanceCounter(&diskStart);
 
-            // Ignore warnings if output is available,
-            // if no output and no action required just repeat the DecodeFrameAsync call
-            if (MFX_ERR_NONE < sts && syncPoint)
-                sts = MFX_ERR_NONE;
+            Array<unsigned char>^ outbytes = ref new Array<unsigned char>(displayOrderFrame->Info.CropW);
 
-            if (sts == MFX_ERR_NONE) {
-                EX_HANDLER(sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE););
-                decodedFrameCount++;
-                if (sts != MFX_ERR_NONE)
-                {
-                    swprintf_s(str, strSize, L"Frame# %d MFXVideoCORE_SyncOperation returned status: %X", decodedFrameCount, sts);
-                    LogMsg(str);
-                    if (sts < MFX_ERR_NONE)
-                    {
-                        decodingError = true;
-                        break;
-                    }
-                }
-                QueryPerformanceCounter(&diskStart);
-
-                Array<unsigned char>^ outbytes = ref new Array<unsigned char>(displayOrderFrame->Info.CropW);
-
-                /* We are writing Y-component */
-                for (mfxU32 row = 0; row < displayOrderFrame->Info.CropH; row++)
-                {
-                    memcpy(outbytes->begin(), displayOrderFrame->Data.Y + row*displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
-                    dataWriter->WriteBytes(outbytes);
-                }
-                /* We are writing UV-component */
-                for (mfxU32 row = 0; row < mfxU32(displayOrderFrame->Info.CropH / 2); row++)
-                {
-                    memcpy(outbytes->begin(), displayOrderFrame->Data.U + row*displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
-                    dataWriter->WriteBytes(outbytes);
-                }
-                /* To do wait() you need start task with task_continuation_context::use_arbitrary(), look after this lambda's body */
-                create_task(dataWriter->StoreAsync()).wait();
-                create_task((*outputStream)->FlushAsync()).wait();
-                QueryPerformanceCounter(&diskEnd);
-
-                diskElapsed.QuadPart += diskEnd.QuadPart - diskStart.QuadPart;
-            }
-        }
-
-        QueryPerformanceCounter(&perfEnd);
-        perfElapsed.QuadPart = (perfEnd.QuadPart - perfStart.QuadPart - diskElapsed.QuadPart) / perfFreq.QuadPart;
-        diskElapsed.QuadPart /= perfFreq.QuadPart;
-        swprintf_s(str, strSize, L"Total frames decoded: %d\r\nDECODE FPS: %.2f fps\r\nDISK FPS: %.2f fps",
-            decodedFrameCount,
-            (double)decodedFrameCount / ((double)perfElapsed.QuadPart / 1000),
-            (double)decodedFrameCount / ((double)diskElapsed.QuadPart / 1000)
-        );
-        LogMsg(str);
-
-        /* MediaSDK De-Initialization */
-        if (session != NULL)
-        {
-            EX_HANDLER(sts = MFXVideoDECODE_Close(session););
-            swprintf_s(str, strSize, L"MFXVideoDECODE_Close returned status: %X", sts);
-            LogMsg(str);
-            EX_HANDLER(sts = MFXClose(session););
-            swprintf_s(str, strSize, L"MFXClose returned status: %X", sts);
-            LogMsg(str);
-            if (!decodingError)
+            /* We are writing Y-component */
+            for (mfxU32 row = 0; row < displayOrderFrame->Info.CropH; row++)
             {
-                LogMsg(L"DECODE: SUCCESS");
-                goto noerror;
+                memcpy(outbytes->begin(), displayOrderFrame->Data.Y + row * displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
+                dataWriter->WriteBytes(outbytes);
+            }
+            /* We are writing UV-component */
+            for (mfxU32 row = 0; row < mfxU32(displayOrderFrame->Info.CropH / 2); row++)
+            {
+                memcpy(outbytes->begin(), displayOrderFrame->Data.U + row * displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
+                dataWriter->WriteBytes(outbytes);
+            }
+            /* To do wait() you need start task with task_continuation_context::use_arbitrary(), look after this lambda's body */
+            create_task(dataWriter->StoreAsync()).wait();
+            create_task(outputStream->FlushAsync()).wait();
+            QueryPerformanceCounter(&diskEnd);
+
+            diskElapsed.QuadPart += diskEnd.QuadPart - diskStart.QuadPart;
+        }
+    }
+
+    // MFX_ERR_MORE_DATA means that file has ended, need to go to buffering loop, exit in case of other errors
+    if (sts == MFX_ERR_MORE_DATA)
+    {
+        sts = MFX_ERR_NONE;
+    }
+    else if (sts < MFX_ERR_NONE)
+    {
+        decodingError = true;
+    }
+
+    //
+    // Stage 2: Retrieve the buffered decoded frames
+    //
+    while (!decodingError && (MFX_ERR_NONE <= sts || MFX_ERR_MORE_SURFACE == sts)) {
+        if (MFX_WRN_DEVICE_BUSY == sts)
+            _sleep(10);  // Wait if device is busy, then repeat the same call to DecodeFrameAsync
+
+        freeFrame = NULL;
+        for (mfxU16 i = 0; i < allocRequest.NumFrameSuggested; i++) {
+            if (!frames[i].Data.Locked) {
+                freeFrame = &frames[i];
+                break;
             }
         }
-error:
-        LogMsg(L"DECODE: ERROR");
-noerror:
-        delete[] inputBS.Data;
-        delete[] outputBS.Data;
-        for (mfxU16 i = 0; i < allocRequest.NumFrameSuggested; i++) {
-            delete[] framesMemory[i];
+        if (!freeFrame) {
+            _sleep(10);
+            continue;
         }
-        delete[] framesMemory;
-        delete[] frames;
-        delete[] str;
-    }, task_continuation_context::use_arbitrary())
+
+        // Decode a frame asychronously (returns immediately)
+        EX_HANDLER(sts = MFXVideoDECODE_DecodeFrameAsync(session, NULL, freeFrame, &displayOrderFrame, &syncPoint););
+        if (sts != MFX_ERR_NONE)
+        {
+            swprintf_s(str, strSize, L"MFXVideoDECODE_DecodeFrameAsync returned status: %X", sts);
+            reporter.report(ref new String(str));
+        }
+
+        // Ignore warnings if output is available,
+        // if no output and no action required just repeat the DecodeFrameAsync call
+        if (MFX_ERR_NONE < sts && syncPoint)
+            sts = MFX_ERR_NONE;
+
+        if (sts == MFX_ERR_NONE) {
+            EX_HANDLER(sts = MFXVideoCORE_SyncOperation(session, syncPoint, MFX_INFINITE););
+            decodedFrameCount++;
+            if (sts != MFX_ERR_NONE)
+            {
+                swprintf_s(str, strSize, L"Frame# %d MFXVideoCORE_SyncOperation returned status: %X", decodedFrameCount, sts);
+                reporter.report(ref new String(str));
+                if (sts < MFX_ERR_NONE)
+                {
+                    decodingError = true;
+                    break;
+                }
+            }
+            QueryPerformanceCounter(&diskStart);
+
+            Array<unsigned char>^ outbytes = ref new Array<unsigned char>(displayOrderFrame->Info.CropW);
+
+            /* We are writing Y-component */
+            for (mfxU32 row = 0; row < displayOrderFrame->Info.CropH; row++)
+            {
+                memcpy(outbytes->begin(), displayOrderFrame->Data.Y + row * displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
+                dataWriter->WriteBytes(outbytes);
+            }
+            /* We are writing UV-component */
+            for (mfxU32 row = 0; row < mfxU32(displayOrderFrame->Info.CropH / 2); row++)
+            {
+                memcpy(outbytes->begin(), displayOrderFrame->Data.U + row * displayOrderFrame->Data.Pitch, displayOrderFrame->Info.CropW);
+                dataWriter->WriteBytes(outbytes);
+            }
+            /* To do wait() you need start task with task_continuation_context::use_arbitrary(), look after this lambda's body */
+            create_task(dataWriter->StoreAsync()).wait();
+            create_task(outputStream->FlushAsync()).wait();
+            QueryPerformanceCounter(&diskEnd);
+
+            diskElapsed.QuadPart += diskEnd.QuadPart - diskStart.QuadPart;
+        }
+    }
+
+    QueryPerformanceCounter(&perfEnd);
+    perfElapsed.QuadPart = (perfEnd.QuadPart - perfStart.QuadPart - diskElapsed.QuadPart) / perfFreq.QuadPart;
+    diskElapsed.QuadPart /= perfFreq.QuadPart;
+    swprintf_s(str, strSize, L"Total frames decoded: %d\r\nDECODE FPS: %.2f fps\r\nDISK FPS: %.2f fps",
+        decodedFrameCount,
+        (double)decodedFrameCount / ((double)perfElapsed.QuadPart / 1000),
+        (double)decodedFrameCount / ((double)diskElapsed.QuadPart / 1000)
+    );
+    reporter.report(ref new String(str));
+
+    /* MediaSDK De-Initialization */
+    if (session != NULL)
+    {
+        EX_HANDLER(sts = MFXVideoDECODE_Close(session););
+        swprintf_s(str, strSize, L"MFXVideoDECODE_Close returned status: %X", sts);
+        reporter.report(ref new String(str));
+        EX_HANDLER(sts = MFXClose(session););
+        swprintf_s(str, strSize, L"MFXClose returned status: %X", sts);
+        reporter.report(ref new String(str));
+        if (!decodingError)
+        {
+            reporter.report(L"DECODE: SUCCESS");
+            return;
+        }
+    }
+}
+
+bool mfx_uwptest::MainPage::MfxCheckRobustness(bool hevc)
+{
+    auto decodeTask = create_async([hevc](progress_reporter<String^> reporter) {
+        VerifyMediaSDKDecoder(reporter, hevc);
+    });
+    decodeTask->Progress = ref new AsyncActionProgressHandler<String^>([=](IAsyncActionWithProgress<String^>^ asyncInfo, String^ progress)
+    {
+        Log->Text += progress + "\r\n";
+        Log->Height = Log->ActualHeight + 200;
+    });
+    /* This needs to assign task to Non-UI thread */
+    concurrency::task_options decodeTaskOptions = {};
+    decodeTaskOptions.set_continuation_context(concurrency::task_continuation_context::use_arbitrary());
+
+
+    /* Decoding procedure */
+    create_task(decodeTask, decodeTaskOptions)
         .then([this]()
     {
         Log->Text += ref new String(L"Decoding task is completed\r\n");
     }, task_continuation_context::use_default())
     /* After all - do command line requests */
-        .then([&, toWrite]()
+        .then([=]() -> String^
     {
         if (DumpToFile)
         {
@@ -754,30 +804,57 @@ noerror:
             this->LogMsg(L"Log dump is NOT required");
         }
         Sleep(1000); //Looking for correct mechanism for the waiting for queued tasks
-        *toWrite = this->Log->Text;
         Log->Height = Log->ActualHeight + 100;
+        return this->Log->Text;
     }, task_continuation_context::use_default())
-        .then([&, toWrite, outputDir]()
+        .then([=](String^ LogText)
     {
         if (DumpToFile)
         {
-             create_task((*outputDir)->CreateFileAsync(L"mfx_uwptest.mfxresult", CreationCollisionOption::ReplaceExisting))
-                .then([this, toWrite](StorageFile^ file)
+            try
             {
-                return create_task(file->OpenAsync(FileAccessMode::ReadWrite));
-            })
-                .then([this, toWrite](IRandomAccessStream^ stream)
+                create_task(DestinationFolder->IsEmpty() ? KnownFolders::GetFolderForUserAsync(nullptr, KnownFolderId::DocumentsLibrary) : StorageFolder::GetFolderFromPathAsync(DestinationFolder))
+                    .then([](StorageFolder^ folder)
+                {
+                    return create_task(folder->CreateFileAsync(L"mfx_uwptest.mfxresult", CreationCollisionOption::ReplaceExisting));
+                })
+                    .then([](StorageFile^ file)
+                {
+                    return create_task(file->OpenAsync(FileAccessMode::ReadWrite));
+                })
+                    .then([LogText](IRandomAccessStream^ stream)
+                {
+                    InMemoryRandomAccessStream^ memStream = ref new InMemoryRandomAccessStream();
+                    DataWriter^ dataWriter = ref new DataWriter(memStream);
+                    dataWriter->WriteString(LogText);
+                    create_task(stream->WriteAsync(dataWriter->DetachBuffer())).wait();
+                })
+                    .wait();
+            }
+            catch (...)
             {
-                InMemoryRandomAccessStream^ memStream = ref new InMemoryRandomAccessStream();
-                DataWriter^ dataWriter = ref new DataWriter(memStream);
-                dataWriter->WriteString(*toWrite);
-                create_task(stream->WriteAsync(dataWriter->DetachBuffer())).wait();
-            }, task_continuation_context::use_arbitrary())
-                .then([](task<void> task)
-            {
-                return task;
-            })
-                .wait();
+                LogMsg(L"Cannot open output log file. Probably application doesn't have FileSystem access rights.");
+                try
+                {
+                    Sleep(1000); //Looking for correct mechanism for the waiting for queued tasks
+                    create_task(Windows::Storage::ApplicationData::Current->LocalFolder->CreateFileAsync(L"runlog.txt", CreationCollisionOption::ReplaceExisting))
+                        .then([](StorageFile^ file)
+                    {
+                        return create_task(file->OpenAsync(FileAccessMode::ReadWrite));
+                    })
+                        .then([LogText](IRandomAccessStream^ stream)
+                    {
+                        InMemoryRandomAccessStream^ memStream = ref new InMemoryRandomAccessStream();
+                        DataWriter^ dataWriter = ref new DataWriter(memStream);
+                        dataWriter->WriteString(LogText + L"Log file is unavailable. It is possible due to FileSystem access restrictions.");
+                        create_task(stream->WriteAsync(dataWriter->DetachBuffer())).wait();
+                    })
+                        .wait();
+                }
+                catch (...)
+                {
+                }
+            }
         }
     }, task_continuation_context::use_arbitrary())
         .then([]()
@@ -790,9 +867,4 @@ noerror:
 
 
     return 0;
-}
-
-Platform::String^ mfx_uwptest::MainPage::GetLog(void)
-{
-    return Log->Text;
 }

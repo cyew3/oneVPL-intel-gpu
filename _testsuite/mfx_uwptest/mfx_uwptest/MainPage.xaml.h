@@ -35,6 +35,5 @@ namespace mfx_uwptest
     private:
         void Button_Click(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
         void Grid_Loaded(Platform::Object^ sender, Windows::UI::Xaml::RoutedEventArgs^ e);
-        Platform::String^ GetLog(void);
     };
 }
