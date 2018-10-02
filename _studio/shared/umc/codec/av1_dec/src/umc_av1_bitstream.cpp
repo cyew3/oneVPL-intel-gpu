@@ -1242,7 +1242,7 @@ namespace UMC_AV1_DECODER
         m_pbs += actualSize;
     }
 
-    void AV1Bitstream::GetSequenceHeader(SequenceHeader* sh)
+    void AV1Bitstream::ReadSequenceHeader(SequenceHeader* sh)
     {
         AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
 
@@ -1393,91 +1393,6 @@ namespace UMC_AV1_DECODER
             !FrameIsIntraOnly(prev_fh) &&
             fh->FrameWidth == prev_fh->FrameWidth &&
             fh->FrameHeight == prev_fh->FrameHeight);
-    }
-
-    void AV1Bitstream::GetFrameHeaderPart1(FrameHeader* fh, SequenceHeader const* sh)
-    {
-        AV1D_LOG("[+]: %d", (mfxU32)BitsDecoded());
-
-        if (!fh || !sh)
-            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
-
-        fh->show_existing_frame = GetBit();
-        if (fh->show_existing_frame)
-        {
-            fh->frame_to_show_map_idx = GetBits(3);
-            if (sh->frame_id_numbers_present_flag)
-                fh->display_frame_id = GetBits(sh->idLen);
-
-            fh->show_frame = 1;
-
-            return;
-        }
-
-        fh->frame_type = static_cast<FRAME_TYPE>(GetBits(2));
-        fh->show_frame = GetBit();
-        fh->error_resilient_mode = GetBit();
-        fh->enable_intra_edge_filter = GetBit();
-        fh->enable_filter_intra = GetBit();
-        fh->disable_cdf_update = GetBit();
-        if (sh->seq_force_screen_content_tools == 2)
-            fh->allow_screen_content_tools = GetBit();
-        else
-            fh->allow_screen_content_tools = sh->seq_force_screen_content_tools;
-
-        if (fh->allow_screen_content_tools)
-        {
-            if (sh->seq_force_integer_mv == 2)
-                fh->seq_force_integer_mv = GetBit();
-            else
-                fh->seq_force_integer_mv = sh->seq_force_integer_mv;
-        }
-        else
-            fh->seq_force_integer_mv = 0;
-
-        if (sh->frame_id_numbers_present_flag)
-            fh->current_frame_id = GetBits(sh->idLen);
-
-        fh->frame_size_override_flag = GetBits(1);
-        fh->order_hint = GetBits(sh->order_hint_bits_minus1 + 1);
-
-        if (KEY_FRAME == fh->frame_type)
-        {
-            if (!fh->show_frame)
-                fh->refresh_frame_flags = static_cast<Ipp8u>(GetBits(NUM_REF_FRAMES));
-            else
-                fh->refresh_frame_flags = (1 << NUM_REF_FRAMES) - 1;
-
-            for (Ipp8u i = 0; i < INTER_REFS; ++i)
-            {
-                fh->ref_frame_idx[i] = -1;
-            }
-
-            av1_get_frame_size(this, fh, sh);
-
-            if (fh->allow_screen_content_tools &&
-                (fh->FrameWidth == fh->UpscaledWidth || !NO_FILTER_FOR_IBC))
-                fh->allow_intrabc = GetBit();
-        }
-        else
-        {
-            if (FrameIsResilient(fh))
-            {
-                fh->use_ref_frame_mvs = 0;
-            }
-
-            if (FrameIsIntraOnly(fh))
-            {
-                fh->refresh_frame_flags = (Ipp8u)GetBits(NUM_REF_FRAMES);
-                av1_get_frame_size(this, fh, sh);
-
-                if (fh->allow_screen_content_tools &&
-                    (fh->FrameWidth == fh->UpscaledWidth || !NO_FILTER_FOR_IBC))
-                    fh->allow_intrabc = GetBit();
-            }
-        }
-
-        AV1D_LOG("[-]: %d", (mfxU32)BitsDecoded());
     }
 
     static bool IsAllLosless(FrameHeader const * fh)
@@ -1735,7 +1650,7 @@ namespace UMC_AV1_DECODER
         }
     }
 
-    void AV1Bitstream::GetFrameHeaderFull(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh, DPBType const& frameDpb)
+    void AV1Bitstream::ReadUncompressedHeader(FrameHeader* fh, SequenceHeader const* sh, FrameHeader const* prev_fh, DPBType const& frameDpb)
     {
         using UMC_VP9_DECODER::REF_FRAMES_LOG2;
 
@@ -1744,6 +1659,41 @@ namespace UMC_AV1_DECODER
         if (!fh || !sh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
+        bool missingRefFrame = false; // TODO: [Global] Use this flag to trigger error resilience actions
+
+        fh->show_existing_frame = GetBit();
+        if (fh->show_existing_frame)
+        {
+            fh->frame_to_show_map_idx = GetBits(3);
+
+            FrameHeader const& refHdr = frameDpb[fh->frame_to_show_map_idx]->GetFrameHeader();
+
+            if (sh->frame_id_numbers_present_flag)
+            {
+                fh->display_frame_id = GetBits(sh->idLen);
+
+                // check that there is no confilct between display_frame_id and respective frame in DPB
+                if ((fh->display_frame_id != refHdr.current_frame_id ||
+                    false == frameDpb[fh->frame_to_show_map_idx]->RefValid()))
+                {
+                    VM_ASSERT("Frame_to_show is absent in DPB or invalid!");
+                    missingRefFrame = true;
+                }
+
+                fh->current_frame_id = fh->display_frame_id;
+            }
+
+            // get frame resolution
+            fh->FrameWidth = refHdr.FrameWidth;
+            fh->FrameHeight = refHdr.FrameHeight;
+
+            fh->show_frame = 1;
+
+            return;
+        }
+
+        fh->frame_type = static_cast<FRAME_TYPE>(GetBits(2));
+
         if (fh->frame_type != KEY_FRAME)
         {
             VM_ASSERT(prev_fh);
@@ -1751,29 +1701,38 @@ namespace UMC_AV1_DECODER
             // TODO: [Global] Add handling of case when decoding starts from non key frame and thus frameDpb is empty
         }
 
-        bool missingRefFrame = false; // TODO: [Global] Use this flag to trigger error resilience actions
+        fh->show_frame = GetBit();
+        fh->error_resilient_mode = GetBit();
+        fh->enable_intra_edge_filter = GetBit();
+        fh->enable_filter_intra = GetBit();
 
-        if (fh->show_existing_frame)
+        if (fh->frame_type == KEY_FRAME && !frameDpb.empty())
         {
-            FrameHeader const& refHdr = frameDpb[fh->frame_to_show_map_idx]->GetFrameHeader();
+            for (int i = 0; i < NUM_REF_FRAMES; i++)
+                frameDpb[i]->SetRefValid(false);
+        }
 
-            // get frame resolution
-            fh->FrameWidth  = refHdr.FrameWidth;
-            fh->FrameHeight = refHdr.FrameHeight;
+        fh->disable_cdf_update = GetBit();
+        if (sh->seq_force_screen_content_tools == 2)
+            fh->allow_screen_content_tools = GetBit();
+        else
+            fh->allow_screen_content_tools = sh->seq_force_screen_content_tools;
 
-            // check that there is no confilct between display_frame_id and respective frame in DPB
-            if (sh->frame_id_numbers_present_flag &&
-                (fh->display_frame_id != refHdr.current_frame_id ||
-                false == frameDpb[fh->frame_to_show_map_idx]->RefValid()))
-                VM_ASSERT("Frame_to_show is absent in DPB or invalid!");
-                missingRefFrame = true;
-
-            return;
+        if (fh->allow_screen_content_tools)
+        {
+            if (sh->seq_force_integer_mv == 2)
+                fh->seq_force_integer_mv = GetBit();
+            else
+                fh->seq_force_integer_mv = sh->seq_force_integer_mv;
         }
         else
+            fh->seq_force_integer_mv = 0;
+
+        if (sh->frame_id_numbers_present_flag)
         {
-            // check current_frame_id and DPB frames for validity
-            if (sh->frame_id_numbers_present_flag && KEY_FRAME != fh->frame_type)
+            fh->current_frame_id = GetBits(sh->idLen);
+
+            if (fh->frame_type != KEY_FRAME)
             {
                 // check current_frame_id as described in AV1 spec 6.8.2
                 const Ipp32u idLen = sh->idLen;
@@ -1794,72 +1753,110 @@ namespace UMC_AV1_DECODER
             }
         }
 
-        if (!FrameIsIntra(fh))
+        fh->frame_size_override_flag = GetBits(1);
+        fh->order_hint = GetBits(sh->order_hint_bits_minus1 + 1);
+
+        if (KEY_FRAME == fh->frame_type)
         {
-            fh->refresh_frame_flags = (Ipp8u)GetBits(NUM_REF_FRAMES);
-
-            Ipp32u frame_refs_short_signalling = 0;
-
-            if (!fh->error_resilient_mode && sh->enable_order_hint)
-                frame_refs_short_signalling = GetBit();
-
-            if (frame_refs_short_signalling)
-            {
-                const Ipp32u last_frame_idx = GetBits(REF_FRAMES_LOG2);
-                const Ipp32u gold_frame_idx = GetBits(REF_FRAMES_LOG2);
-
-                // set last and gold reference frames
-                fh->ref_frame_idx[LAST_FRAME - LAST_FRAME]   = last_frame_idx;
-                fh->ref_frame_idx[GOLDEN_FRAME - LAST_FRAME] = gold_frame_idx;
-
-                // compute other active references as specified in "Set frame refs process" AV1 spec 7.8
-                av1_set_frame_refs(sh, fh, frameDpb, last_frame_idx, gold_frame_idx);
-            }
+            if (!fh->show_frame)
+                fh->refresh_frame_flags = static_cast<Ipp8u>(GetBits(NUM_REF_FRAMES));
+            else
+                fh->refresh_frame_flags = (1 << NUM_REF_FRAMES) - 1;
 
             for (Ipp8u i = 0; i < INTER_REFS; ++i)
             {
-                if (!frame_refs_short_signalling)
-                    fh->ref_frame_idx[i] = GetBits(REF_FRAMES_LOG2);
-
-                if (sh->frame_id_numbers_present_flag)
-                {
-                    const Ipp32s deltaFrameId = GetBits(sh->delta_frame_id_length) + 1;
-
-                    // compute expected reference frame id from delta_frame_id and check that it's equal to one saved in DPB
-                    const Ipp32u idLen = sh->idLen;
-                    const Ipp32u expectedFrameId = ((fh->current_frame_id - deltaFrameId + (1 << idLen))
-                            % (1 << idLen));
-
-                    AV1DecoderFrame const* refFrm = frameDpb[fh->ref_frame_idx[i]];
-                    FrameHeader const& refHdr = refFrm->GetFrameHeader();
-
-                    if (expectedFrameId != refHdr.current_frame_id ||
-                        false == refFrm->RefValid())
-                    {
-                        VM_ASSERT("Active reference frame is absent in DPB or invalid!");
-                        missingRefFrame = true;
-                    }
-                }
+                fh->ref_frame_idx[i] = -1;
             }
 
-            if (fh->error_resilient_mode == 0 && fh->frame_size_override_flag)
-                av1_get_frame_sizes_with_refs(this, fh, frameDpb, sh);
-            else
+            av1_get_frame_size(this, fh, sh);
+
+            if (fh->allow_screen_content_tools &&
+                (fh->FrameWidth == fh->UpscaledWidth || !NO_FILTER_FOR_IBC))
+                fh->allow_intrabc = GetBit();
+        }
+        else
+        {
+            if (FrameIsResilient(fh))
+            {
+                fh->use_ref_frame_mvs = 0;
+            }
+
+            if (FrameIsIntraOnly(fh))
+            {
+                fh->refresh_frame_flags = (Ipp8u)GetBits(NUM_REF_FRAMES);
                 av1_get_frame_size(this, fh, sh);
 
-            if (fh->seq_force_integer_mv)
-                fh->allow_high_precision_mv = 0;
+                if (fh->allow_screen_content_tools &&
+                    (fh->FrameWidth == fh->UpscaledWidth || !NO_FILTER_FOR_IBC))
+                    fh->allow_intrabc = GetBit();
+            }
             else
-                fh->allow_high_precision_mv = GetBit();
-
-            fh->interpolation_filter = GetBit() ? SWITCHABLE : (INTERP_FILTER)GetBits(LOG2_SWITCHABLE_FILTERS);
-            fh->is_motion_mode_switchable = GetBit();
-            FrameHeader const& last_fh = frameDpb[fh->ref_frame_idx[LAST_FRAME - LAST_FRAME]]->GetFrameHeader();
-
-            if (FrameMightUsePrevFrameMVs(fh) && sh->enable_order_hint)
             {
-                const Ipp32u useRefFrameMVs = GetBit();
-                fh->use_ref_frame_mvs = useRefFrameMVs && FrameCanUsePrevFrameMVs(fh, &last_fh);
+                fh->refresh_frame_flags = (Ipp8u)GetBits(NUM_REF_FRAMES);
+
+                Ipp32u frame_refs_short_signalling = 0;
+
+                if (!fh->error_resilient_mode && sh->enable_order_hint)
+                    frame_refs_short_signalling = GetBit();
+
+                if (frame_refs_short_signalling)
+                {
+                    const Ipp32u last_frame_idx = GetBits(REF_FRAMES_LOG2);
+                    const Ipp32u gold_frame_idx = GetBits(REF_FRAMES_LOG2);
+
+                    // set last and gold reference frames
+                    fh->ref_frame_idx[LAST_FRAME - LAST_FRAME] = last_frame_idx;
+                    fh->ref_frame_idx[GOLDEN_FRAME - LAST_FRAME] = gold_frame_idx;
+
+                    // compute other active references as specified in "Set frame refs process" AV1 spec 7.8
+                    av1_set_frame_refs(sh, fh, frameDpb, last_frame_idx, gold_frame_idx);
+                }
+
+                for (Ipp8u i = 0; i < INTER_REFS; ++i)
+                {
+                    if (!frame_refs_short_signalling)
+                        fh->ref_frame_idx[i] = GetBits(REF_FRAMES_LOG2);
+
+                    if (sh->frame_id_numbers_present_flag)
+                    {
+                        const Ipp32s deltaFrameId = GetBits(sh->delta_frame_id_length) + 1;
+
+                        // compute expected reference frame id from delta_frame_id and check that it's equal to one saved in DPB
+                        const Ipp32u idLen = sh->idLen;
+                        const Ipp32u expectedFrameId = ((fh->current_frame_id - deltaFrameId + (1 << idLen))
+                            % (1 << idLen));
+
+                        AV1DecoderFrame const* refFrm = frameDpb[fh->ref_frame_idx[i]];
+                        FrameHeader const& refHdr = refFrm->GetFrameHeader();
+
+                        if (expectedFrameId != refHdr.current_frame_id ||
+                            false == refFrm->RefValid())
+                        {
+                            VM_ASSERT("Active reference frame is absent in DPB or invalid!");
+                            missingRefFrame = true;
+                        }
+                    }
+                }
+
+                if (fh->error_resilient_mode == 0 && fh->frame_size_override_flag)
+                    av1_get_frame_sizes_with_refs(this, fh, frameDpb, sh);
+                else
+                    av1_get_frame_size(this, fh, sh);
+
+                if (fh->seq_force_integer_mv)
+                    fh->allow_high_precision_mv = 0;
+                else
+                    fh->allow_high_precision_mv = GetBit();
+
+                fh->interpolation_filter = GetBit() ? SWITCHABLE : (INTERP_FILTER)GetBits(LOG2_SWITCHABLE_FILTERS);
+                fh->is_motion_mode_switchable = GetBit();
+                FrameHeader const& last_fh = frameDpb[fh->ref_frame_idx[LAST_FRAME - LAST_FRAME]]->GetFrameHeader();
+
+                if (FrameMightUsePrevFrameMVs(fh) && sh->enable_order_hint)
+                {
+                    const Ipp32u useRefFrameMVs = GetBit();
+                    fh->use_ref_frame_mvs = useRefFrameMVs && FrameCanUsePrevFrameMVs(fh, &last_fh);
+                }
             }
         }
 

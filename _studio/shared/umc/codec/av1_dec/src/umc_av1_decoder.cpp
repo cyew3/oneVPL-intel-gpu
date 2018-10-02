@@ -61,8 +61,6 @@ namespace UMC_AV1_DECODER
         if (!in)
             return UMC::UMC_ERR_NULL_PTR;
 
-        bool gotSeqHeader = false;
-
         SequenceHeader sh = {};
         FrameHeader fh = {};
 
@@ -77,24 +75,14 @@ namespace UMC_AV1_DECODER
                 bs.ReadOBUInfo(&obuInfo);
                 VM_ASSERT(CheckOBUType(obuInfo.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
 
-                switch (obuInfo.header.obu_type)
+                if (obuInfo.header.obu_type == OBU_SEQUENCE_HEADER)
                 {
-                case OBU_SEQUENCE_HEADER:
-                    bs.GetSequenceHeader(&sh);
-                    gotSeqHeader = true; // activate seq header
-                    break;
-                case OBU_FRAME_HEADER:
-                case OBU_FRAME:
-                    if (!gotSeqHeader)
-                        break; // bypass frame header if there is no active seq header
-                    // let's read frame header to check compatibility with sequence header
-                    bs.GetFrameHeaderPart1(&fh, &sh);
+                    bs.ReadSequenceHeader(&sh);
+
                     in->MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
 
                     if (FillVideoParam(sh, par) == UMC::UMC_OK)
                         return UMC::UMC_OK;
-
-                    break;
                 }
 
                 in->MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
@@ -309,14 +297,13 @@ namespace UMC_AV1_DECODER
             case OBU_SEQUENCE_HEADER:
                 if (!sequence_header.get())
                     sequence_header.reset(new SequenceHeader);
-                bs.GetSequenceHeader(sequence_header.get());
+                bs.ReadSequenceHeader(sequence_header.get());
                 break;
             case OBU_FRAME_HEADER:
             case OBU_FRAME:
                 if (!sequence_header.get())
                     break; // bypass frame header if there is no active seq header
-                bs.GetFrameHeaderPart1(&fh, sequence_header.get());
-                bs.GetFrameHeaderFull(&fh, sequence_header.get(), prev_fh, updated_refs);
+                bs.ReadUncompressedHeader(&fh, sequence_header.get(), prev_fh, updated_refs);
                 gotFrameHeader = true;
                 if (obuInfo.header.obu_type == OBU_FRAME_HEADER)
                     break;
