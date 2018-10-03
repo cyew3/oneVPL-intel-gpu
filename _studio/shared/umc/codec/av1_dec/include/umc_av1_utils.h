@@ -26,35 +26,30 @@ namespace UMC_AV1_DECODER
     // because after switch to AV1-specific segmentation stuff there are only few definitions we need to re-use from VP9
     void SetSegData(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data);
 
-    inline
-    Ipp32s GetSegData(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    inline Ipp32s GetSegData(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.FeatureData[segmentId][featureId];
     }
 
-    inline
-    bool IsSegFeatureActive(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    inline bool IsSegFeatureActive(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.segmentation_enabled && (seg.FeatureMask[segmentId] & (1 << featureId));
     }
 
-    inline
-    void EnableSegFeature(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    inline void EnableSegFeature(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
     {
         seg.FeatureMask[segmentId] |= 1 << featureId;
     }
 
-    inline
-    Ipp8u IsSegFeatureSigned(SEG_LVL_FEATURES featureId)
+    inline Ipp8u IsSegFeatureSigned(SEG_LVL_FEATURES featureId)
     {
         return
             SEG_FEATURE_DATA_SIGNED[featureId];
     }
 
-    inline
-        void ClearAllSegFeatures(AV1Segmentation & seg)
+    inline void ClearAllSegFeatures(AV1Segmentation & seg)
     {
         memset(&seg.FeatureData, 0, sizeof(seg.FeatureData));
         memset(&seg.FeatureMask, 0, sizeof(seg.FeatureMask));
@@ -80,6 +75,54 @@ namespace UMC_AV1_DECODER
     inline Ipp32u NumTiles(FrameHeader const & fh)
     {
         return fh.TileCols * fh.TileRows;
+    }
+
+    int IsCodedLossless(FrameHeader const*);
+
+    void InheritFromPrevFrame(FrameHeader*, FrameHeader const*);
+
+    inline bool FrameMightUsePrevFrameMVs(FrameHeader const* fh, SequenceHeader const* sh)
+    {
+#if UMC_AV1_DECODER_REV >= 8500
+        return !FrameIsResilient(fh) && sh->enable_order_hint && sh->enable_ref_frame_mvs;
+#else
+        const bool large_scale_tile = 0; // this parameter isn't taken from the bitstream. Looks like decoder gets it from outside (e.g. container or some environment).
+        return !FrameIsResilient(fh) && sh->enable_order_hint && !large_scale_tile;
+#endif
+    }
+
+#if UMC_AV1_DECODER_REV == 5000
+    inline bool FrameCanUsePrevFrameMVs(FrameHeader const* fh, SequenceHeader const* sh, FrameHeader const* prev_fh = 0)
+    {
+        return (FrameMightUsePrevFrameMVs(fh, sh) &&
+            prev_fh &&
+            !FrameIsIntraOnly(prev_fh) &&
+            fh->FrameWidth == prev_fh->FrameWidth &&
+            fh->FrameHeight == prev_fh->FrameHeight);
+    }
+#endif
+
+    inline void SetDefaultLFParams(Loopfilter& par)
+    {
+        par.loop_filter_delta_enabled = 1;
+        par.loop_filter_delta_update = 1;
+
+        par.loop_filter_ref_deltas[INTRA_FRAME] = 1;
+        par.loop_filter_ref_deltas[LAST_FRAME] = 0;
+        par.loop_filter_ref_deltas[LAST2_FRAME] = par.loop_filter_ref_deltas[LAST_FRAME];
+        par.loop_filter_ref_deltas[LAST3_FRAME] = par.loop_filter_ref_deltas[LAST_FRAME];
+        par.loop_filter_ref_deltas[BWDREF_FRAME] = par.loop_filter_ref_deltas[LAST_FRAME];
+        par.loop_filter_ref_deltas[GOLDEN_FRAME] = -1;
+        par.loop_filter_ref_deltas[ALTREF2_FRAME] = -1;
+        par.loop_filter_ref_deltas[ALTREF_FRAME] = -1;
+
+        par.loop_filter_mode_deltas[0] = 0;
+        par.loop_filter_mode_deltas[1] = 0;
+    }
+
+    inline Ipp8u GetNumPlanes(SequenceHeader const * sh)
+    {
+        return sh->color_config.mono_chrome ? 1 : MAX_MB_PLANE;
     }
 }
 

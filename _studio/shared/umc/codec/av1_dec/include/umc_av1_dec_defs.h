@@ -61,7 +61,6 @@ namespace UMC_AV1_DECODER
     const Ipp8u SUPERRES_SCALE_DENOMINATOR_MIN = SCALE_NUMERATOR + 1;
     const Ipp8u PRIMARY_REF_BITS = 3;
     const Ipp8u PRIMARY_REF_NONE = 7;
-    const Ipp8u NO_FILTER_FOR_IBC = 1;
 
     const Ipp32u MAX_TILE_WIDTH = 4096;        // Max Tile width in pixels
     const Ipp32u MAX_TILE_AREA  = 4096 * 2304;  // Maximum tile area in pixels
@@ -87,6 +86,7 @@ namespace UMC_AV1_DECODER
         OBU_TILE_GROUP = 4,
         OBU_METADATA = 5,
         OBU_FRAME = 6,
+        OBU_REDUNDANT_FRAME_HEADER = 7,
         OBU_PADDING = 15,
     };
 
@@ -178,7 +178,7 @@ namespace UMC_AV1_DECODER
         KEY_FRAME = 0,
         INTER_FRAME = 1,
         INTRA_ONLY_FRAME = 2,  // replaces intra-only
-        S_FRAME = 3,
+        SWITCH_FRAME = 3,
         FRAME_TYPES,
     };
 
@@ -252,6 +252,7 @@ namespace UMC_AV1_DECODER
         REFERENCE_MODES = 3,
     };
 
+    // TODO: [Rev0.85] remove this enum once "refresh_frame_context" field will be removed from DDI
     enum REFRESH_FRAME_CONTEXT_MODE {
         REFRESH_FRAME_CONTEXT_DISABLED,
         REFRESH_FRAME_CONTEXT_BACKWARD,
@@ -473,6 +474,7 @@ namespace UMC_AV1_DECODER
         //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in uncompressed_header()
         Ipp32u show_existing_frame;
         Ipp32u frame_to_show_map_idx;
+        Ipp64u frame_presentation_time;
         Ipp32u display_frame_id;
         FRAME_TYPE frame_type;
         Ipp32u show_frame;
@@ -480,13 +482,14 @@ namespace UMC_AV1_DECODER
         Ipp32u error_resilient_mode;
         Ipp32u disable_cdf_update;
         Ipp32u allow_screen_content_tools;
-        Ipp32u seq_force_integer_mv;
+        Ipp32u force_integer_mv;
         Ipp32u current_frame_id;
         Ipp32u frame_size_override_flag;
         Ipp32u order_hint;
         Ipp32u primary_ref_frame;
 
         Ipp8u refresh_frame_flags;
+        Ipp32u ref_order_hint[NUM_REF_FRAMES];
 
         Ipp32u FrameWidth;
         Ipp32u FrameHeight;
@@ -503,6 +506,7 @@ namespace UMC_AV1_DECODER
         INTERP_FILTER interpolation_filter;
         Ipp32u is_motion_mode_switchable;
         Ipp32u use_ref_frame_mvs;
+        Ipp32u disable_frame_end_update_cdf;
 
         Ipp32u sbCols;
         Ipp32u sbRows;
@@ -514,6 +518,7 @@ namespace UMC_AV1_DECODER
         Ipp32u TileRows;
         Ipp32u SbColStarts[MAX_TILE_COLS + 1];  // valid for 0 <= i <= TileCols
         Ipp32u SbRowStarts[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= TileRows
+        Ipp32u context_update_tile_id;
         Ipp32u TileSizeBytes;
 
         Ipp32u base_q_idx;
@@ -521,7 +526,7 @@ namespace UMC_AV1_DECODER
         Ipp32s DeltaQUDc;
         Ipp32s DeltaQUAc;
         Ipp32s DeltaQVDc;
-        Ipp32s DeltaQVac;
+        Ipp32s DeltaQVAc;
         Ipp32u using_qmatrix;
         Ipp32u qm_y;
         Ipp32u qm_u;
@@ -536,14 +541,17 @@ namespace UMC_AV1_DECODER
         Ipp32u delta_lf_res;
         Ipp32u delta_lf_multi;
 
-        Ipp32u lossless;
+        Ipp32u CodedLossless;
+        Ipp32u AllLossless;
 
         Loopfilter loop_filter_params;
 
         Ipp32u cdef_damping;
         Ipp32u cdef_bits;
-        Ipp32u cdef_y_strength[CDEF_MAX_STRENGTHS];
-        Ipp32u cdef_uv_strength[CDEF_MAX_STRENGTHS];
+        Ipp32u cdef_y_pri_strength[CDEF_MAX_STRENGTHS];
+        Ipp32u cdef_y_sec_strength[CDEF_MAX_STRENGTHS];
+        Ipp32u cdef_uv_pri_strength[CDEF_MAX_STRENGTHS];
+        Ipp32u cdef_uv_sec_strength[CDEF_MAX_STRENGTHS];
 
         RestorationType lr_type[MAX_MB_PLANE];
         Ipp32u lr_unit_shift;
@@ -551,7 +559,8 @@ namespace UMC_AV1_DECODER
 
         TX_MODE TxMode;
         Ipp32u reference_mode;
-        Ipp32u skipModeAllowed;
+        Ipp32u skip_mode_present;
+        Ipp32u allow_warped_motion;
         Ipp32u reduced_tx_set;
 
         WarpedMotionParams global_motion_params[TOTAL_REFS];
@@ -563,9 +572,10 @@ namespace UMC_AV1_DECODER
         Ipp32u large_scale_tile;
 
         //Rev 0.5 parameters
-        Ipp32u refresh_frame_context;
         Ipp32u loop_filter_across_tiles_v_enabled;
         Ipp32u loop_filter_across_tiles_h_enabled;
+        Ipp32u cdef_y_strength[CDEF_MAX_STRENGTHS];
+        Ipp32u cdef_uv_strength[CDEF_MAX_STRENGTHS];
         Ipp32u enable_interintra_compound;
         Ipp32u enable_masked_compound;
         Ipp32u enable_intra_edge_filter;

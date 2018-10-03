@@ -11,6 +11,8 @@
 #include "umc_defs.h"
 #ifdef UMC_ENABLE_AV1_VIDEO_DECODER
 
+#include "umc_structures.h"
+#include "umc_vp9_utils.h"
 #include "umc_av1_utils.h"
 
 namespace UMC_AV1_DECODER
@@ -29,26 +31,58 @@ namespace UMC_AV1_DECODER
 
     void SetupPastIndependence(FrameHeader & info)
     {
-        // Reset the segment feature data to the default stats:
-        // Features disabled, 0, with delta coding (Default state).
-
         ClearAllSegFeatures(info.segmentation_params);
 
-        // set_default_lf_deltas()
-        info.loop_filter_params.loop_filter_delta_enabled = 1;
-        info.loop_filter_params.loop_filter_delta_update = 1;
+        SetDefaultLFParams(info.loop_filter_params);
+    }
 
-        info.loop_filter_params.loop_filter_ref_deltas[INTRA_FRAME] = 1;
-        info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME] = 0;
-        info.loop_filter_params.loop_filter_ref_deltas[LAST2_FRAME] = info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME];
-        info.loop_filter_params.loop_filter_ref_deltas[LAST3_FRAME] = info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME];
-        info.loop_filter_params.loop_filter_ref_deltas[BWDREF_FRAME] = info.loop_filter_params.loop_filter_ref_deltas[LAST_FRAME];
-        info.loop_filter_params.loop_filter_ref_deltas[GOLDEN_FRAME] = -1;
-        info.loop_filter_params.loop_filter_ref_deltas[ALTREF2_FRAME] = -1;
-        info.loop_filter_params.loop_filter_ref_deltas[ALTREF_FRAME] = -1;
+    inline Ipp32u av1_get_qindex(FrameHeader const * fh, Ipp8u segmentId)
+    {
+        if (IsSegFeatureActive(fh->segmentation_params, segmentId, SEG_LVL_ALT_Q))
+        {
+            const int data = GetSegData(fh->segmentation_params, segmentId, SEG_LVL_ALT_Q);
+            return UMC_VP9_DECODER::clamp(fh->base_q_idx + data, 0, UMC_VP9_DECODER::MAXQ);
+        }
+        else
+            return fh->base_q_idx;
+    }
 
-        info.loop_filter_params.loop_filter_mode_deltas[0] = 0;
-        info.loop_filter_params.loop_filter_mode_deltas[1] = 0;
+    int IsCodedLossless(FrameHeader const * fh)
+    {
+        int CodedLossless = 1;
+
+        for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; ++i)
+        {
+            const Ipp32u qindex = av1_get_qindex(fh, i);
+
+            if (qindex || fh->DeltaQYDc ||
+                fh->DeltaQUAc || fh->DeltaQUDc ||
+                fh->DeltaQVAc || fh->DeltaQVDc)
+            {
+                CodedLossless = 0;
+                break;
+            }
+        }
+
+        return CodedLossless;
+    }
+
+    void InheritFromPrevFrame(FrameHeader* fh, FrameHeader const* prev_fh)
+    {
+        for (Ipp32u i = 0; i < TOTAL_REFS; i++)
+            fh->loop_filter_params.loop_filter_ref_deltas[i] = prev_fh->loop_filter_params.loop_filter_ref_deltas[i];
+
+        for (Ipp32u i = 0; i < MAX_MODE_LF_DELTAS; i++)
+            fh->loop_filter_params.loop_filter_mode_deltas[i] = prev_fh->loop_filter_params.loop_filter_mode_deltas[i];
+
+        fh->cdef_damping = prev_fh->cdef_damping;
+        for (Ipp32u i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        {
+            fh->cdef_y_strength[i] = prev_fh->cdef_y_strength[i];
+            fh->cdef_uv_strength[i] = prev_fh->cdef_uv_strength[i];
+        }
+
+        fh->segmentation_params = prev_fh->segmentation_params;
     }
 }
 

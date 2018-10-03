@@ -179,16 +179,16 @@ namespace UMC_AV1_DECODER
         ddiPicParam.error_resilient_mode = info.error_resilient_mode;
         ddiPicParam.disable_cdf_update = info.disable_cdf_update;
         ddiPicParam.allow_screen_content_tools = info.allow_screen_content_tools;
-        ddiPicParam.force_integer_mv = info.seq_force_integer_mv;
+        ddiPicParam.force_integer_mv = info.force_integer_mv;
         ddiPicParam.allow_intrabc = info.allow_intrabc;
         ddiPicParam.use_superres = (info.SuperresDenom == SCALE_NUMERATOR) ? 0 : 1;
         ddiPicParam.allow_high_precision_mv = info.allow_high_precision_mv;
         ddiPicParam.is_motion_mode_switchable = info.is_motion_mode_switchable;
         ddiPicParam.use_ref_frame_mvs = info.use_ref_frame_mvs;
-        ddiPicParam.disable_frame_end_update_cdf = (info.refresh_frame_context == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
+        ddiPicParam.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         ddiPicParam.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
         ddiPicParam.allow_warped_motion = 0;
-        ddiPicParam.refresh_frame_context = info.refresh_frame_context;
+        ddiPicParam.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
         ddiPicParam.large_scale_tile = info.large_scale_tile;
 
         picParam->order_hint = (UCHAR)info.order_hint;
@@ -257,7 +257,7 @@ namespace UMC_AV1_DECODER
         picParam->u_dc_delta_q = (CHAR)info.DeltaQUDc;
         picParam->v_dc_delta_q = (CHAR)info.DeltaQVDc;
         picParam->u_ac_delta_q = (CHAR)info.DeltaQUAc;
-        picParam->v_ac_delta_q = (CHAR)info.DeltaQVac;
+        picParam->v_ac_delta_q = (CHAR)info.DeltaQVAc;
 
         memset(&picParam->stAV1Segments.feature_data, 0, sizeof(picParam->stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam->stAV1Segments.feature_mask, 0, sizeof(&picParam->stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
@@ -459,16 +459,16 @@ namespace UMC_AV1_DECODER
         picInfo.error_resilient_mode = info.error_resilient_mode;
         picInfo.disable_cdf_update = info.disable_cdf_update;
         picInfo.allow_screen_content_tools = info.allow_screen_content_tools;
-        picInfo.force_integer_mv = info.seq_force_integer_mv;
+        picInfo.force_integer_mv = info.force_integer_mv;
         picInfo.allow_intrabc = info.allow_intrabc;
         picInfo.use_superres = (info.SuperresDenom == SCALE_NUMERATOR) ? 0 : 1;
         picInfo.allow_high_precision_mv = info.allow_high_precision_mv;
         picInfo.is_motion_mode_switchable = info.is_motion_mode_switchable;
         picInfo.use_ref_frame_mvs = info.use_ref_frame_mvs;
-        picInfo.disable_frame_end_update_cdf = (info.refresh_frame_context == REFRESH_FRAME_CONTEXT_DISABLED) ? 1 : 0;;
+        picInfo.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         picInfo.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
         picInfo.allow_warped_motion = 0;
-        picInfo.refresh_frame_context = info.refresh_frame_context;
+        picInfo.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;;
         picInfo.large_scale_tile = info.large_scale_tile;
 
         picParam->order_hint = (uint8_t)info.order_hint;
@@ -544,7 +544,7 @@ namespace UMC_AV1_DECODER
         picParam->u_dc_delta_q = (int8_t)info.DeltaQUDc;
         picParam->v_dc_delta_q = (int8_t)info.DeltaQVDc;
         picParam->u_ac_delta_q = (int8_t)info.DeltaQUAc;
-        picParam->v_ac_delta_q = (int8_t)info.DeltaQVac;
+        picParam->v_ac_delta_q = (int8_t)info.DeltaQVAc;
 
         // fill CDEF
         picParam->cdef_damping_minus_3 = (uint8_t)(info.cdef_damping - 3);

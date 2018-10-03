@@ -46,6 +46,7 @@ namespace UMC_AV1_DECODER
         case OBU_TEMPORAL_DELIMITER:
         case OBU_SEQUENCE_HEADER:
         case OBU_FRAME_HEADER:
+        case OBU_REDUNDANT_FRAME_HEADER:
         case OBU_FRAME:
         case OBU_TILE_GROUP:
         case OBU_METADATA:
@@ -297,15 +298,17 @@ namespace UMC_AV1_DECODER
             case OBU_SEQUENCE_HEADER:
                 if (!sequence_header.get())
                     sequence_header.reset(new SequenceHeader);
+                *sequence_header = SequenceHeader{};
                 bs.ReadSequenceHeader(sequence_header.get());
                 break;
             case OBU_FRAME_HEADER:
+            case OBU_REDUNDANT_FRAME_HEADER:
             case OBU_FRAME:
                 if (!sequence_header.get())
                     break; // bypass frame header if there is no active seq header
-                bs.ReadUncompressedHeader(&fh, sequence_header.get(), prev_fh, updated_refs);
+                bs.ReadUncompressedHeader(&fh, sequence_header.get(), prev_fh, updated_refs, obuInfo.header);
                 gotFrameHeader = true;
-                if (obuInfo.header.obu_type == OBU_FRAME_HEADER)
+                if (obuInfo.header.obu_type != OBU_FRAME)
                     break;
                 bs.ReadByteAlignment();
             case OBU_TILE_GROUP:
