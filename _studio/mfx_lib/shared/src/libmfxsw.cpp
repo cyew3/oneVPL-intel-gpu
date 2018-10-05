@@ -111,7 +111,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 #else
     _mfxSession * pSession = 0;
 #endif
-    mfxVersion libver;
     mfxStatus mfxRes;
     int adapterNum = 0;
     mfxIMPL impl = par.Implementation & (MFX_IMPL_VIA_ANY - 1);
@@ -124,8 +123,15 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInit");
     MFX_LTRACE_1(MFX_TRACE_LEVEL_API, "^ModuleHandle^libmfx=", "%p", g_hModule);
 
-#if defined (MFX_RT)
+    // check the library version
+    if ((MFX_VERSION_MAJOR != par.Version.Major) ||
+        (MFX_VERSION_MINOR < par.Version.Minor))
+    {
+        return MFX_ERR_UNSUPPORTED;
+    }
+
     // check error(s)
+#if defined (MFX_RT)
     if ((MFX_IMPL_AUTO != impl) &&
         (MFX_IMPL_AUTO_ANY != impl) &&
         (MFX_IMPL_HARDWARE_ANY != impl) &&
@@ -138,7 +144,6 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         return MFX_ERR_UNSUPPORTED;
     }
 #else
-        // check error(s)
     if ((MFX_IMPL_AUTO != impl) &&
         (MFX_IMPL_AUTO_ANY != impl) &&
 #ifdef MFX_VA
@@ -208,18 +213,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
         mfxInitParam init_param = par;
         init_param.Implementation = implInterface;
 
-        //mfxRes = pSession->Init(implInterface, &par.Version);
         mfxRes = pSession->InitEx(init_param);
-
-        // check the library version
-        MFXQueryVersion(pSession, &libver);
-
-        // check the numbers
-        if ((libver.Major != par.Version.Major) ||
-            (libver.Minor < par.Version.Minor))
-        {
-            mfxRes = MFX_ERR_UNSUPPORTED;
-        }
     }
     catch(MFX_CORE_CATCH_TYPE)
     {
