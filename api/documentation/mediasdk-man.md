@@ -196,7 +196,7 @@ The SDK video processing pipeline does not support HW acceleration for P210 form
 
 This chapter describes the concepts used in programming the SDK.
 
-The application must use the include file, **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK static dispatcher library, **libmfx.lib** or **libmfx.a**. If the application is written in C then **libstdc++.a** library should also be linked.
+The application must use the include file, **mfxvideo.h** (for C programming), or **mfxvideo++.h** (for C++ programming), and link the SDK dispatcher library, **libmfx.lib** or **libmfx.so**. If the application is written in C then **libstdc++.a** library should also be linked.
 
 Include these files:
 ```C
@@ -209,13 +209,8 @@ Link this library:
 ```
 or
 ```
-      libmfx.a                 /* The SDK static dispatcher library */
+      libmfx.so                /* The SDK dynamic dispatcher library (Linux)*/
 ```
-
-On Linux* there is slight difference between using dispatcher library from executable module or from shared object. To mitigate symbol conflict between itself and SDK shared object on Linux*, application should:
-
-1. link against **dispatch_shared.a** instead of **libmfx.a**
-2. define `MFX_DISPATCHER_EXPOSED_PREFIX` before any SDK includes
 
 ## Status Codes
 

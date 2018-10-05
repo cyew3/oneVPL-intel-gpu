@@ -14,7 +14,7 @@ list( APPEND LIBS
     mfx_pipeline
     shared_utils
     sample_common
-    dispatch_trace
+    mfx
     umc_codecs_merged
     media_buffers
     umc_io

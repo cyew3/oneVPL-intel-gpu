@@ -89,7 +89,7 @@ foreach( prefix ${CMAKE_CURRENT_SOURCE_DIR}/../shared/src )
 endforeach()
 
 set( USE_STRICT_NAME TRUE )
-set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libmfx.map" )
+set( MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MSDK_LIB_ROOT}/libmfxhw.map" )
 
 get_mfx_version(mfx_version_major mfx_version_minor)
 

@@ -90,7 +90,7 @@ set( LIBS "" )
 set( LIBS_SUFFIX "" )
 
 list( APPEND LIBS
-  dispatch_trace
+  mfx
   bs_parser
   umc_va_elk_hw
   dl
@@ -134,7 +134,7 @@ add_definitions( -DUSE_SAMPLE_ALLOCATOR=1 )
 
 set( LIBS "" )
 list( APPEND LIBS
-  dispatch_trace
+  mfx
   umc
   vm
   vm_plus
@@ -216,7 +216,7 @@ list(APPEND sources
 
 set( LIBS "" )
 list( APPEND LIBS
-  dispatch_trace
+  mfx
   umc
   vm
   vm_plus
