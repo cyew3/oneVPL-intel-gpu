@@ -203,10 +203,12 @@ namespace UMC_AV1_DECODER
         SEG_LVL_MAX
     };
 
+    const Ipp8u MAX_REF_IDX_FOR_SEGMENT = 7;
+
     const Ipp8u SEG_FEATURE_DATA_SIGNED[SEG_LVL_MAX] = { 1, 1, 1, 1, 1, 0, 0};
     const Ipp8u SEG_FEATURE_DATA_MAX[SEG_LVL_MAX] = { UMC_VP9_DECODER::MAXQ,
                                                       MAX_LOOP_FILTER, MAX_LOOP_FILTER, MAX_LOOP_FILTER, MAX_LOOP_FILTER,
-                                                      3,
+                                                      MAX_REF_IDX_FOR_SEGMENT,
                                                       0 };
 
     struct AV1Segmentation
