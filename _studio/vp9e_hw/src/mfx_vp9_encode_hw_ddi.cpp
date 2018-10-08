@@ -182,6 +182,8 @@ namespace MfxHwVP9Encode
 
         Zero(offsets);
 
+        offsets.BitOffsetUncompressedHeader = (mfxU16)localBuf.bitOffset;
+
         WriteLiteral(localBuf, VP9_FRAME_MARKER, 2);
 
         // profile

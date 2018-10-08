@@ -215,8 +215,6 @@ void FillPpsBuffer(
     // per-frame part of pps structure
     pps.SrcFrameWidthMinus1 = static_cast<mfxU16>(task.m_frameParam.width) - 1;
     pps.SrcFrameHeightMinus1 = static_cast<mfxU16>(task.m_frameParam.height) - 1;
-    pps.DstFrameWidthMinus1 = pps.SrcFrameWidthMinus1;
-    pps.DstFrameHeightMinus1 = pps.SrcFrameHeightMinus1;
 
     pps.CurrOriginalPic      = (UCHAR)task.m_pRecFrame->idInPool;
     pps.CurrReconstructedPic = (UCHAR)task.m_pRecFrame->idInPool;
@@ -320,6 +318,9 @@ void FillPpsBuffer(
     pps.BitOffsetForFirstPartitionSize = offsets.BitOffsetForFirstPartitionSize;
     pps.BitOffsetForSegmentation = offsets.BitOffsetForSegmentation;
     pps.BitSizeForSegmentation = offsets.BitSizeForSegmentation;
+
+    VM_ASSERT(offsets.BitOffsetUncompressedHeader % 8 == 0);
+    pps.UncompressedHeaderByteOffset = offsets.BitOffsetUncompressedHeader >> 3;
 }
 
 mfxStatus FillSegmentMap(Task const & task,
@@ -363,7 +364,6 @@ mfxStatus FillSegmentMap(Task const & task,
     }
 
     mfxU32 dstPitch = 0;
-
     if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D9)
     {
         // for D3D9 2D surface is used, need to take pitch into account

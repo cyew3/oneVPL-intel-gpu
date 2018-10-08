@@ -167,6 +167,7 @@ typedef struct tagENCODE_CAPS_VP9
 
     struct BitOffsets
     {
+        mfxU16 BitOffsetUncompressedHeader;
         mfxU16 BitOffsetForLFRefDelta;
         mfxU16 BitOffsetForLFModeDelta;
         mfxU16 BitOffsetForLFLevel;

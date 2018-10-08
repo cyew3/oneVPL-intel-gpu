@@ -125,8 +125,10 @@ typedef struct tagENCODE_SET_PICTURE_PARAMETERS_VP9
 {
     USHORT              SrcFrameHeightMinus1;
     USHORT              SrcFrameWidthMinus1;
-    USHORT              DstFrameHeightMinus1;
-    USHORT              DstFrameWidthMinus1;
+
+    USHORT              UncompressedHeaderByteOffset;
+    USHORT              Reserved2;
+
 
     UCHAR               CurrOriginalPic;
     UCHAR               CurrReconstructedPic;
