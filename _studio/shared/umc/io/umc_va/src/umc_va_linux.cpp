@@ -915,7 +915,7 @@ Status LinuxVideoAccelerator::EndFrame(void*)
 }
 
 /* TODO: need to rewrite return value type (possible problems with signed/unsigned) */
-int32_t LinuxVideoAccelerator::GetSurfaceID(int32_t idx)
+int32_t LinuxVideoAccelerator::GetSurfaceID(int32_t idx) const
 {
     VASurfaceID *surface;
     Status sts = m_allocator->GetFrameHandle(idx, &surface);

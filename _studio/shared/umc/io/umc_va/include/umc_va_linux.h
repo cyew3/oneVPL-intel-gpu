@@ -104,7 +104,7 @@ public:
     virtual void* GetCompBuffer(int32_t buffer_type, UMCVACompBuffer **buf, int32_t size, int32_t index);
     virtual Status Execute      (void);
     virtual Status EndFrame     (void*);
-    virtual int32_t GetSurfaceID (int32_t idx);
+    virtual int32_t GetSurfaceID (int32_t idx) const;
 
     // NOT implemented functions:
     virtual Status ReleaseBuffer(int32_t /*type*/)
