@@ -703,6 +703,24 @@ const tsVPPInfo::TCCSupport tsVPPInfo::CCSupportTable[3] =
     /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
     /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
     },
+#if defined(LINUX)
+    {//gen11
+    //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
+    /*   NV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   YV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    NO,     NO,     NO },
+    /*   UYVY*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   YUY2*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   AYUV*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   RGB4*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   P010*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   Y210*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*   Y410*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
+    /*A2RGB10*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*P016/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
+    },
+#else
     {//gen11
     //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
     /*   NV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      HW,    NO,     NO,     NO },
@@ -719,6 +737,7 @@ const tsVPPInfo::TCCSupport tsVPPInfo::CCSupportTable[3] =
     /*Y216/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
     /*Y416/12*/{  NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,   NO,      NO,    NO,     NO,     NO },
     },
+#endif
     {//gen12
     //   in\out NV12  YV12  UYVY  YUY2  AYUV  RGB4  P010  Y210  Y410  A2RGB10 P016/12 Y216/12 Y416/12
     /*   NV12*/{  HW,   NO,   NO,   HW,   HW,   HW,   HW,   HW,   HW,      NO,    HW,     HW,     HW },
