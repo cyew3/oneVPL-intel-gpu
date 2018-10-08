@@ -62,15 +62,6 @@ void SkipDecision(mfxVideoParam& par, mfxPluginUID& uid, eEncoderFunction functi
             unsupported = true;
         }
 
-        if (   par.mfx.RateControlMethod == MFX_RATECONTROL_LA
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_ICQ
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_EXT
-            || par.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD)
-        {
-            expect = MFX_ERR_UNSUPPORTED;
-            unsupported = true;
-        }
-
         if (unsupported)
         {
             if (function != QUERY && expect == MFX_ERR_UNSUPPORTED)

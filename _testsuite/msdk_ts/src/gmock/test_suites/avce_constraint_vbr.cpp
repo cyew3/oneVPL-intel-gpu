@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -208,7 +208,7 @@ int TestSuite::RunTest(unsigned int id)
         m_par.mfx.TargetKbps = 6000;
         m_par.mfx.MaxKbps = 12000;
     }
-    else // defoult
+    else // default
     {
         m_par.mfx.FrameInfo.Width = m_par.mfx.FrameInfo.CropW = 720;
         m_par.mfx.FrameInfo.Height = m_par.mfx.FrameInfo.CropH = 576;
