@@ -1348,7 +1348,12 @@ namespace UMC_AV1_DECODER
 
     void AV1Bitstream::ReadTile(FrameHeader const* fh, size_t& reportedSize, size_t& actualSize)
     {
+#if UMC_AV1_DECODER_REV >= 8500
+        const size_t tile_size_minus_1 = static_cast<size_t>(GetLE(fh->TileSizeBytes));
+        actualSize = reportedSize = tile_size_minus_1 + 1;
+#else
         actualSize = reportedSize = static_cast<size_t>(GetLE(fh->TileSizeBytes));
+#endif
 
         if (BytesLeft() < reportedSize)
             actualSize = BytesLeft();
