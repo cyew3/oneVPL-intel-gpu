@@ -1863,13 +1863,13 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             vm_file* par_file = vm_file_fopen(argv[0], VM_STRING("r"));
             MFX_CHECK(par_file != 0);
 
-            int map_width = (m_inParams.FrameInfo.Width + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
-            int map_height = (m_inParams.FrameInfo.Height + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
-            m_extVP9Segmentation->NumSegmentIdAlloc = map_width * map_height;
+            mfxU16 map_width = (m_inParams.FrameInfo.Width + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
+            mfxU16 map_height = (m_inParams.FrameInfo.Height + (m_extVP9Segmentation->SegmentIdBlockSize - 1)) / m_extVP9Segmentation->SegmentIdBlockSize;
+            m_extVP9Segmentation->NumSegmentIdAlloc = (mfxU32)(map_width * map_height);
 
             m_extVP9Segmentation->SegmentId = new mfxU8[m_extVP9Segmentation->NumSegmentIdAlloc];
 
-            for (mfxU32 i = 0; i < map_height; ++i)
+            for (mfxU16 i = 0; i < map_height; ++i)
             {
                 vm_char sbuf[256], *pStr;
 
@@ -1877,7 +1877,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
                 if (!pStr)
                     break;
 
-                for (mfxU32 j = 0; j < map_width; ++j)
+                for (mfxU16 j = 0; j < map_width; ++j)
                 {
                     m_extVP9Segmentation->SegmentId[i * map_width + j] = pStr[j] - '0';
                     if (m_extVP9Segmentation->SegmentId[i * map_width + j] >= m_extVP9Segmentation->NumSegments)
