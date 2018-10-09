@@ -31,6 +31,7 @@ list( APPEND LIBS
 
 list( APPEND LIBS_SUFFIX gmock )
 
+disable_werror()
 ###################################################################################################
 # Target
 make_executable( scheduler_tests none )

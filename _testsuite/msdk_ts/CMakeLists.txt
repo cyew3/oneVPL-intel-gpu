@@ -2,6 +2,9 @@ mfx_include_dirs( )
 # =============================================================================
 # msdk_gmock:
 #
+
+disable_werror()
+
 include_directories (
   ${MSDK_SAMPLES_ROOT}/sample_common/include/vm
   ${MSDK_SAMPLES_ROOT}/sample_common/include

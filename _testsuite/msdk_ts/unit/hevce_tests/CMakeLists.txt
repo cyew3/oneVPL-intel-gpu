@@ -63,6 +63,7 @@ list( APPEND LIBS
 
 list( APPEND LIBS_SUFFIX gmock )
 
+disable_werror()
 ###################################################################################################
 # Target
 make_executable( hevce_tests none )
