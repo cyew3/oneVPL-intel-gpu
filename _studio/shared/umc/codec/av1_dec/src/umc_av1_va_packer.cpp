@@ -145,7 +145,23 @@ namespace UMC_AV1_DECODER
 
         auto& ddiSeqParam = picParam->dwSeqInfoFlags.fields;
 
-        ddiSeqParam.still_picture = 0;
+#if AV1D_DDI_VERSION >= 26
+        picParam->order_hint_bits_minus_1 = (UCHAR)sh.order_hint_bits_minus1;
+
+        picParam->BitDepthIdx = (sh.color_config.BitDepth == 10) ? 1 :
+            (sh.color_config.BitDepth == 12) ? 2 : 0;
+
+        ddiSeqParam.use_128x128_superblock = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
+        ddiSeqParam.enable_filter_intra = sh.enable_filter_intra;
+        ddiSeqParam.enable_intra_edge_filter = sh.enable_intra_edge_filter;
+
+        ddiSeqParam.enable_interintra_compound = sh.enable_interintra_compound;
+        ddiSeqParam.enable_masked_compound = sh.enable_masked_compound;
+
+        ddiSeqParam.enable_cdef = sh.enable_cdef;
+        ddiSeqParam.enable_restoration = sh.enable_restoration;
+        ddiSeqParam.large_scale_tile = info.large_scale_tile;
+#else // AV1D_DDI_VERSION >= 26
         ddiSeqParam.sb_size_128x128 = (sh.sbSize == BLOCK_128X128) ? 1 : 0;
         ddiSeqParam.enable_filter_intra = info.enable_filter_intra;
         ddiSeqParam.enable_intra_edge_filter = info.enable_intra_edge_filter;
@@ -153,13 +169,17 @@ namespace UMC_AV1_DECODER
         ddiSeqParam.enable_interintra_compound = info.enable_interintra_compound;
         ddiSeqParam.enable_masked_compound = info.enable_masked_compound;
 
-        ddiSeqParam.enable_dual_filter = sh.enable_dual_filter;
-        ddiSeqParam.enable_order_hint = sh.enable_order_hint;
-        ddiSeqParam.enable_jnt_comp = sh.enable_jnt_comp;
         ddiSeqParam.enable_cdef = 1;
         ddiSeqParam.enable_restoration = 1;
         ddiSeqParam.BitDepthIdx = (sh.color_config.BitDepth == 10) ? 1 :
             (sh.color_config.BitDepth == 12) ? 2 : 0;
+#endif // AV1D_DDI_VERSION >= 26
+
+        ddiSeqParam.still_picture = 0;
+        ddiSeqParam.enable_dual_filter = sh.enable_dual_filter;
+        ddiSeqParam.enable_order_hint = sh.enable_order_hint;
+        ddiSeqParam.enable_jnt_comp = sh.enable_jnt_comp;
+
         ddiSeqParam.mono_chrome = sh.color_config.mono_chrome;
         ddiSeqParam.color_range = sh.color_config.color_range;
         ddiSeqParam.subsampling_x = sh.color_config.subsampling_x;
@@ -188,8 +208,10 @@ namespace UMC_AV1_DECODER
         ddiPicParam.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         ddiPicParam.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
         ddiPicParam.allow_warped_motion = 0;
+#if AV1D_DDI_VERSION < 26
         ddiPicParam.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
         ddiPicParam.large_scale_tile = info.large_scale_tile;
+#endif
 
         picParam->order_hint = (UCHAR)info.order_hint;
         picParam->superres_scale_denominator = (UCHAR)info.SuperresDenom;
@@ -223,7 +245,9 @@ namespace UMC_AV1_DECODER
                 Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
 
                 picParam->ref_frame_idx[ref_idx] = idxInDPB;
+#if AV1D_DDI_VERSION < 26
                 picParam->ref_order_hint[ref_idx] = (UCHAR)frame->frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
+#endif
             }
         }
 
@@ -297,12 +321,10 @@ namespace UMC_AV1_DECODER
         {
             picParam->wm[i].wmtype = info.global_motion_params[i + 1].wmtype;
             for (Ipp8u j = 0; j < 8; j++)
-            {
                 picParam->wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
-                // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
-            }
         }
 
+#if AV1D_DDI_VERSION < 26
         if (info.uniform_tile_spacing_flag)
         {
             picParam->log2_tile_rows = (UCHAR)info.TileRowsLog2;
@@ -310,6 +332,7 @@ namespace UMC_AV1_DECODER
         }
         else
         {
+#endif
             picParam->tile_cols = (USHORT)info.TileCols;
             picParam->tile_rows = (USHORT)info.TileRows;
 
@@ -324,17 +347,21 @@ namespace UMC_AV1_DECODER
                 picParam->height_in_sbs_minus_1[i] =
                     (USHORT)(info.SbRowStarts[i + 1] - info.SbRowStarts[i]);
             }
+#if AV1D_DDI_VERSION < 26
         }
+#endif
     }
 
     void PackerIntel::PackTileControlParams(DXVA_Intel_Tile_AV1* tileControlParam, TileLocation const& loc)
     {
-        // TODO: [Rev0.5] Add support for multiple tiles
         tileControlParam->BSTileDataLocation = (UINT)loc.offset;
         tileControlParam->BSTileBytesInBuffer = (UINT)loc.size;
         tileControlParam->wBadBSBufferChopping = 0;
         tileControlParam->tile_row = (USHORT)loc.row;
         tileControlParam->tile_column = (USHORT)loc.col;
+#if AV1D_DDI_VERSION >= 26
+        tileControlParam->TileIndex = 0; // valid for large_scale_tile only
+#endif
         tileControlParam->StartTileIdx = (USHORT)loc.startIdx;
         tileControlParam->EndTileIdx = (USHORT)loc.endIdx;
         tileControlParam->anchor_frame_idx.Index15Bits = 0;

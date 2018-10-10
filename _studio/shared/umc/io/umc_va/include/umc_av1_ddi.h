@@ -22,11 +22,15 @@
 
 namespace UMC_AV1_DECODER
 {
+#if UMC_AV1_DECODER_REV >= 8500
+    #define AV1D_DDI_VERSION 26
+    #define DDI_HACKS_FOR_REV_85 // Rev 0.85 uses some DDI changes in comparison with 0.26
+                                // such changes are handled by macro DDI_HACKS_FOR_REV_85
+#else
     #define AV1D_DDI_VERSION 21
     #define DDI_HACKS_FOR_REV_5 // Rev 0.5 uses some essential DDI changes in comparison with 0.21
                                 // such changes are handled by macro DDI_HACKS_FOR_REV_252
-
-#if AV1D_DDI_VERSION == 21
+#endif
 
     typedef struct _DXVA_PicEntry_AV1
     {
@@ -103,30 +107,44 @@ namespace UMC_AV1_DECODER
         UINT ReservedDWs[4];
     } DXVA_Film_Grain_Params_AV1;
 
-    typedef struct
+    typedef struct _DXVA_Warped_Motion_Params_AV1
     {
         TRANSFORMATION_TYPE wmtype;
         int32_t wmmat[8];
+#if AV1D_DDI_VERSION < 26
         int16_t alpha, beta, gamma, delta;
         int8_t invalid;
-    } DDIWarpedMotionParams;
+#endif
+    } DXVA_Warped_Motion_Params_AV1;
 
     typedef struct _DXVA_Intel_PicParams_AV1
     {
         DXVA_PicEntry_AV1 CurrPic;
         DXVA_PicEntry_AV1 CurrDisplayPic;
         UCHAR             profile;        // [0..2]
+#if !defined(DDI_HACKS_FOR_REV_85)
         USHORT            Reserved16b;    // [0]
+#endif
 
+#if AV1D_DDI_VERSION >= 26
+        UCHAR        order_hint_bits_minus_1;
+        UCHAR        BitDepthIdx;
+        USHORT       reserved16b;
+#else
         USHORT max_frame_width_minus_1;   // [0..65535]
         USHORT max_frame_height_minus_1;  // [0..65535]
+#endif
 
         union
         {
             struct
             {
                 UINT still_picture : 1;
+#if AV1D_DDI_VERSION >= 26
+                UINT use_128x128_superblock : 1;
+#else
                 UINT sb_size_128x128 : 1;
+#endif
                 UINT enable_filter_intra : 1;
                 UINT enable_intra_edge_filter : 1;
 
@@ -138,14 +156,21 @@ namespace UMC_AV1_DECODER
                 UINT enable_jnt_comp : 1;
                 UINT enable_cdef : 1;
                 UINT enable_restoration : 1;
+#if AV1D_DDI_VERSION >= 26
+                UINT reserved2b : 2;
+#else
                 UINT BitDepthIdx : 2;
+#endif
                 UINT mono_chrome : 1;
                 UINT color_range : 1;
                 UINT subsampling_x : 1;
                 UINT subsampling_y : 1;
                 UINT chroma_sample_position : 1;
                 UINT film_grain_params_present : 1;
-#ifdef DDI_HACKS_FOR_REV_5
+#if AV1D_DDI_VERSION >= 26
+                UINT large_scale_tile : 1;
+                UINT ReservedSeqInfoBits : 12;
+#elif defined(DDI_HACKS_FOR_REV_5)
                 UINT order_hint_bits_minus1 : 3;
                 UINT ReservedSeqInfoBits : 10;
 #else
@@ -173,10 +198,13 @@ namespace UMC_AV1_DECODER
                 UINT disable_frame_end_update_cdf : 1;
                 UINT uniform_tile_spacing_flag : 1;
                 UINT allow_warped_motion : 1;
-
+#if AV1D_DDI_VERSION >= 26
+                UINT ReservedPicInfoBits : 16;
+#else
                 UINT refresh_frame_context : 1;
                 UINT large_scale_tile : 1;
                 UINT ReservedPicInfoBits : 14;
+#endif
             } fields;
             UINT value;
         } dwPicInfoFlags;
@@ -189,7 +217,14 @@ namespace UMC_AV1_DECODER
         UCHAR primary_ref_frame;  // [0..7]
 
         UCHAR order_hint;
+#if AV1D_DDI_VERSION >= 26
+        USHORT output_frame_width_in_tiles_minus_1;// [0..65535]
+        USHORT output_frame_height_in_tiles_minus_1;// [0..65535]
+
+        UINT reserved32b2;
+#else
         UCHAR ref_order_hint[8];  // may be removed.
+#endif
 
         UCHAR superres_scale_denominator;  // [9..16]
         UCHAR frame_interp_filter;               // [0..9]
@@ -253,18 +288,26 @@ namespace UMC_AV1_DECODER
 
         DXVA_segmentation_AV1 stAV1Segments;
 
+#if AV1D_DDI_VERSION < 26
         UINT tg_size_bit_offset;
         UCHAR log2_tile_cols;  // [0..6]
         UCHAR log2_tile_rows;  // [0..6]
+#endif
 
         USHORT tile_cols;
         USHORT width_in_sbs_minus_1[64];
         USHORT tile_rows;
+#if AV1D_DDI_VERSION >= 26
+        USHORT height_in_sbs_minus_1[64];
+
+        USHORT tile_count_minus_1;
+#else
         USHORT height_in_sbs_minus_1[128];
 
         USHORT number_of_tiles_in_list_minus_1;
 
         UCHAR tile_col_size_bytes;  // [1..4] to be removed.
+#endif
         USHORT context_update_tile_id;
 
         // CDEF
@@ -288,7 +331,7 @@ namespace UMC_AV1_DECODER
         } LoopRestorationFlags;
 
         // global motion
-        DDIWarpedMotionParams wm[7];
+        DXVA_Warped_Motion_Params_AV1 wm[7];
         DXVA_Film_Grain_Params_AV1 stAV1FilmGrainParams;
 #ifdef DDI_HACKS_FOR_REV_5
         UCHAR UncompressedHeaderLengthInBytes;  // [0..255]
@@ -306,13 +349,20 @@ namespace UMC_AV1_DECODER
         USHORT    wBadBSBufferChopping;
         USHORT    tile_row;
         USHORT    tile_column;
+#if AV1D_DDI_VERSION >= 26
+        USHORT TileIndex;
+        USHORT reserved16b;
+#endif
         USHORT    StartTileIdx;
         USHORT    EndTileIdx;
         DXVA_PicEntry_AV1 anchor_frame_idx;
         UINT      BSTilePayloadSizeInBytes;
+#if AV1D_DDI_VERSION >= 26
+        UINT      Reserved[3];
+#else
         UINT      Reserved[4];
-    } DXVA_Intel_Tile_AV1, *LPDXVA_Intel_Tile_AV1;
 #endif
+    } DXVA_Intel_Tile_AV1, *LPDXVA_Intel_Tile_AV1;
 
     typedef struct _DXVA_Intel_Status_AV1 {
         USHORT                    StatusReportFeedbackNumber;
