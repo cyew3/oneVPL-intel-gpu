@@ -1253,7 +1253,7 @@ mfxStatus ParseParFile(FILE *parFile, std::vector<AppConfig*> &config, msdk_char
         }
         if(!argc)
             continue;
-        for(int i = 0; i < argc; i++)
+        for(unsigned int i = 0; i < argc; i++)
         {
             msdk_printf(MSDK_STRING("%s "), argv[i]);
         }
@@ -1360,7 +1360,7 @@ int main(int argc, char *argv[])
         sts = ParseParFile(parFile, Configs, parBuf, fileSize);
         if(sts != MFX_ERR_NONE)
         {
-            msdk_printf(MSDK_STRING("ERROR: ParFile reading failed\n"), parFileName);
+            msdk_printf(MSDK_STRING("ERROR: ParFile reading failed: %s\n"), parFileName);
             return MFX_ERR_UNSUPPORTED;
         }
 
@@ -1423,7 +1423,7 @@ int main(int argc, char *argv[])
     {
         for(size_t pipe = 0 ; pipe < pipelines.size(); pipe++)
         {
-            msdk_printf(MSDK_STRING("Start session %d\n"), pipe);
+            msdk_printf(MSDK_STRING("Start session %zd\n"), pipe);
             CEncodingPipeline* pPipeline = pipelines[pipe];
             pipe_threads.push_back(std::thread(std::bind(&RunPipeline, pPipeline, (int)pipe)));
         }
