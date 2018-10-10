@@ -502,20 +502,10 @@ mfxU16 MakeSlices(MfxVideoParam& par, mfxU32 SliceStructure)
 
 #if (MFX_VERSION >= 1027)
     /*
+        DDI 0.9964
         A tile must wholly contain all the slices within it. Slices cannot cross tile boundaries.
-        If a slice contains more than one tile, it must contain all the tiles in the frame, i.e. there can only be one slice in the frame. (Upto Gen12, Intel HW does not support this scenario.)
-        Normally, each tile will contain a single slice. So  2x2 and 4 slices is normal.
-        Fewer slices than tiles is illegal (e.g. 3 slice, 2x2 tiles)
-        More slices than tiles is legal as long as the slices do not cross tile boundaries; the app needs to use the slice segment address and number of LCUs in the slice to define the slices within the tiles.
     */
-#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (par.m_platform < MFX_HW_TGL_LP)
-#else
-    if (par.m_platform <= MFX_HW_ICL_LP)
-#endif
-    {
-        nSlice = Max(nSlice, nTile);
-    }
+    nSlice = Max(nSlice, nTile);
 
     if (par.m_platform >= MFX_HW_ICL && IsOn(par.mfx.LowPower)) {
         if (nTile == 1)
