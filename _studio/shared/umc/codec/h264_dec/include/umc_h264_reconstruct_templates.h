@@ -1088,13 +1088,13 @@ public:
 
         if (color_format)
         {
-            Ipp32s iWidth = (color_format == 3) ? 16 : 8;
-            Ipp32s iHeight = 8 + 8 * (color_format >> 1);
+            Ipp32s const iWidth = (color_format == 3) ? 16 : 8;
+            Ipp32s const iHeight = 8 + 8 * (color_format >> 1);
+            size_t const pitch = iWidth;
 
-            PlaneUV pSrcDstUPlane[64];
-            PlaneUV pSrcDstVPlane[64];
+            PlaneUV pSrcDstUPlane[iHeight * pitch];
+            PlaneUV pSrcDstVPlane[iHeight * pitch];
 
-            size_t pitch = 8;
             PlanePtrUV pCoeffBlocksRead_UV = (PlanePtrUV) (sd->m_pCoeffBlocksRead);
             for (Ipp32s i = 0; i < iHeight; i += 1)
                 MFX_INTERNAL_CPY(pSrcDstUPlane + i * pitch, pCoeffBlocksRead_UV + i * iWidth, iWidth*sizeof(PlaneUV));
