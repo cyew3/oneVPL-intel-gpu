@@ -16,7 +16,6 @@
 #include "umc_va_linux.h"
 #include "umc_va_linux_protected.h"
 #include "umc_va_video_processing.h"
-#include "vm_file.h"
 #include "mfx_trace.h"
 #include "umc_frame_allocator.h"
 #include "mfxstructures.h"
