@@ -5,13 +5,17 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #pragma once
 
 #if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 #include "cmut/cmrtex.h"

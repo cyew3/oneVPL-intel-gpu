@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -13,7 +13,11 @@
 
 #if defined (UMC_ENABLE_MVC_VIDEO_ENCODER)
 #if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 #include "mfx_common.h" // this is mfx file. mfx defs are of importance!!!

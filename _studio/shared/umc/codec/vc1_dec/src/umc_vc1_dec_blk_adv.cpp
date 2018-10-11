@@ -12,7 +12,11 @@
 
 #if defined (UMC_ENABLE_VC1_VIDEO_DECODER)
 #if defined(__GNUC__)
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__INTEL_COMPILER)
+#pragma warning (disable:1478)
+#else
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 #include "ippi.h"

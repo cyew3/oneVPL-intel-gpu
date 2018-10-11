@@ -30,6 +30,14 @@
 #include <vector>
 #endif
 
+#if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#endif
+
 
 using namespace H265Enc;
 

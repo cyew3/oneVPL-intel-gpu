@@ -11,7 +11,11 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_AAC_AUDIO_ENCODER)
 #if defined(__GNUC__)
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__INTEL_COMPILER)
+#pragma warning (disable:1478)
+#else
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 #pragma warning(disable:4996)
 #include "align.h"

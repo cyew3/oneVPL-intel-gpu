@@ -14,7 +14,11 @@
 
 #define PARSER_CHECK_INIT CHECK_OBJ_INIT(m_pDataReader)
 #if defined(__GNUC__)
-    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#if defined(__INTEL_COMPILER)
+#pragma warning (disable:1478)
+#else
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 namespace UMC

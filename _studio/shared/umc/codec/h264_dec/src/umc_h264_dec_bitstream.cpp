@@ -79,8 +79,12 @@ H264Bitstream::~H264Bitstream()
 
 // Function 'p8_ippiHuffmanTableFree_32s' is depricated
 #if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #elif defined(__clang__)
   #pragma clang diagnostic push
   #pragma clang diagnostic ignored "-Wdeprecated-declarations"

@@ -12,7 +12,11 @@
 
 #if defined (MFX_ENABLE_VPP) && !defined (MFX_ENABLE_HW_ONLY_VPP)
 #if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 #include "mfx_color_space_conversion_vpp.h"

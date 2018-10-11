@@ -20,6 +20,14 @@
 #include "mfx_h265_enc.h"
 #include "mfx_h265_lookahead.h"
 
+#if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#endif
+
 #ifndef MFX_VA
 #define H265FEI_AllocateSurfaceUp(...) (MFX_ERR_NONE)
 #define H265FEI_AllocateInputSurface(...) (MFX_ERR_NONE)

@@ -12,7 +12,11 @@
 
 #if defined (MFX_ENABLE_VPP)
 #if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 #include "mfx_vpp_utils.h"

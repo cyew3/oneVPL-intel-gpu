@@ -12,7 +12,11 @@
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE)
 #if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
 #endif
 
 //#define SVC_DUMP_RECON
@@ -1689,6 +1693,13 @@ inline Ipp32u h264enc_ConvertBitrate(mfxU16 TargetKbps)
 }
 
 //////////////////////////////////////////////////////////////////////////
+#if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#endif
 
 MFXVideoENCODEH264::MFXVideoENCODEH264(VideoCORE *core, mfxStatus *stat)
 : VideoENCODE(),

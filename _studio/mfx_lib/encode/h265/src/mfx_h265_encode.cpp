@@ -68,6 +68,14 @@ extern "C"
 }
 #endif
 
+#if defined(__GNUC__)
+#if defined(__INTEL_COMPILER)
+    #pragma warning (disable:1478)
+#else
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#endif
+
 namespace {
 #if TT_TRACE || VT_TRACE || TASK_LOG_ENABLE
     const char *TT_NAMES[] = {
