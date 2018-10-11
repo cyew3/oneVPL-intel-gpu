@@ -1394,7 +1394,12 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams)
     }
     // Determine if we should shift P010 surfaces
     bool readerShift = false;
-    if (pParams->FileInputFourCC == MFX_FOURCC_P010 || pParams->FileInputFourCC == MFX_FOURCC_P210 || pParams->FileInputFourCC == MFX_FOURCC_Y210)
+    if (pParams->FileInputFourCC == MFX_FOURCC_P010
+        || pParams->FileInputFourCC == MFX_FOURCC_P210
+#if (MFX_VERSION >= 1027)
+        || pParams->FileInputFourCC == MFX_FOURCC_Y210
+#endif
+    )
     {
         if (pParams->IsSourceMSB)
         {
