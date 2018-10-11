@@ -19,7 +19,9 @@
 #include <vector>
 #include <assert.h>
 #include <memory>
+#if 0
 #include "vm_file.h"
+#endif
 #include "mfx_ext_buffers.h"
 #include "mfxwidi.h"
 #include "mfxfei.h"
@@ -903,13 +905,12 @@ namespace MfxHwH264Encode
         mfxFrameData const & src,
         mfxFrameInfo const & info);
 
-#if 0 // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
+#if 0 // removed dependency from file operations
     void WriteFrameData(
         vm_file *            file,
         VideoCORE *          core,
         mfxFrameData const & data,
         mfxFrameInfo const & info);
-#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 
     mfxStatus ReadFrameData(
         vm_file *            file,
@@ -917,6 +918,7 @@ namespace MfxHwH264Encode
         VideoCORE *          core,
         mfxFrameData const & data,
         mfxFrameInfo const & info);
+#endif // removed dependency from file operations
 
     mfxExtBuffer * GetExtBuffer(
         mfxExtBuffer ** extBuf,

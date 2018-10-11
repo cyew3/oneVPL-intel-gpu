@@ -7378,8 +7378,7 @@ mfxStatus MfxHwH264Encode::CopyFrameDataBothFields(
     return core->DoFastCopyWrapper(&surfDst,MFX_MEMTYPE_INTERNAL_FRAME|MFX_MEMTYPE_DXVA2_DECODER_TARGET|MFX_MEMTYPE_FROM_ENCODE, &surfSrc, MFX_MEMTYPE_EXTERNAL_FRAME|MFX_MEMTYPE_SYSTEM_MEMORY);
 }
 
-
-#if 0 // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
+#if 0 // removed dependency from file operations
 void MfxHwH264Encode::WriteFrameData(
     vm_file *            file,
     VideoCORE *          core,
@@ -7405,7 +7404,6 @@ void MfxHwH264Encode::WriteFrameData(
         vm_file_fflush(file);
     }
 }
-#endif // removed dependency from fwrite(). Custom writing to file shouldn't be present in MSDK releases w/o documentation and testing
 
 mfxStatus MfxHwH264Encode::ReadFrameData(
     vm_file *            file,
@@ -7454,6 +7452,7 @@ mfxStatus MfxHwH264Encode::ReadFrameData(
 
     return MFX_ERR_NONE;
 }
+#endif // removed dependency from file operations
 
 mfxExtBuffer* MfxHwH264Encode::GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id, mfxU32 offset)
 {

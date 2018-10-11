@@ -32,6 +32,10 @@
 #include "vm_time.h"
 #include "asc.h"
 
+#ifdef MFX_UNDOCUMENTED_DUMP_FILES
+#include "vm_file.h"
+#endif
+
 #ifndef _MFX_H264_ENCODE_HW_UTILS_H_
 #define _MFX_H264_ENCODE_HW_UTILS_H_
 
