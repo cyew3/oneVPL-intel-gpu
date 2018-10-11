@@ -381,19 +381,6 @@ namespace vp9e_big_resolution
 
         TS_START;
 
-        if (g_tsHWtype < MFX_HW_TGL && (tc.type & CHECK_16Kx16K || tc.type & CHECK_16Kx4K))
-        {
-            case_description += "[platform < TGL][16K]";
-            g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
-            throw tsSKIP;
-        }
-        else if (g_tsHWtype < MFX_HW_ICL && tc.type & CHECK_8Kx8K)
-        {
-            case_description += "[platform < ICL][8K]";
-            g_tsLog << "\n\nWARNING: SKIP test (unsupported on current platform)\n\n";
-            throw tsSKIP;
-        }
-
         tsRawReader *reader = nullptr;
         std::map<mfxU32, mfxFrameSurface1*> inputSurfaces;
 
@@ -517,8 +504,19 @@ namespace vp9e_big_resolution
 
         // QUERY SECTION
         {
-            mfxStatus query_expect_status = MFX_ERR_NONE;
+            bool isResolutionSupported = true;
+            if (g_tsHWtype < MFX_HW_TGL && (tc.type & CHECK_16Kx16K || tc.type & CHECK_16Kx4K || tc.type & CHECK_16Kx256))
+            {
+                // platform < TGL - 16K stream is unsupported on current platform
+                isResolutionSupported = false;
+            }
+            else if (g_tsHWtype < MFX_HW_ICL && tc.type & CHECK_8Kx8K)
+            {
+                // platform < ICL - 8K stream is unsupported on current platform
+                isResolutionSupported = false;
+            }
 
+            mfxStatus query_expect_status = isResolutionSupported ? MFX_ERR_NONE : MFX_ERR_UNSUPPORTED;
             g_tsStatus.expect(query_expect_status);
             tsExtBufType<mfxVideoParam> par_query_out = m_par;
 
@@ -531,6 +529,14 @@ namespace vp9e_big_resolution
 
             g_tsLog << "Query() returned with status " << query_result_status << ", expected status " << query_expect_status << "\n";
             g_tsStatus.check(query_result_status);
+
+            if (!isResolutionSupported)
+            {
+                // MFXVideoENCODE_Query() returned MFX_ERR_UNSUPPORTED for unsupported resolution
+                g_tsLog << "Resolution of the stream is not supported on the current platform.\n";
+                g_tsLog << "Function MFXVideoENCODE_Query returned MFX_ERR_UNSUPPORTED. It was expected. Skip this test.\n";
+                throw tsSKIP;
+            }
         }
 
         // INIT SECTION

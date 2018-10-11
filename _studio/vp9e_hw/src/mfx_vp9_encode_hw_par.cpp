@@ -993,6 +993,18 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
         unsupported = true;
     }
 
+    if (fi.Width > caps.MaxPicWidth)
+    {
+        fi.Width = 0;
+        unsupported = true;
+    }
+
+    if (fi.Height > caps.MaxPicHeight)
+    {
+        fi.Height = 0;
+        unsupported = true;
+    }
+
     //VP9 doesn't support CropX, CropY due to absence of syntax in bitstream header
     if ((fi.Width  && (fi.CropW > fi.Width))  ||
         (fi.Height && (fi.CropH > fi.Height)) ||
@@ -1336,6 +1348,20 @@ mfxStatus CheckParameters(VP9MfxVideoParam &par, ENCODE_CAPS_VP9 const &caps)
      if (extPar.FrameHeight % 2)
      {
          extPar.FrameHeight = 0;
+         unsupported = true;
+     }
+
+     if (extPar.FrameHeight &&
+         extPar.FrameHeight > caps.MaxPicHeight)
+     {
+         extPar.FrameHeight = 0;
+         unsupported = true;
+     }
+
+     if (extPar.FrameWidth &&
+         extPar.FrameWidth > caps.MaxPicWidth)
+     {
+         extPar.FrameWidth = 0;
          unsupported = true;
      }
 
