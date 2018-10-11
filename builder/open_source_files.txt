@@ -441,7 +441,6 @@ _studio/shared/umc/core/umc/src/umc_video_encoder.cpp
 _studio/shared/umc/core/vm/CMakeLists.txt
 _studio/shared/umc/core/vm/include/vm_debug.h
 _studio/shared/umc/core/vm/include/vm_event.h
-_studio/shared/umc/core/vm/include/vm_file.h
 _studio/shared/umc/core/vm/include/vm_interlocked.h
 _studio/shared/umc/core/vm/include/vm_mutex.h
 _studio/shared/umc/core/vm/include/vm_semaphore.h
@@ -450,16 +449,10 @@ _studio/shared/umc/core/vm/include/vm_strings.h
 _studio/shared/umc/core/vm/include/vm_sys_info.h
 _studio/shared/umc/core/vm/include/vm_time.h
 _studio/shared/umc/core/vm/include/vm_types.h
-_studio/shared/umc/core/vm/include/sys/vm_file_unix.h
-_studio/shared/umc/core/vm/include/sys/vm_file_win.h
 _studio/shared/umc/core/vm/include/sys/vm_types_linux32.h
 _studio/shared/umc/core/vm/include/sys/vm_types_win32.h
-_studio/shared/umc/core/vm/src/vm_debug_win32.c
 _studio/shared/umc/core/vm/src/vm_event_linux32.c
 _studio/shared/umc/core/vm/src/vm_event_win32.c
-_studio/shared/umc/core/vm/src/vm_file.c
-_studio/shared/umc/core/vm/src/vm_file_unix.c
-_studio/shared/umc/core/vm/src/vm_file_win.c
 _studio/shared/umc/core/vm/src/vm_interlocked_unix.c
 _studio/shared/umc/core/vm/src/vm_interlocked_win.c
 _studio/shared/umc/core/vm/src/vm_mutex_linux32.c

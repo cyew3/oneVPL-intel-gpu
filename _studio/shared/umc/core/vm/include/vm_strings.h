@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -56,22 +56,23 @@ extern "C"
 
 typedef char vm_char;
 
+#ifndef OPEN_SOURCE
 # include "vm_file.h"
-
-
+#endif
 #define VM_STRING(x) x
 
 #define vm_string_printf    printf
-#define vm_string_fprintf   vm_file_fprintf
 #define vm_string_sprintf   sprintf
 #define vm_string_sprintf_s sprintf
 #define vm_string_snprintf  snprintf
 
-#define vm_string_vfprintf  vm_file_vfprintf
 #define vm_string_vsprintf  vsprintf
 #define vm_string_vsnprintf vsnprintf
 
-
+#ifndef OPEN_SOURCE
+#define vm_string_fprintf   vm_file_fprintf
+#define vm_string_vfprintf  vm_file_vfprintf
+#endif
 #if !defined(ANDROID)
 
 #define vm_string_strcat    strcat
