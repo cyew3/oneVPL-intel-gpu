@@ -1,6 +1,6 @@
 /******************************************************************************* *\
 
-Copyright (C) 2010-2017 Intel Corporation.  All rights reserved.
+Copyright (C) 2010-2018 Intel Corporation.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -174,17 +174,23 @@ static CodeStringTable StringsOfExtendedBuffer[] = {
     DEFINE_CODE(MFX_EXTBUFF_MB_FORCE_INTRA           ),
     DEFINE_CODE(MFX_EXTBUFF_HEVC_TILES               ),
     DEFINE_CODE(MFX_EXTBUFF_MB_DISABLE_SKIP_MAP      ),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     DEFINE_CODE(MFX_EXTBUFF_DPB                      ),
+#endif
     DEFINE_CODE(MFX_EXTBUFF_HEVC_PARAM               ),
     DEFINE_CODE(MFX_EXTBUFF_DECODED_FRAME_INFO       ),
     DEFINE_CODE(MFX_EXTBUFF_TIME_CODE                ),
     DEFINE_CODE(MFX_EXTBUFF_HEVC_REGION              ),
     DEFINE_CODE(MFX_EXTBUFF_PRED_WEIGHT_TABLE        ),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     DEFINE_CODE(MFX_EXTBUFF_TEMPORAL_LAYERS          ),
+#endif
     DEFINE_CODE(MFX_EXTBUFF_DIRTY_RECTANGLES         ),
     DEFINE_CODE(MFX_EXTBUFF_MOVING_RECTANGLES        ),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     DEFINE_CODE(MFX_EXTBUFF_AVC_SCALING_MATRIX       ),
     DEFINE_CODE(MFX_EXTBUFF_MPEG2_QUANT_MATRIX       ),
+#endif
     DEFINE_CODE(MFX_EXTBUFF_CODING_OPTION_VPS        ),
     DEFINE_CODE(MFX_EXTBUFF_VPP_ROTATION             ),
     DEFINE_CODE(MFX_EXTBUFF_ENCODED_SLICES_INFO      ),
