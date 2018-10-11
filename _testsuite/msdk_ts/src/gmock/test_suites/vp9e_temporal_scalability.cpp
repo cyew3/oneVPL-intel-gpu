@@ -13,6 +13,7 @@ Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include "mfx_ext_buffers.h"
+#include "gmock/test_suites/vp9e_utils.h"
 
 namespace vp9e_temporal_scalability
 {
@@ -616,6 +617,21 @@ namespace vp9e_temporal_scalability
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
                 { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+            }
+        },
+
+        // Cases below check TS in combination with other complicated features
+
+        // BRC + 2 layers + SEGMENTATION
+        // NB: Segmentation is not checked directly in the encoded stream, checked only general encoding issues and artifacts
+        {/*43*/ MFX_ERR_NONE, CHECK_ENCODE | CHECK_ZERO_LAYER | CHECK_PSNR,
+            {
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].FrameRateScale, 1 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[0].TargetKbps, VP9E_DEFAULT_BITRATE / 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].FrameRateScale, 2 },
+                { MFX_PAR, &tsStruct::mfxExtVP9TemporalLayers.Layer[1].TargetKbps, VP9E_DEFAULT_BITRATE },
+                { MFX_PAR, &tsStruct::mfxExtVP9Segmentation.NumSegments, 3 },
             }
         },
     };
@@ -1239,6 +1255,12 @@ namespace vp9e_temporal_scalability
             m_extDDI->ChangeFrameContextIdxForTS = MFX_CODINGOPTION_ON;
         }
 
+        mfxExtVP9Segmentation *segmentation_ext_params = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+        if (segmentation_ext_params)
+        {
+            SetDefaultSegmentationParams(*segmentation_ext_params, m_par);
+        }
+
         InitAndSetAllocator();
 
         if (0 == memcmp(m_uid->Data, MFX_PLUGINID_VP9E_HW.Data, sizeof(MFX_PLUGINID_VP9E_HW.Data)))
@@ -1426,6 +1448,11 @@ namespace vp9e_temporal_scalability
 
         if (m_initialized)
         {
+            mfxExtVP9Segmentation *segmentation_ext_params = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+            if (segmentation_ext_params && segmentation_ext_params->SegmentId)
+            {
+                delete[] segmentation_ext_params->SegmentId;
+            }
             g_tsStatus.expect(MFX_ERR_NONE);
             Close();
         }

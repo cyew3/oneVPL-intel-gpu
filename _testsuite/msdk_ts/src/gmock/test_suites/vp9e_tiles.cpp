@@ -14,6 +14,7 @@ Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 #include "ts_struct.h"
 #include "mfx_ext_buffers.h"
+#include "gmock/test_suites/vp9e_utils.h"
 
 /*
 // required for registry manipulations
@@ -126,7 +127,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         DYNAMIC_CHANGE = 0x080000 | CHECK_FULL_INITIALIZATION,
         CHECK_ASYNC2 = 0x100000,
         CHECK_ASYNC3 = 0x200000,
-        CHECK_MULTIREF = 0x400000
+        CHECK_MULTIREF = 0x400000,
+        CHECK_WITH_SEGMENTATION = 0x800000,
     };
 
     const std::vector<TestSubtype> executeTests =
@@ -152,7 +154,8 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         DYNAMIC_CHANGE,
         CHECK_ASYNC2,
         CHECK_ASYNC3,
-        CHECK_MULTIREF
+        CHECK_MULTIREF,
+        CHECK_WITH_SEGMENTATION
     };
 
     enum
@@ -656,20 +659,30 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
                 { 5, SET_NUM_ROWS(2), SET_NUM_COLS(2) }
             }
         },
+
+        // Cases below check TS in combination with other complicated features
+
+        // BRC + 2x2 tiles + SEGMENTATION
+        // NB: Segmentation is not checked directly in the encoded stream, checked only general encoding issues and artifacts
+        {/*86*/ MFX_ERR_NONE, SCALABLE_PIPE | CBR | TU1 | CHECK_WITH_SEGMENTATION,
+            {
+                { 5, SET_W(1408), SET_H(1152), SET_NUM_ROWS(2), SET_NUM_COLS(2) }
+            }
+        },
     };
 
     const tc_struct TestSuite::test_case_nv12[] =
     {
-        {/*86*/ MFX_ERR_NONE, CQP | TU4,
+        {/*87*/ MFX_ERR_NONE, CQP | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
         },
-        {/*87*/ MFX_ERR_NONE, CQP | TU4,
+        {/*88*/ MFX_ERR_NONE, CQP | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
         },
-        {/*88*/ MFX_ERR_NONE, CBR | TU4,
+        {/*89*/ MFX_ERR_NONE, CBR | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(2), SET_NUM_COLS(1) } }
         },
-        {/*89*/ MFX_ERR_NONE, CBR | TU4,
+        {/*90*/ MFX_ERR_NONE, CBR | TU4,
             { { ITER_LENGTH, SET_W(1280), SET_H(720), SET_NUM_ROWS(1), SET_NUM_COLS(2) } }
         },
     };
@@ -908,6 +921,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         mfxExtVP9Param m_extParam[3];
         mfxExtCodingOptionDDI m_extDDI;
         mfxExtEncoderResetOption m_extResetOpt;
+        mfxExtVP9Segmentation m_extSeg;
         mfxU32 m_firstFrame;
         mfxU32 m_numFramesToEncode;
 
@@ -939,6 +953,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
 
         InitExtBuffer(MFX_EXTBUFF_VP9_PARAM, m_extParam[SET]);
         SETPARSITER(&m_extParam[SET], MFX_EXT_VP9PARAM_SET);
+
         if (false == IsZeroExtBuf(m_extParam[SET]))
         {
             m_param[SET].ExtParam[m_param[SET].NumExtParam++] = (mfxExtBuffer*)&m_extParam[SET];
@@ -946,6 +961,19 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             m_param[SET].ExtParam[m_param[SET].NumExtParam] = nullptr;
         }
+
+        if (type & CHECK_WITH_SEGMENTATION)
+        {
+            // prepare mfxEXtVP9Segmentation
+            InitExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION, m_extSeg);
+            SetDefaultSegmentationParams(m_extSeg, m_param[SET]);
+
+            if (false == IsZeroExtBuf(m_extSeg))
+            {
+                m_param[SET].ExtParam[m_param[SET].NumExtParam++] = (mfxExtBuffer*)&m_extSeg;
+            }
+        }
+
         SetAdditionalParams(m_param[SET], m_extParam[SET], fourcc, type);
 
         // prepare parameters to "get" encoder configuration
@@ -1694,6 +1722,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         g_tsStatus.expect(MFX_ERR_NONE);
         if (m_initialized)
         {
+            mfxExtVP9Segmentation *segmentation_ext_params = reinterpret_cast <mfxExtVP9Segmentation*>(m_par.GetExtBuffer(MFX_EXTBUFF_VP9_SEGMENTATION));
+            if (segmentation_ext_params && segmentation_ext_params->SegmentId)
+            {
+                delete[] segmentation_ext_params->SegmentId;
+            }
             Close();
         }
 
