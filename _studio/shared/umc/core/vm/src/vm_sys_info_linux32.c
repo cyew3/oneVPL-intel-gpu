@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -62,7 +62,7 @@ uint32_t vm_sys_info_get_cpu_num(void)
     return sysconf(_SC_NPROCESSORS_CONF); /* on Linux *_CONF will return number of _logical_ processors */
 #endif
 } /* uint32_t vm_sys_info_get_cpu_num(void) */
-
+#ifndef OPEN_SOURCE
 void vm_sys_info_get_cpu_name(vm_char *cpu_name)
 {
 #ifdef __APPLE__
@@ -222,7 +222,7 @@ uint32_t vm_sys_info_get_mem_size(void)
 #endif /* __APPLE__ */
 
 } /* uint32_t vm_sys_info_get_mem_size(void) */
-
+#endif
 #else
 # pragma warning( disable: 4206 )
 #endif /* LINUX32 */

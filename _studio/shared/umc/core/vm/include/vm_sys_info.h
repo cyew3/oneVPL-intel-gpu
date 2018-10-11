@@ -1,4 +1,4 @@
-// Copyright (c) 2003-2018 Intel Corporation
+// Copyright (c) 2003-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@ extern "C"
 
 /* Functions to obtain processor's specific information */
 uint32_t vm_sys_info_get_cpu_num(void);
+#ifndef OPEN_SOURCE
 uint32_t vm_sys_info_get_numa_nodes_num(void);
 unsigned long long vm_sys_info_get_cpu_mask_of_numa_node(uint32_t node);
 void vm_sys_info_get_cpu_name(vm_char *cpu_name);
@@ -42,6 +43,7 @@ void vm_sys_info_get_program_name(vm_char *program_name);
 void vm_sys_info_get_program_path(vm_char *program_path);
 uint32_t vm_sys_info_get_cpu_speed(void);
 uint32_t vm_sys_info_get_mem_size(void);
+#endif
 
 #ifdef __cplusplus
 }
