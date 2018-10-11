@@ -23,6 +23,10 @@
 
 namespace MfxHwH265Encode
 {
+
+#define DEFAULT_H265_TIMEOUT_MS         60000      // 1 minute
+#define DEFAULT_H265_TIMEOUT_MS_SIM     3600000    // 1 hour
+
     class D3DXCommonEncoder : public DriverEncoder
     {
     public:
@@ -68,6 +72,10 @@ namespace MfxHwH265Encode
         MFXIScheduler2 *pSheduler;
         bool m_bSingleThreadMode;
         bool m_bIsBlockingTaskSyncEnabled;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        mfxU32 m_TaskSyncTimeOutMs;
+#endif
+
     private:
         D3DXCommonEncoder(D3DXCommonEncoder const &); // no implementation
         D3DXCommonEncoder & operator =(D3DXCommonEncoder const &); // no implementation

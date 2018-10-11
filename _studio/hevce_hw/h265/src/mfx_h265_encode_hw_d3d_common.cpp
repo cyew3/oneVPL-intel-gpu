@@ -22,12 +22,13 @@
 
 using namespace MfxHwH265Encode;
 
-#define DEFAULT_TIMEOUT_H265_HW 60000
-
 D3DXCommonEncoder::D3DXCommonEncoder()
     :pSheduler(nullptr)
     ,m_bSingleThreadMode(false)
     ,m_bIsBlockingTaskSyncEnabled(false)
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    ,m_TaskSyncTimeOutMs(DEFAULT_H265_TIMEOUT_MS)
+#endif
 {
 }
 
@@ -53,6 +54,10 @@ mfxStatus D3DXCommonEncoder::Init(VideoCORE *pCore)
     bool *eventsEnabled = (bool *)pCore->QueryCoreInterface(MFXBlockingTaskSyncEnabled_GUID);
     if (eventsEnabled)
         m_bIsBlockingTaskSyncEnabled = *eventsEnabled;
+
+    eMFXHWType platform = pCore->GetHWType();
+    if (platform >= MFX_HW_TGL_LP)
+        m_TaskSyncTimeOutMs = DEFAULT_H265_TIMEOUT_MS_SIM;
 
 #else
     pCore;
@@ -126,7 +131,7 @@ mfxStatus D3DXCommonEncoder::QueryStatus(
     // If the task was submitted to the driver
     if (task.m_GpuEvent.gpuSyncEvent != INVALID_HANDLE_VALUE)
     {
-        mfxU32 timeOutMs = DEFAULT_TIMEOUT_H265_HW;
+        mfxU32 timeOutMs = m_TaskSyncTimeOutMs;
 
         if (m_bSingleThreadMode)
         {
