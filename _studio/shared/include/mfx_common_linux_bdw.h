@@ -70,8 +70,6 @@
     #endif
 #endif
 
-//#define MFX_ENABLE_H264_VIDEO_PAK
-//#define MFX_ENABLE_H264_VIDEO_ENC
 #if defined(LINUX64)
 #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
 #define MFX_ENABLE_H264_VIDEO_FEI_PREENC

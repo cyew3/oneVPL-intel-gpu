@@ -198,7 +198,6 @@
 #endif
 #if defined(AS_HEVCE_PLUGIN)
 //    #define MFX_ENABLE_H265_VIDEO_ENCODE
-    //#define MFX_ENABLE_H265_PAQ
     #if !defined(__APPLE__)
 //        #define MFX_ENABLE_CM
     #endif

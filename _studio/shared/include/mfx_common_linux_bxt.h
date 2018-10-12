@@ -23,22 +23,18 @@
 
 #define PRE_SI_GEN 11
 
-// Disable HEVC plugins
-//#undef AS_HEVCE_PLUGIN
-//#undef AS_HEVCD_PLUGIN
-
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE
-#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-    #define MFX_ENABLE_H265_VIDEO_DECODE
-#endif
 
 #if defined (MFX_VA)
     #define MFX_ENABLE_H265_VIDEO_DECODE
     #define MFX_ENABLE_VP8_VIDEO_DECODE_HW
-    //#define MFX_ENABLE_VP9_VIDEO_DECODE_HW
     #define MFX_ENABLE_H265_VIDEO_ENCODE
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
+#endif
+
+#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
+    #define MFX_ENABLE_H265_VIDEO_DECODE
 #endif
 
 #define MFX_ENABLE_H264_VIDEO_ENCODE
@@ -46,14 +42,12 @@
     #define MFX_ENABLE_H265_VIDEO_ENCODE
 #endif
 #define MFX_ENABLE_MVC_VIDEO_ENCODE
-//#define MFX_ENABLE_H264_VIDEO_PAK
-//#define MFX_ENABLE_H264_VIDEO_ENC
 
 #if (MFX_VERSION < MFX_VERSION_NEXT)
 
     #define MFX_PROTECTED_FEATURE_DISABLE
-    #define MFX_CLOSED_PLATFORMS_DISABLE
     #define MFX_CAMERA_FEATURE_DISABLE
+    #define MFX_CLOSED_PLATFORMS_DISABLE
     #define MFX_EXT_DPB_HEVC_DISABLE
     #define MFX_FUTURE_FEATURE_DISABLE
 
@@ -68,34 +62,28 @@
 #endif
 
 // mpeg2
-#if 1 // ENABLED
 #define MFX_ENABLE_MPEG2_VIDEO_DECODE
 #define MFX_ENABLE_HW_ONLY_MPEG2_DECODER
 #define MFX_ENABLE_MPEG2_VIDEO_ENCODE
 #define MFX_ENABLE_MPEG2_VIDEO_PAK
 #define MFX_ENABLE_MPEG2_VIDEO_ENC
-#define MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
-#endif  
 
 //// vc1
-#if 1 // ENABLED
 #define MFX_ENABLE_VC1_VIDEO_DECODE
-#endif
 
 // mjpeg
-#if 1 // ENABLED
 #define MFX_ENABLE_MJPEG_VIDEO_DECODE
 #define MFX_ENABLE_MJPEG_VIDEO_ENCODE
-#endif
 
 // vpp
 #define MFX_ENABLE_DENOISE_VIDEO_VPP
 #define MFX_ENABLE_IMAGE_STABILIZATION_VPP
 #define MFX_ENABLE_VPP
-#define MFX_ENABLE_MJPEG_ROTATE_VPP
 #define MFX_ENABLE_MJPEG_WEAVE_DI_VPP
+#define MFX_ENABLE_MJPEG_ROTATE_VPP
 
 #define MFX_ENABLE_H264_VIDEO_ENCODE_HW
+#define MFX_ENABLE_MPEG2_VIDEO_ENCODE_HW
 //#define MFX_ENABLE_H264_VIDEO_ENC_HW
 
 #define MFX_ENABLE_MVC_VIDEO_ENCODE_HW
@@ -108,18 +96,18 @@
 #define MFX_ENABLE_H265FEI_HW
 #endif
 
-// user plugin for decoder, encoder, and vpp
-#define MFX_ENABLE_USER_DECODE
-#define MFX_ENABLE_USER_ENCODE
-#define MFX_ENABLE_USER_ENC
-#define MFX_ENABLE_USER_VPP
-
 // undefine unsupported features DirtyRect and MoveRect on Linux
 #undef MFX_ENABLE_AVCE_DIRTY_RECTANGLE
 #undef MFX_ENABLE_AVCE_MOVE_RECTANGLE
 
 //H265 feature
 #undef MFX_ENABLE_HEVCE_HDR_SEI
+
+// user plugin for decoder, encoder, and vpp
+#define MFX_ENABLE_USER_DECODE
+#define MFX_ENABLE_USER_ENCODE
+#define MFX_ENABLE_USER_ENC
+#define MFX_ENABLE_USER_VPP
 
 // aac
 #define MFX_ENABLE_AAC_AUDIO_DECODE
@@ -129,46 +117,8 @@
 #define MFX_ENABLE_MP3_AUDIO_DECODE
 // linux support
 
-//#undef MFX_ENABLE_MP3_AUDIO_DECODE
-// HW limitation
 #if defined (MFX_VA)
-    // h265
-    //#undef MFX_ENABLE_H265_VIDEO_DECODE
-    //#undef MFX_ENABLE_H265_VIDEO_ENCODE
-    // h264
-    //#undef MFX_ENABLE_H264_VIDEO_ENCODE
-    #undef MFX_ENABLE_MVC_VIDEO_ENCODE
-    //#undef MFX_ENABLE_H264_VIDEO_PAK
-
-    //#undef MFX_ENABLE_H264_VIDEO_ENCODE_HW
-    //#undef MFX_ENABLE_MVC_VIDEO_ENCODE_HW
-
-    // mpeg2
-    //#undef MFX_ENABLE_MPEG2_VIDEO_DECODE
-    //#undef MFX_ENABLE_MPEG2_VIDEO_ENCODE
-    //#undef MFX_ENABLE_MPEG2_VIDEO_PAK
-    //#undef MFX_ENABLE_MPEG2_VIDEO_ENC
-
-    // mjpeg
-    //#undef MFX_ENABLE_MJPEG_VIDEO_DECODE
-    //#undef MFX_ENABLE_MJPEG_VIDEO_ENCODE
-
-    // vpp
-    //#undef MFX_ENABLE_DENOISE_VIDEO_VPP
-    //#undef MFX_ENABLE_VPP
-
-    // vc1
-    //#undef MFX_ENABLE_VC1_VIDEO_DECODE
-
-    // vp8
-    //#undef MFX_ENABLE_VP8_VIDEO_DECODE
-    //#undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
-
-    //#undef MFX_ENABLE_H265_VIDEO_ENCODE
-// SW limitation
-#else // #if defined (MFX_VA)
-    //#undef MFX_ENABLE_VP8_VIDEO_DECODE
-    //#undef MFX_ENABLE_VP8_VIDEO_DECODE_HW
+    #undef MFX_ENABLE_MVC_VIDEO_ENCODE // HW limitation
 #endif // #if defined (MFX_VA)
 
 #define SYNCHRONIZATION_BY_VA_SYNC_SURFACE
@@ -223,7 +173,6 @@
 #endif
 #if defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_ENCODE
-    //#define MFX_ENABLE_H265_PAQ
     #if !defined(__APPLE__)
         #define MFX_ENABLE_CM
     #endif

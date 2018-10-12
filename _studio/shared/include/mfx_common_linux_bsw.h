@@ -21,15 +21,8 @@
 #ifndef _MFX_COMMON_LINUX_BSW_H_
 #define _MFX_COMMON_LINUX_BSW_H_
 
-// Disable HEVC plugins
-//#undef AS_HEVCE_PLUGIN
-//#undef AS_HEVCD_PLUGIN
-
 // h264
 #define MFX_ENABLE_H264_VIDEO_DECODE
-#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
-    #define MFX_ENABLE_H265_VIDEO_DECODE
-#endif
 
 #if defined (MFX_VA)
     #define MFX_ENABLE_H265_VIDEO_DECODE
@@ -39,13 +32,15 @@
     #define MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 #endif
 
+#if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
+    #define MFX_ENABLE_H265_VIDEO_DECODE
+#endif
+
 #define MFX_ENABLE_H264_VIDEO_ENCODE
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_ENCODE
 #endif
 #define MFX_ENABLE_MVC_VIDEO_ENCODE
-//#define MFX_ENABLE_H264_VIDEO_PAK
-//#define MFX_ENABLE_H264_VIDEO_ENC
 
 #if defined(LINUX64)
 #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
@@ -202,7 +197,6 @@
 #endif
 #if defined(AS_HEVCE_PLUGIN)
     #define MFX_ENABLE_H265_VIDEO_ENCODE
-    //#define MFX_ENABLE_H265_PAQ
     #if !defined(__APPLE__)
         #define MFX_ENABLE_CM
     #endif

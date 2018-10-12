@@ -29,6 +29,9 @@
 
 #if defined (MFX_VA)
     #define MFX_ENABLE_AV1_VIDEO_DECODE
+#if defined(AS_HEVC_FEI_ENCODE_PLUGIN) && MFX_VERSION >= 1024
+    #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
+#endif
 #endif
 
 #if defined(AS_HEVCD_PLUGIN) || defined(AS_HEVCE_PLUGIN)
@@ -40,10 +43,6 @@
     #define MFX_ENABLE_H265_VIDEO_ENCODE
 #endif
 #define MFX_ENABLE_MVC_VIDEO_ENCODE
-
-#if defined(AS_HEVC_FEI_ENCODE_PLUGIN) && MFX_VERSION >= 1024
-    #define MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE
-#endif
 
 #if MFX_VERSION >= 1023
     #define MFX_ENABLE_H264_REPARTITION_CHECK
@@ -66,8 +65,6 @@
     #endif
 #endif
 
-//#define MFX_ENABLE_H264_VIDEO_PAK
-//#define MFX_ENABLE_H264_VIDEO_ENC
 #if defined(LINUX64)
 #define MFX_ENABLE_H264_VIDEO_FEI_ENCPAK
 #define MFX_ENABLE_H264_VIDEO_FEI_PREENC
