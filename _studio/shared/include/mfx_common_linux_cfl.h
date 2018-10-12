@@ -134,9 +134,6 @@
 //H265 feature
 #undef MFX_ENABLE_HEVCE_HDR_SEI
 
-// H265 features
-#define MFX_ENABLE_HEVCE_ROI
-
 // aac
 #define MFX_ENABLE_AAC_AUDIO_DECODE
 #define MFX_ENABLE_AAC_AUDIO_ENCODE
