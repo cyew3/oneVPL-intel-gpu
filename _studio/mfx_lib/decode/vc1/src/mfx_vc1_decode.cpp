@@ -592,8 +592,7 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
 
     mfxStatus       MFXSts = MFX_ERR_NONE;
 
-    memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_par.mfx, sizeof(mfxInfoMFX));
-
+    par->mfx = m_par.mfx;
     par->Protected = m_par.Protected;
     par->IOPattern = m_par.IOPattern;
     par->AsyncDepth = m_par.AsyncDepth;
@@ -610,11 +609,10 @@ mfxStatus MFXVideoDECODEVC1::GetVideoParam(mfxVideoParam *par)
         if (pSPS->SPSBufSize < m_RawSeq.size())
             return MFX_ERR_NOT_ENOUGH_BUFFER;
 
-        memcpy_s(pSPS->SPSBuffer, m_RawSeq.size(), &m_RawSeq[0], m_RawSeq.size());
+        std::copy(std::begin(m_RawSeq), std::end(m_RawSeq), pSPS->SPSBuffer);
         pSPS->SPSBufSize = (mfxU16)m_RawSeq.size();
-
     }
-     return MFXSts;
+    return MFXSts;
 }
 
 mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *surface_work, mfxFrameSurface1 **surface_disp)
@@ -818,7 +816,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
             m_bIsInit = true;
 
             m_RawSeq.resize(m_FrameSize);
-            memcpy_s(&m_RawSeq[0], m_FrameSize, bs->Data, m_FrameSize);
+            std::copy(bs->Data, bs->Data + m_FrameSize, std::begin(m_RawSeq));
         }
         else
         {
@@ -881,7 +879,9 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                     if (m_SHSize)
                     {
                         m_RawSeq.resize(m_SHSize);
-                        memcpy_s(&m_RawSeq[0], m_SHSize, m_FrameConstrData.GetBufferPointer(), m_SHSize);
+                        std::copy(reinterpret_cast<uint8_t*>(m_FrameConstrData.GetBufferPointer()),
+                                  reinterpret_cast<uint8_t*>(m_FrameConstrData.GetBufferPointer()) + m_SHSize,
+                                  std::begin(m_RawSeq));
                     }
                     return MFX_ERR_NONE;
                 }
@@ -912,7 +912,8 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                 {
                     if (bs->DataLength <= 4)
                     {
-                        memcpy_s((Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(), bs->DataLength, bs->Data + bs->DataOffset, bs->DataLength);
+                        std::copy(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + bs->DataLength,
+                                  reinterpret_cast<uint8_t*>(m_FrameConstrData.GetBufferPointer()) + m_FrameConstrData.GetDataSize());
                         m_sbs.TimeStamp = bs->TimeStamp;
                     }
                     m_SaveBytesSize = 0;
@@ -926,7 +927,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
                     m_SaveBytesSize = bs->DataLength;
                     if (m_SaveBytesSize <= 4)
                     {
-                        memcpy_s(m_pSaveBytes, m_SaveBytesSize, bs->Data + bs->DataOffset, m_SaveBytesSize);
+                        std::copy(bs->Data + bs->DataOffset, bs->Data + bs->DataOffset + m_SaveBytesSize, m_pSaveBytes);
                         m_sbs.TimeStamp = bs->TimeStamp;
 
                     }
@@ -1405,7 +1406,7 @@ mfxStatus MFXVideoDECODEVC1::DecodeHeader(VideoCORE *, mfxBitstream *bs, mfxVide
 
     MFX_CHECK_STS(MFXSts);
 
-    memcpy_s(&(par->mfx.FrameInfo), sizeof(temp.mfx.FrameInfo), &temp.mfx.FrameInfo, sizeof(temp.mfx.FrameInfo));
+    par->mfx.FrameInfo = temp.mfx.FrameInfo;
 
     par->mfx.CodecProfile = temp.mfx.CodecProfile;
     par->mfx.CodecLevel = temp.mfx.CodecLevel;
@@ -1588,7 +1589,8 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestInternal(VideoCORE *core, mfxVideoPa
         return MFX_ERR_INVALID_VIDEO_PARAM;
     par->mfx.FrameInfo.CropX = 0;
     par->mfx.FrameInfo.CropY = 0;
-    memcpy_s(&request->Info, sizeof(par->mfx.FrameInfo), &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
+
+    request->Info = par->mfx.FrameInfo;
     request->Info.FourCC = MFX_FOURCC_NV12;
 
     bool isSWplatform = true;
@@ -1634,7 +1636,8 @@ mfxStatus MFXVideoDECODEVC1::SetAllocRequestExternal(VideoCORE *core, mfxVideoPa
         return MFX_ERR_INVALID_VIDEO_PARAM;
     par->mfx.FrameInfo.CropX = 0;
     par->mfx.FrameInfo.CropY = 0;
-    memcpy_s(&request->Info, sizeof(par->mfx.FrameInfo), &par->mfx.FrameInfo, sizeof(par->mfx.FrameInfo));
+
+    request->Info = par->mfx.FrameInfo;
     request->Info.FourCC = MFX_FOURCC_NV12;
 
     bool isSWplatform = true;
