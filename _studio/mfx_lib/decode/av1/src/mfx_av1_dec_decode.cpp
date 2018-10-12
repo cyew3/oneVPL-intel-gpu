@@ -328,7 +328,7 @@ mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVid
         MFXMediaDataAdapter in(bs);
 
         UMC::VideoDecoderParams vp;
-        UMC::Status res = UMC_AV1_DECODER::AV1Decoder::DecodeHeader(&in, &vp);
+        UMC::Status res = UMC_AV1_DECODER::AV1Decoder::DecodeHeader(&in, vp);
         if (res != UMC::UMC_OK)
             return ConvertStatusUmc2Mfx(res);
 

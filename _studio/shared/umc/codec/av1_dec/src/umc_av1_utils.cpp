@@ -36,18 +36,18 @@ namespace UMC_AV1_DECODER
         SetDefaultLFParams(info.loop_filter_params);
     }
 
-    inline Ipp32u av1_get_qindex(FrameHeader const * fh, Ipp8u segmentId)
+    inline Ipp32u av1_get_qindex(FrameHeader const& fh, Ipp8u segmentId)
     {
-        if (IsSegFeatureActive(fh->segmentation_params, segmentId, SEG_LVL_ALT_Q))
+        if (IsSegFeatureActive(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q))
         {
-            const int data = GetSegData(fh->segmentation_params, segmentId, SEG_LVL_ALT_Q);
-            return UMC_VP9_DECODER::clamp(fh->base_q_idx + data, 0, UMC_VP9_DECODER::MAXQ);
+            const int data = GetSegData(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q);
+            return UMC_VP9_DECODER::clamp(fh.base_q_idx + data, 0, UMC_VP9_DECODER::MAXQ);
         }
         else
-            return fh->base_q_idx;
+            return fh.base_q_idx;
     }
 
-    int IsCodedLossless(FrameHeader const * fh)
+    int IsCodedLossless(FrameHeader const& fh)
     {
         int CodedLossless = 1;
 
@@ -55,9 +55,9 @@ namespace UMC_AV1_DECODER
         {
             const Ipp32u qindex = av1_get_qindex(fh, i);
 
-            if (qindex || fh->DeltaQYDc ||
-                fh->DeltaQUAc || fh->DeltaQUDc ||
-                fh->DeltaQVAc || fh->DeltaQVDc)
+            if (qindex || fh.DeltaQYDc ||
+                fh.DeltaQUAc || fh.DeltaQUDc ||
+                fh.DeltaQVAc || fh.DeltaQVDc)
             {
                 CodedLossless = 0;
                 break;
@@ -67,22 +67,22 @@ namespace UMC_AV1_DECODER
         return CodedLossless;
     }
 
-    void InheritFromPrevFrame(FrameHeader* fh, FrameHeader const* prev_fh)
+    void InheritFromPrevFrame(FrameHeader& fh, FrameHeader const& prev_fh)
     {
         for (Ipp32u i = 0; i < TOTAL_REFS; i++)
-            fh->loop_filter_params.loop_filter_ref_deltas[i] = prev_fh->loop_filter_params.loop_filter_ref_deltas[i];
+            fh.loop_filter_params.loop_filter_ref_deltas[i] = prev_fh.loop_filter_params.loop_filter_ref_deltas[i];
 
         for (Ipp32u i = 0; i < MAX_MODE_LF_DELTAS; i++)
-            fh->loop_filter_params.loop_filter_mode_deltas[i] = prev_fh->loop_filter_params.loop_filter_mode_deltas[i];
+            fh.loop_filter_params.loop_filter_mode_deltas[i] = prev_fh.loop_filter_params.loop_filter_mode_deltas[i];
 
-        fh->cdef_damping = prev_fh->cdef_damping;
+        fh.cdef_damping = prev_fh.cdef_damping;
         for (Ipp32u i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            fh->cdef_y_strength[i] = prev_fh->cdef_y_strength[i];
-            fh->cdef_uv_strength[i] = prev_fh->cdef_uv_strength[i];
+            fh.cdef_y_strength[i] = prev_fh.cdef_y_strength[i];
+            fh.cdef_uv_strength[i] = prev_fh.cdef_uv_strength[i];
         }
 
-        fh->segmentation_params = prev_fh->segmentation_params;
+        fh.segmentation_params = prev_fh.segmentation_params;
     }
 }
 

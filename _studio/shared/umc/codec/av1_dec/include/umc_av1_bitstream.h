@@ -28,13 +28,13 @@ namespace UMC_AV1_DECODER
     {
     public:
 
-        void ReadOBUInfo(OBUInfo*);
-        void ReadTileGroupHeader(FrameHeader const*, TileGroupInfo*);
-        void ReadTile(FrameHeader const*, size_t&, size_t&);
+        void ReadOBUInfo(OBUInfo&);
+        void ReadTileGroupHeader(FrameHeader const&, TileGroupInfo&);
+        void ReadTile(FrameHeader const&, size_t&, size_t&);
         void ReadByteAlignment();
         Ipp64u GetLE(Ipp32u);
-        void ReadSequenceHeader(SequenceHeader*);
-        void ReadUncompressedHeader(FrameHeader*, SequenceHeader const*, FrameHeader const*, DPBType const&, OBUHeader const&);
+        void ReadSequenceHeader(SequenceHeader&);
+        void ReadUncompressedHeader(FrameHeader&, SequenceHeader const&, FrameHeader const*, DPBType const&, OBUHeader const&);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
 

@@ -43,6 +43,9 @@ namespace UMC_AV1_DECODER
         if (submitted)
             return 0;
 
+        if (!bsBuffer)
+            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
         Ipp8u* data = static_cast<Ipp8u*>(source.GetDataPointer());
         const size_t length = std::min<size_t>(source.GetDataSize(), spaceInBuffer);
 
@@ -140,6 +143,9 @@ namespace UMC_AV1_DECODER
 
     void AV1DecoderFrame::AddTileSet(UMC::MediaData* in, TileLayout const& layout)
     {
+        if (!in)
+            throw av1_exception(UMC::UMC_ERR_NULL_PTR);
+
         tile_sets.emplace_back(in, layout);
     }
 

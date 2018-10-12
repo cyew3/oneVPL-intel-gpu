@@ -19,36 +19,36 @@
 
 namespace UMC_AV1_DECODER
 {
-    inline int read_inv_signed_literal(AV1Bitstream* bs, int bits) {
-        const unsigned sign = bs->GetBit();
-        const unsigned literal = bs->GetBits(bits);
+    inline int read_inv_signed_literal(AV1Bitstream& bs, int bits) {
+        const unsigned sign = bs.GetBit();
+        const unsigned literal = bs.GetBits(bits);
         if (sign == 0)
             return literal; // if positive: literal
         else
             return literal - (1 << bits); // if negative: complement to literal with respect to 2^bits
     }
 
-    inline Ipp32s read_uniform(AV1Bitstream* bs, Ipp32u n)
+    inline Ipp32s read_uniform(AV1Bitstream& bs, Ipp32u n)
     {
         const Ipp32u l = UMC_VP9_DECODER::GetUnsignedBits(n);
         const Ipp32u m = (1 << l) - n;
-        const Ipp32u v = bs->GetBits(l - 1);
+        const Ipp32u v = bs.GetBits(l - 1);
         if (v < m)
             return v;
         else
-            return (v << 1) - m + bs->GetBits(1);
+            return (v << 1) - m + bs.GetBits(1);
     }
 
-    inline Ipp32u read_uvlc(AV1Bitstream* bs)
+    inline Ipp32u read_uvlc(AV1Bitstream& bs)
     {
         Ipp32u leading_zeros = 0;
-        while (!bs->GetBit()) ++leading_zeros;
+        while (!bs.GetBit()) ++leading_zeros;
 
         // Maximum 32 bits.
         if (leading_zeros >= 32)
             return std::numeric_limits<Ipp32u>::max();
         const Ipp32u base = (1u << leading_zeros) - 1;
-        const Ipp32u value = bs->GetBits(leading_zeros);
+        const Ipp32u value = bs.GetBits(leading_zeros);
         return base + value;
     }
 
@@ -85,17 +85,17 @@ namespace UMC_AV1_DECODER
         return pos;
     }
 
-    inline Ipp16u read_primitive_quniform(AV1Bitstream* bs, Ipp16u n)
+    inline Ipp16u read_primitive_quniform(AV1Bitstream& bs, Ipp16u n)
     {
         if (n <= 1) return 0;
         Ipp8u l = GetMSB(n - 1) + 1;
         const int m = (1 << l) - n;
-        const int v = bs->GetBits(l - 1);
-        const int result = v < m ? v : (v << 1) - m + bs->GetBit();
+        const int v = bs.GetBits(l - 1);
+        const int result = v < m ? v : (v << 1) - m + bs.GetBit();
         return static_cast<Ipp16u>(result);
     }
 
-    inline Ipp16u read_primitive_subexpfin(AV1Bitstream* bs, Ipp16u n, Ipp16u k)
+    inline Ipp16u read_primitive_subexpfin(AV1Bitstream& bs, Ipp16u n, Ipp16u k)
     {
         int i = 0;
         int mk = 0;
@@ -108,12 +108,12 @@ namespace UMC_AV1_DECODER
                 break;
             }
             else {
-                if (bs->GetBit()) {
+                if (bs.GetBit()) {
                     i = i + 1;
                     mk += a;
                 }
                 else {
-                    v = static_cast<Ipp16u>(bs->GetBits(b) + mk);
+                    v = static_cast<Ipp16u>(bs.GetBits(b) + mk);
                     break;
                 }
             }
@@ -121,24 +121,24 @@ namespace UMC_AV1_DECODER
         return v;
     }
 
-    inline Ipp16u read_primitive_refsubexpfin(AV1Bitstream* bs, Ipp16u n, Ipp16u k, Ipp16u ref)
+    inline Ipp16u read_primitive_refsubexpfin(AV1Bitstream& bs, Ipp16u n, Ipp16u k, Ipp16u ref)
     {
         return inv_recenter_finite_non_neg(n, ref,
             read_primitive_subexpfin(bs, n, k));
     }
 
-    inline Ipp16s read_signed_primitive_refsubexpfin(AV1Bitstream* bs, Ipp16u n, Ipp16u k, Ipp16s ref) {
+    inline Ipp16s read_signed_primitive_refsubexpfin(AV1Bitstream& bs, Ipp16u n, Ipp16u k, Ipp16s ref) {
         ref += n - 1;
         const Ipp16u scaled_n = (n << 1) - 1;
         return read_primitive_refsubexpfin(bs, scaled_n, k, ref) - n + 1;
     }
 
-    inline size_t read_leb128(AV1Bitstream* bs)
+    inline size_t read_leb128(AV1Bitstream& bs)
     {
         size_t value = 0;
         for (size_t i = 0; i < MAX_LEB128_SIZE; ++i)
         {
-            const Ipp8u cur_byte = static_cast<Ipp8u>(bs->GetBits(8));
+            const Ipp8u cur_byte = static_cast<Ipp8u>(bs.GetBits(8));
             const Ipp8u decoded_byte = cur_byte & LEB128_BYTE_MASK;
             value |= ((Ipp64u)decoded_byte) << (i * 7);
             if ((cur_byte & ~LEB128_BYTE_MASK) == 0)

@@ -34,8 +34,8 @@ namespace UMC_AV1_DECODER
 
     private:
 
-        void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) override;
-        UMC::Status SubmitTiles(AV1DecoderFrame*, bool) override;
+        void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame&) override;
+        UMC::Status SubmitTiles(AV1DecoderFrame&, bool) override;
 
     private:
         std::vector<ReportItem> reports;

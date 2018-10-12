@@ -53,18 +53,15 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
-    UMC::Status AV1DecoderVA::SubmitTiles(AV1DecoderFrame* frame, bool firstSubmission)
+    UMC::Status AV1DecoderVA::SubmitTiles(AV1DecoderFrame& frame, bool firstSubmission)
     {
-        if (!frame)
-            return UMC::UMC_ERR_FAILED;;
-
         VM_ASSERT(va);
         UMC::Status sts = UMC::UMC_OK;
 
         if (firstSubmission)
         {
             // it's first submission for current frame - need to call BeginFrame
-            sts = va->BeginFrame(frame->GetMemID());
+            sts = va->BeginFrame(frame.GetMemID());
             if (sts != UMC::UMC_OK)
                 return sts;
 
@@ -72,10 +69,10 @@ namespace UMC_AV1_DECODER
             packer->BeginFrame();
         }
 
-        auto &tileSets = frame->GetTileSets();
+        auto &tileSets = frame.GetTileSets();
         packer->PackAU(tileSets, frame, firstSubmission);
 
-        FrameHeader const& fh = frame->GetFrameHeader();
+        FrameHeader const& fh = frame.GetFrameHeader();
         const bool lastSubmission = CalcTilesInTileSets(tileSets) == NumTiles(fh);
         if (lastSubmission)
             packer->EndFrame();
@@ -88,38 +85,37 @@ namespace UMC_AV1_DECODER
         return sts;
     }
 
-    void AV1DecoderVA::AllocateFrameData(UMC::VideoDataInfo const& info, UMC::FrameMemID id, AV1DecoderFrame* frame)
+    void AV1DecoderVA::AllocateFrameData(UMC::VideoDataInfo const& info, UMC::FrameMemID id, AV1DecoderFrame& frame)
     {
         VM_ASSERT(id != UMC::FRAME_MID_INVALID);
-        VM_ASSERT(frame);
 
         UMC::FrameData fd;
         fd.Init(&info, id, allocator);
 
-        frame->Allocate(&fd);
+        frame.Allocate(&fd);
 
-        UMC::FrameData* fd2 = frame->GetFrameData();
+        UMC::FrameData* fd2 = frame.GetFrameData();
         VM_ASSERT(fd2);
         fd2->m_locked = true;
     }
 
-    inline bool InProgress(AV1DecoderFrame const * frame)
+    inline bool InProgress(AV1DecoderFrame const& frame)
     {
-        return frame->DecodingStarted() && !frame->DecodingCompleted();
+        return frame.DecodingStarted() && !frame.DecodingCompleted();
     }
 
-    inline void SetError(AV1DecoderFrame* frame, Ipp8u status)
+    inline void SetError(AV1DecoderFrame& frame, Ipp8u status)
     {
         switch (status)
         {
         case 1:
-            frame->AddError(UMC::ERROR_FRAME_MINOR);
+            frame.AddError(UMC::ERROR_FRAME_MINOR);
             break;
         case 2:
         case 3:
         case 4:
         default:
-            frame->AddError(UMC::ERROR_FRAME_MAJOR);
+            frame.AddError(UMC::ERROR_FRAME_MAJOR);
             break;
         }
     }
@@ -134,7 +130,7 @@ namespace UMC_AV1_DECODER
         // form frame queue in decoded order
         DPBType decode_queue;
         for (DPBType::iterator frm = dpb.begin(); frm != dpb.end(); frm++)
-            if (InProgress(*frm))
+            if (InProgress(**frm))
                 decode_queue.push_back(*frm);
 
         std::sort(decode_queue.begin(), decode_queue.end(),
@@ -152,7 +148,7 @@ namespace UMC_AV1_DECODER
             {
                 if (reports[i].m_index == static_cast<Ipp32u>(frame.GetMemID())) // report for the frame was found in previuously cached reports
                 {
-                    SetError(&frame, reports[i].m_status);
+                    SetError(frame, reports[i].m_status);
                     frame.CompleteDecoding();
                     wasCompleted = true;
                     reports.erase(reports.begin() + i);
@@ -178,7 +174,7 @@ namespace UMC_AV1_DECODER
                     const Ipp16u index = pStatusReport[i].current_picture.Index15Bits;
                     if (index == frame.GetMemID()) // report for the frame was found in new reports
                     {
-                        SetError(&frame, pStatusReport[i].bStatus);
+                        SetError(frame, pStatusReport[i].bStatus);
                         frame.CompleteDecoding();
                         wasFound = true;
                         wasCompleted = true;

@@ -46,7 +46,7 @@ public:
     virtual void BeginFrame() = 0;
     virtual void EndFrame() = 0;
 
-    virtual void PackAU(std::vector<TileSet>&, AV1DecoderFrame const*, bool) = 0;
+    virtual void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) = 0;
 
     static Packer* CreatePacker(UMC::VideoAccelerator * va);
 
@@ -82,12 +82,12 @@ public:
 
     PackerIntel(UMC::VideoAccelerator * va);
 
-    void PackAU(std::vector<TileSet>&, AV1DecoderFrame const*, bool) override;
+    void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) override;
 
 private:
 
-    void PackPicParams(DXVA_Intel_PicParams_AV1*, AV1DecoderFrame const*);
-    void PackTileControlParams(DXVA_Intel_Tile_AV1*, TileLocation const&);
+    void PackPicParams(DXVA_Intel_PicParams_AV1&, AV1DecoderFrame const&);
+    void PackTileControlParams(DXVA_Intel_Tile_AV1&, TileLocation const&);
 };
 
 #endif // UMC_VA_DXVA
@@ -107,12 +107,12 @@ public:
     void BeginFrame();
     void EndFrame();
 
-    void PackAU(std::vector<TileSet>&, AV1DecoderFrame const*, bool) override;
+    void PackAU(std::vector<TileSet>&, AV1DecoderFrame const&, bool) override;
 
  private:
 
-    void PackPicParams(VADecPictureParameterBufferAV1*, AV1DecoderFrame const*);
-    void PackTileControlParams(VABitStreamParameterBufferAV1*, TileLocation const&);
+    void PackPicParams(VADecPictureParameterBufferAV1&, AV1DecoderFrame const&);
+    void PackTileControlParams(VABitStreamParameterBufferAV1&, TileLocation const&);
 };
 
 #endif // UMC_VA_LINUX

@@ -84,7 +84,7 @@ namespace UMC_AV1_DECODER
 
     public:
 
-        static UMC::Status DecodeHeader(UMC::MediaData*, UMC::VideoDecoderParams*);
+        static UMC::Status DecodeHeader(UMC::MediaData*, UMC::VideoDecoderParams&);
 
         /* UMC::BaseCodec interface */
         UMC::Status Init(UMC::BaseCodecParams*) override;
@@ -114,15 +114,15 @@ namespace UMC_AV1_DECODER
 
     protected:
 
-        static UMC::Status FillVideoParam(SequenceHeader const&, UMC::VideoDecoderParams*);
+        static UMC::Status FillVideoParam(SequenceHeader const&, UMC::VideoDecoderParams&);
 
         virtual void SetDPBSize(Ipp32u);
         virtual AV1DecoderFrame* GetFreeFrame();
         virtual AV1DecoderFrame* GetFrameBuffer(FrameHeader const&);
 
-        virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame*) = 0;
+        virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame&) = 0;
         virtual void CompleteDecodedFrames();
-        virtual UMC::Status SubmitTiles(AV1DecoderFrame*, bool) = 0;
+        virtual UMC::Status SubmitTiles(AV1DecoderFrame&, bool) = 0;
 
     private:
 
