@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2017-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -326,6 +326,12 @@ namespace vp9e_reset
         else {
             ADD_FAILURE() << "ERROR: loading encoder from plugin failed!";
             throw tsFAIL;
+        }
+
+        if (g_tsConfig.sim == true && g_tsHWtype == MFX_HW_TGL && (tc.pre_init.p3 != tc.pre_reset.p3 || tc.pre_init.p4 != tc.pre_reset.p4))
+        {
+            g_tsLog << "\n\nWARNING: SKIP test (Dynamic Scaling not working in TGL simulation (1-pass DS mode only works on Si and Emu))\n\n";
+            throw tsSKIP;
         }
 
         Init();
