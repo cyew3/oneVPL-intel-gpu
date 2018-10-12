@@ -47,16 +47,16 @@ namespace UMC_AV1_DECODER
     public:
 
         UMC::FrameAllocator* allocator;
-        Ipp32u               async_depth;
+        uint32_t             async_depth;
     };
 
     class ReportItem // adopted from HEVC/AVC decoders
     {
     public:
-        Ipp32u  m_index;
-        Ipp8u   m_status;
+        uint32_t  m_index;
+        uint8_t   m_status;
 
-        ReportItem(Ipp32u index, Ipp8u status)
+        ReportItem(uint32_t index, uint8_t status)
             : m_index(index)
             , m_status(status)
         {
@@ -99,15 +99,15 @@ namespace UMC_AV1_DECODER
         /* UMC::VideoDecoder interface */
         UMC::Status ResetSkipCount()
         { return UMC::UMC_ERR_NOT_IMPLEMENTED; }
-        UMC::Status SkipVideoFrame(Ipp32s)
+        UMC::Status SkipVideoFrame(int32_t)
         { return UMC::UMC_ERR_NOT_IMPLEMENTED; }
-        Ipp32u GetNumOfSkippedFrames()
+        uint32_t GetNumOfSkippedFrames()
         { return 0; }
 
     public:
 
         AV1DecoderFrame* FindFrameByMemID(UMC::FrameMemID);
-        AV1DecoderFrame* FindFrameByDispID(Ipp32u);
+        AV1DecoderFrame* FindFrameByDispID(uint32_t);
         AV1DecoderFrame* GetFrameToDisplay();
 
         virtual bool QueryFrames() = 0;
@@ -116,7 +116,7 @@ namespace UMC_AV1_DECODER
 
         static UMC::Status FillVideoParam(SequenceHeader const&, UMC::VideoDecoderParams&);
 
-        virtual void SetDPBSize(Ipp32u);
+        virtual void SetDPBSize(uint32_t);
         virtual AV1DecoderFrame* GetFreeFrame();
         virtual AV1DecoderFrame* GetFrameBuffer(FrameHeader const&);
 
@@ -139,7 +139,7 @@ namespace UMC_AV1_DECODER
         std::unique_ptr<SequenceHeader> sequence_header;
         DPBType                         dpb;     // store of decoded frames
 
-        Ipp32u                          counter;
+        uint32_t                        counter;
         AV1DecoderParams                params;
 
         AV1DecoderFrame*                prev_frame;

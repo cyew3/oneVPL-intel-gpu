@@ -46,7 +46,7 @@ namespace UMC_AV1_DECODER
         va = dp->pVideoAccelerator;
         packer.reset(Packer::CreatePacker(va));
 
-        Ipp32u const dpb_size =
+        uint32_t const dpb_size =
             params.async_depth + TOTAL_REFS;
         SetDPBSize(dpb_size);
 
@@ -104,7 +104,7 @@ namespace UMC_AV1_DECODER
         return frame.DecodingStarted() && !frame.DecodingCompleted();
     }
 
-    inline void SetError(AV1DecoderFrame& frame, Ipp8u status)
+    inline void SetError(AV1DecoderFrame& frame, uint8_t status)
     {
         switch (status)
         {
@@ -120,7 +120,7 @@ namespace UMC_AV1_DECODER
         }
     }
 
-    const Ipp32u NUMBER_OF_STATUS = 32;
+    const uint32_t NUMBER_OF_STATUS = 32;
 
     bool AV1DecoderVA::QueryFrames()
     {
@@ -144,9 +144,9 @@ namespace UMC_AV1_DECODER
         {
             AV1DecoderFrame& frame = **frm;
             // check previously cached reports
-            for (Ipp32u i = 0; i < reports.size(); i++)
+            for (uint32_t i = 0; i < reports.size(); i++)
             {
-                if (reports[i].m_index == static_cast<Ipp32u>(frame.GetMemID())) // report for the frame was found in previuously cached reports
+                if (reports[i].m_index == static_cast<uint32_t>(frame.GetMemID())) // report for the frame was found in previuously cached reports
                 {
                     SetError(frame, reports[i].m_status);
                     frame.CompleteDecoding();
@@ -165,13 +165,13 @@ namespace UMC_AV1_DECODER
                 packer->GetStatusReport(&pStatusReport[0], sizeof(DXVA_Intel_Status_AV1)*NUMBER_OF_STATUS);
 
                 // iterate through new status reports
-                for (Ipp32u i = 0; i < NUMBER_OF_STATUS; i++)
+                for (uint32_t i = 0; i < NUMBER_OF_STATUS; i++)
                 {
                     if (!pStatusReport[i].StatusReportFeedbackNumber)
                         continue;
 
                     bool wasFound = false;
-                    const Ipp16u index = pStatusReport[i].current_picture.Index15Bits;
+                    const uint16_t index = pStatusReport[i].current_picture.Index15Bits;
                     if (index == frame.GetMemID()) // report for the frame was found in new reports
                     {
                         SetError(frame, pStatusReport[i].bStatus);

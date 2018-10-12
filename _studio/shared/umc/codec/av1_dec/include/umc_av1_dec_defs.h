@@ -27,56 +27,56 @@ namespace UMC_AV1_DECODER
 
     using UMC_VP9_DECODER::NUM_REF_FRAMES;
 
-    const Ipp8u SYNC_CODE_0 = 0x49;
-    const Ipp8u SYNC_CODE_1 = 0x83;
-    const Ipp8u SYNC_CODE_2 = 0x43;
+    const uint8_t SYNC_CODE_0 = 0x49;
+    const uint8_t SYNC_CODE_1 = 0x83;
+    const uint8_t SYNC_CODE_2 = 0x43;
 
-    const Ipp8u FRAME_MARKER = 0x2;
+    const uint8_t FRAME_MARKER = 0x2;
 
-    const Ipp8u MINIMAL_DATA_SIZE = 4;
+    const uint8_t MINIMAL_DATA_SIZE = 4;
 
-    const Ipp8u INTER_REFS                    = 7;
-    const Ipp8u TOTAL_REFS                    = 8;
+    const uint8_t INTER_REFS                    = 7;
+    const uint8_t TOTAL_REFS                    = 8;
 
-    const Ipp8u QM_LEVEL_BITS                 = 4;
+    const uint8_t QM_LEVEL_BITS                 = 4;
 
-    const Ipp8u LOG2_SWITCHABLE_FILTERS       = 2;
+    const uint8_t LOG2_SWITCHABLE_FILTERS       = 2;
 
-    const Ipp8u CDEF_MAX_STRENGTHS            = 8;
+    const uint8_t CDEF_MAX_STRENGTHS            = 8;
 
-    const Ipp8u CDEF_STRENGTH_BITS            = 6;
+    const uint8_t CDEF_STRENGTH_BITS            = 6;
 
-    const Ipp8u  MAX_MB_PLANE                 = 3;
-    const Ipp8u MAX_LEB128_SIZE               = 8;
-    const Ipp8u LEB128_BYTE_MASK              = 0x7f;
-    const Ipp8u MAX_SB_SIZE_LOG2              = 7;
+    const uint8_t  MAX_MB_PLANE                 = 3;
+    const uint8_t MAX_LEB128_SIZE               = 8;
+    const uint8_t LEB128_BYTE_MASK              = 0x7f;
+    const uint8_t MAX_SB_SIZE_LOG2              = 7;
 
-    const Ipp16u RESTORATION_UNITSIZE_MAX     = 256;
+    const uint16_t RESTORATION_UNITSIZE_MAX     = 256;
 
-    const Ipp8u MI_SIZE_LOG2 = 2;
-    const Ipp8u MAX_MIB_SIZE_LOG2 = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
+    const uint8_t MI_SIZE_LOG2 = 2;
+    const uint8_t MAX_MIB_SIZE_LOG2 = MAX_SB_SIZE_LOG2 - MI_SIZE_LOG2;
 
-    const Ipp8u SCALE_NUMERATOR = 8;
-    const Ipp8u SUPERRES_SCALE_BITS = 3;
-    const Ipp8u SUPERRES_SCALE_DENOMINATOR_MIN = SCALE_NUMERATOR + 1;
-    const Ipp8u PRIMARY_REF_BITS = 3;
-    const Ipp8u PRIMARY_REF_NONE = 7;
+    const uint8_t SCALE_NUMERATOR = 8;
+    const uint8_t SUPERRES_SCALE_BITS = 3;
+    const uint8_t SUPERRES_SCALE_DENOMINATOR_MIN = SCALE_NUMERATOR + 1;
+    const uint8_t PRIMARY_REF_BITS = 3;
+    const uint8_t PRIMARY_REF_NONE = 7;
 
-    const Ipp32u MAX_TILE_WIDTH = 4096;        // Max Tile width in pixels
-    const Ipp32u MAX_TILE_AREA  = 4096 * 2304;  // Maximum tile area in pixels
-    const Ipp32u MAX_TILE_ROWS  = 1024;
-    const Ipp32u MAX_TILE_COLS  = 1024;
+    const uint32_t MAX_TILE_WIDTH = 4096;        // Max Tile width in pixels
+    const uint32_t MAX_TILE_AREA  = 4096 * 2304;  // Maximum tile area in pixels
+    const uint32_t MAX_TILE_ROWS  = 1024;
+    const uint32_t MAX_TILE_COLS  = 1024;
 
-    const Ipp8u FRAME_CONTEXTS_LOG2           = 3;
-    const Ipp8u MAX_MODE_LF_DELTAS            = 2;
+    const uint8_t FRAME_CONTEXTS_LOG2           = 3;
+    const uint8_t MAX_MODE_LF_DELTAS            = 2;
 
-    const Ipp8u WARPEDMODEL_PREC_BITS         = 16;
+    const uint8_t WARPEDMODEL_PREC_BITS         = 16;
 
-    const Ipp8u MAX_NUM_TEMPORAL_LAYERS       = 8;
-    const Ipp8u MAX_NUM_SPATIAL_LAYERS        = 4;
-    const Ipp8u MAX_NUM_OPERATING_POINTS      = MAX_NUM_TEMPORAL_LAYERS * MAX_NUM_SPATIAL_LAYERS;
-    const Ipp8u SELECT_SCREEN_CONTENT_TOOLS   = 2;
-    const Ipp8u SELECT_INTEGER_MV             = 2;
+    const uint8_t MAX_NUM_TEMPORAL_LAYERS       = 8;
+    const uint8_t MAX_NUM_SPATIAL_LAYERS        = 4;
+    const uint8_t MAX_NUM_OPERATING_POINTS      = MAX_NUM_TEMPORAL_LAYERS * MAX_NUM_SPATIAL_LAYERS;
+    const uint8_t SELECT_SCREEN_CONTENT_TOOLS   = 2;
+    const uint8_t SELECT_INTEGER_MV             = 2;
 
     enum AV1_OBU_TYPE
     {
@@ -203,23 +203,23 @@ namespace UMC_AV1_DECODER
         SEG_LVL_MAX
     };
 
-    const Ipp8u MAX_REF_IDX_FOR_SEGMENT = 7;
+    const uint8_t MAX_REF_IDX_FOR_SEGMENT = 7;
 
-    const Ipp8u SEG_FEATURE_DATA_SIGNED[SEG_LVL_MAX] = { 1, 1, 1, 1, 1, 0, 0};
-    const Ipp8u SEG_FEATURE_DATA_MAX[SEG_LVL_MAX] = { UMC_VP9_DECODER::MAXQ,
+    const uint8_t SEG_FEATURE_DATA_SIGNED[SEG_LVL_MAX] = { 1, 1, 1, 1, 1, 0, 0};
+    const uint8_t SEG_FEATURE_DATA_MAX[SEG_LVL_MAX] = { UMC_VP9_DECODER::MAXQ,
                                                       MAX_LOOP_FILTER, MAX_LOOP_FILTER, MAX_LOOP_FILTER, MAX_LOOP_FILTER,
                                                       MAX_REF_IDX_FOR_SEGMENT,
                                                       0 };
 
     struct AV1Segmentation
     {
-        Ipp8u segmentation_enabled;
-        Ipp8u segmentation_update_map;
-        Ipp8u segmentation_temporal_update;
-        Ipp8u segmentation_update_data;
+        uint8_t segmentation_enabled;
+        uint8_t segmentation_update_map;
+        uint8_t segmentation_temporal_update;
+        uint8_t segmentation_update_data;
 
-        Ipp32s FeatureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
-        Ipp32u FeatureMask[VP9_MAX_NUM_OF_SEGMENTS];
+        int32_t FeatureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
+        uint32_t FeatureMask[VP9_MAX_NUM_OF_SEGMENTS];
 
     };
 
@@ -287,114 +287,114 @@ namespace UMC_AV1_DECODER
 
     struct TimingInfo
     {
-        Ipp32u num_units_in_display_tick;
-        Ipp32u time_scale;
-        Ipp32u equal_picture_interval;
-        Ipp32u num_ticks_per_picture_minus_1;
+        uint32_t num_units_in_display_tick;
+        uint32_t time_scale;
+        uint32_t equal_picture_interval;
+        uint32_t num_ticks_per_picture_minus_1;
     };
 
     struct DecoderModelInfo
     {
-        Ipp32u buffer_delay_length_minus_1;
-        Ipp32u num_units_in_decoding_tick;
-        Ipp32u buffer_removal_time_length_minus_1;
-        Ipp32u frame_presentation_time_length_minus_1;
+        uint32_t buffer_delay_length_minus_1;
+        uint32_t num_units_in_decoding_tick;
+        uint32_t buffer_removal_time_length_minus_1;
+        uint32_t frame_presentation_time_length_minus_1;
     };
 
     struct OperatingParametersInfo
     {
-        Ipp32u decoder_buffer_delay;
-        Ipp32u encoder_buffer_delay;
-        Ipp32u low_delay_mode_flag;
+        uint32_t decoder_buffer_delay;
+        uint32_t encoder_buffer_delay;
+        uint32_t low_delay_mode_flag;
     };
 
     struct ColorConfig
     {
-        Ipp32u BitDepth;
-        Ipp32u mono_chrome;
-        Ipp32u color_primaries;
-        Ipp32u transfer_characteristics;
-        Ipp32u matrix_coefficients;
-        Ipp32u color_range;
-        Ipp32u chroma_sample_position;
-        Ipp32u subsampling_x;
-        Ipp32u subsampling_y;
-        Ipp32u separate_uv_delta_q;
+        uint32_t BitDepth;
+        uint32_t mono_chrome;
+        uint32_t color_primaries;
+        uint32_t transfer_characteristics;
+        uint32_t matrix_coefficients;
+        uint32_t color_range;
+        uint32_t chroma_sample_position;
+        uint32_t subsampling_x;
+        uint32_t subsampling_y;
+        uint32_t separate_uv_delta_q;
     };
 
     struct SequenceHeader
     {
         //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in sequence_header_obu()
-        Ipp32u seq_profile;
-        Ipp32u still_picture;
-        Ipp32u reduced_still_picture_header;
+        uint32_t seq_profile;
+        uint32_t still_picture;
+        uint32_t reduced_still_picture_header;
 
-        Ipp32u timing_info_present_flag;
+        uint32_t timing_info_present_flag;
         TimingInfo timing_info;
 
-        Ipp32u decoder_model_info_present_flag;
+        uint32_t decoder_model_info_present_flag;
         DecoderModelInfo decoder_model_info;
 
-        Ipp32u operating_points_cnt_minus_1;
-        Ipp32u operating_point_idc[MAX_NUM_OPERATING_POINTS];
-        Ipp32u seq_level_idx[MAX_NUM_OPERATING_POINTS];
-        Ipp32u seq_tier[MAX_NUM_OPERATING_POINTS];
-        Ipp32u decoder_model_present_for_this_op[MAX_NUM_OPERATING_POINTS];
+        uint32_t operating_points_cnt_minus_1;
+        uint32_t operating_point_idc[MAX_NUM_OPERATING_POINTS];
+        uint32_t seq_level_idx[MAX_NUM_OPERATING_POINTS];
+        uint32_t seq_tier[MAX_NUM_OPERATING_POINTS];
+        uint32_t decoder_model_present_for_this_op[MAX_NUM_OPERATING_POINTS];
         OperatingParametersInfo operating_parameters_info[MAX_NUM_OPERATING_POINTS];
-        Ipp32u initial_display_delay_minus_1[MAX_NUM_OPERATING_POINTS];
+        uint32_t initial_display_delay_minus_1[MAX_NUM_OPERATING_POINTS];
 
-        Ipp32u frame_width_bits;
-        Ipp32u frame_height_bits;
-        Ipp32u max_frame_width;
-        Ipp32u max_frame_height;
-        Ipp32u frame_id_numbers_present_flag;
-        Ipp32u delta_frame_id_length;
-        Ipp32u idLen;
-        Ipp32u sbSize;
-        Ipp32u enable_filter_intra;
-        Ipp32u enable_intra_edge_filter;
-        Ipp32u enable_interintra_compound;
-        Ipp32u enable_masked_compound;
-        Ipp32u enable_warped_motion;
-        Ipp32u enable_dual_filter;
-        Ipp32u enable_order_hint;
-        Ipp32u enable_jnt_comp;
-        Ipp32u enable_ref_frame_mvs;
-        Ipp32u seq_force_screen_content_tools;
-        Ipp32u seq_force_integer_mv;
-        Ipp32s order_hint_bits_minus1;
-        Ipp32u enable_superres;
-        Ipp32u enable_cdef;
-        Ipp32u enable_restoration;
+        uint32_t frame_width_bits;
+        uint32_t frame_height_bits;
+        uint32_t max_frame_width;
+        uint32_t max_frame_height;
+        uint32_t frame_id_numbers_present_flag;
+        uint32_t delta_frame_id_length;
+        uint32_t idLen;
+        uint32_t sbSize;
+        uint32_t enable_filter_intra;
+        uint32_t enable_intra_edge_filter;
+        uint32_t enable_interintra_compound;
+        uint32_t enable_masked_compound;
+        uint32_t enable_warped_motion;
+        uint32_t enable_dual_filter;
+        uint32_t enable_order_hint;
+        uint32_t enable_jnt_comp;
+        uint32_t enable_ref_frame_mvs;
+        uint32_t seq_force_screen_content_tools;
+        uint32_t seq_force_integer_mv;
+        int32_t order_hint_bits_minus1;
+        uint32_t enable_superres;
+        uint32_t enable_cdef;
+        uint32_t enable_restoration;
 
         ColorConfig color_config;
 
-        Ipp32u film_grain_param_present;
+        uint32_t film_grain_param_present;
     };
 
     struct Loopfilter
     {
-        Ipp32s loop_filter_level[4];
+        int32_t loop_filter_level[4];
 
-        Ipp32s loop_filter_sharpness;
+        int32_t loop_filter_sharpness;
 
-        Ipp8u loop_filter_delta_enabled;
-        Ipp8u loop_filter_delta_update;
+        uint8_t loop_filter_delta_enabled;
+        uint8_t loop_filter_delta_update;
 
         // 0 = Intra, Last, Last2, Last3, GF, BWD, ARF
-        Ipp8s loop_filter_ref_deltas[TOTAL_REFS];
+        int8_t loop_filter_ref_deltas[TOTAL_REFS];
 
         // 0 = ZERO_MV, MV
-        Ipp8s loop_filter_mode_deltas[MAX_MODE_LF_DELTAS];
+        int8_t loop_filter_mode_deltas[MAX_MODE_LF_DELTAS];
     };
 
     struct WarpedMotionParams {
         TRANSFORMATION_TYPE wmtype;
-        Ipp32s wmmat[8];
-        Ipp16u alpha;
-        Ipp16u beta;
-        Ipp16u gamma;
-        Ipp16u delta;
+        int32_t wmmat[8];
+        uint16_t alpha;
+        uint16_t beta;
+        uint16_t gamma;
+        uint16_t delta;
     };
 
     enum RestorationType
@@ -410,188 +410,188 @@ namespace UMC_AV1_DECODER
     struct RestorationInfo
     {
         RestorationType frameRestorationType;
-        Ipp32s restorationUnitSize;
+        int32_t restorationUnitSize;
     };
 
     struct FilmGrain{
-        Ipp32s apply_grain;
-        Ipp32s update_parameters;
+        int32_t apply_grain;
+        int32_t update_parameters;
 
         // 8 bit values
-        Ipp32s scaling_points_y[14][2];
-        Ipp32s num_y_points;  // value: 0..14
+        int32_t scaling_points_y[14][2];
+        int32_t num_y_points;  // value: 0..14
 
         // 8 bit values
-        Ipp32s scaling_points_cb[10][2];
-        Ipp32s num_cb_points;  // value: 0..10
+        int32_t scaling_points_cb[10][2];
+        int32_t num_cb_points;  // value: 0..10
 
         // 8 bit values
-        Ipp32s scaling_points_cr[10][2];
-        Ipp32s num_cr_points;  // value: 0..10
+        int32_t scaling_points_cr[10][2];
+        int32_t num_cr_points;  // value: 0..10
 
-        Ipp32s scaling_shift;  // values : 8..11
+        int32_t scaling_shift;  // values : 8..11
 
-        Ipp32s ar_coeff_lag;  // values:  0..3
+        int32_t ar_coeff_lag;  // values:  0..3
 
         // 8 bit values
-        Ipp32s ar_coeffs_y[24];
-        Ipp32s ar_coeffs_cb[25];
-        Ipp32s ar_coeffs_cr[25];
+        int32_t ar_coeffs_y[24];
+        int32_t ar_coeffs_cb[25];
+        int32_t ar_coeffs_cr[25];
 
         // Shift value: AR coeffs range
         // 6: [-2, 2)
         // 7: [-1, 1)
         // 8: [-0.5, 0.5)
         // 9: [-0.25, 0.25)
-        Ipp32s ar_coeff_shift;  // values : 6..9
+        int32_t ar_coeff_shift;  // values : 6..9
 
-        Ipp32s cb_mult;       // 8 bits
-        Ipp32s cb_luma_mult;  // 8 bits
-        Ipp32s cb_offset;     // 9 bits
+        int32_t cb_mult;       // 8 bits
+        int32_t cb_luma_mult;  // 8 bits
+        int32_t cb_offset;     // 9 bits
 
-        Ipp32s cr_mult;       // 8 bits
-        Ipp32s cr_luma_mult;  // 8 bits
-        Ipp32s cr_offset;     // 9 bits
+        int32_t cr_mult;       // 8 bits
+        int32_t cr_luma_mult;  // 8 bits
+        int32_t cr_offset;     // 9 bits
 
-        Ipp32s overlap_flag;
+        int32_t overlap_flag;
 
-        Ipp32s clip_to_restricted_range;
+        int32_t clip_to_restricted_range;
 
-        Ipp32s BitDepth;  // video bit depth
+        int32_t BitDepth;  // video bit depth
 
-        Ipp32s chroma_scaling_from_luma;
+        int32_t chroma_scaling_from_luma;
 
-        Ipp32s grain_scale_shift;
+        int32_t grain_scale_shift;
 
-        Ipp32u random_seed;
+        uint32_t random_seed;
     };
 
     struct  SizeOfFrame{
-        Ipp32u FrameWidth;
-        Ipp32u FrameHeight;
+        uint32_t FrameWidth;
+        uint32_t FrameHeight;
     };
 
     struct FrameHeader
     {
         //Rev 0.85 parameters (AV1 spec version 1.0) in order of appearance/calculation in uncompressed_header()
-        Ipp32u show_existing_frame;
-        Ipp32u frame_to_show_map_idx;
-        Ipp64u frame_presentation_time;
-        Ipp32u display_frame_id;
+        uint32_t show_existing_frame;
+        uint32_t frame_to_show_map_idx;
+        uint64_t frame_presentation_time;
+        uint32_t display_frame_id;
         FRAME_TYPE frame_type;
-        Ipp32u show_frame;
-        Ipp32u showable_frame;
-        Ipp32u error_resilient_mode;
-        Ipp32u disable_cdf_update;
-        Ipp32u allow_screen_content_tools;
-        Ipp32u force_integer_mv;
-        Ipp32u current_frame_id;
-        Ipp32u frame_size_override_flag;
-        Ipp32u order_hint;
-        Ipp32u primary_ref_frame;
+        uint32_t show_frame;
+        uint32_t showable_frame;
+        uint32_t error_resilient_mode;
+        uint32_t disable_cdf_update;
+        uint32_t allow_screen_content_tools;
+        uint32_t force_integer_mv;
+        uint32_t current_frame_id;
+        uint32_t frame_size_override_flag;
+        uint32_t order_hint;
+        uint32_t primary_ref_frame;
 
-        Ipp8u refresh_frame_flags;
-        Ipp32u ref_order_hint[NUM_REF_FRAMES];
+        uint8_t refresh_frame_flags;
+        uint32_t ref_order_hint[NUM_REF_FRAMES];
 
-        Ipp32u FrameWidth;
-        Ipp32u FrameHeight;
-        Ipp32u SuperresDenom;
-        Ipp32u UpscaledWidth;
-        Ipp32u MiCols;
-        Ipp32u MiRows;
-        Ipp32u RenderWidth;
-        Ipp32u RenderHeight;
+        uint32_t FrameWidth;
+        uint32_t FrameHeight;
+        uint32_t SuperresDenom;
+        uint32_t UpscaledWidth;
+        uint32_t MiCols;
+        uint32_t MiRows;
+        uint32_t RenderWidth;
+        uint32_t RenderHeight;
 
-        Ipp32u allow_intrabc;
-        Ipp32s ref_frame_idx[INTER_REFS];
-        Ipp32u allow_high_precision_mv;
+        uint32_t allow_intrabc;
+        int32_t ref_frame_idx[INTER_REFS];
+        uint32_t allow_high_precision_mv;
         INTERP_FILTER interpolation_filter;
-        Ipp32u is_motion_mode_switchable;
-        Ipp32u use_ref_frame_mvs;
-        Ipp32u disable_frame_end_update_cdf;
+        uint32_t is_motion_mode_switchable;
+        uint32_t use_ref_frame_mvs;
+        uint32_t disable_frame_end_update_cdf;
 
-        Ipp32u sbCols;
-        Ipp32u sbRows;
-        Ipp32u sbSize;
-        Ipp32u uniform_tile_spacing_flag;
-        Ipp32u TileColsLog2;
-        Ipp32u TileRowsLog2;
-        Ipp32u TileCols;
-        Ipp32u TileRows;
-        Ipp32u SbColStarts[MAX_TILE_COLS + 1];  // valid for 0 <= i <= TileCols
-        Ipp32u SbRowStarts[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= TileRows
-        Ipp32u context_update_tile_id;
-        Ipp32u TileSizeBytes;
+        uint32_t sbCols;
+        uint32_t sbRows;
+        uint32_t sbSize;
+        uint32_t uniform_tile_spacing_flag;
+        uint32_t TileColsLog2;
+        uint32_t TileRowsLog2;
+        uint32_t TileCols;
+        uint32_t TileRows;
+        uint32_t SbColStarts[MAX_TILE_COLS + 1];  // valid for 0 <= i <= TileCols
+        uint32_t SbRowStarts[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= TileRows
+        uint32_t context_update_tile_id;
+        uint32_t TileSizeBytes;
 
-        Ipp32u base_q_idx;
-        Ipp32s DeltaQYDc;
-        Ipp32s DeltaQUDc;
-        Ipp32s DeltaQUAc;
-        Ipp32s DeltaQVDc;
-        Ipp32s DeltaQVAc;
-        Ipp32u using_qmatrix;
-        Ipp32u qm_y;
-        Ipp32u qm_u;
-        Ipp32u qm_v;
+        uint32_t base_q_idx;
+        int32_t DeltaQYDc;
+        int32_t DeltaQUDc;
+        int32_t DeltaQUAc;
+        int32_t DeltaQVDc;
+        int32_t DeltaQVAc;
+        uint32_t using_qmatrix;
+        uint32_t qm_y;
+        uint32_t qm_u;
+        uint32_t qm_v;
 
         AV1Segmentation segmentation_params;
 
-        Ipp32u delta_q_present;
-        Ipp32u delta_q_res;
+        uint32_t delta_q_present;
+        uint32_t delta_q_res;
 
-        Ipp32u delta_lf_present;
-        Ipp32u delta_lf_res;
-        Ipp32u delta_lf_multi;
+        uint32_t delta_lf_present;
+        uint32_t delta_lf_res;
+        uint32_t delta_lf_multi;
 
-        Ipp32u CodedLossless;
-        Ipp32u AllLossless;
+        uint32_t CodedLossless;
+        uint32_t AllLossless;
 
         Loopfilter loop_filter_params;
 
-        Ipp32u cdef_damping;
-        Ipp32u cdef_bits;
-        Ipp32u cdef_y_pri_strength[CDEF_MAX_STRENGTHS];
-        Ipp32u cdef_y_sec_strength[CDEF_MAX_STRENGTHS];
-        Ipp32u cdef_uv_pri_strength[CDEF_MAX_STRENGTHS];
-        Ipp32u cdef_uv_sec_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_damping;
+        uint32_t cdef_bits;
+        uint32_t cdef_y_pri_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_y_sec_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_uv_pri_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_uv_sec_strength[CDEF_MAX_STRENGTHS];
 
         RestorationType lr_type[MAX_MB_PLANE];
-        Ipp32u lr_unit_shift;
-        Ipp32u lr_uv_shift;
+        uint32_t lr_unit_shift;
+        uint32_t lr_uv_shift;
 
         TX_MODE TxMode;
-        Ipp32u reference_mode;
-        Ipp32u skip_mode_present;
-        Ipp32u allow_warped_motion;
-        Ipp32u reduced_tx_set;
+        uint32_t reference_mode;
+        uint32_t skip_mode_present;
+        uint32_t allow_warped_motion;
+        uint32_t reduced_tx_set;
 
         WarpedMotionParams global_motion_params[TOTAL_REFS];
 
         FilmGrain film_grain_params;
 
-        Ipp32u NumPlanes;
+        uint32_t NumPlanes;
 
-        Ipp32u large_scale_tile;
+        uint32_t large_scale_tile;
 
         //Rev 0.5 parameters
-        Ipp32u loop_filter_across_tiles_v_enabled;
-        Ipp32u loop_filter_across_tiles_h_enabled;
-        Ipp32u cdef_y_strength[CDEF_MAX_STRENGTHS];
-        Ipp32u cdef_uv_strength[CDEF_MAX_STRENGTHS];
-        Ipp32u enable_interintra_compound;
-        Ipp32u enable_masked_compound;
-        Ipp32u enable_intra_edge_filter;
-        Ipp32u enable_filter_intra;
+        uint32_t loop_filter_across_tiles_v_enabled;
+        uint32_t loop_filter_across_tiles_h_enabled;
+        uint32_t cdef_y_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_uv_strength[CDEF_MAX_STRENGTHS];
+        uint32_t enable_interintra_compound;
+        uint32_t enable_masked_compound;
+        uint32_t enable_intra_edge_filter;
+        uint32_t enable_filter_intra;
     };
 
     struct OBUHeader
     {
         AV1_OBU_TYPE obu_type;
 #if UMC_AV1_DECODER_REV >= 8500
-        Ipp32u obu_has_size_field;
+        uint32_t obu_has_size_field;
 #endif
-        Ipp32u temporal_id;
-        Ipp32u spatial_id;
+        uint32_t temporal_id;
+        uint32_t spatial_id;
     };
 
     struct OBUInfo
@@ -602,9 +602,9 @@ namespace UMC_AV1_DECODER
 
     struct TileGroupInfo
     {
-        Ipp32u numTiles;
-        Ipp32u startTileIdx;
-        Ipp32u endTileIdx;
+        uint32_t numTiles;
+        uint32_t startTileIdx;
+        uint32_t endTileIdx;
     };
 
     class av1_exception
@@ -612,11 +612,11 @@ namespace UMC_AV1_DECODER
     {
     public:
 
-        av1_exception(Ipp32s /*status*/)
+        av1_exception(int32_t /*status*/)
             : std::runtime_error("AV1 error")
         {}
 
-        Ipp32s GetStatus() const
+        int32_t GetStatus() const
         {
             return UMC::UMC_OK;
         }

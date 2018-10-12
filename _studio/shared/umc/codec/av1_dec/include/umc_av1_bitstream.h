@@ -32,15 +32,15 @@ namespace UMC_AV1_DECODER
         void ReadTileGroupHeader(FrameHeader const&, TileGroupInfo&);
         void ReadTile(FrameHeader const&, size_t&, size_t&);
         void ReadByteAlignment();
-        Ipp64u GetLE(Ipp32u);
+        uint64_t GetLE(uint32_t);
         void ReadSequenceHeader(SequenceHeader&);
         void ReadUncompressedHeader(FrameHeader&, SequenceHeader const&, FrameHeader const*, DPBType const&, OBUHeader const&);
 
         using UMC_VP9_DECODER::VP9Bitstream::VP9Bitstream;
 
-        Ipp8u GetBit()
+        uint8_t GetBit()
         {
-            return static_cast<Ipp8u>(UMC_VP9_DECODER::VP9Bitstream::GetBit());
+            return static_cast<uint8_t>(UMC_VP9_DECODER::VP9Bitstream::GetBit());
         }
 
     protected:

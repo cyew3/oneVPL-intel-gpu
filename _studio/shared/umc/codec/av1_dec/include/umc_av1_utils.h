@@ -20,30 +20,30 @@
 
 namespace UMC_AV1_DECODER
 {
-    inline Ipp32u CeilLog2(Ipp32u x) { Ipp32u l = 0; while (x > (1U << l)) l++; return l; }
+    inline uint32_t CeilLog2(uint32_t x) { uint32_t l = 0; while (x > (1U << l)) l++; return l; }
 
     // we stop using UMC_VP9_DECODER namespace starting from Rev 0.25.2
     // because after switch to AV1-specific segmentation stuff there are only few definitions we need to re-use from VP9
-    void SetSegData(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId, Ipp32s seg_data);
+    void SetSegData(AV1Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data);
 
-    inline Ipp32s GetSegData(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    inline int32_t GetSegData(AV1Segmentation const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.FeatureData[segmentId][featureId];
     }
 
-    inline bool IsSegFeatureActive(AV1Segmentation const& seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    inline bool IsSegFeatureActive(AV1Segmentation const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.segmentation_enabled && (seg.FeatureMask[segmentId] & (1 << featureId));
     }
 
-    inline void EnableSegFeature(AV1Segmentation & seg, Ipp8u segmentId, SEG_LVL_FEATURES featureId)
+    inline void EnableSegFeature(AV1Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         seg.FeatureMask[segmentId] |= 1 << featureId;
     }
 
-    inline Ipp8u IsSegFeatureSigned(SEG_LVL_FEATURES featureId)
+    inline uint8_t IsSegFeatureSigned(SEG_LVL_FEATURES featureId)
     {
         return
             SEG_FEATURE_DATA_SIGNED[featureId];
@@ -72,7 +72,7 @@ namespace UMC_AV1_DECODER
         return FrameIsIntra(fh) || fh.error_resilient_mode;
     }
 
-    inline Ipp32u NumTiles(FrameHeader const & fh)
+    inline uint32_t NumTiles(FrameHeader const & fh)
     {
         return fh.TileCols * fh.TileRows;
     }
@@ -120,7 +120,7 @@ namespace UMC_AV1_DECODER
         par.loop_filter_mode_deltas[1] = 0;
     }
 
-    inline Ipp8u GetNumPlanes(SequenceHeader const& sh)
+    inline uint8_t GetNumPlanes(SequenceHeader const& sh)
     {
         return sh.color_config.mono_chrome ? 1 : MAX_MB_PLANE;
     }

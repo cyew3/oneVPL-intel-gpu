@@ -27,12 +27,12 @@ namespace UMC_AV1_DECODER
 
     struct TileLocation
     {
-        Ipp32u startIdx; // index of 1st tile in current tile group
-        Ipp32u endIdx; // index of last tile in current tile group
+        uint32_t startIdx; // index of 1st tile in current tile group
+        uint32_t endIdx; // index of last tile in current tile group
         size_t offset; // offset in the buffer
         size_t size; // size of the tile
-        Ipp32u row; // row in tile grid
-        Ipp32u col; // column in tile grid
+        uint32_t row; // row in tile grid
+        uint32_t col; // column in tile grid
     };
 
     typedef std::vector<TileLocation> TileLayout;
@@ -45,9 +45,9 @@ namespace UMC_AV1_DECODER
         TileSet(UMC::MediaData*, TileLayout const&);
         ~TileSet() {};
 
-        size_t Submit(Ipp8u*, size_t, size_t, TileLayout&);
-        Ipp32u GetTileCount() const
-        { return static_cast<Ipp32u>(layout.size()); }
+        size_t Submit(uint8_t*, size_t, size_t, TileLayout&);
+        uint32_t GetTileCount() const
+        { return static_cast<uint32_t>(layout.size()); }
         size_t GetSize() const
         { return source.GetDataSize(); }
 
@@ -57,9 +57,9 @@ namespace UMC_AV1_DECODER
         bool submitted = false;
     };
 
-    inline Ipp32u CalcTilesInTileSets(std::vector<TileSet> const& tileSets)
+    inline uint32_t CalcTilesInTileSets(std::vector<TileSet> const& tileSets)
     {
-        Ipp32u numTiles = 0;
+        uint32_t numTiles = 0;
         for (auto& tileSet : tileSets)
             numTiles += tileSet.GetTileCount();
 
@@ -97,13 +97,13 @@ namespace UMC_AV1_DECODER
         std::vector<TileSet>& GetTileSets()
         { return tile_sets; }
 
-        Ipp32s GetError() const
+        int32_t GetError() const
         { return error; }
 
-        void SetError(Ipp32s e)
+        void SetError(int32_t e)
         { error = e; }
 
-        void AddError(Ipp32s e)
+        void AddError(int32_t e)
         { error |= e; }
 
         void SetSeqHeader(SequenceHeader const&);
@@ -156,12 +156,12 @@ namespace UMC_AV1_DECODER
         bool RefValid() const
         { return ref_valid; };
 
-        Ipp32u GetUpscaledWidth() const;
-        Ipp32u GetHeight() const;
+        uint32_t GetUpscaledWidth() const;
+        uint32_t GetHeight() const;
 
     public:
 
-        Ipp32s           UID;
+        int32_t           UID;
         DPBType          frame_dpb;
 
     protected:
@@ -172,7 +172,7 @@ namespace UMC_AV1_DECODER
 
     private:
 
-        Ipp16u                            locked;
+        uint16_t                          locked;
         bool                              outputted; // set in [application thread] when frame is mapped to respective output mfxFrameSurface
         bool                              displayed; // set in [scheduler thread] when frame decoding is finished and
                                                      // respective mfxFrameSurface prepared for output to application
@@ -188,7 +188,7 @@ namespace UMC_AV1_DECODER
 
         std::vector<TileSet>              tile_sets;
 
-        Ipp32s                            error;
+        int32_t                           error;
 
         std::unique_ptr<SequenceHeader>   seq_header;
         std::unique_ptr<FrameHeader>      header;

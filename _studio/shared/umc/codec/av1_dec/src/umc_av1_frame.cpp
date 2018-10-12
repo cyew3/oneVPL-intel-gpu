@@ -38,7 +38,7 @@ namespace UMC_AV1_DECODER
         source.SetDataSize(size);
     }
 
-    size_t TileSet::Submit(Ipp8u* bsBuffer, size_t spaceInBuffer, size_t offsetInBuffer, TileLayout& layoutWithOffset)
+    size_t TileSet::Submit(uint8_t* bsBuffer, size_t spaceInBuffer, size_t offsetInBuffer, TileLayout& layoutWithOffset)
     {
         if (submitted)
             return 0;
@@ -46,7 +46,7 @@ namespace UMC_AV1_DECODER
         if (!bsBuffer)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
-        Ipp8u* data = static_cast<Ipp8u*>(source.GetDataPointer());
+        uint8_t* data = static_cast<uint8_t*>(source.GetDataPointer());
         const size_t length = std::min<size_t>(source.GetDataSize(), spaceInBuffer);
 
         MFX_INTERNAL_CPY_S(bsBuffer + offsetInBuffer, length, data, length);
@@ -90,7 +90,7 @@ namespace UMC_AV1_DECODER
 
         memset(seq_header.get(), 0, sizeof(SequenceHeader));
         memset(header.get(), 0, sizeof(FrameHeader));
-        header->display_frame_id = (std::numeric_limits<Ipp32u>::max)();
+        header->display_frame_id = (std::numeric_limits<uint32_t>::max)();
         // TODO: [Global] Restore work with below fields if required
         //header->currFrame = -1;
         //header->frameCountInBS = 0;
@@ -111,7 +111,7 @@ namespace UMC_AV1_DECODER
         if (!fh)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
-        Ipp32s id = UID;
+        int32_t id = UID;
         Reset();
         UID = id;
 
@@ -193,9 +193,9 @@ namespace UMC_AV1_DECODER
         if (header->frame_type == KEY_FRAME)
             return;
 
-        for (Ipp8u i = 0; i < INTER_REFS; ++i)
+        for (uint8_t i = 0; i < INTER_REFS; ++i)
         {
-            Ipp32s refIdx = header->ref_frame_idx[i];
+            int32_t refIdx = header->ref_frame_idx[i];
             AddReferenceFrame(frame_dpb[refIdx]);
         }
     }
@@ -207,12 +207,12 @@ namespace UMC_AV1_DECODER
         decoded = true;
     }
 
-    Ipp32u AV1DecoderFrame::GetUpscaledWidth() const
+    uint32_t AV1DecoderFrame::GetUpscaledWidth() const
     {
         return header->UpscaledWidth;
     }
 
-    Ipp32u AV1DecoderFrame::GetHeight() const
+    uint32_t AV1DecoderFrame::GetHeight() const
     {
         return header->FrameHeight;
     }

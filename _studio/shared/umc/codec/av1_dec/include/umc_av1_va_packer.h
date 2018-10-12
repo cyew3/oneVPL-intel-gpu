@@ -71,7 +71,7 @@ public:
 
 protected:
 
-    Ipp32u  m_report_counter;
+    uint32_t  m_report_counter;
 };
 
 class PackerIntel

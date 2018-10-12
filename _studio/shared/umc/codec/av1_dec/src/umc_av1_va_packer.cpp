@@ -61,7 +61,7 @@ namespace UMC_AV1_DECODER
     Status PackerDXVA::GetStatusReport(void * pStatusReport, size_t size)
     {
         return
-            m_va->ExecuteStatusReportBuffer(pStatusReport, (Ipp32u)size);
+            m_va->ExecuteStatusReportBuffer(pStatusReport, (uint32_t)size);
     }
 
     void PackerDXVA::BeginFrame()
@@ -94,7 +94,7 @@ namespace UMC_AV1_DECODER
         }
 
         UMC::UMCVACompBuffer* compBufBs = nullptr;
-        Ipp8u* const bistreamData = (mfxU8 *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &compBufBs);
+        uint8_t* const bistreamData = (uint8_t *)m_va->GetCompBuffer(DXVA_BITSTREAM_DATA_BUFFER, &compBufBs);
         if (!bistreamData || !compBufBs)
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
@@ -118,10 +118,10 @@ namespace UMC_AV1_DECODER
                 }
             }
         }
-        compBufBs->SetDataSize(static_cast<Ipp32u>(offsetInBuffer));
+        compBufBs->SetDataSize(static_cast<uint32_t>(offsetInBuffer));
 
         UMCVACompBuffer* compBufTile = nullptr;
-        const Ipp32s tileControlInfoSize = static_cast<Ipp32s>(sizeof(DXVA_Intel_Tile_AV1) * tileControlParams.size());
+        const int32_t tileControlInfoSize = static_cast<int32_t>(sizeof(DXVA_Intel_Tile_AV1) * tileControlParams.size());
         DXVA_Intel_Tile_AV1 *tileControlParam = (DXVA_Intel_Tile_AV1*)m_va->GetCompBuffer(DXVA_SLICE_CONTROL_BUFFER, &compBufTile);
         if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
@@ -223,10 +223,10 @@ namespace UMC_AV1_DECODER
         picParam.stAV1Segments.update_map = info.segmentation_params.segmentation_update_map;
         picParam.stAV1Segments.Reserved4Bits = 0;
 
-        for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
         {
             picParam.stAV1Segments.feature_mask[i] = (UCHAR)info.segmentation_params.FeatureMask[i];
-            for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
+            for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
                 picParam.stAV1Segments.feature_data[i][j] = (SHORT)info.segmentation_params.FeatureData[i][j];
         }
 
@@ -237,12 +237,12 @@ namespace UMC_AV1_DECODER
         }
         else
         {
-            for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+            for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
                 picParam.ref_frame_map[ref].wPicEntry = (USHORT)frame.frame_dpb[ref]->GetMemID();
 
-            for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
+            for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
+                uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
 
                 picParam.ref_frame_idx[ref_idx] = idxInDPB;
 #if AV1D_DDI_VERSION < 26
@@ -267,11 +267,11 @@ namespace UMC_AV1_DECODER
 
         picParam.StatusReportFeedbackNumber = ++m_report_counter;
 
-        for (Ipp8u i = 0; i < TOTAL_REFS; i++)
+        for (uint8_t i = 0; i < TOTAL_REFS; i++)
         {
             picParam.ref_deltas[i] = info.loop_filter_params.loop_filter_ref_deltas[i];
         }
-        for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
+        for (uint8_t i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
         {
             picParam.mode_deltas[i] = info.loop_filter_params.loop_filter_mode_deltas[i];
         }
@@ -289,7 +289,7 @@ namespace UMC_AV1_DECODER
         picParam.cdef_damping_minus_3 = (UCHAR)(info.cdef_damping - 3);
         picParam.cdef_bits = (UCHAR)info.cdef_bits;
 
-        for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
             picParam.cdef_y_strengths[i] = (UCHAR)info.cdef_y_strength[i];
             picParam.cdef_uv_strengths[i] = (UCHAR)info.cdef_uv_strength[i];
@@ -317,10 +317,10 @@ namespace UMC_AV1_DECODER
         picParam.LoopRestorationFlags.fields.lr_unit_shift = info.lr_unit_shift;
         picParam.LoopRestorationFlags.fields.lr_uv_shift = info.lr_uv_shift;
 
-        for (Ipp8u i = 0; i < INTER_REFS; i++)
+        for (uint8_t i = 0; i < INTER_REFS; i++)
         {
             picParam.wm[i].wmtype = info.global_motion_params[i + 1].wmtype;
-            for (Ipp8u j = 0; j < 8; j++)
+            for (uint8_t j = 0; j < 8; j++)
                 picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
         }
 
@@ -336,7 +336,7 @@ namespace UMC_AV1_DECODER
             picParam.tile_cols = (USHORT)info.TileCols;
             picParam.tile_rows = (USHORT)info.TileRows;
 
-            for (Ipp32u i = 0; i < picParam.tile_cols; i++)
+            for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
                     (USHORT)(info.SbColStarts[i + 1] - info.SbColStarts[i]);
@@ -396,7 +396,7 @@ namespace UMC_AV1_DECODER
             VADecPictureParameterBufferAV1 *picParam =
                 (VADecPictureParameterBufferAV1*)m_va->GetCompBuffer(VAPictureParameterBufferType, &compBufPic, sizeof(VADecPictureParameterBufferAV1));
 
-            if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < static_cast<Ipp32s>(sizeof(VADecPictureParameterBufferAV1))))
+            if (!picParam || !compBufPic || (compBufPic->GetBufferSize() < static_cast<int32_t>(sizeof(VADecPictureParameterBufferAV1))))
                 throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
             compBufPic->SetDataSize(sizeof(VADecPictureParameterBufferAV1));
@@ -405,7 +405,7 @@ namespace UMC_AV1_DECODER
         }
 
         UMC::UMCVACompBuffer* compBufBs = nullptr;
-        Ipp8u* const bitstreamData = (mfxU8 *)m_va->GetCompBuffer(VASliceDataBufferType, &compBufBs, CalcSizeOfTileSets(tileSets));
+        uint8_t* const bitstreamData = (uint8_t *)m_va->GetCompBuffer(VASliceDataBufferType, &compBufBs, CalcSizeOfTileSets(tileSets));
         if (!bitstreamData || !compBufBs)
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
 
@@ -420,7 +420,7 @@ namespace UMC_AV1_DECODER
 
             if (bytesSubmitted)
             {
-                compBufBs->SetDataSize(static_cast<Ipp32u>(offsetInBuffer + bytesSubmitted));
+                compBufBs->SetDataSize(static_cast<uint32_t>(offsetInBuffer + bytesSubmitted));
 
                 for (auto& loc : layout)
                 {
@@ -431,7 +431,7 @@ namespace UMC_AV1_DECODER
         }
 
         UMCVACompBuffer* compBufTile = nullptr;
-        const Ipp32s tileControlInfoSize = static_cast<Ipp32s>(sizeof(VABitStreamParameterBufferAV1) * tileControlParams.size());
+        const int32_t tileControlInfoSize = static_cast<int32_t>(sizeof(VABitStreamParameterBufferAV1) * tileControlParams.size());
         VABitStreamParameterBufferAV1 *tileControlParam = (VABitStreamParameterBufferAV1*)m_va->GetCompBuffer(VASliceParameterBufferType, &compBufTile, tileControlInfoSize);
         if (!tileControlParam || !compBufTile || (compBufTile->GetBufferSize() < tileControlInfoSize))
             throw av1_exception(MFX_ERR_MEMORY_ALLOC);
@@ -515,10 +515,10 @@ namespace UMC_AV1_DECODER
         picParam.current_frame = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
         picParam.current_display_picture = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
 
-        for (Ipp8u i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
+        for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
         {
             seg.feature_mask[i] = (uint8_t)info.segmentation_params.FeatureMask[i];
-            for (Ipp8u j = 0; j < SEG_LVL_MAX; j++)
+            for (uint8_t j = 0; j < SEG_LVL_MAX; j++)
                 seg.feature_data[i][j] = (int16_t)info.segmentation_params.FeatureData[i][j];
         }
 
@@ -531,12 +531,12 @@ namespace UMC_AV1_DECODER
         }
         else
         {
-            for (mfxU8 ref = 0; ref < NUM_REF_FRAMES; ++ref)
+            for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
                 picParam.ref_frame_map[ref] = (VASurfaceID)m_va->GetSurfaceID(frame.frame_dpb[ref]->GetMemID());
 
-            for (mfxU8 ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
+            for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
-                const Ipp8u idxInDPB = (Ipp8u)info.ref_frame_idx[ref_idx];
+                const uint8_t idxInDPB = (uint8_t)info.ref_frame_idx[ref_idx];
                 picParam.ref_order_hint[ref_idx] = frame.frame_dpb[idxInDPB]->GetFrameHeader().order_hint;
                 picParam.ref_frame_idx[ref_idx] = idxInDPB;
             }
@@ -556,11 +556,11 @@ namespace UMC_AV1_DECODER
         lfInfo.mode_ref_delta_update = info.loop_filter_params.loop_filter_delta_update;
 
 
-        for (Ipp8u i = 0; i < TOTAL_REFS; i++)
+        for (uint8_t i = 0; i < TOTAL_REFS; i++)
         {
             picParam.ref_deltas[i] = info.loop_filter_params.loop_filter_ref_deltas[i];
         }
-        for (Ipp8u i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
+        for (uint8_t i = 0; i < UMC_VP9_DECODER::MAX_MODE_LF_DELTAS; i++)
         {
             picParam.mode_deltas[i] = info.loop_filter_params.loop_filter_mode_deltas[i];
         }
@@ -577,7 +577,7 @@ namespace UMC_AV1_DECODER
         picParam.cdef_damping_minus_3 = (uint8_t)(info.cdef_damping - 3);
         picParam.cdef_bits = (uint8_t)info.cdef_bits;
 
-        for (Ipp8u i = 0; i < CDEF_MAX_STRENGTHS; i++)
+        for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
             picParam.cdef_y_strengths[i] = (uint8_t)info.cdef_y_strength[i];
             picParam.cdef_uv_strengths[i] = (uint8_t)info.cdef_uv_strength[i];
@@ -610,10 +610,10 @@ namespace UMC_AV1_DECODER
         lrInfo.lr_uv_shift = info.lr_uv_shift;
 
         // fill global motion params
-        for (Ipp8u i = 0; i < INTER_REFS; i++)
+        for (uint8_t i = 0; i < INTER_REFS; i++)
         {
             picParam.wm[i].wmtype = static_cast<VATransformationType>(info.global_motion_params[i + 1].wmtype);
-            for (Ipp8u j = 0; j < 8; j++)
+            for (uint8_t j = 0; j < 8; j++)
             {
                 picParam.wm[i].wmmat[j] = info.global_motion_params[i + 1].wmmat[j];
                 // TODO: [Rev0.5] implement processing of alpha, beta, gamma, delta.
@@ -626,7 +626,7 @@ namespace UMC_AV1_DECODER
 
         if (!info.uniform_tile_spacing_flag)
         {
-            for (Ipp32u i = 0; i < picParam.tile_cols; i++)
+            for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
                     (uint16_t)(info.SbColStarts[i + 1] - info.SbColStarts[i]);

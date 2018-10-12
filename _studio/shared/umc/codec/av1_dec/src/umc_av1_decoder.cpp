@@ -69,8 +69,8 @@ namespace UMC_AV1_DECODER
         {
             try
             {
-                const auto src = reinterpret_cast<Ipp8u*>(in->GetDataPointer());
-                AV1Bitstream bs(src, Ipp32u(in->GetDataSize()));
+                const auto src = reinterpret_cast<uint8_t*>(in->GetDataPointer());
+                AV1Bitstream bs(src, uint32_t(in->GetDataSize()));
 
                 OBUInfo obuInfo;
                 bs.ReadOBUInfo(obuInfo);
@@ -80,13 +80,13 @@ namespace UMC_AV1_DECODER
                 {
                     bs.ReadSequenceHeader(sh);
 
-                    in->MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
+                    in->MoveDataPointer(static_cast<int32_t>(obuInfo.size));
 
                     if (FillVideoParam(sh, par) == UMC::UMC_OK)
                         return UMC::UMC_OK;
                 }
 
-                in->MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
+                in->MoveDataPointer(static_cast<int32_t>(obuInfo.size));
             }
             catch (av1_exception const& e)
             {
@@ -140,7 +140,7 @@ namespace UMC_AV1_DECODER
 
         const FrameHeader& fh = prevFrame->GetFrameHeader();
 
-        for (Ipp8u i = 0; i < NUM_REF_FRAMES; i++)
+        for (uint8_t i = 0; i < NUM_REF_FRAMES; i++)
         {
             if ((fh.refresh_frame_flags >> i) & 1)
             {
@@ -159,13 +159,13 @@ namespace UMC_AV1_DECODER
         AV1Bitstream* bs,
         FrameHeader const& fh,
         TileGroupInfo const& tgInfo,
-        Ipp32u idxInTG,
+        uint32_t idxInTG,
         size_t OBUSize,
         size_t OBUOffset,
         TileLocation& loc)
     {
         // calculate tile row and column
-        const Ipp32u idxInFrame = tgInfo.startTileIdx + idxInTG;
+        const uint32_t idxInFrame = tgInfo.startTileIdx + idxInTG;
         loc.row = idxInFrame / fh.TileCols;
         loc.col = idxInFrame - loc.row * fh.TileCols;
 
@@ -196,7 +196,7 @@ namespace UMC_AV1_DECODER
         loc.offset = OBUOffset + tileOffsetInTG;
     }
 
-    inline bool CheckTileGroup(Ipp32u prevNumTiles, FrameHeader const& fh, TileGroupInfo const& tgInfo)
+    inline bool CheckTileGroup(uint32_t prevNumTiles, FrameHeader const& fh, TileGroupInfo const& tgInfo)
     {
         if (prevNumTiles + tgInfo.numTiles > NumTiles(fh))
             return false;
@@ -232,10 +232,10 @@ namespace UMC_AV1_DECODER
         TileGroupInfo tgInfo = {};
         bs.ReadTileGroupHeader(fh, tgInfo);
 
-        if (!CheckTileGroup(static_cast<Ipp32u>(layout.size()), fh, tgInfo))
+        if (!CheckTileGroup(static_cast<uint32_t>(layout.size()), fh, tgInfo))
             throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-        Ipp32u idxInLayout = static_cast<Ipp32u>(layout.size());
+        uint32_t idxInLayout = static_cast<uint32_t>(layout.size());
 
         layout.resize(layout.size() + tgInfo.numTiles,
             { tgInfo.startTileIdx, tgInfo.endTileIdx });
@@ -246,7 +246,7 @@ namespace UMC_AV1_DECODER
             GetTileLocation(&bs, fh, tgInfo, idxInTG, obuSize, obuOffset, loc);
         }
 
-        const Ipp32u numTilesAccumulated = static_cast<Ipp32u>(layout.size()) +
+        const uint32_t numTilesAccumulated = static_cast<uint32_t>(layout.size()) +
             (curr_frame ? CalcTilesInTileSets(curr_frame->GetTileSets()) : 0);
         if (numTilesAccumulated == NumTiles(fh))
             return true;
@@ -271,13 +271,13 @@ namespace UMC_AV1_DECODER
         bool gotFullFrame = false;
 
         UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
-        Ipp32u OBUOffset = 0;
+        uint32_t OBUOffset = 0;
         TileLayout layout;
 
         while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false)
         {
-            const auto src = reinterpret_cast<Ipp8u*>(tmp.GetDataPointer());
-            AV1Bitstream bs(src, Ipp32u(tmp.GetDataSize()));
+            const auto src = reinterpret_cast<uint8_t*>(tmp.GetDataPointer());
+            AV1Bitstream bs(src, uint32_t(tmp.GetDataSize()));
 
             OBUInfo obuInfo;
             bs.ReadOBUInfo(obuInfo);
@@ -328,8 +328,8 @@ namespace UMC_AV1_DECODER
                 }
             }
 
-            OBUOffset += static_cast<Ipp32u>(obuInfo.size);
-            tmp.MoveDataPointer(static_cast<Ipp32s>(obuInfo.size));
+            OBUOffset += static_cast<uint32_t>(obuInfo.size);
+            tmp.MoveDataPointer(static_cast<int32_t>(obuInfo.size));
         }
 
         if (!gotTileGroup)
@@ -368,7 +368,7 @@ namespace UMC_AV1_DECODER
         );
     }
 
-    AV1DecoderFrame* AV1Decoder::FindFrameByDispID(Ipp32u id)
+    AV1DecoderFrame* AV1Decoder::FindFrameByDispID(uint32_t id)
     {
         return FindFrame(
             [id](AV1DecoderFrame const* f)
@@ -384,8 +384,8 @@ namespace UMC_AV1_DECODER
             [](AV1DecoderFrame const* f1, AV1DecoderFrame const* f2)
             {
                 FrameHeader const& h1 = f1->GetFrameHeader(); FrameHeader const& h2 = f2->GetFrameHeader();
-                Ipp32u const id1 = h1.show_frame && !f1->Displayed() ? h1.display_frame_id : (std::numeric_limits<Ipp32u>::max)();
-                Ipp32u const id2 = h2.show_frame && !f2->Displayed() ? h2.display_frame_id : (std::numeric_limits<Ipp32u>::max)();
+                uint32_t const id1 = h1.show_frame && !f1->Displayed() ? h1.display_frame_id : (std::numeric_limits<uint32_t>::max)();
+                uint32_t const id2 = h2.show_frame && !f2->Displayed() ? h2.display_frame_id : (std::numeric_limits<uint32_t>::max)();
 
                 return  id1 < id2;
             }
@@ -404,7 +404,7 @@ namespace UMC_AV1_DECODER
         par.info.stream_type = UMC::AV1_VIDEO;
         par.info.profile = sh.seq_profile;
 
-        par.info.clip_info = { Ipp32s(sh.max_frame_width), Ipp32s(sh.max_frame_height) };
+        par.info.clip_info = { int32_t(sh.max_frame_width), int32_t(sh.max_frame_height) };
         par.info.disp_clip_info = par.info.clip_info;
 
         if (!sh.color_config.subsampling_x && !sh.color_config.subsampling_y)
@@ -450,7 +450,7 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
-    void AV1Decoder::SetDPBSize(Ipp32u size)
+    void AV1Decoder::SetDPBSize(uint32_t size)
     {
         VM_ASSERT(size > 0);
         VM_ASSERT(size < 128);
