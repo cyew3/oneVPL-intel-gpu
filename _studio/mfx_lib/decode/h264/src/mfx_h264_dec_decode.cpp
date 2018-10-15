@@ -807,20 +807,20 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
     mfxExtMVCSeqDesc * mvcSeqDescInternal = (mfxExtMVCSeqDesc *)GetExtendedBuffer(m_vPar.ExtParam, m_vPar.NumExtParam, MFX_EXTBUFF_MVC_SEQ_DESC);
     if (mvcSeqDesc && mvcSeqDescInternal && mvcSeqDescInternal->NumView)
     {
-        mvcSeqDesc->NumView = mvcSeqDescInternal->NumView;
+        mvcSeqDesc->NumView   = mvcSeqDescInternal->NumView;
         mvcSeqDesc->NumViewId = mvcSeqDescInternal->NumViewId;
-        mvcSeqDesc->NumOP = mvcSeqDescInternal->NumOP;
+        mvcSeqDesc->NumOP     = mvcSeqDescInternal->NumOP;
 
-        if (mvcSeqDesc->NumViewAlloc < mvcSeqDescInternal->NumView ||
+        if (mvcSeqDesc->NumViewAlloc   < mvcSeqDescInternal->NumView   ||
             mvcSeqDesc->NumViewIdAlloc < mvcSeqDescInternal->NumViewId ||
-            mvcSeqDesc->NumOPAlloc < mvcSeqDescInternal->NumOP)
+            mvcSeqDesc->NumOPAlloc     < mvcSeqDescInternal->NumOP)
         {
             return MFX_ERR_NOT_ENOUGH_BUFFER;
         }
 
-        memcpy_s(mvcSeqDesc->View, mvcSeqDesc->NumView * sizeof(mfxMVCViewDependency), mvcSeqDescInternal->View, mvcSeqDescInternal->NumView * sizeof(mfxMVCViewDependency));
-        memcpy_s(mvcSeqDesc->ViewId, mvcSeqDesc->NumViewId * sizeof(mfxU16), mvcSeqDescInternal->ViewId, mvcSeqDescInternal->NumViewId * sizeof(mfxU16));
-        memcpy_s(mvcSeqDesc->OP, mvcSeqDesc->NumOP * sizeof(mfxMVCOperationPoint), mvcSeqDescInternal->OP, mvcSeqDescInternal->NumOP * sizeof(mfxMVCOperationPoint));
+        std::copy(mvcSeqDescInternal->View,   mvcSeqDescInternal->View   + mvcSeqDescInternal->NumView,   mvcSeqDesc->View);
+        std::copy(mvcSeqDescInternal->ViewId, mvcSeqDescInternal->ViewId + mvcSeqDescInternal->NumViewId, mvcSeqDesc->ViewId);
+        std::copy(mvcSeqDescInternal->OP,     mvcSeqDescInternal->OP     + mvcSeqDescInternal->NumOP,     mvcSeqDesc->OP);
 
         mfxU16 * targetView = mvcSeqDesc->ViewId;
         for (mfxU32 i = 0; i < mvcSeqDesc->NumOP; i++)
@@ -869,8 +869,8 @@ mfxStatus VideoDECODEH264::GetVideoParam(mfxVideoParam *par)
         spsPps->SPSBufSize = spsPpsInternal->SPSBufSize;
         spsPps->PPSBufSize = spsPpsInternal->PPSBufSize;
 
-        memcpy_s(spsPps->SPSBuffer, spsPps->SPSBufSize, spsPpsInternal->SPSBuffer, spsPps->SPSBufSize);
-        memcpy_s(spsPps->PPSBuffer, spsPps->PPSBufSize, spsPpsInternal->PPSBuffer, spsPps->PPSBufSize);
+        std::copy(spsPpsInternal->SPSBuffer, spsPpsInternal->SPSBuffer + spsPps->SPSBufSize, spsPps->SPSBuffer);
+        std::copy(spsPpsInternal->PPSBuffer, spsPpsInternal->PPSBuffer + spsPps->PPSBufSize, spsPps->PPSBuffer);
     }
 
     par->mfx.FrameInfo.FrameRateExtN = m_vFirstPar.mfx.FrameInfo.FrameRateExtN;
@@ -951,7 +951,8 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
             spsPps->SPSBufSize = (mfxU16)sps->GetSize();
-            memcpy_s(spsPps->SPSBuffer, spsPps->SPSBufSize, sps->GetPointer(), spsPps->SPSBufSize);
+
+            std::copy(sps->GetPointer(), sps->GetPointer() + spsPps->SPSBufSize, spsPps->SPSBuffer);
         }
         else
         {
@@ -964,7 +965,8 @@ mfxStatus VideoDECODEH264::DecodeHeader(VideoCORE *core, mfxBitstream *bs, mfxVi
                 return MFX_ERR_NOT_ENOUGH_BUFFER;
 
             spsPps->PPSBufSize = (mfxU16)pps->GetSize();
-            memcpy_s(spsPps->PPSBuffer, spsPps->PPSBufSize, pps->GetPointer(), spsPps->PPSBufSize);
+
+            std::copy(pps->GetPointer(), pps->GetPointer() + spsPps->PPSBufSize, spsPps->PPSBuffer);
         }
         else
         {
@@ -1830,7 +1832,8 @@ mfxStatus VideoDECODEH264::GetUserData(mfxU8 *ud, mfxU32 *sz, mfxU64 *ts)
 
     *sz = (mfxU32)data.GetDataSize();
     *ts = GetMfxTimeStamp(data.GetTime());
-    memcpy_s(ud, *sz, data.GetDataPointer(), data.GetDataSize());
+
+    std::copy(reinterpret_cast<mfxU8 *>(data.GetDataPointer()), reinterpret_cast<mfxU8 *>(data.GetDataPointer()) + data.GetDataSize(), ud);
 
     return MFXSts;
 }
@@ -1857,7 +1860,8 @@ mfxStatus VideoDECODEH264::GetPayload( mfxU64 *ts, mfxPayload *payload )
             return MFX_ERR_NOT_ENOUGH_BUFFER;
 
         *ts = GetMfxTimeStamp(msg->timestamp);
-        memcpy_s(payload->Data, payload->BufSize, msg->data, msg->msg_size);
+
+        std::copy(msg->data, msg->data + msg->msg_size, payload->Data);
 
         payload->NumBit = (mfxU32)(msg->msg_size * 8);
         payload->Type = (mfxU16)msg->type;
