@@ -83,6 +83,7 @@ namespace UMC_HEVC_DECODER
 
 Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
 {
+    (void)va;
     Packer * packer = 0;
 
 #ifdef UMC_VA_DXVA

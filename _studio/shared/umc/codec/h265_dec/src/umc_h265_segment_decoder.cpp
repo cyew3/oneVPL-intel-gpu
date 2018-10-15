@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -1796,7 +1796,7 @@ void H265SegmentDecoder::ParseDeltaQPCABAC(Ipp32u AbsPartIdx)
         Ipp32s QPBdOffsetY = m_pSeqParamSet->getQpBDOffsetY();
 
         if (CuQpDeltaVal < -(26 + QPBdOffsetY / 2) || CuQpDeltaVal > (25 + QPBdOffsetY / 2))
-            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM); 
+            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         qp = (((Ipp32s)getRefQP(AbsPartIdx) + CuQpDeltaVal + 52 + 2 * QPBdOffsetY) % (52 + QPBdOffsetY)) - QPBdOffsetY;
     }
@@ -1923,7 +1923,10 @@ void H265SegmentDecoder::ParseCoeffNxNCABAC(CoeffsPtr pCoef, Ipp32u AbsPartIdx, 
     }
 }
 
+// turn off the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif // _MSVC_LANG
 
 // Parse TU coefficients
 template <bool scaling_list_enabled_flag>
@@ -2230,7 +2233,11 @@ void H265SegmentDecoder::ParseCoeffNxNCABACOptimized(CoeffsPtr pCoef, Ipp32u Abs
         LastPinCG = 15;
     }
 }
-#pragma warning(default: 4127)
+
+// restore the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
+#pragma warning(disable: 4127)
+#endif // _MSVC_LANG
 
 // Parse TU transform skip flag
 void H265SegmentDecoder::ParseTransformSkipFlags(Ipp32u AbsPartIdx, ComponentPlane plane)
@@ -2394,7 +2401,7 @@ void H265SegmentDecoder::ReconInter(Ipp32u AbsPartIdx, Ipp32u Depth)
 // Place IPCM decoded samples to reconstruct frame
 void H265SegmentDecoder::ReconPCM(Ipp32u AbsPartIdx, Ipp32u Depth)
 {
-    Ipp32u size = m_pSeqParamSet->MaxCUSize >> Depth; 
+    Ipp32u size = m_pSeqParamSet->MaxCUSize >> Depth;
     m_reconstructor->ReconstructPCMBlock(m_pCurrentFrame->GetLumaAddr(m_cu->CUAddr, AbsPartIdx), m_pCurrentFrame->pitch_luma(),
         m_pSeqParamSet->bit_depth_luma - m_pSeqParamSet->pcm_sample_bit_depth_luma, // luma bit shift
         m_pCurrentFrame->GetCbCrAddr(m_cu->CUAddr, AbsPartIdx), m_pCurrentFrame->pitch_chroma(),

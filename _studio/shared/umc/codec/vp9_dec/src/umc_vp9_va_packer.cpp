@@ -35,6 +35,7 @@ void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
 
 Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
 {
+    (void)va;
     Packer * packer = 0;
 
 #ifdef UMC_VA_DXVA

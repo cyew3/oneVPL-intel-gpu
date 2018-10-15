@@ -135,7 +135,7 @@ Status VC1VideoDecoderHW::Close(void)
 
     m_AllocBuffer = 0;
 
-    // reset all values 
+    // reset all values
     umcRes = Reset();
 
     if (m_pStore)
@@ -143,7 +143,7 @@ Status VC1VideoDecoderHW::Close(void)
         delete m_pStore;
         m_pStore = 0;
     }
-    
+
     FreeAlloc(m_pContext);
 
     if(m_pMemoryAllocator)
@@ -427,6 +427,9 @@ Status VC1VideoDecoderHW::FillAndExecute(MediaData* in)
 
 Status VC1VideoDecoderHW::VC1DecodeFrame(MediaData* in, VideoData* out_data)
 {
+    (void)in;
+    (void)out_data;
+
     if (m_va->m_Profile == VC1_VLD)
     {
 #if defined (UMC_VA_DXVA)

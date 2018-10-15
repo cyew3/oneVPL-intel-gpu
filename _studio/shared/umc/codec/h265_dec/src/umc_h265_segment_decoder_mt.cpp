@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -751,6 +751,7 @@ UMC::Status H265SegmentDecoderMultiThreaded::DecodeSegment(Ipp32s curCUAddr, Ipp
             {
                 Ipp32u uVal = m_pBitStream->DecodeTerminatingBit_CABAC();
                 VM_ASSERT(uVal);
+                (void)uVal;
             }
 
             if (CUX == 1)
@@ -989,7 +990,10 @@ private:
     Ipp32s m_chromaFormat;
 };
 
+// turn off the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(disable: 4127)
+#endif
 
 template<bool bitDepth, typename H265PlaneType>
 void ReconstructorT<bitDepth, H265PlaneType>::ReconstructPCMBlock(PlanePtrY luma, Ipp32s pitchLuma, Ipp32u PcmLeftShiftBitLuma,
@@ -1287,7 +1291,10 @@ void ReconstructorT<bitDepth, H265PlaneType>::PredictIntraChroma(Ipp32s predMode
     }
 }
 
+// restore the "conditional expression is constant" warning
+#ifdef _MSVC_LANG
 #pragma warning(default: 4127)
+#endif
 
 // Create a buffer of neighbour luma samples for intra prediction
 template<bool bitDepth, typename H265PlaneType>

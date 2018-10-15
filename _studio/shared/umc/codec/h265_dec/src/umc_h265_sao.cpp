@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -494,9 +494,7 @@ void H265SampleAdaptiveOffsetTemplate<PlaneType>::processSaoCuChroma(Ipp32s addr
 
     picWidthTmp  = m_PicWidth;
     picHeightTmp = m_PicHeight >> m_sps->chromaShiftH;
-    LCUWidth     = LCUWidth;
     LCUHeight    = LCUHeight   >> m_sps->chromaShiftH;
-    LPelX        = LPelX;
     TPelY        = TPelY       >> m_sps->chromaShiftH;
     RPelX        = LPelX + LCUWidth;
     BPelY        = TPelY + LCUHeight;
