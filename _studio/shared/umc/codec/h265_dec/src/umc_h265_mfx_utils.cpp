@@ -207,6 +207,7 @@ bool IsBugSurfacePoolApplicable(eMFXHWType hwtype, mfxVideoParam * par)
 inline
 mfxU16 QueryMaxProfile(eMFXHWType type)
 {
+    (void)type;
 
 #if !defined(MFX_VA)
     return MFX_PROFILE_HEVC_REXT;

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -533,11 +533,15 @@ void H265Prediction::WriteAverageToPic(
                 Ipp32s width,
                 Ipp32s height )
 {
-    #pragma ivdep
+#ifdef __INTEL_COMPILER
+#pragma ivdep
+#endif // __INTEL_COMPILER
     for (int j = 0; j < height; j++)
     {
-        #pragma ivdep
-        #pragma vector always
+#ifdef __INTEL_COMPILER
+#pragma ivdep
+#pragma vector always
+#endif // __INTEL_COMPILER
         for (int i = 0; i < width; i++)
              pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
 
@@ -562,10 +566,14 @@ void H265Prediction::CopyExtendPU(const PixType * in_pSrc,
     Ipp16s *pDst = in_pDst;
     Ipp32s i, j;
 
-    #pragma ivdep
+#ifdef __INTEL_COMPILER
+#pragma ivdep
+#endif // __INTEL_COMPILER
     for (j = 0; j < height; j++)
     {
-        #pragma vector always
+#ifdef __INTEL_COMPILER
+#pragma vector always
+#endif // __INTEL_COMPILER
         for (i = 0; i < width; i++)
         {
             pDst[i] = (Ipp16s)(((Ipp32s)pSrc[i]) << c_shift);

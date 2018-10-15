@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -43,12 +43,11 @@ public:
         STATUS_STARTED
     };
 
-    H265DecoderFrameInfo(H265DecoderFrame * pFrame, Heap_Objects * pObjHeap)
+    H265DecoderFrameInfo(H265DecoderFrame * pFrame)
         : m_pFrame(pFrame)
         , m_prepared(0)
         , m_sps(0)
         , m_SliceCount(0)
-        , m_pObjHeap(pObjHeap)
     {
         Reset();
     }
@@ -215,7 +214,6 @@ private:
 
     Ipp32s m_SliceCount;
 
-    Heap_Objects * m_pObjHeap;
     bool m_isNeedDeblocking;
     bool m_isNeedSAO;
 

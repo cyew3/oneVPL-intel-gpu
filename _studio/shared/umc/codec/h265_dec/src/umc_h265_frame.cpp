@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -54,7 +54,7 @@ H265DecoderFrame::H265DecoderFrame(UMC::MemoryAllocator *pMemoryAllocator, Heap_
 
     ResetRefCounter();
 
-    m_pSlicesInfo = new H265DecoderFrameInfo(this, m_pObjHeap);
+    m_pSlicesInfo = new H265DecoderFrameInfo(this);
 
     m_Flags.isFull = 0;
     m_Flags.isDecoded = 0;

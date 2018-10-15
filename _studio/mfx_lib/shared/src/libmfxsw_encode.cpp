@@ -89,7 +89,6 @@ template<>
 VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 {
     VideoENCODE *pENCODE = nullptr;
-    VideoCORE* core = m_pCORE.get();
     mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
     mfxU32 CodecId = par.mfx.CodecId;
 #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
@@ -104,19 +103,19 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 #if defined(MFX_VA) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
         if (m_bIsHWENCSupport)
         {
-            pENCODE = new MFXHWVideoENCODEH264(core, &mfxRes);
+            pENCODE = new MFXHWVideoENCODEH264(m_pCORE.get(), &mfxRes);
         }
 #ifndef OPEN_SOURCE
         else
         {
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
             if(par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                pENCODE = new MFXVideoENCODEMVC(core, &mfxRes);
+                pENCODE = new MFXVideoENCODEMVC(m_pCORE.get(), &mfxRes);
             else
 #else // MFX_ENABLE_MVC_VIDEO_ENCODE
             (void)par;
 #endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                pENCODE = new MFXVideoENCODEH264(core, &mfxRes);
+                pENCODE = new MFXVideoENCODEH264(m_pCORE.get(), &mfxRes);
         }
 #endif // OPEN_SOURCE
 
@@ -124,12 +123,12 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 
 #ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
         if(par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-            pENCODE = new MFXVideoENCODEMVC(core, &mfxRes);
+            pENCODE = new MFXVideoENCODEMVC(m_pCORE.get(), &mfxRes);
         else
 #else // MFX_ENABLE_MVC_VIDEO_ENCODE
         (void)par;
 #endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-            pENCODE = new MFXVideoENCODEH264(core, &mfxRes);
+            pENCODE = new MFXVideoENCODEH264(m_pCORE.get(), &mfxRes);
 #endif //MFX_VA
 
         break;
@@ -140,16 +139,16 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 #if defined(MFX_VA)
         if (m_bIsHWENCSupport)
         {
-            pENCODE = new MFXVideoENCODEMPEG2_HW(core, &mfxRes);
+            pENCODE = new MFXVideoENCODEMPEG2_HW(m_pCORE.get(), &mfxRes);
         }
 #ifndef OPEN_SOURCE
         else
         {
-            pENCODE = new MFXVideoENCODEMPEG2(core, &mfxRes);
+            pENCODE = new MFXVideoENCODEMPEG2(m_pCORE.get(), &mfxRes);
         }
 #endif // OPEN_SOURCE
 #else //MFX_VA
-        pENCODE = new MFXVideoENCODEMPEG2(core, &mfxRes);
+        pENCODE = new MFXVideoENCODEMPEG2(m_pCORE.get(), &mfxRes);
 #endif //MFX_VA
         break;
 #endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE
@@ -159,17 +158,17 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 #if defined(MFX_VA)
         if (m_bIsHWENCSupport)
         {
-            pENCODE = new MFXVideoENCODEMJPEG_HW(core, &mfxRes);
+            pENCODE = new MFXVideoENCODEMJPEG_HW(m_pCORE.get(), &mfxRes);
         }
 #ifndef OPEN_SOURCE
         else
         {
-            pENCODE = new MFXVideoENCODEMJPEG(core, &mfxRes);
+            pENCODE = new MFXVideoENCODEMJPEG(m_pCORE.get(), &mfxRes);
         }
 #endif
         break;
 #else  // MFX_VA
-        pENCODE = new MFXVideoENCODEMJPEG(core, &mfxRes);
+        pENCODE = new MFXVideoENCODEMJPEG(m_pCORE.get(), &mfxRes);
 #endif // MFX_VA
         break;
 #endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
@@ -179,14 +178,14 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
         if (m_bIsHWENCSupport)
         {
 #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-            feiEnabled = (bool*)core->QueryCoreInterface(MFXIFEIEnabled_GUID);
+            feiEnabled = (bool*)m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID);
             if (feiEnabled == nullptr)
                 return nullptr;
             else if(*feiEnabled)
-                pENCODE = new MfxHwH265FeiEncode::H265FeiEncode_HW(core, &mfxRes);
+                pENCODE = new MfxHwH265FeiEncode::H265FeiEncode_HW(m_pCORE.get(), &mfxRes);
             else
 #endif
-            pENCODE = new MfxHwH265Encode::MFXVideoENCODEH265_HW(core, &mfxRes);
+            pENCODE = new MfxHwH265Encode::MFXVideoENCODEH265_HW(m_pCORE.get(), &mfxRes);
         }
         else
         {
@@ -417,14 +416,14 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
             {
                 std::string result = mfx_reflect::CompareStructsToString(g_Reflection.Access(in), g_Reflection.Access(out));
                 MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, result.c_str())
-            }  
+            }
         }
         catch (const std::exception& e)
         {
             MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, e.what());
         }
-        catch (...) 
-        { 
+        catch (...)
+        {
             MFX_LTRACE_MSG(MFX_TRACE_LEVEL_INTERNAL, "Unknown exception was caught while comparing In and Out VideoParams.");
         }
     }
@@ -831,8 +830,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.pSrc[0] = surface;
                 task.pDst[0] = ((mfxStatus)MFX_ERR_MORE_DATA_SUBMIT_TASK == mfxRes) ? 0: bs;
 
-// specific plug-in case to run additional task after main task 
-#if !defined(AS_HEVCE_PLUGIN) 
+// specific plug-in case to run additional task after main task
+#if !defined(AS_HEVCE_PLUGIN)
                 {
                     task.pSrc[1] =  bs;
                 }
@@ -858,8 +857,8 @@ mfxStatus MFXVideoENCODE_EncodeFrameAsync(mfxSession session, mfxEncodeCtrl *ctr
                 task.threadingPolicy = session->m_pENCODE->GetThreadingPolicy();
                 // fill dependencies
                 task.pSrc[0] = surface;
-                // specific plug-in case to run additional task after main task 
-#if !defined(AS_HEVCE_PLUGIN) 
+                // specific plug-in case to run additional task after main task
+#if !defined(AS_HEVCE_PLUGIN)
                 {
                     task.pSrc[1] =  bs;
                 }

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2014-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2014-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -320,7 +320,7 @@ namespace MFX_HEVC_PP
 
     //======================
     // TEMP SOLUTIONS
-    /* mode: AVERAGE_NO, just clip/pack 16-bit output to 8-bit 
+    /* mode: AVERAGE_NO, just clip/pack 16-bit output to 8-bit
     * NOTE: could be optimized more, but is not used very often in practice
     */
     void MAKE_NAME(h265_AverageModeN)(INTERP_AVG_NONE_PARAMETERS_LIST)
@@ -347,7 +347,7 @@ namespace MFX_HEVC_PP
                 int add3 = 1 << 6;
 
                 int sum_total = (add1 + add2 + add3) >> 7;
-         
+
                 pDst[y*dstPitch + x] = (Ipp8u)Saturate(0, 255, sum_total);
             }
         }
@@ -397,7 +397,7 @@ namespace MFX_HEVC_PP
                 int add3 = 1 << (shift - 1);
 
                 int sum_total = (add1 + add2 + add3) >> shift;
-         
+
                 pDst[y*dstPitch + x] = (Ipp16u)Saturate(0, max_value, sum_total);
             }
         }
@@ -446,12 +446,12 @@ namespace MFX_HEVC_PP
     template <typename PixType> void h265_Average_px(const PixType *pSrc0, Ipp32s pitchSrc0, const PixType *pSrc1, Ipp32s pitchSrc1, PixType *H265_RESTRICT pDst, Ipp32s pitchDst, Ipp32s width, Ipp32s height)
     {
 #ifdef __INTEL_COMPILER
-        #pragma ivdep
+#pragma ivdep
 #endif // __INTEL_COMPILER
         for (int j = 0; j < height; j++, pSrc0 += pitchSrc0, pSrc1 += pitchSrc1, pDst += pitchDst) {
 #ifdef __INTEL_COMPILER
-            #pragma ivdep
-            #pragma vector always
+#pragma ivdep
+#pragma vector always
 #endif // __INTEL_COMPILER
             for (int i = 0; i < width; i++)
                  pDst[i] = (((Ipp16u)pSrc0[i] + (Ipp16u)pSrc1[i] + 1) >> 1);
