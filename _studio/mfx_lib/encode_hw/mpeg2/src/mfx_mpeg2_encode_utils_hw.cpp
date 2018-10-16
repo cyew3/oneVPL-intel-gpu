@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -585,7 +585,7 @@ namespace MPEG2EncoderHW
                     {
                         if (real_size <= pSPSPPS_out->SPSBufSize)
                         {
-                            memcpy_s(pSPSPPS_out->SPSBuffer, real_size * sizeof(mfxU8), pSPSPPS_in->SPSBuffer, real_size * sizeof(mfxU8));
+                            std::copy(pSPSPPS_in->SPSBuffer, pSPSPPS_in->SPSBuffer + real_size, pSPSPPS_out->SPSBuffer);
                             memset(pSPSPPS_out->SPSBuffer + real_size, 0, pSPSPPS_out->SPSBufSize - real_size);
                         }
                         else
@@ -797,7 +797,7 @@ namespace MPEG2EncoderHW
                 mfxU32 bufOffset = sizeof(mfxExtBuffer);
                 mfxU32 bufSize   = sizeof(mfxExtCodingOption) - bufOffset;
 
-                memcpy_s(&temp, sizeof(mfxExtCodingOption), ext_in, sizeof(mfxExtCodingOption));
+                temp = *ext_in;
 
                 memset ((mfxU8*)(ext_out) + bufOffset,0, bufSize);
 
@@ -1084,7 +1084,7 @@ namespace MPEG2EncoderHW
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
-        memcpy_s (&videoParamEx.mfxVideoParams, sizeof (mfxVideoParam), par, sizeof (mfxVideoParam));
+        videoParamEx.mfxVideoParams = *par;
         ApplyTargetUsage (&videoParamEx);
 
         if ((par->IOPattern & (MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_IN_SYSTEM_MEMORY)) == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
@@ -1204,7 +1204,7 @@ namespace MPEG2EncoderHW
         MFX_CHECK(CheckExtendedBuffers(par) == MFX_ERR_NONE, MFX_ERR_INVALID_VIDEO_PARAM);
 
         memset(&m_VideoParamsEx,0,sizeof(mfxVideoParamEx_MPEG2));
-        memcpy_s(&m_VideoParamsEx.mfxVideoParams.mfx, sizeof(mfxInfoMFX), &par->mfx, sizeof(mfxInfoMFX));
+        m_VideoParamsEx.mfxVideoParams.mfx = par->mfx;
         m_VideoParamsEx.mfxVideoParams.IOPattern = par->IOPattern;
         m_VideoParamsEx.mfxVideoParams.Protected = par->Protected;
         m_VideoParamsEx.mfxVideoParams.AsyncDepth = par->AsyncDepth == 0 ? 2: par->AsyncDepth;
@@ -1613,7 +1613,7 @@ namespace MPEG2EncoderHW
         MFX_CHECK_NULL_PTR1(par);
         CHECK_VERSION(par->Version);
 
-        memcpy_s(&par->mfx, sizeof(mfxInfoMFX), &m_VideoParamsEx.mfxVideoParams.mfx, sizeof(mfxInfoMFX));
+        par->mfx = m_VideoParamsEx.mfxVideoParams.mfx;
         par->IOPattern = m_VideoParamsEx.mfxVideoParams.IOPattern;
         par->mfx.CodecId = MFX_CODEC_MPEG2;
         mfxExtCodingOption* ext = GetExtCodingOptions(par->ExtParam, par->NumExtParam);
@@ -2542,7 +2542,7 @@ namespace MPEG2EncoderHW
         else if (m_RefRequest.NumFrameSuggested)
         {
             m_RefRequest.Type = type;
-            memcpy_s (&m_RefRequest.Info, sizeof(mfxFrameInfo), pFrameInfo, sizeof(mfxFrameInfo));
+            m_RefRequest.Info = *pFrameInfo;
 
             sts = m_pCore->AllocFrames(&m_RefRequest, &m_RefResponse);
             MFX_CHECK_STS(sts);
@@ -2587,7 +2587,7 @@ namespace MPEG2EncoderHW
         else if (m_InputRequest.NumFrameSuggested)
         {
             m_InputRequest.Type = type;
-            memcpy_s (&m_InputRequest.Info, sizeof(mfxFrameInfo), pFrameInfo, sizeof(mfxFrameInfo));
+            m_InputRequest.Info = *pFrameInfo;
 
             sts = m_pCore->AllocFrames(&m_InputRequest, &m_InputResponse);
             MFX_CHECK_STS(sts);

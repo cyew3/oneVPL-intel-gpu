@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __MFX_MPEG2_ENCODE_HW_UTILS_H__
@@ -501,7 +501,7 @@ namespace MPEG2EncoderHW
                        mfxEncodeInternalParams* pEncodeInternalParams)
         {
             m_Frames = *pFrames;
-            memcpy_s(&m_sEncodeInternalParams, sizeof(mfxEncodeInternalParams), pEncodeInternalParams, sizeof(mfxEncodeInternalParams));
+            m_sEncodeInternalParams = *pEncodeInternalParams;
         }
         inline
             mfxStatus FillFrameParams (mfxU8 frameType, mfxVideoParamEx_MPEG2 *pExParams, mfxU16 surface_pict_struct, bool bBackwOnly, bool bFwdOnly, bool bAddSH, bool bAddEOS)

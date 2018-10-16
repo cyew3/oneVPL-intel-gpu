@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -660,7 +660,7 @@ mfxStatus UserDataBuffer::AddUserData(mfxU8* pUserData, mfxU32 len)
             *(pCurr++) = 1;
             *(pCurr++) = 0xB2;           
         }
-        memcpy_s(pCurr, m_bufSize - m_dataSize, pUserData, size);
+        std::copy(pUserData, pUserData + std::min(m_bufSize - m_dataSize, size), pCurr);
     }
     return MFX_ERR_NONE;
 }
