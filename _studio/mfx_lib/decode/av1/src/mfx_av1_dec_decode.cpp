@@ -337,7 +337,7 @@ mfxStatus VideoDECODEAV1::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfxVid
     {
         MFXMediaDataAdapter in(bs);
 
-        UMC::VideoDecoderParams vp;
+        UMC_AV1_DECODER::AV1DecoderParams vp;
         UMC::Status res = UMC_AV1_DECODER::AV1Decoder::DecodeHeader(&in, vp);
         if (res != UMC::UMC_OK)
             return ConvertStatusUmc2Mfx(res);
@@ -570,7 +570,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
                  umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS ||
                  umcRes == UMC::UMC_ERR_UNSUPPORTED)
             {
-                 UMC::VideoDecoderParams vp;
+                 UMC_AV1_DECODER::AV1DecoderParams vp;
                  umcRes = m_decoder->GetInfo(&vp);
                  FillVideoParam(m_core, &vp, &m_video_par);
             }
@@ -749,7 +749,7 @@ mfxU16 av1_native_profile_to_mfx_profile(mfxU16 native)
     }
 }
 
-mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC::VideoDecoderParams const* vp, mfxVideoParam* par)
+mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC_AV1_DECODER::AV1DecoderParams const* vp, mfxVideoParam* par)
 {
     VM_ASSERT(vp);
     VM_ASSERT(par);
@@ -769,6 +769,8 @@ mfxStatus VideoDECODEAV1::FillVideoParam(VideoCORE* /*core*/, UMC::VideoDecoderP
     par->mfx.CodecLevel           = p.mfx.CodecLevel;
     par->mfx.DecodedOrder         = p.mfx.DecodedOrder;
     par->mfx.MaxDecFrameBuffering = p.mfx.MaxDecFrameBuffering;
+
+    par->mfx.FilmGrain = static_cast<mfxU16>(vp->film_grain);
 
     return MFX_ERR_NONE;
 }

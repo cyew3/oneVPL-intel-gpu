@@ -39,6 +39,7 @@ namespace UMC_AV1_DECODER
 {
     class AV1Decoder;
     class AV1DecoderFrame;
+    class AV1DecoderParams;
 }
 
 using UMC_AV1_DECODER::AV1DecoderFrame;
@@ -77,7 +78,7 @@ public:
 
 private:
 
-    static mfxStatus FillVideoParam(VideoCORE*, UMC::VideoDecoderParams const*, mfxVideoParam*);
+    static mfxStatus FillVideoParam(VideoCORE*, UMC_AV1_DECODER::AV1DecoderParams const*, mfxVideoParam*);
     static mfxStatus DecodeRoutine(void* state, void* param, mfxU32, mfxU32);
     static mfxStatus CompleteProc(void*, void* param, mfxStatus);
 

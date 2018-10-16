@@ -67,7 +67,7 @@ namespace UMC_AV1_DECODER
         }
     }
 
-    UMC::Status AV1Decoder::DecodeHeader(UMC::MediaData* in, UMC::VideoDecoderParams& par)
+    UMC::Status AV1Decoder::DecodeHeader(UMC::MediaData* in, UMC_AV1_DECODER::AV1DecoderParams& par)
     {
         if (!in)
             return UMC::UMC_ERR_NULL_PTR;
@@ -409,7 +409,7 @@ namespace UMC_AV1_DECODER
             frame->GetFrameHeader().show_frame ? frame : nullptr;
     }
 
-    UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC::VideoDecoderParams& par)
+    UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC_AV1_DECODER::AV1DecoderParams& par)
     {
         par.info.stream_type = UMC::AV1_VIDEO;
         par.info.profile = sh.seq_profile;
@@ -457,6 +457,9 @@ namespace UMC_AV1_DECODER
         par.info.aspect_ratio_width = par.info.aspect_ratio_height = 1;
 
         par.lFlags = 0;
+
+        par.film_grain = sh.film_grain_param_present;
+
         return UMC::UMC_OK;
     }
 

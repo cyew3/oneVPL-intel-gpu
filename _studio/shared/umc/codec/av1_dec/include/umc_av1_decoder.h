@@ -52,12 +52,14 @@ namespace UMC_AV1_DECODER
         AV1DecoderParams()
             : allocator(nullptr)
             , async_depth(0)
+            , film_grain(0)
         {}
 
     public:
 
         UMC::FrameAllocator* allocator;
         uint32_t             async_depth;
+        uint32_t             film_grain;
     };
 
     class ReportItem // adopted from HEVC/AVC decoders
@@ -94,7 +96,7 @@ namespace UMC_AV1_DECODER
 
     public:
 
-        static UMC::Status DecodeHeader(UMC::MediaData*, UMC::VideoDecoderParams&);
+        static UMC::Status DecodeHeader(UMC::MediaData*, UMC_AV1_DECODER::AV1DecoderParams&);
 
         /* UMC::BaseCodec interface */
         UMC::Status Init(UMC::BaseCodecParams*) override;
@@ -124,7 +126,7 @@ namespace UMC_AV1_DECODER
 
     protected:
 
-        static UMC::Status FillVideoParam(SequenceHeader const&, UMC::VideoDecoderParams&);
+        static UMC::Status FillVideoParam(SequenceHeader const&, UMC_AV1_DECODER::AV1DecoderParams&);
 
         virtual void SetDPBSize(uint32_t);
         virtual AV1DecoderFrame* GetFreeFrame();
