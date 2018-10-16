@@ -73,7 +73,7 @@ namespace UMC_AV1_DECODER
         packer->PackAU(tileSets, frame, firstSubmission);
 
         FrameHeader const& fh = frame.GetFrameHeader();
-        const bool lastSubmission = CalcTilesInTileSets(tileSets) == NumTiles(fh);
+        const bool lastSubmission = CalcTilesInTileSets(tileSets) == NumTiles(fh.tile_info);
         if (lastSubmission)
             packer->EndFrame();
 

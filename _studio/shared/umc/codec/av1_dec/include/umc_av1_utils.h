@@ -24,21 +24,21 @@ namespace UMC_AV1_DECODER
 
     // we stop using UMC_VP9_DECODER namespace starting from Rev 0.25.2
     // because after switch to AV1-specific segmentation stuff there are only few definitions we need to re-use from VP9
-    void SetSegData(AV1Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data);
+    void SetSegData(SegmentationParams & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data);
 
-    inline int32_t GetSegData(AV1Segmentation const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
+    inline int32_t GetSegData(SegmentationParams const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.FeatureData[segmentId][featureId];
     }
 
-    inline bool IsSegFeatureActive(AV1Segmentation const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
+    inline bool IsSegFeatureActive(SegmentationParams const& seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         return
             seg.segmentation_enabled && (seg.FeatureMask[segmentId] & (1 << featureId));
     }
 
-    inline void EnableSegFeature(AV1Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
+    inline void EnableSegFeature(SegmentationParams & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId)
     {
         seg.FeatureMask[segmentId] |= 1 << featureId;
     }
@@ -49,7 +49,7 @@ namespace UMC_AV1_DECODER
             SEG_FEATURE_DATA_SIGNED[featureId];
     }
 
-    inline void ClearAllSegFeatures(AV1Segmentation & seg)
+    inline void ClearAllSegFeatures(SegmentationParams & seg)
     {
         memset(&seg.FeatureData, 0, sizeof(seg.FeatureData));
         memset(&seg.FeatureMask, 0, sizeof(seg.FeatureMask));
@@ -72,9 +72,9 @@ namespace UMC_AV1_DECODER
         return FrameIsIntra(fh) || fh.error_resilient_mode;
     }
 
-    inline uint32_t NumTiles(FrameHeader const & fh)
+    inline uint32_t NumTiles(TileInfo const & info)
     {
-        return fh.TileCols * fh.TileRows;
+        return info.TileCols * info.TileRows;
     }
 
     int IsCodedLossless(FrameHeader const&);
@@ -102,7 +102,7 @@ namespace UMC_AV1_DECODER
     }
 #endif
 
-    inline void SetDefaultLFParams(Loopfilter& par)
+    inline void SetDefaultLFParams(LoopFilterParams& par)
     {
         par.loop_filter_delta_enabled = 1;
         par.loop_filter_delta_update = 1;

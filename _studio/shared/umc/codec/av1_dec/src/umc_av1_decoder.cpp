@@ -166,8 +166,8 @@ namespace UMC_AV1_DECODER
     {
         // calculate tile row and column
         const uint32_t idxInFrame = tgInfo.startTileIdx + idxInTG;
-        loc.row = idxInFrame / fh.TileCols;
-        loc.col = idxInFrame - loc.row * fh.TileCols;
+        loc.row = idxInFrame / fh.tile_info.TileCols;
+        loc.col = idxInFrame - loc.row * fh.tile_info.TileCols;
 
         size_t tileOffsetInTG = bs->BytesDecoded();
 
@@ -175,7 +175,7 @@ namespace UMC_AV1_DECODER
             loc.size = OBUSize - tileOffsetInTG;  // tile is last in tile group - no explicit size signaling
         else
         {
-            tileOffsetInTG += fh.TileSizeBytes;
+            tileOffsetInTG += fh.tile_info.TileSizeBytes;
 
             // read tile size
             size_t reportedSize = 0;
@@ -198,7 +198,7 @@ namespace UMC_AV1_DECODER
 
     inline bool CheckTileGroup(uint32_t prevNumTiles, FrameHeader const& fh, TileGroupInfo const& tgInfo)
     {
-        if (prevNumTiles + tgInfo.numTiles > NumTiles(fh))
+        if (prevNumTiles + tgInfo.numTiles > NumTiles(fh.tile_info))
             return false;
 
         if (tgInfo.numTiles == 0)
@@ -248,7 +248,7 @@ namespace UMC_AV1_DECODER
 
         const uint32_t numTilesAccumulated = static_cast<uint32_t>(layout.size()) +
             (curr_frame ? CalcTilesInTileSets(curr_frame->GetTileSets()) : 0);
-        if (numTilesAccumulated == NumTiles(fh))
+        if (numTilesAccumulated == NumTiles(fh.tile_info))
             return true;
 
         return false;

@@ -211,18 +211,6 @@ namespace UMC_AV1_DECODER
                                                       MAX_REF_IDX_FOR_SEGMENT,
                                                       0 };
 
-    struct AV1Segmentation
-    {
-        uint8_t segmentation_enabled;
-        uint8_t segmentation_update_map;
-        uint8_t segmentation_temporal_update;
-        uint8_t segmentation_update_data;
-
-        int32_t FeatureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
-        uint32_t FeatureMask[VP9_MAX_NUM_OF_SEGMENTS];
-
-    };
-
     enum {
         RESET_FRAME_CONTEXT_NONE = 0,
         RESET_FRAME_CONTEXT_CURRENT = 1,
@@ -372,29 +360,73 @@ namespace UMC_AV1_DECODER
         uint32_t film_grain_param_present;
     };
 
-    struct Loopfilter
+    struct TileInfo
+    {
+        uint32_t uniform_tile_spacing_flag;
+        uint32_t TileColsLog2;
+        uint32_t TileRowsLog2;
+        uint32_t TileCols;
+        uint32_t TileRows;
+        uint32_t SbColStarts[MAX_TILE_COLS + 1];  // valid for 0 <= i <= TileCols
+        uint32_t SbRowStarts[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= TileRows
+        uint32_t context_update_tile_id;
+        uint32_t TileSizeBytes;
+
+        //Rev 0.5 parameters
+        uint32_t loop_filter_across_tiles_v_enabled;
+        uint32_t loop_filter_across_tiles_h_enabled;
+    };
+
+    struct QuantizationParams
+    {
+        uint32_t base_q_idx;
+        int32_t DeltaQYDc;
+        int32_t DeltaQUDc;
+        int32_t DeltaQUAc;
+        int32_t DeltaQVDc;
+        int32_t DeltaQVAc;
+        uint32_t using_qmatrix;
+        uint32_t qm_y;
+        uint32_t qm_u;
+        uint32_t qm_v;
+    };
+
+    struct SegmentationParams
+    {
+        uint8_t segmentation_enabled;
+        uint8_t segmentation_update_map;
+        uint8_t segmentation_temporal_update;
+        uint8_t segmentation_update_data;
+
+        int32_t FeatureData[VP9_MAX_NUM_OF_SEGMENTS][SEG_LVL_MAX];
+        uint32_t FeatureMask[VP9_MAX_NUM_OF_SEGMENTS];
+
+    };
+
+    struct LoopFilterParams
     {
         int32_t loop_filter_level[4];
-
         int32_t loop_filter_sharpness;
-
         uint8_t loop_filter_delta_enabled;
         uint8_t loop_filter_delta_update;
-
         // 0 = Intra, Last, Last2, Last3, GF, BWD, ARF
         int8_t loop_filter_ref_deltas[TOTAL_REFS];
-
         // 0 = ZERO_MV, MV
         int8_t loop_filter_mode_deltas[MAX_MODE_LF_DELTAS];
     };
 
-    struct WarpedMotionParams {
-        TRANSFORMATION_TYPE wmtype;
-        int32_t wmmat[8];
-        uint16_t alpha;
-        uint16_t beta;
-        uint16_t gamma;
-        uint16_t delta;
+    struct CdefParams
+    {
+        uint32_t cdef_damping;
+        uint32_t cdef_bits;
+        uint32_t cdef_y_pri_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_y_sec_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_uv_pri_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_uv_sec_strength[CDEF_MAX_STRENGTHS];
+
+        //Rev 0.5 parameters
+        uint32_t cdef_y_strength[CDEF_MAX_STRENGTHS];
+        uint32_t cdef_uv_strength[CDEF_MAX_STRENGTHS];
     };
 
     enum RestorationType
@@ -407,29 +439,49 @@ namespace UMC_AV1_DECODER
         RESTORE_TYPES = 4,
     };
 
-    struct RestorationInfo
+    struct LRParams
     {
-        RestorationType frameRestorationType;
-        int32_t restorationUnitSize;
+        RestorationType lr_type[MAX_MB_PLANE];
+        uint32_t lr_unit_shift;
+        uint32_t lr_uv_shift;
     };
 
-    struct FilmGrain{
-        int32_t apply_grain;
-        int32_t update_parameters;
+    struct GlobalMotionParams
+    {
+        TRANSFORMATION_TYPE wmtype;
+        int32_t wmmat[8];
+        uint16_t alpha;
+        uint16_t beta;
+        uint16_t gamma;
+        uint16_t delta;
+    };
+
+    struct FilmGrainParams{
+        uint32_t apply_grain;
+        uint32_t grain_seed;
+        uint32_t update_grain;
+
+        uint32_t film_grain_params_ref_idx;
 
         // 8 bit values
-        int32_t scaling_points_y[14][2];
+
         int32_t num_y_points;  // value: 0..14
+        int32_t point_y_value[14];
+        int32_t point_y_scaling[14];
+
+        int32_t chroma_scaling_from_luma;
 
         // 8 bit values
-        int32_t scaling_points_cb[10][2];
         int32_t num_cb_points;  // value: 0..10
+        int32_t point_cb_value[10];
+        int32_t point_cb_scaling[10];
 
         // 8 bit values
-        int32_t scaling_points_cr[10][2];
         int32_t num_cr_points;  // value: 0..10
+        int32_t point_cr_value[10];
+        int32_t point_cr_scaling[10];
 
-        int32_t scaling_shift;  // values : 8..11
+        int32_t grain_scaling;
 
         int32_t ar_coeff_lag;  // values:  0..3
 
@@ -444,6 +496,7 @@ namespace UMC_AV1_DECODER
         // 8: [-0.5, 0.5)
         // 9: [-0.25, 0.25)
         int32_t ar_coeff_shift;  // values : 6..9
+        int32_t grain_scale_shift;
 
         int32_t cb_mult;       // 8 bits
         int32_t cb_luma_mult;  // 8 bits
@@ -458,12 +511,6 @@ namespace UMC_AV1_DECODER
         int32_t clip_to_restricted_range;
 
         int32_t BitDepth;  // video bit depth
-
-        int32_t chroma_scaling_from_luma;
-
-        int32_t grain_scale_shift;
-
-        uint32_t random_seed;
     };
 
     struct  SizeOfFrame{
@@ -513,28 +560,10 @@ namespace UMC_AV1_DECODER
         uint32_t sbCols;
         uint32_t sbRows;
         uint32_t sbSize;
-        uint32_t uniform_tile_spacing_flag;
-        uint32_t TileColsLog2;
-        uint32_t TileRowsLog2;
-        uint32_t TileCols;
-        uint32_t TileRows;
-        uint32_t SbColStarts[MAX_TILE_COLS + 1];  // valid for 0 <= i <= TileCols
-        uint32_t SbRowStarts[MAX_TILE_ROWS + 1];  // valid for 0 <= i <= TileRows
-        uint32_t context_update_tile_id;
-        uint32_t TileSizeBytes;
 
-        uint32_t base_q_idx;
-        int32_t DeltaQYDc;
-        int32_t DeltaQUDc;
-        int32_t DeltaQUAc;
-        int32_t DeltaQVDc;
-        int32_t DeltaQVAc;
-        uint32_t using_qmatrix;
-        uint32_t qm_y;
-        uint32_t qm_u;
-        uint32_t qm_v;
-
-        AV1Segmentation segmentation_params;
+        TileInfo tile_info;
+        QuantizationParams quantization_params;
+        SegmentationParams segmentation_params;
 
         uint32_t delta_q_present;
         uint32_t delta_q_res;
@@ -546,18 +575,9 @@ namespace UMC_AV1_DECODER
         uint32_t CodedLossless;
         uint32_t AllLossless;
 
-        Loopfilter loop_filter_params;
-
-        uint32_t cdef_damping;
-        uint32_t cdef_bits;
-        uint32_t cdef_y_pri_strength[CDEF_MAX_STRENGTHS];
-        uint32_t cdef_y_sec_strength[CDEF_MAX_STRENGTHS];
-        uint32_t cdef_uv_pri_strength[CDEF_MAX_STRENGTHS];
-        uint32_t cdef_uv_sec_strength[CDEF_MAX_STRENGTHS];
-
-        RestorationType lr_type[MAX_MB_PLANE];
-        uint32_t lr_unit_shift;
-        uint32_t lr_uv_shift;
+        LoopFilterParams loop_filter_params;
+        CdefParams cdef_params;
+        LRParams lr_params;
 
         TX_MODE TxMode;
         uint32_t reference_mode;
@@ -565,19 +585,15 @@ namespace UMC_AV1_DECODER
         uint32_t allow_warped_motion;
         uint32_t reduced_tx_set;
 
-        WarpedMotionParams global_motion_params[TOTAL_REFS];
+        GlobalMotionParams global_motion_params[TOTAL_REFS];
 
-        FilmGrain film_grain_params;
+        FilmGrainParams film_grain_params;
 
         uint32_t NumPlanes;
 
         uint32_t large_scale_tile;
 
         //Rev 0.5 parameters
-        uint32_t loop_filter_across_tiles_v_enabled;
-        uint32_t loop_filter_across_tiles_h_enabled;
-        uint32_t cdef_y_strength[CDEF_MAX_STRENGTHS];
-        uint32_t cdef_uv_strength[CDEF_MAX_STRENGTHS];
         uint32_t enable_interintra_compound;
         uint32_t enable_masked_compound;
         uint32_t enable_intra_edge_filter;

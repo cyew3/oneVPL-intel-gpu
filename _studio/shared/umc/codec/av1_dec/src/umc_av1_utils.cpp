@@ -17,7 +17,7 @@
 
 namespace UMC_AV1_DECODER
 {
-    void SetSegData(AV1Segmentation & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data)
+    void SetSegData(SegmentationParams & seg, uint8_t segmentId, SEG_LVL_FEATURES featureId, int32_t seg_data)
     {
         VM_ASSERT(seg_data <= SEG_FEATURE_DATA_MAX[featureId]);
         if (seg_data < 0)
@@ -41,10 +41,10 @@ namespace UMC_AV1_DECODER
         if (IsSegFeatureActive(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q))
         {
             const int data = GetSegData(fh.segmentation_params, segmentId, SEG_LVL_ALT_Q);
-            return UMC_VP9_DECODER::clamp(fh.base_q_idx + data, 0, UMC_VP9_DECODER::MAXQ);
+            return UMC_VP9_DECODER::clamp(fh.quantization_params.base_q_idx + data, 0, UMC_VP9_DECODER::MAXQ);
         }
         else
-            return fh.base_q_idx;
+            return fh.quantization_params.base_q_idx;
     }
 
     int IsCodedLossless(FrameHeader const& fh)
@@ -55,9 +55,9 @@ namespace UMC_AV1_DECODER
         {
             const uint32_t qindex = av1_get_qindex(fh, i);
 
-            if (qindex || fh.DeltaQYDc ||
-                fh.DeltaQUAc || fh.DeltaQUDc ||
-                fh.DeltaQVAc || fh.DeltaQVDc)
+            if (qindex || fh.quantization_params.DeltaQYDc ||
+                fh.quantization_params.DeltaQUAc || fh.quantization_params.DeltaQUDc ||
+                fh.quantization_params.DeltaQVAc || fh.quantization_params.DeltaQVDc)
             {
                 CodedLossless = 0;
                 break;
@@ -75,11 +75,11 @@ namespace UMC_AV1_DECODER
         for (uint32_t i = 0; i < MAX_MODE_LF_DELTAS; i++)
             fh.loop_filter_params.loop_filter_mode_deltas[i] = prev_fh.loop_filter_params.loop_filter_mode_deltas[i];
 
-        fh.cdef_damping = prev_fh.cdef_damping;
+        fh.cdef_params.cdef_damping = prev_fh.cdef_params.cdef_damping;
         for (uint32_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            fh.cdef_y_strength[i] = prev_fh.cdef_y_strength[i];
-            fh.cdef_uv_strength[i] = prev_fh.cdef_uv_strength[i];
+            fh.cdef_params.cdef_y_strength[i] = prev_fh.cdef_params.cdef_y_strength[i];
+            fh.cdef_params.cdef_uv_strength[i] = prev_fh.cdef_params.cdef_uv_strength[i];
         }
 
         fh.segmentation_params = prev_fh.segmentation_params;

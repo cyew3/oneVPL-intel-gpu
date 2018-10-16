@@ -206,7 +206,7 @@ namespace UMC_AV1_DECODER
         ddiPicParam.is_motion_mode_switchable = info.is_motion_mode_switchable;
         ddiPicParam.use_ref_frame_mvs = info.use_ref_frame_mvs;
         ddiPicParam.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
-        ddiPicParam.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
+        ddiPicParam.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
         ddiPicParam.allow_warped_motion = 0;
 #if AV1D_DDI_VERSION < 26
         ddiPicParam.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
@@ -276,30 +276,30 @@ namespace UMC_AV1_DECODER
             picParam.mode_deltas[i] = info.loop_filter_params.loop_filter_mode_deltas[i];
         }
 
-        picParam.base_qindex = (SHORT)info.base_q_idx;
-        picParam.y_dc_delta_q = (CHAR)info.DeltaQYDc;
-        picParam.u_dc_delta_q = (CHAR)info.DeltaQUDc;
-        picParam.v_dc_delta_q = (CHAR)info.DeltaQVDc;
-        picParam.u_ac_delta_q = (CHAR)info.DeltaQUAc;
-        picParam.v_ac_delta_q = (CHAR)info.DeltaQVAc;
+        picParam.base_qindex = (SHORT)info.quantization_params.base_q_idx;
+        picParam.y_dc_delta_q = (CHAR)info.quantization_params.DeltaQYDc;
+        picParam.u_dc_delta_q = (CHAR)info.quantization_params.DeltaQUDc;
+        picParam.v_dc_delta_q = (CHAR)info.quantization_params.DeltaQVDc;
+        picParam.u_ac_delta_q = (CHAR)info.quantization_params.DeltaQUAc;
+        picParam.v_ac_delta_q = (CHAR)info.quantization_params.DeltaQVAc;
 
         memset(&picParam.stAV1Segments.feature_data, 0, sizeof(picParam.stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
         memset(&picParam.stAV1Segments.feature_mask, 0, sizeof(&picParam.stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
 
-        picParam.cdef_damping_minus_3 = (UCHAR)(info.cdef_damping - 3);
-        picParam.cdef_bits = (UCHAR)info.cdef_bits;
+        picParam.cdef_damping_minus_3 = (UCHAR)(info.cdef_params.cdef_damping - 3);
+        picParam.cdef_bits = (UCHAR)info.cdef_params.cdef_bits;
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            picParam.cdef_y_strengths[i] = (UCHAR)info.cdef_y_strength[i];
-            picParam.cdef_uv_strengths[i] = (UCHAR)info.cdef_uv_strength[i];
+            picParam.cdef_y_strengths[i] = (UCHAR)info.cdef_params.cdef_y_strength[i];
+            picParam.cdef_uv_strengths[i] = (UCHAR)info.cdef_params.cdef_uv_strength[i];
         }
 
         auto& ddiQMFlags = picParam.wQMatrixFlags.fields;
-        ddiQMFlags.using_qmatrix = info.using_qmatrix;
-        ddiQMFlags.qm_y = info.qm_y;
-        ddiQMFlags.qm_u = info.qm_u;;
-        ddiQMFlags.qm_v = info.qm_v;;
+        ddiQMFlags.using_qmatrix = info.quantization_params.using_qmatrix;
+        ddiQMFlags.qm_y = info.quantization_params.qm_y;
+        ddiQMFlags.qm_u = info.quantization_params.qm_u;;
+        ddiQMFlags.qm_v = info.quantization_params.qm_v;;
 
         picParam.dwModeControlFlags.fields.delta_q_present_flag = info.delta_q_present;
         picParam.dwModeControlFlags.fields.log2_delta_q_res = CeilLog2(info.delta_q_res);
@@ -311,11 +311,11 @@ namespace UMC_AV1_DECODER
         picParam.dwModeControlFlags.fields.reduced_tx_set_used = info.reduced_tx_set;
         picParam.dwModeControlFlags.fields.ReservedField = 0;
 
-        picParam.LoopRestorationFlags.fields.yframe_restoration_type = info.lr_type[0];
-        picParam.LoopRestorationFlags.fields.cbframe_restoration_type = info.lr_type[1];
-        picParam.LoopRestorationFlags.fields.crframe_restoration_type = info.lr_type[2];
-        picParam.LoopRestorationFlags.fields.lr_unit_shift = info.lr_unit_shift;
-        picParam.LoopRestorationFlags.fields.lr_uv_shift = info.lr_uv_shift;
+        picParam.LoopRestorationFlags.fields.yframe_restoration_type = info.lr_params.lr_type[0];
+        picParam.LoopRestorationFlags.fields.cbframe_restoration_type = info.lr_params.lr_type[1];
+        picParam.LoopRestorationFlags.fields.crframe_restoration_type = info.lr_params.lr_type[2];
+        picParam.LoopRestorationFlags.fields.lr_unit_shift = info.lr_params.lr_unit_shift;
+        picParam.LoopRestorationFlags.fields.lr_uv_shift = info.lr_params.lr_uv_shift;
 
         for (uint8_t i = 0; i < INTER_REFS; i++)
         {
@@ -325,27 +325,27 @@ namespace UMC_AV1_DECODER
         }
 
 #if AV1D_DDI_VERSION < 26
-        if (info.uniform_tile_spacing_flag)
+        if (info.tile_info.uniform_tile_spacing_flag)
         {
-            picParam.log2_tile_rows = (UCHAR)info.TileRowsLog2;
-            picParam.log2_tile_cols = (UCHAR)info.TileColsLog2;
+            picParam.log2_tile_rows = (UCHAR)info.tile_info.TileRowsLog2;
+            picParam.log2_tile_cols = (UCHAR)info.tile_info.TileColsLog2;
         }
         else
         {
 #endif
-            picParam.tile_cols = (USHORT)info.TileCols;
-            picParam.tile_rows = (USHORT)info.TileRows;
+            picParam.tile_cols = (USHORT)info.tile_info.TileCols;
+            picParam.tile_rows = (USHORT)info.tile_info.TileRows;
 
             for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
-                    (USHORT)(info.SbColStarts[i + 1] - info.SbColStarts[i]);
+                    (USHORT)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i]);
             }
 
             for (int i = 0; i < picParam.tile_rows; i++)
             {
                 picParam.height_in_sbs_minus_1[i] =
-                    (USHORT)(info.SbRowStarts[i + 1] - info.SbRowStarts[i]);
+                    (USHORT)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i]);
             }
 #if AV1D_DDI_VERSION < 26
         }
@@ -493,7 +493,7 @@ namespace UMC_AV1_DECODER
         picInfo.is_motion_mode_switchable = info.is_motion_mode_switchable;
         picInfo.use_ref_frame_mvs = info.use_ref_frame_mvs;
         picInfo.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
-        picInfo.uniform_tile_spacing_flag = info.uniform_tile_spacing_flag;
+        picInfo.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
         picInfo.allow_warped_motion = 0;
         picInfo.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;;
         picInfo.large_scale_tile = info.large_scale_tile;
@@ -566,29 +566,29 @@ namespace UMC_AV1_DECODER
         }
 
         // fill quantization params
-        picParam.base_qindex = (int16_t)info.base_q_idx;
-        picParam.y_dc_delta_q = (int8_t)info.DeltaQYDc;
-        picParam.u_dc_delta_q = (int8_t)info.DeltaQUDc;
-        picParam.v_dc_delta_q = (int8_t)info.DeltaQVDc;
-        picParam.u_ac_delta_q = (int8_t)info.DeltaQUAc;
-        picParam.v_ac_delta_q = (int8_t)info.DeltaQVAc;
+        picParam.base_qindex = (int16_t)info.quantization_params.base_q_idx;
+        picParam.y_dc_delta_q = (int8_t)info.quantization_params.DeltaQYDc;
+        picParam.u_dc_delta_q = (int8_t)info.quantization_params.DeltaQUDc;
+        picParam.v_dc_delta_q = (int8_t)info.quantization_params.DeltaQVDc;
+        picParam.u_ac_delta_q = (int8_t)info.quantization_params.DeltaQUAc;
+        picParam.v_ac_delta_q = (int8_t)info.quantization_params.DeltaQVAc;
 
         // fill CDEF
-        picParam.cdef_damping_minus_3 = (uint8_t)(info.cdef_damping - 3);
-        picParam.cdef_bits = (uint8_t)info.cdef_bits;
+        picParam.cdef_damping_minus_3 = (uint8_t)(info.cdef_params.cdef_damping - 3);
+        picParam.cdef_bits = (uint8_t)info.cdef_params.cdef_bits;
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
-            picParam.cdef_y_strengths[i] = (uint8_t)info.cdef_y_strength[i];
-            picParam.cdef_uv_strengths[i] = (uint8_t)info.cdef_uv_strength[i];
+            picParam.cdef_y_strengths[i] = (uint8_t)info.cdef_params.cdef_y_strength[i];
+            picParam.cdef_uv_strengths[i] = (uint8_t)info.cdef_params.cdef_uv_strength[i];
         }
 
         // fill quantization matrix params
         auto& qmFlags = picParam.qmatrix_fields.bits;
-        qmFlags.using_qmatrix = info.using_qmatrix;
-        qmFlags.qm_y = info.qm_y;
-        qmFlags.qm_u = info.qm_u;
-        qmFlags.qm_v = info.qm_v;
+        qmFlags.using_qmatrix = info.quantization_params.using_qmatrix;
+        qmFlags.qm_y = info.quantization_params.qm_y;
+        qmFlags.qm_u = info.quantization_params.qm_u;
+        qmFlags.qm_v = info.quantization_params.qm_v;
 
 
         auto& modeCtrl = picParam.mode_control_fields.bits;
@@ -603,11 +603,11 @@ namespace UMC_AV1_DECODER
 
         // fill loop restoration params
         auto& lrInfo = picParam.loop_restoration_fields.bits;
-        lrInfo.yframe_restoration_type = info.lr_type[0];
-        lrInfo.cbframe_restoration_type = info.lr_type[1];
-        lrInfo.crframe_restoration_type = info.lr_type[2];;
-        lrInfo.lr_unit_shift = info.lr_unit_shift;
-        lrInfo.lr_uv_shift = info.lr_uv_shift;
+        lrInfo.yframe_restoration_type = info.lr_params.lr_type[0];
+        lrInfo.cbframe_restoration_type = info.lr_params.lr_type[1];
+        lrInfo.crframe_restoration_type = info.lr_params.lr_type[2];;
+        lrInfo.lr_unit_shift = info.lr_params.lr_unit_shift;
+        lrInfo.lr_uv_shift = info.lr_params.lr_uv_shift;
 
         // fill global motion params
         for (uint8_t i = 0; i < INTER_REFS; i++)
@@ -621,21 +621,21 @@ namespace UMC_AV1_DECODER
         }
 
         // fill tile params
-        picParam.tile_cols = (uint16_t)info.TileCols;
-        picParam.tile_rows = (uint16_t)info.TileRows;
+        picParam.tile_cols = (uint16_t)info.tile_info.TileCols;
+        picParam.tile_rows = (uint16_t)info.tile_info.TileRows;
 
-        if (!info.uniform_tile_spacing_flag)
+        if (!info.tile_info.uniform_tile_spacing_flag)
         {
             for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
-                    (uint16_t)(info.SbColStarts[i + 1] - info.SbColStarts[i]);
+                    (uint16_t)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i]);
             }
 
             for (int i = 0; i < picParam.tile_rows; i++)
             {
                 picParam.height_in_sbs_minus_1[i] =
-                    (uint16_t)(info.SbRowStarts[i + 1] - info.SbRowStarts[i]);
+                    (uint16_t)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i]);
             }
         }
     }
