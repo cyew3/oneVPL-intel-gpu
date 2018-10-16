@@ -13,8 +13,6 @@ Redistribution and use in source and binary forms, with or without modification,
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 This sample was distributed or derived from the Intel's Media Samples package.
-The original version of this sample may be obtained from https://software.intel.com/en-us/intel-media-server-studio
-or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
 #include "pch.h"
@@ -84,7 +82,7 @@ mfxStatus CPluginsManager::LoadPluginByGUID(mfxPluginUID pluginGUID,mfxU32 versi
 
 mfxStatus CPluginsManager::UnloadAllPlugins()
 {
-    for(int i=0;i<loadedPlugins.size();i++)
+    for(unsigned int i=0;i<loadedPlugins.size();i++)
     {
         mfxStatus sts = MFXVideoUSER_UnLoad((mfxSession)parentSession, &loadedPlugins[i].GUID);
         if(sts!=MFX_ERR_NONE)
@@ -126,7 +124,7 @@ mfxStatus CPluginsManager::UnloadVideoPlugin(mfxU32 codecID,EPluginSpecification
 
 const CPluginDescription* CPluginsManager::GetLoadedVideoPlugin(mfxU32 codecID,EPluginSpecification spec)
 {
-    for(int i=0;i<loadedPlugins.size();i++)
+    for(unsigned int i=0;i<loadedPlugins.size();i++)
     {
         if(loadedPlugins[i].CodecID==codecID && (knownPlugins[i].Specification & spec) == knownPlugins[i].Specification)
         {
@@ -139,7 +137,7 @@ const CPluginDescription* CPluginsManager::GetLoadedVideoPlugin(mfxU32 codecID,E
 
 const CPluginDescription* CPluginsManager::GetLoadedPluginByGUID(mfxPluginUID pluginGUID)
 {
-    for(int i=0;i<loadedPlugins.size();i++)
+    for(unsigned int i=0;i<loadedPlugins.size();i++)
     {
         if(loadedPlugins[i].GUID==pluginGUID)
         {
