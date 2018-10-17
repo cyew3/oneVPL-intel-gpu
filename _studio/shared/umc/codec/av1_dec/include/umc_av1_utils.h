@@ -27,6 +27,7 @@
 #define __UMC_AV1_UTILS_H_
 
 #include "umc_av1_dec_defs.h"
+#include "umc_av1_frame.h"
 
 namespace UMC_AV1_DECODER
 {
@@ -133,6 +134,13 @@ namespace UMC_AV1_DECODER
     inline uint8_t GetNumPlanes(SequenceHeader const& sh)
     {
         return sh.color_config.mono_chrome ? 1 : MAX_MB_PLANE;
+    }
+
+    inline unsigned GetNumMissingTiles(AV1DecoderFrame const& frame)
+    {
+        FrameHeader const& fh = frame.GetFrameHeader();
+        auto &tileSets = frame.GetTileSets();
+        return NumTiles(fh.tile_info) - CalcTilesInTileSets(tileSets);
     }
 }
 

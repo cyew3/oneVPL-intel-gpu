@@ -195,7 +195,7 @@ namespace UMC_AV1_DECODER
             {
                 // before parsing tiles we check that tile_group_obu() is complete (bitstream has enough bytes to hold whole OBU)
                 // but here we encountered incomplete tile inside this tile_group_obu() which means tile size corruption
-                // later check for complete tile_group_obu() will be removed, and thus incomplete tile will be possible
+                // [maybe] later check for complete tile_group_obu() will be removed, and thus incomplete tile will be possible
                 VM_ASSERT("Tile size corruption: Incomplete tile encountered inside complete tile_group_obu()!");
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
             }
@@ -237,7 +237,7 @@ namespace UMC_AV1_DECODER
         return UMC::UMC_OK;
     }
 
-    static bool ReadTileGroup(TileLayout& layout, AV1Bitstream& bs, FrameHeader const& fh, AV1DecoderFrame* curr_frame, size_t obuOffset, size_t obuSize)
+    static void ReadTileGroup(TileLayout& layout, AV1Bitstream& bs, FrameHeader const& fh, size_t obuOffset, size_t obuSize)
     {
         TileGroupInfo tgInfo = {};
         bs.ReadTileGroupHeader(fh, tgInfo);
@@ -255,13 +255,6 @@ namespace UMC_AV1_DECODER
             TileLocation& loc = layout[idxInLayout];
             GetTileLocation(&bs, fh, tgInfo, idxInTG, obuSize, obuOffset, loc);
         }
-
-        const uint32_t numTilesAccumulated = static_cast<uint32_t>(layout.size()) +
-            (curr_frame ? CalcTilesInTileSets(curr_frame->GetTileSets()) : 0);
-        if (numTilesAccumulated == NumTiles(fh.tile_info))
-            return true;
-
-        return false;
     }
 
     inline bool NextFrameDetected(AV1_OBU_TYPE obuType)
@@ -276,8 +269,35 @@ namespace UMC_AV1_DECODER
         }
     }
 
+    inline bool GotFullFrame(AV1DecoderFrame const* curr_frame, FrameHeader const& fh, TileLayout const& layout)
+    {
+        const unsigned numMissingTiles = curr_frame ? GetNumMissingTiles(*curr_frame) : NumTiles(fh.tile_info);
+        if (layout.size() == numMissingTiles) // current tile group_obu() contains all missing tiles
+            return true;
+        else
+            return false;
+    }
+
+    inline bool HaveTilesToSubmit(AV1DecoderFrame const* curr_frame, TileLayout const& layout)
+    {
+        if (!layout.empty() ||
+            curr_frame && BytesReadyForSubmission(curr_frame->GetTileSets()))
+            return true;
+
+        return false;
+    }
+
+    inline bool AllocComplete(AV1DecoderFrame const& frame)
+    {
+        return frame.GetFrameData(SURFACE_DISPLAY) &&
+            frame.GetFrameData(SURFACE_RECON);
+    }
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
+        if (!in)
+            return UMC::UMC_ERR_NULL_PTR;
+
         FrameHeader fh = {};
 
         DPBType updated_refs;
@@ -288,97 +308,128 @@ namespace UMC_AV1_DECODER
             prev_fh = &(prev_frame->GetFrameHeader());
         }
 
-        bool gotFrameHeader = false;
-        bool gotTileGroup = false;
         bool gotFullFrame = false;
 
-        UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
-        uint32_t OBUOffset = 0;
-        TileLayout layout;
-
-        while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false)
+        if (curr_frame && GetNumMissingTiles(*curr_frame) == 0)
         {
-            const auto src = reinterpret_cast<uint8_t*>(tmp.GetDataPointer());
-            AV1Bitstream bs(src, uint32_t(tmp.GetDataSize()));
+            /* this code is executed if and only if whole frame (all tiles) was already got from applicaiton during previous calls of DecodeFrameAsync
+               but there were no sufficient surfaces to start decoding (e.g. to apply film_grain)
+               in this case reading from bitstream must be skipped, and code should proceed to frame submission to the driver */
 
-            OBUInfo obuInfo;
-            bs.ReadOBUInfo(obuInfo);
-            const AV1_OBU_TYPE obuType = obuInfo.header.obu_type;
-            VM_ASSERT(CheckOBUType(obuType)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+            VM_ASSERT(!AllocComplete(*curr_frame));
+            gotFullFrame = true;
+        }
+        else
+        {
+            /*do bitstream parsing*/
 
-            if (tmp.GetDataSize() < obuInfo.size)
-                return UMC::UMC_ERR_NOT_ENOUGH_DATA; // not enough data in the buffer to hold full OBU unit
-                                                     // we return error because there is no support for chopped tile_group_obu() submission so far
-                                                     // TODO: [Global] Add support for submission of incomplete tile group OBUs
+            bool gotFrameHeader = false;
+            uint32_t OBUOffset = 0;
+            TileLayout layout;
 
-            if (curr_frame && NextFrameDetected(obuType))
+            UMC::MediaData tmp = *in; // use local copy of [in] for OBU header parsing to not move data pointer in original [in] prematurely
+
+            while (tmp.GetDataSize() >= MINIMAL_DATA_SIZE && gotFullFrame == false)
             {
-                VM_ASSERT(!"Current frame was interrupted unexpectedly!");
-                throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
-                // TODO: [robust] add support for cases when series of tile_group_obu() interrupted by other OBU type before end of frame was reached
-            }
+                const auto src = reinterpret_cast<uint8_t*>(tmp.GetDataPointer());
+                AV1Bitstream bs(src, uint32_t(tmp.GetDataSize()));
 
-            switch (obuType)
-            {
-            case OBU_SEQUENCE_HEADER:
-                if (!sequence_header.get())
-                    sequence_header.reset(new SequenceHeader);
-                *sequence_header = SequenceHeader{};
-                bs.ReadSequenceHeader(*sequence_header);
-                break;
-            case OBU_FRAME_HEADER:
-            case OBU_REDUNDANT_FRAME_HEADER:
-            case OBU_FRAME:
-                if (!sequence_header.get())
-                    break; // bypass frame header if there is no active seq header
-                bs.ReadUncompressedHeader(fh, *sequence_header, prev_fh, updated_refs, obuInfo.header);
-                gotFrameHeader = true;
-                if (obuInfo.header.obu_type != OBU_FRAME)
+                OBUInfo obuInfo;
+                bs.ReadOBUInfo(obuInfo);
+                const AV1_OBU_TYPE obuType = obuInfo.header.obu_type;
+                VM_ASSERT(CheckOBUType(obuType)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+
+                if (tmp.GetDataSize() < obuInfo.size) // not enough data left in the buffer to hold full OBU unit
                     break;
-                bs.ReadByteAlignment();
-            case OBU_TILE_GROUP:
-                FrameHeader const* pFH = nullptr;
-                if (curr_frame)
-                    pFH = &(curr_frame->GetFrameHeader());
-                else if (gotFrameHeader)
-                    pFH = &fh;
 
-                if (pFH) // bypass tile group if there is no respective frame header
+                if (curr_frame && NextFrameDetected(obuType))
                 {
-                    gotFullFrame = ReadTileGroup(layout, bs, *pFH, curr_frame, OBUOffset, obuInfo.size);
-                    gotTileGroup = true;
-                    break;
+                    VM_ASSERT(!"Current frame was interrupted unexpectedly!");
+                    throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
+                    // TODO: [robust] add support for cases when series of tile_group_obu() interrupted by other OBU type before end of frame was reached
                 }
+
+                switch (obuType)
+                {
+                case OBU_SEQUENCE_HEADER:
+                    if (!sequence_header.get())
+                        sequence_header.reset(new SequenceHeader);
+                    *sequence_header = SequenceHeader{};
+                    bs.ReadSequenceHeader(*sequence_header);
+                    break;
+                case OBU_FRAME_HEADER:
+                case OBU_REDUNDANT_FRAME_HEADER:
+                case OBU_FRAME:
+                    if (!sequence_header.get())
+                        break; // bypass frame header if there is no active seq header
+                    bs.ReadUncompressedHeader(fh, *sequence_header, prev_fh, updated_refs, obuInfo.header);
+                    gotFrameHeader = true;
+                    if (obuType != OBU_FRAME)
+                        break;
+                    bs.ReadByteAlignment();
+                case OBU_TILE_GROUP:
+                    FrameHeader const* pFH = nullptr;
+                    if (curr_frame)
+                        pFH = &(curr_frame->GetFrameHeader());
+                    else if (gotFrameHeader)
+                        pFH = &fh;
+
+                    if (pFH) // bypass tile group if there is no respective frame header
+                    {
+                        ReadTileGroup(layout, bs, *pFH, OBUOffset, obuInfo.size);
+                        gotFullFrame = GotFullFrame(curr_frame, *pFH, layout);
+                        break;
+                    }
+                }
+
+                OBUOffset += static_cast<uint32_t>(obuInfo.size);
+                tmp.MoveDataPointer(static_cast<int32_t>(obuInfo.size));
             }
 
-            OBUOffset += static_cast<uint32_t>(obuInfo.size);
-            tmp.MoveDataPointer(static_cast<int32_t>(obuInfo.size));
+            if (!HaveTilesToSubmit(curr_frame, layout))
+                return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+
+            if (curr_frame == 0)
+            {
+                UMC::Status umcRes = StartFrame(fh, updated_refs);
+                if (umcRes != UMC::UMC_OK)
+                    return umcRes;
+            }
+
+            if (!layout.empty())
+            {
+                curr_frame->AddTileSet(in, layout);
+                in->MoveDataPointer(OBUOffset);
+            }
         }
 
-        if (!gotTileGroup)
-            return UMC::UMC_ERR_NOT_ENOUGH_DATA; // no tile_group_obu() or incomplete tile_group_obu (no support for chopped tile_group_obu() submission so far)
-                                                 // TODO: [Global] Add support for submission of incomplete tile group OBUs
+        VM_ASSERT(curr_frame);
+
+        UMC::Status umcRes = UMC::UMC_OK;
 
         bool firstSubmission = false;
 
-        if (curr_frame == 0)
+        if (!AllocComplete(*curr_frame))
         {
-            UMC::Status umcRes = StartFrame(fh, updated_refs);
-            if (umcRes != UMC::UMC_OK)
-                return umcRes;
+            AddFrameData(*curr_frame);
+
+            if (!AllocComplete(*curr_frame))
+                return UMC::UMC_OK;
+
             firstSubmission = true;
         }
 
-        curr_frame->AddTileSet(in, layout);
-        in->MoveDataPointer(OBUOffset);
-
-        UMC::Status umcRes = SubmitTiles(*curr_frame, firstSubmission);
+        umcRes = SubmitTiles(*curr_frame, firstSubmission);
+        if (umcRes != UMC::UMC_OK)
+            return umcRes;
 
         if (gotFullFrame)
         {
             prev_frame = curr_frame;
             curr_frame = nullptr;
         }
+        else
+            return UMC::UMC_ERR_NOT_ENOUGH_DATA;
 
         return umcRes;
     }
@@ -403,6 +454,11 @@ namespace UMC_AV1_DECODER
     {
         std::unique_lock<std::mutex> l(guard);
 
+        // When all frames in DPB are displayed, and app keeps sending mfxBitstream with zero DataLength
+        // This function will be called and will always return dpb.front(), so app will get MFX_ERR_NONE in infinite loop
+        // And will never get MFX_ERR_MORE_DATA (as it should be per design/API)
+        // TODO: [Rev0.85] Fix this when will modify this function to add proper support of reordering.
+
         auto i = std::min_element(std::begin(dpb), std::end(dpb),
             [](AV1DecoderFrame const* f1, AV1DecoderFrame const* f2)
             {
@@ -419,7 +475,7 @@ namespace UMC_AV1_DECODER
 
         AV1DecoderFrame* frame = *i;
         return
-            frame->GetFrameHeader().show_frame ? frame : nullptr;
+            frame->GetFrameHeader().show_frame && AllocComplete(*frame) ? frame : nullptr;
     }
 
     UMC::Status AV1Decoder::FillVideoParam(SequenceHeader const& sh, UMC_AV1_DECODER::AV1DecoderParams& par)
@@ -520,6 +576,12 @@ namespace UMC_AV1_DECODER
 
     AV1DecoderFrame* AV1Decoder::GetFrameBuffer(FrameHeader const& fh)
     {
+        if (fh.show_existing_frame)
+        {
+            // TODO: [Rev0.85] Implement proper processing of reordering
+            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
+        }
+
         CompleteDecodedFrames();
         AV1DecoderFrame* frame = GetFreeFrame();
         if (!frame)
@@ -530,38 +592,33 @@ namespace UMC_AV1_DECODER
         // increase ref counter when we get empty frame from DPB
         frame->IncrementReference();
 
+        return frame;
+    }
+
+    void AV1Decoder::AddFrameData(AV1DecoderFrame& frame)
+    {
+        FrameHeader const& fh = frame.GetFrameHeader();
+
         if (fh.show_existing_frame)
         {
-            AV1DecoderFrame* existing_frame =  FindFrameByDispID(fh.display_frame_id);
-            if (!existing_frame)
-            {
-                VM_ASSERT(!"Existing frame is not found");
-                return nullptr;
-            }
-
-            UMC::FrameData* fd = frame->GetFrameData();
-            VM_ASSERT(fd);
-            fd->m_locked = true;
-        }
-        else
-        {
-            if (!allocator)
-                throw av1_exception(UMC::UMC_ERR_NOT_INITIALIZED);
-
-            UMC::VideoDataInfo info{};
-            UMC::Status sts = info.Init(params.info.clip_info.width, params.info.clip_info.height, params.info.color_format, 0);
-            if (sts != UMC::UMC_OK)
-                throw av1_exception(sts);
-
-            UMC::FrameMemID id;
-            sts = allocator->Alloc(&id, &info, 0);
-            if (sts != UMC::UMC_OK)
-                throw av1_exception(UMC::UMC_ERR_ALLOC);
-
-            AllocateFrameData(info, id, *frame);
+            // TODO: [Rev0.85] Implement proper processing of reordering
+            throw av1_exception(UMC::UMC_ERR_NOT_IMPLEMENTED);
         }
 
-        return frame;
+        if (!allocator)
+            throw av1_exception(UMC::UMC_ERR_NOT_INITIALIZED);
+
+        UMC::VideoDataInfo info{};
+        UMC::Status sts = info.Init(params.info.clip_info.width, params.info.clip_info.height, params.info.color_format, 0);
+        if (sts != UMC::UMC_OK)
+            throw av1_exception(sts);
+
+        UMC::FrameMemID id;
+        sts = allocator->Alloc(&id, &info, 0);
+        if (sts != UMC::UMC_OK)
+            throw av1_exception(UMC::UMC_ERR_ALLOC);
+
+        AllocateFrameData(info, id, frame);
     }
 
     template <typename F>

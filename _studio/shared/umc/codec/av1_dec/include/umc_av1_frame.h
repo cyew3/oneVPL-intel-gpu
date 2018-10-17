@@ -56,6 +56,8 @@ namespace UMC_AV1_DECODER
         ~TileSet() {};
 
         size_t Submit(uint8_t*, size_t, size_t, TileLayout&);
+        bool Submitted() const
+        { return submitted; }
         uint32_t GetTileCount() const
         { return static_cast<uint32_t>(layout.size()); }
         size_t GetSize() const
@@ -76,6 +78,15 @@ namespace UMC_AV1_DECODER
         return numTiles;
     }
 
+    inline size_t BytesReadyForSubmission(std::vector<TileSet> const& tileSets)
+    {
+        size_t bytes = 0;
+        for (auto& tileSet : tileSets)
+            bytes += tileSet.Submitted() ? tileSet.GetSize() : 0;
+
+        return bytes;
+    }
+
     inline size_t CalcSizeOfTileSets(std::vector<TileSet> const& tileSets)
     {
         size_t size = 0;
@@ -84,6 +95,12 @@ namespace UMC_AV1_DECODER
 
         return size;
     }
+
+    enum
+    {
+        SURFACE_DISPLAY = 0,
+        SURFACE_RECON = 1
+    };
 
     class AV1DecoderFrame : public RefCounter
     {
@@ -95,7 +112,7 @@ namespace UMC_AV1_DECODER
 
         void Reset();
         void Reset(FrameHeader const*);
-        void Allocate(UMC::FrameData const*);
+        void AllocateAndLock(UMC::FrameData const*);
 
         void AddSource(UMC::MediaData*);
 
@@ -103,6 +120,9 @@ namespace UMC_AV1_DECODER
         { return source.get(); }
 
         void AddTileSet(UMC::MediaData* in, TileLayout const& layout);
+
+        std::vector<TileSet> const& GetTileSets() const
+        { return tile_sets; }
 
         std::vector<TileSet>& GetTileSets()
         { return tile_sets; }
@@ -149,12 +169,12 @@ namespace UMC_AV1_DECODER
         void CompleteDecoding()
         { decoding_completed = true; }
 
-        UMC::FrameData* GetFrameData()
-        { return data.get(); }
-        UMC::FrameData const* GetFrameData() const
-        { return data.get(); }
+        UMC::FrameData* GetFrameData(int idx = SURFACE_DISPLAY)
+        { return data[idx].get(); }
+        UMC::FrameData const* GetFrameData(int idx = SURFACE_DISPLAY) const
+        { return data[idx].get(); }
 
-        UMC::FrameMemID GetMemID() const;
+        UMC::FrameMemID GetMemID(int idx = SURFACE_DISPLAY) const;
 
         void AddReferenceFrame(AV1DecoderFrame* frm);
         void FreeReferenceFrames();
@@ -193,7 +213,8 @@ namespace UMC_AV1_DECODER
         bool                              decoding_completed; // set in [scheduler thread] after getting driver status report for the frame
 
 
-        std::unique_ptr<UMC::FrameData>   data;
+        std::shared_ptr<UMC::FrameData>   data[2]; // if FilmGrain is applied:     data[SURFACE_DISPLAY] points to data of frame with film grain, and data[SURFACE_RECON] points to data of reconstructed frame
+                                                   // if FilmGrain is not applied: both data[SURFACE_DISPLAY] and data[SURFACE_RECON] point to data of reconstructed frame
         std::unique_ptr<UMC::MediaData>   source;
 
         std::vector<TileSet>              tile_sets;
@@ -208,7 +229,7 @@ namespace UMC_AV1_DECODER
         bool                              ref_valid;
     };
 
-} // end namespace UMC_VP9_DECODER
+} // end namespace UMC_AV1_DECODER
 
 #endif // __UMC_AV1_FRAME_H__
 #endif // UMC_ENABLE_AV1_VIDEO_DECODER

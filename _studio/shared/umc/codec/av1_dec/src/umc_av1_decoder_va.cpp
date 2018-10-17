@@ -71,7 +71,7 @@ namespace UMC_AV1_DECODER
         if (firstSubmission)
         {
             // it's first submission for current frame - need to call BeginFrame
-            sts = va->BeginFrame(frame.GetMemID());
+            sts = va->BeginFrame(frame.GetMemID()); // TODO: [Rev0.85] Clarify with Ce which surface index to send: recon of display
             if (sts != UMC::UMC_OK)
                 return sts;
 
@@ -82,8 +82,7 @@ namespace UMC_AV1_DECODER
         auto &tileSets = frame.GetTileSets();
         packer->PackAU(tileSets, frame, firstSubmission);
 
-        FrameHeader const& fh = frame.GetFrameHeader();
-        const bool lastSubmission = CalcTilesInTileSets(tileSets) == NumTiles(fh.tile_info);
+        const bool lastSubmission = (GetNumMissingTiles(frame) == 0);
         if (lastSubmission)
             packer->EndFrame();
 
@@ -102,11 +101,7 @@ namespace UMC_AV1_DECODER
         UMC::FrameData fd;
         fd.Init(&info, id, allocator);
 
-        frame.Allocate(&fd);
-
-        UMC::FrameData* fd2 = frame.GetFrameData();
-        VM_ASSERT(fd2);
-        fd2->m_locked = true;
+        frame.AllocateAndLock(&fd);
     }
 
     inline bool InProgress(AV1DecoderFrame const& frame)

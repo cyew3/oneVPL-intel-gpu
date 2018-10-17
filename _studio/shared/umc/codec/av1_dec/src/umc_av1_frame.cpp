@@ -75,7 +75,6 @@ namespace UMC_AV1_DECODER
 
     AV1DecoderFrame::AV1DecoderFrame()
         : locked(0)
-        , data(new UMC::FrameData{})
         , seq_header(new SequenceHeader{})
         , header(new FrameHeader{})
     {
@@ -95,7 +94,8 @@ namespace UMC_AV1_DECODER
         decoded   = false;
         decoding_started = false;
         decoding_completed = false;
-        data->Close();
+        data[SURFACE_DISPLAY].reset();
+        data[SURFACE_RECON].reset();
         tile_sets.resize(0);
 
         memset(seq_header.get(), 0, sizeof(SequenceHeader));
@@ -128,13 +128,38 @@ namespace UMC_AV1_DECODER
         *header = *fh;
     }
 
-    void AV1DecoderFrame::Allocate(UMC::FrameData const* fd)
+    void AV1DecoderFrame::AllocateAndLock(UMC::FrameData const* fd)
     {
         if (!fd)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
-        VM_ASSERT(data);
-        *data = *fd;
+        if (header->film_grain_params.apply_grain)
+        {
+            /* film grain is applied - two output surfaces required */
+
+            VM_ASSERT(!data[SURFACE_DISPLAY].get() || !data[SURFACE_RECON].get());
+
+            int surf = SURFACE_RECON;
+            if (!data[SURFACE_DISPLAY].get())
+                surf = SURFACE_DISPLAY;
+
+            data[surf].reset(new UMC::FrameData{});
+            *data[surf] = *fd;
+            data[surf]->m_locked = true;
+        }
+        else
+        {
+            /* film grain not applied - single output surface required
+               both data[SURFACE_DISPLAY] and data[SURFACE_RECON] point to same FrameData */
+
+            VM_ASSERT(!data[SURFACE_DISPLAY].get());
+            VM_ASSERT(!data[SURFACE_RECON].get());
+
+            data[SURFACE_DISPLAY].reset(new UMC::FrameData{});
+            *data[SURFACE_DISPLAY] = *fd;
+            data[SURFACE_DISPLAY]->m_locked = true;
+            data[SURFACE_RECON] = data[SURFACE_DISPLAY];
+        }
     }
 
     void AV1DecoderFrame::AddSource(UMC::MediaData* in)
@@ -165,17 +190,19 @@ namespace UMC_AV1_DECODER
     }
 
     bool AV1DecoderFrame::Empty() const
-    { return !data->m_locked; }
+    {
+        return !data[SURFACE_DISPLAY].get();
+    }
 
     bool AV1DecoderFrame::Decoded() const
     {
         return decoded;
     }
 
-    UMC::FrameMemID AV1DecoderFrame::GetMemID() const
+    UMC::FrameMemID AV1DecoderFrame::GetMemID(int idx) const
     {
-        VM_ASSERT(data);
-        return data->GetFrameMID();
+        VM_ASSERT(data[idx]);
+        return data[idx]->GetFrameMID();
     }
 
     void AV1DecoderFrame::AddReferenceFrame(AV1DecoderFrame * frm)

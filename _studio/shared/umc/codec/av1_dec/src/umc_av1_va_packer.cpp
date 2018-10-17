@@ -248,7 +248,7 @@ namespace UMC_AV1_DECODER
         else
         {
             for (uint8_t ref = 0; ref < NUM_REF_FRAMES; ++ref)
-                picParam.ref_frame_map[ref].wPicEntry = (USHORT)frame.frame_dpb[ref]->GetMemID();
+                picParam.ref_frame_map[ref].wPicEntry = (USHORT)frame.frame_dpb[ref]->GetMemID(SURFACE_RECON);
 
             for (uint8_t ref_idx = 0; ref_idx < INTER_REFS; ref_idx++)
             {
@@ -261,7 +261,7 @@ namespace UMC_AV1_DECODER
             }
         }
 
-        picParam.CurrPic.wPicEntry = (USHORT)frame.GetMemID();
+        picParam.CurrPic.wPicEntry = (USHORT)frame.GetMemID(SURFACE_RECON);
         picParam.CurrDisplayPic.wPicEntry = (USHORT)frame.GetMemID();
         picParam.primary_ref_frame = (UCHAR)info.primary_ref_frame;
 

@@ -544,7 +544,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
     sts = bs ? CheckBitstream(bs) : MFX_ERR_NONE;
     MFX_CHECK_STS(sts);
 
-    if (!bs || !bs->DataLength)
+    if (!bs)
     {
         return MFX_ERR_MORE_DATA;
     }
@@ -565,6 +565,8 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
         {
             UMC::Status umcRes = m_allocator->FindFreeSurface() != -1 ?
                 m_decoder->GetFrame(bs ? &src : 0, nullptr) : UMC::UMC_ERR_NEED_FORCE_OUTPUT;
+
+            UMC::Status umcFrameRes = umcRes;
 
              if (umcRes == UMC::UMC_NTF_NEW_RESOLUTION ||
                  umcRes == UMC::UMC_WRN_REPOSITION_INPROGRESS ||
@@ -611,6 +613,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
             if (umcRes == UMC::UMC_OK && m_allocator->FindFreeSurface() == -1)
             {
                 sts = MFX_ERR_MORE_SURFACE;
+                umcFrameRes = UMC::UMC_ERR_NOT_ENOUGH_BUFFER;
             }
 
             if (umcRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umcRes == UMC::UMC_WRN_INFO_NOT_READY || umcRes == UMC::UMC_ERR_NEED_FORCE_OUTPUT)
@@ -651,7 +654,7 @@ mfxStatus VideoDECODEAV1::SubmitFrame(mfxBitstream* bs, mfxFrameSurface1* surfac
                 return MFX_ERR_NONE;
             }
 
-            if (umcRes != UMC::UMC_OK)
+            if (umcFrameRes != UMC::UMC_OK)
                 break;
 
         } // for (;;)

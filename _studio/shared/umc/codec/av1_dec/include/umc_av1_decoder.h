@@ -131,6 +131,7 @@ namespace UMC_AV1_DECODER
         virtual void SetDPBSize(uint32_t);
         virtual AV1DecoderFrame* GetFreeFrame();
         virtual AV1DecoderFrame* GetFrameBuffer(FrameHeader const&);
+        virtual void AddFrameData(AV1DecoderFrame&);
 
         virtual void AllocateFrameData(UMC::VideoDataInfo const&, UMC::FrameMemID, AV1DecoderFrame&) = 0;
         virtual void CompleteDecodedFrames();
