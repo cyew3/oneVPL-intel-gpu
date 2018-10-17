@@ -152,7 +152,7 @@ function( create_plugins_cfg directory )
   file(WRITE ${directory}/plugins.cfg ${PLUGINS_CFG})
   file(WRITE ${directory}/plugins_eval.cfg ${PLUGINS_EVAL_CFG})
 
-  install( FILES ${directory}/plugins.cfg ${directory}/plugins_eval.cfg DESTINATION ${MFX_PLUGINS_DIR} )
+  install( FILES ${directory}/plugins.cfg DESTINATION ${MFX_PLUGINS_CONF_DIR} )
 
 endfunction()
 
