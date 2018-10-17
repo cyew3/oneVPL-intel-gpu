@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -140,7 +140,7 @@ mfxStatus VideoVppJpegD3D9::Init(const mfxVideoParam *par)
         for (mfxU32 i = 0; i < m_response.NumFrameActual; i++)
         {
             m_surfaces[i].Data.MemId = m_response.mids[i];
-            memcpy_s(&m_surfaces[i].Info, sizeof(mfxFrameInfo), &request.Info, sizeof(mfxFrameInfo));
+            m_surfaces[i].Info       = request.Info;
         }
     }
 
