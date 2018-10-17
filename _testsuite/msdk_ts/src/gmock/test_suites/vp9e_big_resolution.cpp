@@ -552,18 +552,19 @@ namespace vp9e_big_resolution
             //set reader
             if (reader == nullptr)
             {
+                tsRawReader* feeder = nullptr;
                 if (tc.type & DISABLE_DECODER)
                 {
                     // use a common stream reader
-                    tsRawReader* feeder = new tsRawReader(stream, m_par.mfx.FrameInfo);
-                    m_filler = feeder;
+                    feeder = new tsRawReader(stream, m_par.mfx.FrameInfo);
                 }
                 else
                 {
                     // use a reader with surface storing to get PSNR later
-                    tsRawReader* feeder = new SurfaceFeeder(&inputSurfaces, m_par, stream);
-                    m_filler = feeder;
+                    feeder = new SurfaceFeeder(&inputSurfaces, m_par, stream);
                 }
+                feeder->m_disable_shift_hack = true; // disable an additional shifting of shifted streams
+                m_filler = feeder;
             }
 
             mfxU32 encoded = 0;
