@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef _MFX_FRAMES_H_
@@ -97,7 +97,7 @@
                 sExtTask1 *pTask = &m_pTasks[(m_currTask + m_numTasks)% m_maxTasks];
                 if (pParams)
                 {
-                    memcpy_s(&pTask->m_inputInternalParams,sizeof(mfxEncodeInternalParams),pParams,sizeof(mfxEncodeInternalParams));
+                    pTask->m_inputInternalParams = *pParams;
                 }
                 pTask->m_pInput_surface = input_surface;
                 pTask->m_pBs = bs;
@@ -188,7 +188,7 @@
                 sExtTask2 *pTask = &m_pTasks[(m_currTask + m_numTasks)% m_maxTasks];
                 if (pParams)
                 {
-                    memcpy_s(&pTask->m_inputInternalParams, sizeof(pTask->m_inputInternalParams), pParams, sizeof(mfxEncodeInternalParams));
+                    pTask->m_inputInternalParams = *pParams;
                 }
                 pTask->m_pInput_surface = input_surface;
                 pTask->m_pBs = bs;

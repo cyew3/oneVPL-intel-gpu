@@ -5,8 +5,10 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2010-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2010-2018 Intel Corporation. All Rights Reserved.
 //
+
+#include <algorithm>
 
 #include <mfx_log.h>
 
@@ -267,7 +269,7 @@ protected:
 
             // copy the string to the buffer
             copySize = (m_bufSize < strLen) ? (m_bufSize) : (strLen);
-            memcpy_s(m_pCur, copySize, pStr, copySize);
+            std::copy(pStr, pStr + copySize, m_pCur);
             m_pCur += copySize;
             m_bufSize -= copySize;
             pStr += copySize;
