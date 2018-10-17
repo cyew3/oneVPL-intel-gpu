@@ -318,10 +318,10 @@ namespace
             assert(0);
         }
 
-//         if (pUserData && userDataLen > 0)
+//         if (pUserData && userDataLen > 4)
 //         {
-//             mfxU32 len = IPP_MIN(userDataLen - 4, sizeof(pps.user_data)/sizeof(pps.user_data[0]));
-//             memcpy_s(pps.user_data, sizeof(pps.user_data)/sizeof(pps.user_data[0]), pUserData + 4, len);
+//             mfxU32 len = std:min<mfxU32>(userDataLen - 4, sizeof(pps.user_data)/sizeof(pps.user_data[0]));
+//             std::copy(pUserData + 4, pUserData + 4 + len, pps.user_data);
 //             pps.user_data_length = len;
 //         }
     } // void FillPps(...)
@@ -1809,7 +1809,6 @@ mfxStatus VAAPIEncoder::FillBSBuffer(mfxU32 nFeedback,mfxU32 nBitstream, mfxBits
 
         MFX_CHECK(ret == MFX_ERR_NONE, MFX_ERR_UNDEFINED_BEHAVIOR);
 
-        //memcpy(pBitstream->Data + pBitstream->DataLength + pBitstream->DataOffset, Frame.Y, queryStatus.bitstreamSize);
         pBitstream->DataLength += bitstreamSize;
 
         {
