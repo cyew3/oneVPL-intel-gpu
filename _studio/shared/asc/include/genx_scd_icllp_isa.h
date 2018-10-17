@@ -5,10 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2012-2018 Intel Corporation. All Rights Reserved.
+// Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
-
-#ifndef __genx_scd_cnl__
-#define __genx_scd_cnl__
-extern const unsigned char genx_scd_cnl[19089];
+#ifndef __genx_scd_icllp__
+#define __genx_scd_icllp__
+extern const unsigned char genx_scd_icllp[19177];
 #endif

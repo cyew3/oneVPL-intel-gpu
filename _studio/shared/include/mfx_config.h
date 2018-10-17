@@ -396,7 +396,7 @@
 #if ((MFX_VERSION >= 1026) && (!AS_CAMERA_PLUGIN))
 #define MFX_ENABLE_MCTF
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-#define MFX_ENABLE_MCTF_EXT // extended MCTF interface
+#undef MFX_ENABLE_MCTF_EXT // extended MCTF interface
 #endif
 #endif
 

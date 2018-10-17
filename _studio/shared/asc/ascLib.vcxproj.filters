@@ -45,9 +45,6 @@
     <ClInclude Include="include\genx_scd_bdw_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\genx_scd_bxt_isa.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\genx_scd_cnl_isa.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -69,6 +66,12 @@
     <ClInclude Include="include\asc_defs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\genx_scd_icl_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\genx_scd_icllp_isa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\asc.cpp">
@@ -86,9 +89,6 @@
     <ClCompile Include="src\genx_scd_bdw_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\genx_scd_bxt_isa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\genx_scd_cnl_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -102,6 +102,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\tree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_scd_icl_isa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\genx_scd_icllp_isa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

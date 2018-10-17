@@ -23,6 +23,14 @@
 #include "genx_mc_skl_isa.h"
 #include "genx_sd_skl_isa.h"
 
+#include "genx_me_icl_isa.h"
+#include "genx_mc_icl_isa.h"
+#include "genx_sd_icl_isa.h"
+
+#include "genx_me_icllp_isa.h"
+#include "genx_mc_icllp_isa.h"
+#include "genx_sd_icllp_isa.h"
+
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -32,12 +40,12 @@ using std::min;
 using  std::max;
 using namespace ns_asc;
 
-const mfxU16 CMC::AUTO_FILTER_STRENTH = 0;
+const mfxU16 CMC::AUTO_FILTER_STRENGTH = 0;
 const mfxU16 CMC::DEFAULT_FILTER_STRENGTH = 8;
-const mfxU32 CMC::DEFAULT_BPP = 12 * MCTF_BITRATE_MULTIPLIER;
+const mfxU32 CMC::DEFAULT_BPP             = 0; //Automode
 const mfxU16 CMC::DEFAULT_DEBLOCKING = MFX_CODINGOPTION_OFF;
 const mfxU16 CMC::DEFAULT_OVERLAP = MFX_CODINGOPTION_OFF;
-const mfxU16 CMC::DEFAULT_ME = MFX_MVPRECISION_INTEGER;
+const mfxU16 CMC::DEFAULT_ME = MFX_MVPRECISION_INTEGER >> 1;
 const mfxU16 CMC::DEFAULT_REFS = MCTF_TEMPORAL_MODE_2REF;
 
 void CMC::QueryDefaultParams(IntMctfParams* pBuffer)
@@ -47,7 +55,7 @@ void CMC::QueryDefaultParams(IntMctfParams* pBuffer)
     pBuffer->Overlap = DEFAULT_OVERLAP;
     pBuffer->subPelPrecision = DEFAULT_ME;
     pBuffer->TemporalMode = DEFAULT_REFS;
-    pBuffer->FilterStrength = AUTO_FILTER_STRENTH; // [0...20]
+    pBuffer->FilterStrength = AUTO_FILTER_STRENGTH; // [0...20]
     pBuffer->BitsPerPixelx100k= DEFAULT_BPP;
 };
 
@@ -71,7 +79,7 @@ mfxStatus CMC::CheckAndFixParams(mfxExtVppMctf* pBuffer)
     mfxStatus sts = MFX_ERR_NONE;
     if (!pBuffer) return MFX_ERR_NULL_PTR;
     if (pBuffer->FilterStrength > 20) {
-        pBuffer->FilterStrength = AUTO_FILTER_STRENTH;
+        pBuffer->FilterStrength = AUTO_FILTER_STRENGTH;
         sts = MFX_WRN_INCOMPATIBLE_VIDEO_PARAM;
     }
 #ifdef MFX_ENABLE_MCTF_EXT
@@ -209,20 +217,21 @@ inline mfxStatus CMC::SetupMeControl(const mfxFrameInfo& FrameInfo, mfxU16 th, m
     p_ctrl->CropW = CropW;
     p_ctrl->CropH = CropH;
 
-    if (th  > 20)
+    if (th > 20)
     {
 #ifdef MFX_MCTF_DEBUG_PRINT
         ASC_PRINTF("MCTF Error: Filter strength too large; check your parameters\n");
 #endif
         return MFX_ERR_INVALID_VIDEO_PARAM;
-        
     }
-    p_ctrl->th = th * 50;
-    p_ctrl->sTh = min(th + CHROMABASE, MAXCHROMA);// th * 5;
-    if (MFX_MVPRECISION_INTEGER == subPelPre)
+    p_ctrl->th  = th * 50;
+    p_ctrl->sTh = min(th + CHROMABASE, MAXCHROMA);
+    p_ctrl->mre_width  = 0;
+    p_ctrl->mre_height = 0;
+    if (MFX_MVPRECISION_INTEGER >> 1 == subPelPre)
         p_ctrl->subPrecision = 0;
     else
-        if (MFX_MVPRECISION_QUARTERPEL == subPelPre)
+        if (MFX_MVPRECISION_QUARTERPEL >> 1 == subPelPre)
             p_ctrl->subPrecision = 1;
         else
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -233,7 +242,7 @@ void CMC::TimeStart() {
 #if defined (_WIN32) || defined(_WIN64)
 //    QueryPerformanceFrequency(&pTimer->tFrequency);
 //    QueryPerformanceCounter(&pTimer->tStart);
-    ;
+//    ;
 #endif
 }
 
@@ -562,7 +571,7 @@ mfxStatus CMC::MCTF_INIT( VideoCORE * core, CmDevice *pCmDevice, const mfxFrameI
     //--filter configuration parameters
     m_AutoMode = MCTF_MODE::MCTF_NOT_INITIALIZED_MODE;
     ConfigMode = MCTF_CONFIGURATION::MCTF_NOT_CONFIGURED;
-    number_of_References = TWO_REFERENCES;
+    number_of_References = MCTF_TEMPORAL_MODE_2REF;
     bitrate_Adaptation = false;
     deblocking_Control = MFX_CODINGOPTION_OFF;
     bpp = 0.0;
@@ -769,13 +778,31 @@ mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* 
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     //Motion Estimation
-    if (hwType == PLATFORM_INTEL_BDW)
+
+    switch (hwType)
+    {
+    case PLATFORM_INTEL_BDW:
         res = device->LoadProgram((void *)genx_me_bdw, sizeof(genx_me_bdw), programMe, "nojitter");
-    else if (hwType >= PLATFORM_INTEL_SKL && hwType <= PLATFORM_INTEL_CFL)
+        break;
+    case PLATFORM_INTEL_ICL:
+        res = device->LoadProgram((void *)genx_me_icl, sizeof(genx_me_icl), programMe, "nojitter");
+        break;
+    case PLATFORM_INTEL_ICLLP:
+        res = device->LoadProgram((void *)genx_me_icllp, sizeof(genx_me_icllp), programMe, "nojitter");
+        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_BXT:
+    case PLATFORM_INTEL_CNL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_GLK:
         res = device->LoadProgram((void *)genx_me_skl, sizeof(genx_me_skl), programMe, "nojitter");
-    else
+        break;
+    default:
         return MFX_ERR_UNSUPPORTED;
+    }
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+
     //ME Kernel
     if (MFX_CODINGOPTION_ON == overlap_Motion) 
     {
@@ -790,24 +817,56 @@ mfxStatus CMC::MCTF_SET_ENV(const mfxFrameInfo& FrameInfo, const IntMctfParams* 
     }
     else
         return MFX_ERR_INVALID_VIDEO_PARAM;
-
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     //Motion Compensation
-    if (hwType == PLATFORM_INTEL_BDW)
+    switch (hwType)
+    {
+    case PLATFORM_INTEL_BDW:
         res = device->LoadProgram((void *)genx_mc_bdw, sizeof(genx_mc_bdw), programMc, "nojitter");
-    else if (hwType >= PLATFORM_INTEL_SKL && hwType <= PLATFORM_INTEL_CFL)
+        break;
+    case PLATFORM_INTEL_ICL:
+        res = device->LoadProgram((void *)genx_mc_icl, sizeof(genx_mc_icl), programMc, "nojitter");
+        break;
+    case PLATFORM_INTEL_ICLLP:
+        res = device->LoadProgram((void *)genx_mc_icllp, sizeof(genx_mc_icllp), programMc, "nojitter");
+        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_BXT:
+    case PLATFORM_INTEL_CNL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_GLK:
         res = device->LoadProgram((void *)genx_mc_skl, sizeof(genx_mc_skl), programMc, "nojitter");
-    else
+        break;
+    default:
         return MFX_ERR_UNSUPPORTED;
+    }
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
-    if (hwType == PLATFORM_INTEL_BDW)
-        res = device->LoadProgram((void *)genx_sd_bdw, sizeof(genx_mc_bdw), programDe, "nojitter");
-    else if (hwType >= PLATFORM_INTEL_SKL && hwType <= PLATFORM_INTEL_CFL)
-        res = device->LoadProgram((void *)genx_sd_skl, sizeof(genx_mc_skl), programDe, "nojitter");
-    else
+    //Spatial denoising
+    switch (hwType)
+    {
+    case PLATFORM_INTEL_BDW:
+        res = device->LoadProgram((void *)genx_sd_bdw, sizeof(genx_sd_bdw), programDe, "nojitter");
+        break;
+    case PLATFORM_INTEL_ICL:
+        res = device->LoadProgram((void *)genx_sd_icl, sizeof(genx_sd_icl), programDe, "nojitter");
+        break;
+    case PLATFORM_INTEL_ICLLP:
+        res = device->LoadProgram((void *)genx_sd_icllp, sizeof(genx_sd_icllp), programDe, "nojitter");
+        break;
+    case PLATFORM_INTEL_SKL:
+    case PLATFORM_INTEL_BXT:
+    case PLATFORM_INTEL_CNL:
+    case PLATFORM_INTEL_KBL:
+    case PLATFORM_INTEL_CFL:
+    case PLATFORM_INTEL_GLK:
+        res = device->LoadProgram((void *)genx_sd_skl, sizeof(genx_sd_skl), programDe, "nojitter");
+        break;
+    default:
         return MFX_ERR_UNSUPPORTED;
+    }
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
 
     //Denoising No reference Kernel
@@ -1051,8 +1110,13 @@ mfxI32 CMC::MCTF_LOAD_4REF() {
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMe(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-    mfxU16 start_x, mfxU16 start_y, mfxU8 blSize) {
+mfxI32 CMC::MCTF_SET_KERNELMe(
+    SurfaceIndex * GenxRefs,
+    SurfaceIndex * idxMV,
+    mfxU16         start_x,
+    mfxU16         start_y,
+    mfxU8          blSize)
+{
     argIdx = 0;
     res = kernelMe->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1071,134 +1135,18 @@ mfxI32 CMC::MCTF_SET_KERNELMe(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
     return res;
 }
 
-mfxI32 CMC::MCTF_SET_KERNELMeMRE(
-    SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-    SurfaceIndex *idxMRE, mfxU16 start_x,
-    mfxU16 start_y, mfxU8 blSize) {
-    argIdx = 0;
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(*GenxRefs), GenxRefs);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(*idxDist), idxDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(*idxMV), idxMV);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(*idxMRE), idxMRE);
-    MCTF_CHECK_CM_ERR(res, res);
-    // set start mb
-    mfxU16Pair start_xy = { start_x, start_y };
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(start_xy), &start_xy);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMe->SetKernelArg(argIdx++, sizeof(blSize), &blSize);
-    MCTF_CHECK_CM_ERR(res, res);
-    return res;
-}
-
 mfxI32 CMC::MCTF_SET_KERNELMeBi(
-    SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-    SurfaceIndex *idxMV2, mfxU16 start_x,
-    mfxU16 start_y, mfxU8 blSize,
-    mfxI8 forwardRefDist, mfxI8 backwardRefDist) {
-    argIdx = 0;
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*GenxRefs), GenxRefs);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxDist), idxDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMV), idxMV);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxDist), idxDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMV2), idxMV2);
-    MCTF_CHECK_CM_ERR(res, res);
-    // set start mb
-    mfxU16Pair start_xy = { start_x, start_y };
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(start_xy), &start_xy);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(blSize), &blSize);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(forwardRefDist), &forwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(backwardRefDist), &backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    return res;
-}
-
-mfxI32 CMC::MCTF_SET_KERNELMeBi(
-    SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-    SurfaceIndex *idxMV2, SurfaceIndex *idxMRE1,
-    SurfaceIndex *idxMRE2, mfxU16 start_x,
-    mfxU16 start_y, mfxU8 blSize,
-    mfxI8 forwardRefDist, mfxI8 backwardRefDist) {
-    argIdx = 0;
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*GenxRefs), GenxRefs);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxDist), idxDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMV), idxMV);
-    MCTF_CHECK_CM_ERR(res, res);
-    /*res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxDist), idxDist);
-    MCTF_CHECK_CM_ERR(res);*/
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMV2), idxMV2);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMRE1), idxMRE1);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMRE2), idxMRE2);
-    MCTF_CHECK_CM_ERR(res, res);
-    // set start mb
-    mfxU16Pair start_xy = { start_x, start_y };
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(start_xy), &start_xy);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(blSize), &blSize);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(forwardRefDist), &forwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(backwardRefDist), &backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    return res;
-}
-
-mfxI32 CMC::MCTF_SET_KERNELMeBi(
-    SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    mfxU16 start_x, mfxU16 start_y, mfxU8 blSize,
-    mfxI8 forwardRefDist, mfxI8 backwardRefDist) {
-    argIdx = 0;
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*GenxRefs), GenxRefs);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*GenxRefs2), GenxRefs2);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxDist), idxDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMV);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMV2);
-    MCTF_CHECK_CM_ERR(res, res);
-    // set start mb
-    mfxU16Pair start_xy = { start_x, start_y };
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(start_xy), &start_xy);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(blSize), &blSize);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(forwardRefDist), &forwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(backwardRefDist), &backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    return res;
-}
-
-mfxI32 CMC::MCTF_SET_KERNELMeBiMRE(
-    SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-    mfxU16 start_x, mfxU16 start_y, mfxU8 blSize,
-    mfxI8 forwardRefDist, mfxI8 backwardRefDist) {
+    SurfaceIndex * GenxRefs,
+    SurfaceIndex * GenxRefs2,
+    SurfaceIndex * idxMV,
+    SurfaceIndex * idxMV2,
+    mfxU16         start_x,
+    mfxU16         start_y,
+    mfxU8          blSize,
+    mfxI8          forwardRefDist,
+    mfxI8          backwardRefDist
+)
+{
     argIdx = 0;
     res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxCtrl), idxCtrl);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1211,10 +1159,6 @@ mfxI32 CMC::MCTF_SET_KERNELMeBiMRE(
     res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMV), idxMV);
     MCTF_CHECK_CM_ERR(res, res);
     res = kernelMeB->SetKernelArg(argIdx++, sizeof(*idxMV2), idxMV2);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMRE1);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = kernelMeB->SetKernelArg(argIdx++, sizeof(SurfaceIndex), idxMRE2);
     MCTF_CHECK_CM_ERR(res, res);
     // set start mb
     mfxU16Pair start_xy = { start_x, start_y };
@@ -1514,7 +1458,7 @@ mfxI32 CMC::MCTF_RUN_DOUBLE_TASK(CmKernel *meKernel, CmKernel *mcKernel, bool re
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidth, tsHeight, threadSpace2);
     MCTF_CHECK_CM_ERR(res, res);
-    res = threadSpace2->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    res = threadSpace2->SelectThreadDependencyPattern(CM_HORIZONTAL_DEPENDENCY);
     MCTF_CHECK_CM_ERR(res, res);
     res = meKernel->AssociateThreadSpace(threadSpace2);
 
@@ -1522,7 +1466,7 @@ mfxI32 CMC::MCTF_RUN_DOUBLE_TASK(CmKernel *meKernel, CmKernel *mcKernel, bool re
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidthMC, tsHeightMC, threadSpaceMC);
     MCTF_CHECK_CM_ERR(res, res);
-    res = threadSpaceMC->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    res = threadSpaceMC->SelectThreadDependencyPattern(CM_HORIZONTAL_DEPENDENCY);
     MCTF_CHECK_CM_ERR(res, res);
     res = mcKernel->AssociateThreadSpace(threadSpaceMC);
 
@@ -1550,7 +1494,7 @@ mfxI32 CMC::MCTF_RUN_MCTASK(CmKernel *kernel, bool reset) {
     MCTF_CHECK_CM_ERR(res, res);
     res = device->CreateThreadSpace(tsWidthMC, tsHeightMC, threadSpaceMC2);
     MCTF_CHECK_CM_ERR(res, res);
-    res = threadSpaceMC2->SelectThreadDependencyPattern(CM_NONE_DEPENDENCY);
+    res = threadSpaceMC2->SelectThreadDependencyPattern(CM_HORIZONTAL_DEPENDENCY);
     MCTF_CHECK_CM_ERR(res, res);
     //res = kernel->AssociateThreadSpace(threadSpaceMC2);
 
@@ -1596,145 +1540,8 @@ mfxI32 CMC::MCTF_RUN_TASK(CmKernel *kernel, bool reset, CmThreadSpace *tS) {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_ME(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV) {
-    time = 0;
-    mfxU8 blSize = VMEBLSIZE / 2;
-//    tsHeight = (DIVUP(p_ctrl->height, VMEBLSIZE) * 2) - 1;//Motion Estimation of any block size is performed in 16x16 units
-//    tsWidthFull = (DIVUP(p_ctrl->width, VMEBLSIZE) * 2) - 1;
-    tsHeight = (DIVUP(p_ctrl->CropH, VMEBLSIZE) * 2) - 1;//Motion Estimation of any block size is performed in 16x16 units
-    tsWidthFull = (DIVUP(p_ctrl->CropW, VMEBLSIZE) * 2) - 1;
-    tsWidth = tsWidthFull;
-//    res = MCTF_SET_KERNELMe(GenxRefs, idxMV, 0, 0, blSize);
-    res = MCTF_SET_KERNELMe(GenxRefs, idxMV, DIVUP(p_ctrl->CropX, blSize), DIVUP(p_ctrl->CropY, blSize),  blSize);
-    MCTF_CHECK_CM_ERR(res, res);
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
-    threadSpace = 0;
-    res = MCTF_RUN_TASK(kernelMe, task != 0);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        mfxU16 start_mbX = tsWidth;
-        tsWidth = tsWidthFull - tsWidth;
-//        res = MCTF_SET_KERNELMe(GenxRefs, idxMV, start_mbX, 0, blSize);
-        res = MCTF_SET_KERNELMe(GenxRefs, idxMV, start_mbX, DIVUP(p_ctrl->CropY, blSize), blSize);
-        MCTF_CHECK_CM_ERR(res, res);
-        // the rest of frame TS
-        res = MCTF_RUN_TASK(kernelMe, task != 0);
-        MCTF_CHECK_CM_ERR(res, res);
-    }
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#endif
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    device->DestroyThreadSpace(threadSpace);
-    queue->DestroyEvent(e);
-    device->DestroyVmeSurfaceG7_5(GenxRefs);
-    e = 0;
-    return res;
-}
-mfxI32 CMC::MCTF_RUN_ME(
-    SurfaceIndex *GenxRefs,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    char forwardRefDist, char backwardRefDist) {
-    time = 0;
-    mfxU8 blSize = VMEBLSIZE / 2;
-//    tsHeight = (DIVUP(p_ctrl->height, VMEBLSIZE) * 2) - 1;//Motion Estimation of any block size is performed in 16x16 units
-//    tsWidthFull = (DIVUP(p_ctrl->width, VMEBLSIZE) * 2) - 1;
-    tsHeight = (DIVUP(p_ctrl->CropH, VMEBLSIZE) * 2) - 1;//Motion Estimation of any block size is performed in 16x16 units
-    tsWidthFull = (DIVUP(p_ctrl->CropW, VMEBLSIZE) * 2) - 1;
-    tsWidth = tsWidthFull;
-//    res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, 0, 0, blSize, forwardRefDist, backwardRefDist);
-    res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, DIVUP(p_ctrl->CropX, blSize), DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
-
-    threadSpace = 0;
-    res = MCTF_RUN_TASK(kernelMeB, task != 0);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        mfxU16 start_mbX = tsWidth;
-        tsWidth = tsWidthFull - tsWidth;
-//        res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, start_mbX, 0, blSize, forwardRefDist, backwardRefDist);
-        res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, start_mbX, DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
-        MCTF_CHECK_CM_ERR(res, res);
-        res = MCTF_RUN_TASK(kernelMeB, task != 0);
-        MCTF_CHECK_CM_ERR(res, res);
-    }
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#endif
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    device->DestroyThreadSpace(threadSpace);
-    queue->DestroyEvent(e);
-    device->DestroyVmeSurfaceG7_5(GenxRefs);
-    e = 0;
-    return res;
-}
-
-mfxI32 CMC::MCTF_RUN_ME_MRE(
-    SurfaceIndex *GenxRefs,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-    char forwardRefDist, char backwardRefDist) {
-    time = 0;
-    mfxU8 blSize = VMEBLSIZE/* / 2*/;
-//    tsHeight = DIVUP(p_ctrl->height, VMEBLSIZE);/*(DIVUP(p_ctrl->height, VMEBLSIZE) * 2) - 1;*///Motion Estimation of any block size is performed in 16x16 units
-//    tsWidthFull = DIVUP(p_ctrl->width, VMEBLSIZE);/*(DIVUP(p_ctrl->width,  VMEBLSIZE) * 2) - 1;*/
-    tsHeight = DIVUP(p_ctrl->CropH, VMEBLSIZE);/*(DIVUP(p_ctrl->height, VMEBLSIZE) * 2) - 1;*///Motion Estimation of any block size is performed in 16x16 units
-    tsWidthFull = DIVUP(p_ctrl->CropW, VMEBLSIZE);/*(DIVUP(p_ctrl->width,  VMEBLSIZE) * 2) - 1;*/
-
-    tsWidth = tsWidthFull;
-//    res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, idxMRE1, idxMRE2, 0, 0, blSize, forwardRefDist, backwardRefDist);
-    res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, idxMRE1, idxMRE2, DIVUP(p_ctrl->CropX, blSize), DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
-
-    threadSpace = 0;
-    res = MCTF_RUN_TASK(kernelMeB, task != 0);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        mfxU16 start_mbX = tsWidth;
-        tsWidth = tsWidthFull - tsWidth;
-//        res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, start_mbX, 0, blSize, forwardRefDist, backwardRefDist);
-        res = MCTF_SET_KERNELMeBi(GenxRefs, idxMV, idxMV2, start_mbX, DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
-        MCTF_CHECK_CM_ERR(res, res);
-        // the rest of frame TS
-        res = MCTF_RUN_TASK(kernelMeB, task != 0);
-        MCTF_CHECK_CM_ERR(res, res);
-    }
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#endif
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    device->DestroyThreadSpace(threadSpace);
-    queue->DestroyEvent(e);
-    device->DestroyVmeSurfaceG7_5(GenxRefs);
-    e = 0;
-    return res;
-}
-
-mfxU8 CMC::SetOverlapOp() {
+mfxU8 CMC::SetOverlapOp()
+{
     mfxU8 blSize = 0;
     switch (overlap_Motion)
     {
@@ -1788,102 +1595,28 @@ mfxU8 CMC::SetOverlapOp_half() {
 }
 
 mfxI32 CMC::MCTF_RUN_ME(
-    SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    char forwardRefDist, char backwardRefDist) {
-    time = 0;
-    mfxU8 blSize = VMEBLSIZE / 2;
-//    tsHeight = (DIVUP(p_ctrl->height, VMEBLSIZE) * 2) - 1;//Motion Estimation of any block size is performed in 16x16 units
-//    tsWidthFull = (DIVUP(p_ctrl->width, VMEBLSIZE) * 2) - 1;
-    tsHeight = (DIVUP(p_ctrl->CropH, VMEBLSIZE) * 2) - 1;//Motion Estimation of any block size is performed in 16x16 units
-    tsWidthFull = (DIVUP(p_ctrl->CropW, VMEBLSIZE) * 2) - 1;
-    tsWidth = tsWidthFull;
-//    res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, 0, 0, blSize, forwardRefDist, backwardRefDist);
-    res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, DIVUP(p_ctrl->CropX, blSize), DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
-
-    threadSpace = 0;
-    res = MCTF_RUN_TASK(kernelMeB, task != 0);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        mfxU16 start_mbX = tsWidth;
-        tsWidth = tsWidthFull - tsWidth;
-//        res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, start_mbX, 0, blSize, forwardRefDist, backwardRefDist);
-        res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, start_mbX, DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
-        MCTF_CHECK_CM_ERR(res, res);
-        // the rest of frame TS
-        res = MCTF_RUN_TASK(kernelMeB, task != 0);
-        MCTF_CHECK_CM_ERR(res, res);
-    }
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-#if TIMINGINFO
-    time += GetAccurateGpuTime(queue, task, threadSpace);
-#endif
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    device->DestroyThreadSpace(threadSpace);
-    queue->DestroyEvent(e);
-    device->DestroyVmeSurfaceG7_5(GenxRefs);
-    device->DestroyVmeSurfaceG7_5(GenxRefs2);
-    e = 0;
-    return res;
-}
-
-mfxI32 CMC::MCTF_WAIT_ME_MRE(SurfaceIndex *GenxRefs) {
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    device->DestroyThreadSpace(threadSpace);
-    queue->DestroyEvent(e);
-    device->DestroyVmeSurfaceG7_5(GenxRefs);
-    e = 0;
-    return res;
-}
-
-mfxI32 CMC::MCTF_WAIT_ME_MRE(
-    SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2) {
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    device->DestroyThreadSpace(threadSpace);
-    queue->DestroyEvent(e);
-    device->DestroyVmeSurfaceG7_5(GenxRefs);
-    device->DestroyVmeSurfaceG7_5(GenxRefs2);
-    e = 0;
-    return res;
-}
-
-mfxI32 CMC::MCTF_RUN_ME_MRE(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV, SurfaceIndex *idxMRE) {
+    SurfaceIndex * GenxRefs,
+    SurfaceIndex * idxMV
+)
+{
     time = 0;
 
     mfxU8
         blSize = SetOverlapOp();
-    //res = MCTF_SET_KERNELMeMRE(GenxRefs, idxMV, idxMRE, 0, 0, blSize);
-    res = MCTF_SET_KERNELMeMRE(GenxRefs, idxMV, idxMRE, DIVUP(p_ctrl->CropX, blSize) , DIVUP(p_ctrl->CropY, blSize), blSize);
+    res = MCTF_SET_KERNELMe(GenxRefs, idxMV, DIVUP(p_ctrl->CropX, blSize) , DIVUP(p_ctrl->CropY, blSize), blSize);
     MCTF_CHECK_CM_ERR(res, res);
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
         tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
 
     threadSpace = 0;
     res = MCTF_RUN_TASK(kernelMe, task != 0);
     MCTF_CHECK_CM_ERR(res, res);
 
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
         mfxU16 start_mbX = tsWidth;
         tsWidth = tsWidthFull - tsWidth;
-//        res = MCTF_SET_KERNELMeMRE(GenxRefs, idxMV, idxMRE, start_mbX, 0, blSize);
-        res = MCTF_SET_KERNELMeMRE(GenxRefs, idxMV, idxMRE, start_mbX, DIVUP(p_ctrl->CropY, blSize), blSize);
+        res = MCTF_SET_KERNELMe(GenxRefs, idxMV, start_mbX, DIVUP(p_ctrl->CropY, blSize), blSize);
         MCTF_CHECK_CM_ERR(res, res);
         // the rest of frame TS
         res = MCTF_RUN_TASK(kernelMe, task != 0);
@@ -1892,74 +1625,100 @@ mfxI32 CMC::MCTF_RUN_ME_MRE(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV, Surface
     return res;
 }
 
+mfxI32 CMC::MCTF_RUN_ME(
+    SurfaceIndex * GenxRefs,
+    SurfaceIndex * GenxRefs2,
+    SurfaceIndex * idxMV,
+    SurfaceIndex * idxMV2,
+    char           forwardRefDist,
+    char           backwardRefDist
+)
+{
+    mfxU8
+        blSize = SetOverlapOp();
+    res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, 0, 0, blSize, forwardRefDist, backwardRefDist);
+    MCTF_CHECK_CM_ERR(res, res);
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+        tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
+
+    threadSpace = 0;
+    res = MCTF_RUN_TASK(kernelMeB, task != 0);
+    MCTF_CHECK_CM_ERR(res, res);
+
+    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW)
+    {
+        mfxU16
+            start_mbX = tsWidth;
+        tsWidth = tsWidthFull - tsWidth;
+        res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, start_mbX, 0, blSize, forwardRefDist, backwardRefDist);
+
+        MCTF_CHECK_CM_ERR(res, res);
+        // the rest of frame TS
+        res = MCTF_RUN_TASK(kernelMeB, task != 0);
+        MCTF_CHECK_CM_ERR(res, res);
+    }
+    return res;
+}
 
 mfxI32 CMC::MCTF_RUN_ME_MC_H(
-    SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-    char forwardRefDist, char backwardRefDist,
-    mfxU8 mcSufIndex) {
-#if !_MRE_
-    (void)idxMRE1;
-    (void)idxMRE2;
-#endif
-    time = 0;
-
+    SurfaceIndex * GenxRefs,
+    SurfaceIndex * GenxRefs2,
+    SurfaceIndex * idxMV,
+    SurfaceIndex * idxMV2,
+    mfxI8          forwardRefDist,
+    mfxI8           backwardRefDist,
+    mfxU8          mcSufIndex
+)
+{
+    UINT64 executionTime;
     mfxU8
         blSize = SetOverlapOp_half();
-//    res = MCTF_SET_KERNELMeBiMRE(GenxRefs, GenxRefs2, idxMV, idxMV2, idxMRE1, idxMRE2, 0, 0, blSize, forwardRefDist, backwardRefDist);
-    res = MCTF_SET_KERNELMeBiMRE(GenxRefs, GenxRefs2, idxMV, idxMV2, idxMRE1, idxMRE2, DIVUP(p_ctrl->CropX, blSize), DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
+    res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, DIVUP(p_ctrl->CropX, blSize), DIVUP(p_ctrl->CropY, blSize), blSize, forwardRefDist, backwardRefDist);
 
     MCTF_CHECK_CM_ERR(res, res);
 
     threadSpace = 0;
 
     res = MCTF_RUN_TASK(kernelMeB, task != 0);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = e->WaitForTaskFinished();
-    MCTF_CHECK_CM_ERR(res, res);
-    res = device->DestroyThreadSpace(threadSpace);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    res = device->DestroyTask(task);
-    MCTF_CHECK_CM_ERR(res, res);
-    UINT64 executionTime;
-    e->GetExecutionTime(executionTime);
-    exeTime += executionTime / 1000;
-    res = queue->DestroyEvent(e);
-    MCTF_CHECK_CM_ERR(res, res);
-    task = 0;
-    e = 0;
 
     mfxU16 multiplier = 2;
-//    tsHeightMC = (DIVUP(p_ctrl->height, blsize) * multiplier);
-//    tsWidthFullMC = (DIVUP(p_ctrl->width, blsize) * multiplier);
     tsHeightMC = (DIVUP(p_ctrl->CropH, blsize) * multiplier);
     tsWidthFullMC = (DIVUP(p_ctrl->CropW, blsize) * multiplier);
     tsWidthMC = tsWidthFullMC;
 
     if (pMCTF_NOA_func)
+    {
+        res = queue->Enqueue(task, e);
+        MCTF_CHECK_CM_ERR(res, res);
+        res = e->WaitForTaskFinished();
+        MCTF_CHECK_CM_ERR(res, res);
+        res = device->DestroyThreadSpace(threadSpace);
+        MCTF_CHECK_CM_ERR(res, res);
+
+        res = device->DestroyTask(task);
+        MCTF_CHECK_CM_ERR(res, res);
+        e->GetExecutionTime(executionTime);
+        exeTime += executionTime / 1000;
+        res = queue->DestroyEvent(e);
+        MCTF_CHECK_CM_ERR(res, res);
+        task = 0;
+        e = 0;
         (this->*(pMCTF_NOA_func))();
-
-    //res = MCTF_SET_KERNELMeBiMRE(GenxRefs, GenxRefs2, idxMV, idxMV2, idxMRE1, idxMRE2, 0, tsHeight, blSize, forwardRefDist, backwardRefDist);
-    res = MCTF_SET_KERNELMeBiMRE(GenxRefs, GenxRefs2, idxMV, idxMV2, idxMRE1, idxMRE2, DIVUP(p_ctrl->CropX, blsize), tsHeight, blSize, forwardRefDist, backwardRefDist);
+    }
+    else
+        res = task->AddSync();
+    res = MCTF_SET_KERNELMeBi(GenxRefs, GenxRefs2, idxMV, idxMV2, DIVUP(p_ctrl->CropX, blsize), tsHeight, blSize, forwardRefDist, backwardRefDist);
 
     MCTF_CHECK_CM_ERR(res, res);
-    if (mcSufIndex == 0) {
-        //        res = MCTF_SET_KERNELMc2r(0, 0);
-        res = MCTF_SET_KERNELMc2r(DIVUP(p_ctrl->CropX, blSize)*2, DIVUP(p_ctrl->CropY, blSize)*2);
-    }
-    else if (mcSufIndex == 1) {
-        //        res = MCTF_SET_KERNELMc4r(0, 0, DEN_CLOSE_RUN);
-        res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blSize)*2, DIVUP(p_ctrl->CropY, blSize)*2, DEN_CLOSE_RUN);
-    }
-    else {
-        //        res = MCTF_SET_KERNELMc4r(0, 0, DEN_FAR_RUN);
-        res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blSize)*2, DIVUP(p_ctrl->CropY, blSize)*2, DEN_FAR_RUN);
-    }
+    if (mcSufIndex == 0)
+        res = MCTF_SET_KERNELMc2r(DIVUP(p_ctrl->CropX, blSize) * 2, DIVUP(p_ctrl->CropY, blSize) * 2);
+    else if (mcSufIndex == 1)
+        res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blSize) * 2, DIVUP(p_ctrl->CropY, blSize) * 2, DEN_CLOSE_RUN);
+    else
+        res = MCTF_SET_KERNELMc4r(DIVUP(p_ctrl->CropX, blSize) * 2, DIVUP(p_ctrl->CropY, blSize) * 2, DEN_FAR_RUN);
     MCTF_CHECK_CM_ERR(res, res);
 
-    threadSpace = 0;
+    threadSpace2 = 0;
     threadSpaceMC = 0;
 
     MCTF_RUN_DOUBLE_TASK(kernelMeB, kernelMc2r, task != 0);
@@ -1972,6 +1731,11 @@ mfxI32 CMC::MCTF_RUN_ME_MC_H(
     MCTF_CHECK_CM_ERR(res, res);
     res = device->DestroyThreadSpace(threadSpaceMC);
     MCTF_CHECK_CM_ERR(res, res);
+    if (threadSpace)
+    {
+        res = device->DestroyThreadSpace(threadSpace);
+        MCTF_CHECK_CM_ERR(res, res);
+    }
 
     res = device->DestroyVmeSurfaceG7_5(GenxRefs);
     MCTF_CHECK_CM_ERR(res, res);
@@ -1985,52 +1749,21 @@ mfxI32 CMC::MCTF_RUN_ME_MC_H(
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_ME_MRE(
-    SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-    SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-    SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-    char forwardRefDist, char backwardRefDist) {
-    time = 0;
-
-    mfxU8
-        blSize = SetOverlapOp();
-    res = MCTF_SET_KERNELMeBiMRE(GenxRefs, GenxRefs2, idxMV, idxMV2, idxMRE1, idxMRE2, 0, 0, blSize, forwardRefDist, backwardRefDist);
-    MCTF_CHECK_CM_ERR(res, res);
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        tsWidth = (tsWidthFull >> 1) & ~1;  // must be even for 32x32 blocks 
-    }
-
-    threadSpace = 0;
-    res = MCTF_RUN_TASK(kernelMeB, task != 0);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (tsWidthFull > CM_MAX_THREADSPACE_WIDTH_FOR_MW) {
-        mfxU16
-            start_mbX = tsWidth;
-        tsWidth = tsWidthFull - tsWidth;
-        res = MCTF_SET_KERNELMeBiMRE(GenxRefs, GenxRefs2, idxMV, idxMV2, idxMRE1, idxMRE2, start_mbX, 0, blSize, forwardRefDist, backwardRefDist);
-
-        MCTF_CHECK_CM_ERR(res, res);
-        // the rest of frame TS
-        res = MCTF_RUN_TASK(kernelMeB, task != 0);
-        MCTF_CHECK_CM_ERR(res, res);
-    }
-    return res;
-}
-
-
-void CMC::GET_DISTDATA() {
+void CMC::GET_DISTDATA()
+{
     for (int y = 0; y < ov_height_bl; y++)
         memcpy_s(distRef.data() + y * ov_width_bl, sizeof(mfxU32) * ov_width_bl * ov_height_bl,(char *)distSys + y * surfPitch, sizeof(mfxU32) * ov_width_bl);
 
 }
 
-void CMC::GET_DISTDATA_H() {
+void CMC::GET_DISTDATA_H()
+{
     for (int y = 0; y < ov_height_bl / 2; y++)
         memcpy_s(distRef.data() + y * ov_width_bl, sizeof(mfxU32) * ov_width_bl * ov_height_bl, (char *)distSys + y * surfPitch, sizeof(mfxU32) * ov_width_bl);
 }
 
-void CMC::GET_NOISEDATA() {
+void CMC::GET_NOISEDATA()
+{
     int var_sc_area = DIVUP(p_ctrl->CropW, 16) * DIVUP(p_ctrl->CropH, 16);
     for (int y = 0; y < DIVUP(p_ctrl->CropH, 16); y++)
         memcpy_s(var_sc.data() + y * DIVUP(p_ctrl->CropW, 16), var_sc_area, (char *)noiseAnalysisSys + y * surfNoisePitch, sizeof(spatialNoiseAnalysis) * DIVUP(p_ctrl->CropW, 16));
@@ -2168,8 +1901,6 @@ mfxU32 CMC::computeQpClassFromBitRate(mfxU8 currentFrame)
         QP = (mfxU32)(6.0 * qs) + 4;
     mfxU32
         QCL = (QP > 53) ? 3 : QP_CLASS[QP];
-    //QCL = (QP < 0) ? 0 : ((QP > 53) ? 3 : QP_CLASS[QP]);
-
     return QCL;
 }
 
@@ -2663,11 +2394,20 @@ void CMC::AssignSceneNumber() {
         scene_numbers[i] = QfIn[i].scene_idx;
 }
 
-mfxI32 CMC::MCTF_RUN_ME_1REF() {
-    res = MCTF_RUN_ME_MRE(genxRefs1, idxMv_1, QfIn[0].idxMag);
+mfxI32 CMC::MCTF_RUN_ME_1REF()
+{
+    res = MCTF_RUN_ME(genxRefs1, idxMv_1);
     MCTF_CHECK_CM_ERR(res, res);
-    res = MCTF_WAIT_ME_MRE(genxRefs1);
+
+    res = e->WaitForTaskFinished();
     MCTF_CHECK_CM_ERR(res, res);
+    UINT64 executionTime;
+    e->GetExecutionTime(executionTime);
+    exeTime += executionTime / 1000;
+    device->DestroyThreadSpace(threadSpace);
+    queue->DestroyEvent(e);
+    device->DestroyVmeSurfaceG7_5(genxRefs1);
+    e = 0;
 
     if (pMCTF_NOA_func)
         (this->*(pMCTF_NOA_func))();
@@ -2675,41 +2415,18 @@ mfxI32 CMC::MCTF_RUN_ME_1REF() {
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_ME_2REF() {
-#if HALFWORK
-    res = MCTF_RUN_ME_MC_H(genxRefs1, genxRefs2, idxMv_1, idxMv_2, QfIn[0].idxMag, QfIn[1].idxMag, forward_distance, backward_distance, 0);
+mfxI32 CMC::MCTF_RUN_ME_2REF()
+{
+    res = MCTF_RUN_ME_MC_H(genxRefs1, genxRefs2, idxMv_1, idxMv_2, forward_distance, backward_distance, 0);
     MCTF_CHECK_CM_ERR(res, res);
-#else
-    res = MCTF_RUN_ME_MRE(genxRefs1, genxRefs2, idxMv_1, idxMv_2, QfIn[0].idxMag, QfIn[1].idxMag, -1);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = MCTF_WAIT_ME_MRE(genxRefs1, genxRefs2);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (pMCTF_NOA_func)
-        (this->*(pMCTF_NOA_func))();
-#endif
     return res;
 }
 
-mfxI32 CMC::MCTF_RUN_ME_4REF() {
-#if HALFWORK
-    res = MCTF_RUN_ME_MC_H(genxRefs1, genxRefs2, idxMv_1, idxMv_2, QfIn[1].idxMag, QfIn[2].idxMag, forward_distance, backward_distance, 1);
+mfxI32 CMC::MCTF_RUN_ME_4REF()
+{
+    res = MCTF_RUN_ME_MC_H(genxRefs1, genxRefs2, idxMv_1, idxMv_2, forward_distance, backward_distance, 1);
     MCTF_CHECK_CM_ERR(res, res);
-    res = MCTF_RUN_ME_MC_H(genxRefs3, genxRefs4, idxMv_3, idxMv_4, QfIn[0].idxMag, QfIn[3].idxMag, forward_distance, backward_distance, 2);
-#else
-    res = MCTF_RUN_ME_MRE(genxRefs1, genxRefs2, idxMv_1, idxMv_2, QfIn[1].idxMag, QfIn[2].idxMag, forward_distance, backward_distance);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = MCTF_WAIT_ME_MRE(genxRefs1, genxRefs2);
-    MCTF_CHECK_CM_ERR(res, res);
-
-    if (pMCTF_NOA_func)
-        (this->*(pMCTF_NOA_func))();
-
-    res = MCTF_RUN_ME_MRE(genxRefs3, genxRefs4, idxMv_3, idxMv_4, QfIn[0].idxMag, QfIn[3].idxMag, forward_distance, backward_distance);
-    MCTF_CHECK_CM_ERR(res, res);
-    res = MCTF_WAIT_ME_MRE(genxRefs3, genxRefs4);
-    MCTF_CHECK_CM_ERR(res, res);
-#endif
+    res = MCTF_RUN_ME_MC_H(genxRefs3, genxRefs4, idxMv_3, idxMv_4, forward_distance, backward_distance, 2);
     return res;
 }
 
@@ -2789,7 +2506,7 @@ mfxI32 CMC::MCTF_RUN_AMCTF_DEN() {
     res = (this->*(pMCTF_LOAD_func))();
     MCTF_CHECK_CM_ERR(res, res);
     AssignSceneNumber();
-    res = MCTF_RUN_ME_MRE(genxRefs1, genxRefs2, idxMv_1, idxMv_2, QfIn[0].idxMag, QfIn[1].idxMag, forward_distance, backward_distance);
+    res = MCTF_RUN_ME(genxRefs1, genxRefs2, idxMv_1, idxMv_2, forward_distance, backward_distance);
     MCTF_CHECK_CM_ERR(res, res);
     res = MCTF_RUN_BLEND2R();
     MCTF_CHECK_CM_ERR(res, res);

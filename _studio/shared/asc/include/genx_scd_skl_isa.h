@@ -5,9 +5,9 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(c) 2017 Intel Corporation. All Rights Reserved.
+// Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
 #ifndef __genx_scd_skl__
 #define __genx_scd_skl__
-extern const unsigned char genx_scd_skl[18354];
+extern const unsigned char genx_scd_skl[19009];
 #endif

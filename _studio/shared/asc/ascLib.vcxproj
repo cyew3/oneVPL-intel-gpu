@@ -31,8 +31,9 @@
     <ClInclude Include="include\asc_sse4_impl.h" />
     <ClInclude Include="include\cpu_detect.h" />
     <ClInclude Include="include\genx_scd_bdw_isa.h" />
-    <ClInclude Include="include\genx_scd_bxt_isa.h" />
     <ClInclude Include="include\genx_scd_cnl_isa.h" />
+    <ClInclude Include="include\genx_scd_icllp_isa.h" />
+    <ClInclude Include="include\genx_scd_icl_isa.h" />
     <ClInclude Include="include\genx_scd_skl_isa.h" />
     <ClInclude Include="include\iofunctions.h" />
     <ClInclude Include="include\me_asc.h" />
@@ -45,8 +46,9 @@
     <ClCompile Include="src\asc_c_impl.cpp" />
     <ClCompile Include="src\asc_sse4_impl.cpp" />
     <ClCompile Include="src\genx_scd_bdw_isa.cpp" />
-    <ClCompile Include="src\genx_scd_bxt_isa.cpp" />
     <ClCompile Include="src\genx_scd_cnl_isa.cpp" />
+    <ClCompile Include="src\genx_scd_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_scd_icl_isa.cpp" />
     <ClCompile Include="src\genx_scd_skl_isa.cpp" />
     <ClCompile Include="src\iofunctions.cpp" />
     <ClCompile Include="src\motion_estimation_engine.cpp" />

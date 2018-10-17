@@ -1,12 +1,12 @@
-/*//////////////////////////////////////////////////////////////////////////////
 //
-//                  INTEL CORPORATION PROPRIETARY INFORMATION
-//     This software is supplied under the terms of a license agreement or
-//     nondisclosure agreement with Intel Corporation and may not be copied
-//     or disclosed except in accordance with the terms of that agreement.
-//          Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
+// INTEL CORPORATION PROPRIETARY INFORMATION
 //
-*/
+// This software is supplied under the terms of a license agreement or
+// nondisclosure agreement with Intel Corporation and may not be copied
+// or disclosed except in accordance with the terms of that agreement.
+//
+// Copyright(C) 2017-2018 Intel Corporation. All Rights Reserved.
+//
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,16 +16,17 @@
 
 void make_copyright(FILE* f)
 {
-    fprintf(f,"/*//////////////////////////////////////////////////////////////////////////////\n"
-"//"
-"//                  INTEL CORPORATION PROPRIETARY INFORMATION\n"
-"//     This software is supplied under the terms of a license agreement or\n"
-"//     nondisclosure agreement with Intel Corporation and may not be copied\n"
-"//     or disclosed except in accordance with the terms of that agreement.\n"
-"//          Copyright(c) 2012-2017 Intel Corporation. All Rights Reserved.\n"
+    fprintf(f,
 "//\n"
-"*/\n"
-"\n");
+"// INTEL CORPORATION PROPRIETARY INFORMATION\n"
+"//\n"
+"// This software is supplied under the terms of a license agreement or\n"
+"// nondisclosure agreement with Intel Corporation and may not be copied\n"
+"// or disclosed except in accordance with the terms of that agreement.\n"
+"//\n"
+"// Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.\n"
+"//\n"
+);
 }
 
 /* first argument is file.isa to incorporate in C code */

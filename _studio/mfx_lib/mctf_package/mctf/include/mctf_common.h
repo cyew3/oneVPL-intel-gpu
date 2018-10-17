@@ -60,61 +60,14 @@ enum { MCTF_BITRATE_MULTIPLIER = 100000 };
 //#define MFX_MCTF_DEBUG_PRINT
 #include <memory>
 #include "cmrt_cross_platform.h"
-//#include "mfx_common.h"
 #include "../../../vpp/include/mfx_vpp_defs.h"
 #include "libmfx_core_interface.h"
-/*
-#include "genx_global.h"
-
-#include "genx_me_bdw_isa.h"
-#include "genx_mc_bdw_isa.h"
-#include "genx_sd_bdw_isa.h"
-
-#include "genx_me_skl_isa.h"
-#include "genx_mc_skl_isa.h"
-#include "genx_sd_skl_isa.h"
-*/
 #include "asc.h"
 
 #include <cassert>
-#define OUTPUTDEBUG 0
-#define TIMINGINFO  0
-#define PRINTTIMING 0
-#include "tuple"
-#define REFNUM4     1
-#define HEVC_VME    1
 #define HALFWORK    1
 #define CHROMABASE  80
 #define MAXCHROMA   100
-
-#ifndef __MFXDEFS_H__
-typedef char mfxI8;
-typedef char Ipp8s;
-typedef unsigned char mfxU8;
-typedef unsigned char Ipp8u;
-typedef short mfxI16;
-typedef short Ipp16s;
-typedef unsigned short mfxU16;
-typedef unsigned short Ipp16u;
-typedef int mfxI32;
-typedef int Ipp32s;
-typedef unsigned int mfxU32;
-typedef unsigned int Ipp32u;
-typedef __int64 mfxI64;
-typedef __int64 Ipp64s;
-typedef unsigned __int64 mfxU64;
-typedef unsigned __int64 Ipp64u;
-typedef double mfx64F;
-typedef double Ipp64f;
-typedef float mfx32F;
-typedef float Ipp32f;
-
-typedef struct {
-    mfxI16
-        x,
-        y;
-} mfxI16Pair;
-#endif //__MFXDEFS_H__
 
 typedef struct {
     mfxU16
@@ -136,7 +89,6 @@ typedef struct {
 
 #define CLIPVAL(VAL, MINVAL, MAXVAL) MAX(MINVAL, MIN(MAXVAL, VAL))
 #define MCTF_CHECK_CM_ERR(STS, ERR) if ((STS) != CM_SUCCESS) { ASC_PRINTF("FAILED at file: %s, line: %d, cmerr: %d\n", __FILE__, __LINE__, STS); return ERR; }
-//#define MCTFMFX_CHECK_CM_ERR(STS) if ((STS) != CM_SUCCESS) { ASC_PRINTF("FAILED at file: %s, line: %d, cmerr: %d\n", __FILE__, __LINE__, STS); return MFX_ERR_ABORTED; }
 
 #define CHECK_ERR(ERR) if ((ERR) != PASSED) { ASC_PRINTF("FAILED at file: %s, line: %d\n", __FILE__, __LINE__); return (ERR); }
 #define DIVUP(a, b) ((a+b-1)/b)
@@ -152,9 +104,18 @@ typedef struct {
 #define TEST_MAIN               1
 #define MINHEIGHT               120 //it determines which picture size will use 8x8 or 16x16 blocks, smaller than this 8x8, bigger 16x16.
 
-enum { PASSED, FAILED };
-enum { AMCTF_NOT_READY, AMCTF_READY };
-typedef enum AMCTF_OP_MODE {
+enum
+{ 
+    PASSED,
+    FAILED 
+};
+enum
+{ 
+    AMCTF_NOT_READY,
+    AMCTF_READY
+};
+typedef enum AMCTF_OP_MODE
+{
     SEPARATE_REG_OP,
     OVERLAP_REG_OP,
     SEPARATE_ADA_OP,
@@ -264,11 +225,7 @@ inline mfxU64 GetAccurateGpuTime_ThreadGroup(CmQueue *queue, CmTask *task, CmThr
 
 struct VmeSearchPath // sizeof=58
 {
-#if HEVC_VME
     mfxU8 sp[56];
-#else
-    mfxU8 sp[56];
-#endif
     mfxU8 maxNumSu;
     mfxU8 lenSp;
 };
@@ -377,7 +334,7 @@ class CMC
 {
 
 public:
-    static const mfxU16 AUTO_FILTER_STRENTH;
+    static const mfxU16 AUTO_FILTER_STRENGTH;
     static const mfxU16 DEFAULT_FILTER_STRENGTH;
     static const mfxU32 DEFAULT_BPP;
     static const mfxU16 DEFAULT_DEBLOCKING;
@@ -557,39 +514,47 @@ private:
 
 //    mfxStatus GetFrameHandle(mfxMemId MemId, mfxHDLPair& handle, bool bInternalAlloc);
     mfxStatus IM_SURF_SET();
-    mfxStatus IM_SURF_SET(CmSurface2D **p_surface, SurfaceIndex **p_idxSurf);
-    mfxStatus IM_SURF_SET(AbstractSurfaceHandle pD3DSurf, CmSurface2D **p_surface, SurfaceIndex **p_idxSurf);
-    mfxStatus IM_MRE_SURF_SET(CmSurface2D **p_Surface, SurfaceIndex **p_idxSurf);
-    mfxStatus GEN_NoiseSURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, SurfaceIndex **p_idxSurf);
-    mfxStatus GEN_SURF_SET(CmSurface2DUP **p_Surface, void **p_Sys, SurfaceIndex **p_idxSurf);
-    mfxI32 MCTF_SET_KERNELMe(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-        mfxU16 start_x, mfxU16 start_y, mfxU8 blSize);
+    mfxStatus IM_SURF_SET(
+        CmSurface2D  ** p_surface,
+        SurfaceIndex ** p_idxSurf
+    );
+    mfxStatus IM_SURF_SET(
+        AbstractSurfaceHandle      pD3DSurf,
+        CmSurface2D             ** p_surface,
+        SurfaceIndex            ** p_idxSurf
+    );
+    mfxStatus IM_MRE_SURF_SET(
+        CmSurface2D  ** p_Surface,
+        SurfaceIndex ** p_idxSurf
+    );
+    mfxStatus GEN_NoiseSURF_SET(
+        CmSurface2DUP   ** p_Surface,
+        void            ** p_Sys,
+        SurfaceIndex    ** p_idxSurf
+    );
+    mfxStatus GEN_SURF_SET(
+        CmSurface2DUP    ** p_Surface,
+        void             ** p_Sys,
+        SurfaceIndex     ** p_idxSurf
+    );
+    mfxI32 MCTF_SET_KERNELMe(
+        SurfaceIndex      * GenxRefs,
+        SurfaceIndex      * idxMV,
+        mfxU16              start_x,
+        mfxU16              start_y,
+        mfxU8 blSize
+    );
     mfxI32 MCTF_SET_KERNELMeBi(
-        SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-        SurfaceIndex *idxMV2, mfxU16 start_x,
-        mfxU16 start_y, mfxU8 blSize,
-        mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-    mfxI32 MCTF_SET_KERNELMeBi(
-        SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-        SurfaceIndex *idxMV2, SurfaceIndex *idxMRE1,
-        SurfaceIndex *idxMRE2, mfxU16 start_x,
-        mfxU16 start_y, mfxU8 blSize,
-        mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-    mfxI32 MCTF_SET_KERNELMeBi(
-        SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-        SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-        mfxU16 start_x, mfxU16 start_y, mfxU8 blSize,
-        mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-    mfxI32 MCTF_SET_KERNELMeMRE(
-        SurfaceIndex *GenxRefs, SurfaceIndex *idxMV,
-        SurfaceIndex *idxMRE, mfxU16 start_x,
-        mfxU16 start_y, mfxU8 blSize);
-    mfxI32 MCTF_SET_KERNELMeBiMRE(
-        SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-        SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-        SurfaceIndex *idxMRE, SurfaceIndex *idxMRE2,
-        mfxU16 start_x, mfxU16 start_y, mfxU8 blSize,
-        mfxI8 forwardRefDist, mfxI8 backwardRefDist);
+        SurfaceIndex * GenxRefs,
+        SurfaceIndex * GenxRefs2,
+        SurfaceIndex * idxMV,
+        SurfaceIndex * idxMV2,
+        mfxU16         start_x,
+        mfxU16         start_y,
+        mfxU8          blSize,
+        mfxI8          forwardRefDist,
+        mfxI8          backwardRefDist
+    );
     mfxI32 MCTF_SET_KERNELMc(
         mfxU16 start_x, mfxU16 start_y,
         mfxU8 srcNum, mfxU8 refNum);
@@ -602,34 +567,51 @@ private:
 
     mfxU8  SetOverlapOp();
     mfxU8  SetOverlapOp_half();
-
-    mfxI32 MCTF_RUN_TASK_NA(CmKernel *kernel, bool reset, mfxU16 widthTs, mfxU16 heightTs);
-    mfxI32 MCTF_RUN_TASK(CmKernel *kernel, bool reset);
-    mfxI32 MCTF_RUN_DOUBLE_TASK(CmKernel *meKernel, CmKernel *mcKernel, bool reset);
-    mfxI32 MCTF_RUN_MCTASK(CmKernel *kernel, bool reset);
-    mfxI32 MCTF_RUN_TASK(CmKernel *kernel, bool reset, CmThreadSpace *tS);
-    mfxI32 MCTF_RUN_ME(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV);
-    mfxI32 MCTF_RUN_ME(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV, SurfaceIndex *idxMV2, mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-    mfxI32 MCTF_RUN_ME(SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2, SurfaceIndex *idxMV, SurfaceIndex *idxMV2, mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-
-    mfxI32 MCTF_RUN_ME_MRE(SurfaceIndex *GenxRefs, SurfaceIndex *idxMV, SurfaceIndex *idxMRE);
-    mfxI32 MCTF_RUN_ME_MRE( SurfaceIndex *GenxRefs,
-                            SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-                            SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-                            mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-    mfxI32 MCTF_RUN_ME_MRE( SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-                            SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-                            SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-                            mfxI8 forwardRefDist, mfxI8 backwardRefDist);
-    mfxI32 MCTF_WAIT_ME_MRE(SurfaceIndex *GenxRefs);
-    mfxI32 MCTF_WAIT_ME_MRE(SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2);
-
-    mfxI32 MCTF_RUN_ME_MC_H(SurfaceIndex *GenxRefs, SurfaceIndex *GenxRefs2,
-                            SurfaceIndex *idxMV, SurfaceIndex *idxMV2,
-                            SurfaceIndex *idxMRE1, SurfaceIndex *idxMRE2,
-                            mfxI8 forwardRefDist, mfxI8 backwardRefDist,
-                            mfxU8 mcSufIndex);
-
+    mfxI32 MCTF_RUN_TASK_NA(
+        CmKernel * kernel,
+        bool       reset,
+        mfxU16     widthTs,
+        mfxU16     heightTs
+    );
+    mfxI32 MCTF_RUN_TASK(
+        CmKernel * kernel,
+        bool       reset
+    );
+    mfxI32 MCTF_RUN_DOUBLE_TASK(
+        CmKernel * meKernel,
+        CmKernel * mcKernel,
+        bool       reset
+    );
+    mfxI32 MCTF_RUN_MCTASK(
+        CmKernel * kernel,
+        bool       reset
+    );
+    mfxI32 MCTF_RUN_TASK(
+        CmKernel      * kernel,
+        bool            reset,
+        CmThreadSpace * tS
+    );
+    mfxI32 MCTF_RUN_ME(
+        SurfaceIndex * GenxRefs,
+        SurfaceIndex * idxMV
+    );
+    mfxI32 MCTF_RUN_ME(
+        SurfaceIndex * GenxRefs,
+        SurfaceIndex * GenxRefs2,
+        SurfaceIndex * idxMV,
+        SurfaceIndex * idxMV2,
+        char forwardRefDist,
+        char backwardRefDist
+    );
+    mfxI32 MCTF_RUN_ME_MC_H(
+        SurfaceIndex * GenxRefs,
+        SurfaceIndex * GenxRefs2,
+        SurfaceIndex * idxMV,
+        SurfaceIndex * idxMV2,
+        mfxI8          forwardRefDist,
+        mfxI8          backwardRefDist,
+        mfxU8          mcSufIndex
+    );
     mfxI32 MCTF_RUN_ME_1REF();
     mfxI32 MCTF_RUN_ME_2REF();
     mfxI32 MCTF_RUN_ME_4REF();

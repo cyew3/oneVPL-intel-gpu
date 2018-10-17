@@ -5,7 +5,7 @@
       <Filter>Lib\ME</Filter>
     </ClCompile>
     <ClCompile Include="..\..\genx\mctf\src\genx_sd.cpp">
-      <Filter>Lib\SpatialDenoiser</Filter>
+      <Filter>Lib\SD</Filter>
     </ClCompile>
     <ClCompile Include="..\..\genx\mctf\src\genx_mc.cpp">
       <Filter>Lib\MC</Filter>
@@ -26,48 +26,33 @@
       <Filter>Lib\ME</Filter>
     </ClCompile>
     <ClCompile Include="..\..\genx\mctf\src\genx_sd_bdw_isa.cpp">
-      <Filter>Lib\SpatialDenoiser</Filter>
+      <Filter>Lib\SD</Filter>
     </ClCompile>
     <ClCompile Include="..\..\genx\mctf\src\genx_sd_skl_isa.cpp">
-      <Filter>Lib\SpatialDenoiser</Filter>
+      <Filter>Lib\SD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_mc_icl_isa.cpp">
+      <Filter>Lib\MC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_me_icl_isa.cpp">
+      <Filter>Lib\ME</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_sd_icl_isa.cpp">
+      <Filter>Lib\SD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_me_icllp_isa.cpp">
+      <Filter>Lib\ME</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_mc_icllp_isa.cpp">
+      <Filter>Lib\MC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_sd_icllp_isa.cpp">
+      <Filter>Lib\SD</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\genx\mctf\include\genx_blend_mc.h">
-      <Filter>Lib\MC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_me_common.h">
-      <Filter>Lib\ME</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_sd_common.h">
-      <Filter>Lib\SpatialDenoiser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_global.h">
-      <Filter>Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\table_mc.h">
-      <Filter>Lib\MC</Filter>
-    </ClInclude>
     <ClInclude Include="include\mctf_common.h">
       <Filter>Lib</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_sd_bdw_isa.h">
-      <Filter>Lib\SpatialDenoiser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_sd_skl_isa.h">
-      <Filter>Lib\SpatialDenoiser</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_me_bdw_isa.h">
-      <Filter>Lib\ME</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_me_skl_isa.h">
-      <Filter>Lib\ME</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_mc_bdw_isa.h">
-      <Filter>Lib\MC</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\genx\mctf\include\genx_mc_skl_isa.h">
-      <Filter>Lib\MC</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -80,7 +65,7 @@
     <Filter Include="Lib\ME">
       <UniqueIdentifier>{46bab218-84d7-4a35-acfd-431c12010a36}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Lib\SpatialDenoiser">
+    <Filter Include="Lib\SD">
       <UniqueIdentifier>{d4936dca-1b1f-49ed-9d2a-b41ce09f88ab}</UniqueIdentifier>
     </Filter>
   </ItemGroup>

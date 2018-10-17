@@ -11,8 +11,17 @@
 
 #if defined(__AVX2__)
 
-void ME_SAD_8x8_Block_Search_AVX2(mfxU8 *pSrc, mfxU8 *pRef, int pitch, int xrange, int yrange,
-    mfxU16 *bestSAD, int *bestX, int *bestY) {
+void ME_SAD_8x8_Block_Search_AVX2(
+    mfxU8  * pSrc,
+    mfxU8  * pRef,
+    int      pitch,
+    int      xrange,
+    int      yrange,
+    mfxU16 * bestSAD,
+    int    * bestX,
+    int    * bestY
+)
+{
     __m256i
         s0 = _mm256_broadcastsi128_si256(_mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[0 * pitch]), (__m128i *)&pSrc[1 * pitch])),
         s1 = _mm256_broadcastsi128_si256(_mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[2 * pitch]), (__m128i *)&pSrc[3 * pitch])),
@@ -66,8 +75,17 @@ void ME_SAD_8x8_Block_Search_AVX2(mfxU8 *pSrc, mfxU8 *pRef, int pitch, int xrang
     }
 }
 
-void ME_SAD_8x8_Block_FSearch_AVX2(mfxU8 *pSrc, mfxU8 *pRef, int pitch, int xrange, int yrange,
-    mfxU32 *bestSAD, int *bestX, int *bestY) {
+void ME_SAD_8x8_Block_FSearch_AVX2(
+    mfxU8  * pSrc,
+    mfxU8  * pRef,
+    int      pitch,
+    int      xrange,
+    int      yrange,
+    mfxU32 * bestSAD,
+    int    * bestX,
+    int    * bestY
+)
+{
     __m256i
         s0 = _mm256_broadcastsi128_si256(_mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[0 * pitch]), (__m128i *)&pSrc[1 * pitch])),
         s1 = _mm256_broadcastsi128_si256(_mm_loadh_epi64(_mm_loadl_epi64((__m128i *)&pSrc[2 * pitch]), (__m128i *)&pSrc[3 * pitch])),
@@ -120,10 +138,19 @@ void ME_SAD_8x8_Block_FSearch_AVX2(mfxU8 *pSrc, mfxU8 *pRef, int pitch, int xran
 }
 
 #if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
-void RsCsCalc_4x4_AVX2(pmfxU8 pSrc, int srcPitch, int wblocks, int hblocks, pmfxU16 pRs, pmfxU16 pCs)
+void RsCsCalc_4x4_AVX2(
+    pmfxU8  pSrc,
+    int     srcPitch,
+    int     wblocks,
+    int     hblocks,
+    pmfxU16 pRs,
+    pmfxU16 pCs
+)
 {
-    const __m256i zero = _mm256_setzero_si256();
-    mfxU32 count = 0;
+    const __m256i
+        zero = _mm256_setzero_si256();
+    mfxU32
+        count = 0;
     pSrc += (4 * srcPitch) + 4;
     for (mfxI32 i = 0; i < hblocks - 2; i++)
     {
@@ -205,10 +232,22 @@ void RsCsCalc_4x4_AVX2(pmfxU8 pSrc, int srcPitch, int wblocks, int hblocks, pmfx
     }
 }
 
-void RsCsCalc_bound_AVX2(pmfxU16 pRs, pmfxU16 pCs, pmfxU16 pRsCs, pmfxU32 pRsFrame, pmfxU32 pCsFrame, int wblocks, int hblocks) {
-    mfxI32 i, len = wblocks * hblocks;
-    __m256i accRs = _mm256_setzero_si256();
-    __m256i accCs = _mm256_setzero_si256();
+void RsCsCalc_bound_AVX2(
+    pmfxU16 pRs,
+    pmfxU16 pCs,
+    pmfxU16 pRsCs,
+    pmfxU32 pRsFrame,
+    pmfxU32 pCsFrame,
+    int     wblocks,
+    int     hblocks
+)
+{
+    mfxI32
+        i,
+        len = wblocks * hblocks;
+    __m256i
+        accRs = _mm256_setzero_si256(),
+        accCs = _mm256_setzero_si256();
 
     for (i = 0; i < len - 7; i += 8)
     {
@@ -232,7 +271,6 @@ void RsCsCalc_bound_AVX2(pmfxU16 pRs, pmfxU16 pCs, pmfxU16 pRsCs, pmfxU32 pRsFra
         accRs = _mm256_add_epi32(accRs, rs);
         accCs = _mm256_add_epi32(accCs, cs);
 
-        //        StorePartialYmm<0>((unsigned char*)&pRsCs[i], rc, len & 0xF);
 #if __INTEL_COMPILER
         StorePartialYmm<0>((unsigned char*)&pRsCs[i], rc, len & 0xF);
 #else
@@ -259,9 +297,12 @@ void RsCsCalc_bound_AVX2(pmfxU16 pRs, pmfxU16 pCs, pmfxU16 pRsCs, pmfxU32 pRsFra
 void RsCsCalc_diff_AVX2(pmfxU16 pRs0, pmfxU16 pCs0, pmfxU16 pRs1, pmfxU16 pCs1, int wblocks, int hblocks,
     pmfxU32 pRsDiff, pmfxU32 pCsDiff)
 {
-    mfxU32 i, len = wblocks * hblocks;
-    __m256i accRs = _mm256_setzero_si256();
-    __m256i accCs = _mm256_setzero_si256();
+    mfxU32
+        i,
+        len = wblocks * hblocks;
+    __m256i
+        accRs = _mm256_setzero_si256(),
+        accCs = _mm256_setzero_si256();
 
     for (i = 0; i < len - 7; i += 8)
     {
@@ -270,7 +311,6 @@ void RsCsCalc_diff_AVX2(pmfxU16 pRs0, pmfxU16 pCs0, pmfxU16 pRs1, pmfxU16 pCs1, 
 
         rs = _mm256_abs_epi32(rs);
         cs = _mm256_abs_epi32(cs);
-
         accRs = _mm256_add_epi32(accRs, rs);
         accCs = _mm256_add_epi32(accCs, cs);
     }
@@ -282,7 +322,6 @@ void RsCsCalc_diff_AVX2(pmfxU16 pRs0, pmfxU16 pCs0, pmfxU16 pRs1, pmfxU16 pCs1, 
 
         rs = _mm256_abs_epi32(rs);
         cs = _mm256_abs_epi32(cs);
-
         accRs = _mm256_add_epi32(accRs, rs);
         accCs = _mm256_add_epi32(accCs, cs);
     }
@@ -290,8 +329,8 @@ void RsCsCalc_diff_AVX2(pmfxU16 pRs0, pmfxU16 pCs0, pmfxU16 pRs1, pmfxU16 pCs1, 
     // horizontal sum
     accRs = _mm256_hadd_epi32(accRs, accCs);//8 to 4
     accRs = _mm256_hadd_epi32(accRs, accRs);//4 to 2
-
-    __m128i t = _mm_add_epi32(_mm256_castsi256_si128(accRs), _mm256_extracti128_si256(accRs, 1));//2 to 1
+    __m128i
+        t = _mm_add_epi32(_mm256_castsi256_si128(accRs), _mm256_extracti128_si256(accRs, 1));//2 to 1
 #ifdef __INTEL_COMPILER
     _mm_storeu_si32(pRsDiff, t);
     _mm_storeu_si32(pCsDiff, _mm_shuffle_epi32(t, _MM_SHUFFLE(0, 0, 0, 1)));
@@ -301,16 +340,25 @@ void RsCsCalc_diff_AVX2(pmfxU16 pRs0, pmfxU16 pCs0, pmfxU16 pRs1, pmfxU16 pCs1, 
 #endif
 }
 
-void ImageDiffHistogram_AVX2(pmfxU8 pSrc, pmfxU8 pRef, mfxU32 pitch, mfxU32 width, mfxU32 height, mfxI32 histogram[5], mfxI64 *pSrcDC, mfxI64 *pRefDC) {
-    __m256i sDC = _mm256_setzero_si256();
-    __m256i rDC = _mm256_setzero_si256();
-
-    __m256i h0 = _mm256_setzero_si256();
-    __m256i h1 = _mm256_setzero_si256();
-    __m256i h2 = _mm256_setzero_si256();
-    __m256i h3 = _mm256_setzero_si256();
-
-    __m256i zero = _mm256_setzero_si256();
+void ImageDiffHistogram_AVX2(
+    pmfxU8 pSrc,
+    pmfxU8 pRef,
+    mfxU32 pitch,
+    mfxU32 width,
+    mfxU32 height,
+    mfxI32 histogram[5],
+    mfxI64 *pSrcDC,
+    mfxI64 *pRefDC
+)
+{
+    __m256i
+        sDC  = _mm256_setzero_si256(),
+        rDC  = _mm256_setzero_si256(),
+        h0   = _mm256_setzero_si256(),
+        h1   = _mm256_setzero_si256(),
+        h2   = _mm256_setzero_si256(),
+        h3   = _mm256_setzero_si256();,
+        zero = _mm256_setzero_si256();
 
     for (mfxU32 i = 0; i < height; i++)
     {
@@ -323,7 +371,6 @@ void ImageDiffHistogram_AVX2(pmfxU8 pSrc, pmfxU8 pRef, mfxU32 pitch, mfxU32 widt
 
             sDC = _mm256_add_epi64(sDC, _mm256_sad_epu8(s, zero));    //accumulate horizontal sums
             rDC = _mm256_add_epi64(rDC, _mm256_sad_epu8(r, zero));
-
             r = _mm256_sub_epi8(r, _mm256_set1_epi8(-128));   // convert to signed
             s = _mm256_sub_epi8(s, _mm256_set1_epi8(-128));
 
@@ -339,7 +386,6 @@ void ImageDiffHistogram_AVX2(pmfxU8 pSrc, pmfxU8 pRef, mfxU32 pitch, mfxU32 widt
             m1 = _mm256_sub_epi8(zero, m1);
             m2 = _mm256_sub_epi8(zero, m2);
             m3 = _mm256_sub_epi8(zero, m3);
-
             h0 = _mm256_add_epi32(h0, _mm256_sad_epu8(m0, zero)); // accumulate horizontal sums
             h1 = _mm256_add_epi32(h1, _mm256_sad_epu8(m1, zero));
             h2 = _mm256_add_epi32(h2, _mm256_sad_epu8(m2, zero));
@@ -354,9 +400,7 @@ void ImageDiffHistogram_AVX2(pmfxU8 pSrc, pmfxU8 pRef, mfxU32 pitch, mfxU32 widt
 
             sDC = _mm256_add_epi64(sDC, _mm256_sad_epu8(s, zero));    //accumulate horizontal sums
             rDC = _mm256_add_epi64(rDC, _mm256_sad_epu8(r, zero));
-
             s = LoadPartialYmm<-1>(&pSrc[j], width & 0x1f);   // ensure unused elements not counted
-
             r = _mm256_sub_epi8(r, _mm256_set1_epi8(-128));   // convert to signed
             s = _mm256_sub_epi8(s, _mm256_set1_epi8(-128));
 
@@ -372,7 +416,6 @@ void ImageDiffHistogram_AVX2(pmfxU8 pSrc, pmfxU8 pRef, mfxU32 pitch, mfxU32 widt
             m1 = _mm256_sub_epi8(zero, m1);
             m2 = _mm256_sub_epi8(zero, m2);
             m3 = _mm256_sub_epi8(zero, m3);
-
             h0 = _mm256_add_epi32(h0, _mm256_sad_epu8(m0, zero)); // accumulate horizontal sums
             h1 = _mm256_add_epi32(h1, _mm256_sad_epu8(m1, zero));
             h2 = _mm256_add_epi32(h2, _mm256_sad_epu8(m2, zero));
@@ -413,7 +456,15 @@ void ImageDiffHistogram_AVX2(pmfxU8 pSrc, pmfxU8 pRef, mfxU32 pitch, mfxU32 widt
     histogram[1] -= histogram[0];
 }
 
-void GainOffset_AVX2(pmfxU8 *pSrc, pmfxU8 *pDst, mfxU16 width, mfxU16 height, mfxU16 pitch, mfxI16 gainDiff) {
+void GainOffset_AVX2(
+    pmfxU8 *pSrc,
+    pmfxU8 *pDst,
+    mfxU16 width,
+    mfxU16 height,
+    mfxU16 pitch,
+    mfxI16 gainDiff
+)
+{
     __m256i
         diff = _mm256_set1_epi16(gainDiff);
     const __m256i

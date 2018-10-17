@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{F5D7ACFF-4A38-444B-B865-8EDA0F82B075}</ProjectGuid>
+    <RootNamespace>mctfkernels</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>SETLOCAL ENABLEDELAYEDEXPANSION
+
+set ICLDIR=%MEDIASDK_ROOT%\cmrt
+set RUNTIME_LIB=%ICLDIR%\runtime\lib
+set COMPILER_LIB=%ICLDIR%\compiler\lib
+set COMPILER_INC=%ICLDIR%\compiler\include
+set RUNTIME_INC=%ICLDIR%\runtime\include
+
+SET PATH=%ICLDIR%\compiler\bin;%PATH%
+SET INCLUDE=%COMPILER_INC%;%COMPILER_INC%\cm;%COMPILER_INC%;%MSVSINCL%;%INCLUDE%
+SET TMP=genx_temp
+
+IF exist .\%TMP%\ ( rmdir .\%TMP% /S/Q )
+mkdir %TMP%
+cl .\src\embed_isa.c
+move embed_isa.* .\%TMP%
+cd %TMP%
+
+for %%m in (me,mc,sd) do (
+for %%g in (bdw,skl,icl,icllp) do (
+IF "%%g" EQU "bdw" ( set GEN=gen8 )
+IF "%%g" EQU "skl" ( set GEN=gen9 )
+IF "%%g" EQU "icl" ( set GEN=gen11 )
+IF "%%g" EQU "icllp" ( set GEN=gen11lp )
+IF "%%g" EQU "tgl" ( set GEN=gen12 )
+IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
+cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+ren genx_%%m.isa genx_%%m_%%g.isa
+embed_isa genx_%%m_%%g.isa
+move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp
+move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
+)
+)</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <PreBuildEvent>
+      <Command>SETLOCAL ENABLEDELAYEDEXPANSION
+
+set ICLDIR=%MEDIASDK_ROOT%\cmrt
+set RUNTIME_LIB=%ICLDIR%\runtime\lib
+set COMPILER_LIB=%ICLDIR%\compiler\lib
+set COMPILER_INC=%ICLDIR%\compiler\include
+set RUNTIME_INC=%ICLDIR%\runtime\include
+
+SET PATH=%ICLDIR%\compiler\bin;%PATH%
+SET INCLUDE=%COMPILER_INC%;%COMPILER_INC%\cm;%COMPILER_INC%;%MSVSINCL%;%INCLUDE%
+SET TMP=genx_temp
+
+IF exist .\%TMP%\ ( rmdir .\%TMP% /S/Q )
+mkdir %TMP%
+cl .\src\embed_isa.c
+move embed_isa.* .\%TMP%
+cd %TMP%
+
+for %%m in (me,mc,sd) do (
+for %%g in (bdw,skl,icl,icllp) do (
+IF "%%g" EQU "bdw" ( set GEN=gen8 )
+IF "%%g" EQU "skl" ( set GEN=gen9 )
+IF "%%g" EQU "icl" ( set GEN=gen11 )
+IF "%%g" EQU "icllp" ( set GEN=gen11lp )
+IF "%%g" EQU "tgl" ( set GEN=gen12 )
+IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
+cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+ren genx_%%m.isa genx_%%m_%%g.isa
+embed_isa genx_%%m_%%g.isa
+move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp
+move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
+)
+)</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>SETLOCAL ENABLEDELAYEDEXPANSION
+
+set ICLDIR=%MEDIASDK_ROOT%\cmrt
+set RUNTIME_LIB=%ICLDIR%\runtime\lib
+set COMPILER_LIB=%ICLDIR%\compiler\lib
+set COMPILER_INC=%ICLDIR%\compiler\include
+set RUNTIME_INC=%ICLDIR%\runtime\include
+
+SET PATH=%ICLDIR%\compiler\bin;%PATH%
+SET INCLUDE=%COMPILER_INC%;%COMPILER_INC%\cm;%COMPILER_INC%;%MSVSINCL%;%INCLUDE%
+SET TMP=genx_temp
+
+IF exist .\%TMP%\ ( rmdir .\%TMP% /S/Q )
+mkdir %TMP%
+cl .\src\embed_isa.c
+move embed_isa.* .\%TMP%
+cd %TMP%
+
+for %%m in (me,mc,sd) do (
+for %%g in (bdw,skl,icl,icllp) do (
+IF "%%g" EQU "bdw" ( set GEN=gen8 )
+IF "%%g" EQU "skl" ( set GEN=gen9 )
+IF "%%g" EQU "icl" ( set GEN=gen11 )
+IF "%%g" EQU "icllp" ( set GEN=gen11lp )
+IF "%%g" EQU "tgl" ( set GEN=gen12 )
+IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
+cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+ren genx_%%m.isa genx_%%m_%%g.isa
+embed_isa genx_%%m_%%g.isa
+move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp
+move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
+)
+)</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\include</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>SETLOCAL ENABLEDELAYEDEXPANSION
+
+set ICLDIR=%MEDIASDK_ROOT%\cmrt
+set RUNTIME_LIB=%ICLDIR%\runtime\lib
+set COMPILER_LIB=%ICLDIR%\compiler\lib
+set COMPILER_INC=%ICLDIR%\compiler\include
+set RUNTIME_INC=%ICLDIR%\runtime\include
+
+SET PATH=%ICLDIR%\compiler\bin;%PATH%
+SET INCLUDE=%COMPILER_INC%;%COMPILER_INC%\cm;%COMPILER_INC%;%MSVSINCL%;%INCLUDE%
+SET TMP=genx_temp
+
+IF exist .\%TMP%\ ( rmdir .\%TMP% /S/Q )
+mkdir %TMP%
+cl .\src\embed_isa.c
+move embed_isa.* .\%TMP%
+cd %TMP%
+
+for %%m in (me,mc,sd) do (
+for %%g in (bdw,skl,icl,icllp) do (
+IF "%%g" EQU "bdw" ( set GEN=gen8 )
+IF "%%g" EQU "skl" ( set GEN=gen9 )
+IF "%%g" EQU "icl" ( set GEN=gen11 )
+IF "%%g" EQU "icllp" ( set GEN=gen11lp )
+IF "%%g" EQU "tgl" ( set GEN=gen12 )
+IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
+cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+ren genx_%%m.isa genx_%%m_%%g.isa
+embed_isa genx_%%m_%%g.isa
+move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp
+move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
+)
+)</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\genx_mc.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_mc_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_mc_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_mc_icl_isa.cpp" />
+    <ClCompile Include="src\genx_mc_skl_isa.cpp" />
+    <ClCompile Include="src\genx_me.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_me_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_me_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_me_icl_isa.cpp" />
+    <ClCompile Include="src\genx_me_skl_isa.cpp" />
+    <ClCompile Include="src\genx_sd.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\genx_sd_bdw_isa.cpp" />
+    <ClCompile Include="src\genx_sd_icllp_isa.cpp" />
+    <ClCompile Include="src\genx_sd_icl_isa.cpp" />
+    <ClCompile Include="src\genx_sd_skl_isa.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\genx_mc_bdw_isa.h" />
+    <ClInclude Include="include\genx_mc_icllp_isa.h" />
+    <ClInclude Include="include\genx_mc_icl_isa.h" />
+    <ClInclude Include="include\genx_mc_skl_isa.h" />
+    <ClInclude Include="include\genx_me_bdw_isa.h" />
+    <ClInclude Include="include\genx_me_icllp_isa.h" />
+    <ClInclude Include="include\genx_me_icl_isa.h" />
+    <ClInclude Include="include\genx_me_skl_isa.h" />
+    <ClInclude Include="include\genx_sd_bdw_isa.h" />
+    <ClInclude Include="include\genx_sd_icllp_isa.h" />
+    <ClInclude Include="include\genx_sd_icl_isa.h" />
+    <ClInclude Include="include\genx_sd_skl_isa.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
