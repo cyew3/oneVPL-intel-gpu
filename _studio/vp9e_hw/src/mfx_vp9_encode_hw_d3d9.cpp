@@ -745,7 +745,7 @@ mfxStatus D3D9Encoder::Execute(
     encodeExecuteParams.pCipherCounter                     = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
-    UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
+    volatile UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
 
