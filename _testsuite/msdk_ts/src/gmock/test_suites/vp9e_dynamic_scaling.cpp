@@ -1738,10 +1738,10 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             switch (id)
             {
-                /*for REXT x2 of the basic threshold*/
-                case 0:  COUNT_ARTIFATCS(Y16, 1, DIFF_THRESHOLD*2, enable_log); break;
-                case 1:  COUNT_ARTIFATCS(U16, chroma_step, DIFF_THRESHOLD*2, enable_log); break;
-                case 2:  COUNT_ARTIFATCS(V16, chroma_step, DIFF_THRESHOLD*2, enable_log); break;
+                /*for REXT x3 of the basic threshold*/
+                case 0:  COUNT_ARTIFATCS(Y16, 1, DIFF_THRESHOLD*3, enable_log); break;
+                case 1:  COUNT_ARTIFATCS(U16, chroma_step, DIFF_THRESHOLD*3, enable_log); break;
+                case 2:  COUNT_ARTIFATCS(V16, chroma_step, DIFF_THRESHOLD*3, enable_log); break;
                 default: g_tsStatus.check(MFX_ERR_UNSUPPORTED); break;
             }
         }
