@@ -762,6 +762,7 @@ mfxStatus D3D9Encoder::Execute(
     Zero(m_frameHeaderBuf);
 
     mfxU16 bytesWritten = PrepareFrameHeader(curMfxPar, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
+    MFX_CHECK(bytesWritten != 0, MFX_ERR_MORE_DATA);
 
     // fill PPS DDI structure for current frame
     FillPpsBuffer(curMfxPar, task, m_pps, offsets);

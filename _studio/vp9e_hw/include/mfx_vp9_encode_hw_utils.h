@@ -272,11 +272,6 @@ enum // identifies memory type at encoder input w/o any details
         memset(&obj, 0, sizeof(obj));
         obj.Header = header;
     }
-    template<class T, class U> inline void Copy(T & dst, U const & src)
-    {
-        STATIC_ASSERT(sizeof(T) == sizeof(U), copy_objects_of_different_size);
-        memcpy_s(&dst, sizeof(dst), &src, sizeof(dst));
-    }
 
     inline mfxU32 CeilDiv(mfxU32 x, mfxU32 y) { return (x + y - 1) / y; }
     inline mfxU32 CeilLog2(mfxU32 x) { mfxU32 l = 0; while (x > (1U << l)) l++; return l; }
@@ -966,11 +961,11 @@ inline void CopySegmentationBuffer(mfxExtVP9Segmentation & dst, mfxExtVP9Segment
 {
     mfxU8* tmp = dst.SegmentId;
     ZeroExtBuffer(dst);
-    memcpy_s(&dst, sizeof(mfxExtVP9Segmentation), &src, sizeof(mfxExtVP9Segmentation));
+    dst = src;
     dst.SegmentId = tmp;
     if (dst.SegmentId && src.SegmentId && dst.NumSegmentIdAlloc)
     {
-        memcpy_s(dst.SegmentId, dst.NumSegmentIdAlloc, src.SegmentId, dst.NumSegmentIdAlloc);
+        std::copy(src.SegmentId, src.SegmentId + dst.NumSegmentIdAlloc, dst.SegmentId);
     }
 }
 

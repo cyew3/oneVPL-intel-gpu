@@ -433,17 +433,23 @@ namespace MfxHwVP9Encode
         {
             if (task.m_insertIVFSeqHeader)
             {
-                AddSeqHeader(task.m_frameParam.width,
-                    task.m_frameParam.height,
-                    par.mfx.FrameInfo.FrameRateExtN,
-                    par.mfx.FrameInfo.FrameRateExtD,
-                    0,
-                    localBuf.pBuffer,
-                    bufferSizeBytes);
+                mfxStatus sts = AddSeqHeader(task.m_frameParam.width,
+                                             task.m_frameParam.height,
+                                             par.mfx.FrameInfo.FrameRateExtN,
+                                             par.mfx.FrameInfo.FrameRateExtD,
+                                             0,
+                                             localBuf.pBuffer,
+                                             bufferSizeBytes);
+                if (sts != MFX_ERR_NONE)
+                    return 0;
+
                 ivfHeaderSize += IVF_SEQ_HEADER_SIZE_BYTES;
             }
 
-            AddPictureHeader(localBuf.pBuffer + ivfHeaderSize, bufferSizeBytes - ivfHeaderSize);
+            mfxStatus sts = AddPictureHeader(localBuf.pBuffer + ivfHeaderSize, bufferSizeBytes - ivfHeaderSize);
+            if (sts != MFX_ERR_NONE)
+                return 0;
+
             ivfHeaderSize += IVF_PIC_HEADER_SIZE_BYTES;
         }
 

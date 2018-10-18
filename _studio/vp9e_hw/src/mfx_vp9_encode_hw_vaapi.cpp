@@ -885,6 +885,7 @@ mfxStatus VAAPIEncoder::Execute(
     Zero(m_frameHeaderBuf);
 
     mfxU16 bytesWritten = PrepareFrameHeader(*task.m_pParam, pBuf, (mfxU32)m_frameHeaderBuf.size(), task, m_seqParam, offsets);
+    MFX_CHECK(bytesWritten != 0, MFX_ERR_MORE_DATA);
 
     // update params
     FillPpsBuffer(task, m_video, m_pps, m_reconQueue, offsets);
