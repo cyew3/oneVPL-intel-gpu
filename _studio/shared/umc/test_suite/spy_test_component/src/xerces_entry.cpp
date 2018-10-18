@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "xerces_entry.h"
@@ -47,6 +47,8 @@ void XML_Entry_Read::GetAttributeFormat(const vm_char * name, const vm_char * fo
 
     vm_string_vsscanf(str, format, arglist);
     va_end(arglist);
+
+    XMLString::release((XMLCh **)&str);
 }
 
 void XML_Entry_Read::GetValueFormat(const vm_char * tag, const vm_char * format, ...) const
@@ -88,7 +90,12 @@ Ipp32u XML_Entry_Read::GetUNumberValueByTag(vm_char * tagName) const
 
 const XMLCh * XML_Entry_Read::GetXMLAttribute(const vm_char * name) const
 {
-    return m_Element->getAttribute(transcodeToXML(name));
+    const XMLCh* xml_name = transcodeToXML(name);
+    const XMLCh* xml_attr = m_Element->getAttribute(xml_name);
+    if ((void *)xml_name != (void *)name) {
+        XMLString::release((XMLCh **)&xml_name);
+    }
+    return xml_attr;
 }
 
 const XMLCh * XML_Entry_Read::GetXMLValueByTag(const vm_char * tagName) const
