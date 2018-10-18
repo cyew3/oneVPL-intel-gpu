@@ -51,9 +51,9 @@ ifeq ($(MFX_VERSION),)
   MFX_VERSION = "6.0.010"
 endif
 
-# We need to freeze Media SDK API to 1.26 on Android O MR1
+# We need to freeze Media SDK API to 1.26 on Android O
 # because there is used old version of LibVA 2.0
-ifeq ($(MFX_ANDROID_VERSION),MFX_O_MR1)
+ifneq ($(filter MFX_O MFX_O_MR1, $(MFX_ANDROID_VERSION)),)
   MFX_CFLAGS += -DMFX_VERSION=1026
 endif
 
