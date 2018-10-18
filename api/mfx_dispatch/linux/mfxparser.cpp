@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2018 Intel Corporation
+// Copyright (c) 2017-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ static bool parseGUID(const char* src, mfxPluginUID* uid)
 
     int res = sscanf(src,
         "%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx%02hhx",
-        p, p + 1, p + 2, p + 3, p + 4, p + 5, p + 6, p + 7, 
+        p, p + 1, p + 2, p + 3, p + 4, p + 5, p + 6, p + 7,
         p + 8, p + 9, p + 10, p + 11, p + 12, p + 13, p + 14, p + 15);
 
     if (res != sizeof(uid->Data)) {
@@ -130,8 +130,13 @@ void skip(std::string & str)
 
 void parse(const char* file_name, std::list<PluginInfo>& plugins)
 {
+#if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 7)
+  const char* mode = "re";
+#else
+  const char* mode = "r";
+#endif
 
-  FILE* file = fopen(file_name, "r");
+  FILE* file = fopen(file_name, mode);
   if (!file)
     return;
 
