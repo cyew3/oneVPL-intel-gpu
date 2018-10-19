@@ -581,11 +581,11 @@ mfxStatus FeedbackStorage::Update()
 // copy fb into cache
 inline void FeedbackStorage::CacheFeedback(Feedback *fb_dst, Feedback *fb_src)
 {
-    CopyN((mfxU8*)fb_dst, (mfxU8*)fb_src, sizeof(ENCODE_QUERY_STATUS_PARAMS));
+    *fb_dst = *fb_src;
     if (m_type == QUERY_STATUS_PARAM_SLICE) {
         ENCODE_QUERY_STATUS_SLICE_PARAMS *pdst = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_dst;
         ENCODE_QUERY_STATUS_SLICE_PARAMS *psrc = (ENCODE_QUERY_STATUS_SLICE_PARAMS *)fb_src;
-        CopyN((mfxU8*)pdst->pSliceSizes, (mfxU8*)psrc->pSliceSizes, psrc->FrameLevelStatus.NumberSlices * sizeof(mfxU16));
+        std::copy(psrc->pSliceSizes, psrc->pSliceSizes + psrc->FrameLevelStatus.NumberSlices, pdst->pSliceSizes);
     }
 }
 
@@ -648,7 +648,10 @@ void FillSliceBuffer(
 #endif
     if (cs.slice_type != 2)
     {
-        Copy(cs.RefPicList, task.m_refPicList);
+        const mfxU8 *src = reinterpret_cast <const mfxU8*> (&task.m_refPicList[0]);
+        mfxU8 *dst = reinterpret_cast <mfxU8*>(&cs.RefPicList[0]);
+        std::copy(src, src + sizeof(task.m_refPicList), dst);
+
         cs.num_ref_idx_l0_active_minus1 = task.m_numRefActive[0] - 1;
 
         if (cs.slice_type == 0)
@@ -942,9 +945,8 @@ void FillPpsBuffer(
     pps.num_tile_columns_minus1 = (mfxU8)par.m_pps.num_tile_columns_minus1;
     pps.num_tile_rows_minus1    = (mfxU8)par.m_pps.num_tile_rows_minus1;
 
-    Copy(pps.tile_column_width, par.m_pps.column_width);
-    Copy(pps.tile_row_height, par.m_pps.row_height);
-
+    std::copy(std::begin(par.m_pps.column_width), std::end(par.m_pps.column_width), std::begin(pps.tile_column_width));
+    std::copy(std::begin(par.m_pps.row_height), std::end(par.m_pps.row_height), std::begin(pps.tile_row_height));
     pps.log2_parallel_merge_level_minus2 = (mfxU8)par.m_pps.log2_parallel_merge_level_minus2;
 
     pps.num_ref_idx_l0_default_active_minus1 = (mfxU8)par.m_pps.num_ref_idx_l0_default_active_minus1;
@@ -1211,8 +1213,10 @@ void FillPpsBuffer(
     pps.chroma_qp_offset_list_enabled_flag          = par.m_pps.chroma_qp_offset_list_enabled_flag;
     pps.diff_cu_chroma_qp_offset_depth              = par.m_pps.diff_cu_chroma_qp_offset_depth;
     pps.chroma_qp_offset_list_len_minus1            = par.m_pps.chroma_qp_offset_list_len_minus1;
-    Copy(pps.cb_qp_offset_list, par.m_pps.cb_qp_offset_list);
-    Copy(pps.cr_qp_offset_list, par.m_pps.cr_qp_offset_list);
+
+    std::copy(std::begin(par.m_pps.cb_qp_offset_list), std::end(par.m_pps.cb_qp_offset_list), std::begin(pps.cb_qp_offset_list));
+    std::copy(std::begin(par.m_pps.cr_qp_offset_list), std::end(par.m_pps.cr_qp_offset_list), std::begin(pps.cr_qp_offset_list));
+
     pps.log2_sao_offset_scale_luma                  = par.m_pps.log2_sao_offset_scale_luma;
     pps.log2_sao_offset_scale_chroma                = par.m_pps.log2_sao_offset_scale_chroma;
 }
