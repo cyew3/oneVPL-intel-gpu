@@ -452,6 +452,10 @@ namespace MFX_VPX_Utility
         p_request->NumFrameMin = p_params->mfx.CodecId == MFX_CODEC_VP8 ? mfxU16(4) : mfxU16(8);
 
         p_request->NumFrameMin += p_params->AsyncDepth ? p_params->AsyncDepth : MFX_AUTO_ASYNC_DEPTH_VALUE;
+
+        if (MFX_CODEC_AV1 && p_params->mfx.FilmGrain)
+            p_request->NumFrameMin = 2 * p_request->NumFrameMin; // we need two output surfaces for each frame when film_grain is applied
+
         p_request->NumFrameSuggested = p_request->NumFrameMin;
 
         if (p_params->IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY)
