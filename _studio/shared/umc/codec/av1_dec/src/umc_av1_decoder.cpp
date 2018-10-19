@@ -264,6 +264,18 @@ namespace UMC_AV1_DECODER
         return false;
     }
 
+    inline bool NextFrameDetected(AV1_OBU_TYPE obuType)
+    {
+        switch (obuType)
+        {
+        case OBU_REDUNDANT_FRAME_HEADER:
+        case OBU_TILE_GROUP:
+            return false;
+        default:
+            return true;
+        }
+    }
+
     UMC::Status AV1Decoder::GetFrame(UMC::MediaData* in, UMC::MediaData*)
     {
         FrameHeader fh = {};
@@ -291,21 +303,22 @@ namespace UMC_AV1_DECODER
 
             OBUInfo obuInfo;
             bs.ReadOBUInfo(obuInfo);
-            VM_ASSERT(CheckOBUType(obuInfo.header.obu_type)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
+            const AV1_OBU_TYPE obuType = obuInfo.header.obu_type;
+            VM_ASSERT(CheckOBUType(obuType)); // TODO: [clean up] Need to remove assert once decoder code is stabilized
 
             if (tmp.GetDataSize() < obuInfo.size)
                 return UMC::UMC_ERR_NOT_ENOUGH_DATA; // not enough data in the buffer to hold full OBU unit
                                                      // we return error because there is no support for chopped tile_group_obu() submission so far
                                                      // TODO: [Global] Add support for submission of incomplete tile group OBUs
 
-            if (curr_frame && obuInfo.header.obu_type != OBU_TILE_GROUP)
+            if (curr_frame && NextFrameDetected(obuType))
             {
-                VM_ASSERT("Series of tile_group_obu() was interrupted unexpectedly!");
+                VM_ASSERT(!"Current frame was interrupted unexpectedly!");
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
                 // TODO: [robust] add support for cases when series of tile_group_obu() interrupted by other OBU type before end of frame was reached
             }
 
-            switch (obuInfo.header.obu_type)
+            switch (obuType)
             {
             case OBU_SEQUENCE_HEADER:
                 if (!sequence_header.get())
