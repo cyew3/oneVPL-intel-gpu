@@ -9,6 +9,7 @@
 //
 
 #include "umc_defs.h"
+#include <algorithm>
 #ifdef UMC_ENABLE_H265_VIDEO_DECODER
 
 #ifndef UMC_RESTRICTED_CODE_VA
@@ -170,7 +171,7 @@ namespace UMC_HEVC_DECODER
                     {
                         const int *src = getDefaultScalingList(sizeId, listId);
                         int *dst = sl.getScalingListAddress(sizeId, listId);
-                        int count = min(MAX_MATRIX_COEF_NUM, (Ipp32s)g_scalingListSize[sizeId]);
+                        int count = std::min<Ipp32s>(MAX_MATRIX_COEF_NUM, g_scalingListSize[sizeId]);
                         MFX_INTERNAL_CPY(dst, src, sizeof(Ipp32s) * count);
                         sl.setScalingListDC(sizeId, listId, SCALING_LIST_DC);
                     }

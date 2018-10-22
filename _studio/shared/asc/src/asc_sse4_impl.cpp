@@ -8,6 +8,7 @@
 //
 */
 #include "asc_sse4_impl.h"
+#include<algorithm>
 
 void ME_SAD_8x8_Block_Search_SSE4(mfxU8 *pSrc, mfxU8 *pRef, int pitch, int xrange, int yrange,
     mfxU16 *bestSAD, int *bestX, int *bestY)
@@ -401,7 +402,7 @@ void GainOffset_SSE4(pmfxU8 *pSrc, pmfxU8 *pDst, mfxU16 width, mfxU16 height, mf
         {
             mfxI16
                 val = ss[j] - gainDiff;
-            dd[j] = (mfxU8)min(max(val, mfxI16(0)), mfxI16(255));
+            dd[j] = (mfxU8)std::min(std::max(val, mfxI16(0)), mfxI16(255));
         }
         ss += pitch;
         dd += pitch;

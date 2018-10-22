@@ -19,6 +19,7 @@
 #include "libmfx_core_d3d11.h"
 #include "mfx_platform_headers.h"
 #include "libmfx_core_interface.h"
+#include <algorithm>
 
 //using namespace MfxHwVideoProcessing;
 
@@ -2921,10 +2922,10 @@ mfxStatus D3D11VideoProcessor::Execute(mfxExecuteParams *pParams)
             videoProcessorStreams[refIdx].FutureFrames     = NULL;
 
             rec = pParams->dstRects[startIdx + refIdx];
-            pRect.top = min(rec.DstY, (mfxU32)pRect.top);
-            pRect.left = min(rec.DstX, (mfxU32)pRect.left);
-            pRect.bottom = max((rec.DstY + rec.DstH), (mfxU32)pRect.bottom);
-            pRect.right  = max((rec.DstX + rec.DstW), (mfxU32)pRect.right);
+            pRect.top    = std::min(rec.DstY, (mfxU32)pRect.top);
+            pRect.left   = std::min(rec.DstX, (mfxU32)pRect.left);
+            pRect.bottom = std::max((rec.DstY + rec.DstH), (mfxU32)pRect.bottom);
+            pRect.right  = std::max((rec.DstX + rec.DstW), (mfxU32)pRect.right);
 
         }
 

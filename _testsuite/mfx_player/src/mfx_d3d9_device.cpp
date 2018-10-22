@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -12,7 +12,7 @@ Copyright(c) 2008-2013 Intel Corporation. All Rights Reserved.
 
 #include "mfx_pipeline_defs.h"
 #include "mfx_d3d9_device.h"
-
+#include <algorithm>
 
 MFXD3D9Device::MFXD3D9Device()
     : m_D3DPP()
@@ -62,8 +62,8 @@ mfxStatus MFXD3D9Device::Init(mfxU32 nAdapter,
         GetClientRect((HWND)hWindow, &r);
         int x = GetSystemMetrics(SM_CXSCREEN);
         int y = GetSystemMetrics(SM_CYSCREEN);
-        m_D3DPP.BackBufferWidth  = min(r.right - r.left, x);
-        m_D3DPP.BackBufferHeight = min(r.bottom - r.top, y);
+        m_D3DPP.BackBufferWidth  = std::min<int>(r.right - r.left, x);
+        m_D3DPP.BackBufferHeight = std::min<int>(r.bottom - r.top, y);
         m_D3DPP.FullScreen_RefreshRateInHz = D3DPRESENT_RATE_DEFAULT;
         fullscreen = NULL;
         BACK_BUFFER_COUNT = 0;
@@ -198,8 +198,8 @@ mfxStatus MFXD3D9Device::Reset(WindowHandle hWindow,
             RECT r;
             GetClientRect((HWND)hWindow, &r);
             // In overlay mode backbuffer cannot be lager than screen widthxheight.
-            m_D3DPP.BackBufferWidth  = min(GetSystemMetrics(SM_CXSCREEN), r.right - r.left);
-            m_D3DPP.BackBufferHeight = min(GetSystemMetrics(SM_CYSCREEN), r.bottom - r.top);
+            m_D3DPP.BackBufferWidth  = std::min<int>(GetSystemMetrics(SM_CXSCREEN), r.right - r.left);
+            m_D3DPP.BackBufferHeight = std::min<int>(GetSystemMetrics(SM_CYSCREEN), r.bottom - r.top);
             m_drawRect.left   = 0;
             m_drawRect.top    = 0;
             m_drawRect.right  = m_D3DPP.BackBufferWidth;

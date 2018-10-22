@@ -32,7 +32,8 @@
     <MfxDefinitions Condition="'$(IntelDebugConf)'!='true'">NDEBUG;$(MfxDefinitions)</MfxDefinitions>
     <MfxDefinitions Condition="'$(IntelDebugConf)'=='true'">_DEBUG;VM_DEBUG;$(MfxDefinitions)</MfxDefinitions>
     <MfxDefinitions Condition="'$(IsTHM)'=='true'">WIN_TRESHOLD_MOBILE;_ATL_NO_WIN_SUPPORT;$(MfxDefinitions)</MfxDefinitions>
-	<MfxDefinitions Condition="'$(MfxSoftwareOnly)'=='true'">MFX_NO_VA;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions Condition="'$(MfxSoftwareOnly)'=='true'">MFX_NO_VA;$(MfxDefinitions)</MfxDefinitions>
+    <MfxDefinitions>NOMINMAX;$(MfxDefinitions)</MfxDefinitions>
     <!-- Destination file name -->
     <MfxTargetName Condition="'$(IntelDebugConf)'=='true' and '$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)_d</MfxTargetName>
     <MfxTargetName Condition="'$(MfxTargetName)'==''">$(ProjectName)$(PlatformArchitecture)</MfxTargetName>

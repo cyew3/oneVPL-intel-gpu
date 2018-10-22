@@ -19,6 +19,7 @@
 
 #include "vm_time.h"
 #include "mfx_session.h"
+#include <algorithm>
 
 //#define DUMP_AVC_ENC_DEBUG_INFO
 
@@ -564,8 +565,8 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
 
         slice[i].slice_type                         = ConvertMfxFrameType2SliceType(task.m_type[fieldId]);
         slice[i].pic_parameter_set_id               = pps.pic_parameter_set_id;
-        slice[i].num_ref_idx_l0_active_minus1       = mfxU8(max(1, task.m_list0[fieldId].Size()) - 1);
-        slice[i].num_ref_idx_l1_active_minus1       = mfxU8(max(1, task.m_list1[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l0_active_minus1       = mfxU8(std::max<mfxU32>(1, task.m_list0[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l1_active_minus1       = mfxU8(std::max<mfxU32>(1, task.m_list1[fieldId].Size()) - 1);
         slice[i].num_ref_idx_active_override_flag   =
             slice[i].num_ref_idx_l0_active_minus1 != pps.num_ref_idx_l0_active_minus1 ||
             slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
@@ -628,8 +629,8 @@ mfxStatus MfxHwH264Encode::FillVaringPartOfSliceBufferSizeLimited(
 
         slice[i].slice_type                         = ConvertMfxFrameType2SliceType(task.m_type[fieldId]);
         slice[i].pic_parameter_set_id               = pps.pic_parameter_set_id;
-        slice[i].num_ref_idx_l0_active_minus1       = mfxU8(max(1, task.m_list0[fieldId].Size()) - 1);
-        slice[i].num_ref_idx_l1_active_minus1       = mfxU8(max(1, task.m_list1[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l0_active_minus1       = mfxU8(std::max<mfxU32>(1, task.m_list0[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l1_active_minus1       = mfxU8(std::max<mfxU32>(1, task.m_list1[fieldId].Size()) - 1);
         slice[i].num_ref_idx_active_override_flag   =
             slice[i].num_ref_idx_l0_active_minus1 != pps.num_ref_idx_l0_active_minus1 ||
             slice[i].num_ref_idx_l1_active_minus1 != pps.num_ref_idx_l1_active_minus1;
@@ -987,8 +988,8 @@ void MfxHwH264Encode::FillVaringPartOfSliceBuffer(
             slice[i].RefPicList[1][ref].bPicEntry = 0xff;
 
         slice[i].slice_type                         = ConvertMfxFrameType2SliceType(task.m_type[fieldId]);
-        slice[i].num_ref_idx_l0_active_minus1       = mfxU8(max(1, task.m_list0[fieldId].Size()) - 1);
-        slice[i].num_ref_idx_l1_active_minus1       = mfxU8(max(1, task.m_list1[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l0_active_minus1       = mfxU8(std::max<mfxU32>(1, task.m_list0[fieldId].Size()) - 1);
+        slice[i].num_ref_idx_l1_active_minus1       = mfxU8(std::max<mfxU32>(1, task.m_list1[fieldId].Size()) - 1);
 
         slice[i].slice_qp_delta                     = mfxI8(task.m_cqpValue[fieldId] - pps.QpY);
 
