@@ -1379,21 +1379,7 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         {
 #if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-                {
-                    mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
-                    if (widevineDecryptParams)
-                    {
-                        DecryptParametersWrapper AvcParams;
-                        if (widevineDecryptParams->Data && (widevineDecryptParams->DataLength == sizeof (DECRYPT_QUERY_STATUS_PARAMS_AVC)))
-                        {
-                            AvcParams = *((DECRYPT_QUERY_STATUS_PARAMS_AVC*)widevineDecryptParams->Data);
-                            AvcParams.SetTime(GetUmcTimeStamp(bs->TimeStamp));
-                            umcRes = m_pH264VideoDecoder->AddSource(&AvcParams);
-                        }
-                    }
-                    else
-                        return MFX_ERR_UNDEFINED_BEHAVIOR;
-                }
+                    umcRes = m_pH264VideoDecoder->AddSource(bs);
                 else
 #endif
                     umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);

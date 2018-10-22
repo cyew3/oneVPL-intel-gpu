@@ -32,8 +32,9 @@ public:
 
     virtual void Reset();
 
-    using VATaskSupplier::MFXTaskSupplier_H265::TaskSupplier_H265::AddSource;
-    virtual UMC::Status AddSource(DecryptParametersWrapper* pDecryptParams);
+    using VATaskSupplier::AddSource; //VATaskSupplier::MFXTaskSupplier_H265::TaskSupplier_H265::AddSource;
+
+    virtual UMC::Status AddSource(mfxBitstream *bs);
 
 protected:
 
@@ -44,6 +45,8 @@ protected:
     virtual H265Slice * ParseWidevineSliceHeader(DecryptParametersWrapper* pDecryptParams);
 
     virtual UMC::Status ParseWidevineSEI(DecryptParametersWrapper* pDecryptParams);
+
+    virtual UMC::Status AddSource(DecryptParametersWrapper* pDecryptParams);
 
     virtual UMC::Status AddOneFrame(DecryptParametersWrapper* pDecryptParams);
 

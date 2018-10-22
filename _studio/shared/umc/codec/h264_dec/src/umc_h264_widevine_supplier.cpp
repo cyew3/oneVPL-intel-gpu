@@ -16,6 +16,7 @@
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
 #include "umc_h264_notify.h"
+#include "mfx_common_int.h"
 
 #if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 
@@ -1056,6 +1057,23 @@ Status WidevineTaskSupplier::DecryptWidevineHeaders(MediaData *pSource, DecryptP
     }
 
     return UMC_OK;
+}
+
+Status WidevineTaskSupplier::AddSource(mfxBitstream *bs)
+{
+    mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
+    if (widevineDecryptParams)
+    {
+        DecryptParametersWrapper AvcParams;
+        if (widevineDecryptParams->Data && (widevineDecryptParams->DataLength == sizeof (DECRYPT_QUERY_STATUS_PARAMS_AVC)))
+        {
+            AvcParams = *((DECRYPT_QUERY_STATUS_PARAMS_AVC*)widevineDecryptParams->Data);
+            AvcParams.SetTime(GetUmcTimeStamp(bs->TimeStamp));
+            return AddSource(&AvcParams);
+        }
+    }
+
+    return UMC_ERR_INVALID_STREAM;
 }
 
 Status WidevineTaskSupplier::AddSource(DecryptParametersWrapper* pDecryptParams)

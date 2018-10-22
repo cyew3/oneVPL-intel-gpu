@@ -1110,21 +1110,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
             {
 #if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
                 if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-                {
-                    mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
-                    if (widevineDecryptParams)
-                    {
-                        DecryptParametersWrapper HevcParams;
-                        if (widevineDecryptParams->Data && (widevineDecryptParams->DataLength == sizeof (DECRYPT_QUERY_STATUS_PARAMS_HEVC)))
-                        {
-                            HevcParams = *((DECRYPT_QUERY_STATUS_PARAMS_HEVC*)widevineDecryptParams->Data);
-                            HevcParams.SetTime(GetUmcTimeStamp(bs->TimeStamp));
-                            umcRes = m_pH265VideoDecoder->AddSource(&HevcParams);
-                        }
-                    }
-                    else
-                        return MFX_ERR_UNDEFINED_BEHAVIOR;
-                }
+                    umcRes = m_pH265VideoDecoder->AddSource(bs);
                 else
 #endif
                     umcRes = m_pH265VideoDecoder->AddSource(bs ? &src : 0);

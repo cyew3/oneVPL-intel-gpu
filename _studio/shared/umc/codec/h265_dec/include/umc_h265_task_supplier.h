@@ -303,7 +303,7 @@ public:
 
 #if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
     // Add a new Widevine buffer to decoding
-    virtual UMC::Status AddSource(DecryptParametersWrapper * /*pDecryptParams*/) { return MFX_ERR_UNSUPPORTED; }
+    virtual UMC::Status AddSource(mfxBitstream * /*bs*/) { return MFX_ERR_UNSUPPORTED; }
 #endif
 
     // Chose appropriate processing action for specified NAL unit

@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -13,12 +13,14 @@
 
 #include "umc_h265_widevine_supplier.h"
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
+#if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 
 #include "umc_h265_widevine_slice_decoding.h"
 
 #include "umc_va_dxva2_protected.h"
 #include "umc_va_linux_protected.h"
+
+#include "mfx_common_int.h"
 
 namespace UMC_HEVC_DECODER
 {
@@ -609,6 +611,23 @@ UMC::Status WidevineTaskSupplier::DecryptWidevineHeaders(UMC::MediaData *pSource
     return UMC::UMC_OK;
 }
 
+UMC::Status WidevineTaskSupplier::AddSource(mfxBitstream *bs)
+{
+    mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
+    if (widevineDecryptParams)
+    {
+        DecryptParametersWrapper HevcParams;
+        if (widevineDecryptParams->Data && (widevineDecryptParams->DataLength == sizeof (DECRYPT_QUERY_STATUS_PARAMS_HEVC)))
+        {
+            HevcParams = *((DECRYPT_QUERY_STATUS_PARAMS_HEVC*)widevineDecryptParams->Data);
+            HevcParams.SetTime(GetUmcTimeStamp(bs->TimeStamp));
+            return AddSource(&HevcParams);
+        }
+    }
+
+    return UMC::UMC_ERR_INVALID_STREAM;
+}
+
 UMC::Status WidevineTaskSupplier::AddSource(DecryptParametersWrapper* pDecryptParams)
 {
     UMC::Status umcRes = UMC::UMC_OK;
@@ -957,5 +976,5 @@ void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // MFX_PROTECTED_FEATURE_DISABLE
+#endif // #if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

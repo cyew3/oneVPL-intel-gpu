@@ -507,7 +507,7 @@ public:
     virtual Status AddSource(MediaData *pSource);
 
 #if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    virtual Status AddSource(DecryptParametersWrapper * /*pDecryptParams*/) { return MFX_ERR_UNSUPPORTED; }
+    virtual Status AddSource(mfxBitstream * /*bs*/) { return MFX_ERR_UNSUPPORTED; }
 #endif
 
 #if (MFX_VERSION >= 1025)
