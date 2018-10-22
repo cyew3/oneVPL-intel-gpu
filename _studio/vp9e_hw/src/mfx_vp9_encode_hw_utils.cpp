@@ -325,7 +325,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
             frameParam.modeRefDeltaUpdate = 0;
         }
 #else //MFX_VERSION >= 1027
-        platform;
+        (void)platform;
 #endif //MFX_VERSION >= 1027
     }
 

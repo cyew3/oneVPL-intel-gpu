@@ -2944,11 +2944,11 @@ void SetDefaults(
         rawBits = rawBits / 8 * par.mfx.FrameInfo.BitDepthLuma;
         maxQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
 
-        if (IsOn(par.mfx.LowPower) || par.m_platform >= MFX_HW_KBL
+        if (IsOn(par.mfx.LowPower) || (par.m_platform >= MFX_HW_KBL
 #if (MFX_VERSION >= 1025)
             && par.m_platform < MFX_HW_CNL
 #endif
-            )
+            ))
             minQP += 6 * (par.mfx.FrameInfo.BitDepthLuma - 8);
     }
 #endif

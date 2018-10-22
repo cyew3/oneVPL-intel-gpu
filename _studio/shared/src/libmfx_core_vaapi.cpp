@@ -680,10 +680,10 @@ VAAPIVideoCORE::CreateVA(
         {
             profile |= VA_PROFILE_REXT;
         }
-        if ((param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010)
+        if (param->mfx.FrameInfo.FourCC == MFX_FOURCC_P010
 #if (MFX_VERSION >= 1027)
-            || (param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210)
-            || (param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410)
+            || param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y210
+            || param->mfx.FrameInfo.FourCC == MFX_FOURCC_Y410
 #endif
         )
         {
