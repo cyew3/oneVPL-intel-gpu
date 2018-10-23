@@ -745,7 +745,7 @@ mfxStatus D3D9Encoder::Execute(
     encodeExecuteParams.pCipherCounter                     = 0;
     encodeExecuteParams.PavpEncryptionMode.eCounterMode    = 0;
     encodeExecuteParams.PavpEncryptionMode.eEncryptionType = PAVP_ENCRYPTION_NONE;
-    volatile UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
+    UINT & bufCnt = encodeExecuteParams.NumCompBuffers;
 
     const VP9MfxVideoParam& curMfxPar = *task.m_pParam;
 
@@ -783,7 +783,7 @@ mfxStatus D3D9Encoder::Execute(
         mfxStatus sts = FillSegmentMap(task, m_pmfxCore);
         MFX_CHECK_STS(sts);
 
-        mfxU32 segMap = task.m_pSegmentMap->idInPool;
+        mfxU32 &segMap = task.m_pSegmentMap->idInPool;
         compBufferDesc[bufCnt].CompressedBufferType = (D3DDDIFORMAT)D3DDDIFMT_INTELENCODE_MBSEGMENTMAP;
         compBufferDesc[bufCnt].DataSize = mfxU32(sizeof(segMap));
         compBufferDesc[bufCnt].pCompBuffer = &segMap;
