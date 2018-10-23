@@ -124,12 +124,14 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV420) && CO3.TargetBitDepthLuma == 10)
     {
-        if (par.m_platform >= MFX_HW_ICL)
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        if (par.m_platform >= MFX_HW_TGL_LP)
         {
             rec.FourCC = MFX_FOURCC_NV12;
             rec.Width = Align(rec.Width, 32) * 2;
         }
         else
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
         {
             rec.FourCC = MFX_FOURCC_P010;
         }
