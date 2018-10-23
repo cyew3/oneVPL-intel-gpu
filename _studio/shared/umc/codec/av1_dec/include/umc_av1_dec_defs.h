@@ -88,6 +88,11 @@ namespace UMC_AV1_DECODER
     const uint8_t SELECT_SCREEN_CONTENT_TOOLS   = 2;
     const uint8_t SELECT_INTEGER_MV             = 2;
 
+    const uint8_t MAX_POINTS_IN_SCALING_FUNCTION_LUMA    = 14;
+    const uint8_t MAX_POINTS_IN_SCALING_FUNCTION_CHROMA  = 10;
+    const uint8_t MAX_AOTOREG_COEFFS_LUMA                = 24;
+    const uint8_t MAX_AOTOREG_COEFFS_CHROMA              = MAX_AOTOREG_COEFFS_LUMA + 1;
+
     enum AV1_OBU_TYPE
     {
         OBU_SEQUENCE_HEADER = 1,
@@ -476,29 +481,29 @@ namespace UMC_AV1_DECODER
         // 8 bit values
 
         int32_t num_y_points;  // value: 0..14
-        int32_t point_y_value[14];
-        int32_t point_y_scaling[14];
+        int32_t point_y_value[MAX_POINTS_IN_SCALING_FUNCTION_LUMA];
+        int32_t point_y_scaling[MAX_POINTS_IN_SCALING_FUNCTION_LUMA];
 
         int32_t chroma_scaling_from_luma;
 
         // 8 bit values
         int32_t num_cb_points;  // value: 0..10
-        int32_t point_cb_value[10];
-        int32_t point_cb_scaling[10];
+        int32_t point_cb_value[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
+        int32_t point_cb_scaling[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
 
         // 8 bit values
         int32_t num_cr_points;  // value: 0..10
-        int32_t point_cr_value[10];
-        int32_t point_cr_scaling[10];
+        int32_t point_cr_value[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
+        int32_t point_cr_scaling[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
 
         int32_t grain_scaling;
 
         int32_t ar_coeff_lag;  // values:  0..3
 
         // 8 bit values
-        int32_t ar_coeffs_y[24];
-        int32_t ar_coeffs_cb[25];
-        int32_t ar_coeffs_cr[25];
+        int32_t ar_coeffs_y[MAX_AOTOREG_COEFFS_LUMA];
+        int32_t ar_coeffs_cb[MAX_AOTOREG_COEFFS_CHROMA];
+        int32_t ar_coeffs_cr[MAX_AOTOREG_COEFFS_CHROMA];
 
         // Shift value: AR coeffs range
         // 6: [-2, 2)

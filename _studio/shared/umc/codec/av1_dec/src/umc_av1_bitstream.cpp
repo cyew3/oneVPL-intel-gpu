@@ -1141,7 +1141,7 @@ namespace UMC_AV1_DECODER
 
         // Scaling functions parameters
         params.num_y_points = bs.GetBits(4);  // max 14
-        if (params.num_y_points > 14)
+        if (params.num_y_points > MAX_POINTS_IN_SCALING_FUNCTION_LUMA)
             throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 
         for (int i = 0; i < params.num_y_points; i++)
@@ -1166,7 +1166,7 @@ namespace UMC_AV1_DECODER
         else
         {
             params.num_cb_points = bs.GetBits(4);  // max 10
-            if (params.num_cb_points > 10)
+            if (params.num_cb_points > MAX_POINTS_IN_SCALING_FUNCTION_CHROMA)
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 
             for (int i = 0; i < params.num_cb_points; i++)
@@ -1179,7 +1179,7 @@ namespace UMC_AV1_DECODER
             }
 
             params.num_cr_points = bs.GetBits(4);  // max 10
-            if (params.num_cr_points > 10)
+            if (params.num_cr_points > MAX_POINTS_IN_SCALING_FUNCTION_CHROMA)
                 throw av1_exception(UMC::UMC_ERR_INVALID_STREAM);
 
             for (int i = 0; i < params.num_cr_points; i++)

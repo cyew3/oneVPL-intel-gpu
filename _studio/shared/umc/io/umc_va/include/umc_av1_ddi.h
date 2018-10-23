@@ -96,17 +96,17 @@ namespace UMC_AV1_DECODER
 
         USHORT    random_seed;
         UCHAR     num_y_points;  // [0..14]
-        UCHAR     point_y_value[14];
-        UCHAR     point_y_scaling[14];
+        UCHAR     point_y_value[MAX_POINTS_IN_SCALING_FUNCTION_LUMA];
+        UCHAR     point_y_scaling[MAX_POINTS_IN_SCALING_FUNCTION_LUMA];
         UCHAR     num_cb_points;  // [0..10]
-        UCHAR     point_cb_value[10];
-        UCHAR     point_cb_scaling[10];
+        UCHAR     point_cb_value[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
+        UCHAR     point_cb_scaling[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
         UCHAR     num_cr_points;  // [0..10]
-        UCHAR     point_cr_value[10];
-        UCHAR     point_cr_scaling[10];
-        CHAR      ar_coeffs_y[24];   // [-128..127]
-        CHAR      ar_coeffs_cb[25];  // [-128..127]
-        CHAR      ar_coeffs_cr[25];  // [-128..127]
+        UCHAR     point_cr_value[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
+        UCHAR     point_cr_scaling[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
+        CHAR      ar_coeffs_y[MAX_AOTOREG_COEFFS_LUMA];   // [-128..127]
+        CHAR      ar_coeffs_cb[MAX_AOTOREG_COEFFS_CHROMA];  // [-128..127]
+        CHAR      ar_coeffs_cr[MAX_AOTOREG_COEFFS_CHROMA];  // [-128..127]
         UCHAR     cb_mult;
         UCHAR     cb_luma_mult;
         USHORT    cb_offset;  // [0..512]
@@ -342,6 +342,7 @@ namespace UMC_AV1_DECODER
 
         // global motion
         DXVA_Warped_Motion_Params_AV1 wm[7];
+
         DXVA_Film_Grain_Params_AV1 stAV1FilmGrainParams;
 #ifdef DDI_HACKS_FOR_REV_5
         UCHAR UncompressedHeaderLengthInBytes;  // [0..255]
