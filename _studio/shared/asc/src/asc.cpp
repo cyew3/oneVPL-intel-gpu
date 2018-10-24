@@ -1687,7 +1687,7 @@ mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, Sur
     {
         //UMC::AutomaticUMCMutex guard(m_guard);
         {
-            cmSts = m_device->CreateSurface2D(SrcPair, pCmSurface2D);
+            cmSts = m_device->CreateSurface2D(pSrcD3D, pCmSurface2D);
             SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
             m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
         }
