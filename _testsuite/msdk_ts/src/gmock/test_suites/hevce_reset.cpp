@@ -271,7 +271,7 @@ namespace hevce_reset
             }
         },
         //Frame Rate
-        {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, FRAMERATE, CHANGE, 1,
+        {/* 34*/ MFX_WRN_INCOMPATIBLE_VIDEO_PARAM, MFX_ERR_NONE, FRAMERATE, CHANGE, 1,
             {
                 { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_VBR },
                 { MFX_PAR_RESET, &tsStruct::mfxVideoParam.mfx.FrameInfo.FrameRateExtN, 60 },
