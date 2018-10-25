@@ -112,9 +112,20 @@ bool GetRecInfo(const MfxVideoParam& par, mfxFrameInfo& rec)
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 10)
     {
-        rec.FourCC = MFX_FOURCC_Y210;
-        rec.Width /= 2;
-        rec.Height *= 2;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        if (par.m_platform >= MFX_HW_TGL_LP)
+        {
+            rec.FourCC = MFX_FOURCC_Y216;
+            rec.Width /= 2;
+            rec.Height *= 2;
+        }
+        else
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        {
+            rec.FourCC = MFX_FOURCC_Y210;
+            rec.Width /= 2;
+            rec.Height *= 2;
+        }
     }
     else if (CO3.TargetChromaFormatPlus1 == (1 + MFX_CHROMAFORMAT_YUV422) && CO3.TargetBitDepthLuma == 8)
     {
