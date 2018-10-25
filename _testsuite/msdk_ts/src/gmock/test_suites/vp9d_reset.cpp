@@ -245,7 +245,19 @@ int TestSuite::RunTest(const tc_struct& tc)
     tsStruct::SetPars(m_par, tc, INIT);
 
     bool isSW = !!(m_par.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
+#if (defined(LINUX32) || defined(LINUX64))
+    if (!isSW && m_pVAHandle != nullptr)
+    { // On Linux, an allocator has already been created and set as a handle
+      // inside tsSession::MFXInit
+        SetAllocator(m_pVAHandle, true);
+    }
+    else
+    {
+        UseDefaultAllocator(isSW);
+    }
+#else
     UseDefaultAllocator(isSW);
+#endif
     m_pFrameAllocator = GetAllocator();
     if (!isSW && !m_is_handle_set)
     {

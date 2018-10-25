@@ -77,7 +77,8 @@ tsVideoDecoder::~tsVideoDecoder()
 }
 
 mfxStatus tsVideoDecoder::Init()
-{
+{ // TODO: remove this. This function is too logic-heavy and non-portable.
+  // Use more granular lib init checks/functions in the tests.
     if(m_default)
     {
         if(!m_session)
@@ -111,6 +112,31 @@ mfxStatus tsVideoDecoder::Init()
             m_pVAHandle->get_hdl(type, hdl);
             SetHandle(m_session, type, hdl);
             m_is_handle_set = (g_tsStatus.get() >= 0);
+        }
+        if(!m_par_set && (m_bs_processor || (m_pBitstream && m_pBitstream->DataLength)))
+        {
+            DecodeHeader();
+        }
+        if(m_par.IOPattern & MFX_IOPATTERN_OUT_OPAQUE_MEMORY)
+        {
+            QueryIOSurf();
+            AllocOpaque(m_request, m_par);
+        }
+    }
+    return Init(m_session, m_pPar);
+}
+
+mfxStatus tsVideoDecoder::NoAllocatorCheckInit()
+{
+    if(m_default)
+    {
+        if(!m_session)
+        {
+            MFXInit();
+        }
+        if(!m_loaded)
+        {
+            Load();
         }
         if(!m_par_set && (m_bs_processor || (m_pBitstream && m_pBitstream->DataLength)))
         {

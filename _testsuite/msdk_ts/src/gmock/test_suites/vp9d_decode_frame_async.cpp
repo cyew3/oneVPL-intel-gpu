@@ -358,7 +358,19 @@ int TestSuite::RunTest(const tc_struct& tc)
     if(NO_EXT_ALLOCATOR != tc.mode)
     {
         bool isSW = !(!!(m_par.IOPattern & MFX_IOPATTERN_IN_VIDEO_MEMORY || m_par.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY));
+#if (defined(LINUX32) || defined(LINUX64))
+        if (!isSW && m_pVAHandle != nullptr)
+        { // On Linux, an allocator has already been created and set as a handle
+          // inside tsSession::MFXInit
+            SetAllocator(m_pVAHandle, true);
+        }
+        else
+        {
+            UseDefaultAllocator(isSW);
+        }
+#else
         UseDefaultAllocator(isSW);
+#endif
         m_pFrameAllocator = GetAllocator();
         SetFrameAllocator(m_session, GetAllocator());
 
@@ -374,8 +386,18 @@ int TestSuite::RunTest(const tc_struct& tc)
     AllocSurfaces();
     if(FAILED_INIT == tc.mode)
         g_tsStatus.disable_next_check();
+
     if(NOT_INITIALIZED != tc.mode)
-        Init();
+    {
+        if (NO_EXT_ALLOCATOR == tc.mode)
+        {
+            NoAllocatorCheckInit();
+        }
+        else
+        {
+            Init();
+        }
+    }
 
     tsStruct::SetPars(m_par, tc, AFTER_INIT);
 

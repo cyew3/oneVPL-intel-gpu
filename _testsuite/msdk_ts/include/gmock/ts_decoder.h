@@ -46,6 +46,7 @@ public:
 
     mfxStatus Init();
     mfxStatus Init(mfxSession session, mfxVideoParam *par);
+    mfxStatus NoAllocatorCheckInit();
 
     mfxStatus Close();
     mfxStatus Close(mfxSession session);

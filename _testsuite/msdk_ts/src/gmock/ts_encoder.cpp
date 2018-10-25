@@ -321,7 +321,8 @@ tsVideoEncoder::~tsVideoEncoder()
 }
 
 mfxStatus tsVideoEncoder::Init()
-{
+{   // TODO: remove this. This function is too logic-heavy and non-portable.
+    // Use more granular lib init checks/functions in the tests.
     if(m_default)
     {
         if(!m_session)
