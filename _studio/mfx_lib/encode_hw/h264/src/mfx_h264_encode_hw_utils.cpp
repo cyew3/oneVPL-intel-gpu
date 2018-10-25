@@ -2949,16 +2949,16 @@ using namespace MfxHwH264EncodeHW;
 
 mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
 {
-    mfxExtCodingOptionDDI const * extDdi  = GetExtBuffer(video);
-    mfxExtCodingOption2 const *   extOpt2 = GetExtBuffer(video);
-    mfxExtCodingOption3  const *   extOpt3  = GetExtBuffer(video);
+    mfxExtCodingOptionDDI const &  extDdi   = GetExtBufferRef(video);
+    mfxExtCodingOption2 const &    extOpt2  = GetExtBufferRef(video);
+    mfxExtCodingOption3  const &   extOpt3  = GetExtBufferRef(video);
 
 
-    m_lookAhead     = extOpt2->LookAheadDepth - extDdi->LookAheadDependency;
-    m_lookAheadDep  = extDdi->LookAheadDependency;
-    m_LaScaleFactor = LaDSenumToFactor(extOpt2->LookAheadDS);
-    m_qpUpdateRange = extDdi->QpUpdateRange;
-    m_strength      = extDdi->StrengthN;
+    m_lookAhead     = extOpt2.LookAheadDepth - extDdi.LookAheadDependency;
+    m_lookAheadDep  = extDdi.LookAheadDependency;
+    m_LaScaleFactor = LaDSenumToFactor(extOpt2.LookAheadDS);
+    m_qpUpdateRange = extDdi.QpUpdateRange;
+    m_strength      = extDdi.StrengthN;
 
     m_fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
     m_totNumMb = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
@@ -2967,9 +2967,9 @@ mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
     m_targetRateMax = m_initTargetRate;
     m_laData.reserve(m_lookAhead);
 
-    assert(extDdi->RegressionWindow <= m_rateCoeffHistory[0].MAX_WINDOW);
+    assert(extDdi.RegressionWindow <= m_rateCoeffHistory[0].MAX_WINDOW);
     for (mfxU32 qp = 0; qp < 52; qp++)
-        m_rateCoeffHistory[qp].Reset(extDdi->RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
+        m_rateCoeffHistory[qp].Reset(extDdi.RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
     m_framesBehind = 0;
     m_bitsBehind = 0.0;
     m_curQp = -1;
@@ -2981,9 +2981,19 @@ mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
 
     m_bControlMaxFrame = (video.mfx.RateControlMethod == MFX_RATECONTROL_LA_HRD);
     m_AvgBitrate = 0;
-    if (extOpt3->WinBRCSize)
+
+// driver doesn't support qp=0
+    m_QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
+    m_QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
+    m_QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
+
+    m_QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MaxQPI : 51;
+    m_QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MaxQPP : 51;
+    m_QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MaxQPB : 51;
+
+    if (extOpt3.WinBRCSize)
     {
-        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0* video.calcParam.WinBRCMaxAvgKbps / m_fr), (mfxU32)(1000.0* video.calcParam.targetKbps / m_fr), true);
+        m_AvgBitrate = new AVGBitrate(extOpt3.WinBRCSize, (mfxU32)(1000.0* video.calcParam.WinBRCMaxAvgKbps / m_fr), (mfxU32)(1000.0* video.calcParam.targetKbps / m_fr), true);
     }
     m_AsyncDepth = video.AsyncDepth > 1 ? 1 : 0;
     m_first = 0;
@@ -3004,14 +3014,14 @@ void LookAheadBrc2::Close()
 
 mfxStatus VMEBrc::Init(MfxVideoParam  & video)
 {
-    mfxExtCodingOptionDDI const * extDdi    = GetExtBuffer(video);
-    mfxExtCodingOption2  const * extOpt2    = GetExtBuffer(video);
-    mfxExtCodingOption3  const *   extOpt3  = GetExtBuffer(video);
+    mfxExtCodingOptionDDI const &   extDdi    = GetExtBufferRef(video);
+    mfxExtCodingOption2  const &    extOpt2   = GetExtBufferRef(video);
+    mfxExtCodingOption3  const &    extOpt3   = GetExtBufferRef(video);
 
 
-    m_LaScaleFactor = LaDSenumToFactor(extOpt2->LookAheadDS);
-    m_qpUpdateRange = extDdi->QpUpdateRange;
-    m_strength      = extDdi->StrengthN;
+    m_LaScaleFactor = LaDSenumToFactor(extOpt2.LookAheadDS);
+    m_qpUpdateRange = extDdi.QpUpdateRange;
+    m_strength      = extDdi.StrengthN;
 
     m_fr = mfxF64(video.mfx.FrameInfo.FrameRateExtN) / video.mfx.FrameInfo.FrameRateExtD;
 
@@ -3021,9 +3031,9 @@ mfxStatus VMEBrc::Init(MfxVideoParam  & video)
     m_targetRateMax = m_initTargetRate;
     m_laData.resize(0);
 
-    assert(extDdi->RegressionWindow <= m_rateCoeffHistory[0].MAX_WINDOW);
+    assert(extDdi.RegressionWindow <= m_rateCoeffHistory[0].MAX_WINDOW);
     for (mfxU32 qp = 0; qp < 52; qp++)
-        m_rateCoeffHistory[qp].Reset(extDdi->RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
+        m_rateCoeffHistory[qp].Reset(extDdi.RegressionWindow, 100.0, 100.0 * INIT_RATE_COEFF[qp]);
     m_framesBehind = 0;
     m_bitsBehind = 0.0;
     m_curQp = -1;
@@ -3031,10 +3041,20 @@ mfxStatus VMEBrc::Init(MfxVideoParam  & video)
     m_skipped = 0;
     m_lookAhead = 0;
 
+// driver doesn't support qp=0
+
+    m_QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
+    m_QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
+    m_QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
+
+    m_QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MaxQPI : 51;
+    m_QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MaxQPP : 51;
+    m_QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MaxQPB : 51;
+
     m_AvgBitrate = 0;
-    if (extOpt3->WinBRCSize)
+    if (extOpt3.WinBRCSize)
     {
-        m_AvgBitrate = new AVGBitrate(extOpt3->WinBRCSize, (mfxU32)(1000.0 * video.calcParam.WinBRCMaxAvgKbps/m_fr),(mfxU32)(1000.0* video.calcParam.targetKbps / m_fr),true);
+        m_AvgBitrate = new AVGBitrate(extOpt3.WinBRCSize, (mfxU32)(1000.0 * video.calcParam.WinBRCMaxAvgKbps/m_fr),(mfxU32)(1000.0* video.calcParam.targetKbps / m_fr),true);
     }
     return MFX_ERR_NONE;
 }
@@ -3219,6 +3239,16 @@ mfxU8 GetFrameTypeLetter(mfxU32 frameType)
         return mfxU8('B' + ref);
     return 'x';
 }
+inline mfxU32 GetFrameTypeIndex(mfxU32 frameType)
+{
+    if (frameType & MFX_FRAMETYPE_I)
+        return 0;
+    if (frameType & MFX_FRAMETYPE_P)
+        return 1;
+    if (frameType & MFX_FRAMETYPE_B)
+        return 2;
+    return 0;
+}
 
 mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
 {
@@ -3300,7 +3330,9 @@ mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
         m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, maxQp);
     else
         ; // do not change qp if last qp guarantees target rate interval
-    m_curQp = CLIPVAL(1, 51, m_curBaseQp + m_laData[m_first].deltaQp ); // driver doesn't support qp=0
+
+    mfxU32 ind = GetFrameTypeIndex(par.FrameType);
+    m_curQp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], m_curBaseQp + m_laData[m_first].deltaQp );
 
     //printf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, m_laData[0].deltaQp, m_laData[0].estRateTotal[m_curQp]);
 
@@ -3309,7 +3341,10 @@ mfxU8 LookAheadBrc2::GetQp(const BRCFrameParams& par)
 mfxU8 LookAheadBrc2::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
 {
     mfxU8 qp = curQP + (mfxU8)par.NumRecode;
-    qp = CLIPVAL(1,51,qp);
+
+    mfxU32 ind = GetFrameTypeIndex(par.FrameType);
+    qp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], qp);
+
     return qp;
 }
 void  LookAheadBrc2::SetQp(const BRCFrameParams& /*par*/, mfxU32 qp)
@@ -3630,8 +3665,9 @@ mfxU8 VMEBrc::GetQp(const BRCFrameParams& par)
         m_curBaseQp = CLIPVAL(m_curBaseQp - MAX_QP_CHANGE, m_curBaseQp + MAX_QP_CHANGE, maxQp);
     else
         ; // do not change qp if last qp guarantees target rate interval
-    m_curQp = CLIPVAL(1, 51, m_curBaseQp + (*start).deltaQp); // driver doesn't support qp=0
 
+    mfxU32 ind = GetFrameTypeIndex(par.FrameType);
+    m_curQp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], m_curBaseQp + (*start).deltaQp);
 
     brcprintf("bqp=%2d qp=%2d dqp=%2d erate=%7.3f ", m_curBaseQp, m_curQp, (*start).deltaQp, (*start).estRateTotal[m_curQp]);
 
@@ -3640,15 +3676,16 @@ mfxU8 VMEBrc::GetQp(const BRCFrameParams& par)
 mfxU8 VMEBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
 {
     mfxU8 qp = curQP + (mfxU8)par.NumRecode;
-    qp = CLIPVAL(1,51,qp);
+    mfxU32 ind = GetFrameTypeIndex(par.FrameType);
+    m_curQp = CLIPVAL(m_QPMin[ind], m_QPMax[ind],qp);
     return qp;
 }
 
 mfxStatus LookAheadCrfBrc::Init(MfxVideoParam  & video)
 {
-    mfxExtCodingOption2 const * extOpt2 = GetExtBuffer(video);
+    mfxExtCodingOption2 const &extOpt2 = GetExtBufferRef(video);
 
-    m_lookAhead  = extOpt2->LookAheadDepth;
+    m_lookAhead  = extOpt2.LookAheadDepth;
     m_crfQuality = video.mfx.ICQQuality;
     m_totNumMb   = video.mfx.FrameInfo.Width * video.mfx.FrameInfo.Height / 256;
 
@@ -3656,10 +3693,19 @@ mfxStatus LookAheadCrfBrc::Init(MfxVideoParam  & video)
     m_interCost = 0;
     m_propCost  = 0;
 
+// driver doesn't support qp=0
+    m_QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
+    m_QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
+    m_QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
+
+    m_QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MinQPI : 51;
+    m_QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MinQPP : 51;
+    m_QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MinQPB : 51;
+
     return MFX_ERR_NONE;
 }
 
-mfxU8 LookAheadCrfBrc::GetQp(const BRCFrameParams& /*par*/)
+mfxU8 LookAheadCrfBrc::GetQp(const BRCFrameParams& par)
 {
     mfxF64 strength = 0.03 * m_crfQuality + .75;
     mfxF64 ratio    = 1.0;
@@ -3669,14 +3715,18 @@ mfxU8 LookAheadCrfBrc::GetQp(const BRCFrameParams& /*par*/)
         ? -mfxI32(deltaQpF * 2 * strength + 0.5)
         : -mfxI32(deltaQpF * 1 * strength + 0.5);
 
-    m_curQp = CLIPVAL(1, 51, m_crfQuality + deltaQp); // driver doesn't support qp=0
+    mfxU32 ind = GetFrameTypeIndex(par.FrameType);
+    m_curQp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], m_crfQuality + deltaQp); // driver doesn't support qp=0
 
     return mfxU8(m_curQp);
 }
 mfxU8 LookAheadCrfBrc::GetQpForRecode(const BRCFrameParams& par, mfxU8 curQP)
 {
     mfxU8 qp = curQP + (mfxU8)par.NumRecode;
-    qp = CLIPVAL(1,51,qp);
+
+    mfxU32 ind = GetFrameTypeIndex(par.FrameType);
+    qp = CLIPVAL(m_QPMin[ind], m_QPMax[ind], qp); 
+
     return qp;
 }
 
