@@ -27,12 +27,6 @@ using namespace UMC;
 namespace UMC_VP9_DECODER
 {
 
-inline
-void mfx_memcpy(void * dst, size_t dstLen, void * src, size_t len)
-{
-    memcpy_s(dst, dstLen, src, len);
-}
-
 Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
 {
     (void)va;
@@ -130,7 +124,7 @@ void PackerIntel::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
         if (compBufBs->GetBufferSize() < (mfxI32)length)
             lenght2 = compBufBs->GetBufferSize();
 
-        mfx_memcpy(bistreamData, lenght2, data + offset, lenght2);
+        std::copy(data + offset, data + offset + lenght2, bistreamData);
         compBufBs->SetDataSize(lenght2);
 
         length -= lenght2;
@@ -296,7 +290,7 @@ void PackerMS::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
         mfxU32 const padding = 
             align_value<int32_t>(lenght2, 128) - lenght2;
 
-        mfx_memcpy(bistreamData, lenght2, data, lenght2);
+        std::copy(data, data + lenght2, bistreamData);
 
         bistreamData += lenght2;
         memset(bistreamData, 0, padding);
@@ -492,7 +486,7 @@ void PackerVA::PackAU(VP9Bitstream* bs, VP9DecoderFrame const* info)
     if (!bistreamData)
         throw vp9_exception(MFX_ERR_MEMORY_ALLOC);
     
-    mfx_memcpy(bistreamData, length, data + offset, length);
+    std::copy(data + offset, data + offset + length, bistreamData);
     pCompBuf->SetDataSize(length);
 }
 
