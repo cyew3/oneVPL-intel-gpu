@@ -1502,6 +1502,23 @@ mfxStatus ASC::QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSam
     return MFX_ERR_NONE;
 }
 
+mfxStatus ASC::QueueFrame(mfxHDLPair frameHDLp, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+{
+    if (!m_ASCinitialized)
+        return MFX_ERR_NOT_INITIALIZED;
+    m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
+
+    CmSurface2D* p_surfaceFrom = nullptr;
+    SurfaceIndex* idxFrom = nullptr;
+
+    CreateCmSurface2D(frameHDLp, p_surfaceFrom, idxFrom);
+
+    mfxStatus sts = QueueFrame(idxFrom, idxTo, subSamplingEv, subSamplingTask, parity);
+    SCD_CHECK_MFX_ERR(sts);
+
+    return MFX_ERR_NONE;
+}
+
 
 mfxStatus ASC::QueueFrame(mfxHDL frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
 {
@@ -1575,6 +1592,12 @@ mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSampling
 }
 
 mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
+{
+    mfxStatus sts = QueueFrame(surface, idxTo, subSamplingEv, subSamplingTask, ASCTopField);
+    return sts;
+}
+
+mfxStatus ASC::QueueFrameProgressive(mfxHDLPair surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
 {
     mfxStatus sts = QueueFrame(surface, idxTo, subSamplingEv, subSamplingTask, ASCTopField);
     return sts;
@@ -1688,6 +1711,38 @@ mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, Sur
         //UMC::AutomaticUMCMutex guard(m_guard);
         {
             cmSts = m_device->CreateSurface2D(pSrcD3D, pCmSurface2D);
+            SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
+            m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
+        }
+
+        cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
+        SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
+        m_tableCmIndex2.insert(std::pair<CmSurface2D *, SurfaceIndex *>(pCmSurface2D, pCmSrcIndex));
+    }
+    else
+    {
+        pCmSurface2D = it->second;
+        it_idx = m_tableCmIndex2.find(pCmSurface2D);
+        if (it_idx == m_tableCmIndex2.end())
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        else
+            pCmSrcIndex = it_idx->second;
+    }
+
+    return MFX_ERR_NONE;
+}
+
+mfxStatus ASC::CreateCmSurface2D(mfxHDLPair SrcPair, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
+{
+    INT cmSts = 0;
+    std::map<mfxHDLPair, CmSurface2D *>::iterator it;
+    std::map<CmSurface2D *, SurfaceIndex *>::iterator it_idx;
+    it = m_tableCmRelations2.find(SrcPair);
+    if (m_tableCmRelations2.end() == it)
+    {
+        //UMC::AutomaticUMCMutex guard(m_guard);
+        {
+            cmSts = m_device->CreateSurface2D(SrcPair, pCmSurface2D);
             SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
             m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
         }

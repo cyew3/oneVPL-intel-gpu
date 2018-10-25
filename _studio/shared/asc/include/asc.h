@@ -213,6 +213,7 @@ private:
     mfxStatus SetKernel(SurfaceIndex *idxFrom, mfxU32 parity);
 
     mfxStatus QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
+    mfxStatus QueueFrame(mfxHDLPair frameHDLp, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
     mfxStatus QueueFrame(mfxHDL frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
 
     mfxStatus QueueFrame(mfxHDL frameHDL, mfxU32 parity);
@@ -228,6 +229,7 @@ private:
     mfxStatus RunFrame(mfxHDL frameHDL, mfxU32 parity);
     mfxStatus RunFrame(mfxU8 *frame, mfxU32 parity);
     mfxStatus CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
+    mfxStatus CreateCmSurface2D(mfxHDLPair SrcPair, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
     mfxStatus CreateCmKernels();
     mfxStatus CopyFrameSurface(mfxHDL frameHDL);
     void Reset_ASCCmDevice();
@@ -252,6 +254,7 @@ public:
     inline void SetProgressiveOp() { SetInterlaceMode(ASCprogressive_frame); }
 
     mfxStatus QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask);
+    mfxStatus QueueFrameProgressive(mfxHDLPair surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask);
     mfxStatus QueueFrameProgressive(mfxHDL surface, CmEvent **taskEvent, CmTask **subSamplingTask);
 
     mfxStatus QueueFrameProgressive(mfxHDL surface);

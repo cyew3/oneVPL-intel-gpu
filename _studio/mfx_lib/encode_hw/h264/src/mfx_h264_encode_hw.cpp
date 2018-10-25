@@ -2495,7 +2495,7 @@ mfxStatus ImplementationAvc::SCD_Put_Frame(DdiTask & task)
         }
         else
             return MFX_ERR_DEVICE_FAILED;
-        MFX_SAFE_CALL(amtScd.QueueFrameProgressive(reinterpret_cast<mfxHDL*>(&handle), task.m_wsIdxGpuImage, &task.m_wsSubSamplingEv, &task.m_wsSubSamplingTask));
+        MFX_SAFE_CALL(amtScd.QueueFrameProgressive(handle, task.m_wsIdxGpuImage, &task.m_wsSubSamplingEv, &task.m_wsSubSamplingTask));
     }
     else
     {
