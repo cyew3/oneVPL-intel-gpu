@@ -93,8 +93,8 @@ void FillSpsBuffer(
     sps.SeqFlags.fields.bResetBRC = task.m_resetBrc;
     sps.SeqFlags.fields.MBBRC = 2; // 2 is for MBBRC DISABLED
 
-    sps.SeqFlags.fields.EnableDynamicScaling = 1;
-
+    mfxExtVP9Param vp9param = GetExtBufferRef(par);
+    sps.SeqFlags.fields.EnableDynamicScaling = vp9param.DynamicScaling == MFX_CODINGOPTION_ON ? 1 : 0;
     if (IsBitrateBasedBRC(par.mfx.RateControlMethod))
     {
         mfxExtCodingOption2 opt2 = GetExtBufferRef(par);
