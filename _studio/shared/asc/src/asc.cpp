@@ -1495,7 +1495,7 @@ mfxStatus ASC::RunFrame(SurfaceIndex *idxFrom, mfxU32 parity) {
     return MFX_ERR_NONE;
 }
 
-mfxStatus ASC::QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+mfxStatus ASC::QueueFrame(mfxHDLPair frameHDL, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
 {
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
@@ -1504,7 +1504,7 @@ mfxStatus ASC::QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSam
     CmSurface2D* p_surfaceFrom = nullptr;
     SurfaceIndex* idxFrom = nullptr;
 
-    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+    CreateCmSurface2D(frameHDL, p_surfaceFrom, idxFrom);
 
     mfxStatus sts = QueueFrame(idxFrom, idxTo, subSamplingEv, subSamplingTask, parity);
     SCD_CHECK_MFX_ERR(sts);
@@ -1512,7 +1512,7 @@ mfxStatus ASC::QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSam
     return MFX_ERR_NONE;
 }
 
-mfxStatus ASC::QueueFrame(mfxHDLPair frameHDLp, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
+mfxStatus ASC::QueueFrame(mfxHDLPair frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
 {
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
@@ -1521,25 +1521,7 @@ mfxStatus ASC::QueueFrame(mfxHDLPair frameHDLp, SurfaceIndex *idxTo, CmEvent **s
     CmSurface2D* p_surfaceFrom = nullptr;
     SurfaceIndex* idxFrom = nullptr;
 
-    CreateCmSurface2D(frameHDLp, p_surfaceFrom, idxFrom);
-
-    mfxStatus sts = QueueFrame(idxFrom, idxTo, subSamplingEv, subSamplingTask, parity);
-    SCD_CHECK_MFX_ERR(sts);
-
-    return MFX_ERR_NONE;
-}
-
-
-mfxStatus ASC::QueueFrame(mfxHDL frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity)
-{
-    if (!m_ASCinitialized)
-        return MFX_ERR_NOT_INITIALIZED;
-    m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
-
-    CmSurface2D* p_surfaceFrom = nullptr;
-    SurfaceIndex* idxFrom = nullptr;
-
-    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+    CreateCmSurface2D(frameHDL, p_surfaceFrom, idxFrom);
 
     mfxStatus sts = QueueFrame(idxFrom, subSamplingEv, subSamplingTask, parity);
     SCD_CHECK_MFX_ERR(sts);
@@ -1547,7 +1529,8 @@ mfxStatus ASC::QueueFrame(mfxHDL frameHDL, CmEvent **subSamplingEv, CmTask **sub
     return MFX_ERR_NONE;
 }
 
-mfxStatus ASC::QueueFrame(mfxHDL frameHDL, mfxU32 parity) {
+mfxStatus ASC::QueueFrame(mfxHDLPair frameHDL, mfxU32 parity)
+{
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
     m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
@@ -1555,7 +1538,7 @@ mfxStatus ASC::QueueFrame(mfxHDL frameHDL, mfxU32 parity) {
     CmSurface2D* p_surfaceFrom = nullptr;
     SurfaceIndex* idxFrom = nullptr;
 
-    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+    CreateCmSurface2D(frameHDL, p_surfaceFrom, idxFrom);
 
     mfxStatus sts = QueueFrame(idxFrom, parity);
     SCD_CHECK_MFX_ERR(sts);
@@ -1563,7 +1546,8 @@ mfxStatus ASC::QueueFrame(mfxHDL frameHDL, mfxU32 parity) {
     return MFX_ERR_NONE;
 }
 
-mfxStatus ASC::RunFrame(mfxHDL frameHDL, mfxU32 parity) {
+mfxStatus ASC::RunFrame(mfxHDLPair frameHDL, mfxU32 parity)
+{
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
     m_videoData[ASCCurrent_Frame]->frame_number = m_videoData[ASCReference_Frame]->frame_number + 1;
@@ -1571,7 +1555,7 @@ mfxStatus ASC::RunFrame(mfxHDL frameHDL, mfxU32 parity) {
     CmSurface2D* p_surfaceFrom = 0;
 
     SurfaceIndex *idxFrom = nullptr;
-    CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+    CreateCmSurface2D(frameHDL, p_surfaceFrom, idxFrom);
 
     mfxStatus sts = RunFrame(idxFrom, parity);
     SCD_CHECK_MFX_ERR(sts);
@@ -1601,24 +1585,18 @@ mfxStatus ASC::QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSampling
     return sts;
 }
 
-mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
-{
-    mfxStatus sts = QueueFrame(surface, idxTo, subSamplingEv, subSamplingTask, ASCTopField);
-    return sts;
-}
-
 mfxStatus ASC::QueueFrameProgressive(mfxHDLPair surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask)
 {
     mfxStatus sts = QueueFrame(surface, idxTo, subSamplingEv, subSamplingTask, ASCTopField);
     return sts;
 }
 
-mfxStatus ASC::QueueFrameProgressive(mfxHDL surface, CmEvent **subSamplingEv, CmTask **subSamplingTask) {
+mfxStatus ASC::QueueFrameProgressive(mfxHDLPair surface, CmEvent **subSamplingEv, CmTask **subSamplingTask) {
     mfxStatus sts = QueueFrame(surface, subSamplingEv, subSamplingTask, ASCTopField);
     return sts;
 }
 
-mfxStatus ASC::QueueFrameProgressive(mfxHDL surface) {
+mfxStatus ASC::QueueFrameProgressive(mfxHDLPair surface) {
     mfxStatus sts = QueueFrame(surface, ASCTopField);
     return sts;
 }
@@ -1629,9 +1607,18 @@ mfxStatus ASC::PutFrameProgressive(SurfaceIndex* idxSurf) {
     return sts;
 }
 
-mfxStatus ASC::PutFrameProgressive(mfxHDL surface) {
+mfxStatus ASC::PutFrameProgressive(mfxHDLPair surface)
+{
     mfxStatus sts = RunFrame(surface, ASCTopField);
     m_dataReady = (sts == MFX_ERR_NONE);
+    return sts;
+}
+
+mfxStatus ASC::PutFrameProgressive(mfxHDL surface)
+{
+    mfxHDLPair
+        surfPair = { surface, nullptr };
+    mfxStatus sts = PutFrameProgressive(surfPair);
     return sts;
 }
 
@@ -1676,19 +1663,28 @@ mfxStatus ASC::PutFrameInterlaced(SurfaceIndex* idxSurf) {
     return sts;
 }
 
-mfxStatus ASC::QueueFrameInterlaced(mfxHDL surface) {
+mfxStatus ASC::QueueFrameInterlaced(mfxHDLPair surface)
+{
     mfxStatus sts = QueueFrame(surface, m_dataIn->currentField);
     SetNextField();
     return sts;
 }
 
-mfxStatus ASC::PutFrameInterlaced(mfxHDL surface) {
+mfxStatus ASC::PutFrameInterlaced(mfxHDLPair surface)
+{
     mfxStatus sts = RunFrame(surface, m_dataIn->currentField);
     m_dataReady = (sts == MFX_ERR_NONE);
     SetNextField();
     return sts;
 }
 
+mfxStatus ASC::PutFrameInterlaced(mfxHDL surface)
+{
+    mfxHDLPair
+        surfPair = { surface, nullptr };
+    mfxStatus sts = PutFrameInterlaced(surfPair);
+    return sts;
+}
 
 mfxStatus ASC::calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs) {
     if (!m_ASCinitialized)
@@ -1696,10 +1692,9 @@ mfxStatus ASC::calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pi
     return Calc_RaCa_pic(pSrc, width, height, pitch, RsCs);
 }
 
-mfxStatus ASC::calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs) {
+mfxStatus ASC::calc_RaCa_Surf(mfxHDLPair surface, mfxF64 &rscs) {
     if (!Query_ASCCmDevice())
         return MFX_ERR_UNDEFINED_BEHAVIOR;
-
     mfxStatus sts = CopyFrameSurface(surface);
     SCD_CHECK_MFX_ERR(sts);
     
@@ -1709,20 +1704,19 @@ mfxStatus ASC::calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs) {
     return sts;
 }
 
-mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
+mfxStatus ASC::CreateCmSurface2D(mfxHDLPair pSrcPair, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
 {
     INT cmSts = 0;
     std::map<mfxHDLPair, CmSurface2D *>::iterator it;
     std::map<CmSurface2D *, SurfaceIndex *>::iterator it_idx;
-    mfxHDLPair SrcPair = static_cast<mfxHDLPair>(*(mfxHDLPair *)pSrcD3D);
-    it = m_tableCmRelations2.find(SrcPair);
+    it = m_tableCmRelations2.find(pSrcPair);
     if (m_tableCmRelations2.end() == it)
     {
         //UMC::AutomaticUMCMutex guard(m_guard);
         {
-            cmSts = m_device->CreateSurface2D(pSrcD3D, pCmSurface2D);
+            cmSts = m_device->CreateSurface2D(pSrcPair, pCmSurface2D);
             SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
-            m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
+            m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(pSrcPair, pCmSurface2D));
         }
 
         cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
@@ -1742,39 +1736,7 @@ mfxStatus ASC::CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, Sur
     return MFX_ERR_NONE;
 }
 
-mfxStatus ASC::CreateCmSurface2D(mfxHDLPair SrcPair, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex)
-{
-    INT cmSts = 0;
-    std::map<mfxHDLPair, CmSurface2D *>::iterator it;
-    std::map<CmSurface2D *, SurfaceIndex *>::iterator it_idx;
-    it = m_tableCmRelations2.find(SrcPair);
-    if (m_tableCmRelations2.end() == it)
-    {
-        //UMC::AutomaticUMCMutex guard(m_guard);
-        {
-            cmSts = m_device->CreateSurface2D(SrcPair, pCmSurface2D);
-            SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
-            m_tableCmRelations2.insert(std::pair<mfxHDLPair, CmSurface2D *>(SrcPair, pCmSurface2D));
-        }
-
-        cmSts = pCmSurface2D->GetIndex(pCmSrcIndex);
-        SCD_CHECK_CM_ERR(cmSts, MFX_ERR_DEVICE_FAILED);
-        m_tableCmIndex2.insert(std::pair<CmSurface2D *, SurfaceIndex *>(pCmSurface2D, pCmSrcIndex));
-    }
-    else
-    {
-        pCmSurface2D = it->second;
-        it_idx = m_tableCmIndex2.find(pCmSurface2D);
-        if (it_idx == m_tableCmIndex2.end())
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        else
-            pCmSrcIndex = it_idx->second;
-    }
-
-    return MFX_ERR_NONE;
-}
-
-mfxStatus ASC::CopyFrameSurface(mfxHDL frameHDL) {
+mfxStatus ASC::CopyFrameSurface(mfxHDLPair frameHDL) {
     if (!m_ASCinitialized)
         return MFX_ERR_NOT_INITIALIZED;
     CmSurface2D* p_surfaceFrom = 0;
@@ -1782,7 +1744,7 @@ mfxStatus ASC::CopyFrameSurface(mfxHDL frameHDL) {
     INT res;
     SurfaceIndex *idxFrom;
 
-    sts = CreateCmSurface2D(reinterpret_cast<AbstractSurfaceHandle>(frameHDL), p_surfaceFrom, idxFrom);
+    sts = CreateCmSurface2D(frameHDL, p_surfaceFrom, idxFrom);
     SCD_CHECK_MFX_ERR(sts);
 
     m_frameCopyEv = NULL;// CM_NO_EVENT;

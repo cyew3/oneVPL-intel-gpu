@@ -222,11 +222,10 @@ private:
     mfxStatus SetKernel(SurfaceIndex *idxFrom, CmTask **subSamplingTask, mfxU32 parity);
     mfxStatus SetKernel(SurfaceIndex *idxFrom, mfxU32 parity);
 
-    mfxStatus QueueFrame(mfxHDL frameHDL, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
-    mfxStatus QueueFrame(mfxHDLPair frameHDLp, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
-    mfxStatus QueueFrame(mfxHDL frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
+    mfxStatus QueueFrame(mfxHDLPair frameHDL, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
+    mfxStatus QueueFrame(mfxHDLPair frameHDL, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
 
-    mfxStatus QueueFrame(mfxHDL frameHDL, mfxU32 parity);
+    mfxStatus QueueFrame(mfxHDLPair frameHDL, mfxU32 parity);
     mfxStatus QueueFrame(SurfaceIndex *idxFrom, mfxU32 parity);
 #ifndef CMRT_EMU
     mfxStatus QueueFrame(SurfaceIndex *idxFrom, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask, mfxU32 parity);
@@ -236,17 +235,17 @@ private:
 #endif
     void AscFrameAnalysis();
     mfxStatus RunFrame(SurfaceIndex *idxFrom, mfxU32 parity);
-    mfxStatus RunFrame(mfxHDL frameHDL, mfxU32 parity);
+    mfxStatus RunFrame(mfxHDLPair frameHDL, mfxU32 parity);
     mfxStatus RunFrame(mfxU8 *frame, mfxU32 parity);
-    mfxStatus CreateCmSurface2D(void *pSrcD3D, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
-    mfxStatus CreateCmSurface2D(mfxHDLPair SrcPair, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
+
+    mfxStatus CreateCmSurface2D(mfxHDLPair pSrcPair, CmSurface2D* & pCmSurface2D, SurfaceIndex* &pCmSrcIndex);
     mfxStatus CreateCmKernels();
-    mfxStatus CopyFrameSurface(mfxHDL frameHDL);
+    mfxStatus CopyFrameSurface(mfxHDLPair frameHDL);
     void Reset_ASCCmDevice();
     void Set_ASCCmDevice();
-    bool Query_ASCCmDevice();
     mfxStatus SetInterlaceMode(ASCFTS interlaceMode);
 public:
+    bool Query_ASCCmDevice();
     mfxStatus Init(mfxI32 Width, mfxI32 Height, mfxI32 Pitch, mfxU32 PicStruct, CmDevice* pCmDevice);
     void Close();
     bool IsASCinitialized();
@@ -263,12 +262,11 @@ public:
     inline void SetParityBFF() { SetInterlaceMode(ASCbotfieldFirst_frame); }
     inline void SetProgressiveOp() { SetInterlaceMode(ASCprogressive_frame); }
 
-    mfxStatus QueueFrameProgressive(mfxHDL surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask);
     mfxStatus QueueFrameProgressive(mfxHDLPair surface, SurfaceIndex *idxTo, CmEvent **subSamplingEv, CmTask **subSamplingTask);
-    mfxStatus QueueFrameProgressive(mfxHDL surface, CmEvent **taskEvent, CmTask **subSamplingTask);
+    mfxStatus QueueFrameProgressive(mfxHDLPair surface, CmEvent **taskEvent, CmTask **subSamplingTask);
 
-    mfxStatus QueueFrameProgressive(mfxHDL surface);
-    mfxStatus QueueFrameInterlaced(mfxHDL surface);
+    mfxStatus QueueFrameProgressive(mfxHDLPair surface);
+    mfxStatus QueueFrameInterlaced(mfxHDLPair surface);
 
     mfxStatus QueueFrameProgressive(SurfaceIndex* idxSurf, CmEvent *subSamplingEv, CmTask *subSamplingTask);
     mfxStatus QueueFrameProgressive(SurfaceIndex* idxSurf);
@@ -278,7 +276,9 @@ public:
     mfxStatus ProcessQueuedFrame(CmEvent **subSamplingEv, CmTask **subSamplingTask, CmSurface2DUP **inputFrame, mfxU8 **pixelData);
     mfxStatus ProcessQueuedFrame();
 
+    mfxStatus PutFrameProgressive(mfxHDLPair surface);
     mfxStatus PutFrameProgressive(mfxHDL surface);
+    mfxStatus PutFrameInterlaced(mfxHDLPair surface);
     mfxStatus PutFrameInterlaced(mfxHDL surface);
 
     mfxStatus PutFrameProgressive(SurfaceIndex* idxSurf);
@@ -303,7 +303,7 @@ public:
     mfxStatus get_LTR_op_hint(ASC_LTR_DEC& scd_LTR_hint);
 
     mfxStatus calc_RaCa_pic(mfxU8 *pSrc, mfxI32 width, mfxI32 height, mfxI32 pitch, mfxF64 &RsCs);
-    mfxStatus calc_RaCa_Surf(mfxHDL surface, mfxF64 &rscs);
+    mfxStatus calc_RaCa_Surf(mfxHDLPair surface, mfxF64 &rscs);
 
     bool Check_last_frame_processed(mfxU32 frameOrder);
     void Reset_last_frame_processed();

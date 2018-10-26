@@ -4139,7 +4139,7 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         BOOL is30i60pConversion = 0;
 
         mfxU32 frameIndex = pTask->bkwdRefCount; // index of current frame
-        mfxHDL frameHandle;
+        mfxHDLPair frameHandle = { nullptr, nullptr };
         mfxFrameSurface1 frameSurface;
         memset(&frameSurface, 0, sizeof(mfxFrameSurface1));
 
@@ -4153,27 +4153,8 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         MFX_CHECK_NULL_PTR1(inFrame);
         frameSurface.Info = inFrame->Info;
 
-
-        if (SYS_TO_D3D == m_ioMode || SYS_TO_SYS == m_ioMode)
-        {
-            sts = m_pCore->GetFrameHDL(m_internalVidSurf[VPP_IN].mids[surfQueue[frameIndex].resIdx], &frameHandle);
-            MFX_CHECK_STS(sts);
-        }
-        else
-        {
-            if(m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
-            {
-                MFX_SAFE_CALL(m_pCore->GetFrameHDL(surfQueue[frameIndex].pSurf->Data.MemId, (mfxHDL *)&frameHandle));
-            }
-            else
-            {
-                MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surfQueue[frameIndex].pSurf->Data.MemId, (mfxHDL *)&frameHandle));
-            }
-        }
-        frameSurface.Data.MemId = frameHandle;
-
         // Set input frame parity in SCD
-        if(frameSurface.Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
+        if (frameSurface.Info.PicStruct & MFX_PICSTRUCT_FIELD_TFF)
         {
             m_SCD.SetParityTFF();
         }
@@ -4181,7 +4162,6 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
         {
             m_SCD.SetParityBFF();
         }
-
         // Check for scene change
         // Do it only when new input frame are fed to deinterlacer.
         // For 30i->60p, this happens every odd frames as:
@@ -4192,23 +4172,62 @@ mfxStatus VideoVPPHW::SyncTaskSubmission(DdiTask* pTask)
 
         if (is30i60pConversion == 0 || (m_frame_num % 2) == 1 || m_frame_num == 0)
         {
-            // SCD detects scene change for field to be display.
-            // 30i->30p displays only first of current (frame N = field 2N)
-            // for 30i->60p, check happends on odd output frame 2N +1
-            // 30i->60p display output 2N+1, 2N+2
-            // input fields to SCD detection engine are field 2N + 2 and 2N + 3
+            if (m_SCD.Query_ASCCmDevice())
+            {
+                if (SYS_TO_D3D == m_ioMode || SYS_TO_SYS == m_ioMode)
+                {
+                    sts = m_pCore->GetFrameHDL(m_internalVidSurf[VPP_IN].mids[surfQueue[frameIndex].resIdx], reinterpret_cast<mfxHDL*>(&frameHandle));
+                    MFX_CHECK_STS(sts);
+                }
+                else
+                {
+                    if (m_IOPattern & MFX_IOPATTERN_IN_OPAQUE_MEMORY)
+                    {
+                        MFX_SAFE_CALL(m_pCore->GetFrameHDL(surfQueue[frameIndex].pSurf->Data.MemId, reinterpret_cast<mfxHDL*>(&frameHandle)));
+                    }
+                    else
+                    {
+                        MFX_SAFE_CALL(m_pCore->GetExternalFrameHDL(surfQueue[frameIndex].pSurf->Data.MemId, reinterpret_cast<mfxHDL*>(&frameHandle)));
+                    }
+                }
+                // SCD detects scene change for field to be display.
+                // 30i->30p displays only first of current (frame N = field 2N)
+                // for 30i->60p, check happends on odd output frame 2N +1
+                // 30i->60p display output 2N+1, 2N+2
+                // input fields to SCD detection engine are field 2N + 2 and 2N + 3
 
-            // SCD needs field input in display order
-            // SCD detects if input field is the first field of a new Scene 
-            // based on current and previous stream statistics
-            sts = m_SCD.PutFrameInterlaced(frameHandle);
-            MFX_CHECK_STS(sts);
+                // SCD needs field input in display order
+                // SCD detects if input field is the first field of a new Scene 
+                // based on current and previous stream statistics
+                sts = m_SCD.PutFrameInterlaced(frameHandle);
+                MFX_CHECK_STS(sts);
 
-            // detect scene change in first field of current 2N + 2
-            sc_in_first_field = m_SCD.Get_frame_shot_Decision();
+                // detect scene change in first field of current 2N + 2
+                sc_in_first_field = m_SCD.Get_frame_shot_Decision();
 
-            // Feed SCD detector with second field of current frame
-            sts = m_SCD.PutFrameInterlaced(frameHandle);
+                // Feed SCD detector with second field of current frame
+                sts = m_SCD.PutFrameInterlaced(frameHandle);
+            }
+            else
+            {
+                mfxFrameData
+                    data = surfQueue[frameIndex].pSurf->Data;
+                FrameLocker
+                    lock2(m_pCore, data, true);
+                if (data.Y == 0)
+                    return MFX_ERR_LOCK_MEMORY;
+                mfxI32
+                    pitch = (mfxI32)(data.PitchLow + (data.PitchHigh << 16));
+ 
+                sts = m_SCD.PutFrameInterlaced(data.Y, pitch);
+                MFX_CHECK_STS(sts);
+
+                // detect scene change in first field of current 2N + 2
+                sc_in_first_field = m_SCD.Get_frame_shot_Decision();
+
+                // Feed SCD detector with second field of current frame
+                sts = m_SCD.PutFrameInterlaced(data.Y, pitch);
+            }
             MFX_CHECK_STS(sts);
 
             // check second field of current

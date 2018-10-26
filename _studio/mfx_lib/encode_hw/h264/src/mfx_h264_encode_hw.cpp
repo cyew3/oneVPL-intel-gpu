@@ -2655,7 +2655,7 @@ mfxStatus ImplementationAvc::CalculateFrameCmplx(DdiTask const &task, mfxU16 &ra
         {
             MFX_SAFE_CALL(m_core->GetExternalFrameHDL(pSurfI->Data.MemId, reinterpret_cast<mfxHDL*>(&handle), false));
         }
-        MFX_SAFE_CALL(amtScd.calc_RaCa_Surf(reinterpret_cast<mfxHDL*>(&handle), raca));
+        MFX_SAFE_CALL(amtScd.calc_RaCa_Surf(handle, raca));
     }
     else
     {
