@@ -1407,6 +1407,7 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         // prepare mfxExtVP9Param
         InitExtBuffer(MFX_EXTBUFF_VP9_PARAM, m_extParam[SET]);
         SETPARSITER(&m_extParam[SET], MFX_EXT_VP9PARAM);
+        m_extParam[SET].DynamicScaling = MFX_CODINGOPTION_ON;
         if (false == IsZeroExtBuf(m_extParam[SET]))
         {
             m_param[SET].ExtParam[m_param[SET].NumExtParam++] = (mfxExtBuffer*)&m_extParam[SET];
@@ -2070,6 +2071,11 @@ for(mfxU32 i = 0; i < MAX_NPARS; i++)                                           
         {
             ADD_FAILURE() << "ERROR: function " << function << " returned incorrect value for parameter FrameHeight: " << real.FrameHeight <<
                 ", expected " << expected.FrameHeight; throw tsFAIL;
+        }
+        if (expected.DynamicScaling != MFX_CODINGOPTION_UNKNOWN && expected.DynamicScaling != real.DynamicScaling)
+        {
+            ADD_FAILURE() << "ERROR: function " << function << " returned incorrect value for parameter DynamicScaling: " << real.DynamicScaling <<
+                ", expected " << expected.DynamicScaling; throw tsFAIL;
         }
     }
 
