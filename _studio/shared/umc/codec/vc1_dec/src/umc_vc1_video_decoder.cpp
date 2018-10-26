@@ -514,14 +514,12 @@ Status VC1VideoDecoder::SMProfilesProcessing(Ipp8u* pBitstream)
         params.info.clip_info.height = m_ClipInfo.clip_info.height;
         params.m_SuggestedOutputSize = m_SurfaceNum;
         params.lpMemoryAllocator = m_pMemoryAllocator;
-
+    
         bool deblocking = (Ipp32s)m_pStore->IsDeblockingOn();
 
         Close();
-        umcRes = Init(&params);
-        VC1_TO_UMC_CHECK_STS(umcRes);
-
-
+        Init(&params);
+        
         //need to add code for restoring skip mode!
         if(!deblocking)
         {
