@@ -48,9 +48,9 @@ void MJPEGEncodeTask::Close(void)
     m_initialDataLength = 0;
     encodedPieces = 0;
 
-    if(m_pMJPEGVideoEncoder.get())
+    if(m_pMJPEGVideoEncoder)
     {
-        m_pMJPEGVideoEncoder.get()->Close();
+        m_pMJPEGVideoEncoder->Close();
     }
 
 } // void MJPEGEncodeTask::Close(void)
@@ -67,13 +67,9 @@ mfxStatus MJPEGEncodeTask::Initialize(UMC::VideoEncoderParams* params)
         encodedPieces = 0;
 
         m_pMJPEGVideoEncoder.reset(new UMC::MJPEGVideoEncoder);
-        if(NULL == m_pMJPEGVideoEncoder.get())
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
 
         //m_pMJPEGVideoDecoder.get()->SetFrameAllocator(pFrameAllocator);
-        umcRes = m_pMJPEGVideoEncoder.get()->Init(params);
+        umcRes = m_pMJPEGVideoEncoder->Init(params);
         if (umcRes != UMC::UMC_OK)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -89,7 +85,7 @@ void MJPEGEncodeTask::Reset(void)
     m_initialDataLength = 0;
     encodedPieces = 0;
 
-    if(m_pMJPEGVideoEncoder.get())
+    if(m_pMJPEGVideoEncoder)
     {
         m_pMJPEGVideoEncoder->Reset();
     }
@@ -98,12 +94,12 @@ void MJPEGEncodeTask::Reset(void)
 
 mfxU32 MJPEGEncodeTask::NumPicsCollected()
 {
-    return m_pMJPEGVideoEncoder.get()->NumPicsCollected();
+    return m_pMJPEGVideoEncoder->NumPicsCollected();
 }
 
 mfxU32 MJPEGEncodeTask::NumPiecesCollected(void)
 {
-    return m_pMJPEGVideoEncoder.get()->NumPiecesCollected();
+    return m_pMJPEGVideoEncoder->NumPiecesCollected();
 }
 
 mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInfo* frameInfo, bool useAuxInput)
@@ -151,14 +147,9 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
     // create an entry in the array
     while (NumPicsCollected() < numFields)
     {
-        UMC::MJPEGEncoderPicture *p = new UMC::MJPEGEncoderPicture();
+        std::unique_ptr<UMC::MJPEGEncoderPicture> encPic(new UMC::MJPEGEncoderPicture());
 
-        if (NULL == p)
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-
-        UMC::VideoData* pDataIn = p->m_sourceData.get();
+        UMC::VideoData* pDataIn = encPic->m_sourceData.get();
         mfxU32 pitch = frameSurface->Data.PitchLow + ((mfxU32)frameSurface->Data.PitchHigh << 16);
 
         // color image
@@ -190,15 +181,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
             }
             else if(frameSurface->Info.FourCC == MFX_FOURCC_YUY2)
             {
-                UMC::VideoData* cvt = new UMC::VideoData();
+                std::unique_ptr<UMC::VideoData> cvt(new UMC::VideoData());
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::YUV422);
                 cvt->SetImageSize(width, height);
                 sts = cvt->Alloc();
                 if(sts != UMC::UMC_OK)
                 {
-                    delete p;
-                    delete cvt;
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
@@ -210,9 +199,9 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
 
                     pDataIn->SetPlanePointer(frameSurface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset, 0);
                     pDataIn->SetPlanePitch(pitch * numFields, 0);
-                    
+
                     UMC::VideoProcessing proc;
-                    proc.GetFrame(pDataIn, cvt);
+                    proc.GetFrame(pDataIn, cvt.get());
                 }
                 else if(MFX_CHROMAFORMAT_YUV422V == frameSurface->Info.ChromaFormat)
                 {
@@ -220,11 +209,11 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                     Ipp8u* src = frameSurface->Data.Y + ((frameInfo->CropX >> 1) << 2) + fieldOffset;
                     Ipp32u srcPitch = pitch * numFields;
 
-                    Ipp8u* dst[3] = {(Ipp8u*)cvt->GetPlanePointer(0), 
-                                     (Ipp8u*)cvt->GetPlanePointer(1), 
+                    Ipp8u* dst[3] = {(Ipp8u*)cvt->GetPlanePointer(0),
+                                     (Ipp8u*)cvt->GetPlanePointer(1),
                                      (Ipp8u*)cvt->GetPlanePointer(2)};
-                    Ipp32u dstPitch[3] = {(Ipp32u)cvt->GetPlanePitch(0), 
-                                          (Ipp32u)cvt->GetPlanePitch(1), 
+                    Ipp32u dstPitch[3] = {(Ipp32u)cvt->GetPlanePitch(0),
+                                          (Ipp32u)cvt->GetPlanePitch(1),
                                           (Ipp32u)cvt->GetPlanePitch(2)};
                     for(Ipp32u i=0; i<height; i++)
                         for(Ipp32u j=0; j<width/2; j++)
@@ -237,13 +226,12 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                 }
                 else
                 {
-                    delete p;
-                    delete cvt;
+
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
-                
-                p->m_sourceData.reset(cvt);
-                p->m_release_source_data = true;
+
+                encPic->m_sourceData.reset(cvt.release());
+                encPic->m_release_source_data = true;
             }
             else if(frameSurface->Info.FourCC == MFX_FOURCC_RGB4)
             {
@@ -256,49 +244,44 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
             }
             else
             {
-                delete p;
                 return MFX_ERR_UNSUPPORTED;
             }
 
             if(pDataIn->GetColorFormat() == UMC::NV12 || pDataIn->GetColorFormat() == UMC::YV12)
-            {            
-                UMC::VideoData* cvt = new UMC::VideoData();
+            {
+                std::unique_ptr<UMC::VideoData> cvt(new UMC::VideoData());
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::YUV420);
                 cvt->SetImageSize(width, height);
                 sts = cvt->Alloc();
                 if(sts != UMC::UMC_OK)
                 {
-                    delete p;
-                    delete cvt;
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
                 UMC::VideoProcessing proc;
-                proc.GetFrame(pDataIn, cvt);
-                
-                p->m_sourceData.reset(cvt);
-                p->m_release_source_data = true;
+                proc.GetFrame(pDataIn, cvt.get());
+
+                encPic->m_sourceData.reset(cvt.release());
+                encPic->m_release_source_data = true;
             }
             else if (pDataIn->GetColorFormat() == UMC::RGB32 && useAuxInput)
             {
-                UMC::VideoData* cvt = new UMC::VideoData();
+                std::unique_ptr<UMC::VideoData> cvt(new UMC::VideoData());
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::RGB32);
                 cvt->SetImageSize(width, height);
                 sts = cvt->Alloc();
                 if(sts != UMC::UMC_OK)
                 {
-                    delete p;
-                    delete cvt;
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
                 UMC::VideoProcessing proc;
-                proc.GetFrame(pDataIn, cvt);
-                
-                p->m_sourceData.reset(cvt);
-                p->m_release_source_data = true;
+                proc.GetFrame(pDataIn, cvt.get());
+
+                encPic->m_sourceData.reset(cvt.release());
+                encPic->m_release_source_data = true;
             }
         }
         // gray image
@@ -324,15 +307,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
             }
             else if(frameSurface->Info.FourCC == MFX_FOURCC_YUY2)
             {
-                UMC::VideoData* cvt = new UMC::VideoData();
+                std::unique_ptr<UMC::VideoData> cvt(new UMC::VideoData());
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::GRAY);
                 cvt->SetImageSize(width, height);
                 sts = cvt->Alloc();
                 if(sts != UMC::UMC_OK)
                 {
-                    delete p;
-                    delete cvt;
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
@@ -346,43 +327,40 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                     {
                         dst[i*dstPitch + j] = src[i*srcPitch + (j<<1)];
                     }
-                
-                p->m_sourceData.reset(cvt);
-                p->m_release_source_data = true;
+
+                encPic->m_sourceData.reset(cvt.release());
+                encPic->m_release_source_data = true;
             }
             else
             {
-                delete p;
                 return MFX_ERR_UNSUPPORTED;
             }
 
             if((frameSurface->Info.FourCC == MFX_FOURCC_NV12 || frameSurface->Info.FourCC == MFX_FOURCC_YV12) && useAuxInput)
-            {            
-                UMC::VideoData* cvt = new UMC::VideoData();
+            {
+                std::unique_ptr<UMC::VideoData> cvt(new UMC::VideoData());
 
                 cvt->Init(alignedWidth, alignedHeight, UMC::GRAY);
                 cvt->SetImageSize(width, height);
                 sts = cvt->Alloc();
                 if(sts != UMC::UMC_OK)
                 {
-                    delete p;
-                    delete cvt;
                     return MFX_ERR_MEMORY_ALLOC;
                 }
 
                 UMC::VideoProcessing proc;
-                proc.GetFrame(pDataIn, cvt);
-                
-                p->m_sourceData.reset(cvt);
-                p->m_release_source_data = true;
+                proc.GetFrame(pDataIn, cvt.get());
+
+                encPic->m_sourceData.reset(cvt.release());
+                encPic->m_release_source_data = true;
             }
         }
 
-        p->m_sourceData.get()->SetTime((Ipp64f)frameSurface->Data.TimeStamp);
+        encPic->m_sourceData->SetTime((Ipp64f)frameSurface->Data.TimeStamp);
 
         if(MFX_SCANTYPE_INTERLEAVED == params.interleaved || MFX_CHROMAFORMAT_YUV400 == frameSurface->Info.ChromaFormat)
         {
-            UMC::MJPEGEncoderScan *s = new UMC::MJPEGEncoderScan();
+            std::unique_ptr<UMC::MJPEGEncoderScan> scan(new UMC::MJPEGEncoderScan());
 
             if(params.restart_interval)
             {
@@ -406,14 +384,12 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                         mcuWidth = mcuHeight = 8;
                         break;
                     default:
-                        delete p;
-                        delete s;
                         return MFX_ERR_UNSUPPORTED;
                 }
 
                 numxMCU = (width  + (mcuWidth  - 1)) / mcuWidth;
                 numyMCU = (height + (mcuHeight - 1)) / mcuHeight;
-                
+
                 numPieces = ((numxMCU * numyMCU + params.restart_interval - 1) / params.restart_interval) * numFields;
             }
             else
@@ -421,15 +397,15 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                 numPieces = 1;
             }
 
-            s->Init(numPieces);
+            scan->Init(numPieces);
 
-            p->m_scans.push_back(s);
+            encPic->m_scans.push_back(scan.release());
         }
         else
         {
             for(Ipp32u i=0; i<3; i++)
             {
-                UMC::MJPEGEncoderScan *s = new UMC::MJPEGEncoderScan();
+                std::unique_ptr<UMC::MJPEGEncoderScan> scan(new UMC::MJPEGEncoderScan());
 
                 if(params.restart_interval)
                 {
@@ -462,7 +438,7 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                             }
                         }
                     }
-                    
+
                     numPieces = ((numxMCU * numyMCU + params.restart_interval - 1) / params.restart_interval) * numFields;
                 }
                 else
@@ -470,13 +446,13 @@ mfxStatus MJPEGEncodeTask::AddSource(mfxFrameSurface1* frameSurface, mfxFrameInf
                     numPieces = 1;
                 }
 
-                s->Init(numPieces);
+                scan->Init(numPieces);
 
-                p->m_scans.push_back(s);
+                encPic->m_scans.push_back(scan.release());
             }
         }
 
-        m_pMJPEGVideoEncoder.get()->AddPicture(p);
+        m_pMJPEGVideoEncoder->AddPicture(encPic.release());
 
         isBottom = 1 - isBottom;
     }
@@ -625,7 +601,7 @@ mfxStatus MJPEGEncodeTask::EncodePiece(const mfxU32 threadNumber)
         encodedPieces++;
     }
 
-    UMC::Status umc_sts = m_pMJPEGVideoEncoder.get()->EncodePiece(threadNumber, pieceNum);
+    UMC::Status umc_sts = m_pMJPEGVideoEncoder->EncodePiece(threadNumber, pieceNum);
     if(UMC::UMC_ERR_INVALID_PARAMS == umc_sts)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -634,7 +610,7 @@ mfxStatus MJPEGEncodeTask::EncodePiece(const mfxU32 threadNumber)
     {
         return MFX_ERR_UNKNOWN;
     }
-    
+
     return (pieceNum == NumPiecesCollected()) ? (MFX_TASK_DONE) : (MFX_TASK_WORKING);
 }
 
@@ -659,7 +635,7 @@ mfxStatus MFXVideoENCODEMJPEG::MJPEGENCODECompleteProc(void *pState, void *pPara
     UMC::MediaData pDataOut;
     pDataOut.SetBufferPointer(pTask->bs->Data + pTask->bs->DataOffset + pTask->bs->DataLength, pTask->bs->MaxLength - pTask->bs->DataOffset - pTask->bs->DataLength);
 
-    umc_sts = pTask->m_pMJPEGVideoEncoder.get()->PostProcessing(&pDataOut);
+    umc_sts = pTask->m_pMJPEGVideoEncoder->PostProcessing(&pDataOut);
     if(UMC::UMC_OK != umc_sts)
     {
         if(UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umc_sts)
@@ -1559,7 +1535,6 @@ mfxStatus MFXVideoENCODEMJPEG::Close(void)
 mfxStatus MFXVideoENCODEMJPEG::GetVideoParam(mfxVideoParam *par)
 {
     UMC::Status umcRes = UMC::UMC_OK;
-    UMC::MJPEGVideoEncoder* pMJPEGVideoEncoder;
 
     if(!m_isInitialized)
         return MFX_ERR_NOT_INITIALIZED;
@@ -1584,8 +1559,8 @@ mfxStatus MFXVideoENCODEMJPEG::GetVideoParam(mfxVideoParam *par)
         if(!pLastTask)
             return MFX_ERR_UNSUPPORTED;
 
-        pMJPEGVideoEncoder = pLastTask->m_pMJPEGVideoEncoder.get();
-        
+        UMC::MJPEGVideoEncoder* pMJPEGVideoEncoder = pLastTask->m_pMJPEGVideoEncoder.get();
+
         if(jpegQT)
         {
             umcRes = pMJPEGVideoEncoder->FillQuantTableExtBuf(jpegQT);
@@ -1628,7 +1603,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
     mfxStatus mfxRes = MFX_ERR_NONE;
 
     UMC::MJPEGEncoderParams info;
-    task.m_pMJPEGVideoEncoder.get()->GetInfo(&info);
+    task.m_pMJPEGVideoEncoder->GetInfo(&info);
     mfxU32 numFields = ((info.info.interlace_type == UMC::PROGRESSIVE) ? 1 : 2);
 
     if(callNumber == 0)
@@ -1688,7 +1663,7 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
                 {
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
-                
+
                 mfxU32 pitch = surface->Data.PitchLow + ((mfxU32)surface->Data.PitchHigh << 16);
                 if (!pitch)
                 {
@@ -1703,10 +1678,10 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
                     return MFX_ERR_UNDEFINED_BEHAVIOR;
                 }
             }
-            
+
             mfxRes = task.AddSource(task.surface, &(m_vParam.mfx.FrameInfo), true);
             MFX_CHECK_STS(mfxRes);
-            
+
             mfxRes = m_core->UnlockExternalFrame(task.surface->Data.MemId, &task.surface->Data);
             MFX_CHECK_STS(mfxRes);
         }
@@ -1716,17 +1691,17 @@ mfxStatus MFXVideoENCODEMJPEG::RunThread(MJPEGEncodeTask &task, mfxU32 threadNum
             MFX_CHECK_STS(mfxRes);
         }
     }
-    else if(task.m_pMJPEGVideoEncoder.get()->NumPicsCollected() != numFields)
+    else if(task.m_pMJPEGVideoEncoder->NumPicsCollected() != numFields)
     {
         return MFX_TASK_WORKING;
     }
-    
+
     return task.EncodePiece(threadNumber);
 }
 
 mfxStatus MFXVideoENCODEMJPEG::EncodeFrame(mfxEncodeCtrl *, mfxEncodeInternalParams *, mfxFrameSurface1* /*inputSurface*/, mfxBitstream* /*bs*/)
 {
-#if 0    
+#if 0
     mfxFrameSurface1 *surface = inputSurface;
     mfxStatus st;
     mfxU32 minBufferSize;
@@ -1904,7 +1879,6 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
 
     mfxExtJPEGQuantTables*   jpegQT = NULL;
     mfxExtJPEGHuffmanTables* jpegHT = NULL;
-    UMC::MJPEGVideoEncoder*  pMJPEGVideoEncoder = NULL;
 
     if(!m_isInitialized) return MFX_ERR_NOT_INITIALIZED;
     if (bs == 0) return MFX_ERR_NULL_PTR;
@@ -1918,15 +1892,10 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
                 return MFX_WRN_DEVICE_BUSY;
             }
 
-            std::auto_ptr<MJPEGEncodeTask> pTask(new MJPEGEncodeTask());
-
-            if (NULL == pTask.get())
-            {
-                return MFX_ERR_MEMORY_ALLOC;
-            }
+            std::unique_ptr<MJPEGEncodeTask> pTask(new MJPEGEncodeTask());
 
             // initialize the task
-            sts = pTask.get()->Initialize(m_pUmcVideoParams.get());
+            sts = pTask->Initialize(m_pUmcVideoParams.get());
             if (MFX_ERR_NONE != sts)
             {
                 return sts;
@@ -1947,7 +1916,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
                     jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( m_vParam.ExtParam, m_vParam.NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
                 }
 
-                pMJPEGVideoEncoder = pTask.get()->m_pMJPEGVideoEncoder.get();
+                UMC::MJPEGVideoEncoder*  pMJPEGVideoEncoder = pTask->m_pMJPEGVideoEncoder.get();
 
                 if(jpegQT)
                 {
@@ -2044,7 +2013,7 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
         jpegHT = (mfxExtJPEGHuffmanTables*) GetExtBuffer( ctrl->ExtParam, ctrl->NumExtParam, MFX_EXTBUFF_JPEG_HUFFMAN );
     }
 
-    pMJPEGVideoEncoder = m_freeTasks.front()->m_pMJPEGVideoEncoder.get();
+    UMC::MJPEGVideoEncoder* pMJPEGVideoEncoder = m_freeTasks.front()->m_pMJPEGVideoEncoder.get();
 
     if(jpegQT)
     {

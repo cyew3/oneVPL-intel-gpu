@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2008-2013 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2008-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -57,7 +57,7 @@ public:
 
     mfxU32           m_initialDataLength;
 
-    std::auto_ptr<UMC::MJPEGVideoEncoder> m_pMJPEGVideoEncoder;
+    std::unique_ptr<UMC::MJPEGVideoEncoder> m_pMJPEGVideoEncoder;
 
     mfxStatus EncodePiece(const mfxU32 threadNumber);
 
@@ -76,24 +76,24 @@ public:
     static mfxStatus Query(mfxVideoParam *in, mfxVideoParam *out);
     static mfxStatus QueryIOSurf(mfxVideoParam *par, mfxFrameAllocRequest *request);
 
-    virtual mfxTaskThreadingPolicy GetThreadingPolicy(void)
+    mfxTaskThreadingPolicy GetThreadingPolicy(void) override
     {
         return MFX_TASK_THREADING_INTRA;
     }
 
     MFXVideoENCODEMJPEG(VideoCORE *core, mfxStatus *sts);
-    virtual ~MFXVideoENCODEMJPEG();
-    virtual mfxStatus Init(mfxVideoParam *par);
-    virtual mfxStatus Reset(mfxVideoParam *par);
-    virtual mfxStatus Close(void);
+    ~MFXVideoENCODEMJPEG() override;
+    mfxStatus Init(mfxVideoParam *par) override;
+    mfxStatus Reset(mfxVideoParam *par) override;
+    mfxStatus Close(void) override;
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
-    virtual mfxStatus GetFrameParam(mfxFrameParam *par);
-    virtual mfxStatus GetEncodeStat(mfxEncodeStat *stat);
-    virtual mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs);
-    virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams);
-    virtual mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams, MFX_ENTRY_POINT *pEntryPoint);
-    virtual mfxStatus CancelFrame(mfxEncodeCtrl * /*ctrl*/, mfxEncodeInternalParams * /*pInternalParams*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/) {return MFX_ERR_UNSUPPORTED;}
+    mfxStatus GetVideoParam(mfxVideoParam *par) override;
+    mfxStatus GetFrameParam(mfxFrameParam *par) override;
+    mfxStatus GetEncodeStat(mfxEncodeStat *stat) override;
+    mfxStatus EncodeFrame(mfxEncodeCtrl *ctrl, mfxEncodeInternalParams *pInternalParams, mfxFrameSurface1 *surface, mfxBitstream *bs) override;
+    mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams) override;
+    mfxStatus EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSurface1 *surface, mfxBitstream *bs, mfxFrameSurface1 **reordered_surface, mfxEncodeInternalParams *pInternalParams, MFX_ENTRY_POINT *pEntryPoint) override;
+    mfxStatus CancelFrame(mfxEncodeCtrl * /*ctrl*/, mfxEncodeInternalParams * /*pInternalParams*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/) override {return MFX_ERR_UNSUPPORTED;}
 
     mfxFrameSurface1 *GetOriginalSurface(mfxFrameSurface1 *surface);
     mfxStatus RunThread(MJPEGEncodeTask &task, mfxU32 threadNumber, mfxU32 callNumber);
@@ -118,7 +118,7 @@ protected:
 
     MJPEGEncodeTask *pLastTask;
 
-    std::auto_ptr<UMC::MJPEGEncoderParams> m_pUmcVideoParams;
+    std::unique_ptr<UMC::MJPEGEncoderParams> m_pUmcVideoParams;
 
     mfxU32  m_totalBits;
     mfxU32  m_frameCountSync;   // counter for sync. part

@@ -79,8 +79,8 @@ public:
    ~MJPEGEncoderPicture();
 
     Ipp32u GetNumPieces();
-   
-    std::auto_ptr<VideoData>       m_sourceData;
+
+    std::unique_ptr<VideoData>     m_sourceData;
     std::vector<MJPEGEncoderScan*> m_scans;
 
     Ipp32u                         m_release_source_data;
@@ -123,8 +123,6 @@ public:
         interleaved      = 0;
         chroma_format    = 0;
     }
-
-//    Status ReadParamFile(const vm_char *ParFileName) { return UMC_ERR_NOT_IMPLEMENTED; }
 
     Ipp32s quality;
     Ipp32s huffman_opt;
@@ -197,13 +195,11 @@ public:
 protected:
 
     // JPEG encoders allocated
-    std::auto_ptr<CJPEGEncoder>       m_enc[JPEG_ENC_MAX_THREADS];
+    std::vector<std::unique_ptr<CJPEGEncoder>> m_enc;
     // Bitstream buffer for each thread
-    std::auto_ptr<MediaData>          m_pBitstreamBuffer[JPEG_ENC_MAX_THREADS];
+    std::vector<std::unique_ptr<MediaData>>    m_pBitstreamBuffer;
     //
-    std::auto_ptr<MJPEGEncoderFrame>  m_frame;
-    // Number of the encoders allocated
-    Ipp32u                            m_numEnc;
+    std::unique_ptr<MJPEGEncoderFrame>  m_frame;
 
     std::mutex                        m_guard;
 

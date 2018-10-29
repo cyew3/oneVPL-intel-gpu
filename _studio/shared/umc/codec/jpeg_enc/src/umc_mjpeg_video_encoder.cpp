@@ -67,7 +67,7 @@ MJPEGEncoderPicture::~MJPEGEncoderPicture()
 {
     if(m_release_source_data)
     {
-        m_sourceData.get()->ReleaseImage();
+        m_sourceData->ReleaseImage();
     }
 
     for(Ipp32u i=0; i<m_scans.size(); i++)
@@ -157,7 +157,6 @@ VideoEncoder *CreateMJPEGEncoder() { return new MJPEGVideoEncoder(); }
 MJPEGVideoEncoder::MJPEGVideoEncoder(void)
 {
     m_IsInit      = false;
-    m_numEnc      = 0;
 }
 
 MJPEGVideoEncoder::~MJPEGVideoEncoder(void)
@@ -175,10 +174,9 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
     if(!pEncoderParams)
         return UMC_ERR_NULL_PTR;
 
-    for (i = 0; i < m_numEnc; i += 1)
+    for (auto& buffer: m_pBitstreamBuffer)
     {
-        //m_enc[i].reset(0);
-        m_pBitstreamBuffer[i].get()->Reset();
+        buffer->Reset();
     }
 
     status = VideoEncoder::Close();
@@ -199,13 +197,11 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
         numThreads = m_EncoderParams.numThreads;
     }
 
+    m_enc.resize(numThreads);
+    m_pBitstreamBuffer.resize(numThreads);
     for (i = 0; i < numThreads; i += 1)
     {
         m_enc[i].reset(new CJPEGEncoder());
-        if (NULL == m_enc[i].get())
-        {
-            return UMC_ERR_ALLOC;
-        }
 
         if(m_EncoderParams.quality)
         {
@@ -222,13 +218,12 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
-        if(!m_pBitstreamBuffer[i].get())
+        if(!m_pBitstreamBuffer[i])
             m_pBitstreamBuffer[i].reset(new MediaData(m_EncoderParams.buf_size));
     }
-    m_numEnc = numThreads;
 
-    if(m_frame.get())
-        m_frame.get()->Reset();
+    if(m_frame)
+        m_frame->Reset();
 
     m_frame.reset(new MJPEGEncoderFrame);
 
@@ -244,14 +239,17 @@ Status MJPEGVideoEncoder::Reset(void)
 
 Status MJPEGVideoEncoder::Close(void)
 {
-    for (Ipp32u i = 0; i < m_numEnc; i += 1)
+    for (auto& enc: m_enc)
     {
-        m_enc[i].reset();
-        m_pBitstreamBuffer[i].reset();
+        enc.reset();
+    }
+    for (auto& buffer: m_pBitstreamBuffer)
+    {
+        buffer.reset();
     }
 
-    if(m_frame.get())
-        m_frame.get()->Reset();
+    if(m_frame)
+        m_frame->Reset();
 
     m_IsInit       = false;
 
@@ -309,9 +307,9 @@ Status MJPEGVideoEncoder::SetDefaultQuantTable(const mfxU16 quality)
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    for(Ipp32u i=0; i<m_numEnc; i++)
+    for(auto& enc: m_enc)
     {
-        jerr = m_enc[i]->SetDefaultQuantTable(quality);
+        jerr = enc->SetDefaultQuantTable(quality);
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
     }
@@ -326,13 +324,13 @@ Status MJPEGVideoEncoder::SetDefaultHuffmanTable()
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    for(Ipp32u i=0; i<m_numEnc; i++)
+    for(auto& enc: m_enc)
     {
-        jerr = m_enc[i]->SetDefaultACTable(); 
+        jerr = enc->SetDefaultACTable();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
-        jerr = m_enc[i]->SetDefaultDCTable();
+        jerr = enc->SetDefaultDCTable();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
     }
@@ -347,11 +345,11 @@ Status MJPEGVideoEncoder::SetQuantTableExtBuf(mfxExtJPEGQuantTables* quantTables
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    for(Ipp32u i=0; i<m_numEnc; i++)
+    for(auto& enc: m_enc)
     {
         for(Ipp16u j=0; j<quantTables->NumTable; j++)
         {
-            jerr = m_enc[i]->SetQuantTable(j, quantTables->Qm[j]);
+            jerr = enc->SetQuantTable(j, quantTables->Qm[j]);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
         }
@@ -367,18 +365,18 @@ Status MJPEGVideoEncoder::SetHuffmanTableExtBuf(mfxExtJPEGHuffmanTables* huffman
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    for(Ipp32u i=0; i<m_numEnc; i++)
+    for(auto& enc: m_enc)
     {
         for(int j=0; j<huffmanTables->NumACTable; j++)
         {
-            jerr = m_enc[i]->SetACTable(j, huffmanTables->ACTables[j].Bits, huffmanTables->ACTables[j].Values);
+            jerr = enc->SetACTable(j, huffmanTables->ACTables[j].Bits, huffmanTables->ACTables[j].Values);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
         }
 
         for(int j=0; j<huffmanTables->NumDCTable; j++)
         {
-            jerr = m_enc[i]->SetDCTable(j, huffmanTables->DCTables[j].Bits, huffmanTables->DCTables[j].Values);
+            jerr = enc->SetDCTable(j, huffmanTables->DCTables[j].Bits, huffmanTables->DCTables[j].Values);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
         }
@@ -409,19 +407,19 @@ Status MJPEGVideoEncoder::GetInfo(BaseCodecParams *info)
 
 Ipp32u MJPEGVideoEncoder::NumEncodersAllocated(void)
 {
-    return m_numEnc;
+    return static_cast<Ipp32u>(m_enc.size());
 }
 
 Ipp32u MJPEGVideoEncoder::NumPicsCollected(void)
 {
     std::lock_guard<std::mutex> guard(m_guard);
 
-    return m_frame.get()->GetNumPics();
+    return m_frame->GetNumPics();
 }
 
 Ipp32u MJPEGVideoEncoder::NumPiecesCollected(void)
 {
-    return m_frame.get()->GetNumPieces();
+    return m_frame->GetNumPieces();
 }
 
 Status MJPEGVideoEncoder::AddPicture(MJPEGEncoderPicture* pic)
@@ -431,7 +429,7 @@ Status MJPEGVideoEncoder::AddPicture(MJPEGEncoderPicture* pic)
 
     std::lock_guard<std::mutex> guard(m_guard);
 
-    m_frame.get()->m_pics.push_back(pic);
+    m_frame->m_pics.push_back(pic);
 
     return UMC_OK;
 }
@@ -638,9 +636,9 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    m_frame.get()->GetPiecePosition(numPiece, &numField, &numScan, &piecePosInField, &piecePosInScan);
+    m_frame->GetPiecePosition(numPiece, &numField, &numScan, &piecePosInField, &piecePosInScan);
 
-    VideoData *in = m_frame.get()->m_pics[numField]->m_sourceData.get();
+    VideoData *in = m_frame->m_pics[numField]->m_sourceData.get();
     VideoData *pDataIn = DynamicCast<VideoData, MediaData>(in);
 
     if(!in)
@@ -694,8 +692,8 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
         return UMC_ERR_UNSUPPORTED;
     }
 
-    status = streamOut.Open((Ipp8u*)m_pBitstreamBuffer[threadNumber].get()->GetBufferPointer() + m_pBitstreamBuffer[threadNumber].get()->GetDataSize(), 
-                            (int)m_pBitstreamBuffer[threadNumber].get()->GetBufferSize() - (int)m_pBitstreamBuffer[threadNumber].get()->GetDataSize());
+    status = streamOut.Open((Ipp8u*)m_pBitstreamBuffer[threadNumber]->GetBufferPointer() + m_pBitstreamBuffer[threadNumber]->GetDataSize(), 
+                            (int)m_pBitstreamBuffer[threadNumber]->GetBufferSize() - (int)m_pBitstreamBuffer[threadNumber]->GetDataSize());
     if(JPEG_OK != status)
         return UMC_ERR_FAILED;
 
@@ -767,7 +765,7 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
                                                 jss,
                                                 m_EncoderParams.restart_interval,
                                                 m_EncoderParams.interleaved,
-                                                m_frame.get()->m_pics[numField]->GetNumPieces(),
+                                                m_frame->m_pics[numField]->GetNumPieces(),
                                                 piecePosInField,
                                                 numScan,
                                                 piecePosInScan,
@@ -792,13 +790,13 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
     else if(JPEG_OK != status)
         return UMC_ERR_FAILED;
 
-    m_frame.get()->m_pics[numField]->m_scans[numScan]->m_pieceLocation[piecePosInScan] = threadNumber; //m_pOutputBuffer[numPic].get()->m_pieceLocation[numPiece] = threadNumber;
-    m_frame.get()->m_pics[numField]->m_scans[numScan]->m_pieceOffset[piecePosInScan] = m_pBitstreamBuffer[threadNumber].get()->GetDataSize(); //m_pOutputBuffer[numPic].get()->m_pieceOffset[numPiece] = m_pBitstreamBuffer[threadNumber].get()->GetDataSize();
-    m_frame.get()->m_pics[numField]->m_scans[numScan]->m_pieceSize[piecePosInScan] = streamOut.GetPosition(); //m_pOutputBuffer[numPic].get()->m_pieceSize[numPiece] = streamOut.GetPosition();
-    
+    m_frame->m_pics[numField]->m_scans[numScan]->m_pieceLocation[piecePosInScan] = threadNumber; //m_pOutputBuffer[numPic].get()->m_pieceLocation[numPiece] = threadNumber;
+    m_frame->m_pics[numField]->m_scans[numScan]->m_pieceOffset[piecePosInScan] = m_pBitstreamBuffer[threadNumber]->GetDataSize(); //m_pOutputBuffer[numPic].get()->m_pieceOffset[numPiece] = m_pBitstreamBuffer[threadNumber].get()->GetDataSize();
+    m_frame->m_pics[numField]->m_scans[numScan]->m_pieceSize[piecePosInScan] = streamOut.GetPosition(); //m_pOutputBuffer[numPic].get()->m_pieceSize[numPiece] = streamOut.GetPosition();
+
     //out->SetTime(pDataIn->GetTime());
-    
-    m_pBitstreamBuffer[threadNumber]->SetDataSize(m_pBitstreamBuffer[threadNumber].get()->GetDataSize() + streamOut.GetPosition());
+
+    m_pBitstreamBuffer[threadNumber]->SetDataSize(m_pBitstreamBuffer[threadNumber]->GetDataSize() + streamOut.GetPosition());
 
     return status;
 }
@@ -813,31 +811,31 @@ Status MJPEGVideoEncoder::PostProcessing(MediaData* out)
     size_t requiredDataSize = 0;
 
     // check buffer size
-    for(i=0; i<m_frame.get()->GetNumPics(); i++)
-        for(j=0; j<m_frame.get()->m_pics[i]->m_scans.size(); j++)
-            for(k=0; k<m_frame.get()->m_pics[i]->m_scans[j]->GetNumPieces(); k++)
-                requiredDataSize += m_frame.get()->m_pics[i]->m_scans[j]->m_pieceSize[k];
+    for(i=0; i<m_frame->GetNumPics(); i++)
+        for(j=0; j<m_frame->m_pics[i]->m_scans.size(); j++)
+            for(k=0; k<m_frame->m_pics[i]->m_scans[j]->GetNumPieces(); k++)
+                requiredDataSize += m_frame->m_pics[i]->m_scans[j]->m_pieceSize[k];
 
     if(out->GetBufferSize() - out->GetDataSize() < requiredDataSize)
     {
         return UMC_ERR_NOT_ENOUGH_BUFFER;
     }
 
-    for(i=0; i<m_frame.get()->GetNumPics(); i++)
+    for(i=0; i<m_frame->GetNumPics(); i++)
     {
-        for(j=0; j<m_frame.get()->m_pics[i]->m_scans.size(); j++)
+        for(j=0; j<m_frame->m_pics[i]->m_scans.size(); j++)
         {
-            for(k=0; k<m_frame.get()->m_pics[i]->m_scans[j]->GetNumPieces(); k++)
+            for(k=0; k<m_frame->m_pics[i]->m_scans[j]->GetNumPieces(); k++)
             {
-                size_t location = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceLocation[k];
-                size_t offset = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceOffset[k];
-                size_t size = m_frame.get()->m_pics[i]->m_scans[j]->m_pieceSize[k];
+                size_t location = m_frame->m_pics[i]->m_scans[j]->m_pieceLocation[k];
+                size_t offset = m_frame->m_pics[i]->m_scans[j]->m_pieceOffset[k];
+                size_t size = m_frame->m_pics[i]->m_scans[j]->m_pieceSize[k];
 
                 MFX_INTERNAL_CPY((Ipp8u *)out->GetBufferPointer() + out->GetDataSize(),
                             (Ipp8u *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
                             (Ipp32u)size);
 
-                if(k != m_frame.get()->m_pics[i]->m_scans[j]->GetNumPieces() - 1)
+                if(k != m_frame->m_pics[i]->m_scans[j]->GetNumPieces() - 1)
                 {
                     Ipp8u *link = (Ipp8u *)out->GetBufferPointer() + out->GetDataSize() + size;
                     link[0] = 0xFF;
