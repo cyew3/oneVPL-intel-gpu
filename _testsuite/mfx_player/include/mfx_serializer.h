@@ -513,6 +513,25 @@ protected:
 };
 
 template<>
+class MFXStructureRef <mfxExtMultiFrameParam>
+    : public MFXStructureBase<mfxExtMultiFrameParam>
+{
+public:
+    MFXStructureRef(mfxExtBuffer & refStruct, int flags = 0)
+        : MFXStructureBase<mfxExtMultiFrameParam>((mfxExtMultiFrameParam &)refStruct, flags)
+    {
+    }
+
+    MFXStructureRef(mfxExtMultiFrameParam & refStruct, int flags = 0)
+        :MFXStructureBase<mfxExtMultiFrameParam>(refStruct, flags)
+    {
+    }
+
+protected:
+    virtual void ConstructValues() const;
+};
+
+template<>
 class MFXStructureRef <mfxExtCodingOptionQuantMatrix>
     : public MFXStructureBase<mfxExtCodingOptionQuantMatrix>
 {

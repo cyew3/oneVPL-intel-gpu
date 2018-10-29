@@ -87,6 +87,7 @@ Copyright(c) 2008-2018 Intel Corporation. All Rights Reserved.
 #define HANDLE_VP8_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP8CodingOptions, member, OPT_TYPE, description, MFX_CODEC_VP8)
 #define HANDLE_VP9_PARAM(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extVP9Param, member, OPT_TYPE, description, MFX_CODEC_VP9)
 #define HANDLE_ENCRESET_OPTION(member, OPT_TYPE, description) HANDLE_OPTION_FOR_EXT_BUFFER(m_extEncoderReset, member, OPT_TYPE, description, 0)
+#define HANDLE_EXT_MFE(member, OPT_TYPE, description)     HANDLE_OPTION_FOR_EXT_BUFFER(m_extMFEParam, member, OPT_TYPE, description, 0)
 
 
 #define FILL_MASK(type, ptr)\
@@ -137,6 +138,7 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
     , m_QuantMatrix(VM_STRING(""),*m_extCodingOptionsQuantMatrix.get())
     , m_extEncoderCapability(new mfxExtEncoderCapability())
     , m_extEncoderReset(new mfxExtEncoderResetOption())
+    , m_extMFEParam(new mfxExtMultiFrameParam())
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     , m_extTemporalLayers(new mfxExtTemporalLayers())
 #endif
@@ -456,6 +458,8 @@ MFXTranscodingPipeline::MFXTranscodingPipeline(IMFXPipelineFactory *pFactory)
         //mfxExtEncoderResetOption
         HANDLE_ENCRESET_OPTION(StartNewSequence,   OPT_TRI_STATE,  "Start New Sequence"),
 
+        HANDLE_EXT_MFE(MaxNumFrames, OPT_UINT_16, "Number of frames for MFE, pure DDI verification with single frame"),
+        HANDLE_EXT_MFE(MFMode, OPT_UINT_16, "MFE mode, 0 - default, 1 - off, 2 - auto"),
         // Quant Matrix parameters
         {VM_STRING("-qm"), OPT_AUTO_DESERIAL, {&m_QuantMatrix}, VM_STRING("Quant Matrix structure")},
 
@@ -594,6 +598,11 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
         else if (m_OptProc.Check(argv[0], VM_STRING("-RefRec"), VM_STRING("motion estimation on reconstructed frames")))
         {
             m_extCodingOptionsDDI->RefRaw = MFX_CODINGOPTION_OFF;
+        }
+        else if (m_OptProc.Check(argv[0], VM_STRING("-MfeFrames"), VM_STRING("Number of frames for MFE")))
+        {
+            MFX_PARSE_INT(m_extMFEParam->MaxNumFrames, argv[1]);
+            argv++;
         }
         else if (m_OptProc.Check(argv[0], VM_STRING("-dump_rec"), VM_STRING("dump reconstructed frames into YUV file"), OPT_FILENAME))
         {
@@ -2473,6 +2482,8 @@ mfxStatus MFXTranscodingPipeline::CheckParams()
 
     if (!m_extEncoderReset.IsZero())
         m_components[eREN].m_extParams.push_back(m_extEncoderReset);
+    if (!m_extMFEParam.IsZero())
+        m_components[eREN].m_extParams.push_back(m_extMFEParam);
 
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     if (!m_extTemporalLayers.IsZero())

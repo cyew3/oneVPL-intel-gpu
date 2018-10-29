@@ -109,7 +109,7 @@ protected:
     MFXExtBufferPtr<mfxExtEncoderCapability> m_extEncoderCapability;
 
     MFXExtBufferPtr<mfxExtEncoderResetOption> m_extEncoderReset;
-
+    MFXExtBufferPtr<mfxExtMultiFrameParam> m_extMFEParam;
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFXExtBufferPtr<mfxExtTemporalLayers> m_extTemporalLayers;
 #endif

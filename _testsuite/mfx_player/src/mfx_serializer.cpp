@@ -226,6 +226,12 @@ void MFXStructureRef <mfxExtCodingOption3>::ConstructValues() const
     SERIALIZE_INT(BRCPanicMode);
 }
 
+void MFXStructureRef <mfxExtMultiFrameParam>::ConstructValues() const
+{
+    SERIALIZE_INT(MFMode);
+    SERIALIZE_INT(MaxNumFrames);
+}
+
 void MFXStructureRef <mfxExtCodingOptionDDI>::ConstructValues () const
 {
     SERIALIZE_INT(IntraPredCostType);
@@ -1039,6 +1045,10 @@ void MFXStructureRef <mfxExtBuffer>:: ConstructValues () const {
         }
         case MFX_EXTBUFF_DDI : {
             SerializeStruct(VM_STRING("DDI."), *(mfxExtCodingOptionDDI*)m_pStruct);
+            break;
+        }
+        case MFX_EXTBUFF_MULTI_FRAME_PARAM: {
+            SerializeStruct(VM_STRING("MFE."), *(mfxExtMultiFrameParam*)m_pStruct);
             break;
         }
         case MFX_EXTBUFF_QM: {
