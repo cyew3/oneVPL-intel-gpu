@@ -151,19 +151,19 @@ class VideoDECODEMJPEGBase_SW : public VideoDECODEMJPEGBase
 public:
     VideoDECODEMJPEGBase_SW();
 
-    virtual mfxStatus Init(mfxVideoParam *decPar, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxFrameAllocRequest *request_internal, bool isUseExternalFrames, VideoCORE *core);
-    virtual mfxStatus Reset(mfxVideoParam *par);
-    virtual mfxStatus Close(void);
+    mfxStatus Init(mfxVideoParam *decPar, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response, mfxFrameAllocRequest *request_internal, bool isUseExternalFrames, VideoCORE *core) override;
+    mfxStatus Reset(mfxVideoParam *par) override;
+    mfxStatus Close(void) override;
 
-    virtual mfxStatus GetVideoParam(mfxVideoParam *par);
-    virtual mfxStatus RunThread(void *pParam, mfxU32 threadNumber, mfxU32 callNumber);
-    virtual mfxStatus CompleteTask(void *pParam, mfxStatus taskRes);
-    virtual mfxStatus CheckTaskAvailability(mfxU32 maxTaskNumber);
-    virtual mfxStatus ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq);
-    virtual void ReleaseReservedTask();
-    virtual mfxStatus AddPicture(UMC::MediaDataEx *pSrcData, mfxU32 & numPic);
-    virtual mfxStatus AllocateFrameData(UMC::FrameData *&data);
-    virtual mfxStatus FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out);
+    mfxStatus GetVideoParam(mfxVideoParam *par) override;
+    mfxStatus RunThread(void *pParam, mfxU32 threadNumber, mfxU32 callNumber) override;
+    mfxStatus CompleteTask(void *pParam, mfxStatus taskRes) override;
+    mfxStatus CheckTaskAvailability(mfxU32 maxTaskNumber) override;
+    mfxStatus ReserveUMCDecoder(UMC::MJPEGVideoDecoderBaseMFX* &pMJPEGVideoDecoder, mfxFrameSurface1 *surf, bool isOpaq) override;
+    void ReleaseReservedTask() override;
+    mfxStatus AddPicture(UMC::MediaDataEx *pSrcData, mfxU32 & numPic) override;
+    mfxStatus AllocateFrameData(UMC::FrameData *&data) override;
+    mfxStatus FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, mfxFrameSurface1 *surface_work, mfxFrameSurface1 *surface_out) override;
 
 protected:
     CJpegTask *pLastTask;

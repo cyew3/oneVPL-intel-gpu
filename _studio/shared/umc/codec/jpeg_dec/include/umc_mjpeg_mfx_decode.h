@@ -48,7 +48,7 @@ class CJpegTaskBuffer;
 namespace UMC
 {
 
-    
+
 enum
 {
     JPEG_MAX_THREADS = 4
@@ -64,20 +64,20 @@ public:
     virtual ~MJPEGVideoDecoderMFX(void);
 
     // Initialize for subsequent frame decoding.
-    virtual Status Init(BaseCodecParams* init);
+    Status Init(BaseCodecParams* init) override;
 
     // Reset decoder to initial state
-    virtual Status Reset(void);
+    Status Reset(void) override;
 
     // Close decoding & free all allocated resources
-    virtual Status Close(void);
+    Status Close(void) override;
 
     virtual FrameData *GetDst(void);
 
     // Get next frame
     virtual Status DecodePicture(const CJpegTask &task, const mfxU32 threadNumber, const mfxU32 callNumber);
 
-    virtual void SetFrameAllocator(FrameAllocator * frameAllocator);
+    void SetFrameAllocator(FrameAllocator * frameAllocator) override;
 
     Status DecodeHeader(MediaData* in);
 
@@ -97,7 +97,7 @@ public:
     Status _GetFrameInfo(const Ipp8u* pBitStream, size_t nSize);
 
     // Allocate the destination frame
-    virtual Status AllocateFrame();
+    Status AllocateFrame() override;
 
     // Close the frame being decoded
     Status CloseFrame(void);
@@ -118,7 +118,7 @@ public:
 
 protected:
 
-    virtual void AdjustFrameSize(IppiSize & size);
+    void AdjustFrameSize(IppiSize & size) override;
 
     Status DecodePiece(const mfxU32 fieldNum,
                        const mfxU32 restartNum,
@@ -138,9 +138,7 @@ protected:
     Ipp32s                  m_framePrecision;
 
     // JPEG decoders allocated
-    std::auto_ptr<CJPEGDecoder> m_dec[JPEG_MAX_THREADS];
-    // Number of the decoders allocated
-    mfxU32                  m_numDec;
+    std::vector<std::unique_ptr<CJPEGDecoder>> m_dec;
 
     // Pointer to the last buffer decoded. It is required to check if header was already decoded.
     const CJpegTaskBuffer *(m_pLastPicBuffer[JPEG_MAX_THREADS]);
@@ -148,13 +146,13 @@ protected:
     Ipp64f                  m_local_frame_time;
     Ipp64f                  m_local_delta_frame_time;
 
-    std::auto_ptr<BaseCodec>  m_PostProcessing; // (BaseCodec*) pointer to post processing
+    std::unique_ptr<BaseCodec>  m_PostProcessing; // (BaseCodec*) pointer to post processing
 };
 
 inline
 mfxU32 MJPEGVideoDecoderMFX::NumDecodersAllocated(void) const
 {
-    return m_numDec;
+    return static_cast<mfxU32>(m_dec.size());
 
 } // mfxU32 MJPEGVideoDecoderMFX::NumDecodersAllocated(void) const
 

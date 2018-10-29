@@ -73,10 +73,6 @@ mfxStatus CJpegTaskBuffer::Allocate(const size_t size)
 
     // allocate the new buffer
     pBuf = new mfxU8[size];
-    if (NULL == pBuf)
-    {
-        return MFX_ERR_MEMORY_ALLOC;
-    }
     bufSize = size;
 
     return MFX_ERR_NONE;
@@ -102,13 +98,10 @@ CJpegTask::~CJpegTask(void)
 
 void CJpegTask::Close(void)
 {
-    size_t i;
-
     // delete all buffers allocated
-    for (i = 0; i < m_pics.size(); i += 1)
+    for (auto& pic: m_pics)
     {
-        delete m_pics[i];
-        m_pics[i] = NULL;
+        pic.reset(nullptr);
     }
 
     m_numPic = 0;
@@ -129,31 +122,27 @@ mfxStatus CJpegTask::Initialize(UMC::VideoDecoderParams &params,
         UMC::Status umcRes;
 
         m_pMJPEGVideoDecoder.reset(new UMC::MJPEGVideoDecoderMFX);
-        if (NULL == m_pMJPEGVideoDecoder.get())
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-        m_pMJPEGVideoDecoder.get()->SetFrameAllocator(pFrameAllocator);
-        umcRes = m_pMJPEGVideoDecoder.get()->Init(&params);
+        m_pMJPEGVideoDecoder->SetFrameAllocator(pFrameAllocator);
+        umcRes = m_pMJPEGVideoDecoder->Init(&params);
         if (umcRes != UMC::UMC_OK)
         {
             return ConvertUMCStatusToMfx(umcRes);
         }
-        m_pMJPEGVideoDecoder.get()->Reset();
+        m_pMJPEGVideoDecoder->Reset();
 
         switch(rotation)
         {
         case MFX_ROTATION_0:
-            umcRes = m_pMJPEGVideoDecoder.get()->SetRotation(0);
+            umcRes = m_pMJPEGVideoDecoder->SetRotation(0);
             break;
         case MFX_ROTATION_90:
-            umcRes = m_pMJPEGVideoDecoder.get()->SetRotation(90);
+            umcRes = m_pMJPEGVideoDecoder->SetRotation(90);
             break;
         case MFX_ROTATION_180:
-            umcRes = m_pMJPEGVideoDecoder.get()->SetRotation(180);
+            umcRes = m_pMJPEGVideoDecoder->SetRotation(180);
             break;
         case MFX_ROTATION_270:
-            umcRes = m_pMJPEGVideoDecoder.get()->SetRotation(270);
+            umcRes = m_pMJPEGVideoDecoder->SetRotation(270);
             break;
         }
 
@@ -162,8 +151,8 @@ mfxStatus CJpegTask::Initialize(UMC::VideoDecoderParams &params,
             return ConvertUMCStatusToMfx(umcRes);
         }
 
-        umcRes = m_pMJPEGVideoDecoder.get()->SetColorSpace(chromaFormat, colorFormat);
-        
+        umcRes = m_pMJPEGVideoDecoder->SetColorSpace(chromaFormat, colorFormat);
+
         if (umcRes != UMC::UMC_OK)
         {
             return ConvertUMCStatusToMfx(umcRes);
@@ -310,17 +299,11 @@ mfxStatus CJpegTask::AddPicture(UMC::MediaDataEx *pSrcData,
 
 mfxStatus CJpegTask::CheckBufferSize(const size_t srcSize)
 {
-    // create an entry in the array
+    // add new entry in the array
+    m_pics.reserve(m_numPic+1);
     while (m_pics.size() <= m_numPic)
     {
-        CJpegTaskBuffer *p = new CJpegTaskBuffer();
-
-        if (NULL == p)
-        {
-            return MFX_ERR_MEMORY_ALLOC;
-        }
-
-        m_pics.push_back(p);
+        m_pics.emplace_back(new CJpegTaskBuffer());
     }
 
     return m_pics[m_numPic]->Allocate(srcSize);

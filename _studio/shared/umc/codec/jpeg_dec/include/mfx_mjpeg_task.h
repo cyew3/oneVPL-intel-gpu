@@ -1,4 +1,4 @@
-// Copyright (c) 2004-2018 Intel Corporation
+// Copyright (c) 2003-2018 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -134,7 +134,7 @@ public:
     mfxFrameSurface1 *surface_out;
 
     // Decoder's array
-    std::auto_ptr<UMC::MJPEGVideoDecoderMFX> m_pMJPEGVideoDecoder;
+    std::unique_ptr<UMC::MJPEGVideoDecoderMFX> m_pMJPEGVideoDecoder;
 
 protected:
     // Close the object, release all resources
@@ -146,7 +146,7 @@ protected:
     // Number of pictures collected
     mfxU32 m_numPic;
     // Array with collected pictures
-    std::vector<CJpegTaskBuffer *> m_pics;
+    std::vector<std::unique_ptr<CJpegTaskBuffer>> m_pics;
 
     // Number of scan data pieces. This number is used to request the number of
     // threads.

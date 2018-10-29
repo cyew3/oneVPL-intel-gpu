@@ -46,13 +46,12 @@ MJPEGVideoDecoderMFX::MJPEGVideoDecoderMFX(void)
 
     m_rotation    = 0;
     m_frameNo     = 0;
-    m_frame       = 0;
+    m_frame       = nullptr;
     m_frameSampling = 0;
 
     m_frameAllocator = 0;
 
-    m_numDec = 0;
-    memset(m_pLastPicBuffer, 0, sizeof(m_pLastPicBuffer));
+    std::fill(std::begin(m_pLastPicBuffer), std::end(m_pLastPicBuffer), nullptr);
 
     m_framePrecision = 0;
     m_frameChannels = 0;
@@ -101,15 +100,11 @@ Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
     {
         numThreads = m_DecoderParams.numThreads;
     }
+    m_dec.resize(numThreads);
     for (i = 0; i < numThreads; i += 1)
     {
         m_dec[i].reset(new CJPEGDecoder());
-        if (NULL == m_dec[i].get())
-        {
-            return UMC_ERR_ALLOC;
-        }
     }
-    m_numDec = numThreads;
 
     m_decBase = m_dec[0].get();
 
@@ -127,7 +122,6 @@ Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
 
 Status MJPEGVideoDecoderMFX::Reset(void)
 {
-    Ipp32u i;
     m_IsInit       = true;
     //m_firstFrame   = true;
     m_frameNo      = 0;
@@ -141,13 +135,13 @@ Status MJPEGVideoDecoderMFX::Reset(void)
 
     m_frameData.Close();
     m_internalFrame.Close();
-    for (i = 0; i < m_numDec; i += 1)
+    for (auto& dec: m_dec)
     {
-        m_dec[i]->Reset();
+        dec->Reset();
     }
     m_local_frame_time = 0;
 
-    memset(m_pLastPicBuffer, 0, sizeof(m_pLastPicBuffer));
+    std::fill(std::begin(m_pLastPicBuffer), std::end(m_pLastPicBuffer), nullptr);
 
     return UMC_OK;
 
@@ -156,7 +150,6 @@ Status MJPEGVideoDecoderMFX::Reset(void)
 
 Status MJPEGVideoDecoderMFX::Close(void)
 {
-    Ipp32u i;
     m_IsInit       = false;
     //m_firstFrame   = false;
     //m_firstField   = false;
@@ -173,11 +166,11 @@ Status MJPEGVideoDecoderMFX::Close(void)
 
     m_frameData.Close();
     m_internalFrame.Close();
-    for (i = 0; i < m_numDec; i += 1)
+    for (auto& dec: m_dec)
     {
-        m_dec[i].reset(0);
+        dec.reset(nullptr);
     }
-    m_PostProcessing.reset(0);
+    m_PostProcessing.reset(nullptr);
 
     return UMC_OK;
 } // MJPEGVideoDecoderMFX::Close()
@@ -540,12 +533,12 @@ Status MJPEGVideoDecoderMFX::SetRotation(Ipp16u rotation)
 
 Status MJPEGVideoDecoderMFX::SetColorSpace(Ipp16u chromaFormat, Ipp16u colorFormat)
 {
-    if(m_numDec == 0 || m_numDec > JPEG_MAX_THREADS)
+    if(m_dec.empty() || m_dec.size() > JPEG_MAX_THREADS)
         return UMC_ERR_FAILED;
 
-    for (mfxU32 i = 0; i < m_numDec; i += 1)
+    for (auto& dec: m_dec)
     {
-        m_dec[i]->m_jpeg_color = GetUMCColorType(chromaFormat, colorFormat);
+        dec->m_jpeg_color = GetUMCColorType(chromaFormat, colorFormat);
     }
 
     return UMC_OK;
@@ -926,7 +919,7 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
         m_internalFrame.SetPictureStructure(m_interleaved ? PS_TOP_FIELD_FIRST : PS_FRAME);
         out.SetPictureStructure(m_internalFrame.GetPictureStructure());
 
-        if (!m_PostProcessing.get())
+        if (!m_PostProcessing)
         {
             m_PostProcessing.reset(createVideoProcessing());
         }
@@ -991,7 +984,7 @@ Status MJPEGVideoDecoderMFX::CloseFrame(void)
 {
     m_frameData.Close();
 
-    memset(m_pLastPicBuffer, 0, sizeof(m_pLastPicBuffer));
+    std::fill(std::begin(m_pLastPicBuffer), std::end(m_pLastPicBuffer), nullptr);
 
     return UMC_OK;
 
