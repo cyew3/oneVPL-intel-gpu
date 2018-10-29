@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "mfx_common.h"
@@ -22,7 +22,7 @@
 #include "umc_video_decoder.h"
 #include "mfx_umc_alloc_wrapper.h"
 
-#include "umc_mutex.h"
+#include <mutex>
 
 #ifdef ALLOW_SW_FALLBACK
 #include <queue>
@@ -51,7 +51,7 @@ public:
     UMC::VideoDecoderParams umcVideoParams;
 
     // Free tasks queue guard (if SW is used)
-    UMC::Mutex m_guard;
+    std::mutex m_guard;
     mfxDecodeStat m_stat;
     bool    m_isOpaq;
     mfxVideoParamWrapper m_vPar;
@@ -223,7 +223,7 @@ protected:
     mfxFrameAllocResponse m_response_alien;
     eMFXPlatform m_platform;
 
-    UMC::Mutex m_mGuard;
+    std::mutex m_mGuard;
 
     // Frame skipping rate
     mfxU32 m_skipRate;

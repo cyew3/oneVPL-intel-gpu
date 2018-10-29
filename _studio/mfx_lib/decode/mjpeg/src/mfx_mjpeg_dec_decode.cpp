@@ -26,7 +26,6 @@
 #include "mfx_thread_task.h"
 #endif
 
-#include "umc_automatic_mutex.h"
 #include "mfx_enc_common.h"
 
 #include "umc_jpeg_frame_constructor.h"
@@ -100,7 +99,7 @@ VideoDECODEMJPEG::~VideoDECODEMJPEG(void)
 
 mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
 {
-    UMC::AutomaticUMCMutex guard(m_mGuard);
+    std::lock_guard<std::mutex> guard(m_mGuard);
 
     if (m_isInit)
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1634,7 +1633,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::Reset(mfxVideoParam *par)
     m_vPar = *par;
 
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
 
         mfxU32 picToCollect = (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) ?
             (1) : (2);
@@ -1670,7 +1669,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::Close(void)
     m_pCc    = 0;
 
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
 
         mfxU32 picToCollect = (MFX_PICSTRUCT_PROGRESSIVE == m_vPar.mfx.FrameInfo.PicStruct) ?
             (1) : (2);
@@ -2416,7 +2415,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::AddPicture(UMC::MediaDataEx *pSrcData, mfxU32
 
 mfxStatus VideoDECODEMJPEGBase_HW::AllocateFrameData(UMC::FrameData *&data)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
     m_dsts.push_back(m_dst);
     data = m_dst;
     m_dst = 0;
@@ -2466,7 +2465,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
 
 mfxStatus VideoDECODEMJPEGBase_HW::CheckTaskAvailability(mfxU32 maxTaskNumber)
 {
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     if (m_dsts.size() >= maxTaskNumber)
     {
@@ -2480,7 +2479,7 @@ mfxStatus VideoDECODEMJPEGBase_HW::CompleteTask(void *pParam, mfxStatus )
 {
     ThreadTaskInfo * info = (ThreadTaskInfo *)pParam;
 
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     mfxI32 index = -1;
     for (size_t i = 0; i < m_dsts.size(); i++)
@@ -2528,11 +2527,13 @@ mfxStatus VideoDECODEMJPEGBase_SW::Reset(mfxVideoParam *par)
 {
     m_tasksCount = 0;
     pLastTask = NULL;
-    while(!m_freeTasks.empty())
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        delete m_freeTasks.front();
-        m_freeTasks.pop();
+        std::lock_guard<std::mutex> guard(m_guard);
+        while(!m_freeTasks.empty())
+        {
+            delete m_freeTasks.front();
+            m_freeTasks.pop();
+        }
     }
 
     memset(&m_stat, 0, sizeof(mfxDecodeStat));
@@ -2555,11 +2556,13 @@ mfxStatus VideoDECODEMJPEGBase_SW::Close()
     memset(&m_stat, 0, sizeof(mfxDecodeStat));
 
     // delete free tasks queue
-    while (false == m_freeTasks.empty())
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
-        delete m_freeTasks.front();
-        m_freeTasks.pop();
+        std::lock_guard<std::mutex> guard(m_guard);
+        while (!m_freeTasks.empty())
+        {
+            delete m_freeTasks.front();
+            m_freeTasks.pop();
+        }
     }
 
     m_isOpaq = false;
@@ -2633,7 +2636,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
 
     // remove the ready task from the queue
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
         m_freeTasks.pop();
     }
 
@@ -2690,7 +2693,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::CheckTaskAvailability(mfxU32 maxTaskNumber)
 
         // save the task object into the queue
         {
-            UMC::AutomaticUMCMutex guard(m_guard);
+            std::lock_guard<std::mutex> guard(m_guard);
             m_freeTasks.push(pTask.release());
         }
     }
@@ -2749,7 +2752,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::CompleteTask(void *pParam, mfxStatus taskRes)
 
     task.Reset();
     {
-        UMC::AutomaticUMCMutex guard(m_guard);
+        std::lock_guard<std::mutex> guard(m_guard);
         m_freeTasks.push(&task);
     }
     return MFX_ERR_NONE;

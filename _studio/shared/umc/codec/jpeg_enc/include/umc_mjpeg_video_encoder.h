@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2012 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __UMC_MJPEG_VIDEO_DECODER_H
@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
 
 #include "ippdefs.h"
 #include "ippcore.h"
@@ -26,7 +27,6 @@
 #include "umc_structures.h"
 #include "umc_video_encoder.h"
 #include "umc_video_data.h"
-#include "umc_mutex.h"
 
 #include "mfxvideo++int.h"
 
@@ -205,7 +205,7 @@ protected:
     // Number of the encoders allocated
     Ipp32u                            m_numEnc;
 
-    UMC::Mutex                        m_guard;
+    std::mutex                        m_guard;
 
     bool                              m_IsInit;
 

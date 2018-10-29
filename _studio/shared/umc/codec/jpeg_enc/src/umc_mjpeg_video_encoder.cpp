@@ -15,7 +15,6 @@
 #include "vm_debug.h"
 #include "umc_video_data.h"
 #include "umc_mjpeg_video_encoder.h"
-#include <umc_automatic_mutex.h>
 #include "membuffout.h"
 #include "jpegenc.h"
 
@@ -191,7 +190,7 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
         return UMC_ERR_INIT;
 
     m_EncoderParams  = *pEncoderParams;
-    
+
     // allocate the JPEG encoders
     numThreads = JPEG_ENC_MAX_THREADS;
     if ((m_EncoderParams.numThreads) &&
@@ -214,8 +213,8 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
         }
-        
-        jerr = m_enc[i]->SetDefaultACTable(); 
+
+        jerr = m_enc[i]->SetDefaultACTable();
         if(JPEG_OK != jerr)
             return UMC_ERR_FAILED;
 
@@ -369,7 +368,7 @@ Status MJPEGVideoEncoder::SetHuffmanTableExtBuf(mfxExtJPEGHuffmanTables* huffman
         return UMC_ERR_NOT_INITIALIZED;
 
     for(Ipp32u i=0; i<m_numEnc; i++)
-    {     
+    {
         for(int j=0; j<huffmanTables->NumACTable; j++)
         {
             jerr = m_enc[i]->SetACTable(j, huffmanTables->ACTables[j].Bits, huffmanTables->ACTables[j].Values);
@@ -415,7 +414,7 @@ Ipp32u MJPEGVideoEncoder::NumEncodersAllocated(void)
 
 Ipp32u MJPEGVideoEncoder::NumPicsCollected(void)
 {
-    AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     return m_frame.get()->GetNumPics();
 }
@@ -430,10 +429,10 @@ Status MJPEGVideoEncoder::AddPicture(MJPEGEncoderPicture* pic)
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     m_frame.get()->m_pics.push_back(pic);
-    
+
     return UMC_OK;
 }
 
