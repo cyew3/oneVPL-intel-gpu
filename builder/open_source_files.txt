@@ -588,8 +588,6 @@ _studio/mfx_lib/genx/scd/asc_genx.cpp
 _studio/mfx_lib/genx/scd/asc_genx_bdw_isa.cpp
 _studio/mfx_lib/genx/scd/asc_genx_hsw_isa.cpp
 _studio/mfx_lib/genx/scd/asc_genx_skl_isa.cpp
-_studio/shared/umc/core/vm/include/vm_cond.h
-_studio/shared/umc/core/vm/src/vm_cond_linux32.c
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_common.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_hw.h
 _studio/mfx_lib/decode/vp8/include/mfx_vp8_dec_decode_vp8_defs.h

@@ -54,13 +54,6 @@ extern "C"
 
 typedef void * vm_handle;
 
-/* vm_condvar.h */
-typedef struct vm_cond
-{
-    vm_handle handle;
-
-} vm_cond;
-
 /* vm_event.h */
 typedef struct vm_event
 {

@@ -251,8 +251,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\vm_cond_linux32.c" />
-    <ClCompile Include="src\vm_cond_win32.c" />
     <ClCompile Include="src\vm_debug_win32.c" />
     <ClCompile Include="src\vm_event_linux32.c" />
     <ClCompile Include="src\vm_event_win32.c" />
@@ -279,7 +277,6 @@
     <ClCompile Include="src\vm_time_win32.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\vm_cond.h" />
     <ClInclude Include="include\vm_debug.h" />
     <ClInclude Include="include\vm_event.h" />
     <ClInclude Include="include\vm_file.h" />
