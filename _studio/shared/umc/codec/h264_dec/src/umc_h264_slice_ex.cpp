@@ -169,7 +169,7 @@ Status H264SliceEx::UpdateReferenceList(ViewList &views, int32_t dIdIndex)
     return sts;
 }
 
-#define CalculateDSF(index, value, value_mv)                                                     \
+#define CalculateDSF(index, value, value_mv)                                    \
         /* compute scaling ratio for temporal direct and implicit weighting*/   \
         tb = picCntCur - picCntRef0;    /* distance from previous */            \
         td = picCntRef1 - picCntRef0;    /* distance between ref0 and ref1 */   \
@@ -185,25 +185,25 @@ Status H264SliceEx::UpdateReferenceList(ViewList &views, int32_t dIdIndex)
         }                                                                       \
         else                                                                    \
         {                                                                       \
-            tb = MFX_MAX(-128,tb);                                              \
-            tb = MFX_MIN(127,tb);                                               \
-            td = MFX_MAX(-128,td);                                              \
-            td = MFX_MIN(127,td);                                               \
+            tb = std::max(-128,tb);                                             \
+            tb = std::min( 127,tb);                                             \
+            td = std::max(-128,td);                                             \
+            td = std::min( 127,td);                                             \
                                                                                 \
             VM_ASSERT(td != 0);                                                 \
                                                                                 \
             tx = (16384 + abs(td/2))/td;                                        \
                                                                                 \
             DistScaleFactor = (tb*tx + 32)>>6;                                  \
-            DistScaleFactor = MFX_MAX(-1024, DistScaleFactor);                  \
-            DistScaleFactor = MFX_MIN(1023, DistScaleFactor);                   \
+            DistScaleFactor = std::max(-1024, DistScaleFactor);                 \
+            DistScaleFactor = std::min(1023, DistScaleFactor);                  \
                                                                                 \
-            if (isL1LongTerm || DistScaleFactor < -256 || DistScaleFactor > 512)                \
+            if (isL1LongTerm || DistScaleFactor < -256 || DistScaleFactor > 512)\
                 value = 128;    /* equal weighting     */   \
             else                                                                \
-                value = (FactorArrayValue)DistScaleFactor;                    \
+                value = (FactorArrayValue)DistScaleFactor;                      \
                                                                                 \
-            value_mv = (FactorArrayValue)DistScaleFactor;                      \
+            value_mv = (FactorArrayValue)DistScaleFactor;                       \
         }
 
 void H264SliceEx::InitDistScaleFactor(int32_t NumL0RefActive,
