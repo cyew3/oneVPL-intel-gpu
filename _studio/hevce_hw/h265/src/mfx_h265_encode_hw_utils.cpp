@@ -987,7 +987,7 @@ void MfxVideoParam::SyncVideoToCalculableParam()
 
     BufferSizeInKB = mfx.BufferSizeInKB * multiplier;
     LTRInterval    = 0;
-    PPyrInterval = (mfx.NumRefFrame >0) ? Min<mfxU32> (DEFAULT_PPYR_INTERVAL, mfx.NumRefFrame) : DEFAULT_PPYR_INTERVAL;
+    PPyrInterval = (mfx.NumRefFrame > 0) ? Min<mfxU32> (DEFAULT_PPYR_INTERVAL, mfx.NumRefFrame) : DEFAULT_PPYR_INTERVAL;
 
     if (mfx.RateControlMethod != MFX_RATECONTROL_CQP)
     {
@@ -3756,6 +3756,7 @@ void ConfigureTask(
         mfxI32 layer = PLayer(task.m_poc - prevTask.m_lastIPoc, par);
         task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveP[layer];
         task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1);
+        task.m_level = (par.isTL()) ? task.m_tid : layer; // for QP modulation; low delay mode only
     }
 
     if (!isI)
