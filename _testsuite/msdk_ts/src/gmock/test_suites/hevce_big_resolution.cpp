@@ -234,7 +234,7 @@ namespace hevce_big_resolution
         return 0;
     }
 
-    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_big_resolution, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
+    TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_420_nv12_big_resolution, RunTest_Subtype<MFX_FOURCC_NV12>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_10b_420_p010_big_resolution, RunTest_Subtype<MFX_FOURCC_P010>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_12b_420_p016_big_resolution, RunTest_Subtype<GMOCK_FOURCC_P012>, n_cases);
     TS_REG_TEST_SUITE_CLASS_ROUTINE(hevce_8b_422_yuy2_big_resolution, RunTest_Subtype<MFX_FOURCC_YUY2>, n_cases);
