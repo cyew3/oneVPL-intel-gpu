@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2004-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2004-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include <mfx_mjpeg_task.h>
@@ -171,7 +171,7 @@ void CJpegTask::Reset(void)
         m_pics[i]->pieceOffset.clear();
         m_pics[i]->pieceSize.clear();
         m_pics[i]->pieceRSTOffset.clear();
-        
+
         m_pics[i]->scanOffset.clear();
         m_pics[i]->scanSize.clear();
         m_pics[i]->scanTablesOffset.clear();
@@ -186,7 +186,7 @@ void CJpegTask::Reset(void)
 mfxStatus CJpegTask::AddPicture(UMC::MediaDataEx *pSrcData,
                                 const mfxU32  fieldPos)
 {
-    const void*   pSrc = pSrcData->GetDataPointer();
+    const mfxU8*  pSrc = static_cast<const mfxU8*>(pSrcData->GetDataPointer());
     const size_t  srcSize = pSrcData->GetDataSize();
     const Ipp64f  timeStamp = pSrcData->GetTime();
     const UMC::MediaDataEx::_MediaDataEx *pAuxData = pSrcData->GetExData();
@@ -278,7 +278,9 @@ mfxStatus CJpegTask::AddPicture(UMC::MediaDataEx *pSrcData,
     }
 
     // copy the data
-    memcpy_s(m_pics[m_numPic]->pBuf, m_pics[m_numPic]->bufSize, pSrc, srcSize);
+    if(m_pics[m_numPic]->bufSize < srcSize)
+        return MFX_ERR_NOT_ENOUGH_BUFFER;
+    std::copy(pSrc, pSrc + srcSize, m_pics[m_numPic]->pBuf);
     m_pics[m_numPic]->dataSize = srcSize;
     m_pics[m_numPic]->imageHeaderSize = imageHeaderSize;
     m_pics[m_numPic]->timeStamp = timeStamp;

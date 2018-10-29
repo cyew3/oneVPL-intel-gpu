@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2003-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2003-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_deinterlacing.h"
@@ -126,10 +126,12 @@ static void DeinterlacingEdgeDetect(Ipp8u *psrc,
   Ipp32s dif1, dif2, dif3;
   IppiSize roi = {w, h/2};
 
+  // copy even lines
   ippiCopy_8u_C1R(psrc, 2*iSrcPitch, pdst, 2*iDstPitch, roi);
 
-  memcpy_s(pdst + iDstPitch, iSrcPitch, psrc + iSrcPitch, iSrcPitch);
-  memcpy_s(pdst + (h - 1)*iDstPitch, w, psrc + (h - 2) * iSrcPitch, w);
+  // then line #1 and line before last
+  std::copy(psrc + iSrcPitch, psrc + 2*iSrcPitch, pdst + iDstPitch);
+  std::copy(psrc + (h - 2) * iSrcPitch, psrc + (h - 2) * iSrcPitch + w, pdst + (h - 1)*iDstPitch);
 
   psrc += 3*iSrcPitch;
   pdst += 3*iDstPitch;
