@@ -950,21 +950,34 @@ mfxU16 GetMaxNumRef(MfxVideoParam &par, bool bForward)
         }
         break;
 #endif
-    case MFX_HW_CNL:
-    case MFX_HW_ICL:
-    case MFX_HW_ICL_LP:
 #ifdef PRE_SI_TARGET_PLATFORM_GEN12
     case MFX_HW_TGL_LP:
     case MFX_HW_TGL_HP:
+        if (IsOn(par.mfx.LowPower)) {   // VDENC
+            if (par.mfx.GopRefDist > 1) {   // Gen12 VDENC RA B
+                mfxU16 maxNumRefsL0[7] = { 2, 2, 1, 1, 1, 1, 1 };
+                mfxU16 maxNumRefsL1[7] = { 1, 1, 1, 1, 1, 1, 1 };
+                return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+            } else {
+                mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
+                return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
+            }
+        } else {   // VME
+            mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
+            mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
+            return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
+        }
+        break;
 #endif
+    case MFX_HW_CNL:
+    case MFX_HW_ICL:
+    case MFX_HW_ICL_LP:
     default:
         if (IsOn(par.mfx.LowPower)) {   // VDENC
-            //2 references support by VDEnc HW and 3rd one picked via StreamIn interface
             mfxU16 maxNumRefsL0L1[7] = { 3, 3, 2, 2, 2, 1, 1 };
             return maxNumRefsL0L1[par.mfx.TargetUsage - 1];
         } else {   // VME
-            //HW limitation to suport only 2 forward references Max, enabled only at High quality TUs L0 Can be more, but 4 references can cover any cases
-            mfxU16 maxNumRefsL0[7] = { 4, 4, 4, 4, 4, 1, 1 };
+            mfxU16 maxNumRefsL0[7] = { 4, 4, 3, 3, 3, 1, 1 };
             mfxU16 maxNumRefsL1[7] = { 2, 2, 1, 1, 1, 1, 1 };
             return  bForward ? maxNumRefsL0[par.mfx.TargetUsage - 1] : maxNumRefsL1[par.mfx.TargetUsage - 1];
         }
@@ -2023,7 +2036,17 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
     if (par.mfx.TargetUsage && caps.TUSupport)
         changed += CheckTU(caps.TUSupport, par.mfx.TargetUsage);
 
-    changed += CheckMax(par.mfx.GopRefDist, (caps.SliceIPOnly || IsOn(par.mfx.LowPower)) ? 1 : (par.mfx.GopPicSize ? Max(1, par.mfx.GopPicSize - 1) : 0xFFFF));
+
+    changed += CheckMax(par.mfx.GopRefDist, caps.SliceIPOnly ? 1 : (par.mfx.GopPicSize ? Max(1, par.mfx.GopPicSize - 1) : 0xFFFF));
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    // RA B is not supported in TGL VDENC TU7
+    if ((par.m_platform == MFX_HW_TGL_LP || par.m_platform == MFX_HW_TGL_HP)
+        && IsOn(par.mfx.LowPower) && (par.mfx.TargetUsage == 7))
+    {
+        par.mfx.GopRefDist = 1;
+        changed++;
+    }
+#endif
 
     invalid += CheckOption(par.Protected
 #if !defined(MFX_VA_LINUX) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
@@ -3025,11 +3048,9 @@ void SetDefaults(
     if (!par.mfx.GopPicSize)
         par.mfx.GopPicSize = (par.mfx.CodecProfile == MFX_PROFILE_HEVC_MAINSP ? 1 : 0xFFFF);
 
-
-
     if (!par.mfx.GopRefDist)
     {
-        if (par.isTL() || hwCaps.SliceIPOnly || IsOn(par.mfx.LowPower) || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
+        if (par.isTL() || hwCaps.SliceIPOnly || par.mfx.GopPicSize < 3 || par.mfx.NumRefFrame == 1)
             par.mfx.GopRefDist = 1; // in case of correct SliceIPOnly using of IsOn(par.mfx.LowPower) is not necessary
         else
             par.mfx.GopRefDist = Min<mfxU16>(par.mfx.GopPicSize - 1, (par.mfx.RateControlMethod == MFX_RATECONTROL_CQP || par.isSWBRC()) ? 8 : 4);
@@ -3037,7 +3058,7 @@ void SetDefaults(
 
     if (par.m_ext.CO2.BRefType == MFX_B_REF_UNKNOWN)
     {
-        if (par.mfx.GopRefDist > 3 && ((minRefForPyramid(par.mfx.GopRefDist, par.isField()) <= par.mfx.NumRefFrame) || par.mfx.NumRefFrame ==0))
+        if (par.mfx.GopRefDist > 3 && ((minRefForPyramid(par.mfx.GopRefDist, par.isField()) <= par.mfx.NumRefFrame) || par.mfx.NumRefFrame == 0))
             par.m_ext.CO2.BRefType = MFX_B_REF_PYRAMID;
         else
             par.m_ext.CO2.BRefType = MFX_B_REF_OFF;
