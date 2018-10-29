@@ -54,12 +54,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="EncoderSample_TemporaryKey.pfx" />
-    <None Include="..\ffmpeg\Build\Windows10\x64\bin\avdevice-57.dll" />
-    <None Include="..\ffmpeg\Build\Windows10\x64\bin\avfilter-6.dll" />
-    <None Include="..\ffmpeg\Build\Windows10\x64\bin\avformat-57.dll" />
-    <None Include="..\ffmpeg\Build\Windows10\x64\bin\avutil-55.dll" />
-    <None Include="..\ffmpeg\Build\Windows10\x64\bin\swresample-2.dll" />
-    <None Include="..\ffmpeg\Build\Windows10\x64\bin\swscale-4.dll" />
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" />
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" />
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" />
@@ -71,6 +65,7 @@
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" />
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" />
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" />
+    <None Include="key.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="MainPage.xaml" />

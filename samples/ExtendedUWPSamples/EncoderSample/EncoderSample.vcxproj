@@ -178,16 +178,18 @@
     <None Include="..\ffmpeg\Build\Windows10\x64\bin\*.dll" Condition="'$(Configuration)'=='DebugWithExtras' Or '$(Configuration)'=='ReleaseWithExtras'">
       <DeploymentContent>true</DeploymentContent>
     </None>
+    <None Include="key.pfx" />
   </ItemGroup>
   <PropertyGroup>
-    <PackageCertificateKeyFile>EncoderSample_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>key.pfx</PackageCertificateKeyFile>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
-    <AppxBundle>Never</AppxBundle>
+    <AppxBundle>Always</AppxBundle>
     <AppInstallerUpdateFrequency>1</AppInstallerUpdateFrequency>
     <AppInstallerCheckForUpdateFrequency>OnApplicationRun</AppInstallerCheckForUpdateFrequency>
-    <PackageCertificateThumbprint>0CA56681FC5A5168DC6BAD6BA9B58F671736BDC8</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>08BD5C9A60B42099231B5EF8728FD0ECF5E81651</PackageCertificateThumbprint>
+    <AppxBundlePlatforms>x86|x64</AppxBundlePlatforms>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(SolutionDir)_build\$(Platform)\$(Configuration)\$(TargetName)\</OutDir>
