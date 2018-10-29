@@ -1136,7 +1136,11 @@ Status WidevineTaskSupplier::AddOneFrame(DecryptParametersWrapper* pDecryptParam
     Status umsRes = UMC_OK;
 
     if (m_pLastSlice)
-        return AddSlice(m_pLastSlice, true);
+    {
+        umsRes = AddSlice(m_pLastSlice, true);
+        if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK || umsRes == UMC_ERR_ALLOC)
+            return umsRes;
+    }
 
     umsRes = ParseWidevineSPSPPS(pDecryptParams);
     if (umsRes != UMC_OK)
@@ -1150,7 +1154,7 @@ Status WidevineTaskSupplier::AddOneFrame(DecryptParametersWrapper* pDecryptParam
     if (pSlice)
     {
         umsRes = AddSlice(pSlice, true);
-        if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK)
+        if (umsRes == UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC_OK || umsRes == UMC_ERR_ALLOC)
             return umsRes;
     }
 

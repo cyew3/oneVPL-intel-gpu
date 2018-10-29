@@ -686,7 +686,11 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(DecryptParametersWrapper* pDecrypt
     UMC::Status umsRes = UMC::UMC_OK;
 
     if (m_pLastSlice)
-        return AddSlice(m_pLastSlice, true);
+    {
+        umsRes = AddSlice(m_pLastSlice, true);
+        if (umsRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC::UMC_OK)
+            return umsRes;
+    }
 
     umsRes = ParseWidevineVPSSPSPPS(pDecryptParams);
     if (umsRes != UMC::UMC_OK)
@@ -699,9 +703,9 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(DecryptParametersWrapper* pDecrypt
     H265Slice * pSlice = ParseWidevineSliceHeader(pDecryptParams);
     if (pSlice)
     {
-        UMC::Status sts = AddSlice(pSlice, true);
-        if (sts == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || sts == UMC::UMC_OK)
-            return sts;
+        umsRes = AddSlice(pSlice, true);
+        if (umsRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC::UMC_OK)
+            return umsRes;
     }
 
     return AddSlice(0, true);
