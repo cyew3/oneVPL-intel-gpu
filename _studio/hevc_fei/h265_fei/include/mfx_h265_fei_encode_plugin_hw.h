@@ -24,7 +24,7 @@ namespace MfxHwH265FeiEncode
     public:
         static MFXEncoderPlugin* Create()
         {
-            return new H265FeiEncodePlugin(false);
+            return GetInstance();
         }
 
         static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
@@ -38,11 +38,7 @@ namespace MfxHwH265FeiEncode
 
             try
             {
-                tmp_pplg = new H265FeiEncodePlugin(false);
-            }
-            catch (std::bad_alloc&)
-            {
-                return MFX_ERR_MEMORY_ALLOC;
+                tmp_pplg = GetInstance();
             }
             catch (...)
             {
@@ -86,7 +82,7 @@ namespace MfxHwH265FeiEncode
 
         virtual void Release() override
         {
-            delete this;
+            return;
         }
 
         virtual mfxStatus Close() override
@@ -143,6 +139,12 @@ namespace MfxHwH265FeiEncode
             : m_createdByDispatcher(CreateByDispatcher)
             , m_adapter(this)
         {}
+
+        static H265FeiEncodePlugin* GetInstance()
+        {
+            static H265FeiEncodePlugin instance(false);
+            return &instance;
+        }
 
         ~H265FeiEncodePlugin()
         {}
