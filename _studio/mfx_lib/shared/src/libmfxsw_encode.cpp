@@ -198,7 +198,7 @@ VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
     case MFX_CODEC_VP9:
         if (m_bIsHWENCSupport)
         {
-            pENCODE = new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(&m_coreInt, &mfxRes);
+            pENCODE = new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(m_pCORE.get(), &mfxRes);
         }
         else
         {
@@ -374,7 +374,7 @@ mfxStatus MFXVideoENCODE_Query(mfxSession session, mfxVideoParam *in, mfxVideoPa
 
 #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
         case MFX_CODEC_VP9:
-            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::Query(&session->m_coreInt, in, out);
+            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::Query(session->m_pCORE.get(), in, out);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
                 mfxRes = MFX_ERR_UNSUPPORTED;
@@ -573,7 +573,7 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
 
 #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
         case MFX_CODEC_VP9:
-            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(&session->m_coreInt, par, request);
+            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
                 mfxRes = MFX_ERR_UNSUPPORTED;

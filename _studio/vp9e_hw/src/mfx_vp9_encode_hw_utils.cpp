@@ -245,7 +245,7 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
                           Task const & task,
                           mfxU8 frameType,
                           VP9FrameLevelParam &frameParam,
-                          mfxPlatform const & platform)
+                          eMFXHWType platform)
 {
     Zero(frameParam);
     frameParam.frameType = frameType;
@@ -316,17 +316,19 @@ mfxStatus SetFramesParams(VP9MfxVideoParam const &par,
         // in BRC mode driver may update LF level and mode/ref LF deltas
         frameParam.modeRefDeltaEnabled = 1;
         frameParam.modeRefDeltaUpdate = 1;
+
 #if (MFX_VERSION >= 1027)
-        if (platform.CodeName >= MFX_PLATFORM_ICELAKE /*&& par.mfx.CodecProfile > MFX_PROFILE_VP9_0*/)
+        if (platform >= MFX_HW_ICL)
         {
-            // driver writes corrupted uncompressed frame header when mode or ref deltas are written by MSDK
+            // WA: driver writes corrupted uncompressed frame header when mode or ref deltas are written by MSDK
             // TODO: remove this once driver behavior fixed
             frameParam.modeRefDeltaEnabled = 0;
             frameParam.modeRefDeltaUpdate = 0;
         }
 #else //MFX_VERSION >= 1027
-        (void)platform;
+(void)platform;
 #endif //MFX_VERSION >= 1027
+
     }
 
     mfxExtCodingOptionDDI const & extDdi = GetExtBufferRef(par);
@@ -507,7 +509,7 @@ mfxStatus DecideOnRefListAndDPBRefresh(
     return MFX_ERR_NONE;
 }
 
-mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::vector<sFrameEx*>&dpb, mfxCoreInterface* pCore)
+mfxStatus UpdateDpb(VP9FrameLevelParam &frameParam, sFrameEx *pRecFrame, std::vector<sFrameEx*>&dpb, VideoCORE* pCore)
 {
     for (mfxU8 i = 0; i < dpb.size(); i++)
     {
@@ -542,17 +544,13 @@ MfxFrameAllocResponse::~MfxFrameAllocResponse()
     Release();
 }
 
-
 mfxStatus MfxFrameAllocResponse::Alloc(
-    mfxCoreInterface *     pCore,
+    VideoCORE*     pCore,
     mfxFrameAllocRequest & req)
 {
     req.NumFrameSuggested = req.NumFrameMin; // no need in 2 different NumFrames
 
-    mfxCoreParam corePar = {};
-    pCore->GetCoreParam(pCore->pthis, &corePar);
-
-    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    if (pCore->GetVAType() == MFX_HW_D3D11)
     {
         mfxFrameAllocRequest tmp = req;
         tmp.NumFrameMin = tmp.NumFrameSuggested = 1;
@@ -562,7 +560,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
 
         for (int i = 0; i < req.NumFrameMin; i++)
         {
-            mfxStatus sts = pCore->FrameAllocator.Alloc(pCore->FrameAllocator.pthis, &tmp, &m_responseQueue[i]);
+            mfxStatus sts = pCore->AllocFrames(&tmp, &m_responseQueue[i]);
             MFX_CHECK_STS(sts);
 
             m_mids[i] = m_responseQueue[i].mids[0];
@@ -573,7 +571,7 @@ mfxStatus MfxFrameAllocResponse::Alloc(
     }
     else
     {
-        mfxStatus sts = pCore->FrameAllocator.Alloc(pCore->FrameAllocator.pthis, &req, this);
+        mfxStatus sts = pCore->AllocFrames(&req, this);
         MFX_CHECK_STS(sts);
     }
 
@@ -603,14 +601,11 @@ mfxStatus MfxFrameAllocResponse::Release()
         return MFX_ERR_NULL_PTR;
     }
 
-    mfxCoreParam corePar = {};
-    m_pCore->GetCoreParam(m_pCore->pthis, &corePar);
-
-    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D11)
+    if (m_pCore->GetVAType() == MFX_HW_D3D11)
     {
         for (size_t i = 0; i < m_responseQueue.size(); i++)
         {
-            mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, &m_responseQueue[i]);
+            mfxStatus sts = m_pCore->FreeFrames(&m_responseQueue[i]);
             MFX_CHECK_STS(sts);
         }
         m_responseQueue.resize(0);
@@ -621,7 +616,7 @@ mfxStatus MfxFrameAllocResponse::Release()
         if (mids)
         {
             NumFrameActual = m_numFrameActualReturnedByAllocFrames;
-            mfxStatus sts = m_pCore->FrameAllocator.Free(m_pCore->FrameAllocator.pthis, this);
+            mfxStatus sts = m_pCore->FreeFrames(this);
             MFX_CHECK_STS(sts);
 
             m_numFrameActualReturnedByAllocFrames = 0;
@@ -676,11 +671,11 @@ mfxStatus ExternalFrames::GetFrame(mfxFrameSurface1 *pInFrame, sFrameEx *&pOutFr
 
     return MFX_ERR_NONE;
 }
+
 //---------------------------------------------------------
 // service class: InternalFrames
 //---------------------------------------------------------
-
-mfxStatus InternalFrames::Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pAllocReq)
+mfxStatus InternalFrames::Init(VideoCORE *pCore, mfxFrameAllocRequest *pAllocReq)
 {
     MFX_CHECK_NULL_PTR2 (pCore, pAllocReq);
     mfxU32 nFrames = pAllocReq->NumFrameMin;
@@ -693,7 +688,7 @@ mfxStatus InternalFrames::Init(mfxCoreInterface *pCore, mfxFrameAllocRequest *pA
     //printf("internal frames init %d (request)\n", req.NumFrameSuggested);
 
     mfxStatus sts = MFX_ERR_NONE;
-    sts = m_response.Alloc(pCore,*pAllocReq);
+    sts = m_response.Alloc(pCore, *pAllocReq);
     MFX_CHECK_STS(sts);
 
     //printf("internal frames init %d (%d) [%d](response)\n", m_response.NumFrameActual,Num(),nFrames);
@@ -757,15 +752,14 @@ mfxStatus InternalFrames::Release()
 //---------------------------------------------------------
 
 mfxStatus GetRealSurface(
-    mfxCoreInterface const *pCore,
+    VideoCORE *pCore,
     VP9MfxVideoParam const &par,
     Task const &task,
     mfxFrameSurface1 *& pSurface)
 {
     if (par.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
-        mfxStatus sts = pCore->GetRealSurface(pCore->pthis, task.m_pRawFrame->pSurface, &pSurface);
-        MFX_CHECK_STS(sts);
+        pSurface = pCore->GetNativeSurface(task.m_pRawFrame->pSurface);
     }
     else
     {
@@ -776,7 +770,7 @@ mfxStatus GetRealSurface(
 }
 
 mfxStatus GetInputSurface(
-    mfxCoreInterface const *pCore,
+   VideoCORE *pCore,
     VP9MfxVideoParam const &par,
     Task const &task,
     mfxFrameSurface1 *& pSurface)
@@ -795,7 +789,7 @@ mfxStatus GetInputSurface(
 }
 
 mfxStatus CopyRawSurfaceToVideoMemory(
-    mfxCoreInterface *pCore,
+    VideoCORE *pCore,
     VP9MfxVideoParam const &par,
     Task const &task)
 {
@@ -811,20 +805,46 @@ mfxStatus CopyRawSurfaceToVideoMemory(
 
         if (pSysSurface->Data.Y == 0)
         {
-            pCore->FrameAllocator.Lock(pCore->FrameAllocator.pthis, pSysSurface->Data.MemId, &lockedSurf.Data);
+            pCore->LockFrame(pSysSurface->Data.MemId, &lockedSurf.Data);
             pSysSurface = &lockedSurf;
         }
 
-        sts = pCore->CopyFrame(pCore->pthis, pDd3dSurf, pSysSurface);
+        sts = pCore->CopyFrame(pDd3dSurf, pSysSurface);
         MFX_CHECK_STS(sts);
 
         if (pSysSurface == &lockedSurf)
         {
-            pCore->FrameAllocator.Unlock(pCore->FrameAllocator.pthis, pSysSurface->Data.MemId, &lockedSurf.Data);
+            pCore->UnlockFrame(pSysSurface->Data.MemId, &lockedSurf.Data);
         }
     }
 
     return MFX_ERR_NONE;
+}
+
+mfxStatus GetNativeHandleToRawSurface(
+    VideoCORE & core,
+    mfxMemId mid,
+    mfxHDL *handle,
+    VP9MfxVideoParam const & video)
+{
+    mfxStatus sts = MFX_ERR_NONE;
+
+    mfxU32 iopattern = video.IOPattern;
+
+    mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(video);
+    mfxU16 opaq_type = opaq.In.Type;
+
+    if (iopattern == MFX_IOPATTERN_IN_SYSTEM_MEMORY ||
+        (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && (opaq_type & MFX_MEMTYPE_SYSTEM_MEMORY)))
+        sts = core.GetFrameHDL(mid, handle);
+    else if (iopattern == MFX_IOPATTERN_IN_VIDEO_MEMORY)
+        sts = core.GetExternalFrameHDL(mid, handle);
+    else if (iopattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY) // opaq with internal video memory
+        sts = core.GetFrameHDL(mid, handle);
+    else
+        return MFX_ERR_UNDEFINED_BEHAVIOR;
+
+    return sts;
 }
 
 } // MfxHwVP9Encode

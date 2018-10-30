@@ -9,6 +9,7 @@
 //
 
 #include <mutex>
+#include "libmfx_core_interface.h"
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_par.h"
 
@@ -324,7 +325,7 @@ void FillPpsBuffer(
 }
 
 mfxStatus FillSegmentMap(Task const & task,
-                         mfxCoreInterface* m_pmfxCore)
+                         VideoCORE* m_pmfxCore)
 {
     // for now application seg map is accepted in 32x32 and 64x64 blocks
     // and driver seg map is always in 16x16 blocks
@@ -344,9 +345,6 @@ mfxStatus FillSegmentMap(Task const & task,
     mfxU32 dstW = dstFi.Width;
     mfxU32 dstH = dstFi.Height;
 
-    mfxCoreParam corePar = {};
-    m_pmfxCore->GetCoreParam(m_pmfxCore->pthis, &corePar);
-
     mfxFrameInfo const & srcFi = task.m_pRawFrame->pSurface->Info;
     mfxU16 srcBlockSize = MapIdToBlockSize(seg.SegmentIdBlockSize);
     mfxU32 srcW = (srcFi.Width + srcBlockSize - 1) / srcBlockSize;
@@ -364,7 +362,7 @@ mfxStatus FillSegmentMap(Task const & task,
     }
 
     mfxU32 dstPitch = 0;
-    if ((corePar.Impl & 0xF00) == MFX_IMPL_VIA_D3D9)
+    if (m_pmfxCore->GetVAType() == MFX_HW_D3D9)
     {
         // for D3D9 2D surface is used, need to take pitch into account
         dstPitch = segMap.Pitch;
@@ -504,17 +502,14 @@ D3D9Encoder::~D3D9Encoder()
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
 // this function is aimed to workaround all CAPS reporting problems in mainline driver
-void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
+void HardcodeCaps(ENCODE_CAPS_VP9& caps, VideoCORE* pCore)
 {
-    //mfxCoreParam corePar;
-    //pCore->GetCoreParam(pCore->pthis, &corePar);
-
-    mfxPlatform platform;
-    pCore->QueryPlatform(pCore->pthis, &platform);
     caps;
 
+    eMFXHWType type = pCore->GetHWType();
+
 #if (MFX_VERSION >= 1027)
-    if (platform.CodeName >= MFX_PLATFORM_ICELAKE)
+    if (type >= MFX_HW_ICL)
     {
         // for now driver supports only 2 pipes for LP and HP configurations, but for HP it reports 4 (actual
         // support will be added to the driver later), until then this hardcode is required
@@ -524,7 +519,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
 #endif //MFX_VERSION >= 1027
 
 #if defined(PRE_SI_TARGET_PLATFORM_GEN12)
-    if (platform.CodeName >= MFX_PLATFORM_TIGERLAKE)
+    if (type >= MFX_HW_TGL_LP)
     {
         // mainline driver doesn't report REXT support correctly for TGL
         // hardcode proper CAPS values for now
@@ -536,7 +531,7 @@ void HardcodeCaps(ENCODE_CAPS_VP9& caps, mfxCoreInterface* pCore)
 }
 
 mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
-    mfxCoreInterface* pCore,
+    VideoCORE* pCore,
     GUID guid,
     mfxU32 width,
     mfxU32 height)
@@ -551,26 +546,21 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
     m_pmfxCore = pCore;
     m_guid = guid;
 
-    IDirect3DDeviceManager9* device = 0;
+    IDirect3DDeviceManager9 *device = nullptr;
+    D3D9Interface *pID3D = QueryCoreInterface<D3D9Interface>(m_pmfxCore, MFXICORED3D_GUID);
+    MFX_CHECK_WITH_ASSERT(pID3D != nullptr, MFX_ERR_DEVICE_FAILED);
 
-    mfxStatus sts = pCore->GetHandle(pCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
-
-    if (sts == MFX_ERR_NOT_FOUND)
-        sts = m_pmfxCore->CreateAccelerationDevice(pCore->pthis, MFX_HANDLE_D3D9_DEVICE_MANAGER, (mfxHDL*)&device);
-
-    MFX_CHECK_STS(sts);
+    device = pID3D->GetD3D9DeviceManager();
     MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
 
     std::auto_ptr<AuxiliaryDevice> auxDevice(new AuxiliaryDevice());
-    sts = auxDevice->Initialize(device);
+    mfxStatus sts = auxDevice->Initialize(device);
     MFX_CHECK_STS(sts);
 
     sts = auxDevice->IsAccelerationServiceExist(guid);
     MFX_CHECK_STS(sts);
 
-    Zero(m_caps);
-
-    HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid),& m_caps, sizeof(m_caps));
+    HRESULT hr = auxDevice->Execute(AUXDEV_QUERY_ACCEL_CAPS, &guid, sizeof(guid), &m_caps, sizeof(m_caps));
     MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
     PrintDdiToLogOnce(m_caps);
@@ -584,8 +574,6 @@ mfxStatus D3D9Encoder::CreateAuxilliaryDevice(
 
     m_auxDevice = auxDevice;
 
-    Zero(m_platform);
-    sts = pCore->QueryPlatform(pCore->pthis, &m_platform);
     MFX_CHECK_STS(sts);
 
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::CreateAuxilliaryDevice -");
@@ -687,18 +675,11 @@ mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS_VP9& caps)
 
 } // mfxStatus D3D9Encoder::QueryEncodeCaps(ENCODE_CAPS& caps)
 
-mfxStatus D3D9Encoder::QueryPlatform(mfxPlatform& platform)
-{
-    platform = m_platform;
-
-    return MFX_ERR_NONE;
-} // mfxStatus D3D9Encoder::QueryPlatform(mfxPlatform& platform)
-
 mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT type)
 {
     VP9_LOG("\n (VP9_LOG) D3D9Encoder::Register +");
 
-    mfxFrameAllocator & fa = m_pmfxCore->FrameAllocator;
+    //mfxFrameAllocator & fa = m_pmfxCore->FrameAllocator;
     EmulSurfaceRegister surfaceReg = {};
     surfaceReg.type = type;
     surfaceReg.num_surf = response.NumFrameActual;
@@ -707,7 +688,7 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
 
     for (mfxU32 i = 0; i < response.NumFrameActual; i++)
     {
-        mfxStatus sts = fa.GetHDL(fa.pthis, response.mids[i], (mfxHDL *)&surfaceReg.surface[i]);
+        mfxStatus sts = m_pmfxCore->GetFrameHDL(response.mids[i], (mfxHDL *)&surfaceReg.surface[i]);
         MFX_CHECK_STS(sts);
         MFX_CHECK(surfaceReg.surface[i], MFX_ERR_UNSUPPORTED);
     }

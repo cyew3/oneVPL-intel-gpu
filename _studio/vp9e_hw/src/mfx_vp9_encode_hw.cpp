@@ -18,7 +18,7 @@
 
 namespace MfxHwVP9Encode
 {
-mfxStatus MFXVideoENCODEVP9_HW::Query(mfxCoreInterface *core, mfxVideoParam *in, mfxVideoParam *out)
+mfxStatus MFXVideoENCODEVP9_HW::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out)
 {
     VP9_LOG("\n (VP9_LOG) MFXVideoENCODEVP9_HW::Query +");
     MFX_CHECK_NULL_PTR1(out);
@@ -29,6 +29,8 @@ mfxStatus MFXVideoENCODEVP9_HW::Query(mfxCoreInterface *core, mfxVideoParam *in,
     }
     else
     {
+        core->GetHWType();
+
         // check attached buffers (all are supported by encoder, no duplications, etc.)
         mfxStatus sts = CheckExtBufferHeaders(in->NumExtParam, in->ExtParam);
         MFX_CHECK_STS(sts);
@@ -37,12 +39,9 @@ mfxStatus MFXVideoENCODEVP9_HW::Query(mfxCoreInterface *core, mfxVideoParam *in,
 
         VP9MfxVideoParam toValidate = *in;
 
-        mfxCoreInterface _core = *core;
-
         // get HW caps from driver
         ENCODE_CAPS_VP9 caps = {};
-        mfxPlatform platform = {};
-        MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(&_core, caps, platform, GetGuid(toValidate), in->mfx.FrameInfo.Width, in->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
+        MFX_CHECK(MFX_ERR_NONE == QueryCaps(core, caps, GetGuid(toValidate), in->mfx.FrameInfo.Width, in->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
         // validate input parameters
         sts = CheckParameters(toValidate, caps);
@@ -86,11 +85,13 @@ mfxStatus MFXVideoENCODEVP9_HW::Query(mfxCoreInterface *core, mfxVideoParam *in,
     }
 }
 
-mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(mfxCoreInterface *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
+mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfxFrameAllocRequest *request)
 {
     MFX_CHECK_NULL_PTR2(par,request);
     mfxStatus sts = CheckExtBufferHeaders(par->NumExtParam, par->ExtParam);
     MFX_CHECK_STS(sts);
+
+    core->GetHWType();
 
     mfxU32 inPattern = par->IOPattern & MFX_IOPATTERN_IN_MASK;
     MFX_CHECK(inPattern == MFX_IOPATTERN_IN_VIDEO_MEMORY ||
@@ -99,16 +100,13 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(mfxCoreInterface *core, mfxVideoPara
 
     VP9MfxVideoParam toValidate = *par;
 
-    mfxCoreInterface _core = *core;
-
     // get HW caps from driver
     ENCODE_CAPS_VP9 caps = {};
-    mfxPlatform platform = {};
-    MFX_CHECK(MFX_ERR_NONE == QueryCapsAndPlatform(&_core, caps, platform, GetGuid(toValidate), par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
+    MFX_CHECK(MFX_ERR_NONE == QueryCaps(core, caps, GetGuid(toValidate), par->mfx.FrameInfo.Width, par->mfx.FrameInfo.Height), MFX_ERR_UNSUPPORTED);
 
     // get validated and properly initialized set of parameters
     CheckParameters(toValidate, caps);
-    SetDefaults(toValidate, caps, platform);
+    SetDefaults(toValidate, caps);
 
     // fill mfxFrameAllocRequest
     switch (par->IOPattern)
@@ -194,6 +192,8 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 
     m_video = *par;
 
+    m_pCore->GetHWType();
+
     m_ddi.reset(CreatePlatformVp9Encoder(m_pCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
 
@@ -204,11 +204,9 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 
     ENCODE_CAPS_VP9 caps = {};
     m_ddi->QueryEncodeCaps(caps);
-    mfxPlatform platform = {};
-    m_ddi->QueryPlatform(platform);
 
     // get validated and properly initialized set of parameters for encoding
-    checkSts = CheckParametersAndSetDefaults(m_video, caps, platform);
+    checkSts = CheckParametersAndSetDefaults(m_video, caps);
     MFX_CHECK(checkSts >= 0, checkSts);
 
     // save WxH from Init to check resolution change in Reset
@@ -233,16 +231,19 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     }
     else if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY)
     {
-        mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(m_video);
+        mfxExtOpaqueSurfaceAlloc& opaq = GetExtBufferRef(m_video);
+        request.Type = opaq.In.Type;
+        request.NumFrameMin = opaq.In.NumSurface;
 
-        sts = m_pCore->MapOpaqueSurface(m_pCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
+        sts = m_opaqFrames.Init(m_pCore, &request);
         MFX_CHECK_STS(sts);
 
         if (opaq.In.Type & MFX_MEMTYPE_SYSTEM_MEMORY)
         {
-            request.NumFrameMin = request.NumFrameSuggested = opaq.In.NumSurface;
+            request.Type = MFX_MEMTYPE_D3D_INT;
+            request.NumFrameMin = opaq.In.NumSurface;
             sts = m_rawLocalFrames.Init(m_pCore, &request);
-MFX_CHECK_STS(sts);
+            MFX_CHECK_STS(sts);
         }
     }
 
@@ -380,14 +381,12 @@ mfxStatus MFXVideoENCODEVP9_HW::Reset(mfxVideoParam *par)
 
     ENCODE_CAPS_VP9 caps = {};
     m_ddi->QueryEncodeCaps(caps);
-    mfxPlatform platform = {};
-    m_ddi->QueryPlatform(platform);
 
     InheritDefaults(parAfterReset, parBeforeReset);
     parAfterReset.CalculateInternalParams();
 
     // get validated and properly initialized set of parameters for encoding
-    checkSts = CheckParametersAndSetDefaults(parAfterReset, caps, platform);
+    checkSts = CheckParametersAndSetDefaults(parAfterReset, caps);
     MFX_CHECK(checkSts >= 0, checkSts);
 
     // check that no re-allocation is required
@@ -661,8 +660,7 @@ mfxStatus MFXVideoENCODEVP9_HW::ConfigTask(Task &task)
 
     task.m_frameOrderInRefStructure = m_frameOrderInRefStructure;
 
-    mfxPlatform platform = {};
-    m_ddi->QueryPlatform(platform);
+    eMFXHWType platform = m_pCore->GetHWType();
     mfxStatus sts = SetFramesParams(curMfxPar, task, frameType, frameParam, platform);
 
     task.m_pRecFrame = 0;
@@ -757,8 +755,9 @@ mfxStatus MFXVideoENCODEVP9_HW::Execute(mfxThreadTask task, mfxU32 /*uid_p*/, mf
             MFX_CHECK_STS(sts);
 
             // get handle to input frame in VIDEO memory (either external or local)
-            //sts = m_pCore->FrameAllocator.GetHDL(m_pCore->FrameAllocator.pthis, pSurface->Data.MemId, &surfaceHDL.first);
-            sts = m_pCore->GetFrameHandle(m_pCore->pthis, &pSurface->Data, &surfaceHDL.first);
+            sts = GetNativeHandleToRawSurface(*m_pCore, pSurface->Data.MemId, &surfaceHDL.first, m_video);
+            MFX_CHECK_STS(sts);
+
             MFX_CHECK_STS(sts);
             MFX_CHECK(surfaceHDL.first != 0, MFX_ERR_UNDEFINED_BEHAVIOR);
 
@@ -846,6 +845,8 @@ mfxStatus MFXVideoENCODEVP9_HW::Close()
         MFX_CHECK_STS(sts);
     }
 
+    sts = m_opaqFrames.Release();
+    MFX_CHECK_STS(sts);
     sts = m_rawLocalFrames.Release();
     MFX_CHECK_STS(sts);
     sts = m_reconFrames.Release();
@@ -854,14 +855,6 @@ mfxStatus MFXVideoENCODEVP9_HW::Close()
     MFX_CHECK_STS(sts);
     sts = m_segmentMaps.Release();
     MFX_CHECK_STS(sts);
-
-    mfxExtOpaqueSurfaceAlloc &opaq = GetExtBufferRef(m_video);
-
-    if (m_video.IOPattern == MFX_IOPATTERN_IN_OPAQUE_MEMORY && opaq.In.Surfaces)
-    {
-        sts = m_pCore->UnmapOpaqueSurface(m_pCore->pthis, opaq.In.NumSurface, opaq.In.Type, opaq.In.Surfaces);
-        Zero(opaq);
-    }
 
     if (m_prevSegment.SegmentId)
     {
@@ -927,7 +920,6 @@ inline mfxStatus UpdatePictureHeader(mfxU32 frameLen, mfxU32 frameNum, mfxU8* pP
 };
 
 //#define SUPERFRAME_WA_MSDK
-
 
 mfxStatus MFXVideoENCODEVP9_HW::UpdateBitstream(
     Task & task)

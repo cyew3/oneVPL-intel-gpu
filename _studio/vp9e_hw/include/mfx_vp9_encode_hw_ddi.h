@@ -96,9 +96,9 @@ typedef struct tagENCODE_CAPS_VP9
 
     class DriverEncoder;
 
-    mfxStatus QueryCapsAndPlatform(mfxCoreInterface * pCore, ENCODE_CAPS_VP9 & caps, mfxPlatform & platform, GUID guid, mfxU32 width, mfxU32 height);
+    mfxStatus QueryCaps(VideoCORE * pCore, ENCODE_CAPS_VP9 & caps, GUID guid, mfxU32 width, mfxU32 height);
 
-    DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface * pCore);
+    DriverEncoder* CreatePlatformVp9Encoder(VideoCORE * pCore);
 
     class DriverEncoder
     {
@@ -107,7 +107,7 @@ typedef struct tagENCODE_CAPS_VP9
         virtual ~DriverEncoder(){}
 
         virtual mfxStatus CreateAuxilliaryDevice(
-                        mfxCoreInterface * pCore,
+                        VideoCORE * pCore,
                         GUID               guid,
                         mfxU32             width,
                         mfxU32             height) = 0;
@@ -140,10 +140,6 @@ typedef struct tagENCODE_CAPS_VP9
         virtual
         mfxStatus QueryEncodeCaps(
             ENCODE_CAPS_VP9 & caps) = 0;
-
-        virtual
-        mfxStatus QueryPlatform(
-            mfxPlatform& platform) = 0;
 
         virtual
         mfxStatus QueryStatus(

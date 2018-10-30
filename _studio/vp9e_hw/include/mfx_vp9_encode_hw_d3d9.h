@@ -254,14 +254,14 @@ void FillPpsBuffer(
     BitOffsets const &offsets);
 
 mfxStatus FillSegmentMap(Task const & task,
-    mfxCoreInterface* m_pmfxCore);
+    VideoCORE* m_pmfxCore);
 
 void FillSegmentParam(Task const & task,
     ENCODE_SEGMENT_PARAMETERS & segPar);
 
 void HardcodeCaps(
     ENCODE_CAPS_VP9& caps,
-    mfxCoreInterface* pCore);
+    VideoCORE* pCore);
 
 void PrintDdiToLog(
     ENCODE_CAPS_VP9 const &caps);
@@ -296,7 +296,7 @@ public:
 
     virtual
     mfxStatus CreateAuxilliaryDevice(
-        mfxCoreInterface* core,
+        VideoCORE* core,
         GUID       guid,
         mfxU32     width,
         mfxU32     height);
@@ -333,10 +333,6 @@ public:
         ENCODE_CAPS_VP9& caps);
 
     virtual
-    mfxStatus QueryPlatform(
-        mfxPlatform& platform);
-
-    virtual
     mfxStatus QueryStatus(
         Task & task);
 
@@ -353,7 +349,7 @@ private:
     std::auto_ptr<AuxiliaryDevice> m_auxDevice;
     GUID m_guid;
 
-    mfxCoreInterface*  m_pmfxCore;
+    VideoCORE*  m_pmfxCore;
     ENCODE_CAPS_VP9    m_caps;
     mfxPlatform        m_platform;
 

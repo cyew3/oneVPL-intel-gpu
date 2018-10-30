@@ -10,6 +10,7 @@
 
 #if defined (_WIN32) || defined (_WIN64)
 
+#include "libmfx_core_interface.h"
 #include "mfx_vp9_encode_hw_utils.h"
 #include "mfx_vp9_encode_hw_d3d9.h"
 #include "mfx_vp9_encode_hw_d3d11.h"
@@ -22,20 +23,15 @@ namespace MfxHwVP9Encode
 
 #if defined (MFX_VA_WIN)
 
-    DriverEncoder* CreatePlatformVp9Encoder(mfxCoreInterface* pCore)
+    DriverEncoder* CreatePlatformVp9Encoder(VideoCORE* pCore)
     {
         if (pCore)
         {
-            mfxCoreParam par = {};
-
-            if (pCore->GetCoreParam(pCore->pthis, &par))
-                return 0;
-
-            switch (par.Impl & 0xF00)
+            switch (pCore->GetVAType())
             {
-            case MFX_IMPL_VIA_D3D9:
+            case MFX_HW_D3D9:
                 return new D3D9Encoder;
-            case MFX_IMPL_VIA_D3D11:
+            case MFX_HW_D3D11:
                 return new D3D11Encoder;
             default:
                 return 0;
@@ -59,7 +55,6 @@ D3D11Encoder::D3D11Encoder()
     , m_width(0)
     , m_height(0)
 {
-    m_pContext.Release();
     m_pVDecoder.Release();
     m_pVDevice.Release();
     m_pVContext.Release();
@@ -75,16 +70,16 @@ D3D11Encoder::~D3D11Encoder()
 #define MFX_CHECK_WITH_ASSERT(EXPR, ERR) { assert(EXPR); MFX_CHECK(EXPR, ERR); }
 
 mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
-    mfxCoreInterface* pCore,
+    VideoCORE* pCore,
     GUID guid,
     mfxU32 width,
     mfxU32 height)
 {
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice +");
 
+    MFX_CHECK_NULL_PTR1(pCore);
+
     m_pmfxCore = pCore;
-    mfxStatus sts = MFX_ERR_NONE;
-    ID3D11Device* device;
     D3D11_VIDEO_DECODER_DESC    desc = {};
     D3D11_VIDEO_DECODER_CONFIG  config = {};
     HRESULT hr;
@@ -107,19 +102,11 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
     // [0] Get device/context
     {
-        sts = pCore->GetHandle(pCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&device);
+        D3D11Interface* pD3d11 = QueryCoreInterface<D3D11Interface>(m_pmfxCore);
+        MFX_CHECK(pD3d11, MFX_ERR_DEVICE_FAILED)
 
-        if (sts == MFX_ERR_NOT_FOUND)
-            sts = pCore->CreateAccelerationDevice(pCore->pthis, MFX_HANDLE_D3D11_DEVICE, (mfxHDL*)&device);
-
-        MFX_CHECK_STS(sts);
-        MFX_CHECK(device, MFX_ERR_DEVICE_FAILED);
-
-        device->GetImmediateContext(&m_pContext);
-        MFX_CHECK(m_pContext, MFX_ERR_DEVICE_FAILED);
-
-        m_pVDevice = device;
-        m_pVContext = m_pContext;
+        m_pVDevice = pD3d11->GetD3D11VideoDevice();
+        m_pVContext = pD3d11->GetD3D11VideoContext();
         MFX_CHECK(m_pVDevice, MFX_ERR_DEVICE_FAILED);
         MFX_CHECK(m_pVContext, MFX_ERR_DEVICE_FAILED);
     }
@@ -195,11 +182,6 @@ mfxStatus D3D11Encoder::CreateAuxilliaryDevice(
 
         HardcodeCaps(m_caps, pCore);
     }
-
-    // [5] Query HW platform
-    Zero(m_platform);
-    sts = pCore->QueryPlatform(pCore->pthis, &m_platform);
-    MFX_CHECK_STS(sts);
 
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::CreateAuxilliaryDevice -");
     return MFX_ERR_NONE;
@@ -378,8 +360,6 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
 {
     VP9_LOG("\n (VP9_LOG) D3D11Encoder::Register +");
 
-    mfxFrameAllocator & fa = m_pmfxCore->FrameAllocator;
-
     std::vector<mfxHDLPair> & queue = (type == D3DDDIFMT_INTELENCODE_BITSTREAMDATA) ? m_bsQueue :
         (type == D3DDDIFMT_INTELENCODE_MBSEGMENTMAP) ? m_segmapQueue : m_reconQueue;
 
@@ -389,7 +369,7 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     {
         mfxHDLPair handlePair = {};
 
-        mfxStatus sts = fa.GetHDL(fa.pthis, response.mids[i], (mfxHDL*)&handlePair);
+        mfxStatus sts = m_pmfxCore->GetFrameHDL(response.mids[i], (mfxHDL*)&handlePair);
         MFX_CHECK_STS(sts);
 
         queue[i] = handlePair;

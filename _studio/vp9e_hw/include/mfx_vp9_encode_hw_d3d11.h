@@ -31,7 +31,7 @@ public:
 
     virtual
     mfxStatus CreateAuxilliaryDevice(
-        mfxCoreInterface* core,
+        VideoCORE* core,
         GUID       guid,
         mfxU32     width,
         mfxU32     height);
@@ -87,13 +87,12 @@ private:
 
     GUID m_guid;
 
-    CComPtr<ID3D11DeviceContext>                m_pContext;
     CComPtr<ID3D11VideoDecoder>                 m_pVDecoder;
     CComQIPtr<ID3D11VideoDevice>                m_pVDevice;
     CComQIPtr<ID3D11VideoContext>               m_pVContext;
 
 
-    mfxCoreInterface*  m_pmfxCore;
+    VideoCORE*  m_pmfxCore;
     ENCODE_CAPS_VP9    m_caps;
     mfxPlatform        m_platform;
 
