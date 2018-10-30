@@ -1377,14 +1377,17 @@ mfxStatus VideoDECODEH264::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
         }
 #endif
 
+#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        mfxExtBuffer* widevineExtbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : nullptr;
+        if (widevineExtbuf)
+        {
+            src.SetExtBuffer(widevineExtbuf);
+        }
+#endif
+
         for (;;)
         {
-#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-                if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-                    umcRes = m_pH264VideoDecoder->AddSource(bs);
-                else
-#endif
-                    umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);
+            umcRes = m_pH264VideoDecoder->AddSource(bs ? &src : 0);
 
             umcAddSourceRes = umcFrameRes = umcRes;
 
