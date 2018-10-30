@@ -34,7 +34,6 @@
 #include "mfxdefs.h"
 #include "mfx_task.h"
 #include "vm_interlocked.h"
-#include "vm_cond.h"
 #include "vm_file.h"
 
 #include "mfx_h265_encode.h"
@@ -921,11 +920,6 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
     , m_fei(NULL)
 {
     ippStaticInit();
-    vm_cond_set_invalid(&m_condVar);
-    vm_mutex_set_invalid(&m_critSect);
-    vm_mutex_set_invalid(&m_prepCritSect);
-    vm_cond_set_invalid(&m_feiCondVar);
-    vm_mutex_set_invalid(&m_feiCritSect);
     Zero(m_stat);
     Zero(m_profile_level);
     Zero(m_vps);
@@ -985,11 +979,11 @@ H265Encoder::H265Encoder(MFXCoreInterface1 &core)
 
 H265Encoder::~H265Encoder()
 {
-    vm_mutex_lock(&m_feiCritSect);
+    m_feiCritSect.lock();
     m_pauseFeiThread = 0;
     m_stopFeiThread = 1;
-    vm_mutex_unlock(&m_feiCritSect);
-    vm_cond_signal(&m_feiCondVar);
+    m_feiCritSect.unlock();
+    m_feiCondVar.notify_one();
     m_feiThread.Close();
 
     for_each(m_free.begin(), m_free.end(), Deleter());
@@ -1035,13 +1029,6 @@ H265Encoder::~H265Encoder()
 #ifdef AMT_HROI_PSY_AQ
     FS_Free(&m_faceSkinDet);
 #endif
-
-    vm_cond_destroy(&m_condVar);
-    vm_mutex_destroy(&m_critSect);
-    vm_mutex_destroy(&m_prepCritSect);
-
-    vm_cond_destroy(&m_feiCondVar);
-    vm_mutex_destroy(&m_feiCritSect);
 
     if (m_memBuf) {
         H265_Free(m_memBuf);
@@ -1290,20 +1277,6 @@ mfxStatus H265Encoder::Init(const mfxVideoParam &par)
         mfxStatus st = m_frameEncoder[encIdx]->Init();
         if (st != MFX_ERR_NONE)
             return st;
-    }
-
-    if (vm_cond_init(&m_condVar) != VM_OK)
-        return MFX_ERR_MEMORY_ALLOC;
-    if (vm_mutex_init(&m_critSect) != VM_OK)
-        return MFX_ERR_MEMORY_ALLOC;
-    if (vm_mutex_init(&m_prepCritSect) != VM_OK)
-        return MFX_ERR_MEMORY_ALLOC;
-
-    if (m_videoParam.enableCmFlag) {
-        if (vm_cond_init(&m_feiCondVar) != VM_OK)
-            return MFX_ERR_MEMORY_ALLOC;
-        if (vm_mutex_init(&m_feiCritSect) != VM_OK)
-            return MFX_ERR_MEMORY_ALLOC;
     }
 
     m_la.reset(new Lookahead(*this));
@@ -2187,7 +2160,7 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
         // the following modifications should be guarded by m_feiCritSect
         // because finished, numDownstreamDependencies and downstreamDependencies[]
         // may be accessed from FeiThreadRoutine()
-        vm_mutex_lock(&m_feiCritSect);
+        std::lock_guard<std::mutex> guard(m_feiCritSect);
         for (Ipp32s i = 0; i < frame->m_numRefUnique; i++) {
             Ipp32s listIdx = frame->m_ttSubmitGpuMe[i].listIdx;
             Ipp32s refIdx = frame->m_ttSubmitGpuMe[i].refIdx;
@@ -2196,10 +2169,9 @@ void H265Encoder::EnqueueFrameEncoder(H265EncodeTaskInputParams *inputParam)
         }
         if (vm_interlocked_dec32(&frame->m_ttSubmitGpuCopySrc.numUpstreamDependencies) == 0) {
             m_feiSubmitTasks.push_back(&frame->m_ttSubmitGpuCopySrc); // GPU_COPY_SRC is independent
-            vm_cond_signal(&m_feiCondVar);
+            m_feiCondVar.notify_one();
         }
         m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
-        vm_mutex_unlock(&m_feiCritSect);
     } else {
         m_outputQueue.splice(m_outputQueue.end(), m_encodeQueue, m_encodeQueue.begin());
     }
@@ -2304,11 +2276,11 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
 {
     mfxBitstream *mfxBs = inputParam->bs;
 
-    vm_mutex_lock(&m_critSect);
+    std::unique_lock<std::mutex> guard(m_critSect);
     // THREADING_WORKING -> THREADING_PAUSE
     assert(m_doStage == THREADING_WORKING);
     m_doStage = THREADING_PAUSE;
-    vm_mutex_unlock(&m_critSect);
+    guard.unlock();
 
     H265FrameEncoder *frameEnc = m_frameEncoder[frame->m_encIdx];
     Ipp32s overheadBytes = 0;
@@ -2345,9 +2317,9 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                 while (m_threadingTaskRunning > 1) thread_sleep(0);
 
                 if (m_videoParam.enableCmFlag) {
-                    vm_mutex_lock(&m_feiCritSect);
+                    m_feiCritSect.lock();
                     m_pauseFeiThread = 1;
-                    vm_mutex_unlock(&m_feiCritSect);
+                    m_feiCritSect.unlock();
                     while (m_feiThreadRunning) thread_sleep(0);
                     m_feiSubmitTasks.resize(0);
                     for (std::deque<ThreadingTask *>::iterator i = m_feiWaitTasks.begin(); i != m_feiWaitTasks.end(); ++i) {
@@ -2364,23 +2336,23 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
                 PrepareToEncode(inputParam);
 
                 if (m_videoParam.enableCmFlag) {
-                    vm_mutex_lock(&m_feiCritSect);
+                    m_feiCritSect.lock();
                     m_pauseFeiThread = 0;
-                    vm_mutex_unlock(&m_feiCritSect);
-                    vm_cond_signal(&m_feiCondVar);
+                    m_feiCritSect.unlock();
+                    m_feiCondVar.notify_one();
                 }
 
-                vm_mutex_lock(&m_critSect);
+                guard.lock();
                 vm_interlocked_inc32(&inputParam->m_taskReencode);
                 vm_interlocked_inc32(&m_reencode);
                 assert(m_threadingTaskRunning == 1);
                 // THREADING_PAUSE -> THREADING_WORKING
                 assert(m_doStage == THREADING_PAUSE);
                 m_doStage = THREADING_WORKING;
-                vm_mutex_unlock(&m_critSect);
+                guard.unlock();
 
                 if (m_videoParam.num_threads > 1)
-                    vm_cond_broadcast(&m_condVar);
+                    m_condVar.notify_all();
 
                 return MFX_TASK_WORKING; // recode!!!
 
@@ -2419,20 +2391,20 @@ mfxStatus H265Encoder::SyncOnFrameCompletion(H265EncodeTaskInputParams *inputPar
         }
     }
     // bs update on completion stage
-    vm_mutex_lock(&m_critSect);
+    guard.lock();
     Ipp32u numPendingTasks = (Ipp32u) m_pendingTasks.size();
     // THREADING_PAUSE -> THREADING_WORKING
     assert(m_doStage == THREADING_PAUSE);
     m_doStage = THREADING_WORKING;
-    vm_mutex_unlock(&m_critSect);
+    guard.unlock();
 
     if (m_videoParam.hrdPresentFlag)
         m_hrd.Update((bs->DataLength - initialDataLength) * 8, *frame);
 
     if (m_videoParam.num_threads > 1)
-        vm_cond_broadcast(&m_condVar);
+        m_condVar.notify_all();
 
-    MfxAutoMutex guard(m_statMutex);
+    MfxAutoMutex status_guard(m_statMutex);
     m_stat.NumCachedFrame--;
     m_stat.NumFrame++;
     m_stat.NumBit += (bs->DataLength - initialDataLength) * 8;
@@ -2608,7 +2580,7 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
     }
 
     {
-        vm_mutex_lock(&m_critSect);
+        std::lock_guard<std::mutex> guard(m_critSect);
 
         for (Ipp32s f = 0; f < (m_videoParam.picStruct == PROGR ? 1 : 2); f++) {
             Frame *tframe = inputParam->m_targetFrame[f];
@@ -2641,8 +2613,6 @@ void H265Encoder::PrepareToEncode(H265EncodeTaskInputParams *inputParam)
 
         if (vm_interlocked_dec32(&inputParam->m_ttComplete.numUpstreamDependencies) == 0)
             m_pendingTasks.push_front(&inputParam->m_ttComplete); // COMPLETE's dependencies are already resolved
-
-        vm_mutex_unlock(&m_critSect);
     }
 #if VT_TRACE
     if (tracetask) delete tracetask;
@@ -2696,10 +2666,10 @@ void H265Encoder::ProcessTaskDependencies(void *pState, ThreadingTask *task, Thr
             }
         } else if (vm_interlocked_dec32(&taskDep->numUpstreamDependencies) == 0) {
             if (taskDep->action == TT_GPU_SUBMIT) {
-                vm_mutex_lock(&th->m_feiCritSect);
+                th->m_feiCritSect.lock();
                 th->m_feiSubmitTasks.push_back(taskDep);
-                vm_mutex_unlock(&th->m_feiCritSect);
-                vm_cond_signal(&th->m_feiCondVar);
+                th->m_feiCritSect.unlock();
+                th->m_feiCondVar.notify_one();
             }
             else if ((taskDep->action != TT_COMPLETE &&
                 taskDep->action != TT_ENC_COMPLETE &&
@@ -2740,14 +2710,14 @@ void H265Encoder::ProcessTaskDependencies(void *pState, ThreadingTask *task, Thr
     if (taskCount) {
         int c;
 
-        vm_mutex_lock(&th->m_critSect);
+        th->m_critSect.lock();
         for (c = 0; c < taskCount; c++) {
             th->m_pendingTasks.push_back(taskDepAll[c]);
         }
         
-        vm_mutex_unlock(&th->m_critSect);
+        th->m_critSect.unlock();
         for (c = 0; c < taskCount; c++)
-            vm_cond_signal(&th->m_condVar);
+            th->m_condVar.notify_one();
     }
 }
 
@@ -2772,11 +2742,10 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
     Ipp32s taskStage = vm_interlocked_cas32(&inputParam->m_taskStage, THREADING_ITASK_WORKING, THREADING_ITASK_INI); 
 
     if (THREADING_ITASK_INI == taskStage) {
-        vm_mutex_lock(&th->m_prepCritSect);
+        std::unique_lock<std::mutex> guard(th->m_prepCritSect);
         if (inputParam->m_taskID != th->m_taskEncodeCount) {
             // THREADING_ITASK_WORKING -> THREADING_ITASK_INI
             vm_interlocked_cas32(&inputParam->m_taskStage, THREADING_ITASK_INI, THREADING_ITASK_WORKING); 
-            vm_mutex_unlock(&th->m_prepCritSect);
             return MFX_TASK_BUSY;
         }
 #if TASK_LOG_ENABLE
@@ -2793,15 +2762,15 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             th->m_inputTasks.pop_front();
         }
 
-        vm_mutex_lock(&th->m_critSect);
+        th->m_critSect.lock();
 
         Ipp32s numPendingTasks = (Ipp32s)th->m_pendingTasks.size();
 
-        vm_mutex_unlock(&th->m_critSect);
-        vm_mutex_unlock(&th->m_prepCritSect);
+        th->m_critSect.unlock();
+        guard.unlock();
 
         while (numPendingTasks--)
-            vm_cond_signal(&th->m_condVar);
+            th->m_condVar.notify_one();
     }
 
     if (inputParam->m_taskID > th->m_taskEncodeCount)
@@ -2824,8 +2793,8 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
     Ipp32u reencodeCounter = 0;
 
     while (true) {
-        vm_mutex_lock(&th->m_critSect);
-        while (1) {
+        std::unique_lock<std::mutex> guard(th->m_critSect);
+        while (true) {
             if (taskNext && reencodeCounter != th->m_reencode)
                 taskNext = NULL;
             if (th->m_doStage == THREADING_WORKING && (taskNext || th->m_pendingTasks.size()))
@@ -2836,13 +2805,12 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                 th->m_doStage == THREADING_ERROR)
                 break;
             // temp workaround, should be cond_wait. Possibly linux kernel futex bug (not sure yet)
-            vm_cond_wait(&th->m_condVar, &th->m_critSect/*, 1*/);
+            th->m_condVar.wait(guard);
         }
 
         if (inputParam->m_taskStage == THREADING_ITASK_COMPLETE || th->m_doStage == THREADING_ERROR) {
             if (taskNext)
                 th->m_pendingTasks.push_back(taskNext);
-            vm_mutex_unlock(&th->m_critSect);
             break;
         }
 
@@ -2883,7 +2851,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
 
         Ipp32u numThreadsRunning = vm_interlocked_inc32(&th->m_threadingTaskRunning);
 
-        vm_mutex_unlock(&th->m_critSect);
+        guard.unlock();
 #ifndef TASK_REFACTOR_HUB_RECURSIVE
         Ipp32s taskCount = 0;
 
@@ -3030,10 +2998,10 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                 }
                 break;
             case TT_ENC_COMPLETE:
-                vm_mutex_lock(&th->m_prepCritSect);
+                th->m_prepCritSect.lock();
                 assert(th->m_inputTaskInProgress);
                 sts = th->SyncOnFrameCompletion(th->m_inputTaskInProgress, task->frame);
-                vm_mutex_unlock(&th->m_prepCritSect);
+                th->m_prepCritSect.unlock();
                 if (sts != MFX_TASK_DONE) {
                     vm_interlocked_dec32(&th->m_threadingTaskRunning);
                     continue;
@@ -3043,7 +3011,7 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                 {
                     // TT_COMPLETE shouldn't have dependent tasks
                     assert(task->numDownstreamDependencies == 0);
-                    vm_mutex_lock(&th->m_prepCritSect);
+                    th->m_prepCritSect.lock();
 
                     H265EncodeTaskInputParams *taskInProgress = th->m_inputTaskInProgress;
                     if (taskInProgress->bs) {
@@ -3069,13 +3037,13 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
                         th->m_inputTaskInProgress = NULL;
                     }
 
-                    vm_mutex_lock(&th->m_critSect);
+                    guard.lock();
                     Ipp32u numPendingTasks = (Ipp32u)th->m_pendingTasks.size();
                     // THREADING_ITASK_WORKING -> THREADING_ITASK_COMPLETE
                     vm_interlocked_cas32(&(taskInProgress->m_taskStage), THREADING_ITASK_COMPLETE, THREADING_ITASK_WORKING);
-                    vm_mutex_unlock(&th->m_critSect);
-                    vm_mutex_unlock(&th->m_prepCritSect);
-                    vm_cond_broadcast(&th->m_condVar);
+                    guard.unlock();
+                    th->m_prepCritSect.unlock();
+                    th->m_condVar.notify_all();
 
                     vm_interlocked_dec32(&th->m_threadingTaskRunning);
                     continue;
@@ -3088,11 +3056,11 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
         } catch (...) {
             // to prevent SyncOnFrameCompletion hang
             vm_interlocked_dec32(&th->m_threadingTaskRunning);
-            vm_mutex_lock(&th->m_critSect);
+            guard.lock();
             th->m_doStage = THREADING_ERROR;
             inputParam->m_taskStage = THREADING_ITASK_COMPLETE;
-            vm_mutex_unlock(&th->m_critSect);
-            vm_cond_broadcast(&th->m_condVar);
+            guard.unlock();
+            th->m_condVar.notify_all();
             throw;
         }
 #if TASK_LOG_ENABLE
@@ -3123,10 +3091,10 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
             ThreadingTask *taskDep = task->downstreamDependencies[i];
             if (vm_interlocked_dec32(&taskDep->numUpstreamDependencies) == 0) {
                 if (taskDep->action == TT_GPU_SUBMIT) {
-                    vm_mutex_lock(&th->m_feiCritSect);
+                    th->m_feiCritSect.lock();
                     th->m_feiSubmitTasks.push_back(taskDep);
-                    vm_mutex_unlock(&th->m_feiCritSect);
-                    vm_cond_signal(&th->m_feiCondVar);
+                    th->m_feiCritSect.unlock();
+                    th->m_feiCondVar.notify_one();
                 } else if (taskDep->action != TT_COMPLETE &&
                            taskDep->action != TT_ENC_COMPLETE &&
                            taskDep->poc != task->poc) {
@@ -3167,13 +3135,13 @@ mfxStatus H265Encoder::TaskRoutine(void *pState, void *pParam, mfxU32 threadNumb
 
         if (taskCount) {
             int c;
-            vm_mutex_lock(&th->m_critSect);
+            guard.lock()
             for (c = 0; c < taskCount; c++) {
                 th->m_pendingTasks.push_back(taskDepAll[c]);
             }
-            vm_mutex_unlock(&th->m_critSect);
+            guard.unlock();
             for (c = 0; c < taskCount; c++)
-                vm_cond_signal(&th->m_condVar);
+                th->m_condVar.notify_one();
         }
 #else
 #ifdef TASK_CHAIN
@@ -3574,15 +3542,14 @@ void H265Encoder::FeiThreadRoutine()
         while (true) {
             ThreadingTask *task = NULL;
 
-            vm_mutex_lock(&m_feiCritSect);
+            std::unique_lock<std::mutex> guard(m_feiCritSect);
 
             while (m_stopFeiThread == 0 && (m_pauseFeiThread == 1 || m_feiSubmitTasks.empty() && m_feiWaitTasks.empty()))
-                vm_cond_wait(&m_feiCondVar, &m_feiCritSect);
+                m_feiCondVar.wait(guard, [this] {
+                return m_stopFeiThread != 0 || (m_pauseFeiThread != 1 && (m_feiSubmitTasks.size() || m_feiWaitTasks.size())); });
 
-            if (m_stopFeiThread) {
-                vm_mutex_unlock(&m_feiCritSect);
+            if (m_stopFeiThread)
                 break;
-            }
 
             if (!m_feiSubmitTasks.empty()) {
                 Frame *targetFrame = m_outputQueue.front();
@@ -3600,7 +3567,7 @@ void H265Encoder::FeiThreadRoutine()
             }
 
             m_feiThreadRunning = 1;
-            vm_mutex_unlock(&m_feiCritSect);
+            guard.unlock();
 
             if (task) {
                 while (m_feiWaitTasks.size() > 0)
@@ -3999,7 +3966,7 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
     // the following modifications should be guarded by m_feiCritSect
     // because finished, numDownstreamDependencies and downstreamDependencies[]
     // may be accessed from PrepareToEncode()
-    vm_mutex_lock(&m_feiCritSect);
+    std::lock_guard<std::mutex> guard(m_feiCritSect);
     SetTaskFinishedThreaded(&task);
 
     for (Ipp32s i = 0; i < task.numDownstreamDependencies; i++) {
@@ -4018,7 +3985,6 @@ void H265Encoder::FeiThreadSubmit(ThreadingTask &task)
             }
         }
     }
-    vm_mutex_unlock(&m_feiCritSect);
 }
 
 bool H265Encoder::FeiThreadWait(Ipp32u timeout)
@@ -4048,7 +4014,7 @@ bool H265Encoder::FeiThreadWait(Ipp32u timeout)
     // the following modifications should be guarded by m_critSect
     // because finished, numDownstreamDependencies and downstreamDependencies[]
     // may be accessed from PrepareToEncode() and TaskRoutine()
-    vm_mutex_lock(&m_critSect);
+    std::lock_guard<std::mutex> guard(m_critSect);
     SetTaskFinishedThreaded(task);
 
     for (Ipp32s i = 0; i < task->numDownstreamDependencies; i++) {
@@ -4056,10 +4022,9 @@ bool H265Encoder::FeiThreadWait(Ipp32u timeout)
         assert(taskDep->action != TT_GPU_SUBMIT && taskDep->action != TT_GPU_WAIT);
         if (vm_interlocked_dec32(&taskDep->numUpstreamDependencies) == 0) {
             m_pendingTasks.push_back(taskDep);
-            vm_cond_signal(&m_condVar);
+            m_condVar.notify_one();
         }
     }
-    vm_mutex_unlock(&m_critSect);
 
     return true;
 }

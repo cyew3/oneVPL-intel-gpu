@@ -3574,14 +3574,13 @@ void H265FrameEncoder::SetEncodeFrame_GpuPostProc(Frame* frame, std::deque<Threa
         }
     }
 
-    vm_mutex_lock(&m_topEnc.m_critSect);
+    std::lock_guard<std::mutex> guard(m_topEnc.m_critSect);
     for (Ipp32u i = 0; i < m_topEnc.m_ttRootTasks.size(); i++)
     {
         if (vm_interlocked_dec32(&m_topEnc.m_ttRootTasks[i]->numUpstreamDependencies) == 0) {
             m_pendingTasks->push_back(m_topEnc.m_ttRootTasks[i]);
         }
     } 
-    vm_mutex_unlock(&m_topEnc.m_critSect);
 }
 
 

@@ -25,6 +25,7 @@
 #if defined (MFX_ENABLE_H265_VIDEO_ENCODE)
 
 #include "memory"
+#include <condition_variable>
 #include "deque"
 
 #include "ippdefs.h"
@@ -158,9 +159,9 @@ namespace H265Enc {
         volatile Ipp32u   m_taskSubmitCount;
         volatile Ipp32u   m_taskEncodeCount;
 
-        vm_cond m_condVar;
-        vm_mutex m_critSect;
-        vm_mutex m_prepCritSect;
+        std::condition_variable m_condVar;
+        std::mutex m_critSect;
+        std::mutex m_prepCritSect;
         std::deque<ThreadingTask *> m_pendingTasks;
         std::deque<H265EncodeTaskInputParams *> m_inputTasks;
         H265EncodeTaskInputParams *m_inputTaskInProgress;
@@ -226,8 +227,8 @@ namespace H265Enc {
         volatile Ipp32s m_feiThreadRunning;
         std::deque<ThreadingTask *> m_feiSubmitTasks;
         std::deque<ThreadingTask *> m_feiWaitTasks;
-        vm_cond m_feiCondVar;
-        vm_mutex m_feiCritSect;
+        std::condition_variable m_feiCondVar;
+        std::mutex m_feiCritSect;
 
         mfxStatus InitInternal();
 
