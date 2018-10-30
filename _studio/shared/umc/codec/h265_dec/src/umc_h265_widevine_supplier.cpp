@@ -45,17 +45,13 @@ const Ipp32u levelIndexArray[] = {
     H265_LEVEL_62
 };
 
-WidevineTaskSupplier::WidevineTaskSupplier():
-    VATaskSupplier(),
-    m_pWidevineDecrypter(0)
-{
-}
+WidevineTaskSupplier::WidevineTaskSupplier()
+    : VATaskSupplier()
+    , m_pWidevineDecrypter(new WidevineDecrypter{})
+{}
 
 WidevineTaskSupplier::~WidevineTaskSupplier()
-{
-    if(m_pWidevineDecrypter)
-        delete m_pWidevineDecrypter;
-}
+{}
 
 UMC::Status WidevineTaskSupplier::Init(UMC::VideoDecoderParams *pInit)
 {
@@ -67,7 +63,6 @@ UMC::Status WidevineTaskSupplier::Init(UMC::VideoDecoderParams *pInit)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
-        m_pWidevineDecrypter = new WidevineDecrypter;
         m_pWidevineDecrypter->Init();
         m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
     }
@@ -452,18 +447,8 @@ H265Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
     notifier0<H265WidevineSlice> memory_leak_preventing_slice(pSlice, &H265WidevineSlice::DecrementReference);
 
-    //MemoryPiece memCopy;
-    //memCopy.SetData(nalUnit);
-
     pSlice->SetDecryptParameters(pDecryptParams);
     pSlice->m_source.SetTime(pDecryptParams->GetTime());
-    //pSlice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-
-    //notifier0<MemoryPiece> memory_leak_preventing(&pSlice->m_source, &MemoryPiece::Release);
-
-    //std::vector<Ipp32u> removed_offsets(0);
-    //SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-    //swapper->SwapMemory(&pSlice->m_source, &memCopy, &removed_offsets);
 
     Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber();
     if (pps_pid == -1)
@@ -510,58 +495,6 @@ H265Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
     ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->GetSeqParam()), const_cast<H265PicParamSet *>(pSlice->GetPicParam()));
 
-    /*H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
-    Ipp32u currOffset = sliceHdr->m_HeaderBitstreamOffset;
-    Ipp32u currOffsetWithEmul = currOffset;
-
-    size_t headersEmuls = 0;
-    for (; headersEmuls < removed_offsets.size(); headersEmuls++)
-    {
-        if (removed_offsets[headersEmuls] < currOffsetWithEmul)
-            currOffsetWithEmul++;
-        else
-            break;
-    }
-
-    // Update entry points
-    size_t offsets = removed_offsets.size();
-    if (pSlice->GetPicParam()->tiles_enabled_flag && pSlice->getTileLocationCount() > 0 && offsets > 0)
-    {
-        Ipp32u removed_bytes = 0;
-        std::vector<Ipp32u>::iterator it = removed_offsets.begin();
-        Ipp32u emul_offset = *it;
-
-        for (Ipp32s tile = 0; tile < (Ipp32s)pSlice->getTileLocationCount(); tile++)
-        {
-            while ((pSlice->m_tileByteLocation[tile] + currOffsetWithEmul >= emul_offset) && removed_bytes < offsets)
-            {
-                removed_bytes++;
-                if (removed_bytes < offsets)
-                {
-                    it++;
-                    emul_offset = *it;
-                }
-                else
-                    break;
-            }
-
-            // 1st tile start offset is length of slice header, it should not be corrected because it is
-            // not specified in slice header, it is calculated by parsing a modified bitstream instead
-            if (0 == tile)
-            {
-                offsets -= removed_bytes;
-                removed_bytes = 0;
-            }
-            else
-                pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] - removed_bytes;
-        }
-    }
-
-    for (Ipp32s tile = 0; tile < pSlice->getTileLocationCount(); tile++)
-    {
-        pSlice->m_tileByteLocation[tile] = pSlice->m_tileByteLocation[tile] + currOffset;
-    }*/
-
     m_WaitForIDR = false;
     memory_leak_preventing_slice.ClearNotification();
 
@@ -600,81 +533,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDe
     return UMC::UMC_OK;
 }
 
-UMC::Status WidevineTaskSupplier::DecryptWidevineHeaders(UMC::MediaData *pSource, DecryptParametersWrapper* pDecryptParams)
-{
-    UMC::Status sts = m_pWidevineDecrypter->DecryptFrame(pSource, pDecryptParams);
-    if(sts != UMC::UMC_OK)
-    {
-        return sts;
-    }
-
-    return UMC::UMC_OK;
-}
-
-UMC::Status WidevineTaskSupplier::AddSource(mfxBitstream *bs)
-{
-    mfxExtDecryptedParam * widevineDecryptParams = bs ? (mfxExtDecryptedParam *)GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : NULL;
-    if (widevineDecryptParams)
-    {
-        DecryptParametersWrapper HevcParams;
-        if (widevineDecryptParams->Data && (widevineDecryptParams->DataLength == sizeof (DECRYPT_QUERY_STATUS_PARAMS_HEVC)))
-        {
-            HevcParams = *((DECRYPT_QUERY_STATUS_PARAMS_HEVC*)widevineDecryptParams->Data);
-            HevcParams.SetTime(GetUmcTimeStamp(bs->TimeStamp));
-            return AddSource(&HevcParams);
-        }
-    }
-
-    return UMC::UMC_ERR_INVALID_STREAM;
-}
-
-UMC::Status WidevineTaskSupplier::AddSource(DecryptParametersWrapper* pDecryptParams)
-{
-    UMC::Status umcRes = UMC::UMC_OK;
-
-    CompleteDecodedFrames(0);
-
-    if (GetFrameToDisplayInternal(false))
-        return UMC::UMC_OK;
-
-    umcRes = AddOneFrame(pDecryptParams); // construct frame
-
-    if (UMC::UMC_ERR_NOT_ENOUGH_BUFFER == umcRes)
-    {
-        ViewItem_H265 &view = *GetView();
-
-        Ipp32s count = 0;
-        for (H265DecoderFrame *pFrame = view.pDPB->head(); pFrame; pFrame = pFrame->future())
-        {
-            count++;
-            // frame is being processed. Wait for asynchronous end of operation.
-            if (pFrame->isDisposable() || isInDisplayngStage(pFrame) || isAlmostDisposable(pFrame))
-            {
-                return UMC::UMC_WRN_INFO_NOT_READY;
-            }
-        }
-
-        if (count < view.pDPB->GetDPBSize())
-            return UMC::UMC_WRN_INFO_NOT_READY;
-
-        // some more hard reasons of frame lacking.
-        if (!m_pTaskBroker->IsEnoughForStartDecoding(true))
-        {
-            if (CompleteDecodedFrames(0) == UMC::UMC_OK)
-                return UMC::UMC_WRN_INFO_NOT_READY;
-
-            if (GetFrameToDisplayInternal(true))
-                return UMC::UMC_ERR_NEED_FORCE_OUTPUT;
-
-            PreventDPBFullness();
-            return UMC::UMC_WRN_INFO_NOT_READY;
-        }
-    }
-
-    return umcRes;
-}
-
-UMC::Status WidevineTaskSupplier::AddOneFrame(DecryptParametersWrapper* pDecryptParams)
+UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
 {
 #if defined(MFX_VA)
     if (!m_initializationParams.pVideoAccelerator->GetProtectedVA() ||
@@ -683,161 +542,50 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(DecryptParametersWrapper* pDecrypt
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 #endif
-    UMC::Status umsRes = UMC::UMC_OK;
-
-    if (m_pLastSlice)
-    {
-        umsRes = AddSlice(m_pLastSlice, true);
-        if (umsRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC::UMC_OK)
-            return umsRes;
-    }
-
-    umsRes = ParseWidevineVPSSPSPPS(pDecryptParams);
-    if (umsRes != UMC::UMC_OK)
-        return umsRes;
-
-    umsRes = ParseWidevineSEI(pDecryptParams);
-    if (umsRes != UMC::UMC_OK)
-        return umsRes;
-
-    H265Slice * pSlice = ParseWidevineSliceHeader(pDecryptParams);
-    if (pSlice)
-    {
-        umsRes = AddSlice(pSlice, true);
-        if (umsRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC::UMC_OK)
-            return umsRes;
-    }
-
-    return AddSlice(0, true);
-}
-
-UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData * pSource)
-{
-#if defined(MFX_VA)
-    if (!m_initializationParams.pVideoAccelerator->GetProtectedVA() ||
-        !IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected()))
-    {
-        return TaskSupplier_H265::AddOneFrame(pSource);
-    }
-#endif
 
     UMC::Status umsRes = UMC::UMC_OK;
 
     if (m_pLastSlice)
     {
-        UMC::Status sts = AddSlice(m_pLastSlice, !pSource);
-        if (sts == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || sts == UMC::UMC_OK)
-            return sts;
+        umsRes = AddSlice(m_pLastSlice, !src);
+        if (umsRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC::UMC_OK)
+            return umsRes;
     }
 
-    //if (m_checkCRAInsideResetProcess && !pSource)
-    //    return UMC::UMC_ERR_FAILED;
+    Ipp32u flags = src ? src->GetFlags() : 0;
+    if (flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
+        return UMC::UMC_ERR_INVALID_STREAM;
 
-    //size_t moveToSpsOffset = m_checkCRAInsideResetProcess ? pSource->GetDataSize() : 0;
+    bool decrypted = false;
+    DecryptParametersWrapper decryptParams{};
 
-    DecryptParametersWrapper decryptParams;
-    void* bsDataPointer = pSource ? pSource->GetDataPointer() : 0;
+    auto aux = src ? src->GetAuxInfo(MFX_EXTBUFF_DECRYPTED_PARAM) : nullptr;
+    auto dp_ext = aux ? reinterpret_cast<mfxExtDecryptedParam*>(aux->ptr) : nullptr;
 
+    if (dp_ext)
     {
-        UMC::Status sts = DecryptWidevineHeaders(pSource, &decryptParams);
-        if (sts != UMC::UMC_OK)
-            return sts;
+        if (!dp_ext->Data       ||
+             dp_ext->DataLength != sizeof (DECRYPT_QUERY_STATUS_PARAMS_HEVC))
+            return UMC::UMC_ERR_INVALID_STREAM;
+
+        decryptParams = *(reinterpret_cast<DECRYPT_QUERY_STATUS_PARAMS_HEVC*>(dp_ext->Data));
+        decrypted = true;
+    }
+    else
+    {
+        void* bsDataPointer = src ? src->GetDataPointer() : 0;
+
+        umsRes = m_pWidevineDecrypter->DecryptFrame(src, &decryptParams);
+        if (umsRes != UMC::UMC_OK)
+            return umsRes;
+
+        decrypted = src ? (bsDataPointer != src->GetDataPointer()) : false;
     }
 
-    bool decrypted = pSource ? (bsDataPointer != pSource->GetDataPointer()) : false;
+    decryptParams.SetTime(src ? src->GetTime() : 0);
 
-    if (!decrypted && pSource)
+    if (decrypted)
     {
-        Ipp32u flags = pSource->GetFlags();
-
-        if (!(flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
-        {
-            VM_ASSERT(!m_pLastSlice);
-            return AddSlice(0, true);
-        }
-
-        return UMC::UMC_ERR_SYNC;
-    }
-
-    if (!decrypted)
-    {
-        if (!pSource)
-            return AddSlice(0, true);
-
-        return UMC::UMC_ERR_NOT_ENOUGH_DATA;
-    }
-
-    //do
-    //{
-    //    UMC::MediaDataEx *nalUnit = m_pNALSplitter->GetNalUnits(pSource);
-    //    if (!nalUnit)
-    //        break;
-
-    //    UMC::MediaDataEx::_MediaDataEx* pMediaDataEx = nalUnit->GetExData();
-
-    //    for (Ipp32s i = 0; i < (Ipp32s)pMediaDataEx->count; i++, pMediaDataEx->index ++)
-    //    {
-    //        if (m_checkCRAInsideResetProcess)
-    //        {
-    //            switch ((NalUnitType)pMediaDataEx->values[i])
-    //            {
-    //            case NAL_UT_CODED_SLICE_RASL_N:
-    //            case NAL_UT_CODED_SLICE_RADL_N:
-    //            case NAL_UT_CODED_SLICE_TRAIL_R:
-    //            case NAL_UT_CODED_SLICE_TRAIL_N:
-    //            case NAL_UT_CODED_SLICE_TLA_R:
-    //            case NAL_UT_CODED_SLICE_TSA_N:
-    //            case NAL_UT_CODED_SLICE_STSA_R:
-    //            case NAL_UT_CODED_SLICE_STSA_N:
-    //            case NAL_UT_CODED_SLICE_BLA_W_LP:
-    //            case NAL_UT_CODED_SLICE_BLA_W_RADL:
-    //            case NAL_UT_CODED_SLICE_BLA_N_LP:
-    //            case NAL_UT_CODED_SLICE_IDR_W_RADL:
-    //            case NAL_UT_CODED_SLICE_IDR_N_LP:
-    //            case NAL_UT_CODED_SLICE_CRA:
-    //            case NAL_UT_CODED_SLICE_RADL_R:
-    //            case NAL_UT_CODED_SLICE_RASL_R:
-    //                {
-    //                    H265Slice * pSlice = m_ObjHeap.AllocateObject<H265Slice>();
-    //                    pSlice->IncrementReference();
-
-    //                    notifier0<H265Slice> memory_leak_preventing_slice(pSlice, &H265Slice::DecrementReference);
-    //                    nalUnit->SetDataSize(100); // is enough for retrive
-
-    //                    MemoryPiece memCopy;
-    //                    memCopy.SetData(nalUnit);
-
-    //                    pSlice->m_source.Allocate(nalUnit->GetDataSize() + DEFAULT_NU_TAIL_SIZE);
-
-    //                    notifier0<MemoryPiece> memory_leak_preventing(&pSlice->m_source, &MemoryPiece::Release);
-    //                    SwapperBase * swapper = m_pNALSplitter->GetSwapper();
-    //                    swapper->SwapMemory(&pSlice->m_source, &memCopy, 0);
-
-    //                    Ipp32s pps_pid = pSlice->RetrievePicParamSetNumber();
-    //                    if (pps_pid != -1)
-    //                        CheckCRAOrBLA(pSlice);
-
-    //                    m_checkCRAInsideResetProcess = false;
-    //                    pSource->MoveDataPointer(Ipp32s(pSource->GetDataSize() - moveToSpsOffset));
-    //                    m_pNALSplitter->Reset();
-    //                    return UMC::UMC_NTF_NEW_RESOLUTION;
-    //                }
-    //                break;
-
-    //            case NAL_UT_VPS:
-    //            case NAL_UT_SPS:
-    //            case NAL_UT_PPS:
-    //                DecodeHeaders(nalUnit);
-    //                break;
-
-    //            default:
-    //                break;
-    //            };
-
-    //            continue;
-    //        }
-    {
-
         umsRes = ParseWidevineVPSSPSPPS(&decryptParams);
         if (umsRes != UMC::UMC_OK)
             return umsRes;
@@ -849,117 +597,13 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData * pSource)
         H265Slice * pSlice = ParseWidevineSliceHeader(&decryptParams);
         if (pSlice)
         {
-            UMC::Status sts = AddSlice(pSlice, !pSource);
-            if (sts == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || sts == UMC::UMC_OK)
-                return sts;
-        }
-    }
-    //        switch ((NalUnitType)pMediaDataEx->values[i])
-    //        {
-    //        case NAL_UT_CODED_SLICE_RASL_N:
-    //        case NAL_UT_CODED_SLICE_RADL_N:
-    //        case NAL_UT_CODED_SLICE_TRAIL_R:
-    //        case NAL_UT_CODED_SLICE_TRAIL_N:
-    //        case NAL_UT_CODED_SLICE_TLA_R:
-    //        case NAL_UT_CODED_SLICE_TSA_N:
-    //        case NAL_UT_CODED_SLICE_STSA_R:
-    //        case NAL_UT_CODED_SLICE_STSA_N:
-    //        case NAL_UT_CODED_SLICE_BLA_W_LP:
-    //        case NAL_UT_CODED_SLICE_BLA_W_RADL:
-    //        case NAL_UT_CODED_SLICE_BLA_N_LP:
-    //        case NAL_UT_CODED_SLICE_IDR_W_RADL:
-    //        case NAL_UT_CODED_SLICE_IDR_N_LP:
-    //        case NAL_UT_CODED_SLICE_CRA:
-    //        case NAL_UT_CODED_SLICE_RADL_R:
-    //        case NAL_UT_CODED_SLICE_RASL_R:
-    //            if(H265Slice *pSlice = DecodeSliceHeader(nalUnit))
-    //            {
-    //                UMC::Status sts = AddSlice(pSlice, !pSource);
-    //                if (sts == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || sts == UMC::UMC_OK)
-    //                    return sts;
-    //            }
-    //            break;
-
-    //        case NAL_UT_SEI:
-    //            DecodeSEI(nalUnit);
-    //            break;
-
-    //        case NAL_UT_SEI_SUFFIX:
-    //            break;
-
-    //        case NAL_UT_VPS:
-    //        case NAL_UT_SPS:
-    //        case NAL_UT_PPS:
-    //            {
-    //                UMC::Status umsRes = DecodeHeaders(nalUnit);
-    //                if (umsRes != UMC::UMC_OK)
-    //                {
-    //                    if (umsRes == UMC::UMC_NTF_NEW_RESOLUTION)
-    //                    {
-    //                        Ipp32s nalIndex = pMediaDataEx->index;
-    //                        Ipp32s size = pMediaDataEx->offsets[nalIndex + 1] - pMediaDataEx->offsets[nalIndex];
-
-    //                        m_checkCRAInsideResetProcess = true;
-
-    //                        if (AddSlice(0, !pSource) == UMC::UMC_OK)
-    //                        {
-    //                            pSource->MoveDataPointer(- size - 3);
-    //                            return UMC::UMC_OK;
-    //                        }
-    //                        moveToSpsOffset = pSource->GetDataSize() + size + 3;
-    //                        continue;
-    //                    }
-
-    //                    return umsRes;
-    //                }
-    //            }
-    //            break;
-
-    //        case NAL_UT_AU_DELIMITER:
-    //            if (AddSlice(0, !pSource) == UMC::UMC_OK)
-    //                return UMC::UMC_OK;
-    //            break;
-
-    //        case NAL_UT_EOS:
-    //        case NAL_UT_EOB:
-    //            m_WaitForIDR = true;
-    //            AddSlice(0, !pSource);
-    //            m_RA_POC = 0;
-    //            m_IRAPType = NAL_UT_INVALID;
-    //            GetView()->pDPB->IncreaseRefPicListResetCount(0); // for flushing DPB
-    //            NoRaslOutputFlag = 1;
-    //            return UMC::UMC_OK;
-    //            break;
-
-    //        default:
-    //            break;
-    //        };
-    //    }
-
-    //} while ((pSource) && (MINIMAL_DATA_SIZE_H265 < pSource->GetDataSize()));
-
-    //if (m_checkCRAInsideResetProcess)
-    //{
-    //    pSource->MoveDataPointer(Ipp32s(pSource->GetDataSize() - moveToSpsOffset));
-    //    m_pNALSplitter->Reset();
-    //}
-
-    if (!pSource)
-    {
-        return AddSlice(0, true);
-    }
-    else
-    {
-        Ipp32u flags = pSource->GetFlags();
-
-        if (!(flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME))
-        {
-            VM_ASSERT(!m_pLastSlice);
-            return AddSlice(0, true);
+            umsRes = AddSlice(pSlice, !src);
+            if (umsRes == UMC::UMC_ERR_NOT_ENOUGH_BUFFER || umsRes == UMC::UMC_OK)
+                return umsRes;
         }
     }
 
-    return UMC::UMC_ERR_NOT_ENOUGH_DATA;
+    return AddSlice(0, !src);
 }
 
 void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
@@ -973,10 +617,7 @@ void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
         m_pWidevineDecrypter->ReleaseForNewBitstream();
     }
 #endif
-
-    return;
 }
-
 
 } // namespace UMC_HEVC_DECODER
 

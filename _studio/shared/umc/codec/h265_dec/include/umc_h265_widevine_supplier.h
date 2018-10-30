@@ -15,53 +15,42 @@
 #define __UMC_H265_WIDEVINE_SUPPLIER_H
 
 #include "umc_h265_va_supplier.h"
-#include "umc_h265_widevine_decrypter.h"
 
 namespace UMC_HEVC_DECODER
 {
+    class WidevineDecrypter;
+    class DecryptParametersWrapper;
 
-class WidevineTaskSupplier : public VATaskSupplier
-{
-public:
-
-    WidevineTaskSupplier();
-
-    ~WidevineTaskSupplier();
-
-    virtual UMC::Status Init(UMC::VideoDecoderParams *pInit);
-
-    virtual void Reset();
-
-    using VATaskSupplier::AddSource; //VATaskSupplier::MFXTaskSupplier_H265::TaskSupplier_H265::AddSource;
-
-    virtual UMC::Status AddSource(mfxBitstream *bs);
-
-protected:
-
-    virtual UMC::Status DecryptWidevineHeaders(UMC::MediaData *pSource, DecryptParametersWrapper* pDecryptParams);
-
-    UMC::Status ParseWidevineVPSSPSPPS(DecryptParametersWrapper* pDecryptParams);
-
-    virtual H265Slice * ParseWidevineSliceHeader(DecryptParametersWrapper* pDecryptParams);
-
-    virtual UMC::Status ParseWidevineSEI(DecryptParametersWrapper* pDecryptParams);
-
-    virtual UMC::Status AddSource(DecryptParametersWrapper* pDecryptParams);
-
-    virtual UMC::Status AddOneFrame(DecryptParametersWrapper* pDecryptParams);
-
-    virtual UMC::Status AddOneFrame(UMC::MediaData * pSource);
-
-    virtual void CompleteFrame(H265DecoderFrame * pFrame);
-
-private:
-    WidevineTaskSupplier & operator = (WidevineTaskSupplier &)
+    class WidevineTaskSupplier
+        : public VATaskSupplier
     {
-        return *this;
-    }
 
-    WidevineDecrypter * m_pWidevineDecrypter;
-};
+    public:
+
+        WidevineTaskSupplier();
+        ~WidevineTaskSupplier();
+
+        UMC::Status Init(UMC::VideoDecoderParams*) override;
+        void Reset() override;
+
+    protected:
+
+        UMC::Status ParseWidevineVPSSPSPPS(DecryptParametersWrapper*);
+        H265Slice*  ParseWidevineSliceHeader(DecryptParametersWrapper*);
+        UMC::Status ParseWidevineSEI(DecryptParametersWrapper*);
+
+        UMC::Status AddOneFrame(UMC::MediaData*) override;
+
+        void CompleteFrame(H265DecoderFrame*) override;
+
+    private:
+
+        WidevineTaskSupplier& operator=(WidevineTaskSupplier const&) = delete;
+
+    private:
+
+        std::unique_ptr<WidevineDecrypter> m_pWidevineDecrypter;
+    };
 
 } // namespace UMC_HEVC_DECODER
 

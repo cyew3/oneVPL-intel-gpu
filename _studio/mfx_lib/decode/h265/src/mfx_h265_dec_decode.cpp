@@ -1100,21 +1100,19 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
 
         MFXMediaDataAdapter src(bs);
 
+#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        mfxExtBuffer* widevineExtbuf = (bs) ? GetExtendedBuffer(bs->ExtParam, bs->NumExtParam, MFX_EXTBUFF_DECRYPTED_PARAM) : nullptr;
+        if (widevineExtbuf)
+        {
+            src.SetExtBuffer(widevineExtbuf);
+        }
+#endif
+
         for (;;)
         {
-            if (m_FrameAllocator->FindFreeSurface() == -1)
-            {
-                umcRes = UMC::UMC_ERR_NEED_FORCE_OUTPUT;
-            }
-            else
-            {
-#if (defined(MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-                if (IS_PROTECTION_WIDEVINE(m_vPar.Protected))
-                    umcRes = m_pH265VideoDecoder->AddSource(bs);
-                else
-#endif
-                    umcRes = m_pH265VideoDecoder->AddSource(bs ? &src : 0);
-            }
+
+            umcRes = m_FrameAllocator->FindFreeSurface() == -1 ?
+                UMC::UMC_ERR_NEED_FORCE_OUTPUT : m_pH265VideoDecoder->AddSource(bs ? &src : 0);
 
             umcAddSourceRes = umcFrameRes = umcRes;
 
