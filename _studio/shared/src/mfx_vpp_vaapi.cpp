@@ -1715,14 +1715,12 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
             m_pipelineParam[i].blend_state = &blend_state[i];
         }
 
-#if defined(LINUX_TARGET_PLATFORM_BSW) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BXTMIN)
         m_pipelineParam[i].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
         m_pipelineParam[i].filter_flags   |= VA_FILTER_SCALING_HQ;
-#else
-        m_pipelineParam[i].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
-#endif
+
         m_pipelineParam[i].filters      = 0;
         m_pipelineParam[i].num_filters  = 0;
+        m_pipelineParam[i].output_background_color = 0;
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                             m_vaContextVPP,
@@ -1760,6 +1758,7 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition_TiledVideoWall(mfxExecutePar
 
         outputparam.output_region  = &tilingParams[currTile].targerRect;
         outputparam.surface_region = &tilingParams[currTile].targerRect;
+        outputparam.output_background_color = 0;
 
         vaSts = vaCreateBuffer(m_vaDisplay,
                                   m_vaContextVPP,
@@ -2040,8 +2039,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
                 m_pipelineParam[refIdx].output_color_properties.color_range = (MFX_NOMINALRANGE_0_255 == pParams->VideoSignalInfoOut.NominalRange) ? VA_SOURCE_RANGE_FULL : VA_SOURCE_RANGE_REDUCED;
             }
         }
-    m_pipelineParam[refIdx].input_color_properties.chroma_sample_location  = VA_CHROMA_SITING_UNKNOWN;
-    m_pipelineParam[refIdx].output_color_properties.chroma_sample_location = VA_CHROMA_SITING_UNKNOWN;
+        m_pipelineParam[refIdx].input_color_properties.chroma_sample_location  = VA_CHROMA_SITING_UNKNOWN;
+        m_pipelineParam[refIdx].output_color_properties.chroma_sample_location = VA_CHROMA_SITING_UNKNOWN;
 
         switch (pRefSurf->frameInfo.PicStruct)
         {
@@ -2068,12 +2067,8 @@ mfxStatus VAAPIVideoProcessing::Execute_Composition(mfxExecuteParams *pParams)
         if (pParams->bComposite)
         {
             m_pipelineParam[refIdx].num_filters  = 0;
-#if defined(LINUX_TARGET_PLATFORM_BSW) || defined(LINUX_TARGET_PLATFORM_BXT) || defined(LINUX_TARGET_PLATFORM_BXTMIN)
             m_pipelineParam[refIdx].pipeline_flags |= VA_PROC_PIPELINE_SUBPICTURES;
             m_pipelineParam[refIdx].filter_flags   |= VA_FILTER_SCALING_HQ;
-#else
-            m_pipelineParam[refIdx].pipeline_flags  |= VA_PROC_PIPELINE_FAST;
-#endif
         }
     }
 
