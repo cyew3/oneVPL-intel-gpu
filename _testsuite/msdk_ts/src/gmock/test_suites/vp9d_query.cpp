@@ -110,8 +110,8 @@ void CheckParams(tsExtBufType<TB>& par, const TestSuite::f_pair (&pairs)[MAX_NPA
         {
             void* ptr = 0;
 
-            if((typeid(TB) == typeid(mfxVideoParam) && ( pairs[i].f->name.find("mfxVideoParam") != std::string::npos) ) || 
-               (typeid(TB) == typeid(mfxBitstream)  && ( pairs[i].f->name.find("mfxBitstream")  != std::string::npos) ) || 
+            if((typeid(TB) == typeid(mfxVideoParam) && ( pairs[i].f->name.find("mfxVideoParam") != std::string::npos) ) ||
+               (typeid(TB) == typeid(mfxBitstream)  && ( pairs[i].f->name.find("mfxBitstream")  != std::string::npos) ) ||
                (typeid(TB) == typeid(mfxEncodeCtrl) && ( pairs[i].f->name.find("mfxEncodeCtrl") != std::string::npos) ))
             {
                 ptr = (TB*) &par;
@@ -212,7 +212,7 @@ const unsigned int TestSuite::n_cases_ayuv = sizeof(TestSuite::test_case_ayuv)/s
 
 const TestSuite::tc_struct TestSuite::test_case_p010[] =
 {
-    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P010, IGNORED}, {BitDepthLuma, 0, INVALID}}},
+    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P010, IGNORED}, {BitDepthLuma, 0}}},
     {/*33*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P010}, {BitDepthLuma, 10}}},
     {/*34*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_P010, IGNORED}, {BitDepthLuma, 8, INVALID}}},
     {/*35*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_P010, INVALID}, {ChromaFormat, MFX_CHROMAFORMAT_YUV444, INVALID}}},
@@ -225,7 +225,7 @@ const unsigned int TestSuite::n_cases_p010 = sizeof(TestSuite::test_case_p010)/s
 
 const TestSuite::tc_struct TestSuite::test_case_y410[] =
 {
-    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y410, IGNORED}, {BitDepthLuma, 0, INVALID}}},
+    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y410, IGNORED}, {BitDepthLuma, 0}}},
     {/*33*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y410}, {BitDepthLuma, 10}}},
     {/*34*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_Y410, IGNORED}, {BitDepthLuma, 8, INVALID}}},
     {/*35*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_Y410, INVALID}, {ChromaFormat, MFX_CHROMAFORMAT_YUV420, INVALID}}},
@@ -238,7 +238,7 @@ const unsigned int TestSuite::n_cases_y410 = sizeof(TestSuite::test_case_y410)/s
 
 const TestSuite::tc_struct TestSuite::test_case_p016[] =
 {
-    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P016, IGNORED}, {BitDepthLuma, 0, INVALID}}},
+    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_P016, IGNORED}, {BitDepthLuma, 0}}},
     {/*33*/ MFX_ERR_NONE, 0,        {{FourCC, MFX_FOURCC_P016},          {BitDepthLuma, 12}}},
     {/*34*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_P016, IGNORED}, {BitDepthLuma, 8, INVALID}}},
     {/*35*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_P016, IGNORED}, {BitDepthLuma, 10, INVALID}}},
@@ -254,7 +254,7 @@ const unsigned int TestSuite::n_cases_p016 = sizeof(TestSuite::test_case_p016)/s
 
 const TestSuite::tc_struct TestSuite::test_case_y416[] =
 {
-    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y416, IGNORED}, {BitDepthLuma, 0, INVALID}}},
+    {/*32*/ MFX_ERR_NONE, 0, {{FourCC, MFX_FOURCC_Y416, IGNORED}, {BitDepthLuma, 0}}},
     {/*33*/ MFX_ERR_NONE, 0,        {{FourCC, MFX_FOURCC_Y416},          {BitDepthLuma, 12}}},
     {/*34*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_Y416, IGNORED}, {BitDepthLuma, 8, INVALID}}},
     {/*34*/ MFX_ERR_UNSUPPORTED, 0, {{FourCC, MFX_FOURCC_Y416, IGNORED}, {BitDepthLuma, 10, INVALID}}},
@@ -308,7 +308,7 @@ int TestSuite::RunTest_fourcc(const unsigned int id)
     m_par_set = true; //we are not testing DecodeHeader here
 
     const tc_struct* fourcc_table = getTestTable(fourcc);
-    
+
     const unsigned int real_id = (id < n_cases) ? (id) : (id - n_cases);
     const tc_struct& tc = (real_id == id) ? test_case[real_id] : fourcc_table[real_id];
     return RunTest(tc);
