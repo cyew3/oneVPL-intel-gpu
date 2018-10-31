@@ -250,13 +250,7 @@ namespace hevce_query
         {/*12*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, {} },
         {/*13*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, {} },
         {/*14*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, {} },
-        {/*15*/
-#if (defined(LINUX32) || defined(LINUX64))
-            MFX_ERR_UNSUPPORTED,
-#else
-            MFX_ERR_NONE,
-#endif
-            EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY,{} },
+        {/*15*/ MFX_ERR_UNSUPPORTED, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, {} },
         {/*16*/ MFX_ERR_NULL_PTR, EXT_BUFF, NONE, {} },
         //Rate Control Metod
         {/*17*/ MFX_ERR_NONE, NONE, NONE, { MFX_PAR, &tsStruct::mfxVideoParam.mfx.RateControlMethod, MFX_RATECONTROL_CBR } },
@@ -610,8 +604,8 @@ namespace hevce_query
                     g_tsStatus.expect(MFX_ERR_NONE);
                 else if (tc.sub_type == NONE)
                     g_tsStatus.expect(MFX_ERR_NULL_PTR);
-                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && !(g_tsImpl & MFX_IMPL_VIA_D3D11))
-                    g_tsStatus.expect(MFX_ERR_UNSUPPORTED);
+                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && (g_tsImpl & MFX_IMPL_VIA_D3D11))
+                    g_tsStatus.expect(MFX_ERR_NONE);
 
             }
             if (tc.type == CROP)

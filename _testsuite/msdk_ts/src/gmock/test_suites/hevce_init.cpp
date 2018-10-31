@@ -331,13 +331,7 @@ namespace hevce_init
         {/*39*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_AUXDATA, {} },
         {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_VPP_FRAME_RATE_CONVERSION, {} },
         {/*41*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_PICTURE_TIMING_SEI, {} },
-        {/*42*/
-#if (defined(LINUX32) || defined(LINUX64))
-                MFX_ERR_INVALID_VIDEO_PARAM,
-#else
-                MFX_ERR_NONE,
-#endif
-                EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY,{} },
+        {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_CAPABILITY, {} },
         {/*43*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_AVC_REFLIST_CTRL, {} },
         {/*44*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, MFX_EXTBUFF_ENCODER_RESET_OPTION, {} },
         {/*45*/ MFX_ERR_INVALID_VIDEO_PARAM, EXT_BUFF, NONE, {} },
@@ -693,6 +687,8 @@ namespace hevce_init
                     sts = MFX_ERR_INVALID_VIDEO_PARAM;
                 else if (tc.sub_type == NONE)
                     sts = MFX_ERR_NULL_PTR;
+                else if (tc.sub_type == MFX_EXTBUFF_ENCODER_CAPABILITY && g_tsOSFamily == MFX_OS_FAMILY_WINDOWS)
+                    sts = MFX_ERR_NONE;
                 else
                     if (tc.sts != MFX_ERR_NONE)
                         sts = MFX_ERR_INVALID_VIDEO_PARAM;
