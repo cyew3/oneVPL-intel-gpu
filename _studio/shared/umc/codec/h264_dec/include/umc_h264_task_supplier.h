@@ -32,10 +32,6 @@
 
 #include "umc_h264_au_splitter.h"
 
-#if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-#include "umc_h264_widevine_decrypter.h"
-#endif
-
 namespace UMC
 {
 class TaskBroker;
@@ -505,10 +501,6 @@ public:
     Status GetInfo(VideoDecoderParams *lpInfo);
 
     virtual Status AddSource(MediaData *pSource);
-
-#if (defined(UMC_VA_DXVA) || defined(UMC_VA_LINUX)) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    virtual Status AddSource(mfxBitstream * /*bs*/) { return MFX_ERR_UNSUPPORTED; }
-#endif
 
 #if (MFX_VERSION >= 1025)
     Status ProcessNalUnit(NalUnit *nalUnit, mfxExtDecodeErrorReport *pDecodeErrorReport);

@@ -13,7 +13,10 @@
 
 #include "umc_h264_va_packer.h"
 #include "umc_h264_task_supplier.h"
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "huc_based_drm_common.h"
+#endif
 
 #ifdef UMC_VA_DXVA
 #include "umc_mvc_ddi.h"
@@ -77,13 +80,14 @@ Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
 {
     (void)va;
     (void)supplier;
+
     Packer * packer = 0;
 #if defined(UMC_VA_DXVA)
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (va->GetProtectedVA() && IS_PROTECTION_WIDEVINE(va->GetProtectedVA()->GetProtected()))
         packer = new PackerDXVA2_Widevine(va, supplier);
     else
-#endif
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
         packer = new PackerDXVA2(va, supplier);
 #elif defined (UMC_VA_LINUX)
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
@@ -92,7 +96,7 @@ Packer * Packer::CreatePacker(VideoAccelerator * va, TaskSupplier* supplier)
     else if (va->GetProtectedVA())
         packer = new PackerVA_PAVP(va, supplier);
     else
-#endif
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
         packer = new PackerVA(va, supplier);
 #endif // UMC_VA_LINUX
 
@@ -1538,6 +1542,7 @@ void PackerDXVA2::PackQmatrix(const H264ScalingPicParams * scaling)
     }
 }
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 PackerDXVA2_Widevine::PackerDXVA2_Widevine(VideoAccelerator * va, TaskSupplier * supplier)
     : PackerDXVA2(va, supplier)
 {
@@ -1567,7 +1572,6 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, int32_t firs
         count_all -= partial_count;
     }
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (m_va->GetProtectedVA())
     {
         mfxBitstream * bs = m_va->GetProtectedVA()->GetBitstream();
@@ -1578,7 +1582,6 @@ void PackerDXVA2_Widevine::PackAU(H264DecoderFrameInfo * sliceInfo, int32_t firs
             m_va->GetProtectedVA()->MoveBSCurrentEncrypt(count);
         }
     }
-#endif
 }
 
 void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
@@ -1717,8 +1720,8 @@ void PackerDXVA2_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264
             j++;
         }
     }
-
 }
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
 #endif // UMC_VA_DXVA
 
@@ -2560,10 +2563,6 @@ Status PackerVA::QueryStreamOut(H264DecoderFrame* pFrame)
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
-/****************************************************************************************************/
-// PAVP Widevine HuC-based implementation
-/****************************************************************************************************/
-
 PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * supplier)
     : PackerVA(va, supplier)
 {
@@ -2572,7 +2571,7 @@ PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va, TaskSupplier * suppl
 void PackerVA_Widevine::PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice)
 {
     const H264SliceHeader* pSliceHeader = pSlice->GetSliceHeader();
-    const H264DecoderFrame *pCurrentFrame = pSliceInfo->m_pFrame;
+    const H264DecoderFrame* pCurrentFrame = pSliceInfo->m_pFrame;
 
     UMCVACompBuffer *picParamBuf;
     VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType, &picParamBuf, sizeof(VAPictureParameterBufferH264));
@@ -2810,6 +2809,7 @@ void PackerVA_PAVP::PackPavpParams(void)
     pEncryptParam->pavpHasBeenEnabled = 1;
 }
 #endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+
 #endif // UMC_VA_LINUX
 
 } // namespace UMC

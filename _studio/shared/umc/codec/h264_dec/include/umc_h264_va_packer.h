@@ -129,6 +129,7 @@ protected:
     DXVA_PicParams_H264* m_picParams;
 };
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
 class PackerDXVA2_Widevine
     : public PackerDXVA2
 {
@@ -143,6 +144,7 @@ private:
     void PackPicParams(H264DecoderFrameInfo * pSliceInfo, H264Slice * pSlice, DXVA_PicParams_H264* pPicParams_H264);
     void PackAU(H264DecoderFrameInfo * sliceInfo, int32_t firstSlice, int32_t count);
 };
+#endif // #ifndef MFX_PROTECTED_FEATURE_DISABLE
 
 #endif // UMC_VA_DXVA
 

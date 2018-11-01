@@ -11,22 +11,32 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
+#include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
+#include "umc_h264_notify.h"
+#include "umc_h264_widevine_decrypter.h"
 #include "umc_h264_widevine_supplier.h"
 
+#ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
-#include "umc_va_linux_protected.h"
-#include "umc_h264_notify.h"
-#include "mfx_common_int.h"
+#endif
 
-#if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#ifdef UMC_VA_LINUX
+#include "umc_va_linux_protected.h"
+#endif
+
+#include "mfx_common_int.h"
 
 namespace UMC
 {
 
 void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, int32_t frame_num)
 {
-    const H264SliceHeader *sliceHeader = slice->GetSliceHeader();
+    const H264SliceHeader* sliceHeader = slice->GetSliceHeader();
     const H264SeqParamSet* sps = slice->GetSeqParam();
+
+    int32_t uMaxFrameNum = (1<<sps->log2_max_frame_num);
 
     if (sps->pic_order_cnt_type == 0)
     {
@@ -49,7 +59,6 @@ void POCDecoderWidevine::DecodePictureOrderCount(const H264Slice *slice, int32_t
             int32_t ExpectedPicOrderCnt = 0;
             int32_t ExpectedDeltaPerPicOrderCntCycle;
             uint32_t uNumRefFramesinPicOrderCntCycle = sps->num_ref_frames_in_pic_order_cnt_cycle;
-            int32_t uMaxFrameNum = (1<<sps->log2_max_frame_num);
 
             if (frame_num < m_FrameNum)
                 m_FrameNumOffset += uMaxFrameNum;
@@ -141,7 +150,6 @@ Status WidevineTaskSupplier::Init(VideoDecoderParams *pInit)
     if (umsRes != UMC_OK)
         return umsRes;
 
-#if defined(MFX_VA)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
@@ -157,7 +165,6 @@ Status WidevineTaskSupplier::Init(VideoDecoderParams *pInit)
             }
         }
     }
-#endif
 
 #if defined(ANDROID)
     m_DPBSizeEx += 2; // Fix for Netflix freeze issue
@@ -170,13 +177,11 @@ void WidevineTaskSupplier::Reset()
 {
     VATaskSupplier::Reset();
 
-#if defined(MFX_VA)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
         m_pWidevineDecrypter->Reset();
     }
-#endif
 }
 
 static
@@ -268,8 +273,14 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
             }
             if (view)
             {
-                view->SetDPBSize(&sps, m_level_idc);
-                temp->vui.max_dec_frame_buffering = (uint8_t)view->maxDecFrameBuffering;
+                uint8_t newDPBsizeL = (uint8_t)CalculateDPBSize(m_level_idc ? m_level_idc : temp->level_idc,
+                                                                sps.frame_width_in_mbs * 16,
+                                                                sps.frame_height_in_mbs * 16,
+                                                                sps.num_ref_frames);
+
+                temp->vui.max_dec_frame_buffering = temp->vui.max_dec_frame_buffering ? temp->vui.max_dec_frame_buffering : newDPBsizeL;
+                if (temp->vui.max_dec_frame_buffering > newDPBsizeL)
+                    temp->vui.max_dec_frame_buffering = newDPBsizeL;
             }
 
             if (!temp->vui.timing_info_present_flag || m_use_external_framerate)
@@ -394,16 +405,6 @@ Status WidevineTaskSupplier::ParseWidevineSPSPPS(DecryptParametersWrapper* pDecr
         }
     }
 
-    if (m_firstVideoParams.mfx.FrameInfo.PicStruct == MFX_PICSTRUCT_PROGRESSIVE &&
-        isMVCProfile(m_firstVideoParams.mfx.CodecProfile) && m_va && (m_va->m_HWPlatform >= MFX_HW_HSW))
-    {
-        H264SeqParamSet * currSPS = m_Headers.m_SeqParams.GetCurrentHeader();
-        if (currSPS && !currSPS->frame_mbs_only_flag)
-        {
-            return UMC_NTF_NEW_RESOLUTION;
-        }
-    }
-
     return UMC_OK;
 }
 
@@ -424,7 +425,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         }
     }
 
-    H264Slice * pSlice = m_ObjHeap.AllocateObject<H264Slice>();
+    H264Slice * pSlice = CreateSlice();
     if (!pSlice)
     {
         return 0;
@@ -451,20 +452,18 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
     int32_t seq_parameter_set_id = pSlice->m_pPicParamSet->seq_parameter_set_id;
 
+    pSlice->m_pSeqParamSetSvcEx = m_Headers.m_SeqParamsSvcExt.GetCurrentHeader();
+    pSlice->m_pSeqParamSetMvcEx = m_Headers.m_SeqParamsMvcExt.GetCurrentHeader();
+    pSlice->m_pSeqParamSet = m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id);
+
+    if (!pSlice->m_pSeqParamSet)
     {
-        pSlice->m_pSeqParamSetSvcEx = m_Headers.m_SeqParamsSvcExt.GetCurrentHeader();
-        pSlice->m_pSeqParamSetMvcEx = m_Headers.m_SeqParamsMvcExt.GetCurrentHeader();
-        pSlice->m_pSeqParamSet = m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id);
-
-        if (!pSlice->m_pSeqParamSet)
-        {
-            ErrorStatus::isSPSError = 0;
-            return 0;
-        }
-
-        m_Headers.m_SeqParams.SetCurrentID(pSlice->m_pPicParamSet->seq_parameter_set_id);
-        m_Headers.m_PicParams.SetCurrentID(pSlice->m_pPicParamSet->pic_parameter_set_id);
+        ErrorStatus::isSPSError = 0;
+        return 0;
     }
+
+    m_Headers.m_SeqParams.SetCurrentID(pSlice->m_pPicParamSet->seq_parameter_set_id);
+    m_Headers.m_PicParams.SetCurrentID(pSlice->m_pPicParamSet->pic_parameter_set_id);
 
     if (pSlice->m_pSeqParamSet->errorFlags)
         ErrorStatus::isSPSError = 1;
@@ -483,123 +482,132 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
     pSlice->m_dTime = pDecryptParams->GetTime();
 
+    int32_t iMBInFrame;
+    int32_t iFieldIndex;
+
+    // decode slice header
     {
-        int32_t iMBInFrame;
-        int32_t iFieldIndex;
+        Status umcRes = UMC_OK;
+        int32_t iSQUANT;
 
-        // decode slice header
+        try
         {
-            Status umcRes = UMC_OK;
-            int32_t iSQUANT;
+            memset(&pSlice->m_SliceHeader, 0, sizeof(pSlice->m_SliceHeader));
 
-            try
-            {
-                memset(&pSlice->m_SliceHeader, 0, sizeof(pSlice->m_SliceHeader));
-
-                // decode first part of slice header
-                umcRes = pDecryptParams->GetSliceHeaderPart1(&pSlice->m_SliceHeader);
-                if (UMC_OK != umcRes)
-                    return 0;
+            // decode first part of slice header
+            umcRes = pDecryptParams->GetSliceHeaderPart1(&pSlice->m_SliceHeader);
+            if (UMC_OK != umcRes)
+                return 0;
 
 
-                // decode second part of slice header
-                umcRes = pDecryptParams->GetSliceHeaderPart2(&pSlice->m_SliceHeader,
-                                                         pSlice->m_pPicParamSet,
-                                                         pSlice->m_pSeqParamSet);
-                if (UMC_OK != umcRes)
-                    return 0;
+            // decode second part of slice header
+            umcRes = pDecryptParams->GetSliceHeaderPart2(&pSlice->m_SliceHeader,
+                                                        pSlice->m_pPicParamSet,
+                                                        pSlice->m_pSeqParamSet);
+            if (UMC_OK != umcRes)
+                return 0;
 
-                // decode second part of slice header
-                umcRes = pDecryptParams->GetSliceHeaderPart3(&pSlice->m_SliceHeader,
-                                                         pSlice->m_PredWeight[0],
-                                                         pSlice->m_PredWeight[1],
-                                                         &pSlice->ReorderInfoL0,
-                                                         &pSlice->ReorderInfoL1,
-                                                         &pSlice->m_AdaptiveMarkingInfo,
-                                                         &pSlice->m_BaseAdaptiveMarkingInfo,
-                                                         pSlice->m_pPicParamSet,
-                                                         pSlice->m_pSeqParamSet,
-                                                         pSlice->m_pSeqParamSetSvcEx);
-                if (UMC_OK != umcRes)
-                    return 0;
+            // decode second part of slice header
+            umcRes = pDecryptParams->GetSliceHeaderPart3(&pSlice->m_SliceHeader,
+                                                        pSlice->m_PredWeight[0],
+                                                        pSlice->m_PredWeight[1],
+                                                        &pSlice->ReorderInfoL0,
+                                                        &pSlice->ReorderInfoL1,
+                                                        &pSlice->m_AdaptiveMarkingInfo,
+                                                        &pSlice->m_BaseAdaptiveMarkingInfo,
+                                                        pSlice->m_pPicParamSet,
+                                                        pSlice->m_pSeqParamSet,
+                                                        pSlice->m_pSeqParamSetSvcEx);
+            if (UMC_OK != umcRes)
+                return 0;
 
-                // decode 4 part of slice header
-                umcRes = pDecryptParams->GetSliceHeaderPart4(&pSlice->m_SliceHeader, pSlice->m_pSeqParamSetSvcEx);
-                if (UMC_OK != umcRes)
-                    return 0;
+            //7.4.3 Slice header semantics
+            //If the current picture is an IDR picture, frame_num shall be equal to 0
+            //If this restrictions is violated, clear LT flag to avoid ref. pic. marking process corruption
+            if (pSlice->m_SliceHeader.IdrPicFlag && pSlice->m_SliceHeader.frame_num != 0)
+                pSlice->m_SliceHeader.long_term_reference_flag = 0;
 
-                pSlice->m_iMBWidth = pSlice->m_pSeqParamSet->frame_width_in_mbs;
-                pSlice->m_iMBHeight = pSlice->m_pSeqParamSet->frame_height_in_mbs;
+            // decode 4 part of slice header
+            umcRes = pDecryptParams->GetSliceHeaderPart4(&pSlice->m_SliceHeader, pSlice->m_pSeqParamSetSvcEx);
+            if (UMC_OK != umcRes)
+                return 0;
 
-                pSlice->m_WidevineStatusReportNumber = pDecryptParams->usStatusReportFeedbackNumber;
+            pSlice->m_iMBWidth = pSlice->m_pSeqParamSet->frame_width_in_mbs;
+            pSlice->m_iMBHeight = pSlice->m_pSeqParamSet->frame_height_in_mbs;
 
-                // redundant slice, discard
-                if (pSlice->m_SliceHeader.redundant_pic_cnt)
-                    return 0;
+            pSlice->m_WidevineStatusReportNumber = pDecryptParams->usStatusReportFeedbackNumber;
 
-                // Set next MB.
-                if (pSlice->m_SliceHeader.first_mb_in_slice >= (int32_t) (pSlice->m_iMBWidth * pSlice->m_iMBHeight))
-                {
-                    return 0;
-                }
+            // redundant slice, discard
+            if (pSlice->m_SliceHeader.redundant_pic_cnt)
+                return 0;
 
-                int32_t bit_depth_luma = pSlice->GetSeqParam()->bit_depth_luma;
-
-                iSQUANT = pSlice->m_pPicParamSet->pic_init_qp +
-                          pSlice->m_SliceHeader.slice_qp_delta;
-                if (iSQUANT < QP_MIN - 6*(bit_depth_luma - 8)
-                    || iSQUANT > QP_MAX)
-                {
-                    return 0;
-                }
-
-                if (pSlice->m_pPicParamSet->entropy_coding_mode)
-                    pSlice->m_BitStream.AlignPointerRight();
-            }
-            catch(const h264_exception & )
+            // Set next MB.
+            if (pSlice->m_SliceHeader.first_mb_in_slice >= (int32_t) (pSlice->m_iMBWidth * pSlice->m_iMBHeight))
             {
                 return 0;
             }
-            catch(...)
+
+            int32_t bit_depth_luma = pSlice->GetSeqParam()->bit_depth_luma;
+
+            iSQUANT = pSlice->m_pPicParamSet->pic_init_qp +
+                        pSlice->m_SliceHeader.slice_qp_delta;
+            if (iSQUANT < QP_MIN - 6*(bit_depth_luma - 8)
+                || iSQUANT > QP_MAX)
             {
                 return 0;
             }
+
+            if (pSlice->m_pPicParamSet->entropy_coding_mode)
+                pSlice->m_BitStream.AlignPointerRight();
         }
-
-        pSlice->m_iMBWidth  = pSlice->GetSeqParam()->frame_width_in_mbs;
-        pSlice->m_iMBHeight = pSlice->GetSeqParam()->frame_height_in_mbs;
-
-        iMBInFrame = (pSlice->m_iMBWidth * pSlice->m_iMBHeight) / ((pSlice->m_SliceHeader.field_pic_flag) ? (2) : (1));
-        iFieldIndex = (pSlice->m_SliceHeader.field_pic_flag && pSlice->m_SliceHeader.bottom_field_flag) ? (1) : (0);
-
-        // set slice variables
-        pSlice->m_iFirstMB = pSlice->m_SliceHeader.first_mb_in_slice;
-        pSlice->m_iMaxMB = iMBInFrame;
-
-        pSlice->m_iFirstMBFld = pSlice->m_SliceHeader.first_mb_in_slice + iMBInFrame * iFieldIndex;
-
-        pSlice->m_iAvailableMB = iMBInFrame;
-
-        if (pSlice->m_iFirstMB >= pSlice->m_iAvailableMB)
+        catch(const h264_exception & )
+        {
             return 0;
-
-        // set conditional flags
-        pSlice->m_bDecoded = false;
-        pSlice->m_bPrevDeblocked = false;
-        pSlice->m_bDeblocked = (pSlice->m_SliceHeader.disable_deblocking_filter_idc == DEBLOCK_FILTER_OFF);
-
-        // frame is not associated yet
-        pSlice->m_pCurrentFrame = NULL;
-
-        pSlice->m_pSeqParamSet->IncrementReference();
-        pSlice->m_pPicParamSet->IncrementReference();
-        if (pSlice->m_pSeqParamSetEx)
-            pSlice->m_pSeqParamSetEx->IncrementReference();
-        if (pSlice->m_pSeqParamSetMvcEx)
-            pSlice->m_pSeqParamSetMvcEx->IncrementReference();
-        if (pSlice->m_pSeqParamSetSvcEx)
-            pSlice->m_pSeqParamSetSvcEx->IncrementReference();
+        }
+        catch(...)
+        {
+            return 0;
+        }
     }
+
+    pSlice->m_iMBWidth  = pSlice->GetSeqParam()->frame_width_in_mbs;
+    pSlice->m_iMBHeight = pSlice->GetSeqParam()->frame_height_in_mbs;
+
+    iMBInFrame = (pSlice->m_iMBWidth * pSlice->m_iMBHeight) / ((pSlice->m_SliceHeader.field_pic_flag) ? (2) : (1));
+    iFieldIndex = (pSlice->m_SliceHeader.field_pic_flag && pSlice->m_SliceHeader.bottom_field_flag) ? (1) : (0);
+
+    // set slice variables
+    pSlice->m_iFirstMB = pSlice->m_SliceHeader.first_mb_in_slice;
+    pSlice->m_iMaxMB = iMBInFrame;
+
+    pSlice->m_iFirstMBFld = pSlice->m_SliceHeader.first_mb_in_slice + iMBInFrame * iFieldIndex;
+
+    pSlice->m_iAvailableMB = iMBInFrame;
+
+    if (pSlice->m_iFirstMB >= pSlice->m_iAvailableMB)
+        return 0;
+
+    // reset all internal variables
+    pSlice->m_bFirstDebThreadedCall = true;
+    pSlice->m_bError = false;
+
+    // set conditional flags
+    pSlice->m_bDecoded = false;
+    pSlice->m_bPrevDeblocked = false;
+    pSlice->m_bDeblocked = (pSlice->m_SliceHeader.disable_deblocking_filter_idc == DEBLOCK_FILTER_OFF);
+
+    // frame is not associated yet
+    pSlice->m_pCurrentFrame = NULL;
+
+    pSlice->m_bInited = true;
+    pSlice->m_pSeqParamSet->IncrementReference();
+    pSlice->m_pPicParamSet->IncrementReference();
+    if (pSlice->m_pSeqParamSetEx)
+        pSlice->m_pSeqParamSetEx->IncrementReference();
+    if (pSlice->m_pSeqParamSetMvcEx)
+        pSlice->m_pSeqParamSetMvcEx->IncrementReference();
+    if (pSlice->m_pSeqParamSetSvcEx)
+        pSlice->m_pSeqParamSetSvcEx->IncrementReference();
 
     if (IsShouldSkipSlice(pSlice))
         return 0;
@@ -628,9 +636,6 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
     m_WaitForIDR = false;
     memory_leak_preventing_slice.ClearNotification();
-
-    if (!pSlice)
-        return 0;
 
     return pSlice;
 }
@@ -682,13 +687,11 @@ Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDecrypt
 
 Status WidevineTaskSupplier::AddOneFrame(MediaData* src)
 {
-#if defined(MFX_VA)
     if (!m_initializationParams.pVideoAccelerator->GetProtectedVA() ||
         !IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected()))
     {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        return UMC_ERR_FAILED;
     }
-#endif
 
     Status umsRes = UMC_OK;
 
@@ -701,7 +704,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData* src)
 
     uint32_t flags = src ? src->GetFlags() : 0;
     if (flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
-        return UMC_ERR_INVALID_STREAM;
+        return UMC_ERR_FAILED;
 
     bool decrypted = false;
     int32_t size = src ? (int32_t)src->GetDataSize() : 0;
@@ -714,7 +717,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData* src)
     {
         if (!dp_ext->Data       ||
              dp_ext->DataLength != sizeof (DECRYPT_QUERY_STATUS_PARAMS_AVC))
-            return UMC_ERR_INVALID_STREAM;
+            return UMC_ERR_FAILED;
 
         decryptParams = *(reinterpret_cast<DECRYPT_QUERY_STATUS_PARAMS_AVC*>(dp_ext->Data));
         decrypted = true;
@@ -763,19 +766,16 @@ Status WidevineTaskSupplier::CompleteFrame(H264DecoderFrame * pFrame, int32_t fi
 {
     Status sts = VATaskSupplier::CompleteFrame(pFrame, field);
 
-#if defined(MFX_VA)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
         m_pWidevineDecrypter->ReleaseForNewBitstream();
     }
-#endif
 
     return sts;
 }
 
 } // namespace UMC
 
-#endif // #if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

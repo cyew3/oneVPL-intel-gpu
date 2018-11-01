@@ -608,7 +608,7 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
     {
         return MFX_PLATFORM_SOFTWARE;
     }
-#endif
+#endif // MFX_VA
 
     return platform;
 }
@@ -1731,7 +1731,7 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                 sts = MFX_ERR_UNDEFINED_BEHAVIOR;
             }
         }
-#endif // #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#endif // #ifdef MFX_ENABLE_SVC_VIDEO_DECODE
 
         if (GetPlatform(core, out) != core->GetPlatformType() && sts == MFX_ERR_NONE)
         {

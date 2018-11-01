@@ -21,6 +21,8 @@
 #include "umc_automatic_mutex.h"
 #include "umc_h264_heap.h"
 
+#include "mfx_common.h"
+
 namespace UMC
 {
 struct H264RefListInfo
@@ -215,7 +217,9 @@ public:  // DEBUG !!!! should remove dependence
     bool m_bError;                                              // (bool) there is an error in decoding
     bool m_isInitialized;
 
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     uint16_t m_WidevineStatusReportNumber;
+#endif
 
     AdaptiveMarkingInfo     m_AdaptiveMarkingInfo;
     AdaptiveMarkingInfo     m_BaseAdaptiveMarkingInfo;

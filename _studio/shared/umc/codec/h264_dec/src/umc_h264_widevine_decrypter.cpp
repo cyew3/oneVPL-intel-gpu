@@ -11,10 +11,18 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H264_VIDEO_DECODER)
 
+#include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
+#ifdef UMC_VA_DXVA
 #include "umc_va_dxva2.h"
+#endif
+
+#ifdef UMC_VA_LINUX
 #include "umc_va_linux.h"
+#endif
+
 #include "umc_h264_widevine_decrypter.h"
-#include "mfx_common.h"
 
 #include <limits.h>
 
@@ -122,6 +130,9 @@ Status DecryptParametersWrapper::GetSequenceParamSet(H264SeqParamSet *sps)
     sps->constraint_set5_flag = 0;                                        //TBD
 
     sps->level_idc = SeqParams.level_idc;
+
+    if (sps->level_idc == H264VideoDecoderParams::H264_LEVEL_UNKNOWN)
+        sps->level_idc = H264VideoDecoderParams::H264_LEVEL_52;
 
     switch(sps->level_idc)
     {
@@ -591,85 +602,7 @@ Status DecryptParametersWrapper::GetPictureParamSetPart2(H264PicParamSet *pps)
     // number of slice groups, bitstream has value - 1
     pps->num_slice_groups = PicParams.num_slice_groups_minus1 + 1;
     if (pps->num_slice_groups != 1)
-    {
-        if (pps->num_slice_groups > MAX_NUM_SLICE_GROUPS)
-        {
-            return UMC_ERR_INVALID_STREAM;
-        }
-
-        uint32_t slice_group_map_type = PicParams.slice_group_map_type;
-        pps->SliceGroupInfo.slice_group_map_type = (uint8_t)slice_group_map_type;
-
-        if (slice_group_map_type > 6)
-            return UMC_ERR_INVALID_STREAM;
-
         return UMC_ERR_INVALID_STREAM;
-
-        //// Get additional, map type dependent slice group data
-        //switch (pps->SliceGroupInfo.slice_group_map_type)
-        //{
-        //case 0:
-        //    for (uint32_t slice_group = 0; slice_group < pps->num_slice_groups; slice_group++)
-        //    {
-        //        // run length, bitstream has value - 1
-        //        pps->SliceGroupInfo.run_length[slice_group] = GetVLCElement(false) + 1;
-        //    }
-        //    break;
-        //case 1:
-        //    // no additional info
-        //    break;
-        //case 2:
-        //    for (uint32_t slice_group = 0; slice_group < (uint32_t)(pps->num_slice_groups-1); slice_group++)
-        //    {
-        //        pps->SliceGroupInfo.t1.top_left[slice_group] = GetVLCElement(false);
-        //        pps->SliceGroupInfo.t1.bottom_right[slice_group] = GetVLCElement(false);
-
-        //        // check for legal values
-        //        if (pps->SliceGroupInfo.t1.top_left[slice_group] >
-        //            pps->SliceGroupInfo.t1.bottom_right[slice_group])
-        //        {
-        //            return UMC_ERR_INVALID_STREAM;
-        //        }
-        //    }
-        //    break;
-        //case 3:
-        //case 4:
-        //case 5:
-        //    // For map types 3..5, number of slice groups must be 2
-        //    if (pps->num_slice_groups != 2)
-        //    {
-        //        return UMC_ERR_INVALID_STREAM;
-        //    }
-        //    pps->SliceGroupInfo.t2.slice_group_change_direction_flag = Get1Bit();
-        //    pps->SliceGroupInfo.t2.slice_group_change_rate = GetVLCElement(false) + 1;
-        //    break;
-        //case 6:
-        //    // mapping of slice group to map unit (macroblock if not fields) is
-        //    // per map unit, read from bitstream
-        //    {
-        //        // number of map units, bitstream has value - 1
-        //        pps->SliceGroupInfo.t3.pic_size_in_map_units = GetVLCElement(false) + 1;
-
-        //        int32_t len = MFX_MAX(1, pps->SliceGroupInfo.t3.pic_size_in_map_units);
-
-        //        pps->SliceGroupInfo.pSliceGroupIDMap.resize(len);
-
-        //        // num_bits is Ceil(log2(num_groups)) - number of bits used to code each slice group id
-        //        uint32_t num_bits = SGIdBits[pps->num_slice_groups - 2];
-
-        //        for (uint32_t map_unit = 0;
-        //             map_unit < pps->SliceGroupInfo.t3.pic_size_in_map_units;
-        //             map_unit++)
-        //        {
-        //            pps->SliceGroupInfo.pSliceGroupIDMap[map_unit] = (uint8_t)GetBits(num_bits);
-        //        }
-        //    }
-        //    break;
-        //default:
-        //    return UMC_ERR_INVALID_STREAM;
-
-        //}    // switch
-    }    // slice group info
 
     // number of list 0 ref pics used to decode picture, bitstream has value - 1
     pps->num_ref_idx_l0_active = PicParams.num_ref_idx_l0_active;
@@ -770,10 +703,6 @@ Status DecryptParametersWrapper::GetSliceHeaderPart1(H264SliceHeader *hdr)
     hdr->nal_ref_idc = nal_ref_idc;
     hdr->IdrPicFlag = idr_flag;
 
-    //hdr->first_mb_in_slice = GetVLCElement(false);
-    //if (0 > hdr->first_mb_in_slice) // upper bound is checked in H264Slice
-    //    return UMC_ERR_INVALID_STREAM;
-
     // slice type
     val = slice_type;
     if (val > S_INTRASLICE)
@@ -826,34 +755,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
         }
     }
 
-    //if (hdr->MbaffFrameFlag)
-    //{
-    //    uint32_t const first_mb_in_slice
-    //        = hdr->first_mb_in_slice;
-
-    //    if (first_mb_in_slice * 2 > INT_MAX)
-    //        return UMC_ERR_INVALID_STREAM;
-
-    //    // correct frst_mb_in_slice in order to handle MBAFF
-    //    hdr->first_mb_in_slice *= 2;
-    //}
-
-    //if (hdr->IdrPicFlag)
-    //{
-    //    int32_t pic_id = hdr->idr_pic_id = GetVLCElement(false);
-    //    if (pic_id < 0 || pic_id > 65535)
-    //        return UMC_ERR_INVALID_STREAM;
-    //}
-
     hdr->pic_order_cnt_lsb = iCurrFieldOrderCnt[0];
     hdr->delta_pic_order_cnt_bottom = iCurrFieldOrderCnt[1] - iCurrFieldOrderCnt[0];
-
-    //if (sps->pic_order_cnt_type == 0)
-    //{
-    //    hdr->pic_order_cnt_lsb = GetBits(sps->log2_max_pic_order_cnt_lsb);
-    //    if (pps->bottom_field_pic_order_in_frame_present_flag && (!hdr->field_pic_flag))
-    //        hdr->delta_pic_order_cnt_bottom = GetVLCElement(true);
-    //}
 
     if ((sps->pic_order_cnt_type == 1) && (sps->delta_pic_order_always_zero_flag == 0))
     {
@@ -861,17 +764,6 @@ Status DecryptParametersWrapper::GetSliceHeaderPart2(H264SliceHeader *hdr,
         if (pps->bottom_field_pic_order_in_frame_present_flag && (!hdr->field_pic_flag))
             hdr->delta_pic_order_cnt[1] = -1;  // WA to be sure that value is not 0, to correctly process FrameNumGap
     }
-
-    //if (pps->redundant_pic_cnt_present_flag)
-    //{
-    //    hdr->hw_wa_redundant_elimination_bits[0] = (uint32_t)BitsDecoded();
-    //    // redundant pic count
-    //    hdr->redundant_pic_cnt = GetVLCElement(false);
-    //    if (hdr->redundant_pic_cnt > 127)
-    //        return UMC_ERR_INVALID_STREAM;
-
-    //    hdr->hw_wa_redundant_elimination_bits[1] = (uint32_t)BitsDecoded();
-    //}
 
     return UMC_OK;
 }
@@ -888,10 +780,6 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
     const H264SeqParamSet * /*sps*/,
     const H264SeqParamSetSVCExtension * /*spsSvcExt*/)
 {
-    //uint8_t ref_pic_list_reordering_flag_l0 = 0;
-    //uint8_t ref_pic_list_reordering_flag_l1 = 0;
-    //Status ps = UMC_OK;
-
     pReorderInfo_L0->num_entries = 0;
     pReorderInfo_L1->num_entries = 0;
     hdr->num_ref_idx_l0_active = pps->num_ref_idx_l0_active;
@@ -901,134 +789,12 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
 
     if (!hdr->nal_ext.svc_extension_flag || hdr->nal_ext.svc.quality_id == 0)
     {
-        //if (BPREDSLICE == hdr->slice_type)
-        //{
-        //    // direct mode prediction method
-        //    hdr->direct_spatial_mv_pred_flag = Get1Bit();
-        //}
-
-        //if (PREDSLICE == hdr->slice_type ||
-        //    S_PREDSLICE == hdr->slice_type ||
-        //    BPREDSLICE == hdr->slice_type)
-        //{
-        //    hdr->num_ref_idx_active_override_flag = Get1Bit();
-        //    if (hdr->num_ref_idx_active_override_flag != 0)
-        //    // ref idx active l0 and l1
-        //    {
-        //        hdr->num_ref_idx_l0_active = GetVLCElement(false) + 1;
-        //        if (BPREDSLICE == hdr->slice_type)
-        //            hdr->num_ref_idx_l1_active = GetVLCElement(false) + 1;
-        //    }
-        //}    // ref idx override
-
-        //if (hdr->num_ref_idx_l0_active < 0 || hdr->num_ref_idx_l0_active > (int32_t)MAX_NUM_REF_FRAMES ||
-        //    hdr->num_ref_idx_l1_active < 0 || hdr->num_ref_idx_l1_active > (int32_t)MAX_NUM_REF_FRAMES)
-        //    return UMC_ERR_INVALID_STREAM;
-
-        //if (hdr->slice_type != INTRASLICE && hdr->slice_type != S_INTRASLICE)
-        //{
-        //    uint32_t reordering_of_pic_nums_idc;
-        //    uint32_t reorder_idx;
-
-        //    // Reference picture list reordering
-        //    ref_pic_list_reordering_flag_l0 = Get1Bit();
-        //    if (ref_pic_list_reordering_flag_l0)
-        //    {
-        //        bool bOk = true;
-
-        //        reorder_idx = 0;
-        //        reordering_of_pic_nums_idc = 0;
-
-        //        // Get reorder idc,pic_num pairs until idc==3
-        //        while (bOk)
-        //        {
-        //          reordering_of_pic_nums_idc = (uint8_t)GetVLCElement(false);
-        //          if (reordering_of_pic_nums_idc > 5)
-        //            return UMC_ERR_INVALID_STREAM;
-
-        //            if (reordering_of_pic_nums_idc == 3)
-        //                break;
-
-        //            if (reorder_idx >= MAX_NUM_REF_FRAMES)
-        //            {
-        //                return UMC_ERR_INVALID_STREAM;
-        //            }
-
-        //            pReorderInfo_L0->reordering_of_pic_nums_idc[reorder_idx] =
-        //                                        (uint8_t)reordering_of_pic_nums_idc;
-        //            pReorderInfo_L0->reorder_value[reorder_idx]  =
-        //                                                GetVLCElement(false);
-        //          if (reordering_of_pic_nums_idc != 2)
-        //                // abs_diff_pic_num is coded minus 1
-        //                pReorderInfo_L0->reorder_value[reorder_idx]++;
-        //            reorder_idx++;
-        //        }    // while
-
-        //        pReorderInfo_L0->num_entries = reorder_idx;
-        //    }    // L0 reordering info
-        //    else
-        //        pReorderInfo_L0->num_entries = 0;
-
-        //    if (BPREDSLICE == hdr->slice_type)
-        //    {
-        //        ref_pic_list_reordering_flag_l1 = Get1Bit();
-        //        if (ref_pic_list_reordering_flag_l1)
-        //        {
-        //            bool bOk = true;
-
-        //            // Get reorder idc,pic_num pairs until idc==3
-        //            reorder_idx = 0;
-        //            reordering_of_pic_nums_idc = 0;
-        //            while (bOk)
-        //            {
-        //            reordering_of_pic_nums_idc = GetVLCElement(false);
-        //              if (reordering_of_pic_nums_idc > 5)
-        //                return UMC_ERR_INVALID_STREAM;
-
-        //                if (reordering_of_pic_nums_idc == 3)
-        //                    break;
-
-        //                if (reorder_idx >= MAX_NUM_REF_FRAMES)
-        //                {
-        //                    return UMC_ERR_INVALID_STREAM;
-        //                }
-
-        //                pReorderInfo_L1->reordering_of_pic_nums_idc[reorder_idx] =
-        //                                            (uint8_t)reordering_of_pic_nums_idc;
-        //                pReorderInfo_L1->reorder_value[reorder_idx]  =
-        //                                                    GetVLCElement(false);
-        //                if (reordering_of_pic_nums_idc != 2)
-        //                    // abs_diff_pic_num is coded minus 1
-        //                    pReorderInfo_L1->reorder_value[reorder_idx]++;
-        //                reorder_idx++;
-        //            }    // while
-        //            pReorderInfo_L1->num_entries = reorder_idx;
-        //        }    // L1 reordering info
-        //        else
-        //            pReorderInfo_L1->num_entries = 0;
-        //    }    // B slice
-        //}    // reordering info
-
-        //hdr->luma_log2_weight_denom = 0;
-        //hdr->chroma_log2_weight_denom = 0;
-
-        //// prediction weight table
-        //if ( (pps->weighted_pred_flag &&
-        //      ((PREDSLICE == hdr->slice_type) || (S_PREDSLICE == hdr->slice_type))) ||
-        //     ((pps->weighted_bipred_idc == 1) && (BPREDSLICE == hdr->slice_type)))
-        //{
-        //    ps = GetPredWeightTable(hdr, sps, pPredWeight_L0, pPredWeight_L1);
-        //    if (ps != UMC_OK)
-        //        return ps;
-        //}
-
         // dec_ref_pic_marking
         pAdaptiveMarkingInfo->num_entries = 0;
         pBaseAdaptiveMarkingInfo->num_entries = 0;
 
         if (hdr->nal_ref_idc)
         {
-            //ps = DecRefPicMarking(hdr, pAdaptiveMarkingInfo);
             if (hdr->IdrPicFlag)
             {
                 hdr->no_output_of_prior_pics_flag = RefPicMarking.no_output_of_prior_pics_flag;
@@ -1036,8 +802,6 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
             }
             else
             {
-                //ps =  DecRefBasePicMarking(pAdaptiveMarkingInfo, hdr->adaptive_ref_pic_marking_mode_flag);
-
                 uint8_t memory_management_control_operation;
                 uint32_t num_entries = 0;
 
@@ -1094,17 +858,6 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
                         return UMC_ERR_INVALID_STREAM;
                     }  // switch
 
-                    //if (memory_management_control_operation != 5)
-                    //{
-                    //    pAdaptiveMarkingInfo->value[num_entries*2] = GetVLCElement(false);
-                    //}
-
-                    //// Only mmco 3 requires 2 values
-                    //if (memory_management_control_operation == 3)
-                    //{
-                    //    pAdaptiveMarkingInfo->value[num_entries*2+1] = GetVLCElement(false);
-                    //}
-
                     num_entries++;
 
                     if (num_entries >= MAX_NUM_REF_FRAMES || num_entries >= NUM_MMCO_OPERATIONS)
@@ -1120,109 +873,8 @@ Status DecryptParametersWrapper::GetSliceHeaderPart3(
 
                 pAdaptiveMarkingInfo->num_entries = num_entries;
             }
-
-            //if (ps != UMC_OK)
-            //{
-            //    return ps;
-            //}
-
-            //if (hdr->nal_unit_type == NAL_UT_CODED_SLICE_EXTENSION && hdr->nal_ext.svc_extension_flag &&
-            //    spsSvcExt && !spsSvcExt->slice_header_restriction_flag)
-            //{
-            //    hdr->nal_ext.svc.store_ref_base_pic_flag = Get1Bit();
-            //    if ((hdr->nal_ext.svc.use_ref_base_pic_flag ||
-            //        hdr->nal_ext.svc.store_ref_base_pic_flag) &&
-            //        (!hdr->nal_ext.svc.idr_flag))
-            //    {
-            //        ps = DecRefBasePicMarking(pBaseAdaptiveMarkingInfo, hdr->nal_ext.svc.adaptive_ref_base_pic_marking_mode_flag);
-            //        if (ps != UMC_OK)
-            //            return ps;
-            //    }
-            //}
         }    // def_ref_pic_marking
     }
-
-    //if (pps->entropy_coding_mode == 1  &&    // CABAC
-    //    (hdr->slice_type != INTRASLICE && hdr->slice_type != S_INTRASLICE))
-    //    hdr->cabac_init_idc = GetVLCElement(false);
-    //else
-    //    hdr->cabac_init_idc = 0;
-
-    //if (hdr->cabac_init_idc > 2)
-    //    return UMC_ERR_INVALID_STREAM;
-
-    //hdr->slice_qp_delta = GetVLCElement(true);
-
-    //if (S_PREDSLICE == hdr->slice_type ||
-    //    S_INTRASLICE == hdr->slice_type)
-    //{
-    //    if (S_PREDSLICE == hdr->slice_type)
-    //        hdr->sp_for_switch_flag = Get1Bit();
-    //    hdr->slice_qs_delta = GetVLCElement(true);
-    //}
-
-    //if (pps->deblocking_filter_variables_present_flag)
-    //{
-    //    // deblock filter flag and offsets
-    //    hdr->disable_deblocking_filter_idc_from_stream = GetVLCElement(false);
-    //    if (hdr->disable_deblocking_filter_idc_from_stream > DEBLOCK_FILTER_ON_NO_SLICE_EDGES)
-    //        return UMC_ERR_INVALID_STREAM;
-
-    //    if (hdr->disable_deblocking_filter_idc_from_stream != DEBLOCK_FILTER_OFF)
-    //    {
-    //        hdr->slice_alpha_c0_offset = GetVLCElement(true)<<1;
-    //        hdr->slice_beta_offset = GetVLCElement(true)<<1;
-
-    //        if (hdr->slice_alpha_c0_offset < -12 || hdr->slice_alpha_c0_offset > 12)
-    //        {
-    //            return UMC_ERR_INVALID_STREAM;
-    //        }
-
-    //        if (hdr->slice_beta_offset < -12 || hdr->slice_beta_offset > 12)
-    //        {
-    //            return UMC_ERR_INVALID_STREAM;
-    //        }
-    //    }
-    //    else
-    //    {
-    //        // set filter offsets to max values to disable filter
-    //        hdr->slice_alpha_c0_offset = (int8_t)(0 - QP_MAX);
-    //        hdr->slice_beta_offset = (int8_t)(0 - QP_MAX);
-    //    }
-    //}
-
-    //if (pps->num_slice_groups > 1 &&
-    //    pps->SliceGroupInfo.slice_group_map_type >= 3 &&
-    //    pps->SliceGroupInfo.slice_group_map_type <= 5)
-    //{
-    //    uint32_t num_bits;    // number of bits used to code slice_group_change_cycle
-    //    uint32_t val;
-    //    uint32_t pic_size_in_map_units;
-    //    uint32_t max_slice_group_change_cycle=0;
-
-    //    // num_bits is Ceil(log2(picsizeinmapunits/slicegroupchangerate + 1))
-    //    pic_size_in_map_units = sps->frame_width_in_mbs * sps->frame_height_in_mbs;
-    //        // TBD: change above to support fields
-
-    //    max_slice_group_change_cycle = pic_size_in_map_units /
-    //                    pps->SliceGroupInfo.t2.slice_group_change_rate;
-    //    if (pic_size_in_map_units %
-    //                    pps->SliceGroupInfo.t2.slice_group_change_rate)
-    //        max_slice_group_change_cycle++;
-
-    //    val = max_slice_group_change_cycle;// + 1;
-    //    num_bits = 0;
-    //    while (val)
-    //    {
-    //        num_bits++;
-    //        val >>= 1;
-    //    }
-    //    hdr->slice_group_change_cycle = GetBits(num_bits);
-    //    if (hdr->slice_group_change_cycle > max_slice_group_change_cycle)
-    //    {
-    //        //return UMC_ERR_INVALID_STREAM; don't see any reasons for that
-    //    }
-    //}
 
     return UMC_OK;
 } // GetSliceHeaderPart3()
@@ -1232,6 +884,7 @@ Status DecryptParametersWrapper::GetSliceHeaderPart4(H264SliceHeader *hdr,
 {
     hdr->scan_idx_start = 0;
     hdr->scan_idx_end = 15;
+
     return UMC_OK;
 } // GetSliceHeaderPart4()
 
@@ -1342,7 +995,6 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
         throw h264_exception(UMC_ERR_INVALID_STREAM);
     }
 
-    //const uint8_t NumClockTS[]={1,1,1,2,2,3,3,2,3};
     H264SEIPayLoad::SEIMessages::PicTiming &pts = spl->SEI_messages.pic_timing;
 
     if (csps->vui.nal_hrd_parameters_present_flag || csps->vui.vcl_hrd_parameters_present_flag)
@@ -1364,46 +1016,6 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H264SE
             throw h264_exception(UMC_ERR_INVALID_STREAM);
 
         pts.pic_struct = (DisplayPictureStruct)picStruct;
-
-        //for (int32_t i = 0; i < NumClockTS[pts.pic_struct]; i++)
-        //{
-        //    pts.clock_timestamp_flag[i] = (uint8_t)Get1Bit();
-        //    if (pts.clock_timestamp_flag[i])
-        //    {
-        //        pts.clock_timestamps[i].ct_type = (uint8_t)GetBits(2);
-        //        pts.clock_timestamps[i].nunit_field_based_flag = (uint8_t)Get1Bit();
-        //        pts.clock_timestamps[i].counting_type = (uint8_t)GetBits(5);
-        //        pts.clock_timestamps[i].full_timestamp_flag = (uint8_t)Get1Bit();
-        //        pts.clock_timestamps[i].discontinuity_flag = (uint8_t)Get1Bit();
-        //        pts.clock_timestamps[i].cnt_dropped_flag = (uint8_t)Get1Bit();
-        //        pts.clock_timestamps[i].n_frames = (uint8_t)GetBits(8);
-
-        //        if (pts.clock_timestamps[i].full_timestamp_flag)
-        //        {
-        //            pts.clock_timestamps[i].seconds_value = (uint8_t)GetBits(6);
-        //            pts.clock_timestamps[i].minutes_value = (uint8_t)GetBits(6);
-        //            pts.clock_timestamps[i].hours_value = (uint8_t)GetBits(5);
-        //        }
-        //        else
-        //        {
-        //            if (Get1Bit())
-        //            {
-        //                pts.clock_timestamps[i].seconds_value = (uint8_t)GetBits(6);
-        //                if (Get1Bit())
-        //                {
-        //                    pts.clock_timestamps[i].minutes_value = (uint8_t)GetBits(6);
-        //                    if (Get1Bit())
-        //                    {
-        //                        pts.clock_timestamps[i].hours_value = (uint8_t)GetBits(5);
-        //                    }
-        //                }
-        //            }
-        //        }
-
-        //        if (csps->time_offset_length > 0)
-        //            pts.clock_timestamps[i].time_offset = (uint8_t)GetBits(csps->time_offset_length);
-        //    }
-        //}
     }
 }
 
@@ -1729,4 +1341,5 @@ Status WidevineDecrypter::DecryptFrame(MediaData *pSource, DecryptParametersWrap
 
 } // namespace UMC
 
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

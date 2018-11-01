@@ -476,10 +476,13 @@ mfxStatus VideoDECODEH264::Init(mfxVideoParam *par)
         static_cast<UMC::VATaskSupplier*>(m_pH264VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
 #if !defined (MFX_PROTECTED_FEATURE_DISABLE)
-        if (m_va->GetProtectedVA())
+        if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
         {
-            if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+            if (m_va->GetProtectedVA())
+            {
+                if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
         }
 #endif
 
@@ -667,7 +670,7 @@ mfxStatus VideoDECODEH264::Reset(mfxVideoParam *par)
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(m_platform, par);
 
 #if (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX)) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
         {

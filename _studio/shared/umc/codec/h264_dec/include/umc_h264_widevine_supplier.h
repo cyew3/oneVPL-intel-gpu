@@ -14,6 +14,9 @@
 #ifndef __UMC_H264_WIDEVINE_SUPPLIER_H
 #define __UMC_H264_WIDEVINE_SUPPLIER_H
 
+#include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
 #include "umc_h264_va_supplier.h"
 
 namespace UMC
@@ -45,8 +48,8 @@ namespace UMC
     protected:
 
         Status ParseWidevineSPSPPS(DecryptParametersWrapper*);
-        H264Slice * ParseWidevineSliceHeader(DecryptParametersWrapper*);
         Status ParseWidevineSEI(DecryptParametersWrapper*);
+        H264Slice* ParseWidevineSliceHeader(DecryptParametersWrapper*);
 
         Status AddOneFrame(MediaData*) override;
 
@@ -63,5 +66,6 @@ namespace UMC
 
 } // namespace UMC
 
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // __UMC_H264_WIDEVINE_SUPPLIER_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER

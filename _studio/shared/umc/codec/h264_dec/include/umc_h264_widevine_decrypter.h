@@ -15,6 +15,8 @@
 #define __UMC_H264_WIDEVINE_DECRYPTER_H
 
 #include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
 #include "umc_h264_headers.h"
 #include "huc_based_drm_common.h"
 
@@ -34,7 +36,6 @@ public:
     Status GetPictureParamSetPart1(H264PicParamSet *pps);
     Status GetPictureParamSetPart2(H264PicParamSet *pps);
 
-    //Status GetNALUnitType(NAL_Unit_Type &nal_unit_type, uint32_t &nal_ref_idc);
     Status GetSliceHeaderPart1(H264SliceHeader *pSliceHeader);
     Status GetSliceHeaderPart2(H264SliceHeader *pSliceHeader,
                                const H264PicParamSet *pps,
@@ -127,5 +128,6 @@ protected:
 
 } // namespace UMC
 
-#endif /* __UMC_H264_WIDEVINE_DECRYPTER_H */
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#endif // __UMC_H264_WIDEVINE_DECRYPTER_H
 #endif // UMC_ENABLE_H264_VIDEO_DECODER
