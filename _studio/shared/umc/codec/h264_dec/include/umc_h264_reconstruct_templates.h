@@ -1088,8 +1088,8 @@ public:
 
         if (color_format)
         {
-            Ipp32s const iWidth = (color_format == 3) ? 16 : 8;
-            Ipp32s const iHeight = 8 + 8 * (color_format >> 1);
+            int32_t const iWidth = (color_format == 3) ? 16 : 8;
+            int32_t const iHeight = 8 + 8 * (color_format >> 1);
             size_t const pitch = iWidth;
 
             PlaneUV pSrcDstUPlane[iHeight * pitch];
