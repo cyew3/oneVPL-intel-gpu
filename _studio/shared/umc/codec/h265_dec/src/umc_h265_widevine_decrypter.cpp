@@ -11,13 +11,20 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
+#include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
+#ifdef UMC_VA_DXVA
 #include "umc_va_dxva2.h"
+#endif
+
+#ifdef UMC_VA_LINUX
 #include "umc_va_linux.h"
+#endif
+
 #include "umc_h265_tables.h"
 #include "umc_h265_widevine_decrypter.h"
 #include "umc_h265_widevine_slice_decoding.h"
-
-#include "mfx_common.h" //  for trace routines
 
 namespace UMC_HEVC_DECODER
 {
@@ -195,6 +202,8 @@ UMC::Status DecryptParametersWrapper::GetVideoParamSet(H265VideoParamSet * /*pcV
 // Parse scaling list data block
 void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, unsigned sizeId, unsigned listId, h265_scaling_list * sourceList)
 {
+    VM_ASSERT(scalingList);
+
     int i,coefNum = MFX_MIN(MAX_MATRIX_COEF_NUM,(int)g_scalingListSize[sizeId]);
     //int nextCoef = SCALING_LIST_START_VALUE;
     const uint16_t *scan  = (sizeId == 0) ? ScanTableDiag4x4 : g_sigLastScanCG32x32;
@@ -227,13 +236,6 @@ void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, 
 
     for(i = 0; i < coefNum; i++)
     {
-    //    int32_t scaling_list_delta_coef = GetVLCElementS();
-
-    //    if (scaling_list_delta_coef < -128 || scaling_list_delta_coef > 127)
-    //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    //    nextCoef = (nextCoef + scaling_list_delta_coef + 256 ) % 256;
-    //    dst[scan[i]] = nextCoef;
         dst[scan[i]] = source[listId][i];
     }
 }
@@ -241,6 +243,9 @@ void DecryptParametersWrapper::xDecodeScalingList(H265ScalingList *scalingList, 
 // Parse scaling list information in SPS or PPS
 void DecryptParametersWrapper::parseScalingList(H265ScalingList *scalingList, h265_scaling_list * sourceList)
 {
+    if (!scalingList)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
     //for each size
     for(uint32_t sizeId = 0; sizeId < SCALING_LIST_SIZE_NUM; sizeId++)
     {
@@ -272,30 +277,13 @@ void DecryptParametersWrapper::parseScalingList(H265ScalingList *scalingList, h2
 // Parse profile tier layers header part in VPS or SPS
 void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNumSubLayersMinus1)
 {
+    VM_ASSERT(rpcPTL);
+
     parseProfileTier(rpcPTL->GetGeneralPTL(), &SeqParams.sps_profile_tier_level.general_ptl);
 
-    {
-        int32_t level_idc = SeqParams.sps_profile_tier_level.general_ptl.layer_level_idc;
-        level_idc = ((level_idc * 10) / 30);
-        rpcPTL->GetGeneralPTL()->level_idc = level_idc;
-    }
-    //for(int i = 0; i < maxNumSubLayersMinus1; i++)
-    //{
-    //    if (Get1Bit())
-    //        rpcPTL->sub_layer_profile_present_flags |= 1 << i;
-    //    if (Get1Bit())
-    //        rpcPTL->sub_layer_level_present_flag |= 1 << i;
-    //}
-
-    //if (maxNumSubLayersMinus1 > 0)
-    //{
-    //    for (int i = maxNumSubLayersMinus1; i < 8; i++)
-    //    {
-    //        uint32_t reserved_zero_2bits = GetBits(2);
-    //        if (reserved_zero_2bits)
-    //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    //    }
-    //}
+    int32_t level_idc = SeqParams.sps_profile_tier_level.general_ptl.layer_level_idc;
+    level_idc = ((level_idc * 10) / 30);
+    rpcPTL->GetGeneralPTL()->level_idc = level_idc;
 
     for(int i = 0; i < maxNumSubLayersMinus1; i++)
     {
@@ -308,7 +296,7 @@ void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNum
         if (SeqParams.sps_profile_tier_level.sub_layer_level_present_flag[i])
         {
             rpcPTL->sub_layer_level_present_flag |= 1 << i;
-            int32_t level_idc = SeqParams.sps_profile_tier_level.sub_layer_ptl[i].layer_level_idc;
+            level_idc = SeqParams.sps_profile_tier_level.sub_layer_ptl[i].layer_level_idc;
             level_idc = ((level_idc*10) / 30);
             rpcPTL->GetSubLayerPTL(i)->level_idc = level_idc;
         }
@@ -318,6 +306,8 @@ void DecryptParametersWrapper::parsePTL(H265ProfileTierLevel *rpcPTL, int maxNum
 // Parse one profile tier layer
 void DecryptParametersWrapper::parseProfileTier(H265PTL *ptl, h265_layer_profile_tier_level *sourcePtl)
 {
+    VM_ASSERT(ptl);
+
     ptl->profile_space = sourcePtl->layer_profile_space;
     if (ptl->profile_space)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
@@ -344,40 +334,20 @@ void DecryptParametersWrapper::parseProfileTier(H265PTL *ptl, h265_layer_profile
         }
     }
 
-    if (ptl->profile_idc > H265_PROFILE_FREXT)
+    if (ptl->profile_idc > H265_PROFILE_MAINSP)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     ptl->progressive_source_flag    = sourcePtl->layer_progressive_source_flag;
     ptl->interlaced_source_flag     = sourcePtl->layer_interlaced_source_flag;
     ptl->non_packed_constraint_flag = sourcePtl->layer_non_packed_constraint_flag;
     ptl->frame_only_constraint_flag = sourcePtl->layer_frame_only_constraint_flag;
-
-    //if (ptl->profile_idc == H265_PROFILE_FREXT || (ptl->profile_compatibility_flags & (1 << 4)))
-    //{
-    ////    uint8_t max_12bit_constraint_flag = Get1Bit();
-    //    uint8_t max_10bit_constraint_flag = Get1Bit();
-    //    uint8_t max_8bit_constraint_flag = Get1Bit();
-    //    uint8_t max_422chroma_constraint_flag = Get1Bit();
-    //    uint8_t max_420chroma_constraint_flag = Get1Bit();
-    //    uint8_t max_monochrome_constraint_flag = Get1Bit();
-    //    uint8_t intra_constraint_flag = Get1Bit();
-    //    uint8_t one_picture_only_constraint_flag = Get1Bit();
-    //    uint8_t lower_bit_rate_constraint_flag = Get1Bit();
-
-    //    uint32_t XXX_reserved_zero_35bits = GetBits(32);
-    //    XXX_reserved_zero_35bits = GetBits(3);
-    //}
-    //else
-    //{
-    //    uint32_t XXX_reserved_zero_44bits = GetBits(32);
-    //    XXX_reserved_zero_44bits = GetBits(12);
-    //    //if (XXX_reserved_zero_44bits)
-    //      //  throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    //}
 }
 
 UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS)
 {
+    if (!pcSPS)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
     pcSPS->sps_video_parameter_set_id = SeqParams.sps_video_parameter_set_id;
 
     pcSPS->sps_max_sub_layers = SeqParams.sps_max_sub_layers_minus1 + 1;
@@ -489,7 +459,11 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
         }
     }
 
-    pcSPS->log2_min_luma_coding_block_size = SeqParams.sps_log2_min_luma_coding_block_size_minus3 + 3;
+    uint32_t const log2_min_luma_coding_block_size_minus3 = SeqParams.sps_log2_min_luma_coding_block_size_minus3;
+    if (log2_min_luma_coding_block_size_minus3 > 3)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+    pcSPS->log2_min_luma_coding_block_size = log2_min_luma_coding_block_size_minus3 + 3;
 
     uint32_t MinCbLog2SizeY = pcSPS->log2_min_luma_coding_block_size;
     uint32_t MinCbSizeY = 1 << pcSPS->log2_min_luma_coding_block_size;
@@ -498,7 +472,15 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     uint32_t log2_diff_max_min_coding_block_size = SeqParams.sps_log2_diff_max_min_luma_coding_block_size;
+    if (log2_diff_max_min_coding_block_size > 3)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     pcSPS->log2_max_luma_coding_block_size = log2_diff_max_min_coding_block_size + pcSPS->log2_min_luma_coding_block_size;
+    //CtbLog2SizeY = (log2_min_luma_coding_block_size_minus3 + 3) + log2_diff_max_min_luma_coding_block_size //7.3.2.2 eq. 7-10, 7-11
+    //CtbLog2SizeY derived according to active SPSs for the base layer shall be in the range of 4 to 6, inclusive. (A.2, main, main10, mainsp, rext profiles)
+    if (pcSPS->log2_max_luma_coding_block_size < 4 || pcSPS->log2_max_luma_coding_block_size > 6)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     pcSPS->MaxCUSize =  1 << pcSPS->log2_max_luma_coding_block_size;
 
     pcSPS->log2_min_transform_block_size = SeqParams.sps_log2_min_transform_block_size_minus2 + 2;
@@ -612,42 +594,14 @@ UMC::Status DecryptParametersWrapper::GetSequenceParamSet(H265SeqParamSet *pcSPS
         parseVUI(pcSPS);
     }
 
-    uint8_t sps_extension_present_flag = SeqParams.sps_extension_flag;
-    if (sps_extension_present_flag)
-    {
-        // Currently not supported
-        ;//throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //uint32_t sps_range_extension_flag = Get1Bit();
-        //uint32_t sps_extension_7bits = GetBits(7);
-
-        //if (sps_range_extension_flag)
-        //{
-        //    uint8_t transform_skip_rotation_enabled_flag = Get1Bit();
-        //    uint8_t transform_skip_context_enabled_flag = Get1Bit();
-        //    uint8_t implicit_residual_dpcm_enabled_flag = Get1Bit();
-        //    uint8_t explicit_residual_dpcm_enabled_flag = Get1Bit();
-        //    uint8_t extended_precision_processing_flag = Get1Bit();
-        //    uint8_t intra_smoothing_disabled_flag = Get1Bit();
-        //    uint8_t high_precision_offsets_enabled_flag = Get1Bit();
-        //    uint8_t fast_rice_adaptation_enabled_flag = Get1Bit();
-        //    uint8_t cabac_bypass_alignment_enabled_flag = Get1Bit();
-        //}
-
-        //if (sps_extension_7bits)
-        //{
-        //    while (MoreRbspData())
-        //    {
-        //        /*uint8_t sps_extension_data_flag =*/ Get1Bit();
-        //    }
-        //}
-    }
-
     return UMC::UMC_OK;
 }
 
 // Parse video usability information block in SPS
 void DecryptParametersWrapper::parseVUI(H265SeqParamSet *pSPS)
 {
+    VM_ASSERT(pSPS);
+
     pSPS->aspect_ratio_info_present_flag = SeqParams.sps_vui.vui_aspect_ratio_info_present_flag;
     if (pSPS->aspect_ratio_info_present_flag)
     {
@@ -743,6 +697,7 @@ void DecryptParametersWrapper::parseVUI(H265SeqParamSet *pSPS)
     {
         pSPS->tiles_fixed_structure_flag = SeqParams.sps_vui.vui_tiles_fixed_structure_flag;
         pSPS->motion_vectors_over_pic_boundaries_flag = SeqParams.sps_vui.vui_motion_vectors_over_pic_boundaries_flag;
+        pSPS->restricted_ref_pic_lists_flag = SeqParams.sps_vui.vui_restricted_ref_pic_lists_flag;
         pSPS->min_spatial_segmentation_idc = SeqParams.sps_vui.vui_min_spatial_segmentation_idc;
         pSPS->max_bytes_per_pic_denom = SeqParams.sps_vui.vui_max_bytes_per_pic_denom;
         pSPS->max_bits_per_min_cu_denom = SeqParams.sps_vui.vui_max_bits_per_mincu_denom;
@@ -753,8 +708,17 @@ void DecryptParametersWrapper::parseVUI(H265SeqParamSet *pSPS)
 
 UMC::Status DecryptParametersWrapper::GetPictureParamSetFull(H265PicParamSet *pcPPS)
 {
+    if (!pcPPS)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
     pcPPS->pps_pic_parameter_set_id = PicParams.pps_pic_parameter_set_id;
+    if (pcPPS->pps_pic_parameter_set_id > 63)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     pcPPS->pps_seq_parameter_set_id = PicParams.pps_seq_parameter_set_id;
+    if (pcPPS->pps_seq_parameter_set_id > 15)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     pcPPS->dependent_slice_segments_enabled_flag = PicParams.pps_dependent_slice_segments_enabled_flag;
     pcPPS->output_flag_present_flag = PicParams.pps_output_flag_present_flag;
     pcPPS->num_extra_slice_header_bits = PicParams.pps_num_extra_slice_header_bits;
@@ -870,54 +834,15 @@ UMC::Status DecryptParametersWrapper::GetPictureParamSetFull(H265PicParamSet *pc
     pcPPS->log2_parallel_merge_level = PicParams.pps_log2_parallel_merge_level_minus2 + 2;
     pcPPS->slice_segment_header_extension_present_flag = PicParams.pps_slice_segment_header_extension_present_flag;
 
-    uint8_t pps_extension_present_flag = PicParams.pps_extension_flag;
-    if (pps_extension_present_flag)
-    {
-        // Currently not supported
-        ;//throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //uint8_t pps_range_extensions_flag = Get1Bit();
-        //uint8_t pps_extension_7bits = GetBits(7);
-
-        //if (pps_range_extensions_flag)
-        //{
-        //    if (pcPPS->transform_skip_enabled_flag)
-        //    {
-        //        uint32_t log2_max_transform_skip_block_size_minus2 = GetVLCElementU();
-        //        uint8_t cross_component_prediction_enabled_flag = Get1Bit();
-
-        //        uint8_t chroma_qp_offset_list_enabled_flag = Get1Bit();
-        //        if (chroma_qp_offset_list_enabled_flag)
-        //        {
-        //            uint32_t diff_cu_chroma_qp_offset_depth = GetVLCElementU();
-        //            uint32_t chroma_qp_offset_list_len_minus1 = GetVLCElementU();
-        //            for (uint32_t i = 0; i < chroma_qp_offset_list_len_minus1; i++)
-        //            {
-        //                uint32_t cb_qp_offset_list = GetVLCElementS();
-        //                uint32_t cr_qp_offset_list = GetVLCElementS();
-        //            }
-        //        }
-
-        //        uint32_t log2_sao_offset_scale_luma = GetVLCElementU();
-        //        uint32_t log2_sao_offset_scale_chroma = GetVLCElementU();
-        //    }
-        //}
-
-        //if (pps_extension_7bits)
-        //{
-        //    while (MoreRbspData())
-        //    {
-        //        Get1Bit();// "pps_extension_data_flag"
-        //    }
-        //}
-    }
-
     return UMC::UMC_OK;
 }
 
 UMC::Status DecryptParametersWrapper::GetSliceHeaderPart1(H265SliceHeader * sliceHdr)
 {
+    if (!sliceHdr)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+
     sliceHdr->IdrPicFlag = (sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP) ? 1 : 0;
-    //sliceHdr->first_slice_segment_in_pic_flag = Get1Bit();
 
     if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_W_RADL
       || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_IDR_N_LP
@@ -940,537 +865,90 @@ UMC::Status DecryptParametersWrapper::GetSliceHeaderPart1(H265SliceHeader * slic
 // Parse remaining of slice header after GetSliceHeaderPart1
 void DecryptParametersWrapper::decodeSlice(H265WidevineSlice *pSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
-    if (!pps || !sps)
+    if (!pSlice || !pps || !sps)
         throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
     H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
-    //sliceHdr->collocated_from_l0_flag = 1;
 
-    //if (pps->dependent_slice_segments_enabled_flag && !sliceHdr->first_slice_segment_in_pic_flag)
-    //{
-    //    sliceHdr->dependent_slice_segment_flag = Get1Bit();
-    //}
-    //else
-    //{
-    //    sliceHdr->dependent_slice_segment_flag = 0;
-    //}
+    sliceHdr->slice_type = (SliceType)ui8SliceType;
 
-    //uint32_t numCTUs = ((sps->pic_width_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize)*((sps->pic_height_in_luma_samples + sps->MaxCUSize-1)/sps->MaxCUSize);
-    //int32_t maxParts = 1<<(sps->MaxCUDepth<<1);
-    //uint32_t bitsSliceSegmentAddress = 0;
+    if (sliceHdr->slice_type > I_SLICE || sliceHdr->slice_type < B_SLICE)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
 
-    //while (numCTUs > uint32_t(1<<bitsSliceSegmentAddress))
-    //{
-    //    bitsSliceSegmentAddress++;
-    //}
+    if (pps->output_flag_present_flag)
+    {
+        sliceHdr->pic_output_flag = ui8PicOutputFlag;
+    }
+    else
+    {
+        sliceHdr->pic_output_flag = 1;
+    }
 
-    //if (!sliceHdr->first_slice_segment_in_pic_flag)
-    //{
-    //    sliceHdr->slice_segment_address = GetBits(bitsSliceSegmentAddress);
+    if (sliceHdr->IdrPicFlag)
+    {
+        sliceHdr->slice_pic_order_cnt_lsb = 0;
+        ReferencePictureSet* rps = pSlice->getRPS();
+        rps->num_negative_pics = 0;
+        rps->num_positive_pics = 0;
+        rps->setNumberOfLongtermPictures(0);
+        rps->num_pics = 0;
+    }
+    else
+    {
+        sliceHdr->slice_pic_order_cnt_lsb = ui16SlicePicOrderCntLsb;
 
-    //    if (sliceHdr->slice_segment_address >= numCTUs)
-    //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    //}
-
-    //set uiCode to equal slice start address (or dependent slice start address)
-    //int32_t startCuAddress = maxParts*sliceHdr->slice_segment_address;
-    //sliceHdr->m_sliceSegmentCurStartCUAddr = startCuAddress;
-    //sliceHdr->m_sliceSegmentCurEndCUAddr = (numCTUs - 1) *maxParts;
-    // DO NOT REMOVE THIS LINE !!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    //if (!sliceHdr->dependent_slice_segment_flag)
-    //{
-    //    sliceHdr->SliceCurStartCUAddr = startCuAddress;
-    //}
-
-    //if (!sliceHdr->dependent_slice_segment_flag)
-    //{
-    //    for (uint32_t i = 0; i < pps->num_extra_slice_header_bits; i++)
-    //    {
-    //        Get1Bit(); //slice_reserved_undetermined_flag
-    //    }
-
-        sliceHdr->slice_type = (SliceType)ui8SliceType;
-
-        if (sliceHdr->slice_type > I_SLICE || sliceHdr->slice_type < B_SLICE)
-            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    //}
-
-    //if(!sliceHdr->dependent_slice_segment_flag)
-    //{
-        if (pps->output_flag_present_flag)
         {
-            sliceHdr->pic_output_flag = ui8PicOutputFlag;
-        }
-        else
-        {
-            sliceHdr->pic_output_flag = 1;
+            ReferencePictureSet* rps = pSlice->getRPS();
+            parseRefPicSet(rps);
+
+            if (((uint32_t)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
+                ((uint32_t)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (uint32_t)rps->getNumberOfNegativePictures()))
+            {
+                pSlice->m_bError = true;
+                if (sliceHdr->slice_type != I_SLICE)
+                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
+                rps->num_negative_pics = 0;
+                rps->num_positive_pics = 0;
+                rps->num_pics = 0;
+            }
         }
 
-        if (sps->chroma_format_idc > 2)
-            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-        //if (sps->separate_colour_plane_flag  ==  1)
-        //{
-        //    sliceHdr->colour_plane_id = GetBits(2);
-        //}
-
-        if (sliceHdr->IdrPicFlag)
+        if (sps->long_term_ref_pics_present_flag)
         {
-            sliceHdr->slice_pic_order_cnt_lsb = 0;
+            ReferencePictureSet* rps = pSlice->getRPS();
+            int offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
+
+            for(uint32_t j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
+            {
+                rps->delta_poc_msb_present_flag[j] = RefFrames.ref_set_deltapoc_msb_present_flag[k];
+            }
+        }
+
+        if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
+            || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
+            || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP )
+        {
             ReferencePictureSet* rps = pSlice->getRPS();
             rps->num_negative_pics = 0;
             rps->num_positive_pics = 0;
-            rps->num_lt_pics = 0;
+            rps->setNumberOfLongtermPictures(0);
             rps->num_pics = 0;
         }
-        else
-        {
-            sliceHdr->slice_pic_order_cnt_lsb = ui16SlicePicOrderCntLsb;
-
-        //    sliceHdr->short_term_ref_pic_set_sps_flag = Get1Bit();
-        //    if (!sliceHdr->short_term_ref_pic_set_sps_flag) // short term ref pic is signalled
-        //    {
-        //        size_t bitsDecoded = BitsDecoded();
-
-            {
-                ReferencePictureSet* rps = pSlice->getRPS();
-                parseRefPicSet(rps);
-
-                if (((uint32_t)rps->getNumberOfNegativePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1]) ||
-                    ((uint32_t)rps->getNumberOfPositivePictures() > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1] - (uint32_t)rps->getNumberOfNegativePictures()))
-                {
-                    pSlice->m_bError = true;
-                    if (sliceHdr->slice_type != I_SLICE)
-                        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-                    rps->num_negative_pics = 0;
-                    rps->num_positive_pics = 0;
-                    rps->num_pics = 0;
-                }
-            }
-
-        //        sliceHdr->wNumBitsForShortTermRPSInSlice = (int32_t)(BitsDecoded() - bitsDecoded);
-        //    }
-        //    else // reference to ST ref pic set in PPS
-        //    {
-        //        int32_t numBits = 0;
-        //        while ((uint32_t)(1 << numBits) < sps->getRPSList()->getNumberOfReferencePictureSets())
-        //            numBits++;
-
-        //        sliceHdr->wNumBitsForShortTermRPSInSlice = 0;
-
-        //        uint32_t short_term_ref_pic_set_idx = numBits > 0 ? GetBits(numBits) : 0;
-        //        if (short_term_ref_pic_set_idx >= sps->getRPSList()->getNumberOfReferencePictureSets())
-        //        {
-        //            pSlice->m_bError = true;
-        //            if (sliceHdr->slice_type != I_SLICE)
-        //                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //        }
-        //        else
-        //        {
-        //            *pSlice->getRPS() = *sps->getRPSList()->getReferencePictureSet(short_term_ref_pic_set_idx);
-        //        }
-        //    }
-
-            if (sps->long_term_ref_pics_present_flag)
-            {
-                ReferencePictureSet* rps = pSlice->getRPS();
-                uint32_t offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
-        //        if (sps->num_long_term_ref_pics_sps > 0)
-        //        {
-        //            rps->num_long_term_sps = GetVLCElementU();
-        //            if (rps->num_long_term_sps > sps->num_long_term_ref_pics_sps)
-        //                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //            rps->num_lt_pics = rps->num_long_term_sps;
-        //        }
-
-        //        rps->num_long_term_pics = GetVLCElementU();
-        //        rps->num_lt_pics = rps->num_long_term_sps + rps->num_long_term_pics;
-
-        //        if (offset + rps->num_long_term_sps + rps->num_long_term_pics > sps->sps_max_dec_pic_buffering[sps->sps_max_sub_layers - 1])
-        //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-                for(uint32_t j = offset, k = 0; k < rps->num_lt_pics; j++, k++)
-                {
-        //            int pocLsbLt;
-        //            if (k < rps->num_long_term_sps)
-        //            {
-        //                uint32_t lt_idx_sps = 0;
-        //                if (sps->num_long_term_ref_pics_sps > 1)
-        //                {
-        //                    uint32_t bitsForLtrpInSPS = 0;
-        //                    while (sps->num_long_term_ref_pics_sps > (uint32_t)(1 << bitsForLtrpInSPS))
-        //                        bitsForLtrpInSPS++;
-
-        //                    lt_idx_sps = GetBits(bitsForLtrpInSPS);
-        //                }
-
-        //                pocLsbLt = sps->lt_ref_pic_poc_lsb_sps[lt_idx_sps];
-        //                rps->used_by_curr_pic_flag[j] = sps->used_by_curr_pic_lt_sps_flag[lt_idx_sps];
-        //            }
-        //            else
-        //            {
-        //                uint32_t poc_lsb_lt = GetBits(sps->log2_max_pic_order_cnt_lsb);
-        //                pocLsbLt = poc_lsb_lt;
-        //                rps->used_by_curr_pic_flag[j] = Get1Bit();
-        //            }
-
-        //            rps->poc_lbs_lt[j] = pocLsbLt;
-
-                    rps->delta_poc_msb_present_flag[j] = RefFrames.ref_set_deltapoc_msb_present_flag[k];
-        //            if (rps->delta_poc_msb_present_flag[j])
-        //            {
-        //                rps->delta_poc_msb_cycle_lt[j] = (uint8_t)GetVLCElementU();
-        //            }
-                }
-        //        offset += rps->getNumberOfLongtermPictures();
-        //        rps->num_pics = offset;
-            }
-
-            if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
-                || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
-                || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_N_LP )
-            {
-                ReferencePictureSet* rps = pSlice->getRPS();
-                rps->num_negative_pics = 0;
-                rps->num_positive_pics = 0;
-                rps->num_lt_pics = 0;
-                rps->num_pics = 0;
-            }
-
-        //    if (sps->sps_temporal_mvp_enabled_flag)
-        //    {
-        //        sliceHdr->slice_temporal_mvp_enabled_flag = Get1Bit();
-        //    }
-        }
-
-        //if (sps->sample_adaptive_offset_enabled_flag)
-        //{
-        //    sliceHdr->slice_sao_luma_flag = Get1Bit();
-        //    if (sps->ChromaArrayType)
-        //        sliceHdr->slice_sao_chroma_flag = Get1Bit();
-        //}
-/*
-        if (sliceHdr->slice_type != I_SLICE)
-        {
-            uint8_t num_ref_idx_active_override_flag = Get1Bit();
-            if (num_ref_idx_active_override_flag)
-            {
-                sliceHdr->m_numRefIdx[REF_PIC_LIST_0] = GetVLCElementU() + 1;
-                if (sliceHdr->slice_type == B_SLICE)
-                {
-                    sliceHdr->m_numRefIdx[REF_PIC_LIST_1] = GetVLCElementU() + 1;
-                }
-
-                if (sliceHdr->m_numRefIdx[REF_PIC_LIST_0] > 15 || sliceHdr->m_numRefIdx[REF_PIC_LIST_1] > 15)
-                    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-            }
-            else
-            {
-                sliceHdr->m_numRefIdx[REF_PIC_LIST_0] = pps->num_ref_idx_l0_default_active;
-                if (sliceHdr->slice_type == B_SLICE)
-                {
-                    sliceHdr->m_numRefIdx[REF_PIC_LIST_1] = pps->num_ref_idx_l1_default_active;
-                }
-            }
-        }
-
-        RefPicListModification* refPicListModification = &sliceHdr->m_RefPicListModification;
-        if(sliceHdr->slice_type != I_SLICE)
-        {
-            if (!pps->lists_modification_present_flag || pSlice->getNumRpsCurrTempList() <= 1 )
-            {
-                refPicListModification->ref_pic_list_modification_flag_l0 = 0;
-            }
-            else
-            {
-                refPicListModification->ref_pic_list_modification_flag_l0 = Get1Bit();
-            }
-
-            if(refPicListModification->ref_pic_list_modification_flag_l0)
-            {
-                int i = 0;
-                int numRpsCurrTempList0 = pSlice->getNumRpsCurrTempList();
-                if ( numRpsCurrTempList0 > 1 )
-                {
-                    int length = 1;
-                    numRpsCurrTempList0 --;
-                    while ( numRpsCurrTempList0 >>= 1)
-                    {
-                        length ++;
-                    }
-                    for (i = 0; i < pSlice->getNumRefIdx(REF_PIC_LIST_0); i ++)
-                    {
-                        refPicListModification->list_entry_l0[i] = GetBits(length);
-                    }
-                }
-                else
-                {
-                    for (i = 0; i < pSlice->getNumRefIdx(REF_PIC_LIST_0); i ++)
-                    {
-                        refPicListModification->list_entry_l0[i] = 0;
-                    }
-                }
-            }
-        }
-        else
-        {
-            refPicListModification->ref_pic_list_modification_flag_l0 = 0;
-        }
-
-        if (sliceHdr->slice_type == B_SLICE)
-        {
-            if( !pps->lists_modification_present_flag || pSlice->getNumRpsCurrTempList() <= 1 )
-            {
-                refPicListModification->ref_pic_list_modification_flag_l1 = 0;
-            }
-            else
-            {
-                refPicListModification->ref_pic_list_modification_flag_l1 = Get1Bit();
-            }
-
-            if(refPicListModification->ref_pic_list_modification_flag_l1)
-            {
-                int i = 0;
-                int numRpsCurrTempList1 = pSlice->getNumRpsCurrTempList();
-                if ( numRpsCurrTempList1 > 1 )
-                {
-                    int length = 1;
-                    numRpsCurrTempList1 --;
-                    while ( numRpsCurrTempList1 >>= 1)
-                    {
-                        length ++;
-                    }
-                    for (i = 0; i < pSlice->getNumRefIdx(REF_PIC_LIST_1); i ++)
-                    {
-                        refPicListModification->list_entry_l1[i] = GetBits(length);
-                    }
-                }
-                else
-                {
-                    for (i = 0; i < pSlice->getNumRefIdx(REF_PIC_LIST_1); i ++)
-                    {
-                        refPicListModification->list_entry_l1[i] = 0;
-                    }
-                }
-            }
-        }
-        else
-        {
-            refPicListModification->ref_pic_list_modification_flag_l1 = 0;
-        }*/
-
-        //if (sliceHdr->slice_type == B_SLICE)
-        //{
-        //    sliceHdr->mvd_l1_zero_flag = Get1Bit();
-        //}
-
-        //sliceHdr->cabac_init_flag = false; // default
-        //if(pps->cabac_init_present_flag && sliceHdr->slice_type != I_SLICE)
-        //{
-        //    sliceHdr->cabac_init_flag = Get1Bit();
-        //}
-
-        //if (sliceHdr->slice_temporal_mvp_enabled_flag)
-        //{
-        //    if ( sliceHdr->slice_type == B_SLICE )
-        //    {
-        //        sliceHdr->collocated_from_l0_flag = Get1Bit();
-        //    }
-        //    else
-        //    {
-        //        sliceHdr->collocated_from_l0_flag = 1;
-        //    }
-
-        //    if (sliceHdr->slice_type != I_SLICE &&
-        //        ((sliceHdr->collocated_from_l0_flag==1 && pSlice->getNumRefIdx(REF_PIC_LIST_0)>1)||
-        //        (sliceHdr->collocated_from_l0_flag ==0 && pSlice->getNumRefIdx(REF_PIC_LIST_1)>1)))
-        //    {
-        //        sliceHdr->collocated_ref_idx = GetVLCElementU();
-        //        if (sliceHdr->collocated_ref_idx >= (uint32_t)sliceHdr->m_numRefIdx[sliceHdr->collocated_from_l0_flag ? REF_PIC_LIST_0 : REF_PIC_LIST_1])
-        //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //    }
-        //    else
-        //    {
-        //        sliceHdr->collocated_ref_idx = 0;
-        //    }
-        //}
-
-        //if ( (pps->weighted_pred_flag && sliceHdr->slice_type == P_SLICE) || (pps->weighted_bipred_flag && sliceHdr->slice_type == B_SLICE) )
-        //{
-        //    xParsePredWeightTable(sps, sliceHdr);
-        //}
-
-        //if (sliceHdr->slice_type != I_SLICE)
-        //{
-        //    sliceHdr->max_num_merge_cand = MERGE_MAX_NUM_CAND - GetVLCElementU();
-        //    if (sliceHdr->max_num_merge_cand < 1 || sliceHdr->max_num_merge_cand > 5)
-        //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //}
-
-        //sliceHdr->SliceQP = pps->init_qp + GetVLCElementS();
-
-        //if (sliceHdr->SliceQP < -sps->getQpBDOffsetY() || sliceHdr->SliceQP >  51)
-        //    throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-        //if (pps->pps_slice_chroma_qp_offsets_present_flag)
-        //{
-        //    sliceHdr->slice_cb_qp_offset =  GetVLCElementS();
-        //    if (sliceHdr->slice_cb_qp_offset < -12 || sliceHdr->slice_cb_qp_offset >  12)
-        //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-        //    if (pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset < -12 || pps->pps_cb_qp_offset + sliceHdr->slice_cb_qp_offset >  12)
-        //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-        //    sliceHdr->slice_cr_qp_offset = GetVLCElementS();
-        //    if (sliceHdr->slice_cr_qp_offset < -12 || sliceHdr->slice_cr_qp_offset >  12)
-        //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-        //    if (pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset < -12 || pps->pps_cr_qp_offset + sliceHdr->slice_cr_qp_offset >  12)
-        //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //}
-
-        //if (pps->chroma_qp_offset_list_enabled_flag)
-        //{
-        //    sliceHdr->cu_chroma_qp_offset_enabled_flag = Get1Bit();
-        //}
-
-        //if (pps->deblocking_filter_control_present_flag)
-        //{
-        //    if (pps->deblocking_filter_override_enabled_flag)
-        //    {
-        //        sliceHdr->deblocking_filter_override_flag = Get1Bit();
-        //    }
-        //    else
-        //    {
-        //        sliceHdr->deblocking_filter_override_flag = 0;
-        //    }
-        //    if (sliceHdr->deblocking_filter_override_flag)
-        //    {
-        //        sliceHdr->slice_deblocking_filter_disabled_flag = Get1Bit();
-        //        if(!sliceHdr->slice_deblocking_filter_disabled_flag)
-        //        {
-        //            sliceHdr->slice_beta_offset =  GetVLCElementS() << 1;
-        //            sliceHdr->slice_tc_offset = GetVLCElementS() << 1;
-
-        //            if (sliceHdr->slice_beta_offset < -12 || sliceHdr->slice_beta_offset > 12)
-        //                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-        //            if (sliceHdr->slice_tc_offset < -12 || sliceHdr->slice_tc_offset > 12)
-        //                throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        sliceHdr->slice_deblocking_filter_disabled_flag =  pps->pps_deblocking_filter_disabled_flag;
-        //        sliceHdr->slice_beta_offset = pps->pps_beta_offset;
-        //        sliceHdr->slice_tc_offset = pps->pps_tc_offset;
-        //    }
-        //}
-        //else
-        //{
-        //    sliceHdr->slice_deblocking_filter_disabled_flag = 0;
-        //    sliceHdr->slice_beta_offset = 0;
-        //    sliceHdr->slice_tc_offset = 0;
-        //}
-
-        //bool isSAOEnabled = sliceHdr->slice_sao_luma_flag || sliceHdr->slice_sao_chroma_flag;
-        //bool isDBFEnabled = !sliceHdr->slice_deblocking_filter_disabled_flag;
-
-        //if (pps->pps_loop_filter_across_slices_enabled_flag && ( isSAOEnabled || isDBFEnabled ))
-        //{
-        //    sliceHdr->slice_loop_filter_across_slices_enabled_flag = Get1Bit();
-        //}
-        //else
-        //{
-        //    sliceHdr->slice_loop_filter_across_slices_enabled_flag = pps->pps_loop_filter_across_slices_enabled_flag;
-        //}
-    //}
+    }
 
     if (!pps->tiles_enabled_flag)
     {
         pSlice->allocateTileLocation(1);
         pSlice->m_tileByteLocation[0] = 0;
     }
-
-    //if (pps->tiles_enabled_flag || pps->entropy_coding_sync_enabled_flag)
-    //{
-    //    uint32_t *entryPointOffset  = 0;
-    //    int offsetLenMinus1 = 0;
-
-    //    sliceHdr->num_entry_point_offsets = GetVLCElementU();
-
-    //    uint32_t PicHeightInCtbsY = sps->HeightInCU;
-
-    //    if (!pps->tiles_enabled_flag && pps->entropy_coding_sync_enabled_flag && sliceHdr->num_entry_point_offsets > PicHeightInCtbsY)
-    //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    //    if (pps->tiles_enabled_flag && !pps->entropy_coding_sync_enabled_flag && sliceHdr->num_entry_point_offsets > pps->num_tile_columns*pps->num_tile_rows)
-    //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    //    if (pps->tiles_enabled_flag && pps->entropy_coding_sync_enabled_flag && sliceHdr->num_entry_point_offsets > pps->num_tile_columns*PicHeightInCtbsY)
-    //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    //    if (sliceHdr->num_entry_point_offsets > 0)
-    //    {
-    //        offsetLenMinus1 = GetVLCElementU();
-    //        if (offsetLenMinus1 > 31)
-    //            throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-    //    }
-
-    //    entryPointOffset = new uint32_t[sliceHdr->num_entry_point_offsets];
-    //    for (uint32_t idx = 0; idx < sliceHdr->num_entry_point_offsets; idx++)
-    //    {
-    //        entryPointOffset[idx] = GetBits(offsetLenMinus1 + 1) + 1;
-    //    }
-
-    //    if (pps->tiles_enabled_flag)
-    //    {
-    //        pSlice->allocateTileLocation(sliceHdr->num_entry_point_offsets + 1);
-
-    //        unsigned prevPos = 0;
-    //        pSlice->m_tileByteLocation[0] = 0;
-    //        for (int idx=1; idx < pSlice->getTileLocationCount() ; idx++)
-    //        {
-    //            pSlice->m_tileByteLocation[idx] = prevPos + entryPointOffset[idx - 1];
-    //            prevPos += entryPointOffset[ idx - 1 ];
-    //        }
-    //    }
-    //    else if (pps->entropy_coding_sync_enabled_flag)
-    //    {
-    //        // we don't use wpp offsets
-    //    }
-
-    //    if (entryPointOffset)
-    //    {
-    //        delete[] entryPointOffset;
-    //    }
-    //}
-    //else
-    //{
-    //    sliceHdr->num_entry_point_offsets = 0;
-    //}
-
-    //if(pps->slice_segment_header_extension_present_flag)
-    //{
-    //    uint32_t slice_header_extension_length = GetVLCElementU();
-
-    //    if (slice_header_extension_length > 256)
-    //        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
-
-    //    for (uint32_t i = 0; i < slice_header_extension_length; i++)
-    //    {
-    //        GetBits(8); // slice_header_extension_data_byte
-    //    }
-    //}
-
-    //readOutTrailingBits();
-    return;
 }
 
 UMC::Status DecryptParametersWrapper::GetSliceHeaderFull(H265WidevineSlice *rpcSlice, const H265SeqParamSet *sps, const H265PicParamSet *pps)
 {
+    if (!rpcSlice)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     UMC::Status sts = GetSliceHeaderPart1(rpcSlice->GetSliceHeader());
     if (UMC::UMC_OK != sts)
         return sts;
@@ -1482,6 +960,9 @@ UMC::Status DecryptParametersWrapper::GetSliceHeaderFull(H265WidevineSlice *rpcS
 // Parse RPS part in SPS
 void DecryptParametersWrapper::parseShortTermRefPicSet(const H265SeqParamSet* sps, ReferencePictureSet* rps, uint32_t idx)
 {
+    if (!sps || !rps)
+        throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
+
     if (idx > 0)
     {
         rps->inter_ref_pic_set_prediction_flag = SeqParams.sps_short_term_ref_pic_set[idx].rps_inter_ref_pic_set_prediction_flag;
@@ -1623,7 +1104,6 @@ void DecryptParametersWrapper::ParseSEIPicTiming(const Headers & headers, H265SE
                 throw h265_exception(UMC::UMC_ERR_INVALID_STREAM);
         }
     }
-    return;
 }
 
 #ifdef UMC_VA_DXVA
@@ -1914,4 +1394,5 @@ UMC::Status WidevineDecrypter::DecryptFrame(UMC::MediaData *pSource, DecryptPara
 
 } // namespace UMC_HEVC_DECODER
 
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -21,7 +21,7 @@
 
 #include "vm_sys_info.h"
 
-#ifdef MFX_VA
+#if defined(MFX_VA)
 #include "umc_h265_va_supplier.h"
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     #include "umc_h265_widevine_supplier.h"
@@ -380,11 +380,14 @@ mfxStatus VideoDECODEH265::Init(mfxVideoParam *par)
         umcVideoParams.pVideoAccelerator = m_va;
         static_cast<VATaskSupplier*>(m_pH265VideoDecoder.get())->SetVideoHardwareAccelerator(m_va);
 
-#if defined MFX_VA_WIN
-        if (m_va->GetProtectedVA())
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE) && defined (MFX_VA_WIN)
+        if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
         {
-            if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
-                return MFX_ERR_INVALID_VIDEO_PARAM;
+            if (m_va->GetProtectedVA())
+            {
+                if (m_va->GetProtectedVA()->SetModes(par) != UMC::UMC_OK)
+                    return MFX_ERR_INVALID_VIDEO_PARAM;
+            }
         }
 #endif
     }
@@ -484,7 +487,7 @@ mfxStatus VideoDECODEH265::Reset(mfxVideoParam *par)
     m_vPar.mfx.NumThread = (mfxU16)CalculateNumThread(par, m_platform);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE) && (defined (MFX_VA_WIN) || defined (MFX_VA_LINUX))
-    if (IS_PROTECTION_ANY(m_vFirstPar.Protected))
+    if (IS_PROTECTION_ANY(m_vFirstPar.Protected) && !IS_PROTECTION_WIDEVINE(m_vFirstPar.Protected))
     {
         if (m_va->GetProtectedVA())
         {
@@ -1037,6 +1040,7 @@ mfxStatus VideoDECODEH265::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 *
     MFX_CHECK_NULL_PTR2(surface_work, surface_out);
 
     mfxStatus sts = MFX_ERR_NONE;
+
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (!IS_PROTECTION_WIDEVINE(m_vPar.Protected))
 #endif

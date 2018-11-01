@@ -15,6 +15,8 @@
 #define __UMC_H265_WIDEVINE_DECRYPTER_H
 
 #include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
 #include "umc_h265_headers.h"
 #include "huc_based_drm_common.h"
 
@@ -128,5 +130,6 @@ protected:
 
 } // namespace UMC_HEVC_DECODER
 
-#endif /* __UMC_H265_WIDEVINE_DECRYPTER_H */
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#endif // __UMC_H265_WIDEVINE_DECRYPTER_H
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

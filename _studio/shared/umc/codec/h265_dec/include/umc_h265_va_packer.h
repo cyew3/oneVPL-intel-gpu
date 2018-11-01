@@ -209,11 +209,11 @@ class PackerVA_Widevine: public PackerVA
 public:
     PackerVA_Widevine(UMC::VideoAccelerator * va);
 
-    virtual void PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                        H265DecoderFrameInfo * pSliceInfo,
-                        TaskSupplier_H265 * supplier);
+    void PackPicParams(const H265DecoderFrame *pCurrentFrame,
+                       H265DecoderFrameInfo * pSliceInfo,
+                       TaskSupplier_H265 * supplier) override;
 
-    virtual void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier);
+    void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier) override;
 };
 #endif
 

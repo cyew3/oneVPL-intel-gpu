@@ -71,7 +71,7 @@
     <ClCompile Include="src\umc_h265_va_packer_dxva.cpp" />
     <ClCompile Include="src\umc_h265_va_packer_intel.cpp" />
     <ClCompile Include="src\umc_h265_va_packer_ms.cpp" />
-    <ClCompile Include="src\umc_h265_va_packer_widevine.cpp" />
+    <ClCompile Include="src\umc_h265_va_packer_dxva_widevine.cpp" />
     <ClCompile Include="src\umc_h265_va_supplier.cpp" />
     <ClCompile Include="src\umc_h265_widevine_decrypter.cpp" />
     <ClCompile Include="src\umc_h265_widevine_slice_decoding.cpp" />

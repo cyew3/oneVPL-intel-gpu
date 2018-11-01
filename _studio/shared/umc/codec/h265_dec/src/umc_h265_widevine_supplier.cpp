@@ -11,14 +11,19 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
+#include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+
 #include "umc_h265_widevine_supplier.h"
-
-#if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
-
 #include "umc_h265_widevine_slice_decoding.h"
 
+#ifdef UMC_VA_DXVA
 #include "umc_va_dxva2_protected.h"
+#endif
+
+#ifdef UMC_VA_LINUX
 #include "umc_va_linux_protected.h"
+#endif
 
 #include "mfx_common_int.h"
 
@@ -59,14 +64,12 @@ UMC::Status WidevineTaskSupplier::Init(UMC::VideoDecoderParams *pInit)
     if (umsRes != UMC::UMC_OK)
         return umsRes;
 
-#if defined(MFX_VA)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
         m_pWidevineDecrypter->Init();
         m_pWidevineDecrypter->SetVideoHardwareAccelerator(((UMC::VideoDecoderParams*)pInit)->pVideoAccelerator);
     }
-#endif
 
     return UMC::UMC_OK;
 }
@@ -75,13 +78,11 @@ void WidevineTaskSupplier::Reset()
 {
     VATaskSupplier::Reset();
 
-#if defined(MFX_VA)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
         m_pWidevineDecrypter->Reset();
     }
-#endif
 }
 
 static
@@ -457,12 +458,13 @@ H265Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
     }
 
     pSlice->SetPicParam(m_Headers.m_PicParams.GetHeader(pps_pid));
-    if (!pSlice->GetPicParam())
+    H265PicParamSet const* pps = pSlice->GetPicParam();
+    if (!pps)
     {
         return 0;
     }
 
-    int32_t seq_parameter_set_id = pSlice->GetPicParam()->pps_seq_parameter_set_id;
+    int32_t seq_parameter_set_id = pps->pps_seq_parameter_set_id;
 
     pSlice->SetSeqParam(m_Headers.m_SeqParams.GetHeader(seq_parameter_set_id));
     if (!pSlice->GetSeqParam())
@@ -470,36 +472,54 @@ H265Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
         return 0;
     }
 
-    // do not need vps
-    //H265VideoParamSet * vps = m_Headers.m_VideoParams.GetHeader(pSlice->GetSeqParam()->sps_video_parameter_set_id);
-
-    m_Headers.m_SeqParams.SetCurrentID(pSlice->GetPicParam()->pps_seq_parameter_set_id);
-    m_Headers.m_PicParams.SetCurrentID(pSlice->GetPicParam()->pps_pic_parameter_set_id);
+    m_Headers.m_SeqParams.SetCurrentID(pps->pps_seq_parameter_set_id);
+    m_Headers.m_PicParams.SetCurrentID(pps->pps_pic_parameter_set_id);
 
     pSlice->m_pCurrentFrame = NULL;
 
-    //memory_leak_preventing.ClearNotification();
-
-    if (!pSlice->Reset(&m_pocDecoding))
+    bool ready = pSlice->Reset(&m_pocDecoding);
+    if (!ready)
     {
+        m_prevSliceBroken = pSlice->IsError();
         return 0;
     }
 
+    H265SliceHeader * sliceHdr = pSlice->GetSliceHeader();
+    VM_ASSERT(sliceHdr);
+
+    if (m_prevSliceBroken && sliceHdr->dependent_slice_segment_flag)
+    {
+        //Prev. slice contains errors. There is no relayable way to infer parameters for dependent slice
+        return 0;
+    }
+
+    m_prevSliceBroken = false;
+
     if (m_WaitForIDR)
     {
-        if (pSlice->GetSliceHeader()->slice_type != I_SLICE)
+        if (pps->pps_curr_pic_ref_enabled_flag)
+        {
+            ReferencePictureSet const* rps = pSlice->getRPS();
+            VM_ASSERT(rps);
+
+            uint32_t const numPicTotalCurr = rps->getNumberOfUsedPictures();
+            if (numPicTotalCurr)
+                return 0;
+        }
+        else if (sliceHdr->slice_type != I_SLICE)
         {
             return 0;
         }
     }
 
-    ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->GetSeqParam()), const_cast<H265PicParamSet *>(pSlice->GetPicParam()));
+    ActivateHeaders(const_cast<H265SeqParamSet *>(pSlice->GetSeqParam()), const_cast<H265PicParamSet *>(pps));
 
     m_WaitForIDR = false;
     memory_leak_preventing_slice.ClearNotification();
 
+    pSlice->SetWidevineStatusReportNumber(pDecryptParams->ui16StatusReportFeebackNumber);
+
     //for SliceIdx m_SliceIdx m_iNumber
-    pSlice->m_WidevineStatusReportNumber = pDecryptParams->ui16StatusReportFeebackNumber;
     pSlice->m_iNumber = m_SliceIdxInTaskSupplier;
     m_SliceIdxInTaskSupplier++;
     return pSlice;
@@ -535,13 +555,11 @@ UMC::Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDe
 
 UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
 {
-#if defined(MFX_VA)
     if (!m_initializationParams.pVideoAccelerator->GetProtectedVA() ||
         !IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected()))
     {
-        return MFX_ERR_UNDEFINED_BEHAVIOR;
+        return UMC::UMC_ERR_FAILED;
     }
-#endif
 
     UMC::Status umsRes = UMC::UMC_OK;
 
@@ -554,7 +572,7 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
 
     uint32_t const flags = src ? src->GetFlags() : 0;
     if (flags & UMC::MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
-        return UMC::UMC_ERR_INVALID_STREAM;
+        return UMC::UMC_ERR_FAILED;
 
     bool decrypted = false;
     DecryptParametersWrapper decryptParams{};
@@ -566,7 +584,7 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
     {
         if (!dp_ext->Data       ||
              dp_ext->DataLength != sizeof (DECRYPT_QUERY_STATUS_PARAMS_HEVC))
-            return UMC::UMC_ERR_INVALID_STREAM;
+            return UMC::UMC_ERR_FAILED;
 
         decryptParams = *(reinterpret_cast<DECRYPT_QUERY_STATUS_PARAMS_HEVC*>(dp_ext->Data));
         decrypted = true;
@@ -610,16 +628,14 @@ void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)
 {
     VATaskSupplier::CompleteFrame(pFrame);
 
-#if defined(MFX_VA)
     if (m_initializationParams.pVideoAccelerator->GetProtectedVA() &&
         (IS_PROTECTION_WIDEVINE(m_initializationParams.pVideoAccelerator->GetProtectedVA()->GetProtected())))
     {
         m_pWidevineDecrypter->ReleaseForNewBitstream();
     }
-#endif
 }
 
 } // namespace UMC_HEVC_DECODER
 
-#endif // #if defined (MFX_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

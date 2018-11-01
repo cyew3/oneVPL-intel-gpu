@@ -9,16 +9,14 @@
 //
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_H265_VIDEO_DECODER
-
-#ifndef UMC_RESTRICTED_CODE_VA
+#if defined (UMC_ENABLE_H265_VIDEO_DECODER)
 
 #include "umc_va_base.h"
-
-#ifdef UMC_VA_DXVA
+#if defined (UMC_VA_DXVA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 
 #include "umc_hevc_ddi.h"
 #include "umc_h265_va_packer_dxva.h"
+#include "umc_h265_widevine_slice_decoding.h"
 
 #include "umc_va_dxva2_protected.h"
 
@@ -39,8 +37,8 @@ namespace UMC_HEVC_DECODER
 
     private:
 
-        void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier);
-        void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier);
+        void PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 * supplier) override;
+        void PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier) override;
         bool PackSliceParams(H265Slice*, uint32_t& /*sliceNum*/, bool /*isLastSlice*/)
         { return true; }
         void PackQmatrix(const H265Slice* /*pSlice*/) {}
@@ -91,7 +89,7 @@ namespace UMC_HEVC_DECODER
 
         memset(pPicParam, 0, sizeof(DXVA_Intel_PicParams_HEVC));
 
-        H265Slice *pSlice = pSliceInfo ? pSliceInfo->GetSlice(0) : NULL;
+        H265WidevineSlice* pSlice = pSliceInfo ? (H265WidevineSlice*)pSliceInfo->GetSlice(0) : nullptr;
         if (!pSlice)
             return;
 
@@ -188,11 +186,9 @@ namespace UMC_HEVC_DECODER
         }
 
         pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
-        pPicParam->TotalNumEntryPointOffsets = pSlice->m_WidevineStatusReportNumber;
+        pPicParam->TotalNumEntryPointOffsets = pSlice->GetWidevineStatusReportNumber();
     }
 }
 
-#endif //UMC_VA_DXVA
-
-#endif // UMC_RESTRICTED_CODE_VA
+#endif // #if defined (UMC_VA_DXVA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

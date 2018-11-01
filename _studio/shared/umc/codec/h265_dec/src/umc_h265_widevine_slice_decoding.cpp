@@ -9,7 +9,10 @@
 //
 
 #include "umc_defs.h"
-#ifdef UMC_ENABLE_H265_VIDEO_DECODER
+#if defined (UMC_ENABLE_H265_VIDEO_DECODER)
+
+#include "umc_va_base.h"
+#if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 
 #include "umc_h265_widevine_slice_decoding.h"
 #include "umc_h265_frame_list.h"
@@ -17,19 +20,16 @@
 namespace UMC_HEVC_DECODER
 {
 
-
 H265WidevineSlice::H265WidevineSlice():
     H265Slice()
 {
     Reset();
 }
 
-
 H265WidevineSlice::~H265WidevineSlice()
 {
     Release();
 }
-
 
 // Initialize slice structure to default values
 void H265WidevineSlice::Reset()
@@ -39,8 +39,9 @@ void H265WidevineSlice::Reset()
     DECRYPT_QUERY_STATUS_PARAMS_HEVC decryptParams;
     memset(&decryptParams, 0, sizeof(DECRYPT_QUERY_STATUS_PARAMS_HEVC));
     m_DecryptParams = decryptParams;
-}
 
+    m_WidevineStatusReportNumber = 0;
+}
 
 // Release resources
 void H265WidevineSlice::Release()
@@ -48,17 +49,15 @@ void H265WidevineSlice::Release()
     Reset();
 }
 
-
 void H265WidevineSlice::SetDecryptParameters(DecryptParametersWrapper* pDecryptParameters)
 {
     m_DecryptParams = *pDecryptParameters;
 }
 
-
 // Parse beginning of slice header to get PPS ID
 int32_t H265WidevineSlice::RetrievePicParamSetNumber()
 {
-    memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
+    m_SliceHeader = H265SliceHeader{};
 
     UMC::Status umcRes = UMC::UMC_OK;
 
@@ -80,30 +79,15 @@ int32_t H265WidevineSlice::RetrievePicParamSetNumber()
 
 } // int32_t H265WidevineSlice::RetrievePicParamSetNumber()
 
-
 // Decode slice header and initializ slice structure with parsed values
 bool H265WidevineSlice::Reset(PocDecoding * pocDecoding)
 {
-    //m_BitStream.Reset((uint8_t *) m_source.GetPointer(), (uint32_t) m_source.GetDataSize());
-
     // decode slice header
     if (false == DecodeSliceHeader(pocDecoding))
         return false;
 
-    //m_SliceHeader.m_HeaderBitstreamOffset = (uint32_t)m_BitStream.BytesDecoded();
-
     m_SliceHeader.m_SeqParamSet = m_pSeqParamSet;
     m_SliceHeader.m_PicParamSet = m_pPicParamSet;
-
-    //int32_t iMBInFrame = (GetSeqParam()->WidthInCU * GetSeqParam()->HeightInCU);
-
-    // set slice variables
-    //m_iFirstMB = m_SliceHeader.slice_segment_address;
-    //m_iFirstMB = m_iFirstMB > iMBInFrame ? iMBInFrame : m_iFirstMB;
-    //m_iFirstMB = m_pPicParamSet->m_CtbAddrRStoTS[m_iFirstMB];
-    //m_iMaxMB = iMBInFrame;
-
-    //processInfo.Initialize(m_iFirstMB, GetSeqParam()->WidthInCU);
 
     m_bError = false;
 
@@ -112,7 +96,6 @@ bool H265WidevineSlice::Reset(PocDecoding * pocDecoding)
     return true;
 
 } // H265WidevineSlice::Reset(PocDecoding * pocDecoding)
-
 
 bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 {
@@ -123,14 +106,10 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
     // discarded when read again here.
     try
     {
-        memset(&m_SliceHeader, 0, sizeof(m_SliceHeader));
+        m_SliceHeader = H265SliceHeader{};
 
         m_SliceHeader.nal_unit_type = (NalUnitType)m_DecryptParams.ui8NalUnitType;
         m_SliceHeader.nuh_temporal_id = m_DecryptParams.ui8NuhTemporalId;
-        //umcRes = m_BitStream.GetNALUnitType(m_SliceHeader.nal_unit_type,
-        //                                    m_SliceHeader.nuh_temporal_id);
-        //if (UMC::UMC_OK != umcRes)
-        //    return false;
 
         umcRes = m_DecryptParams.GetSliceHeaderFull(this, m_pSeqParamSet, m_pPicParamSet);
 
@@ -166,7 +145,6 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
 
                 m_SliceHeader.slice_pic_order_cnt_lsb = PicOrderCntMsb + slice_pic_order_cnt_lsb;
 
-                //const H265SeqParamSet * sps = m_pSeqParamSet;
                 H265SliceHeader * sliceHdr = &m_SliceHeader;
 
                 {
@@ -177,48 +155,6 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
                         rps->m_POC[index] = sliceHdr->slice_pic_order_cnt_lsb + rps->m_DeltaPOC[index];
                     }
                 }
-
-                //if (GetSeqParam()->long_term_ref_pics_present_flag)
-                //{
-                //    ReferencePictureSet *rps = getRPS();
-                //    uint32_t offset = rps->getNumberOfNegativePictures()+rps->getNumberOfPositivePictures();
-
-                //    int32_t prevDeltaMSB = 0;
-                //    int32_t maxPicOrderCntLSB = 1 << sps->log2_max_pic_order_cnt_lsb;
-                //    int32_t DeltaPocMsbCycleLt = 0;
-                //    for(uint32_t j = offset, k = 0; k < rps->getNumberOfLongtermPictures(); j++, k++)
-                //    {
-                //        int pocLsbLt = rps->poc_lbs_lt[j];
-                //        if (rps->delta_poc_msb_present_flag[j])
-                //        {
-                //            bool deltaFlag = false;
-
-                //            if( (j == offset) || (j == (offset + rps->num_long_term_sps)))
-                //                deltaFlag = true;
-
-                //            if(deltaFlag)
-                //                DeltaPocMsbCycleLt = rps->delta_poc_msb_cycle_lt[j];
-                //            else
-                //                DeltaPocMsbCycleLt = rps->delta_poc_msb_cycle_lt[j] + prevDeltaMSB;
-
-                //            int32_t pocLTCurr = sliceHdr->slice_pic_order_cnt_lsb - DeltaPocMsbCycleLt * maxPicOrderCntLSB - slice_pic_order_cnt_lsb + pocLsbLt;
-                //            rps->setPOC(j, pocLTCurr);
-                //            rps->setDeltaPOC(j, - sliceHdr->slice_pic_order_cnt_lsb + pocLTCurr);
-                //        }
-                //        else
-                //        {
-                //            rps->setPOC     (j, pocLsbLt);
-                //            rps->setDeltaPOC(j, - sliceHdr->slice_pic_order_cnt_lsb + pocLsbLt);
-                //            if (j == offset + rps->num_long_term_sps)
-                //                DeltaPocMsbCycleLt = 0;
-                //        }
-
-                //        prevDeltaMSB = DeltaPocMsbCycleLt;
-                //    }
-
-                //    offset += rps->getNumberOfLongtermPictures();
-                //    rps->num_pics = offset;
-                //}
 
                 if ( sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_LP
                     || sliceHdr->nal_unit_type == NAL_UT_CODED_SLICE_BLA_W_RADL
@@ -247,8 +183,7 @@ bool H265WidevineSlice::DecodeSliceHeader(PocDecoding * pocDecoding)
                 }
             }
         }
-
-   }
+    }
     catch(...)
     {
         return false;
@@ -276,36 +211,45 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
         return UMC::UMC_ERR_NULL_PTR;
     }
 
-    if (GetSliceHeader()->slice_type == I_SLICE)
+    H265SliceHeader* header = GetSliceHeader();
+    VM_ASSERT(header);
+
+    if (header->slice_type == I_SLICE)
     {
         for (int32_t number = 0; number < 3; number++)
-            GetSliceHeader()->m_numRefIdx[number] = 0;
+            header->m_numRefIdx[number] = 0;
 
         return UMC::UMC_OK;
     }
 
-    H265DecoderFrame *RefPicSetStCurr0[16] = {NULL};
-    H265DecoderFrame *RefPicSetStCurr1[16] = {NULL};
-    H265DecoderFrame *RefPicSetLtCurr[16] = {NULL};
-    uint32_t NumPocStCurr0 = 0;
-    uint32_t NumPocStCurr1 = 0;
-    uint32_t NumPocLtCurr = 0;
+    H265DecoderFrame *RefPicSetStCurr0[16] = {};
+    H265DecoderFrame *RefPicSetStCurr1[16] = {};
+    H265DecoderFrame *RefPicSetLtCurr[16] = {};
+    uint32_t NumPicStCurr0 = 0;
+    uint32_t NumPicStCurr1 = 0;
+    uint32_t NumPicLtCurr = 0;
     uint32_t i;
 
     for(i = 0; i < getRPS()->getNumberOfNegativePictures(); i++)
     {
         if(getRPS()->getUsed(i))
         {
-            int32_t poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
+            int32_t poc = header->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
             m_pCurrentFrame->AddReferenceFrame(pFrm);
 
             if (pFrm)
                 pFrm->SetisLongTermRef(false);
-            RefPicSetStCurr0[NumPocStCurr0] = pFrm;
-            NumPocStCurr0++;
-            // pcRefPic->setCheckLTMSBPresent(false);
+            RefPicSetStCurr0[NumPicStCurr0] = pFrm;
+            NumPicStCurr0++;
+            if (!pFrm)
+            {
+                // Reporting about missed reference
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+                // And because frame can not be decoded properly set flag "ERROR_FRAME_MAJOR" too
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+            }
         }
     }
 
@@ -313,16 +257,22 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
     {
         if(getRPS()->getUsed(i))
         {
-            int32_t poc = GetSliceHeader()->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
+            int32_t poc = header->slice_pic_order_cnt_lsb + getRPS()->getDeltaPOC(i);
 
             H265DecoderFrame *pFrm = pDecoderFrameList->findShortRefPic(poc);
             m_pCurrentFrame->AddReferenceFrame(pFrm);
 
             if (pFrm)
                 pFrm->SetisLongTermRef(false);
-            RefPicSetStCurr1[NumPocStCurr1] = pFrm;
-            NumPocStCurr1++;
-            // pcRefPic->setCheckLTMSBPresent(false);
+            RefPicSetStCurr1[NumPicStCurr1] = pFrm;
+            NumPicStCurr1++;
+            if (!pFrm)
+            {
+                // Reporting about missed reference
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+                // And because frame can not be decoded properly set flag "ERROR_FRAME_MAJOR" too
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+            }
         }
     }
 
@@ -341,170 +291,101 @@ UMC::Status H265WidevineSlice::UpdateReferenceList(H265DBPList *pDecoderFrameLis
             m_pCurrentFrame->AddReferenceFrame(pFrm);
 
             pFrm->SetisLongTermRef(true);
-            RefPicSetLtCurr[NumPocLtCurr] = pFrm;
-            NumPocLtCurr++;
+            RefPicSetLtCurr[NumPicLtCurr] = pFrm;
+            NumPicLtCurr++;
+            if (!pFrm)
+            {
+                // Reporting about missed reference
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+                // And because frame can not be decoded properly set flag "ERROR_FRAME_MAJOR" too
+                m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_MAJOR);
+            }
         }
-        // pFrm->setCheckLTMSBPresent(getRPS()->getCheckLTMSBPresent(i));
     }
 
-    // ref_pic_list_init
-    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1] = {NULL};
-    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1] = {NULL};
-    int32_t numPocTotalCurr = NumPocStCurr0 + NumPocStCurr1 + NumPocLtCurr;
+    H265PicParamSet const* pps = GetPicParam();
+    VM_ASSERT(pps);
 
-    if (!numPocTotalCurr) // this is error
+    int32_t numPicTotalCurr = NumPicStCurr0 + NumPicStCurr1 + NumPicLtCurr;
+    if (pps->pps_curr_pic_ref_enabled_flag)
+        numPicTotalCurr++;
+
+    // ref_pic_list_init
+    H265DecoderFrame *refPicListTemp0[MAX_NUM_REF_PICS + 1] = {};
+    H265DecoderFrame *refPicListTemp1[MAX_NUM_REF_PICS + 1] = {};
+
+    if (header->nal_unit_type >= NAL_UT_CODED_SLICE_BLA_W_LP &&
+        header->nal_unit_type <= NAL_UT_CODED_SLICE_CRA &&
+        numPicTotalCurr != pps->pps_curr_pic_ref_enabled_flag)
     {
-        m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_DPB);
+        //8.3.2: If the current picture is a BLA or CRA picture, the value of NumPicTotalCurr shall be equal to pps_curr_pic_ref_enabled_flag ...
+        m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
+        return UMC::UMC_OK;
+    }
+    else if (!numPicTotalCurr)
+    {
+        //8.3.2: ... Otherwise, when the current picture contains a P or B slice, the value of NumPicTotalCurr shall not be equal to 0
+        m_pCurrentFrame->SetErrorFlagged(UMC::ERROR_FRAME_REFERENCE_FRAME);
         return UMC::UMC_OK;
     }
 
     int32_t cIdx = 0;
-    for (i = 0; i < NumPocStCurr0; cIdx++, i++)
+    for (i = 0; i < NumPicStCurr0; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetStCurr0[i];
     }
-    for (i = 0; i < NumPocStCurr1; cIdx++, i++)
+    for (i = 0; i < NumPicStCurr1; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetStCurr1[i];
     }
-    for (i = 0; i < NumPocLtCurr; cIdx++, i++)
+    for (i = 0; i < NumPicLtCurr; cIdx++, i++)
     {
         refPicListTemp0[cIdx] = RefPicSetLtCurr[i];
     }
 
-    if (GetSliceHeader()->slice_type == B_SLICE)
+    if (header->slice_type == B_SLICE)
     {
         cIdx = 0;
-        for (i = 0; i < NumPocStCurr1; cIdx++, i++)
+        for (i = 0; i < NumPicStCurr1; cIdx++, i++)
         {
             refPicListTemp1[cIdx] = RefPicSetStCurr1[i];
         }
-        for (i = 0; i < NumPocStCurr0; cIdx++, i++)
+        for (i = 0; i < NumPicStCurr0; cIdx++, i++)
         {
             refPicListTemp1[cIdx] = RefPicSetStCurr0[i];
         }
-        for (i = 0; i < NumPocLtCurr; cIdx++, i++)
+        for (i = 0; i < NumPicLtCurr; cIdx++, i++)
         {
             refPicListTemp1[cIdx] = RefPicSetLtCurr[i];
         }
     }
 
-    //RefPicListModification &refPicListModification = GetSliceHeader()->m_RefPicListModification;
-
-    //for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[0] - 1; cIdx ++)
-    //{
-    //    bool isLong = refPicListModification.ref_pic_list_modification_flag_l0 ?
-    //        (refPicListModification.list_entry_l0[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
-    //        : ((uint32_t)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
-
-    //    pRefPicList0[cIdx].refFrame = refPicListModification.ref_pic_list_modification_flag_l0 ? refPicListTemp0[refPicListModification.list_entry_l0[cIdx]] : refPicListTemp0[cIdx % numPocTotalCurr];
-    //    pRefPicList0[cIdx].isLongReference = isLong;
-    //}
-
-    //if (GetSliceHeader()->slice_type == P_SLICE)
-    //{
-    //    GetSliceHeader()->m_numRefIdx[1] = 0;
-    //}
-    //else
-    //{
-    //    for (cIdx = 0; cIdx <= GetSliceHeader()->m_numRefIdx[1] - 1; cIdx ++)
-    //    {
-    //        bool isLong = refPicListModification.ref_pic_list_modification_flag_l1 ?
-    //            (refPicListModification.list_entry_l1[cIdx] >= (NumPocStCurr0 + NumPocStCurr1))
-    //            : ((uint32_t)(cIdx % numPocTotalCurr) >= (NumPocStCurr0 + NumPocStCurr1));
-
-    //        pRefPicList1[cIdx].refFrame = refPicListModification.ref_pic_list_modification_flag_l1 ? refPicListTemp1[refPicListModification.list_entry_l1[cIdx]] : refPicListTemp1[cIdx % numPocTotalCurr];
-    //        pRefPicList1[cIdx].isLongReference = isLong;
-    //    }
-    //
-
     for (cIdx = 0; cIdx < MAX_NUM_REF_PICS; cIdx ++)
     {
         pRefPicList0[cIdx].refFrame = refPicListTemp0[m_DecryptParams.RefFrames.ref_list_idx[0][cIdx]];
-        pRefPicList0[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[0][cIdx] >= (NumPocStCurr0 + NumPocStCurr1);
+        pRefPicList0[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[0][cIdx] >= (NumPicStCurr0 + NumPicStCurr1);
     }
 
-    if (GetSliceHeader()->slice_type == P_SLICE)
+    if (header->slice_type == P_SLICE)
     {
-        GetSliceHeader()->m_numRefIdx[1] = 0;
+        header->m_numRefIdx[1] = 0;
     }
     else
     {
         for (cIdx = 0; cIdx < MAX_NUM_REF_PICS; cIdx ++)
         {
-            if(refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]] != NULL)
+            if (refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]] != NULL)
             {
                 pRefPicList1[cIdx].refFrame = refPicListTemp1[m_DecryptParams.RefFrames.ref_list_idx[1][cIdx]];
-                pRefPicList1[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[1][cIdx] >= (NumPocStCurr0 + NumPocStCurr1);
+                pRefPicList1[cIdx].isLongReference = m_DecryptParams.RefFrames.ref_list_idx[1][cIdx] >= (NumPicStCurr0 + NumPicStCurr1);
             }
         }
     }
 
-    // Not sure about this code
-/*
-    if (GetSliceHeader()->slice_type == B_SLICE && getNumRefIdx(REF_PIC_LIST_1) == 0)
-    {
-        int32_t iNumRefIdx = getNumRefIdx(REF_PIC_LIST_0);
-        GetSliceHeader()->m_numRefIdx[REF_PIC_LIST_1] = iNumRefIdx;
-
-        for (int32_t iRefIdx = 0; iRefIdx < iNumRefIdx; iRefIdx++)
-        {
-            pRefPicList1[iRefIdx] = pRefPicList0[iRefIdx];
-        }
-    }
-
-    if (GetSliceHeader()->slice_type != I_SLICE)
-    {
-        bool bLowDelay = true;
-        int32_t currPOC = GetSliceHeader()->slice_pic_order_cnt_lsb;
-
-        H265DecoderFrame *missedReference = 0;
-
-        for (int32_t i = 0; !missedReference && i < numPocTotalCurr; i++)
-        {
-            missedReference = refPicListTemp0[i];
-        }
-
-        for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
-        {
-            if (!pRefPicList0[k].refFrame)
-            {
-                pRefPicList0[k].refFrame = missedReference;
-            }
-        }
-
-        for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_0) && bLowDelay; k++)
-        {
-            if (pRefPicList0[k].refFrame && pRefPicList0[k].refFrame->PicOrderCnt() > currPOC)
-            {
-                bLowDelay = false;
-            }
-        }
-
-        if (GetSliceHeader()->slice_type == B_SLICE)
-        {
-            for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_1); k++)
-            {
-                if (!pRefPicList1[k].refFrame)
-                {
-                    pRefPicList1[k].refFrame = missedReference;
-                }
-            }
-
-            for (int32_t k = 0; k < getNumRefIdx(REF_PIC_LIST_1) && bLowDelay; k++)
-            {
-                if (pRefPicList1[k].refFrame && pRefPicList1[k].refFrame->PicOrderCnt() > currPOC)
-                {
-                    bLowDelay = false;
-                }
-            }
-        }
-
-        m_SliceHeader.m_CheckLDC = bLowDelay;
-    }
-*/
     return ps;
 } // Status H265WidevineSlice::UpdateRefPicList(H265DBPList *pDecoderFrameList)
 
 } // namespace UMC_HEVC_DECODER
+
+#endif // #if defined (UMC_VA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

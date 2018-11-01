@@ -119,8 +119,11 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
     }
 
 #if defined (MFX_VA_WIN)
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (IS_PROTECTION_WIDEVINE(vp.Protected))
         return core->IsGuidSupported(DXVA_Intel_Decode_Elementary_Stream_HEVC, &vp) == MFX_ERR_NONE;
+#endif
 
     mfxU32 const va_profile =
         ChooseProfile(&vp, type) & (UMC::VA_CODEC | UMC::VA_ENTRY_POINT);

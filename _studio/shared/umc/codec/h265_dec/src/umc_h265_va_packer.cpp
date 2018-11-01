@@ -16,7 +16,10 @@
 
 #ifdef UMC_VA
 #include "umc_h265_task_supplier.h"
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#include "umc_h265_widevine_slice_decoding.h"
 #include "huc_based_drm_common.h"
+#endif
 #endif
 
 #include "umc_h265_tables.h"
@@ -78,7 +81,9 @@ namespace UMC_HEVC_DECODER
 #ifdef UMC_VA_DXVA
     extern Packer * CreatePackerMS(UMC::VideoAccelerator*);
     extern Packer * CreatePackerIntel(UMC::VideoAccelerator*);
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
     extern Packer * CreatePackerWidevine(UMC::VideoAccelerator*);
+#endif
 #endif
 
 Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
@@ -92,7 +97,7 @@ Packer * Packer::CreatePacker(UMC::VideoAccelerator * va)
         packer = CreatePackerWidevine(va);
     else
 #endif
-        if (va->IsIntelCustomGUID())
+    if (va->IsIntelCustomGUID())
         packer = CreatePackerIntel(va);
     else
         packer = CreatePackerMS(va);
@@ -803,9 +808,6 @@ void PackerVA::EndFrame()
 }
 
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
-/****************************************************************************************************/
-// PAVP Widevine HuC-based implementation
-/****************************************************************************************************/
 
 PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va)
     : PackerVA(va)
@@ -815,7 +817,7 @@ PackerVA_Widevine::PackerVA_Widevine(VideoAccelerator * va)
 void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H265DecoderFrameInfo * pSliceInfo, TaskSupplier_H265 *supplier)
 {
     if(!pCurrentFrame || !pSliceInfo || !supplier) { throw h265_exception(UMC_ERR_NULL_PTR); }
-    H265Slice * pSlice = pSliceInfo->GetSlice(0);
+    H265WidevineSlice* pSlice = (H265WidevineSlice*)pSliceInfo->GetSlice(0);
     const H265SeqParamSet* pSeqParamSet = pSlice->GetSeqParam();
 
     UMCVACompBuffer *picParamBuf;
@@ -921,101 +923,12 @@ void PackerVA_Widevine::PackPicParams(const H265DecoderFrame *pCurrentFrame, H26
 
     MFX_INTERNAL_CPY(picParam->ReferenceFrames, sortedReferenceFrames, sizeof(sortedReferenceFrames));
 
-    //picParam->pic_width_in_luma_samples = (uint16_t)pSeqParamSet->pic_width_in_luma_samples;
-    //picParam->pic_height_in_luma_samples = (uint16_t)pSeqParamSet->pic_height_in_luma_samples;
-
-    //picParam->pic_fields.bits.chroma_format_idc = pSeqParamSet->chroma_format_idc;
-    //picParam->pic_fields.bits.separate_colour_plane_flag = pSeqParamSet->separate_colour_plane_flag;
-
-    //picParam->pic_fields.bits.pcm_enabled_flag = pSeqParamSet->pcm_enabled_flag;
-    //picParam->pic_fields.bits.scaling_list_enabled_flag = pSeqParamSet->scaling_list_enabled_flag;
-    //picParam->pic_fields.bits.transform_skip_enabled_flag = pPicParamSet->transform_skip_enabled_flag;
-    //picParam->pic_fields.bits.amp_enabled_flag = pSeqParamSet->amp_enabled_flag;
-    //picParam->pic_fields.bits.strong_intra_smoothing_enabled_flag = pSeqParamSet->sps_strong_intra_smoothing_enabled_flag;
-
-    //picParam->pic_fields.bits.sign_data_hiding_enabled_flag = pPicParamSet->sign_data_hiding_enabled_flag;
-    //picParam->pic_fields.bits.constrained_intra_pred_flag = pPicParamSet->constrained_intra_pred_flag;
-    //picParam->pic_fields.bits.cu_qp_delta_enabled_flag = pPicParamSet->cu_qp_delta_enabled_flag;
-    //picParam->pic_fields.bits.weighted_pred_flag = pPicParamSet->weighted_pred_flag;
-    //picParam->pic_fields.bits.weighted_bipred_flag = pPicParamSet->weighted_bipred_flag;
-
-    //picParam->pic_fields.bits.transquant_bypass_enabled_flag = pPicParamSet->transquant_bypass_enabled_flag;
-    //picParam->pic_fields.bits.tiles_enabled_flag = pPicParamSet->tiles_enabled_flag;
-    //picParam->pic_fields.bits.entropy_coding_sync_enabled_flag = pPicParamSet->entropy_coding_sync_enabled_flag;
-    //picParam->pic_fields.bits.pps_loop_filter_across_slices_enabled_flag = pPicParamSet->pps_loop_filter_across_slices_enabled_flag;
-    //picParam->pic_fields.bits.loop_filter_across_tiles_enabled_flag = pPicParamSet->loop_filter_across_tiles_enabled_flag;
-
-    //picParam->pic_fields.bits.pcm_loop_filter_disabled_flag = pSeqParamSet->pcm_loop_filter_disabled_flag;
-    //picParam->pic_fields.bits.NoPicReorderingFlag = pSeqParamSet->sps_max_num_reorder_pics == 0 ? 1 : 0;
-    //picParam->pic_fields.bits.NoBiPredFlag = 0;
-
-    //picParam->sps_max_dec_pic_buffering_minus1 = (uint8_t)(pSeqParamSet->sps_max_dec_pic_buffering[pSlice->GetSliceHeader()->nuh_temporal_id] - 1);
-    //picParam->bit_depth_luma_minus8 = (uint8_t)(pSeqParamSet->bit_depth_luma - 8);
-    //picParam->bit_depth_chroma_minus8 = (uint8_t)(pSeqParamSet->bit_depth_chroma - 8);
-    //picParam->pcm_sample_bit_depth_luma_minus1 = (uint8_t)(pSeqParamSet->pcm_sample_bit_depth_luma - 1);
-    //picParam->pcm_sample_bit_depth_chroma_minus1 = (uint8_t)(pSeqParamSet->pcm_sample_bit_depth_chroma - 1);
-    //picParam->log2_min_luma_coding_block_size_minus3 = (uint8_t)(pSeqParamSet->log2_min_luma_coding_block_size- 3);
-    //picParam->log2_diff_max_min_luma_coding_block_size = (uint8_t)(pSeqParamSet->log2_max_luma_coding_block_size - pSeqParamSet->log2_min_luma_coding_block_size);
-    //picParam->log2_min_transform_block_size_minus2 = (uint8_t)(pSeqParamSet->log2_min_transform_block_size - 2);
-    //picParam->log2_diff_max_min_transform_block_size = (uint8_t)(pSeqParamSet->log2_max_transform_block_size - pSeqParamSet->log2_min_transform_block_size);
-    //picParam->log2_min_pcm_luma_coding_block_size_minus3 = (uint8_t)(pSeqParamSet->log2_min_pcm_luma_coding_block_size - 3);
-    ////picParam->log2_diff_max_min_pcm_luma_coding_block_size = (uint8_t)(pSeqParamSet->log2_max_pcm_luma_coding_block_size - pSeqParamSet->log2_min_pcm_luma_coding_block_size);
-    //picParam->max_transform_hierarchy_depth_intra = (uint8_t)pSeqParamSet->max_transform_hierarchy_depth_intra;
-    //picParam->max_transform_hierarchy_depth_inter = (uint8_t)pSeqParamSet->max_transform_hierarchy_depth_inter;
-    //picParam->init_qp_minus26 = pPicParamSet->init_qp - 26;
-    //picParam->diff_cu_qp_delta_depth = (uint8_t)pPicParamSet->diff_cu_qp_delta_depth;
-    //picParam->pps_cb_qp_offset = (uint8_t)pPicParamSet->pps_cb_qp_offset;
-    //picParam->pps_cr_qp_offset = (uint8_t)pPicParamSet->pps_cr_qp_offset;
-    //picParam->log2_parallel_merge_level_minus2 = (uint8_t)(pPicParamSet->log2_parallel_merge_level - 2);
-
-    //if (pPicParamSet->tiles_enabled_flag)
-    //{
-    //    picParam->num_tile_columns_minus1 = (uint8_t)(pPicParamSet->num_tile_columns - 1);
-    //    picParam->num_tile_rows_minus1 = (uint8_t)(pPicParamSet->num_tile_rows - 1);
-
-    //    picParam->num_tile_columns_minus1 = MFX_MIN(sizeof(picParam->column_width_minus1)/sizeof(picParam->column_width_minus1[0]) - 1, picParam->num_tile_columns_minus1);
-    //    picParam->num_tile_rows_minus1 = MFX_MIN(sizeof(picParam->row_height_minus1)/sizeof(picParam->row_height_minus1[0]) - 1, picParam->num_tile_rows_minus1);
-
-    //    for (uint32_t i = 0; i <= picParam->num_tile_columns_minus1; i++)
-    //        picParam->column_width_minus1[i] = (uint16_t)(pPicParamSet->column_width[i] - 1);
-
-    //    for (uint32_t i = 0; i <= picParam->num_tile_rows_minus1; i++)
-    //        picParam->row_height_minus1[i] = (uint16_t)(pPicParamSet->row_height[i] - 1);
-    //}
-
-    //picParam->slice_parsing_fields.bits.lists_modification_present_flag = pPicParamSet->lists_modification_present_flag;
-    //picParam->slice_parsing_fields.bits.long_term_ref_pics_present_flag = pSeqParamSet->long_term_ref_pics_present_flag;
-    //picParam->slice_parsing_fields.bits.sps_temporal_mvp_enabled_flag = pSeqParamSet->sps_temporal_mvp_enabled_flag;
-    //picParam->slice_parsing_fields.bits.cabac_init_present_flag = pPicParamSet->cabac_init_present_flag;
-    //picParam->slice_parsing_fields.bits.output_flag_present_flag = pPicParamSet->output_flag_present_flag;
-    //picParam->slice_parsing_fields.bits.dependent_slice_segments_enabled_flag = pPicParamSet->dependent_slice_segments_enabled_flag;
-    //picParam->slice_parsing_fields.bits.pps_slice_chroma_qp_offsets_present_flag = pPicParamSet->pps_slice_chroma_qp_offsets_present_flag;
-    //picParam->slice_parsing_fields.bits.sample_adaptive_offset_enabled_flag = pSeqParamSet->sample_adaptive_offset_enabled_flag;
-    //picParam->slice_parsing_fields.bits.deblocking_filter_override_enabled_flag = pPicParamSet->deblocking_filter_override_enabled_flag;
-    //picParam->slice_parsing_fields.bits.pps_disable_deblocking_filter_flag = pPicParamSet->pps_deblocking_filter_disabled_flag;
-    //picParam->slice_parsing_fields.bits.slice_segment_header_extension_present_flag = pPicParamSet->slice_segment_header_extension_present_flag;
-
-    //picParam->slice_parsing_fields.bits.RapPicFlag = (sliceHeader->nal_unit_type >= NAL_UT_CODED_SLICE_BLA_W_LP && sliceHeader->nal_unit_type <= NAL_UT_CODED_SLICE_CRA) ? 1 : 0;
-    //picParam->slice_parsing_fields.bits.IdrPicFlag = sliceHeader->IdrPicFlag;
-    //picParam->slice_parsing_fields.bits.IntraPicFlag = pSliceInfo->IsIntraAU() ? 1 : 0;
-
-    //picParam->log2_max_pic_order_cnt_lsb_minus4 = (uint8_t)(pSeqParamSet->log2_max_pic_order_cnt_lsb - 4);
-    //picParam->num_short_term_ref_pic_sets = (uint8_t)pSeqParamSet->getRPSList()->getNumberOfReferencePictureSets();
-    //picParam->num_long_term_ref_pic_sps = (uint8_t)pSeqParamSet->num_long_term_ref_pics_sps;
-    //picParam->num_ref_idx_l0_default_active_minus1 = (uint8_t)(pPicParamSet->num_ref_idx_l0_default_active - 1);
-    //picParam->num_ref_idx_l1_default_active_minus1 = (uint8_t)(pPicParamSet->num_ref_idx_l1_default_active - 1);
-    //picParam->pps_beta_offset_div2 = (int8_t)(pPicParamSet->pps_beta_offset >> 1);
-    //picParam->pps_tc_offset_div2 = (int8_t)(pPicParamSet->pps_tc_offset >> 1);
-    //picParam->num_extra_slice_header_bits = (uint8_t)pPicParamSet->num_extra_slice_header_bits;
-
-    //picParam->st_rps_bits = pSlice->GetSliceHeader()->wNumBitsForShortTermRPSInSlice;
-
     UMCVACompBuffer *pParamBuf;
     unsigned int* pSliceID = (unsigned int*)m_va->GetCompBuffer(VAStatusParameterBufferType, &pParamBuf, sizeof(unsigned int));
     if (!pSliceID)
         throw h265_exception(UMC_ERR_FAILED);
 
-    *pSliceID = pSlice->m_WidevineStatusReportNumber;
+    *pSliceID = pSlice->GetWidevineStatusReportNumber();
 
     pParamBuf->SetDataSize(sizeof(unsigned int));
 }
@@ -1032,25 +945,9 @@ void PackerVA_Widevine::PackAU(const H265DecoderFrame *frame, TaskSupplier_H265 
 
     H265Slice *pSlice = sliceInfo->GetSlice(0);
     if(!pSlice) { throw h265_exception(UMC_ERR_NULL_PTR); }
-    //const H265SeqParamSet *pSeqParamSet = pSlice->GetSeqParam();
     H265DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
 
     PackPicParams(pCurrentFrame, sliceInfo, supplier);
-
-    //if (pSeqParamSet->scaling_list_enabled_flag)
-    //{
-    //    PackQmatrix(pSlice);
-    //}
-
-    //CreateSliceParamBuffer(sliceInfo);
-    //CreateSliceDataBuffer(sliceInfo);
-
-    //uint32_t sliceNum = 0;
-    //for (int32_t n = 0; n < sliceCount; n++)
-    //{
-    //    PackSliceParams(sliceInfo->GetSlice(n), sliceNum, n == sliceCount - 1);
-    //    sliceNum++;
-    //}
 
     Status s = m_va->Execute();
     if(s != UMC_OK)
