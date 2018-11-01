@@ -11,7 +11,7 @@
 #include "ts_parser.h"
 
 //#define DUMP_BS
-#define MAX_P_PYRAMID_WIDTH 3
+#define MAX_P_PYRAMID_WIDTH 4
 
 namespace hevce_qp_offset
 {

@@ -13,7 +13,7 @@ Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 #include "ts_parser.h"
 
 //#define DUMP_BS
-#define MAX_P_PYRAMID_WIDTH 3
+#define MAX_P_PYRAMID_WIDTH 4
 
 namespace hevce_p_pyramid
 {
