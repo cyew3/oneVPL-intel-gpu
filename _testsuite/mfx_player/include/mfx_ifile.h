@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011-2013 Intel Corporation. All Rights Reserved.
+Copyright(c) 2011-2019 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -43,6 +43,10 @@ public:
     virtual bool isEOF () = 0;
     virtual bool isOpen() = 0;
     virtual mfxStatus Close() = 0;
+    // Helper method to take some actions on the frame's boundary
+    // E.g., calculate the hashes per frame, print elapsed time
+    // between frames to see if sort of stall took place.
+    virtual void FrameBoundary() {}
     /* size - in,out*/
     virtual mfxStatus Read(mfxU8* p, mfxU32 &size) = 0;
     //zero terminated string
