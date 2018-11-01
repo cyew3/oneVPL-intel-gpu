@@ -166,7 +166,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*17*/ MFX_ERR_NONE, 0, {PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING, IGNORED}},
     //Any valid values or unspecified (zero);
     {/*18*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}}},
-    {/*19*/ MFX_ERR_NONE, 0, {{AspectRatioW, 16}, {AspectRatioH, 9}}},
+    {/*19*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}}},
     {/*20*/ MFX_ERR_UNSUPPORTED, 0, {{AspectRatioW, 0}, {AspectRatioH, 15, INVALID}}},
     {/*21*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}}},
     {/*22*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}}},

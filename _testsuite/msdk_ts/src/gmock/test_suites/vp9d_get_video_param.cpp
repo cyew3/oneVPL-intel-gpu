@@ -146,7 +146,7 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                               {CropX, 0, CHECK}, {CropY, 0, CHECK}, {CropW, 0, CHECK, 1}, {CropH,  0, CHECK, 1}}, 5}, //real values from stream should be reported
     {/*11*/ MFX_ERR_NONE, 0, {{PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}, {PicStruct, MFX_PICSTRUCT_PROGRESSIVE, CHECK}}, 5}, //should be ignored during init and reported then
     {/*12*/ MFX_ERR_NONE, 0, {{AspectRatioW, 0}, {AspectRatioH, 0}, {AspectRatioW, 0, CHECK, 1}, {AspectRatioH, 0, CHECK, 1},}, 5},
-    {/*13*/ MFX_ERR_NONE, 0, {{AspectRatioW, 16}, {AspectRatioH, 9}, {AspectRatioW, 16, CHECK, 0}, {AspectRatioH, 9, CHECK, 0}}},
+    {/*13*/ MFX_ERR_NONE, 0, {{AspectRatioW, 80}, {AspectRatioH, 33}, {AspectRatioW, 80, CHECK, 0}, {AspectRatioH, 33, CHECK, 0}}},
     {/*14*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 0}, {FrameRateExtD, 0}, {FrameRateExtN, 0, CHECK, 1}, {FrameRateExtD, 0, CHECK, 1}}},
     {/*15*/ MFX_ERR_NONE, 0, {{FrameRateExtN, 30}, {FrameRateExtD, 1}, {FrameRateExtN, 30, CHECK, 0}, {FrameRateExtD, 1, CHECK, 0}}},
 };

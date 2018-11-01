@@ -98,8 +98,8 @@ namespace hevce_encode_frame_async
         },
         {/*11*/ MFX_ERR_NONE, NONE, NONE,
             {
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW, 16 },
-                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH, 9 }
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioW, 80 },
+                { MFX_PAR, &tsStruct::mfxVideoParam.mfx.FrameInfo.AspectRatioH, 33 }
             }
         },
 

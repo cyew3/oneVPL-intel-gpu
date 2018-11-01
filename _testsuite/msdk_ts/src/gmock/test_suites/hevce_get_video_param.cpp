@@ -139,8 +139,8 @@ namespace hevce_get_video_param
         m_par.mfx.FrameInfo.FrameRateExtD = 1;
         m_par.mfx.FrameInfo.ChromaFormat = 1;
         m_par.mfx.FrameInfo.PicStruct = 1;
-        m_par.mfx.FrameInfo.AspectRatioW = 16;
-        m_par.mfx.FrameInfo.AspectRatioH = 9;
+        m_par.mfx.FrameInfo.AspectRatioW = 1;
+        m_par.mfx.FrameInfo.AspectRatioH = 1;
         m_par.mfx.GopPicSize = 15;
         m_par.mfx.GopRefDist = 1;
         m_par.mfx.IdrInterval = 2;
