@@ -137,6 +137,8 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_MV           = 0x05000,
     VA_PROFILE_MVC_STEREO       = 0x06000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
+#endif
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     VA_PROFILE_WIDEVINE         = 0x09000,
 #endif
     VA_PROFILE_422              = 0x0a000,

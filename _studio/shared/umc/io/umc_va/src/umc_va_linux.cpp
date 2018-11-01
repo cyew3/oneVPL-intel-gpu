@@ -19,7 +19,10 @@
 #include "mfx_trace.h"
 #include "umc_frame_allocator.h"
 #include "mfxstructures.h"
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "huc_based_drm_common.h"
+#endif
 
 #define UMC_VA_NUM_OF_COMP_BUFFERS       8
 #define UMC_VA_DECODE_STREAM_OUT_ENABLE  2
