@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2013-2016 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2013-2018 Intel Corporation. All Rights Reserved.
 //
 
 #ifndef __HUC_BASED_DRM_COMMON_H__
@@ -53,9 +53,10 @@ typedef enum
 
 
 #ifdef UMC_VA_LINUX
+#define VA_ENCRYPTION_TYPE_NONE             0x00000000
 #define VA_ENCRYPTION_TYPE_WIDEVINE_CLASSIC 0x00000001
 #define VA_ENCRYPTION_TYPE_GOOGLE_DASH      0x00000002
-#define VA_ENCRYPTION_TYPE_PLAYREADY        0x00000003
+#define VA_ENCRYPTION_TYPE_PLAYREADY        0x00000004
 
 #define VADecryptStatusRequested     -2
 #define VAStatusParameterBufferType  -5
