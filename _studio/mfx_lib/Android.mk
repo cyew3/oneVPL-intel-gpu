@@ -297,6 +297,8 @@ ifeq ($(MFX_IMPL_SW), true)
   LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
   LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
+  LOCAL_HEADER_LIBRARIES := liblog_headers
+
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfx_lib_merged_sw
 
