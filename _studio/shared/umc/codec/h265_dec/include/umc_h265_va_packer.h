@@ -203,20 +203,6 @@ private:
 
 };
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
-class PackerVA_Widevine: public PackerVA
-{
-public:
-    PackerVA_Widevine(UMC::VideoAccelerator * va);
-
-    void PackPicParams(const H265DecoderFrame *pCurrentFrame,
-                       H265DecoderFrameInfo * pSliceInfo,
-                       TaskSupplier_H265 * supplier) override;
-
-    void PackAU(const H265DecoderFrame *pCurrentFrame, TaskSupplier_H265 * supplier) override;
-};
-#endif
-
 #endif // UMC_VA_LINUX
 
 inline bool IsVLDProfile (int32_t profile)
