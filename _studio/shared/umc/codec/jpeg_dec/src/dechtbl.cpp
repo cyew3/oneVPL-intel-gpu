@@ -5,7 +5,7 @@
 // nondisclosure agreement with Intel Corporation and may not be copied
 // or disclosed except in accordance with the terms of that agreement.
 //
-// Copyright(C) 2001-2017 Intel Corporation. All Rights Reserved.
+// Copyright(C) 2001-2018 Intel Corporation. All Rights Reserved.
 //
 
 #include "umc_defs.h"
@@ -96,8 +96,6 @@ JERRCODE CJPEGDecoderHuffmanTable::Destroy(void)
 
 JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* vals)
 {
-  IppStatus status;
-
   m_id     = id     & 0x0f;
   m_hclass = hclass & 0x0f;
 
@@ -105,7 +103,7 @@ JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* val
   MFX_INTERNAL_CPY(m_vals,vals,256);
 
 #ifdef ALLOW_JPEG_SW_FALLBACK
-  status = ippiDecodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
+  IppStatus status = ippiDecodeHuffmanSpecInit_JPEG_8u(m_bits,m_vals,m_table);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiDecodeHuffmanSpecInit_JPEG_8u() failed - ",status);
