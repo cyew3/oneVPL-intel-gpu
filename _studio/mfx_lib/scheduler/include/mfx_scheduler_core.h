@@ -29,11 +29,8 @@
 #include <mfx_task.h>
 
 // synchronization stuff
-#include <vm_cond.h>
 #include <vm_time.h>
 
-#include <umc_mutex.h>
-#include <umc_automatic_mutex.h>
 #include <umc_semaphore.h>
 #include <umc_event.h>
 #include <umc_array.h>
@@ -417,7 +414,7 @@ protected:
     //
 
     // Guard for task queues
-    vm_mutex m_guard;
+    std::mutex m_guard;
     // array of task queues
     MFX_SCHEDULER_TASK *m_pTasks[MFX_PRIORITY_NUMBER][MFX_TYPE_NUMBER];
     // Number of assigned tasks for each kind of tasks

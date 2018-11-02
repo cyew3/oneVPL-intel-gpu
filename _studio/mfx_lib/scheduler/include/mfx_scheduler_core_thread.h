@@ -25,6 +25,7 @@
 
 #include <thread>
 #include <umc_event.h>
+#include <condition_variable>
 
 // forward declaration of the owning class
 class mfxSchedulerCore;

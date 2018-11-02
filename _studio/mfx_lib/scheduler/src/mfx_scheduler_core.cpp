@@ -24,7 +24,6 @@
 #include <mfx_scheduler_core_handle.h>
 #include <mfx_trace.h>
 
-#include <umc_automatic_mutex.h>
 #include <vm_time.h>
 #include <vm_sys_info.h>
 
@@ -58,7 +57,6 @@ mfxSchedulerCore::mfxSchedulerCore(void)
     m_pThreadCtx = NULL;
 #endif
     m_vmtick_msec_frequency = vm_time_get_frequency()/1000;
-    vm_mutex_set_invalid(&m_guard);
     vm_event_set_invalid(&m_hwTaskDone);
 
     // reset task variables
@@ -297,8 +295,6 @@ void mfxSchedulerCore::Close(void)
     // reset task counters
     m_taskCounter = 0;
     m_jobCounter = 0;
-
-    vm_mutex_destroy(&m_guard);
 }
 
 void mfxSchedulerCore::WakeUpThreads(const mfxU32 curThreadNum,
@@ -695,7 +691,7 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
         // save the status
         m_pFreeTasks->curStatus = taskRes;
         m_pFreeTasks->opRes = taskRes;
-        vm_cond_broadcast(&m_pFreeTasks->done);
+        m_pFreeTasks->done.notify_all();
     }
 
 } // void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
@@ -715,7 +711,7 @@ void mfxSchedulerCore::RegisterTaskDependencies(MFX_SCHEDULER_TASK  *pTask)
 void mfxSchedulerCore::PrintTaskInfo(void)
 {
 #if defined(ENABLE_TASK_DEBUG)
-    UMC::AutomaticUMCMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
 
     PrintTaskInfoUnsafe();
 #endif // defined(ENABLE_TASK_DEBUG)

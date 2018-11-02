@@ -22,7 +22,6 @@
 #include <mfx_scheduler_core_task.h>
 #include <mfx_trace.h>
 
-#include <umc_automatic_mutex.h>
 #include <vm_time.h>
 
 // declare the static section of the file
@@ -123,7 +122,7 @@ mfxStatus mfxSchedulerCore::GetTask(MFX_CALL_INFO &callInfo,
                                     mfxTaskHandle previousTask,
                                     const mfxU32 threadNum)
 {
-    UMC::AutomaticMutex guard(m_guard);
+    std::lock_guard<std::mutex> guard(m_guard);
     int prevTaskPriority = -1;
     mfxU32 run;
     mfxU64 totalTimeSpent[MFX_PRIORITY_NUMBER], timeSpent[MFX_PRIORITY_NUMBER];
@@ -433,7 +432,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
 
     // enter the protected code section
     {
-        UMC::AutomaticMutex guard(m_guard);
+        std::unique_lock<std::mutex> guard(m_guard);
         MFX_SCHEDULER_TASK *pTask = m_ppTaskLookUpTable[pCallInfo->taskHandle.taskID];
         mfxU32 curTime;
 
@@ -537,7 +536,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                     mfxStatus mfxRes;
 
                     // temporarily leave the protected code section
-                    guard.Unlock();
+                    guard.unlock();
 
                     mfxRes = pTask->CompleteTask(pTask->curStatus);
                     if ((isFailed(mfxRes)) &&
@@ -547,7 +546,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                     }
 
                     // enter the protected code section
-                    guard.Lock();
+                    guard.lock();
                 }
             }
 
@@ -559,7 +558,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                 // save the status
                 pTask->opRes = pTask->curStatus;
 
-                vm_cond_broadcast(&pTask->done);
+                pTask->done.notify_all();
 
                 // update dependencies produced from the dependency table
                 //for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
@@ -589,7 +588,7 @@ void mfxSchedulerCore::MarkTaskCompleted(const MFX_CALL_INFO *pCallInfo,
                 // save the status
                 pTask->opRes = MFX_ERR_NONE;
 
-                vm_cond_broadcast(&pTask->done);
+                pTask->done.notify_all();
 
                 // remove dependencies produced from the dependency table
                 for (i = 0; i < MFX_TASK_NUM_DEPENDENCIES; i += 1)
