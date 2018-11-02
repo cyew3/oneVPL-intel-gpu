@@ -262,7 +262,8 @@ namespace UMC_AV1_DECODER
         }
 
         picParam.CurrPic.wPicEntry = (USHORT)frame.GetMemID(SURFACE_RECON);
-        picParam.CurrDisplayPic.wPicEntry = (USHORT)frame.GetMemID();
+        if (!frame.FilmGrainDisabled())
+            picParam.CurrDisplayPic.wPicEntry = (USHORT)frame.GetMemID();
         picParam.primary_ref_frame = (UCHAR)info.primary_ref_frame;
 
         picParam.filter_level[0] = (UCHAR)info.loop_filter_params.loop_filter_level[0];
@@ -337,52 +338,55 @@ namespace UMC_AV1_DECODER
         auto& ddiFilmGrain = picParam.stAV1FilmGrainParams;
         auto& ddiFGInfoFlags = ddiFilmGrain.dwFilmGrainInfoFlags.fields;
 
-        ddiFGInfoFlags.apply_grain = info.film_grain_params.apply_grain;
-        ddiFGInfoFlags.update_grain = info.film_grain_params.update_grain;
-        ddiFGInfoFlags.film_grain_params_ref_idx = info.film_grain_params.film_grain_params_ref_idx;
-        ddiFGInfoFlags.chroma_scaling_from_luma = info.film_grain_params.chroma_scaling_from_luma;
-        ddiFGInfoFlags.grain_scaling_minus_8 = info.film_grain_params.grain_scaling - 8;
-        ddiFGInfoFlags.ar_coeff_lag = info.film_grain_params.ar_coeff_lag;
-        ddiFGInfoFlags.ar_coeff_shift_minus_6 = info.film_grain_params.ar_coeff_shift - 6;
-        ddiFGInfoFlags.grain_scale_shift = info.film_grain_params.grain_scale_shift;
-        ddiFGInfoFlags.overlap_flag = info.film_grain_params.overlap_flag;
-        ddiFGInfoFlags.clip_to_restricted_range = info.film_grain_params.clip_to_restricted_range;
-
-        ddiFilmGrain.random_seed = (USHORT)info.film_grain_params.grain_seed;
-        ddiFilmGrain.num_y_points = (UCHAR)info.film_grain_params.num_y_points;
-
-        for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_LUMA; i++)
+        if (!frame.FilmGrainDisabled())
         {
-            ddiFilmGrain.point_y_value[i] = (UCHAR)info.film_grain_params.point_y_value[i];
-            ddiFilmGrain.point_y_scaling[i] = (UCHAR)info.film_grain_params.point_y_scaling[i];
+            ddiFGInfoFlags.apply_grain = info.film_grain_params.apply_grain;
+            ddiFGInfoFlags.update_grain = info.film_grain_params.update_grain;
+            ddiFGInfoFlags.film_grain_params_ref_idx = info.film_grain_params.film_grain_params_ref_idx;
+            ddiFGInfoFlags.chroma_scaling_from_luma = info.film_grain_params.chroma_scaling_from_luma;
+            ddiFGInfoFlags.grain_scaling_minus_8 = info.film_grain_params.grain_scaling - 8;
+            ddiFGInfoFlags.ar_coeff_lag = info.film_grain_params.ar_coeff_lag;
+            ddiFGInfoFlags.ar_coeff_shift_minus_6 = info.film_grain_params.ar_coeff_shift - 6;
+            ddiFGInfoFlags.grain_scale_shift = info.film_grain_params.grain_scale_shift;
+            ddiFGInfoFlags.overlap_flag = info.film_grain_params.overlap_flag;
+            ddiFGInfoFlags.clip_to_restricted_range = info.film_grain_params.clip_to_restricted_range;
+
+            ddiFilmGrain.random_seed = (USHORT)info.film_grain_params.grain_seed;
+            ddiFilmGrain.num_y_points = (UCHAR)info.film_grain_params.num_y_points;
+
+            for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_LUMA; i++)
+            {
+                ddiFilmGrain.point_y_value[i] = (UCHAR)info.film_grain_params.point_y_value[i];
+                ddiFilmGrain.point_y_scaling[i] = (UCHAR)info.film_grain_params.point_y_scaling[i];
+            }
+
+            ddiFilmGrain.num_cb_points = (UCHAR)info.film_grain_params.num_cb_points;
+            ddiFilmGrain.num_cr_points = (UCHAR)info.film_grain_params.num_cr_points;
+
+            for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_CHROMA; i++)
+            {
+                ddiFilmGrain.point_cb_value[i] = (UCHAR)info.film_grain_params.point_cb_value[i];
+                ddiFilmGrain.point_cb_scaling[i] = (UCHAR)info.film_grain_params.point_cb_scaling[i];
+                ddiFilmGrain.point_cr_value[i] = (UCHAR)info.film_grain_params.point_cr_value[i];
+                ddiFilmGrain.point_cr_scaling[i] = (UCHAR)info.film_grain_params.point_cr_scaling[i];
+            }
+
+            for (uint8_t i = 0; i < MAX_AOTOREG_COEFFS_LUMA; i++)
+                ddiFilmGrain.ar_coeffs_y[i] = (CHAR)info.film_grain_params.ar_coeffs_y[i];
+
+            for (uint8_t i = 0; i < MAX_AOTOREG_COEFFS_CHROMA; i++)
+            {
+                ddiFilmGrain.ar_coeffs_cb[i] = (CHAR)info.film_grain_params.ar_coeffs_cb[i];
+                ddiFilmGrain.ar_coeffs_cr[i] = (CHAR)info.film_grain_params.ar_coeffs_cr[i];
+            }
+
+            ddiFilmGrain.cb_mult = (UCHAR)info.film_grain_params.cb_mult;
+            ddiFilmGrain.cb_luma_mult = (UCHAR)info.film_grain_params.cb_luma_mult;
+            ddiFilmGrain.cb_offset = (USHORT)info.film_grain_params.cb_offset;
+            ddiFilmGrain.cr_mult = (UCHAR)info.film_grain_params.cr_mult;
+            ddiFilmGrain.cr_luma_mult = (UCHAR)info.film_grain_params.cr_luma_mult;
+            ddiFilmGrain.cr_offset = (USHORT)info.film_grain_params.cr_offset;
         }
-
-        ddiFilmGrain.num_cb_points = (UCHAR)info.film_grain_params.num_cb_points;
-        ddiFilmGrain.num_cr_points = (UCHAR)info.film_grain_params.num_cr_points;
-
-        for (uint8_t i = 0; i < MAX_POINTS_IN_SCALING_FUNCTION_CHROMA; i++)
-        {
-            ddiFilmGrain.point_cb_value[i] = (UCHAR)info.film_grain_params.point_cb_value[i];
-            ddiFilmGrain.point_cb_scaling[i] = (UCHAR)info.film_grain_params.point_cb_scaling[i];
-            ddiFilmGrain.point_cr_value[i] = (UCHAR)info.film_grain_params.point_cr_value[i];
-            ddiFilmGrain.point_cr_scaling[i] = (UCHAR)info.film_grain_params.point_cr_scaling[i];
-        }
-
-        for (uint8_t i = 0; i < MAX_AOTOREG_COEFFS_LUMA; i++)
-            ddiFilmGrain.ar_coeffs_y[i] = (CHAR)info.film_grain_params.ar_coeffs_y[i];
-
-        for (uint8_t i = 0; i < MAX_AOTOREG_COEFFS_CHROMA; i++)
-        {
-            ddiFilmGrain.ar_coeffs_cb[i] = (CHAR)info.film_grain_params.ar_coeffs_cb[i];
-            ddiFilmGrain.ar_coeffs_cr[i] = (CHAR)info.film_grain_params.ar_coeffs_cr[i];
-        }
-
-        ddiFilmGrain.cb_mult = (UCHAR)info.film_grain_params.cb_mult;
-        ddiFilmGrain.cb_luma_mult = (UCHAR)info.film_grain_params.cb_luma_mult;
-        ddiFilmGrain.cb_offset = (USHORT)info.film_grain_params.cb_offset;
-        ddiFilmGrain.cr_mult = (UCHAR)info.film_grain_params.cr_mult;
-        ddiFilmGrain.cr_luma_mult = (UCHAR)info.film_grain_params.cr_luma_mult;
-        ddiFilmGrain.cr_offset = (USHORT)info.film_grain_params.cr_offset;
 
 #if AV1D_DDI_VERSION < 26
         if (info.tile_info.uniform_tile_spacing_flag)

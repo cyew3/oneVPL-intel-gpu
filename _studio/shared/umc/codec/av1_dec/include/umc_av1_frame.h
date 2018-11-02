@@ -169,6 +169,11 @@ namespace UMC_AV1_DECODER
         void CompleteDecoding()
         { decoding_completed = true; }
 
+        bool FilmGrainDisabled() const
+        { return film_grain_disabled; }
+        void DisableFilmGrain()
+        { film_grain_disabled = true; }
+
         UMC::FrameData* GetFrameData(int idx = SURFACE_DISPLAY)
         { return data[idx].get(); }
         UMC::FrameData const* GetFrameData(int idx = SURFACE_DISPLAY) const
@@ -227,6 +232,8 @@ namespace UMC_AV1_DECODER
         DPBType                           references;
 
         bool                              ref_valid;
+
+        bool                              film_grain_disabled;
     };
 
 } // end namespace UMC_AV1_DECODER

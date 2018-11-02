@@ -113,6 +113,8 @@ namespace UMC_AV1_DECODER
 
         SetRefValid(false);
 
+        film_grain_disabled = false;
+
         UID = -1;
     }
 
@@ -133,7 +135,7 @@ namespace UMC_AV1_DECODER
         if (!fd)
             throw av1_exception(UMC::UMC_ERR_NULL_PTR);
 
-        if (header->film_grain_params.apply_grain)
+        if (header->film_grain_params.apply_grain && !film_grain_disabled)
         {
             /* film grain is applied - two output surfaces required */
 

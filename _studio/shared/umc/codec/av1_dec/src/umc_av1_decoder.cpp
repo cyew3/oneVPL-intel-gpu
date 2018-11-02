@@ -232,6 +232,9 @@ namespace UMC_AV1_DECODER
         curr_frame->frame_dpb = frameDPB;
         curr_frame->UpdateReferenceList();
 
+        if (!params.film_grain)
+            curr_frame->DisableFilmGrain();
+
         curr_frame->StartDecoding();
 
         return UMC::UMC_OK;

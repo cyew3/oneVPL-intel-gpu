@@ -219,6 +219,7 @@ mfxStatus VideoDECODEAV1::Init(mfxVideoParam* par)
     UMC_AV1_DECODER::AV1DecoderParams vp{};
     vp.allocator = m_allocator.get();
     vp.async_depth = par->AsyncDepth;
+    vp.film_grain = par->mfx.FilmGrain ? 1 : 0; // 0 - film grain is forced off, 1 - film grain is controlled by apply_grain syntax parameter
     if (!vp.async_depth)
         vp.async_depth = MFX_AUTO_ASYNC_DEPTH_VALUE;
 
