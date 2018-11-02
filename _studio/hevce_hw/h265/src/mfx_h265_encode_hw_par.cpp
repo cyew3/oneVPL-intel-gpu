@@ -1019,7 +1019,8 @@ mfxStatus CheckAndFixRoi(MfxVideoParam  const & par, ENCODE_CAPS_HEVC const & ca
 
     if (!(par.mfx.RateControlMethod == MFX_RATECONTROL_CBR ||
         par.mfx.RateControlMethod == MFX_RATECONTROL_VBR ||
-        par.mfx.RateControlMethod == MFX_RATECONTROL_CQP))
+        par.mfx.RateControlMethod == MFX_RATECONTROL_CQP ||
+        par.mfx.RateControlMethod == MFX_RATECONTROL_QVBR))
     {
         invalid++;
     }
