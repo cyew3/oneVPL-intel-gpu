@@ -35,6 +35,8 @@
     <ClInclude Include="include\genx_scd_icllp_isa.h" />
     <ClInclude Include="include\genx_scd_icl_isa.h" />
     <ClInclude Include="include\genx_scd_skl_isa.h" />
+    <ClInclude Include="include\genx_scd_tgllp_isa.h" />
+    <ClInclude Include="include\genx_scd_tgl_isa.h" />
     <ClInclude Include="include\iofunctions.h" />
     <ClInclude Include="include\me_asc.h" />
     <ClInclude Include="include\motion_estimation_engine.h" />
@@ -50,6 +52,8 @@
     <ClCompile Include="src\genx_scd_icllp_isa.cpp" />
     <ClCompile Include="src\genx_scd_icl_isa.cpp" />
     <ClCompile Include="src\genx_scd_skl_isa.cpp" />
+    <ClCompile Include="src\genx_scd_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_scd_tgl_isa.cpp" />
     <ClCompile Include="src\iofunctions.cpp" />
     <ClCompile Include="src\motion_estimation_engine.cpp" />
     <ClCompile Include="src\tree.cpp" />

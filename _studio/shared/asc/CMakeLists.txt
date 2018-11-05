@@ -19,6 +19,8 @@ list( APPEND sources
     ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_skl_isa.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_icl_isa.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_icllp_isa.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_tgl_isa.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/genx_scd_tgllp_isa.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/iofunctions.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/motion_estimation_engine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tree.cpp

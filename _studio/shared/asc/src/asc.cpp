@@ -27,6 +27,10 @@
 #include "genx_scd_cnl_isa.h"
 #include "genx_scd_icl_isa.h"
 #include "genx_scd_icllp_isa.h"
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#include "genx_scd_tgl_isa.h"
+#include "genx_scd_tgllp_isa.h"
+#endif
 #include "tree.h"
 #include "iofunctions.h"
 #include "motion_estimation_engine.h"
@@ -340,6 +344,14 @@ mfxStatus ASC::InitGPUsurf(CmDevice* pCmDevice) {
     case PLATFORM_INTEL_ICLLP:
         res = m_device->LoadProgram((void *)genx_scd_icllp, sizeof(genx_scd_icllp), m_program, "nojitter");
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case PLATFORM_INTEL_TGL:
+        res = m_device->LoadProgram((void *)genx_scd_tgl, sizeof(genx_scd_tgl), m_program, "nojitter");
+        break;
+    case PLATFORM_INTEL_TGLLP:
+        res = m_device->LoadProgram((void *)genx_scd_tgllp, sizeof(genx_scd_tgllp), m_program, "nojitter");
+        break;
+#endif
     default:
         res = CM_NOT_IMPLEMENTED;
     }
