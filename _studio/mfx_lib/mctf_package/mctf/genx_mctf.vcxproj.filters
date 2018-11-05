@@ -49,6 +49,24 @@
     <ClCompile Include="..\..\genx\mctf\src\genx_sd_icllp_isa.cpp">
       <Filter>Lib\SD</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_mc_tgl_isa.cpp">
+      <Filter>Lib\MC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_mc_tgllp_isa.cpp">
+      <Filter>Lib\MC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_me_tgl_isa.cpp">
+      <Filter>Lib\ME</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_me_tgllp_isa.cpp">
+      <Filter>Lib\ME</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_sd_tgl_isa.cpp">
+      <Filter>Lib\SD</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\genx\mctf\src\genx_sd_tgllp_isa.cpp">
+      <Filter>Lib\SD</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\mctf_common.h">

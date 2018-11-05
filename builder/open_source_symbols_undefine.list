@@ -133,3 +133,10 @@ MFX_ENABLE_HW_BLOCKING_TASK_SYNC_H265D
 AS_HEVCE_DP_PLUGIN
 __genx_scd_tgl__
 __genx_scd_tgllp__
+target_gen12
+__genx_sd_tgllp__
+__genx_mc_tgllp__
+__genx_me_tgllp__
+__genx_sd_tgl__
+__genx_mc_tgl__
+__genx_me_tgl__

@@ -98,7 +98,7 @@ move embed_isa.* .\%TMP%
 cd %TMP%
 
 for %%m in (me,mc,sd) do (
-for %%g in (bdw,skl,icl,icllp) do (
+for %%g in (bdw,skl,icl,icllp,tgl,tgllp) do (
 IF "%%g" EQU "bdw" ( set GEN=gen8 )
 IF "%%g" EQU "skl" ( set GEN=gen9 )
 IF "%%g" EQU "icl" ( set GEN=gen11 )
@@ -142,14 +142,15 @@ move embed_isa.* .\%TMP%
 cd %TMP%
 
 for %%m in (me,mc,sd) do (
-for %%g in (bdw,skl,icl,icllp) do (
+for %%g in (bdw,skl,icl,icllp,tgl,tgllp) do (
 IF "%%g" EQU "bdw" ( set GEN=gen8 )
 IF "%%g" EQU "skl" ( set GEN=gen9 )
 IF "%%g" EQU "icl" ( set GEN=gen11 )
 IF "%%g" EQU "icllp" ( set GEN=gen11lp )
 IF "%%g" EQU "tgl" ( set GEN=gen12 )
 IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
-cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+rem cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+cmc.exe -mCM_init_global -c -Qxcm -march=!GEN! ..\src\genx_%%m.cpp -Dtarget_!GEN! -Qxcm_release
 ren genx_%%m.isa genx_%%m_%%g.isa
 embed_isa genx_%%m_%%g.isa
 move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp
@@ -192,7 +193,7 @@ move embed_isa.* .\%TMP%
 cd %TMP%
 
 for %%m in (me,mc,sd) do (
-for %%g in (bdw,skl,icl,icllp) do (
+for %%g in (bdw,skl,icl,icllp,tgl,tgllp) do (
 IF "%%g" EQU "bdw" ( set GEN=gen8 )
 IF "%%g" EQU "skl" ( set GEN=gen9 )
 IF "%%g" EQU "icl" ( set GEN=gen11 )
@@ -242,14 +243,15 @@ move embed_isa.* .\%TMP%
 cd %TMP%
 
 for %%m in (me,mc,sd) do (
-for %%g in (bdw,skl,icl,icllp) do (
+for %%g in (bdw,skl,icl,icllp,tgl,tgllp) do (
 IF "%%g" EQU "bdw" ( set GEN=gen8 )
 IF "%%g" EQU "skl" ( set GEN=gen9 )
 IF "%%g" EQU "icl" ( set GEN=gen11 )
 IF "%%g" EQU "icllp" ( set GEN=gen11lp )
 IF "%%g" EQU "tgl" ( set GEN=gen12 )
 IF "%%g" EQU "tgllp" ( set GEN=gen12lp )
-cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
+cmc.exe -mCM_init_global -c -Qxcm -march=%%g ..\src\genx_%%m.cpp -Dtarget_!GEN! -Qxcm_release 
+rem cmc.exe -mCM_init_global -c -Qxcm -Qxcm_jit_target=!GEN! ..\src\genx_%%m.cpp -Qxcm_print_asm_count -mCM_printregusage -menableiga -Dtarget_!GEN! -Qxcm_release
 ren genx_%%m.isa genx_%%m_%%g.isa
 embed_isa genx_%%m_%%g.isa
 move genx_%%m_%%g.cpp ..\src\genx_%%m_%%g_isa.cpp
@@ -269,6 +271,8 @@ move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
     <ClCompile Include="src\genx_mc_icllp_isa.cpp" />
     <ClCompile Include="src\genx_mc_icl_isa.cpp" />
     <ClCompile Include="src\genx_mc_skl_isa.cpp" />
+    <ClCompile Include="src\genx_mc_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_mc_tgl_isa.cpp" />
     <ClCompile Include="src\genx_me.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -279,6 +283,8 @@ move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
     <ClCompile Include="src\genx_me_icllp_isa.cpp" />
     <ClCompile Include="src\genx_me_icl_isa.cpp" />
     <ClCompile Include="src\genx_me_skl_isa.cpp" />
+    <ClCompile Include="src\genx_me_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_me_tgl_isa.cpp" />
     <ClCompile Include="src\genx_sd.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -289,20 +295,28 @@ move genx_%%m_%%g.h ..\include\genx_%%m_%%g_isa.h
     <ClCompile Include="src\genx_sd_icllp_isa.cpp" />
     <ClCompile Include="src\genx_sd_icl_isa.cpp" />
     <ClCompile Include="src\genx_sd_skl_isa.cpp" />
+    <ClCompile Include="src\genx_sd_tgllp_isa.cpp" />
+    <ClCompile Include="src\genx_sd_tgl_isa.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\genx_mc_bdw_isa.h" />
     <ClInclude Include="include\genx_mc_icllp_isa.h" />
     <ClInclude Include="include\genx_mc_icl_isa.h" />
     <ClInclude Include="include\genx_mc_skl_isa.h" />
+    <ClInclude Include="include\genx_mc_tgllp_isa.h" />
+    <ClInclude Include="include\genx_mc_tgl_isa.h" />
     <ClInclude Include="include\genx_me_bdw_isa.h" />
     <ClInclude Include="include\genx_me_icllp_isa.h" />
     <ClInclude Include="include\genx_me_icl_isa.h" />
     <ClInclude Include="include\genx_me_skl_isa.h" />
+    <ClInclude Include="include\genx_me_tgllp_isa.h" />
+    <ClInclude Include="include\genx_me_tgl_isa.h" />
     <ClInclude Include="include\genx_sd_bdw_isa.h" />
     <ClInclude Include="include\genx_sd_icllp_isa.h" />
     <ClInclude Include="include\genx_sd_icl_isa.h" />
     <ClInclude Include="include\genx_sd_skl_isa.h" />
+    <ClInclude Include="include\genx_sd_tgllp_isa.h" />
+    <ClInclude Include="include\genx_sd_tgl_isa.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

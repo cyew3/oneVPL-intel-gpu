@@ -37,7 +37,15 @@
 #include "genx_me_icllp_isa.h"
 #include "genx_mc_icllp_isa.h"
 #include "genx_sd_icllp_isa.h"
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+#include "genx_me_tgl_isa.h"
+#include "genx_mc_tgl_isa.h"
+#include "genx_sd_tgl_isa.h"
 
+#include "genx_me_tgllp_isa.h"
+#include "genx_mc_tgllp_isa.h"
+#include "genx_sd_tgllp_isa.h"
+#endif
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -47,12 +55,12 @@ using std::min;
 using  std::max;
 using namespace ns_asc;
 
-const mfxU16 CMC::AUTO_FILTER_STRENGTH    = 0;
+const mfxU16 CMC::AUTO_FILTER_STRENGTH = 0;
 const mfxU16 CMC::DEFAULT_FILTER_STRENGTH = 8;
 const mfxU32 CMC::DEFAULT_BPP             = 0; //Automode
 const mfxU16 CMC::DEFAULT_DEBLOCKING = MFX_CODINGOPTION_OFF;
 const mfxU16 CMC::DEFAULT_OVERLAP = MFX_CODINGOPTION_OFF;
-const mfxU16 CMC::DEFAULT_ME              = MFX_MVPRECISION_INTEGER >> 1;
+const mfxU16 CMC::DEFAULT_ME = MFX_MVPRECISION_INTEGER >> 1;
 const mfxU16 CMC::DEFAULT_REFS = MCTF_TEMPORAL_MODE_2REF;
 
 void CMC::QueryDefaultParams(
@@ -64,7 +72,7 @@ void CMC::QueryDefaultParams(
     pBuffer->Overlap = DEFAULT_OVERLAP;
     pBuffer->subPelPrecision = DEFAULT_ME;
     pBuffer->TemporalMode = DEFAULT_REFS;
-    pBuffer->FilterStrength    = AUTO_FILTER_STRENGTH; // [0...20]
+    pBuffer->FilterStrength = AUTO_FILTER_STRENGTH; // [0...20]
     pBuffer->BitsPerPixelx100k= DEFAULT_BPP;
 };
 
@@ -608,12 +616,13 @@ mfxStatus CMC::MCTF_INIT(
     if (!pMctfParam)
         pMctfParam = &MctfParam;
 
-    sts = MCTF_SET_ENV(FrameInfo, pMctfParam);
+    sts = MCTF_SET_ENV(core, FrameInfo, pMctfParam);
     MFX_CHECK_STS(sts);
     return sts;
 }
 
 mfxStatus CMC::MCTF_SET_ENV(
+    VideoCORE           * core,
     const mfxFrameInfo  & FrameInfo,
     const IntMctfParams * pMctfParam
 )
@@ -623,11 +632,16 @@ mfxStatus CMC::MCTF_SET_ENV(
     if (!device)
         return MFX_ERR_NOT_INITIALIZED;
 
-    res = device->CreateQueue(queue);
-    MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
     hwSize = 4;
     res = device->GetCaps(CAP_GPU_PLATFORM, hwSize, &hwType);
     MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+
+    if (core->GetHWType() >= MFX_HW_ICL)
+        res = device->CreateQueueEx(queue, CM_VME_QUEUE_CREATE_OPTION);
+    else
+        res = device->CreateQueue(queue);
+    MCTF_CHECK_CM_ERR(res, MFX_ERR_DEVICE_FAILED);
+    
 
     task = 0;
     // --- bitrate
@@ -746,6 +760,14 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_ICLLP:
         res = device->LoadProgram((void *)genx_me_icllp, sizeof(genx_me_icllp), programMe, "nojitter");
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case PLATFORM_INTEL_TGL:
+        res = device->LoadProgram((void *)genx_me_tgl, sizeof(genx_me_tgl), programMe, "nojitter");
+        break;
+    case PLATFORM_INTEL_TGLLP:
+        res = device->LoadProgram((void *)genx_me_tgllp, sizeof(genx_me_tgllp), programMe, "nojitter");
+        break;
+#endif
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_CNL:
@@ -787,6 +809,14 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_ICLLP:
         res = device->LoadProgram((void *)genx_mc_icllp, sizeof(genx_mc_icllp), programMc, "nojitter");
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case PLATFORM_INTEL_TGL:
+        res = device->LoadProgram((void *)genx_mc_tgl, sizeof(genx_mc_tgl), programMc, "nojitter");
+        break;
+    case PLATFORM_INTEL_TGLLP:
+        res = device->LoadProgram((void *)genx_mc_tgllp, sizeof(genx_mc_tgllp), programMc, "nojitter");
+        break;
+#endif
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_CNL:
@@ -811,6 +841,14 @@ mfxStatus CMC::MCTF_SET_ENV(
     case PLATFORM_INTEL_ICLLP:
         res = device->LoadProgram((void *)genx_sd_icllp, sizeof(genx_sd_icllp), programDe, "nojitter");
         break;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+    case PLATFORM_INTEL_TGL:
+        res = device->LoadProgram((void *)genx_sd_tgl, sizeof(genx_sd_tgl), programDe, "nojitter");
+        break;
+    case PLATFORM_INTEL_TGLLP:
+        res = device->LoadProgram((void *)genx_sd_tgllp, sizeof(genx_sd_tgllp), programDe, "nojitter");
+        break;
+#endif
     case PLATFORM_INTEL_SKL:
     case PLATFORM_INTEL_BXT:
     case PLATFORM_INTEL_CNL:

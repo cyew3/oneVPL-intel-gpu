@@ -9,5 +9,5 @@
 //
 #ifndef __genx_me_icllp__
 #define __genx_me_icllp__
-extern const unsigned char genx_me_icllp[28006];
+extern const unsigned char genx_me_icllp[17531];
 #endif

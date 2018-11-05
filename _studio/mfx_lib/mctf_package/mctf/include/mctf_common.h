@@ -680,7 +680,9 @@ private:
     mfxI32 MCTF_RUN_MCTF_DEN();
     mfxI32 MCTF_RUN_MCTF_DEN_4REF();
     mfxI32 MCTF_RUN_AMCTF_DEN();
+
     mfxStatus MCTF_SET_ENV(
+        VideoCORE           * core,
         const mfxFrameInfo  & FrameInfo,
         const IntMctfParams * pMctfParam
     );
@@ -690,13 +692,13 @@ private:
         mfxU16 start_y
     );
     mfxI32 MCTF_SET_KERNELDe(
-        mfxU16 srcNum,
-        mfxU16 start_x,
-        mfxU16 start_y
+       mfxU16 srcNum,
+       mfxU16 start_x,
+       mfxU16 start_y
     );
     mfxI32 MCTF_SET_KERNELDe(
-        mfxU16 start_x,
-        mfxU16 start_y
+       mfxU16 start_x,
+       mfxU16 start_y
     );
     mfxI32 MCTF_RUN_AMCTF();
     mfxI32 MCTF_RUN_AMCTF(

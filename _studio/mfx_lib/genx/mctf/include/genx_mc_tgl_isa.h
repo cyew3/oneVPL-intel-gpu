@@ -7,7 +7,7 @@
 //
 // Copyright(c) 2012-2018 Intel Corporation. All Rights Reserved.
 //
-#ifndef __genx_mc_skl__
-#define __genx_mc_skl__
-extern const unsigned char genx_mc_skl[77421];
+#ifndef __genx_mc_tgl__
+#define __genx_mc_tgl__
+extern const unsigned char genx_mc_tgl[77421];
 #endif

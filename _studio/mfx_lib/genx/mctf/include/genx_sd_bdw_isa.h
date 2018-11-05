@@ -9,5 +9,5 @@
 //
 #ifndef __genx_sd_bdw__
 #define __genx_sd_bdw__
-extern const unsigned char genx_sd_bdw[100716];
+extern const unsigned char genx_sd_bdw[68752];
 #endif
