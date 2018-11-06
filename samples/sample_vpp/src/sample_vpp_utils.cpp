@@ -106,11 +106,13 @@ static
         return MSDK_STRING("AYUV");
     case MFX_FOURCC_I420:
         return MSDK_STRING("I420");
-#ifdef ENABLE_PS
+#if (MFX_VERSION >= 1027)
     case MFX_FOURCC_Y210:
         return MSDK_STRING("Y210");
     case MFX_FOURCC_Y410:
         return MSDK_STRING("Y410");
+#endif
+#ifdef ENABLE_PS    
     case MFX_FOURCC_P016:
         return MSDK_STRING("P016");
     case MFX_FOURCC_Y216:
@@ -1308,8 +1310,12 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
+#if (MFX_VERSION >= 1027)
+    else if (pInfo->FourCC == MFX_FOURCC_Y210
 #ifdef ENABLE_PS
-    else if (pInfo->FourCC == MFX_FOURCC_Y210 || pInfo->FourCC == MFX_FOURCC_Y216)
+    || pInfo->FourCC == MFX_FOURCC_Y216
+#endif
+)
     {
         ptr = (mfxU8*)(pData->Y16 + pInfo->CropX * 2) + pInfo->CropY * pitch;
 
@@ -1329,6 +1335,8 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
             IOSTREAM_MSDK_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
     }
+#endif
+#ifdef ENABLE_PS
     else if (pInfo->FourCC == MFX_FOURCC_Y416)
     {
         ptr = (mfxU8*)(pData->U16 + pInfo->CropX * 4) + pInfo->CropY * pitch;
