@@ -1,0 +1,63 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace_lib", "..\..\..\opensource\mfx_dispatch\mfx_prefixed_dispatch_trace_lib.vcproj", "{2382A698-EEAB-4F2A-92B0-8AB101387106}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tracer", "gui\tracer.csproj", "{54E94009-6BF9-4847-A614-1DDDC863EB3F}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tracer_core", "tracer_core.vcproj", "{E21389BF-98B7-4932-A6CF-C026F4FBA328}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{2382A698-EEAB-4F2A-92B0-8AB101387106} = {2382A698-EEAB-4F2A-92B0-8AB101387106}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		debug_ascii|Win32 = debug_ascii|Win32
+		debug_ascii|x64 = debug_ascii|x64
+		release_ascii|Win32 = release_ascii|Win32
+		release_ascii|x64 = release_ascii|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.debug_ascii|Win32.ActiveCfg = debug_ascii|Win32
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.debug_ascii|Win32.Build.0 = debug_ascii|Win32
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.debug_ascii|x64.ActiveCfg = debug_ascii|x64
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.debug_ascii|x64.Build.0 = debug_ascii|x64
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.release_ascii|Win32.ActiveCfg = release_ascii|Win32
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.release_ascii|Win32.Build.0 = release_ascii|Win32
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.release_ascii|x64.ActiveCfg = release_ascii|x64
+		{2382A698-EEAB-4F2A-92B0-8AB101387106}.release_ascii|x64.Build.0 = release_ascii|x64
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.debug_ascii|Win32.ActiveCfg = Debug|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.debug_ascii|Win32.Build.0 = Debug|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.debug_ascii|x64.ActiveCfg = Debug|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.debug_ascii|x64.Build.0 = Debug|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.release_ascii|Win32.ActiveCfg = Release|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.release_ascii|Win32.Build.0 = Release|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.release_ascii|x64.ActiveCfg = Release|Any CPU
+		{54E94009-6BF9-4847-A614-1DDDC863EB3F}.release_ascii|x64.Build.0 = Release|Any CPU
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.debug_ascii|Win32.ActiveCfg = debug_ascii|Win32
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.debug_ascii|Win32.Build.0 = debug_ascii|Win32
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.debug_ascii|x64.ActiveCfg = debug_ascii|x64
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.debug_ascii|x64.Build.0 = debug_ascii|x64
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.release_ascii|Win32.ActiveCfg = release_ascii|Win32
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.release_ascii|Win32.Build.0 = release_ascii|Win32
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.release_ascii|x64.ActiveCfg = release_ascii|x64
+		{E21389BF-98B7-4932-A6CF-C026F4FBA328}.release_ascii|x64.Build.0 = release_ascii|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(DPCodeReviewSolutionGUID) = preSolution
+		DPCodeReviewSolutionGUID = {00000000-0000-0000-0000-000000000000}
+	EndGlobalSection
+EndGlobal

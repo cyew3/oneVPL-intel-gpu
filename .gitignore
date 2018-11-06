@@ -31,3 +31,13 @@ content
 /samples/SampleEncodeUWP/AppPackages/*
 BundleArtifacts/
 /samples/ExtendedUWPSamples/AppPackages/
+*.user
+_build
+# CMake intermidiate files
+__cmake
+/.project
+.gitreview
+*.ipch
+*.opendb
+*.db
+*.aps

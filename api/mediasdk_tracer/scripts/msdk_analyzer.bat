@@ -1,0 +1,1 @@
+msdk_analyzer.exe -l msdk_analyzer.log -c msdk_analyzer.cfg -t "Intel Media SDK Analyzer v1.2"

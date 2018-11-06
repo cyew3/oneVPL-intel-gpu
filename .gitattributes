@@ -15,6 +15,9 @@
 *.mk text eol=lf
 Makefile text eol=lf
 */Makefile text eol=lf
+Makefile text eol=lf
+*/Makefile text eol=lf
+CMake*.txt text eol=lf
 
 # files to be stored and checked out with CRLF endings
 *.vcxproj text eol=crlf
