@@ -21,7 +21,6 @@
 #ifndef __UMC_DEINTERLACING_H__
 #define __UMC_DEINTERLACING_H__
 
-#include "vm_types.h"
 #include "ippdefs.h"
 #include "umc_base_codec.h"
 #include "umc_video_processing.h"

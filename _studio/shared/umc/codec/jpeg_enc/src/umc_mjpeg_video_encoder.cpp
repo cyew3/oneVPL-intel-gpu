@@ -22,7 +22,6 @@
 #if defined (UMC_ENABLE_MJPEG_VIDEO_ENCODER)
 
 #include <string.h>
-#include "vm_debug.h"
 #include "umc_video_data.h"
 #include "umc_mjpeg_video_encoder.h"
 #include "membuffout.h"

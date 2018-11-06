@@ -21,7 +21,7 @@
 #include "umc_defs.h"
 #if defined (UMC_ENABLE_MJPEG_VIDEO_DECODER)
 #include <string.h>
-#include "vm_debug.h"
+#include <assert.h>
 #include "umc_video_data.h"
 #include "umc_mjpeg_mfx_decode.h"
 #include "membuffin.h"
@@ -210,23 +210,23 @@ ChromaType MJPEGVideoDecoderMFX::GetChromaType()
             else if (m_dec[0]->m_jpeg_color == JC_RGB)
                 type = CHROMA_TYPE_RGB;
             else
-                VM_ASSERT(false);
+                assert(false);
         }
         else
         {
-            VM_ASSERT((m_dec[0]->m_ccomp[0].m_vsampling == 2) && (m_dec[0]->m_ccomp[1].m_hsampling == 1));
+            assert((m_dec[0]->m_ccomp[0].m_vsampling == 2) && (m_dec[0]->m_ccomp[1].m_hsampling == 1));
             type = CHROMA_TYPE_YUV422V_2Y; // YUV422V_2Y
         }
         break;
     case 2: // YUV420, YUV422H_2Y, YUV422H_4Y, YUV422V_4Y
         if (m_dec[0]->m_ccomp[0].m_vsampling == 1)
         {
-            VM_ASSERT(m_dec[0]->m_ccomp[1].m_vsampling == 1 && m_dec[0]->m_ccomp[1].m_hsampling == 1);
+            assert(m_dec[0]->m_ccomp[1].m_vsampling == 1 && m_dec[0]->m_ccomp[1].m_hsampling == 1);
             type = CHROMA_TYPE_YUV422H_2Y; // YUV422H_2Y
         }
         else
         {
-            VM_ASSERT(m_dec[0]->m_ccomp[0].m_vsampling == 2);
+            assert(m_dec[0]->m_ccomp[0].m_vsampling == 2);
 
             if (m_dec[0]->m_ccomp[1].m_hsampling == 1 && m_dec[0]->m_ccomp[1].m_vsampling == 1)
                 type = CHROMA_TYPE_YUV420; // YUV420;
@@ -235,11 +235,11 @@ ChromaType MJPEGVideoDecoderMFX::GetChromaType()
         }
         break;
     case 4: // YUV411
-        VM_ASSERT(m_dec[0]->m_ccomp[0].m_vsampling == 1);
+        assert(m_dec[0]->m_ccomp[0].m_vsampling == 1);
         type = CHROMA_TYPE_YUV411;
         break;
     default:
-        VM_ASSERT(false);
+        assert(false);
         break;
     }
 
@@ -264,7 +264,7 @@ JCOLOR MJPEGVideoDecoderMFX::GetColorType()
         color = JC_RGB;
         break;
     default:
-        VM_ASSERT(false);
+        assert(false);
         break;
     }
 
@@ -558,7 +558,7 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
     if(0 == out)
         return UMC_ERR_NULL_PTR;
     *out = 0;*/
-    vm_debug_trace1(VM_DEBUG_NONE, __VM_STRING("MJPEG, frame: %d\n"), m_frameNo);
+    MFX_LTRACE_1(MFX_TRACE_LEVEL_INTERNAL, "MJPEG, frame: ", "%d", m_frameNo);
 
     // find appropriate source picture buffer
     picNum = 0;
@@ -1127,7 +1127,7 @@ Status MJPEGVideoDecoderMFX::DecodePiece(const mfxU32 fieldNum,
 
 void MJPEGVideoDecoderMFX::SetFrameAllocator(FrameAllocator * frameAllocator)
 {
-    VM_ASSERT(frameAllocator);
+    assert(frameAllocator);
     m_frameAllocator = frameAllocator;
 }
 

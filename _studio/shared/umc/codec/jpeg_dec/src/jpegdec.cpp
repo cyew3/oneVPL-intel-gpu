@@ -30,14 +30,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "ippi.h"
 #include "ippj.h"
 #include "jpegbase.h"
 #include "jpegdec.h"
 #include <cstdlib>
-
-#include "vm_debug.h"
 
 extern void ConvertFrom_YUV444_To_YV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size);
 extern void ConvertFrom_YUV422V_To_YV12(uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size);
@@ -5469,7 +5468,7 @@ ChromaType CJPEGDecoder::GetChromaType()
 
     if (m_ccomp[0].m_hsampling == 4)
     {
-        VM_ASSERT(m_ccomp[0].m_vsampling == 1);
+        assert(m_ccomp[0].m_vsampling == 1);
         return CHROMA_TYPE_YUV411; // YUV411
     }
 
@@ -5481,7 +5480,7 @@ ChromaType CJPEGDecoder::GetChromaType()
         }
         else
         {
-            VM_ASSERT(m_ccomp[0].m_vsampling == 2);
+            assert(m_ccomp[0].m_vsampling == 2);
             return (m_ccomp[1].m_hsampling == 1) ? CHROMA_TYPE_YUV422V_2Y : CHROMA_TYPE_YUV422V_4Y; // YUV422V_2Y, YUV422V_4Y
         }
     }
@@ -5494,7 +5493,7 @@ ChromaType CJPEGDecoder::GetChromaType()
         }
         else
         {
-            VM_ASSERT(m_ccomp[0].m_vsampling == 2);
+            assert(m_ccomp[0].m_vsampling == 2);
             return CHROMA_TYPE_YUV420; // YUV420;
         }
     }

@@ -22,13 +22,14 @@
 
 #if defined (MFX_ENABLE_MJPEG_VIDEO_ENCODE)
 
+#include <thread> // for thread::hardware_concurrency()
+
 #include "mfx_common.h"
 
 #include "mfx_mjpeg_encode.h"
 #include "mfx_tools.h"
 #include "mfx_task.h"
 #include "mfx_enc_common.h"
-#include "vm_sys_info.h"
 #include <umc_automatic_mutex.h>
 #include "umc_video_processing.h"
 
@@ -979,7 +980,7 @@ mfxStatus MFXVideoENCODEMJPEG::Query(mfxVideoParam *in, mfxVideoParam *out)
 
         out->mfx.NumThread = in->mfx.NumThread;
         if(out->mfx.NumThread < 1)
-            out->mfx.NumThread = (mfxU16)vm_sys_info_get_cpu_num();
+            out->mfx.NumThread = (mfxU16)std::thread::hardware_concurrency();
 
 #if defined (__ICL)
         //error #186: pointless comparison of unsigned integer with zero
