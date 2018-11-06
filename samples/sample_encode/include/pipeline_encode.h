@@ -103,6 +103,9 @@ struct sInputParams
     mfxU16 nDstWidth; // destination picture width, specified if resizing required
     mfxU16 nDstHeight; // destination picture height, specified if resizing required
 
+    mfxU16 nEncTileRows; // number of rows for encoding tileing
+    mfxU16 nEncTileCols; // number of columns for encoding tileing
+
     MemType memType;
     bool bUseHWLib; // true if application wants to use HW MSDK library
 
@@ -390,6 +393,7 @@ protected:
     mfxExtCodingOption2 m_CodingOption2;
     // HEVC
     mfxExtHEVCParam m_ExtHEVCParam;
+    mfxExtHEVCTiles m_ExtHEVCTiles;
     mfxExtCodingOption3 m_CodingOption3;
 
     // Set up video signal information

@@ -484,6 +484,9 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
     m_mfxEncParams.mfx.FrameInfo.CropW = pInParams->nDstWidth;
     m_mfxEncParams.mfx.FrameInfo.CropH = pInParams->nDstHeight;
 
+    m_ExtHEVCTiles.NumTileRows = pInParams->nEncTileRows;
+    m_ExtHEVCTiles.NumTileColumns = pInParams->nEncTileCols;
+
     bool bCodingOption = false;
     if(*pInParams->uSEI && (pInParams->CodecId == MFX_CODEC_AVC ||
                 pInParams->CodecId == MFX_CODEC_HEVC))
@@ -636,6 +639,13 @@ mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
         m_CodingOption3.WinBRCMaxAvgKbps = pInParams->WinBRCMaxAvgKbps;
 
         m_EncExtParams.push_back((mfxExtBuffer *)&m_CodingOption3);
+    }
+
+    if (m_ExtHEVCTiles.NumTileRows
+        && m_ExtHEVCTiles.NumTileColumns
+        && m_mfxEncParams.mfx.CodecId == MFX_CODEC_HEVC)
+    {
+        m_EncExtParams.push_back((mfxExtBuffer*)&m_ExtHEVCTiles);
     }
 
     // In case of HEVC when height and/or width divided with 8 but not divided with 16
@@ -1136,6 +1146,10 @@ CEncodingPipeline::CEncodingPipeline()
     MSDK_ZERO_MEMORY(m_ExtHEVCParam);
     m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
     m_ExtHEVCParam.Header.BufferSz = sizeof(m_ExtHEVCParam);
+
+    MSDK_ZERO_MEMORY(m_ExtHEVCTiles);
+    m_ExtHEVCTiles.Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
+    m_ExtHEVCTiles.Header.BufferSz = sizeof(m_ExtHEVCTiles);
 
     MSDK_ZERO_MEMORY(m_VideoSignalInfo);
     m_VideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
