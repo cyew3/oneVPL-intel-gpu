@@ -2720,9 +2720,11 @@ mfxStatus CheckVideoParam(MfxVideoParam& par, ENCODE_CAPS_HEVC const & caps, boo
             , (mfxU16)MFX_SAO_ENABLE_CHROMA
             , (mfxU16)(MFX_SAO_ENABLE_LUMA | MFX_SAO_ENABLE_CHROMA)
         );
-        //On Gen10+ VDEnc SAO for only Luma/Chroma in CQP mode isn't supported by driver until real customer usage
-        //For TU 1 and TU 4 SAO isn't supported due to HuC restrictions, for TU 7 SAO isn't supported at all
+        //On Gen10 and Gen11 VDEnc SAO for only Luma/Chroma in CQP mode isn't supported by driver
         if (par.m_platform >= MFX_HW_CNL &&
+#ifdef PRE_SI_TARGET_PLATFORM_GEN12
+            par.m_platform < MFX_HW_TGL_LP &&
+#endif
             par.mfx.RateControlMethod == MFX_RATECONTROL_CQP &&
             par.mfx.LowPower == MFX_CODINGOPTION_ON &&
             (par.m_ext.HEVCParam.SampleAdaptiveOffset == (mfxU16)MFX_SAO_ENABLE_LUMA || par.m_ext.HEVCParam.SampleAdaptiveOffset == (mfxU16)MFX_SAO_ENABLE_CHROMA))
