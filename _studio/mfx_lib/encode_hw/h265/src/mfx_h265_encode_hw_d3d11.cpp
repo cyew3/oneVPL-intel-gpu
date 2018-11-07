@@ -291,7 +291,7 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::CreateAccelerationService(M
     m_cbd.resize(MAX_DDI_BUFFERS + MaxPackedHeaders());
 
     m_maxSlices = CeilDiv(par.m_ext.HEVCParam.PicHeightInLumaSamples, par.LCUSize) * CeilDiv(par.m_ext.HEVCParam.PicWidthInLumaSamples, par.LCUSize);
-    m_maxSlices = Min(m_maxSlices, (mfxU32)MAX_SLICES);
+    m_maxSlices = std::min(m_maxSlices, (mfxU32)MAX_SLICES);
 
     mfxStatus sts = D3DXCommonEncoder::Init(m_core, m_guid);
     MFX_CHECK_STS(sts);

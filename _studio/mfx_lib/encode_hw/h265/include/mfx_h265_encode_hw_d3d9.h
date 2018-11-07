@@ -129,9 +129,9 @@ private:
     {
         HRESULT hr;
         Trace(">>Function", func);
-        TraceArray(in, inSizeInBytes / Max<mfxU32>(SizeOf<T>::value, 1));
+        TraceArray(in, inSizeInBytes / std::max<mfxU32>(SizeOf<T>::value, 1));
         hr = m_auxDevice->Execute(func, in, inSizeInBytes, out, outSizeInBytes);
-        TraceArray(out, outSizeInBytes / Max<mfxU32>(SizeOf<U>::value, 1));
+        TraceArray(out, outSizeInBytes / std::max<mfxU32>(SizeOf<U>::value, 1));
         Trace("<<HRESULT", hr);
         return hr;
     }
