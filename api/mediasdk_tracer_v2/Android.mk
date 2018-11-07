@@ -22,6 +22,7 @@ LOCAL_LDFLAGS := \
     $(MFX_LDFLAGS)
    -Wl,--version-script=$(LOCAL_PATH)/libmfx.map
 
+LOCAL_HEADER_LIBRARIES := libmfx_headers
 LOCAL_SHARED_LIBRARIES := libdl liblog
 
 LOCAL_MODULE_TAGS := optional

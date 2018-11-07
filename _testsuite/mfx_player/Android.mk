@@ -12,7 +12,7 @@ MFX_PIPELINE_CFLAGS := \
 MFX_PIPELINE_INCLUDES += \
     $(MFX_INCLUDES_INTERNAL) \
     $(MFX_INCLUDES_LIBVA) \
-    $(MFX_HOME)/mdp_msdk-api/opensource/mfx_dispatch/include \
+    $(MFX_HOME)/mdp_msdk-lib/api/opensource/mfx_dispatch/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/spl_common/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/avi_spl/include \
     $(MFX_HOME)/mdp_msdk-lib/_studio/shared/umc/codec/demuxer/include \
@@ -43,7 +43,7 @@ LOCAL_CFLAGS := $(MFX_PIPELINE_CFLAGS)
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_HEADER_LIBRARIES := liblog_headers
+LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline
@@ -69,7 +69,7 @@ LOCAL_CFLAGS := \
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-LOCAL_HEADER_LIBRARIES := liblog_headers
+LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_pipeline_lucas
@@ -93,6 +93,7 @@ LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
+LOCAL_HEADER_LIBRARIES := libmfx_headers
 LOCAL_STATIC_LIBRARIES := \
     libmfx \
     libmfx_pipeline \
@@ -141,6 +142,7 @@ LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
+LOCAL_HEADER_LIBRARIES := libmfx_headers
 LOCAL_STATIC_LIBRARIES := \
     libmfx \
     libmfx_pipeline_lucas \

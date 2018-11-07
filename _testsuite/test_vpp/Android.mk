@@ -27,7 +27,7 @@ LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
 LOCAL_LDFLAGS := $(MFX_LDFLAGS)
 
-LOCAL_HEADER_LIBRARIES := liblog_headers
+LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
 
 LOCAL_STATIC_LIBRARIES := \
     libmfx \

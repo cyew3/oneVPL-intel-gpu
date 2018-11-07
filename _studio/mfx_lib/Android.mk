@@ -236,6 +236,8 @@ LOCAL_CFLAGS := \
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
+LOCAL_HEADER_LIBRARIES := libmfx_headers
+
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libmfx_optimization
 
@@ -265,7 +267,7 @@ ifeq ($(MFX_IMPL_HW), true)
   LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
   LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-  LOCAL_HEADER_LIBRARIES := liblog_headers
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfx_lib_merged_hw
@@ -297,7 +299,7 @@ ifeq ($(MFX_IMPL_SW), true)
   LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
   LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
-  LOCAL_HEADER_LIBRARIES := liblog_headers
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
 
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libmfx_lib_merged_sw
@@ -326,7 +328,7 @@ ifeq ($(MFX_IMPL_HW), true)
 
   LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
 
-  LOCAL_HEADER_LIBRARIES := liblog_headers
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
   LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
   LOCAL_SHARED_LIBRARIES := libva libdl liblog
 
@@ -359,7 +361,7 @@ ifeq ($(MFX_IMPL_HW), true)
 
   LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_HW)
 
-  LOCAL_HEADER_LIBRARIES := liblog_headers
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
   LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_HW)
   LOCAL_SHARED_LIBRARIES := libva libdl liblog
 
@@ -392,7 +394,7 @@ ifeq ($(MFX_IMPL_SW), true)
 
   LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_SW)
 
-  LOCAL_HEADER_LIBRARIES := liblog_headers
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
   LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_SW)
   LOCAL_SHARED_LIBRARIES := libdl liblog
 
@@ -425,7 +427,7 @@ ifeq ($(MFX_IMPL_SW), true)
 
   LOCAL_LDFLAGS := $(MFX_LOCAL_LDFLAGS_SW)
 
-  LOCAL_HEADER_LIBRARIES := liblog_headers
+  LOCAL_HEADER_LIBRARIES := libmfx_headers liblog_headers
   LOCAL_STATIC_LIBRARIES := $(MFX_LOCAL_STATIC_LIBRARIES_SW)
   LOCAL_SHARED_LIBRARIES := libdl liblog
 

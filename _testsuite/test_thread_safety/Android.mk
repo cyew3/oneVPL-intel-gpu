@@ -53,6 +53,7 @@ ifeq ($(MFX_IMPL_HW), true)
     LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
     LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
+    LOCAL_HEADER_LIBRARIES := libmfx_headers
     LOCAL_STATIC_LIBRARIES := \
         $(THREAD_SAFETY_STATIC_LIBRARIES) \
         libumc_io_merged_hw \
@@ -88,6 +89,7 @@ ifeq ($(MFX_IMPL_SW), true)
     LOCAL_C_INCLUDES_32 := $(MFX_INCLUDES_INTERNAL_32)
     LOCAL_C_INCLUDES_64 := $(MFX_INCLUDES_INTERNAL_64)
 
+    LOCAL_HEADER_LIBRARIES := libmfx_headers
     LOCAL_STATIC_LIBRARIES := \
         $(THREAD_SAFETY_STATIC_LIBRARIES) \
         libumc_io_merged_sw \

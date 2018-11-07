@@ -44,6 +44,8 @@ ifeq ($(MFX_IMPL_HW), true)
   LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
   LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
 
+  LOCAL_HEADER_LIBRARIES := libmfx_headers
+
   LOCAL_MODULE_TAGS := optional
   LOCAL_MODULE := libumc_io_merged_hw
 
@@ -71,6 +73,8 @@ LOCAL_CFLAGS := \
   -Wall -Werror
 LOCAL_CFLAGS_32 := $(MFX_CFLAGS_INTERNAL_32)
 LOCAL_CFLAGS_64 := $(MFX_CFLAGS_INTERNAL_64)
+
+LOCAL_HEADER_LIBRARIES := libmfx_headers
 
 LOCAL_MODULE_TAGS := optional
 LOCAL_MODULE := libumc_io_merged_sw

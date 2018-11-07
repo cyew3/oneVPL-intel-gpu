@@ -77,10 +77,7 @@ ifneq ($(filter $(MFX_ANDROID_VERSION), MFX_O),)
 endif
 
 # Setting usual paths to include files
-MFX_INCLUDES := \
-  $(LOCAL_PATH)/include \
-  $(MFX_HOME)/mdp_msdk-api/include \
-  $(MFX_HOME)/mdp_msdk-lib/android/include
+MFX_INCLUDES := $(LOCAL_PATH)/include
 
 MFX_INCLUDES_LIBVA := $(TARGET_OUT_HEADERS)/libva
 
