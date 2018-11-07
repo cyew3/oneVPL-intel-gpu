@@ -1239,9 +1239,9 @@ mfxU32 MfxHwH264Encode::GetMaxBitrateValue(mfxU32 kbps, mfxU32 scale)
 
 mfxU8 MfxHwH264Encode::GetCabacInitIdc(mfxU32 targetUsage)
 {
-    (void)targetUsage;
     assert(targetUsage >= 1);
     assert(targetUsage <= 7);
+    (void)targetUsage;
     //const mfxU8 CABAC_INIT_IDC_TABLE[] = { 0, 2, 2, 1, 0, 0, 0, 0 };
     return 0;
     //return CABAC_INIT_IDC_TABLE[targetUsage];
@@ -4644,7 +4644,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParamQueryLike(
     }
 
     bool mfxRateControlHwCbr =
-        (platform == MFX_HW_APL || platform == MFX_HW_CFL) && 
+        (platform == MFX_HW_APL || platform == MFX_HW_CFL) &&
         (par.mfx.RateControlMethod == MFX_RATECONTROL_CBR);
 
     bool slidingWindowSupported  =
@@ -6232,7 +6232,7 @@ void MfxHwH264Encode::SetDefaults(
             }
             else
             {
-                // HRD buffer size can be different for the same level for AVC and MVC profiles. 
+                // HRD buffer size can be different for the same level for AVC and MVC profiles.
                 // So in case of MVC we need to copy MVC-specific buffer size to calcParam.bufferSizeInKB to assure that application will get enough size for bitstream buffer allocation
                 mfxU32 maxKbps = IsMvcProfile( par.mfx.CodecProfile ) ? par.calcParam.mvcPerViewPar.maxKbps : par.calcParam.maxKbps;
                 mfxU32 maxBufferSize = IsMvcProfile( par.mfx.CodecProfile ) ? GetMaxPerViewBufferSize( par ) : GetMaxBufferSize( par );
@@ -8745,8 +8745,7 @@ mfxU8 MfxHwH264Encode::ReadSpsIdOfPpsHeader(
     InputBitstream is)
 {
     InputBitstreamCheckedRange reader(is);
-    mfxU8 ppsId = reader.GetUe();
-    (void)ppsId;
+    /*mfxU8 ppsId = */reader.GetUe();
 
     mfxU8 spsId = reader.GetUe();
     if (spsId > 31)
