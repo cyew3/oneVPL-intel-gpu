@@ -395,7 +395,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
             {
                 if (isReadyIncrease)
                     info->m_iDecMBReady = pSlice->m_iMaxMB;
-                pSlice->m_iMaxMB = MFX_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
+                pSlice->m_iMaxMB = std::min(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
             else
@@ -450,7 +450,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                     info->m_iRecMBReady = pSlice->m_iMaxMB;
                 }
 
-                //pSlice->m_iMaxMB = MFX_MIN(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
+                //pSlice->m_iMaxMB = std::min(pSlice->m_iCurMBToRec, pSlice->m_iMaxMB);
                 pSlice->m_bError = true;
             }
 
@@ -520,7 +520,7 @@ void TaskBrokerSingleThread::AddPerformedTask(H264Task *pTask)
                 if (isReadyIncreaseRec && pSlice->m_bDeblocked)
                     info->m_iRecMBReady = pSlice->m_iMaxMB;
 
-                pSlice->m_iMaxMB = MFX_MIN(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
+                pSlice->m_iMaxMB = std::min(pSlice->m_iCurMBToDec, pSlice->m_iMaxMB);
                 pSlice->m_iCurMBToRec = pSlice->m_iCurMBToDec;
                 pSlice->m_bError = true;
             }
@@ -909,7 +909,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
     // and first slice is always reserved for first slice decoder
     /*if (pTask->m_iThreadNumber)
     {
-        i = MFX_MAX(1, GetNumberOfSlicesFromCurrentFrame() / m_iConsumerNumber);
+        i = std::max(1, GetNumberOfSlicesFromCurrentFrame() / m_iConsumerNumber);
         bDoDeblocking = false;
     }
     else
@@ -932,7 +932,7 @@ bool TaskBrokerSingleThread::GetNextSliceToDecoding(H264DecoderFrameInfo * info,
         {
             InitTask(info, pTask, pSlice);
             pTask->m_iFirstMB = pSlice->m_iFirstMB;
-            pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iMaxMB - pSlice->m_iFirstMB, pSlice->m_iAvailableMB);
+            pTask->m_iMBToProcess = std::min(pSlice->m_iMaxMB - pSlice->m_iFirstMB, pSlice->m_iAvailableMB);
             pTask->m_iTaskID = TASK_PROCESS;
             pTask->m_pBuffer = NULL;
             // we can do deblocking only on independent slices or
@@ -1164,12 +1164,12 @@ bool TaskBrokerTwoThread::WrapDecodingTask(H264DecoderFrameInfo * info, H264Task
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = pSlice->m_iCurMBToDec;
         pTask->m_WrittenSize = 0;
-        pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iCurMBToDec -
+        pTask->m_iMBToProcess = std::min(pSlice->m_iCurMBToDec -
                                     (pSlice->m_iCurMBToDec % iMBWidth) +
                                     iMBWidth,
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToDec;
 
-        pTask->m_iMBToProcess = MFX_MIN(pTask->m_iMBToProcess, pSlice->m_iAvailableMB);
+        pTask->m_iMBToProcess = std::min(pTask->m_iMBToProcess, pSlice->m_iAvailableMB);
         pTask->m_iTaskID = TASK_DEC;
         pTask->m_pBuffer = (UMC::CoeffsPtrCommon)pSlice->GetCoeffsBuffers()->LockInputBuffer();
 
@@ -1199,7 +1199,7 @@ bool TaskBrokerTwoThread::WrapReconstructTask(H264DecoderFrameInfo * info, H264T
 
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = pSlice->m_iCurMBToRec;
-        pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iCurMBToRec -
+        pTask->m_iMBToProcess = std::min(pSlice->m_iCurMBToRec -
                                     (pSlice->m_iCurMBToRec % iMBWidth) +
                                     iMBWidth,
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToRec;
@@ -1239,7 +1239,7 @@ bool TaskBrokerTwoThread::WrapDecRecTask(H264DecoderFrameInfo * info, H264Task *
         InitTask(info, pTask, pSlice);
         pTask->m_iFirstMB = pSlice->m_iCurMBToDec;
         pTask->m_WrittenSize = 0;
-        pTask->m_iMBToProcess = MFX_MIN(pSlice->m_iCurMBToDec -
+        pTask->m_iMBToProcess = std::min(pSlice->m_iCurMBToDec -
                                     (pSlice->m_iCurMBToDec % iMBWidth) +
                                     iMBWidth,
                                     pSlice->m_iMaxMB) - pSlice->m_iCurMBToDec;
@@ -1415,9 +1415,9 @@ bool TaskBrokerTwoThread::GetDeblockingTask(H264DecoderFrameInfo * info, H264Tas
             pTask->m_iFirstMB = pSlice->m_iCurMBToDeb;
 
             {
-                pTask->m_iMBToProcess = MFX_MIN(iMBWidth - (pSlice->m_iCurMBToDeb % iMBWidth),
+                pTask->m_iMBToProcess = std::min(iMBWidth - (pSlice->m_iCurMBToDeb % iMBWidth),
                                             iAvailableToDeblock);
-                pTask->m_iMBToProcess = MFX_MAX(pTask->m_iMBToProcess,
+                pTask->m_iMBToProcess = std::max(pTask->m_iMBToProcess,
                                             iDebUnit);
                 pTask->m_iMBToProcess = mfx::align2_value(pTask->m_iMBToProcess, iDebUnit);
             }
@@ -1746,7 +1746,7 @@ H264CoeffsBuffer * LocalResources::AllocateCoeffBuffer(H264Slice * slice)
     if (slice->m_iMaxMB - slice->m_iFirstMB > iMBRowSize)
     {
         iMBRowBuffers = (slice->m_iMaxMB - slice->m_iFirstMB + iMBRowSize - 1) / iMBRowSize;
-        iMBRowBuffers = MFX_MIN(MINIMUM_NUMBER_OF_ROWS, iMBRowBuffers);
+        iMBRowBuffers = std::min(int32_t(MINIMUM_NUMBER_OF_ROWS), iMBRowBuffers);
     }
     else
     {

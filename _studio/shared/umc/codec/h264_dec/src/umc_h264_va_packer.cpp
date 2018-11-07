@@ -388,7 +388,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             xDir  = dir_flag - 1;
             yDir  = dir_flag;
 
-            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
+            uint32_t uNumInGroup0 = std::min(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
 
             for(uint32_t i = 0; i < uNumMapUnits; i++)
                 mapUnitToSliceGroupMap[i] = 1;
@@ -402,28 +402,28 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
 
                 if(xDir == -1 && x == leftBound)
                 {
-                    leftBound = MFX_MAX(leftBound - 1, 0);
+                    leftBound = std::max(leftBound - 1, 0u);
                     x = leftBound;
                     xDir = 0;
                     yDir = 2 * dir_flag - 1;
                 }
                 else if(xDir == 1 && x == rightBound)
                 {
-                    rightBound = MFX_MIN(rightBound + 1, uNumMBCols - 1);
+                    rightBound = std::min(rightBound + 1, uNumMBCols - 1);
                     x = rightBound;
                     xDir = 0;
                     yDir = 1 - 2 * dir_flag;
                 }
                 else if(yDir == -1 && y == topBound)
                 {
-                    topBound = MFX_MAX(topBound - 1, 0);
+                    topBound = std::max(topBound - 1, 0u);
                     y = topBound;
                     xDir = 1 - 2 * dir_flag;
                     yDir = 0;
                 }
                 else if(yDir == 1 && y == bottomBound)
                 {
-                    bottomBound = MFX_MIN(bottomBound + 1, uNumMBRows - 1);
+                    bottomBound = std::min(bottomBound + 1, uNumMBRows - 1);
                     y = bottomBound;
                     xDir = 2 * dir_flag - 1;
                     yDir = 0;
@@ -441,7 +441,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
         {
             // raster-scan: 2 slice groups
 
-            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
+            uint32_t uNumInGroup0 = std::min(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
             uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
             uint32_t sizeOfUpperLeftGroup = (dir_flag ? (uNumMapUnits - uNumInGroup0) : uNumInGroup0);
 
@@ -461,7 +461,7 @@ void PackerDXVA2::PackSliceGroups(DXVA_PicParams_H264 * pPicParams_H264, H264Dec
             //  L L L R R R R R R
             //  L L L R R R R R R
 
-            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
+            uint32_t uNumInGroup0 = std::min(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, uNumMapUnits);
             uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
             uint32_t sizeOfUpperLeftGroup = (dir_flag ? (uNumMapUnits - uNumInGroup0) : uNumInGroup0);
 
@@ -1232,7 +1232,7 @@ int32_t PackerDXVA2::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_
         else
         {
             alignedSize = CompBuf->GetBufferSize() - CompBuf->GetDataSize();
-            NalUnitSize = MFX_MIN(NalUnitSize, alignedSize);
+            NalUnitSize = std::min(NalUnitSize, alignedSize);
             pBitstream->SetDecodedBytes(pBitstream->BytesDecoded() + NalUnitSize);
             if (chopping == CHOPPING_NONE)
                 pBitstream->SetDecodedBytes(NalUnitSize - (sliceParams->wBadSliceChopping == 0 ? sizeof(start_code_prefix) : 0));

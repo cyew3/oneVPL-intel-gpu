@@ -545,7 +545,7 @@ median_8x16_0_aff:
             px1 = sa->mvx;
             px2 = sr->mvx;
 
-#define MEDIAN_OF_3(a, b, c) (MFX_MIN((a),(b))) ^ (MFX_MIN((b),(c))) ^ (MFX_MIN((c),(a)))
+#define MEDIAN_OF_3(a, b, c) (std::min((a),(b))) ^ (std::min((b),(c))) ^ (std::min((c),(a)))
 
             mv->mvx = (int16_t)(MEDIAN_OF_3(px0, px1, px2));
 
@@ -1040,7 +1040,7 @@ median_8x16_0:
             px1 = sa->mvx;
             px2 = sr->mvx;
 
-#define MEDIAN_OF_3(a, b, c) (MFX_MIN((a),(b))) ^ (MFX_MIN((b),(c))) ^ (MFX_MIN((c),(a)))
+#define MEDIAN_OF_3(a, b, c) (std::min((a),(b))) ^ (std::min((b),(c))) ^ (std::min((c),(a)))
 
             mv->mvx = (int16_t)(MEDIAN_OF_3(px0, px1, px2));
 

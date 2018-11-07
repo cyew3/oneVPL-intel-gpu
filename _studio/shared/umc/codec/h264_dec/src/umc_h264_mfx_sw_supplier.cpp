@@ -163,7 +163,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
             xDir  = dir_flag - 1;
             yDir  = dir_flag;
 
-            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            uint32_t uNumInGroup0 = std::min(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
 
             for(uint32_t i = 0; i < PicSizeInMbs; i++)
                 mapUnitToSliceGroupMap[i] = 1;
@@ -177,28 +177,28 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
 
                 if(xDir == -1 && x == leftBound)
                 {
-                    leftBound = MFX_MAX(leftBound - 1, 0);
+                    leftBound = std::max(leftBound - 1, 0);
                     x = leftBound;
                     xDir = 0;
                     yDir = 2 * dir_flag - 1;
                 }
                 else if(xDir == 1 && x == rightBound)
                 {
-                    rightBound = MFX_MIN(rightBound + 1, (int32_t)PicWidthInMbs - 1);
+                    rightBound = std::min(rightBound + 1, (int32_t)PicWidthInMbs - 1);
                     x = rightBound;
                     xDir = 0;
                     yDir = 1 - 2 * dir_flag;
                 }
                 else if(yDir == -1 && y == topBound)
                 {
-                    topBound = MFX_MAX(topBound - 1, 0);
+                    topBound = std::max(topBound - 1, 0);
                     y = topBound;
                     xDir = 1 - 2 * dir_flag;
                     yDir = 0;
                 }
                 else if(yDir == 1 && y == bottomBound)
                 {
-                    bottomBound = MFX_MIN(bottomBound + 1, (int32_t)PicHeightInMapUnits - 1);
+                    bottomBound = std::min(bottomBound + 1, (int32_t)PicHeightInMapUnits - 1);
                     y = bottomBound;
                     xDir = 2 * dir_flag - 1;
                     yDir = 0;
@@ -215,7 +215,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
     case 4:
         {
             // raster-scan: 2 slice groups
-            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            uint32_t uNumInGroup0 = std::min(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
             uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
             uint32_t sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
 
@@ -235,7 +235,7 @@ void MFX_SW_TaskSupplier::SetMBMap(const H264Slice * slice, H264DecoderFrame *fr
             //  L L L R R R R R R
             //  L L L R R R R R R
 
-            uint32_t uNumInGroup0 = MFX_MIN(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
+            uint32_t uNumInGroup0 = std::min(pps->SliceGroupInfo.t2.slice_group_change_rate * sliceHeader->slice_group_change_cycle, PicSizeInMbs);
             uint8_t dir_flag = pps->SliceGroupInfo.t2.slice_group_change_direction_flag;
             uint32_t sizeOfUpperLeftGroup = (dir_flag ? (PicSizeInMbs - uNumInGroup0) : uNumInGroup0);
 

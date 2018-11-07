@@ -838,7 +838,7 @@ void _GetBlockCoeffs_CAVLC(uint32_t ** const & ppBitStream,
         int32_t levelCode;
 
         h264GetBits((*ppBitStream), (*pOffset), levelSuffixSize, level_suffix);
-        levelCode = ((MFX_MIN(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
+        levelCode = ((std::min(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
         levelCode = (levelCode + (1 << levelSuffixSize) - 4096);
 
         CoeffBuf[uCoeffIndex] = ((levelCode & 1) ?
@@ -885,7 +885,7 @@ void _GetBlockCoeffs_CAVLC(uint32_t ** const & ppBitStream,
             int32_t levelCode;
 
             h264GetBits((*ppBitStream), (*pOffset), levelSuffixSize, level_suffix);
-            levelCode = ((MFX_MIN(15, zeros) << suffixLength) + level_suffix) + sadd[suffixLength];
+            levelCode = ((std::min(15, zeros) << suffixLength) + level_suffix) + sadd[suffixLength];
             levelCode = (levelCode + (1 << levelSuffixSize) - 4096);
 
             CoeffBuf[uCoeffIndex] = ((levelCode & 1) ?
@@ -1117,7 +1117,7 @@ IppStatus ownippiDecodeCAVLCCoeffs_H264_1u16s (uint32_t **ppBitStream,
                     int32_t levelCode;
 
                     h264GetBits((*ppBitStream), (*pOffset), levelSuffixSize, level_suffix);
-                    levelCode = (uint16_t) ((MFX_MIN(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
+                    levelCode = (uint16_t) ((std::min(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
                     levelCode = (uint16_t) (levelCode + (1 << (NumZeros - 3)) - 4096);
 
                     lCoeffBuf[lCoeffIndex] = (int16_t) ((levelCode & 1) ?
@@ -1218,7 +1218,7 @@ IppStatus ownippiDecodeCAVLCCoeffs_H264_1u16s (uint32_t **ppBitStream,
 
             /*Put coeff to the buffer */
             pos             = sNumCoeff - 1 + sTotalZeros + sFirstPos;
-            sTotalZeros -= MFX_MIN(sTotalZeros, sRunBefore);
+            sTotalZeros    -= std::min(sTotalZeros, sRunBefore);
             pos             = pScanMatrix[pos];
 
             (*ppPosCoefbuf)[pos] = CoeffBuf[(uCoeffIndex++)&0x0f];
@@ -1411,7 +1411,7 @@ IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (uint32_t ** const ppBitStream,
                 int32_t levelCode;
 
                 ippiGetNBits((*ppBitStream), (*pOffset), levelSuffixSize, level_suffix);
-                levelCode = ((MFX_MIN(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
+                levelCode = ((std::min(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
                 levelCode = (levelCode + (1 << levelSuffixSize) - 4096);
 
                 CoeffBuf[uCoeffIndex] = ((levelCode & 1) ?
@@ -1458,7 +1458,7 @@ IppStatus MyippiDecodeCAVLCCoeffs_H264_1u16s (uint32_t ** const ppBitStream,
                     int32_t levelCode;
 
                     ippiGetNBits((*ppBitStream), (*pOffset), levelSuffixSize, level_suffix);
-                    levelCode = ((MFX_MIN(15, NumZeros) << suffixLength) + level_suffix) + sadd[suffixLength];
+                    levelCode = ((std::min(15, NumZeros) << suffixLength) + level_suffix) + sadd[suffixLength];
                     levelCode = (levelCode + (1 << levelSuffixSize) - 4096);
 
                     CoeffBuf[uCoeffIndex] = ((levelCode & 1) ?
@@ -1645,7 +1645,7 @@ IppStatus _GetBlockCoeffs_CAVLC(uint32_t **pbs,
             int32_t levelCode;
 
             h264GetBits((*pbs), (*bitOffset), levelSuffixSize, level_suffix);
-            levelCode = (uint16_t) ((MFX_MIN(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
+            levelCode = (uint16_t) ((std::min(15, NumZeros) << suffixLength) + level_suffix) + uFirstAdjust*2 + sadd[suffixLength];
             levelCode = (uint16_t) (levelCode + (1 << (NumZeros - 3)) - 4096);
 
             CoeffBuf[uCoeffIndex] = (int16_t) ((levelCode & 1) ?

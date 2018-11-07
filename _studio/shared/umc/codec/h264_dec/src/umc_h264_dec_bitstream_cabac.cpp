@@ -1070,7 +1070,7 @@ void H264Bitstream::InitializeContextVariablesIntra_CABAC(int32_t SliceQPy)
 {
     int32_t l;
 
-    SliceQPy = MFX_MAX(0, SliceQPy);
+    SliceQPy = std::max(0, SliceQPy);
 
     // See subclause 9.3.1.1 of H.264 standard
 
@@ -1187,7 +1187,7 @@ void H264Bitstream::InitializeContextVariablesInter_CABAC(int32_t SliceQPy,
     int32_t l;
 
     // See subclause 9.3.1.1 of H.264 standard
-    SliceQPy = MFX_MAX(0, SliceQPy);
+    SliceQPy = std::max(0, SliceQPy);
 
     // Initialize context(s) for mb_skip_flag & mb_type (P & SP slices)
     // & sub_mb_pred (P & SP slices)

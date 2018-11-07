@@ -2698,7 +2698,7 @@ Status VDATaskSupplier::AllocateFrameData(H264DecoderFrame * pFrame, mfxSize dim
 H264Slice * VDATaskSupplier::DecodeSliceHeader(MediaDataEx *nalUnit)
 {
     size_t dataSize = nalUnit->GetDataSize();
-    nalUnit->SetDataSize(MFX_MIN(1024, dataSize));
+    nalUnit->SetDataSize(std::min(size_t(1024), dataSize));
 
     H264Slice * slice = TaskSupplier::DecodeSliceHeader(nalUnit);
 

@@ -373,7 +373,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         // Predicted mode is minimum of the above and left modes, or
         // mode 2 if above or left is outside slice, indicated by 0 in
         // mode array.
-        uPredMode = MFX_MIN(uModeLeft[uLeftIndex], uModeAbove[uAboveIndex]);
+        uPredMode = std::min(uModeLeft[uLeftIndex], uModeAbove[uAboveIndex]);
         if (uPredMode)
             uPredMode--;
         else
@@ -394,7 +394,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeAbove[uAboveIndex] = uPredMode + 1;
 
         // upper right 4x4
-        uPredMode = MFX_MIN(uPredMode+1, uModeAbove[uAboveIndex+1]);
+        uPredMode = std::min(uPredMode+1, uModeAbove[uAboveIndex+1]);
         if (uPredMode)
             uPredMode--;
         else
@@ -412,7 +412,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeLeft[uLeftIndex] = uPredMode + 1;
 
         // lower left 4x4
-        uPredMode = MFX_MIN(uModeLeft[uLeftIndex+1], uModeAbove[uAboveIndex]);
+        uPredMode = std::min(uModeLeft[uLeftIndex+1], uModeAbove[uAboveIndex]);
         if (uPredMode)
             uPredMode--;
         else
@@ -429,7 +429,7 @@ void H264SegmentDecoder::DecodeIntraTypes4x4_CABAC(IntraType *pMBIntraTypes, boo
         uModeAbove[uAboveIndex] = uPredMode + 1;
 
         // lower right 4x4 (above and left must always both be in slice)
-        uPredMode = MFX_MIN(uPredMode+1, uModeAbove[uAboveIndex+1]) - 1;
+        uPredMode = std::min(uPredMode+1, uModeAbove[uAboveIndex+1]) - 1;
 
         if(predModeValues[4*block + 3] != -1)
         {
@@ -521,7 +521,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     // Predicted mode is minimum of the above and left modes, or
     // mode 2 if above or left is outside slice, indicated by 0 in
     // mode array.
-    uPredMode = MFX_MIN(uModeLeft[0], uModeAbove[0]);
+    uPredMode = std::min(uModeLeft[0], uModeAbove[0]);
     if (uPredMode)
         uPredMode--;
     else
@@ -546,7 +546,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     uModeAbove[0] = uPredMode + 1;
 
     // upper right 8x8
-    uPredMode = MFX_MIN(uPredMode+1, uModeAbove[1]);
+    uPredMode = std::min(uPredMode+1, uModeAbove[1]);
     if (uPredMode)
         uPredMode--;
     else
@@ -570,7 +570,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     uModeAbove[1] = uPredMode + 1;
 
     // lower left 4x4
-    uPredMode = MFX_MIN(uModeLeft[1], uModeAbove[0]);
+    uPredMode = std::min(uModeLeft[1], uModeAbove[0]);
     if (uPredMode)
         uPredMode--;
     else
@@ -593,7 +593,7 @@ void H264SegmentDecoder::DecodeIntraTypes8x8_CABAC(IntraType *pMBIntraTypes, boo
     uModeAbove[0] = uPredMode + 1;
 
     // lower right 4x4 (above and left must always both be in slice)
-    uPredMode = MFX_MIN(uPredMode+1, uModeAbove[1]) - 1;
+    uPredMode = std::min(uPredMode+1, uModeAbove[1]) - 1;
 
     if (0 == m_pBitStream->DecodeSingleBin_CABAC(ctxIdxOffset[PREV_INTRA8X8_PRED_MODE_FLAG]))
     {

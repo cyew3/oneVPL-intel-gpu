@@ -980,7 +980,7 @@ void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(int32_
 } // void H264SegmentDecoderMultiThreaded::ReconstructMVs4x4InternalNoCheckRef(int32_t iListNum,
 
 #define MEDIAN_OF_3(a, b, c) \
-    (int16_t) ((MFX_MIN((a),(b))) ^ (MFX_MIN((b),(c))) ^ (MFX_MIN((c),(a))))
+    (int16_t) ((std::min((a),(b))) ^ (std::min((b),(c))) ^ (std::min((c),(a))))
 
 void H264SegmentDecoderMultiThreaded::ReconstructMVPredictorExternalBlock(int32_t iListNum,
                                                                           const H264DecoderBlockLocation &mbAddr,

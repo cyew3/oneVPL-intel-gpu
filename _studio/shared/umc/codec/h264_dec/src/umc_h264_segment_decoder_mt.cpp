@@ -201,8 +201,8 @@ void H264SegmentDecoderMultiThreaded::EndProcessingSegment(H264Task &Task)
             m_MVDistortion[1] <<= 1;
         }
 
-        m_MVDistortion[0] = MFX_MAX(m_MVDistortion[0], m_MVDistortion[1]);
-        Task.m_mvsDistortion = MFX_MAX(m_MVDistortion[0], m_pSlice->m_MVsDistortion);
+        m_MVDistortion[0]    = std::max(m_MVDistortion[0], m_MVDistortion[1]);
+        Task.m_mvsDistortion = std::max(m_MVDistortion[0], m_pSlice->m_MVsDistortion);
     }
 
     m_pTaskBroker->AddPerformedTask(&Task);
@@ -376,7 +376,7 @@ Status H264SegmentDecoderMultiThreaded::DecodeSegment(int32_t iCurMBNumber, int3
         int32_t iPreCallMBNumber;
 
         // calculate the last MB in a row
-        nBorder = MFX_MIN(iMaxMBNumber,
+        nBorder = std::min(iMaxMBNumber,
                       iCurMBNumber -
                       (iCurMBNumber % iMBRowSize) +
                       iMBRowSize);
@@ -436,7 +436,7 @@ Status H264SegmentDecoderMultiThreaded::ReconstructSegment(int32_t iCurMBNumber,
         int32_t iPreCallMBNumber;
 
         // calculate the last MB in a row
-        nBorder = MFX_MIN(iMaxMBNumber,
+        nBorder = std::min(iMaxMBNumber,
                       iCurMBNumber -
                       (iCurMBNumber % iMBRowSize) +
                       iMBRowSize);
@@ -528,7 +528,7 @@ Status H264SegmentDecoderMultiThreaded::DeblockSegmentTask(int32_t iCurMBNumber,
         int32_t iPreCallMBNumber;
 
         // calculate the last MB in a row
-        nBorder = MFX_MIN(iMaxMBNumber,
+        nBorder = std::min(iMaxMBNumber,
                       iCurMBNumber -
                       (iCurMBNumber % iMBRowSize) +
                       iMBRowSize);
@@ -2786,7 +2786,7 @@ Status H264SegmentDecoderMultiThreaded::ProcessSlice(int32_t iCurMBNumber, int32
         int32_t iPreCallMBNumber;
 
         // calculate the last MB in a row
-        nBorder = MFX_MIN(iMaxMBNumber,
+        nBorder = std::min(iMaxMBNumber,
                       iCurMBNumber -
                       (iCurMBNumber % iMBRowSize) +
                       iMBRowSize);
