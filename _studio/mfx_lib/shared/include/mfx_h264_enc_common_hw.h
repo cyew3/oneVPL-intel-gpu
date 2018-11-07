@@ -1580,6 +1580,14 @@ namespace MfxHwH264Encode
             return LookAheadDS;
         }
     }
+
+    // Function checks if scenario is a target for memory footprint optimization
+    inline bool IsMemoryConstrainedScenario(mfxU16 ScenarioInfo)
+    {
+        return
+            MFX_SCENARIO_VIDEO_CONFERENCE == ScenarioInfo ||
+            MFX_SCENARIO_DISPLAY_REMOTING == ScenarioInfo;
+    }
 };
 
 #endif // MFX_ENABLE_H264_VIDEO_..._HW
