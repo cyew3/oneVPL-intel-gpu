@@ -1,4 +1,4 @@
-// Copyright (c) 2009-2018 Intel Corporation
+// Copyright (c) 2009-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -2956,6 +2956,18 @@ namespace MfxHwH264EncodeHW
 }
 using namespace MfxHwH264EncodeHW;
 
+inline void SetMinMaxQP(mfxExtCodingOption2 const &  extOpt2, mfxU8  QPMin[], mfxU8  QPMax[])
+{
+    // qp=0 doesn't supported
+    QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
+    QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
+    QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
+
+    QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MaxQPI : 51;
+    QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MaxQPP : 51;
+    QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MaxQPB : 51;
+}
+
 mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
 {
     mfxExtCodingOptionDDI const & extDdi  = GetExtBufferRef(video);
@@ -2991,14 +3003,7 @@ mfxStatus LookAheadBrc2::Init(MfxVideoParam  & video)
 
     m_AvgBitrate = 0;
 
-// driver doesn't support qp=0
-    m_QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
-    m_QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
-    m_QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
-
-    m_QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MaxQPI : 51;
-    m_QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MaxQPP : 51;
-    m_QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MaxQPB : 51;
+    SetMinMaxQP(extOpt2, m_QPMin, m_QPMax);
 
     if (extOpt3.WinBRCSize)
     {
@@ -3051,15 +3056,7 @@ mfxStatus VMEBrc::Init(MfxVideoParam  & video)
     m_lookAhead = 0;
     m_maxFrameSize = 0;
 
-// driver doesn't support qp=0
-
-    m_QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
-    m_QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
-    m_QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
-
-    m_QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MaxQPI : 51;
-    m_QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MaxQPP : 51;
-    m_QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MaxQPB : 51;
+    SetMinMaxQP(extOpt2, m_QPMin, m_QPMax);
 
     m_AvgBitrate = 0;
     if (extOpt3.WinBRCSize)
@@ -3733,14 +3730,7 @@ mfxStatus LookAheadCrfBrc::Init(MfxVideoParam  & video)
     m_interCost = 0;
     m_propCost  = 0;
 
-// driver doesn't support qp=0
-    m_QPMin[0] = (extOpt2.MinQPI) ? extOpt2.MinQPI : 1;
-    m_QPMin[1] = (extOpt2.MinQPP) ? extOpt2.MinQPP : 1;
-    m_QPMin[2] = (extOpt2.MinQPB) ? extOpt2.MinQPB : 1;
-
-    m_QPMax[0] = (extOpt2.MaxQPI) ? extOpt2.MinQPI : 51;
-    m_QPMax[1] = (extOpt2.MaxQPP) ? extOpt2.MinQPP : 51;
-    m_QPMax[2] = (extOpt2.MaxQPB) ? extOpt2.MinQPB : 51;
+    SetMinMaxQP(extOpt2, m_QPMin, m_QPMax);
 
     return MFX_ERR_NONE;
 }
