@@ -1710,7 +1710,7 @@ mfxStatus CommonCORE::CopyFrame(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
 
         return DoFastCopyWrapper(dst, dstMemType, src, srcMemType);
     }
-    else if(src->Data.MemId && dst->Data.Y)
+    else if(src->Data.MemId && !LumaIsNull(dst))
     {
         mfxHDLPair srcHandle = {};
         mfxU16 srcMemType = MFX_MEMTYPE_VIDEO_MEMORY_DECODER_TARGET;

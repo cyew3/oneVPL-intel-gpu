@@ -803,7 +803,7 @@ mfxStatus CopyRawSurfaceToVideoMemory(
         mfxFrameSurface1 lockedSurf = {};
         lockedSurf.Info = par.mfx.FrameInfo;
 
-        if (pSysSurface->Data.Y == 0)
+        if (LumaIsNull(pSysSurface))
         {
             pCore->LockFrame(pSysSurface->Data.MemId, &lockedSurf.Data);
             pSysSurface = &lockedSurf;

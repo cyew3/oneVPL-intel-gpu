@@ -1892,9 +1892,11 @@ mfxStatus CheckSurface(
 
     if (video.m_inMemType == INPUT_SYSTEM_MEMORY)
     {
-        MFX_CHECK(surface.Data.Y != 0, MFX_ERR_NULL_PTR);
-        MFX_CHECK(surface.Data.U != 0, MFX_ERR_NULL_PTR);
-        MFX_CHECK(surface.Data.V != 0, MFX_ERR_NULL_PTR);
+        MFX_CHECK(!LumaIsNull(&surface), MFX_ERR_NULL_PTR);
+        if (surface.Info.FourCC != MFX_FOURCC_Y410) {
+            MFX_CHECK(surface.Data.U != 0, MFX_ERR_NULL_PTR);
+            MFX_CHECK(surface.Data.V != 0, MFX_ERR_NULL_PTR);
+        }
     }
     else if (isOpaq == false)
     {
