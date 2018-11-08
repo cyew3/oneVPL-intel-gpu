@@ -15,6 +15,7 @@
 #include "mfx_enc_common.h"
 #include <assert.h>
 #include <math.h>
+#include <algorithm>
 
 namespace MfxHwH265Encode
 {
@@ -3173,8 +3174,9 @@ void SetDefaults(
             }
             par.mfx.NumRefFrame = Max<mfxU16>(par.NumTL() - 1, par.mfx.NumRefFrame);
             par.mfx.NumRefFrame = Min<mfxU16>(maxDPB - 1, par.mfx.NumRefFrame);
+            par.PPyrInterval = std::min<mfxU32>(par.PPyrInterval, par.mfx.NumRefFrame);
         }
-     }
+    }
 #if !defined(MFX_EXT_BRC_DISABLE)
     if (par.m_ext.CO2.ExtBRC == MFX_CODINGOPTION_UNKNOWN)
         par.m_ext.CO2.ExtBRC = MFX_CODINGOPTION_OFF;
