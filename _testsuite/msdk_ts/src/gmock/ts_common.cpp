@@ -491,6 +491,8 @@ void SetParam(tsExtBufType<T>& base, const std::string name, const mfxU32 offset
         ptr = base.GetExtBuffer(bufId);
         if(!ptr)
         {
+            if (name.find("mfxExt") == std::string::npos)
+                return;
             assert(0 != bufSz);
             base.AddExtBuffer(bufId, bufSz);
             ptr = base.GetExtBuffer(bufId);
@@ -519,8 +521,11 @@ bool CompareParam(tsExtBufType<T>& base, const tsStruct::Field& field, mfxU64 va
         ptr = base.GetExtBuffer(bufId);
         if (ptr==NULL)
         {
-            if (log != LOG_NOTHING)
-                g_tsLog << "WARNING: CompareParams expectedto find ExtBuf[" << field.name <<"] attached but it is missed\n";
+            if (field.name.find("mfxExt") != std::string::npos)
+            {
+                if (log != LOG_NOTHING)
+                    g_tsLog << "WARNING: CompareParams expectedto find ExtBuf[" << field.name << "] attached but it is missed\n";
+            }
             return false;
         }
     }
