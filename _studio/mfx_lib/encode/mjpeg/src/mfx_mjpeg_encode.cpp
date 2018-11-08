@@ -2107,9 +2107,8 @@ mfxStatus MFXVideoENCODEMJPEG::EncodeFrameCheck(mfxEncodeCtrl *ctrl, mfxFrameSur
             pTask = m_freeTasks.front();
         }
 
-        pEntryPoint->requiredNumThreads = std::min(pTask->m_pMJPEGVideoEncoder->NumEncodersAllocated(),
-                                                   std::min(static_cast<mfxU32>(m_vParam.mfx.NumThread),
-                                                            pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo))));
+        pEntryPoint->requiredNumThreads = std::min<mfxU32>( { pTask->m_pMJPEGVideoEncoder->NumEncodersAllocated(), m_vParam.mfx.NumThread,
+                                                      pTask->CalculateNumPieces(pOriginalSurface, &(m_vParam.mfx.FrameInfo)) } );
 
         pTask->bs           = bs;
         pTask->ctrl         = ctrl;
