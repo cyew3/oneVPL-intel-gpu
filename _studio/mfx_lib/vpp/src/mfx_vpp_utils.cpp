@@ -1490,7 +1490,7 @@ mfxStatus GetPipelineList(
     /* *************************************************************************** */
     /* 4. optional filters, disabled by default, enabled by EXT_BUFFER             */
     /* *************************************************************************** */
-    mfxU32 configCount = MFX_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
+    mfxU32 configCount = std::max<mfxU32>(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
     std::vector<mfxU32> configList(configCount);
 
     GetConfigurableFilterList( videoParam, &configList[0], &configCount );
@@ -2459,7 +2459,7 @@ void SignalPlatformCapabilities(
         GetDoUseFilterList( (mfxVideoParam*)&param, &pDO_USE_List, &douseCount );
         if(douseCount > 0)
         {
-            size_t fCount = MFX_MIN(supportedList.size(), douseCount);
+            size_t fCount = std::min<size_t>(supportedList.size(), douseCount);
             size_t fIdx = 0;
             for(fIdx = 0; fIdx < fCount; fIdx++)
             {

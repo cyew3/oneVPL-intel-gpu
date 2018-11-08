@@ -414,14 +414,12 @@ namespace MfxHwVideoProcessing
         ReleaseResource* CreateSubResourceForMode30i60p(void);
 
         //-------------------------------------------------
-        mfxU32   GetNumToRemove( void )
+        mfxU32 GetNumToRemove( void )
         {
-            mfxU32 numFramesToRemove = m_inputFramesOrFieldPerCycle - std::min(m_inputFramesOrFieldPerCycle, m_bkwdRefCountRequired - m_bkwdRefCount);
-
             if (m_fieldWeaving)
-                numFramesToRemove = 2;
+                return 2;
 
-            return numFramesToRemove;
+            return m_inputFramesOrFieldPerCycle - std::min(m_inputFramesOrFieldPerCycle, m_bkwdRefCountRequired - m_bkwdRefCount);
         }
 
         mfxU32   GetNextBkwdRefCount( void )
@@ -432,9 +430,8 @@ namespace MfxHwVideoProcessing
             }
 
             mfxU32 numBkwdRef = m_bkwdRefCount + (m_inputFramesOrFieldPerCycle - GetNumToRemove());
-            numBkwdRef = std::min(numBkwdRef,  m_bkwdRefCountRequired);
 
-            return numBkwdRef;
+            return std::min(numBkwdRef,  m_bkwdRefCountRequired);
         }
 
         //-------------------------------------------------

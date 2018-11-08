@@ -596,7 +596,7 @@ mfxStatus ResMngr::DoAdvGfx(
 
         if(isEOSSignal)
         {
-            m_fwdRefCount = MFX_MAX(m_inputIndex - m_bkwdRefCount - 1, 0);
+            m_fwdRefCount = m_inputIndex > m_bkwdRefCount + 1 ? m_inputIndex - m_bkwdRefCount - 1 : 0;
         }
 
         if( (m_inputIndex - m_bkwdRefCount == m_inputIndexCount - m_bkwdRefCountRequired) ||
@@ -825,9 +825,7 @@ ReleaseResource* ResMngr::CreateSubResource(void)
 
     subRes->refCount = m_outputIndexCountPerCycle;
 
-    mfxU32 numFramesForRemove = GetNumToRemove();
-
-    numFramesForRemove = MFX_MIN(numFramesForRemove, (mfxU32)m_surfQueue.size());
+    mfxU32 numFramesForRemove = std::min(GetNumToRemove(), mfxU32(m_surfQueue.size()));
 
     for(mfxU32 i = 0; i < numFramesForRemove; i++)
     {
@@ -5471,8 +5469,8 @@ mfxStatus ConfigureExecuteParams(
                     config.m_extConfig.customRateData.bkwdRefCount = 1; /* ref frame */
                     config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
                     config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
-                    config.m_surfCount[VPP_IN]  = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT]  = MFX_MAX(1, config.m_surfCount[VPP_OUT]);
+                    config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = std::max<mfxU16>(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = IS_REFERENCES;
                 }
                 else if (MFX_DEINTERLACING_ADVANCED_NOREF == executeParams.iDeinterlacingAlgorithm)
@@ -5483,8 +5481,8 @@ mfxStatus ConfigureExecuteParams(
                     config.m_extConfig.customRateData.bkwdRefCount = 0; /* ref frame */
                     config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
                     config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
-                    config.m_surfCount[VPP_IN]  = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT]  = MFX_MAX(1, config.m_surfCount[VPP_OUT]);
+                    config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = std::max<mfxU16>(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = 0;
                 }
                 else if (0 == executeParams.iDeinterlacingAlgorithm)
@@ -5517,8 +5515,8 @@ mfxStatus ConfigureExecuteParams(
                     config.m_extConfig.customRateData.bkwdRefCount = 1; /* ref frame */
                     config.m_extConfig.customRateData.inputFramesOrFieldPerCycle= 1;
                     config.m_extConfig.customRateData.outputIndexCountPerCycle  = 1;
-                    config.m_surfCount[VPP_IN]   = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT]  = MFX_MAX(1, config.m_surfCount[VPP_OUT]);
+                    config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = std::max<mfxU16>(1, config.m_surfCount[VPP_OUT]);
                     config.m_extConfig.mode = IS_REFERENCES;
                 }
                 else
@@ -5551,8 +5549,8 @@ mfxStatus ConfigureExecuteParams(
                     // use motion adaptive ADI with reference frame (quality)
                     config.m_bRefFrameEnable = true;
                     config.m_extConfig.customRateData.bkwdRefCount = 1;
-                    config.m_surfCount[VPP_IN]  = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT] = MFX_MAX(2, config.m_surfCount[VPP_OUT]);
+                    config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = true;
                     executeParams.bDeinterlace30i60p = true;
                 }
@@ -5560,8 +5558,8 @@ mfxStatus ConfigureExecuteParams(
                 {
                     // use ADI with spatial info, no reference frame (speed)
                     config.m_bRefFrameEnable = false;
-                    config.m_surfCount[VPP_IN]  = MFX_MAX(1, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT] = MFX_MAX(2, config.m_surfCount[VPP_OUT]);
+                    config.m_surfCount[VPP_IN]  = std::max<mfxU16>(1, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
                     executeParams.bDeinterlace30i60p = true;
                 }
@@ -5570,8 +5568,8 @@ mfxStatus ConfigureExecuteParams(
                     // use ADI with spatial info, no reference frame (speed)
                     executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_ADVANCED_NOREF;
                     config.m_bRefFrameEnable = false;
-                    config.m_surfCount[VPP_IN]  = MFX_MAX(1, config.m_surfCount[VPP_IN]);
-                    config.m_surfCount[VPP_OUT] = MFX_MAX(2, config.m_surfCount[VPP_OUT]);
+                    config.m_surfCount[VPP_IN]  = std::max<mfxU16>(1, config.m_surfCount[VPP_IN]);
+                    config.m_surfCount[VPP_OUT] = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
                     executeParams.bFMDEnable = false;
                     executeParams.bDeinterlace30i60p = true;
                 }
@@ -5838,8 +5836,8 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.frcRational[VPP_OUT].FrameRateExtN = videoParam.vpp.Out.FrameRateExtN;
                 config.m_extConfig.frcRational[VPP_OUT].FrameRateExtD = videoParam.vpp.Out.FrameRateExtD;
 
-                config.m_surfCount[VPP_IN]  = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                config.m_surfCount[VPP_OUT] = MFX_MAX(2, config.m_surfCount[VPP_OUT]);
+                config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT] = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
                 executeParams.frcModeOrig = static_cast<mfxU16>(GetMFXFrcMode(videoParam));
 #if 0
                 // Disable interpolated FRC until related issues resolved
@@ -5919,8 +5917,8 @@ mfxStatus ConfigureExecuteParams(
                 outDNRatio = (mfxF64) videoParam.vpp.Out.FrameRateExtD / videoParam.vpp.Out.FrameRateExtN;
 
                 executeParams.iDeinterlacingAlgorithm = MFX_DEINTERLACING_BOB;
-                config.m_surfCount[VPP_IN]  = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                config.m_surfCount[VPP_OUT] = MFX_MAX(2, config.m_surfCount[VPP_OUT]);
+                config.m_surfCount[VPP_IN]  = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT] = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
 
                 break;
             }
@@ -6049,8 +6047,8 @@ mfxStatus ConfigureExecuteParams(
                     }
                 }
 
-                config.m_surfCount[VPP_IN]  = (mfxU16)MFX_MAX(StreamCount, config.m_surfCount[VPP_IN]);
-                config.m_surfCount[VPP_OUT] = (mfxU16)MFX_MAX(1, config.m_surfCount[VPP_OUT]);
+                config.m_surfCount[VPP_IN]  = std::max(mfxU16(StreamCount), config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT] = std::max(mfxU16(1),           config.m_surfCount[VPP_OUT]);
 
                 config.m_extConfig.mode = COMPOSITE;
                 config.m_extConfig.customRateData.bkwdRefCount = 0;
@@ -6211,8 +6209,8 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 1;
                 config.m_extConfig.customRateData.outputIndexCountPerCycle   = 1;
 
-                config.m_surfCount[VPP_IN]   = MFX_MAX(2, config.m_surfCount[VPP_IN]);
-                config.m_surfCount[VPP_OUT]  = MFX_MAX(1, config.m_surfCount[VPP_OUT]);
+                config.m_surfCount[VPP_IN]   = std::max<mfxU16>(2, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT]  = std::max<mfxU16>(1, config.m_surfCount[VPP_OUT]);
                 config.m_extConfig.mode = IS_REFERENCES;
                 executeParams.bFieldWeaving = true;
                 // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
@@ -6244,8 +6242,8 @@ mfxStatus ConfigureExecuteParams(
                 config.m_extConfig.customRateData.inputFramesOrFieldPerCycle = 1;
                 config.m_extConfig.customRateData.outputIndexCountPerCycle   = 2;
 
-                config.m_surfCount[VPP_IN]   = MFX_MAX(1, config.m_surfCount[VPP_IN]);
-                config.m_surfCount[VPP_OUT]  = MFX_MAX(2, config.m_surfCount[VPP_OUT]);
+                config.m_surfCount[VPP_IN]   = std::max<mfxU16>(1, config.m_surfCount[VPP_IN]);
+                config.m_surfCount[VPP_OUT]  = std::max<mfxU16>(2, config.m_surfCount[VPP_OUT]);
                 config.m_extConfig.mode = IS_REFERENCES;
                 // kernel uses "0"  as a "valid" data, but HW_VPP doesn't.
                 // To prevent an issue we increment here and decrement before kernel call.
@@ -6309,8 +6307,8 @@ mfxStatus ConfigureExecuteParams(
                             break;
 
                         }
-                        config.m_surfCount[VPP_IN] = MFX_MAX(MCTF_requiredFrames_In, config.m_surfCount[VPP_IN]);
-                        config.m_surfCount[VPP_OUT] = MFX_MAX(MCTF_requiredFrames_Out, config.m_surfCount[VPP_OUT]);
+                        config.m_surfCount[VPP_IN]  = std::max<mfxU16>(MCTF_requiredFrames_In, config.m_surfCount[VPP_IN]);
+                        config.m_surfCount[VPP_OUT] = std::max<mfxU16>(MCTF_requiredFrames_Out, config.m_surfCount[VPP_OUT]);
                         break;
                     }
                 }
