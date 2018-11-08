@@ -1,4 +1,4 @@
-// Copyright (c) 2010-2018 Intel Corporation
+// Copyright (c) 2010-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -364,7 +364,7 @@ protected:
 
         _GetBits (8,temp); // vbv_buffer_size_ext
         vbv_buffer_size |= (temp << 10);
-        par->mfx.BufferSizeInKB = mfxU16(IPP_MIN(0xffff, 2 * vbv_buffer_size));
+        par->mfx.BufferSizeInKB = mfxU16(std::min<mfxU32>(0xffff, 2 * vbv_buffer_size));
 
         _GetBits (1,temp); //low delay
         if (temp == 1)
