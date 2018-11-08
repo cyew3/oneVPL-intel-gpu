@@ -24,9 +24,7 @@
 #if defined(MFX_VA_WIN) && defined(MFX_ENABLE_MFE)
 #include <vector>
 #include <list>
-#include "vm_mutex.h"
-#include "vm_cond.h"
-#include "vm_time.h"
+#include <condition_variable>
 #include <mfxstructures.h>
 #include "encoding_ddi.h"
 #include "hevce_ddi_main.h"
@@ -93,7 +91,7 @@ public:
     //MSFT runtime restrict multiple contexts per device
     //so for DXVA MFE implementation the same context being used for encoder and MFE submission
     ID3D11VideoDecoder* GetVideoDecoder();
-    mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait, bool skipFrame);//time passed in vm_tick, so milliseconds to be multiplied by vm_frequency/1000
+    mfxStatus Submit(ENCODE_MULTISTREAM_INFO info, long long timeToWait, bool skipFrame);//time passed in microseconds
     //returns pointer to particular caps with only read access, NULL if caps not set.
     CAPS GetCaps(MFE_CODEC codecId);
 //placeholder
@@ -106,8 +104,8 @@ public:
 private:
     mfxU32      m_refCounter;
 
-    vm_cond     m_mfe_wait;
-    vm_mutex    m_mfe_guard;
+    std::condition_variable     m_mfe_wait;
+    std::mutex                  m_mfe_guard;
 
     ID3D11VideoDevice*  m_pVideoDevice;
     ID3D11VideoContext* m_pVideoContext;
@@ -151,7 +149,7 @@ private:
     // store iterators to particular items
     std::map<mfxU32, StreamsIter_t> m_streamsMap;
     //time frequency for conversion to us/ms
-    vm_tick m_time_frequency;
+    long long m_time_frequency;
 
     // currently up-to-to 3 frames worth combining
     static const mfxU32 MAX_FRAMES_TO_COMBINE = 3;

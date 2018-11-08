@@ -49,8 +49,6 @@ MFEDXVAEncoder::MFEDXVAEncoder() :
     , m_pAv1CAPS(NULL)
 #endif
 {
-    vm_cond_set_invalid(&m_mfe_wait);
-    vm_mutex_set_invalid(&m_mfe_guard);
     m_contexts.reserve(MAX_FRAMES_TO_COMBINE);
     m_streams.reserve(MAX_FRAMES_TO_COMBINE);
 }
@@ -187,16 +185,6 @@ mfxStatus MFEDXVAEncoder::Create(ID3D11VideoDevice *pVideoDevice,
     m_pVideoDevice = pVideoDevice;
     m_pVideoContext = pVideoContext;
 
-    if (VM_OK != vm_mutex_init(&m_mfe_guard))
-    {
-        return MFX_ERR_MEMORY_ALLOC;
-    }
-
-    if (VM_OK != vm_cond_init(&m_mfe_wait))
-    {
-        return MFX_ERR_MEMORY_ALLOC;
-    }
-
     m_maxFramesToCombine = MAX_FRAMES_TO_COMBINE;
 
     m_streams_pool.clear();
@@ -260,7 +248,7 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
                                ENCODE_MULTISTREAM_INFO &info,
                                bool doubleField)
 {
-    vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
+    std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime.
     //no specific function needed for DXVA implementation to join stream to MFE
     //stream being added during BeginFrame call.
     StreamsIter_t iter;
@@ -304,18 +292,16 @@ mfxStatus MFEDXVAEncoder::Join(mfxExtMultiFrameParam const & par,
     // to deal with the situation when a number of sessions < requested
     if (m_framesToCombine < m_maxFramesToCombine)
         ++m_framesToCombine;
-    vm_mutex_unlock(&m_mfe_guard);
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Disjoin");
-    vm_mutex_lock(&m_mfe_guard);//need to protect in case there are streams added/removed in runtime
+    std::lock_guard<std::mutex> guard(m_mfe_guard);//need to protect in case there are streams added/removed in runtime
     std::map<mfxU32, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
     if (iter == m_streamsMap.end())
     {
-        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     //ToDo: Function call ENCODE_MFE_END_STREAM_ID 0x114 needed here.
@@ -323,7 +309,6 @@ mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
     ENCODE_MULTISTREAM_INFO _info = info;
     if(iter == m_streamsMap.end())
     {
-        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
     ENCODE_COMPBUFFERDESC  encodeCompBufferDesc;
@@ -359,29 +344,24 @@ mfxStatus MFEDXVAEncoder::Disjoin(ENCODE_MULTISTREAM_INFO info)
     m_streamsMap.erase(iter);
     if (m_framesToCombine > 0 && m_framesToCombine >= m_maxFramesToCombine)
         --m_framesToCombine;
-    vm_mutex_unlock(&m_mfe_guard);
     return MFX_ERR_NONE;
 }
 
 mfxStatus MFEDXVAEncoder::Destroy()
 {
-    vm_mutex_lock(&m_mfe_guard);
+    std::lock_guard<std::mutex> guard(m_mfe_guard);
     m_streams_pool.clear();
     m_streamsMap.clear();
     SAFE_RELEASE(m_pMfeContext);
     m_pMfeContext = NULL;
-    vm_mutex_unlock(&m_mfe_guard);
-
-    vm_mutex_destroy(&m_mfe_guard);
-    vm_cond_destroy(&m_mfe_wait);
 
     return MFX_ERR_NONE;
 }
 
-mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWait, bool skipFrame)
+mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, long long timeToWait, bool skipFrame)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "MFEDXVAEncoder::Submit");
-    vm_mutex_lock(&m_mfe_guard);
+    std::unique_lock<std::mutex> guard(m_mfe_guard);
     //stream in pool corresponding to particular context;
     StreamsIter_t cur_stream;
     //we can wait for less frames than expected by pipeline due to avilability.
@@ -398,7 +378,6 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
     }
     if(m_streams_pool.empty())
     {
-        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_MEMORY_ALLOC;
     }
 
@@ -406,7 +385,6 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
     std::map<mfxU32, StreamsIter_t>::iterator iter = m_streamsMap.find(info.StreamId);
     if(iter == m_streamsMap.end())
     {
-        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
 
@@ -433,7 +411,6 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
         //if frame is skipped - threat it as submitted without real submission
         //to not lock other streams waiting for it
         m_submitted_pool.splice(m_submitted_pool.end(), m_toSubmit, cur_stream);
-        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_NONE;
     }
     ++m_framesCollected;
@@ -449,27 +426,11 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
 
     if(!framesToSubmit)
     {
-        vm_mutex_unlock(&m_mfe_guard);
         return MFX_ERR_UNDEFINED_BEHAVIOR;
     }
-    vm_tick start_tick = vm_time_get_tick();
-    vm_tick spent_ticks = 0;
-    while (m_framesCollected < framesToSubmit &&
-           !cur_stream->isFieldSubmitted() &&
-           timeToWait > spent_ticks)
-    {
-        vm_status res = vm_cond_timedwait(&m_mfe_wait, &m_mfe_guard,
-                                          (mfxU32)((timeToWait - spent_ticks)*1000/ m_time_frequency));
-        if ((VM_OK == res) || (VM_TIMEOUT == res))
-        {
-            spent_ticks = (vm_time_get_tick() - start_tick);
-        }
-        else
-        {
-            vm_mutex_unlock(&m_mfe_guard);
-            return MFX_ERR_UNKNOWN;
-        }
-    }
+    m_mfe_wait.wait_for(guard, std::chrono::microseconds(timeToWait), [this, framesToSubmit, cur_stream] {
+        return (m_framesCollected >= framesToSubmit) || cur_stream->isFrameSubmitted();
+
     //for interlace we will return stream back to stream pool when first field submitted
     //to submit next one imediately after that, and don't count it as submitted
     if (!cur_stream->isFieldSubmitted())
@@ -528,7 +489,7 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
             m_framesCollected -= (mfxU32)m_contexts.size();
         }
         // Broadcast is done before unlock for this case to simplify the code avoiding extra ifs
-        vm_cond_broadcast(&m_mfe_wait);
+        m_mfe_wait.notify_all();
         m_contexts.clear();
         m_streams.clear();
     }
@@ -545,7 +506,6 @@ mfxStatus MFEDXVAEncoder::Submit(ENCODE_MULTISTREAM_INFO info, vm_tick timeToWai
         cur_stream->resetField();
         m_streams_pool.splice(m_streams_pool.end(), m_toSubmit, cur_stream);
     }
-    vm_mutex_unlock(&m_mfe_guard);
     return res;
 }
 
