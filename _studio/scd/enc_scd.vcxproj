@@ -118,7 +118,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;WIN32;_DEBUG;_WINDOWS;_USRDLL;MFX_VA;MFX_VA_WIN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -139,7 +139,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\" _d</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\api\include\" _d</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -149,7 +149,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Async</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -169,7 +169,7 @@
       <SubSystem>Console</SubSystem>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\" _d</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\api\include\" _d</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -178,7 +178,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -200,7 +200,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\"</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\api\include\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>
@@ -209,7 +209,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\..\mdp_msdk-api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\include;..\shared\ASC\include;..\mfx_lib\vpp\include;..\mfx_lib\cmrt_cross_platform\include;..\mfx_lib\genx\scd;..\mfx_lib\cmut;$(MEDIASDK_ROOT)\CMRT\compiler\include;$(MEDIASDK_ROOT)\CMRT\compiler\include\cm;$(MEDIASDK_ROOT)\CMRT\runtime\include;..\..\api\include;..\shared\include;..\mfx_lib\shared\include;..\mfx_lib\plugin\include;$(MfxIppIncludeDir);..\shared\umc\core\umc\include;..\shared\umc\core\vm\include;..\shared\umc\core\vm_plus\include;..\mfx_lib\scheduler\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>AS_ENC_SCD_PLUGIN;MFX_VA;MFX_VA_WIN;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
@@ -230,7 +230,7 @@
       <ImportLibrary>$(OutDir)\..\..\lib\$(TargetName).lib</ImportLibrary>
     </Link>
     <PostBuildEvent>
-      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\..\mdp_msdk-api\include\"</Command>
+      <Command>cmd /c $(ProjectDir)\make_plugin_cfg.bat 1 $(ProjectName) 04 0 "$(OutDir)" "..\..\api\include\"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>

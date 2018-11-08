@@ -1,4 +1,4 @@
-include( ${BUILDER_ROOT}/FindOpenCL.cmake )
+include( ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/builder/FindOpenCL.cmake )
 
 set( PLUGINS_COMMON_PATH    ${CMAKE_CURRENT_SOURCE_DIR}/../plugins_common_files )
 

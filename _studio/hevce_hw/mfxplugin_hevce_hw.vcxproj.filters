@@ -36,31 +36,31 @@
     <ClInclude Include="..\mfx_lib\shared\include\mfx_brc_common.h">
       <Filter>External</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxbrc.h">
+    <ClInclude Include="..\..\api\include\mfxbrc.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxcommon.h">
+    <ClInclude Include="..\..\api\include\mfxcommon.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxdefs.h">
+    <ClInclude Include="..\..\api\include\mfxdefs.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin.h">
+    <ClInclude Include="..\..\api\include\mfxplugin.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxplugin++.h">
+    <ClInclude Include="..\..\api\include\mfxplugin++.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxsession.h">
+    <ClInclude Include="..\..\api\include\mfxsession.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxstructures.h">
+    <ClInclude Include="..\..\api\include\mfxstructures.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo.h">
+    <ClInclude Include="..\..\api\include\mfxvideo.h">
       <Filter>API</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\mdp_msdk-api\include\mfxvideo++.h">
+    <ClInclude Include="..\..\api\include\mfxvideo++.h">
       <Filter>API</Filter>
     </ClInclude>
   </ItemGroup>

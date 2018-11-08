@@ -1,7 +1,7 @@
 mfx_include_dirs( )
 
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/opensource/mfx_dispatch/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/api/opensource/mfx_dispatch/include
   ${MSDK_UMC_ROOT}/codec/spl_common/include
   ${MSDK_UMC_ROOT}/codec/avi_spl/include
   ${MSDK_UMC_ROOT}/codec/demuxer/include

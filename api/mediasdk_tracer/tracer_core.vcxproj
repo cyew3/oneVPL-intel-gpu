@@ -69,22 +69,22 @@
     <_ProjectFileVersion>11.0.50727.1</_ProjectFileVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
     <IntDir>$(OutDir)objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
     <IntDir>$(OutDir)objs\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>..\..\build\win_$(Platform)\</OutDir>
+    <OutDir>..\..\..\build\win_$(Platform)\</OutDir>
     <IntDir>$(OutDir)objs\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>

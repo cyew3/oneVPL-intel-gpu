@@ -5,9 +5,9 @@ if(FEIH265_INCLUDE MATCHES NOTFOUND)
 endif()
 
 include_directories (
-  ${CMAKE_SOURCE_DIR}/sample_common/include
-  ${CMAKE_SOURCE_DIR}/sample_utilities/vpp_plugin/include
-  ${CMAKE_SOURCE_DIR}/sample_h265_gaa/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_utilities/vpp_plugin/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/deprecated/sample_h265_gaa/include
 )
 
 list( APPEND LIBS_VARIANT sample_common )

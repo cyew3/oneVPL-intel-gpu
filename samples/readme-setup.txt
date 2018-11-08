@@ -15,15 +15,15 @@ To compile samples you'll need:
 To create MSDK_Install directory:
 1. Run createMSDKInstalled.bat providing 2 parameters:
    - Path to target directory (including its name)
-   - Path to mdp_msdk-api directory.
+   - Path to mdp_msdk-lib/api directory.
    - Path to mdp_msdk-samples directory.
 
    Note: createMSDKInstalled.bat assumes that both dispatcher libaries and library dll 
-   files are stored at mdp_msdk-api\..\Build directory. That path is taken from current 
+   files are stored at mdp_msdk-lib/api\..\Build directory. That path is taken from current 
    settings of that project. However, if it will be changed in future, those changes should 
    be reflected in .bat file.
 
-   Example: createMSDKInstalled.bat c:\MSDK_Inst_Dir C:\VC\mdp_msdk-api C:\VC\mdp_msdk-samples
+   Example: createMSDKInstalled.bat c:\MSDK_Inst_Dir C:\VC\mdp_msdk-lib/api C:\VC\mdp_msdk-samples
 
    After running bat file make sure that target directory has the same structure as shown below:
 

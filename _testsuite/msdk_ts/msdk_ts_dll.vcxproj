@@ -242,7 +242,7 @@
     <ClInclude Include="include\test_trace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
+    <ProjectReference Include="..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj">
       <Project>{430e22ba-bdf6-497c-bfc5-ec6907f90018}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj">

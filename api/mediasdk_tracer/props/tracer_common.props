@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <OutDir>..\..\..\build\win_$(Platform)\bin\</OutDir>
+    <OutDir>..\..\..\..\build\win_$(Platform)\bin\</OutDir>
     <IntDir>$(OutDir)..\objs\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
   </PropertyGroup>

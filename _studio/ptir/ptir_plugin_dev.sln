@@ -23,7 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PTIR", "PTIR", "{BDD7708A-6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TEST_VPP_APP", "TEST_VPP_APP", "{D6D25296-D801-4587-B966-BFD67A3F8CDD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx", "..\..\api\opensource\mfx_dispatch\libmfx.vcxproj", "{9E7B3527-11AA-46BA-A82F-C58761F9B56F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared_utils", "..\..\_testsuite\shared\shared_utils.vcxproj", "{0D02568B-3117-47C3-AC2E-D83781259C1D}"
 EndProject
@@ -178,7 +178,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_common", "..\..\..\m
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bs_parser", "..\..\..\mdp_msdk-val-tools\bs_parser\bs_parser.vcxproj", "{D08D664E-7245-40F7-9B55-3440EF95F2F7}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcxproj", "{430E22BA-BDF6-497C-BFC5-EC6907F90018}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

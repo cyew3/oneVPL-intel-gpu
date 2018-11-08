@@ -2,6 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <MSDK_LIB_ROOT>$(MSBuildThisFileDirectory)..\mdp_msdk-lib</MSDK_LIB_ROOT>
+    <MSDK_LIB_ROOT>$(MSBuildThisFileDirectory)..\</MSDK_LIB_ROOT>
   </PropertyGroup>
 </Project>

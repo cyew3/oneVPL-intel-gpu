@@ -1,5 +1,5 @@
 include_directories (
-  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-api/include
+  ${CMAKE_HOME_DIRECTORY}/mdp_msdk-lib/api/include
   ${CMAKE_HOME_DIRECTORY}/mdp_msdk-contrib/yaml-cpp/include
   ${MSDK_TSUITE_ROOT}/mfx_serializer/include
   ${MSDK_STUDIO_ROOT}/shared/include

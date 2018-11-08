@@ -81,7 +81,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_player", "..\mfx_player
 		{8BA23C0C-D2D7-4A5A-B8F9-BA5CA19CBAB7} = {8BA23C0C-D2D7-4A5A-B8F9-BA5CA19CBAB7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcproj", "{FF00BC67-6B92-4F2D-B5FC-CBF2335CA2A7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_dispatch_trace", "..\..\api\opensource\mfx_dispatch\mfx_dispatch_trace_lib.vcproj", "{FF00BC67-6B92-4F2D-B5FC-CBF2335CA2A7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_thread_safety", "..\test_thread_safety\test_thread_safety.vcproj", "{182CC318-151B-41C8-8013-B300D378F144}"
 	ProjectSection(ProjectDependencies) = postProject

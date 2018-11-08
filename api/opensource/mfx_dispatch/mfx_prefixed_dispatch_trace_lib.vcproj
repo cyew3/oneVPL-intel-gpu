@@ -20,7 +20,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="1"
@@ -82,7 +82,7 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="1"
@@ -145,7 +145,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="1"
@@ -210,7 +210,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\ob\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="1"
@@ -276,7 +276,7 @@
 		</Configuration>
 		<Configuration
 			Name="debug_ascii|Win32"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="2"
@@ -338,7 +338,7 @@
 		</Configuration>
 		<Configuration
 			Name="debug_ascii|x64"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="2"
@@ -401,7 +401,7 @@
 		</Configuration>
 		<Configuration
 			Name="release_ascii|Win32"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="2"
@@ -466,7 +466,7 @@
 		</Configuration>
 		<Configuration
 			Name="release_ascii|x64"
-			OutputDirectory="..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="4"
 			CharacterSet="2"

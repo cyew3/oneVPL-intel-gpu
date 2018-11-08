@@ -1,7 +1,7 @@
 if(0)
 include_directories (
-  ${CMAKE_SOURCE_DIR}/sample_common/include
-  ${CMAKE_SOURCE_DIR}/sample_camera/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_camera/include
 )
 
 list( APPEND LIBS_NOVARIANT sample_common )

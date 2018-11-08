@@ -5,7 +5,7 @@
     <PreSiliconGen>0</PreSiliconGen>
   </PropertyGroup>
   <PropertyGroup>
-    <MfxBuildDir>$(MSBuildThisFileDirectory)..\build\</MfxBuildDir>
+    <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\build\</MfxBuildDir>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(ProjectName)'!='libmfx_uwp' and ('$(Configuration)'=='Debug' or '$(Configuration)'=='debug' or '$(Configuration)'=='Debug_Intel' or '$(Configuration)'=='Debug_MD' or '$(Configuration)'=='Debug_THM')">

@@ -20,7 +20,7 @@
 	<Configurations>
 		<Configuration
 			Name="debug_ascii|Win32"
-			OutputDirectory="..\..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			UseOfATL="0"
@@ -100,7 +100,7 @@
 		</Configuration>
 		<Configuration
 			Name="debug_ascii|x64"
-			OutputDirectory="..\..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(PlatformName)\$(ConfigurationName)\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
@@ -183,7 +183,7 @@
 		</Configuration>
 		<Configuration
 			Name="release_ascii|Win32"
-			OutputDirectory="..\..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\objs\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"
@@ -262,7 +262,7 @@
 		</Configuration>
 		<Configuration
 			Name="release_ascii|x64"
-			OutputDirectory="..\..\..\build\win_$(PlatformName)"
+			OutputDirectory="..\..\..\..\build\win_$(PlatformName)"
 			IntermediateDirectory="$(OutDir)\obj\$(ProjectName)"
 			ConfigurationType="2"
 			CharacterSet="2"

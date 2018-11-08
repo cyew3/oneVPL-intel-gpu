@@ -1,7 +1,7 @@
 include_directories (
-  ${CMAKE_SOURCE_DIR}/sample_common/include
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_full_transcode/include
-  ${CMAKE_SOURCE_DIR}/deprecated/sample_spl_mux/api
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/sample_common/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/deprecated/sample_full_transcode/include
+  ${CMAKE_HOME_DIRECTORY}/${SAMPLES_DIR}/samples/deprecated/sample_spl_mux/api
 )
 
 list(APPEND sources

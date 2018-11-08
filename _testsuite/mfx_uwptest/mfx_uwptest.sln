@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mfx_uwptest", "mfx_uwptest\mfx_uwptest.vcxproj", "{26B1BADD-F28D-4B99-9C46-30DD5AAE98D9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_uwp", "..\..\..\mdp_msdk-api\opensource\mfx_dispatch\libmfx_uwp.vcxproj", "{313EE96A-7923-4A18-AFFA-9247181364D3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libmfx_uwp", "..\..\api\opensource\mfx_dispatch\libmfx_uwp.vcxproj", "{313EE96A-7923-4A18-AFFA-9247181364D3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

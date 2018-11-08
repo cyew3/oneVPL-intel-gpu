@@ -169,7 +169,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>include;include\vm;..\..\sample_spl_mux\api;..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\..\mdp_msdk-api\include;..\..\sample_user_modules\plugin_api;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>include;include\vm;..\..\sample_spl_mux\api;..\..\..\..\mdp_msdk-contrib\gmock\gtest\include;..\..\..\..\mdp_msdk-contrib\gmock\include;..\..\..\api\include;..\..\sample_user_modules\plugin_api;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <ExceptionHandling>Async</ExceptionHandling>

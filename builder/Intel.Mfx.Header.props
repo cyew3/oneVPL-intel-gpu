@@ -4,7 +4,7 @@
   <PropertyGroup>
     <MfxBuildDir>$(MSBuildThisFileDirectory)..\..\build\</MfxBuildDir>
     <MSDK_STUDIO_ROOT>$(MSBuildThisFileDirectory)..\_studio</MSDK_STUDIO_ROOT>
-    <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-api</MSDK_API_ROOT>
+    <MSDK_API_ROOT>$(MSBuildThisFileDirectory)..\api</MSDK_API_ROOT>
     <MSDK_MFX_BUILD_DIR>$(MSBuildThisFileDirectory)..\..\build</MSDK_MFX_BUILD_DIR>
     <MSDK_MFX_CONTRIB_ROOT>$(MSBuildThisFileDirectory)..\..\mdp_msdk-contrib</MSDK_MFX_CONTRIB_ROOT>
     <MfxPropsDir Condition="Exists('$(SolutionDir)\Intel.Mfx.Header.props')">$(SolutionDir)</MfxPropsDir>
