@@ -193,7 +193,7 @@ mfxStatus MFXVideoENC_Query(mfxSession session, mfxVideoParam *in, mfxVideoParam
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_NULL_PTR;
     }
@@ -266,7 +266,7 @@ mfxStatus MFXVideoENC_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfxFra
         }
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_NULL_PTR;
     }
@@ -279,11 +279,12 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(par, MFX_ERR_NULL_PTR);
+
     try
     {
 #if !defined (MFX_RT)
         // check existence of component
-        if (!session->m_pENC.get())
+        if (!session->m_pENC)
         {
             // create a new instance
             session->m_pENC.reset(session->Create<VideoENC>(*par));
@@ -294,27 +295,14 @@ mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
         mfxRes = session->m_pENC->Init(par);
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == session->m_pENC.get())
-        {
-            mfxRes = MFX_ERR_INVALID_VIDEO_PARAM;
-        }
-        else if (0 == par)
-        {
-            mfxRes = MFX_ERR_NULL_PTR;
-        }
     }
 
     return mfxRes;
-
-} // mfxStatus MFXVideoENC_Init(mfxSession session, mfxVideoParam *par)
+}
 
 mfxStatus MFXVideoENC_Close(mfxSession session)
 {
@@ -325,7 +313,7 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 
     try
     {
-        if (!session->m_pENC.get())
+        if (!session->m_pENC)
         {
             return MFX_ERR_NOT_INITIALIZED;
         }
@@ -335,22 +323,17 @@ mfxStatus MFXVideoENC_Close(mfxSession session)
 
         mfxRes = session->m_pENC->Close();
         // delete the codec's instance
-        session->m_pENC.reset((VideoENC *) 0);
+        session->m_pENC.reset(nullptr);
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
     }
 
     return mfxRes;
-
-} // mfxStatus MFXVideoENC_Close(mfxSession session)
+}
 
 static
 mfxStatus MFXVideoENCLegacyRoutineExt(void *pState, void *pParam,
@@ -492,22 +475,10 @@ mfxStatus  MFXVideoENC_ProcessFrameAsync(mfxSession session, mfxENCInput *in, mf
         *syncp = syncPoint;
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
-        else if (0 == pEnc)
-        {
-            mfxRes = MFX_ERR_NOT_INITIALIZED;
-        }
-        else if (0 == syncp)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
     }
 
     return mfxRes;

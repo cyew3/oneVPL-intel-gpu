@@ -225,7 +225,7 @@ mfxStatus MFXInitEx(mfxInitParam par, mfxSession *session)
 
         mfxRes = pSession->InitEx(init_param);
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         mfxRes = MFX_ERR_MEMORY_ALLOC;
     }
@@ -317,14 +317,10 @@ mfxStatus MFXClose(mfxSession session)
 #endif
     }
     // handle error(s)
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         // set the default error value
         mfxRes = MFX_ERR_UNKNOWN;
-        if (0 == session)
-        {
-            mfxRes = MFX_ERR_INVALID_HANDLE;
-        }
     }
 #if defined(MFX_TRACE_ENABLE) && defined(MFX_VA)
     MFX_TRACE_CLOSE();
