@@ -1111,7 +1111,9 @@ void FillPpsBuffer(
 
     pps.CodingType      = task.m_codingType;
     pps.CurrPicOrderCnt = task.m_poc;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
     pps.FrameLevel      = (mfxU8)task.m_level; // QP modulation feature; used in low delay mode only
+#endif
 
     pps.bEnableRollingIntraRefresh = task.m_IRState.refrType;
 

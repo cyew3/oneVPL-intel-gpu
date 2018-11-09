@@ -3767,7 +3767,10 @@ void ConfigureTask(
         mfxI32 layer = PLayer(task.m_poc - prevTask.m_lastIPoc, par);
         task.m_numRefActive[0] = (mfxU8)CO3.NumRefActiveP[layer];
         task.m_numRefActive[1] = (mfxU8)Min(CO3.NumRefActiveP[layer], par.m_ext.DDI.NumActiveRefBL1);
-        task.m_level = (par.isTL()) ? task.m_tid : layer; // for QP modulation; low delay mode only
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        if (par.m_platform >= MFX_HW_TGL_LP)
+            task.m_level = (par.isTL()) ? task.m_tid : layer; // for QP modulation; low delay mode only
+#endif
     }
 
     if (!isI)

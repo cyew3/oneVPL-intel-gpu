@@ -174,7 +174,7 @@ enum
 
     MAX_SLICES              = 200,// WA for driver issue regerding CNL and older platforms
     DEFAULT_LTR_INTERVAL    = 16,
-    DEFAULT_PPYR_INTERVAL   = 4,
+    DEFAULT_PPYR_INTERVAL   = 3,
 
     MAX_NUM_ROI             = 16,
     MAX_NUM_DIRTY_RECT      = 64
