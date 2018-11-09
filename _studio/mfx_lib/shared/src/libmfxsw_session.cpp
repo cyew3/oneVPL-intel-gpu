@@ -28,7 +28,7 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXJoinSession");
     mfxStatus mfxRes;
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    //MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(child_session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(child_session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
 
@@ -62,26 +62,14 @@ mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
             return mfxRes;
         }
         child_session->m_pOperatorCore = session->m_pOperatorCore;
+
+        return MFX_ERR_NONE;
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
-        // check errors()
-        if ((NULL == session) ||
-            (NULL == child_session))
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-
-        if ((NULL == session->m_pScheduler) ||
-            (NULL == child_session->m_pScheduler))
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
+        return MFX_ERR_UNKNOWN;
     }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
+}
 
 mfxStatus MFXDisjoinSession(mfxSession session)
 {
@@ -123,28 +111,14 @@ mfxStatus MFXDisjoinSession(mfxSession session)
 
         // join the original scheduler
         mfxRes = session->RestoreScheduler();
-        if (MFX_ERR_NONE != mfxRes)
-        {
-            return mfxRes;
-        }
+
+        return mfxRes;
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
-        // check errors()
-        if (NULL == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-
-        if (NULL == session->m_pScheduler)
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
+        return MFX_ERR_UNKNOWN;
     }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus MFXDisjoinSession(mfxSession session)
+}
 
 mfxStatus MFXCloneSession(mfxSession session, mfxSession *clone)
 {
@@ -200,53 +174,31 @@ mfxStatus MFXSetPriority(mfxSession session, mfxPriority priority)
                 break;
             }
         }
+        return MFX_ERR_NONE;
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
-        // check errors()
-        if (NULL == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
+        return MFX_ERR_UNKNOWN;
     }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus MFXSetPriority(mfxSession session, mfxPriority priority)
+}
 
 mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
 {
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(priority, MFX_ERR_NULL_PTR);
 
-    try
-    {
-        // set the new priority value
-        *priority = session->m_priority;
-    }
-    catch(MFX_CORE_CATCH_TYPE)
-    {
-        // check errors()
-        if (NULL == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-        if (NULL == priority)
-        {
-            return MFX_ERR_NULL_PTR;
-        }
-    }
+    // set the new priority value
+    *priority = session->m_priority;
 
     return MFX_ERR_NONE;
-
-} // mfxStatus MFXGetPriority(mfxSession session, mfxPriority *priority)
+}
 
 #if 0
 mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
 {
     session; msg; size;
     return MFX_ERR_UNSUPPORTED;
-} // mfxStatus MFXGetLogMessage(mfxSession session, char *msg, mfxU32 size)
+}
 #endif
 
 mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_session)
@@ -255,14 +207,12 @@ mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_sess
     mfxStatus mfxRes;
 
     MFX_CHECK(session, MFX_ERR_INVALID_HANDLE);
-    //MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
+    MFX_CHECK(session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
     MFX_CHECK(child_session, MFX_ERR_INVALID_HANDLE);
     MFX_CHECK(child_session->m_pScheduler, MFX_ERR_NOT_INITIALIZED);
 
     try
     {
- 
-
         //  release  the child scheduler
         mfxRes = child_session->ReleaseScheduler();
         if (MFX_ERR_NONE != mfxRes)
@@ -275,26 +225,15 @@ mfxStatus MFXInternalPseudoJoinSession(mfxSession session, mfxSession child_sess
 
         child_session->m_pCORE.reset(session->m_pCORE.get(), false);
         child_session->m_pOperatorCore = session->m_pOperatorCore;
+
+        return MFX_ERR_NONE;
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
-        // check errors()
-        if ((NULL == session) ||
-            (NULL == child_session))
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-
-        if ((NULL == session->m_pScheduler) ||
-            (NULL == child_session->m_pScheduler))
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
+        return MFX_ERR_UNKNOWN;
     }
+}
 
-    return MFX_ERR_NONE;
-
-} // mfxStatus MFXJoinSession(mfxSession session, mfxSession child_session)
 mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_API, "MFXInternalPseudoDisjoinSession");
@@ -325,25 +264,12 @@ mfxStatus MFXInternalPseudoDisjoinSession(mfxSession session)
         {
             return mfxRes;
         }
-          
-        // core will released automatically 
 
-
+        // core will released automatically
+        return MFX_ERR_NONE;
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
-        // check errors()
-        if (NULL == session)
-        {
-            return MFX_ERR_INVALID_HANDLE;
-        }
-
-        if (NULL == session->m_pScheduler)
-        {
-            return MFX_ERR_NOT_INITIALIZED;
-        }
+        return MFX_ERR_UNKNOWN;
     }
-
-    return MFX_ERR_NONE;
-
-} // mfxStatus MFXDisjoinSession(mfxSession session)
+}
