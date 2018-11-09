@@ -56,7 +56,7 @@ set(MFX_LDFLAGS "${MFX_ORIG_LDFLAGS} -Wl,--version-script=${MFX_ROOTDIR}/mfx_lib
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/include )
 
-list( APPEND sources "${CMAKE_CURRENT_SOURCE_DIR}/src/export.cpp")
+list( APPEND sources "${CMAKE_CURRENT_SOURCE_DIR}/src/mfx_vp9_encode_plugin.cpp")
 
 set( defs "-DMFX_PLUGIN_PRODUCT_NAME=\"\\\"${VP9E_HW_PRODUCT_NAME}\"\\\" -DMFX_FILE_DESCRIPTION=\"\\\"${VP9E_HW_DESCRIPTION}\"\\\" ${VP9E_HW_version_defs}" )
 

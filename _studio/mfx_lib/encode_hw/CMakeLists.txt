@@ -1,7 +1,7 @@
 set(MFX_ORIG_LDFLAGS "${MFX_LDFLAGS}" )
 
 list( APPEND vdirs
-  h264 mjpeg mpeg2 mvc svc
+  h264 mjpeg mpeg2 mvc svc vp9
   )
 list( APPEND cdirs
   mpeg2_enc jpeg_common brc color_space_converter h264_enc
@@ -17,7 +17,6 @@ include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../pak/mpeg2/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../genx/h264_encode/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../fei/h264_preenc )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../hevc_fei/h265_fei/include )
 foreach( dir ${cdirs} )
   include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../../shared/umc/codec/${dir}/include )
@@ -53,15 +52,6 @@ list( APPEND sources.plus
     ${CMAKE_CURRENT_SOURCE_DIR}/../../hevce_hw/h265/src/mfx_h265_encode_vaapi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../hevc_fei/h265_fei/src/mfx_h265_fei_encode_hw.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../hevc_fei/h265_fei/src/mfx_h265_fei_encode_vaapi.cpp
-    )
-
-list( APPEND sources.plus
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/src/export.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/src/mfx_vp9_encode_hw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/src/mfx_vp9_encode_hw_ddi.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/src/mfx_vp9_encode_hw_par.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/src/mfx_vp9_encode_hw_utils.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../vp9e_hw/src/mfx_vp9_encode_hw_vaapi.cpp
     )
 
 set( LIBS "" )

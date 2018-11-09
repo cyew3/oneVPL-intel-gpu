@@ -23,7 +23,6 @@
 #include "mfx_common.h"
 #if defined(AS_VP9E_PLUGIN)
 
-#include "mfx_vp9_encode_hw_utils.h"
 #include "mfxplugin++.h"
 
 namespace MfxHwVP9Encode
@@ -32,11 +31,15 @@ namespace MfxHwVP9Encode
     {
     public:
         static MFXEncoderPlugin* Create() {
-            return new Plugin(false);
+             return GetInstance();
         }
 
         static mfxStatus CreateByDispatcher(mfxPluginUID guid, mfxPlugin* mfxPlg)
         {
+            if (mfxPlg)
+            {
+                return MFX_ERR_NULL_PTR;
+            }
             if (memcmp(&guid, &MFX_PLUGINID_VP9E_HW, sizeof(mfxPluginUID))) {
                 return MFX_ERR_NOT_FOUND;
             }
@@ -44,17 +47,17 @@ namespace MfxHwVP9Encode
 
             try
             {
-            tmp_pplg = new Plugin(false);
+                tmp_pplg = GetInstance();
             }
 
             catch (std::bad_alloc&)
             {
-            return MFX_ERR_MEMORY_ALLOC;;
+                return MFX_ERR_MEMORY_ALLOC;;
             }
 
             catch (...)
             {
-            return MFX_ERR_UNKNOWN;;
+                return MFX_ERR_UNKNOWN;;
             }
 
             *mfxPlg = tmp_pplg->m_adapter;
@@ -62,51 +65,44 @@ namespace MfxHwVP9Encode
 
             return MFX_ERR_NONE;
         }
-        virtual mfxStatus PluginInit(mfxCoreInterface *core)
+        virtual mfxStatus PluginInit(mfxCoreInterface * /*core*/)
         {
-            if (!core)
-                 return MFX_ERR_NULL_PTR;
-
-            m_pmfxCore = core;
             return MFX_ERR_NONE;
         }
         virtual mfxStatus PluginClose()
         {
-            if (m_createdByDispatcher) {
-                delete this;
-            }
+            if (m_createdByDispatcher)
+                Release();
 
             return MFX_ERR_NONE;
         }
 
         virtual mfxStatus GetPluginParam(mfxPluginParam *par)
         {
-            if (!par)
-                return MFX_ERR_NULL_PTR;
-            *par = m_PluginParam;
+            MFX_CHECK_NULL_PTR1(par);
+
+            par->PluginUID        = MFX_PLUGINID_VP9E_HW;
+            par->PluginVersion    = 1;
+            par->ThreadPolicy     = MFX_THREADPOLICY_SERIAL;
+            par->MaxThreadNum     = 1;
+            par->APIVersion.Major = MFX_VERSION_MAJOR;
+            par->APIVersion.Minor = MFX_VERSION_MINOR;
+            par->Type             = MFX_PLUGINTYPE_VIDEO_ENCODE;
+            par->CodecId          = MFX_CODEC_VP9;
+
             return MFX_ERR_NONE;
         }
-        virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl * /*ctrl*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/, mfxThreadTask * /*task*/)
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
-        virtual mfxStatus ConfigTask(Task & /*task*/)
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
-        virtual mfxStatus RemoveObsoleteParameters()
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
+
         virtual mfxStatus Execute(mfxThreadTask /*task*/, mfxU32 /*uid_p*/, mfxU32 /*uid_a*/)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-        virtual mfxStatus FreeResources(mfxThreadTask, mfxStatus)
+        virtual mfxStatus FreeResources(mfxThreadTask /*task*/, mfxStatus /*sts*/)
         {
-            return MFX_ERR_NONE;
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-        virtual mfxStatus Query(mfxVideoParam * /*in*/, mfxVideoParam * /*out*/)
+
+        virtual mfxStatus Init(mfxVideoParam * /*par*/)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
@@ -114,7 +110,7 @@ namespace MfxHwVP9Encode
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-        virtual mfxStatus Init(mfxVideoParam * /*par*/)
+        virtual mfxStatus Query(mfxVideoParam * /*in*/, mfxVideoParam * /*out*/)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
@@ -122,53 +118,47 @@ namespace MfxHwVP9Encode
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-        virtual mfxStatus Close()
-        {
-            return MFX_ERR_UNDEFINED_BEHAVIOR;
-        }
         virtual mfxStatus GetVideoParam(mfxVideoParam * /*par*/)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
-        virtual void Release()
-        {
-            delete this;
-        }
 
-        virtual mfxStatus SetAuxParams(void*, int)
-        {
-            return MFX_ERR_UNKNOWN;
-        }
-
-        virtual mfxStatus UpdateBitstream(Task & /*task*/)
+        virtual mfxStatus EncodeFrameSubmit(mfxEncodeCtrl * /*ctrl*/, mfxFrameSurface1 * /*surface*/, mfxBitstream * /*bs*/, mfxThreadTask * /*task*/)
         {
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 
+        virtual void Release()
+        {
+            return;
+        }
+
+        virtual mfxStatus Close()
+        {
+            return MFX_ERR_UNDEFINED_BEHAVIOR;
+        }
+
+        virtual mfxStatus SetAuxParams(void*, int)
+        {
+            return MFX_ERR_UNSUPPORTED;
+        }
     protected:
         explicit Plugin(bool CreateByDispatcher)
-             : MFXEncoderPlugin()
-             , m_pmfxCore(nullptr)
-             , m_PluginParam()
-             , m_createdByDispatcher(CreateByDispatcher)
+             : m_createdByDispatcher(CreateByDispatcher)
              , m_adapter(this)
+        { }
+
+        virtual ~Plugin()
+        {}
+
+        static Plugin* GetInstance()
         {
-            m_PluginParam.ThreadPolicy = MFX_THREADPOLICY_SERIAL;
-            m_PluginParam.MaxThreadNum = 1;
-            m_PluginParam.APIVersion.Major = MFX_VERSION_MAJOR;
-            m_PluginParam.APIVersion.Minor = MFX_VERSION_MINOR;
-            m_PluginParam.PluginUID = MFX_PLUGINID_VP9E_HW;
-            m_PluginParam.Type = MFX_PLUGINTYPE_VIDEO_ENCODE;
-            m_PluginParam.CodecId = MFX_CODEC_VP9;
-            m_PluginParam.PluginVersion = 1;
+            static Plugin instance(false);
+            return &instance;
         }
-        virtual ~Plugin() {}
 
-        mfxCoreInterface * m_pmfxCore;
-
-        mfxPluginParam      m_PluginParam;
         bool                m_createdByDispatcher;
         MFXPluginAdapter<MFXEncoderPlugin> m_adapter;
-        };
-    }
+    };
+}
 #endif // AS_VP9E_PLUGIN

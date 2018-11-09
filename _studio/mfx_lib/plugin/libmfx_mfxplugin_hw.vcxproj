@@ -125,7 +125,6 @@
     <ClInclude Include="..\..\shared\include\mfx_common.h" />
     <ClInclude Include="..\..\shared\include\mfx_dxva2_device.h" />
     <ClInclude Include="..\..\shared\include\mfx_vpp_interface.h" />
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_platform_defs.h" />
     <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_plugin_hw.h" />
     <ClInclude Include="..\genx\copy_kernels\include\cnl_copy_kernel_genx_isa.h" />
     <ClInclude Include="..\genx\copy_kernels\include\icllp_copy_kernel_genx_isa.h" />

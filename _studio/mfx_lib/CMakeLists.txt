@@ -6,7 +6,7 @@ mfx_include_dirs( )
 
 list( APPEND mdirs
   scheduler vpp encode_hw/mjpeg
-  decode/h264 decode/h265 decode/vp8 decode/vp9 decode/av1 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2
+  decode/h264 decode/h265 decode/vp8 decode/vp9 decode/av1 decode/mpeg2 decode/mjpeg cmrt_cross_platform encode_hw/h264 encode_hw/mpeg2 encode_hw/vp9
   decode/vc1 encode/h264 enc/mpeg2 pak/mpeg2 enc_hw/mpeg2 encode/mpeg2 encode/mjpeg
   audio_decode/aac audio_decode/mp3 audio_encode/aac genx/copy_kernels
   mctf_package/mctf
@@ -31,7 +31,6 @@ foreach( dir ${cdirs} )
 endforeach( )
 
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevce_hw/h265/include )
-include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../vp9e_hw/include )
 include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/../hevc_fei/h265_fei/include )
 
 # =============================================================================

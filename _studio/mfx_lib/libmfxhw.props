@@ -33,7 +33,7 @@
     <!-- MediaSDK h265 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\h265\include;$(MSDK_STUDIO_ROOT)\hevce_hw\h265\include;
     <!-- MediaSDK mjpeg -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\mjpeg\include;
     <!-- MediaSDK VP8 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp8\include;
-    <!-- MediaSDK VP9 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp9\include;$(MSDK_STUDIO_ROOT)\vp9e_hw\include;
+    <!-- MediaSDK VP9 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\vp9\include;$(MSDK_STUDIO_ROOT)\mfx_lib\encode_hw\vp9\include;
     <!-- MediaSDK AV1 -->$(MSDK_STUDIO_ROOT)\mfx_lib\decode\av1\include;
     </MfxIncludes>
     <MfxDefinitions>_WINDOWS;LIBMFXSW_EXPORTS;MFX_VA;MFX_VA_WIN;MFX_D3D11_ENABLED;</MfxDefinitions>

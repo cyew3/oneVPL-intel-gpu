@@ -95,22 +95,22 @@
     <ClCompile Include="..\..\hevce_hw\h265\src\mfx_h265_encode_hw_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw.cpp">
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_d3d9.cpp">
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d9.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_d3d11.cpp">
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d11.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_ddi.cpp">
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_ddi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_par.cpp">
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_par.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\vp9e_hw\src\mfx_vp9_encode_hw_utils.cpp">
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -193,22 +193,22 @@
     <ClInclude Include="..\..\hevce_hw\h265\include\mfx_h265_encode_hw_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw.h">
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_d3d9.h">
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d9.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_d3d11.h">
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d11.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_ddi.h">
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_ddi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_par.h">
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_par.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\vp9e_hw\include\mfx_vp9_encode_hw_utils.h">
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
