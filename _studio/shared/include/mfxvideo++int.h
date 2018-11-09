@@ -200,8 +200,6 @@ namespace UMC
     class FrameAllocator;
 };
 
-#define MFX_CORE_CATCH_TYPE     ...
-
 // Forward declaration of used classes
 struct MFX_ENTRY_POINT;
 
