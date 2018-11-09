@@ -443,7 +443,7 @@ mfxStatus D3D9VideoCORE::SetHandle(mfxHandleType type, mfxHDL hdl)
         pD3DDevice->Release();
         return MFX_ERR_NONE;
     }
-    catch (MFX_CORE_CATCH_TYPE)
+    catch (...)
     {
         ReleaseHandle();
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -575,7 +575,7 @@ mfxStatus D3D9VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             }
         }
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }

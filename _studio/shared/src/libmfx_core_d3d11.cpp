@@ -465,7 +465,7 @@ mfxStatus D3D11VideoCORE::AllocFrames(mfxFrameAllocRequest *request,
             }
         }
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
@@ -1154,7 +1154,7 @@ mfxStatus D3D11VideoCORE::SetHandle(mfxHandleType type, mfxHDL handle)
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         ReleaseHandle();
         return MFX_ERR_UNDEFINED_BEHAVIOR;

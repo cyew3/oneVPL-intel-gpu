@@ -215,7 +215,7 @@ VDAAPIVideoCORE::AllocFrames(
             }
         }
     }
-    catch(MFX_CORE_CATCH_TYPE)
+    catch(...)
     {
         return MFX_ERR_MEMORY_ALLOC;
     }
