@@ -40,7 +40,6 @@ GUID GetGUID(MfxVideoParam const & par)
 {
     GUID guid = DXVA2_Intel_Encode_HEVC_Main;
 
-#ifndef OPEN_SOURCE
     mfxU16 bdId = 0, cfId = 0;
 
 #if (MFX_VERSION >= 1027)
@@ -72,7 +71,6 @@ GUID GetGUID(MfxVideoParam const & par)
 
     guid = GuidTable[cFamily][bdId] [cfId];
     DDITracer::TraceGUID(guid, stdout);
-#endif // OPEN_SOURCE
     return guid;
 }
 

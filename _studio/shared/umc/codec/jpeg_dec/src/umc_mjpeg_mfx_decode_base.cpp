@@ -315,6 +315,7 @@ Status MJPEGVideoDecoderBaseMFX::DecodeHeader(MediaData* in)
 Status MJPEGVideoDecoderBaseMFX::SetRotation(Ipp16u rotation)
 {
 #ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
+    (void)rotation;
     m_rotation = 0;
 #else
     m_rotation = rotation;

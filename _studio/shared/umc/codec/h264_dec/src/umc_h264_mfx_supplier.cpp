@@ -1907,7 +1907,7 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
             return false;
     }
 #else
-    type = type;
+    (void)type;
 #endif
 
     if (MFX_CODEC_AVC != in->mfx.CodecId)

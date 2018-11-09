@@ -45,7 +45,7 @@ static Ipp32u bit_mask[33] =
 
 #define GetNBits(current_data, bit_ptr, nbits, pData,type)              \
 {                                                                       \
-    register Ipp32u x;                                                  \
+    Ipp32u x;                                                  \
                                                                         \
     bit_ptr -= nbits;                                                   \
                                                                         \
@@ -225,8 +225,8 @@ int DecodeHuffmanOne(Ipp32u**  pBitStream, int* pOffset,
     Ipp32s*  pDst, const Ipp32s* pDecodeTable)
 {
     Ipp32u table_bits, code_len;
-    register Ipp32u  pos;
-    register Ipp32s  val;
+    Ipp32u  pos;
+    Ipp32s  val;
 
     if (!pBitStream || !pOffset || !pDecodeTable || !*pBitStream || !pDst)
         return -1;

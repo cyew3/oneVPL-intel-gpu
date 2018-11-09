@@ -802,6 +802,8 @@ void PackerVA::BeginFrame(H265DecoderFrame* frame)
             *trigger = 1;
         }
     }
+#else
+    (void)frame;
 #endif
 }
 

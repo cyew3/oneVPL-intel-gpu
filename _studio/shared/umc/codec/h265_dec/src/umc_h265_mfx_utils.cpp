@@ -1196,7 +1196,7 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
             return false;
     }
 #else
-    type = type;
+    (void)type;
 #endif
 
     if (MFX_CODEC_HEVC != in->mfx.CodecId)

@@ -1392,6 +1392,8 @@ mfxStatus VideoVPPBase::CheckPlatformLimitations(
     {
         sts = CheckLimitationsSW(param, supportedList, bCorrectionEnable);
     }
+#else
+    (void)bCorrectionEnable;
 #endif
 
     // check unsupported list if we need to reset ext buffer fields

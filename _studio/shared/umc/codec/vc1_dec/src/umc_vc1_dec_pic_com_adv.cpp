@@ -336,6 +336,8 @@ VC1Status DecodeSkippicture(VC1Context* pContext)
     MFX_INTERNAL_CPY(pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iToSkipCoping].m_pAllocatedMemory,
                 pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_pAllocatedMemory,
                 pContext->m_frmBuff.m_pFrames[pContext->m_frmBuff.m_iPrevIndex].m_AllocatedMemorySize);
+#else
+    (void)pContext;
 #endif
     return VC1_OK;
 }
