@@ -143,9 +143,10 @@ mfxStatus MFXVideoENCODEVP9_HW::QueryIOSurf(VideoCORE *core, mfxVideoParam *par,
 }
 
 #define ALIGN64(X) (((mfxU32)((X)+63)) & (~ (mfxU32)63))
+#define ALIGN32(X) (((mfxU32)((X)+31)) & (~ (mfxU32)31))
 
 #if (MFX_VERSION >= 1027)
-void SetReconInfo(VP9MfxVideoParam const & par, mfxFrameInfo& fi)
+void SetReconInfo(VP9MfxVideoParam const &par, mfxFrameInfo &fi, eMFXHWType const &platform)
 {
     mfxExtCodingOption3 opt3 = GetExtBufferRef(par);
     mfxU16 format = opt3.TargetChromaFormatPlus1 - 1;
@@ -168,7 +169,18 @@ void SetReconInfo(VP9MfxVideoParam const & par, mfxFrameInfo& fi)
     }
     else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_10)
     {
-        fi.FourCC = MFX_FOURCC_P010;
+#if defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        if (platform >= MFX_HW_TGL_LP)
+        {
+            fi.FourCC = MFX_FOURCC_NV12;
+            fi.Width = ALIGN32(fi.Width) * 2;
+        }
+        else
+#endif //defined(PRE_SI_TARGET_PLATFORM_GEN12)
+        {
+            std::ignore = platform;
+            fi.FourCC = MFX_FOURCC_P010;
+        }
     }
     else if (format == MFX_CHROMAFORMAT_YUV420 && depth == BITDEPTH_8)
     {
@@ -202,7 +214,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 
     m_video = *par;
 
-    m_pCore->GetHWType();
+    eMFXHWType platform = m_pCore->GetHWType();
 
     m_ddi.reset(CreatePlatformVp9Encoder(m_pCore));
     MFX_CHECK(m_ddi.get() != 0, MFX_ERR_UNSUPPORTED);
@@ -260,7 +272,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
     // allocate and register surfaces for reconstructed frames
     request.NumFrameMin = request.NumFrameSuggested = (mfxU16)CalcNumSurfRecon(m_video);
 #if (MFX_VERSION >= 1027)
-    SetReconInfo(m_video, request.Info);
+    SetReconInfo(m_video, request.Info, platform);
 #else
     request.Info.FourCC = MFX_FOURCC_NV12;
 #endif
