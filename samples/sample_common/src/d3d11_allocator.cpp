@@ -226,6 +226,13 @@ mfxStatus D3D11FrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
             break;
 
         case DXGI_FORMAT_AYUV:
+            ptr->Pitch = (mfxU16)lockedRect.RowPitch;
+            ptr->V = (mfxU8 *)lockedRect.pData;
+            ptr->U = ptr->V + 1;
+            ptr->Y = ptr->V + 2;
+            ptr->A = ptr->V + 3;
+            break;
+
         case DXGI_FORMAT_B8G8R8A8_UNORM:
             ptr->Pitch = (mfxU16)lockedRect.RowPitch;
             ptr->B = (mfxU8 *)lockedRect.pData;
