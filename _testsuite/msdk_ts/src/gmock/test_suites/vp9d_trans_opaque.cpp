@@ -228,7 +228,7 @@ int RunTest(const TestCase& tc, char const * const stream)
 
     tsTranscoder tr(tc.DEC, tc.ENC);
 
-    tsIvfReader reader(stream, 100000);
+    tsIvfReader reader(stream, 300000);
     tr.m_bsProcIn = &reader;
 
     //tsBitstreamWriter w("debug.bit");
