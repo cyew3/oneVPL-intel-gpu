@@ -1385,10 +1385,19 @@ int32_t PackerDXVA2::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_
 
     //RefPicList
     int32_t realSliceNum = pSlice->GetSliceNum();
-    H264DecoderFrame **pRefPicList0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_RefPicList;
-    H264DecoderFrame **pRefPicList1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_RefPicList;
-    ReferenceFlags *pFields0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_Flags;
-    ReferenceFlags *pFields1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_Flags;
+    if (pCurrentFrame == nullptr)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    const H264DecoderRefPicList* pH264DecRefPicList0 = pCurrentFrame->GetRefPicList(realSliceNum, 0);
+    const H264DecoderRefPicList* pH264DecRefPicList1 = pCurrentFrame->GetRefPicList(realSliceNum, 1);
+
+    if (pH264DecRefPicList0 == nullptr || pH264DecRefPicList1 == nullptr)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    H264DecoderFrame **pRefPicList0 = pH264DecRefPicList0->m_RefPicList;
+    H264DecoderFrame **pRefPicList1 = pH264DecRefPicList1->m_RefPicList;
+    ReferenceFlags *pFields0 = pH264DecRefPicList0->m_Flags;
+    ReferenceFlags *pFields1 = pH264DecRefPicList1->m_Flags;
 
     for (int32_t i = 0; i < 32; i++)
     {
@@ -2101,6 +2110,8 @@ int32_t PackerVA::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t c
 {
     int32_t partial_data = CHOPPING_NONE;
     H264DecoderFrame *pCurrentFrame = pSlice->GetCurrentFrame();
+    if (pCurrentFrame == nullptr)
+        throw h264_exception(UMC_ERR_FAILED);
     const H264SliceHeader *pSliceHeader = pSlice->GetSliceHeader();
 
     VAPictureParameterBufferH264* pPicParams_H264 = (VAPictureParameterBufferH264*)m_va->GetCompBuffer(VAPictureParameterBufferType);
@@ -2282,10 +2293,17 @@ int32_t PackerVA::PackSliceParams(H264Slice *pSlice, int32_t sliceNum, int32_t c
     }
 
     int32_t realSliceNum = pSlice->GetSliceNum();
-    H264DecoderFrame **pRefPicList0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_RefPicList;
-    H264DecoderFrame **pRefPicList1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_RefPicList;
-    ReferenceFlags *pFields0 = pCurrentFrame->GetRefPicList(realSliceNum, 0)->m_Flags;
-    ReferenceFlags *pFields1 = pCurrentFrame->GetRefPicList(realSliceNum, 1)->m_Flags;
+
+    const H264DecoderRefPicList* pH264DecRefPicList0 = pCurrentFrame->GetRefPicList(realSliceNum, 0);
+    const H264DecoderRefPicList* pH264DecRefPicList1 = pCurrentFrame->GetRefPicList(realSliceNum, 1);
+
+    if (pH264DecRefPicList0 == nullptr || pH264DecRefPicList1 == nullptr)
+        throw h264_exception(UMC_ERR_FAILED);
+
+    H264DecoderFrame **pRefPicList0 = pH264DecRefPicList0->m_RefPicList;
+    H264DecoderFrame **pRefPicList1 = pH264DecRefPicList1->m_RefPicList;
+    ReferenceFlags *pFields0 = pH264DecRefPicList0->m_Flags;
+    ReferenceFlags *pFields1 = pH264DecRefPicList1->m_Flags;
 
     int32_t i;
     for(i = 0; i < 32; i++)
