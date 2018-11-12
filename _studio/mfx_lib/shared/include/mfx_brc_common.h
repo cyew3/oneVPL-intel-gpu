@@ -25,6 +25,7 @@
 #include "mfxbrc.h"
 #include <vector>
 #include <memory>
+#include <algorithm>
 
 #if defined (MFX_ENABLE_H264_VIDEO_ENCODE) || defined (MFX_ENABLE_MPEG2_VIDEO_ENCODE)
 #define UMC_ENABLE_VIDEO_BRC
@@ -41,7 +42,7 @@ public:
     AVGBitrate(mfxU32 windowSize, mfxU32 maxBitPerFrame, mfxU32 avgBitPerFrame, bool bLA = false):
         m_maxWinBits(maxBitPerFrame*windowSize),
         m_maxWinBitsLim(0),
-        m_avgBitPerFrame(IPP_MIN(avgBitPerFrame, maxBitPerFrame)),
+        m_avgBitPerFrame(std::min(avgBitPerFrame, maxBitPerFrame)),
         m_currPosInWindow(windowSize-1),
         m_lastFrameOrder(mfxU32(-1)),
         m_bLA(bLA)
@@ -75,12 +76,12 @@ public:
         {
             if (bPanic || bSH)
             {
-                m_maxWinBitsLim = IPP_MAX(IPP_MIN((GetLastFrameBits(windowSize,false) + m_maxWinBits) / 2, m_maxWinBits), GetMaxWinBitsLim());
+                m_maxWinBitsLim = mfx::clamp((GetLastFrameBits(windowSize,false) + m_maxWinBits) / 2, GetMaxWinBitsLim(), m_maxWinBits);
             }
             else
             {
                 if (recode)
-                    m_maxWinBitsLim = IPP_MIN(IPP_MAX(GetLastFrameBits(windowSize,false) + GetStep() / 2, m_maxWinBitsLim), m_maxWinBits);
+                    m_maxWinBitsLim = mfx::clamp(GetLastFrameBits(windowSize,false) + GetStep() / 2, m_maxWinBitsLim, m_maxWinBits);
                 else if ((m_maxWinBitsLim > GetMaxWinBitsLim() + GetStep()) &&
                     (m_maxWinBitsLim - GetStep() > (GetLastFrameBits(windowSize - 1,false) + sizeInBits)))
                     m_maxWinBitsLim -= GetStep();
@@ -97,7 +98,7 @@ public:
             maxWinBitsLim = (m_maxWinBits + m_maxWinBitsLim) / 2;
         if (bPanic)
             maxWinBitsLim = m_maxWinBits;
-        maxWinBitsLim = IPP_MIN(maxWinBitsLim + recode*GetStep() / 2, m_maxWinBits);
+        maxWinBitsLim = std::min(maxWinBitsLim + recode*GetStep() / 2, m_maxWinBits);
 
         mfxU32 maxFrameSize = winBits >= m_maxWinBitsLim ?
             (mfxU32)(IPP_MAX((mfxI32)m_maxWinBits - (mfxI32)winBits, 1)) :
@@ -111,7 +112,7 @@ public:
     }
     mfxI32 GetBudget(mfxU32 numFrames)
     {
-        numFrames = IPP_MIN((mfxU32)m_slidingWindow.size(), numFrames);
+        numFrames = std::min(mfxU32(m_slidingWindow.size()), numFrames);
         return ((mfxI32)m_maxWinBitsLim - (mfxI32)GetLastFrameBits((mfxU32)m_slidingWindow.size() - numFrames, true));
     }
 
