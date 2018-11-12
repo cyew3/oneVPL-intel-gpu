@@ -23,6 +23,8 @@
 #include "umc_h265_yuv.h"
 #include "umc_h265_frame.h"
 
+#include <assert.h>
+
 namespace UMC_HEVC_DECODER
 {
 H265DecYUVBufferPadded::H265DecYUVBufferPadded()
@@ -51,15 +53,12 @@ H265DecYUVBufferPadded::H265DecYUVBufferPadded(UMC::MemoryAllocator *pMemoryAllo
     , m_pMemoryAllocator(pMemoryAllocator)
     , m_midAllocatedBuffer(0)
     , m_pAllocatedBuffer(0)
+    , m_lumaSize()
+    , m_chromaSize()
     , m_pitch_luma(0)
     , m_pitch_chroma(0)
     , m_color_format(UMC::NV12)
 {
-    m_lumaSize.width = 0;
-    m_lumaSize.height = 0;
-
-    m_chromaSize.width = 0;
-    m_chromaSize.height = 0;
 }
 
 H265DecYUVBufferPadded::~H265DecYUVBufferPadded()
@@ -89,8 +88,7 @@ void H265DecYUVBufferPadded::deallocate()
 
     m_pYPlane = m_pUPlane = m_pVPlane = m_pUVPlane = NULL;
 
-    m_lumaSize.width = 0;
-    m_lumaSize.height = 0;
+    m_lumaSize = { 0, 0 };
     m_pitch_luma = 0;
     m_pitch_chroma = 0;
 }
@@ -98,7 +96,10 @@ void H265DecYUVBufferPadded::deallocate()
 // Initialize variables to default values
 void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
 {
-    VM_ASSERT(info);
+    if (info == nullptr)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
+    if (info->GetNumPlanes() == 0)
+        throw h265_exception(UMC::UMC_ERR_NULL_PTR);
 
     m_color_format = info->GetColorFormat();
     m_chroma_format = GetH265ColorFormat(info->GetColorFormat());
@@ -108,14 +109,13 @@ void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
     m_pVPlane = 0;
     m_pUVPlane = 0;
 
-    if (m_chroma_format > 0)
+    if ((m_chroma_format > 0) && (info->GetNumPlanes() >= 2))
     {
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
     }
     else
     {
-        m_chromaSize.width = 0;
-        m_chromaSize.height = 0;
+        m_chromaSize = { 0, 0 };
     }
 }
 
@@ -123,9 +123,11 @@ void H265DecYUVBufferPadded::Init(const UMC::VideoDataInfo *info)
 // Used to contain decoded frames.
 void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UMC::VideoDataInfo *info)
 {
-    VM_ASSERT(info);
-    VM_ASSERT(frameData);
-
+    if (info == nullptr || frameData == nullptr || info->GetNumPlanes() == 0)
+    {
+        deallocate();
+        return;
+    }
     m_frameData = *frameData;
 
     if (frameData->GetPlaneMemoryInfo(0)->m_planePtr)
@@ -139,7 +141,8 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
 
     m_pYPlane = (PlanePtrY)m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
-    if (m_chroma_format > 0 || GetH265ColorFormat(frameData->GetInfo()->GetColorFormat()) > 0)
+    if ((m_chroma_format > 0 || GetH265ColorFormat(frameData->GetInfo()->GetColorFormat()) > 0) &&
+        (info->GetNumPlanes() >= 2))
     {
         if (m_chroma_format == 0)
             info = frameData->GetInfo();
@@ -154,6 +157,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
         }
         else
         {
+            assert(m_frameData.GetInfo()->GetNumPlanes == 3);
             m_pUPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pVPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(2)->m_planePtr;
             m_pUVPlane = 0;
@@ -161,8 +165,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
     }
     else
     {
-        m_chromaSize.width = 0;
-        m_chromaSize.height = 0;
+        m_chromaSize = { 0, 0 };
         m_pitch_chroma = 0;
         m_pUPlane = 0;
         m_pVPlane = 0;

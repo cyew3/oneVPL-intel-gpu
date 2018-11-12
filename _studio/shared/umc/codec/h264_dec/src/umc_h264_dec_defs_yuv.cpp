@@ -66,15 +66,17 @@ void H264DecYUVBufferPadded::deallocate()
 
     m_pYPlane = m_pUPlane = m_pVPlane = m_pUVPlane = 0;
 
-    m_lumaSize.width = 0;
-    m_lumaSize.height = 0;
+    m_lumaSize = { 0, 0 };
     m_pitch_luma = 0;
     m_pitch_chroma = 0;
 }
 
 void H264DecYUVBufferPadded::Init(const VideoDataInfo *info)
 {
-    VM_ASSERT(info);
+    if (info == nullptr)
+        throw h264_exception(UMC_ERR_NULL_PTR);
+    if (info->GetNumPlanes() == 0)
+        throw h264_exception(UMC_ERR_NULL_PTR);
 
     m_bpp = MFX_MAX(info->GetPlaneBitDepth(0), info->GetPlaneBitDepth(1));
 
@@ -86,21 +88,23 @@ void H264DecYUVBufferPadded::Init(const VideoDataInfo *info)
     m_pVPlane = 0;
     m_pUVPlane = 0;
 
-    if (m_chroma_format > 0)
+    if ((m_chroma_format > 0) && (info->GetNumPlanes() >= 2))
     {
         m_chromaSize = info->GetPlaneInfo(1)->m_ippSize;
     }
     else
     {
-        m_chromaSize.width = 0;
-        m_chromaSize.height = 0;
+        m_chromaSize = { 0, 0 };
     }
 }
 
 void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDataInfo *info)
 {
-    VM_ASSERT(info);
-    VM_ASSERT(frameData);
+    if (info == nullptr || frameData == nullptr || info->GetNumPlanes() == 0)
+    {
+        deallocate();
+        return;
+    }
 
     m_frameData = *frameData;
 
@@ -116,7 +120,8 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
 
     m_pYPlane = m_frameData.GetPlaneMemoryInfo(0)->m_planePtr;
 
-    if (m_chroma_format > 0 || GetH264ColorFormat(frameData->GetInfo()->GetColorFormat()) > 0)
+    if ((m_chroma_format > 0 || GetH264ColorFormat(frameData->GetInfo()->GetColorFormat()) > 0) &&
+        (info->GetNumPlanes() >= 2))
     {
         if (m_chroma_format == 0)
             info = frameData->GetInfo();
@@ -139,8 +144,7 @@ void H264DecYUVBufferPadded::allocate(const FrameData * frameData, const VideoDa
     }
     else
     {
-        m_chromaSize.width = 0;
-        m_chromaSize.height = 0;
+        m_chromaSize = { 0, 0 };
         m_pitch_chroma = 0;
         m_pUPlane = 0;
         m_pVPlane = 0;
