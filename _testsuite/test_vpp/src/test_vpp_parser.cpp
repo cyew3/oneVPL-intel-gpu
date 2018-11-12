@@ -16,8 +16,8 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     if (strErrorMessage)
     {
         vm_string_printf(VM_STRING("Error: %s\n"), strErrorMessage);
-    } 
-    else 
+    }
+    else
     {
         vm_string_printf(VM_STRING("Intel(R) Media SDK VPP Sample\n"));
     }
@@ -42,9 +42,9 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-scc  format]    - format (FourCC) of src video (def: nv12. support nv12|yv12|yuy2|rgb3|rgb4|imc3|yuv400|yuv411|yuv422h|yuv422v|yuv444|uyvy|ayuv|y210|y410)\n"));
     vm_string_printf(VM_STRING("   [-sbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
-    vm_string_printf(VM_STRING("   [-spic value]     - picture structure of src video\n")); 
+    vm_string_printf(VM_STRING("   [-spic value]     - picture structure of src video\n"));
     vm_string_printf(VM_STRING("                        0 - interlaced top    field first\n"));
-    vm_string_printf(VM_STRING("                        2 - interlaced bottom field first\n")); 
+    vm_string_printf(VM_STRING("                        2 - interlaced bottom field first\n"));
     vm_string_printf(VM_STRING("                        1 - progressive (default)\n"));
     vm_string_printf(VM_STRING("                       -1 - unknown\n\n"));
 
@@ -55,12 +55,12 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
     vm_string_printf(VM_STRING("   [-dcrW  w]        - cropW  of dst video (def: width)\n"));
     vm_string_printf(VM_STRING("   [-dcrH  h]        - cropH  of dst video (def: height)\n"));
     vm_string_printf(VM_STRING("   [-df  frameRate]  - frame rate of dst video (def: 30.0)\n"));
-    vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|yv12|ayuv|p010|p016|y210|y216|y410|y416)\n"));
+    vm_string_printf(VM_STRING("   [-dcc format]     - format (FourCC) of dst video (def: nv12. support nv12|yuy2|rgb4|rgbp|yv12|ayuv|p010|p016|y210|y216|y410|y416)\n"));
     vm_string_printf(VM_STRING("   [-dbitshift 0|1]  - shift data to right or keep it the same way as in Microsoft's P010\n"));
 
-    vm_string_printf(VM_STRING("   [-dpic value]     - picture structure of dst video\n")); 
+    vm_string_printf(VM_STRING("   [-dpic value]     - picture structure of dst video\n"));
     vm_string_printf(VM_STRING("                        0 - interlaced top    field first\n"));
-    vm_string_printf(VM_STRING("                        2 - interlaced bottom field first\n")); 
+    vm_string_printf(VM_STRING("                        2 - interlaced bottom field first\n"));
     vm_string_printf(VM_STRING("                        1 - progressive (default)\n"));
     vm_string_printf(VM_STRING("                       -1 - unknown\n\n"));
 
@@ -130,9 +130,9 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
 
     vm_string_printf(VM_STRING("   [-roi_check mode seed1 seed2] - checking of ROI processing. Default is OFF \n"));
     vm_string_printf(VM_STRING("               mode - usage model of cropping\n"));
-    vm_string_printf(VM_STRING("                      var_to_fix - variable input ROI and fixed output ROI\n")); 
-    vm_string_printf(VM_STRING("                      fix_to_var - fixed input ROI and variable output ROI\n")); 
-    vm_string_printf(VM_STRING("                      var_to_var - variable input ROI and variable output ROI\n")); 
+    vm_string_printf(VM_STRING("                      var_to_fix - variable input ROI and fixed output ROI\n"));
+    vm_string_printf(VM_STRING("                      fix_to_var - fixed input ROI and variable output ROI\n"));
+    vm_string_printf(VM_STRING("                      var_to_var - variable input ROI and variable output ROI\n"));
     vm_string_printf(VM_STRING("               seed1 - seed for init of rand generator for src\n"));
     vm_string_printf(VM_STRING("               seed2 - seed for init of rand generator for dst\n"));
     vm_string_printf(VM_STRING("                       range of seed [1, 65535]. 0 reserved for random init\n\n"));
@@ -159,20 +159,20 @@ void vppPrintHelp(const vm_char *strAppName, const vm_char *strErrorMessage)
 
 
 mfxU8 GetPicStruct( mfxI8 picStruct )
-{  
-    if ( 0 == picStruct ) 
+{
+    if ( 0 == picStruct )
     {
         return MFX_PICSTRUCT_FIELD_TFF;
-    } 
+    }
     else if( 2 == picStruct )
     {
         return MFX_PICSTRUCT_FIELD_BFF;
-    } 
+    }
     else if( -1 == picStruct )
     {
         return MFX_PICSTRUCT_UNKNOWN;
-    } 
-    else 
+    }
+    else
     {
         return MFX_PICSTRUCT_PROGRESSIVE;
     }
@@ -184,61 +184,65 @@ mfxU32 Str2FourCC( vm_char* strInput )
 {
     mfxU32 fourcc = 0;//default
 
-    if ( 0 == vm_string_strcmp(strInput, VM_STRING("yv12")) ) 
+    if ( 0 == vm_string_strcmp(strInput, VM_STRING("yv12")) )
     {
         fourcc = MFX_FOURCC_YV12;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgb3")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgb3")) )
     {
         fourcc = MFX_FOURCC_RGB3;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgb4")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgb4")) )
     {
         fourcc = MFX_FOURCC_RGB4;
-    } 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("rgbp")) )
+    {
+        fourcc = MFX_FOURCC_RGBP;
+    }
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuy2")) )
     {
         fourcc = MFX_FOURCC_YUY2;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("nv12")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("nv12")) )
     {
         fourcc = MFX_FOURCC_NV12;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("imc3")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("imc3")) )
     {
         fourcc = MFX_FOURCC_IMC3;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv400")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv400")) )
     {
         fourcc = MFX_FOURCC_YUV400;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv411")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv411")) )
     {
         fourcc = MFX_FOURCC_YUV411;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv422h")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv422h")) )
     {
         fourcc = MFX_FOURCC_YUV422H;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv422v")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv422v")) )
     {
         fourcc = MFX_FOURCC_YUV422V;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv444")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("yuv444")) )
     {
         fourcc = MFX_FOURCC_YUV444;
     }
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p010")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p010")) )
     {
         fourcc = MFX_FOURCC_P010;
     }
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p016")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p016")) )
     {
         fourcc = MFX_FOURCC_P016;
     }
 #endif
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p210")) ) 
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("p210")) )
     {
         fourcc = MFX_FOURCC_P210;
     }
@@ -287,15 +291,15 @@ eROIMode Str2ROIMode( vm_char* strInput )
 {
     eROIMode mode;
 
-    if ( 0 == vm_string_strcmp(strInput, VM_STRING("var_to_fix")) ) 
+    if ( 0 == vm_string_strcmp(strInput, VM_STRING("var_to_fix")) )
     {
         mode = ROI_VAR_TO_FIX;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("var_to_var")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("var_to_var")) )
     {
         mode = ROI_VAR_TO_VAR;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("fix_to_var")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("fix_to_var")) )
     {
         mode = ROI_FIX_TO_VAR;
     }
@@ -313,22 +317,22 @@ static mfxU16 Str2IOpattern( vm_char* strInput )
 {
     mfxU16 IOPattern = 0;
 
-    if ( 0 == vm_string_strcmp(strInput, VM_STRING("d3d_to_d3d")) ) 
+    if ( 0 == vm_string_strcmp(strInput, VM_STRING("d3d_to_d3d")) )
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("d3d_to_sys")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("d3d_to_sys")) )
     {
         IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    } 
-    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("sys_to_d3d")) ) 
+    }
+    else if ( 0 == vm_string_strcmp(strInput, VM_STRING("sys_to_d3d")) )
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_VIDEO_MEMORY;
-    } 
+    }
     else if ( 0 == vm_string_strcmp(strInput, VM_STRING("sys_to_sys")) )
     {
         IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY|MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-    } 
+    }
     return IOPattern;
 
 } // static mfxU16 Str2IOpattern( vm_char* strInput )
@@ -365,7 +369,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
     mfxU32 readData;
     mfxU32 ioStatus;
 
-    for (mfxU8& i = curArg; i < nArgNum; i++ ) 
+    for (mfxU8& i = curArg; i < nArgNum; i++ )
     {
         CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
         {
@@ -458,7 +462,7 @@ mfxStatus vppParseResetPar(vm_char* strInput[], mfxU8 nArgNum, mfxU8& curArg, sI
                 pParams->denoiseParam[paramID].mode = VPP_FILTER_ENABLED_DEFAULT;
 
                 if( i+1 < nArgNum )
-                {                
+                {
                     ioStatus = vm_string_sscanf(strInput[i+1], VM_STRING("%hd"), reinterpret_cast<short int *>(&readData));
                     if ( ioStatus > 0 )
                     {
@@ -752,10 +756,10 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
 
     bool isD3D11Required = false;
 
-    for (mfxU8 i = 1; i < nArgNum; i++ ) 
+    for (mfxU8 i = 1; i < nArgNum; i++ )
     {
         CHECK_POINTER(strInput[i], MFX_ERR_NULL_PTR);
-        {      
+        {
             if ( 0 == vm_string_strcmp(strInput[i], VM_STRING("-ssinr")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
@@ -843,7 +847,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoIn[0].CropH);
-            } 
+            }
             else if(0 == vm_string_strcmp(strInput[i], VM_STRING("-spic")))
             {
                 VAL_CHECK(1 + i == nArgNum);
@@ -857,12 +861,12 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->frameInfoIn[0].dFrameRate);
             }
-            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dw")) ) 
+            else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dw")) )
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%hd"), &pParams->frameInfoOut[0].nWidth);
-            } 
+            }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-dh")))
             {
                 VAL_CHECK(1 + i == nArgNum);
@@ -905,7 +909,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
                 vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->frameInfoOut[0].dFrameRate);
-            }          
+            }
             //-----------------------------------------------------------------------------------
             //                   Video Enhancement Algorithms
             //-----------------------------------------------------------------------------------
@@ -931,7 +935,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
                 pParams->frameInfoIn[0].PicStruct  = MFX_PICSTRUCT_FIELD_TFF;
 
                 if( i+1 < nArgNum )
-                {                
+                {
                     if(0 == vm_string_strcmp(strInput[i+1], VM_STRING("bff")))
                     {
                         pParams->frameInfoOut[0].PicStruct = MFX_PICSTRUCT_FIELD_BFF;
@@ -1368,7 +1372,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
             {
                 VAL_CHECK(1 + i == nArgNum);
                 i++;
-                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->ptsFR);  
+                vm_string_sscanf(strInput[i], VM_STRING("%lf"), &pParams->ptsFR);
             }
             else if (0 == vm_string_strcmp(strInput[i], VM_STRING("-pts_advanced")) )
             {
@@ -1449,7 +1453,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
         it++;
     }
 
-    if (0 == vm_string_strlen(pParams->strSrcFile)) 
+    if (0 == vm_string_strlen(pParams->strSrcFile))
     {
         vppPrintHelp(strInput[0], VM_STRING("Source file name not found"));
         return MFX_ERR_UNSUPPORTED;
@@ -1473,7 +1477,7 @@ mfxStatus vppParseInputString(vm_char* strInput[], mfxU8 nArgNum, sInputParams* 
         pParams->vaType = isD3D11Required ? ALLOC_IMPL_VIA_D3D11 : ALLOC_IMPL_VIA_D3D9;
     }
 
-    if (pParams->ImpLib & MFX_IMPL_HARDWARE) 
+    if (pParams->ImpLib & MFX_IMPL_HARDWARE)
     {
 #if defined(_WIN32) || defined(_WIN64)
         pParams->ImpLib |= (isD3D11Required)? MFX_IMPL_VIA_D3D11 : MFX_IMPL_VIA_D3D9;

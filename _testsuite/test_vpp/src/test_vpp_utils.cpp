@@ -35,10 +35,10 @@ void WipeFrameProcessor(sFrameProcessor* pProcessor);
 static
 void WipeMemoryAllocator(sMemoryAllocator* pAllocator);
 
-IppStatus cc_NV12_to_YV12( 
-                          mfxFrameData* inData,  
+IppStatus cc_NV12_to_YV12(
+                          mfxFrameData* inData,
                           mfxFrameInfo* inInfo,
-                          mfxFrameData* outData, 
+                          mfxFrameData* outData,
                           mfxFrameInfo* outInfo );
 /* ******************************************************************* */
 
@@ -57,6 +57,8 @@ const vm_char* FourCC2Str( mfxU32 FourCC )
         return VM_STRING("RGB3");
     case MFX_FOURCC_RGB4:
         return VM_STRING("RGB4");
+    case MFX_FOURCC_RGBP:
+        return MSDK_STRING("RGBP");
     case MFX_FOURCC_YUV400:
         return VM_STRING("YUV400");
     case MFX_FOURCC_YUV411:
@@ -160,7 +162,7 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     mfxFrameInfo Info;
 
     CHECK_POINTER_NO_RET(pParams);
-    CHECK_POINTER_NO_RET(pMfxParams);    
+    CHECK_POINTER_NO_RET(pMfxParams);
 
     Info = pMfxParams->vpp.In;
     vm_string_printf(VM_STRING("Input format\t%s\n"), FourCC2Str( Info.FourCC ));
@@ -235,11 +237,11 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     // info abour ROI testing
     if( ROI_FIX_TO_FIX == pParams->roiCheckParam.mode )
     {
-        vm_string_printf(VM_STRING("ROI checking                 \tOFF\n"));  
+        vm_string_printf(VM_STRING("ROI checking                 \tOFF\n"));
     }
     else
     {
-        vm_string_printf(VM_STRING("ROI checking                 \tON (seed1 = %i, seed2 = %i)\n"),pParams->roiCheckParam.srcSeed, pParams->roiCheckParam.dstSeed );  
+        vm_string_printf(VM_STRING("ROI checking                 \tON (seed1 = %i, seed2 = %i)\n"),pParams->roiCheckParam.srcSeed, pParams->roiCheckParam.dstSeed );
     }
 
     vm_string_printf(VM_STRING("\n"));
@@ -256,9 +258,9 @@ void PrintInfo(sInputParams* pParams, mfxVideoParam* pMfxParams, MFXVideoSession
     if (isHWlib || (pParams->vaType & (ALLOC_IMPL_VIA_D3D9 | ALLOC_IMPL_VIA_D3D11)))
     {
         bool  isD3D11 = (( ALLOC_IMPL_VIA_D3D11 == pParams->vaType) || (pParams->ImpLib == (MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D11))) ?  true : false;
-        const vm_char* sIface = ( isD3D11 ) ? VM_STRING("VIA_D3D11") : VM_STRING("VIA_D3D9");  
+        const vm_char* sIface = ( isD3D11 ) ? VM_STRING("VIA_D3D11") : VM_STRING("VIA_D3D9");
         vm_string_printf(VM_STRING(" | %s"), sIface);
-    } 
+    }
 #endif
     vm_string_printf(VM_STRING("\n"));
     //-------------------------------------------------------
@@ -282,7 +284,7 @@ mfxStatus ParseGUID(vm_char strPlgGuid[MAX_FILELEN], mfxU8 DataGUID[16])
     const vm_char *uid = strPlgGuid;
     mfxU32 i   = 0;
     mfxU32 hex = 0;
-    for(i = 0; i != 16; i++) 
+    for(i = 0; i != 16; i++)
     {
         hex = 0;
 #if defined(_WIN32) || defined(_WIN64)
@@ -320,12 +322,12 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
         return MFX_ERR_UNSUPPORTED;
     }
 
-    memset(pParams, 0, sizeof(mfxVideoParam));                                   
+    memset(pParams, 0, sizeof(mfxVideoParam));
 
-    /* input data */  
+    /* input data */
     pParams->vpp.In.Shift           = pInParams->frameInfoIn[paramID].Shift;
     pParams->vpp.In.FourCC          = pInParams->frameInfoIn[paramID].FourCC;
-    pParams->vpp.In.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;  
+    pParams->vpp.In.ChromaFormat    = MFX_CHROMAFORMAT_YUV420;
     pParams->vpp.In.BitDepthLuma    = pInParams->frameInfoIn[paramID].BitDepth;
     pParams->vpp.In.BitDepthChroma  = pInParams->frameInfoIn[paramID].BitDepth;
 
@@ -334,9 +336,9 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     pParams->vpp.In.CropW = pInParams->frameInfoIn[paramID].CropW;
     pParams->vpp.In.CropH = pInParams->frameInfoIn[paramID].CropH;
 
-    // width must be a multiple of 16 
-    // height must be a multiple of 16 in case of frame picture and 
-    // a multiple of 32 in case of field picture  
+    // width must be a multiple of 16
+    // height must be a multiple of 16 in case of frame picture and
+    // a multiple of 32 in case of field picture
     pParams->vpp.In.Width = ALIGN16(pInParams->frameInfoIn[paramID].nWidth);
     pParams->vpp.In.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfoIn[paramID].PicStruct)?
         ALIGN16(pInParams->frameInfoIn[paramID].nHeight) : ALIGN32(pInParams->frameInfoIn[paramID].nHeight);
@@ -344,7 +346,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     pParams->vpp.In.PicStruct = pInParams->frameInfoIn[paramID].PicStruct;
 
     ConvertFrameRate(pInParams->frameInfoIn[paramID].dFrameRate,
-        &pParams->vpp.In.FrameRateExtN, 
+        &pParams->vpp.In.FrameRateExtN,
         &pParams->vpp.In.FrameRateExtD);
 
     /* output data */
@@ -359,9 +361,9 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     pParams->vpp.Out.CropW = pInParams->frameInfoOut[paramID].CropW;
     pParams->vpp.Out.CropH = pInParams->frameInfoOut[paramID].CropH;
 
-    // width must be a multiple of 16 
-    // height must be a multiple of 16 in case of frame picture and 
-    // a multiple of 32 in case of field picture  
+    // width must be a multiple of 16
+    // height must be a multiple of 16 in case of frame picture and
+    // a multiple of 32 in case of field picture
     pParams->vpp.Out.Width = ALIGN16(pInParams->frameInfoOut[paramID].nWidth);
     pParams->vpp.Out.Height= (MFX_PICSTRUCT_PROGRESSIVE == pInParams->frameInfoOut[paramID].PicStruct)?
         ALIGN16(pInParams->frameInfoOut[paramID].nHeight) : ALIGN32(pInParams->frameInfoOut[paramID].nHeight);
@@ -379,7 +381,7 @@ mfxStatus InitParamsVPP(mfxVideoParam* pParams, sInputParams* pInParams, mfxU32 
     pParams->vpp.Out.PicStruct = pInParams->frameInfoOut[paramID].PicStruct;
 
     ConvertFrameRate(pInParams->frameInfoOut[paramID].dFrameRate,
-        &pParams->vpp.Out.FrameRateExtN, 
+        &pParams->vpp.Out.FrameRateExtN,
         &pParams->vpp.Out.FrameRateExtD);
 
     pParams->IOPattern = pInParams->IOPattern;
@@ -433,7 +435,7 @@ mfxStatus CreateFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pPara
     CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to Init mfx session\n"));  WipeFrameProcessor(pProcessor);});
 
     // Plug-in
-    if ( pInParams->need_plugin ) 
+    if ( pInParams->need_plugin )
     {
         pProcessor->plugin = true;
         ParseGUID(pInParams->strPlgGuid, pProcessor->mfxGuid.Data);
@@ -570,7 +572,7 @@ mfxStatus InitFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams
     CHECK_POINTER(pProcessor->pmfxVPP, MFX_ERR_NULL_PTR);
 
     // close VPP in case it was initialized
-    sts = pProcessor->pmfxVPP->Close(); 
+    sts = pProcessor->pmfxVPP->Close();
     IGNORE_MFX_STS(sts, MFX_ERR_NOT_INITIALIZED);
     CHECK_RESULT(sts,   MFX_ERR_NONE, sts);
 
@@ -583,10 +585,10 @@ mfxStatus InitFrameProcessor(sFrameProcessor* pProcessor, mfxVideoParam* pParams
 /* ******************************************************************* */
 
 mfxStatus InitSurfaces(
-    sMemoryAllocator* pAllocator, 
-    mfxFrameAllocRequest* pRequest, 
-    mfxFrameInfo* pInfo, 
-    mfxU32 indx, 
+    sMemoryAllocator* pAllocator,
+    mfxFrameAllocRequest* pRequest,
+    mfxFrameInfo* pInfo,
+    mfxU32 indx,
     bool isPtr)
 {
     mfxStatus sts = MFX_ERR_NONE;
@@ -599,7 +601,7 @@ mfxStatus InitSurfaces(
     pAllocator->pSurfaces[indx] = new mfxFrameSurface1 [nFrames];
 
     for (i = 0; i < nFrames; i++)
-    {       
+    {
         memset(&(pAllocator->pSurfaces[indx][i]), 0, sizeof(mfxFrameSurface1));
         pAllocator->pSurfaces[indx][i].Info = *pInfo;
 
@@ -609,8 +611,8 @@ mfxStatus InitSurfaces(
         }
         else
         {
-            sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis, 
-                pAllocator->response[indx].mids[i], 
+            sts = pAllocator->pMfxAllocator->Lock(pAllocator->pMfxAllocator->pthis,
+                pAllocator->response[indx].mids[i],
                 &(pAllocator->pSurfaces[indx][i].Data));
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to lock frames\n"));  WipeMemoryAllocator(pAllocator);});
         }
@@ -622,10 +624,10 @@ mfxStatus InitSurfaces(
 /* ******************************************************************* */
 
 mfxStatus InitSvcSurfaces(
-    sMemoryAllocator* pAllocator, 
-    mfxFrameAllocRequest* pRequest, 
-    mfxFrameInfo* pInfo, 
-    mfxU32 /*indx*/, 
+    sMemoryAllocator* pAllocator,
+    mfxFrameAllocRequest* pRequest,
+    mfxFrameInfo* pInfo,
+    mfxU32 /*indx*/,
     bool isPtr,
     sSVCLayerDescr* pSvcDesc
     )
@@ -639,12 +641,12 @@ mfxStatus InitSvcSurfaces(
         if( pSvcDesc[did].active )
         {
             layerRequest[did] = *pRequest;
-            
+
             layerRequest[did].Info.CropX  = pSvcDesc[did].cropX;
             layerRequest[did].Info.CropY  = pSvcDesc[did].cropY;
             layerRequest[did].Info.CropW  = pSvcDesc[did].cropW;
             layerRequest[did].Info.CropH  = pSvcDesc[did].cropH;
-            
+
             layerRequest[did].Info.Height = pSvcDesc[did].height;
             layerRequest[did].Info.Width  = pSvcDesc[did].width;
 
@@ -653,22 +655,22 @@ mfxStatus InitSvcSurfaces(
             layerRequest[did].Info.FrameId.DependencyId = did;
 
             sts = pAllocator->pMfxAllocator->Alloc(
-                pAllocator->pMfxAllocator->pthis, 
-                &(layerRequest[did]), 
+                pAllocator->pMfxAllocator->pthis,
+                &(layerRequest[did]),
                 &(pAllocator->svcResponse[did]));
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to alloc frames\n"));  WipeMemoryAllocator(pAllocator);});
 
             pAllocator->pSvcSurfaces[did] = new mfxFrameSurface1 [nFrames];
         }
-    } 
-    
+    }
+
 
     for( did = 0; did < 8; did++ )
     {
         if( 0 == pSvcDesc[did].active ) continue;
-        
+
         for (i = 0; i < nFrames; i++)
-        {       
+        {
             memset(&(pAllocator->pSvcSurfaces[did][i]), 0, sizeof(mfxFrameSurface1));
 
             pAllocator->pSvcSurfaces[did][i].Info = layerRequest[did].Info;
@@ -680,8 +682,8 @@ mfxStatus InitSvcSurfaces(
             else
             {
                 sts = pAllocator->pMfxAllocator->Lock(
-                    pAllocator->pMfxAllocator->pthis, 
-                    pAllocator->svcResponse[did].mids[i], 
+                    pAllocator->pMfxAllocator->pthis,
+                    pAllocator->svcResponse[did].mids[i],
                     &(pAllocator->pSvcSurfaces[did][i].Data));
                 CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to lock frames\n"));  WipeMemoryAllocator(pAllocator);});
             }
@@ -694,12 +696,12 @@ mfxStatus InitSvcSurfaces(
 /* ******************************************************************* */
 
 mfxStatus InitMemoryAllocator(
-    sFrameProcessor* pProcessor, 
-    sMemoryAllocator* pAllocator, 
-    mfxVideoParam* pParams, 
+    sFrameProcessor* pProcessor,
+    sMemoryAllocator* pAllocator,
+    mfxVideoParam* pParams,
     sInputParams* pInParams)
 {
-    mfxStatus sts = MFX_ERR_NONE;  
+    mfxStatus sts = MFX_ERR_NONE;
     mfxFrameAllocRequest request[2];// [0] - in, [1] - out
 
     CHECK_POINTER(pProcessor,          MFX_ERR_NULL_PTR);
@@ -737,7 +739,7 @@ mfxStatus InitMemoryAllocator(
 #ifdef D3D_SURFACES_SUPPORT
         if( ((MFX_IMPL_HARDWARE | MFX_IMPL_VIA_D3D9) == pInParams->ImpLib) || (ALLOC_IMPL_VIA_D3D9 == pInParams->vaType) )
         {
-            D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;  
+            D3DAllocatorParams *pd3dAllocParams = new D3DAllocatorParams;
             // prepare device manager
             sts = CreateDeviceManager(&(pAllocator->pd3dDeviceManager));
             CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to CreateDeviceManager\n")); WipeMemoryAllocator(pAllocator);});
@@ -749,7 +751,7 @@ mfxStatus InitMemoryAllocator(
             pd3dAllocParams->pManager = pAllocator->pd3dDeviceManager;
             pAllocator->pAllocatorParams = pd3dAllocParams;
 
-            /* In case of video memory we must provide mediasdk with external allocator 
+            /* In case of video memory we must provide mediasdk with external allocator
             thus we demonstrate "external allocator" usage model.
             Call SetAllocator to pass allocator to mediasdk */
             sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
@@ -759,7 +761,7 @@ mfxStatus InitMemoryAllocator(
         {
 #ifdef MFX_D3D11_SUPPORT
 
-            D3D11AllocatorParams *pd3d11AllocParams = new D3D11AllocatorParams;  
+            D3D11AllocatorParams *pd3d11AllocParams = new D3D11AllocatorParams;
 
             // prepare device manager
             sts = CreateD3D11Device(&(pAllocator->pD3D11Device), &(pAllocator->pD3D11DeviceContext));
@@ -789,13 +791,13 @@ mfxStatus InitMemoryAllocator(
         sts = pProcessor->mfxSession.SetHandle(MFX_HANDLE_VA_DISPLAY, (mfxHDL)pAllocator->libvaKeeper->GetVADisplay());
         CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-        /* In case of video memory we must provide mediasdk with external allocator 
+        /* In case of video memory we must provide mediasdk with external allocator
         thus we demonstrate "external allocator" usage model.
         Call SetAllocator to pass allocator to mediasdk */
         sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
         CHECK_RESULT_SAFE(sts, MFX_ERR_NONE, sts, { vm_string_printf(VM_STRING("Failed to SetFrameAllocator\n"));  WipeMemoryAllocator(pAllocator);});
 #endif
-    }  
+    }
     else if (pAllocator->bUsedAsExternalAllocator)
     {
         sts = pProcessor->mfxSession.SetFrameAllocator(pAllocator->pMfxAllocator);
@@ -824,19 +826,19 @@ mfxStatus InitMemoryAllocator(
     if( VPP_FILTER_DISABLED == pInParams->svcParam[0].mode )
     {
         sts = InitSurfaces(
-            pAllocator, 
-            &(request[VPP_OUT]), 
-            &(pParams->vpp.Out), 
-            VPP_OUT, 
+            pAllocator,
+            &(request[VPP_OUT]),
+            &(pParams->vpp.Out),
+            VPP_OUT,
             isOutPtr);
     }
     else
     {
         sts = InitSvcSurfaces(
-            pAllocator, 
-            &(request[VPP_OUT]), 
-            &(pParams->vpp.Out), 
-            VPP_OUT, 
+            pAllocator,
+            &(request[VPP_OUT]),
+            &(pParams->vpp.Out),
+            VPP_OUT,
             isOutPtr,
             &(pInParams->svcParam[0].descr[0]));
     }
@@ -879,7 +881,7 @@ void WipeFrameProcessor(sFrameProcessor* pProcessor)
 
     SAFE_DELETE(pProcessor->pmfxVPP);
 
-    if ( pProcessor->plugin ) 
+    if ( pProcessor->plugin )
     {
         MFXVideoUSER_UnLoad(pProcessor->mfxSession, &(pProcessor->mfxGuid));
     }
@@ -915,7 +917,7 @@ void WipeMemoryAllocator(sMemoryAllocator* pAllocator)
     // delete allocator
     SAFE_DELETE(pAllocator->pMfxAllocator);
 
-#ifdef D3D_SURFACES_SUPPORT 
+#ifdef D3D_SURFACES_SUPPORT
     // release device manager
     if (pAllocator->pd3dDeviceManager)
     {
@@ -1033,12 +1035,12 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
     mfxU32 nBytesRead;
     mfxU8 *ptr;
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0) 
+    if (pInfo->CropH > 0 && pInfo->CropW > 0)
     {
         w = pInfo->CropW;
         h = pInfo->CropH;
-    } 
-    else 
+    }
+    else
     {
         w = pInfo->Width;
         h = pInfo->Height;
@@ -1051,7 +1053,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1062,14 +1064,14 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         pitch >>= 1;
         // load V
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
         // load U
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1080,7 +1082,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1091,7 +1093,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1101,14 +1103,14 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 
         // load V
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
         // load U
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1119,7 +1121,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1129,14 +1131,14 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 
         // load V
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
         // load U
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1147,7 +1149,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1157,14 +1159,14 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 
         // load V
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
         // load U
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1175,7 +1177,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1183,14 +1185,14 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 
         // load V
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
         // load U
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1201,7 +1203,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1210,7 +1212,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         // load UV
         h     >>= 1;
         ptr = pData->UV + pInfo->CropX + (pInfo->CropY >> 1) * pitch;
-        for (i = 0; i < h; i++) 
+        for (i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1253,7 +1255,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         // load UV
         h     >>= 1;
         ptr = pData->UV + pInfo->CropX + (pInfo->CropY >> 1) * pitch;
-        for (i = 0; i < h; i++) 
+        for (i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w*2, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
@@ -1264,7 +1266,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = pData->Y + pInfo->CropX * 2 + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w * 2, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
@@ -1272,7 +1274,7 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 
         // load UV
         ptr = pData->UV + pInfo->CropX + (pInfo->CropY >> 1) * pitch;
-        for (i = 0; i < h; i++) 
+        for (i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w*2, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w*2, MFX_ERR_MORE_DATA);
@@ -1287,29 +1289,29 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
         ptr = IPP_MIN( IPP_MIN(pData->R, pData->G), pData->B );
         ptr = ptr + pInfo->CropX + pInfo->CropY * pitch;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, 3*w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 3*w, MFX_ERR_MORE_DATA);
         }
-    } 
+    }
     else if (pInfo->FourCC == MFX_FOURCC_RGB4)
     {
         CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
         CHECK_POINTER(pData->G, MFX_ERR_NOT_INITIALIZED);
         CHECK_POINTER(pData->B, MFX_ERR_NOT_INITIALIZED);
         // there is issue with A channel in case of d3d, so A-ch is ignored
-        //CHECK_POINTER(pData->A, MFX_ERR_NOT_INITIALIZED); 
+        //CHECK_POINTER(pData->A, MFX_ERR_NOT_INITIALIZED);
 
         ptr = IPP_MIN( IPP_MIN(pData->R, pData->G), pData->B );
         ptr = ptr + pInfo->CropX + pInfo->CropY * pitch;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, 4*w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 4*w, MFX_ERR_MORE_DATA);
         }
-    } 
+    }
     else if (pInfo->FourCC == MFX_FOURCC_YUY2)
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
@@ -1324,18 +1326,18 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
     {
         ptr = pData->U + pInfo->CropX + pInfo->CropY * pitch;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, 2*w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, 2*w, MFX_ERR_MORE_DATA);
         }
-    } 
+    }
     else if (pInfo->FourCC == MFX_FOURCC_IMC3)
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
         // read luminance plane
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1345,14 +1347,14 @@ mfxStatus CRawVideoReader::LoadNextFrame(mfxFrameData* pData, mfxFrameInfo* pInf
 
         // load V
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
         }
         // load U
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             nBytesRead = (mfxU32)vm_file_fread(ptr + i * pitch, 1, w, m_fSrc);
             IOSTREAM_CHECK_NOT_EQUAL(nBytesRead, w, MFX_ERR_MORE_DATA);
@@ -1439,7 +1441,7 @@ mfxStatus CRawVideoReader::GetNextInputFrame(sMemoryAllocator* pAllocator, mfxFr
             MFX_CHECK_STS(sts);
         }
     }
-    else 
+    else
     {
         sts = GetPreAllocFrame(pSurface);
         MFX_CHECK_STS(sts);
@@ -1476,8 +1478,8 @@ mfxStatus  CRawVideoReader::GetPreAllocFrame(mfxFrameSurface1 **pSurface)
 }
 
 
-mfxStatus  CRawVideoReader::PreAllocateFrameChunk(mfxVideoParam* pVideoParam, 
-                                                  sInputParams* pParams, 
+mfxStatus  CRawVideoReader::PreAllocateFrameChunk(mfxVideoParam* pVideoParam,
+                                                  sInputParams* pParams,
                                                   MFXFrameAllocator* pAllocator)
 {
     mfxStatus sts;
@@ -1552,7 +1554,7 @@ CRawVideoWriter::~CRawVideoWriter()
 }
 
 
-mfxStatus CRawVideoWriter::CRC32(mfxU8 *data, mfxU32 len) 
+mfxStatus CRawVideoWriter::CRC32(mfxU8 *data, mfxU32 len)
 {
     if (! data || len <= 0 ) return MFX_ERR_ABORTED;
 
@@ -1579,12 +1581,12 @@ mfxU32 CRawVideoWriter::GetCRC()
 
 
 mfxStatus CRawVideoWriter::PutNextFrame(
-                                        sMemoryAllocator* pAllocator, 
-                                        mfxFrameInfo* pInfo, 
+                                        sMemoryAllocator* pAllocator,
+                                        mfxFrameInfo* pInfo,
                                         mfxFrameSurface1* pSurface)
 {
     mfxStatus sts;
-    
+
     try
     {
         if (m_fDst)
@@ -1644,13 +1646,13 @@ void CRawVideoWriter::WriteLine(mfxU8 *data, mfxU32 length)
 
     if (length != (mfxU32)vm_file_fwrite(data, 1, length, m_fDst))
         throw MFX_ERR_UNDEFINED_BEHAVIOR;
- 
+
     if (m_need_crc)
         CRC32(data, length);
 }
 
 mfxStatus CRawVideoWriter::WriteFrame(
-                                      mfxFrameData* pData, 
+                                      mfxFrameData* pData,
                                       mfxFrameInfo* pInfo)
 {
     mfxU32 i, h, w, pitch;
@@ -1659,7 +1661,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
     CHECK_POINTER(pData, MFX_ERR_NOT_INITIALIZED);
     CHECK_POINTER(pInfo, MFX_ERR_NOT_INITIALIZED);
     //-------------------------------------------------------
-    //aya: yv12 output is usefull 
+    //aya: yv12 output is usefull
     mfxFrameData outData = *pData;
 
 
@@ -1696,12 +1698,12 @@ mfxStatus CRawVideoWriter::WriteFrame(
 
     //-------------------------------------------------------
 
-    if (pInfo->CropH > 0 && pInfo->CropW > 0) 
+    if (pInfo->CropH > 0 && pInfo->CropW > 0)
     {
         w = pInfo->CropW;
         h = pInfo->CropH;
-    } 
-    else 
+    }
+    else
     {
         w = pInfo->Width;
         h = pInfo->Height;
@@ -1724,17 +1726,17 @@ mfxStatus CRawVideoWriter::WriteFrame(
         pitch >>= 1;
 
         ptr  = outData.V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = outData.U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
-    } 
+    }
     else if(pInfo->FourCC == MFX_FOURCC_YUV400)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
@@ -1749,17 +1751,17 @@ mfxStatus CRawVideoWriter::WriteFrame(
         pitch >>= 1;
 
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
-    } 
+    }
     else if(pInfo->FourCC == MFX_FOURCC_YUV411)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
@@ -1773,17 +1775,17 @@ mfxStatus CRawVideoWriter::WriteFrame(
         //pitch /= 4;
 
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
-    } 
+    }
     else if(pInfo->FourCC == MFX_FOURCC_YUV422H)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
@@ -1797,17 +1799,17 @@ mfxStatus CRawVideoWriter::WriteFrame(
         //pitch >>= 1;
 
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
-    } 
+    }
     else if(pInfo->FourCC == MFX_FOURCC_YUV422V)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
@@ -1820,17 +1822,17 @@ mfxStatus CRawVideoWriter::WriteFrame(
         h     >>= 1;
 
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
-    } 
+    }
     else if(pInfo->FourCC == MFX_FOURCC_YUV444)
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
@@ -1841,17 +1843,17 @@ mfxStatus CRawVideoWriter::WriteFrame(
         }
 
         ptr  = pData->V + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
 
         ptr  = pData->U + (pInfo->CropX >> 1) + (pInfo->CropY >> 1) * pitch;
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
-    } 
+    }
     else if( pInfo->FourCC == MFX_FOURCC_NV12 )
     {
         ptr   = pData->Y + (pInfo->CropX ) + (pInfo->CropY ) * pitch;
@@ -1865,7 +1867,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
         h     >>= 1;
         ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w);
         }
@@ -1904,7 +1906,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
         h     >>= 1;
         ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch ;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w * 2);
         }
@@ -1921,7 +1923,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
         // write UV data
         ptr  = pData->UV + (pInfo->CropX ) + (pInfo->CropY >> 1) * pitch ;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, w * 2);
         }
@@ -1930,7 +1932,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
     {
         ptr = pData->Y + pInfo->CropX + pInfo->CropY * pitch;
 
-        for(i = 0; i < h; i++) 
+        for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, 2*w);
         }
@@ -1965,7 +1967,7 @@ mfxStatus CRawVideoWriter::WriteFrame(
         CHECK_POINTER(pData->G, MFX_ERR_NOT_INITIALIZED);
         CHECK_POINTER(pData->B, MFX_ERR_NOT_INITIALIZED);
         // there is issue with A channel in case of d3d, so A-ch is ignored
-        //CHECK_POINTER(pData->A, MFX_ERR_NOT_INITIALIZED); 
+        //CHECK_POINTER(pData->A, MFX_ERR_NOT_INITIALIZED);
 
         ptr = IPP_MIN( IPP_MIN(pData->R, pData->G), pData->B );
         ptr = ptr + pInfo->CropX + pInfo->CropY * pitch;
@@ -1973,6 +1975,28 @@ mfxStatus CRawVideoWriter::WriteFrame(
         for(i = 0; i < h; i++)
         {
             WriteLine(ptr + i * pitch, 4*w);
+        }
+    }
+    else if (pInfo->FourCC == MFX_FOURCC_RGBP)
+    {
+        CHECK_POINTER(pData->R, MFX_ERR_NOT_INITIALIZED);
+        CHECK_POINTER(pData->G, MFX_ERR_NOT_INITIALIZED);
+        CHECK_POINTER(pData->B, MFX_ERR_NOT_INITIALIZED);
+
+        ptr = pData->R + pInfo->CropX + pInfo->CropY * pitch;
+        for(i = 0; i < h; i++)
+        {
+            WriteLine(ptr + i * pitch, w);
+        }
+        ptr = pData->G + pInfo->CropX + pInfo->CropY * pitch;
+        for(i = 0; i < h; i++)
+        {
+            WriteLine(ptr + i * pitch, w);
+        }
+        ptr = pData->B + pInfo->CropX + pInfo->CropY * pitch;
+        for(i = 0; i < h; i++)
+        {
+            WriteLine(ptr + i * pitch, w);
         }
     }
     else if (pInfo->FourCC == MFX_FOURCC_AYUV)
@@ -2051,7 +2075,7 @@ void GeneralWriter::Close()
 
 
 mfxStatus GeneralWriter::Init(
-    const vm_char *strFileName, 
+    const vm_char *strFileName,
     PTSMaker *pPTSMaker,
     sInputParams   &params,
     sSVCLayerDescr*  pDesc)
@@ -2082,7 +2106,7 @@ mfxStatus GeneralWriter::Init(
                 dir,
                 fname,
                 ext);
-            
+
             vm_char out_buf[1024];
             vm_string_sprintf_s(out_buf, VM_STRING("%s%s%s_layer%i.yuv"), drive, dir, fname, did);
 
@@ -2107,12 +2131,12 @@ mfxU32  GeneralWriter::GetCRC(
 };
 
 mfxStatus  GeneralWriter::PutNextFrame(
-        sMemoryAllocator* pAllocator, 
-        mfxFrameInfo* pInfo, 
+        sMemoryAllocator* pAllocator,
+        mfxFrameInfo* pInfo,
         mfxFrameSurface1* pSurface)
 {
     mfxU32 did = (m_svcMode) ? pSurface->Info.FrameId.DependencyId : 0;//aya: for MVC we have 1 out file only
-    
+
     mfxStatus sts = m_ofile[did]->PutNextFrame(pAllocator, pInfo, pSurface);
 
     return sts;
@@ -2134,7 +2158,7 @@ mfxStatus UpdateSurfacePool(mfxFrameInfo SurfacesInfo, mfxU16 nPoolSize, mfxFram
 }
 mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxFrameSurface1** ppSurface)
 {
-    CHECK_POINTER(pSurfacesPool, MFX_ERR_NULL_PTR); 
+    CHECK_POINTER(pSurfacesPool, MFX_ERR_NULL_PTR);
     CHECK_POINTER(ppSurface,     MFX_ERR_NULL_PTR);
 
     mfxU32 timeToSleep = 10; // milliseconds
@@ -2144,7 +2168,7 @@ mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxF
 
     //wait if there's no free surface
     while ((INVALID_SURF_IDX == GetFreeSurfaceIndex(pSurfacesPool, nPoolSize)) && (i < numSleeps))
-    {        
+    {
         vm_time_sleep(timeToSleep);
         i++;
     }
@@ -2160,9 +2184,9 @@ mfxStatus GetFreeSurface(mfxFrameSurface1* pSurfacesPool, mfxU16 nPoolSize, mfxF
     return MFX_ERR_NOT_ENOUGH_BUFFER;
 }
 
-// Wrapper on standard allocator for concurrent allocation of 
+// Wrapper on standard allocator for concurrent allocation of
 // D3D and system surfaces
-GeneralAllocator::GeneralAllocator() 
+GeneralAllocator::GeneralAllocator()
 {
 #ifdef MFX_D3D11_SUPPORT
     m_D3D11Allocator.reset(new D3D11FrameAllocator);
@@ -2178,7 +2202,7 @@ GeneralAllocator::GeneralAllocator()
     m_isDx11 = false;
 
 };
-GeneralAllocator::~GeneralAllocator() 
+GeneralAllocator::~GeneralAllocator()
 {
 };
 mfxStatus GeneralAllocator::Init(mfxAllocatorParams *pParams)
@@ -2389,10 +2413,10 @@ void PrintDllInfo()
 
 
 // internal feature
-IppStatus cc_NV12_to_YV12( 
-                          mfxFrameData* inData,  
+IppStatus cc_NV12_to_YV12(
+                          mfxFrameData* inData,
                           mfxFrameInfo* inInfo,
-                          mfxFrameData* outData, 
+                          mfxFrameData* outData,
                           mfxFrameInfo* /*outInfo*/ )
 {
     IppStatus sts = ippStsNoErr;

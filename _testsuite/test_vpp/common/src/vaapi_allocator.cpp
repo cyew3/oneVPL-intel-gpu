@@ -30,6 +30,8 @@ unsigned int ConvertMfxFourccToVAFormat(mfxU32 fourcc)
         return VA_FOURCC_YV12;
     case MFX_FOURCC_RGB4:
         return VA_FOURCC_ARGB;
+    case MFX_FOURCC_RGBP:
+        return VA_FOURCC_RGBP;
     case MFX_FOURCC_BGR4:
         return VA_FOURCC_ABGR;
     case MFX_FOURCC_P8:
@@ -138,6 +140,10 @@ mfxStatus vaapiFrameAllocator::AllocImpl(mfxFrameAllocRequest *request, mfxFrame
             else if (va_fourcc == VA_FOURCC_NV12)
             {
                 format = VA_RT_FORMAT_YUV420;
+            }
+            else if (fourcc == MFX_FOURCC_RGBP)
+            {
+                format = VA_RT_FORMAT_RGBP;
             }
 
             va_res = m_libva.vaCreateSurfaces(m_dpy,
@@ -326,6 +332,16 @@ mfxStatus vaapiFrameAllocator::LockFrame(mfxMemId mid, mfxFrameData *ptr)
                     ptr->G = ptr->B + 1;
                     ptr->R = ptr->B + 2;
                     ptr->A = ptr->B + 3;
+                }
+                else mfx_res = MFX_ERR_LOCK_MEMORY;
+                break;
+            case VA_FOURCC_RGBP:
+                if (vaapi_mid->m_fourcc == MFX_FOURCC_RGBP)
+                {
+                    ptr->Pitch = (mfxU16)vaapi_mid->m_image.pitches[0];
+                    ptr->B = pBuffer + vaapi_mid->m_image.offsets[0];
+                    ptr->G = pBuffer + vaapi_mid->m_image.offsets[1];
+                    ptr->R = pBuffer + vaapi_mid->m_image.offsets[2];
                 }
                 else mfx_res = MFX_ERR_LOCK_MEMORY;
                 break;
