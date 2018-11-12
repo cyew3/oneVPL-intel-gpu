@@ -323,7 +323,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
       {
         currMCURow = curr_rsti*m_rstiHeight;
 
-        rh = MFX_MIN(m_rstiHeight, m_numyMCU - currMCURow);
+        rh = std::min(m_rstiHeight, m_numyMCU - currMCURow);
 
         for(int r = 0; r < rh; r++)
         {
@@ -456,7 +456,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
       {
         currMCURow = curr_rsti*m_rstiHeight;
 
-        rh = MFX_MIN(m_rstiHeight, m_numyMCU - currMCURow);
+        rh = std::min(m_rstiHeight, m_numyMCU - currMCURow);
 
         for(int r = 0; r < rh; r++)
         {

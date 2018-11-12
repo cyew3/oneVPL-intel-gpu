@@ -579,7 +579,7 @@ JERRCODE CJPEGEncoder::SetParams(
   case JC_YCBCR: m_jpeg_ncomp = 3; break;
   case JC_CMYK:  m_jpeg_ncomp = 4; break;
   case JC_YCCK:  m_jpeg_ncomp = 4; break;
-  default:       m_jpeg_ncomp = MFX_MIN(MAX_COMPS_PER_SCAN,m_src.nChannels); break;
+  default:       m_jpeg_ncomp = std::min(MAX_COMPS_PER_SCAN,m_src.nChannels); break;
   }
 
   int id[4] = { 0, 1, 1, 0 };
@@ -715,7 +715,7 @@ JERRCODE CJPEGEncoder::SetParams(
   case JC_YCBCR: m_jpeg_ncomp = 3; break;
   case JC_CMYK:  m_jpeg_ncomp = 4; break;
   case JC_YCCK:  m_jpeg_ncomp = 4; break;
-  default:       m_jpeg_ncomp = MFX_MIN(MAX_COMPS_PER_SCAN,m_src.nChannels); break;
+  default:       m_jpeg_ncomp = std::min(MAX_COMPS_PER_SCAN,m_src.nChannels); break;
   }
 
   if(!m_optimal_htbl)
@@ -2141,7 +2141,7 @@ JERRCODE CJPEGEncoder::Init(void)
   int buflen;
 
   buflen = (m_jpeg_mode == JPEG_LOSSLESS) ?
-    MFX_MAX(ENC_DEFAULT_BUFLEN,m_numxMCU * m_jpeg_ncomp * 2 * 2) :
+    std::max(ENC_DEFAULT_BUFLEN,m_numxMCU * m_jpeg_ncomp * 2 * 2) :
     ENC_DEFAULT_BUFLEN;
 
   jerr = m_BitStreamOut.Init(buflen);
