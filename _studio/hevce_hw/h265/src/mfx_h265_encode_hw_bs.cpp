@@ -2825,10 +2825,14 @@ void HeaderPacker::GetPrefixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     bool insertLightLevel = false, insertDisplayColour = false;
 #endif
 
-    for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
+    if (task.m_ctrl.Payload != nullptr)
     {
-        if (!(task.m_ctrl.Payload[i]->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX))
-            prefixPL.push_back(task.m_ctrl.Payload[i]);
+        for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
+        {
+            if ((task.m_ctrl.Payload[i] != nullptr) &&
+                !(task.m_ctrl.Payload[i]->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX))
+                prefixPL.push_back(task.m_ctrl.Payload[i]);
+        }
     }
 
     if (m_par->mfx.RateControlMethod != MFX_RATECONTROL_CQP)
@@ -3019,12 +3023,18 @@ void HeaderPacker::GetSuffixSEI(Task const & task, mfxU8*& buf, mfxU32& sizeInBy
     std::list<const mfxPayload*> suffixPL, prefixPL;
     std::list<const mfxPayload*>::iterator plIt;
 
-    for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
+    if (task.m_ctrl.Payload != nullptr)
     {
-        if (task.m_ctrl.Payload[i]->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX)
-            suffixPL.push_back(task.m_ctrl.Payload[i]);
-        else
-            prefixPL.push_back(task.m_ctrl.Payload[i]);
+        for (mfxU16 i = 0; i < task.m_ctrl.NumPayload; i++)
+        {
+            if (task.m_ctrl.Payload[i] != nullptr)
+            {
+                if (task.m_ctrl.Payload[i]->CtrlFlags & MFX_PAYLOAD_CTRL_SUFFIX)
+                    suffixPL.push_back(task.m_ctrl.Payload[i]);
+                else
+                    prefixPL.push_back(task.m_ctrl.Payload[i]);
+            }
+        }
     }
 
      /* It is a requirement of bitstream conformance that when a prefix SEI message with payloadType

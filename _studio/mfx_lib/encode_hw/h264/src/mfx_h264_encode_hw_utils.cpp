@@ -5617,7 +5617,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         needBufferingPeriod = needPicTimingSei = 0; // in CQP HRD mode application inserts BP and PT SEI itself
 
     mfxU32 needAtLeastOneSei =
-        (task.m_ctrl.Payload && task.m_ctrl.NumPayload > secondFieldPicFlag && task.m_ctrl.Payload[secondFieldPicFlag] != 0) ||
+        (task.m_ctrl.NumPayload > secondFieldPicFlag && task.m_ctrl.Payload != nullptr && task.m_ctrl.Payload[secondFieldPicFlag] != 0) ||
         (fillerSize > 0)    ||
         needBufferingPeriod ||
         needPicTimingSei    ||
@@ -5668,9 +5668,11 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
         }
     }
     // user-defined messages
+    if (task.m_ctrl.Payload != nullptr)
+    {
     for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
     {
-        if (task.m_ctrl.Payload[i] != 0)
+            if (task.m_ctrl.Payload[i] != nullptr)
         {
             if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
@@ -5679,6 +5681,7 @@ void MfxHwH264Encode::PrepareSeiMessageBuffer(
             if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
         }
+    }
     }
 
     if (needMarkingRepetitionSei)
@@ -5834,9 +5837,11 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
         writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
 
     // user-defined messages
+    if (task.m_ctrl.Payload != nullptr)
+    {
     for (mfxU32 i = secondFieldPicFlag; i < task.m_ctrl.NumPayload; i = i + 1 + fieldPicFlag)
     {
-        if (task.m_ctrl.Payload[i] != 0)
+            if (task.m_ctrl.Payload[i] != nullptr)
         {
             if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutRawBytes(SEI_STARTCODE, SEI_STARTCODE + sizeof(SEI_STARTCODE));
@@ -5845,6 +5850,7 @@ void MfxHwH264Encode::PrepareSeiMessageBufferDepView(
             if (IsOff(extOpt.SingleSeiNalUnit))
                 writer.PutTrailingBits();
         }
+    }
     }
 
     if (needMarkingRepetitionSei)
