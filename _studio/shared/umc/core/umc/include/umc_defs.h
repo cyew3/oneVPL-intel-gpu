@@ -139,14 +139,6 @@ namespace UMC
 #define MFX_INTERNAL_CPY(dst, src, size) memcpy((uint8_t *)(dst), (const uint8_t *)(src), (int)(size))
 #define MFX_INTERNAL_ZERO(dst, size) memset((uint8_t *)(dst), 0, (int)(size))
 
-#ifndef MFX_MAX
-#define MFX_MAX( a, b ) ( ((a) > (b)) ? (a) : (b) )
-#endif
-
-#ifndef MFX_MIN
-#define MFX_MIN( a, b ) ( ((a) < (b)) ? (a) : (b) )
-#endif
-
 #ifndef MFX_ABS
 #define MFX_ABS( a )    ((a) >= 0 ? (a) : -(a))
 #endif
