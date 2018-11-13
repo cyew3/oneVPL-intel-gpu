@@ -1294,6 +1294,7 @@ STRUCT(mfxExtVP9Param,
     FIELD_T(mfxI16      , QIndexDeltaChromaDC)
     FIELD_T(mfxU16      , NumTileRows)
     FIELD_T(mfxU16      , NumTileColumns)
+    FIELD_T(mfxU16      , DynamicScaling)
 )
 #elif (MFX_VERSION >= 1026)
 STRUCT(mfxExtVP9Param,

@@ -1499,6 +1499,7 @@ std::string DumpContext::dump(const std::string structName, const  mfxExtVP9Para
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
     DUMP_FIELD(NumTileRows);
     DUMP_FIELD(NumTileColumns);
+    DUMP_FIELD(DynamicScaling);
 #endif
     return str;
 }

@@ -6614,7 +6614,8 @@ typedef struct {
 
     mfxU16  NumTileRows;
     mfxU16  NumTileColumns;
-    mfxU16  reserved[110];
+    mfxU16  DynamicScaling;
+    mfxU16  reserved[109];
 } mfxExtVP9Param;
 ```
 
@@ -6635,11 +6636,12 @@ Attached to the [mfxVideoParam](#mfxVideoParam) structure extends it with VP9-sp
 `QIndexDeltaLumaDC`,<br>`QIndexDeltaChromaAC`,<br>`QIndexDeltaChromaDC` | Specifies an offset for a particular quantization parameter.
 `NumTileRows`           | Number of tile rows. Should be power of two. Maximum number of tile rows is 4 (per VP9 specification). In addition maximum supported number of tile rows may depend on underlying hardware platform. Use [Query](#MFXVideoENCODE_Query) function to check if particular pair of values (NumTileRows, NumTileColumns) is supported. In VP9 tile rows have dependencies and cannot be encoded/decoded in parallel. So tile rows are always encoded by the SDK in serial mode (one-by-one).
 `NumTileColumns`        | Number of tile columns. Should be power of two. Restricted with maximum and minimum tile width in luma pixels defined in VP9 specification (4096 and 256 respectively). In addition maximum supported number of tile columns may depend on underlying hardware platform. Use [Query](#MFXVideoENCODE_Query) function to check if particular pair of values (NumTileRows, NumTileColumns) is supported. In VP9 tile columns don't have dependencies and can be encoded/decoded in parallel. So tile columns can be encoded by the SDK in both parallel and serial modes. Parallel mode is automatically utilized by the SDK when NumTileColumns exceeds 1 and doesn't exceed number of tile coding engines on the platform. In other cases serial mode is used. Parallel mode is capable to encode more than 1 tile row (within limitations provided by VP9 specification and particular platform). Serial mode supports only tile grids 1xN and Nx1.
+`DynamicScaling`        | Turn this option ON to enable [Dynamic reference frame scaling](#Dynamic_scaling) feature. <br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option.
 
 **Change History**
 
 This structure is available since SDK API 1.26.
-The SDK API **TBD** adds `LoopFilterRefDelta`,`LoopFilterModeDelta`,`NumTileRows` and `NumTileColumns` fields.
+The SDK API **TBD** adds `LoopFilterRefDelta`,`LoopFilterModeDelta`,`NumTileRows`,`NumTileColumns` and `DynamicScaling` fields.
 
 ## <a id='mfxExtVP9Segmentation'>mfxExtVP9Segmentation</a>
 
@@ -8840,7 +8842,7 @@ The SDK encoder may change some of the initialization parameters provided by the
 
 ### <a id='Dynamic_scaling'>Dynamic reference frame scaling</a>
 
-VP9 standard allows to change resolution without insertion of key-frame. It's possible because of native built-in capability of VP9 decoder to upscale and downscale reference frames to match resolution of frame which is being encoded. By default SDK VP9 encoder doesn't insert key-frame when application does [Dynamic Resolution Change](#Dynamic_resolution_change). In this case first frame with new resolution is encoded using Inter prediction from scaled reference frame of previous resolution. Dynamic scaling has following limitation coming from VP9 specification: resolution of any active reference frame cannot exceed 2x resolution of current frame, and can't be smaller than 1/16 of current frame resolution. In case of dynamic scaling SDK VP9 encoder always uses single active reference frame for first frame after resolution change. So SDK VP9 encoder has following limitation for dynamic resolution change: new resolution shouln't exceed 16x and be below than 1/2 of current resolution.
+VP9 standard allows to change resolution without insertion of key-frame. It's possible because of native built-in capability of VP9 decoder to upscale and downscale reference frames to match resolution of frame which is being encoded. By default SDK VP9 encoder inserts key-frame when application does [Dynamic Resolution Change](#Dynamic_resolution_change). To change resolution without insertion of key frame DynamicScaling field from [mfxExtVP9Param](#mfxExtVP9Param) should be set to `MFX_CODINGOPTION_ON`. In this case first frame with new resolution is encoded using Inter prediction from scaled reference frame of previous resolution. Dynamic scaling has following limitation coming from VP9 specification: resolution of any active reference frame cannot exceed 2x resolution of current frame, and can't be smaller than 1/16 of current frame resolution. In case of dynamic scaling SDK VP9 encoder always uses single active reference frame for first frame after resolution change. So SDK VP9 encoder has following limitation for dynamic resolution change: new resolution shouln't exceed 16x and be below than 1/2 of current resolution.
 
 Application may force insertion of key-frame at the place of resolution change by invoking [encoder reset](#MFXVideoENCODE_Reset) with [mfxExtEncoderResetOption](#mfxExtEncoderResetOption)`::StartNewSequence` set to `MFX_CODINGOPTION_ON`. In case of inserted key-frame above limitations for new resolution are not in force.
 
