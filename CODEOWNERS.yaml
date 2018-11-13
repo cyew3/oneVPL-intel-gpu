@@ -264,9 +264,7 @@ tests:
   paths:
   - _testsuite/msdk_ts
   reviewers:
-  - olga.tsiruleva@intel.com
   - alexey.s.kokoshnikov@intel.com
-  - nikolay.korshunov@intel.com
 
 mvce:
   paths:
