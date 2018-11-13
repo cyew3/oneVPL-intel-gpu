@@ -118,6 +118,7 @@ struct CodecKey {
 struct Handlers {
     struct Funcs {
         std::function<mfxStatus(mfxSession s, mfxVideoParam *in, mfxVideoParam *out)> query;
+        std::function<mfxStatus(mfxSession s, mfxVideoParam *par, mfxFrameAllocRequest *request)> queryIOSurf;
     };
 
     Funcs primary;
@@ -146,6 +147,11 @@ static const CodecId2Handlers codecId2Handlers =
                         return MFXHWVideoENCODEH264::Query(session->m_pCORE.get(), in, out);
                     else
                         return MFXHWVideoENCODEH264::Query(session->m_pCORE.get(), in, out, session->m_pENCODE.get());
+                },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXHWVideoENCODEH264::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
             },
             // .fallback =
@@ -162,6 +168,18 @@ static const CodecId2Handlers codecId2Handlers =
     #endif
                         mfxRes = MFXVideoENCODEH264::Query(in, out);
                     mfxRes = MFX_ERR_UNSUPPORTED;
+                    return mfxRes;
+                },
+                // .queryIOSurf =
+                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    mfxStatus mfxRes;
+#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
+                    if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
+                        mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
+                    else
+#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
+                        mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
                     return mfxRes;
                 }
   #endif // OPEN_SOURCE
@@ -180,12 +198,24 @@ static const CodecId2Handlers codecId2Handlers =
   #endif
                         mfxRes = MFXVideoENCODEH264::Query(in, out);
                     return mfxRes;
+                },
+                // .queryIOSurf =
+                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    mfxStatus mfxRes;
+#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
+                    if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
+                        mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
+                    else
+#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
+                        mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
+                    return mfxRes;
                 }
             }
 #endif // MFX_VA
         }
     },
-#endif
+#endif // MFX_ENABLE_H264_VIDEO_ENCODE
 
 #ifdef MFX_ENABLE_MPEG2_VIDEO_ENCODE
     {
@@ -202,6 +232,11 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MFXVideoENCODEMPEG2_HW::Query(session->m_pCORE.get(), in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXVideoENCODEMPEG2_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
             },
             // .fallback =
@@ -211,6 +246,11 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MFXVideoENCODEMPEG2::Query(in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
                 }
   #endif // OPEN_SOURCE
             }
@@ -221,12 +261,17 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MFXVideoENCODEMPEG2::Query(in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
                 }
             }
 #endif // MFX_VA
         }
     },
-#endif
+#endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE
 
 #if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
     {
@@ -243,6 +288,11 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MFXVideoENCODEMJPEG_HW::Query(session->m_pCORE.get(), in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXVideoENCODEMJPEG_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
             },
             // .fallback =
@@ -252,6 +302,11 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MFXVideoENCODEMJPEG::Query(in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
                 }
   #endif // OPEN_SOURCE
             }
@@ -262,12 +317,17 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MFXVideoENCODEMJPEG::Query(in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession /*session*/, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
                 }
             }
 #endif // MFX_VA
         }
     },
-#endif
+#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
 
 #if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
   #if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
@@ -282,7 +342,10 @@ static const CodecId2Handlers codecId2Handlers =
             {
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
-                { return MfxHwH265FeiEncode::H265FeiEncode_HW::Query(session->m_pCORE.get(), in, out); }
+                { return MfxHwH265FeiEncode::H265FeiEncode_HW::Query(session->m_pCORE.get(), in, out); },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                { return MfxHwH265FeiEncode::H265FeiEncode_HW::QueryIOSurf(session->m_pCORE.get(), par, request); }
             }
         }
     },
@@ -298,14 +361,17 @@ static const CodecId2Handlers codecId2Handlers =
             {
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
-                { return MfxHwH265Encode::MFXVideoENCODEH265_HW::Query(session->m_pCORE.get(), in, out); }
+                { return MfxHwH265Encode::MFXVideoENCODEH265_HW::Query(session->m_pCORE.get(), in, out); },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                { return MfxHwH265Encode::MFXVideoENCODEH265_HW::QueryIOSurf(session->m_pCORE.get(), par, request); }
             },
             // .fallback =
             {
             }
         }
     },
-#endif
+#endif // MFX_ENABLE_H265_VIDEO_ENCODE
 
 #if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
     {
@@ -321,12 +387,16 @@ static const CodecId2Handlers codecId2Handlers =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
                     return MfxHwVP9Encode::MFXVideoENCODEVP9_HW::Query(session->m_pCORE.get(), in, out);
+                },
+                // .queryIOSurf =
+                [](mfxSession session, mfxVideoParam *par, mfxFrameAllocRequest *request)
+                {
+                    return MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
                 }
             }
         }
     }
-#endif
-
+#endif // MFX_ENABLE_VP9_VIDEO_ENCODE_HW
 }; // codecId2Handlers
 
 #if !defined (MFX_RT)
@@ -589,9 +659,6 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
     MFX_LTRACE_BUFFER(MFX_TRACE_LEVEL_API, par);
 
     bool bIsHWENCSupport = false;
-#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-    bool * feiEnabled = nullptr;//required to check FEI plugin registration.
-#endif
 
     try
     {
@@ -613,124 +680,25 @@ mfxStatus MFXVideoENCODE_QueryIOSurf(mfxSession session, mfxVideoParam *par, mfx
         // if plugin is not supported, or wrong parameters passed we should not look into library
         else
 #endif
-        switch (par->mfx.CodecId)
         {
-#ifdef MFX_ENABLE_H264_VIDEO_ENCODE
-        case MFX_CODEC_AVC:
-#if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
-            mfxRes = MFXHWVideoENCODEH264::QueryIOSurf(session->m_pCORE.get(), par, request);
+            // required to check FEI plugin registration
+            bool *feiEnabled = (bool*)session->m_pCORE->QueryCoreInterface(MFXIFEIEnabled_GUID);
+            MFX_CHECK_NULL_PTR1(feiEnabled);
+            const bool fei = *feiEnabled;
+            auto handler = codecId2Handlers.find(CodecKey(par->mfx.CodecId, fei));
+            mfxRes = handler == codecId2Handlers.end() ? MFX_ERR_UNSUPPORTED
+                : (handler->second.primary.queryIOSurf)(session, par, request);
+
             if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
             {
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-                if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                    mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
-                else
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-#ifndef OPEN_SOURCE
-                    mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
-#else // OPEN_SOURCE
-                mfxRes = MFX_ERR_UNSUPPORTED;
-#endif // OPEN_SOURCE
+                assert(handler != codecId2Handlers.end());
+                mfxRes = !handler->second.fallback.queryIOSurf ? MFX_ERR_UNSUPPORTED
+                    : (handler->second.fallback.queryIOSurf)(session, par, request);
             }
             else
             {
                 bIsHWENCSupport = true;
             }
-#else //MFX_VA
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-            if (par->mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par->mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                mfxRes = MFXVideoENCODEMVC::QueryIOSurf(par, request);
-            else
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                mfxRes = MFXVideoENCODEH264::QueryIOSurf(par, request);
-#endif //MFX_VA
-            break;
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE
-
-
-#ifdef MFX_ENABLE_MPEG2_VIDEO_ENCODE
-        case MFX_CODEC_MPEG2:
-#if defined(MFX_VA)
-            mfxRes = MFXVideoENCODEMPEG2_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-            if (MFX_WRN_PARTIAL_ACCELERATION  == mfxRes)
-            {
-#ifndef OPEN_SOURCE
-                mfxRes = MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
-#else // OPEN_SOURCE
-                mfxRes = MFX_ERR_UNSUPPORTED;
-#endif // OPEN_SOURCE
-            }
-            else
-            {
-                bIsHWENCSupport = true;
-            }
-#else // MFX_VA
-            mfxRes = MFXVideoENCODEMPEG2::QueryIOSurf(par, request);
-#endif // MFX_VA
-            break;
-#endif // MFX_ENABLE_MPEG2_VIDEO_ENC
-
-#if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
-        case MFX_CODEC_JPEG:
-#if defined(MFX_VA)
-            mfxRes = MFXVideoENCODEMJPEG_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-#ifndef OPEN_SOURCE
-                mfxRes = MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
-#else // OPEN_SOURCE
-                mfxRes = MFX_ERR_UNSUPPORTED;
-#endif // OPEN_SOURCE
-            }
-            else
-            {
-                bIsHWENCSupport = true;
-            }
-            break;
-#else // MFX_VA
-            mfxRes = MFXVideoENCODEMJPEG::QueryIOSurf(par, request);
-#endif // MFX_VA
-            break;
-#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
-
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
-        case MFX_CODEC_HEVC:
-#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-            feiEnabled = (bool*)session->m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID);
-            if (feiEnabled == nullptr)
-                return MFX_ERR_NULL_PTR;
-            else if(*feiEnabled)
-                mfxRes = MfxHwH265FeiEncode::H265FeiEncode_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-            else
-#endif
-                mfxRes = MfxHwH265Encode::MFXVideoENCODEH265_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                mfxRes = MFX_ERR_UNSUPPORTED;
-            }
-            else
-            {
-                bIsHWENCSupport = true;
-            }
-            break;
-#endif // MFX_ENABLE_H265_VIDEO_ENCODE
-
-#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
-        case MFX_CODEC_VP9:
-            mfxRes = MfxHwVP9Encode::MFXVideoENCODEVP9_HW::QueryIOSurf(session->m_pCORE.get(), par, request);
-            if (MFX_WRN_PARTIAL_ACCELERATION == mfxRes)
-            {
-                mfxRes = MFX_ERR_UNSUPPORTED;
-            }
-            else
-            {
-                bIsHWENCSupport = true;
-            }
-            break;
-#endif //MFX_ENABLE_VP9_VIDEO_ENCODE_HW
-
-        default:
-            mfxRes = MFX_ERR_UNSUPPORTED;
         }
     }
     // handle error(s)
