@@ -872,6 +872,7 @@ protected:
             m_VPPParams.vpp.In.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
             m_VPPParams.vpp.In.BitDepthLuma   = 10;
             m_VPPParams.vpp.In.BitDepthChroma = 10;
+            m_VPPParams.vpp.In.Shift = 1;
         }
         else
         {
@@ -928,6 +929,7 @@ protected:
             m_VPPParams.vpp.Out.ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
             m_VPPParams.vpp.Out.BitDepthLuma   = 10;
             m_VPPParams.vpp.Out.BitDepthChroma = 10;
+            m_VPPParams.vpp.Out.Shift = 1;
         }
         else /*RGB case*/
         {
@@ -1043,6 +1045,7 @@ protected:
                         m_Streams[m_nStreams].ChromaFormat   = MFX_CHROMAFORMAT_YUV420;
                         m_Streams[m_nStreams].BitDepthLuma   = 10;
                         m_Streams[m_nStreams].BitDepthChroma = 10;
+                        m_Streams[m_nStreams].Shift = 1;
                     }
                     else
                     {
