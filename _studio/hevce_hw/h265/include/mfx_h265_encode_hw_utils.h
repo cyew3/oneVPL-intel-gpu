@@ -381,6 +381,8 @@ typedef struct _Task : DpbFrame
     mfxU16 m_insertHeaders;
     mfxU8  m_shNUT;
     mfxI8  m_qpY;
+    mfxU8  m_avgQP;
+    mfxU32 m_MAD;
     mfxI32 m_lastIPoc;
     mfxI32 m_lastRAP;
 
@@ -503,7 +505,8 @@ namespace ExtBuffer
          MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME,
          MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO,
 #endif
-         MFX_EXTBUFF_ENCODER_CAPABILITY
+         MFX_EXTBUFF_ENCODER_CAPABILITY,
+         MFX_EXTBUFF_ENCODED_FRAME_INFO
     };
 
     template<class T> struct ExtBufferMap {};
@@ -556,6 +559,7 @@ namespace ExtBuffer
         EXTBUF(mfxExtMasteringDisplayColourVolume, MFX_EXTBUFF_MASTERING_DISPLAY_COLOUR_VOLUME);
         EXTBUF(mfxExtContentLightLevelInfo, MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO);
 #endif
+        EXTBUF(mfxExtAVCEncodedFrameInfo, MFX_EXTBUFF_ENCODED_FRAME_INFO);
 
 #if defined(MFX_ENABLE_MFE) && defined(PRE_SI_TARGET_PLATFORM_GEN12)
         EXTBUF(mfxExtMultiFrameParam, MFX_EXTBUFF_MULTI_FRAME_PARAM);
@@ -615,6 +619,8 @@ namespace ExtBuffer
         buf_dst.MinQPB                 = buf_src.MinQPB;
         buf_dst.MaxQPB                 = buf_src.MaxQPB;
         buf_dst.SkipFrame              = buf_src.SkipFrame;
+
+      buf_dst.EnableMAD=buf_src.EnableMAD;
     }
 
     inline void  CopySupportedParams(mfxExtCodingOption3& buf_dst, mfxExtCodingOption3& buf_src)

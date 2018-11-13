@@ -889,6 +889,8 @@ mfxStatus D3D11Encoder<DDI_SPS, DDI_PPS, DDI_SLICE>::QueryStatusAsync(Task & tas
         assert(!"slice sizes buffer is too small");
     case ENCODE_OK:
         task.m_bsDataLength = feedback->bitstreamSize;
+        task.m_avgQP = feedback->AverageQP;
+        task.m_MAD = feedback->MAD;
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (m_widi && m_caps.HWCounterAutoIncrementSupport)
