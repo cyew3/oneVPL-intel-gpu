@@ -1003,7 +1003,7 @@ mfxStatus ASC::RsCsCalc() {
 }
 
 bool Hint_LTR_op_on(mfxU32 SC, mfxU32 TSC) {
-    bool ltr = TSC *TSC < (IPP_MAX(SC, 64) / 12);
+    bool ltr = TSC *TSC < (std::max(SC, 64u) / 12);
     return ltr;
 }
 
