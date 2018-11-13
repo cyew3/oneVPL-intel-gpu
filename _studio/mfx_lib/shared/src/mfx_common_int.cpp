@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <string>
 #include <climits>
+#include <algorithm>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <DXGI.h>
@@ -1156,7 +1157,7 @@ mfxU8* GetFramePointer(mfxU32 fourcc, mfxFrameData const& data)
         case MFX_FOURCC_RGBP:
 #endif
         case MFX_FOURCC_ARGB16:
-        case MFX_FOURCC_ABGR16:      return IPP_MIN(IPP_MIN(data.R, data.G), data.B); break;
+        case MFX_FOURCC_ABGR16:      return std::min({data.R, data.G, data.B}); break;
 #if defined (MFX_ENABLE_FOURCC_RGB565)
         case MFX_FOURCC_RGB565:      return data.R; break;
 #endif // MFX_ENABLE_FOURCC_RGB565

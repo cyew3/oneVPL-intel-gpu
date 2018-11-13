@@ -1296,7 +1296,7 @@ mfxStatus CommonCORE::DoFastCopy(mfxFrameSurface1 *dst, mfxFrameSurface1 *src)
     mfxStatus sts;
     if (!dst || !src)
         return MFX_ERR_NULL_PTR;
-    IppiSize roi = { IPP_MIN(src->Info.Width, dst->Info.Width), IPP_MIN(src->Info.Height, dst->Info.Height) };
+    IppiSize roi = { std::min(src->Info.Width, dst->Info.Width), std::min(src->Info.Height, dst->Info.Height) };
     if (!roi.width || !roi.height)
     {
         return MFX_ERR_UNDEFINED_BEHAVIOR;
@@ -1403,7 +1403,7 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 {
     mfxStatus sts;
 
-    IppiSize roi = {IPP_MIN(pSrc->Info.Width, pDst->Info.Width), IPP_MIN(pSrc->Info.Height, pDst->Info.Height)};
+    IppiSize roi = {std::min(pSrc->Info.Width, pDst->Info.Width), std::min(pSrc->Info.Height, pDst->Info.Height)};
 
     // check that region of interest is valid
     if (0 == roi.width || 0 == roi.height)
@@ -1597,8 +1597,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
 
     case MFX_FOURCC_RGB3:
         {
-            mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-            mfxU8* ptrDst = IPP_MIN(IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B);
+            mfxU8* ptrSrc = std::min({pSrc->Data.R, pSrc->Data.G, pSrc->Data.B});
+            mfxU8* ptrDst = std::min({pDst->Data.R, pDst->Data.G, pDst->Data.B});
 
             roi.width *= 3;
 
@@ -1633,8 +1633,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
     case MFX_FOURCC_BGR4:
     case MFX_FOURCC_A2RGB10:
         {
-            mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-            mfxU8* ptrDst = IPP_MIN( IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B );
+            mfxU8* ptrSrc = std::min({pSrc->Data.R, pSrc->Data.G, pSrc->Data.B});
+            mfxU8* ptrDst = std::min({pDst->Data.R, pDst->Data.G, pDst->Data.B});
 
             roi.width *= 4;
 
@@ -1645,8 +1645,8 @@ mfxStatus CoreDoSWFastCopy(mfxFrameSurface1 *pDst, mfxFrameSurface1 *pSrc, int c
     case MFX_FOURCC_ARGB16:
     case MFX_FOURCC_ABGR16:
         {
-            mfxU8* ptrSrc = IPP_MIN(IPP_MIN(pSrc->Data.R, pSrc->Data.G), pSrc->Data.B);
-            mfxU8* ptrDst = IPP_MIN( IPP_MIN(pDst->Data.R, pDst->Data.G), pDst->Data.B );
+            mfxU8* ptrSrc = std::min({pSrc->Data.R, pSrc->Data.G, pSrc->Data.B});
+            mfxU8* ptrDst = std::min({pDst->Data.R, pDst->Data.G, pDst->Data.B});
 
             roi.width *= 8;
 
