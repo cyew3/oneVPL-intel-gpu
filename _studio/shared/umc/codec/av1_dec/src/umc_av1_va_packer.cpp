@@ -323,6 +323,7 @@ namespace UMC_AV1_DECODER
         picParam.dwModeControlFlags.fields.tx_mode = info.TxMode;
         picParam.dwModeControlFlags.fields.reference_mode = info.reference_mode;
         picParam.dwModeControlFlags.fields.reduced_tx_set_used = info.reduced_tx_set;
+        picParam.dwModeControlFlags.fields.skip_mode_present = info.skip_mode_present;
         picParam.dwModeControlFlags.fields.ReservedField = 0;
 
         picParam.LoopRestorationFlags.fields.yframe_restoration_type = info.lr_params.lr_type[0];
@@ -675,6 +676,7 @@ namespace UMC_AV1_DECODER
         modeCtrl.tx_mode = info.TxMode;
         modeCtrl.reference_mode = info.reference_mode;
         modeCtrl.reduced_tx_set_used = info.reduced_tx_set;
+        modeCtrl.skip_mode_present = info.skip_mode_present;
 
         // fill loop restoration params
         auto& lrInfo = picParam.loop_restoration_fields.bits;
