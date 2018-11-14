@@ -139,7 +139,7 @@ namespace UMC_AV1_DECODER
 #if AV1D_DDI_VERSION >= 26
         UCHAR        order_hint_bits_minus_1;
         UCHAR        BitDepthIdx;
-        USHORT       reserved16b;
+        UCHAR        reserved8b;
 #else
         USHORT max_frame_width_minus_1;   // [0..65535]
         USHORT max_frame_height_minus_1;  // [0..65535]

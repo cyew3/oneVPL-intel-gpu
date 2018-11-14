@@ -217,7 +217,7 @@ namespace UMC_AV1_DECODER
         ddiPicParam.use_ref_frame_mvs = info.use_ref_frame_mvs;
         ddiPicParam.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         ddiPicParam.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
-        ddiPicParam.allow_warped_motion = 0;
+        ddiPicParam.allow_warped_motion = info.allow_warped_motion;
 #if AV1D_DDI_VERSION < 26
         ddiPicParam.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;
         ddiPicParam.large_scale_tile = info.large_scale_tile;
@@ -231,6 +231,7 @@ namespace UMC_AV1_DECODER
         picParam.stAV1Segments.enabled = info.segmentation_params.segmentation_enabled;
         picParam.stAV1Segments.temporal_update = info.segmentation_params.segmentation_temporal_update;
         picParam.stAV1Segments.update_map = info.segmentation_params.segmentation_update_map;
+        picParam.stAV1Segments.update_data = info.segmentation_params.segmentation_update_data;
         picParam.stAV1Segments.Reserved4Bits = 0;
 
         for (uint8_t i = 0; i < VP9_MAX_NUM_OF_SEGMENTS; i++)
@@ -294,16 +295,18 @@ namespace UMC_AV1_DECODER
         picParam.u_ac_delta_q = (CHAR)info.quantization_params.DeltaQUAc;
         picParam.v_ac_delta_q = (CHAR)info.quantization_params.DeltaQVAc;
 
-        memset(&picParam.stAV1Segments.feature_data, 0, sizeof(picParam.stAV1Segments.feature_data)); // TODO: [Global] implement proper setting
-        memset(&picParam.stAV1Segments.feature_mask, 0, sizeof(&picParam.stAV1Segments.feature_mask)); // TODO: [Global] implement proper setting
-
         picParam.cdef_damping_minus_3 = (UCHAR)(info.cdef_params.cdef_damping - 3);
         picParam.cdef_bits = (UCHAR)info.cdef_params.cdef_bits;
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
+#if UMC_AV1_DECODER_REV >= 8500
+            picParam.cdef_y_strengths[i] = (UCHAR)((info.cdef_params.cdef_y_pri_strength[i] << 2) + info.cdef_params.cdef_y_sec_strength[i]);
+            picParam.cdef_uv_strengths[i] = (UCHAR)((info.cdef_params.cdef_uv_pri_strength[i] << 2) + info.cdef_params.cdef_uv_sec_strength[i]);
+#else
             picParam.cdef_y_strengths[i] = (UCHAR)info.cdef_params.cdef_y_strength[i];
             picParam.cdef_uv_strengths[i] = (UCHAR)info.cdef_params.cdef_uv_strength[i];
+#endif
         }
 
         auto& ddiQMFlags = picParam.wQMatrixFlags.fields;
@@ -403,16 +406,20 @@ namespace UMC_AV1_DECODER
             for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
-                    (USHORT)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i]);
+                    (USHORT)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i] - 1);
             }
 
             for (int i = 0; i < picParam.tile_rows; i++)
             {
                 picParam.height_in_sbs_minus_1[i] =
-                    (USHORT)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i]);
+                    (USHORT)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i] - 1);
             }
 #if AV1D_DDI_VERSION < 26
         }
+#endif
+
+#if UMC_AV1_DECODER_REV >= 8500
+        picParam.context_update_tile_id = (USHORT)info.tile_info.context_update_tile_id;
 #endif
     }
 
@@ -558,7 +565,7 @@ namespace UMC_AV1_DECODER
         picInfo.use_ref_frame_mvs = info.use_ref_frame_mvs;
         picInfo.disable_frame_end_update_cdf = info.disable_frame_end_update_cdf;
         picInfo.uniform_tile_spacing_flag = info.tile_info.uniform_tile_spacing_flag;
-        picInfo.allow_warped_motion = 0;
+        picInfo.allow_warped_motion = info.allow_warped_motion;
         picInfo.refresh_frame_context = info.disable_frame_end_update_cdf ? REFRESH_FRAME_CONTEXT_DISABLED : REFRESH_FRAME_CONTEXT_BACKWARD;;
         picInfo.large_scale_tile = info.large_scale_tile;
 
@@ -572,8 +579,7 @@ namespace UMC_AV1_DECODER
         seg.segment_info_fields.bits.enabled = info.segmentation_params.segmentation_enabled;;
         seg.segment_info_fields.bits.temporal_update = info.segmentation_params.segmentation_temporal_update;
         seg.segment_info_fields.bits.update_map = info.segmentation_params.segmentation_update_map;
-        memset(&seg.feature_data, 0, sizeof(seg.feature_data)); // TODO: [Global] implement proper setting
-        memset(&seg.feature_mask, 0, sizeof(seg.feature_mask)); // TODO: [Global] implement proper setting
+        seg.segment_info_fields.bits.update_data = info.segmentation_params.segmentation_update_data;
 
         // set current and reference frames
         picParam.current_frame = (VASurfaceID)m_va->GetSurfaceID(frame.GetMemID());
@@ -643,8 +649,13 @@ namespace UMC_AV1_DECODER
 
         for (uint8_t i = 0; i < CDEF_MAX_STRENGTHS; i++)
         {
+#if UMC_AV1_DECODER_REV >= 8500
+            picParam.cdef_y_strengths[i] = (uint8_t)((info.cdef_params.cdef_y_pri_strength[i] << 2) + info.cdef_params.cdef_y_sec_strength[i]);
+            picParam.cdef_uv_strengths[i] = (uint8_t)((info.cdef_params.cdef_uv_pri_strength[i] << 2) + info.cdef_params.cdef_uv_sec_strength[i]);
+#else
             picParam.cdef_y_strengths[i] = (uint8_t)info.cdef_params.cdef_y_strength[i];
             picParam.cdef_uv_strengths[i] = (uint8_t)info.cdef_params.cdef_uv_strength[i];
+#endif
         }
 
         // fill quantization matrix params
@@ -693,15 +704,19 @@ namespace UMC_AV1_DECODER
             for (uint32_t i = 0; i < picParam.tile_cols; i++)
             {
                 picParam.width_in_sbs_minus_1[i] =
-                    (uint16_t)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i]);
+                    (uint16_t)(info.tile_info.SbColStarts[i + 1] - info.tile_info.SbColStarts[i] - 1);
             }
 
             for (int i = 0; i < picParam.tile_rows; i++)
             {
                 picParam.height_in_sbs_minus_1[i] =
-                    (uint16_t)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i]);
+                    (uint16_t)(info.tile_info.SbRowStarts[i + 1] - info.tile_info.SbRowStarts[i] - 1);
             }
         }
+
+#if UMC_AV1_DECODER_REV >= 8500
+        picParam.context_update_tile_id = (uint16_t)info.tile_info.context_update_tile_id;
+#endif
     }
 
     void PackerVA::PackTileControlParams(VABitStreamParameterBufferAV1& tileControlParam, TileLocation const& loc)

@@ -361,13 +361,14 @@ namespace UMC_AV1_DECODER
     }
 
     inline
-    void av1_read_cdef(AV1Bitstream& bs, CdefParams& params, FrameHeader const& fh)
+    void av1_read_cdef(AV1Bitstream& bs, CdefParams& params, SequenceHeader const& sh, FrameHeader const& fh)
     {
         AV1D_LOG("[+]: %d", (uint32_t)bs.BitsDecoded());
 
 #if UMC_AV1_DECODER_REV >= 8500
-        if (fh.CodedLossless || fh.allow_intrabc)
+        if (fh.CodedLossless || fh.allow_intrabc || !sh.enable_cdef)
 #else
+        sh;
         if (fh.allow_intrabc)
 #endif
         {
@@ -406,12 +407,12 @@ namespace UMC_AV1_DECODER
     }
 
     inline
-    void av1_decode_restoration_mode(AV1Bitstream& bs, LRParams& params, SequenceHeader const& sh, FrameHeader const& fh)
+    void av1_read_lr_params(AV1Bitstream& bs, LRParams& params, SequenceHeader const& sh, FrameHeader const& fh)
     {
         AV1D_LOG("[+]: %d", (uint32_t)bs.BitsDecoded());
 
 #if UMC_AV1_DECODER_REV >= 8500
-        if (fh.AllLossless || fh.allow_intrabc)
+        if (fh.AllLossless || fh.allow_intrabc || !sh.enable_restoration)
 #else
         if (fh.allow_intrabc)
 #endif
@@ -420,8 +421,8 @@ namespace UMC_AV1_DECODER
             return;
         }
 
-        bool allNone = true;;
-        bool chromaNone = true;
+        bool usesLR = false;
+        bool usesChromaLR = false;
 
         for (uint8_t p = 0; p < fh.NumPlanes; ++p)
         {
@@ -436,17 +437,33 @@ namespace UMC_AV1_DECODER
             }
             if (params.lr_type[p] != RESTORE_NONE)
             {
-                allNone = false;
+                usesLR = true;
                 if (p != 0)
-                    chromaNone = false;
+                    usesChromaLR = true;
             }
         }
 
+#if UMC_AV1_DECODER_REV >= 8500
+        if (usesLR)
+        {
+            if (sh.sbSize == BLOCK_128X128)
+                params.lr_unit_shift = bs.GetBit() + 1;
+            else
+            {
+                params.lr_unit_shift = bs.GetBit();
+                if (params.lr_unit_shift)
+                    params.lr_unit_shift += bs.GetBit(); // lr_unit_extra_shift
+            }
+
+            if (sh.color_config.subsampling_x && sh.color_config.subsampling_y && usesChromaLR)
+                params.lr_uv_shift = bs.GetBit();
+        }
+#else // UMC_AV1_DECODER_REV >= 8500
         const int32_t size = sh.sbSize == BLOCK_128X128 ? 128 : 64;
 
         int32_t restorationUnitSize[MAX_MB_PLANE];
 
-        if (!allNone)
+        if (usesLR)
         {
             for (uint8_t p = 0; p < fh.NumPlanes; ++p)
                 restorationUnitSize[p] = size;
@@ -467,7 +484,7 @@ namespace UMC_AV1_DECODER
         {
             int s = std::min(sh.color_config.subsampling_x, sh.color_config.subsampling_y);
 
-            if (s && !chromaNone) {
+            if (s && usesChromaLR) {
                 restorationUnitSize[1] =
                     restorationUnitSize[0] >> (bs.GetBit() * s);
             }
@@ -481,6 +498,7 @@ namespace UMC_AV1_DECODER
 
         params.lr_unit_shift = static_cast<uint32_t>(log(restorationUnitSize[0] / size) / log(2));
         params.lr_uv_shift = static_cast<uint32_t>(log(restorationUnitSize[0] / restorationUnitSize[1]) / log(2));
+#endif // UMC_AV1_DECODER_REV >= 8500
 
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
     }
@@ -1102,10 +1120,16 @@ namespace UMC_AV1_DECODER
         int frame;
         for (frame = LAST_FRAME; frame <= ALTREF_FRAME; ++frame)
         {
-            FrameHeader const& last_fh = frameDpb[fh.ref_frame_idx[LAST_FRAME - LAST_FRAME]]->GetFrameHeader();
+#if UMC_AV1_DECODER_REV >= 8500
+            FrameHeader const* refFH = nullptr;
+            if (fh.primary_ref_frame != PRIMARY_REF_NONE)
+                refFH = &frameDpb[fh.ref_frame_idx[fh.primary_ref_frame]]->GetFrameHeader();
+#else
+            FrameHeader const* refFH = &frameDpb[fh.ref_frame_idx[LAST_FRAME - LAST_FRAME]]->GetFrameHeader();
+#endif
 
-            GlobalMotionParams const& ref_params = fh.error_resilient_mode ?
-                default_warp_params : last_fh.global_motion_params[frame];
+            GlobalMotionParams const& ref_params = fh.error_resilient_mode || !refFH ?
+                default_warp_params : refFH->global_motion_params[frame];
             GlobalMotionParams& params = fh.global_motion_params[frame];
             av1_read_global_motion_params(bs, params, ref_params, fh);
         }
@@ -2111,8 +2135,11 @@ namespace UMC_AV1_DECODER
             SetupPastIndependence(fh);
         else
         {
-            // TODO: [Rev0.85] need to replace prev frame with primary ref frame
+#if UMC_AV1_DECODER_REV >= 8500
+            av1_load_previous(fh, frameDpb);
+#else
             InheritFromPrevFrame(fh, *prev_fh);
+#endif
         }
 
 #if UMC_AV1_DECODER_REV >= 8500
@@ -2137,9 +2164,9 @@ namespace UMC_AV1_DECODER
 #endif
             av1_setup_loop_filter(*this, fh.loop_filter_params, fh);
 
-            av1_read_cdef(*this, fh.cdef_params, fh);
+            av1_read_cdef(*this, fh.cdef_params, sh, fh);
 
-            av1_decode_restoration_mode(*this, fh.lr_params, sh, fh);
+            av1_read_lr_params(*this, fh.lr_params, sh, fh);
 #if UMC_AV1_DECODER_REV == 5000
         }
 #endif

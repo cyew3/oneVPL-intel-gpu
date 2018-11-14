@@ -77,6 +77,7 @@ namespace UMC_AV1_DECODER
         return CodedLossless;
     }
 
+#if UMC_AV1_DECODER_REV == 5000
     void InheritFromPrevFrame(FrameHeader& fh, FrameHeader const& prev_fh)
     {
         for (uint32_t i = 0; i < TOTAL_REFS; i++)
@@ -94,6 +95,7 @@ namespace UMC_AV1_DECODER
 
         fh.segmentation_params = prev_fh.segmentation_params;
     }
+#endif
 }
 
 #endif //UMC_ENABLE_AV1_VIDEO_DECODER

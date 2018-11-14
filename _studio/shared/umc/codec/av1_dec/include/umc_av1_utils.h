@@ -90,7 +90,23 @@ namespace UMC_AV1_DECODER
 
     int IsCodedLossless(FrameHeader const&);
 
+#if UMC_AV1_DECODER_REV >= 8500
+    inline void av1_load_previous(FrameHeader& fh, DPBType const& frameDpb)
+    {
+        const int prevFrame = fh.ref_frame_idx[fh.primary_ref_frame];
+        FrameHeader const& prevFH = frameDpb[prevFrame]->GetFrameHeader();
+
+        for (uint32_t i = 0; i < TOTAL_REFS; i++)
+            fh.loop_filter_params.loop_filter_ref_deltas[i] = prevFH.loop_filter_params.loop_filter_ref_deltas[i];
+
+        for (uint32_t i = 0; i < MAX_MODE_LF_DELTAS; i++)
+            fh.loop_filter_params.loop_filter_mode_deltas[i] = prevFH.loop_filter_params.loop_filter_mode_deltas[i];
+
+        fh.segmentation_params = prevFH.segmentation_params;
+    }
+#else
     void InheritFromPrevFrame(FrameHeader&, FrameHeader const&);
+#endif
 
     inline bool FrameMightUsePrevFrameMVs(FrameHeader const& fh, SequenceHeader const& sh)
     {
