@@ -331,7 +331,12 @@ typedef struct {
             mfxU16  SliceGroupsPresent;
             mfxU16  MaxDecFrameBuffering;
             mfxU16  EnableReallocRequest;
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+            mfxU16  FilmGrain;
+            mfxU16  reserved2[6];
+#else
             mfxU16  reserved2[7];
+#endif
         };
         struct {   /* JPEG Decoding Options */
             mfxU16  JPEGChromaFormat;

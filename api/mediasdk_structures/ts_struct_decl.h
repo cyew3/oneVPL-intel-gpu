@@ -105,6 +105,8 @@ STRUCT(mfxFrameSurface1,
     FIELD_S(mfxFrameData, Data)
 )
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+
 STRUCT(mfxInfoMFX,
     FIELD_T(mfxU16, LowPower          )
     FIELD_T(mfxU16, BRCParamMultiplier)
@@ -137,6 +139,7 @@ STRUCT(mfxInfoMFX,
     FIELD_T(mfxU16, ExtendedPicStruct )
     FIELD_T(mfxU16, TimeStampCalc     )
     FIELD_T(mfxU16, SliceGroupsPresent)
+    FIELD_T(mfxU16, FilmGrain         )
     FIELD_T(mfxU16, JPEGChromaFormat  )
     FIELD_T(mfxU16, Rotation          )
     FIELD_T(mfxU16, JPEGColorFormat   )
@@ -145,6 +148,51 @@ STRUCT(mfxInfoMFX,
     FIELD_T(mfxU16, Quality           )
     FIELD_T(mfxU16, RestartInterval   )
 )
+
+#else
+
+STRUCT(mfxInfoMFX,
+    FIELD_T(mfxU16, LowPower)
+    FIELD_T(mfxU16, BRCParamMultiplier)
+    FIELD_S(mfxFrameInfo, FrameInfo)
+    FIELD_T(mfx4CC, CodecId)
+    FIELD_T(mfxU16, CodecProfile)
+    FIELD_T(mfxU16, CodecLevel)
+    FIELD_T(mfxU16, NumThread)
+    FIELD_T(mfxU16, TargetUsage)
+    FIELD_T(mfxU16, GopPicSize)
+    FIELD_T(mfxU16, GopRefDist)
+    FIELD_T(mfxU16, GopOptFlag)
+    FIELD_T(mfxU16, IdrInterval)
+    FIELD_T(mfxU16, RateControlMethod)
+    FIELD_T(mfxU16, InitialDelayInKB)
+    FIELD_T(mfxU16, QPI)
+    FIELD_T(mfxU16, Accuracy)
+    FIELD_T(mfxU16, BufferSizeInKB)
+    FIELD_T(mfxU16, TargetKbps)
+    FIELD_T(mfxU16, QPP)
+    FIELD_T(mfxU16, ICQQuality)
+    FIELD_T(mfxU16, MaxKbps)
+    FIELD_T(mfxU16, QPB)
+    FIELD_T(mfxU16, Convergence)
+    FIELD_T(mfxU16, NumSlice)
+    FIELD_T(mfxU16, NumRefFrame)
+    FIELD_T(mfxU16, EncodedOrder)
+    FIELD_T(mfxU16, DecodedOrder)
+    FIELD_T(mfxU16, MaxDecFrameBuffering)
+    FIELD_T(mfxU16, ExtendedPicStruct)
+    FIELD_T(mfxU16, TimeStampCalc)
+    FIELD_T(mfxU16, SliceGroupsPresent)
+    FIELD_T(mfxU16, JPEGChromaFormat)
+    FIELD_T(mfxU16, Rotation)
+    FIELD_T(mfxU16, JPEGColorFormat)
+    FIELD_T(mfxU16, InterleavedDec)
+    FIELD_T(mfxU16, Interleaved)
+    FIELD_T(mfxU16, Quality)
+    FIELD_T(mfxU16, RestartInterval)
+)
+
+#endif
 
 STRUCT(mfxInfoVPP,
     FIELD_S(mfxFrameInfo, In)
