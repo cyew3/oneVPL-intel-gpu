@@ -5237,7 +5237,7 @@ This structure specifies configurations for decoding, encoding and transcoding p
 `SliceGroupsPresent`    | Nonzero value indicates that slice groups are present in the bitstream. Only AVC decoder uses this field.
 `MaxDecFrameBuffering`  | Nonzero value specifies the maximum required size of the decoded picture buffer in frames for AVC and HEVC decoders.
 `EnableReallocRequest`  | For decoders supporting dynamic resolution change (VP9), set this option to ON to allow `MFXVideoDECODE_DecodeFrameAsync` return [MFX_ERR_REALLOC_SURFACE](#mfxStatus).<br><br>See the [CodingOptionValue](#CodingOptionValue) enumerator for values of this option. Use [Query](#MFXVideoDECODE_Query) function to check if this feature is supported.
-`FilmGrain`             | For AV1 decoder. Indicates presence/absence of film grain parameters in bitstream. Also controls SDK decoding behavior for streams with film grain parameters.<br><br>`MFXVideoDECODE_DecodeHeader` returns nonzero `FilmGrain` for streams with film grain parameters and zero for streams w/o them.<br><br>Decoding with film grain requires additional output surfaces. If `FilmGrain` is nonzero then `MFXVideoDECODE_QueryIOSurf` will request more surfaces in case of video memory at decoder output.<br><br>`FilmGrain` is passed to `MFXVideoDECODE_Init` function to control SDK decoding operation for AV1 streams with film grain parameters.<br>If `FilmGrain` is nonzero decoding of each frame require two output surfaces (one for reconstructed frame and one for output frame with film grain applied). The SDK returns [MFX_ERR_MORE_SURFACE](#mfxStatus) from `MFXVideoDECODE_DecodeFrameAsync` if it has insufficient output surfaces to decode frame.<br>Application of film grain can be forcibly disabled by passing zero `FilmGrain` to `MFXVideoDECODE_Init`. In this case SDK will output reconstructed frames w/o film grain applied.<br><br>If stream has no film grain parameters `FilmGrain` passed to `MFXVideoDECODE_Init` is ignored by the SDK during decode operation.
+`FilmGrain`             | For AV1 decoder. Indicates presence/absence of film grain parameters in bitstream. Also controls SDK decoding behavior for streams with film grain parameters.<br><br>`MFXVideoDECODE_DecodeHeader` returns nonzero `FilmGrain` for streams with film grain parameters and zero for streams w/o them.<br><br>Decoding with film grain requires additional output surfaces. If `FilmGrain` is nonzero then `MFXVideoDECODE_QueryIOSurf` will request more surfaces in case of video memory at decoder output.<br><br>`FilmGrain` is passed to `MFXVideoDECODE_Init` function to control SDK decoding operation for AV1 streams with film grain parameters.<br>If `FilmGrain` is nonzero decoding of each frame require two output surfaces (one for reconstructed frame and one for output frame with film grain applied). The SDK returns [MFX_ERR_MORE_SURFACE](#mfxStatus) from `MFXVideoDECODE_DecodeFrameAsync` if it has insufficient output surfaces to decode frame.<br>Application of film grain can be forcibly disabled by passing zero `FilmGrain` to `MFXVideoDECODE_Init`. In this case SDK will output reconstructed frames w/o film grain applied. Application can retrieve film grain parameters for a frame by attaching extended buffer [mfxExtAV1FilmGrainParam](#mfxExtAV1FilmGrainParam) to [mfxFrameSurface1](#mfxFrameSurface).<br><br>If stream has no film grain parameters `FilmGrain` passed to `MFXVideoDECODE_Init` is ignored by the SDK during decode operation.
 
 **Change History**
 
@@ -7240,6 +7240,68 @@ This structure is used by the SDK decoders to report bitstream error information
 
 This structure is available since SDK API 1.25.
 
+## <a id='mfxExtAV1FilmGrainParam'>mfxExtAV1FilmGrainParam</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxU8 Value;
+    mfxU8 Scaling;
+} mfxAV1FilmGrainPoint;
+
+typedef struct {
+    mfxExtBuffer Header;
+
+    mfxU16 Flags;
+    mfxU16 GrainSeed;
+
+    mfxU8  RefIdx;
+    mfxU8  NumYPoints;
+    mfxU8  NumCbPoints;
+    mfxU8  NumCrPoints;
+
+    mfxAV1FilmGrainPoint PointY[14];
+    mfxAV1FilmGrainPoint PointCb[10];
+    mfxAV1FilmGrainPoint PointCr[10];
+
+    mfxU8 GrainScalingMinus8;
+    mfxU8 ArCoeffLag;
+
+    mfxU8 ArCoeffsYPlus128[24];
+    mfxU8 ArCoeffsCbPlus128[25];
+    mfxU8 ArCoeffsCrPlus128[25];
+
+    mfxU8 ArCoeffShiftMinus6;
+    mfxU8 GrainScaleShift;
+
+    mfxU8  CbMult;
+    mfxU8  CbLumaMult;
+    mfxU16 CbOffset;
+
+    mfxU8  CrMult;
+    mfxU8  CrLumaMult;
+    mfxU16 CrOffset;
+
+    mfxU16 reserved[43];
+} mfxExtAV1FilmGrainParam;
+```
+
+**Description**
+
+This structure is used by AV1 SDK decoder to report film grain parameters for decoded frame. The application can attach this extended buffer to the [mfxFrameSurface1](#mfxFrameSurface) structure at runtime.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM](#ExtendedBufferID)
+`Value`, `Scaling`, `Flags`, `GrainSeed`, `RefIdx`, `NumYPoints`, `NumCbPoints`, `NumCrPoints`, `PointY`, `PointCb`, `PointCr`, `GrainScalingMinus8`, `ArCoeffLag`, `ArCoeffsYPlus128`, `ArCoeffsCbPlus128`, `ArCoeffsCrPlus128`, `ArCoeffShiftMinus6`, `GrainScaleShift`, `CbMult`, `CbLumaMult`, `CbOffset`, `CrMult`, `CrLumaMult`, `CrOffset` | These parameters represent film grain syntax of AV1 codec. They are equivalent of film_grain_params() from uncompressed header syntax of AV1 frame.<br><br>Parameter `Flags` is a bit map with bit-ORed flags from enum [AV1FilmGrainFlags](#AV1FilmGrainFlags)<br><br>If syntax parameter isn't present in uncompressed header of particular frame, respective member of `mfxExtAV1FilmGrainParam` is zeroed by the SDK AV1 decoder.
+
+**Change History**
+
+This structure is available since SDK API **TBD**.
+
 # Enumerator Reference
 
 ## <a id='BitstreamDataFlag'>BitstreamDataFlag</a>
@@ -7546,6 +7608,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_VPP_COLOR_CONVERSION` | See the [mfxExtColorConversion](#mfxExtColorConversion) structure for details.
 `MFX_EXTBUFF_TASK_DEPENDENCY` | See the [Alternative Dependencies](#Alternative_Dependencies) chapter for details.
 `MFX_EXTBUFF_VPP_MCTF` | This video processing algorithm identifier is used to enable MCTF via [mfxExtVPPDoUse](#mfxExtVPPDoUse) and together with `mfxExtVppMctf` | See the [mfxExtVppMctf](#mfxExtVppMctf) chapter for details.
+`MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM` | This extended buffer is used by AV1 SDK decoder to report film grain parameters for decoded frame. See the [mfxExtAV1FilmGrainParam](#mfxExtAV1FilmGrainParam) structure for more details.
 
 **Change History**
 
@@ -7582,7 +7645,7 @@ SDK API 1.26 adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_
 
 SDK API 1.27 adds `MFX_EXTBUFF_AVC_ROUNDING_OFFSET`.
 
-SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY` and `MFX_EXTBUFF_VPP_PROCAMP` use for per-frame processing configuration.
+SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY` and `MFX_EXTBUFF_VPP_PROCAMP` use for per-frame processing configuration, `MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM`
 
 See additional change history in the structure definitions.
 
@@ -8648,6 +8711,26 @@ The `ChromaSiting` enumerator defines chroma location. Use bit-OR’ed values to
 **Change History**
 
 This enumerator is available since SDK API 1.25.
+
+## <a id='AV1FilmGrainFlags'>AV1FilmGrainFlags</a>
+
+**Description**
+
+The `AV1FilmGrainFlags` enumerator indicates flags in AV1 film grain parameters. The flags are equavalent to respective syntax elements from film_grain_params() section of uncompressed header. These values are used with the [mfxExtAV1FilmGrainParam](#mfxExtAV1FilmGrainParam)**::Flags** parameter.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_FILM_GRAIN_APPLY`                     | Film grain is added to this frame
+`MFX_FILM_GRAIN_UPDATE`                    | New set of film grain parameters is sent for this frame
+`MFX_FILM_GRAIN_CHROMA_SCALING_FROM_LUMA`  | Chroma scaling is inferred from luma scaling
+`MFX_FILM_GRAIN_OVERLAP`                   | Overlap between film grain blocks is applied
+`MFX_FILM_GRAIN_CLIP_TO_RESTRICTED_RANGE`  | Clipping to the restricted (studio) range is applied after adding the film grain
+
+**Change History**
+
+This enumerator is available since SDK API **TBD**.
 
 # Appendices
 

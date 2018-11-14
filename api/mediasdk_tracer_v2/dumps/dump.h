@@ -620,6 +620,10 @@ public:
     DEFINE_DUMP_FUNCTION(mfxExtVP9Param);
 #endif
 
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+    DEFINE_DUMP_FUNCTION(mfxExtAV1FilmGrainParam);
+#endif
+
     //mfxsession
     DEFINE_DUMP_FUNCTION(mfxSession);
 

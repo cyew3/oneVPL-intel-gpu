@@ -1450,4 +1450,38 @@ STRUCT(mfxExtVppMctf,
     FIELD_T(mfxU16, FilterStrength)
 )
 #endif
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxAV1FilmGrainPoint,
+    FIELD_T(mfxU8, Value)
+    FIELD_T(mfxU8, Scaling)
+)
+
+STRUCT(mfxExtAV1FilmGrainParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU16, Flags)
+    FIELD_T(mfxU16, GrainSeed)
+    FIELD_T(mfxU8, RefIdx)
+    FIELD_T(mfxI8, NumYPoints)
+    FIELD_T(mfxI8, NumCbPoints)
+    FIELD_T(mfxI8, NumCrPoints)
+    FIELD_S(mfxAV1FilmGrainPoint, PointY)
+    FIELD_S(mfxAV1FilmGrainPoint, PointCb)
+    FIELD_S(mfxAV1FilmGrainPoint, PointCr)
+    FIELD_T(mfxI8, GrainScalingMinus8)
+    FIELD_T(mfxU8, ArCoeffLag)
+    FIELD_T(mfxU8, ArCoeffsYPlus128)
+    FIELD_T(mfxU8, ArCoeffsCbPlus128)
+    FIELD_T(mfxU8, ArCoeffsCrPlus128)
+    FIELD_T(mfxU8, ArCoeffShiftMinus6)
+    FIELD_T(mfxU8, GrainScaleShift)
+    FIELD_T(mfxU8, CbMult)
+    FIELD_T(mfxU8, CbLumaMult)
+    FIELD_T(mfxU16, CbOffset)
+    FIELD_T(mfxU8, CrMult)
+    FIELD_T(mfxU8, CrLumaMult)
+    FIELD_T(mfxU16, CrOffset)
+)
+#endif
+
 #endif
