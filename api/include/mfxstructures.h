@@ -500,10 +500,6 @@ enum {
     MFX_PROFILE_AV1_MAIN                    = 1,
     MFX_PROFILE_AV1_HIGH                    = 2,
     MFX_PROFILE_AV1_PRO                     = 3,
-    MFX_PROFILE_AV1_0                       = 1,
-    MFX_PROFILE_AV1_1                       = 2,
-    MFX_PROFILE_AV1_2                       = 3,
-    MFX_PROFILE_AV1_3                       = 4,
 #endif
 };
 
