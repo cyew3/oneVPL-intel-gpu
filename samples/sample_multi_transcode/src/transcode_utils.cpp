@@ -1987,11 +1987,11 @@ mfxStatus CmdProcessor::ParseParamsForOneSession(mfxU32 argc, msdk_char *argv[])
             InputParams.bSingleTexture = true;
         }
 #if (MFX_VERSION >= 1024)
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc:on")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::on")))
         {
             InputParams.nExtBRC = EXTBRC_ON;
         }
-        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc:off")))
+        else if (0 == msdk_strcmp(argv[i], MSDK_STRING("-extbrc::off")))
         {
             InputParams.nExtBRC = EXTBRC_OFF;
         }
