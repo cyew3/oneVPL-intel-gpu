@@ -31,8 +31,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc_io", "..\..\shared\umc\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73648CAF-96E3-476E-B87A-9846762C427F}"
 	ProjectSection(SolutionItems) = preProject
-		Intel.Mfx.Plugin.props = Intel.Mfx.Plugin.props
-		..\Intel.Mfx.Trace.Itt.props = ..\Intel.Mfx.Trace.Itt.props
+		..\..\..\builder\Intel.Mfx.Building.props = ..\..\..\builder\Intel.Mfx.Building.props
+		..\..\..\builder\Intel.Mfx.Default.props = ..\..\..\builder\Intel.Mfx.Default.props
+		..\..\..\builder\Intel.Mfx.Footer.props = ..\..\..\builder\Intel.Mfx.Footer.props
+		..\..\..\builder\Intel.Mfx.Header.props = ..\..\..\builder\Intel.Mfx.Header.props
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "umc_va_elk", "..\..\shared\umc\io\umc_va\umc_va_elk.vcxproj", "{8B6C2462-3A4D-4070-A44F-9A75E813EF27}"
