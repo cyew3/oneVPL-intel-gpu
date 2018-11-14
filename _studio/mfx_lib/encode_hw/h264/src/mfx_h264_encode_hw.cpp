@@ -443,7 +443,9 @@ mfxStatus ImplementationAvc::Query(
         sts = ReadSpsPpsHeaders(tmp);
         MFX_CHECK_STS(sts);
 
-        mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType(), *QueryCoreInterface<eMFXGTConfig>(core, MFXICORE_GT_CONFIG_GUID));
+        eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(core, MFXICORE_GT_CONFIG_GUID);
+        MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
+        mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType(), *pMFXGTConfig);
 
         if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
             return MFX_WRN_PARTIAL_ACCELERATION;
@@ -690,13 +692,15 @@ mfxStatus ImplementationAvc::QueryIOSurf(
     if (sts < MFX_ERR_NONE)
         return sts;
 
-    mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType(), *QueryCoreInterface<eMFXGTConfig>(core, MFXICORE_GT_CONFIG_GUID));
+    eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(core, MFXICORE_GT_CONFIG_GUID);
+    MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxStatus checkSts = CheckVideoParamQueryLike(tmp, hwCaps, platfrom, core->GetVAType(), *pMFXGTConfig);
     if (checkSts == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION; // return immediately
     else if (checkSts == MFX_ERR_NONE && lpSts != MFX_ERR_NONE)
         checkSts = lpSts;
 
-    SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType(), *QueryCoreInterface<eMFXGTConfig>(core, MFXICORE_GT_CONFIG_GUID));
+    SetDefaults(tmp, hwCaps, true, core->GetHWType(), core->GetVAType(), *pMFXGTConfig);
 
 #ifdef MFX_VA_WIN
     mfxExtCodingOption3 const &   extOpt3 = GetExtBufferRef(tmp);
@@ -896,7 +900,9 @@ mfxStatus ImplementationAvc::Init(mfxVideoParam * par)
 
     mfxStatus spsppsSts = CopySpsPpsToVideoParam(m_video);
 
-    mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType, *QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID), true);
+    eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID);
+    MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxStatus checkStatus = CheckVideoParam(m_video, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType, *pMFXGTConfig, true);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_WRN_PARTIAL_ACCELERATION;
     else if (checkStatus < MFX_ERR_NONE)
@@ -1485,7 +1491,9 @@ mfxStatus ImplementationAvc::ProcessAndCheckNewParameters(
 
     InheritDefaultValues(m_video, newPar, newParIn);
 
-    mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType,*QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID));
+    eMFXGTConfig* pMFXGTConfig = QueryCoreInterface<eMFXGTConfig>(m_core, MFXICORE_GT_CONFIG_GUID);
+    MFX_CHECK(pMFXGTConfig != nullptr, MFX_ERR_UNDEFINED_BEHAVIOR);
+    mfxStatus checkStatus = CheckVideoParam(newPar, m_caps, m_core->IsExternalFrameAllocator(), m_currentPlatform, m_currentVaType, *pMFXGTConfig);
     if (checkStatus == MFX_WRN_PARTIAL_ACCELERATION)
         return MFX_ERR_INVALID_VIDEO_PARAM;
     else if (checkStatus < MFX_ERR_NONE)
