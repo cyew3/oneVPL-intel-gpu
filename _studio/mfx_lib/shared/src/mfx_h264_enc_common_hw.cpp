@@ -2021,7 +2021,7 @@ mfxStatus MfxHwH264Encode::CheckVideoParam(
         {
             checkSts = sts;
         }
-        else if (sts == MFX_ERR_UNSUPPORTED)
+        else if (sts < MFX_ERR_NONE)
         {
             return MFX_ERR_INVALID_VIDEO_PARAM;
         }
@@ -5252,6 +5252,10 @@ mfxStatus MfxHwH264Encode::CheckMVCSeqDescQueryLike(mfxExtMVCSeqDesc * mvcSeqDes
 // check mfxExtMVCSeqDesc before encoding
 mfxStatus MfxHwH264Encode::CheckAndFixMVCSeqDesc(mfxExtMVCSeqDesc * mvcSeqDesc, bool isViewOutput)
 {
+    if (mvcSeqDesc == nullptr)
+    {
+        return MFX_ERR_NULL_PTR;
+    }
     bool unsupported = false;
     bool changed = false;
     if (mvcSeqDesc->NumView > 2 || mvcSeqDesc->NumView < 2)
