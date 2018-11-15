@@ -3649,6 +3649,8 @@ Status TaskSupplier::AddSlice(H264Slice * pSlice, bool force)
             {
                 SetOfSlices * setOfSlices = m_accessUnit.GetLayer(i);
                 H264Slice * slice = setOfSlices->GetSlice(0);
+                if (slice == nullptr)
+                    continue;
 
                 AllocateAndInitializeView(slice);
 
@@ -4092,7 +4094,8 @@ void TaskSupplier::DBPUpdate(H264DecoderFrame * pFrame, int32_t field)
 {
     H264DecoderFrameInfo *slicesInfo = pFrame->GetAU(field);
 
-    for (uint32_t i = 0; i < slicesInfo->GetSliceCount(); i++)
+    uint32_t count = slicesInfo->GetSliceCount();
+    for (uint32_t i = 0; i < count; i++)
     {
         H264Slice * slice = slicesInfo->GetSlice(i);
         if (!slice->IsReference())
