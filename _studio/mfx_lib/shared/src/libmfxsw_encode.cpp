@@ -116,7 +116,10 @@ struct CodecKey {
 };
 
 struct Handlers {
+    typedef std::function<VideoENCODE*(VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)> CtorType;
+
     struct Funcs {
+        CtorType ctor;
         std::function<mfxStatus(mfxSession s, mfxVideoParam *in, mfxVideoParam *out)> query;
         std::function<mfxStatus(mfxSession s, mfxVideoParam *par, mfxFrameAllocRequest *request)> queryIOSurf;
     };
@@ -140,6 +143,12 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_VA) && defined (MFX_ENABLE_H264_VIDEO_ENCODE_HW)
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXHWVideoENCODEH264(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -157,6 +166,17 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
   #ifndef OPEN_SOURCE
+                // .ctor =
+                [](VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    (void)codecProfile;
+#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
+                    if(codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || codecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
+                        return new MFXVideoENCODEMVC(core, mfxRes);
+#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
+                    return new MFXVideoENCODEH264(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -167,7 +187,6 @@ static const CodecId2Handlers codecId2Handlers =
                     else
     #endif
                         mfxRes = MFXVideoENCODEH264::Query(in, out);
-                    mfxRes = MFX_ERR_UNSUPPORTED;
                     return mfxRes;
                 },
                 // .queryIOSurf =
@@ -187,6 +206,17 @@ static const CodecId2Handlers codecId2Handlers =
 #else // MFX_VA
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 codecProfile, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    (void)codecProfile;
+#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
+                    if(codecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || codecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
+                        return new MFXVideoENCODEMVC(core, mfxRes);
+#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
+                    return new MFXVideoENCODEH264(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -228,6 +258,12 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_VA)
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXVideoENCODEMPEG2_HW(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -242,6 +278,12 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
   #ifndef OPEN_SOURCE
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXVideoENCODEMPEG2(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -257,6 +299,12 @@ static const CodecId2Handlers codecId2Handlers =
 #else // MFX_VA
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXVideoENCODEMPEG2(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -284,6 +332,12 @@ static const CodecId2Handlers codecId2Handlers =
 #if defined(MFX_VA)
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXVideoENCODEMJPEG_HW(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -298,6 +352,12 @@ static const CodecId2Handlers codecId2Handlers =
             // .fallback =
             {
   #ifndef OPEN_SOURCE
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXVideoENCODEMJPEG(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -313,6 +373,12 @@ static const CodecId2Handlers codecId2Handlers =
 #else // MFX_VA
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MFXVideoENCODEMJPEG(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession /*session*/, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -340,6 +406,12 @@ static const CodecId2Handlers codecId2Handlers =
         {
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MfxHwH265FeiEncode::H265FeiEncode_HW(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 { return MfxHwH265FeiEncode::H265FeiEncode_HW::Query(session->m_pCORE.get(), in, out); },
@@ -359,6 +431,12 @@ static const CodecId2Handlers codecId2Handlers =
         {
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE* core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MfxHwH265Encode::MFXVideoENCODEH265_HW(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 { return MfxHwH265Encode::MFXVideoENCODEH265_HW::Query(session->m_pCORE.get(), in, out); },
@@ -383,6 +461,12 @@ static const CodecId2Handlers codecId2Handlers =
         {
             // .primary =
             {
+                // .ctor =
+                [](VideoCORE *core, mfxU16 /*codecProfile*/, mfxStatus *mfxRes)
+                -> VideoENCODE*
+                {
+                    return new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(core, mfxRes);
+                },
                 // .query =
                 [](mfxSession session, mfxVideoParam *in, mfxVideoParam *out)
                 {
@@ -403,137 +487,36 @@ static const CodecId2Handlers codecId2Handlers =
 template<>
 VideoENCODE* _mfxSession::Create<VideoENCODE>(mfxVideoParam& par)
 {
-    VideoENCODE *pENCODE = nullptr;
-    mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
     mfxU32 CodecId = par.mfx.CodecId;
-#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-    bool * feiEnabled = nullptr;//required to check FEI plugin registration.
-#endif
+
+    bool *feiEnabled = (bool*)m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID);
+    if (feiEnabled)
+        return nullptr;
+    const bool fei = *feiEnabled;
 
     // create a codec instance
-    switch (CodecId)
+    auto handler = codecId2Handlers.find(CodecKey(CodecId, fei));
+    if (handler == codecId2Handlers.end())
     {
-#if defined(MFX_ENABLE_H264_VIDEO_ENCODE)
-    case MFX_CODEC_AVC:
-#if defined(MFX_VA) && defined(MFX_ENABLE_H264_VIDEO_ENCODE_HW)
-        if (m_bIsHWENCSupport)
-        {
-            pENCODE = new MFXHWVideoENCODEH264(m_pCORE.get(), &mfxRes);
-        }
-#ifndef OPEN_SOURCE
-        else
-        {
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-            if(par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-                pENCODE = new MFXVideoENCODEMVC(m_pCORE.get(), &mfxRes);
-            else
-#else // MFX_ENABLE_MVC_VIDEO_ENCODE
-            (void)par;
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-                pENCODE = new MFXVideoENCODEH264(m_pCORE.get(), &mfxRes);
-        }
-#endif // OPEN_SOURCE
-
-#else //MFX_VA
-
-#ifdef MFX_ENABLE_MVC_VIDEO_ENCODE
-        if(par.mfx.CodecProfile == MFX_PROFILE_AVC_MULTIVIEW_HIGH || par.mfx.CodecProfile == MFX_PROFILE_AVC_STEREO_HIGH)
-            pENCODE = new MFXVideoENCODEMVC(m_pCORE.get(), &mfxRes);
-        else
-#else // MFX_ENABLE_MVC_VIDEO_ENCODE
-        (void)par;
-#endif // MFX_ENABLE_MVC_VIDEO_ENCODE
-            pENCODE = new MFXVideoENCODEH264(m_pCORE.get(), &mfxRes);
-#endif //MFX_VA
-
-        break;
-#endif // MFX_ENABLE_H264_VIDEO_ENCODE
-
-#if defined(MFX_ENABLE_MPEG2_VIDEO_ENCODE)
-    case MFX_CODEC_MPEG2:
-#if defined(MFX_VA)
-        if (m_bIsHWENCSupport)
-        {
-            pENCODE = new MFXVideoENCODEMPEG2_HW(m_pCORE.get(), &mfxRes);
-        }
-#ifndef OPEN_SOURCE
-        else
-        {
-            pENCODE = new MFXVideoENCODEMPEG2(m_pCORE.get(), &mfxRes);
-        }
-#endif // OPEN_SOURCE
-#else //MFX_VA
-        pENCODE = new MFXVideoENCODEMPEG2(m_pCORE.get(), &mfxRes);
-#endif //MFX_VA
-        break;
-#endif // MFX_ENABLE_MPEG2_VIDEO_ENCODE
-
-#if defined(MFX_ENABLE_MJPEG_VIDEO_ENCODE)
-    case MFX_CODEC_JPEG:
-#if defined(MFX_VA)
-        if (m_bIsHWENCSupport)
-        {
-            pENCODE = new MFXVideoENCODEMJPEG_HW(m_pCORE.get(), &mfxRes);
-        }
-#ifndef OPEN_SOURCE
-        else
-        {
-            pENCODE = new MFXVideoENCODEMJPEG(m_pCORE.get(), &mfxRes);
-        }
-#endif
-        break;
-#else  // MFX_VA
-        pENCODE = new MFXVideoENCODEMJPEG(m_pCORE.get(), &mfxRes);
-#endif // MFX_VA
-        break;
-#endif // MFX_ENABLE_MJPEG_VIDEO_ENCODE
-
-#if defined(MFX_ENABLE_H265_VIDEO_ENCODE) && defined(MFX_VA) && !defined(AS_HEVCE_PLUGIN)
-    case MFX_CODEC_HEVC:
-        if (m_bIsHWENCSupport)
-        {
-#if defined (MFX_ENABLE_HEVC_VIDEO_FEI_ENCODE)
-            feiEnabled = (bool*)m_pCORE.get()->QueryCoreInterface(MFXIFEIEnabled_GUID);
-            if (feiEnabled == nullptr)
-                return nullptr;
-            else if(*feiEnabled)
-                pENCODE = new MfxHwH265FeiEncode::H265FeiEncode_HW(m_pCORE.get(), &mfxRes);
-            else
-#endif
-            pENCODE = new MfxHwH265Encode::MFXVideoENCODEH265_HW(m_pCORE.get(), &mfxRes);
-        }
-        else
-        {
-            pENCODE = nullptr;
-        }
-        break;
-#endif // MFX_ENABLE_H265_VIDEO_ENCODE
-
-#if defined(MFX_ENABLE_VP9_VIDEO_ENCODE_HW)
-    case MFX_CODEC_VP9:
-        if (m_bIsHWENCSupport)
-        {
-            pENCODE = new MfxHwVP9Encode::MFXVideoENCODEVP9_HW(m_pCORE.get(), &mfxRes);
-        }
-        else
-        {
-            pENCODE = nullptr;
-        }
-        break;
-#endif
-    default:
-        break;
+        return nullptr;
     }
 
+    const Handlers::CtorType &ctor = m_bIsHWENCSupport?
+        handler->second.primary.ctor : handler->second.fallback.ctor;
+    if (!ctor)
+    {
+        return nullptr;
+    }
+
+    mfxStatus mfxRes = MFX_ERR_MEMORY_ALLOC;
+    std::unique_ptr<VideoENCODE> pENCODE(ctor(m_pCORE.get(), par.mfx.CodecProfile, &mfxRes));
     // check error(s)
     if (MFX_ERR_NONE != mfxRes)
     {
-        delete pENCODE;
-        pENCODE = nullptr;
+        return nullptr;
     }
 
-    return pENCODE;
-
+    return pENCODE.release();
 } // VideoENCODE *CreateENCODESpecificClass(mfxU32 CodecId, VideoCORE *core)
 #endif
 
