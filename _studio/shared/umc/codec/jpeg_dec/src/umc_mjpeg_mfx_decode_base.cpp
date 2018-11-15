@@ -329,15 +329,12 @@ Status MJPEGVideoDecoderBaseMFX::_GetFrameInfo(const Ipp8u* pBitStream, size_t n
     Ipp32s   precision;
     JSS      sampling;
     JCOLOR   color;
-    CMemBuffInput in;
     JERRCODE jerr;
 
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    in.Open(pBitStream,nSize);
-
-    jerr = m_decBase->SetSource(&in);
+    jerr = m_decBase->SetSource(pBitStream, nSize);
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 
@@ -381,9 +378,7 @@ Status MJPEGVideoDecoderBaseMFX::FindStartOfImage(MediaData * in)
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    source.Open((Ipp8u*) in->GetDataPointer(), in->GetDataSize());
-
-    jerr = m_decBase->SetSource(&source);
+    jerr = m_decBase->SetSource((uint8_t*)in->GetDataPointer(), in->GetDataSize());
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 

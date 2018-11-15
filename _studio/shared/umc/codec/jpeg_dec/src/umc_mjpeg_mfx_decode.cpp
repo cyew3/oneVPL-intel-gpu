@@ -552,7 +552,6 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
     Status umcRes = UMC_OK;
     mfxU32 picNum, pieceNum;
     mfxI32 curr_scan_no;
-    CMemBuffInput stream;
     JERRCODE jerr;
     int i;
 /*
@@ -577,10 +576,12 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
         Ipp32s nUsedBytes = 0;
 
         // set the source data
-        stream.Open((Ipp8u *) picBuffer.pBuf,
+        jerr = m_dec[threadNumber]->SetSource((Ipp8u *) picBuffer.pBuf,
                     picBuffer.imageHeaderSize + picBuffer.scanSize[0]);
+        if (JPEG_OK != jerr)
+            return UMC_ERR_FAILED;
 
-        umcRes = _DecodeHeader(&stream, &nUsedBytes, threadNumber);
+        umcRes = _DecodeHeader(&nUsedBytes, threadNumber);
         if (UMC_OK != umcRes)
         {
             return umcRes;
@@ -621,10 +622,12 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
             if(picBuffer.scanTablesOffset[i] != 0)
             {
                 Ipp32s nUsedBytes = 0;
-                stream.Open((Ipp8u *) picBuffer.pBuf + picBuffer.scanTablesOffset[i],
+                jerr = m_dec[threadNumber]->SetSource((Ipp8u *) picBuffer.pBuf + picBuffer.scanTablesOffset[i],
                             picBuffer.scanTablesSize[i] + picBuffer.scanSize[i]);
+                if (JPEG_OK != jerr)
+                    return UMC_ERR_FAILED;
 
-                umcRes = _DecodeHeader(&stream, &nUsedBytes, threadNumber);
+                umcRes = _DecodeHeader(&nUsedBytes, threadNumber);
                 if (UMC_OK != umcRes)
                 {
                     return umcRes;
@@ -636,10 +639,8 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
     m_dec[threadNumber]->m_num_scans = picBuffer.numScans;
 
     // set the next piece to the decoder
-    stream.Open(picBuffer.pBuf + picBuffer.pieceOffset[pieceNum],
-                picBuffer.pieceSize[pieceNum]);
-
-    jerr = m_dec[threadNumber]->SetSource(&stream);
+    jerr = m_dec[threadNumber]->SetSource(picBuffer.pBuf + picBuffer.pieceOffset[pieceNum],
+        picBuffer.pieceSize[pieceNum]);
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 
@@ -942,15 +943,12 @@ Status MJPEGVideoDecoderMFX::_GetFrameInfo(const Ipp8u* pBitStream, size_t nSize
     Ipp32s   precision;
     JSS      sampling;
     JCOLOR   color;
-    CMemBuffInput in;
     JERRCODE jerr;
 
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    in.Open(pBitStream,nSize);
-
-    jerr = m_dec[0]->SetSource(&in);
+    jerr = m_dec[0]->SetSource(pBitStream, nSize);
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 
@@ -990,17 +988,13 @@ Status MJPEGVideoDecoderMFX::CloseFrame(void)
 
 } // Status MJPEGVideoDecoderMFX::CloseFrame(void)
 
-Status MJPEGVideoDecoderMFX::_DecodeHeader(CBaseStreamInput* in, Ipp32s* cnt, const Ipp32u threadNum)
+Status MJPEGVideoDecoderMFX::_DecodeHeader(Ipp32s* cnt, const Ipp32u threadNum)
 {
     JSS      sampling;
     JERRCODE jerr;
 
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
-
-    jerr = m_dec[threadNum]->SetSource(in);
-    if(JPEG_OK != jerr)
-        return UMC_ERR_FAILED;
 
     IppiSize size = {};
 
@@ -1017,7 +1011,7 @@ Status MJPEGVideoDecoderMFX::_DecodeHeader(CBaseStreamInput* in, Ipp32s* cnt, co
 
     if ((m_frameSampling != (int)sampling) || (m_frameDims.width && sizeHaveChanged))
     {
-        in->Seek(-m_dec[threadNum]->GetNumDecodedBytes(),UIC_SEEK_CUR);
+        m_dec[threadNum]->Seek(-m_dec[threadNum]->GetNumDecodedBytes(),UIC_SEEK_CUR);
         *cnt = 0;
         return UMC_ERR_NOT_ENOUGH_DATA;//UMC_WRN_INVALID_STREAM;
     }
@@ -1144,15 +1138,12 @@ ConvertInfo * MJPEGVideoDecoderMFX::GetConvertInfo()
 
 Status MJPEGVideoDecoderMFX::FindStartOfImage(MediaData * in)
 {
-    CMemBuffInput source;
     JERRCODE jerr;
 
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    source.Open((Ipp8u*) in->GetDataPointer(), in->GetDataSize());
-
-    jerr = m_dec[0]->SetSource(&source);
+    jerr = m_dec[0]->SetSource((Ipp8u*)in->GetDataPointer(), in->GetDataSize());
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 

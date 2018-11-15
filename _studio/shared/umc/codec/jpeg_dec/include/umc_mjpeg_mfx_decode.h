@@ -125,7 +125,7 @@ protected:
                        const mfxU32 restartsToDecode,
                        const mfxU32 threadNum);
 
-    Status _DecodeHeader(CBaseStreamInput* in, Ipp32s* nUsedBytes, const Ipp32u threadNum);
+    Status _DecodeHeader(Ipp32s* nUsedBytes, const Ipp32u threadNum);
 
     Ipp32s                  m_frameNo;
 
