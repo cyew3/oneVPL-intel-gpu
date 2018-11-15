@@ -188,7 +188,7 @@ namespace UMC_HEVC_DECODER
         pPicParam->StatusReportFeedbackNumber = m_statusReportFeedbackCounter;
         pPicParam->TotalNumEntryPointOffsets = pSlice->GetWidevineStatusReportNumber();
     }
-}
+} // namespace UMC_HEVC_DECODER
 
 #endif // #if defined (UMC_VA_DXVA) && !defined (MFX_PROTECTED_FEATURE_DISABLE)
 #endif // UMC_ENABLE_H265_VIDEO_DECODER

@@ -28,8 +28,6 @@
 #include "umc_h265_task_supplier.h"
 #include "umc_h265_widevine_slice_decoding.h"
 
-#include "huc_based_drm_common.h"
-
 using namespace UMC;
 
 namespace UMC_HEVC_DECODER

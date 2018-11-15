@@ -512,22 +512,22 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
 
             // decode second part of slice header
             umcRes = pDecryptParams->GetSliceHeaderPart2(&pSlice->m_SliceHeader,
-                                                        pSlice->m_pPicParamSet,
-                                                        pSlice->m_pSeqParamSet);
+                                                         pSlice->m_pPicParamSet,
+                                                         pSlice->m_pSeqParamSet);
             if (UMC_OK != umcRes)
                 return 0;
 
             // decode second part of slice header
             umcRes = pDecryptParams->GetSliceHeaderPart3(&pSlice->m_SliceHeader,
-                                                        pSlice->m_PredWeight[0],
-                                                        pSlice->m_PredWeight[1],
-                                                        &pSlice->ReorderInfoL0,
-                                                        &pSlice->ReorderInfoL1,
-                                                        &pSlice->m_AdaptiveMarkingInfo,
-                                                        &pSlice->m_BaseAdaptiveMarkingInfo,
-                                                        pSlice->m_pPicParamSet,
-                                                        pSlice->m_pSeqParamSet,
-                                                        pSlice->m_pSeqParamSetSvcEx);
+                                                         pSlice->m_PredWeight[0],
+                                                         pSlice->m_PredWeight[1],
+                                                         &pSlice->ReorderInfoL0,
+                                                         &pSlice->ReorderInfoL1,
+                                                         &pSlice->m_AdaptiveMarkingInfo,
+                                                         &pSlice->m_BaseAdaptiveMarkingInfo,
+                                                         pSlice->m_pPicParamSet,
+                                                         pSlice->m_pSeqParamSet,
+                                                         pSlice->m_pSeqParamSetSvcEx);
             if (UMC_OK != umcRes)
                 return 0;
 
@@ -560,7 +560,7 @@ H264Slice *WidevineTaskSupplier::ParseWidevineSliceHeader(DecryptParametersWrapp
             int32_t bit_depth_luma = pSlice->GetSeqParam()->bit_depth_luma;
 
             iSQUANT = pSlice->m_pPicParamSet->pic_init_qp +
-                        pSlice->m_SliceHeader.slice_qp_delta;
+                      pSlice->m_SliceHeader.slice_qp_delta;
             if (iSQUANT < QP_MIN - 6*(bit_depth_luma - 8)
                 || iSQUANT > QP_MAX)
             {
@@ -712,7 +712,7 @@ Status WidevineTaskSupplier::AddOneFrame(MediaData* src)
             return umsRes;
     }
 
-    uint32_t flags = src ? src->GetFlags() : 0;
+    uint32_t const flags = src ? src->GetFlags() : 0;
     if (flags & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME)
         return UMC_ERR_FAILED;
 
