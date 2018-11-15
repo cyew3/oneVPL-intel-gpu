@@ -1551,6 +1551,8 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             pCmd->SetResetFileName(m_FileAfterReset);
             pCmd->SetResetInputFileName(m_inFileAfterReset);
             pCmd->SetVppResizing(m_bUseResizing);
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
             mfxExtVP9Param *pExt = NULL;
 
             {
@@ -1575,7 +1577,7 @@ mfxStatus MFXTranscodingPipeline::ProcessCommandInternal(vm_char ** &argv, mfxI3
             if ((m_EncParams.mfx.FrameInfo.Width != m_inParams.FrameInfo.Width) || (m_EncParams.mfx.FrameInfo.Height != m_inParams.FrameInfo.Height)) {
                 m_extVP9Param->DynamicScaling = MFX_CODINGOPTION_ON;
             }
-
+#endif
             // attach ext buffers
             if (!m_ExtBuffers.get()->empty())
             {
