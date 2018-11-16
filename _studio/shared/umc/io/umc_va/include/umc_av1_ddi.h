@@ -104,9 +104,9 @@ namespace UMC_AV1_DECODER
         UCHAR     num_cr_points;  // [0..10]
         UCHAR     point_cr_value[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
         UCHAR     point_cr_scaling[MAX_POINTS_IN_SCALING_FUNCTION_CHROMA];
-        CHAR      ar_coeffs_y[MAX_AOTOREG_COEFFS_LUMA];   // [-128..127]
-        CHAR      ar_coeffs_cb[MAX_AOTOREG_COEFFS_CHROMA];  // [-128..127]
-        CHAR      ar_coeffs_cr[MAX_AOTOREG_COEFFS_CHROMA];  // [-128..127]
+        CHAR      ar_coeffs_y[MAX_AUTOREG_COEFFS_LUMA];   // [-128..127]
+        CHAR      ar_coeffs_cb[MAX_AUTOREG_COEFFS_CHROMA];  // [-128..127]
+        CHAR      ar_coeffs_cr[MAX_AUTOREG_COEFFS_CHROMA];  // [-128..127]
         UCHAR     cb_mult;
         UCHAR     cb_luma_mult;
         USHORT    cb_offset;  // [0..512]

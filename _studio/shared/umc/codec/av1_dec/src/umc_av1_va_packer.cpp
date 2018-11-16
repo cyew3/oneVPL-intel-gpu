@@ -371,10 +371,10 @@ namespace UMC_AV1_DECODER
                 ddiFilmGrain.point_cr_scaling[i] = (UCHAR)info.film_grain_params.point_cr_scaling[i];
             }
 
-            for (uint8_t i = 0; i < MAX_AOTOREG_COEFFS_LUMA; i++)
+            for (uint8_t i = 0; i < MAX_AUTOREG_COEFFS_LUMA; i++)
                 ddiFilmGrain.ar_coeffs_y[i] = (CHAR)info.film_grain_params.ar_coeffs_y[i];
 
-            for (uint8_t i = 0; i < MAX_AOTOREG_COEFFS_CHROMA; i++)
+            for (uint8_t i = 0; i < MAX_AUTOREG_COEFFS_CHROMA; i++)
             {
                 ddiFilmGrain.ar_coeffs_cb[i] = (CHAR)info.film_grain_params.ar_coeffs_cb[i];
                 ddiFilmGrain.ar_coeffs_cr[i] = (CHAR)info.film_grain_params.ar_coeffs_cr[i];

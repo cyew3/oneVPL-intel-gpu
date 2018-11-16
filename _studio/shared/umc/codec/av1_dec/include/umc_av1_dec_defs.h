@@ -90,8 +90,8 @@ namespace UMC_AV1_DECODER
 
     const uint8_t MAX_POINTS_IN_SCALING_FUNCTION_LUMA    = 14;
     const uint8_t MAX_POINTS_IN_SCALING_FUNCTION_CHROMA  = 10;
-    const uint8_t MAX_AOTOREG_COEFFS_LUMA                = 24;
-    const uint8_t MAX_AOTOREG_COEFFS_CHROMA              = MAX_AOTOREG_COEFFS_LUMA + 1;
+    const uint8_t MAX_AUTOREG_COEFFS_LUMA                = 24;
+    const uint8_t MAX_AUTOREG_COEFFS_CHROMA              = MAX_AUTOREG_COEFFS_LUMA + 1;
 
     enum AV1_OBU_TYPE
     {
@@ -501,9 +501,9 @@ namespace UMC_AV1_DECODER
         int32_t ar_coeff_lag;  // values:  0..3
 
         // 8 bit values
-        int32_t ar_coeffs_y[MAX_AOTOREG_COEFFS_LUMA];
-        int32_t ar_coeffs_cb[MAX_AOTOREG_COEFFS_CHROMA];
-        int32_t ar_coeffs_cr[MAX_AOTOREG_COEFFS_CHROMA];
+        int32_t ar_coeffs_y[MAX_AUTOREG_COEFFS_LUMA];
+        int32_t ar_coeffs_cb[MAX_AUTOREG_COEFFS_CHROMA];
+        int32_t ar_coeffs_cr[MAX_AUTOREG_COEFFS_CHROMA];
 
         // Shift value: AR coeffs range
         // 6: [-2, 2)
