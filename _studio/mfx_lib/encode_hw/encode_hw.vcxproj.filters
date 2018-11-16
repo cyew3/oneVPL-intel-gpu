@@ -113,6 +113,9 @@
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="h264\include\mfx_h264_encode_hw.h">
@@ -209,6 +212,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d_common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -615,6 +615,11 @@ mfxStatus D3D9Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    mfxStatus sts = D3DXCommonEncoder::InitBlockingSync(m_pmfxCore);
+    MFX_CHECK_STS(sts);
+#endif
+
     return MFX_ERR_NONE;
 } // mfxStatus D3D9Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
@@ -711,6 +716,13 @@ mfxStatus D3D9Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT ty
     {
         m_feedbackUpdate.resize(response.NumFrameActual);
         m_feedbackCached.Reset(response.NumFrameActual);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            m_EventCache.reset(new EventCache());
+            m_EventCache->Init(response.NumFrameActual);
+        }
+#endif
     }
 
     return MFX_ERR_NONE;
@@ -801,6 +813,19 @@ mfxStatus D3D9Encoder::Execute(
         }
         MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        // allocate the event
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            Task & task1 = const_cast<Task &>(task);
+            task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+            m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
+
+            hr = m_auxDevice->Execute(DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE, task1.m_GpuEvent, (void *)0);
+            MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+        }
+#endif
+
         hr = m_auxDevice->Execute(ENCODE_ENC_PAK_ID, encodeExecuteParams, (void *)0);
         if (FAILED(hr))
         {
@@ -822,7 +847,7 @@ mfxStatus D3D9Encoder::Execute(
 } // mfxStatus D3D9Encoder::Execute(ExecuteBuffers& data, mfxU32 fieldId)
 
 
-mfxStatus D3D9Encoder::QueryStatus(
+mfxStatus D3D9Encoder::QueryStatusAsync(
     Task & task)
 {
     MFX_LTRACE_1(MFX_TRACE_LEVEL_HOTSPOTS, "D3D9Encoder::QueryStatus, Frame: ", "%d", task.m_frameOrder);

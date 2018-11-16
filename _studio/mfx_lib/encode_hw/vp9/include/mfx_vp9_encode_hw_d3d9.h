@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018 Intel Corporation
+// Copyright (c) 2016-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +23,7 @@
 #if defined (_WIN32) || defined (_WIN64)
 
 #include "auxiliary_device.h"
-#include "encoding_ddi.h"
-#include "mfx_vp9_encode_hw_ddi.h"
+#include "mfx_vp9_encode_hw_d3d_common.h"
 
 namespace MfxHwVP9Encode
 {
@@ -296,7 +295,7 @@ private:
     FeedbackStorage m_cache;
 }; // class CachedFeedback
 
-class D3D9Encoder : public DriverEncoder
+class D3D9Encoder : public D3DXCommonEncoder
 {
 public:
     D3D9Encoder();
@@ -343,7 +342,7 @@ public:
         ENCODE_CAPS_VP9& caps);
 
     virtual
-    mfxStatus QueryStatus(
+    mfxStatus QueryStatusAsync(
         Task & task);
 
     virtual

@@ -25,6 +25,7 @@
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d11.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d9.cpp" />
+    <ClCompile Include="vp9\src\mfx_vp9_encode_hw_d3d_common.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_ddi.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_par.cpp" />
     <ClCompile Include="vp9\src\mfx_vp9_encode_hw_utils.cpp" />
@@ -61,6 +62,7 @@
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d11.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d9.h" />
+    <ClInclude Include="vp9\include\mfx_vp9_encode_hw_d3d_common.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_ddi.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_par.h" />
     <ClInclude Include="vp9\include\mfx_vp9_encode_hw_utils.h" />

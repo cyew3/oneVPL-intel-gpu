@@ -29,6 +29,7 @@
 #include <memory>
 #include "mfxstructures.h"
 #include "mfx_enc_common.h"
+#include "encoding_ddi.h"
 #include "assert.h"
 
 namespace MfxHwVP9Encode
@@ -694,6 +695,10 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
 
         mfxExtVP9Segmentation const * m_pPrevSegment;
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        GPU_SYNC_EVENT_HANDLE m_GpuEvent;
+#endif
+
         Task ():
               m_pRawFrame(NULL),
               m_pRawLocalFrame(NULL),
@@ -715,6 +720,9 @@ template <typename T> mfxStatus RemoveExtBuffer(T & par, mfxU32 id)
               Zero(m_pRecRefFrames);
               Zero(m_frameParam);
               Zero(m_ctrl);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+              Zero(m_GpuEvent);
+#endif
           }
 
           ~Task() {};

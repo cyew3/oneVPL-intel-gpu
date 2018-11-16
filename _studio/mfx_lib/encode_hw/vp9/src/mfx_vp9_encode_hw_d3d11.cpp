@@ -205,6 +205,11 @@ mfxStatus D3D11Encoder::CreateAccelerationService(VP9MfxVideoParam const & par)
     m_frameHeaderBuf.resize(VP9_MAX_UNCOMPRESSED_HEADER_SIZE + MAX_IVF_HEADER_SIZE);
     InitVp9SeqLevelParam(par, m_seqParam);
 
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    mfxStatus sts = D3DXCommonEncoder::InitBlockingSync(m_pmfxCore);
+    MFX_CHECK_STS(sts);
+#endif
+
     return MFX_ERR_NONE;
 } // mfxStatus D3D11Encoder::CreateAccelerationService(MfxVideoParam const & par)
 
@@ -259,6 +264,10 @@ mfxU8 ConvertDX9TypeToDX11Type(mfxU8 type)
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBQPDATA;
     case D3DDDIFMT_INTELENCODE_MBSEGMENTMAP:
         return D3D11_DDI_VIDEO_ENCODER_BUFFER_MBSEGMENTMAP;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    case D3DDDIFMT_INTELENCODE_SYNCOBJECT:
+        return D3D11_DDI_VIDEO_ENCODER_BUFFER_SYNCOBJECT;
+#endif
     default:
         break;
     }
@@ -383,6 +392,13 @@ mfxStatus D3D11Encoder::Register(mfxFrameAllocResponse& response, D3DDDIFORMAT t
     {
         m_feedbackUpdate.resize(response.NumFrameActual);
         m_feedbackCached.Reset(response.NumFrameActual);
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+        if (m_bIsBlockingTaskSyncEnabled)
+        {
+            m_EventCache.reset(new EventCache());
+            m_EventCache->Init(response.NumFrameActual);
+        }
+#endif
     }
 
     return MFX_ERR_NONE;
@@ -504,9 +520,33 @@ mfxStatus D3D11Encoder::Execute(
 
     assert(bufCnt <= compBufferDesc.size());
 
+    HRESULT hr;
+#ifdef MFX_ENABLE_HW_BLOCKING_TASK_SYNC
+    // allocate the event
+    if (m_bIsBlockingTaskSyncEnabled)
+    {
+        Task & task1 = const_cast<Task &>(task);
+        task1.m_GpuEvent.m_gpuComponentId = GPU_COMPONENT_ENCODE;
+        m_EventCache->GetEvent(task1.m_GpuEvent.gpuSyncEvent);
+
+        D3D11_VIDEO_DECODER_EXTENSION decoderExtParams = { 0 };
+        decoderExtParams.Function = DXVA2_PRIVATE_SET_GPU_TASK_EVENT_HANDLE;
+        decoderExtParams.pPrivateInputData = &task1.m_GpuEvent;
+        decoderExtParams.PrivateInputDataSize = sizeof(task1.m_GpuEvent);
+        decoderExtParams.pPrivateOutputData = NULL;
+        decoderExtParams.PrivateOutputDataSize = 0;
+        decoderExtParams.ResourceCount = 0;
+        decoderExtParams.ppResourceList = NULL;
+        {
+            MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_EXTCALL, "SendGpuEventHandle");
+            hr = m_pVContext->DecoderExtension(m_pVDecoder, &decoderExtParams);
+        }
+        MFX_CHECK(SUCCEEDED(hr), MFX_ERR_DEVICE_FAILED);
+    }
+#endif
+
     try
     {
-        HRESULT hr;
         D3D11_VIDEO_DECODER_EXTENSION ext = {};
 
         ext.Function = ENCODE_ENC_PAK_ID;
@@ -544,7 +584,7 @@ mfxStatus D3D11Encoder::Execute(
 } // mfxStatus D3D11Encoder::Execute(ExecuteBuffers& data, mfxU32 fieldId)
 
 
-mfxStatus D3D11Encoder::QueryStatus(
+mfxStatus D3D11Encoder::QueryStatusAsync(
     Task & task)
 {
     MFX_AUTO_LTRACE(MFX_TRACE_LEVEL_HOTSPOTS, "D3D11Encoder::QueryStatus");
