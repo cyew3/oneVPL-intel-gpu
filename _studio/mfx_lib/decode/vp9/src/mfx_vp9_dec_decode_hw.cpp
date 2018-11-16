@@ -525,8 +525,13 @@ mfxStatus VideoDECODEVP9_HW::DecodeHeader(VideoCORE* core, mfxBitstream* bs, mfx
         || par->mfx.FrameInfo.FourCC == MFX_FOURCC_Y416
 #endif //PRE_SI_TARGET_PLATFORM_GEN12
         )
+    {
         par->mfx.FrameInfo.Shift = 1;
-
+    }
+    else
+    {
+        par->mfx.FrameInfo.Shift = 0;
+    }
     return sts;
 }
 
