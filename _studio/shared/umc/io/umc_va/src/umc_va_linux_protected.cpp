@@ -27,6 +27,7 @@
 
 using namespace UMC;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU32 id)
 {
     if (extBuf != 0)
@@ -40,6 +41,7 @@ static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU3
 
     return 0;
 }
+#endif
 
 /////////////////////////////////////////////////
 ProtectedVA::ProtectedVA(mfxU16 p)
@@ -82,7 +84,7 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
         m_counterMode = MFX_PAVP_CTR_TYPE_C;
     }
 #else
-    params = params;
+    (void)params;
 #endif
     return UMC_OK;
 }
