@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2014-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2014-2018 Intel Corporation. All Rights Reserved.
 
 File Name: vp8d_init.cpp
 
@@ -119,55 +119,46 @@ const TestSuite::tc_struct TestSuite::test_case[] =
                              {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 64},
                              {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 64}}},
     {/*34*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.CropX, 42},
-                                            {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 33}}},
-
-    {/*35*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_UNKNOWN}}},
-    {/*36*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE}}},
-    {/*37*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_TFF}}},
-    {/*38*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_BFF}}},
-    {/*39*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FIELD_REPEATED}}},
-    {/*40*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FRAME_DOUBLING}}},
-    {/*41*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_FRAME_TRIPLING}}},
-    {/*42*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.PicStruct, MFX_PICSTRUCT_PROGRESSIVE|MFX_PICSTRUCT_FIELD_TFF}}},
+                             {&tsStruct::mfxVideoParam.mfx.FrameInfo.CropY, 33}}},
 
     // Async_depth
-    {/*43*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.AsyncDepth, 1}}},
-    {/*44*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.AsyncDepth, 10}}},
+    {/*35*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.AsyncDepth, 1}}},
+    {/*36*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.AsyncDepth, 10}}},
 
     // Ext Buffers
-    {/*45*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVP8CodingOption        )}},
-    {/*46*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOption           )}},
-    {/*47*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOptionSPSPPS     )}},
-    {/*48*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoNotUse            )}},
-    {/*49*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVppAuxData             )}},
-    {/*50*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDenoise             )}},
-    {/*51*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPProcAmp             )}},
-    {/*52*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDetail              )}},
-    {/*53*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVideoSignalInfo        )}},
-    {/*54*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoUse               )}},
-    {/*55*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtAVCRefListCtrl         )}},
-    {/*56*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion )}},
-    {/*57*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtPictureTimingSEI       )}},
-    {/*58*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtAvcTemporalLayers      )}},
-    {/*59*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOption2          )}},
-    {/*60*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPImageStab           )}},
-    {/*61*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtEncoderCapability      )}},
-    {/*62*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtEncoderResetOption     )}},
-    {/*63*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtAVCEncodedFrameInfo    )}},
-    {/*64*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPComposite           )}},
-    {/*65*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     )}},
-    {/*66*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtEncoderROI             )}},
-    {/*67*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       )}},
-    {/*68*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtMVCSeqDesc             )}},
-    {/*69*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtMVCTargetViews         )}},
-    {/*70*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtJPEGQuantTables        )}},
-    {/*71*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtJPEGHuffmanTables      )}},
+    {/*37*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVP8CodingOption        )}},
+    {/*38*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOption           )}},
+    {/*39*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOptionSPSPPS     )}},
+    {/*40*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoNotUse            )}},
+    {/*41*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVppAuxData             )}},
+    {/*42*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDenoise             )}},
+    {/*43*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPProcAmp             )}},
+    {/*44*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDetail              )}},
+    {/*45*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVideoSignalInfo        )}},
+    {/*46*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDoUse               )}},
+    {/*47*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtAVCRefListCtrl         )}},
+    {/*48*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPFrameRateConversion )}},
+    {/*49*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtPictureTimingSEI       )}},
+    {/*50*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtAvcTemporalLayers      )}},
+    {/*51*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtCodingOption2          )}},
+    {/*52*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPImageStab           )}},
+    {/*53*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtEncoderCapability      )}},
+    {/*54*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtEncoderResetOption     )}},
+    {/*55*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtAVCEncodedFrameInfo    )}},
+    {/*56*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPComposite           )}},
+    {/*57*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPVideoSignalInfo     )}},
+    {/*58*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtEncoderROI             )}},
+    {/*59*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtVPPDeinterlacing       )}},
+    {/*60*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtMVCSeqDesc             )}},
+    {/*61*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtMVCTargetViews         )}},
+    {/*62*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtJPEGQuantTables        )}},
+    {/*63*/  MFX_ERR_INVALID_VIDEO_PARAM, 0, {}, {ext_buf, EXT_BUF_PAR(mfxExtJPEGHuffmanTables      )}},
 
-    // Maximum supported resolution 1920x1088
-    {/*72*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 1920}}},
-    {/*73*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 1088}}},
-    {/*74*/ MFX_ERR_UNSUPPORTED, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16416}}},
-    {/*75*/ MFX_ERR_UNSUPPORTED, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16416}}}
+    // Maximum supported resolution 4096x4096
+    {/*64*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 4096}}},
+    {/*65*/ MFX_ERR_NONE, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 4096}}},
+    {/*66*/ MFX_ERR_UNSUPPORTED, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Width, 16416}}},
+    {/*67*/ MFX_ERR_UNSUPPORTED, 0, {{&tsStruct::mfxVideoParam.mfx.FrameInfo.Height, 16416}}}
 };
 
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
