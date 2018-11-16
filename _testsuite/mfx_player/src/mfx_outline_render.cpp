@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2011 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -157,9 +157,9 @@ mfxStatus MFXOutlineRender::RenderFrame(mfxFrameSurface1 * surface, mfxEncodeCtr
 
     mfxFrameSurface1 * convertedSurface = surface;
 
-    if (surface->Info.FourCC != m_yv12Surface.Info.FourCC)
+    if (surface->Info.FourCC != m_auxSurface.Info.FourCC)
     {
-        convertedSurface = ConvertSurface(surface, &m_yv12Surface, &m_params);
+        convertedSurface = ConvertSurface(surface, &m_auxSurface, &m_params);
         if (!convertedSurface)
             return MFX_ERR_UNKNOWN;
     }

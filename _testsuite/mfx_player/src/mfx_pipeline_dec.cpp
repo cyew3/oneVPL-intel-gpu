@@ -1853,12 +1853,6 @@ mfxStatus MFXDecPipeline::CreateRender()
         m_components[eREN].m_params.mfx.FrameInfo.ChromaFormat   = m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat;
     }
 
-    //shouldn't recreate existed render in case of light reset
-    if(NULL != m_pRender)
-    {
-        return MFX_ERR_NONE;
-    }
-
     if (m_inParams.outFrameInfo.FourCC == MFX_FOURCC_UNKNOWN)
     {
         m_inParams.outFrameInfo.FourCC = (m_components[eDEC].m_params.mfx.FrameInfo.ChromaFormat == MFX_CHROMAFORMAT_YUV422) ? static_cast<int>(MFX_FOURCC_YV16) : MFX_FOURCC_YV12;
@@ -1930,6 +1924,12 @@ mfxStatus MFXDecPipeline::CreateRender()
     if ( NOT_ASSIGNED_VALUE != m_inParams.OutputPicstruct )
     {
         m_components[eREN].m_params.mfx.FrameInfo.PicStruct = m_inParams.OutputPicstruct;
+    }
+
+    // Shouldn't recreate existing render in case of light reset
+    if(NULL != m_pRender)
+    {
+        return MFX_ERR_NONE;
     }
 
     FileWriterRenderInputParams renderParams;

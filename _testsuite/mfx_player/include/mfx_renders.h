@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2008-2016 Intel Corporation. All Rights Reserved.
+Copyright(c) 2018 Intel Corporation. All Rights Reserved.
 
 File Name: .h
 
@@ -117,7 +117,7 @@ protected:
     
     mfxU32             m_nFourCC; //output color format
     const vm_char *    m_pOpenMode;
-    mfxFrameSurface1   m_yv12Surface;
+    mfxFrameSurface1   m_auxSurface;
     bool               m_bCreateNewFileOnClose;
     tstring            m_OutputFileName;
     int                m_nTimesClosed;

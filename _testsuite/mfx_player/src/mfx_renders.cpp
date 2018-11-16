@@ -447,7 +447,7 @@ MFXFileWriteRender::MFXFileWriteRender(const FileWriterRenderInputParams &params
     , m_params(params)
     , m_nFourCC(params.info.FourCC)
     , m_pOpenMode(VM_STRING("wb"))
-    , m_yv12Surface()
+    , m_auxSurface()
     , m_copier(0)
 {
 #if defined(_WIN32) || defined(_WIN64)
@@ -554,7 +554,7 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
         {
             targetInfo.FourCC = m_nFourCC;
         }
-        MFX_CHECK_STS(AllocSurface(&targetInfo, &m_yv12Surface));
+        MFX_CHECK_STS(AllocSurface(&targetInfo, &m_auxSurface));
     }
 
     m_copier = HWtoSYSCopier::CreateGenericPlugin(m_pSessionWrapper->GetMFXSession());
@@ -568,10 +568,10 @@ mfxStatus MFXFileWriteRender::Init(mfxVideoParam *pInit, const vm_char *pFilenam
 
 mfxStatus MFXFileWriteRender::Close()
 {
-    mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_yv12Surface.Data.Y, m_yv12Surface.Data.U), MFX_MIN_POINTER(m_yv12Surface.Data.V, m_yv12Surface.Data.A));
+    mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_auxSurface.Data.Y, m_auxSurface.Data.U), MFX_MIN_POINTER(m_auxSurface.Data.V, m_auxSurface.Data.A));
     if (ptr)
         delete [] ptr;
-    MFX_ZERO_MEM(m_yv12Surface);
+    MFX_ZERO_MEM(m_auxSurface);
 
     ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_surfaceForCopy.Data.Y, m_surfaceForCopy.Data.U), MFX_MIN_POINTER(m_surfaceForCopy.Data.V, m_surfaceForCopy.Data.A));
     if (ptr)
@@ -601,7 +601,7 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
     }
 #endif
 
-   
+
 #if 1
     mfxFrameSurface1 *surf;
     mfxStatus sts = m_copier->Copy(pSurface, &surf);
@@ -610,17 +610,18 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
         pSurface = surf;
     } else
 #endif
-        MFX_CHECK_STS(LockFrame(pSurface));
+    MFX_CHECK_STS(LockFrame(pSurface));
+
 
     mfxFrameSurface1 * pConvertedSurface = pSurface;
 
     //so target fourcc is different than input
     if (m_nFourCC != pSurface->Info.FourCC)
     {
-        if (pSurface->Info.Width != m_yv12Surface.Info.Width || pSurface->Info.Height != m_yv12Surface.Info.Height)
+        if (pSurface->Info.Width != m_auxSurface.Info.Width || pSurface->Info.Height != m_auxSurface.Info.Height)
         {
             // reallocate
-            mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_yv12Surface.Data.Y, m_yv12Surface.Data.U), MFX_MIN_POINTER(m_yv12Surface.Data.V, m_yv12Surface.Data.A));
+            mfxU8* ptr = MFX_MIN_POINTER(MFX_MIN_POINTER(m_auxSurface.Data.Y, m_auxSurface.Data.U), MFX_MIN_POINTER(m_auxSurface.Data.V, m_auxSurface.Data.A));
             if (ptr)
                 delete [] ptr;
             mfxU32 nOldCC = m_VideoParams.mfx.FrameInfo.FourCC;
@@ -639,11 +640,11 @@ mfxStatus MFXFileWriteRender::RenderFrame(mfxFrameSurface1 * pSurface, mfxEncode
             m_VideoParams.mfx.FrameInfo.CropW = pSurface->Info.CropW;
             m_VideoParams.mfx.FrameInfo.Height = pSurface->Info.Height;
             m_VideoParams.mfx.FrameInfo.CropH = pSurface->Info.CropH;
-            MFX_CHECK_STS(AllocSurface(&m_VideoParams.mfx.FrameInfo, &m_yv12Surface));
+            MFX_CHECK_STS(AllocSurface(&m_VideoParams.mfx.FrameInfo, &m_auxSurface));
             m_VideoParams.mfx.FrameInfo.FourCC = nOldCC;
         }
         //selecting converter
-        pConvertedSurface = ConvertSurface(pSurface, &m_yv12Surface, &m_params);
+        pConvertedSurface = ConvertSurface(pSurface, &m_auxSurface, &m_params);
         if (!pConvertedSurface)
             return MFX_ERR_UNKNOWN;
     }
@@ -694,14 +695,14 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
 
     bool skipChroma = !m_params.alwaysWriteChroma && pConvertedSurface->Info.ChromaFormat == MFX_CHROMAFORMAT_YUV400;
 
-    switch (m_nFourCC)
+    switch (pInfo->FourCC)
     {
         case MFX_FOURCC_YV12: //actually it is i420 format not YV12
         case MFX_FOURCC_YV16: //actually it is i422 format not YV16
         case MFX_FOURCC_YUV444_8:
         {
-            mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YV12 ? 1 : 0;
-            mfxU8 isHalfWidth  = m_nFourCC == MFX_FOURCC_YUV444_8 ? 0 : 1;
+            mfxU8 isHalfHeight = pInfo->FourCC == MFX_FOURCC_YV12 ? 1 : 0;
+            mfxU8 isHalfWidth  = pInfo->FourCC == MFX_FOURCC_YUV444_8 ? 0 : 1;
 
             m_Current.m_comp = VM_STRING('Y');
             m_Current.m_pixX = 0;
@@ -755,8 +756,8 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
                 WRITE(pData->Y + (crop_y * pitch + crop_x) + i*pitch, pInfo->CropW*2);
             }
 
-            mfxU8 isHalfHeight = m_nFourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
-            mfxU8 isHalfWidth  = m_nFourCC == MFX_FOURCC_YUV444_16 ? 0 : 1;
+            mfxU8 isHalfHeight = pInfo->FourCC == MFX_FOURCC_YUV420_16 ? 1 : 0;
+            mfxU8 isHalfWidth  = pInfo->FourCC == MFX_FOURCC_YUV444_16 ? 0 : 1;
             if (isHalfWidth)
                 pitch /= 2;
 
@@ -997,7 +998,7 @@ mfxStatus MFXFileWriteRender::WriteSurface(mfxFrameSurface1 * pConvertedSurface)
         default:
         {
             MFX_TRACE_AND_EXIT(MFX_ERR_UNSUPPORTED, (VM_STRING("[MFXFileWriteRender] file writing in %s colorformat not supported\n"), 
-                GetMFXFourccString(m_nFourCC).c_str()));
+                GetMFXFourccString(pInfo->FourCC).c_str()));
         }
     }
 
