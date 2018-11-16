@@ -16,6 +16,7 @@ namespace vp9e_reset
 #define VP9E_PREDEFINED_BITRATE_VALUE (1111)
 #define MFX_PROFILE_VP9_CHANGE (11)
 #define MFX_PROFILE_VP9_FULL_CHANGE (12)
+#define MAX_EXT_BUFFERS 4
 
     class TestSuite : tsVideoEncoder
     {
@@ -246,6 +247,19 @@ namespace vp9e_reset
         return MFX_ERR_NONE;
     }
 
+    template<class T>
+    void Zero(T& obj) { memset(&obj, 0, sizeof(obj)); }
+
+    template<class T>
+    inline void InitExtBuffer(
+        mfxU32 extType,
+        T& buf)
+    {
+        Zero(buf);
+        buf.Header.BufferSz = sizeof(T);
+        buf.Header.BufferId = extType;
+    }
+
     template<mfxU32 fourcc>
     int TestSuite::RunTest_Subtype(const unsigned int id)
     {
@@ -337,6 +351,16 @@ namespace vp9e_reset
         Init();
         GetVideoParam(m_session, &reset_par);
         EncodeFrames(tc.encode_before);
+
+        if (tc.pre_init.p3 != tc.pre_reset.p3 || tc.pre_init.p4 != tc.pre_reset.p4) {
+            mfxExtVP9Param m_extParam;
+            mfxExtBuffer* m_extBufs[MAX_EXT_BUFFERS][2];
+            reset_par.NumExtParam = 0;
+            reset_par.ExtParam = m_extBufs[0];
+            InitExtBuffer(MFX_EXTBUFF_VP9_PARAM, m_extParam);
+            m_extParam.DynamicScaling = MFX_CODINGOPTION_ON;
+            reset_par.ExtParam[reset_par.NumExtParam++] = (mfxExtBuffer*)&m_extParam;
+        }
 
         m_resetPar.session = m_session;
         m_resetPar.pPar = &reset_par;
