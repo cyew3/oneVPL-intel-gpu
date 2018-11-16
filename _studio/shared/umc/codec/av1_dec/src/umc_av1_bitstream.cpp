@@ -193,6 +193,8 @@ namespace UMC_AV1_DECODER
         AV1D_LOG("[+]: %d", (uint32_t)bs.BitsDecoded());
 
         fh.UpscaledWidth = fh.FrameWidth;
+        fh.SuperresDenom = SCALE_NUMERATOR;
+
 #if UMC_AV1_DECODER_REV >= 8500
         if (!sh.enable_superres)
         {
@@ -202,16 +204,15 @@ namespace UMC_AV1_DECODER
 #else
         sh;
 #endif
-        uint32_t& denom = fh.SuperresDenom;
         if (bs.GetBit())
         {
-            denom = bs.GetBits(SUPERRES_SCALE_BITS);
+            uint32_t denom = bs.GetBits(SUPERRES_SCALE_BITS);
             denom += SUPERRES_SCALE_DENOMINATOR_MIN;
             if (denom != SCALE_NUMERATOR)
                 fh.FrameWidth = (fh.FrameWidth * SCALE_NUMERATOR + denom / 2) / (denom);
+
+            fh.SuperresDenom = denom;
         }
-        else
-            fh.SuperresDenom = SCALE_NUMERATOR;
 
         AV1D_LOG("[-]: %d", (uint32_t)bs.BitsDecoded());
     }
