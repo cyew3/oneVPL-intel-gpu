@@ -793,6 +793,68 @@ UMC_AV1_DECODER::AV1DecoderFrame* VideoDECODEAV1::GetFrameToDisplay()
     return frame;
 }
 
+inline void CopyFilmGrainParam(mfxExtAV1FilmGrainParam &extBuf, UMC_AV1_DECODER::FilmGrainParams const& par)
+{
+    extBuf.Flags = 0;
+
+    if (par.apply_grain)
+        extBuf.Flags |= MFX_FILM_GRAIN_APPLY;
+
+    extBuf.GrainSeed = (mfxU16)par.grain_seed;
+
+    if (par.update_grain)
+        extBuf.Flags |= MFX_FILM_GRAIN_UPDATE;
+
+    extBuf.RefIdx = (mfxU8)par.film_grain_params_ref_idx;
+
+    extBuf.NumYPoints = (mfxU8)par.num_y_points;
+    for (int i = 0; i < UMC_AV1_DECODER::MAX_POINTS_IN_SCALING_FUNCTION_LUMA; i++)
+    {
+        extBuf.PointY[i].Value = (mfxU8)par.point_y_value[i];
+        extBuf.PointY[i].Scaling = (mfxU8)par.point_y_scaling[i];
+    }
+
+    if (par.chroma_scaling_from_luma)
+        extBuf.Flags |= MFX_FILM_GRAIN_CHROMA_SCALING_FROM_LUMA;
+
+    extBuf.NumCbPoints = (mfxU8)par.num_cb_points;
+    extBuf.NumCrPoints = (mfxU8)par.num_cr_points;
+    for (int i = 0; i < UMC_AV1_DECODER::MAX_POINTS_IN_SCALING_FUNCTION_CHROMA; i++)
+    {
+        extBuf.PointCb[i].Value = (mfxU8)par.point_cb_value[i];
+        extBuf.PointCb[i].Scaling = (mfxU8)par.point_cb_scaling[i];
+        extBuf.PointCr[i].Value = (mfxU8)par.point_cr_value[i];
+        extBuf.PointCr[i].Scaling = (mfxU8)par.point_cr_scaling[i];
+    }
+
+    extBuf.GrainScalingMinus8 = (mfxU8)par.grain_scaling - 8;
+    extBuf.ArCoeffLag = (mfxU8)par.ar_coeff_lag;
+
+    for (int i = 0; i < UMC_AV1_DECODER::MAX_AUTOREG_COEFFS_LUMA; i++)
+        extBuf.ArCoeffsYPlus128[i] = (mfxU8)(par.ar_coeffs_y[i] + 128);
+
+    for (int i = 0; i < UMC_AV1_DECODER::MAX_AUTOREG_COEFFS_CHROMA; i++)
+    {
+        extBuf.ArCoeffsCbPlus128[i] = (mfxU8)(par.ar_coeffs_cb[i] + 128);
+        extBuf.ArCoeffsCrPlus128[i] = (mfxU8)(par.ar_coeffs_cr[i] + 128);
+    }
+
+    extBuf.ArCoeffShiftMinus6 = (mfxU8)par.ar_coeff_shift - 6;
+    extBuf.GrainScaleShift = (mfxU8)par.grain_scale_shift;
+    extBuf.CbMult = (mfxU8)par.cb_mult;
+    extBuf.CbLumaMult = (mfxU8)par.cb_luma_mult;
+    extBuf.CbOffset = (mfxU16)par.cb_offset;
+    extBuf.CrMult = (mfxU8)par.cr_mult;
+    extBuf.CrLumaMult = (mfxU8)par.cr_luma_mult;
+    extBuf.CrOffset = (mfxU16)par.cr_offset;
+
+    if (par.overlap_flag)
+        extBuf.Flags |= MFX_FILM_GRAIN_OVERLAP;
+
+    if (par.clip_to_restricted_range)
+        extBuf.Flags |= MFX_FILM_GRAIN_CLIP_TO_RESTRICTED_RANGE;
+}
+
 void VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameSurface1** surface_out, UMC_AV1_DECODER::AV1DecoderFrame* frame)
 {
     VM_ASSERT(surface_work);
@@ -817,6 +879,14 @@ void VideoDECODEAV1::FillOutputSurface(mfxFrameSurface1* surface_work, mfxFrameS
 
     surface->Info.CropW = static_cast<mfxU16>(frame->GetUpscaledWidth());
     surface->Info.CropH = static_cast<mfxU16>(frame->GetHeight());
+
+    mfxExtAV1FilmGrainParam* extFilmGrain = (mfxExtAV1FilmGrainParam*)GetExtendedBuffer(surface->Data.ExtParam, surface->Data.NumExtParam, MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM);
+    if (extFilmGrain)
+    {
+        UMC_AV1_DECODER::FrameHeader const& fh = frame->GetFrameHeader();
+        CopyFilmGrainParam(*extFilmGrain, fh.film_grain_params);
+    }
+
 }
 
 #endif
