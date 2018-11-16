@@ -28,15 +28,11 @@
 #endif
 #endif
 
-#include <stdio.h>
-#include <string.h>
+#include <string>
 
 #include "ippj.h"
 #include "jpegbase.h"
 #include "jpegenc.h"
-#if defined(LINUX32) || defined(LINUX64)
-#include <safe_lib.h>
-#endif
 
 
 CJPEGEncoder::CJPEGEncoder(void) : m_src()
@@ -1250,54 +1246,34 @@ JERRCODE CJPEGEncoder::WriteAPP14(void)
 JERRCODE CJPEGEncoder::WriteCOM(
   char*  comment)
 {
-  int   i;
-  int   len;
-  char* ptr;
-  char  buf[256];
   JERRCODE jerr;
 
   TRC0("-> WriteCOM");
 
+  std::string str("Intel(R) Media SDK JPEG encoder");
+
+  if(comment)
   {
-    buf[0] = 0;
-    ptr = &buf[0];
-    const IppLibraryVersion* jv = ippjGetLibVersion();
-
-    sprintf(ptr,"Intel(R) IPP JPEG encoder [%d.%d.%d] - %s",
-      jv->major,jv->minor,jv->build,jv->BuildDate);
-
-    len = (int)strnlen_s(ptr, 256) + 1;
+    str += "; ";
+    str.append(comment, strnlen(comment, 127));
   }
 
-  if(comment != 0)
-  {
-    int sz;
-    ptr[len-1] = ';';
-    ptr[len  ] = ' ';
-
-    sz = (int)MFX_MIN(strnlen_s(comment, 127),127);
-
-    for(i = 0; i < sz; i++)
-      ptr[len + i] = comment[i];
-
-    len += sz + 1;
-    ptr[len-1] = 0;
-  }
-
-  len += 2;
+  // write 2 words, buf content and zero byte
+  size_t len = str.size() + 1;
+  const char* ptr = str.c_str();
 
   TRC1("  emit marker ",JM_COM);
-  TRC1("    length ",len);
+  TRC1("    length ",len + 2);
 
   jerr = m_BitStreamOut.WriteWord(0xff00 | JM_COM);
   if(JPEG_OK != jerr)
     return jerr;
 
-  jerr = m_BitStreamOut.WriteWord(len);
+  jerr = m_BitStreamOut.WriteWord((int)len + 2);
   if(JPEG_OK != jerr)
     return jerr;
 
-  for(i = 0; i < len - 2; i++)
+  for(size_t i = 0; i < len; i++)
   {
     jerr = m_BitStreamOut.WriteByte(ptr[i]);
     if(JPEG_OK != jerr)
