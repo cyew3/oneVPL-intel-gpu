@@ -25,7 +25,7 @@
 namespace UMC
 {
 
-static Ipp32s Val_QScale[2][32] =
+static int32_t Val_QScale[2][32] =
 {
   /* linear q_scale */
   {0,  2,  4,  6,  8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
@@ -38,7 +38,7 @@ static Ipp32s Val_QScale[2][32] =
 
 #if APA_MPEG2_BRC
 
-static Ipp32s QQuality_AddI[N_QUALITY_LEVELS][N_QP_THRESHLDS+1] = {
+static int32_t QQuality_AddI[N_QUALITY_LEVELS][N_QP_THRESHLDS+1] = {
     {0,0,0,0,0},
       {0,0,0,0,-1},
       {0,0,0,-1,-2},
@@ -48,7 +48,7 @@ static Ipp32s QQuality_AddI[N_QUALITY_LEVELS][N_QP_THRESHLDS+1] = {
       {-2,-3,-4,-5,-6}
 };
 
-static Ipp32s QQuality_AddP[N_QUALITY_LEVELS][N_QP_THRESHLDS+1] = {
+static int32_t QQuality_AddP[N_QUALITY_LEVELS][N_QP_THRESHLDS+1] = {
     {0,0,0,0,0},
       {0,0,0,0,0},
       {0,0,0,0,-1},
@@ -58,7 +58,7 @@ static Ipp32s QQuality_AddP[N_QUALITY_LEVELS][N_QP_THRESHLDS+1] = {
       {-1,-2,-3,-4,-5}
 };
 
-static Ipp32s delta_qp[][N_INST_RATE_THRESHLDS+1][N_QP_THRESHLDS+1]={
+static int32_t delta_qp[][N_INST_RATE_THRESHLDS+1][N_QP_THRESHLDS+1]={
 
   {{1,1,1,0,0,},
      {1,2,1,0,0,},
@@ -121,19 +121,19 @@ static Ipp32s delta_qp[][N_INST_RATE_THRESHLDS+1][N_QP_THRESHLDS+1]={
 #define Q_THRESHOLD3 22
 #define Q_THRESHOLD4 44
 
-static Ipp32s qp_thresh[N_QP_THRESHLDS] = {
+static int32_t qp_thresh[N_QP_THRESHLDS] = {
   Q_THRESHOLD1,
   Q_THRESHOLD2,
   Q_THRESHOLD3,
   Q_THRESHOLD4
 };
 
-static Ipp64f inst_rate_thresh[N_INST_RATE_THRESHLDS] = {
+static double inst_rate_thresh[N_INST_RATE_THRESHLDS] = {
     0.3, 0.6, 0.9, 1.25,
 };
 
 
-static Ipp64f dev_thresh[N_DEV_THRESHLDS] = {
+static double dev_thresh[N_DEV_THRESHLDS] = {
    -0.45, -0.33, -0.2, -0.1, 0.1, 0.2, 0.3, 0.4,
 };
 
@@ -164,7 +164,7 @@ static Ipp64f dev_thresh[N_DEV_THRESHLDS] = {
 
 //size should be even!
 #define FIND_INDEX(ptr,size,value,index) { \
-  Ipp32s delta, test; delta = test = size >> 1; test--;   \
+  int32_t delta, test; delta = test = size >> 1; test--;   \
   while (delta > 1) {    \
     delta >>= 1;         \
     if (ptr[test] < value) test += delta; \
@@ -209,39 +209,39 @@ Status MPEG2BRC::CheckHRDParams()
 {
   mParams.maxBitrate = (mParams.maxBitrate / 400) * 400;  // In MPEG2 bitrate is coded in units of 400 bits
   mHRD.maxBitrate = mParams.maxBitrate;
-  if ((Ipp32s)mBitrate > mParams.maxBitrate)
+  if ((int32_t)mBitrate > mParams.maxBitrate)
     mBitrate = mParams.targetBitrate = mParams.maxBitrate;
   mHRD.inputBitsPerFrame = mHRD.maxInputBitsPerFrame = mHRD.maxBitrate / mFramerate;
 
   if (BRC_VBR == mRCMode) {
-    if (mHRD.bufSize > (Ipp32u)16384 * 0x3fffe)
-      mHRD.bufSize = (Ipp32u)16384 * 0x3fffe;
+    if (mHRD.bufSize > (uint32_t)16384 * 0x3fffe)
+      mHRD.bufSize = (uint32_t)16384 * 0x3fffe;
     if(!full_hw)
     //allow initial delay to be different from buffer size
     mHRD.bufFullness = mHRD.bufSize; // vbv_delay = 0xffff in case of VBR. TODO: check the possibility of VBR with vbv_delay != 0xffff
   } else { // BRC_CBR
-    Ipp32u max_buf_size = (Ipp32u)(0xfffe * (Ipp64u)mHRD.maxBitrate / 90000); // vbv_delay is coded with 16 bits:
+    uint32_t max_buf_size = (uint32_t)(0xfffe * (unsigned long long)mHRD.maxBitrate / 90000); // vbv_delay is coded with 16 bits:
                                                                               //  it is either 0xffff everywhere (VBR) or < 0xffff
     if (mHRD.bufSize > max_buf_size) {
-      if (max_buf_size > (Ipp32u)16384 * 0x3fffe)
-        max_buf_size = (Ipp32u)16384 * 0x3fffe;
+      if (max_buf_size > (uint32_t)16384 * 0x3fffe)
+        max_buf_size = (uint32_t)16384 * 0x3fffe;
       if (mHRD.bufFullness > max_buf_size/2) { // leave mHRD.bufFullness unchanged if below mHRD.bufSize/2
-        Ipp64f newBufFullness = mHRD.bufFullness * max_buf_size / mHRD.bufSize;
-        if (newBufFullness < (Ipp64f)max_buf_size / 2)
-          newBufFullness = (Ipp64f)max_buf_size / 2;
+        double newBufFullness = mHRD.bufFullness * max_buf_size / mHRD.bufSize;
+        if (newBufFullness < (double)max_buf_size / 2)
+          newBufFullness = (double)max_buf_size / 2;
         mHRD.bufFullness = newBufFullness;
       }
       mHRD.bufSize = max_buf_size;
     } else {
-      if (mHRD.bufSize > (Ipp32u)16384 * 0x3fffe)
-        mHRD.bufSize = (Ipp32u)16384 * 0x3fffe;
-      if (mHRD.bufFullness > (Ipp64f)mHRD.bufSize)
-        mHRD.bufFullness = (Ipp64f)mHRD.bufSize;
+      if (mHRD.bufSize > (uint32_t)16384 * 0x3fffe)
+        mHRD.bufSize = (uint32_t)16384 * 0x3fffe;
+      if (mHRD.bufFullness > (double)mHRD.bufSize)
+        mHRD.bufFullness = (double)mHRD.bufSize;
     }
   }
   mParams.HRDBufferSizeBytes = mHRD.bufSize / 8;
   mHRD.bufSize = mParams.HRDBufferSizeBytes * 8;
-  mParams.HRDInitialDelayBytes = (Ipp32s)(mHRD.bufFullness / 8);
+  mParams.HRDInitialDelayBytes = (int32_t)(mHRD.bufFullness / 8);
   mHRD.bufFullness = mParams.HRDInitialDelayBytes * 8;
 
   if (mHRD.bufSize < mHRD.inputBitsPerFrame)
@@ -250,10 +250,10 @@ Status MPEG2BRC::CheckHRDParams()
   return UMC_OK;
 }
 
-Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
+Status MPEG2BRC::Init(BaseCodecParams *params, int32_t no_full_HW)
 {
   Status status = UMC_OK;
-  Ipp64f u_len;
+  double u_len;
   full_hw = (no_full_HW == 0);
   status = CommonBRC::Init(params);
   if (status != UMC_OK)
@@ -267,17 +267,17 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
   if (mBitrate <= 0 || mFramerate <= 0)
     return UMC_ERR_INVALID_PARAMS;
 
-  Ipp64f ppb; //pixels per bit (~ density)
-  Ipp32s i;
+  double ppb; //pixels per bit (~ density)
+  int32_t i;
 
-  mBitsDesiredFrame = (Ipp32s)((Ipp64f)mBitrate / mFramerate);
+  mBitsDesiredFrame = (int32_t)((double)mBitrate / mFramerate);
 
   // one can vary weights, can be added to API
   rc_weight[0] = 120;
   rc_weight[1] = 50;
   rc_weight[2] = 25;
 
-  rc_dev = rc_dev_saved = 0; // deviation from ideal bitrate (should be Ipp32f or renewed)
+  rc_dev = rc_dev_saved = 0; // deviation from ideal bitrate (should be float or renewed)
 
   SetGOP();
 
@@ -287,13 +287,13 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
   rc_tagsize[1] = rc_tagsize_frame[1] = u_len * rc_weight[1];
   rc_tagsize[2] = rc_tagsize_frame[2] = u_len * rc_weight[2];
 
-  Ipp64f rrel = gopw / (rc_weight[0] * mGOPPicSize);
+  double rrel = gopw / (rc_weight[0] * mGOPPicSize);
   block_count = (mParams.info.color_format == YUV444 ? 12 : (mParams.info.color_format == YUV422 ? 8 : 6));
   ppb = mParams.info.clip_info.width * mParams.info.clip_info.height * mFramerate / mBitrate * (block_count-2) / (6-2);
 
-  qscale[0] = (Ipp32s)(6.0 * rrel * ppb); // numbers are empiric
-  qscale[1] = (Ipp32s)(9.0 * rrel * ppb);
-  qscale[2] = (Ipp32s)(12.0 * rrel * ppb);
+  qscale[0] = (int32_t)(6.0 * rrel * ppb); // numbers are empiric
+  qscale[1] = (int32_t)(9.0 * rrel * ppb);
+  qscale[2] = (int32_t)(12.0 * rrel * ppb);
 
   for (i = 0; i < 3; i++) {
     if (qscale[i] < 1)
@@ -304,14 +304,14 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
   }
 
   gopw = N_B_field * rc_weight[2] + rc_weight[1] * N_P_field + rc_weight[0];
-  u_len = (Ipp64f)mBitsDesiredFrame * mGOPPicSize / gopw;
+  u_len = (double)mBitsDesiredFrame * mGOPPicSize / gopw;
   rc_tagsize_field[0] = u_len * rc_weight[0];
   rc_tagsize_field[1] = u_len * rc_weight[1];
   rc_tagsize_field[2] = u_len * rc_weight[2];
 
 #if APA_MPEG2_BRC
   mIsFallBack = 0;
-  Ipp64f orig_frame_size = mParams.info.clip_info.width * mParams.info.clip_info.height *
+  double orig_frame_size = mParams.info.clip_info.width * mParams.info.clip_info.height *
     (mParams.info.color_format == YUV444 ? 3. : (mParams.info.color_format == YUV422 ? 2. : 1.5))*8;
 
   if ( mHRD.inputBitsPerFrame != 0 ){
@@ -334,12 +334,12 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
 
   /* calculating instant bitrate thresholds */
   for (i = 0; i < N_INST_RATE_THRESHLDS; i++) {
-    instant_rate_thresholds[i]=((Ipp64f)mBitrate*inst_rate_thresh[i]);
+    instant_rate_thresholds[i]=((double)mBitrate*inst_rate_thresh[i]);
   }
 
   /* calculating deviation from ideal fullness/bitrate thresholds */
   for (i = 0; i < N_DEV_THRESHLDS; i++) {
-    deviation_thresholds[i]=((Ipp64f)mHRD.bufSize*dev_thresh[i]);
+    deviation_thresholds[i]=((double)mHRD.bufSize*dev_thresh[i]);
   }
 
   mQuantMin=1;
@@ -349,7 +349,7 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
 
   for (i = 0; i < 3; i++) { // just in case - will be set in PreEnc for (frameNum == 0)
     prpicture_flags[i] = BRC_FRAME;
-    prsize[i] = (Ipp32s)rc_tagsize_frame[i];
+    prsize[i] = (int32_t)rc_tagsize_frame[i];
   }
   picture_flags_prev = picture_flags_IP = picture_flags = BRC_FRAME;
 
@@ -358,7 +358,7 @@ Status MPEG2BRC::Init(BaseCodecParams *params, Ipp32s no_full_HW)
 }
 
 
-Status MPEG2BRC::Reset(BaseCodecParams *init, Ipp32s)
+Status MPEG2BRC::Reset(BaseCodecParams *init, int32_t)
 {
   return Init(init);
 }
@@ -375,17 +375,17 @@ Status MPEG2BRC::Close()
 }
 
 
-Status MPEG2BRC::SetParams(BaseCodecParams* params, Ipp32s)
+Status MPEG2BRC::SetParams(BaseCodecParams* params, int32_t)
 {
   return Init(params);
 }
 
 
 Status MPEG2BRC::SetPictureFlags(FrameType frameType,
-                                 Ipp32s picture_structure,
-                                 Ipp32s repeat_first_field,
-                                 Ipp32s top_field_first,
-                                 Ipp32s second_field)
+                                 int32_t picture_structure,
+                                 int32_t repeat_first_field,
+                                 int32_t top_field_first,
+                                 int32_t second_field)
 {
   if (frameType != B_PICTURE) {
     picture_flags_prev = picture_flags_IP;
@@ -408,9 +408,9 @@ Status MPEG2BRC::SetPictureFlags(FrameType frameType,
   return UMC_OK;
 }
 
-Ipp32s MPEG2BRC::ChangeQuant(Ipp32s quant_value)
+int32_t MPEG2BRC::ChangeQuant(int32_t quant_value)
 {
-  Ipp32s curq = quantiser_scale_value;
+  int32_t curq = quantiser_scale_value;
 
   if (quant_value == quantiser_scale_value)
     return quantiser_scale_value;
@@ -454,10 +454,10 @@ Ipp32s MPEG2BRC::ChangeQuant(Ipp32s quant_value)
 
 #if APA_MPEG2_BRC
 
-Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode, Ipp32s)
+Status MPEG2BRC::PreEncFrame(FrameType frameType, int32_t recode, int32_t)
 {
-  Ipp32s isfield = ((picture_flags & BRC_FRAME) != BRC_FRAME);
-  Ipp32s i;
+  int32_t isfield = ((picture_flags & BRC_FRAME) != BRC_FRAME);
+  int32_t i;
 
   if (recode & BRC_EXT_FRAMESKIP)
     return UMC_OK;
@@ -477,7 +477,7 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode, Ipp32s)
 
     if (mHRD.frameNum == 0) { // first frame
       for (i = 0; i < 3; i++) {
-        if (prsize[i] == 0) prsize[i] = (Ipp32s)rc_tagsize[i];
+        if (prsize[i] == 0) prsize[i] = (int32_t)rc_tagsize[i];
         prpicture_flags[i] = picture_flags;
       }
     }
@@ -487,25 +487,25 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode, Ipp32s)
   else return PreEncFrameMidRange(frameType,recode);
 }
 
-Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, Ipp32s recode)
+Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, int32_t recode)
 {
-  Ipp32s q0, q1;
-  Ipp32s indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
-  Ipp32s (*qp_delta_ptr)[5][5] = &delta_qp[0];
-  Ipp32s i,j,t;
+  int32_t q0, q1;
+  int32_t indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+  int32_t (*qp_delta_ptr)[5][5] = &delta_qp[0];
+  int32_t i,j,t;
   Status status = UMC_OK;
 
   if (recode < BRC_RECODE_EXT_QP) // skip in case of external recode
   if (frameType == I_PICTURE && mRCMode == BRC_CBR && mHRD.frameNum) {
-    Ipp64f ip_tagsize = rc_tagsize[0];
-    Ipp64f dev, adev, arc_dev;
+    double ip_tagsize = rc_tagsize[0];
+    double dev, adev, arc_dev;
 
 /*
     if (BRC_FRAME != (picture_flags & 0x3))
       ip_tagsize = (rc_tagsize[0] + rc_tagsize[1]) * .5; // every second I-field became P-field
 */
 
-    if (mHRD.bufFullness < 2 * ip_tagsize || (Ipp64f)mHRD.bufSize -  mHRD.bufFullness < mHRD.maxInputBitsPerFrame) {
+    if (mHRD.bufFullness < 2 * ip_tagsize || (double)mHRD.bufSize -  mHRD.bufFullness < mHRD.maxInputBitsPerFrame) {
       dev = mHRD.bufSize / 2 // half of vbv_buffer
         + ip_tagsize / 2                      // top to center length of I (or IP) frame
         - mHRD.bufFullness;
@@ -525,7 +525,7 @@ Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, Ipp32s recode)
 
   if (recode > BRC_RECODE_NONE) {
     if (mFrameType != frameType) { // recoding due to frame type change
-      Ipp32s prevIndx = (mFrameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+      int32_t prevIndx = (mFrameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
       qscale[prevIndx] = ChangeQuant(prqscale[prevIndx]);
     }
     return status;
@@ -598,14 +598,14 @@ Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, Ipp32s recode)
       q0++;
   }
 
-  Ipp64f inst_bitrate = (((Ipp64f)prsize[0]+(Ipp64f)prsize[1]*N_P+(Ipp64f)prsize[2]*N_B)*mFramerate)/(Ipp64f)mGOPPicSize;
-  Ipp64f deviation;
+  double inst_bitrate = (((double)prsize[0]+(double)prsize[1]*N_P+(double)prsize[2]*N_B)*mFramerate)/(double)mGOPPicSize;
+  double deviation;
 
   if (mRCMode == BRC_CBR)
-    deviation = (Ipp64f)mHRD.bufFullness - (Ipp64f)mHRD.bufSize/2;
+    deviation = (double)mHRD.bufFullness - (double)mHRD.bufSize/2;
   else
-//    deviation = (Ipp64f)mHRD.bufFullness - (Ipp64f)mParams.HRDInitialDelayBytes*8;
-    deviation = (Ipp64f)mHRD.bufFullness - (Ipp64f)mHRD.bufSize; // initial fullness = bufsize for VBR
+//    deviation = (double)mHRD.bufFullness - (double)mParams.HRDInitialDelayBytes*8;
+    deviation = (double)mHRD.bufFullness - (double)mHRD.bufSize; // initial fullness = bufsize for VBR
 
 
   FIND_INDEX_MED(deviation_thresholds,N_DEV_THRESHLDS,deviation,t);
@@ -649,26 +649,26 @@ Status MPEG2BRC::PreEncFrameMidRange(FrameType frameType, Ipp32s recode)
   return status;
 }
 
-Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, Ipp32s recode)
+Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, int32_t recode)
 {
-  Ipp32s q0, q2, sz1;
-  Ipp32s indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
-  Ipp64f target_size;
-  Ipp32s wanted_size;
+  int32_t q0, q2, sz1;
+  int32_t indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+  double target_size;
+  int32_t wanted_size;
   Status status = UMC_OK;
 
   // refresh rate deviation with every new I frame
   if (recode < BRC_RECODE_EXT_QP) // skip in case of external recode
   if (frameType == I_PICTURE && mRCMode == BRC_CBR && mHRD.frameNum) {
-    Ipp64f ip_tagsize = rc_tagsize[0];
-    Ipp64f dev, adev, arc_dev;
+    double ip_tagsize = rc_tagsize[0];
+    double dev, adev, arc_dev;
 
 /*
     if (BRC_FRAME != (picture_flags & 0x3))
       ip_tagsize = (rc_tagsize[0] + rc_tagsize[1]) * .5; // every second I-field became P-field
 */
 
-    if (mHRD.bufFullness < 2 * ip_tagsize || (Ipp64f)mHRD.bufSize -  mHRD.bufFullness < mHRD.maxInputBitsPerFrame ) {
+    if (mHRD.bufFullness < 2 * ip_tagsize || (double)mHRD.bufSize -  mHRD.bufFullness < mHRD.maxInputBitsPerFrame ) {
       dev = mHRD.bufSize / 2 // half of vbv_buffer
         + ip_tagsize / 2                      // top to center length of I (or IP) frame
         - mHRD.bufFullness;
@@ -688,7 +688,7 @@ Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, Ipp32s recode)
 
   if (recode > BRC_RECODE_NONE) {
     if (mFrameType != frameType) { // recoding due to frame type change
-      Ipp32s prevIndx = (mFrameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+      int32_t prevIndx = (mFrameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
       qscale[prevIndx] = ChangeQuant(prqscale[prevIndx]);
     }
     return status;
@@ -699,7 +699,7 @@ Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, Ipp32s recode)
   sz1 = prsize[indx];  // last coded size
 
   target_size = rc_tagsize[indx];
-  wanted_size = (Ipp32s)(target_size - rc_dev / 3 * target_size / rc_tagsize[0]);
+  wanted_size = (int32_t)(target_size - rc_dev / 3 * target_size / rc_tagsize[0]);
 
   if (sz1 > 2*wanted_size)
     q2 = q2 * 3 / 2 + 1;
@@ -711,9 +711,9 @@ Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, Ipp32s recode)
     q2--;
 
   if (rc_dev > 0) {
-    q2 = IPP_MAX(q0,q2);
+    q2 = MFX_MAX(q0,q2);
   } else {
-    q2 = IPP_MIN(q0,q2);
+    q2 = MFX_MIN(q0,q2);
   }
   // this call is used to accept small changes in value, which are mapped to the same code
   // changeQuant bothers about changing scale code if value changes
@@ -726,23 +726,23 @@ Status MPEG2BRC::PreEncFrameFallBack(FrameType frameType, Ipp32s recode)
 
 #else
 
-Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode)
+Status MPEG2BRC::PreEncFrame(FrameType frameType, int32_t recode)
 {
-  Ipp32s q0, q2, sz1;
-  Ipp32s indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
-  Ipp64f target_size;
-  Ipp32s wanted_size;
+  int32_t q0, q2, sz1;
+  int32_t indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+  double target_size;
+  int32_t wanted_size;
   Status status = UMC_OK;
 
   // refresh rate deviation with every new I frame
   if (frameType == I_PICTURE && mRCMode == BRC_CBR && mHRD.frameNum) {
-    Ipp64f ip_tagsize = rc_tagsize[0];
-    Ipp64f dev, adev, arc_dev;
+    double ip_tagsize = rc_tagsize[0];
+    double dev, adev, arc_dev;
 
     if (BRC_FRAME != (picture_flags & 0x3))
       ip_tagsize = (rc_tagsize[0] + rc_tagsize[1]) * .5; // every second I-field became P-field
 
-    if (mHRD.bufFullness < 2 * ip_tagsize || (Ipp64f)mHRD.bufSize -  mHRD.bufFullness < mHRD.maxInputBitsPerFrame ) {
+    if (mHRD.bufFullness < 2 * ip_tagsize || (double)mHRD.bufSize -  mHRD.bufFullness < mHRD.maxInputBitsPerFrame ) {
       dev = mHRD.bufSize / 2 // half of vbv_buffer
         + ip_tagsize / 2                      // top to center length of I (or IP) frame
         - mHRD.bufFullness;
@@ -762,7 +762,7 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode)
 
   if (recode) {
     if (mFrameType != frameType) { // recoding due to frame type change
-      Ipp32s prevIndx = (mFrameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+      int32_t prevIndx = (mFrameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
       qscale[prevIndx] = ChangeQuant(prqscale[prevIndx]);
     }
     return status;
@@ -773,7 +773,7 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode)
   sz1 = prsize[indx];  // last coded size
 
   target_size = rc_tagsize[indx];
-  wanted_size = (Ipp32s)(target_size - rc_dev / 3 * target_size / rc_tagsize[0]);
+  wanted_size = (int32_t)(target_size - rc_dev / 3 * target_size / rc_tagsize[0]);
 
   if (sz1 > 2*wanted_size)
     q2 = q2 * 3 / 2 + 1;
@@ -785,9 +785,9 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode)
     q2--;
 
   if (rc_dev > 0) {
-    q2 = IPP_MAX(q0,q2);
+    q2 = MFX_MAX(q0,q2);
   } else {
-    q2 = IPP_MIN(q0,q2);
+    q2 = MFX_MIN(q0,q2);
   }
   // this call is used to accept small changes in value, which are mapped to the same code
   // changeQuant bothers about changing scale code if value changes
@@ -803,24 +803,24 @@ Status MPEG2BRC::PreEncFrame(FrameType frameType, Ipp32s recode)
 #endif
 
 
-Ipp32s MPEG2BRC::GetQP(FrameType frameType, Ipp32s)
+int32_t MPEG2BRC::GetQP(FrameType frameType, int32_t)
 {
-  Ipp32s indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+  int32_t indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
   return qscale[indx];
 }
-Status MPEG2BRC::SetQP(Ipp32s qp, FrameType frameType, Ipp32s)
+Status MPEG2BRC::SetQP(int32_t qp, FrameType frameType, int32_t)
 {
-  Ipp32s indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+  int32_t indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
   qscale[indx] = qp;
   return UMC_OK;
 }
 
-BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, Ipp32s bits_encoded, Ipp32s, Ipp32s repack, Ipp32s)
+BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, int32_t bits_encoded, int32_t, int32_t repack, int32_t)
 {
-  Ipp32s isfield = ((picture_flags & BRC_FRAME) != BRC_FRAME);
-  Ipp32u picFlags = (frameType == B_PICTURE ? picture_flags : picture_flags_prev);
-  Ipp32s Sts = BRC_OK;
-  Ipp32s indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
+  int32_t isfield = ((picture_flags & BRC_FRAME) != BRC_FRAME);
+  uint32_t picFlags = (frameType == B_PICTURE ? picture_flags : picture_flags_prev);
+  int32_t Sts = BRC_OK;
+  int32_t indx = (frameType == B_PICTURE ? 2 : (frameType == P_PICTURE ? 1 : 0));
 
   mFrameType = frameType;
 
@@ -844,7 +844,7 @@ BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, Ipp32s bits_encoded, Ipp3
     }
   }
 
-//  prsize[indx] = (Ipp32s)(bits_encoded << isfield);
+//  prsize[indx] = (int32_t)(bits_encoded << isfield);
   prsize[indx] = bits_encoded;
   prqscale[indx] = qscale[indx];
 
@@ -903,7 +903,7 @@ BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, Ipp32s bits_encoded, Ipp3
   rc_vbv_fullness = rc_vbv_fullness - bits_encoded;
   rc_vbv_fullness += rc_delay; //
   if(encodeInfo.rc_mode != RC_CBR && rc_vbv_fullness >= vbv_size) {
-    rc_vbv_fullness = (Ipp64f) vbv_size;
+    rc_vbv_fullness = (double) vbv_size;
     vbv_delay = 0xffff; // input
   }
 
@@ -914,8 +914,8 @@ BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, Ipp32s bits_encoded, Ipp3
   if (repack > BRC_RECODE_PANIC) // recoding decision made outside BRC
     rc_dev = rc_dev_saved;
 
-  Ipp32s cur_qscale = qscale[indx];
-  Ipp64f target_size = rc_tagsize[indx];
+  int32_t cur_qscale = qscale[indx];
+  double target_size = rc_tagsize[indx];
 //  rc_dev += bits_encoded - (isfield ? target_size/2 : target_size);
   rc_dev_saved = rc_dev;
   rc_dev += bits_encoded - target_size;
@@ -923,9 +923,9 @@ BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, Ipp32s bits_encoded, Ipp3
 //  if (repack == BRC_RECODE_PANIC || repack == BRC_RECODE_EXT_PANIC) // do not change QP based on panic data
 //    return Sts;
 
-  Ipp32s wanted_size = (Ipp32s)(target_size - rc_dev / 3 * target_size / rc_tagsize[0]);
-  Ipp32s newscale;
-  Ipp32s del_sc;
+  int32_t wanted_size = (int32_t)(target_size - rc_dev / 3 * target_size / rc_tagsize[0]);
+  int32_t newscale;
+  int32_t del_sc;
 
   newscale = cur_qscale;
 //  wanted_size >>= isfield;
@@ -999,12 +999,12 @@ BRCStatus MPEG2BRC::PostPackFrame(FrameType frameType, Ipp32s bits_encoded, Ipp3
   return Sts;
 }
 
-BRCStatus MPEG2BRC::UpdateQuantHRD(Ipp32s bits_encoded, BRCStatus sts)
+BRCStatus MPEG2BRC::UpdateQuantHRD(int32_t bits_encoded, BRCStatus sts)
 {
-  Ipp32s quant, quant_prev;
-  Ipp32s indx = (mFrameType == B_PICTURE ? 2 : (mFrameType == P_PICTURE ? 1 : 0));
-  Ipp64f qs;
-  Ipp32s wantedBits = (sts == BRC_ERR_BIG_FRAME ? mHRD.maxFrameSize : mHRD.minFrameSize);
+  int32_t quant, quant_prev;
+  int32_t indx = (mFrameType == B_PICTURE ? 2 : (mFrameType == P_PICTURE ? 1 : 0));
+  double qs;
+  int32_t wantedBits = (sts == BRC_ERR_BIG_FRAME ? mHRD.maxFrameSize : mHRD.minFrameSize);
   if (wantedBits == 0) // KW-inspired safety check
   {
       wantedBits = 1;
@@ -1016,8 +1016,8 @@ BRCStatus MPEG2BRC::UpdateQuantHRD(Ipp32s bits_encoded, BRCStatus sts)
   if (sts & BRC_ERR_BIG_FRAME)
     mHRD.underflowQuant = quant;
 
-  qs = (Ipp64f)bits_encoded/wantedBits;
-  quant = (Ipp32s)(quant * qs + 0.5);
+  qs = (double)bits_encoded/wantedBits;
+  quant = (int32_t)(quant * qs + 0.5);
 
   if (quant == quant_prev)
     quant += (sts == BRC_ERR_BIG_FRAME ? 1 : -1);

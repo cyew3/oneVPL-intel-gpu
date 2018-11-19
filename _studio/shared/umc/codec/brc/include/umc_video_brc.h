@@ -38,7 +38,7 @@ enum eBrcPictureFlags
   BRC_SECOND_FIELD = 12
 };
 
-typedef Ipp32s BrcPictureFlags;
+typedef int32_t BrcPictureFlags;
 
 #define BRC_BYTES_IN_KBYTE 1000
 #define BRC_BITS_IN_KBIT 1000
@@ -79,28 +79,28 @@ enum eBRCRecode
   BRC_EXT_FRAMESKIP         = 16
 };
 
-typedef Ipp32s BRCStatus;
+typedef int32_t BRCStatus;
 
 class VideoBrcParams : public VideoEncoderParams {
   DYNAMIC_CAST_DECL(VideoBrcParams, VideoEncoderParams)
 public:
   VideoBrcParams();
 
-  Ipp32s  HRDInitialDelayBytes;
-  Ipp32s  HRDBufferSizeBytes;
+  int32_t  HRDInitialDelayBytes;
+  int32_t  HRDBufferSizeBytes;
 
-  Ipp32s  targetBitrate;
-  Ipp32s  maxBitrate;
-  Ipp32s  BRCMode;
+  int32_t  targetBitrate;
+  int32_t  maxBitrate;
+  int32_t  BRCMode;
 
-  Ipp32s GOPPicSize;
-  Ipp32s GOPRefDist;
-  Ipp32u frameRateExtD;
-  Ipp32u frameRateExtN;
-  Ipp32u frameRateExtN_1;
+  int32_t GOPPicSize;
+  int32_t GOPRefDist;
+  uint32_t frameRateExtD;
+  uint32_t frameRateExtN;
+  uint32_t frameRateExtN_1;
 
-  Ipp16u accuracy;
-  Ipp16u convergence;
+  uint16_t accuracy;
+  uint16_t convergence;
 };
 
 class VideoBrc {
@@ -111,30 +111,30 @@ public:
   virtual ~VideoBrc();
 
   // Initialize with specified parameter(s)
-  virtual Status Init(BaseCodecParams *init, Ipp32s numTempLayers = 1) = 0;
+  virtual Status Init(BaseCodecParams *init, int32_t numTempLayers = 1) = 0;
 
   // Close all resources
   virtual Status Close() = 0;
 
-  virtual Status Reset(BaseCodecParams *init, Ipp32s numTempLayers = 1) = 0;
+  virtual Status Reset(BaseCodecParams *init, int32_t numTempLayers = 1) = 0;
 
-  virtual Status SetParams(BaseCodecParams* params, Ipp32s tid = 0) = 0;
-  virtual Status GetParams(BaseCodecParams* params, Ipp32s tid = 0) = 0;
-  virtual Status GetHRDBufferFullness(Ipp64f *hrdBufFullness, Ipp32s recode = 0, Ipp32s tid = 0) = 0;
-  virtual Status PreEncFrame(FrameType frameType, Ipp32s recode = 0, Ipp32s tid = 0) = 0;
-  virtual BRCStatus PostPackFrame(FrameType picType, Ipp32s bitsEncodedFrame, Ipp32s payloadBits = 0, Ipp32s recode = 0, Ipp32s poc = 0) = 0;
+  virtual Status SetParams(BaseCodecParams* params, int32_t tid = 0) = 0;
+  virtual Status GetParams(BaseCodecParams* params, int32_t tid = 0) = 0;
+  virtual Status GetHRDBufferFullness(double *hrdBufFullness, int32_t recode = 0, int32_t tid = 0) = 0;
+  virtual Status PreEncFrame(FrameType frameType, int32_t recode = 0, int32_t tid = 0) = 0;
+  virtual BRCStatus PostPackFrame(FrameType picType, int32_t bitsEncodedFrame, int32_t payloadBits = 0, int32_t recode = 0, int32_t poc = 0) = 0;
 
-  virtual Ipp32s GetQP(FrameType frameType, Ipp32s tid = -1) = 0;
-  virtual Status SetQP(Ipp32s qp, FrameType frameType, Ipp32s tid = 0) = 0;
+  virtual int32_t GetQP(FrameType frameType, int32_t tid = -1) = 0;
+  virtual Status SetQP(int32_t qp, FrameType frameType, int32_t tid = 0) = 0;
 
-//  virtual Status ScaleRemovalDelay(Ipp64f removalDelayScale) = 0;
-  virtual Status SetPictureFlags(FrameType frameType, Ipp32s picture_structure, Ipp32s repeat_first_field = 0, Ipp32s top_field_first = 0, Ipp32s second_field = 0);
+//  virtual Status ScaleRemovalDelay(double removalDelayScale) = 0;
+  virtual Status SetPictureFlags(FrameType frameType, int32_t picture_structure, int32_t repeat_first_field = 0, int32_t top_field_first = 0, int32_t second_field = 0);
 
-  virtual Status GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) = 0;
+  virtual Status GetMinMaxFrameSize(int32_t *minFrameSizeInBits, int32_t *maxFrameSizeInBits) = 0;
 
   static Status CheckCorrectParams_MPEG2(VideoBrcParams *inBrcParams, VideoBrcParams *outBrcParams = NULL);
 
-  virtual Status GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp32s recode = 0);
+  virtual Status GetInitialCPBRemovalDelay(uint32_t *initial_cpb_removal_delay, int32_t recode = 0);
 
 protected:
   //VideoBrc *brc;

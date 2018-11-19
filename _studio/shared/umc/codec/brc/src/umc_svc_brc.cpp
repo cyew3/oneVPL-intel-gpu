@@ -65,7 +65,7 @@ SVCBRC::~SVCBRC()
 }
 
 // Copy of mfx_h264_enc_common.cpp::LevelProfileLimitsNal
-const Ipp64u LevelProfileLimits[4][16][6] = {
+const unsigned long long LevelProfileLimits[4][16][6] = {
     {
         // BASE_PROFILE, MAIN_PROFILE, EXTENDED_PROFILE
                  // MaxMBPS  MaxFS    Max DPB    MaxBR      MaxCPB     MaxMvV
@@ -149,33 +149,33 @@ const Ipp64u LevelProfileLimits[4][16][6] = {
 };
 
 /*
-static Ipp64f QP2Qstep (Ipp32s QP)
+static double QP2Qstep (int32_t QP)
 {
-  return (Ipp64f)(0.85 * pow(2.0, (QP - 12.0) / 6.0));
+  return (double)(0.85 * pow(2.0, (QP - 12.0) / 6.0));
 }
 
-static Ipp32s Qstep2QP (Ipp64f Qstep)
+static int32_t Qstep2QP (double Qstep)
 {
-  return (Ipp32s)(12.0 + 6.0 * log(Qstep/0.85) / log(2.0));
+  return (int32_t)(12.0 + 6.0 * log(Qstep/0.85) / log(2.0));
 }
 */
 
-Status SVCBRC::InitHRDLayer(Ipp32s tid)
+Status SVCBRC::InitHRDLayer(int32_t tid)
 {
   VideoBrcParams *pParams = &mParams[tid];
-  Ipp32s profile_ind, level_ind;
-  Ipp64u bufSizeBits = pParams->HRDBufferSizeBytes << 3;
-  Ipp64u maxBitrate = pParams->maxBitrate;
-  Ipp32s bitsPerFrame;
+  int32_t profile_ind, level_ind;
+  unsigned long long bufSizeBits = pParams->HRDBufferSizeBytes << 3;
+  unsigned long long maxBitrate = pParams->maxBitrate;
+  int32_t bitsPerFrame;
 
-  bitsPerFrame = (Ipp32s)(pParams->targetBitrate / pParams->info.framerate);
+  bitsPerFrame = (int32_t)(pParams->targetBitrate / pParams->info.framerate);
 
   if (BRC_CBR == pParams->BRCMode)
     maxBitrate = pParams->maxBitrate = pParams->targetBitrate;
-  if (maxBitrate < (Ipp64u)pParams->targetBitrate)
+  if (maxBitrate < (unsigned long long)pParams->targetBitrate)
     maxBitrate = pParams->maxBitrate = 0;
 
-  if (bufSizeBits > 0 && bufSizeBits < static_cast<Ipp64u>(bitsPerFrame << 1))
+  if (bufSizeBits > 0 && bufSizeBits < static_cast<unsigned long long>(bitsPerFrame << 1))
     bufSizeBits = (bitsPerFrame << 1);
 
   profile_ind = ConvertProfileToTable(pParams->profile);
@@ -184,9 +184,9 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
   if (level_ind > H264_LIMIT_TABLE_LEVEL_51) // just in case svc brc is called with mvc level
       level_ind = H264_LIMIT_TABLE_LEVEL_51;
 
-  if (pParams->targetBitrate > (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
-    pParams->targetBitrate = (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR];
-  if (static_cast<Ipp64u>(pParams->maxBitrate) > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
+  if (pParams->targetBitrate > (int32_t)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
+    pParams->targetBitrate = (int32_t)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR];
+  if (static_cast<unsigned long long>(pParams->maxBitrate) > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR])
     maxBitrate = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_BR];
   if (bufSizeBits > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_CPB])
     bufSizeBits = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_51][H264_LIMIT_TABLE_MAX_CPB];
@@ -249,8 +249,8 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
     }
   }
 
-  if (maxBitrate < (Ipp64u)pParams->targetBitrate) {
-    maxBitrate = (Ipp64u)pParams->targetBitrate;
+  if (maxBitrate < (unsigned long long)pParams->targetBitrate) {
+    maxBitrate = (unsigned long long)pParams->targetBitrate;
     for (; profile_ind <= H264_LIMIT_TABLE_HIGH_PROFILE; profile_ind++) {
       for (; level_ind <= H264_LIMIT_TABLE_LEVEL_51; level_ind++) {
         if (maxBitrate <= LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR])
@@ -266,8 +266,8 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
     }
     bufSizeBits = LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB];
   }
-  pParams->HRDBufferSizeBytes = (Ipp32s)(bufSizeBits >> 3);
-  pParams->maxBitrate = (Ipp32s)((maxBitrate >> 6) << 6);  // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
+  pParams->HRDBufferSizeBytes = (int32_t)(bufSizeBits >> 3);
+  pParams->maxBitrate = (int32_t)((maxBitrate >> 6) << 6);  // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
   mHRD[tid].maxBitrate = pParams->maxBitrate;
   mHRD[tid].inputBitsPerFrame = mHRD[tid].maxInputBitsPerFrame = mHRD[tid].maxBitrate / pParams->info.framerate;
 
@@ -282,8 +282,8 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
   mHRD[tid].bufFullness = pParams->HRDInitialDelayBytes * 8;
   mHRD[tid].frameNum = 0;
 
-  mHRD[tid].maxFrameSize = (Ipp32s)(mHRD[tid].bufFullness - 1);
-  mHRD[tid].minFrameSize = (mParams[tid].BRCMode == BRC_VBR ? 0 : (Ipp32s)(mHRD[tid].bufFullness + 1 + 1 + mHRD[tid].inputBitsPerFrame - mHRD[tid].bufSize));
+  mHRD[tid].maxFrameSize = (int32_t)(mHRD[tid].bufFullness - 1);
+  mHRD[tid].minFrameSize = (mParams[tid].BRCMode == BRC_VBR ? 0 : (int32_t)(mHRD[tid].bufFullness + 1 + 1 + mHRD[tid].inputBitsPerFrame - mHRD[tid].bufSize));
 
   mHRD[tid].minBufFullness = 0;
   mHRD[tid].maxBufFullness = mHRD[tid].bufSize - mHRD[tid].inputBitsPerFrame;
@@ -294,25 +294,25 @@ Status SVCBRC::InitHRDLayer(Ipp32s tid)
 #define SVCBRC_BUFSIZE2BPF_RATIO 30
 #define SVCBRC_BPF2BUFSIZE_RATIO (1./SVCBRC_BUFSIZE2BPF_RATIO)
 
-Ipp32s SVCBRC::GetInitQP()
+int32_t SVCBRC::GetInitQP()
 {
-    const Ipp64f x0 = 0, y0 = 1.19, x1 = 1.75, y1 = 1.75;
-    Ipp32s fsLuma;
-    Ipp32s i;
-    Ipp32s bpfSum, bpfAv, bpfMin, bpfTarget;
-    Ipp32s bpfMin_ind;
-    Ipp64f bs2bpfMin, bf2bpfMin;
+    const double x0 = 0, y0 = 1.19, x1 = 1.75, y1 = 1.75;
+    int32_t fsLuma;
+    int32_t i;
+    int32_t bpfSum, bpfAv, bpfMin, bpfTarget;
+    int32_t bpfMin_ind;
+    double bs2bpfMin, bf2bpfMin;
 
     fsLuma = mParams[0].info.clip_info.width * mParams[0].info.clip_info.height;
 
     bpfMin = bpfSum = mBRC[mNumTemporalLayers-1].mBitsDesiredFrame;
     bpfMin_ind  = mNumTemporalLayers-1;
 
-    bs2bpfMin = bf2bpfMin = (Ipp64f)IPP_MAX_32S;
+    bs2bpfMin = bf2bpfMin = (double)MFX_MAX_32S;
 
     for (i = mNumTemporalLayers - 1; i >= 0; i--) {
         if (mHRD[i].bufSize > 0) {
-            Ipp64f bs2bpf = (Ipp64f)mHRD[i].bufSize / mBRC[i].mBitsDesiredFrame;
+            double bs2bpf = (double)mHRD[i].bufSize / mBRC[i].mBitsDesiredFrame;
             if (bs2bpf < bs2bpfMin) {
                 bs2bpfMin = bs2bpf;
             }
@@ -325,7 +325,7 @@ Ipp32s SVCBRC::GetInitQP()
             bpfMin = mBRC[i].mBitsDesiredFrame;
             bpfMin_ind = i;
         }
-        mBRC[i].mQuantI = mBRC[i].mQuantP = (Ipp32s)(1. / 1.2 * pow(10.0, (log10((Ipp64f)fsLuma / mBRC[i].mBitsDesiredFrame) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
+        mBRC[i].mQuantI = mBRC[i].mQuantP = (int32_t)(1. / 1.2 * pow(10.0, (log10((double)fsLuma / mBRC[i].mBitsDesiredFrame) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
     }
     bpfAv = bpfSum / mNumTemporalLayers;
 
@@ -338,20 +338,20 @@ Ipp32s SVCBRC::GetInitQP()
             }
         }
     } else {
-        Ipp64f bpfTarget0, bpfTarget1, weight;
+        double bpfTarget0, bpfTarget1, weight;
         bpfTarget0 = (3*mBRC[mNumTemporalLayers - 1].mBitsDesiredFrame + bpfAv) >> 2;
         if (bs2bpfMin > SVCBRC_BUFSIZE2BPF_RATIO) {
-            bpfTarget = (Ipp32s)bpfTarget0;
+            bpfTarget = (int32_t)bpfTarget0;
         } else {
             if (mHRD[mNumTemporalLayers - 1].bufSize > 0) {
-                Ipp64f bs2bpfN_1 = mHRD[mNumTemporalLayers - 1].bufSize / mBRC[mNumTemporalLayers - 1].mBitsDesiredFrame;
+                double bs2bpfN_1 = mHRD[mNumTemporalLayers - 1].bufSize / mBRC[mNumTemporalLayers - 1].mBitsDesiredFrame;
                 weight = bs2bpfMin / bs2bpfN_1;
                 bpfTarget1 = weight * mBRC[mNumTemporalLayers - 1].mBitsDesiredFrame + (1 - weight) * mBRC[bpfMin_ind].mBitsDesiredFrame;
             } else {
                 bpfTarget1 = mBRC[bpfMin_ind].mBitsDesiredFrame;
             }
             weight = bs2bpfMin / SVCBRC_BUFSIZE2BPF_RATIO;
-            bpfTarget =  (Ipp32s)(weight * bpfTarget0  + (1 - weight) * bpfTarget1);
+            bpfTarget =  (int32_t)(weight * bpfTarget0  + (1 - weight) * bpfTarget1);
         }
     }
 
@@ -367,12 +367,12 @@ Ipp32s SVCBRC::GetInitQP()
 
     mRCfa = bpfTarget;
   
-    Ipp32s q = (Ipp32s)(1. / 1.2 * pow(10.0, (log10((Ipp64f)fsLuma / bpfTarget) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
+    int32_t q = (int32_t)(1. / 1.2 * pow(10.0, (log10((double)fsLuma / bpfTarget) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
     BRC_CLIP(q, 1, mQuantMax);
 
     for (i = mNumTemporalLayers - 1; i >= 0; i--) {
         mBRC[i].mRCq = mBRC[i].mQuant = mBRC[i].mQuantI = mBRC[i].mQuantP = mBRC[i].mQuantB = mBRC[i].mQuantPrev = q;
-        mBRC[i].mRCqa = mBRC[i].mRCqa0 = 1. / (Ipp64f)mBRC[i].mRCq;
+        mBRC[i].mRCqa = mBRC[i].mRCqa0 = 1. / (double)mBRC[i].mRCq;
         mBRC[i].mRCfa = mBRC[i].mBitsDesiredFrame; //??? bpfTarget ?
     }
 
@@ -380,7 +380,7 @@ Ipp32s SVCBRC::GetInitQP()
 }
 
 
-Status SVCBRC::InitLayer(VideoBrcParams *brcParams, Ipp32s tid)
+Status SVCBRC::InitLayer(VideoBrcParams *brcParams, int32_t tid)
 {
     Status status = UMC_OK;
     if (!brcParams)
@@ -392,18 +392,18 @@ Status SVCBRC::InitLayer(VideoBrcParams *brcParams, Ipp32s tid)
     *pmParams = *brcParams;
 
     if (pmParams->frameRateExtN && pmParams->frameRateExtD)
-        pmParams->info.framerate = (Ipp64f)pmParams->frameRateExtN /  pmParams->frameRateExtD;
+        pmParams->info.framerate = (double)pmParams->frameRateExtN /  pmParams->frameRateExtD;
 
     mIsInit = true;
     return status;
 }
 
 
-Status SVCBRC::Init(BaseCodecParams *params, Ipp32s numTemporalLayers)
+Status SVCBRC::Init(BaseCodecParams *params, int32_t numTemporalLayers)
 {
   VideoBrcParams *brcParams = DynamicCast<VideoBrcParams>(params);
   Status status = UMC_OK;
-  Ipp32s i;
+  int32_t i;
   if (!brcParams)
       return UMC_ERR_INVALID_PARAMS;
   
@@ -423,7 +423,7 @@ Status SVCBRC::Init(BaseCodecParams *params, Ipp32s numTemporalLayers)
           status = InitHRDLayer(i);
           if (status != UMC_OK)
               return status;
-//          mHRD[i].mBF = (Ipp64s)mParams[i].HRDInitialDelayBytes * mParams[i].frameRateExtN;
+//          mHRD[i].mBF = (long long)mParams[i].HRDInitialDelayBytes * mParams[i].frameRateExtN;
 //          mHRD[i].mBFsaved = mHRD[i].mBF;
       } else {
           mHRD[i].bufSize = 0;
@@ -431,7 +431,7 @@ Status SVCBRC::Init(BaseCodecParams *params, Ipp32s numTemporalLayers)
 
       mBRC[i].mBitsDesiredTotal = mBRC[i].mBitsEncodedTotal = 0;
       mBRC[i].mQuantUpdated = 1;
-      mBRC[i].mBitsDesiredFrame = (Ipp32s)((Ipp64f)mParams[i].targetBitrate / mParams[i].info.framerate);
+      mBRC[i].mBitsDesiredFrame = (int32_t)((double)mParams[i].targetBitrate / mParams[i].info.framerate);
 
 /*
       level_ind = ConvertLevelToTable(mParams[i].level);
@@ -443,16 +443,16 @@ Status SVCBRC::Init(BaseCodecParams *params, Ipp32s numTemporalLayers)
       else
           bitsPerMB = 192.; // minCR = 2
 
-      maxMBPS = (Ipp32s)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
+      maxMBPS = (int32_t)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
       numMBPerFrame = ((mParams[i].info.clip_info.width + 15) >> 4) * ((mParams.info.clip_info.height + 15) >> 4);
       // numMBPerFrame should include ref layers as well - see G10.2.1 !!! ???
 
-      tmpf = (Ipp64f)numMBPerFrame;
+      tmpf = (double)numMBPerFrame;
       if (tmpf < maxMBPS / 172.)
           tmpf = maxMBPS / 172.;
 
-      mMaxBitsPerPic = (Ipp64u)(tmpf * bitsPerMB) * 8;
-      mMaxBitsPerPicNot0 = (Ipp64u)((Ipp64f)maxMBPS / mFramerate * bitsPerMB) * 8;
+      mMaxBitsPerPic = (unsigned long long)(tmpf * bitsPerMB) * 8;
+      mMaxBitsPerPicNot0 = (unsigned long long)((double)maxMBPS / mFramerate * bitsPerMB) * 8;
 */
 
   }
@@ -462,13 +462,13 @@ Status SVCBRC::Init(BaseCodecParams *params, Ipp32s numTemporalLayers)
   mQuantUnderflow = -1;
   mQuantOverflow = mQuantMax + 1;
 
-  Ipp32s q = GetInitQP();
+  int32_t q = GetInitQP();
 
   mRCqap = 100;
   mRCfap = 100;
   mRCbap = 100;
   mQuant = mRCq = q;
-  mRCqa = mRCqa0 = 1. / (Ipp64f)mRCq;
+  mRCqa = mRCqa0 = 1. / (double)mRCq;
 
   for (i = 0; i < mNumTemporalLayers; i++) {
       mBRC[i].mRCqap = mRCqap;
@@ -484,7 +484,7 @@ Status SVCBRC::Init(BaseCodecParams *params, Ipp32s numTemporalLayers)
   return status;
 }
 
-Status SVCBRC::Reset(BaseCodecParams *params,  Ipp32s numTemporalLayers)
+Status SVCBRC::Reset(BaseCodecParams *params,  int32_t numTemporalLayers)
 {
   VideoBrcParams *brcParams = DynamicCast<VideoBrcParams>(params);
 //  VideoBrcParams tmpParams;
@@ -495,16 +495,16 @@ Status SVCBRC::Reset(BaseCodecParams *params,  Ipp32s numTemporalLayers)
     return Init(params, numTemporalLayers);
 
 #if 0
-  Ipp32s bufSize = mHRD.bufSize, maxBitrate = mParams.maxBitrate;
-  Ipp64f bufFullness = mHRD.bufFullness;
-  Ipp32s bufSize_new = (brcParams->HRDBufferSizeBytes >> 4) << 7;  // coded in bits as value*2^(4+scale), assume scale<=3
-  Ipp32s maxBitrate_new = (brcParams->maxBitrate >> 6) << 6;   // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
-  Ipp32s targetBitrate_new = brcParams->targetBitrate;
-  Ipp32s targetBitrate_new_r = (targetBitrate_new >> 6) << 6;
-  Ipp32s rcmode_new = brcParams->BRCMode, rcmode = mRCMode;
-  Ipp32s targetBitrate = mBitrate;
-  Ipp32s profile_ind, level_ind;
-  Ipp32s profile = mParams.profile, level = mParams.level;
+  int32_t bufSize = mHRD.bufSize, maxBitrate = mParams.maxBitrate;
+  double bufFullness = mHRD.bufFullness;
+  int32_t bufSize_new = (brcParams->HRDBufferSizeBytes >> 4) << 7;  // coded in bits as value*2^(4+scale), assume scale<=3
+  int32_t maxBitrate_new = (brcParams->maxBitrate >> 6) << 6;   // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
+  int32_t targetBitrate_new = brcParams->targetBitrate;
+  int32_t targetBitrate_new_r = (targetBitrate_new >> 6) << 6;
+  int32_t rcmode_new = brcParams->BRCMode, rcmode = mRCMode;
+  int32_t targetBitrate = mBitrate;
+  int32_t profile_ind, level_ind;
+  int32_t profile = mParams.profile, level = mParams.level;
 
   if (BRC_CBR == rcmode_new && BRC_VBR == rcmode)
     return UMC_ERR_INVALID_PARAMS;
@@ -531,26 +531,26 @@ Status SVCBRC::Reset(BaseCodecParams *params,  Ipp32s numTemporalLayers)
 
   if (maxBitrate_new > 0 && maxBitrate_new < maxBitrate) {
     bufFullness = mHRD.bufFullness * maxBitrate_new / maxBitrate;
-    if ((Ipp64u)mBF < (Ipp64u)IPP_MAX_64S / (Ipp64u)(maxBitrate_new >> 7))
-      mBF = (Ipp64s)((Ipp64u)mBF * (maxBitrate_new >> 6) / (mMaxBitrate >> 3));
+    if ((unsigned long long)mBF < (unsigned long long)MFX_MAX_64S / (unsigned long long)(maxBitrate_new >> 7))
+      mBF = (long long)((unsigned long long)mBF * (maxBitrate_new >> 6) / (mMaxBitrate >> 3));
     else
-      mBF = (Ipp64s)((Ipp64u)mBF / (mMaxBitrate >> 3) * (maxBitrate_new >> 6));
+      mBF = (long long)((unsigned long long)mBF / (mMaxBitrate >> 3) * (maxBitrate_new >> 6));
     maxBitrate = maxBitrate_new;
   } else if (maxBitrate_new > maxBitrate) {
     if (BRC_VBR == rcmode) {
-      Ipp32s isField = ((mPictureFlagsPrev & BRC_FRAME) == BRC_FRAME) ? 0 : 1;
-      Ipp64f bf_delta = (maxBitrate_new - maxBitrate) / mFramerate;
+      int32_t isField = ((mPictureFlagsPrev & BRC_FRAME) == BRC_FRAME) ? 0 : 1;
+      double bf_delta = (maxBitrate_new - maxBitrate) / mFramerate;
       if (isField)
         bf_delta *= 0.5;
       // lower estimate for the fullness with the bitrate updated at tai;
       // for VBR the fullness encoded in buffering period SEI can be below the real buffer fullness
       bufFullness += bf_delta;
-      if (bufFullness > (Ipp64f)bufSize - mHRD.roundError)
-        bufFullness = (Ipp64f)bufSize - mHRD.roundError;
+      if (bufFullness > (double)bufSize - mHRD.roundError)
+        bufFullness = (double)bufSize - mHRD.roundError;
 
-      mBF += (Ipp64s)((maxBitrate_new >> 3) - mMaxBitrate) * (Ipp64s)mParams.frameRateExtD >> isField;
-      if (mBF > (Ipp64s)(bufSize >> 3) * mParams.frameRateExtN)
-        mBF = (Ipp64s)(bufSize >> 3) * mParams.frameRateExtN;
+      mBF += (long long)((maxBitrate_new >> 3) - mMaxBitrate) * (long long)mParams.frameRateExtD >> isField;
+      if (mBF > (long long)(bufSize >> 3) * mParams.frameRateExtN)
+        mBF = (long long)(bufSize >> 3) * mParams.frameRateExtN;
 
       maxBitrate = maxBitrate_new;
     } else { // CBR
@@ -560,9 +560,9 @@ Status SVCBRC::Reset(BaseCodecParams *params,  Ipp32s numTemporalLayers)
 
   if (bufSize_new > 0 && bufSize_new < bufSize) {
     bufSize = bufSize_new;
-    if (bufFullness > (Ipp64f)bufSize - mHRD.roundError) {
+    if (bufFullness > (double)bufSize - mHRD.roundError) {
       if (BRC_VBR == rcmode)
-        bufFullness = (Ipp64f)bufSize - mHRD.roundError;
+        bufFullness = (double)bufSize - mHRD.roundError;
       else
         return UMC_ERR_INVALID_PARAMS;
     }
@@ -601,34 +601,34 @@ Status SVCBRC::Reset(BaseCodecParams *params,  Ipp32s numTemporalLayers)
   tmpParams.BRCMode = rcmode;
   tmpParams.HRDBufferSizeBytes = bufSize >> 3;
   tmpParams.maxBitrate = maxBitrate;
-  tmpParams.HRDInitialDelayBytes = (Ipp32s)(bufFullness / 8);
+  tmpParams.HRDInitialDelayBytes = (int32_t)(bufFullness / 8);
   tmpParams.targetBitrate = targetBitrate;
   tmpParams.profile = profile;
   tmpParams.level = level;
 
-  Ipp32s bitsDesiredFrameOld = mBitsDesiredFrame;
+  int32_t bitsDesiredFrameOld = mBitsDesiredFrame;
 
   status = CommonBRC::Init(&tmpParams);
   if (status != UMC_OK)
     return status;
 
   mHRD.bufSize = bufSize;
-  mHRD.maxBitrate = (Ipp64f)maxBitrate;
+  mHRD.maxBitrate = (double)maxBitrate;
   mHRD.bufFullness = bufFullness;
   mHRD.inputBitsPerFrame = mHRD.maxInputBitsPerFrame = mHRD.maxBitrate / mFramerate;
-  mMaxBitrate = (Ipp32u)(maxBitrate >> 3);
+  mMaxBitrate = (uint32_t)(maxBitrate >> 3);
 
-  Ipp64f bitsPerMB;
-  Ipp32s maxMBPS;
+  double bitsPerMB;
+  int32_t maxMBPS;
   if (level_ind >= H264_LIMIT_TABLE_LEVEL_31 && level_ind <= H264_LIMIT_TABLE_LEVEL_4)
     bitsPerMB = 96.; // 384 / minCR; minCR = 4
   else
     bitsPerMB = 192.; // minCR = 2
-  maxMBPS = (Ipp32s)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
-  mMaxBitsPerPic = mMaxBitsPerPicNot0 = (Ipp64u)((Ipp64f)maxMBPS / mFramerate * bitsPerMB) * 8;
+  maxMBPS = (int32_t)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
+  mMaxBitsPerPic = mMaxBitsPerPicNot0 = (unsigned long long)((double)maxMBPS / mFramerate * bitsPerMB) * 8;
 
   if (sizeNotChanged) {
-    mRCq = (Ipp32s)(1./mRCqa * pow(mRCfa/mBitsDesiredFrame, 0.32) + 0.5);
+    mRCq = (int32_t)(1./mRCqa * pow(mRCfa/mBitsDesiredFrame, 0.32) + 0.5);
     BRC_CLIP(mRCq, 1, mQuantMax);
   } else {
     mRCq = GetInitQP();
@@ -637,29 +637,29 @@ Status SVCBRC::Reset(BaseCodecParams *params,  Ipp32s numTemporalLayers)
   mQuantPrev = mQuantI = mQuantP = mQuantB = mQPprev = mRCq;
   mRCqa = mRCqa0 = 1./mRCq;
   mRCfa = mBitsDesiredFrame;
-  Ipp64f ratio = (Ipp64f)mBitsDesiredFrame / bitsDesiredFrameOld;
-  mBitsEncodedTotal = (Ipp32s)(mBitsEncodedTotal * ratio + 0.5);
-  mBitsDesiredTotal = (Ipp32s)(mBitsDesiredTotal * ratio + 0.5);
+  double ratio = (double)mBitsDesiredFrame / bitsDesiredFrameOld;
+  mBitsEncodedTotal = (int32_t)(mBitsEncodedTotal * ratio + 0.5);
+  mBitsDesiredTotal = (int32_t)(mBitsDesiredTotal * ratio + 0.5);
 
   mSceneChange = 0;
   mBitsEncodedPrev = mBitsDesiredFrame; //???
   mScChFrameCnt = 0;
 
   if (gopChanged) {
-    Ipp32s i;
+    int32_t i;
     SetGOP();
 
     /* calculating instant bitrate thresholds */
     for (i = 0; i < N_INST_RATE_THRESHLDS; i++)
-      instant_rate_thresholds[i]=((Ipp64f)mBitrate*inst_rate_thresh[i]);
+      instant_rate_thresholds[i]=((double)mBitrate*inst_rate_thresh[i]);
 
     /* calculating deviation from ideal fullness/bitrate thresholds */
     for (i = 0; i < N_DEV_THRESHLDS; i++)
-      deviation_thresholds[i]=((Ipp64f)mHRD.bufSize*dev_thresh[i]);
+      deviation_thresholds[i]=((double)mHRD.bufSize*dev_thresh[i]);
 
-    Ipp64f rc_weight[3] = {I_WEIGHT, P_WEIGHT, B_WEIGHT};
-    Ipp64f gopw = N_B_frame * rc_weight[2] + rc_weight[1] * N_P_frame + rc_weight[0];
-    Ipp64f gopw_field = (2*N_B_frame * rc_weight[2] + rc_weight[1] * (2*N_P_frame + 1) + rc_weight[0]) * 0.5;
+    double rc_weight[3] = {I_WEIGHT, P_WEIGHT, B_WEIGHT};
+    double gopw = N_B_frame * rc_weight[2] + rc_weight[1] * N_P_frame + rc_weight[0];
+    double gopw_field = (2*N_B_frame * rc_weight[2] + rc_weight[1] * (2*N_P_frame + 1) + rc_weight[0]) * 0.5;
 
     for (i = 0; i < 3; i++) {
       sRatio[i] = sizeRatio[i] = rc_weight[i] * mGOPPicSize / gopw;
@@ -684,12 +684,12 @@ Status SVCBRC::Close()
 }
 
 
-Status SVCBRC::SetParams(BaseCodecParams* params, Ipp32s tid)
+Status SVCBRC::SetParams(BaseCodecParams* params, int32_t tid)
 {
     return Init(params, tid);
 }
 
-Status SVCBRC::GetParams(BaseCodecParams* params, Ipp32s tid)
+Status SVCBRC::GetParams(BaseCodecParams* params, int32_t tid)
 {
     VideoBrcParams *brcParams = DynamicCast<VideoBrcParams>(params);
     VideoEncoderParams *videoParams = DynamicCast<VideoEncoderParams>(params);
@@ -728,7 +728,7 @@ Status SVCBRC::SetParams(BaseCodecParams* params)
 }
 */
 
-Status SVCBRC::SetPictureFlags(FrameType, Ipp32s picture_structure, Ipp32s, Ipp32s, Ipp32s)
+Status SVCBRC::SetPictureFlags(FrameType, int32_t picture_structure, int32_t, int32_t, int32_t)
 {
   switch (picture_structure & PS_FRAME) {
   case (PS_TOP_FIELD):
@@ -744,7 +744,7 @@ Status SVCBRC::SetPictureFlags(FrameType, Ipp32s picture_structure, Ipp32s, Ipp3
   return UMC_OK;
 }
 
-Ipp32s SVCBRC::GetQP(FrameType frameType, Ipp32s tid)
+int32_t SVCBRC::GetQP(FrameType frameType, int32_t tid)
 {
     if (tid < 0) {
         return mQuant;
@@ -754,7 +754,7 @@ Ipp32s SVCBRC::GetQP(FrameType frameType, Ipp32s tid)
         return -1;
 }
 
-Status SVCBRC::SetQP(Ipp32s qp, FrameType frameType, Ipp32s tid)
+Status SVCBRC::SetQP(int32_t qp, FrameType frameType, int32_t tid)
 {
     if (tid < 0)
         mQuant = qp;
@@ -782,26 +782,26 @@ Status SVCBRC::SetQP(Ipp32s qp, FrameType frameType, Ipp32s tid)
 #define BRC_QP_DELTA_WMAX 5
 #define  BRC_QP_DELTA_WMIN 5
 
-BRCStatus SVCBRC::PreEncFrame(FrameType picType, Ipp32s, Ipp32s tid)
+BRCStatus SVCBRC::PreEncFrame(FrameType picType, int32_t, int32_t tid)
 { 
-    Ipp32s maxfs, minfs, maxfsi, minfsi;
-    Ipp32s maxfsind, minfsind;
-    Ipp32s i;
-    Ipp32s qp, qpmax, qpmin, qpav, qpi, qpminind, qpmaxind, qptop;
-    Ipp64f fqpav;
+    int32_t maxfs, minfs, maxfsi, minfsi;
+    int32_t maxfsind, minfsind;
+    int32_t i;
+    int32_t qp, qpmax, qpmin, qpav, qpi, qpminind, qpmaxind, qptop;
+    double fqpav;
     BRCStatus Sts = BRC_OK;
-    Ipp32s cnt;
+    int32_t cnt;
 
     mTid = tid;
     if (mHRD[tid].bufSize > 0) {
-        maxfs = (Ipp32s)(mHRD[tid].bufFullness - mHRD[tid].minBufFullness);
-        minfs = (Ipp32s)(mHRD[tid].inputBitsPerFrame - mHRD[tid].maxBufFullness + mHRD[tid].bufFullness);
+        maxfs = (int32_t)(mHRD[tid].bufFullness - mHRD[tid].minBufFullness);
+        minfs = (int32_t)(mHRD[tid].inputBitsPerFrame - mHRD[tid].maxBufFullness + mHRD[tid].bufFullness);
         maxfsind = minfsind = tid;
         qpmaxind = qpminind = tid;
         qpav = qpmax = qpmin = (picType == I_PICTURE) ? mBRC[tid].mQuantI : (picType == B_PICTURE) ? mBRC[tid].mQuantB : mBRC[tid].mQuantP;
         cnt = 1;
     } else {
-        maxfs = IPP_MAX_32S;
+        maxfs = MFX_MAX_32S;
         minfs = 0;
         maxfsind = minfsind = mNumTemporalLayers-1;
         cnt = 0;
@@ -815,8 +815,8 @@ BRCStatus SVCBRC::PreEncFrame(FrameType picType, Ipp32s, Ipp32s tid)
 
         if (mHRD[i].bufSize > 0) {
 
-            maxfsi = (Ipp32s)(mHRD[i].bufFullness - mHRD[i].minBufFullness);
-            minfsi = (Ipp32s)(mHRD[i].inputBitsPerFrame - mHRD[i].maxBufFullness + mHRD[i].bufFullness);
+            maxfsi = (int32_t)(mHRD[i].bufFullness - mHRD[i].minBufFullness);
+            minfsi = (int32_t)(mHRD[i].inputBitsPerFrame - mHRD[i].maxBufFullness + mHRD[i].bufFullness);
             qpi = (picType == I_PICTURE) ? mBRC[i].mQuantI : (picType == B_PICTURE) ? mBRC[i].mQuantB : mBRC[i].mQuantP;
 
             if (maxfsi <= maxfs) {
@@ -842,19 +842,19 @@ BRCStatus SVCBRC::PreEncFrame(FrameType picType, Ipp32s, Ipp32s tid)
 
     if (cnt == 0) {
         mQuant = (picType == I_PICTURE) ? mBRC[mNumTemporalLayers-1].mQuantI : (picType == B_PICTURE) ? mBRC[mNumTemporalLayers-1].mQuantB : mBRC[mNumTemporalLayers-1].mQuantP;
-        mMaxFrameSize = IPP_MAX_32S;
+        mMaxFrameSize = MFX_MAX_32S;
         mMinFrameSize = 0;
         return Sts;
     }
 
-    fqpav = (Ipp64f)qpav / cnt;
+    fqpav = (double)qpav / cnt;
     qptop = picType == I_PICTURE ? mBRC[mNumTemporalLayers-1].mQuantI : (picType == B_PICTURE ? mBRC[mNumTemporalLayers-1].mQuantB : mBRC[mNumTemporalLayers-1].mQuantP);
-    qp = (qptop * 3 + (Ipp32s)fqpav + 3) >> 2; // ???
+    qp = (qptop * 3 + (int32_t)fqpav + 3) >> 2; // ???
 
     for (i = mNumTemporalLayers - 2; i >= tid; i--) {
         if (mHRD[i].bufSize > 0) {
-            maxfsi = (Ipp32s)(mHRD[i].bufFullness - mHRD[i].minBufFullness);
-            minfsi = (Ipp32s)(mHRD[i].inputBitsPerFrame - mHRD[i].maxBufFullness + mHRD[i].bufFullness);
+            maxfsi = (int32_t)(mHRD[i].bufFullness - mHRD[i].minBufFullness);
+            minfsi = (int32_t)(mHRD[i].inputBitsPerFrame - mHRD[i].maxBufFullness + mHRD[i].bufFullness);
             qpi = (picType == I_PICTURE) ? mBRC[i].mQuantI : (picType == B_PICTURE) ? mBRC[i].mQuantB : mBRC[i].mQuantP;
 
             if (qpi > qp) {
@@ -865,15 +865,15 @@ BRCStatus SVCBRC::PreEncFrame(FrameType picType, Ipp32s, Ipp32s tid)
 
             }
             if (qpi < qp) {
-                if (minfsi > (Ipp64f)(mHRD[i].inputBitsPerFrame * 0.5))
+                if (minfsi > (double)(mHRD[i].inputBitsPerFrame * 0.5))
                     qp = qpi;
-                else if (minfsi > (Ipp64f)(mHRD[i].inputBitsPerFrame * 0.25))
+                else if (minfsi > (double)(mHRD[i].inputBitsPerFrame * 0.25))
                     qp = (qp + qpi) >> 1;
             }
         }
     }
 
-    Ipp32s qpt = (picType == I_PICTURE) ? mBRC[maxfsind].mQuantI : (picType == B_PICTURE) ? mBRC[maxfsind].mQuantB : mBRC[maxfsind].mQuantP;
+    int32_t qpt = (picType == I_PICTURE) ? mBRC[maxfsind].mQuantI : (picType == B_PICTURE) ? mBRC[maxfsind].mQuantB : mBRC[maxfsind].mQuantP;
     if (qp < qpt) {
         if (maxfs < 4*mHRD[maxfsind].inputBitsPerFrame)
             qp = (qp + qpt + 1) >> 1;
@@ -885,12 +885,12 @@ BRCStatus SVCBRC::PreEncFrame(FrameType picType, Ipp32s, Ipp32s tid)
     }
     
     if (qp < qpmax - BRC_QP_DELTA_WMAX) {
-        if ((Ipp32s)(mHRD[qpmaxind].bufFullness - mHRD[qpmaxind].minBufFullness) < 4*mHRD[qpmaxind].inputBitsPerFrame)
+        if ((int32_t)(mHRD[qpmaxind].bufFullness - mHRD[qpmaxind].minBufFullness) < 4*mHRD[qpmaxind].inputBitsPerFrame)
             qp = (qp + qpmax + 1) >> 1;
     }
 
     if (qp > qpmin + BRC_QP_DELTA_WMIN) {
-        if ((mHRD[qpminind].maxBufFullness  - (Ipp32s)mHRD[qpminind].bufFullness) < 2*mHRD[qpminind].inputBitsPerFrame)
+        if ((mHRD[qpminind].maxBufFullness  - (int32_t)mHRD[qpminind].bufFullness) < 2*mHRD[qpminind].inputBitsPerFrame)
             qp = (qp + qpmin + 1) >> 1;
     }
 
@@ -901,7 +901,7 @@ BRCStatus SVCBRC::PreEncFrame(FrameType picType, Ipp32s, Ipp32s tid)
     return Sts;
 }
 
-BRCStatus SVCBRC::UpdateAndCheckHRD(Ipp32s tid, Ipp32s frameBits, Ipp32s payloadbits, Ipp32s recode)
+BRCStatus SVCBRC::UpdateAndCheckHRD(int32_t tid, int32_t frameBits, int32_t payloadbits, int32_t recode)
 {
     BRCStatus ret = BRC_OK;
     BRCSVC_HRDState *pHRD = &mHRD[tid];
@@ -912,8 +912,8 @@ BRCStatus SVCBRC::UpdateAndCheckHRD(Ipp32s tid, Ipp32s frameBits, Ipp32s payload
         pHRD->bufFullness = pHRD->prevBufFullness;
     }
 
-    pHRD->maxFrameSize = (Ipp32s)(pHRD->bufFullness - 1);
-    pHRD->minFrameSize = (mParams[tid].BRCMode == BRC_VBR ? 0 : (Ipp32s)(pHRD->bufFullness + 2 + pHRD->inputBitsPerFrame - pHRD->bufSize));
+    pHRD->maxFrameSize = (int32_t)(pHRD->bufFullness - 1);
+    pHRD->minFrameSize = (mParams[tid].BRCMode == BRC_VBR ? 0 : (int32_t)(pHRD->bufFullness + 2 + pHRD->inputBitsPerFrame - pHRD->bufSize));
     if (pHRD->minFrameSize < 0)
         pHRD->minFrameSize = 0;
 
@@ -937,8 +937,8 @@ BRCStatus SVCBRC::UpdateAndCheckHRD(Ipp32s tid, Ipp32s frameBits, Ipp32s payload
     return ret;
 }
 
-Status SVCBRC::GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSizeInBits) {
-    Ipp32s i, minfs = 0, maxfs = IPP_MAX_32S;
+Status SVCBRC::GetMinMaxFrameSize(int32_t *minFrameSizeInBits, int32_t *maxFrameSizeInBits) {
+    int32_t i, minfs = 0, maxfs = MFX_MAX_32S;
     for (i = mTid; i < mNumTemporalLayers; i++) {
         if (mHRD[i].bufSize > 0) {
             if (mHRD[i].minFrameSize > minfs)
@@ -955,10 +955,10 @@ Status SVCBRC::GetMinMaxFrameSize(Ipp32s *minFrameSizeInBits, Ipp32s *maxFrameSi
 };
 
 
-BRCStatus SVCBRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32s payloadBits, Ipp32s repack, Ipp32s /* poc */)
+BRCStatus SVCBRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int32_t payloadBits, int32_t repack, int32_t /* poc */)
 {
   BRCStatus Sts = BRC_OK;
-  Ipp32s bitsEncoded = totalFrameBits - payloadBits;
+  int32_t bitsEncoded = totalFrameBits - payloadBits;
 
   mBitsEncoded = bitsEncoded;
 
@@ -985,9 +985,9 @@ BRCStatus SVCBRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32s
   }
 
   Sts = BRC_OK;
-  Ipp32s quant = mQuant;
-  Ipp32s i;
-  Ipp32s tid = mTid;
+  int32_t quant = mQuant;
+  int32_t i;
+  int32_t tid = mTid;
 
   for (i = tid; i < mNumTemporalLayers; i++) {
       if (mHRD[i].bufSize > 0) {
@@ -1019,7 +1019,7 @@ BRCStatus SVCBRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32s
   }
 
 
-  Ipp32s j;
+  int32_t j;
   if (mHRD[tid].bufSize > 0) {
       mHRD[tid].minBufFullness = 0;
       mHRD[tid].maxBufFullness = mHRD[tid].bufSize - mHRD[tid].inputBitsPerFrame;
@@ -1027,11 +1027,11 @@ BRCStatus SVCBRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32s
 
   for (i = tid; i < mNumTemporalLayers; i++) {
       if (mHRD[i].bufSize > 0) {
-          mHRD[i].minFrameSize = (mParams[i].BRCMode == BRC_VBR ? 0 : (Ipp32s)(mHRD[i].bufFullness + 1 + 1 + mHRD[i].inputBitsPerFrame - mHRD[i].bufSize));
+          mHRD[i].minFrameSize = (mParams[i].BRCMode == BRC_VBR ? 0 : (int32_t)(mHRD[i].bufFullness + 1 + 1 + mHRD[i].inputBitsPerFrame - mHRD[i].bufSize));
 
           for (j = i + 1; j < mNumTemporalLayers; j++) {
               if (mHRD[j].bufSize > 0) {
-                  Ipp64f minbf, maxbf;
+                  double minbf, maxbf;
                   minbf = mHRD[i].minFrameSize - mHRD[j].inputBitsPerFrame;
                   maxbf = mHRD[j].bufSize - mHRD[j].inputBitsPerFrame + mHRD[i].bufFullness - mHRD[j].inputBitsPerFrame;
 
@@ -1092,15 +1092,15 @@ BRCStatus SVCBRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32s
   return Sts;
 };
 
-BRCStatus SVCBRC::UpdateQuant(Ipp32s tid, Ipp32s bEncoded, Ipp32s totalPicBits)
+BRCStatus SVCBRC::UpdateQuant(int32_t tid, int32_t bEncoded, int32_t totalPicBits)
 {
   BRCStatus Sts = BRC_OK;
-  Ipp64f  bo, qs, dq;
-  Ipp32s  quant;
-  Ipp32s isfield = ((mPictureFlags & BRC_FRAME) != BRC_FRAME) ? 1 : 0;
-  Ipp64s totalBitsDeviation;
+  double  bo, qs, dq;
+  int32_t  quant;
+  int32_t isfield = ((mPictureFlags & BRC_FRAME) != BRC_FRAME) ? 1 : 0;
+  long long totalBitsDeviation;
   BRC_SVCLayer_State *pBRC = &mBRC[tid];
-  Ipp32u bitsPerPic = (Ipp32u)pBRC->mBitsDesiredFrame >> isfield;
+  uint32_t bitsPerPic = (uint32_t)pBRC->mBitsDesiredFrame >> isfield;
 
   if (isfield)
     pBRC->mRCfa *= 0.5;
@@ -1137,7 +1137,7 @@ BRCStatus SVCBRC::UpdateQuant(Ipp32s tid, Ipp32s bEncoded, Ipp32s totalPicBits)
   qs = pow(bitsPerPic / pBRC->mRCfa, 2.0);
   dq = pBRC->mRCqa * qs;
 
-  bo = (Ipp64f)totalBitsDeviation / pBRC->mRCbap / pBRC->mBitsDesiredFrame; // ??? bitsPerPic ?
+  bo = (double)totalBitsDeviation / pBRC->mRCbap / pBRC->mBitsDesiredFrame; // ??? bitsPerPic ?
   BRC_CLIP(bo, -1.0, 1.0);
 
   dq = dq + (1./mQuantMax - dq) * bo;
@@ -1176,13 +1176,13 @@ BRCStatus SVCBRC::UpdateQuant(Ipp32s tid, Ipp32s bEncoded, Ipp32s totalPicBits)
 }
 
 
-BRCStatus SVCBRC::UpdateQuantHRD(Ipp32s tid, Ipp32s totalFrameBits, BRCStatus sts, Ipp32s payloadBits)
+BRCStatus SVCBRC::UpdateQuantHRD(int32_t tid, int32_t totalFrameBits, BRCStatus sts, int32_t payloadBits)
 {
-  Ipp32s quant, quant_prev;
-  Ipp64f qs;
+  int32_t quant, quant_prev;
+  double qs;
   BRCSVC_HRDState *pHRD = &mHRD[tid];
-  Ipp32s wantedBits = (sts == BRC_ERR_BIG_FRAME ? pHRD->maxFrameSize : pHRD->minFrameSize);
-  Ipp32s bEncoded = totalFrameBits - payloadBits;
+  int32_t wantedBits = (sts == BRC_ERR_BIG_FRAME ? pHRD->maxFrameSize : pHRD->minFrameSize);
+  int32_t bEncoded = totalFrameBits - payloadBits;
 
   wantedBits -= payloadBits;
   if (wantedBits <= 0) // possible only if BRC_ERR_BIG_FRAME
@@ -1194,8 +1194,8 @@ BRCStatus SVCBRC::UpdateQuantHRD(Ipp32s tid, Ipp32s totalFrameBits, BRCStatus st
   else if (sts & BRC_ERR_SMALL_FRAME)
       mQuantOverflow = quant;
 
-  qs = pow((Ipp64f)bEncoded/wantedBits, 1.5);
-  quant = (Ipp32s)(quant * qs + 0.5);
+  qs = pow((double)bEncoded/wantedBits, 1.5);
+  quant = (int32_t)(quant * qs + 0.5);
 
   if (quant == quant_prev)
     quant += (sts == BRC_ERR_BIG_FRAME ? 1 : -1);
@@ -1229,7 +1229,7 @@ BRCStatus SVCBRC::UpdateQuantHRD(Ipp32s tid, Ipp32s totalFrameBits, BRCStatus st
   return sts;
 }
 
-Status SVCBRC::GetHRDBufferFullness(Ipp64f *hrdBufFullness, Ipp32s recode, Ipp32s tid)
+Status SVCBRC::GetHRDBufferFullness(double *hrdBufFullness, int32_t recode, int32_t tid)
 {
     *hrdBufFullness = (recode & (BRC_EXT_FRAMESKIP - 1)) ? mHRD[tid].prevBufFullness : mHRD[tid].bufFullness;
 
@@ -1237,10 +1237,10 @@ Status SVCBRC::GetHRDBufferFullness(Ipp64f *hrdBufFullness, Ipp32s recode, Ipp32
 }
 
 /*
-Status SVCBRC::GetInitialCPBRemovalDelay(Ipp32s tid, Ipp32u *initial_cpb_removal_delay, Ipp32s recode)
+Status SVCBRC::GetInitialCPBRemovalDelay(int32_t tid, uint32_t *initial_cpb_removal_delay, int32_t recode)
 {
-  Ipp32u cpb_rem_del_u32;
-  Ipp64u cpb_rem_del_u64, temp1_u64, temp2_u64;
+  uint32_t cpb_rem_del_u32;
+  unsigned long long cpb_rem_del_u64, temp1_u64, temp2_u64;
 
   if (BRC_VBR == mRCMode) {
     if (recode)
@@ -1249,19 +1249,19 @@ Status SVCBRC::GetInitialCPBRemovalDelay(Ipp32s tid, Ipp32u *initial_cpb_removal
       mBFsaved = mBF;
   }
 
-  temp1_u64 = (Ipp64u)mBF * 90000;
-  temp2_u64 = (Ipp64u)mMaxBitrate * mParams.frameRateExtN;
+  temp1_u64 = (unsigned long long)mBF * 90000;
+  temp2_u64 = (unsigned long long)mMaxBitrate * mParams.frameRateExtN;
   cpb_rem_del_u64 = temp1_u64 / temp2_u64;
-  cpb_rem_del_u32 = (Ipp32u)cpb_rem_del_u64;
+  cpb_rem_del_u32 = (uint32_t)cpb_rem_del_u64;
 
   if (BRC_VBR == mRCMode) {
     mBF = temp2_u64 * cpb_rem_del_u32 / 90000;
-    temp1_u64 = (Ipp64u)cpb_rem_del_u32 * mMaxBitrate;
-    Ipp32u dec_buf_ful = (Ipp32u)(temp1_u64 / (90000/8));
+    temp1_u64 = (unsigned long long)cpb_rem_del_u32 * mMaxBitrate;
+    uint32_t dec_buf_ful = (uint32_t)(temp1_u64 / (90000/8));
     if (recode)
-      mHRD.prevBufFullness = (Ipp64f)dec_buf_ful;
+      mHRD.prevBufFullness = (double)dec_buf_ful;
     else
-      mHRD.bufFullness = (Ipp64f)dec_buf_ful;
+      mHRD.bufFullness = (double)dec_buf_ful;
   }
 
   *initial_cpb_removal_delay = cpb_rem_del_u32;

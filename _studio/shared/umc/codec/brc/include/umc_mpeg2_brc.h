@@ -53,56 +53,56 @@ public:
   ~MPEG2BRC();
 
   // Initialize with specified parameter(s)
-  virtual Status Init(BaseCodecParams *init, Ipp32s nl = 1);
+  virtual Status Init(BaseCodecParams *init, int32_t nl = 1);
 
   // Close all resources
   virtual Status Close();
 
-  virtual Status Reset(BaseCodecParams *init, Ipp32s nl = 1);
+  virtual Status Reset(BaseCodecParams *init, int32_t nl = 1);
 
-  virtual Status SetParams(BaseCodecParams* params, Ipp32s tid = 0);
+  virtual Status SetParams(BaseCodecParams* params, int32_t tid = 0);
 
-  virtual Status PreEncFrame(FrameType frameType, Ipp32s recode = 0, Ipp32s tid = 0);
-  virtual BRCStatus PostPackFrame(FrameType picType, Ipp32s bitsEncodedFrame, Ipp32s payloadBits = 0, Ipp32s recode = 0, Ipp32s = 0);
+  virtual Status PreEncFrame(FrameType frameType, int32_t recode = 0, int32_t tid = 0);
+  virtual BRCStatus PostPackFrame(FrameType picType, int32_t bitsEncodedFrame, int32_t payloadBits = 0, int32_t recode = 0, int32_t = 0);
 
-  virtual Ipp32s GetQP(FrameType frameType, Ipp32s tid = 0);
-  virtual Status SetQP(Ipp32s qp, FrameType frameType, Ipp32s tid = 0);
-  virtual Status SetPictureFlags(FrameType frameType, Ipp32s picture_structure, Ipp32s repeat_first_field, Ipp32s top_field_first, Ipp32s second_field);
+  virtual int32_t GetQP(FrameType frameType, int32_t tid = 0);
+  virtual Status SetQP(int32_t qp, FrameType frameType, int32_t tid = 0);
+  virtual Status SetPictureFlags(FrameType frameType, int32_t picture_structure, int32_t repeat_first_field, int32_t top_field_first, int32_t second_field);
 
-//  virtual Status Query(UMCExtBuffer *pStat, Ipp32u *numEntries);
+//  virtual Status Query(UMCExtBuffer *pStat, uint32_t *numEntries);
 
 protected:
 
   bool   mIsInit;
-  Ipp64f      rc_weight[3];          // frame weight (length proportion)
-  Ipp64f      rc_tagsize[3];         // bitsize target of the type
-  Ipp64f      rc_tagsize_frame[3];   // bitsize target of the type
-  Ipp64f      rc_tagsize_field[3];   // bitsize target of the type
-  Ipp64f      rc_dev;                // bitrate deviation (sum of GOP's frame diffs)
-  Ipp64f      rc_dev_saved;          // bitrate deviation (sum of GOP's frame diffs)
-  Ipp64f      gopw;
-  Ipp32s      block_count;
-  Ipp32s      qscale[3];             // qscale codes for 3 frame types (Ipp32s!)
-  Ipp32s      prsize[3];             // bitsize of previous frame of the type
-  Ipp32s      prqscale[3];           // quant scale value, used with previous frame of the type
+  double      rc_weight[3];          // frame weight (length proportion)
+  double      rc_tagsize[3];         // bitsize target of the type
+  double      rc_tagsize_frame[3];   // bitsize target of the type
+  double      rc_tagsize_field[3];   // bitsize target of the type
+  double      rc_dev;                // bitrate deviation (sum of GOP's frame diffs)
+  double      rc_dev_saved;          // bitrate deviation (sum of GOP's frame diffs)
+  double      gopw;
+  int32_t      block_count;
+  int32_t      qscale[3];             // qscale codes for 3 frame types (int32_t!)
+  int32_t      prsize[3];             // bitsize of previous frame of the type
+  int32_t      prqscale[3];           // quant scale value, used with previous frame of the type
   BrcPictureFlags      prpicture_flags[3];
   BrcPictureFlags      picture_flags, picture_flags_prev, picture_flags_IP;
-  Ipp32s  quantiser_scale_value;
-  Ipp32s  quantiser_scale_code;
-  Ipp32s  q_scale_type;
+  int32_t  quantiser_scale_value;
+  int32_t  quantiser_scale_code;
+  int32_t  q_scale_type;
   bool  full_hw;
-//  Ipp32s  mBitsDesiredFrame;
+//  int32_t  mBitsDesiredFrame;
 
-  Ipp32s GetInitQP();
-  BRCStatus UpdateQuantHRD(Ipp32s bEncoded, BRCStatus sts);
+  int32_t GetInitQP();
+  BRCStatus UpdateQuantHRD(int32_t bEncoded, BRCStatus sts);
   Status CheckHRDParams();
 //  Status CalculatePicTargets();
-  Ipp32s ChangeQuant(Ipp32s quant);
+  int32_t ChangeQuant(int32_t quant);
 
 #if APA_MPEG2_BRC
 
-  virtual Status PreEncFrameMidRange(FrameType frameType, Ipp32s recode = 0);
-  virtual Status PreEncFrameFallBack(FrameType frameType, Ipp32s recode = 0);
+  virtual Status PreEncFrameMidRange(FrameType frameType, int32_t recode = 0);
+  virtual Status PreEncFrameFallBack(FrameType frameType, int32_t recode = 0);
 
   mfxI32  mIsFallBack;              // depending on bitrate calls PreEncFrameFallBack
 
@@ -135,10 +135,10 @@ public:
   {
         quant[0] = quant[1] = quant[2] = 0;
   }
-  Ipp32s  frameWidth;
-  Ipp32s  frameHeight;
-  Ipp32s  maxFrameSize;
-  Ipp16s  quant[3]; // I,P,B
+  int32_t  frameWidth;
+  int32_t  frameHeight;
+  int32_t  maxFrameSize;
+  int16_t  quant[3]; // I,P,B
 };
 
 class MPEG2BRC_CONST_QUNT : public CommonBRC {
@@ -149,12 +149,12 @@ public:
     ~MPEG2BRC_CONST_QUNT(){};
 
   // Initialize with specified parameter(s)
-  virtual Status Init(BaseCodecParams *init, Ipp32s = 0)
+  virtual Status Init(BaseCodecParams *init, int32_t = 0)
   {
       Mpeg2_BrcParams *brcParams = DynamicCast<Mpeg2_BrcParams>(init);
       if (brcParams && brcParams->quant[0]>0 && brcParams->frameHeight > 0 && brcParams->frameWidth >0 )
       {
-          MFX_INTERNAL_CPY((Ipp8u*)&m_params, (Ipp8u*)brcParams, sizeof(Mpeg2_BrcParams));
+          MFX_INTERNAL_CPY((uint8_t*)&m_params, (uint8_t*)brcParams, sizeof(Mpeg2_BrcParams));
           m_params.frameHeight = brcParams->frameHeight;
           m_params.frameWidth  = brcParams->frameWidth;
 
@@ -171,13 +171,13 @@ public:
   // Close all resources
   virtual Status Close() {return UMC_OK;}
 
-  virtual Status Reset(BaseCodecParams *, Ipp32s) {return UMC_OK;}
+  virtual Status Reset(BaseCodecParams *, int32_t) {return UMC_OK;}
 
-  virtual Status SetParams(BaseCodecParams* params, Ipp32s = 0)
+  virtual Status SetParams(BaseCodecParams* params, int32_t = 0)
   {
       return Init(params);
   }
-  virtual Status GetParams(BaseCodecParams* params, Ipp32s = 0)
+  virtual Status GetParams(BaseCodecParams* params, int32_t = 0)
   {
        Mpeg2_BrcParams *brcParams = DynamicCast<Mpeg2_BrcParams>(params);
        if (brcParams)
@@ -203,15 +203,15 @@ public:
   }
 
 
-  virtual Status PreEncFrame(FrameType /*frameType*/, Ipp32s /*recode*/, Ipp32s)
+  virtual Status PreEncFrame(FrameType /*frameType*/, int32_t /*recode*/, int32_t)
   {
       return UMC_OK;
   }
-  virtual BRCStatus PostPackFrame(FrameType /*picType*/, Ipp32s /*bitsEncodedFrame*/, Ipp32s /*payloadBits*/ = 0, Ipp32s /*recode*/ = 0, Ipp32s = 0)
+  virtual BRCStatus PostPackFrame(FrameType /*picType*/, int32_t /*bitsEncodedFrame*/, int32_t /*payloadBits*/ = 0, int32_t /*recode*/ = 0, int32_t = 0)
   {
       return UMC_OK;
   }
-  virtual Ipp32s GetQP(FrameType frameType, Ipp32s = 0)
+  virtual int32_t GetQP(FrameType frameType, int32_t = 0)
   {
       switch (frameType)
       {
@@ -225,21 +225,21 @@ public:
           return m_params.quant[0];
       }
   }
-  virtual Status SetQP(Ipp32s qp, FrameType frameType, Ipp32s = 0)
+  virtual Status SetQP(int32_t qp, FrameType frameType, int32_t = 0)
   {
       switch (frameType)
       {
       case I_PICTURE:
-          return m_params.quant[0] = (Ipp16s)qp;
+          return m_params.quant[0] = (int16_t)qp;
       case P_PICTURE:
-          return m_params.quant[1] = (Ipp16s)qp;
+          return m_params.quant[1] = (int16_t)qp;
       case B_PICTURE:
-          return m_params.quant[2] = (Ipp16s)qp;
+          return m_params.quant[2] = (int16_t)qp;
       default:
            return UMC_ERR_UNSUPPORTED;
       }
   }
-  virtual Status SetPictureFlags(FrameType /*frameType*/, Ipp32s /*picture_structure*/, Ipp32s /*repeat_first_field*/, Ipp32s /*top_field_first*/, Ipp32s /*second_field*/)
+  virtual Status SetPictureFlags(FrameType /*frameType*/, int32_t /*picture_structure*/, int32_t /*repeat_first_field*/, int32_t /*top_field_first*/, int32_t /*second_field*/)
   {
       return UMC_OK;
   }

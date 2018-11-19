@@ -41,47 +41,47 @@ public:
   ~H264BRC();
 
   // Initialize with specified parameter(s)
-  virtual Status Init(BaseCodecParams *init, Ipp32s nl = 1);
+  virtual Status Init(BaseCodecParams *init, int32_t nl = 1);
 
   // Close all resources
   virtual Status Close();
 
-  virtual Status Reset(BaseCodecParams *init, Ipp32s nl = 1);
+  virtual Status Reset(BaseCodecParams *init, int32_t nl = 1);
 
-  virtual Status SetParams(BaseCodecParams* params, Ipp32s tid = 0);
+  virtual Status SetParams(BaseCodecParams* params, int32_t tid = 0);
 
-  virtual BRCStatus PostPackFrame(FrameType picType, Ipp32s bitsEncodedFrame, Ipp32s payloadBits, Ipp32s recode = 0, Ipp32s poc = 0);
+  virtual BRCStatus PostPackFrame(FrameType picType, int32_t bitsEncodedFrame, int32_t payloadBits, int32_t recode = 0, int32_t poc = 0);
 
-  virtual Ipp32s GetQP(FrameType frameType, Ipp32s tid = 0);
-  virtual Status SetQP(Ipp32s qp, FrameType frameType, Ipp32s tid = 0);
+  virtual int32_t GetQP(FrameType frameType, int32_t tid = 0);
+  virtual Status SetQP(int32_t qp, FrameType frameType, int32_t tid = 0);
 
-  virtual Status SetPictureFlags(FrameType frameType, Ipp32s picture_structure, Ipp32s repeat_first_field = 0, Ipp32s top_field_first = 0, Ipp32s second_field = 0);
-//  virtual Status Query(UMCExtBuffer *pStat, Ipp32u *numEntries);
-  virtual Status GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp32s recode = 0);
+  virtual Status SetPictureFlags(FrameType frameType, int32_t picture_structure, int32_t repeat_first_field = 0, int32_t top_field_first = 0, int32_t second_field = 0);
+//  virtual Status Query(UMCExtBuffer *pStat, uint32_t *numEntries);
+  virtual Status GetInitialCPBRemovalDelay(uint32_t *initial_cpb_removal_delay, int32_t recode = 0);
 
 protected:
   bool   mIsInit;
-//  Ipp32s  mBitsDesiredFrame;
-  Ipp64s  mBitsEncodedTotal, mBitsDesiredTotal;
-  Ipp32s  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
-  Ipp32s  mRCfap, mRCqap, mRCbap, mRCq;
-  Ipp64f  mRCqa, mRCfa, mRCqa0;
-  Ipp64f  mRCfa_short;
-  Ipp32s  mQuantIprev, mQuantPprev, mQuantBprev;
-  Ipp32s  mBitsEncoded;
-  Ipp32s  mBitDepth;
+//  int32_t  mBitsDesiredFrame;
+  long long  mBitsEncodedTotal, mBitsDesiredTotal;
+  int32_t  mQuantI, mQuantP, mQuantB, mQuantMax, mQuantMin, mQuantPrev, mQuantOffset, mQPprev;
+  int32_t  mRCfap, mRCqap, mRCbap, mRCq;
+  double  mRCqa, mRCfa, mRCqa0;
+  double  mRCfa_short;
+  int32_t  mQuantIprev, mQuantPprev, mQuantBprev;
+  int32_t  mBitsEncoded;
+  int32_t  mBitDepth;
   BrcPictureFlags  mPictureFlags, mPictureFlagsPrev;
-  Ipp32s mRecode;
-  Ipp32s GetInitQP();
-  BRCStatus UpdateQuant(Ipp32s bEncoded, Ipp32s totalPicBits);
-  BRCStatus UpdateQuantHRD(Ipp32s bEncoded, BRCStatus sts, Ipp32s payloadBits = 0);
+  int32_t mRecode;
+  int32_t GetInitQP();
+  BRCStatus UpdateQuant(int32_t bEncoded, int32_t totalPicBits);
+  BRCStatus UpdateQuantHRD(int32_t bEncoded, BRCStatus sts, int32_t payloadBits = 0);
   Status InitHRD();
-  Ipp64u mMaxBitsPerPic, mMaxBitsPerPicNot0;
-  Ipp32s mSceneChange;
-  Ipp32s mBitsEncodedP, mBitsEncodedPrev;
-  Ipp32s mPoc, mSChPoc;
-  Ipp32u mMaxBitrate;
-  Ipp64s mBF, mBFsaved;
+  unsigned long long mMaxBitsPerPic, mMaxBitsPerPicNot0;
+  int32_t mSceneChange;
+  int32_t mBitsEncodedP, mBitsEncodedPrev;
+  int32_t mPoc, mSChPoc;
+  uint32_t mMaxBitrate;
+  long long mBF, mBFsaved;
 };
 
 } // namespace UMC

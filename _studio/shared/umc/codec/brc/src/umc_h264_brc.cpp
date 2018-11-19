@@ -77,7 +77,7 @@ H264BRC::~H264BRC()
 
 
 // Copy of mfx_h264_enc_common.cpp::LevelProfileLimitsNal
-const Ipp64u LevelProfileLimits[4][H264_LIMIT_TABLE_LEVEL_MAX+1][6] = {
+const unsigned long long LevelProfileLimits[4][H264_LIMIT_TABLE_LEVEL_MAX+1][6] = {
     {
         // BASE_PROFILE, MAIN_PROFILE, EXTENDED_PROFILE
                  // MaxMBPS  MaxFS    Max DPB    MaxBR      MaxCPB     MaxMvV
@@ -164,42 +164,42 @@ const Ipp64u LevelProfileLimits[4][H264_LIMIT_TABLE_LEVEL_MAX+1][6] = {
     },
 };
 
-static Ipp64f QP2Qstep (Ipp32s QP)
+static double QP2Qstep (int32_t QP)
 {
-  return (Ipp64f)(pow(2.0, (QP - 4.0) / 6.0));
+  return (double)(pow(2.0, (QP - 4.0) / 6.0));
 }
 
-static Ipp32s Qstep2QP (Ipp64f Qstep)
+static int32_t Qstep2QP (double Qstep)
 {
-  return (Ipp32s)(4.0 + 6.0 * log(Qstep) / log(2.0));
+  return (int32_t)(4.0 + 6.0 * log(Qstep) / log(2.0));
 }
 
 Status H264BRC::InitHRD()
 {
-  Ipp32s profile_ind, level_ind;
-  Ipp64u bufSizeBits = mParams.HRDBufferSizeBytes << 3;
-  Ipp64u maxBitrate = mParams.maxBitrate;
-  Ipp32s bitsPerFrame;
+  int32_t profile_ind, level_ind;
+  unsigned long long bufSizeBits = mParams.HRDBufferSizeBytes << 3;
+  unsigned long long maxBitrate = mParams.maxBitrate;
+  int32_t bitsPerFrame;
 
   if (mFramerate <= 0)
     return UMC_ERR_INVALID_PARAMS;
 
-  bitsPerFrame = (Ipp32s)(mBitrate / mFramerate);
+  bitsPerFrame = (int32_t)(mBitrate / mFramerate);
 
   if (BRC_CBR == mRCMode)
     maxBitrate = mParams.maxBitrate = mParams.targetBitrate;
-  if (maxBitrate < (Ipp64u)mParams.targetBitrate)
+  if (maxBitrate < (unsigned long long)mParams.targetBitrate)
     maxBitrate = mParams.maxBitrate = 0;
 
-  if (bufSizeBits > 0 && bufSizeBits < static_cast<Ipp64u>(bitsPerFrame << 1))
+  if (bufSizeBits > 0 && bufSizeBits < static_cast<unsigned long long>(bitsPerFrame << 1))
     bufSizeBits = (bitsPerFrame << 1);
 
   profile_ind = ConvertProfileToTable(mParams.profile);
   level_ind = ConvertLevelToTable(mParams.level);
 
-  if (mParams.targetBitrate > (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
-    mParams.targetBitrate = (Ipp32s)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR];
-  if (static_cast<Ipp64u>(mParams.maxBitrate) > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
+  if (mParams.targetBitrate > (int32_t)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
+    mParams.targetBitrate = (int32_t)LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR];
+  if (static_cast<unsigned long long>(mParams.maxBitrate) > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR])
     maxBitrate = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_BR];
   if (bufSizeBits > LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_CPB])
     bufSizeBits = LevelProfileLimits[H264_LIMIT_TABLE_HIGH_PROFILE][H264_LIMIT_TABLE_LEVEL_MAX][H264_LIMIT_TABLE_MAX_CPB];
@@ -262,8 +262,8 @@ Status H264BRC::InitHRD()
     }
   }
 
-  if (maxBitrate < (Ipp64u)mParams.targetBitrate) {
-    maxBitrate = (Ipp64u)mParams.targetBitrate;
+  if (maxBitrate < (unsigned long long)mParams.targetBitrate) {
+    maxBitrate = (unsigned long long)mParams.targetBitrate;
     for (; profile_ind <= H264_LIMIT_TABLE_HIGH_PROFILE; profile_ind++) {
       for (; level_ind <= H264_LIMIT_TABLE_LEVEL_MAX; level_ind++) {
         if (maxBitrate <= LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR])
@@ -279,8 +279,8 @@ Status H264BRC::InitHRD()
     }
     bufSizeBits = LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB];
   }
-  mParams.HRDBufferSizeBytes = (Ipp32s)(bufSizeBits >> 3);
-  mParams.maxBitrate = (Ipp32s)((maxBitrate >> 6) << 6);  // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
+  mParams.HRDBufferSizeBytes = (int32_t)(bufSizeBits >> 3);
+  mParams.maxBitrate = (int32_t)((maxBitrate >> 6) << 6);  // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
   mHRD.maxBitrate = mParams.maxBitrate;
   mHRD.inputBitsPerFrame = mHRD.maxInputBitsPerFrame = mHRD.maxBitrate / mFramerate;
 
@@ -300,10 +300,10 @@ Status H264BRC::InitHRD()
   return UMC_OK;
 }
 
-Ipp32s H264BRC::GetInitQP()
+int32_t H264BRC::GetInitQP()
 {
-  const Ipp64f x0 = 0, y0 = 1.19, x1 = 1.75, y1 = 1.75;
-  Ipp32s fs, fsLuma;
+  const double x0 = 0, y0 = 1.19, x1 = 1.75, y1 = 1.75;
+  int32_t fs, fsLuma;
 
   fsLuma = mParams.info.clip_info.width * mParams.info.clip_info.height;
   fs = fsLuma;
@@ -314,19 +314,19 @@ Ipp32s H264BRC::GetInitQP()
   else if (mParams.info.color_format == YUV444)
     fs += fsLuma * 2;
   fs = fs * mBitDepth / 8;
-  Ipp32s q = (Ipp32s)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mParams.info.framerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
+  int32_t q = (int32_t)(1. / 1.2 * pow(10.0, (log10(fs * 2. / 3. * mParams.info.framerate / mBitrate) - x0) * (y1 - y0) / (x1 - x0) + y0) + 0.5);
   BRC_CLIP(q, 1, mQuantMax);
   return q;
 }
 
 
-Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
+Status H264BRC::Init(BaseCodecParams *params, int32_t enableRecode)
 {
   Status status = UMC_OK;
-  Ipp32s level_ind;
-  Ipp32s maxMBPS;
-  Ipp32s numMBPerFrame;
-  Ipp64f bitsPerMB, tmpf;
+  int32_t level_ind;
+  int32_t maxMBPS;
+  int32_t numMBPerFrame;
+  double bitsPerMB, tmpf;
 
   status = CommonBRC::Init(params);
   if (status != UMC_OK)
@@ -348,11 +348,11 @@ Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
   if (mParams.HRDBufferSizeBytes != 0) {
     status = InitHRD();
     mMaxBitrate = mParams.maxBitrate >> 3;
-    mBF = (Ipp64s)mParams.HRDInitialDelayBytes * mParams.frameRateExtN;
+    mBF = (long long)mParams.HRDInitialDelayBytes * mParams.frameRateExtN;
     mBFsaved = mBF;
   } else { // no HRD
-    mHRD.bufSize = mHRD.maxFrameSize = IPP_MAX_32S;
-    mHRD.bufFullness = (Ipp64f)mHRD.bufSize/2; // just need buffer fullness not to trigger any hrd related actions
+    mHRD.bufSize = mHRD.maxFrameSize = MFX_MAX_32S;
+    mHRD.bufFullness = (double)mHRD.bufSize/2; // just need buffer fullness not to trigger any hrd related actions
     mHRD.minFrameSize = 0;
   }
 
@@ -371,15 +371,15 @@ Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
   else
     bitsPerMB = 192.; // minCR = 2
 
-  maxMBPS = (Ipp32s)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
+  maxMBPS = (int32_t)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
   numMBPerFrame = ((mParams.info.clip_info.width + 15) >> 4) * ((mParams.info.clip_info.height + 15) >> 4);
 
-  tmpf = (Ipp64f)numMBPerFrame;
+  tmpf = (double)numMBPerFrame;
   if (tmpf < maxMBPS / 172.)
     tmpf = maxMBPS / 172.;
 
-  mMaxBitsPerPic = (Ipp64u)(tmpf * bitsPerMB) * 8;
-  mMaxBitsPerPicNot0 = (Ipp64u)((Ipp64f)maxMBPS / mFramerate * bitsPerMB) * 8;
+  mMaxBitsPerPic = (unsigned long long)(tmpf * bitsPerMB) * 8;
+  mMaxBitsPerPicNot0 = (unsigned long long)((double)maxMBPS / mFramerate * bitsPerMB) * 8;
 
   mBitDepth = 8; // hard coded for now
   mQuantOffset = 6 * (mBitDepth - 8);
@@ -388,19 +388,19 @@ Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
 
   mBitsDesiredTotal = 0;
   mBitsEncodedTotal = 0;
-  mBitsDesiredFrame = (Ipp32s)((Ipp64f)mBitrate / mFramerate);
+  mBitsDesiredFrame = (int32_t)((double)mBitrate / mFramerate);
   if (mBitsDesiredFrame < 10)
     return UMC_ERR_INVALID_PARAMS;
 
   mQuantUpdated = 1;
 
-  Ipp32s q = GetInitQP();
+  int32_t q = GetInitQP();
 
   if (!mRecode) {
       if (q - 6 > 10)
-        mQuantMin = IPP_MAX(10, q - 24);
+        mQuantMin = MFX_MAX(10, q - 24);
       else
-        mQuantMin = IPP_MAX(q - 6, 2);
+        mQuantMin = MFX_MAX(q - 6, 2);
 
       if (q < mQuantMin)
         q = mQuantMin;
@@ -412,7 +412,7 @@ Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
   mRCbap = 100;
 
   mRCq = q;
-  mRCqa = mRCqa0 = 1. / (Ipp64f)mRCq;
+  mRCqa = mRCqa0 = 1. / (double)mRCq;
   mRCfa = mBitsDesiredFrame;
   mRCfa_short = mBitsDesiredFrame;
 
@@ -427,7 +427,7 @@ Status H264BRC::Init(BaseCodecParams *params, Ipp32s enableRecode)
   return status;
 }
 
-Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
+Status H264BRC::Reset(BaseCodecParams *params, int32_t enableRecode)
 {
   Status status = UMC_OK;
   VideoBrcParams *brcParams = DynamicCast<VideoBrcParams>(params);
@@ -436,16 +436,16 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
   if (NULL == brcParams)
     return UMC_ERR_NULL_PTR;
 
-  Ipp32s bufSize = mHRD.bufSize, maxBitrate = mParams.maxBitrate;
-  Ipp64f bufFullness = mHRD.bufFullness;
-  Ipp32s bufSize_new = (brcParams->HRDBufferSizeBytes >> 4) << 7;  // coded in bits as value*2^(4+scale), assume scale<=3
-  Ipp32s maxBitrate_new = (brcParams->maxBitrate >> 6) << 6;   // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
-  Ipp32s targetBitrate_new = brcParams->targetBitrate;
-  Ipp32s targetBitrate_new_r = (targetBitrate_new >> 6) << 6;
-  Ipp32s rcmode_new = brcParams->BRCMode, rcmode = mRCMode;
-  Ipp32s targetBitrate = mBitrate;
-  Ipp32s profile_ind, level_ind;
-  Ipp32s profile = mParams.profile, level = mParams.level;
+  int32_t bufSize = mHRD.bufSize, maxBitrate = mParams.maxBitrate;
+  double bufFullness = mHRD.bufFullness;
+  int32_t bufSize_new = (brcParams->HRDBufferSizeBytes >> 4) << 7;  // coded in bits as value*2^(4+scale), assume scale<=3
+  int32_t maxBitrate_new = (brcParams->maxBitrate >> 6) << 6;   // In H.264 HRD params bitrate is coded as value*2^(6+scale), we assume scale=0
+  int32_t targetBitrate_new = brcParams->targetBitrate;
+  int32_t targetBitrate_new_r = (targetBitrate_new >> 6) << 6;
+  int32_t rcmode_new = brcParams->BRCMode, rcmode = mRCMode;
+  int32_t targetBitrate = mBitrate;
+  int32_t profile_ind, level_ind;
+  int32_t profile = mParams.profile, level = mParams.level;
 
   mRecode = enableRecode ? 1 : 0;
 
@@ -481,26 +481,26 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
 
   if (maxBitrate_new > 0 && maxBitrate_new < maxBitrate) {
     bufFullness = mHRD.bufFullness * maxBitrate_new / maxBitrate;
-    if ((Ipp64u)mBF < (Ipp64u)IPP_MAX_64S / (Ipp64u)(maxBitrate_new >> 7))
-      mBF = (Ipp64s)((Ipp64u)mBF * (maxBitrate_new >> 6) / (mMaxBitrate >> 3));
+    if ((unsigned long long)mBF < (unsigned long long)MFX_MAX_64S / (unsigned long long)(maxBitrate_new >> 7))
+      mBF = (long long)((unsigned long long)mBF * (maxBitrate_new >> 6) / (mMaxBitrate >> 3));
     else
-      mBF = (Ipp64s)((Ipp64u)mBF / (mMaxBitrate >> 3) * (maxBitrate_new >> 6));
+      mBF = (long long)((unsigned long long)mBF / (mMaxBitrate >> 3) * (maxBitrate_new >> 6));
     maxBitrate = maxBitrate_new;
   } else if (maxBitrate_new > maxBitrate) {
     if (BRC_VBR == rcmode) {
-      Ipp32s isField = ((mPictureFlagsPrev & BRC_FRAME) == BRC_FRAME) ? 0 : 1;
-      Ipp64f bf_delta = (maxBitrate_new - maxBitrate) / mFramerate;
+      int32_t isField = ((mPictureFlagsPrev & BRC_FRAME) == BRC_FRAME) ? 0 : 1;
+      double bf_delta = (maxBitrate_new - maxBitrate) / mFramerate;
       if (isField)
         bf_delta *= 0.5;
       // lower estimate for the fullness with the bitrate updated at tai;
       // for VBR the fullness encoded in buffering period SEI can be below the real buffer fullness
       bufFullness += bf_delta;
-      if (bufFullness > (Ipp64f)bufSize - mHRD.roundError)
-        bufFullness = (Ipp64f)bufSize - mHRD.roundError;
+      if (bufFullness > (double)bufSize - mHRD.roundError)
+        bufFullness = (double)bufSize - mHRD.roundError;
 
-      mBF += (Ipp64s)((maxBitrate_new >> 3) - mMaxBitrate) * (Ipp64s)mParams.frameRateExtD >> isField;
-      if (mBF > (Ipp64s)(bufSize >> 3) * mParams.frameRateExtN)
-        mBF = (Ipp64s)(bufSize >> 3) * mParams.frameRateExtN;
+      mBF += (long long)((maxBitrate_new >> 3) - mMaxBitrate) * (long long)mParams.frameRateExtD >> isField;
+      if (mBF > (long long)(bufSize >> 3) * mParams.frameRateExtN)
+        mBF = (long long)(bufSize >> 3) * mParams.frameRateExtN;
 
       maxBitrate = maxBitrate_new;
     } else if (BRC_CBR == rcmode) {
@@ -510,9 +510,9 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
 
   if (BRC_AVBR != rcmode && bufSize_new > 0 && bufSize_new < bufSize) {
     bufSize = bufSize_new;
-    if (bufFullness > (Ipp64f)bufSize - mHRD.roundError) {
+    if (bufFullness > (double)bufSize - mHRD.roundError) {
       if (BRC_VBR == rcmode)
-        bufFullness = (Ipp64f)bufSize - mHRD.roundError;
+        bufFullness = (double)bufSize - mHRD.roundError;
       else
         return UMC_ERR_INVALID_PARAMS;
     }
@@ -539,9 +539,9 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
   if (profile_ind < 0 || level_ind < 0)
     return UMC_ERR_INVALID_PARAMS;
 
-  if (static_cast<Ipp64u>(bufSize) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB])
+  if (static_cast<unsigned long long>(bufSize) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_CPB])
     return UMC_ERR_INVALID_PARAMS;
-  if (static_cast<Ipp64u>(maxBitrate) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR])
+  if (static_cast<unsigned long long>(maxBitrate) > LevelProfileLimits[profile_ind][level_ind][H264_LIMIT_TABLE_MAX_BR])
     return UMC_ERR_INVALID_PARAMS;
 
   bool sizeNotChanged = (brcParams->info.clip_info.height == mParams.info.clip_info.height && brcParams->info.clip_info.width == mParams.info.clip_info.width);
@@ -550,7 +550,7 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
   tmpParams.BRCMode = rcmode;
   tmpParams.HRDBufferSizeBytes = bufSize >> 3;
   tmpParams.maxBitrate = maxBitrate;
-  tmpParams.HRDInitialDelayBytes = (Ipp32s)(bufFullness / 8);
+  tmpParams.HRDInitialDelayBytes = (int32_t)(bufFullness / 8);
   tmpParams.targetBitrate = targetBitrate;
   tmpParams.profile = profile;
   tmpParams.level = level;
@@ -558,7 +558,7 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
   if (BRC_AVBR == rcmode) // just in case
       tmpParams.HRDBufferSizeBytes = 0;
 
-  Ipp32s bitsDesiredFrameOld = mBitsDesiredFrame;
+  int32_t bitsDesiredFrameOld = mBitsDesiredFrame;
 
   status = CommonBRC::Init(&tmpParams);
   if (status != UMC_OK)
@@ -566,35 +566,35 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
 
   if (mParams.HRDBufferSizeBytes > 0) {
     mHRD.bufSize = bufSize;
-    mHRD.maxBitrate = (Ipp64f)maxBitrate;
+    mHRD.maxBitrate = (double)maxBitrate;
     mHRD.bufFullness = bufFullness;
     mHRD.inputBitsPerFrame = mHRD.maxInputBitsPerFrame = mHRD.maxBitrate / mFramerate;
-    mMaxBitrate = (Ipp32u)(maxBitrate >> 3);
+    mMaxBitrate = (uint32_t)(maxBitrate >> 3);
   } else {
-    mHRD.bufSize = mHRD.maxFrameSize = IPP_MAX_32S;
-    mHRD.bufFullness = (Ipp64f)mHRD.bufSize/2; // just need buffer fullness not to trigger any hrd related actions
+    mHRD.bufSize = mHRD.maxFrameSize = MFX_MAX_32S;
+    mHRD.bufFullness = (double)mHRD.bufSize/2; // just need buffer fullness not to trigger any hrd related actions
     mHRD.minFrameSize = 0;
   }
 
-  Ipp64f bitsPerMB;
-  Ipp32s maxMBPS;
+  double bitsPerMB;
+  int32_t maxMBPS;
   if (level_ind >= H264_LIMIT_TABLE_LEVEL_31 && level_ind <= H264_LIMIT_TABLE_LEVEL_42)
     bitsPerMB = 96.; // 384 / minCR; minCR = 4
   else
     bitsPerMB = 192.; // minCR = 2
-  maxMBPS = (Ipp32s)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
-  mMaxBitsPerPic = mMaxBitsPerPicNot0 = (Ipp64u)((Ipp64f)maxMBPS / mFramerate * bitsPerMB) * 8;
+  maxMBPS = (int32_t)LevelProfileLimits[0][level_ind][H264_LIMIT_TABLE_MAX_MBPS];
+  mMaxBitsPerPic = mMaxBitsPerPicNot0 = (unsigned long long)((double)maxMBPS / mFramerate * bitsPerMB) * 8;
 
   if (sizeNotChanged) {
-    mRCq = (Ipp32s)(1./mRCqa * pow(mRCfa/mBitsDesiredFrame, 0.32) + 0.5);
+    mRCq = (int32_t)(1./mRCqa * pow(mRCfa/mBitsDesiredFrame, 0.32) + 0.5);
     BRC_CLIP(mRCq, 1, mQuantMax);
   } else {
     mRCq = GetInitQP();
     if (!mRecode) {
         if (mRCq - 6 > 10)
-            mQuantMin = IPP_MAX(10, mRCq - 24);
+            mQuantMin = MFX_MAX(10, mRCq - 24);
         else
-            mQuantMin = IPP_MAX(mRCq - 6, 2);
+            mQuantMin = MFX_MAX(mRCq - 6, 2);
         if (mRCq < mQuantMin)
             mRCq = mQuantMin;
     }
@@ -604,9 +604,9 @@ Status H264BRC::Reset(BaseCodecParams *params, Ipp32s enableRecode)
   mRCqa = mRCqa0 = 1./mRCq;
   mRCfa = mBitsDesiredFrame;
   mRCfa_short = mBitsDesiredFrame;
-  Ipp64f ratio = (Ipp64f)mBitsDesiredFrame / bitsDesiredFrameOld;
-  mBitsEncodedTotal = (Ipp32s)(mBitsEncodedTotal * ratio + 0.5);
-  mBitsDesiredTotal = (Ipp32s)(mBitsDesiredTotal * ratio + 0.5);
+  double ratio = (double)mBitsDesiredFrame / bitsDesiredFrameOld;
+  mBitsEncodedTotal = (int32_t)(mBitsEncodedTotal * ratio + 0.5);
+  mBitsDesiredTotal = (int32_t)(mBitsDesiredTotal * ratio + 0.5);
 
   mSceneChange = 0;
   mBitsEncodedPrev = mBitsDesiredFrame; //???
@@ -625,12 +625,12 @@ Status H264BRC::Close()
 }
 
 
-Status H264BRC::SetParams(BaseCodecParams* params, Ipp32s)
+Status H264BRC::SetParams(BaseCodecParams* params, int32_t)
 {
   return Init(params);
 }
 
-Status H264BRC::SetPictureFlags(FrameType, Ipp32s picture_structure, Ipp32s, Ipp32s, Ipp32s)
+Status H264BRC::SetPictureFlags(FrameType, int32_t picture_structure, int32_t, int32_t, int32_t)
 {
   switch (picture_structure & PS_FRAME) {
   case (PS_TOP_FIELD):
@@ -646,12 +646,12 @@ Status H264BRC::SetPictureFlags(FrameType, Ipp32s picture_structure, Ipp32s, Ipp
   return UMC_OK;
 }
 
-Ipp32s H264BRC::GetQP(FrameType frameType, Ipp32s)
+int32_t H264BRC::GetQP(FrameType frameType, int32_t)
 {
   return ((frameType == I_PICTURE) ? mQuantI : (frameType == B_PICTURE) ? mQuantB : mQuantP) - mQuantOffset;
 }
 
-Status H264BRC::SetQP(Ipp32s qp, FrameType frameType, Ipp32s)
+Status H264BRC::SetQP(int32_t qp, FrameType frameType, int32_t)
 {
   if (B_PICTURE == frameType) {
     mQuantB = qp + mQuantOffset;
@@ -669,13 +669,13 @@ Status H264BRC::SetQP(Ipp32s qp, FrameType frameType, Ipp32s)
 
 #define BRC_RCFAP_SHORT 5
 
-BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32s payloadBits, Ipp32s repack, Ipp32s poc)
+BRCStatus H264BRC::PostPackFrame(FrameType picType, int32_t totalFrameBits, int32_t payloadBits, int32_t repack, int32_t poc)
 {
     BRCStatus Sts = BRC_OK;
-    Ipp32s bitsEncoded = totalFrameBits - payloadBits;
-    Ipp64f e2pe;
-    Ipp32s qp, qpprev;
-    Ipp64f qs, qstep;
+    int32_t bitsEncoded = totalFrameBits - payloadBits;
+    double e2pe;
+    int32_t qp, qpprev;
+    double qs, qstep;
     FrameType prevFrameType = mFrameType;
 
     if (mBitrate == 0)
@@ -699,7 +699,7 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
 
     mBitsEncoded = bitsEncoded;
 
-    Ipp32s isField = ((mPictureFlags & BRC_FRAME) == BRC_FRAME) ? 0 : 1;
+    int32_t isField = ((mPictureFlags & BRC_FRAME) == BRC_FRAME) ? 0 : 1;
 
     if (mSceneChange)
         if (mQuantUpdated == 1 && poc > mSChPoc + 1)
@@ -707,7 +707,7 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
 
     qpprev = qp = (picType == I_PICTURE) ? mQuantI : (picType == B_PICTURE) ? mQuantB : mQuantP;
 
-    Ipp64f buffullness = repack ? mHRD.prevBufFullness : mHRD.bufFullness;
+    double buffullness = repack ? mHRD.prevBufFullness : mHRD.bufFullness;
     if (mParams.HRDBufferSizeBytes > 0) {
         mHRD.inputBitsPerFrame = mHRD.maxInputBitsPerFrame;
         if (isField)
@@ -715,29 +715,29 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
         Sts = UpdateAndCheckHRD(totalFrameBits, repack);
     }
 
-    Ipp64f fa_short0 = mRCfa_short;
+    double fa_short0 = mRCfa_short;
     mRCfa_short += (bitsEncoded - mRCfa_short) / BRC_RCFAP_SHORT;
 
-    Ipp64f frameFactor = 1.0;
-    Ipp64f targetFrameSize = IPP_MAX((Ipp64f)mBitsDesiredFrame, mRCfa);
+    double frameFactor = 1.0;
+    double targetFrameSize = MFX_MAX((double)mBitsDesiredFrame, mRCfa);
     if (isField) targetFrameSize *= 0.5; 
     
     qstep = QP2Qstep(qp);
-    Ipp64f qstep_prev = QP2Qstep(mQPprev);
+    double qstep_prev = QP2Qstep(mQPprev);
     e2pe = bitsEncoded * sqrt(qstep) / (mBitsEncodedPrev * sqrt(qstep_prev));
     e2pe *= frameFactor;
-    Ipp64f maxFrameSize;
+    double maxFrameSize;
 
     maxFrameSize = 2.5/9. * buffullness + 5./9. * targetFrameSize;
     BRC_CLIP(maxFrameSize, targetFrameSize, BRC_SCENE_CHANGE_RATIO2 * targetFrameSize);
 
-    Ipp64f famax = 1./9. * buffullness + 8./9. * mRCfa  ;
+    double famax = 1./9. * buffullness + 8./9. * mRCfa  ;
 
     if (bitsEncoded >  maxFrameSize && qp < mQuantMax) {
 
-        Ipp64f targetSizeScaled = maxFrameSize * 0.8;
-        Ipp64f qstepnew = qstep * bitsEncoded / targetSizeScaled;
-        Ipp32s qpnew = Qstep2QP(qstepnew);
+        double targetSizeScaled = maxFrameSize * 0.8;
+        double qstepnew = qstep * bitsEncoded / targetSizeScaled;
+        int32_t qpnew = Qstep2QP(qstepnew);
         if (qpnew == qp)
           qpnew++;
         BRC_CLIP(qpnew, 1, mQuantMax);
@@ -769,8 +769,8 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
 
     if (mRCfa_short > famax && (!repack) && qp < mQuantMax) {
 
-        Ipp64f qstepnew = qstep * mRCfa_short / (famax * 0.8);
-        Ipp32s qpnew = Qstep2QP(qstepnew);
+        double qstepnew = qstep * mRCfa_short / (famax * 0.8);
+        int32_t qpnew = Qstep2QP(qstepnew);
         if (qpnew == qp)
             qpnew++;
         BRC_CLIP(qpnew, 1, mQuantMax);
@@ -790,9 +790,9 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
 
     mFrameType = picType;
 
-    Ipp64f fa = isField ? mRCfa*0.5 : mRCfa;
+    double fa = isField ? mRCfa*0.5 : mRCfa;
     bool oldScene = false;
-    if ((mSceneChange & 16) && (mPoc < mSChPoc) && (mBitsEncoded * (0.9 * BRC_SCENE_CHANGE_RATIO1) < (Ipp64f)mBitsEncodedP) && (Ipp64f)mBitsEncoded < 1.5*fa)
+    if ((mSceneChange & 16) && (mPoc < mSChPoc) && (mBitsEncoded * (0.9 * BRC_SCENE_CHANGE_RATIO1) < (double)mBitsEncodedP) && (double)mBitsEncoded < 1.5*fa)
         oldScene = true;
     if (Sts != BRC_OK && mRecode) {
         Sts = UpdateQuantHRD(totalFrameBits, Sts, payloadBits);
@@ -800,12 +800,12 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
         mFrameType = prevFrameType;
         mRCfa_short = fa_short0;
     } else {
-        Ipp64u maxBitsPerFrame = IPP_MIN(mMaxBitsPerPic >> isField, mHRD.bufSize);
+        unsigned long long maxBitsPerFrame = MFX_MIN(mMaxBitsPerPic >> isField, mHRD.bufSize);
 
-        if (static_cast<Ipp64u>(totalFrameBits) > maxBitsPerFrame) {
-            if (maxBitsPerFrame > static_cast<Ipp64u>(mHRD.minFrameSize)) { // otherwise we ignore minCR requirement
+        if (static_cast<unsigned long long>(totalFrameBits) > maxBitsPerFrame) {
+            if (maxBitsPerFrame > static_cast<unsigned long long>(mHRD.minFrameSize)) { // otherwise we ignore minCR requirement
                 qstep = QP2Qstep(qp);
-                qs = (Ipp64f)totalFrameBits/maxBitsPerFrame;
+                qs = (double)totalFrameBits/maxBitsPerFrame;
                 qstep *= qs;
                 qp = Qstep2QP(qstep);
                 if (qp == qpprev)
@@ -864,24 +864,24 @@ BRCStatus H264BRC::PostPackFrame(FrameType picType, Ipp32s totalFrameBits, Ipp32
         mHRD.underflowQuant = -1;
         mQuantUpdated = 1;
         mMaxBitsPerPic = mMaxBitsPerPicNot0;
-        mBF += (Ipp64s)mMaxBitrate * (Ipp64s)mParams.frameRateExtD >> isField;
-        mBF -= ((Ipp64s)totalFrameBits >> 3) * mParams.frameRateExtN;
+        mBF += (long long)mMaxBitrate * (long long)mParams.frameRateExtD >> isField;
+        mBF -= ((long long)totalFrameBits >> 3) * mParams.frameRateExtN;
 
-        if ((BRC_VBR == mRCMode) && (mBF > (Ipp64s)mParams.HRDBufferSizeBytes * mParams.frameRateExtN))
-            mBF = (Ipp64s)mParams.HRDBufferSizeBytes * mParams.frameRateExtN;
+        if ((BRC_VBR == mRCMode) && (mBF > (long long)mParams.HRDBufferSizeBytes * mParams.frameRateExtN))
+            mBF = (long long)mParams.HRDBufferSizeBytes * mParams.frameRateExtN;
     }
     return Sts;
 };
 
-BRCStatus H264BRC::UpdateQuant(Ipp32s bEncoded, Ipp32s totalPicBits)
+BRCStatus H264BRC::UpdateQuant(int32_t bEncoded, int32_t totalPicBits)
 {
   BRCStatus Sts = BRC_OK;
-  Ipp64f  bo, qs, dq;
-  Ipp32s  quant;
-  Ipp32s isfield = ((mPictureFlags & BRC_FRAME) != BRC_FRAME) ? 1 : 0;
-  Ipp32u bitsPerPic = (Ipp32u)mBitsDesiredFrame >> isfield;
-  Ipp64s totalBitsDeviation;
-//  Ipp32s fap = mRCfap, qap = mRCqap;
+  double  bo, qs, dq;
+  int32_t  quant;
+  int32_t isfield = ((mPictureFlags & BRC_FRAME) != BRC_FRAME) ? 1 : 0;
+  uint32_t bitsPerPic = (uint32_t)mBitsDesiredFrame >> isfield;
+  long long totalBitsDeviation;
+//  int32_t fap = mRCfap, qap = mRCqap;
 
   if (isfield)
     mRCfa *= 0.5;
@@ -897,11 +897,11 @@ BRCStatus H264BRC::UpdateQuant(Ipp32s bEncoded, Ipp32s totalPicBits)
   mBitsEncodedTotal += totalPicBits;
   mBitsDesiredTotal += bitsPerPic;
 
-  Ipp64s targetFullness = mParams.HRDInitialDelayBytes << 3;
-  Ipp64s minTargetFullness = IPP_MIN(mHRD.bufSize / 2, mBitrate * 2); // half bufsize or 2 sec
+  long long targetFullness = mParams.HRDInitialDelayBytes << 3;
+  long long minTargetFullness = MFX_MIN(mHRD.bufSize / 2, mBitrate * 2); // half bufsize or 2 sec
   if (targetFullness < minTargetFullness)
       targetFullness = minTargetFullness;
-  totalBitsDeviation = targetFullness - (Ipp64s)mHRD.bufFullness;
+  totalBitsDeviation = targetFullness - (long long)mHRD.bufFullness;
   if (totalBitsDeviation < mBitsEncodedTotal - mBitsDesiredTotal) 
       totalBitsDeviation = mBitsEncodedTotal - mBitsDesiredTotal;
 
@@ -914,15 +914,15 @@ BRCStatus H264BRC::UpdateQuant(Ipp32s bEncoded, Ipp32s totalPicBits)
   qs = pow(bitsPerPic / mRCfa, 2.0);
   dq = mRCqa * qs;
 
-  Ipp32s bap = mRCbap;
-  Ipp64f bfRatio = mHRD.bufFullness / mBitsDesiredFrame;
+  int32_t bap = mRCbap;
+  double bfRatio = mHRD.bufFullness / mBitsDesiredFrame;
 
   if (totalBitsDeviation > 0) {
-      bap = (Ipp32s)bfRatio*3;
-      bap = IPP_MAX(bap, 10);
+      bap = (int32_t)bfRatio*3;
+      bap = MFX_MAX(bap, 10);
       BRC_CLIP(bap, mRCbap/10, mRCbap);
   }
-  bo = (Ipp64f)totalBitsDeviation / bap / mBitsDesiredFrame; // ??? bitsPerPic ?
+  bo = (double)totalBitsDeviation / bap / mBitsDesiredFrame; // ??? bitsPerPic ?
 
   BRC_CLIP(bo, -1.0, 1.0);
 
@@ -945,15 +945,15 @@ BRCStatus H264BRC::UpdateQuant(Ipp32s bEncoded, Ipp32s totalPicBits)
 
   mRCq = quant;
 
-  Ipp64f qstep = QP2Qstep(quant);
-  Ipp64f fullnessThreshold = IPP_MIN(bitsPerPic * 12, mHRD.bufSize*3/16);
+  double qstep = QP2Qstep(quant);
+  double fullnessThreshold = MFX_MIN(bitsPerPic * 12, mHRD.bufSize*3/16);
   qs = 1.0;
   if (bEncoded > mHRD.bufFullness && mFrameType != I_PICTURE) {
-    qs = (Ipp64f)bEncoded / (mHRD.bufFullness);
+    qs = (double)bEncoded / (mHRD.bufFullness);
   }
 
-  if (mHRD.bufFullness < fullnessThreshold && ((Ipp32u)totalPicBits > bitsPerPic || quant < mQuantPrev))
-   qs *= sqrt((Ipp64f)fullnessThreshold * 1.3 / mHRD.bufFullness); // ??? is often useless (quant == quant_old)
+  if (mHRD.bufFullness < fullnessThreshold && ((uint32_t)totalPicBits > bitsPerPic || quant < mQuantPrev))
+   qs *= sqrt((double)fullnessThreshold * 1.3 / mHRD.bufFullness); // ??? is often useless (quant == quant_old)
 
   if (qs > 1.0) {
     qstep *= qs;
@@ -974,12 +974,12 @@ BRCStatus H264BRC::UpdateQuant(Ipp32s bEncoded, Ipp32s totalPicBits)
   return Sts;
 }
 
-BRCStatus H264BRC::UpdateQuantHRD(Ipp32s totalFrameBits, BRCStatus sts, Ipp32s payloadBits)
+BRCStatus H264BRC::UpdateQuantHRD(int32_t totalFrameBits, BRCStatus sts, int32_t payloadBits)
 {
-  Ipp32s quant, quant_prev;
-  Ipp64f qs;
-  Ipp32s wantedBits = (sts == BRC_ERR_BIG_FRAME ? mHRD.maxFrameSize : mHRD.minFrameSize);
-  Ipp32s bEncoded = totalFrameBits - payloadBits;
+  int32_t quant, quant_prev;
+  double qs;
+  int32_t wantedBits = (sts == BRC_ERR_BIG_FRAME ? mHRD.maxFrameSize : mHRD.minFrameSize);
+  int32_t bEncoded = totalFrameBits - payloadBits;
 
   wantedBits -= payloadBits;
   if (wantedBits <= 0) // possible only if BRC_ERR_BIG_FRAME
@@ -989,8 +989,8 @@ BRCStatus H264BRC::UpdateQuantHRD(Ipp32s totalFrameBits, BRCStatus sts, Ipp32s p
   if (sts & BRC_ERR_BIG_FRAME)
     mHRD.underflowQuant = quant;
 
-  qs = pow((Ipp64f)bEncoded/wantedBits, 2.0);
-  quant = (Ipp32s)(quant * qs + 0.5);
+  qs = pow((double)bEncoded/wantedBits, 2.0);
+  quant = (int32_t)(quant * qs + 0.5);
 
   if (quant == quant_prev)
     quant += (sts == BRC_ERR_BIG_FRAME ? 1 : -1);
@@ -1033,10 +1033,10 @@ BRCStatus H264BRC::UpdateQuantHRD(Ipp32s totalFrameBits, BRCStatus sts, Ipp32s p
   return sts;
 }
 
-Status H264BRC::GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp32s recode)
+Status H264BRC::GetInitialCPBRemovalDelay(uint32_t *initial_cpb_removal_delay, int32_t recode)
 {
-  Ipp32u cpb_rem_del_u32;
-  Ipp64u cpb_rem_del_u64, temp1_u64, temp2_u64;
+  uint32_t cpb_rem_del_u32;
+  unsigned long long cpb_rem_del_u64, temp1_u64, temp2_u64;
 
   if (BRC_VBR == mRCMode) {
     if (recode)
@@ -1045,19 +1045,19 @@ Status H264BRC::GetInitialCPBRemovalDelay(Ipp32u *initial_cpb_removal_delay, Ipp
       mBFsaved = mBF;
   }
 
-  temp1_u64 = (Ipp64u)mBF * 90000;
-  temp2_u64 = (Ipp64u)mMaxBitrate * mParams.frameRateExtN;
+  temp1_u64 = (unsigned long long)mBF * 90000;
+  temp2_u64 = (unsigned long long)mMaxBitrate * mParams.frameRateExtN;
   cpb_rem_del_u64 = temp1_u64 / temp2_u64;
-  cpb_rem_del_u32 = (Ipp32u)cpb_rem_del_u64;
+  cpb_rem_del_u32 = (uint32_t)cpb_rem_del_u64;
 
   if (BRC_VBR == mRCMode) {
     mBF = temp2_u64 * cpb_rem_del_u32 / 90000;
-    temp1_u64 = (Ipp64u)cpb_rem_del_u32 * mMaxBitrate;
-    Ipp32u dec_buf_ful = (Ipp32u)(temp1_u64 / (90000/8));
+    temp1_u64 = (unsigned long long)cpb_rem_del_u32 * mMaxBitrate;
+    uint32_t dec_buf_ful = (uint32_t)(temp1_u64 / (90000/8));
     if (recode)
-      mHRD.prevBufFullness = (Ipp64f)dec_buf_ful;
+      mHRD.prevBufFullness = (double)dec_buf_ful;
     else
-      mHRD.bufFullness = (Ipp64f)dec_buf_ful;
+      mHRD.bufFullness = (double)dec_buf_ful;
   }
 
   *initial_cpb_removal_delay = cpb_rem_del_u32;

@@ -51,11 +51,11 @@ CommonBRC::~CommonBRC()
 
 Status CommonBRC::InitHRD()
 {
-  Ipp32s bitsPerFrame;
+  int32_t bitsPerFrame;
   if (mFramerate <= 0)
     return UMC_ERR_INVALID_PARAMS;
 
-  bitsPerFrame = (Ipp32s)(mBitrate / mFramerate);
+  bitsPerFrame = (int32_t)(mBitrate / mFramerate);
 
   if (BRC_CBR == mRCMode)
     mParams.maxBitrate = mParams.targetBitrate;
@@ -63,7 +63,7 @@ Status CommonBRC::InitHRD()
     mParams.maxBitrate = 1200 * 240000; // max for H.264 level 5.1, profile <= EXTENDED
 
   if (mParams.HRDBufferSizeBytes <= 0)
-    mParams.HRDBufferSizeBytes = IPP_MAX_32S/2/8;
+    mParams.HRDBufferSizeBytes = MFX_MAX_32S/2/8;
   if (mParams.HRDBufferSizeBytes * 8 < (bitsPerFrame << 1))
     mParams.HRDBufferSizeBytes = (bitsPerFrame << 1) / 8;
 
@@ -85,7 +85,7 @@ Status CommonBRC::InitHRD()
   return UMC_OK;
 }
 
-Status CommonBRC::Init(BaseCodecParams *params, Ipp32s)
+Status CommonBRC::Init(BaseCodecParams *params, int32_t)
 {
   Status status = UMC_OK;
   VideoEncoderParams *videoParams = DynamicCast<VideoEncoderParams>(params);
@@ -98,10 +98,10 @@ Status CommonBRC::Init(BaseCodecParams *params, Ipp32s)
     if (NULL != brcParams) { // BRC parameters
       mParams = *brcParams;
 
-      mBitrate = (Ipp32u)mParams.targetBitrate;
+      mBitrate = (uint32_t)mParams.targetBitrate;
 
       if (mParams.frameRateExtN && mParams.frameRateExtD)
-          mFramerate = (Ipp64f) mParams.frameRateExtN /  mParams.frameRateExtD;
+          mFramerate = (double) mParams.frameRateExtN /  mParams.frameRateExtD;
       else
           mFramerate = mParams.info.framerate;
 
@@ -134,7 +134,7 @@ Status CommonBRC::Init(BaseCodecParams *params, Ipp32s)
 
   if (mBitrate <= 0 || mFramerate <= 0)
     return UMC_ERR_INVALID_PARAMS;
-  mBitsDesiredFrame = (Ipp32s)((Ipp64f)mBitrate / mFramerate);
+  mBitsDesiredFrame = (int32_t)((double)mBitrate / mFramerate);
   if (mBitsDesiredFrame <= 0)
     return UMC_ERR_INVALID_PARAMS;
   mIsInit = true;
@@ -142,7 +142,7 @@ Status CommonBRC::Init(BaseCodecParams *params, Ipp32s)
 }
 
 
-Status CommonBRC::GetParams(BaseCodecParams* params, Ipp32s)
+Status CommonBRC::GetParams(BaseCodecParams* params, int32_t)
 {
   VideoBrcParams *brcParams = DynamicCast<VideoBrcParams>(params);
   VideoEncoderParams *videoParams = DynamicCast<VideoEncoderParams>(params);
@@ -166,30 +166,30 @@ Status CommonBRC::Close()
 }
 
 
-Status CommonBRC::PreEncFrame(FrameType, Ipp32s, Ipp32s)
+Status CommonBRC::PreEncFrame(FrameType, int32_t, int32_t)
 {
   return UMC_OK;
 }
 
-Status CommonBRC::PostPackFrame(FrameType, Ipp32s, Ipp32s, Ipp32s, Ipp32s)
+Status CommonBRC::PostPackFrame(FrameType, int32_t, int32_t, int32_t, int32_t)
 {
   return UMC_OK;
 }
 
-Ipp32s CommonBRC::GetQP(FrameType, Ipp32s)
+int32_t CommonBRC::GetQP(FrameType, int32_t)
 {
   return UMC_OK;
 }
 
-Status CommonBRC::SetQP(Ipp32s, FrameType, Ipp32s)
+Status CommonBRC::SetQP(int32_t, FrameType, int32_t)
 {
   return UMC_OK;
 }
 
-BRCStatus CommonBRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp32s recode)
+BRCStatus CommonBRC::UpdateAndCheckHRD(int32_t frameBits, int32_t recode)
 {
   BRCStatus ret = BRC_OK;
-  Ipp64f bufFullness;
+  double bufFullness;
 
   if (!(recode & (BRC_EXT_FRAMESKIP - 1))) { // BRC_EXT_FRAMESKIP == 16
     mHRD.prevBufFullness = mHRD.bufFullness;
@@ -198,8 +198,8 @@ BRCStatus CommonBRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp32s recode)
     mHRD.bufFullness = mHRD.prevBufFullness;
   }
 
-  mHRD.maxFrameSize = (Ipp32s)(mHRD.bufFullness - mHRD.roundError);
-  mHRD.minFrameSize = (mRCMode == BRC_VBR ? 0 : (Ipp32s)(mHRD.bufFullness + 1 + mHRD.roundError + mHRD.inputBitsPerFrame - mHRD.bufSize));
+  mHRD.maxFrameSize = (int32_t)(mHRD.bufFullness - mHRD.roundError);
+  mHRD.minFrameSize = (mRCMode == BRC_VBR ? 0 : (int32_t)(mHRD.bufFullness + 1 + mHRD.roundError + mHRD.inputBitsPerFrame - mHRD.bufSize));
   if (mHRD.minFrameSize < 0)
     mHRD.minFrameSize = 0;
 
@@ -208,12 +208,12 @@ BRCStatus CommonBRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp32s recode)
   if (bufFullness < 1 + mHRD.roundError) {
     bufFullness = mHRD.inputBitsPerFrame;
     ret = BRC_ERR_BIG_FRAME;
-    if (bufFullness > (Ipp64f)mHRD.bufSize) // possible in VBR mode if at all (???)
-      bufFullness = (Ipp64f)mHRD.bufSize;
+    if (bufFullness > (double)mHRD.bufSize) // possible in VBR mode if at all (???)
+      bufFullness = (double)mHRD.bufSize;
   } else {
     bufFullness += mHRD.inputBitsPerFrame;
-    if (bufFullness > (Ipp64f)mHRD.bufSize - mHRD.roundError) {
-      bufFullness = (Ipp64f)mHRD.bufSize - mHRD.roundError;
+    if (bufFullness > (double)mHRD.bufSize - mHRD.roundError) {
+      bufFullness = (double)mHRD.bufSize - mHRD.roundError;
       if (mRCMode != BRC_VBR)
         ret = BRC_ERR_SMALL_FRAME;
     }
@@ -229,19 +229,19 @@ BRCStatus CommonBRC::UpdateAndCheckHRD(Ipp32s frameBits, Ipp32s recode)
 }
 
 /*
-Status CommonBRC::ScaleRemovalDelay(Ipp64f removalDelayScale)
+Status CommonBRC::ScaleRemovalDelay(double removalDelayScale)
 {
   if (removalDelayScale <= 0)
     return UMC_ERR_INVALID_PARAMS;
 
-//  mHRD.maxInputBitsPerFrame = (Ipp32u)((mHRD.maxBitrate / mFramerate) * removalDelayScale); // == mHRD.inputBitsPerFrame for CBR
+//  mHRD.maxInputBitsPerFrame = (uint32_t)((mHRD.maxBitrate / mFramerate) * removalDelayScale); // == mHRD.inputBitsPerFrame for CBR
   mHRD.inputBitsPerFrame = mHRD.maxInputBitsPerFrame * removalDelayScale; //???
 
   return UMC_OK;
 }
 */
 
-Status CommonBRC::GetHRDBufferFullness(Ipp64f *hrdBufFullness, Ipp32s recode, Ipp32s)
+Status CommonBRC::GetHRDBufferFullness(double *hrdBufFullness, int32_t recode, int32_t)
 {
   *hrdBufFullness = (recode & (BRC_EXT_FRAMESKIP - 1)) ? mHRD.prevBufFullness : mHRD.bufFullness;
 
@@ -267,7 +267,7 @@ void CommonBRC::SetGOP()
   N_B_field = N_B_frame * 2;
 }
 
-Status CommonBRC::GetInitialCPBRemovalDelay(Ipp32u*, Ipp32s)
+Status CommonBRC::GetInitialCPBRemovalDelay(uint32_t*, int32_t)
 {
   return UMC_OK;
 }
