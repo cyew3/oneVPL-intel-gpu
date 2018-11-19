@@ -23,7 +23,7 @@ namespace vp9d_get_payload
     { return "forBehaviorTest/foreman_cif.ivf"; }
 
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_AYUV>)
-    { return "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9"; }
+    { return "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_150_inter_stress_1.5.vp9"; }
 
     /* 10 bit */
     char const* query_stream(unsigned int, std::integral_constant<unsigned, MFX_FOURCC_P010>)

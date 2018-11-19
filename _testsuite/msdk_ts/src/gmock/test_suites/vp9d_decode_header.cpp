@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2017 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -94,7 +94,7 @@ struct streamDesc
 
 const streamDesc streams[] = {
     { 352, 288, "forBehaviorTest/foreman_cif.ivf"                                                       },
-    { 432, 240, "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_250_extra_stress_2.2.0.vp9" },
+    { 432, 240, "conformance/vp9/SBE/8bit_444/Stress_VP9_FC2p1ss444_432x240_150_inter_stress_1.5.vp9" },
     { 432, 240, "conformance/vp9/SBE/10bit/Stress_VP9_FC2p2b10_432x240_050_intra_stress_1.5.vp9"        },
     { 432, 240, "conformance/vp9/SBE/10bit_444/Syntax_VP9_FC2p3ss444_432x240_101_inter_basic_2.0.0.vp9" },
     { 160, 90,  "conformance/vp9/google/vp92-2-20-12bit-yuv420.ivf"                                     },
