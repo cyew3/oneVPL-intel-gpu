@@ -32,7 +32,6 @@
     <Link>
       <ProgramDatabaseFile>$(MfxProgramDatabaseFile)</ProgramDatabaseFile>
       <ImportLibrary>$(MfxImportLibrary)$(MfxTargetName).lib</ImportLibrary>
-      <ShowProgress>LinkVerbose</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
