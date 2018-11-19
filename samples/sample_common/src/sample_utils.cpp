@@ -890,7 +890,9 @@ mfxStatus CSmplYUVWriter::WriteNextFrame(mfxFrameSurface1 *pSurface)
     break;
 
     case MFX_FOURCC_Y410:
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     case MFX_FOURCC_Y216:
+#endif
     {
         mfxU8* pBuffer = pInfo.FourCC == MFX_FOURCC_Y410 ? (mfxU8*)pData.Y410 : (mfxU8*)pData.Y;
         for (i = 0; i < pInfo.CropH; i++)
