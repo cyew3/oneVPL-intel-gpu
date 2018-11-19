@@ -140,7 +140,7 @@ mfxStatus VideoDECODEMJPEG::Init(mfxVideoParam *par)
     if (MFX_PLATFORM_SOFTWARE != m_platform)
         m_vPar.mfx.NumThread = 1;
 
-    Ipp32s useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
+    int32_t useInternal = (MFX_PLATFORM_SOFTWARE == m_platform) ?
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) :
         (m_vPar.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
@@ -506,7 +506,7 @@ mfxStatus VideoDECODEMJPEG::QueryIOSurf(VideoCORE *core, mfxVideoParam *par, mfx
 
     MFX_SAFE_CALL(QueryIOSurfInternal(core, &params, request));
 
-    Ipp32s isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
+    int32_t isInternalManaging = (MFX_PLATFORM_SOFTWARE == platform) ?
         (params.IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY) : (params.IOPattern & MFX_IOPATTERN_OUT_SYSTEM_MEMORY);
 
     if (isInternalManaging)
@@ -780,7 +780,7 @@ mfxStatus VideoDECODEMJPEG::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1 
 
         if (!m_isHeaderParsed && bs)
         {
-            umcRes = pMJPEGVideoDecoder->_GetFrameInfo((Ipp8u*)src.GetDataPointer(), src.GetDataSize());
+            umcRes = pMJPEGVideoDecoder->_GetFrameInfo((uint8_t*)src.GetDataPointer(), src.GetDataSize());
             if (umcRes != UMC::UMC_OK)
             {
                 if(umcRes != UMC::UMC_ERR_NOT_ENOUGH_DATA)
@@ -983,7 +983,7 @@ bool VideoDECODEMJPEG::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * 
             if (opaqueNew->In.NumSurface != opaqueOld->In.NumSurface)
                 return false;
 
-            for (Ipp32u i = 0; i < opaqueNew->In.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
             {
                 if (opaqueNew->In.Surfaces[i] != opaqueOld->In.Surfaces[i])
                     return false;
@@ -995,7 +995,7 @@ bool VideoDECODEMJPEG::IsSameVideoParam(mfxVideoParam * newPar, mfxVideoParam * 
             if (opaqueNew->Out.NumSurface != opaqueOld->Out.NumSurface)
                 return false;
 
-            for (Ipp32u i = 0; i < opaqueNew->Out.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
             {
                 if (opaqueNew->Out.Surfaces[i] != opaqueOld->Out.Surfaces[i])
                     return false;
@@ -2579,7 +2579,7 @@ mfxStatus VideoDECODEMJPEGBase_SW::FillEntryPoint(MFX_ENTRY_POINT *pEntryPoint, 
     pLastTask->surface_work = surface_work;
     pLastTask->surface_out = surface_out;
 
-    pEntryPoint->requiredNumThreads = IPP_MIN(pLastTask->m_pMJPEGVideoDecoder->NumDecodersAllocated(),
+    pEntryPoint->requiredNumThreads = MFX_MIN(pLastTask->m_pMJPEGVideoDecoder->NumDecodersAllocated(),
                                                 pLastTask->NumPiecesCollected());
     pEntryPoint->pParam = pLastTask;
 
