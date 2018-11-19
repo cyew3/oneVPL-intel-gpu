@@ -31,7 +31,7 @@
 
 #include "mfx_common_int.h"
 
-#include "va_cp_private.h"
+#include "mfx_cenc.h"
 
 using namespace UMC;
 

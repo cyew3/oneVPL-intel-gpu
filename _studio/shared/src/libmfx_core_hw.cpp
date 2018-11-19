@@ -71,7 +71,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
         }
 #endif
 
-#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_WIDEVINE(param->Protected))
         {
             profile |= VA_PROFILE_WIDEVINE;
@@ -174,7 +174,7 @@ mfxU32 ChooseProfile(mfxVideoParam const* param, eMFXHWType)
 #endif
         }
 
-#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (IS_PROTECTION_WIDEVINE(param->Protected))
         {
             profile |= VA_PROFILE_WIDEVINE;

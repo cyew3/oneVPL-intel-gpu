@@ -25,7 +25,7 @@
 #include "umc_h264_task_supplier.h"
 
 #ifdef MFX_ENABLE_CPLIB
-#include "va_cp_private.h"
+#include "mfx_cenc.h"
 #elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "huc_based_drm_common.h"
 #endif

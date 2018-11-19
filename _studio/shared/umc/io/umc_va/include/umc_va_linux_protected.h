@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2018 Intel Corporation
+// Copyright (c) 2018-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -45,31 +45,33 @@ public:
 
     virtual mfxU16 GetProtected() const;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     void SetProtected(mfxU16 p);
-
     Status SetModes(mfxVideoParam * params);
-
     int32_t GetEncryptionMode() const;
-
     int32_t GetCounterMode() const;
+#endif
 
     void SetBitstream(mfxBitstream *bs);
-
     mfxBitstream * GetBitstream();
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     mfxU32 GetBSCurrentEncrypt() const;
     void MoveBSCurrentEncrypt(mfxI32 count);
     void ResetBSCurrentEncrypt();
+#endif
 
 protected:
     mfxU16 m_protected;
     mfxBitstream m_bs;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     int32_t m_counterMode;
     int32_t m_encryptionType;
 
     uint32_t m_encryptBegin;
     uint32_t m_encryptCount;
+#endif
 };
 
 }

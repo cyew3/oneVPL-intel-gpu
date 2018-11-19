@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -148,7 +148,7 @@ enum VideoAccelerationProfile
     VA_PROFILE_MVC_STEREO       = 0x06000,
     VA_PROFILE_MVC_STEREO_PROG  = 0x07000,
 #endif
-#if !defined(MFX_ENABLE_CPLIB) && !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     VA_PROFILE_WIDEVINE         = 0x09000,
 #endif
     VA_PROFILE_422              = 0x0a000,
@@ -284,9 +284,7 @@ public:
         m_Profile(UNKNOWN),
         m_Platform(VA_UNKNOWN_PLATFORM),
         m_HWPlatform(MFX_HW_UNKNOWN),
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        m_protectedVA(0),
-#endif
+        m_protectedVA(nullptr),
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         m_videoProcessingVA(0),
 #endif
@@ -334,9 +332,8 @@ public:
     /* TODO: is used on Linux only? On Linux there are isues with signed/unsigned return value. */
     virtual int32_t GetSurfaceID(int32_t idx) const { return idx; }
 
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
     virtual ProtectedVA * GetProtectedVA() {return m_protectedVA;}
-#endif
+
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     virtual VideoProcessingVA * GetVideoProcessingVA() {return m_videoProcessingVA;}
 #endif
@@ -429,9 +426,8 @@ public:
 
 protected:
 
-#if defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE)
     ProtectedVA       *  m_protectedVA;
-#endif
+
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     VideoProcessingVA *  m_videoProcessingVA;
 #endif

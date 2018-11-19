@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -104,7 +104,6 @@ EXTBUF(mfxExtMVCSeqDesc             , MFX_EXTBUFF_MVC_SEQ_DESC              )
 //EXTBUF(mfxExtMVCTargetViews         , MFX_EXTBUFF_MVC_TARGET_VIEWS          )
 //EXTBUF(mfxExtJPEGQuantTables        , MFX_EXTBUFF_JPEG_QT                   )
 //EXTBUF(mfxExtJPEGHuffmanTables      , MFX_EXTBUFF_JPEG_HUFFMAN              )
-//EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               )
 EXTBUF(mfxExtMBDisableSkipMap       , MFX_EXTBUFF_MB_DISABLE_SKIP_MAP)
 
 //Screen capture
@@ -135,6 +134,21 @@ EXTBUF(mfxExtEncodedUnitsInfo       , MFX_EXTBUFF_ENCODED_UNITS_INFO        )
 #if (MFX_VERSION >= MFX_VERSION_NEXT)
 EXTBUF(mfxExtAVCScalingMatrix       , MFX_EXTBUFF_AVC_SCALING_MATRIX        )
 #endif
+
+#if defined(__MFXPCP_H__)
+
+#if !defined(OPEN_SOURCE)
+EXTBUF(mfxExtPAVPOption             , MFX_EXTBUFF_PAVP_OPTION               )
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+EXTBUF(mfxExtDecryptedParam         , MFX_EXTBUFF_DECRYPTED_PARAM           )
+#endif
+#endif
+
+#if (MFX_VERSION >= 1030)
+EXTBUF(mfxExtCencParam              , MFX_EXTBUFF_CENC_PARAM                )
+#endif
+
+#endif // defined(__MFXPCP_H__)
 
 #if defined(__MFXSCD_H__)
 EXTBUF(mfxExtSCD, MFX_EXTBUFF_SCD)

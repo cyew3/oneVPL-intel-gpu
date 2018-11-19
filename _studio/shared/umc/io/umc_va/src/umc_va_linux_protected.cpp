@@ -46,10 +46,12 @@ static mfxExtBuffer* GetExtBuffer(mfxExtBuffer** extBuf, mfxU32 numExtBuf, mfxU3
 /////////////////////////////////////////////////
 ProtectedVA::ProtectedVA(mfxU16 p)
     : m_protected(p)
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     , m_counterMode(0)
     , m_encryptionType(0)
     , m_encryptBegin(0)
     , m_encryptCount(0)
+#endif
 {
     memset(&m_bs, 0, sizeof(mfxBitstream));
 }
@@ -59,6 +61,7 @@ mfxU16 ProtectedVA::GetProtected() const
     return m_protected;
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 void ProtectedVA::SetProtected(mfxU16 p)
 {
     m_protected = p;
@@ -66,7 +69,6 @@ void ProtectedVA::SetProtected(mfxU16 p)
 
 Status ProtectedVA::SetModes(mfxVideoParam * params)
 {
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_PAVP_ANY(m_protected))
     {
         mfxExtPAVPOption const * extPAVP = (mfxExtPAVPOption*)GetExtBuffer(params->ExtParam, params->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -78,14 +80,17 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
 
         m_counterMode = extPAVP->CounterType;
     }
+    else if (IS_PROTECTION_CENC(m_protected) || IS_PROTECTION_WIDEVINE(m_protected))
+    {
+        m_encryptionType = 0;
+        m_counterMode = 0;
+    }
     else
     {
         m_encryptionType = MFX_PAVP_AES128_CTR;
         m_counterMode = MFX_PAVP_CTR_TYPE_C;
     }
-#else
-    (void)params;
-#endif
+
     return UMC_OK;
 }
 
@@ -98,22 +103,22 @@ int32_t ProtectedVA::GetCounterMode() const
 {
     return m_counterMode;
 }
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 void ProtectedVA::SetBitstream(mfxBitstream *bs)
 {
     if (!bs)
         return;
 
-#ifdef MFX_ENABLE_CPLIB
     if (IS_PROTECTION_CENC(m_protected))
     {
         m_bs = *bs;
         return;
     }
-#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_WIDEVINE(m_protected))
         return;
-#endif
 
     if (!bs->EncryptedData)
         return;
@@ -132,6 +137,7 @@ void ProtectedVA::SetBitstream(mfxBitstream *bs)
         m_encryptCount++;
         temp = temp->Next;
     }
+#endif
 }
 
 mfxBitstream * ProtectedVA::GetBitstream()
@@ -139,6 +145,7 @@ mfxBitstream * ProtectedVA::GetBitstream()
     return &m_bs;
 }
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 mfxU32 ProtectedVA::GetBSCurrentEncrypt() const
 {
     return m_encryptBegin;
@@ -158,5 +165,6 @@ void ProtectedVA::MoveBSCurrentEncrypt(mfxI32 count)
         ResetBSCurrentEncrypt();
     }
 }
+#endif // #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
 
 #endif // UMC_VA_LINUX

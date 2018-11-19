@@ -31,7 +31,7 @@
 #include "mfxstructures.h"
 
 #if defined(MFX_ENABLE_CPLIB)
-#include "va_cp_private.h"
+#include "mfx_cenc.h"
 #elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
 #include "huc_based_drm_common.h"
 #endif
@@ -370,12 +370,10 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
         m_allocator         = pParams->m_allocator;
         m_FrameState        = lvaBeforeBegin;
 
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE) || defined (MFX_ENABLE_CPLIB)
         if (IS_PROTECTION_ANY(pParams->m_protectedVA))
         {
             m_protectedVA = new ProtectedVA(pParams->m_protectedVA);
         }
-#endif
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
         if (pParams->m_needVideoProcessingVA)
@@ -567,6 +565,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
             attribsNumber++;
         }
 #elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
         if (UMC_OK == umcRes && m_protectedVA && IS_PROTECTION_WIDEVINE(m_protectedVA->GetProtected()))
         {
             va_attributes[attribsNumber].type = VAConfigAttribEncryption;
@@ -585,6 +584,7 @@ Status LinuxVideoAccelerator::Init(VideoAcceleratorParams* pInfo)
 
             attribsNumber++;
         }
+#endif
 #endif
 
         if (UMC_OK == umcRes)
@@ -671,10 +671,8 @@ Status LinuxVideoAccelerator::Close(void)
         m_dpy = NULL;
     }
 
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE) || defined (MFX_ENABLE_CPLIB)
     delete m_protectedVA;
-    m_protectedVA = 0;
-#endif
+    m_protectedVA = nullptr;
 
 #ifndef MFX_DEC_VIDEO_POSTPROCESS_DISABLE
     delete m_videoProcessingVA;

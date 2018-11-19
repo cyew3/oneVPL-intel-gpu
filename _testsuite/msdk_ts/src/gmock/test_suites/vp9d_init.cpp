@@ -4,7 +4,7 @@ INTEL CORPORATION PROPRIETARY INFORMATION
 This software is supplied under the terms of a license agreement or nondisclosure
 agreement with Intel Corporation and may not be copied or disclosed except in
 accordance with the terms of that agreement
-Copyright(c) 2016-2018 Intel Corporation. All Rights Reserved.
+Copyright(c) 2016-2019 Intel Corporation. All Rights Reserved.
 
 \* ****************************************************************************** */
 
@@ -120,7 +120,6 @@ const TestSuite::tc_struct TestSuite::test_case[] =
     {/*24*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_UYVY} }},
     {/*25*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{FourCC, MFX_FOURCC_RGB4} }},
     {/*26*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_GPUCP_AES128_CTR} }, },
-    {/*27*/ MFX_ERR_INVALID_VIDEO_PARAM, 0, {{&tsStruct::mfxVideoParam.Protected, MFX_PROTECTION_WIDEVINE_GOOGLE_DASH} }, },
 };
 const unsigned int TestSuite::n_cases = sizeof(TestSuite::test_case)/sizeof(TestSuite::tc_struct);
 

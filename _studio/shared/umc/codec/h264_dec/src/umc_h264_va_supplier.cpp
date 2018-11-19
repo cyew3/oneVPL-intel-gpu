@@ -135,15 +135,14 @@ Status VATaskSupplier::Init(VideoDecoderParams *pInit)
     H264VideoDecoderParams *initH264 = DynamicCast<H264VideoDecoderParams> (pInit);
     m_DPBSizeEx = m_iThreadNum + (initH264 ? initH264->m_bufferedFrames : 0);
 
-#if defined (UMC_VA) && defined(ANDROID) && (defined(MFX_ENABLE_CPLIB) || !defined(MFX_PROTECTED_FEATURE_DISABLE))
+#if defined (UMC_VA)
     if (m_va &&
         m_va->GetProtectedVA() &&
-#ifdef MFX_ENABLE_CPLIB
-        IS_PROTECTION_CENC(m_va->GetProtectedVA()->GetProtected())
-#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
-        IS_PROTECTION_WIDEVINE(m_va->GetProtectedVA()->GetProtected())
+        (IS_PROTECTION_CENC(m_va->GetProtectedVA()->GetProtected())
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
+        || IS_PROTECTION_WIDEVINE(m_va->GetProtectedVA()->GetProtected())
 #endif
-    )
+        ))
     {
         m_DPBSizeEx += 2;
     }

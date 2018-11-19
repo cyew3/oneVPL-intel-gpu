@@ -130,10 +130,10 @@ bool CheckGUID(VideoCORE * core, eMFXHWType type, mfxVideoParam const* param)
 
 #if defined (MFX_VA_WIN)
 
-#ifdef MFX_ENABLE_CPLIB
     if (IS_PROTECTION_CENC(vp.Protected))
         return false;
-#elif !defined(MFX_PROTECTED_FEATURE_DISABLE)
+
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (IS_PROTECTION_WIDEVINE(vp.Protected))
         return core->IsGuidSupported(DXVA_Intel_Decode_Elementary_Stream_HEVC, &vp) == MFX_ERR_NONE;
 #endif
@@ -1010,7 +1010,6 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
         if (stsExt < MFX_ERR_NONE)
             sts = MFX_ERR_UNSUPPORTED;
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
         if (in->Protected)
         {
             out->Protected = in->Protected;
@@ -1027,16 +1026,17 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
                 out->Protected = 0;
             }
 
-            if (in->Protected == MFX_PROTECTION_GPUCP_AES128_CTR && core->GetVAType() != MFX_HW_D3D11)
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-                out->Protected = 0;
-            }
-
             if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
             {
                 out->IOPattern = 0;
                 sts = MFX_ERR_UNSUPPORTED;
+            }
+
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
+            if (in->Protected == MFX_PROTECTION_GPUCP_AES128_CTR && core->GetVAType() != MFX_HW_D3D11)
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+                out->Protected = 0;
             }
 
             mfxExtPAVPOption * pavpOptIn = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -1101,25 +1101,14 @@ mfxStatus Query_H265(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *out, eMF
                     sts = MFX_ERR_UNSUPPORTED;
                 }
             }
+#endif
         }
+#ifndef MFX_PROTECTED_FEATURE_DISABLE
         else
         {
             mfxExtPAVPOption * pavpOptIn = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
             if (pavpOptIn)
                 sts = MFX_ERR_UNSUPPORTED;
-        }
-#elif defined (MFX_ENABLE_CPLIB)
-        if (in->Protected)
-        {
-            out->Protected = in->Protected;
-
-            if (type == MFX_HW_UNKNOWN ||
-                !IS_PROTECTION_CENC(in->Protected) ||
-                !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-                out->Protected = 0;
-            }
         }
 #endif
 
@@ -1205,21 +1194,11 @@ bool CheckVideoParam_H265(mfxVideoParam *in, eMFXHWType type)
     if (!in)
         return false;
 
-#ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (in->Protected)
     {
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
             return false;
     }
-#elif defined (MFX_ENABLE_CPLIB)
-    if (in->Protected)
-    {
-        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_CENC(in->Protected))
-            return false;
-    }
-#else
-    (void)type;
-#endif
 
     if (MFX_CODEC_HEVC != in->mfx.CodecId)
         return false;

@@ -1455,6 +1455,51 @@ STRUCT(mfxExtEncodedUnitsInfo,
     FIELD_T(mfxU16, NumUnitsEncoded)
 )
 
+#if defined(__MFXPCP_H__)
+
+#if !defined(OPEN_SOURCE)
+STRUCT(mfxAES128CipherCounter,
+    FIELD_T(mfxU64, IV)
+    FIELD_T(mfxU64, Count)
+)
+
+STRUCT(mfxEncryptedData,
+    FIELD_T(mfxEncryptedData*     , Next)
+    FIELD_T(mfxHDL                , reserved1)
+    FIELD_T(mfxU8*                , Data)
+    FIELD_T(mfxU32                , DataOffset)
+    FIELD_T(mfxU32                , DataLength)
+    FIELD_T(mfxU32                , MaxLength)
+    FIELD_S(mfxAES128CipherCounter, CipherCounter)
+    FIELD_T(mfxU32                , AppId)
+)
+
+STRUCT(mfxExtPAVPOption,
+    FIELD_S(mfxExtBuffer          , Header)
+    FIELD_S(mfxAES128CipherCounter, CipherCounter)
+    FIELD_T(mfxU32                , CounterIncrement)
+    FIELD_T(mfxU16                , EncryptionType)
+    FIELD_T(mfxU16                , CounterType)
+)
+
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
+STRUCT(mfxExtDecryptedParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU8*      , Data)
+    FIELD_T(mfxU32      , DataLength)
+)
+#endif
+#endif
+
+#if (MFX_VERSION >= 1030)
+STRUCT(mfxExtCencParam,
+    FIELD_S(mfxExtBuffer, Header)
+    FIELD_T(mfxU32      , StatusReportIndex)
+)
+#endif
+
+#endif // defined(__MFXPCP_H__)
+
 #if defined(__MFXSCD_H__)
 STRUCT(mfxExtSCD,
     FIELD_S(mfxExtBuffer, Header)

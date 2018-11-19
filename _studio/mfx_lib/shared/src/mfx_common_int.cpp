@@ -367,10 +367,10 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
 
     if (in->Protected)
     {
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         mfxExtPAVPOption * pavpOpt = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
         if (pavpOpt && pavpOpt->Header.BufferSz != sizeof(mfxExtPAVPOption))
             return MFX_ERR_INVALID_VIDEO_PARAM;
@@ -378,11 +378,6 @@ mfxStatus CheckVideoParamCommon(mfxVideoParam *in, eMFXHWType type)
             return MFX_ERR_INVALID_VIDEO_PARAM;
         if (!IS_PROTECTION_PAVP_ANY(in->Protected) && pavpOpt)
             return MFX_ERR_INVALID_VIDEO_PARAM;
-#elif defined (MFX_ENABLE_CPLIB)
-        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_CENC(in->Protected))
-            return MFX_ERR_INVALID_VIDEO_PARAM;
-#else
-        return MFX_ERR_INVALID_VIDEO_PARAM;
 #endif
     }
 
@@ -457,9 +452,9 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
     if (!IsExternalFrameAllocator && (in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
         return MFX_ERR_INVALID_VIDEO_PARAM;
 
+#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (in->Protected)
     {
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
         if (in->mfx.CodecId == MFX_CODEC_AVC || in->mfx.CodecId == MFX_CODEC_JPEG)
         {
             sts = CheckDecodersExtendedBuffers(in);
@@ -477,10 +472,8 @@ mfxStatus CheckVideoParamDecoders(mfxVideoParam *in, bool IsExternalFrameAllocat
             return MFX_ERR_INVALID_VIDEO_PARAM;
 
         return MFX_ERR_NONE;
-#elif !defined (MFX_ENABLE_CPLIB)
-        return MFX_ERR_INVALID_VIDEO_PARAM;
-#endif
     }
+#endif
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION))

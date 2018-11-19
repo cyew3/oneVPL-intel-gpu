@@ -550,13 +550,9 @@ mfxStatus D3D11VideoCORE::CreateVA(mfxVideoParam *param, mfxFrameAllocRequest *r
     MFX_CHECK_STS(sts);
 
 #if !defined(MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_ANY(param->Protected)
-#ifdef MFX_ENABLE_CPLIB
-        && !IS_PROTECTION_CENC(param->Protected)
-#else
-        && !IS_PROTECTION_WIDEVINE(param->Protected)
-#endif
-    )
+    if (IS_PROTECTION_ANY(param->Protected) &&
+        !IS_PROTECTION_CENC(param->Protected) &&
+        !IS_PROTECTION_WIDEVINE(param->Protected))
     {
         HRESULT hr = m_pAccelerator->GetVideoDecoderDriverHandle(&m_DXVA2DecodeHandle);
         if (FAILED(hr))

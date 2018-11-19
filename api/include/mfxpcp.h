@@ -36,6 +36,7 @@ extern "C"
 {
 #endif /* __cplusplus */
 
+#if !defined(OPEN_SOURCE)
 enum {
     MFX_HANDLE_DECODER_DRIVER_HANDLE            =2,       /* Driver's handle for a video decoder that can be used to configure content protection*/
     MFX_HANDLE_DXVA2_DECODER_DEVICE             =MFX_HANDLE_DECODER_DRIVER_HANDLE,      /* A handle to the DirectX Video Acceleration 2 (DXVA-2) decoder device*/
@@ -46,25 +47,28 @@ enum {
 enum {
     MFX_MEMTYPE_PROTECTED   =   0x0080
 };
+#endif
 
+#if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
 /* Protected in mfxVideoParam */
 enum {
+#if !defined(OPEN_SOURCE)
     MFX_PROTECTION_PAVP                 = 0x0001,
     MFX_PROTECTION_GPUCP_PAVP           = 0x0002,
     MFX_PROTECTION_GPUCP_AES128_CTR     = 0x0003,
-#if (MFX_VERSION >= MFX_VERSION_NEXT)
+#endif
+#if (MFX_VERSION >= 1030)
     MFX_PROTECTION_CENC_WV_CLASSIC      = 0x0004,
     MFX_PROTECTION_CENC_WV_GOOGLE_DASH  = 0x0005,
+#endif
+#if (MFX_VERSION >= MFX_VERSION_NEXT) && !defined(OPEN_SOURCE)
     MFX_PROTECTION_WIDEVINE_CLASSIC     = 0x0006,
-    MFX_PROTECTION_WIDEVINE_GOOGLE_DASH = 0x0007
-#else
-    MFX_PROTECTION_RESERVED1          =   0x0004,
-    MFX_PROTECTION_RESERVED2          =   0x0005,
-    MFX_PROTECTION_RESERVED3          =   0x0006,
-    MFX_PROTECTION_RESERVED4          =   0x0007,
+    MFX_PROTECTION_WIDEVINE_GOOGLE_DASH = 0x0007,
 #endif
 };
+#endif // #if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
 
+#if !defined(OPEN_SOURCE)
 /* EncryptionType in mfxExtPAVPOption */
 enum
 {
@@ -80,14 +84,24 @@ enum
     MFX_PAVP_CTR_TYPE_B = 2,
     MFX_PAVP_CTR_TYPE_C = 4
 };
+#endif
 
+#if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
 /* Extended Buffer Ids */
 enum {
+#if !defined(OPEN_SOURCE)
     MFX_EXTBUFF_PAVP_OPTION         = MFX_MAKEFOURCC('P','V','O','P'),
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     MFX_EXTBUFF_DECRYPTED_PARAM     = MFX_MAKEFOURCC('D','C','R','P'),
+#endif
+#endif
+#if (MFX_VERSION >= 1030)
     MFX_EXTBUFF_CENC_PARAM          = MFX_MAKEFOURCC('C','E','N','P')
+#endif
 };
+#endif // #if (MFX_VERSION >= 1030) || !defined(OPEN_SOURCE)
 
+#if !defined(OPEN_SOURCE)
 MFX_PACK_BEGIN_STRUCT_W_L_TYPE()
 typedef struct _mfxAES128CipherCounter{
     mfxU64  IV;
@@ -120,15 +134,7 @@ typedef struct _mfxExtPAVPOption{
 } mfxExtPAVPOption;
 MFX_PACK_END()
 
-MFX_PACK_BEGIN_USUAL_STRUCT()
-typedef struct _mfxExtCencParam{
-    mfxExtBuffer Header;
-
-    mfxU32 StatusReportIndex;
-    mfxU32 reserved[15];
-} mfxExtCencParam;
-MFX_PACK_END()
-
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
 MFX_PACK_BEGIN_STRUCT_W_PTR()
 typedef struct _mfxExtDecryptedParam{
     mfxExtBuffer Header;
@@ -138,6 +144,19 @@ typedef struct _mfxExtDecryptedParam{
     mfxU32 reserved[11];
 } mfxExtDecryptedParam;
 MFX_PACK_END()
+#endif
+#endif
+
+#if (MFX_VERSION >= 1030)
+MFX_PACK_BEGIN_USUAL_STRUCT()
+typedef struct _mfxExtCencParam{
+    mfxExtBuffer Header;
+
+    mfxU32 StatusReportIndex;
+    mfxU32 reserved[15];
+} mfxExtCencParam;
+MFX_PACK_END()
+#endif
 
 #ifdef __cplusplus
 } // extern "C"

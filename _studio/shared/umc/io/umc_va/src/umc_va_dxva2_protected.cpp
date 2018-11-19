@@ -1,4 +1,4 @@
-// Copyright (c) 2006-2018 Intel Corporation
+// Copyright (c) 2006-2019 Intel Corporation
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -74,6 +74,8 @@ void ProtectedVA::SetProtected(mfxU16 p)
 
 Status ProtectedVA::SetModes(mfxVideoParam * params)
 {
+    (void)params;
+
 #ifndef MFX_PROTECTED_FEATURE_DISABLE
     if (IS_PROTECTION_PAVP_ANY(m_protected))
     {
@@ -88,27 +90,18 @@ Status ProtectedVA::SetModes(mfxVideoParam * params)
         m_counterMode = (pavpOpt->CounterType == MFX_PAVP_CTR_TYPE_B) ? PAVP_COUNTER_TYPE_B : 
             ((pavpOpt->CounterType == MFX_PAVP_CTR_TYPE_C) ? PAVP_COUNTER_TYPE_C : PAVP_COUNTER_TYPE_A);
     }
-#ifdef MFX_ENABLE_CPLIB
-    else if (IS_PROTECTION_CENC(m_protected))
+    else if (IS_PROTECTION_CENC(m_protected) || IS_PROTECTION_WIDEVINE(m_protected))
     {
         m_encryptionType = 0;
         m_counterMode = 0;
     }
-#else
-    else if (IS_PROTECTION_WIDEVINE(m_protected))
-    {
-        m_encryptionType = 0;
-        m_counterMode = 0;
-    }
-#endif
     else
     {
         m_encryptionType = PAVP_ENCRYPTION_AES128_CTR;
         m_counterMode = PAVP_COUNTER_TYPE_C;
     }
-#else
-    params = params;
 #endif
+
     return UMC_OK;
 }
 

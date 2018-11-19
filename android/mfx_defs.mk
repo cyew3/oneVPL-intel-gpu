@@ -46,6 +46,11 @@ endif
 # because there is used old version of LibVA 2.0
 ifneq ($(filter MFX_O MFX_O_MR1, $(MFX_ANDROID_VERSION)),)
   MFX_CFLAGS += -DMFX_VERSION=1026
+else
+  ifeq ($(MFX_ENABLE_CPLIB),true)
+    MFX_CFLAGS += \
+      -DMFX_ENABLE_CPLIB
+  endif
 endif
 
 MFX_CFLAGS += \
@@ -59,11 +64,6 @@ MFX_CFLAGS += \
   -O2 -D_FORTIFY_SOURCE=2 \
   -Wformat -Wformat-security \
   -fexceptions -frtti
-
-ifeq ($(MFX_ENABLE_CPLIB),true)
-  MFX_CFLAGS += \
-    -DMFX_ENABLE_CPLIB
-endif
 
 ifeq ($(ENABLE_MAX_NUM_REORDER_FRAMES_OUTPUT),true)
   MFX_CFLAGS += -DENABLE_MAX_NUM_REORDER_FRAMES_OUTPUT

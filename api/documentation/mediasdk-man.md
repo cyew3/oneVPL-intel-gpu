@@ -18,6 +18,7 @@ boldface, such as [mfxStatus](#mfxStatus).
 **Direct3D** | Microsoft* Direct3D* version 9 or 11.1
 **Direct3D9** | Microsoft* Direct3D* version 9
 **Direct3D11** | Microsoft* Direct3D* version 11.1
+**DRM** | Digital Right Management
 **DXVA2** | Microsoft DirectX* Video Acceleration standard 2.0
 **H.264** | ISO*/IEC* 14496-10 and ITU-T* H.264, MPEG-4 Part 10, Advanced Video Coding, May 2005
 **HRD** | Hypothetical Reference Decoder
@@ -5495,7 +5496,7 @@ The `mfxVideoParam` structure contains configuration parameters for encoding, de
 `AsyncDepth` | Specifies how many asynchronous operations an application performs before the application explicitly synchronizes the result. If zero, the value is not specified.
 `mfx` | Configurations related to encoding, decoding and transcoding; see the definition of the [mfxInfoMFX](#mfxInfoMFX) structure for details.
 `vpp` | Configurations related to video processing; see the definition of the [mfxInfoVPP](#mfxInfoVPP) structure for details.
-`Protected` | Specifies the content protection mechanism; this is a reserved parameter. Its value must be zero.
+`Protected` | Specifies the content protection mechanism; see the [Protected](#Protected) enumerator for a list of supported protection schemes.
 `IOPattern` | Input and output memory access types for SDK functions; see the enumerator [IOPattern](#IOPattern) for details. The **Query** functions return the natively supported [IOPattern](#IOPattern) if the **Query** input argument is `NULL`. This parameter is a mandated input for **QueryIOSurf** and **Init** functions. For **DECODE**, the output pattern must be specified; for **ENCODE**, the input pattern must be specified; and for **VPP**, both input and output pattern must be specified.
 `NumExtParam` | The number of extra configuration structures attached to this structure.
 `ExtParam` | Points to an array of pointers to the extra configuration structures; see the [ExtendedBufferID](#ExtendedBufferID) enumerator for a list of extended configurations.<br><br>The list of extended buffers should not contain duplicated entries, i.e. entries of the same type. If `mfxVideoParam` structure is used to query the SDK capability, then list of extended buffers attached to input and output `mfxVideoParam` structure should be equal, i.e. should contain the same number of extended buffers of the same type.
@@ -7246,6 +7247,34 @@ This structure is used by the SDK decoders to report bitstream error information
 
 This structure is available since SDK API 1.25.
 
+## <a id='mfxExtCencParam'>mfxExtCencParam</a>
+
+**Definition**
+
+```C
+typedef struct {
+    mfxExtBuffer    Header;
+
+    mfxU32          StatusReportIndex;
+    mfxU32          reserved[15];
+} mfxExtCencParam;
+```
+
+**Description**
+
+This structure is used to pass decryption status report index for Common Encryption usage model. The application can attach this extended buffer to the [mfxBitstream](#mfxBitstream) structure at runtime.
+
+**Members**
+
+| | |
+--- | ---
+`Header.BufferId` | Must be [MFX_EXTBUFF_CENC_PARAM](#ExtendedBufferID)
+`StatusReportIndex` | Decryption status report index.
+
+**Change History**
+
+This structure is available since SDK API 1.30.
+
 ## <a id='mfxExtAV1FilmGrainParam'>mfxExtAV1FilmGrainParam</a>
 
 **Definition**
@@ -7588,6 +7617,7 @@ The `ExtendedBufferID` enumerator itemizes and defines identifiers (`BufferId`) 
 `MFX_EXTBUFF_MB_DISABLE_SKIP_MAP` | This extended buffer defines macroblock map for current frame which forces specified macroblocks to be non skip. See the [mfxExtMBDisableSkipMap](#mfxExtMBDisableSkipMap) structure for details. The application can attach this buffer to the [mfxEncodeCtrl](#mfxEncodeCtrl) structure for per-frame encoding configuration.
 `MFX_EXTBUFF_DECODED_FRAME_INFO` | This extended buffer is used by SDK decoders to report additional information about decoded frame. See the [mfxExtDecodedFrameInfo](#mfxExtDecodedFrameInfo) structure for more details.
 `MFX_EXTBUFF_DECODE_ERROR_REPORT` | This extended buffer is used by SDK decoders to report error information before frames get decoded. See the [mfxExtDecodeErrorReport](#mfxExtDecodeErrorReport) structure for more details.
+`MFX_EXTBUFF_CENC_PARAM` | This structure is used to pass decryption status report index for Common Encryption usage model. See the [mfxExtCencParam](#mfxExtCencParam) structure for more details.
 `MFX_EXTBUFF_TIME_CODE` | See the [mfxExtTimeCode](#mfxExtTimeCode) structure for more details.
 `MFX_HEVC_REGION_SLICE` | This extended buffer instructs HEVC encoder to encode only one region. The application can attach this buffer to the [mfxVideoParam](#mfxVideoParam) structure for HEVC encoding initialization.
 `MFX_EXTBUFF_THREADS_PARAM` | See the [mfxExtThreadsParam](#mfxExtThreadsParam) structure for details.
@@ -7651,6 +7681,8 @@ SDK API 1.25 adds `MFX_EXTBUFF_CONTENT_LIGHT_LEVEL_INFO`, `MFX_EXTBUFF_MASTERING
 SDK API 1.26 adds `MFX_EXTBUFF_VP9_PARAM`, `MFX_EXTBUFF_VP9_SEGMENTATION`, `MFX_EXTBUFF_VP9_TEMPORAL_LAYERS`, `MFX_EXTBUFF_VPP_MCTF`.
 
 SDK API 1.27 adds `MFX_EXTBUFF_AVC_ROUNDING_OFFSET`.
+
+SDK API 1.30 adds `MFX_EXTBUFF_CENC_PARAM`.
 
 SDK API **TBD** adds `MFX_EXTBUFF_TASK_DEPENDENCY` and `MFX_EXTBUFF_VPP_PROCAMP` use for per-frame processing configuration, `MFX_EXTBUFF_AV1_FILM_GRAIN_PARAM`
 
@@ -7843,6 +7875,8 @@ The `mfxHandleType` enumerator itemizes system handle types that SDK implementat
 `MFX_HANDLE_D3D11_DEVICE`   | Pointer to the `ID3D11Device` interface. See Working with Microsoft* DirectX* Applications for more details on how to use this handle.
 `MFX_HANDLE_VA_DISPLAY`     | Pointer to VADisplay interface. See Working with VA API Applications for more details on how to use this handle.
 `MFX_HANDLE_ENCODE_CONTEXT` | Pointer to VAContextID interface. It represents encoder context.
+`MFX_HANDLE_VA_CONFIG_ID` | Pointer to VAConfigID interface. It represents external VA config for Common Encryption usage model.
+`MFX_HANDLE_VA_CONTEXT_ID` | Pointer to VAContextID interface. It represents external VA context for Common Encryption usage model.
 `MFX_HANDLE_CM_DEVICE`      | Pointer to `CmDevice` interface ( [Intel® C for media](https://github.com/01org/cmrt) ).
 
 **Change History**
@@ -7852,6 +7886,8 @@ This enumerator is available since SDK API 1.0.
 SDK API 1.4 added `MFX_HANDLE_D3D11_DEVICE` definition.
 
 SDK API 1.8 added `MFX_HANDLE_VA_DISPLAY` and `MFX_HANDLE_ENCODE_CONTEXT` definitions.
+
+SDK API 1.30 added `MFX_HANDLE_VA_CONFIG_ID` and `MFX_HANDLE_VA_CONTEXT_ID` definitions.
 
 SDK API **TBD** added `MFX_HANDLE_CM_DEVICE` definition.
 
@@ -8719,6 +8755,23 @@ The `ChromaSiting` enumerator defines chroma location. Use bit-OR’ed values to
 **Change History**
 
 This enumerator is available since SDK API 1.25.
+
+## <a id='Protected'>Protected</a>
+
+**Description**
+
+The `Protected` enumerator describes the protection schemes.
+
+**Name/Description**
+
+| | |
+--- | ---
+`MFX_PROTECTION_CENC_WV_CLASSIC`             | The protection scheme is based on the Widevine* DRM from Google*.
+`MFX_PROTECTION_CENC_WV_GOOGLE_DASH`        | The protection scheme is based on the Widevine* Modular DRM* from Google*.
+
+**Change History**
+
+This enumerator is available since SDK API 1.30.
 
 ## <a id='AV1FilmGrainFlags'>AV1FilmGrainFlags</a>
 

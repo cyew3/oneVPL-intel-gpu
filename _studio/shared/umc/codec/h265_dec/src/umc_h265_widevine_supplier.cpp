@@ -558,6 +558,7 @@ UMC::Status WidevineTaskSupplier::ParseWidevineSEI(DecryptParametersWrapper* pDe
 
 UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
 {
+#if (MFX_VERSION >= MFX_VERSION_NEXT)
     UMC::Status umsRes = UMC::UMC_OK;
 
     if (m_pLastSlice)
@@ -619,6 +620,10 @@ UMC::Status WidevineTaskSupplier::AddOneFrame(UMC::MediaData* src)
     }
 
     return AddSlice(0, !src);
+#else
+    (void)src;
+    return UMC::UMC_ERR_FAILED;
+#endif
 }
 
 void WidevineTaskSupplier::CompleteFrame(H265DecoderFrame * pFrame)

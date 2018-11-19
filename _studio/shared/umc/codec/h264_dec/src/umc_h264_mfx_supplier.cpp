@@ -610,13 +610,12 @@ eMFXPlatform MFX_Utility::GetPlatform(VideoCORE * core, mfxVideoParam * par)
         break;
     }
 
-#ifdef MFX_ENABLE_CPLIB
-    if (IS_PROTECTION_CENC(par->Protected))
-        name = DXVA_Intel_Decode_Elementary_Stream_AVC;
-#elif !defined (MFX_PROTECTED_FEATURE_DISABLE)
-    if (IS_PROTECTION_WIDEVINE(par->Protected))
-        name = DXVA_Intel_Decode_Elementary_Stream_AVC;
+    if (IS_PROTECTION_CENC(par->Protected)
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+        || IS_PROTECTION_WIDEVINE(par->Protected)
 #endif
+    )
+        name = DXVA_Intel_Decode_Elementary_Stream_AVC;
 
     if (MFX_ERR_NONE != core->IsGuidSupported(name, par) &&
         platform != MFX_PLATFORM_SOFTWARE)
@@ -1415,7 +1414,6 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                 sts = MFX_ERR_UNSUPPORTED;
 #endif
 
-#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
         if (in->Protected)
         {
             out->Protected = in->Protected;
@@ -1432,16 +1430,17 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                 out->Protected = 0;
             }
 
-            if (in->Protected == MFX_PROTECTION_GPUCP_AES128_CTR && core->GetVAType() != MFX_HW_D3D11)
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-                out->Protected = 0;
-            }
-
             if (!(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
             {
                 out->IOPattern = 0;
                 sts = MFX_ERR_UNSUPPORTED;
+            }
+
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
+            if (in->Protected == MFX_PROTECTION_GPUCP_AES128_CTR && core->GetVAType() != MFX_HW_D3D11)
+            {
+                sts = MFX_ERR_UNSUPPORTED;
+                out->Protected = 0;
             }
 
             mfxExtPAVPOption * pavpOptIn = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
@@ -1505,25 +1504,14 @@ mfxStatus MFX_Utility::Query(VideoCORE *core, mfxVideoParam *in, mfxVideoParam *
                     sts = MFX_ERR_UNSUPPORTED;
                 }
             }
+#endif
         }
+#if !defined (MFX_PROTECTED_FEATURE_DISABLE)
         else
         {
             mfxExtPAVPOption * pavpOptIn = (mfxExtPAVPOption*)GetExtendedBuffer(in->ExtParam, in->NumExtParam, MFX_EXTBUFF_PAVP_OPTION);
             if (pavpOptIn)
                 sts = MFX_ERR_UNSUPPORTED;
-        }
-#elif defined (MFX_ENABLE_CPLIB)
-        if (in->Protected)
-        {
-            out->Protected = in->Protected;
-
-            if (type == MFX_HW_UNKNOWN ||
-                !IS_PROTECTION_CENC(in->Protected) ||
-                !(in->IOPattern & MFX_IOPATTERN_OUT_VIDEO_MEMORY))
-            {
-                sts = MFX_ERR_UNSUPPORTED;
-                out->Protected = 0;
-            }
         }
 #endif
 
@@ -1918,21 +1906,11 @@ bool MFX_Utility::CheckVideoParam(mfxVideoParam *in, eMFXHWType type)
     if (!in)
         return false;
 
-#if !defined(MFX_PROTECTED_FEATURE_DISABLE)
     if (in->Protected)
     {
         if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_ANY(in->Protected))
             return false;
     }
-#elif defined (MFX_ENABLE_CPLIB)
-    if (in->Protected)
-    {
-        if (type == MFX_HW_UNKNOWN || !IS_PROTECTION_CENC(in->Protected))
-            return false;
-    }
-#else
-    (void)type;
-#endif
 
     if (MFX_CODEC_AVC != in->mfx.CodecId)
         return false;
