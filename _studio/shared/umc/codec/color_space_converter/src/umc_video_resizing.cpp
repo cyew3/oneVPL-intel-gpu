@@ -55,13 +55,13 @@ Status VideoResizing::GetFrame(MediaData *input, MediaData *output)
   if (out->GetColorFormat() != cFormat) {
     return UMC_ERR_INVALID_PARAMS;
   }
-  Ipp32s in_Width = in->GetWidth();
-  Ipp32s in_Height = in->GetHeight();
-  Ipp32s out_Width = out->GetWidth();
-  Ipp32s out_Height = out->GetHeight();
+  int32_t in_Width = in->GetWidth();
+  int32_t in_Height = in->GetHeight();
+  int32_t out_Width = out->GetWidth();
+  int32_t out_Height = out->GetHeight();
 
-  Ipp64f xRatio = static_cast<Ipp64f> (out_Width)  / static_cast<Ipp64f> (in_Width);
-  Ipp64f yRatio = static_cast<Ipp64f> (out_Height) / static_cast<Ipp64f> (in_Height);
+  double xRatio = static_cast<double> (out_Width)  / static_cast<double> (in_Width);
+  double yRatio = static_cast<double> (out_Height) / static_cast<double> (in_Height);
 
   for (k = 0; k < in->GetNumPlanes(); k++) {
     in->GetPlaneInfo(&srcPlane, k);
@@ -77,12 +77,12 @@ Status VideoResizing::GetFrame(MediaData *input, MediaData *output)
       srcPlane.m_ippSize.width *= 2;
       dstPlane.m_ippSize.width *= 2;
       RectSrc.width *= 2;
-      ippiResizeYUV422_8u_C2R((const Ipp8u *)srcPlane.m_pPlane,
+      ippiResizeYUV422_8u_C2R((const uint8_t *)srcPlane.m_pPlane,
         srcPlane.m_ippSize,
-        (Ipp32s)srcPlane.m_nPitch,
+        (int32_t)srcPlane.m_nPitch,
         RectSrc,
-        (Ipp8u *)dstPlane.m_pPlane,
-        (Ipp32s)dstPlane.m_nPitch,
+        (uint8_t *)dstPlane.m_pPlane,
+        (int32_t)dstPlane.m_nPitch,
         dstPlane.m_ippSize,
         xRatio,
         yRatio,
@@ -90,39 +90,39 @@ Status VideoResizing::GetFrame(MediaData *input, MediaData *output)
       return UMC_OK;
     }
 
-    if (srcPlane.m_iSampleSize == sizeof(Ipp8u)) {
+    if (srcPlane.m_iSampleSize == sizeof(uint8_t)) {
       switch (srcPlane.m_iSamples) {
       case 1:
-        ippiResize_8u_C1R((const Ipp8u *)srcPlane.m_pPlane,
+        ippiResize_8u_C1R((const uint8_t *)srcPlane.m_pPlane,
                           srcPlane.m_ippSize,
-                          (Ipp32s)srcPlane.m_nPitch,
+                          (int32_t)srcPlane.m_nPitch,
                           RectSrc,
-                          (Ipp8u *)dstPlane.m_pPlane,
-                          (Ipp32s)dstPlane.m_nPitch,
+                          (uint8_t *)dstPlane.m_pPlane,
+                          (int32_t)dstPlane.m_nPitch,
                           dstPlane.m_ippSize,
                           xRatio,
                           yRatio,
                           mInterpolation);
         break;
       case 3:
-        ippiResize_8u_C3R((const Ipp8u *)srcPlane.m_pPlane,
+        ippiResize_8u_C3R((const uint8_t *)srcPlane.m_pPlane,
                           srcPlane.m_ippSize,
-                          (Ipp32s)srcPlane.m_nPitch,
+                          (int32_t)srcPlane.m_nPitch,
                           RectSrc,
-                          (Ipp8u *)dstPlane.m_pPlane,
-                          (Ipp32s)dstPlane.m_nPitch,
+                          (uint8_t *)dstPlane.m_pPlane,
+                          (int32_t)dstPlane.m_nPitch,
                           dstPlane.m_ippSize,
                           xRatio,
                           yRatio,
                           mInterpolation);
         break;
       case 4:
-        ippiResize_8u_C4R((const Ipp8u *)srcPlane.m_pPlane,
+        ippiResize_8u_C4R((const uint8_t *)srcPlane.m_pPlane,
                           srcPlane.m_ippSize,
-                          (Ipp32s)srcPlane.m_nPitch,
+                          (int32_t)srcPlane.m_nPitch,
                           RectSrc,
-                          (Ipp8u *)dstPlane.m_pPlane,
-                          (Ipp32s)dstPlane.m_nPitch,
+                          (uint8_t *)dstPlane.m_pPlane,
+                          (int32_t)dstPlane.m_nPitch,
                           dstPlane.m_ippSize,
                           xRatio,
                           yRatio,
@@ -131,39 +131,39 @@ Status VideoResizing::GetFrame(MediaData *input, MediaData *output)
       default:
         return UMC_ERR_UNSUPPORTED;
       }
-    } else if (srcPlane.m_iSampleSize == sizeof(Ipp16u)) {
+    } else if (srcPlane.m_iSampleSize == sizeof(uint16_t)) {
       switch (srcPlane.m_iSamples) {
       case 1:
-        ippiResize_16u_C1R((const Ipp16u *)srcPlane.m_pPlane,
+        ippiResize_16u_C1R((const uint16_t *)srcPlane.m_pPlane,
                            srcPlane.m_ippSize,
-                           (Ipp32s)srcPlane.m_nPitch,
+                           (int32_t)srcPlane.m_nPitch,
                            RectSrc,
-                           (Ipp16u *)dstPlane.m_pPlane,
-                           (Ipp32s)dstPlane.m_nPitch,
+                           (uint16_t *)dstPlane.m_pPlane,
+                           (int32_t)dstPlane.m_nPitch,
                            dstPlane.m_ippSize,
                            xRatio,
                            yRatio,
                            mInterpolation);
         break;
       case 3:
-        ippiResize_16u_C3R((const Ipp16u *)srcPlane.m_pPlane,
+        ippiResize_16u_C3R((const uint16_t *)srcPlane.m_pPlane,
                            srcPlane.m_ippSize,
-                           (Ipp32s)srcPlane.m_nPitch,
+                           (int32_t)srcPlane.m_nPitch,
                            RectSrc,
-                           (Ipp16u *)dstPlane.m_pPlane,
-                           (Ipp32s)dstPlane.m_nPitch,
+                           (uint16_t *)dstPlane.m_pPlane,
+                           (int32_t)dstPlane.m_nPitch,
                            dstPlane.m_ippSize,
                            xRatio,
                            yRatio,
                            mInterpolation);
         break;
       case 4:
-        ippiResize_16u_C4R((const Ipp16u *)srcPlane.m_pPlane,
+        ippiResize_16u_C4R((const uint16_t *)srcPlane.m_pPlane,
                            srcPlane.m_ippSize,
-                           (Ipp32s)srcPlane.m_nPitch,
+                           (int32_t)srcPlane.m_nPitch,
                            RectSrc,
-                           (Ipp16u *)dstPlane.m_pPlane,
-                           (Ipp32s)dstPlane.m_nPitch,
+                           (uint16_t *)dstPlane.m_pPlane,
+                           (int32_t)dstPlane.m_nPitch,
                            dstPlane.m_ippSize,
                            xRatio,
                            yRatio,

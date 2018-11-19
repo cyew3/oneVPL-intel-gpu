@@ -144,7 +144,7 @@ Status VideoProcessing::GetFrame(MediaData *input, MediaData *output)
   VideoData *src;
   VideoData *dst;
   Status res;
-  Ipp64f timeStart, timeEnd;
+  double timeStart, timeEnd;
   int k;
 
   UMC_CHECK(in, UMC_ERR_NULL_PTR);
@@ -180,8 +180,8 @@ Status VideoProcessing::GetFrame(MediaData *input, MediaData *output)
   }
 
   // Get frame size
-  Ipp32s lFrameSize = (Ipp32s)out->GetMappingSize();
-  if (lFrameSize <= 0) lFrameSize = (Ipp32s)in->GetMappingSize();
+  int32_t lFrameSize = (int32_t)out->GetMappingSize();
+  if (lFrameSize <= 0) lFrameSize = (int32_t)in->GetMappingSize();
   if (lFrameSize <= 0) lFrameSize = 1;
 
   // Set PictureStructure

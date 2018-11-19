@@ -45,7 +45,7 @@ class VideoProcessingParams : public BaseCodecParams
 {
   DYNAMIC_CAST_DECL(VideoProcessingParams, BaseCodecParams)
 public:
-  Ipp32u      InterpolationMethod; // interpolation method to perform image resampling (see ippi.h)
+  uint32_t      InterpolationMethod; // interpolation method to perform image resampling (see ippi.h)
   DeinterlacingMethod m_DeinterlacingMethod;  // deinterlacing method
   UMC::sRECT   SrcCropArea;         // source crop region (zero region means full frame)
 
@@ -108,7 +108,7 @@ protected:
   int iResizing;
   bool bSrcCropArea;
   BaseCodec *pFilter[MAX_NUM_FILTERS];
-  Ipp8u bFiltering[MAX_NUM_FILTERS];
+  uint8_t bFiltering[MAX_NUM_FILTERS];
   VideoData tmpData[MAX_NUM_FILTERS];
   VideoDataExt tmp_in[1];
   VideoDataExt tmp_out[1];

@@ -36,12 +36,12 @@ Status Deinterlacing::SetMethod(DeinterlacingMethod method)
   return UMC_OK;
 }
 
-static void DeinterlacingEdgeDetect(Ipp8u *psrc,
-                                    Ipp32s iSrcPitch,
-                                    Ipp8u *pdst,
-                                    Ipp32s iDstPitch,
-                                    Ipp32s w,
-                                    Ipp32s h);
+static void DeinterlacingEdgeDetect(uint8_t *psrc,
+                                    int32_t iSrcPitch,
+                                    uint8_t *pdst,
+                                    int32_t iDstPitch,
+                                    int32_t w,
+                                    int32_t h);
 
 Status Deinterlacing::GetFrame(MediaData *input, MediaData *output)
 {
@@ -58,26 +58,26 @@ Status Deinterlacing::GetFrame(MediaData *input, MediaData *output)
   if (out->GetColorFormat() != cFormat) {
     return UMC_ERR_INVALID_PARAMS;
   }
-  Ipp32s in_Width = in->GetWidth();
-  Ipp32s in_Height = in->GetHeight();
-  Ipp32s out_Width = out->GetWidth();
-  Ipp32s out_Height = out->GetHeight();
+  int32_t in_Width = in->GetWidth();
+  int32_t in_Height = in->GetHeight();
+  int32_t out_Width = out->GetWidth();
+  int32_t out_Height = out->GetHeight();
   if ( (in_Width != out_Width) || (in_Height != out_Height) ) {
     return UMC_ERR_INVALID_PARAMS;
   }
 
   for (k = 0; k < in->GetNumPlanes(); k++) {
     VideoData::PlaneInfo srcPlane;
-    const Ipp8u *pSrc0; //, *pSrc1;
-    Ipp8u *pDst0, *pDst1;
+    const uint8_t *pSrc0; //, *pSrc1;
+    uint8_t *pDst0, *pDst1;
     int srcPitch, dstPitch;
-    IppiSize size;
+    mfxSize size;
 
     in->GetPlaneInfo(&srcPlane, k);
-    pSrc0 = (const Ipp8u*)in->GetPlanePointer(k);
-    srcPitch = (Ipp32s)in->GetPlanePitch(k);
-    pDst0 = (Ipp8u*)out->GetPlanePointer(k);
-    dstPitch = (Ipp32s)out->GetPlanePitch(k);
+    pSrc0 = (const uint8_t*)in->GetPlanePointer(k);
+    srcPitch = (int32_t)in->GetPlanePitch(k);
+    pDst0 = (uint8_t*)out->GetPlanePointer(k);
+    dstPitch = (int32_t)out->GetPlanePitch(k);
     size.width = srcPlane.m_ippSize.width * srcPlane.m_iSamples * srcPlane.m_iSampleSize;
     size.height = srcPlane.m_ippSize.height;
 
@@ -100,7 +100,7 @@ Status Deinterlacing::GetFrame(MediaData *input, MediaData *output)
           //return UMC_ERR_UNSUPPORTED;
           method = DEINTERLACING_DUPLICATE;
         }
-        DeinterlacingEdgeDetect((Ipp8u*)pSrc0, srcPitch,
+        DeinterlacingEdgeDetect((uint8_t*)pSrc0, srcPitch,
                                 pDst0, dstPitch,
                                 size.width, size.height);
         continue;
@@ -123,18 +123,18 @@ Status Deinterlacing::GetFrame(MediaData *input, MediaData *output)
   return UMC_OK;
 }
 
-static void DeinterlacingEdgeDetect(Ipp8u *psrc,
-                                    Ipp32s iSrcPitch,
-                                    Ipp8u *pdst,
-                                    Ipp32s iDstPitch,
-                                    Ipp32s w,
-                                    Ipp32s h)
+static void DeinterlacingEdgeDetect(uint8_t *psrc,
+                                    int32_t iSrcPitch,
+                                    uint8_t *pdst,
+                                    int32_t iDstPitch,
+                                    int32_t w,
+                                    int32_t h)
 {
-  Ipp32s /*hi, lo,*/ x, y;
-  Ipp32s res;
-  Ipp8u *pInA, *pInB, *pInC, *pInD, *pInE, *pInF;
-  Ipp32s dif1, dif2, dif3;
-  IppiSize roi = {w, h/2};
+  int32_t /*hi, lo,*/ x, y;
+  int32_t res;
+  uint8_t *pInA, *pInB, *pInC, *pInD, *pInE, *pInF;
+  int32_t dif1, dif2, dif3;
+  mfxSize roi = {w, h/2};
 
   // copy even lines
   ippiCopy_8u_C1R(psrc, 2*iSrcPitch, pdst, 2*iDstPitch, roi);
@@ -163,28 +163,28 @@ static void DeinterlacingEdgeDetect(Ipp8u *psrc,
 
     for (x = 1; x < w - 1; x++)
     {
-      dif1 = abs((Ipp32s)pInA[x] - (Ipp32s)pInF[x]);
-      dif2 = abs((Ipp32s)pInC[x] - (Ipp32s)pInD[x]);
-      dif3 = abs((Ipp32s)pInB[x] - (Ipp32s)pInE[x]);
+      dif1 = abs((int32_t)pInA[x] - (int32_t)pInF[x]);
+      dif2 = abs((int32_t)pInC[x] - (int32_t)pInD[x]);
+      dif3 = abs((int32_t)pInB[x] - (int32_t)pInE[x]);
 
       if (dif1 < dif2) {
         if (dif1 < dif3) {
-          res = ((Ipp32s)pInA[x] + (Ipp32s)pInF[x]) >> 1; //1
+          res = ((int32_t)pInA[x] + (int32_t)pInF[x]) >> 1; //1
         } else {
-          res = ((Ipp32s)pInB[x] + (Ipp32s)pInE[x]) >> 1; //3
+          res = ((int32_t)pInB[x] + (int32_t)pInE[x]) >> 1; //3
         }
       } else {
         if (dif2 < dif3) {
-          res = ((Ipp32s)pInC[x] + (Ipp32s)pInD[x]) >> 1; //2
+          res = ((int32_t)pInC[x] + (int32_t)pInD[x]) >> 1; //2
         } else {
-          res = ((Ipp32s)pInB[x] + (Ipp32s)pInE[x]) >> 1; //3
+          res = ((int32_t)pInB[x] + (int32_t)pInE[x]) >> 1; //3
         }
       }
 #if 0
       if (res > hi) res = hi;
       else if (res < lo) res = lo;
 #endif
-      pdst[x] = (Ipp8u)res;
+      pdst[x] = (uint8_t)res;
     }
     psrc += 2*iSrcPitch;
     pdst += 2*iDstPitch;
