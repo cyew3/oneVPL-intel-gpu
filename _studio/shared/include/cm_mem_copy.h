@@ -71,14 +71,6 @@ typedef mfxI32 cmStatus;
 #define CM_ALIGNED(PTR) (!((mfxU64(PTR))&0xf))
 #define CM_ALIGNED64(PTR) (!((mfxU64(PTR))&0x3f))
 
-#ifndef max
-#define max(a,b)            (((a) > (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-#define min(a,b)            (((a) < (b)) ? (a) : (b))
-#endif
-
 static inline bool operator < (const mfxHDLPair & l, const mfxHDLPair & r)
 {
     return (l.first == r.first) ? (l.second < r.second) : (l.first < r.first);
