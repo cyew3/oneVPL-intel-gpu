@@ -39,17 +39,17 @@
 
 #include "vm_debug.h"
 
-extern void ConvertFrom_YUV444_To_YV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-extern void ConvertFrom_YUV422V_To_YV12(Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-extern void ConvertFrom_YUV422H_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
-extern void ConvertFrom_YUV422V_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size);
+extern void ConvertFrom_YUV444_To_YV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size);
+extern void ConvertFrom_YUV422V_To_YV12(uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size);
+extern void ConvertFrom_YUV422H_4Y_To_NV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size);
+extern void ConvertFrom_YUV422V_4Y_To_NV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size);
 
 #define HUFF_ROW_API // enable new huffman functions, to improve performance
 
 #define DCT_QUANT_INV8x8To1x1LS(pMCUBuf, dst, qtbl)\
 {\
   int val = (((pMCUBuf[0] * qtbl[0]) >> 3) + 128);\
-  dst[0] = (Ipp8u)(val > 255 ? 255 : (val < 0 ? 0 : val));\
+  dst[0] = (uint8_t)(val > 255 ? 255 : (val < 0 ? 0 : val));\
 }
 
 CJPEGDecoder::CJPEGDecoder(void)
@@ -248,9 +248,9 @@ JERRCODE CJPEGDecoder::Clean(void)
 } // CJPEGDecoder::Clean()
 
 JERRCODE CJPEGDecoder::SetDestination(
-  Ipp8u*   pDst,
+  uint8_t*   pDst,
   int      dstStep,
-  IppiSize dstSize,
+  mfxSize dstSize,
   int      dstChannels,
   JCOLOR   dstColor,
   JSS      dstSampling,
@@ -287,9 +287,9 @@ JERRCODE CJPEGDecoder::SetDestination(
 
 
  JERRCODE CJPEGDecoder::SetDestination(
-  Ipp16s*  pDst,
+  int16_t*  pDst,
   int      dstStep,
-  IppiSize dstSize,
+  mfxSize dstSize,
   int      dstChannels,
   JCOLOR   dstColor,
   JSS      dstSampling,
@@ -311,9 +311,9 @@ JERRCODE CJPEGDecoder::SetDestination(
 
 
  JERRCODE CJPEGDecoder::SetDestination(
-  Ipp8u*   pDst[],
+  uint8_t*   pDst[],
   int      dstStep[],
-  IppiSize dstSize,
+  mfxSize dstSize,
   int      dstChannels,
   JCOLOR   dstColor,
   JSS      dstSampling,
@@ -345,9 +345,9 @@ JERRCODE CJPEGDecoder::SetDestination(
 
 
   JERRCODE CJPEGDecoder::SetDestination(
-  Ipp16s*  pDst[],
+  int16_t*  pDst[],
   int      dstStep[],
-  IppiSize dstSize,
+  mfxSize dstSize,
   int      dstChannels,
   JCOLOR   dstColor,
   JSS      dstSampling,
@@ -461,7 +461,7 @@ JERRCODE CJPEGDecoder::ParseAPP1(void)
       m_exif_app1_data = 0;
     }
 
-    m_exif_app1_data = (Ipp8u*)malloc(len);
+    m_exif_app1_data = (uint8_t*)malloc(len);
     if(0 == m_exif_app1_data)
       return JPEG_ERR_ALLOC;
 
@@ -471,7 +471,7 @@ JERRCODE CJPEGDecoder::ParseAPP1(void)
       if(JPEG_OK != jerr)
         return jerr;
 
-      m_exif_app1_data[i] = (Ipp8u)b0;
+      m_exif_app1_data[i] = (uint8_t)b0;
     }
   }
   else
@@ -511,7 +511,7 @@ JERRCODE CJPEGDecoder::ParseCOM(void)
     free(m_jpeg_comment);
   }
 
-  m_jpeg_comment = (Ipp8u*)malloc(len+1);
+  m_jpeg_comment = (uint8_t*)malloc(len+1);
   if(0 == m_jpeg_comment)
     return JPEG_ERR_ALLOC;
 
@@ -520,7 +520,7 @@ JERRCODE CJPEGDecoder::ParseCOM(void)
     jerr = m_BitStreamIn.ReadByte(&c);
     if(JPEG_OK != jerr)
       return jerr;
-    m_jpeg_comment[i] = (Ipp8u)c;
+    m_jpeg_comment[i] = (uint8_t)c;
   }
 
   m_jpeg_comment[len] = 0;
@@ -839,7 +839,7 @@ JERRCODE CJPEGDecoder::ParseRST(void)
 
 JERRCODE CJPEGDecoder::ParseData()
 {
-    Ipp32s i;
+    int32_t i;
     JERRCODE jerr = Init();
     if(JPEG_OK != jerr)
     {
@@ -871,7 +871,7 @@ JERRCODE CJPEGDecoder::ParseData()
         if(JPEG_OK != jerr ||
           (m_dc_scan_completed != 0 && m_ac_scans_completed == m_jpeg_ncomp))
         {
-          Ipp16s* pMCUBuf;
+          int16_t* pMCUBuf;
           for(i = 0; i < (int) m_numyMCU; i++)
           {
             pMCUBuf = m_block_buffer + (i* m_numxMCU * DCTSIZE2* m_nblock);
@@ -969,7 +969,7 @@ JERRCODE CJPEGDecoder::ParseData()
 
         if(m_ac_scans_completed == m_jpeg_ncomp)
         {
-          Ipp16s* pMCUBuf = m_block_buffer;
+          int16_t* pMCUBuf = m_block_buffer;
 
           for(i = 0; i < (int) m_numyMCU; i++)
           {
@@ -1019,8 +1019,8 @@ JERRCODE CJPEGDecoder::ParseData()
 JERRCODE CJPEGDecoder::FindNextImage()
 {
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   JERRCODE jerr = JPEG_OK;
 
@@ -1080,8 +1080,8 @@ Exit:
 JERRCODE CJPEGDecoder::ParseJPEGBitStream(JOPERATION op)
 {
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   JERRCODE jerr = JPEG_OK;
 
@@ -1348,7 +1348,7 @@ JERRCODE CJPEGDecoder::Init(void)
     case JPEG_BASELINE:
     case JPEG_EXTENDED:
       {
-        int ds = (m_dst.precision <= 8) ? sizeof(Ipp8u) : sizeof(Ipp16s);
+        int ds = (m_dst.precision <= 8) ? sizeof(uint8_t) : sizeof(int16_t);
 
         int lnz_ds               = curr_comp->m_vsampling * curr_comp->m_hsampling;
         curr_comp->m_lnz_bufsize = lnz_ds * m_numxMCU;
@@ -1365,7 +1365,7 @@ JERRCODE CJPEGDecoder::Init(void)
           curr_comp->m_ss_height += 2; // add border lines (top and bottom)
         }
 
-        tr_buf_size = m_numxMCU * m_nblock * DCTSIZE2 * sizeof(Ipp16s) * m_num_threads;
+        tr_buf_size = m_numxMCU * m_nblock * DCTSIZE2 * sizeof(int16_t) * m_num_threads;
 
         break;
       } // JPEG_BASELINE
@@ -1387,7 +1387,7 @@ JERRCODE CJPEGDecoder::Init(void)
           curr_comp->m_ss_height += 2; // add border lines (top and bottom)
         }
 
-        tr_buf_size = m_numxMCU * m_numyMCU * m_nblock * DCTSIZE2 * sizeof(Ipp16s);
+        tr_buf_size = m_numxMCU * m_numyMCU * m_nblock * DCTSIZE2 * sizeof(int16_t);
 
         break;
       } // JPEG_PROGRESSIVE
@@ -1399,21 +1399,21 @@ JERRCODE CJPEGDecoder::Init(void)
         curr_comp->m_lnz_ds      = lnz_ds;
 
         curr_comp->m_cc_height = m_mcuHeight;
-        curr_comp->m_cc_step   = m_numxMCU * m_mcuWidth * sizeof(Ipp16s);
+        curr_comp->m_cc_step   = m_numxMCU * m_mcuWidth * sizeof(int16_t);
 
         curr_comp->m_ss_height = curr_comp->m_cc_height / curr_comp->m_v_factor;
         curr_comp->m_ss_step   = curr_comp->m_cc_step   / curr_comp->m_h_factor;
 
         if(m_curr_scan->ncomps == m_jpeg_ncomp)
-          tr_buf_size = m_numxMCU * m_nblock * sizeof(Ipp16s);
+          tr_buf_size = m_numxMCU * m_nblock * sizeof(int16_t);
         else
-          tr_buf_size = m_numxMCU * m_numyMCU * m_nblock * sizeof(Ipp16s);
+          tr_buf_size = m_numxMCU * m_numyMCU * m_nblock * sizeof(int16_t);
 
-        curr_comp->m_curr_row = (Ipp16s*)malloc(curr_comp->m_cc_step * sizeof(Ipp16s));
+        curr_comp->m_curr_row = (int16_t*)malloc(curr_comp->m_cc_step * sizeof(int16_t));
         if(0 == curr_comp->m_curr_row)
           return JPEG_ERR_ALLOC;
 
-        curr_comp->m_prev_row = (Ipp16s*)malloc(curr_comp->m_cc_step * sizeof(Ipp16s));
+        curr_comp->m_prev_row = (int16_t*)malloc(curr_comp->m_cc_step * sizeof(int16_t));
         if(0 == curr_comp->m_prev_row)
           return JPEG_ERR_ALLOC;
 
@@ -1441,13 +1441,13 @@ JERRCODE CJPEGDecoder::Init(void)
 
   if(0 == m_block_buffer)
   {
-    m_block_buffer = (Ipp16s*)malloc(tr_buf_size);
+    m_block_buffer = (int16_t*)malloc(tr_buf_size);
     if(0 == m_block_buffer)
     {
       return JPEG_ERR_ALLOC;
     }
 
-    memset((Ipp8u*)m_block_buffer, 0, tr_buf_size);
+    memset((uint8_t*)m_block_buffer, 0, tr_buf_size);
   }
 
   m_state.Create();
@@ -1458,7 +1458,7 @@ JERRCODE CJPEGDecoder::Init(void)
 } // CJPEGDecoder::Init()
 
 static
-Ipp32u JPEG_BPP[JC_MAX] =
+uint32_t JPEG_BPP[JC_MAX] =
 {
   1, // JC_UNKNOWN = 0,
   1, // JC_GRAY    = 1,
@@ -1483,12 +1483,12 @@ Ipp32u JPEG_BPP[JC_MAX] =
 #define iGv  0x00006b2f
 #define iBv  0x000014d1
 
-JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU)
 {
   int       cc_h;
-  IppiSize  roi;
+  mfxSize  roi;
   IppStatus status;
-  Ipp32u bpp;
+  uint32_t bpp;
 
   cc_h = m_curr_scan->mcuHeight * m_curr_scan->min_v_factor;
   if (rowMCU == m_curr_scan->numyMCU - 1)
@@ -1510,15 +1510,15 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(JC_RGB == m_jpeg_color && (JC_BGRA == m_dst.color || m_jpeg_ncomp != m_curr_scan->ncomps))
   {
       int     srcStep;
-      Ipp8u*  pSrc8u[3];
+      uint8_t*  pSrc8u[3];
       int     dstStep;
-      Ipp8u*  pDst8u;
+      uint8_t*  pDst8u;
 
       srcStep = m_ccomp[0].m_cc_step;
 
-      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
-      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
-      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
 
       dstStep = m_dst.lineStep[0];
       bpp = JPEG_BPP[m_dst.color % JC_MAX];
@@ -1540,17 +1540,17 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   else if (JC_YCBCR == m_jpeg_color && JC_NV12 == m_dst.color)
   {      
       int     srcStep[3];
-      Ipp8u*  pSrc8u[3];
+      uint8_t*  pSrc8u[3];
       int     dstStep[2];
-      Ipp8u*  pDst8u[2];
+      uint8_t*  pDst8u[2];
 
       srcStep[0] = m_ccomp[0].m_cc_step;
       srcStep[1] = m_ccomp[1].m_cc_step;
       srcStep[2] = m_ccomp[2].m_cc_step;
 
-      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
-      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor / 2;
-      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor / 2;
+      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor / 2;
+      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor / 2;
 
       dstStep[0] = m_dst.lineStep[0];
       dstStep[1] = m_dst.lineStep[1];
@@ -1585,17 +1585,17 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   else if(JC_YCBCR == m_jpeg_color && JC_YCBCR == m_dst.color && JS_444 == m_dst.sampling && m_jpeg_ncomp != m_curr_scan->ncomps)
   {
       int     srcStep[3];
-      Ipp8u*  pSrc8u[3];
+      uint8_t*  pSrc8u[3];
       int     dstStep[3];
-      Ipp8u*  pDst8u[3];
+      uint8_t*  pDst8u[3];
 
       srcStep[0] = m_ccomp[0].m_cc_step;
       srcStep[1] = m_ccomp[0].m_cc_step;
       srcStep[2] = m_ccomp[0].m_cc_step;
 
-      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
-      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
-      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
+      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth * m_curr_scan->min_h_factor;
 
       dstStep[0] = m_dst.lineStep[0];
       dstStep[1] = m_dst.lineStep[1];
@@ -1623,13 +1623,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   else if(JC_GRAY == m_jpeg_color && m_dst.color == JC_BGRA)
   {
       int    srcStep;
-      Ipp8u* pSrc8u;
+      uint8_t* pSrc8u;
       int    dstStep;
-      Ipp8u* pDst8u;
+      uint8_t* pDst8u;
 
       srcStep = m_ccomp[0].m_cc_step;
 
-      pSrc8u = m_ccomp[0].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
+      pSrc8u = m_ccomp[0].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
 
       dstStep = m_dst.lineStep[0];
       bpp = JPEG_BPP[m_dst.color % JC_MAX];
@@ -1650,12 +1650,12 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   else if(JC_GRAY == m_jpeg_color && m_dst.color == JC_NV12)
   {
       int    srcStep;
-      Ipp8u* pSrc8u; 
+      uint8_t* pSrc8u; 
       int     dstStep[2];
-      Ipp8u*  pDst8u[2];
+      uint8_t*  pDst8u[2];
 
       srcStep = m_ccomp[0].m_cc_step;
-      pSrc8u = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+      pSrc8u = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
       dstStep[0] = m_dst.lineStep[0];
       dstStep[1] = m_dst.lineStep[1];
@@ -1681,16 +1681,16 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
       if (JC_RGB == m_jpeg_color && JC_NV12 == m_dst.color)
       {
           int     srcStep;
-          Ipp8u*  pSrc8u[3];
+          uint8_t*  pSrc8u[3];
           int     dstStep[2];
-          Ipp8u*  pDst8u[2];
+          uint8_t*  pDst8u[2];
           int     r0,r1,r2,r3, g0,g1,g2,g3, b0,b1,b2,b3;
 
           srcStep = m_ccomp[0].m_cc_step;
 
-          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
-          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
-          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
+          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
+          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
+          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
 
           dstStep[0] = m_dst.lineStep[0];
           dstStep[1] = m_dst.lineStep[1];
@@ -1718,31 +1718,31 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
               g3 = pSrc8u[1][((i<<1)+1)*srcStep + (j<<1)+1];
               b3 = pSrc8u[2][((i<<1)+1)*srcStep + (j<<1)+1];
 
-              pDst8u[0][ (i<<1)   *dstStep[0] + (j<<1)  ] = (Ipp8u)(( iRY*r0 + iGY*g0 + iBY*b0 + 0x008000) >> 16);
-              pDst8u[0][ (i<<1)   *dstStep[0] + (j<<1)+1] = (Ipp8u)(( iRY*r1 + iGY*g1 + iBY*b1 + 0x008000) >> 16);
-              pDst8u[0][((i<<1)+1)*dstStep[0] + (j<<1)  ] = (Ipp8u)(( iRY*r2 + iGY*g2 + iBY*b2 + 0x008000) >> 16);
-              pDst8u[0][((i<<1)+1)*dstStep[0] + (j<<1)+1] = (Ipp8u)(( iRY*r3 + iGY*g3 + iBY*b3 + 0x008000) >> 16);
+              pDst8u[0][ (i<<1)   *dstStep[0] + (j<<1)  ] = (uint8_t)(( iRY*r0 + iGY*g0 + iBY*b0 + 0x008000) >> 16);
+              pDst8u[0][ (i<<1)   *dstStep[0] + (j<<1)+1] = (uint8_t)(( iRY*r1 + iGY*g1 + iBY*b1 + 0x008000) >> 16);
+              pDst8u[0][((i<<1)+1)*dstStep[0] + (j<<1)  ] = (uint8_t)(( iRY*r2 + iGY*g2 + iBY*b2 + 0x008000) >> 16);
+              pDst8u[0][((i<<1)+1)*dstStep[0] + (j<<1)+1] = (uint8_t)(( iRY*r3 + iGY*g3 + iBY*b3 + 0x008000) >> 16);
 
               r0 = r0+r1+r2+r3;
               g0 = g0+g1+g2+g3;
               b0 = b0+b1+b2+b3;
 
-              pDst8u[1][i*dstStep[1] + (j<<1)  ] = (Ipp8u)((-iRu*r0 - iGu*g0 + iBu*b0 + 0x2000000) >> 18);
-              pDst8u[1][i*dstStep[1] + (j<<1)+1] = (Ipp8u)(( iBu*r0 - iGv*g0 - iBv*b0 + 0x2000000) >> 18);
+              pDst8u[1][i*dstStep[1] + (j<<1)  ] = (uint8_t)((-iRu*r0 - iGu*g0 + iBu*b0 + 0x2000000) >> 18);
+              pDst8u[1][i*dstStep[1] + (j<<1)+1] = (uint8_t)(( iBu*r0 - iGv*g0 - iBv*b0 + 0x2000000) >> 18);
           }
       }
       else if (JC_YCBCR == m_jpeg_color && JC_BGRA == m_dst.color)
       {
           int     srcStep;
-          const Ipp8u*  pSrc8u[3];
+          const uint8_t*  pSrc8u[3];
           int     dstStep;
-          Ipp8u*  pDst8u;
+          uint8_t*  pDst8u;
 
           srcStep = m_ccomp[0].m_cc_step;
 
-          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
-          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
-          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (0) + colMCU * m_curr_scan->mcuWidth;
+          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
+          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
+          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (0) + colMCU * m_curr_scan->mcuWidth;
 
           dstStep = m_dst.lineStep[0];
           bpp = JPEG_BPP[m_dst.color % JC_MAX];
@@ -1765,12 +1765,12 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
 #if 0
   int       dstStep;
   int       cc_h;
-  Ipp8u*    pDst8u  = 0;
-  Ipp16u*   pDst16u = 0;
-  IppiSize  roi;
+  uint8_t*    pDst8u  = 0;
+  uint16_t*   pDst16u = 0;
+  mfxSize  roi;
   IppStatus status;
-  const Ipp32u thread_id = 0;
-  Ipp32u bpp;
+  const uint32_t thread_id = 0;
+  uint32_t bpp;
 
   cc_h = m_curr_scan->mcuHeight;
 
@@ -1795,7 +1795,7 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_dst.precision <= 8)
     pDst8u   = m_dst.p.Data8u[0] + rowMCU * m_curr_scan->mcuHeight * dstStep / m_dd_factor + colMCU * m_curr_scan->mcuWidth * bpp;
   else
-    pDst16u  = (Ipp16u*)((Ipp8u*)m_dst.p.Data16s[0] + rowMCU * m_curr_scan->mcuHeight * dstStep + colMCU * m_curr_scan->mcuWidth * bpp);
+    pDst16u  = (uint16_t*)((uint8_t*)m_dst.p.Data16s[0] + rowMCU * m_curr_scan->mcuHeight * dstStep + colMCU * m_curr_scan->mcuWidth * bpp);
 
   if(m_jpeg_color == JC_UNKNOWN && m_dst.color == JC_UNKNOWN)
   {
@@ -1804,22 +1804,22 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
     case 1:
       {
         int     srcStep;
-        Ipp8u*  pSrc8u;
-        Ipp16u* pSrc16u;
+        uint8_t*  pSrc8u;
+        uint16_t* pSrc16u;
 
         srcStep = m_ccomp[0].m_cc_step;
 
         if(m_dst.precision <= 8)
         {
-          pSrc8u = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+          pSrc8u = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
           status = ippiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
         }
         else
         {
-          pSrc16u = m_ccomp[0].GetCCBufferPtr<Ipp16u> (colMCU);
+          pSrc16u = m_ccomp[0].GetCCBufferPtr<uint16_t> (colMCU);
 
-          status = ippiCopy_16s_C1R((Ipp16s*)pSrc16u,srcStep,(Ipp16s*)pDst16u,dstStep,roi);
+          status = ippiCopy_16s_C1R((int16_t*)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
         }
 
         if(ippStsNoErr != status)
@@ -1833,26 +1833,26 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
     case 3:
       {
         int     srcStep;
-        Ipp8u*  pSrc8u[3];
-        Ipp16u* pSrc16u[3];
+        uint8_t*  pSrc8u[3];
+        uint16_t* pSrc16u[3];
 
         srcStep = m_ccomp[0].m_cc_step;
 
         if(m_dst.precision <= 8)
         {
-          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
           status = ippiCopy_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
         }
         else
         {
-          pSrc16u[0] = m_ccomp[0].GetCCBufferPtr<Ipp16u> (colMCU);
-          pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<Ipp16u> (colMCU);
-          pSrc16u[2] = m_ccomp[2].GetCCBufferPtr<Ipp16u> (colMCU);
+          pSrc16u[0] = m_ccomp[0].GetCCBufferPtr<uint16_t> (colMCU);
+          pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<uint16_t> (colMCU);
+          pSrc16u[2] = m_ccomp[2].GetCCBufferPtr<uint16_t> (colMCU);
 
-          status = ippiCopy_16s_P3C3R((Ipp16s**)pSrc16u,srcStep,(Ipp16s*)pDst16u,dstStep,roi);
+          status = ippiCopy_16s_P3C3R((int16_t**)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
         }
 
         if(ippStsNoErr != status)
@@ -1866,28 +1866,28 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
     case 4:
       {
         int     srcStep;
-        Ipp8u*  pSrc8u[4];
-        Ipp16u* pSrc16u[4];
+        uint8_t*  pSrc8u[4];
+        uint16_t* pSrc16u[4];
 
         srcStep = m_ccomp[0].m_cc_step;
 
         if(m_dst.precision <= 8)
         {
-          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
-          pSrc8u[3] = m_ccomp[3].GetCCBufferPtr<Ipp8u> (colMCU);
+          pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+          pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+          pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
+          pSrc8u[3] = m_ccomp[3].GetCCBufferPtr<uint8_t> (colMCU);
 
           status = ippiCopy_8u_P4C4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
         }
         else
         {
-          pSrc16u[0] = m_ccomp[0].GetCCBufferPtr<Ipp16u> (colMCU);
-          pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<Ipp16u> (colMCU);
-          pSrc16u[2] = m_ccomp[2].GetCCBufferPtr<Ipp16u> (colMCU);
-          pSrc16u[3] = m_ccomp[3].GetCCBufferPtr<Ipp16u> (colMCU);
+          pSrc16u[0] = m_ccomp[0].GetCCBufferPtr<uint16_t> (colMCU);
+          pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<uint16_t> (colMCU);
+          pSrc16u[2] = m_ccomp[2].GetCCBufferPtr<uint16_t> (colMCU);
+          pSrc16u[3] = m_ccomp[3].GetCCBufferPtr<uint16_t> (colMCU);
 
-          status = ippiCopy_16s_P4C4R((Ipp16s**)pSrc16u,srcStep,(Ipp16s*)pDst16u,dstStep,roi);
+          status = ippiCopy_16s_P4C4R((int16_t**)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
         }
 
         if(ippStsNoErr != status)
@@ -1907,22 +1907,22 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_GRAY && m_dst.color == JC_GRAY)
   {
     int     srcStep;
-    Ipp8u*  pSrc8u;
-    Ipp16u* pSrc16u;
+    uint8_t*  pSrc8u;
+    uint16_t* pSrc16u;
 
     srcStep = m_ccomp[0].m_cc_step;
 
     if(m_dst.precision <= 8)
     {
-      pSrc8u = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+      pSrc8u = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
       status = ippiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
-      pSrc16u = m_ccomp[0].GetCCBufferPtr<Ipp16u> (colMCU);
+      pSrc16u = m_ccomp[0].GetCCBufferPtr<uint16_t> (colMCU);
 
-      status = ippiCopy_16s_C1R((Ipp16s*)pSrc16u,srcStep,(Ipp16s*)pDst16u,dstStep,roi);
+      status = ippiCopy_16s_C1R((int16_t*)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
@@ -1936,13 +1936,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_GRAY && m_dst.color == JC_RGB)
   {
     int    srcStep;
-    Ipp8u* pSrc8u[3];
+    uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiCopy_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -1957,13 +1957,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_GRAY && m_dst.color == JC_BGR)
   {
     int    srcStep;
-    Ipp8u* pSrc8u[3];
+    uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiCopy_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -1979,10 +1979,10 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
       m_dst.sampling == JS_422H)
   {
     int    srcStep;
-    Ipp8u* pSrc8u; 
+    uint8_t* pSrc8u; 
 
     srcStep = m_ccomp[0].m_cc_step;
-    pSrc8u = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
     for(int i=0; i<roi.height; i++)
         for(int j=0; j<roi.width >> 1; j++)
@@ -1998,26 +1998,26 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_RGB && m_dst.color == JC_RGB)
   {
     int     srcStep;
-    Ipp8u*  pSrc8u[3];
-    Ipp16u* pSrc16u[3];
+    uint8_t*  pSrc8u[3];
+    uint16_t* pSrc16u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
     if(m_dst.precision <= 8)
     {
-      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+      pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+      pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
       status = ippiCopy_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
-      pSrc16u[0] = m_ccomp[0].GetCCBufferPtr<Ipp16u> (colMCU);
-      pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<Ipp16u> (colMCU);
-      pSrc16u[2] = m_ccomp[2].GetCCBufferPtr<Ipp16u> (colMCU);
+      pSrc16u[0] = m_ccomp[0].GetCCBufferPtr<uint16_t> (colMCU);
+      pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<uint16_t> (colMCU);
+      pSrc16u[2] = m_ccomp[2].GetCCBufferPtr<uint16_t> (colMCU);
 
-      status = ippiCopy_16s_P3C3R((Ipp16s**)pSrc16u,srcStep,(Ipp16s*)pDst16u,dstStep,roi);
+      status = ippiCopy_16s_P3C3R((int16_t**)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
@@ -2031,26 +2031,26 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_RGB && m_dst.color == JC_BGR)
   {
     int     srcStep;
-    Ipp8u*  pSrc8u[3];
-    Ipp16u* pSrc16u[3];
+    uint8_t*  pSrc8u[3];
+    uint16_t* pSrc16u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
     if(m_dst.precision <= 8)
     {
-      pSrc8u[2] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-      pSrc8u[0] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+      pSrc8u[2] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+      pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+      pSrc8u[0] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
       status = ippiCopy_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
     }
     else
     {
-      pSrc16u[2] = m_ccomp[0].GetCCBufferPtr<Ipp16u> (colMCU);
-      pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<Ipp16u> (colMCU);
-      pSrc16u[0] = m_ccomp[2].GetCCBufferPtr<Ipp16u> (colMCU);
+      pSrc16u[2] = m_ccomp[0].GetCCBufferPtr<uint16_t> (colMCU);
+      pSrc16u[1] = m_ccomp[1].GetCCBufferPtr<uint16_t> (colMCU);
+      pSrc16u[0] = m_ccomp[2].GetCCBufferPtr<uint16_t> (colMCU);
 
-      status = ippiCopy_16s_P3C3R((Ipp16s**)pSrc16u,srcStep,(Ipp16s*)pDst16u,dstStep,roi);
+      status = ippiCopy_16s_P3C3R((int16_t**)pSrc16u,srcStep,(int16_t*)pDst16u,dstStep,roi);
     }
 
     if(ippStsNoErr != status)
@@ -2065,14 +2065,14 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
       m_dst.sampling == JS_422H)
   {
     int srcStep;
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
     int g,g1; int r,r1; int b,b1;
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     for(int i=0; i<roi.height; i++)
         for(int j=0; j<roi.width >> 1; j++)
@@ -2084,12 +2084,12 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             g1= pSrc8u[1][i*srcStep + (j<<1)+1];
             r1= pSrc8u[0][i*srcStep + (j<<1)+1];
 
-            pDst8u[i*dstStep + (j<<2)  ] = (Ipp8u)(( iRY*r + iGY*g + iBY*b + 0x008000) >> 16);
-            pDst8u[i*dstStep + (j<<2)+2] = (Ipp8u)(( iRY*r1  + iGY*g1 + iBY*b1 + 0x008000) >> 16);
+            pDst8u[i*dstStep + (j<<2)  ] = (uint8_t)(( iRY*r + iGY*g + iBY*b + 0x008000) >> 16);
+            pDst8u[i*dstStep + (j<<2)+2] = (uint8_t)(( iRY*r1  + iGY*g1 + iBY*b1 + 0x008000) >> 16);
 
             r += r1;b += b1;g += g1;
-            pDst8u[i*dstStep + (j<<2)+1] = (Ipp8u)((-iRu*r - iGu*g + iBu*b + 0x1000000) >> 17);
-            pDst8u[i*dstStep + (j<<2)+3] = (Ipp8u)((iBu*r - iGv*g - iBv*b + 0x1000000) >> 17);
+            pDst8u[i*dstStep + (j<<2)+1] = (uint8_t)((-iRu*r - iGu*g + iBu*b + 0x1000000) >> 17);
+            pDst8u[i*dstStep + (j<<2)+3] = (uint8_t)((iBu*r - iGv*g - iBv*b + 0x1000000) >> 17);
         }
   }
 
@@ -2097,11 +2097,11 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_YCBCR && m_dst.color == JC_GRAY)
   {
     int    srcStep;
-    Ipp8u* pSrc8u;
+    uint8_t* pSrc8u;
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiCopy_8u_C1R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -2116,13 +2116,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_YCBCR && m_dst.color == JC_RGB)
   {
     int srcStep;
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiYCbCrToRGB_JPEG_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -2137,13 +2137,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_YCBCR && m_dst.color == JC_BGR)
   {
     int srcStep;
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiYCbCrToBGR_JPEG_8u_P3C3R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -2158,13 +2158,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_YCBCR && m_dst.color == JC_RGBA)
   {
     int srcStep;
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiYCbCrToRGB_8u_P3C4R(pSrc8u,srcStep,pDst8u,dstStep,roi, 0xFF);
 
@@ -2179,13 +2179,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_YCBCR && m_dst.color == JC_BGRA)
   {
     int srcStep;
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiYCbCrToBGR_8u_P3C4R(pSrc8u,srcStep,pDst8u,dstStep,roi, 0xFF);
 
@@ -2201,15 +2201,15 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
      m_jpeg_sampling == JS_422H && m_dst.sampling == JS_422H)
   {
     int    srcStep[3];
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
 
     srcStep[0] = m_ccomp[0].m_cc_step;
     srcStep[1] = m_ccomp[1].m_cc_step;
     srcStep[2] = m_ccomp[2].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiYCbCr422_8u_P3C2R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -2225,13 +2225,13 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
      m_jpeg_sampling != JS_422H && m_dst.sampling == JS_422H)
   {
     int    srcStep;
-    const Ipp8u* pSrc8u[3];
+    const uint8_t* pSrc8u[3];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
     for(int i=0; i<roi.height; i++)
         for(int j=0; j<roi.width >> 1; j++)
@@ -2247,14 +2247,14 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_CMYK && m_dst.color == JC_CMYK)
   {
     int    srcStep;
-    Ipp8u* pSrc8u[4];
+    uint8_t* pSrc8u[4];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[3] = m_ccomp[3].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[3] = m_ccomp[3].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiCopy_8u_P4C4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -2269,14 +2269,14 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   if(m_jpeg_color == JC_YCCK && m_dst.color == JC_CMYK)
   {
     int    srcStep;
-    const Ipp8u* pSrc8u[4];
+    const uint8_t* pSrc8u[4];
 
     srcStep = m_ccomp[0].m_cc_step;
 
-    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
-    pSrc8u[3] = m_ccomp[3].GetCCBufferPtr<Ipp8u> (colMCU);
+    pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
+    pSrc8u[3] = m_ccomp[3].GetCCBufferPtr<uint8_t> (colMCU);
 
     status = ippiYCCKToCMYK_JPEG_8u_P4C4R(pSrc8u,srcStep,pDst8u,dstStep,roi);
 
@@ -2294,18 +2294,18 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
       case JC_YCBCR:
           {
             int    srcStep[3];
-            const Ipp8u* pSrc8u[3];
+            const uint8_t* pSrc8u[3];
 
             srcStep[0] = m_ccomp[0].m_cc_step;
             srcStep[1] = m_ccomp[1].m_cc_step;
             srcStep[2] = m_ccomp[2].m_cc_step;
 
-            pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-            pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-            pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+            pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+            pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+            pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
             int    dstStep[3];
-            Ipp8u* pDst8u[3];
+            uint8_t* pDst8u[3];
 
             dstStep[0] = m_dst.lineStep[0];
             dstStep[1] = m_dst.lineStep[1];
@@ -2338,18 +2338,18 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
       case CHROMA_TYPE_YUV422H_2Y:
           {
             int    srcStep[3];
-            const Ipp8u* pSrc8u[3];
+            const uint8_t* pSrc8u[3];
 
             srcStep[0] = m_ccomp[0].m_cc_step;
             srcStep[1] = m_ccomp[1].m_cc_step;
             srcStep[2] = m_ccomp[2].m_cc_step;
 
-            pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-            pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-            pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+            pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+            pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+            pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
             int    dstStep[2];
-            Ipp8u* pDst8u[2];
+            uint8_t* pDst8u[2];
 
             dstStep[0] = m_dst.lineStep[0];
             dstStep[1] = m_dst.lineStep[1];
@@ -2369,19 +2369,19 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           break;
       case CHROMA_TYPE_YUV444:
           {
-            Ipp32u    srcStep[3];
-            const Ipp8u* pSrc8u[3];
+            uint32_t    srcStep[3];
+            const uint8_t* pSrc8u[3];
 
             srcStep[0] = m_ccomp[0].m_cc_step;
             srcStep[1] = m_ccomp[1].m_cc_step;
             srcStep[2] = m_ccomp[2].m_cc_step;
 
-            pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<Ipp8u> (colMCU);
-            pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<Ipp8u> (colMCU);
-            pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<Ipp8u> (colMCU);
+            pSrc8u[0] = m_ccomp[0].GetCCBufferPtr<uint8_t> (colMCU);
+            pSrc8u[1] = m_ccomp[1].GetCCBufferPtr<uint8_t> (colMCU);
+            pSrc8u[2] = m_ccomp[2].GetCCBufferPtr<uint8_t> (colMCU);
 
             int    dstStep[2];
-            Ipp8u* pDst8u[2];
+            uint8_t* pDst8u[2];
 
             dstStep[0] = m_dst.lineStep[0];
             dstStep[1] = m_dst.lineStep[1];
@@ -2404,7 +2404,7 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
       default:
           {
             int    srcStep[3];
-            const Ipp8u* pSrc8u[3];
+            const uint8_t* pSrc8u[3];
 
             srcStep[0] = m_ccomp[0].m_cc_step;
             srcStep[1] = m_ccomp[1].m_ss_step;
@@ -2415,7 +2415,7 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             pSrc8u[2] = m_ccomp[2].GetSSBufferPtr(thread_id) + m_ccomp[2].m_ss_step;
 
             int    dstStep[2];
-            Ipp8u* pDst8u[2];
+            uint8_t* pDst8u[2];
 
             dstStep[0] = m_dst.lineStep[0];
             dstStep[1] = m_dst.lineStep[1];
@@ -2439,10 +2439,10 @@ JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   return JPEG_OK;
 #endif
 
-} // JERRCODE CJPEGDecoder::ColorConvert(Ipp32u rowCMU, Ipp32u colMCU, Ipp32u maxMCU)
+} // JERRCODE CJPEGDecoder::ColorConvert(uint32_t rowCMU, uint32_t colMCU, uint32_t maxMCU)
 
 
-JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::UpSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU)
 {
   int i, j, k, n, c;
   int need_upsampling;
@@ -2465,9 +2465,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
           int    srcStep;
           int    dstStep;
-          Ipp8u* pSrc;
-          Ipp8u* pDst;
-          Ipp32u srcWidth, intervalSize, tileSize, pixelToProcess;
+          uint8_t* pSrc;
+          uint8_t* pDst;
+          uint32_t srcWidth, intervalSize, tileSize, pixelToProcess;
 
           need_upsampling = 0;
 
@@ -2476,9 +2476,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           dstStep = curr_comp->m_cc_step;
 
           // set the pointer to source buffer
-          pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
+          pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
           // set the pointer to destination buffer
-          pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
+          pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_h_factor;
 
           intervalSize = m_curr_scan->jpeg_restart_interval ? 
                          m_curr_scan->jpeg_restart_interval * 8 * curr_comp->m_scan_hsampling : 
@@ -2491,7 +2491,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           for(i = 0; i < m_mcuHeight / m_dd_factor; i++)
           {
               j = 0;
-              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              pixelToProcess = MFX_MIN(tileSize, srcWidth / m_dd_factor);
               while(j < (int) srcWidth / m_dd_factor)
               {
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc + j, pixelToProcess , pDst + j * 2);
@@ -2501,7 +2501,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                     return JPEG_ERR_INTERNAL;
                   }
                   j += pixelToProcess;
-                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
+                  pixelToProcess = MFX_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
 
               pSrc += srcStep;
@@ -2513,9 +2513,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         if(curr_comp->m_h_factor == 1 && curr_comp->m_v_factor == 2 && need_upsampling)
         {
           int    srcStep;
-          Ipp8u* pSrc;
-          Ipp8u* pDst;
-          Ipp32u srcWidth;
+          uint8_t* pSrc;
+          uint8_t* pDst;
+          uint32_t srcWidth;
 
           need_upsampling = 0;
 
@@ -2523,9 +2523,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           srcStep = curr_comp->m_ss_step;
 
           // set the pointer to source buffer
-          pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
+          pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
           // set the pointer to destination buffer
-          pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
+          pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_h_factor;
 
           for(i = 0; i < (m_mcuHeight >> 1) - 1; i++)
           {
@@ -2556,9 +2556,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           int    ddShift;
           int    srcStep;
           int    dstStep;
-          Ipp8u* pSrc;
-          Ipp8u* pDst;
-          Ipp32u srcWidth, intervalSize, tileSize, pixelToProcess;
+          uint8_t* pSrc;
+          uint8_t* pDst;
+          uint32_t srcWidth, intervalSize, tileSize, pixelToProcess;
 
           need_upsampling = 0;
 
@@ -2567,9 +2567,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           dstStep = curr_comp->m_cc_step;
 
           // set the pointer to source buffer
-          pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
+          pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
           // set the pointer to destination buffer
-          pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
+          pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_h_factor;
 
           intervalSize = m_curr_scan->jpeg_restart_interval ? 
                          m_curr_scan->jpeg_restart_interval * 8 * curr_comp->m_scan_hsampling : 
@@ -2581,7 +2581,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
 
           // filling the zero row
           j = 0;
-          pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+          pixelToProcess = MFX_MIN(tileSize, srcWidth / m_dd_factor);
           while(j < (int) srcWidth / m_dd_factor)
           {
               status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + j, pSrc + j, pixelToProcess, pDst + j * 2);    
@@ -2591,7 +2591,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                 return JPEG_ERR_INTERNAL;
               }
               j += pixelToProcess;
-              pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
+              pixelToProcess = MFX_MIN(intervalSize, srcWidth / m_dd_factor - j);
           }
           pDst += dstStep;
 
@@ -2600,7 +2600,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           {
               // filling odd rows
               j = 0;
-              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              pixelToProcess = MFX_MIN(tileSize, srcWidth / m_dd_factor);
               while(j < (int) srcWidth / m_dd_factor)
               {
                   status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + j, pSrc + srcStep + j, pixelToProcess, pDst + j * 2);    
@@ -2610,13 +2610,13 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                     return JPEG_ERR_INTERNAL;
                   }
                   j += pixelToProcess;
-                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
+                  pixelToProcess = MFX_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
               pDst += dstStep;
 
               // filling even rows
               j = 0;
-              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              pixelToProcess = MFX_MIN(tileSize, srcWidth / m_dd_factor);
               while(j < (int) srcWidth / m_dd_factor)
               {
                   status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + srcStep + j, pSrc + j, pixelToProcess, pDst + j * 2);    
@@ -2626,7 +2626,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                     return JPEG_ERR_INTERNAL;
                   }
                   j += pixelToProcess;
-                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
+                  pixelToProcess = MFX_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
               pDst += dstStep;
               pSrc += srcStep;
@@ -2634,7 +2634,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
 
           // filling the last row
           j = 0;
-          pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+          pixelToProcess = MFX_MIN(tileSize, srcWidth / m_dd_factor);
           while(j < (int) srcWidth / m_dd_factor)
           {
               status = ippiSampleUpRowH2V2_Triangle_JPEG_8u_C1(pSrc + j, pSrc + j, pixelToProcess, pDst + j * 2);    
@@ -2644,7 +2644,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                 return JPEG_ERR_INTERNAL;
               }
               j += pixelToProcess;
-              pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
+              pixelToProcess = MFX_MIN(intervalSize, srcWidth / m_dd_factor - j);
           }
         } // 420
 
@@ -2653,10 +2653,10 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
           int    srcStep;
           int    dstStep;
-          Ipp8u* pSrc;
-          Ipp8u* pTmp;
-          Ipp8u* pDst;
-          Ipp32u srcWidth, intervalSize, tileSize, pixelToProcess;
+          uint8_t* pSrc;
+          uint8_t* pTmp;
+          uint8_t* pDst;
+          uint32_t srcWidth, intervalSize, tileSize, pixelToProcess;
 
           need_upsampling = 0;
 
@@ -2665,11 +2665,11 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           dstStep = curr_comp->m_cc_step;
 
           // set the pointer to source buffer
-          pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
+          pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
           // set the pointer to temporary buffer
-          pTmp = (Ipp8u*)malloc(2 * srcWidth / m_dd_factor);
+          pTmp = (uint8_t*)malloc(2 * srcWidth / m_dd_factor);
           // set the pointer to destination buffer
-          pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
+          pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_h_factor;
          
           intervalSize = m_curr_scan->jpeg_restart_interval ? 
                          m_curr_scan->jpeg_restart_interval * 8 * curr_comp->m_scan_hsampling : 
@@ -2682,7 +2682,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           for(i = 0; i < m_mcuHeight / m_dd_factor; i++)
           {
               j = 0;
-              pixelToProcess = IPP_MIN(tileSize, srcWidth / m_dd_factor);
+              pixelToProcess = MFX_MIN(tileSize, srcWidth / m_dd_factor);
               while(j < (int) srcWidth / m_dd_factor)
               {
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pSrc + j, pixelToProcess, pTmp + j * 2);
@@ -2693,11 +2693,11 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                     return JPEG_ERR_INTERNAL;
                   }
                   j += pixelToProcess;
-                  pixelToProcess = IPP_MIN(intervalSize, srcWidth / m_dd_factor - j);
+                  pixelToProcess = MFX_MIN(intervalSize, srcWidth / m_dd_factor - j);
               }
               
               j = 0;
-              pixelToProcess = IPP_MIN(2 * tileSize, 2 * srcWidth / m_dd_factor);
+              pixelToProcess = MFX_MIN(2 * tileSize, 2 * srcWidth / m_dd_factor);
               while(j < 2 * (int) srcWidth / m_dd_factor)
               {
                   status = ippiSampleUpRowH2V1_Triangle_JPEG_8u_C1(pTmp + j, pixelToProcess, pDst + j * 2);
@@ -2708,7 +2708,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
                     return JPEG_ERR_INTERNAL;
                   }
                   j += pixelToProcess;
-                  pixelToProcess = IPP_MIN(2 * intervalSize, 2 * srcWidth / m_dd_factor - j);
+                  pixelToProcess = MFX_MIN(2 * intervalSize, 2 * srcWidth / m_dd_factor - j);
               }
 
               pSrc += srcStep;
@@ -2726,10 +2726,10 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           int    v_step;
           int    h_step;
           int    val;
-          Ipp8u* pSrc;
-          Ipp8u* pDst;
-          Ipp8u* p;
-          Ipp32u srcWidth;
+          uint8_t* pSrc;
+          uint8_t* pDst;
+          uint8_t* p;
+          uint32_t srcWidth;
 
           srcWidth = (maxMCU - colMCU) * 8 * curr_comp->m_scan_hsampling;
           srcStep = curr_comp->m_ss_step;
@@ -2739,9 +2739,9 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
           v_step  = curr_comp->m_v_factor;
 
           // set the pointer to source buffer
-          pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
+          pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_scan_hsampling;
           // set the pointer to destination buffer
-          pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * curr_comp->m_h_factor;
+          pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU * curr_comp->m_h_factor;
 
           for(n = 0; n < curr_comp->m_ss_height; n++)
           {
@@ -2750,7 +2750,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
             {
               val = pSrc[i];
               for(j = 0; j < h_step; j++)
-                pDst[j] = (Ipp8u)val;
+                pDst[j] = (uint8_t)val;
 
               pDst += h_step;
             } //  for i
@@ -2786,21 +2786,21 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
             int    srcStep;
             int    tmpStep;
-            Ipp8u* pSrc;
-            Ipp8u* pTmp;
-            Ipp8u* pDst;
-            IppiSize srcRoiSize;
-            IppiSize tmpRoiSize;
+            uint8_t* pSrc;
+            uint8_t* pTmp;
+            uint8_t* pDst;
+            mfxSize srcRoiSize;
+            mfxSize tmpRoiSize;
 
             srcStep = curr_comp->m_cc_step;
             tmpStep = srcStep;            
 
             // set the pointer to source buffer
-            pSrc = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU;
+            pSrc = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU;
             // set the pointer to temporary buffer
-            pTmp = (Ipp8u*)malloc(tmpStep * m_curr_scan->mcuHeight / 2);
+            pTmp = (uint8_t*)malloc(tmpStep * m_curr_scan->mcuHeight / 2);
             // set the pointer to destination buffer
-            pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU / 2;  
+            pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU / 2;  
 
             // set ROI of source
             srcRoiSize.width = (maxMCU - colMCU) * 8;
@@ -2834,17 +2834,17 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
             int    srcStep;
             int    dstStep;
-            Ipp8u* pSrc;
-            Ipp8u* pDst;
-            IppiSize srcRoiSize;
+            uint8_t* pSrc;
+            uint8_t* pDst;
+            mfxSize srcRoiSize;
 
             srcStep = curr_comp->m_ss_step;
             dstStep = curr_comp->m_cc_step;     
 
             // set the pointer to source buffer
-            pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU;
+            pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU;
             // set the pointer to destination buffer
-            pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU;  
+            pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU;  
 
             // set ROI of source
             srcRoiSize.width = (maxMCU - colMCU) * 8;
@@ -2869,18 +2869,18 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
             int    srcStep;
             int    dstStep;
-            Ipp8u* pSrc;
-            Ipp8u* pDst;
-            IppiSize srcRoiSize;
-            IppiSize dstRoiSize;
+            uint8_t* pSrc;
+            uint8_t* pDst;
+            mfxSize srcRoiSize;
+            mfxSize dstRoiSize;
 
             srcStep = curr_comp->m_ss_step;
             dstStep = curr_comp->m_cc_step;
 
             // set the pointer to source buffer
-            pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + m_curr_scan->mcuWidth * colMCU;
+            pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + m_curr_scan->mcuWidth * colMCU;
             // set the pointer to destination buffer
-            pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + m_curr_scan->mcuWidth * colMCU / 2;
+            pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + m_curr_scan->mcuWidth * colMCU / 2;
 
             // set ROI of source
             srcRoiSize.width = (maxMCU - colMCU) * m_curr_scan->mcuWidth;
@@ -2903,17 +2903,17 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
             int    srcStep;
             int    dstStep;
-            Ipp8u* pSrc;
-            Ipp8u* pDst;
-            IppiSize srcRoiSize;
+            uint8_t* pSrc;
+            uint8_t* pDst;
+            mfxSize srcRoiSize;
 
             srcStep = curr_comp->m_ss_step;
             dstStep = curr_comp->m_cc_step;
 
             // set the pointer to source buffer
-            pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU;
+            pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU;
             // set the pointer to destination buffer
-            pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU;
+            pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU;
 
             // set ROI of source
             srcRoiSize.width = (maxMCU - colMCU) * 8;
@@ -2938,17 +2938,17 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
         {
             int    srcStep;
             int    dstStep;
-            Ipp8u* pSrc;
-            Ipp8u* pDst;
-            IppiSize srcRoiSize;
+            uint8_t* pSrc;
+            uint8_t* pDst;
+            mfxSize srcRoiSize;
 
             srcStep = curr_comp->m_ss_step;
             dstStep = curr_comp->m_cc_step;
 
             // set the pointer to source buffer
-            pSrc = curr_comp->GetSSBufferPtr<Ipp8u> (0) + 8 * colMCU;
+            pSrc = curr_comp->GetSSBufferPtr<uint8_t> (0) + 8 * colMCU;
             // set the pointer to destination buffer
-            pDst = curr_comp->GetCCBufferPtr<Ipp8u> (0) + 8 * colMCU * 2;  
+            pDst = curr_comp->GetCCBufferPtr<uint8_t> (0) + 8 * colMCU * 2;  
 
             // set ROI of source
             srcRoiSize.width = (maxMCU - colMCU) * 8;
@@ -2967,7 +2967,7 @@ JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
   }
 
   return JPEG_OK;
-} // JERRCODE CJPEGDecoder::UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU)
+} // JERRCODE CJPEGDecoder::UpSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU)
 
 
 JERRCODE CJPEGDecoder::ProcessBuffer(int nMCURow, int thread_id)
@@ -2978,11 +2978,11 @@ JERRCODE CJPEGDecoder::ProcessBuffer(int nMCURow, int thread_id)
   int                  dstStep = 0;
   int                  copyHeight = 0;
   int                  ssHeight;
-  Ipp8u*               pSrc8u  = 0;
-  Ipp8u*               pDst8u  = 0;
-  Ipp16u*              pSrc16u = 0;
-  Ipp16u*              pDst16u = 0;
-  IppiSize             roi;
+  uint8_t*               pSrc8u  = 0;
+  uint8_t*               pDst8u  = 0;
+  uint16_t*              pSrc16u = 0;
+  uint16_t*              pDst16u = 0;
+  mfxSize             roi;
   IppStatus            status;
   CJPEGColorComponent* curr_comp;
 
@@ -3046,7 +3046,7 @@ JERRCODE CJPEGDecoder::ProcessBuffer(int nMCURow, int thread_id)
     {
       curr_comp  = &m_ccomp[c];
       srcStep    = curr_comp->m_cc_step;
-      pSrc16u    = (Ipp16u*)curr_comp->GetCCBufferPtr(thread_id);
+      pSrc16u    = (uint16_t*)curr_comp->GetCCBufferPtr(thread_id);
 
       copyHeight = m_ccHeight;
 
@@ -3063,9 +3063,9 @@ JERRCODE CJPEGDecoder::ProcessBuffer(int nMCURow, int thread_id)
 
       dstStep  = m_dst.lineStep[c];
 
-      pDst16u  = (Ipp16u*)((Ipp8u*)m_dst.p.Data16s[c] + nMCURow * m_mcuHeight * dstStep);
+      pDst16u  = (uint16_t*)((uint8_t*)m_dst.p.Data16s[c] + nMCURow * m_mcuHeight * dstStep);
 
-      status   = ippiCopy_16s_C1R((Ipp16s*)pSrc16u, srcStep, (Ipp16s*)pDst16u, dstStep, roi);
+      status   = ippiCopy_16s_C1R((int16_t*)pSrc16u, srcStep, (int16_t*)pDst16u, dstStep, roi);
       if(ippStsNoErr != status)
       {
         LOG1("IPP Error: ippiCopy_16s_C1R() failed - ",status);
@@ -3078,13 +3078,13 @@ JERRCODE CJPEGDecoder::ProcessBuffer(int nMCURow, int thread_id)
 } // JERRCODE CJPEGDecoder::ProcessBuffer()
 
 
-JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU)
 {
   int       n, k, l;
-  Ipp32u j;
+  uint32_t j;
   int       srcLen;
   int       currPos;
-  Ipp8u*    src;
+  uint8_t*    src;
   JERRCODE  jerr;
   IppStatus status;
 
@@ -3108,7 +3108,7 @@ JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp
 
     for(n = m_curr_scan->first_comp; n < m_curr_scan->first_comp + m_curr_scan->ncomps; n++)
     {
-      Ipp16s*                lastDC = &m_ccomp[n].m_lastDC;
+      int16_t*                lastDC = &m_ccomp[n].m_lastDC;
       IppiDecodeHuffmanSpec* dctbl  = m_dctbl[m_ccomp[n].m_dc_selector];
       IppiDecodeHuffmanSpec* actbl  = m_actbl[m_ccomp[n].m_ac_selector];
 
@@ -3145,20 +3145,20 @@ JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp
 
 #if 0
   int       n, k, l;
-  Ipp32u j;
+  uint32_t j;
   int       srcLen;
   int       currPos;
   int       curr_lnz;
-  Ipp8u*    src;
-  Ipp8u*    lnzBuf;
+  uint8_t*    src;
+  uint8_t*    lnzBuf;
   JERRCODE  jerr;
   IppStatus status;
-  const Ipp32u thread_id = 0;
+  const uint32_t thread_id = 0;
 
   src    = m_BitStreamIn.GetDataPtr();
   srcLen = m_BitStreamIn.GetDataLen();
 
-  Ipp8u* plnz = ((Ipp8u*)((IppiDecodeHuffmanState*)m_state) + 16*sizeof(Ipp8u));
+  uint8_t* plnz = ((uint8_t*)((IppiDecodeHuffmanState*)m_state) + 16*sizeof(uint8_t));
 
   for(j = colMCU; j < maxMCU; j++)
   {
@@ -3177,7 +3177,7 @@ JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp
 
     for(n = 0; n < m_jpeg_ncomp; n++)
     {
-      Ipp16s*                lastDC = &m_ccomp[n].m_lastDC;
+      int16_t*                lastDC = &m_ccomp[n].m_lastDC;
       IppiDecodeHuffmanSpec* dctbl  = m_dctbl[m_ccomp[n].m_dc_selector];
       IppiDecodeHuffmanSpec* actbl  = m_actbl[m_ccomp[n].m_ac_selector];
       curr_lnz                      = j * m_ccomp[n].m_lnz_ds;
@@ -3218,14 +3218,14 @@ JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp
 
   return JPEG_OK;
 #endif
-} // JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU)
+} // JERRCODE CJPEGDecoder::DecodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU)
 
 
-JERRCODE CJPEGDecoder::DecodeHuffmanMCURowLS(Ipp16s* pMCUBuf)
+JERRCODE CJPEGDecoder::DecodeHuffmanMCURowLS(int16_t* pMCUBuf)
 {
   int       c;
-  Ipp8u*    src;
-  Ipp16s*   dst[4];
+  uint8_t*    src;
+  int16_t*   dst[4];
   int       srcLen;
   int       currPos;
   const IppiDecodeHuffmanSpec* dctbl[4];
@@ -3331,21 +3331,21 @@ JERRCODE CJPEGDecoder::DecodeHuffmanMCURowLS(Ipp16s* pMCUBuf)
 } // CJPEGDecoder::DecodeHuffmanMCURowLS()
 
 
-JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8_NxN(Ipp16s* pMCUBuf,
-                                                  Ipp32u colMCU,
-                                                  Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8_NxN(int16_t* pMCUBuf,
+                                                  uint32_t colMCU,
+                                                  uint32_t maxMCU)
 {
   int       c, k, l, curr_lnz;
-  Ipp32u mcu_col;
-  Ipp8u*    lnz     = 0;
-  Ipp8u*    dst     = 0;
+  uint32_t mcu_col;
+  uint8_t*    lnz     = 0;
+  uint8_t*    dst     = 0;
   int       dstStep = m_ccWidth;
-  Ipp16u*   qtbl;
+  uint16_t*   qtbl;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   const int thread_id = 0;
 
@@ -3433,23 +3433,23 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8_NxN(Ipp16s* pMCUBuf,
 } // CJPEGDecoder::ReconstructMCURowBL8x8_NxN()
 
 
-JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8(Ipp16s* pMCUBuf,
-                                              Ipp32u colMCU,
-                                              Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8(int16_t* pMCUBuf,
+                                              uint32_t colMCU,
+                                              uint32_t maxMCU)
 {
     int       c, k, l;
-  Ipp32u mcu_col;
-  Ipp8u*    dst     = 0;
-  Ipp8u*    p       = 0;
+  uint32_t mcu_col;
+  uint8_t*    dst     = 0;
+  uint8_t*    p       = 0;
   int       dstStep = m_ccWidth;
-  Ipp16u*   qtbl;
+  uint16_t*   qtbl;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
-  const Ipp32u thread_id = 0;
+  const uint32_t thread_id = 0;
 
   for(mcu_col = colMCU; mcu_col < maxMCU; mcu_col++)
   {
@@ -3505,18 +3505,18 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8(Ipp16s* pMCUBuf,
 
 #if 0
   int       c, k, l;
-  Ipp32u mcu_col;
-  Ipp8u*    dst     = 0;
-  Ipp8u*    p       = 0;
+  uint32_t mcu_col;
+  uint8_t*    dst     = 0;
+  uint8_t*    p       = 0;
   int       dstStep = m_ccWidth;
-  Ipp16u*   qtbl;
+  uint16_t*   qtbl;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
-  const Ipp32u thread_id = 0;
+  const uint32_t thread_id = 0;
 
   for(mcu_col = colMCU; mcu_col < maxMCU; mcu_col++)
   {
@@ -3579,20 +3579,20 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8(Ipp16s* pMCUBuf,
 } // CJPEGDecoder::ReconstructMCURowBL8x8()
 
 
-JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To4x4(Ipp16s* pMCUBuf,
-                                                   Ipp32u colMCU,
-                                                   Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To4x4(int16_t* pMCUBuf,
+                                                   uint32_t colMCU,
+                                                   uint32_t maxMCU)
 {
   int       c, k, l;
-  Ipp32u mcu_col;
-  Ipp8u*    dst     = 0;
+  uint32_t mcu_col;
+  uint8_t*    dst     = 0;
   int       dstStep = m_ccWidth;
-  Ipp16u*   qtbl;
+  uint16_t*   qtbl;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   const int thread_id = 0;
 
@@ -3703,20 +3703,20 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To4x4(Ipp16s* pMCUBuf,
 } // CJPEGDecoder::ReconstructMCURowBL8x8To4x4()
 
 
-JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To2x2(Ipp16s* pMCUBuf,
-                                                   Ipp32u colMCU,
-                                                   Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To2x2(int16_t* pMCUBuf,
+                                                   uint32_t colMCU,
+                                                   uint32_t maxMCU)
 {
   int       c, k, l;
-  Ipp32u mcu_col;
-  Ipp8u*    dst     = 0;
+  uint32_t mcu_col;
+  uint8_t*    dst     = 0;
   int       dstStep = m_ccWidth;
-  Ipp16u*   qtbl;
+  uint16_t*   qtbl;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   const int thread_id = 0;
 
@@ -3827,21 +3827,21 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To2x2(Ipp16s* pMCUBuf,
 } // CJPEGDecoder::ReconstructMCURowBL8x8To2x2()
 
 
-JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To1x1(Ipp16s* pMCUBuf,
-                                                   Ipp32u colMCU,
-                                                   Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To1x1(int16_t* pMCUBuf,
+                                                   uint32_t colMCU,
+                                                   uint32_t maxMCU)
 {
   int       c, k, l;
-  Ipp32u mcu_col;
-  Ipp8u*    dst     = 0;
+  uint32_t mcu_col;
+  uint8_t*    dst     = 0;
   int       dstStep = m_ccWidth;
-  Ipp16u*   qtbl;
+  uint16_t*   qtbl;
   IppStatus status;
 
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   const int thread_id = 0;
 
@@ -3942,20 +3942,20 @@ JERRCODE CJPEGDecoder::ReconstructMCURowBL8x8To1x1(Ipp16s* pMCUBuf,
 } // CJPEGDecoder::ReconstructMCURowBL8x8To1x1()
 
 
-JERRCODE CJPEGDecoder::ReconstructMCURowEX(Ipp16s* pMCUBuf,
-                                           Ipp32u colMCU,
-                                           Ipp32u maxMCU)
+JERRCODE CJPEGDecoder::ReconstructMCURowEX(int16_t* pMCUBuf,
+                                           uint32_t colMCU,
+                                           uint32_t maxMCU)
 {
   int       c, k, l;
-  Ipp32u mcu_col;
-  Ipp16u*   dst = 0;
+  uint32_t mcu_col;
+  uint16_t*   dst = 0;
   int       dstStep;
-  Ipp32f*   qtbl;
+  float*   qtbl;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   const int thread_id = 0;
 
@@ -3973,12 +3973,12 @@ JERRCODE CJPEGDecoder::ReconstructMCURowEX(Ipp16s* pMCUBuf,
            curr_comp->m_vsampling == m_max_vsampling)
         {
           dstStep = curr_comp->m_cc_step;
-          dst     = (Ipp16u*)(curr_comp->GetCCBufferPtr(thread_id) + mcu_col*8*curr_comp->m_hsampling*sizeof(Ipp16s) + k*8*dstStep*sizeof(Ipp16s));
+          dst     = (uint16_t*)(curr_comp->GetCCBufferPtr(thread_id) + mcu_col*8*curr_comp->m_hsampling*sizeof(int16_t) + k*8*dstStep*sizeof(int16_t));
         }
         else
         {
           dstStep = curr_comp->m_ss_step;
-          dst     = (Ipp16u*)(curr_comp->GetSSBufferPtr(thread_id) + mcu_col*8*curr_comp->m_hsampling*sizeof(Ipp16s) + k*8*dstStep*sizeof(Ipp16s));
+          dst     = (uint16_t*)(curr_comp->GetSSBufferPtr(thread_id) + mcu_col*8*curr_comp->m_hsampling*sizeof(int16_t) + k*8*dstStep*sizeof(int16_t));
 
           curr_comp->m_need_upsampling = 1;
         }
@@ -4022,18 +4022,18 @@ JERRCODE CJPEGDecoder::ReconstructMCURowEX(Ipp16s* pMCUBuf,
 
 
 JERRCODE CJPEGDecoder::ReconstructMCURowLS(
-  Ipp16s* pMCUBuf,
+  int16_t* pMCUBuf,
   int     nMCURow,
   int     thread_id)
 {
   int       n;
   int       dstStep;
-  Ipp16s*   ptr;
-  Ipp16s*   pCurrRow;
-  Ipp16s*   pPrevRow;
-  Ipp8u*    pDst8u  = 0;
-  Ipp16s*   pDst16s = 0;
-  IppiSize  roi;
+  int16_t*   ptr;
+  int16_t*   pCurrRow;
+  int16_t*   pPrevRow;
+  uint8_t*    pDst8u  = 0;
+  int16_t*   pDst16s = 0;
+  mfxSize  roi;
   IppStatus status;
   CJPEGColorComponent* curr_comp;
 
@@ -4052,7 +4052,7 @@ JERRCODE CJPEGDecoder::ReconstructMCURowLS(
     else
     {
       dstStep = curr_comp->m_cc_step;
-      pDst16s = (Ipp16s*)curr_comp->GetCCBufferPtr(thread_id);
+      pDst16s = (int16_t*)curr_comp->GetCCBufferPtr(thread_id);
     }
 
     if(m_jpeg_ncomp == m_curr_scan->ncomps)
@@ -4088,8 +4088,8 @@ JERRCODE CJPEGDecoder::ReconstructMCURowLS(
 
     if(m_dst.precision <= 8)
     {
-      status = ippiAndC_16u_C1IR(0xFF, (Ipp16u*)pPrevRow, m_dst.width*sizeof(Ipp16s),roi);
-      status = ippiConvert_16u8u_C1R((Ipp16u*)pPrevRow,m_dst.width*sizeof(Ipp16s),pDst8u,dstStep,roi);
+      status = ippiAndC_16u_C1IR(0xFF, (uint16_t*)pPrevRow, m_dst.width*sizeof(int16_t),roi);
+      status = ippiConvert_16u8u_C1R((uint16_t*)pPrevRow,m_dst.width*sizeof(int16_t),pDst8u,dstStep,roi);
     }
     else
       status = ippsCopy_16s(pPrevRow,pDst16s,m_dst.width);
@@ -4114,8 +4114,8 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
     IppStatus status;
   JERRCODE  jerr = JPEG_OK;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
 
   status = ippiDecodeHuffmanStateInit_JPEG_8u(m_state);
@@ -4175,7 +4175,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[0].Init(0,0,(Ipp8u*)&DefaultLuminanceDCBits[0],(Ipp8u*)&DefaultLuminanceDCValues[0]);
+    jerr = m_dctbl[0].Init(0,0,(uint8_t*)&DefaultLuminanceDCBits[0],(uint8_t*)&DefaultLuminanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4186,7 +4186,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[1].Init(1,0,(Ipp8u*)&DefaultChrominanceDCBits[0],(Ipp8u*)&DefaultChrominanceDCValues[0]);
+    jerr = m_dctbl[1].Init(1,0,(uint8_t*)&DefaultChrominanceDCBits[0],(uint8_t*)&DefaultChrominanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4197,7 +4197,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[0].Init(0,1,(Ipp8u*)&DefaultLuminanceACBits[0],(Ipp8u*)&DefaultLuminanceACValues[0]);
+    jerr = m_actbl[0].Init(0,1,(uint8_t*)&DefaultLuminanceACBits[0],(uint8_t*)&DefaultLuminanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4208,16 +4208,16 @@ JERRCODE CJPEGDecoder::DecodeScanBaseline(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[1].Init(1,1,(Ipp8u*)&DefaultChrominanceACBits[0],(Ipp8u*)&DefaultChrominanceACValues[0]);
+    jerr = m_actbl[1].Init(1,1,(uint8_t*)&DefaultChrominanceACBits[0],(uint8_t*)&DefaultChrominanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
 
     {
-        Ipp16s* pMCUBuf;
-        Ipp32u rowMCU, colMCU, maxMCU;
-        Ipp32u numxMCU = m_curr_scan->numxMCU;
-        Ipp32u numyMCU = m_curr_scan->numyMCU;
+        int16_t* pMCUBuf;
+        uint32_t rowMCU, colMCU, maxMCU;
+        uint32_t numxMCU = m_curr_scan->numxMCU;
+        uint32_t numyMCU = m_curr_scan->numyMCU;
 
         // the pointer to Buffer for a current thread.
         pMCUBuf = m_block_buffer;
@@ -4353,8 +4353,8 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN(void)
   IppStatus status;
   JERRCODE  jerr = JPEG_OK;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
 
   status = ippiDecodeHuffmanStateInit_JPEG_8u(m_state);
@@ -4397,7 +4397,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[0].Init(0,0,(Ipp8u*)&DefaultLuminanceDCBits[0],(Ipp8u*)&DefaultLuminanceDCValues[0]);
+    jerr = m_dctbl[0].Init(0,0,(uint8_t*)&DefaultLuminanceDCBits[0],(uint8_t*)&DefaultLuminanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4408,7 +4408,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[1].Init(1,0,(Ipp8u*)&DefaultChrominanceDCBits[0],(Ipp8u*)&DefaultChrominanceDCValues[0]);
+    jerr = m_dctbl[1].Init(1,0,(uint8_t*)&DefaultChrominanceDCBits[0],(uint8_t*)&DefaultChrominanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4419,7 +4419,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[0].Init(0,1,(Ipp8u*)&DefaultLuminanceACBits[0],(Ipp8u*)&DefaultLuminanceACValues[0]);
+    jerr = m_actbl[0].Init(0,1,(uint8_t*)&DefaultLuminanceACBits[0],(uint8_t*)&DefaultLuminanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4430,14 +4430,14 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[1].Init(1,1,(Ipp8u*)&DefaultChrominanceACBits[0],(Ipp8u*)&DefaultChrominanceACValues[0]);
+    jerr = m_actbl[1].Init(1,1,(uint8_t*)&DefaultChrominanceACBits[0],(uint8_t*)&DefaultChrominanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
 
     {
-        Ipp16s* pMCUBuf;
-        Ipp32u rowMCU, colMCU, maxMCU;
+        int16_t* pMCUBuf;
+        uint32_t rowMCU, colMCU, maxMCU;
 
         // the pointer to Buffer for a current thread.
         pMCUBuf = m_block_buffer;
@@ -4574,8 +4574,8 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN_P(void)
   IppStatus status;
   JERRCODE  jerr = JPEG_OK;
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
 
   status = ippiDecodeHuffmanStateInit_JPEG_8u(m_state);
@@ -4618,7 +4618,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN_P(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[0].Init(0,0,(Ipp8u*)&DefaultLuminanceDCBits[0],(Ipp8u*)&DefaultLuminanceDCValues[0]);
+    jerr = m_dctbl[0].Init(0,0,(uint8_t*)&DefaultLuminanceDCBits[0],(uint8_t*)&DefaultLuminanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4629,7 +4629,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN_P(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[1].Init(1,0,(Ipp8u*)&DefaultChrominanceDCBits[0],(Ipp8u*)&DefaultChrominanceDCValues[0]);
+    jerr = m_dctbl[1].Init(1,0,(uint8_t*)&DefaultChrominanceDCBits[0],(uint8_t*)&DefaultChrominanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4640,7 +4640,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN_P(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[0].Init(0,1,(Ipp8u*)&DefaultLuminanceACBits[0],(Ipp8u*)&DefaultLuminanceACValues[0]);
+    jerr = m_actbl[0].Init(0,1,(uint8_t*)&DefaultLuminanceACBits[0],(uint8_t*)&DefaultLuminanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4651,7 +4651,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN_P(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[1].Init(1,1,(Ipp8u*)&DefaultChrominanceACBits[0],(Ipp8u*)&DefaultChrominanceACValues[0]);
+    jerr = m_actbl[1].Init(1,1,(uint8_t*)&DefaultChrominanceACBits[0],(uint8_t*)&DefaultChrominanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4662,7 +4662,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineIN_P(void)
   {
     int     i;
     int     idThread = 0;
-    Ipp16s* pMCUBuf;  // the pointer to Buffer for a current thread.
+    int16_t* pMCUBuf;  // the pointer to Buffer for a current thread.
 
 #ifdef _OPENMP
     idThread = omp_get_thread_num(); // the thread id of the calling thread.
@@ -4772,13 +4772,13 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineNI(void)
   int       i, j, k, l, c;
   int       srcLen;
   int       currPos;
-  Ipp8u*    src;
-  Ipp16s*   block;
+  uint8_t*    src;
+  int16_t*   block;
   JERRCODE  jerr;
   IppStatus status;
 #ifdef __TIMING__
-  Ipp64u    c0;
-  Ipp64u    c1;
+  unsigned long long    c0;
+  unsigned long long    c1;
 #endif
 
   m_ac_scans_completed += m_curr_scan->ncomps;
@@ -4800,7 +4800,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineNI(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[0].Init(0,0,(Ipp8u*)&DefaultLuminanceDCBits[0],(Ipp8u*)&DefaultLuminanceDCValues[0]);
+    jerr = m_dctbl[0].Init(0,0,(uint8_t*)&DefaultLuminanceDCBits[0],(uint8_t*)&DefaultLuminanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4811,7 +4811,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineNI(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_dctbl[1].Init(1,0,(Ipp8u*)&DefaultChrominanceDCBits[0],(Ipp8u*)&DefaultChrominanceDCValues[0]);
+    jerr = m_dctbl[1].Init(1,0,(uint8_t*)&DefaultChrominanceDCBits[0],(uint8_t*)&DefaultChrominanceDCValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4822,7 +4822,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineNI(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[0].Init(0,1,(Ipp8u*)&DefaultLuminanceACBits[0],(Ipp8u*)&DefaultLuminanceACValues[0]);
+    jerr = m_actbl[0].Init(0,1,(uint8_t*)&DefaultLuminanceACBits[0],(uint8_t*)&DefaultLuminanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4833,7 +4833,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineNI(void)
     if(JPEG_OK != jerr)
       return jerr;
 
-    jerr = m_actbl[1].Init(1,1,(Ipp8u*)&DefaultChrominanceACBits[0],(Ipp8u*)&DefaultChrominanceACValues[0]);
+    jerr = m_actbl[1].Init(1,1,(uint8_t*)&DefaultChrominanceACBits[0],(uint8_t*)&DefaultChrominanceACValues[0]);
     if(JPEG_OK != jerr)
       return jerr;
   }
@@ -4879,7 +4879,7 @@ JERRCODE CJPEGDecoder::DecodeScanBaselineNI(void)
               }
             }
 
-            Ipp16s*                lastDC = &m_ccomp[m_curr_comp_no].m_lastDC;
+            int16_t*                lastDC = &m_ccomp[m_curr_comp_no].m_lastDC;
             IppiDecodeHuffmanSpec* dctbl = m_dctbl[m_ccomp[m_curr_comp_no].m_dc_selector];
             IppiDecodeHuffmanSpec* actbl = m_actbl[m_ccomp[m_curr_comp_no].m_ac_selector];
 
@@ -4924,8 +4924,8 @@ JERRCODE CJPEGDecoder::DecodeScanProgressive(void)
   int       i, j, k, n, l, c;
   int       srcLen;
   int       currPos;
-  Ipp8u*    src;
-  Ipp16s*   block;
+  uint8_t*    src;
+  int16_t*   block;
   JERRCODE  jerr;
   IppStatus status;
 
@@ -5061,7 +5061,7 @@ JERRCODE CJPEGDecoder::DecodeScanProgressive(void)
           // first DC scan
           for(n = 0; n < m_jpeg_ncomp; n++)
           {
-            Ipp16s*                lastDC = &m_ccomp[n].m_lastDC;
+            int16_t*                lastDC = &m_ccomp[n].m_lastDC;
             IppiDecodeHuffmanSpec* dctbl  = m_dctbl[m_ccomp[n].m_dc_selector];
 
             for(k = 0; k < m_ccomp[n].m_vsampling; k++)
@@ -5136,12 +5136,12 @@ JERRCODE CJPEGDecoder::DecodeScanProgressive(void)
 JERRCODE CJPEGDecoder::DecodeScanLosslessIN(void)
 {
   int       i;
-  Ipp16s*   pMCUBuf;
+  int16_t*   pMCUBuf;
   JERRCODE  jerr;
   IppStatus status;
 #ifdef __TIMING__
-  Ipp64u    c0;
-  Ipp64u    c1;
+  unsigned long long    c0;
+  unsigned long long    c1;
 #endif
 
   status = ippiDecodeHuffmanStateInit_JPEG_8u(m_state);
@@ -5206,16 +5206,16 @@ JERRCODE CJPEGDecoder::DecodeScanLosslessIN(void)
 JERRCODE CJPEGDecoder::DecodeScanLosslessNI(void)
 {
   int       i, j, n, v, h;
-  Ipp8u*    src;
+  uint8_t*    src;
   int       srcLen;
   int       currPos;
-  Ipp16s*   ptr;
-  Ipp16s*   pMCUBuf;
+  int16_t*   ptr;
+  int16_t*   pMCUBuf;
   JERRCODE  jerr;
   IppStatus status;
 #ifdef __TIMING__
-  Ipp64u    c0;
-  Ipp64u    c1;
+  unsigned long long    c0;
+  unsigned long long    c1;
 #endif
 
   status = ippiDecodeHuffmanStateInit_JPEG_8u(m_state);
@@ -5328,8 +5328,8 @@ JERRCODE CJPEGDecoder::ReadHeader(
   du_height = (JPEG_LOSSLESS == m_jpeg_mode) ? 1 : 8;
 
   // MCU dimensions
-  m_mcuWidth  = du_width  * IPP_MAX(m_max_hsampling,1);
-  m_mcuHeight = du_height * IPP_MAX(m_max_vsampling,1);
+  m_mcuWidth  = du_width  * MFX_MAX(m_max_hsampling,1);
+  m_mcuHeight = du_height * MFX_MAX(m_max_vsampling,1);
 
   // num of MCUs in whole image
   m_numxMCU = (m_jpeg_width  + (m_mcuWidth  - 1)) / m_mcuWidth;
@@ -5359,7 +5359,7 @@ JERRCODE CJPEGDecoder::ReadData(void)
 
 } // CJPEGDecoder::ReadData(void)
 
-JERRCODE CJPEGDecoder::ReadData(Ipp32u restartNum, Ipp32u restartsToDecode)
+JERRCODE CJPEGDecoder::ReadData(uint32_t restartNum, uint32_t restartsToDecode)
 {
     JERRCODE jerr = JPEG_OK;
 
@@ -5447,7 +5447,7 @@ JERRCODE CJPEGDecoder::ReadData(Ipp32u restartNum, Ipp32u restartsToDecode)
 
     return jerr;
 
-} // CJPEGDecoder::ReadData(Ipp32u restartNum)
+} // CJPEGDecoder::ReadData(uint32_t restartNum)
 
 JERRCODE CJPEGDecoder::ReadPictureHeaders(void)
 {
@@ -5502,14 +5502,14 @@ ChromaType CJPEGDecoder::GetChromaType()
     return CHROMA_TYPE_YUV400;
 }
 
-void CopyPlane4To2(Ipp8u  *pDstUV,
-                   Ipp32s iDstStride,
-                   const Ipp8u  *pSrcU,
-                   const Ipp8u  *pSrcV,
-                   Ipp32s iSrcStride,
-                   IppiSize size)
+void CopyPlane4To2(uint8_t  *pDstUV,
+                   int32_t iDstStride,
+                   const uint8_t  *pSrcU,
+                   const uint8_t  *pSrcV,
+                   int32_t iSrcStride,
+                   mfxSize size)
 {
-    Ipp32s y, x;
+    int32_t y, x;
 
     for (y = 0; y < size.height / 2; y += 1)
     {
@@ -5524,11 +5524,11 @@ void CopyPlane4To2(Ipp8u  *pDstUV,
         pDstUV += iDstStride;
     }
 
-} // void CopyPlane(Ipp8u *pDst,
+} // void CopyPlane(uint8_t *pDst,
 
-void DownSamplingPlane(Ipp8u  *pSrcU, Ipp8u  *pSrcV, Ipp32s iSrcStride, IppiSize size)
+void DownSamplingPlane(uint8_t  *pSrcU, uint8_t  *pSrcV, int32_t iSrcStride, mfxSize size)
 {
-    Ipp32s y, x;
+    int32_t y, x;
 
     for (y = 0; y < size.height / 2; y += 1)
     {
@@ -5542,13 +5542,13 @@ void DownSamplingPlane(Ipp8u  *pSrcU, Ipp8u  *pSrcV, Ipp32s iSrcStride, IppiSize
         pSrcV += iSrcStride;
     }
 
-} // void CopyPlane(Ipp8u *pDst,
+} // void CopyPlane(uint8_t *pDst,
 
-void CopyPlane(Ipp8u  *pDst,
-               Ipp32s iDstStride,
-               const Ipp8u  *pSrc,
-               Ipp32s iSrcStride,
-               IppiSize size)
+void CopyPlane(uint8_t  *pDst,
+               int32_t iDstStride,
+               const uint8_t  *pSrc,
+               int32_t iSrcStride,
+               mfxSize size)
 {
     ippiCopy_8u_C1R(pSrc,
                     iSrcStride,
@@ -5556,9 +5556,9 @@ void CopyPlane(Ipp8u  *pDst,
                     iDstStride,
                     size);
 
-} // void CopyPlane(Ipp8u *pDst,
+} // void CopyPlane(uint8_t *pDst,
 
-void ConvertFrom_YUV444_To_YV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size)
+void ConvertFrom_YUV444_To_YV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size)
 {
     CopyPlane(dst[0],
               dstPitch,
@@ -5574,12 +5574,12 @@ void ConvertFrom_YUV444_To_YV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * ds
                   size);
 }
 
-void ConvertFrom_YUV422V_To_YV12(Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * [2], Ipp32u , IppiSize size)
+void ConvertFrom_YUV422V_To_YV12(uint8_t *src[3], uint32_t srcPitch, uint8_t * [2], uint32_t , mfxSize size)
 {
     DownSamplingPlane(src[1], src[2], srcPitch, size);
 }
 
-void ConvertFrom_YUV422H_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size)
+void ConvertFrom_YUV422H_4Y_To_NV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size)
 {
     CopyPlane(dst[0],
               dstPitch,
@@ -5595,7 +5595,7 @@ void ConvertFrom_YUV422H_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u 
                   size);
 }
 
-void ConvertFrom_YUV422V_4Y_To_NV12(const Ipp8u *src[3], Ipp32u srcPitch, Ipp8u * dst[2], Ipp32u dstPitch, IppiSize size)
+void ConvertFrom_YUV422V_4Y_To_NV12(const uint8_t *src[3], uint32_t srcPitch, uint8_t * dst[2], uint32_t dstPitch, mfxSize size)
 {
     CopyPlane(dst[0],
               dstPitch,

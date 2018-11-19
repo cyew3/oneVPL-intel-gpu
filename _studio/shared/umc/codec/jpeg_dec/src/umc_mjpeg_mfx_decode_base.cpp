@@ -97,10 +97,10 @@ Status MJPEGVideoDecoderBaseMFX::Close(void)
     return UMC_OK;
 }
 
-void MJPEGVideoDecoderBaseMFX::AdjustFrameSize(IppiSize & size)
+void MJPEGVideoDecoderBaseMFX::AdjustFrameSize(mfxSize & size)
 {
-    size.width = align_value<Ipp32u>(size.width, 16);
-    size.height = align_value<Ipp32u>(size.height, m_interleaved ? 32 : 16);
+    size.width = align_value<uint32_t>(size.width, 16);
+    size.height = align_value<uint32_t>(size.height, m_interleaved ? 32 : 16);
 }
 
 ChromaType MJPEGVideoDecoderBaseMFX::GetChromaType()
@@ -201,7 +201,7 @@ Status MJPEGVideoDecoderBaseMFX::FillVideoParam(mfxVideoParam *par, bool /*full*
 
     par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
-    IppiSize size = m_frameDims;
+    mfxSize size = m_frameDims;
     AdjustFrameSize(size);
 
     par->mfx.FrameInfo.Width = mfxU16(size.width);
@@ -283,7 +283,7 @@ Status MJPEGVideoDecoderBaseMFX::DecodeHeader(MediaData* in)
 
     for ( ; in->GetDataSize() > 3; )
     {
-        Ipp32s code = frameConstructor.CheckMarker(in);
+        int32_t code = frameConstructor.CheckMarker(in);
 
         if (!code)
         {
@@ -300,7 +300,7 @@ Status MJPEGVideoDecoderBaseMFX::DecodeHeader(MediaData* in)
         }
     }
 
-    Status sts = _GetFrameInfo((Ipp8u*)in->GetDataPointer(), in->GetDataSize());
+    Status sts = _GetFrameInfo((uint8_t*)in->GetDataPointer(), in->GetDataSize());
 
     if (sts == UMC_ERR_NOT_ENOUGH_DATA &&
         (!(in->GetFlags() & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME) ||
@@ -312,7 +312,7 @@ Status MJPEGVideoDecoderBaseMFX::DecodeHeader(MediaData* in)
     return sts;
 }
 
-Status MJPEGVideoDecoderBaseMFX::SetRotation(Ipp16u rotation)
+Status MJPEGVideoDecoderBaseMFX::SetRotation(uint16_t rotation)
 {
 #ifdef MFX_ENABLE_MJPEG_ROTATE_VPP
     (void)rotation;
@@ -323,10 +323,10 @@ Status MJPEGVideoDecoderBaseMFX::SetRotation(Ipp16u rotation)
     return UMC_OK;
 }
 
-Status MJPEGVideoDecoderBaseMFX::_GetFrameInfo(const Ipp8u* pBitStream, size_t nSize)
+Status MJPEGVideoDecoderBaseMFX::_GetFrameInfo(const uint8_t* pBitStream, size_t nSize)
 {
-    Ipp32s   nchannels;
-    Ipp32s   precision;
+    int32_t   nchannels;
+    int32_t   precision;
     JSS      sampling;
     JCOLOR   color;
     JERRCODE jerr;

@@ -83,7 +83,7 @@ JERRCODE CBitStreamOutput::Init(int bufSize)
     delete[] m_pData;
   }
 
-  m_pData = new Ipp8u[m_DataLen];
+  m_pData = new uint8_t[m_DataLen];
 
   m_currPos = 0; // no data yet
 
@@ -122,7 +122,7 @@ JERRCODE CBitStreamOutput::FlushBuffer(int nMinBytes)
 
 JERRCODE CBitStreamOutput::FlushBitStream(CBitStreamOutput &bitStream)
 {
-  Ipp8u* buf     = 0;
+  uint8_t* buf     = 0;
   int    currPos  = 0;
   int    dataLen = 0;
 
@@ -158,7 +158,7 @@ JERRCODE CBitStreamOutput::WriteByte(int byte)
       return jerr;
   }
 
-  m_pData[m_currPos] = (Ipp8u)byte;
+  m_pData[m_currPos] = (uint8_t)byte;
   m_currPos++;
 
   return JPEG_OK;

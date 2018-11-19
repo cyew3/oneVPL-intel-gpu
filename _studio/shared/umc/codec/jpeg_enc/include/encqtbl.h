@@ -30,26 +30,26 @@
 class CJPEGEncoderQuantTable
 {
 private:
-  Ipp8u   m_rbf[DCTSIZE2*sizeof(Ipp16u)+(CPU_CACHE_LINE-1)];
-  Ipp8u   m_qbf[DCTSIZE2*sizeof(Ipp32f)+(CPU_CACHE_LINE-1)];
-  Ipp16u* m_qnt16u;
-  Ipp32f* m_qnt32f;
+  uint8_t   m_rbf[DCTSIZE2*sizeof(uint16_t)+(CPU_CACHE_LINE-1)];
+  uint8_t   m_qbf[DCTSIZE2*sizeof(float)+(CPU_CACHE_LINE-1)];
+  uint16_t* m_qnt16u;
+  float* m_qnt32f;
 
 public:
   int     m_id;
   bool    m_initialized;
   int     m_precision;
-  Ipp8u*  m_raw8u;
-  Ipp16u* m_raw16u;
+  uint8_t*  m_raw8u;
+  uint16_t* m_raw16u;
 
   CJPEGEncoderQuantTable(void);
   virtual ~CJPEGEncoderQuantTable(void);
 
-  JERRCODE Init(int id,Ipp8u  raw[DCTSIZE2],int quality);
-  JERRCODE Init(int id,Ipp16u raw[DCTSIZE2],int quality);
+  JERRCODE Init(int id,uint8_t  raw[DCTSIZE2],int quality);
+  JERRCODE Init(int id,uint16_t raw[DCTSIZE2],int quality);
 
-  operator Ipp16u*() { return m_precision == 0 ? m_qnt16u : 0; }
-  operator Ipp32f*() { return m_precision == 1 ? m_qnt32f : 0; }
+  operator uint16_t*() { return m_precision == 0 ? m_qnt16u : 0; }
+  operator float*() { return m_precision == 1 ? m_qnt32f : 0; }
 };
 
 #endif

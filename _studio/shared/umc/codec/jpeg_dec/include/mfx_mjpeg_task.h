@@ -65,7 +65,7 @@ public:
     std::vector<size_t> scanTablesSize;
 
     // Picture's time stamp
-    Ipp64f timeStamp;
+    double timeStamp;
 
     // Number of scans in the image
     mfxU32 numScans;

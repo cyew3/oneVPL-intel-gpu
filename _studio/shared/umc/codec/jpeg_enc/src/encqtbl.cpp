@@ -40,10 +40,10 @@ CJPEGEncoderQuantTable::CJPEGEncoderQuantTable(void)
   m_initialized = false;
 
   // align for max performance
-  m_raw8u  = UMC::align_pointer<Ipp8u *>(m_rbf,CPU_CACHE_LINE);
-  m_raw16u = UMC::align_pointer<Ipp16u *>(m_rbf,CPU_CACHE_LINE);
-  m_qnt16u = UMC::align_pointer<Ipp16u *>(m_qbf,CPU_CACHE_LINE);
-  m_qnt32f = UMC::align_pointer<Ipp32f *>(m_qbf,CPU_CACHE_LINE);
+  m_raw8u  = UMC::align_pointer<uint8_t *>(m_rbf,CPU_CACHE_LINE);
+  m_raw16u = UMC::align_pointer<uint16_t *>(m_rbf,CPU_CACHE_LINE);
+  m_qnt16u = UMC::align_pointer<uint16_t *>(m_qbf,CPU_CACHE_LINE);
+  m_qnt32f = UMC::align_pointer<float *>(m_qbf,CPU_CACHE_LINE);
 
   memset(m_rbf, 0, sizeof(m_rbf));
   memset(m_qbf, 0, sizeof(m_qbf));
@@ -65,7 +65,7 @@ CJPEGEncoderQuantTable::~CJPEGEncoderQuantTable(void)
 } // dtor
 
 
-JERRCODE CJPEGEncoderQuantTable::Init(int id,Ipp8u raw[64],int quality)
+JERRCODE CJPEGEncoderQuantTable::Init(int id,uint8_t raw[64],int quality)
 {
   IppStatus status;
 
@@ -100,7 +100,7 @@ JERRCODE CJPEGEncoderQuantTable::Init(int id,Ipp8u raw[64],int quality)
 
 static
 IppStatus ippiQuantFwdRawTableInit_JPEG_16u(
-  Ipp16u* raw,
+  uint16_t* raw,
   int     quality)
 {
   int i;
@@ -119,15 +119,15 @@ IppStatus ippiQuantFwdRawTableInit_JPEG_16u(
     val = (raw[i] * quality + 50) / 100;
     if(val < 1)
     {
-      raw[i] = (Ipp16u)1;
+      raw[i] = (uint16_t)1;
     }
     else if(val > 65535)
     {
-      raw[i] = (Ipp16u)65535;
+      raw[i] = (uint16_t)65535;
     }
     else
     {
-      raw[i] = (Ipp16u)val;
+      raw[i] = (uint16_t)val;
     }
   }
 
@@ -137,14 +137,14 @@ IppStatus ippiQuantFwdRawTableInit_JPEG_16u(
 
 static
 IppStatus ippiQuantFwdTableInit_JPEG_16u(
-  Ipp16u* raw,
-  Ipp32f* qnt)
+  uint16_t* raw,
+  float* qnt)
 {
   int       i;
-  Ipp16u    wb[DCTSIZE2];
+  uint16_t    wb[DCTSIZE2];
   IppStatus status;
 
-  status = ippiZigzagInv8x8_16s_C1((const Ipp16s*)&raw[0],(Ipp16s*)&wb[0]);
+  status = ippiZigzagInv8x8_16s_C1((const int16_t*)&raw[0],(int16_t*)&wb[0]);
   if(ippStsNoErr != status)
   {
     LOG1("IPP Error: ippiZigzagInv8x8_16s_C1() failed - ",status);
@@ -160,14 +160,14 @@ IppStatus ippiQuantFwdTableInit_JPEG_16u(
 } // ippiQuantFwdTableInit_JPEG_16u()
 
 
-JERRCODE CJPEGEncoderQuantTable::Init(int id,Ipp16u raw[64],int quality)
+JERRCODE CJPEGEncoderQuantTable::Init(int id,uint16_t raw[64],int quality)
 {
   IppStatus status;
 
   m_id        = id;
   m_precision = 1; // 16-bit precision
 
-  MFX_INTERNAL_CPY((Ipp8u*)m_raw16u,(Ipp8u*)raw,DCTSIZE2*sizeof(Ipp16u));
+  MFX_INTERNAL_CPY((uint8_t*)m_raw16u,(uint8_t*)raw,DCTSIZE2*sizeof(uint16_t));
 
   if(quality)
   {

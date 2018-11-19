@@ -42,7 +42,7 @@ CMemBuffOutput::~CMemBuffOutput(void)
 } // dtor
 
 
-JERRCODE CMemBuffOutput::Open(Ipp8u* pBuf, int buflen)
+JERRCODE CMemBuffOutput::Open(uint8_t* pBuf, int buflen)
 {
   if(0 == pBuf)
     return JPEG_ERR_PARAMS;
@@ -69,9 +69,9 @@ JERRCODE CMemBuffOutput::Write(void* buf,uic_size_t len,uic_size_t* cnt)
 {
   uic_size_t wb;
 
-  wb = (uic_size_t)IPP_MIN((int)len,m_buflen - m_currpos);
+  wb = (uic_size_t)MFX_MIN((int)len,m_buflen - m_currpos);
 
-  MFX_INTERNAL_CPY(m_buf + m_currpos,(Ipp8u*)buf,wb);
+  MFX_INTERNAL_CPY(m_buf + m_currpos,(uint8_t*)buf,wb);
 
   m_currpos += wb;
 

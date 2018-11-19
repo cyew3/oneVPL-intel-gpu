@@ -40,7 +40,7 @@ CMemBuffInput::~CMemBuffInput(void)
 } // dtor
 
 
-JERRCODE CMemBuffInput::Open(const Ipp8u *pBuf, size_t buflen)
+JERRCODE CMemBuffInput::Open(const uint8_t *pBuf, size_t buflen)
 {
   if(0 == pBuf)
     return JPEG_ERR_PARAMS;
@@ -96,9 +96,9 @@ JERRCODE CMemBuffInput::Read(void* buf,uic_size_t len,uic_size_t* cnt)
 {
   uic_size_t rb;
 
-  rb = (uic_size_t)IPP_MIN((int)len,static_cast<int>(m_buflen - m_currpos));
+  rb = (uic_size_t)MFX_MIN((int)len,static_cast<int>(m_buflen - m_currpos));
 
-  MFX_INTERNAL_CPY((Ipp8u*)buf, m_buf + m_currpos,rb);
+  MFX_INTERNAL_CPY((uint8_t*)buf, m_buf + m_currpos,rb);
 
   m_currpos += rb;
 

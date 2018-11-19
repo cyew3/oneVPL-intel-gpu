@@ -81,14 +81,14 @@ public:
     Status FindStartOfImage(MediaData * in);
 
     // All memory sizes should come in size_t type
-    Status _GetFrameInfo(const Ipp8u* pBitStream, size_t nSize);
+    Status _GetFrameInfo(const uint8_t* pBitStream, size_t nSize);
 
-    Status SetRotation(Ipp16u rotation);
+    Status SetRotation(uint16_t rotation);
 
 protected:
 
     JCOLOR GetColorType();
-    virtual void AdjustFrameSize(IppiSize & size);
+    virtual void AdjustFrameSize(mfxSize & size);
     // Allocate the destination frame
     virtual Status AllocateFrame() { return MFX_ERR_NONE; };
 
@@ -99,9 +99,9 @@ protected:
 
     FrameData               m_frameData;
     JCOLOR                  m_color;
-    Ipp16u                  m_rotation;
+    uint16_t                  m_rotation;
 
-    IppiSize                m_frameDims;
+    mfxSize                m_frameDims;
     int                     m_frameSampling;
 
     // JPEG decoders allocated
@@ -174,7 +174,7 @@ inline mfxU16 GetMFXColorFormat(JCOLOR color)
     return colorFormat;
 }
 
-inline JCOLOR GetUMCColorType(Ipp16u chromaFormat, Ipp16u colorFormat)
+inline JCOLOR GetUMCColorType(uint16_t chromaFormat, uint16_t colorFormat)
 {
     JCOLOR color = JC_UNKNOWN;
 

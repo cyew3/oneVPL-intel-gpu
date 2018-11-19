@@ -85,7 +85,7 @@ JERRCODE CBitStreamInput::Init(int bufSize)
     delete[] m_pData;
   }
 
-  m_pData = new Ipp8u[m_DataLen];
+  m_pData = new uint8_t[m_DataLen];
 
   m_currPos    = m_DataLen; // no data yet
   m_nUsedBytes = 0;

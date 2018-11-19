@@ -39,13 +39,13 @@ CJPEGDecoderQuantTable::CJPEGDecoderQuantTable(void)
   m_initialized = 0;
 
   // align for max performance
-  m_raw8u  = UMC::align_pointer<Ipp8u *>(m_rbf, CPU_CACHE_LINE);
-  m_raw16u = UMC::align_pointer<Ipp16u *>(m_rbf,CPU_CACHE_LINE);
+  m_raw8u  = UMC::align_pointer<uint8_t *>(m_rbf, CPU_CACHE_LINE);
+  m_raw16u = UMC::align_pointer<uint16_t *>(m_rbf,CPU_CACHE_LINE);
   memset(m_rbf, 0, sizeof(m_rbf));
 
 #ifdef ALLOW_JPEG_SW_FALLBACK
-  m_qnt16u = UMC::align_pointer<Ipp16u *>(m_qbf,CPU_CACHE_LINE);
-  m_qnt32f = UMC::align_pointer<Ipp32f *>(m_qbf,CPU_CACHE_LINE);
+  m_qnt16u = UMC::align_pointer<uint16_t *>(m_qbf,CPU_CACHE_LINE);
+  m_qnt32f = UMC::align_pointer<float *>(m_qbf,CPU_CACHE_LINE);
 
   memset(m_qbf, 0, sizeof(m_qbf));
 #endif
@@ -67,7 +67,7 @@ CJPEGDecoderQuantTable::~CJPEGDecoderQuantTable(void)
 } // dtor
 
 
-JERRCODE CJPEGDecoderQuantTable::Init(int id,Ipp8u raw[64])
+JERRCODE CJPEGDecoderQuantTable::Init(int id,uint8_t raw[64])
 {
   m_id        = id & 0x0f;
   m_precision = 0; // 8-bit precision
@@ -90,31 +90,31 @@ JERRCODE CJPEGDecoderQuantTable::Init(int id,Ipp8u raw[64])
 #ifdef ALLOW_JPEG_SW_FALLBACK
 static
 IppStatus ippiQuantInvTableInit_JPEG_16u32f(
-  Ipp16u* raw,
-  Ipp32f* qnt)
+  uint16_t* raw,
+  float* qnt)
 {
-  Ipp16u    wb[DCTSIZE2];
+  uint16_t    wb[DCTSIZE2];
   IppStatus status;
 
-  status = ippiZigzagInv8x8_16s_C1((Ipp16s*)raw,(Ipp16s*)wb);
+  status = ippiZigzagInv8x8_16s_C1((int16_t*)raw,(int16_t*)wb);
   if(ippStsNoErr != status)
   {
     return status;
   }
 
   for(int i = 0; i < DCTSIZE2; i++)
-    ((Ipp32f*)qnt)[i] = (Ipp32f)((Ipp16u*)wb)[i];
+    ((float*)qnt)[i] = (float)((uint16_t*)wb)[i];
 
   return ippStsNoErr;
 } // ippiQuantInvTableInit_JPEG_16u32f()
 #endif
 
-JERRCODE CJPEGDecoderQuantTable::Init(int id,Ipp16u raw[64])
+JERRCODE CJPEGDecoderQuantTable::Init(int id,uint16_t raw[64])
 {
   m_id        = id & 0x0f;
   m_precision = 1; // 16-bit precision
 
-  MFX_INTERNAL_CPY((Ipp16s*)m_raw16u, (Ipp16s*)raw, DCTSIZE2*sizeof(Ipp16s));
+  MFX_INTERNAL_CPY((int16_t*)m_raw16u, (int16_t*)raw, DCTSIZE2*sizeof(int16_t));
 #ifdef ALLOW_JPEG_SW_FALLBACK
   IppStatus status = ippiQuantInvTableInit_JPEG_16u32f(m_raw16u,m_qnt32f);
   if(ippStsNoErr != status)
@@ -134,7 +134,7 @@ JERRCODE CJPEGDecoderQuantTable::ConvertToLowPrecision(void)
 {
   IppStatus status;
 
-  status = ippiZigzagInv8x8_16s_C1((Ipp16s*)m_raw16u,(Ipp16s*)m_qnt16u);
+  status = ippiZigzagInv8x8_16s_C1((int16_t*)m_raw16u,(int16_t*)m_qnt16u);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
@@ -150,19 +150,19 @@ JERRCODE CJPEGDecoderQuantTable::ConvertToLowPrecision(void)
 JERRCODE CJPEGDecoderQuantTable::ConvertToHighPrecision(void)
 {
   int       step;
-  IppiSize  roi = { DCTSIZE, DCTSIZE };
-  Ipp16u    wb[DCTSIZE2];
+  mfxSize  roi = { DCTSIZE, DCTSIZE };
+  uint16_t    wb[DCTSIZE2];
   IppStatus status;
 
-  step = DCTSIZE * sizeof(Ipp16s);
+  step = DCTSIZE * sizeof(int16_t);
 
-  status = ippiConvert_8u16u_C1R(m_raw8u,DCTSIZE*sizeof(Ipp8u),wb,step,roi);
+  status = ippiConvert_8u16u_C1R(m_raw8u,DCTSIZE*sizeof(uint8_t),wb,step,roi);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;
   }
 
-  status = ippiCopy_16s_C1R((Ipp16s*)wb,step,(Ipp16s*)m_raw16u,step,roi);
+  status = ippiCopy_16s_C1R((int16_t*)wb,step,(int16_t*)m_raw16u,step,roi);
   if(ippStsNoErr != status)
   {
     return JPEG_ERR_INTERNAL;

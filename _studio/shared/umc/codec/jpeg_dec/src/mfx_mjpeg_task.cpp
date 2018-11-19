@@ -187,12 +187,12 @@ mfxStatus CJpegTask::AddPicture(UMC::MediaDataEx *pSrcData,
 {
     const mfxU8*  pSrc = static_cast<const mfxU8*>(pSrcData->GetDataPointer());
     const size_t  srcSize = pSrcData->GetDataSize();
-    const Ipp64f  timeStamp = pSrcData->GetTime();
+    const double  timeStamp = pSrcData->GetTime();
     const UMC::MediaDataEx::_MediaDataEx *pAuxData = pSrcData->GetExData();
-    Ipp32u        i, numPieces, maxNumPieces, numScans, maxNumScans;
+    uint32_t        i, numPieces, maxNumPieces, numScans, maxNumScans;
     mfxStatus     mfxRes;
     size_t        imageHeaderSize;
-    Ipp32u        marker;
+    uint32_t        marker;
 
     // we strongly need auxilary data
     if (NULL == pAuxData)

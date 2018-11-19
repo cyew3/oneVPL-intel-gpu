@@ -94,17 +94,17 @@ JERRCODE CJPEGColorComponent::DeleteBufferSS(void)
 } // CJPEGColorComponent::DeleteBufferSS()
 
 
-Ipp8u* CJPEGColorComponent::GetCCBufferPtr(int thread_id)
+uint8_t* CJPEGColorComponent::GetCCBufferPtr(int thread_id)
 {
-  Ipp8u* ptr = m_cc_buf;
+  uint8_t* ptr = m_cc_buf;
 
   return &ptr[m_cc_bufsize * thread_id];
 } // CJPEGColorComponent::GetCCBufferPtr()
 
 
-Ipp8u* CJPEGColorComponent::GetSSBufferPtr(int thread_id)
+uint8_t* CJPEGColorComponent::GetSSBufferPtr(int thread_id)
 {
-  Ipp8u* ptr = m_ss_buf;
+  uint8_t* ptr = m_ss_buf;
 
   return &ptr[m_ss_bufsize*thread_id];
 } // CJPEGColorComponent::GetCCBufferPtr()
@@ -122,9 +122,9 @@ JERRCODE CJPEGColorComponent::DeleteBufferLNZ(void)
 } // CJPEGColorComponent::DeleteBufferLNZ()
 
 
-Ipp8u* CJPEGColorComponent::GetLNZBufferPtr(int thread_id)
+uint8_t* CJPEGColorComponent::GetLNZBufferPtr(int thread_id)
 {
-  Ipp8u* ptr = m_lnz_buf;
+  uint8_t* ptr = m_lnz_buf;
 
   return &ptr[m_lnz_bufsize * thread_id];
 } // CJPEGColorComponent::GetLNZBufferPtr()

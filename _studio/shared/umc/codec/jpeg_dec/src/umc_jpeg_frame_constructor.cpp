@@ -71,13 +71,13 @@ void JpegFrameConstructor::Close()
     Reset();
 }
 
-Ipp32s JpegFrameConstructor::FindMarkerCode(Ipp8u * (&source), size_t & size, Ipp32s & startCodeSize)
+int32_t JpegFrameConstructor::FindMarkerCode(uint8_t * (&source), size_t & size, int32_t & startCodeSize)
 {
-    Ipp32u ffCount = 0;
+    uint32_t ffCount = 0;
 
     if (m_prevLengthOfSegment)
     {
-        size_t copySize = IPP_MIN(m_prevLengthOfSegment, size);
+        size_t copySize = MFX_MIN(m_prevLengthOfSegment, size);
         m_prevLengthOfSegment -= copySize;
         source += copySize;
         size -= copySize;
@@ -88,9 +88,9 @@ Ipp32s JpegFrameConstructor::FindMarkerCode(Ipp8u * (&source), size_t & size, Ip
 
     for (;;)
     {
-        Ipp32u i = 0;
+        uint32_t i = 0;
         ffCount = 0;
-        for (; i < (Ipp32u)size; i++)
+        for (; i < (uint32_t)size; i++)
         {
             if (source[i] == 0xff)
             {
@@ -100,7 +100,7 @@ Ipp32s JpegFrameConstructor::FindMarkerCode(Ipp8u * (&source), size_t & size, Ip
             }
         }
 
-        for (; i < (Ipp32u)size; i++, ffCount++)
+        for (; i < (uint32_t)size; i++, ffCount++)
         {
             if (source[i] != 0xff)
             {
@@ -125,7 +125,7 @@ Ipp32s JpegFrameConstructor::FindMarkerCode(Ipp8u * (&source), size_t & size, Ip
             ffCount = 1;
             startCodeSize = ffCount + 1;
             size -= 1;
-            Ipp32s code = source[0];
+            int32_t code = source[0];
             source++;
             return code;
         }
@@ -138,7 +138,7 @@ Ipp32s JpegFrameConstructor::FindMarkerCode(Ipp8u * (&source), size_t & size, Ip
     return 0;
 }
 
-Ipp32s JpegFrameConstructor::CheckMarker(MediaData * pSource)
+int32_t JpegFrameConstructor::CheckMarker(MediaData * pSource)
 {
     if (!pSource)
         return 0;
@@ -146,13 +146,13 @@ Ipp32s JpegFrameConstructor::CheckMarker(MediaData * pSource)
     if (!m_code)
         m_prev.clear();
 
-    Ipp8u * source = (Ipp8u *)pSource->GetDataPointer();
+    uint8_t * source = (uint8_t *)pSource->GetDataPointer();
     size_t  size = pSource->GetDataSize();
 
-    Ipp32s startCodeSize;
-    Ipp32s iCodeNext = FindMarkerCode(source, size, startCodeSize);
+    int32_t startCodeSize;
+    int32_t iCodeNext = FindMarkerCode(source, size, startCodeSize);
 
-    pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
+    pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer()));
     if (iCodeNext)
     {
          pSource->MoveDataPointer(-startCodeSize);
@@ -161,7 +161,7 @@ Ipp32s JpegFrameConstructor::CheckMarker(MediaData * pSource)
     return iCodeNext;
 }
 
-Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
+int32_t JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
 {
     if (!pSource)
         return EndOfStream(pDst);
@@ -169,40 +169,40 @@ Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
     if (!m_code)
         m_prev.clear();
 
-    Ipp8u * source = (Ipp8u *)pSource->GetDataPointer();
+    uint8_t * source = (uint8_t *)pSource->GetDataPointer();
     size_t  size = pSource->GetDataSize();
 
     if (!size)
         return 0;
 
-    Ipp32s startCodeSize;
+    int32_t startCodeSize;
 
-    Ipp32s iCodeNext = FindMarkerCode(source, size, startCodeSize);
+    int32_t iCodeNext = FindMarkerCode(source, size, startCodeSize);
 
     if (m_prev.size())
     {
         if (!iCodeNext)
         {
-            size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
+            size_t sz = source - (uint8_t *)pSource->GetDataPointer();
             if (m_suggestedSize && m_prev.size() + sz >  m_suggestedSize)
             {
                 m_prev.clear();
-                sz = IPP_MIN(sz, m_suggestedSize);
+                sz = MFX_MIN(sz, m_suggestedSize);
             }
 
-            m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
-            pSource->MoveDataPointer((Ipp32s)sz);
+            m_prev.insert(m_prev.end(), (uint8_t *)pSource->GetDataPointer(), (uint8_t *)pSource->GetDataPointer() + sz);
+            pSource->MoveDataPointer((int32_t)sz);
             return 0;
         }
 
         source -= startCodeSize;
-        m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), source);
-        pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
+        m_prev.insert(m_prev.end(), (uint8_t *)pSource->GetDataPointer(), source);
+        pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer()));
 
         pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
         pDst->SetDataSize(m_prev.size());
         pDst->SetTime(m_pts);
-        Ipp32s code = m_code;
+        int32_t code = m_code;
         m_code = 0;
         m_pts = -1;
 
@@ -211,7 +211,7 @@ Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
 
     if (!iCodeNext)
     {
-        pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer()));
+        pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer()));
         return 0;
     }
 
@@ -219,9 +219,9 @@ Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
     m_code = iCodeNext;
 
     // move before start code
-    pSource->MoveDataPointer((Ipp32s)(source - (Ipp8u *)pSource->GetDataPointer() - startCodeSize));
+    pSource->MoveDataPointer((int32_t)(source - (uint8_t *)pSource->GetDataPointer() - startCodeSize));
 
-    Ipp32u flags = pSource->GetFlags();
+    uint32_t flags = pSource->GetFlags();
 
     bool wasNextMarkerFound = true;
 
@@ -260,7 +260,7 @@ Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
 
     if(m_code != JM_EOI)
     {
-        Ipp32s startCodeSize1 = 0;
+        int32_t startCodeSize1 = 0;
 
         iCodeNext = wasNextMarkerFound ? FindMarkerCode(source, size, startCodeSize1) : 0;
 
@@ -275,29 +275,29 @@ Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
         if (!iCodeNext)
         {
             VM_ASSERT(!m_prev.size());
-            size_t sz = source - (Ipp8u *)pSource->GetDataPointer();
+            size_t sz = source - (uint8_t *)pSource->GetDataPointer();
             if (m_suggestedSize && sz >  m_suggestedSize)
             {
                 sz = m_suggestedSize;
             }
 
-            m_prev.insert(m_prev.end(), (Ipp8u *)pSource->GetDataPointer(), (Ipp8u *)pSource->GetDataPointer() + sz);
-            pSource->MoveDataPointer((Ipp32s)sz);
+            m_prev.insert(m_prev.end(), (uint8_t *)pSource->GetDataPointer(), (uint8_t *)pSource->GetDataPointer() + sz);
+            pSource->MoveDataPointer((int32_t)sz);
             return 0;
         }
 
         // fill
-        size_t nal_size = source - (Ipp8u *)pSource->GetDataPointer() - startCodeSize1;
-        pDst->SetBufferPointer((Ipp8u*)pSource->GetDataPointer(), nal_size);
+        size_t nal_size = source - (uint8_t *)pSource->GetDataPointer() - startCodeSize1;
+        pDst->SetBufferPointer((uint8_t*)pSource->GetDataPointer(), nal_size);
         pDst->SetDataSize(nal_size);
-        pSource->MoveDataPointer((Ipp32s)nal_size);
+        pSource->MoveDataPointer((int32_t)nal_size);
     }
     else
     {
         pSource->MoveDataPointer(2);
     }
 
-    Ipp32s code = m_code;
+    int32_t code = m_code;
     m_code = 0;
 
     pDst->SetTime(m_pts);
@@ -305,7 +305,7 @@ Ipp32s JpegFrameConstructor::GetMarker(MediaData * pSource, MediaData * pDst)
     return code;
 }
 
-Ipp32s JpegFrameConstructor::EndOfStream(MediaData * pDst)
+int32_t JpegFrameConstructor::EndOfStream(MediaData * pDst)
 {
     if (!m_code)
     {
@@ -318,7 +318,7 @@ Ipp32s JpegFrameConstructor::EndOfStream(MediaData * pDst)
         pDst->SetBufferPointer(&(m_prev[0]), m_prev.size());
         pDst->SetDataSize(m_prev.size());
         pDst->SetTime(m_pts);
-        Ipp32s code = m_code;
+        int32_t code = m_code;
         m_code = 0;
         m_pts = -1;
         return code;
@@ -328,33 +328,33 @@ Ipp32s JpegFrameConstructor::EndOfStream(MediaData * pDst)
     return 0;
 }
 
-Status JpegFrameConstructor::AddMarker(Ipp32u marker, MediaDataEx::_MediaDataEx* pMediaDataEx, size_t nBufferSize, MediaData *dst)
+Status JpegFrameConstructor::AddMarker(uint32_t marker, MediaDataEx::_MediaDataEx* pMediaDataEx, size_t nBufferSize, MediaData *dst)
 {
     if (!dst->GetDataSize())
         return UMC_OK;
 
-    Ipp32u element = pMediaDataEx->count;
+    uint32_t element = pMediaDataEx->count;
 
     if (element >= pMediaDataEx->limit - 1)
         return UMC_ERR_FAILED;
 
-    m_frame.insert(m_frame.end(), (Ipp8u*)dst->GetDataPointer(), (Ipp8u*)dst->GetDataPointer() + dst->GetDataSize() );
+    m_frame.insert(m_frame.end(), (uint8_t*)dst->GetDataPointer(), (uint8_t*)dst->GetDataPointer() + dst->GetDataSize() );
     
     pMediaDataEx->offsets[0] = 0;
     // process RST marker
     if((JM_RST0 <= marker) && (JM_RST7 >= marker))
     {
         // add marker to MediaDataEx
-        if((Ipp64u)m_frame.size() > ((Ipp64u)nBufferSize * element) / (pMediaDataEx->limit - 2))
+        if((unsigned long long)m_frame.size() > ((unsigned long long)nBufferSize * element) / (pMediaDataEx->limit - 2))
         {
             pMediaDataEx->values[element] = marker | (m_RestartCount << 8);
-            pMediaDataEx->offsets[element + 1] = (Ipp32u)m_frame.size();
+            pMediaDataEx->offsets[element + 1] = (uint32_t)m_frame.size();
             pMediaDataEx->count++;
         }
         // the end of previous interval would be the start of next
         else
         {
-            pMediaDataEx->offsets[element] = (Ipp32u)m_frame.size();
+            pMediaDataEx->offsets[element] = (uint32_t)m_frame.size();
         }
         m_RestartCount++;
     }
@@ -362,14 +362,14 @@ Status JpegFrameConstructor::AddMarker(Ipp32u marker, MediaDataEx::_MediaDataEx*
     else if(JM_SOS == marker)
     {
         pMediaDataEx->values[element] = marker | (m_RestartCount << 8);
-        pMediaDataEx->offsets[element + 1] = (Ipp32u)m_frame.size();
+        pMediaDataEx->offsets[element + 1] = (uint32_t)m_frame.size();
         pMediaDataEx->count++;
         m_RestartCount++;
     }
     else
     {
         pMediaDataEx->values[element] = marker | (m_RestartCount << 8);
-        pMediaDataEx->offsets[element + 1] = (Ipp32u)m_frame.size();
+        pMediaDataEx->offsets[element + 1] = (uint32_t)m_frame.size();
         pMediaDataEx->count++;
     }
 
@@ -386,12 +386,12 @@ void JpegFrameConstructor::ResetForNewFrame()
     m_RestartCount = 0;
 }
 
-MediaDataEx * JpegFrameConstructor::GetFrame(MediaData * in, Ipp32u maxBitstreamSize)
+MediaDataEx * JpegFrameConstructor::GetFrame(MediaData * in, uint32_t maxBitstreamSize)
 {
     for (;;)
     {
         MediaData dst;
-        Ipp32u marker = GetMarker(in, &dst);
+        uint32_t marker = GetMarker(in, &dst);
         
         if (marker == JM_NONE)
         {
@@ -453,7 +453,7 @@ MediaDataEx * JpegFrameConstructor::GetFrame(MediaData * in, Ipp32u maxBitstream
             break;
         }
 
-        if (AddMarker(marker, &m_mediaDataEx, IPP_MAX(in != nullptr ? in->GetBufferSize() : 0, maxBitstreamSize), &dst) != UMC_OK)
+        if (AddMarker(marker, &m_mediaDataEx, MFX_MAX(in != nullptr ? in->GetBufferSize() : 0, maxBitstreamSize), &dst) != UMC_OK)
         {
             ResetForNewFrame();
             continue;

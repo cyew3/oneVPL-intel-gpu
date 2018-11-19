@@ -42,9 +42,9 @@ public:
   JERRCODE Init(int bufSize = DEC_DEFAULT_BUFLEN);
   JERRCODE FillBuffer(int nMinBytes = 0);
 
-  Ipp8u* GetDataPtr(void) const { return m_pData; }
+  uint8_t* GetDataPtr(void) const { return m_pData; }
   int    GetDataLen(void) const { return m_DataLen; }
-  Ipp8u* GetCurrPtr(void) const { return m_pData + m_currPos; }
+  uint8_t* GetCurrPtr(void) const { return m_pData + m_currPos; }
   int    GetCurrPos(void) const { return m_currPos; }
   void   SetCurrPos(int cp)     { m_nUsedBytes += (cp - m_currPos); m_currPos = cp; }
   int    GetNumUsedBytes(void)  { return m_nUsedBytes; }
@@ -58,7 +58,7 @@ public:
 protected:
   CBaseStreamInput* m_in;
 
-  Ipp8u*            m_pData;
+  uint8_t*            m_pData;
   int               m_DataLen;
   int               m_currPos;
   int               m_nUsedBytes;

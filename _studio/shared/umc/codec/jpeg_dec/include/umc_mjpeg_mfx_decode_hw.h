@@ -44,24 +44,24 @@ namespace UMC
 #if defined(UMC_VA_LINUX)
 typedef struct tagJPEG_DECODE_SCAN_PARAMETER
 {
-    Ipp16u        NumComponents;
-    Ipp8u         ComponentSelector[4];
-    Ipp8u         DcHuffTblSelector[4];
-    Ipp8u         AcHuffTblSelector[4];
-    Ipp16u        RestartInterval;
-    Ipp32u        MCUCount;
-    Ipp16u        ScanHoriPosition;
-    Ipp16u        ScanVertPosition;
-    Ipp32u        DataOffset;
-    Ipp32u        DataLength;
+    uint16_t        NumComponents;
+    uint8_t         ComponentSelector[4];
+    uint8_t         DcHuffTblSelector[4];
+    uint8_t         AcHuffTblSelector[4];
+    uint16_t        RestartInterval;
+    uint32_t        MCUCount;
+    uint16_t        ScanHoriPosition;
+    uint16_t        ScanVertPosition;
+    uint32_t        DataOffset;
+    uint32_t        DataLength;
 } JPEG_DECODE_SCAN_PARAMETER;
 
 typedef struct tagJPEG_DECODE_QUERY_STATUS
 {
-    Ipp32u        StatusReportFeedbackNumber;
-    Ipp8u         bStatus;
-    Ipp8u         reserved8bits;
-    Ipp16u        reserved16bits;
+    uint32_t        StatusReportFeedbackNumber;
+    uint8_t         bStatus;
+    uint8_t         reserved8bits;
+    uint16_t        reserved16bits;
 } JPEG_DECODE_QUERY_STATUS;
 #endif
 
@@ -94,11 +94,11 @@ public:
 
     virtual ConvertInfo * GetConvertInfo();
 
-    Ipp32u GetStatusReportNumber() {return m_statusReportFeedbackCounter;}
+    uint32_t GetStatusReportNumber() {return m_statusReportFeedbackCounter;}
 
-    mfxStatus CheckStatusReportNumber(Ipp32u statusReportFeedbackNumber, mfxU16* corrupted);
+    mfxStatus CheckStatusReportNumber(uint32_t statusReportFeedbackNumber, mfxU16* corrupted);
 
-    void   SetFourCC(Ipp32u fourCC) {m_fourCC = fourCC;}
+    void   SetFourCC(uint32_t fourCC) {m_fourCC = fourCC;}
 
 protected:
 
@@ -109,17 +109,17 @@ protected:
     virtual Status _DecodeField(MediaDataEx* in);
 
 
-    Status PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PARAMETER* obtainedScanParams, Ipp8u* buffersForUpdate);
+    Status PackHeaders(MediaData* src, JPEG_DECODE_SCAN_PARAMETER* obtainedScanParams, uint8_t* buffersForUpdate);
 
     Status GetFrameHW(MediaDataEx* in);
     Status DefaultInitializationHuffmantables();
 
-    Ipp16u GetNumScans(MediaDataEx* in);
+    uint16_t GetNumScans(MediaDataEx* in);
 
-    Ipp32u  m_statusReportFeedbackCounter;
+    uint32_t  m_statusReportFeedbackCounter;
     ConvertInfo m_convertInfo;
 
-    Ipp32u m_fourCC;
+    uint32_t m_fourCC;
 
     Mutex m_guard;
     std::set<mfxU32> m_submittedTaskIndex;

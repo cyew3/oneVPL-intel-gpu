@@ -34,7 +34,7 @@ public:
   CMemBuffOutput(void);
   ~CMemBuffOutput(void);
 
-  JERRCODE Open(Ipp8u* pBuf, int buflen);
+  JERRCODE Open(uint8_t* pBuf, int buflen);
   JERRCODE Close(void);
 
   JERRCODE Write(void* buf,uic_size_t len,uic_size_t* cnt);
@@ -45,7 +45,7 @@ private:
   JERRCODE Open(vm_char* /*name*/) { return JPEG_NOT_IMPLEMENTED; }
 
 protected:
-  Ipp8u*  m_buf;
+  uint8_t*  m_buf;
   int     m_buflen;
   int     m_currpos;
 

@@ -29,14 +29,14 @@
 #include "jpegenc.h"
 
 // VD: max num of padding bytes at the end of AVI frame
-//     should be 1 by definition (padding up to Ipp16s boundary),
+//     should be 1 by definition (padding up to int16_t boundary),
 //     but in reality can be bigger
 #define AVI_MAX_PADDING_BYTES 4
 
 
 namespace UMC {
 
-Status MJPEGEncoderScan::Init(Ipp32u numPieces)
+Status MJPEGEncoderScan::Init(uint32_t numPieces)
 {
     if(m_numPieces != numPieces)
     {
@@ -48,7 +48,7 @@ Status MJPEGEncoderScan::Init(Ipp32u numPieces)
     return UMC_OK;
 }
 
-Status MJPEGEncoderScan::Reset(Ipp32u numPieces)
+Status MJPEGEncoderScan::Reset(uint32_t numPieces)
 {
     return Init(numPieces);
 }
@@ -61,7 +61,7 @@ void MJPEGEncoderScan::Close()
     m_pieceSize.clear();
 }
 
-Ipp32u MJPEGEncoderScan::GetNumPieces()
+uint32_t MJPEGEncoderScan::GetNumPieces()
 {
     return m_numPieces;
 }
@@ -80,7 +80,7 @@ MJPEGEncoderPicture::~MJPEGEncoderPicture()
         m_sourceData->ReleaseImage();
     }
 
-    for(Ipp32u i=0; i<m_scans.size(); i++)
+    for(uint32_t i=0; i<m_scans.size(); i++)
     {
         delete m_scans[i];
     }
@@ -88,11 +88,11 @@ MJPEGEncoderPicture::~MJPEGEncoderPicture()
     m_scans.clear();
 }
 
-Ipp32u MJPEGEncoderPicture::GetNumPieces()
+uint32_t MJPEGEncoderPicture::GetNumPieces()
 {
-    Ipp32u numPieces = 0;
+    uint32_t numPieces = 0;
 
-    for(Ipp32u i=0; i<m_scans.size(); i++)
+    for(uint32_t i=0; i<m_scans.size(); i++)
         numPieces += m_scans[i]->GetNumPieces();
 
     return numPieces;
@@ -101,7 +101,7 @@ Ipp32u MJPEGEncoderPicture::GetNumPieces()
 
 void MJPEGEncoderFrame::Reset()
 {
-    for(Ipp32u i=0; i<m_pics.size(); i++)
+    for(uint32_t i=0; i<m_pics.size(); i++)
     {
         delete m_pics[i];
     }
@@ -109,25 +109,25 @@ void MJPEGEncoderFrame::Reset()
     m_pics.clear();
 }
 
-Ipp32u MJPEGEncoderFrame::GetNumPics()
+uint32_t MJPEGEncoderFrame::GetNumPics()
 {
-    return (Ipp32u)m_pics.size();
+    return (uint32_t)m_pics.size();
 }
 
-Ipp32u MJPEGEncoderFrame::GetNumPieces()
+uint32_t MJPEGEncoderFrame::GetNumPieces()
 {
-    Ipp32u numPieces = 0;
+    uint32_t numPieces = 0;
 
-    for(Ipp32u i=0; i<GetNumPics(); i++)
+    for(uint32_t i=0; i<GetNumPics(); i++)
         numPieces += m_pics[i]->GetNumPieces();
 
     return numPieces;
 }
 
-Status MJPEGEncoderFrame::GetPiecePosition(Ipp32u pieceNum, Ipp32u* fieldNum, Ipp32u* scanNum, Ipp32u* piecePosInField, Ipp32u* piecePosInScan)
+Status MJPEGEncoderFrame::GetPiecePosition(uint32_t pieceNum, uint32_t* fieldNum, uint32_t* scanNum, uint32_t* piecePosInField, uint32_t* piecePosInScan)
 {
-    Ipp32u prevNumPieces = 0;
-    for(Ipp32u i=0; i<GetNumPics(); i++)
+    uint32_t prevNumPieces = 0;
+    for(uint32_t i=0; i<GetNumPics(); i++)
     {
         if(prevNumPieces <= pieceNum && pieceNum < prevNumPieces + m_pics[i]->GetNumPieces())
         {
@@ -143,7 +143,7 @@ Status MJPEGEncoderFrame::GetPiecePosition(Ipp32u pieceNum, Ipp32u* fieldNum, Ip
 
     prevNumPieces = 0;
 
-    for(Ipp32u i=0; i<m_pics[*fieldNum]->m_scans.size(); i++)
+    for(uint32_t i=0; i<m_pics[*fieldNum]->m_scans.size(); i++)
     {
         if(prevNumPieces <= *piecePosInField && *piecePosInField < prevNumPieces + m_pics[*fieldNum]->m_scans[i]->GetNumPieces())
         {
@@ -179,7 +179,7 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
     MJPEGEncoderParams* pEncoderParams = (MJPEGEncoderParams*) lpInit;
     Status status = UMC_OK;
     JERRCODE jerr = JPEG_OK;
-    Ipp32u i, numThreads;
+    uint32_t i, numThreads;
 
     if(!pEncoderParams)
         return UMC_ERR_NULL_PTR;
@@ -202,7 +202,7 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
     // allocate the JPEG encoders
     numThreads = JPEG_ENC_MAX_THREADS;
     if ((m_EncoderParams.numThreads) &&
-        (numThreads > (Ipp32u) m_EncoderParams.numThreads))
+        (numThreads > (uint32_t) m_EncoderParams.numThreads))
     {
         numThreads = m_EncoderParams.numThreads;
     }
@@ -215,7 +215,7 @@ Status MJPEGVideoEncoder::Init(BaseCodecParams* lpInit)
 
         if(m_EncoderParams.quality)
         {
-            jerr = m_enc[i]->SetDefaultQuantTable((Ipp16u)m_EncoderParams.quality);
+            jerr = m_enc[i]->SetDefaultQuantTable((uint16_t)m_EncoderParams.quality);
             if(JPEG_OK != jerr)
                 return UMC_ERR_FAILED;
         }
@@ -357,7 +357,7 @@ Status MJPEGVideoEncoder::SetQuantTableExtBuf(mfxExtJPEGQuantTables* quantTables
 
     for(auto& enc: m_enc)
     {
-        for(Ipp16u j=0; j<quantTables->NumTable; j++)
+        for(uint16_t j=0; j<quantTables->NumTable; j++)
         {
             jerr = enc->SetQuantTable(j, quantTables->Qm[j]);
             if(JPEG_OK != jerr)
@@ -415,19 +415,19 @@ Status MJPEGVideoEncoder::GetInfo(BaseCodecParams *info)
     return UMC_OK;
 }
 
-Ipp32u MJPEGVideoEncoder::NumEncodersAllocated(void)
+uint32_t MJPEGVideoEncoder::NumEncodersAllocated(void)
 {
-    return static_cast<Ipp32u>(m_enc.size());
+    return static_cast<uint32_t>(m_enc.size());
 }
 
-Ipp32u MJPEGVideoEncoder::NumPicsCollected(void)
+uint32_t MJPEGVideoEncoder::NumPicsCollected(void)
 {
     std::lock_guard<std::mutex> guard(m_guard);
 
     return m_frame->GetNumPics();
 }
 
-Ipp32u MJPEGVideoEncoder::NumPiecesCollected(void)
+uint32_t MJPEGVideoEncoder::NumPiecesCollected(void)
 {
     return m_frame->GetNumPieces();
 }
@@ -449,13 +449,13 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
     JERRCODE   status   = JPEG_OK;
 #if 0
     VideoData *pDataIn = DynamicCast<VideoData, MediaData>(in);
-    IppiSize   srcSize;
+    mfxSize   srcSize;
     JCOLOR     jcolor   = JC_NV12;
     JTMODE     jtmode   = JT_OLD;
     JMODE      jmode    = JPEG_BASELINE;
     JSS        jss      = JS_444;
-    Ipp32s     channels = 3;
-    Ipp32s     depth    = 8;
+    int32_t     channels = 3;
+    int32_t     depth    = 8;
     bool       planar   = false;
     CMemBuffOutput streamOut;
     VideoData      cvt;
@@ -527,7 +527,7 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
         return UMC_ERR_UNSUPPORTED;
     }
 
-    status = streamOut.Open((Ipp8u*)out->GetBufferPointer(), (int)out->GetBufferSize());
+    status = streamOut.Open((uint8_t*)out->GetBufferPointer(), (int)out->GetBufferSize());
     if(JPEG_OK != status)
         return UMC_ERR_FAILED;
 
@@ -539,8 +539,8 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
     {
         if(planar)
         {
-            Ipp8u  *pSrc[]  = {(Ipp8u*)pDataIn->GetPlanePointer(0), (Ipp8u*)pDataIn->GetPlanePointer(1), (Ipp8u*)pDataIn->GetPlanePointer(2), (Ipp8u*)pDataIn->GetPlanePointer(3)};
-            Ipp32s  iStep[] = {(Ipp32s)pDataIn->GetPlanePitch(0), (Ipp32s)pDataIn->GetPlanePitch(1), (Ipp32s)pDataIn->GetPlanePitch(2), (Ipp32s)pDataIn->GetPlanePitch(3)};
+            uint8_t  *pSrc[]  = {(uint8_t*)pDataIn->GetPlanePointer(0), (uint8_t*)pDataIn->GetPlanePointer(1), (uint8_t*)pDataIn->GetPlanePointer(2), (uint8_t*)pDataIn->GetPlanePointer(3)};
+            int32_t  iStep[] = {(int32_t)pDataIn->GetPlanePitch(0), (int32_t)pDataIn->GetPlanePitch(1), (int32_t)pDataIn->GetPlanePitch(2), (int32_t)pDataIn->GetPlanePitch(3)};
 
             status = m_enc[0]->SetSource(pSrc, iStep, srcSize, channels, jcolor, jss, 8);
             if(JPEG_OK != status)
@@ -548,8 +548,8 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
         }
         else
         {
-            Ipp8u  *pSrc  = (Ipp8u*)pDataIn->GetPlanePointer(0);
-            Ipp32s  iStep = (Ipp32s)pDataIn->GetPlanePitch(0);
+            uint8_t  *pSrc  = (uint8_t*)pDataIn->GetPlanePointer(0);
+            int32_t  iStep = (int32_t)pDataIn->GetPlanePitch(0);
 
             status = m_enc[0]->SetSource(pSrc, iStep, srcSize, channels, jcolor, jss, 8);
             if(JPEG_OK != status)
@@ -560,8 +560,8 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
     {
         if(planar)
         {
-            Ipp16s *pSrc[]  = {(Ipp16s*)pDataIn->GetPlanePointer(0), (Ipp16s*)pDataIn->GetPlanePointer(1), (Ipp16s*)pDataIn->GetPlanePointer(2), (Ipp16s*)pDataIn->GetPlanePointer(3)};
-            Ipp32s  iStep[] = {(Ipp32s)pDataIn->GetPlanePitch(0), (Ipp32s)pDataIn->GetPlanePitch(1), (Ipp32s)pDataIn->GetPlanePitch(2), (Ipp32s)pDataIn->GetPlanePitch(3)};
+            int16_t *pSrc[]  = {(int16_t*)pDataIn->GetPlanePointer(0), (int16_t*)pDataIn->GetPlanePointer(1), (int16_t*)pDataIn->GetPlanePointer(2), (int16_t*)pDataIn->GetPlanePointer(3)};
+            int32_t  iStep[] = {(int32_t)pDataIn->GetPlanePitch(0), (int32_t)pDataIn->GetPlanePitch(1), (int32_t)pDataIn->GetPlanePitch(2), (int32_t)pDataIn->GetPlanePitch(3)};
 
             status = m_enc[0]->SetSource(pSrc, iStep, srcSize, channels, jcolor, jss, 16);
             if(JPEG_OK != status)
@@ -569,8 +569,8 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
         }
         else
         {
-            Ipp16s *pSrc  = (Ipp16s*)pDataIn->GetPlanePointer(0);
-            Ipp32s  iStep = (Ipp32s)pDataIn->GetPlanePitch(0);
+            int16_t *pSrc  = (int16_t*)pDataIn->GetPlanePointer(0);
+            int32_t  iStep = (int32_t)pDataIn->GetPlanePitch(0);
 
             status = m_enc[0]->SetSource(pSrc, iStep, srcSize, channels, jcolor, jss, 16);
             if(JPEG_OK != status)
@@ -628,20 +628,20 @@ Status MJPEGVideoEncoder::GetFrame(MediaData* /*in*/, MediaData* /*out*/)
     return status;
 }
 
-Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u numPiece)
+Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const uint32_t numPiece)
 {
-    IppiSize       srcSize;
+    mfxSize       srcSize;
     JCOLOR         jsrcColor = JC_NV12;
     JCOLOR         jdstColor = JC_NV12;
     JTMODE         jtmode   = JT_OLD;
     JMODE          jmode    = JPEG_BASELINE;
     JSS            jss      = JS_444;
-    Ipp32s         srcChannels = 3;
-    Ipp32s         depth    = 8;
+    int32_t         srcChannels = 3;
+    int32_t         depth    = 8;
     bool           planar   = false;
     JERRCODE       status   = JPEG_OK;
     CMemBuffOutput streamOut;
-    Ipp32u         numField, numScan, piecePosInField, piecePosInScan;
+    uint32_t         numField, numScan, piecePosInField, piecePosInScan;
 
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
@@ -702,7 +702,7 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
         return UMC_ERR_UNSUPPORTED;
     }
 
-    status = streamOut.Open((Ipp8u*)m_pBitstreamBuffer[threadNumber]->GetBufferPointer() + m_pBitstreamBuffer[threadNumber]->GetDataSize(), 
+    status = streamOut.Open((uint8_t*)m_pBitstreamBuffer[threadNumber]->GetBufferPointer() + m_pBitstreamBuffer[threadNumber]->GetDataSize(), 
                             (int)m_pBitstreamBuffer[threadNumber]->GetBufferSize() - (int)m_pBitstreamBuffer[threadNumber]->GetDataSize());
     if(JPEG_OK != status)
         return UMC_ERR_FAILED;
@@ -715,8 +715,8 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
     {
         if(planar)
         {
-            Ipp8u  *pSrc[]  = {(Ipp8u*)pDataIn->GetPlanePointer(0), (Ipp8u*)pDataIn->GetPlanePointer(1), (Ipp8u*)pDataIn->GetPlanePointer(2), (Ipp8u*)pDataIn->GetPlanePointer(3)};
-            Ipp32s  iStep[] = {(Ipp32s)pDataIn->GetPlanePitch(0), (Ipp32s)pDataIn->GetPlanePitch(1), (Ipp32s)pDataIn->GetPlanePitch(2), (Ipp32s)pDataIn->GetPlanePitch(3)};
+            uint8_t  *pSrc[]  = {(uint8_t*)pDataIn->GetPlanePointer(0), (uint8_t*)pDataIn->GetPlanePointer(1), (uint8_t*)pDataIn->GetPlanePointer(2), (uint8_t*)pDataIn->GetPlanePointer(3)};
+            int32_t  iStep[] = {(int32_t)pDataIn->GetPlanePitch(0), (int32_t)pDataIn->GetPlanePitch(1), (int32_t)pDataIn->GetPlanePitch(2), (int32_t)pDataIn->GetPlanePitch(3)};
 
             status = m_enc[threadNumber]->SetSource(pSrc, iStep, srcSize, srcChannels, jsrcColor, jss, 8);
             if(JPEG_OK != status)
@@ -724,8 +724,8 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
         }
         else
         {
-            Ipp8u  *pSrc  = (Ipp8u*)pDataIn->GetPlanePointer(0);
-            Ipp32s  iStep = (Ipp32s)pDataIn->GetPlanePitch(0);
+            uint8_t  *pSrc  = (uint8_t*)pDataIn->GetPlanePointer(0);
+            int32_t  iStep = (int32_t)pDataIn->GetPlanePitch(0);
 
             status = m_enc[threadNumber]->SetSource(pSrc, iStep, srcSize, srcChannels, jsrcColor, jss, 8);
             if(JPEG_OK != status)
@@ -736,8 +736,8 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
     {
         if(planar)
         {
-            Ipp16s *pSrc[]  = {(Ipp16s*)pDataIn->GetPlanePointer(0), (Ipp16s*)pDataIn->GetPlanePointer(1), (Ipp16s*)pDataIn->GetPlanePointer(2), (Ipp16s*)pDataIn->GetPlanePointer(3)};
-            Ipp32s  iStep[] = {(Ipp32s)pDataIn->GetPlanePitch(0), (Ipp32s)pDataIn->GetPlanePitch(1), (Ipp32s)pDataIn->GetPlanePitch(2), (Ipp32s)pDataIn->GetPlanePitch(3)};
+            int16_t *pSrc[]  = {(int16_t*)pDataIn->GetPlanePointer(0), (int16_t*)pDataIn->GetPlanePointer(1), (int16_t*)pDataIn->GetPlanePointer(2), (int16_t*)pDataIn->GetPlanePointer(3)};
+            int32_t  iStep[] = {(int32_t)pDataIn->GetPlanePitch(0), (int32_t)pDataIn->GetPlanePitch(1), (int32_t)pDataIn->GetPlanePitch(2), (int32_t)pDataIn->GetPlanePitch(3)};
 
             status = m_enc[threadNumber]->SetSource(pSrc, iStep, srcSize, srcChannels, jsrcColor, jss, 16);
             if(JPEG_OK != status)
@@ -745,8 +745,8 @@ Status MJPEGVideoEncoder::EncodePiece(const mfxU32 threadNumber, const Ipp32u nu
         }
         else
         {
-            Ipp16s *pSrc  = (Ipp16s*)pDataIn->GetPlanePointer(0);
-            Ipp32s  iStep = (Ipp32s)pDataIn->GetPlanePitch(0);
+            int16_t *pSrc  = (int16_t*)pDataIn->GetPlanePointer(0);
+            int32_t  iStep = (int32_t)pDataIn->GetPlanePitch(0);
 
             status = m_enc[threadNumber]->SetSource(pSrc, iStep, srcSize, srcChannels, jsrcColor, jss, 16);
             if(JPEG_OK != status)
@@ -817,7 +817,7 @@ Status MJPEGVideoEncoder::PostProcessing(MediaData* out)
         return UMC_ERR_NOT_INITIALIZED;
 
     Status status = UMC_OK;
-    Ipp32u i, j, k;
+    uint32_t i, j, k;
     size_t requiredDataSize = 0;
 
     // check buffer size
@@ -841,15 +841,15 @@ Status MJPEGVideoEncoder::PostProcessing(MediaData* out)
                 size_t offset = m_frame->m_pics[i]->m_scans[j]->m_pieceOffset[k];
                 size_t size = m_frame->m_pics[i]->m_scans[j]->m_pieceSize[k];
 
-                MFX_INTERNAL_CPY((Ipp8u *)out->GetBufferPointer() + out->GetDataSize(),
-                            (Ipp8u *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
-                            (Ipp32u)size);
+                MFX_INTERNAL_CPY((uint8_t *)out->GetBufferPointer() + out->GetDataSize(),
+                            (uint8_t *)m_pBitstreamBuffer[location]->GetBufferPointer() + offset,
+                            (uint32_t)size);
 
                 if(k != m_frame->m_pics[i]->m_scans[j]->GetNumPieces() - 1)
                 {
-                    Ipp8u *link = (Ipp8u *)out->GetBufferPointer() + out->GetDataSize() + size;
+                    uint8_t *link = (uint8_t *)out->GetBufferPointer() + out->GetDataSize() + size;
                     link[0] = 0xFF;
-                    link[1] = (Ipp8u)(0xD0 + (k % 8));
+                    link[1] = (uint8_t)(0xD0 + (k % 8));
 
                     out->SetDataSize(out->GetDataSize() + size + 2);
                 }

@@ -44,37 +44,37 @@ public:
 
     virtual void Close();
 
-    virtual MediaDataEx * GetFrame(MediaData * in, Ipp32u maxBitstreamSize);
+    virtual MediaDataEx * GetFrame(MediaData * in, uint32_t maxBitstreamSize);
 
-    Ipp32s CheckMarker(MediaData * pSource);
+    int32_t CheckMarker(MediaData * pSource);
 
-    Ipp32s GetMarker(MediaData * in, MediaData * pDst);
+    int32_t GetMarker(MediaData * in, MediaData * pDst);
 
 protected:
 
-    Status AddMarker(Ipp32u marker, MediaDataEx::_MediaDataEx* pMediaDataEx, size_t nBufferSize, MediaData *dst);
-    Ipp32s EndOfStream(MediaData * pDst);
+    Status AddMarker(uint32_t marker, MediaDataEx::_MediaDataEx* pMediaDataEx, size_t nBufferSize, MediaData *dst);
+    int32_t EndOfStream(MediaData * pDst);
 
-    Ipp32s FindMarkerCode(Ipp8u * (&source), size_t & size, Ipp32s & startCodeSize);
+    int32_t FindMarkerCode(uint8_t * (&source), size_t & size, int32_t & startCodeSize);
 
     void ResetForNewFrame();
 
     size_t              m_prevLengthOfSegment;
-    std::vector<Ipp8u>  m_prev;
-    std::vector<Ipp8u>  m_frame;
+    std::vector<uint8_t>  m_prev;
+    std::vector<uint8_t>  m_frame;
     MediaDataEx         m_mediaData;
     MediaDataEx::_MediaDataEx m_mediaDataEx;
 
-    Ipp32s              m_code; // marker code
-    Ipp64f              m_pts;
+    int32_t              m_code; // marker code
+    double              m_pts;
     size_t              m_suggestedSize;
-    Ipp32s              m_RestartCount;
+    int32_t              m_RestartCount;
 
     struct JpegFCFlags
     {
-        Ipp8u isSOI : 1;
-        Ipp8u isEOI : 1;
-        Ipp8u isSOS : 1;
+        uint8_t isSOI : 1;
+        uint8_t isEOI : 1;
+        uint8_t isSOS : 1;
     };
 
     JpegFCFlags       m_flags;

@@ -688,21 +688,21 @@ JERRCODE CJPEGDecoderBase::ParseDQT(void)
     }
 
     int q;
-    Ipp8u qnt[DCTSIZE2*sizeof(Ipp16s)];
-    Ipp8u*  pq8  = (Ipp8u*) qnt;
-    Ipp16u* pq16 = (Ipp16u*)qnt;
+    uint8_t qnt[DCTSIZE2*sizeof(int16_t)];
+    uint8_t*  pq8  = (uint8_t*) qnt;
+    uint16_t* pq16 = (uint16_t*)qnt;
 
     for(i = 0; i < DCTSIZE2; i++)
     {
       if(precision)
       {
         jerr = m_BitStreamIn.ReadWord(&q);
-        pq16[i] = (Ipp16u)q;
+        pq16[i] = (uint16_t)q;
       }
       else
       {
         jerr = m_BitStreamIn.ReadByte(&q);
-        pq8[i]  = (Ipp8u)q;
+        pq8[i]  = (uint8_t)q;
       }
 
       if(JPEG_OK != jerr)
@@ -749,8 +749,8 @@ JERRCODE CJPEGDecoderBase::ParseDHT(void)
   len -= 2;
 
   int v;
-  Ipp8u bits[MAX_HUFF_BITS];
-  Ipp8u vals[MAX_HUFF_VALS];
+  uint8_t bits[MAX_HUFF_BITS];
+  uint8_t vals[MAX_HUFF_VALS];
 
   memset(bits, 0, sizeof(bits));
   memset(vals, 0, sizeof(vals));
@@ -768,7 +768,7 @@ JERRCODE CJPEGDecoderBase::ParseDHT(void)
       if(JPEG_OK != jerr)
         return jerr;
 
-      bits[i] = (Ipp8u)v;
+      bits[i] = (uint8_t)v;
       count += bits[i];
     }
 
@@ -785,7 +785,7 @@ JERRCODE CJPEGDecoderBase::ParseDHT(void)
       if(JPEG_OK != jerr)
         return jerr;
 
-      vals[i] = (Ipp8u)v;
+      vals[i] = (uint8_t)v;
     }
 
     len -= count;
@@ -1137,8 +1137,8 @@ comp_id_match:
   du_height = (JPEG_LOSSLESS == m_jpeg_mode) ? 1 : 8;
 
   // MCU dimensions
-  m_curr_scan->mcuWidth  = du_width  * IPP_MAX(scan_max_hsampling,1);
-  m_curr_scan->mcuHeight = du_height * IPP_MAX(scan_max_vsampling,1);
+  m_curr_scan->mcuWidth  = du_width  * MFX_MAX(scan_max_hsampling,1);
+  m_curr_scan->mcuHeight = du_height * MFX_MAX(scan_max_vsampling,1);
 
   // num of MCUs in whole scan
   m_curr_scan->numxMCU = (m_jpeg_width  + (m_curr_scan->mcuWidth * m_curr_scan->min_h_factor  - 1)) 
@@ -1228,8 +1228,8 @@ comp_id_match:
 JERRCODE CJPEGDecoderBase::ParseJPEGBitStream(JOPERATION op)
 {
 #ifdef __TIMING__
-  Ipp64u   c0;
-  Ipp64u   c1;
+  unsigned long long   c0;
+  unsigned long long   c1;
 #endif
   JERRCODE jerr = JPEG_OK;
 
@@ -1438,9 +1438,9 @@ JERRCODE CJPEGDecoderBase::ReadHeader(
   return JPEG_OK;
 } // CJPEGDecoderBase::ReadHeader()
 
-Ipp16u CJPEGDecoderBase::GetNumQuantTables()
+uint16_t CJPEGDecoderBase::GetNumQuantTables()
 {
-    Ipp16u numTables = 0;
+    uint16_t numTables = 0;
 
     for(int i=0; i<MAX_QUANT_TABLES; i++)
         if(m_qntbl[i].m_initialized)
@@ -1449,19 +1449,19 @@ Ipp16u CJPEGDecoderBase::GetNumQuantTables()
     return numTables;
 }
   
-JERRCODE CJPEGDecoderBase::FillQuantTable(int numTable, Ipp16u* pTable)
+JERRCODE CJPEGDecoderBase::FillQuantTable(int numTable, uint16_t* pTable)
 {
-    Ipp8u* qtbl = m_qntbl[numTable].m_raw8u;
+    uint8_t* qtbl = m_qntbl[numTable].m_raw8u;
 
     for(int i=0; i<DCTSIZE2; i++)
-        pTable[i] = (Ipp16u)qtbl[i];
+        pTable[i] = (uint16_t)qtbl[i];
 
     return JPEG_OK;
 }
 
-Ipp16u CJPEGDecoderBase::GetNumACTables()
+uint16_t CJPEGDecoderBase::GetNumACTables()
 {
-    Ipp16u numTables = 0;
+    uint16_t numTables = 0;
 
     for(int i=0; i<MAX_HUFF_TABLES; i++)
         if(m_actbl[i].IsValid())
@@ -1470,10 +1470,10 @@ Ipp16u CJPEGDecoderBase::GetNumACTables()
     return numTables;
 }
 
-JERRCODE CJPEGDecoderBase::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
+JERRCODE CJPEGDecoderBase::FillACTable(int numTable, uint8_t* pBits, uint8_t* pValues)
 {
-    const Ipp8u* bits = m_actbl[numTable].GetBits();
-    const Ipp8u* values = m_actbl[numTable].GetValues();
+    const uint8_t* bits = m_actbl[numTable].GetBits();
+    const uint8_t* values = m_actbl[numTable].GetValues();
 
     MFX_INTERNAL_CPY(pBits, bits, 16);
     MFX_INTERNAL_CPY(pValues, values, 162);
@@ -1481,9 +1481,9 @@ JERRCODE CJPEGDecoderBase::FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValue
     return JPEG_OK;
 }
 
-Ipp16u CJPEGDecoderBase::GetNumDCTables()
+uint16_t CJPEGDecoderBase::GetNumDCTables()
 {
-    Ipp16u numTables = 0;
+    uint16_t numTables = 0;
 
     for(int i=0; i<MAX_HUFF_TABLES; i++)
         if(m_dctbl[i].IsValid())
@@ -1492,10 +1492,10 @@ Ipp16u CJPEGDecoderBase::GetNumDCTables()
     return numTables;
 }
 
-JERRCODE CJPEGDecoderBase::FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues)
+JERRCODE CJPEGDecoderBase::FillDCTable(int numTable, uint8_t* pBits, uint8_t* pValues)
 {
-    const Ipp8u* bits = m_dctbl[numTable].GetBits();
-    const Ipp8u* values = m_dctbl[numTable].GetValues();
+    const uint8_t* bits = m_dctbl[numTable].GetBits();
+    const uint8_t* values = m_dctbl[numTable].GetValues();
 
     MFX_INTERNAL_CPY(pBits, bits, 16);
     MFX_INTERNAL_CPY(pValues, values, 12);

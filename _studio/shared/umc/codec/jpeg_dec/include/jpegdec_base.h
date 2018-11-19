@@ -54,14 +54,14 @@ public:
 
   int    GetSOSLen(void)               { return m_sos_len; }
 
-  Ipp16u   GetNumQuantTables(void);
-  JERRCODE FillQuantTable(int numTable, Ipp16u* pTable);
+  uint16_t   GetNumQuantTables(void);
+  JERRCODE FillQuantTable(int numTable, uint16_t* pTable);
 
-  Ipp16u   GetNumACTables(void);
-  JERRCODE FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues);
+  uint16_t   GetNumACTables(void);
+  JERRCODE FillACTable(int numTable, uint8_t* pBits, uint8_t* pValues);
 
-  Ipp16u   GetNumDCTables(void);
-  JERRCODE FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues);
+  uint16_t   GetNumDCTables(void);
+  JERRCODE FillDCTable(int numTable, uint8_t* pBits, uint8_t* pValues);
 
   bool     IsInterleavedScan(void);
 

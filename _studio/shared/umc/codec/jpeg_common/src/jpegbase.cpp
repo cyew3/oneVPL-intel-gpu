@@ -25,7 +25,7 @@
 
 
 // raw quant tables must be in zigzag order
-const Ipp8u DefaultLuminanceQuant[64] =
+const uint8_t DefaultLuminanceQuant[64] =
 {
   16,  11,  12,  14,  12,  10,  16,  14,
   13,  14,  18,  17,  16,  19,  24,  40,
@@ -39,7 +39,7 @@ const Ipp8u DefaultLuminanceQuant[64] =
 
 
 // raw quant tables must be in zigzag order
-const Ipp8u DefaultChrominanceQuant[64] =
+const uint8_t DefaultChrominanceQuant[64] =
 {
   17,  18,  18,  24,  21,  24,  47,  26,
   26,  47,  99,  66,  56,  66,  99,  99,
@@ -52,42 +52,42 @@ const Ipp8u DefaultChrominanceQuant[64] =
 };
 
 
-const Ipp8u DefaultLuminanceDCBits[16] =
+const uint8_t DefaultLuminanceDCBits[16] =
 {
   0x00, 0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01,
   0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
-const Ipp8u DefaultLuminanceDCValues[256] =
+const uint8_t DefaultLuminanceDCValues[256] =
 {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x08, 0x09, 0x0a, 0x0b
 };
 
 
-const Ipp8u DefaultChrominanceDCBits[16] =
+const uint8_t DefaultChrominanceDCBits[16] =
 {
   0x00, 0x03, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
   0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
-const Ipp8u DefaultChrominanceDCValues[256] =
+const uint8_t DefaultChrominanceDCValues[256] =
 {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x08, 0x09, 0x0a, 0x0b
 };
 
 
-const Ipp8u DefaultLuminanceACBits[16] =
+const uint8_t DefaultLuminanceACBits[16] =
 {
   0x00, 0x02, 0x01, 0x03, 0x03, 0x02, 0x04, 0x03,
   0x05, 0x05, 0x04, 0x04, 0x00, 0x00, 0x01, 0x7d
 };
 
 
-const Ipp8u DefaultLuminanceACValues[256] =
+const uint8_t DefaultLuminanceACValues[256] =
 {
   0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12,
   0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
@@ -113,14 +113,14 @@ const Ipp8u DefaultLuminanceACValues[256] =
 };
 
 
-const Ipp8u DefaultChrominanceACBits[16] =
+const uint8_t DefaultChrominanceACBits[16] =
 {
   0x00, 0x02, 0x01, 0x02, 0x04, 0x04, 0x03, 0x04,
   0x07, 0x05, 0x04, 0x04, 0x00, 0x01, 0x02, 0x77
 };
 
 
-const Ipp8u DefaultChrominanceACValues[256] =
+const uint8_t DefaultChrominanceACValues[256] =
 {
   0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21,
   0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
@@ -208,7 +208,7 @@ JERRCODE CMemoryBuffer::Allocate(int size)
 
   m_buffer_size = size;
 
-  m_buffer = new Ipp8u[m_buffer_size];
+  m_buffer = new uint8_t[m_buffer_size];
 
   return JPEG_OK;
 } // CMemoryBuffer::Allocate()

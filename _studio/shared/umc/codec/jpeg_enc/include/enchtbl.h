@@ -36,15 +36,15 @@ private:
 public:
   int                    m_id;
   int                    m_hclass;
-  Ipp8u                  m_bits[16];
-  Ipp8u                  m_vals[256];
+  uint8_t                  m_bits[16];
+  uint8_t                  m_vals[256];
 
   CJPEGEncoderHuffmanTable(void);
   virtual ~CJPEGEncoderHuffmanTable(void);
 
   JERRCODE Create(void);
   JERRCODE Destroy(void);
-  JERRCODE Init(int id,int hclass,Ipp8u* bits,Ipp8u* vals);
+  JERRCODE Init(int id,int hclass,uint8_t* bits,uint8_t* vals);
   
   bool     IsValid(void)                { return m_bValid; }
 

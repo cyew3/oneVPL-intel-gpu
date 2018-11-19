@@ -104,7 +104,7 @@ JERRCODE CJPEGDecoderHuffmanTable::Destroy(void)
 } // CJPEGDecoderHuffmanTable::Destroy()
 
 
-JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* vals)
+JERRCODE CJPEGDecoderHuffmanTable::Init(int id,int hclass,uint8_t* bits,uint8_t* vals)
 {
   m_id     = id     & 0x0f;
   m_hclass = hclass & 0x0f;

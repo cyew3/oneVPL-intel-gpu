@@ -45,7 +45,7 @@ public:
 
   JERRCODE FlushBitStream(CBitStreamOutput& bitStream);
 
-  Ipp8u* GetDataPtr(void) const { return m_pData; }
+  uint8_t* GetDataPtr(void) const { return m_pData; }
   int GetDataLen(void) const { return m_DataLen; }
   int GetCurrPos(void) const { return m_currPos; }
   void SetCurrPos(int cp) { m_currPos = cp; return; }
@@ -59,7 +59,7 @@ public:
 protected:
   CBaseStreamOutput* m_out;
 
-  Ipp8u*             m_pData;
+  uint8_t*             m_pData;
   int                m_DataLen;
   int                m_currPos;
 

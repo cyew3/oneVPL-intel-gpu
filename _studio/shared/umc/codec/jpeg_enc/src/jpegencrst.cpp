@@ -69,7 +69,7 @@ JERRCODE CJPEGEncoder::ProcessRestart(
   int       c;
   int       dstLen;
   int       currPos;
-  Ipp8u*    dst;
+  uint8_t*    dst;
   JERRCODE  jerr;
   IppStatus status = ippStsNoErr;
 
@@ -189,7 +189,7 @@ JERRCODE CJPEGEncoder::ProcessRestart(
 } // CJPEGEncoder::ProcessRestart()
 
 
-JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(Ipp16s* pMCUBuf, int thread_id)
+JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(int16_t* pMCUBuf, int thread_id)
 {
   int                    c;
   int                    vs;
@@ -197,7 +197,7 @@ JERRCODE CJPEGEncoder::EncodeHuffmanMCURowBL_RSTI(Ipp16s* pMCUBuf, int thread_id
   int                    xmcu;
   int                    dstLen;
   int                    currPos;
-  Ipp8u*                 dst;
+  uint8_t*                 dst;
   CJPEGColorComponent*   curr_comp;
   IppiEncodeHuffmanSpec* pDCTbl = 0;
   IppiEncodeHuffmanSpec* pACTbl = 0;
@@ -272,7 +272,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
   int i;
   int dstLen;
   int currPos;
-  Ipp8u* dst;
+  uint8_t* dst;
 
   JERRCODE  jerr;
   IppStatus status;
@@ -313,7 +313,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
     int     rh         = 0;
     int     currMCURow = 0;
     int     thread_id  = 0;
-    Ipp16s* pMCUBuf    = 0;  // the pointer to Buffer for a current thread.
+    int16_t* pMCUBuf    = 0;  // the pointer to Buffer for a current thread.
 
 #ifdef _OPENMP
     thread_id = omp_get_thread_num(); // the thread id of the calling thread.
@@ -327,7 +327,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI(void)
       {
         currMCURow = curr_rsti*m_rstiHeight;
 
-        rh = IPP_MIN(m_rstiHeight, m_numyMCU - currMCURow);
+        rh = MFX_MIN(m_rstiHeight, m_numyMCU - currMCURow);
 
         for(int r = 0; r < rh; r++)
         {
@@ -405,7 +405,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
   int i;
   int dstLen;
   int currPos;
-  Ipp8u* dst;
+  uint8_t* dst;
 
   JERRCODE  jerr;
   IppStatus status;
@@ -446,7 +446,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
     int     rh         = 0;
     int     currMCURow = 0;
     int     thread_id  = 0;
-    Ipp16s* pMCUBuf    = 0;  // the pointer to Buffer for a current thread.
+    int16_t* pMCUBuf    = 0;  // the pointer to Buffer for a current thread.
 
 #ifdef _OPENMP
     thread_id = omp_get_thread_num(); // the thread id of the calling thread.
@@ -460,7 +460,7 @@ JERRCODE CJPEGEncoder::EncodeScanBaselineRSTI_P(void)
       {
         currMCURow = curr_rsti*m_rstiHeight;
 
-        rh = IPP_MIN(m_rstiHeight, m_numyMCU - currMCURow);
+        rh = MFX_MIN(m_rstiHeight, m_numyMCU - currMCURow);
 
         for(int r = 0; r < rh; r++)
         {

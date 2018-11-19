@@ -94,7 +94,7 @@ public:
     JCOLOR GetColorType();
 
     // All memory sizes should come in size_t type
-    Status _GetFrameInfo(const Ipp8u* pBitStream, size_t nSize);
+    Status _GetFrameInfo(const uint8_t* pBitStream, size_t nSize);
 
     // Allocate the destination frame
     Status AllocateFrame() override;
@@ -103,7 +103,7 @@ public:
     Status CloseFrame(void);
 
     // Do post processing
-    virtual Status PostProcessing(Ipp64f ptr);
+    virtual Status PostProcessing(double ptr);
 
     // Get the number of decoders allocated
     inline
@@ -112,30 +112,30 @@ public:
     // Skip extra data at the begiging of stream
     Status FindStartOfImage(MediaData * in);
 
-    Status SetRotation(Ipp16u rotation);
+    Status SetRotation(uint16_t rotation);
 
-    Status SetColorSpace(Ipp16u chromaFormat, Ipp16u colorFormat);
+    Status SetColorSpace(uint16_t chromaFormat, uint16_t colorFormat);
 
 protected:
 
-    void AdjustFrameSize(IppiSize & size) override;
+    void AdjustFrameSize(mfxSize & size) override;
 
     Status DecodePiece(const mfxU32 fieldNum,
                        const mfxU32 restartNum,
                        const mfxU32 restartsToDecode,
                        const mfxU32 threadNum);
 
-    Status _DecodeHeader(Ipp32s* nUsedBytes, const Ipp32u threadNum);
+    Status _DecodeHeader(int32_t* nUsedBytes, const uint32_t threadNum);
 
-    Ipp32s                  m_frameNo;
+    int32_t                  m_frameNo;
 
     VideoData               m_internalFrame;
     bool                    m_needPostProcessing;
 
 
-    Ipp8u*                  m_frame;
-    Ipp32s                  m_frameChannels;
-    Ipp32s                  m_framePrecision;
+    uint8_t*                  m_frame;
+    int32_t                  m_frameChannels;
+    int32_t                  m_framePrecision;
 
     // JPEG decoders allocated
     std::vector<std::unique_ptr<CJPEGDecoder>> m_dec;
@@ -143,8 +143,8 @@ protected:
     // Pointer to the last buffer decoded. It is required to check if header was already decoded.
     const CJpegTaskBuffer *(m_pLastPicBuffer[JPEG_MAX_THREADS]);
 
-    Ipp64f                  m_local_frame_time;
-    Ipp64f                  m_local_delta_frame_time;
+    double                  m_local_frame_time;
+    double                  m_local_delta_frame_time;
 
     std::unique_ptr<BaseCodec>  m_PostProcessing; // (BaseCodec*) pointer to post processing
 };

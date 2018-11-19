@@ -59,36 +59,36 @@ public:
   virtual ~CJPEGEncoder(void);
 
   JERRCODE SetSource(
-    Ipp8u*   pSrc,
+    uint8_t*   pSrc,
     int      srcStep,
-    IppiSize srcSize,
+    mfxSize srcSize,
     int      srcChannels,
     JCOLOR   srcColor,
     JSS      srcSampling  = JS_444,
     int      srcPrecision = 8);
 
   JERRCODE SetSource(
-    Ipp16s*  pSrc,
+    int16_t*  pSrc,
     int      srcStep,
-    IppiSize srcSize,
+    mfxSize srcSize,
     int      srcChannels,
     JCOLOR   srcColor,
     JSS      srcSampling = JS_444,
     int      srcPrecision = 16);
 
   JERRCODE SetSource(
-    Ipp8u*   pSrc[4],
+    uint8_t*   pSrc[4],
     int      srcStep[4],
-    IppiSize srcSize,
+    mfxSize srcSize,
     int      srcChannels,
     JCOLOR   srcColor,
     JSS      srcSampling  = JS_411,
     int      srcPrecision = 8);
 
   JERRCODE SetSource(
-    Ipp16s*  pSrc[4],
+    int16_t*  pSrc[4],
     int      srcStep[4],
-    IppiSize srcSize,
+    mfxSize srcSize,
     int      srcChannels,
     JCOLOR   srcColor,
     JSS      srcSampling  = JS_444,
@@ -120,9 +120,9 @@ public:
              int point_transform,
              int predictor);
 
-  JERRCODE InitHuffmanTable(Ipp8u bits[16], Ipp8u vals[256], int tbl_id, HTBL_CLASS tbl_class);
-  JERRCODE InitQuantTable(Ipp8u  qnt[64], int tbl_id, int quality);
-  JERRCODE InitQuantTable(Ipp16u qnt[64], int tbl_id, int quality);
+  JERRCODE InitHuffmanTable(uint8_t bits[16], uint8_t vals[256], int tbl_id, HTBL_CLASS tbl_class);
+  JERRCODE InitQuantTable(uint8_t  qnt[64], int tbl_id, int quality);
+  JERRCODE InitQuantTable(uint16_t qnt[64], int tbl_id, int quality);
 
   JERRCODE AttachHuffmanTable(int tbl_id, HTBL_CLASS tbl_class, int comp_no);
   JERRCODE AttachQuantTable(int tbl_id, int comp_no);
@@ -136,27 +136,27 @@ public:
   JERRCODE SetJFIFApp0Resolution( JRESUNITS units, int xdensity, int ydensity);
 
 #ifdef __TIMING__
-  Ipp64u   m_clk_dct;
-  Ipp64u   m_clk_ss;
-  Ipp64u   m_clk_cc;
-  Ipp64u   m_clk_diff;
-  Ipp64u   m_clk_huff;
+  unsigned long long   m_clk_dct;
+  unsigned long long   m_clk_ss;
+  unsigned long long   m_clk_cc;
+  unsigned long long   m_clk_diff;
+  unsigned long long   m_clk_huff;
 #endif
 
-  Ipp16u   GetNumQuantTables(void);
-  JERRCODE FillQuantTable(int numTable, Ipp16u* pTable);
+  uint16_t   GetNumQuantTables(void);
+  JERRCODE FillQuantTable(int numTable, uint16_t* pTable);
 
-  Ipp16u   GetNumACTables(void);
-  JERRCODE FillACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues);
+  uint16_t   GetNumACTables(void);
+  JERRCODE FillACTable(int numTable, uint8_t* pBits, uint8_t* pValues);
 
-  Ipp16u   GetNumDCTables(void);
-  JERRCODE FillDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues);
+  uint16_t   GetNumDCTables(void);
+  JERRCODE FillDCTable(int numTable, uint8_t* pBits, uint8_t* pValues);
 
-  JERRCODE SetQuantTable(int numTable, Ipp16u* pTable);
-  JERRCODE SetACTable(int numTable, Ipp8u* pBits, Ipp8u* pValues);
-  JERRCODE SetDCTable(int numTable, Ipp8u* pBits, Ipp8u* pValues);
+  JERRCODE SetQuantTable(int numTable, uint16_t* pTable);
+  JERRCODE SetACTable(int numTable, uint8_t* pBits, uint8_t* pValues);
+  JERRCODE SetDCTable(int numTable, uint8_t* pBits, uint8_t* pValues);
 
-  JERRCODE SetDefaultQuantTable(Ipp16u quality);
+  JERRCODE SetDefaultQuantTable(uint16_t quality);
   JERRCODE SetDefaultACTable();
   JERRCODE SetDefaultDCTable();
 
@@ -201,11 +201,11 @@ protected:
   JPEG_SCAN* m_scan_script;
 
   // Number of MCU already encoded
-  Ipp32u     m_mcu_encoded;
+  uint32_t     m_mcu_encoded;
   // Number of MCU remain in the current VLC unit
-  Ipp32u     m_mcu_to_encode;
+  uint32_t     m_mcu_to_encode;
 
-  Ipp16s*    m_block_buffer;
+  int16_t*    m_block_buffer;
   int        m_block_buffer_size;
   int        m_num_threads;
   int        m_nblock;
@@ -225,7 +225,7 @@ protected:
   bool       m_externalQuantTable;
   bool       m_externalHuffmanTable;
 
-  Ipp16s**   m_lastDC;
+  int16_t**   m_lastDC;
 
   CJPEGEncoderHuffmanState*   m_state_t;
 
@@ -237,8 +237,8 @@ protected:
 
   JERRCODE Init(void);
   JERRCODE Clean(void);
-  JERRCODE ColorConvert(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU/*int nMCURow, int thread_id = 0*/);
-  JERRCODE DownSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU/*int nMCURow, int thread_id = 0*/);
+  JERRCODE ColorConvert(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU/*int nMCURow, int thread_id = 0*/);
+  JERRCODE DownSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU/*int nMCURow, int thread_id = 0*/);
 
   JERRCODE WriteSOI(void);
   JERRCODE WriteEOI(void);
@@ -261,7 +261,7 @@ protected:
   JERRCODE EncodeScanBaselineRSTI(void);
   JERRCODE EncodeScanBaselineRSTI_P(void);
 
-  JERRCODE EncodeHuffmanMCURowBL_RSTI(Ipp16s* pMCUBuf, int thread_id = 0);
+  JERRCODE EncodeHuffmanMCURowBL_RSTI(int16_t* pMCUBuf, int thread_id = 0);
   JERRCODE ProcessRestart(int id[MAX_COMPS_PER_SCAN],int Ss,int Se,int Ah,int Al, int nRSTI, int thread_id);
   JERRCODE WriteRST_T(int next_restart_num,  int thread_id = 0);
 
@@ -279,16 +279,16 @@ protected:
   JERRCODE ProcessRestart(int id[MAX_COMPS_PER_SCAN],int Ss,int Se,int Ah,int Al);
   JERRCODE ProcessRestart(int stat[2][256],int id[MAX_COMPS_PER_SCAN],int Ss,int Se,int Ah,int Al);
 
-  JERRCODE EncodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE EncodeHuffmanMCURowLS(Ipp16s* pMCUBuf);
+  JERRCODE EncodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE EncodeHuffmanMCURowLS(int16_t* pMCUBuf);
 
-  JERRCODE TransformMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU/*Ipp16s* pMCUBuf, int thread_id = 0*/);
+  JERRCODE TransformMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU/*int16_t* pMCUBuf, int thread_id = 0*/);
 
-  JERRCODE ProcessBuffer(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU);//(int nMCURow, int thread_id = 0);
+  JERRCODE ProcessBuffer(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU);//(int nMCURow, int thread_id = 0);
   JERRCODE EncodeScanProgressive_P(void);
 
-  JERRCODE TransformMCURowEX(Ipp16s* pMCUBuf, int thread_id = 0);
-  JERRCODE TransformMCURowLS(Ipp16s* pMCUBuf, int nMCURow, int thread_id = 0);
+  JERRCODE TransformMCURowEX(int16_t* pMCUBuf, int thread_id = 0);
+  JERRCODE TransformMCURowLS(int16_t* pMCUBuf, int nMCURow, int thread_id = 0);
 
 };
 

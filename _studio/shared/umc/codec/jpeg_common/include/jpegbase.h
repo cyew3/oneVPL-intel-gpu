@@ -275,8 +275,8 @@ typedef struct _image
 {
   union
   {
-    Ipp8u*  Data8u[4];
-    Ipp16s* Data16s[4];
+    uint8_t*  Data8u[4];
+    int16_t* Data16s[4];
   } p;
 
   int     width;
@@ -296,8 +296,8 @@ typedef struct _jscan
     int    jpeg_restart_interval;
     int    min_h_factor;
     int    min_v_factor;
-    Ipp32u numxMCU;
-    Ipp32u numyMCU;
+    uint32_t numxMCU;
+    uint32_t numyMCU;
     int    mcuWidth;
     int    mcuHeight;
     int    xPadding;
@@ -318,21 +318,21 @@ const int MAX_SCANS_PER_FRAME = 3;
 const int MAX_HUFF_BITS       = 16;
 const int MAX_HUFF_VALS       = 256;
 const int MAX_BLOCKS_PER_MCU  = 10;
-const int MAX_BYTES_PER_MCU   = DCTSIZE2 * sizeof(Ipp16s) * MAX_BLOCKS_PER_MCU;
+const int MAX_BYTES_PER_MCU   = DCTSIZE2 * sizeof(int16_t) * MAX_BLOCKS_PER_MCU;
 const int SAFE_NBYTES         = 128;
 
 
-extern const Ipp8u DefaultLuminanceQuant[64];
-extern const Ipp8u DefaultChrominanceQuant[64];
+extern const uint8_t DefaultLuminanceQuant[64];
+extern const uint8_t DefaultChrominanceQuant[64];
 
-extern const Ipp8u DefaultLuminanceDCBits[];
-extern const Ipp8u DefaultLuminanceDCValues[];
-extern const Ipp8u DefaultChrominanceDCBits[];
-extern const Ipp8u DefaultChrominanceDCValues[];
-extern const Ipp8u DefaultLuminanceACBits[];
-extern const Ipp8u DefaultLuminanceACValues[];
-extern const Ipp8u DefaultChrominanceACBits[];
-extern const Ipp8u DefaultChrominanceACValues[];
+extern const uint8_t DefaultLuminanceDCBits[];
+extern const uint8_t DefaultLuminanceDCValues[];
+extern const uint8_t DefaultChrominanceDCBits[];
+extern const uint8_t DefaultChrominanceDCValues[];
+extern const uint8_t DefaultLuminanceACBits[];
+extern const uint8_t DefaultLuminanceACValues[];
+extern const uint8_t DefaultChrominanceACBits[];
+extern const uint8_t DefaultChrominanceACValues[];
 
 const vm_char* GetErrorStr(JERRCODE code);
 
@@ -349,10 +349,10 @@ public:
   JERRCODE Allocate(int size);
   JERRCODE Delete(void);
 
-  operator Ipp8u*() { return m_buffer; }
+  operator uint8_t*() { return m_buffer; }
 
   int     m_buffer_size;
-  Ipp8u*  m_buffer;
+  uint8_t*  m_buffer;
 
 };
 

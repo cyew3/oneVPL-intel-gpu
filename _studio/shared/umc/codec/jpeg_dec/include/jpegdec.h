@@ -48,9 +48,9 @@ public:
     int*     precision);
 
   JERRCODE SetDestination(
-    Ipp8u*   pDst,
+    uint8_t*   pDst,
     int      dstStep,
-    IppiSize dstSize,
+    mfxSize dstSize,
     int      dstChannels,
     JCOLOR   dstColor,
     JSS      dstSampling = JS_444,
@@ -58,18 +58,18 @@ public:
     JDD      dstDctScale = JD_1_1);
 
   JERRCODE SetDestination(
-    Ipp16s*  pDst,
+    int16_t*  pDst,
     int      dstStep,
-    IppiSize dstSize,
+    mfxSize dstSize,
     int      dstChannels,
     JCOLOR   dstColor,
     JSS      dstSampling = JS_444,
     int      dstPrecision = 16);
 
   JERRCODE SetDestination(
-    Ipp8u*   pDst[4],
+    uint8_t*   pDst[4],
     int      dstStep[4],
-    IppiSize dstSize,
+    mfxSize dstSize,
     int      dstChannels,
     JCOLOR   dstColor,
     JSS      dstSampling = JS_420,
@@ -77,9 +77,9 @@ public:
     JDD      dstDctScale = JD_1_1);
 
   JERRCODE SetDestination(
-    Ipp16s*  pDst[4],
+    int16_t*  pDst[4],
     int      dstStep[4],
-    IppiSize dstSize,
+    mfxSize dstSize,
     int      dstChannels,
     JCOLOR   dstColor,
     JSS      dstSampling = JS_444,
@@ -89,17 +89,17 @@ public:
   // Read the whole image data
   JERRCODE ReadData(void);
   // Read only VLC NAL data unit. Don't you mind my using h264 slang ? :)
-  JERRCODE ReadData(Ipp32u restartNum, Ipp32u restartsToDecode);
+  JERRCODE ReadData(uint32_t restartNum, uint32_t restartsToDecode);
 
   void SetInColor(JCOLOR color)        { m_jpeg_color = color; }
   void SetDCTType(int dct_type)        { m_use_qdct = dct_type; }
-  void Comment(Ipp8u** buf, int* size) { *buf = m_jpeg_comment; *size = m_jpeg_comment_size; }
+  void Comment(uint8_t** buf, int* size) { *buf = m_jpeg_comment; *size = m_jpeg_comment_size; }
 
   JMODE Mode(void)                     { return m_jpeg_mode; }
 
   int    IsJPEGCommentDetected(void)   { return m_jpeg_comment_detected; }
   int    IsExifAPP1Detected(void)      { return m_exif_app1_detected; }
-  Ipp8u* GetExifAPP1Data(void)         { return m_exif_app1_data; }
+  uint8_t* GetExifAPP1Data(void)         { return m_exif_app1_data; }
   int    GetExifAPP1DataSize(void)     { return m_exif_app1_data_size; }
 
   int    IsAVI1APP0Detected(void)      { return m_avi1_app0_detected; }
@@ -115,15 +115,15 @@ public:
   // JPEG embedded comments variables
   int      m_jpeg_comment_detected;
   int      m_jpeg_comment_size;
-  Ipp8u*   m_jpeg_comment;
+  uint8_t*   m_jpeg_comment;
 
   // Exif APP1 related variables
   int      m_exif_app1_detected;
   int      m_exif_app1_data_size;
-  Ipp8u*   m_exif_app1_data;
+  uint8_t*   m_exif_app1_data;
 
-  Ipp32u   m_numxMCU;
-  Ipp32u   m_numyMCU;
+  uint32_t   m_numxMCU;
+  uint32_t   m_numyMCU;
   int      m_mcuWidth;
   int      m_mcuHeight;
   int      m_ccWidth;
@@ -132,31 +132,31 @@ public:
   int      m_yPadding;
   int      m_rst_go;
   // Number of MCU already decoded
-  Ipp32u   m_mcu_decoded;
+  uint32_t   m_mcu_decoded;
   // Number of MCU remain in the current VLC unit
-  Ipp32u   m_mcu_to_decode;
+  uint32_t   m_mcu_to_decode;
   int      m_restarts_to_go;
   int      m_next_restart_num;
   int      m_dc_scan_completed;
   int      m_ac_scans_completed;
   int      m_init_done;
 
-  Ipp16s*  m_block_buffer;
+  int16_t*  m_block_buffer;
   int      m_num_threads;
   int      m_sof_find;
 
 #ifdef __TIMING__
-  Ipp64u   m_clk_dct;
+  unsigned long long   m_clk_dct;
 
-  Ipp64u   m_clk_dct1x1;
-  Ipp64u   m_clk_dct2x2;
-  Ipp64u   m_clk_dct4x4;
-  Ipp64u   m_clk_dct8x8;
+  unsigned long long   m_clk_dct1x1;
+  unsigned long long   m_clk_dct2x2;
+  unsigned long long   m_clk_dct4x4;
+  unsigned long long   m_clk_dct8x8;
 
-  Ipp64u   m_clk_ss;
-  Ipp64u   m_clk_cc;
-  Ipp64u   m_clk_diff;
-  Ipp64u   m_clk_huff;
+  unsigned long long   m_clk_ss;
+  unsigned long long   m_clk_cc;
+  unsigned long long   m_clk_diff;
+  unsigned long long   m_clk_huff;
 #endif
 
   IMAGE                       m_dst;
@@ -165,8 +165,8 @@ public:
 public:
   JERRCODE Init(void);
   virtual JERRCODE Clean(void);
-  JERRCODE ColorConvert(Ipp32u rowCMU, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE UpSampling(Ipp32u rowMCU, Ipp32u colMCU, Ipp32u maxMCU);
+  JERRCODE ColorConvert(uint32_t rowCMU, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE UpSampling(uint32_t rowMCU, uint32_t colMCU, uint32_t maxMCU);
 
   JERRCODE FindNextImage();
   JERRCODE ParseData();
@@ -189,22 +189,22 @@ public:
   JERRCODE ProcessRestart(void);
 
   // huffman decode mcu row lossless process
-  JERRCODE DecodeHuffmanMCURowLS(Ipp16s* pMCUBuf);
+  JERRCODE DecodeHuffmanMCURowLS(int16_t* pMCUBuf);
 
   // huffman decode mcu row baseline process
-  JERRCODE DecodeHuffmanMCURowBL(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
+  JERRCODE DecodeHuffmanMCURowBL(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
 
   // inverse DCT, de-quantization, level-shift for mcu row
-  JERRCODE ReconstructMCURowBL8x8_NxN(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE ReconstructMCURowBL8x8(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE ReconstructMCURowBL8x8To4x4(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE ReconstructMCURowBL8x8To2x2(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE ReconstructMCURowBL8x8To1x1(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
-  JERRCODE ReconstructMCURowEX(Ipp16s* pMCUBuf, Ipp32u colMCU, Ipp32u maxMCU);
+  JERRCODE ReconstructMCURowBL8x8_NxN(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE ReconstructMCURowBL8x8(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE ReconstructMCURowBL8x8To4x4(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE ReconstructMCURowBL8x8To2x2(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE ReconstructMCURowBL8x8To1x1(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
+  JERRCODE ReconstructMCURowEX(int16_t* pMCUBuf, uint32_t colMCU, uint32_t maxMCU);
 
   JERRCODE ProcessBuffer(int nMCURow, int thread_id = 0);
   // reconstruct mcu row lossless process
-  JERRCODE ReconstructMCURowLS(Ipp16s* pMCUBuf, int nMCURow,int thread_id = 0);
+  JERRCODE ReconstructMCURowLS(int16_t* pMCUBuf, int nMCURow,int thread_id = 0);
 
   ChromaType GetChromaType();
 };

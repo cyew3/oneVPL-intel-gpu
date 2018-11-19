@@ -96,7 +96,7 @@ JERRCODE CJPEGEncoderHuffmanTable::Destroy(void)
 } // CJPEGEncoderHuffmanTable::Destroy()
 
 
-JERRCODE CJPEGEncoderHuffmanTable::Init(int id,int hclass,Ipp8u* bits,Ipp8u* vals)
+JERRCODE CJPEGEncoderHuffmanTable::Init(int id,int hclass,uint8_t* bits,uint8_t* vals)
 {
   IppStatus status;
 

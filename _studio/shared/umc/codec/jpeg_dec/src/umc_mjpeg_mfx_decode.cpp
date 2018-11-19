@@ -68,7 +68,7 @@ MJPEGVideoDecoderMFX::~MJPEGVideoDecoderMFX(void)
 Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
 {
     Status status;
-    Ipp32u i, numThreads;
+    uint32_t i, numThreads;
 
     VideoDecoderParams* pDecoderParams;
 
@@ -96,7 +96,7 @@ Status MJPEGVideoDecoderMFX::Init(BaseCodecParams* lpInit)
     // allocate the JPEG decoders
     numThreads = JPEG_MAX_THREADS;
     if ((m_DecoderParams.numThreads) &&
-        (numThreads > (Ipp32u) m_DecoderParams.numThreads))
+        (numThreads > (uint32_t) m_DecoderParams.numThreads))
     {
         numThreads = m_DecoderParams.numThreads;
     }
@@ -175,10 +175,10 @@ Status MJPEGVideoDecoderMFX::Close(void)
     return UMC_OK;
 } // MJPEGVideoDecoderMFX::Close()
 
-void MJPEGVideoDecoderMFX::AdjustFrameSize(IppiSize & size)
+void MJPEGVideoDecoderMFX::AdjustFrameSize(mfxSize & size)
 {
-    size.width = align_value<Ipp32u>(size.width, 16);
-    size.height = align_value<Ipp32u>(size.height, m_interleaved ? 32 : 16);
+    size.width = align_value<uint32_t>(size.width, 16);
+    size.height = align_value<uint32_t>(size.height, m_interleaved ? 32 : 16);
 }
 
 ChromaType MJPEGVideoDecoderMFX::GetChromaType()
@@ -279,7 +279,7 @@ Status MJPEGVideoDecoderMFX::FillVideoParam(mfxVideoParam *par, bool /*full*/)
 
     par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
-    IppiSize size = m_frameDims;
+    mfxSize size = m_frameDims;
     AdjustFrameSize(size);
 
     par->mfx.FrameInfo.Width = mfxU16(size.width);
@@ -361,7 +361,7 @@ Status MJPEGVideoDecoderMFX::DecodeHeader(MediaData* in)
 
     for ( ; in->GetDataSize() > 3; )
     {
-        Ipp32s code = frameConstructor.CheckMarker(in);
+        int32_t code = frameConstructor.CheckMarker(in);
 
         if (!code)
         {
@@ -378,7 +378,7 @@ Status MJPEGVideoDecoderMFX::DecodeHeader(MediaData* in)
         }
     }
 
-    Status sts = _GetFrameInfo((Ipp8u*)in->GetDataPointer(), in->GetDataSize());
+    Status sts = _GetFrameInfo((uint8_t*)in->GetDataPointer(), in->GetDataSize());
 
     if (sts == UMC_ERR_NOT_ENOUGH_DATA &&
         (!(in->GetFlags() & MediaData::FLAG_VIDEO_DATA_NOT_FULL_FRAME) ||
@@ -392,7 +392,7 @@ Status MJPEGVideoDecoderMFX::DecodeHeader(MediaData* in)
 
 Status MJPEGVideoDecoderMFX::AllocateFrame()
 {
-    IppiSize size;
+    mfxSize size;
     size.height = m_DecoderParams.info.disp_clip_info.height;
     size.width = m_DecoderParams.info.disp_clip_info.width;
 
@@ -523,15 +523,15 @@ FrameData *MJPEGVideoDecoderMFX::GetDst(void)
 
 } // FrameData *MJPEGVideoDecoderMFX::GetDst(void)
 
-Status MJPEGVideoDecoderMFX::SetRotation(Ipp16u rotation)
+Status MJPEGVideoDecoderMFX::SetRotation(uint16_t rotation)
 {
     m_rotation = rotation;
 
     return UMC_OK;
 
-} // MJPEGVideoDecoderMFX::SetRotation(Ipp16u rotation)
+} // MJPEGVideoDecoderMFX::SetRotation(uint16_t rotation)
 
-Status MJPEGVideoDecoderMFX::SetColorSpace(Ipp16u chromaFormat, Ipp16u colorFormat)
+Status MJPEGVideoDecoderMFX::SetColorSpace(uint16_t chromaFormat, uint16_t colorFormat)
 {
     if(m_dec.empty() || m_dec.size() > JPEG_MAX_THREADS)
         return UMC_ERR_FAILED;
@@ -543,7 +543,7 @@ Status MJPEGVideoDecoderMFX::SetColorSpace(Ipp16u chromaFormat, Ipp16u colorForm
 
     return UMC_OK;
 
-} // MJPEGVideoDecoderMFX::SetRotation(Ipp16u rotation)
+} // MJPEGVideoDecoderMFX::SetRotation(uint16_t rotation)
 
 Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
                                            const mfxU32 threadNumber,
@@ -573,10 +573,10 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
     // check if there is a need to decode the header
     if (m_pLastPicBuffer[threadNumber] != &picBuffer)
     {
-        Ipp32s nUsedBytes = 0;
+        int32_t nUsedBytes = 0;
 
         // set the source data
-        jerr = m_dec[threadNumber]->SetSource((Ipp8u *) picBuffer.pBuf,
+        jerr = m_dec[threadNumber]->SetSource((uint8_t *) picBuffer.pBuf,
                     picBuffer.imageHeaderSize + picBuffer.scanSize[0]);
         if (JPEG_OK != jerr)
             return UMC_ERR_FAILED;
@@ -621,8 +621,8 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
 
             if(picBuffer.scanTablesOffset[i] != 0)
             {
-                Ipp32s nUsedBytes = 0;
-                jerr = m_dec[threadNumber]->SetSource((Ipp8u *) picBuffer.pBuf + picBuffer.scanTablesOffset[i],
+                int32_t nUsedBytes = 0;
+                jerr = m_dec[threadNumber]->SetSource((uint8_t *) picBuffer.pBuf + picBuffer.scanTablesOffset[i],
                             picBuffer.scanTablesSize[i] + picBuffer.scanSize[i]);
                 if (JPEG_OK != jerr)
                     return UMC_ERR_FAILED;
@@ -660,7 +660,7 @@ Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
 
 } // Status MJPEGVideoDecoderMFX::DecodePicture(const CJpegTask &task,
 
-Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
+Status MJPEGVideoDecoderMFX::PostProcessing(double pts)
 {
     VideoData rotatedFrame;
 
@@ -676,10 +676,10 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
     if(m_rotation)
     {
-        IppiSize size;
-        Ipp8u* pSrc[4];
+        mfxSize size;
+        uint8_t* pSrc[4];
         size_t pSrcPitch[4];
-        Ipp8u* pDst[4];
+        uint8_t* pDst[4];
         size_t pDstPitch[4];
         Status sts = UMC_OK;
 
@@ -714,13 +714,13 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
         {
         case NV12:
             {
-                pSrc[0] = (Ipp8u*)m_internalFrame.GetPlanePointer(0);
-                pSrc[1] = (Ipp8u*)m_internalFrame.GetPlanePointer(1);
+                pSrc[0] = (uint8_t*)m_internalFrame.GetPlanePointer(0);
+                pSrc[1] = (uint8_t*)m_internalFrame.GetPlanePointer(1);
                 pSrcPitch[0] = m_internalFrame.GetPlanePitch(0);
                 pSrcPitch[1] = m_internalFrame.GetPlanePitch(1);
 
-                pDst[0] = (Ipp8u*)rotatedFrame.GetPlanePointer(0);
-                pDst[1] = (Ipp8u*)rotatedFrame.GetPlanePointer(1);
+                pDst[0] = (uint8_t*)rotatedFrame.GetPlanePointer(0);
+                pDst[1] = (uint8_t*)rotatedFrame.GetPlanePointer(1);
                 pDstPitch[0] = rotatedFrame.GetPlanePitch(0);
                 pDstPitch[1] = rotatedFrame.GetPlanePitch(1);
 
@@ -728,8 +728,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
                 {
                 case 90:
 
-                    for(Ipp32s i=0; i<m_frameDims.width >> 1; i++)
-                        for(Ipp32s j=0; j<m_frameDims.height >> 1; j++)
+                    for(int32_t i=0; i<m_frameDims.width >> 1; i++)
+                        for(int32_t j=0; j<m_frameDims.height >> 1; j++)
                         {
                             pDst[0][( i<<1   )*pDstPitch[0] + (j<<1)  ] = pSrc[0][(m_frameDims.height-1-(j<<1)) * pSrcPitch[0] + (i<<1)  ];
                             pDst[0][((i<<1)+1)*pDstPitch[0] + (j<<1)  ] = pSrc[0][(m_frameDims.height-1-(j<<1)) * pSrcPitch[0] + (i<<1)+1];
@@ -743,8 +743,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
                 case 180:
 
-                    for(Ipp32s i=0; i<m_frameDims.height >> 1; i++)
-                        for(Ipp32s j=0; j<m_frameDims.width >> 1; j++)
+                    for(int32_t i=0; i<m_frameDims.height >> 1; i++)
+                        for(int32_t j=0; j<m_frameDims.width >> 1; j++)
                         {
                             pDst[0][( i<<1   )*pDstPitch[0] + (j<<1)  ] = pSrc[0][(m_frameDims.height-1-(i<<1)) * pSrcPitch[0] + m_frameDims.width-1-(j<<1)];
                             pDst[0][((i<<1)+1)*pDstPitch[0] + (j<<1)  ] = pSrc[0][(m_frameDims.height-2-(i<<1)) * pSrcPitch[0] + m_frameDims.width-1-(j<<1)];
@@ -758,8 +758,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
                 case 270:
 
-                    for(Ipp32s i=0; i<m_frameDims.width >> 1; i++)
-                        for(Ipp32s j=0; j<m_frameDims.height >> 1; j++)
+                    for(int32_t i=0; i<m_frameDims.width >> 1; i++)
+                        for(int32_t j=0; j<m_frameDims.height >> 1; j++)
                         {
                             pDst[0][( i<<1   )*pDstPitch[0] + (j<<1)  ] = pSrc[0][((j<<1)  ) * pSrcPitch[0] + m_frameDims.width-1-(i<<1)];
                             pDst[0][((i<<1)+1)*pDstPitch[0] + (j<<1)  ] = pSrc[0][((j<<1)  ) * pSrcPitch[0] + m_frameDims.width-2-(i<<1)];
@@ -776,18 +776,18 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
         case RGB32:
             {
-                pSrc[0] = (Ipp8u*)m_internalFrame.GetPlanePointer(0);
+                pSrc[0] = (uint8_t*)m_internalFrame.GetPlanePointer(0);
                 pSrcPitch[0] = m_internalFrame.GetPlanePitch(0);
 
-                pDst[0] = (Ipp8u*)rotatedFrame.GetPlanePointer(0);
+                pDst[0] = (uint8_t*)rotatedFrame.GetPlanePointer(0);
                 pDstPitch[0] = rotatedFrame.GetPlanePitch(0);
 
                 switch(m_rotation)
                 {
                 case 90:
 
-                    for(Ipp32s i=0; i<m_frameDims.width; i++)
-                        for(Ipp32s j=0; j<m_frameDims.height; j++)
+                    for(int32_t i=0; i<m_frameDims.width; i++)
+                        for(int32_t j=0; j<m_frameDims.height; j++)
                         {
                             pDst[0][i*pDstPitch[0] + j*4    ] = pSrc[0][(m_frameDims.height-1-j)*pSrcPitch[0] + i*4    ];
                             pDst[0][i*pDstPitch[0] + j*4 + 1] = pSrc[0][(m_frameDims.height-1-j)*pSrcPitch[0] + i*4 + 1];
@@ -798,8 +798,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
                 case 180:
 
-                    for(Ipp32s i=0; i<m_frameDims.height; i++)
-                        for(Ipp32s j=0; j<m_frameDims.width; j++)
+                    for(int32_t i=0; i<m_frameDims.height; i++)
+                        for(int32_t j=0; j<m_frameDims.width; j++)
                         {
                             pDst[0][i*pDstPitch[0] + j*4    ] = pSrc[0][(m_frameDims.height-1-i)*pSrcPitch[0] + (m_frameDims.width-j)*4-4];
                             pDst[0][i*pDstPitch[0] + j*4 + 1] = pSrc[0][(m_frameDims.height-1-i)*pSrcPitch[0] + (m_frameDims.width-j)*4-3];
@@ -810,8 +810,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
                 case 270:
 
-                    for(Ipp32s i=0; i<m_frameDims.width; i++)
-                        for(Ipp32s j=0; j<m_frameDims.height; j++)
+                    for(int32_t i=0; i<m_frameDims.width; i++)
+                        for(int32_t j=0; j<m_frameDims.height; j++)
                         {
                             pDst[0][i*pDstPitch[0] + j*4    ] = pSrc[0][j*pSrcPitch[0] + (m_frameDims.width-1-i)*4    ];
                             pDst[0][i*pDstPitch[0] + j*4 + 1] = pSrc[0][j*pSrcPitch[0] + (m_frameDims.width-1-i)*4 + 1];
@@ -825,16 +825,16 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
         case YUV444:
             {
-                pSrc[0] = (Ipp8u*)m_internalFrame.GetPlanePointer(0);
-                pSrc[1] = (Ipp8u*)m_internalFrame.GetPlanePointer(1);
-                pSrc[2] = (Ipp8u*)m_internalFrame.GetPlanePointer(2);
+                pSrc[0] = (uint8_t*)m_internalFrame.GetPlanePointer(0);
+                pSrc[1] = (uint8_t*)m_internalFrame.GetPlanePointer(1);
+                pSrc[2] = (uint8_t*)m_internalFrame.GetPlanePointer(2);
                 pSrcPitch[0] = m_internalFrame.GetPlanePitch(0);
                 pSrcPitch[1] = m_internalFrame.GetPlanePitch(1);
                 pSrcPitch[2] = m_internalFrame.GetPlanePitch(2);
 
-                pDst[0] = (Ipp8u*)rotatedFrame.GetPlanePointer(0);
-                pDst[1] = (Ipp8u*)rotatedFrame.GetPlanePointer(1);
-                pDst[2] = (Ipp8u*)rotatedFrame.GetPlanePointer(2);
+                pDst[0] = (uint8_t*)rotatedFrame.GetPlanePointer(0);
+                pDst[1] = (uint8_t*)rotatedFrame.GetPlanePointer(1);
+                pDst[2] = (uint8_t*)rotatedFrame.GetPlanePointer(2);
                 pDstPitch[0] = rotatedFrame.GetPlanePitch(0);
                 pDstPitch[1] = rotatedFrame.GetPlanePitch(1);
                 pDstPitch[2] = rotatedFrame.GetPlanePitch(2);
@@ -843,8 +843,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
                 {
                 case 90:
 
-                    for(Ipp32s i=0; i<m_frameDims.width; i++)
-                        for(Ipp32s j=0; j<m_frameDims.height; j++)
+                    for(int32_t i=0; i<m_frameDims.width; i++)
+                        for(int32_t j=0; j<m_frameDims.height; j++)
                         {
                             pDst[0][i*pDstPitch[0] + j] = pSrc[0][(m_frameDims.height-1-j) * pSrcPitch[0] + i];
                             pDst[1][i*pDstPitch[1] + j] = pSrc[1][(m_frameDims.height-1-j) * pSrcPitch[1] + i];
@@ -854,8 +854,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
                 case 180:
 
-                    for(Ipp32s i=0; i<m_frameDims.height; i++)
-                        for(Ipp32s j=0; j<m_frameDims.width; j++)
+                    for(int32_t i=0; i<m_frameDims.height; i++)
+                        for(int32_t j=0; j<m_frameDims.width; j++)
                         {
                             pDst[0][i*pDstPitch[0] + j] = pSrc[0][(m_frameDims.height-1-i) * pSrcPitch[0] + m_frameDims.width-1-j];
                             pDst[1][i*pDstPitch[1] + j] = pSrc[1][(m_frameDims.height-1-i) * pSrcPitch[1] + m_frameDims.width-1-j];
@@ -865,8 +865,8 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
                 case 270:
 
-                    for(Ipp32s i=0; i<m_frameDims.width; i++)
-                        for(Ipp32s j=0; j<m_frameDims.height; j++)
+                    for(int32_t i=0; i<m_frameDims.width; i++)
+                        for(int32_t j=0; j<m_frameDims.height; j++)
                         {
                             pDst[0][i*pDstPitch[0] + j] = pSrc[0][j * pSrcPitch[0] + m_frameDims.width-1-i];
                             pDst[1][i*pDstPitch[1] + j] = pSrc[1][j * pSrcPitch[1] + m_frameDims.width-1-i];
@@ -886,7 +886,7 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
 
     if(m_needPostProcessing)
     {
-        IppiSize size;
+        mfxSize size;
         size.height = m_DecoderParams.info.disp_clip_info.height;
         size.width = m_DecoderParams.info.disp_clip_info.width;
 
@@ -937,10 +937,10 @@ Status MJPEGVideoDecoderMFX::PostProcessing(Ipp64f pts)
     return UMC_OK;
 }
 
-Status MJPEGVideoDecoderMFX::_GetFrameInfo(const Ipp8u* pBitStream, size_t nSize)
+Status MJPEGVideoDecoderMFX::_GetFrameInfo(const uint8_t* pBitStream, size_t nSize)
 {
-    Ipp32s   nchannels;
-    Ipp32s   precision;
+    int32_t   nchannels;
+    int32_t   precision;
     JSS      sampling;
     JCOLOR   color;
     JERRCODE jerr;
@@ -988,7 +988,7 @@ Status MJPEGVideoDecoderMFX::CloseFrame(void)
 
 } // Status MJPEGVideoDecoderMFX::CloseFrame(void)
 
-Status MJPEGVideoDecoderMFX::_DecodeHeader(Ipp32s* cnt, const Ipp32u threadNum)
+Status MJPEGVideoDecoderMFX::_DecodeHeader(int32_t* cnt, const uint32_t threadNum)
 {
     JSS      sampling;
     JERRCODE jerr;
@@ -996,7 +996,7 @@ Status MJPEGVideoDecoderMFX::_DecodeHeader(Ipp32s* cnt, const Ipp32u threadNum)
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    IppiSize size = {};
+    mfxSize size = {};
 
     jerr = m_dec[threadNum]->ReadHeader(
         &size.width, &size.height, &m_frameChannels, &m_color, &sampling, &m_framePrecision);
@@ -1027,21 +1027,21 @@ Status MJPEGVideoDecoderMFX::DecodePiece(const mfxU32 fieldNum,
                                          const mfxU32 restartsToDecode,
                                          const mfxU32 threadNum)
 {
-    Ipp32s   dstPlaneStep[4];
-    Ipp8u*   pDstPlane[4];
-    Ipp32s   dstStep;
-    Ipp8u*   pDst;
+    int32_t   dstPlaneStep[4];
+    uint8_t*   pDstPlane[4];
+    int32_t   dstStep;
+    uint8_t*   pDst;
     //JSS      sampling = (JSS)m_frameSampling;
     JERRCODE jerr = JPEG_OK;
-    IppiSize dimension = m_frameDims;
+    mfxSize dimension = m_frameDims;
 
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
     if (RGB32 == m_internalFrame.GetColorFormat())
     {
-        dstStep = (Ipp32s)m_internalFrame.GetPlanePitch(0);
-        pDst = (Ipp8u*)m_internalFrame.GetPlanePointer(0);
+        dstStep = (int32_t)m_internalFrame.GetPlanePitch(0);
+        pDst = (uint8_t*)m_internalFrame.GetPlanePointer(0);
         if (m_interleaved)
         {
             if (fieldNum & 1)//!m_firstField)
@@ -1055,19 +1055,19 @@ Status MJPEGVideoDecoderMFX::DecodePiece(const mfxU32 fieldNum,
     }
     else if (YUV444 == m_internalFrame.GetColorFormat())
     {
-        pDstPlane[0] = (Ipp8u*)m_internalFrame.GetPlanePointer(0);
-        pDstPlane[1] = (Ipp8u*)m_internalFrame.GetPlanePointer(1);
-        pDstPlane[2] = (Ipp8u*)m_internalFrame.GetPlanePointer(2);
+        pDstPlane[0] = (uint8_t*)m_internalFrame.GetPlanePointer(0);
+        pDstPlane[1] = (uint8_t*)m_internalFrame.GetPlanePointer(1);
+        pDstPlane[2] = (uint8_t*)m_internalFrame.GetPlanePointer(2);
         pDstPlane[3] = 0;
 
-        dstPlaneStep[0] = (Ipp32s)m_internalFrame.GetPlanePitch(0);
-        dstPlaneStep[1] = (Ipp32s)m_internalFrame.GetPlanePitch(1);
-        dstPlaneStep[2] = (Ipp32s)m_internalFrame.GetPlanePitch(2);
+        dstPlaneStep[0] = (int32_t)m_internalFrame.GetPlanePitch(0);
+        dstPlaneStep[1] = (int32_t)m_internalFrame.GetPlanePitch(1);
+        dstPlaneStep[2] = (int32_t)m_internalFrame.GetPlanePitch(2);
         dstPlaneStep[3] = 0;
 
         if (m_interleaved)
         {
-            for (Ipp32s i = 0; i < 3; i++)
+            for (int32_t i = 0; i < 3; i++)
             {
                 if (fieldNum & 1)//!m_firstField)
                     pDstPlane[i] += dstPlaneStep[i];
@@ -1081,19 +1081,19 @@ Status MJPEGVideoDecoderMFX::DecodePiece(const mfxU32 fieldNum,
     }
     else if (NV12 == m_internalFrame.GetColorFormat())
     {
-        pDstPlane[0] = (Ipp8u*)m_internalFrame.GetPlanePointer(0);
-        pDstPlane[1] = (Ipp8u*)m_internalFrame.GetPlanePointer(1);
+        pDstPlane[0] = (uint8_t*)m_internalFrame.GetPlanePointer(0);
+        pDstPlane[1] = (uint8_t*)m_internalFrame.GetPlanePointer(1);
         pDstPlane[2] = 0;
         pDstPlane[3] = 0;
 
-        dstPlaneStep[0] = (Ipp32s)m_internalFrame.GetPlanePitch(0);
-        dstPlaneStep[1] = (Ipp32s)m_internalFrame.GetPlanePitch(1);
+        dstPlaneStep[0] = (int32_t)m_internalFrame.GetPlanePitch(0);
+        dstPlaneStep[1] = (int32_t)m_internalFrame.GetPlanePitch(1);
         dstPlaneStep[2] = 0;
         dstPlaneStep[3] = 0;
 
         if (m_interleaved)
         {
-            for (Ipp32s i = 0; i < 3; i++)
+            for (int32_t i = 0; i < 3; i++)
             {
                 if (fieldNum & 1)//!m_firstField)
                     pDstPlane[i] += dstPlaneStep[i];
@@ -1143,7 +1143,7 @@ Status MJPEGVideoDecoderMFX::FindStartOfImage(MediaData * in)
     if (!m_IsInit)
         return UMC_ERR_NOT_INITIALIZED;
 
-    jerr = m_dec[0]->SetSource((Ipp8u*)in->GetDataPointer(), in->GetDataSize());
+    jerr = m_dec[0]->SetSource((uint8_t*)in->GetDataPointer(), in->GetDataSize());
     if(JPEG_OK != jerr)
         return UMC_ERR_FAILED;
 

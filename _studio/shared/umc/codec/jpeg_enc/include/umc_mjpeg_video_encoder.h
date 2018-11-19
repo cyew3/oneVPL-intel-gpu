@@ -65,14 +65,14 @@ public:
     MJPEGEncoderScan(): m_numPieces(0) {}
     ~MJPEGEncoderScan() {Close();}
 
-    Status Init(Ipp32u numPieces);
-    Status Reset(Ipp32u numPieces);
+    Status Init(uint32_t numPieces);
+    Status Reset(uint32_t numPieces);
     void   Close();
 
-    Ipp32u GetNumPieces();
+    uint32_t GetNumPieces();
 
     // Number of restart intervals in scan
-    Ipp32u m_numPieces;
+    uint32_t m_numPieces;
     // Array of pieces locations (number of BitstreamBuffer, contained the piece)
     std::vector<size_t> m_pieceLocation;
     // Array of pieces offsets
@@ -88,12 +88,12 @@ public:
     MJPEGEncoderPicture();
    ~MJPEGEncoderPicture();
 
-    Ipp32u GetNumPieces();
+    uint32_t GetNumPieces();
 
     std::unique_ptr<VideoData>     m_sourceData;
     std::vector<MJPEGEncoderScan*> m_scans;
 
-    Ipp32u                         m_release_source_data;
+    uint32_t                         m_release_source_data;
 };
 
 
@@ -105,9 +105,9 @@ public:
 
     void Reset();
 
-    Ipp32u GetNumPics();
-    Ipp32u GetNumPieces();
-    Status GetPiecePosition(Ipp32u pieceNum, Ipp32u* fieldNum, Ipp32u* scanNum, Ipp32u* piecePosInField, Ipp32u* piecePosInScan);
+    uint32_t GetNumPics();
+    uint32_t GetNumPieces();
+    Status GetPiecePosition(uint32_t pieceNum, uint32_t* fieldNum, uint32_t* scanNum, uint32_t* piecePosInField, uint32_t* piecePosInScan);
 
     std::vector<MJPEGEncoderPicture*> m_pics;
 };
@@ -134,18 +134,18 @@ public:
         chroma_format    = 0;
     }
 
-    Ipp32s quality;
-    Ipp32s huffman_opt;
-    Ipp32s restart_interval;
-    Ipp32s point_transform;
-    Ipp32s predictor;
-    Ipp32s app0_units;
-    Ipp32s app0_xdensity;
-    Ipp32s app0_ydensity;
-    Ipp32s threading_mode;
-    Ipp32s buf_size;
-    Ipp32s interleaved;
-    Ipp32s chroma_format;
+    int32_t quality;
+    int32_t huffman_opt;
+    int32_t restart_interval;
+    int32_t point_transform;
+    int32_t predictor;
+    int32_t app0_units;
+    int32_t app0_xdensity;
+    int32_t app0_ydensity;
+    int32_t threading_mode;
+    int32_t buf_size;
+    int32_t interleaved;
+    int32_t chroma_format;
 };
 
 
@@ -170,7 +170,7 @@ public:
     virtual Status GetFrame(MediaData* in, MediaData* out);
 
     // 
-    virtual Status EncodePiece(const mfxU32 threadNumber, const Ipp32u numPiece);
+    virtual Status EncodePiece(const mfxU32 threadNumber, const uint32_t numPiece);
 
     // Get codec working (initialization) parameter(s)
     virtual Status GetInfo(BaseCodecParams *info);
@@ -179,13 +179,13 @@ public:
     virtual Status PostProcessing(MediaData* out);
 
     // Get the number of encoders allocated
-    Ipp32u NumEncodersAllocated(void);
+    uint32_t NumEncodersAllocated(void);
 
     //
-    Ipp32u NumPicsCollected(void);
+    uint32_t NumPicsCollected(void);
 
     //
-    Ipp32u NumPiecesCollected(void);
+    uint32_t NumPiecesCollected(void);
 
     //
     Status AddPicture(MJPEGEncoderPicture* pic);

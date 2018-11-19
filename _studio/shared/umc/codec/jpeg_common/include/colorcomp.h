@@ -51,7 +51,7 @@ public:
   int m_ss_step;
   int m_ss_bufsize;
   int m_need_upsampling;
-  Ipp16s m_lastDC;
+  int16_t m_lastDC;
 
   CMemoryBuffer m_cc_buf;
   CMemoryBuffer m_ss_buf;
@@ -62,8 +62,8 @@ public:
   int           m_lnz_bufsize;
   int           m_lnz_ds;
 
-  Ipp16s* m_curr_row;
-  Ipp16s* m_prev_row;
+  int16_t* m_curr_row;
+  int16_t* m_prev_row;
 
   CJPEGColorComponent(void);
   virtual ~CJPEGColorComponent(void);
@@ -77,37 +77,37 @@ public:
   JERRCODE CreateBufferLNZ(int num_threads = 1);
   JERRCODE DeleteBufferLNZ(void);
 
-  Ipp8u* GetCCBufferPtr(int thread_id = 0);
+  uint8_t* GetCCBufferPtr(int thread_id = 0);
   // Get the buffer pointer
   template <class type_t> inline
-  type_t *GetCCBufferPtr(const Ipp32u colMCU) const;
+  type_t *GetCCBufferPtr(const uint32_t colMCU) const;
 
-  Ipp8u* GetSSBufferPtr(int thread_id = 0);
+  uint8_t* GetSSBufferPtr(int thread_id = 0);
   // Get the buffer pointer
   template <class type_t> inline
-  type_t *GetSSBufferPtr(const Ipp32u colMCU) const;
+  type_t *GetSSBufferPtr(const uint32_t colMCU) const;
 
-  Ipp8u* GetLNZBufferPtr(int thread_id = 0);
+  uint8_t* GetLNZBufferPtr(int thread_id = 0);
 
 };
 
 template <class type_t> inline
-type_t *CJPEGColorComponent::GetCCBufferPtr (const Ipp32u colMCU) const
+type_t *CJPEGColorComponent::GetCCBufferPtr (const uint32_t colMCU) const
 {
   type_t *ptr = (type_t *) m_cc_buf.m_buffer;
 
   return (ptr + colMCU * 8 * m_hsampling);
 
-} // type_t *CJPEGColorComponent::GetCCBufferPtr (const Ipp32u colMCU) const
+} // type_t *CJPEGColorComponent::GetCCBufferPtr (const uint32_t colMCU) const
 
 template <class type_t> inline
-type_t *CJPEGColorComponent::GetSSBufferPtr(const Ipp32u colMCU) const
+type_t *CJPEGColorComponent::GetSSBufferPtr(const uint32_t colMCU) const
 {
   type_t *ptr = (type_t *) m_ss_buf.m_buffer;
 
   return (ptr + colMCU * 8 * m_hsampling);
 
-} // type_t *CJPEGColorComponent::GetSSBufferPtr(const Ipp32u colMCU) const
+} // type_t *CJPEGColorComponent::GetSSBufferPtr(const uint32_t colMCU) const
 
 #endif // UMC_ENABLE_MJPEG_VIDEO_DECODER || UMC_ENABLE_MJPEG_VIDEO_ENCODER
 #endif // __COLORCOMP_H__

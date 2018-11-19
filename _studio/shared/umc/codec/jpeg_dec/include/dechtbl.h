@@ -37,8 +37,8 @@ private:
   IppiDecodeHuffmanSpec* m_table;
 #endif
 
-  Ipp8u                  m_bits[16];
-  Ipp8u                  m_vals[256];
+  uint8_t                  m_bits[16];
+  uint8_t                  m_vals[256];
   bool                   m_bEmpty;
   bool                   m_bValid;
 
@@ -52,7 +52,7 @@ public:
   JERRCODE Create(void);
   JERRCODE Destroy(void);
 
-  JERRCODE Init(int id,int hclass,Ipp8u* bits,Ipp8u* vals);
+  JERRCODE Init(int id,int hclass,uint8_t* bits,uint8_t* vals);
 
   bool     IsEmpty(void)                { return m_bEmpty; }
   bool     IsValid(void)                { return m_bValid; }
@@ -62,8 +62,8 @@ public:
   operator IppiDecodeHuffmanSpec*(void) { return m_table; }
 #endif
 
-  const Ipp8u*   GetBits() const        { return m_bits; }
-  const Ipp8u*   GetValues() const      { return m_vals; }
+  const uint8_t*   GetBits() const        { return m_bits; }
+  const uint8_t*   GetValues() const      { return m_vals; }
 };
 
 
