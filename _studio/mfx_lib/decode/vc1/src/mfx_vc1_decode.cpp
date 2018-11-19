@@ -50,7 +50,7 @@ void MFXVideoDECODEVC1::SetFrameOrder(mfx_UMC_FrameAllocator* pFrameAlloc, mfxVi
     mfxFrameSurface1 surface = { };
     mfxFrameSurface1 *pSurface;
 
-    Ipp32u frameOrder;
+    uint32_t frameOrder;
     UMC::FrameMemID idx = m_pVC1VideoDecoder->GetFrameOrder(isLast, isSamePolar, frameOrder);
 
     pSurface = pFrameAlloc->GetSurface(idx, &surface, par);
@@ -330,25 +330,25 @@ mfxStatus MFXVideoDECODEVC1::Init(mfxVideoParam *par)
         16) != UMC::UMC_OK)
         return MFX_ERR_MEMORY_ALLOC;
 
-    m_pReadBuffer = (Ipp8u*)(m_MemoryAllocator.Lock(m_RBufID));
+    m_pReadBuffer = (uint8_t*)(m_MemoryAllocator.Lock(m_RBufID));
 
     m_FrameConstrData.SetBufferPointer(m_pReadBuffer,
         m_BufSize);
     m_FrameConstrData.SetDataSize(0);
 
     if (m_MemoryAllocator.Alloc(&m_stCodesID,
-        START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(UMC::MediaDataEx::_MediaDataEx),
+        START_CODE_NUMBER*2*sizeof(int32_t)+sizeof(UMC::MediaDataEx::_MediaDataEx),
         UMC::UMC_ALLOC_PERSISTENT,
         16) != UMC::UMC_OK)
         return MFX_ERR_MEMORY_ALLOC;
 
     m_pStCodes = (UMC::MediaDataEx::_MediaDataEx*)(m_MemoryAllocator.Lock(m_stCodesID));
-    memset(reinterpret_cast<void*>(m_pStCodes), 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(UMC::MediaDataEx::_MediaDataEx)));
+    memset(reinterpret_cast<void*>(m_pStCodes), 0, (START_CODE_NUMBER*2*sizeof(int32_t)+sizeof(UMC::MediaDataEx::_MediaDataEx)));
     m_pStCodes->count      = 0;
     m_pStCodes->index      = 0;
     m_pStCodes->bstrm_pos  = 0;
-    m_pStCodes->offsets    = (Ipp32u*)((Ipp8u*)m_pStCodes + sizeof(UMC::MediaDataEx::_MediaDataEx));
-    m_pStCodes->values     = (Ipp32u*)((Ipp8u*)m_pStCodes->offsets + START_CODE_NUMBER*sizeof( Ipp32u));
+    m_pStCodes->offsets    = (uint32_t*)((uint8_t*)m_pStCodes + sizeof(UMC::MediaDataEx::_MediaDataEx));
+    m_pStCodes->values     = (uint32_t*)((uint8_t*)m_pStCodes->offsets + START_CODE_NUMBER*sizeof( uint32_t));
 
     // Should add type of statuses to MFX
     if (IntUMCStatus != UMC::UMC_OK)
@@ -408,12 +408,12 @@ mfxStatus MFXVideoDECODEVC1::Reset(mfxVideoParam *par)
     // buffers setting
     m_FrameConstrData.SetBufferPointer(m_pReadBuffer, m_BufSize);
     m_FrameConstrData.SetDataSize(0);
-    memset(m_pStCodes, 0, (START_CODE_NUMBER*2*sizeof(Ipp32s)+sizeof(UMC::MediaDataEx::_MediaDataEx)));
+    memset(m_pStCodes, 0, (START_CODE_NUMBER*2*sizeof(int32_t)+sizeof(UMC::MediaDataEx::_MediaDataEx)));
     m_pStCodes->count      = 0;
     m_pStCodes->index      = 0;
     m_pStCodes->bstrm_pos  = 0;
-    m_pStCodes->offsets    = (Ipp32u*)((Ipp8u*)m_pStCodes + sizeof(UMC::MediaDataEx::_MediaDataEx));
-    m_pStCodes->values     = (Ipp32u*)((Ipp8u*)m_pStCodes->offsets + START_CODE_NUMBER*sizeof( Ipp32u));
+    m_pStCodes->offsets    = (uint32_t*)((uint8_t*)m_pStCodes + sizeof(UMC::MediaDataEx::_MediaDataEx));
+    m_pStCodes->values     = (uint32_t*)((uint8_t*)m_pStCodes->offsets + START_CODE_NUMBER*sizeof( uint32_t));
     // UMC decoder reset
 
     m_par = *par;
@@ -649,15 +649,15 @@ mfxStatus MFXVideoDECODEVC1::DecodeFrameCheck(mfxBitstream *bs, mfxFrameSurface1
             else
             {
                 //start code search
-                Ipp8u* ptr = bs->Data+ bs->DataOffset;
-                Ipp32u i = 0;
-                while(((i < bs->DataLength) && (*(Ipp32u*)ptr!= 0x0F010000)))
+                uint8_t* ptr = bs->Data+ bs->DataOffset;
+                uint32_t i = 0;
+                while(((i < bs->DataLength) && (*(uint32_t*)ptr!= 0x0F010000)))
                 {
                     ptr++;
                     i++;
                 }
 
-                if(*((Ipp32u*)ptr)!= 0x0F010000)
+                if(*((uint32_t*)ptr)!= 0x0F010000)
                 {
                     bs->DataOffset = bs->DataLength;
                     return MFX_ERR_MORE_DATA;
@@ -813,13 +813,13 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
         if ((*(bs->Data+3) == 0xC5)&& (!m_bIsInit)) // sequence header of simple/main profile
         {
             m_FrameSize  = 4;
-            Ipp8u* ptemp = bs->Data + bs->DataOffset + 4;
-            Ipp32u temp_size = ((*(ptemp+3))<<24) + ((*(ptemp+2))<<16) + ((*(ptemp+1))<<8) + *(ptemp);
+            uint8_t* ptemp = bs->Data + bs->DataOffset + 4;
+            uint32_t temp_size = ((*(ptemp+3))<<24) + ((*(ptemp+2))<<16) + ((*(ptemp+1))<<8) + *(ptemp);
 
 
             m_FrameSize += temp_size;
             m_FrameSize +=12;
-            ptemp = (Ipp8u*)bs->Data + bs->DataOffset + m_FrameSize;
+            ptemp = (uint8_t*)bs->Data + bs->DataOffset + m_FrameSize;
             temp_size = ((*(ptemp+3))<<24) + ((*(ptemp+2))<<16) + ((*(ptemp+1))<<8) + *(ptemp);
             m_FrameSize += temp_size;
             m_FrameSize +=4;
@@ -832,7 +832,7 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
         {
             if (!m_FrameConstrData.GetDataSize()) // begin of the frame
             {
-                Ipp8u* pCur = bs->Data + bs->DataOffset;
+                uint8_t* pCur = bs->Data + bs->DataOffset;
                 m_FrameSize  = ((*(pCur+3))<<24) + ((*(pCur+2))<<16) + ((*(pCur+1))<<8) + *(pCur);
                 m_FrameSize &= 0x0fffffff;
                 m_FrameSize += 8;
@@ -840,10 +840,10 @@ mfxStatus MFXVideoDECODEVC1::SelfConstructFrame(mfxBitstream *bs)
             }
         }
 
-        Ipp32u dataSize = ((bs->DataLength) > (m_FrameSize - ReadDataSize))?(m_FrameSize - ReadDataSize):(bs->DataLength);
-        Ipp32u remainedBytes = (Ipp32u)(m_FrameConstrData.GetBufferSize() - m_FrameConstrData.GetDataSize());
+        uint32_t dataSize = ((bs->DataLength) > (m_FrameSize - ReadDataSize))?(m_FrameSize - ReadDataSize):(bs->DataLength);
+        uint32_t remainedBytes = (uint32_t)(m_FrameConstrData.GetBufferSize() - m_FrameConstrData.GetDataSize());
         dataSize = (dataSize > remainedBytes) ? remainedBytes : dataSize;
-        MFX_INTERNAL_CPY((Ipp8u*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(),
+        MFX_INTERNAL_CPY((uint8_t*)m_FrameConstrData.GetBufferPointer() + m_FrameConstrData.GetDataSize(),
                     bs->Data + bs->DataOffset,
                     dataSize);
         m_FrameConstrData.SetDataSize(m_FrameConstrData.GetDataSize() + dataSize);
@@ -1430,7 +1430,7 @@ mfxStatus MFXVideoDECODEVC1::SetSkipMode(mfxSkipMode mode)
         return MFX_ERR_NOT_INITIALIZED;
 
     Status umc_sts = UMC_OK;
-    Ipp32s speed_shift;
+    int32_t speed_shift;
     switch(mode)
     {
     case MFX_SKIPMODE_NOSKIP:
@@ -1446,7 +1446,7 @@ mfxStatus MFXVideoDECODEVC1::SetSkipMode(mfxSkipMode mode)
         {
 #if !defined OPEN_SOURCE
            // disable deblocking
-            speed_shift = (Ipp32s)mode;
+            speed_shift = (int32_t)mode;
             if (0x22 == speed_shift)
             {
                 break;
@@ -1755,7 +1755,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
             if (opaqueNew->In.NumSurface != m_AlloExtBuffer.In.NumSurface)
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-            for (Ipp32u i = 0; i < opaqueNew->In.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->In.NumSurface; i++)
             {
                 if (opaqueNew->In.Surfaces[i] != m_AlloExtBuffer.In.Surfaces[i])
                     return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
@@ -1767,7 +1767,7 @@ mfxStatus MFXVideoDECODEVC1::CheckForCriticalChanges(mfxVideoParam *in)
             if (opaqueNew->Out.NumSurface != m_AlloExtBuffer.Out.NumSurface)
                 return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;
 
-            for (Ipp32u i = 0; i < opaqueNew->Out.NumSurface; i++)
+            for (uint32_t i = 0; i < opaqueNew->Out.NumSurface; i++)
             {
                 if (opaqueNew->Out.Surfaces[i] != m_AlloExtBuffer.Out.Surfaces[i])
                     return MFX_ERR_INCOMPATIBLE_VIDEO_PARAM;

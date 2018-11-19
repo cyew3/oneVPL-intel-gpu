@@ -189,16 +189,16 @@ protected:
     std::unique_ptr<UMC::VC1VideoDecoder>      m_pVC1VideoDecoder;
 
     UMC::vc1_frame_constructor*     m_frame_constructor;
-    Ipp8u*                          m_pReadBuffer;
+    uint8_t*                          m_pReadBuffer;
     UMC::MemID                      m_RBufID;
-    Ipp32u                          m_BufSize;
+    uint32_t                          m_BufSize;
 
     UMC::MediaDataEx::_MediaDataEx*  m_pStCodes;
     UMC::MemID                       m_stCodesID;
 
     mfxVideoParam                    m_par;
     mfxVideoParam                    m_Initpar;
-    Ipp32u                           m_FrameSize;
+    uint32_t                           m_FrameSize;
     bool                             m_bIsInit; // need for sm profile - construct frame
 
     UMC::VC1FrameConstrInfo          m_FCInfo;
@@ -218,7 +218,7 @@ protected:
     mfxFrameAllocResponse            m_response;
     mfxFrameAllocResponse            m_response_op;
 
-    Ipp32u                           m_SHSize;
+    uint32_t                           m_SHSize;
     mfxU8                            m_pSaveBytes[4];  // 4 bytes enough 
     mfxU32                           m_SaveBytesSize;
     mfxBitstream                     m_sbs;
@@ -249,7 +249,7 @@ protected:
     bool                             m_IsOpaq;
     mfxFrameSurface1                *m_pPrevOutSurface; // to process skipped frames through coping 
 
-    std::vector<Ipp8u>                m_RawSeq;
+    std::vector<uint8_t>                m_RawSeq;
     mfxU64                            m_ext_dur;
 
     mfxExtOpaqueSurfaceAlloc          m_AlloExtBuffer;
