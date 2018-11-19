@@ -352,9 +352,10 @@ namespace vp9e_reset
         GetVideoParam(m_session, &reset_par);
         EncodeFrames(tc.encode_before);
 
+        mfxExtVP9Param m_extParam;
+        mfxExtBuffer* m_extBufs[MAX_EXT_BUFFERS][2];
+
         if (tc.pre_init.p3 != tc.pre_reset.p3 || tc.pre_init.p4 != tc.pre_reset.p4) {
-            mfxExtVP9Param m_extParam;
-            mfxExtBuffer* m_extBufs[MAX_EXT_BUFFERS][2];
             reset_par.NumExtParam = 0;
             reset_par.ExtParam = m_extBufs[0];
             InitExtBuffer(MFX_EXTBUFF_VP9_PARAM, m_extParam);
