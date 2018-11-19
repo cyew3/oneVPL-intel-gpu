@@ -66,14 +66,14 @@ private:
 
   Status PackHeaders(MediaData* src);
 
-  Ipp8u                  m_IsInitialized;
+  uint8_t                  m_IsInitialized;
 
   VideoDecoderParams    m_Params;
 
   vp8_FrameData m_FrameData[VP8_NUM_OF_REF_FRAMES];
   vp8_FrameData *m_CurrFrame;
   
-  Ipp8u m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
+  uint8_t m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
 
   VideoAccelerator *m_pVideoAccelerator;
 

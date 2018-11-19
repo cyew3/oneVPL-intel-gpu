@@ -69,7 +69,7 @@ public:
 
 protected:
 
-    Status InitBooleanDecoder(Ipp8u *pBitStream, Ipp32s dataSize, Ipp32s dec_number);
+    Status InitBooleanDecoder(uint8_t *pBitStream, int32_t dataSize, int32_t dec_number);
 
     Status UpdateSegmentation(vp8BooleanDecoder *pBooldec);
     void UpdateCoeffProbabilitites(void);
@@ -94,12 +94,12 @@ protected:
 
     void ExtendFrameBorders(vp8_FrameData* currFrame);
 
-    Ipp8u DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, Ipp32u numbits);
-    Ipp8u DecodeValue(vp8BooleanDecoder *pBooldec, Ipp8u prob, Ipp32u numbits);
+    uint8_t DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, uint32_t numbits);
+    uint8_t DecodeValue(vp8BooleanDecoder *pBooldec, uint8_t prob, uint32_t numbits);
 
 protected:
 
-    Ipp8u                  m_isInitialized;
+    uint8_t                  m_isInitialized;
     vp8_MbInfo            *m_pMbInfo;
     vp8_MbInfo             m_mbExternal;
     vp8_FrameInfo          m_frameInfo;
@@ -115,7 +115,7 @@ protected:
 
     FrameData             m_FrameData[VP8_NUM_OF_REF_FRAMES];
     FrameData*            m_currFrame;
-    Ipp8u                 m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
+    uint8_t                 m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
 
     FrameAllocator        *m_pFrameAllocator;
     MemoryAllocator       *m_pMemoryAllocator;

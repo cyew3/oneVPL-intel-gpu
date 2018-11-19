@@ -28,7 +28,7 @@ using namespace UMC;
 
 #define CHECK_N_REALLOC_BUFFERS \
 { \
-  Ipp32u mbPerCol, mbPerRow; \
+  uint32_t mbPerCol, mbPerRow; \
   mbPerCol = m_FrameInfo.frameHeight >> 4; \
   mbPerRow = m_FrameInfo.frameWidth  >> 4; \
   if (m_FrameInfo.mbPerCol * m_FrameInfo.mbPerRow  < mbPerRow * mbPerCol) \
@@ -43,7 +43,7 @@ using namespace UMC;
     if (m_FrameInfo.blContextUp) \
       vp8dec_Free(m_FrameInfo.blContextUp); \
       \
-    m_FrameInfo.blContextUp = (Ipp8u*)vp8dec_Malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
+    m_FrameInfo.blContextUp = (uint8_t*)vp8dec_Malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
   } \
   m_FrameInfo.mbPerCol = mbPerCol; \
   m_FrameInfo.mbPerRow = mbPerRow; \
@@ -66,7 +66,7 @@ VP8VideoDecoder::VP8VideoDecoder()
 
   m_pMbInfo       = 0;
 
-  for(Ipp8u i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+  for(uint8_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
   {
     UMC_SET_ZERO(m_FrameData[i]);
     m_RefFrameIndx[i] = i;
@@ -92,8 +92,8 @@ VP8VideoDecoder::~VP8VideoDecoder(void)
 
 Status VP8VideoDecoder::Init(BaseCodecParams* init)
 {
-  Ipp32u i;
-  Ipp32u j;
+  uint32_t i;
+  uint32_t j;
 
   Status status = UMC_OK;
 
@@ -141,7 +141,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
   out;
     
   Status status         = UMC_OK;
-  Ipp32s part_number = 0;
+  int32_t part_number = 0;
 
   if(m_IsInitialized)
   {
@@ -152,7 +152,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
   else
     return UMC_ERR_INIT;
 
-  for(Ipp8u i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+  for(uint8_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
   {
     if( i != m_RefFrameIndx[VP8_LAST_FRAME]   && 
         i != m_RefFrameIndx[VP8_GOLDEN_FRAME] && 
@@ -166,7 +166,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
 
   DecodeFirstPartition();
 
-  for(Ipp32u mb_row = 0; mb_row < m_FrameInfo.mbPerCol; mb_row++)
+  for(uint32_t mb_row = 0; mb_row < m_FrameInfo.mbPerCol; mb_row++)
   {
     if(m_FrameInfo.numTokenPartitions >= 1)
     {
@@ -208,10 +208,10 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
 // temp frame saving
   if(m_FrameInfo.showFrame)
   {
-    Ipp32u y_size;
-    Ipp32u uv_size;
-    Ipp32u yuv_size;
-    Ipp32s i;
+    uint32_t y_size;
+    uint32_t uv_size;
+    uint32_t yuv_size;
+    int32_t i;
 
     y_size  = m_FrameInfo.frameSize.width*m_FrameInfo.frameSize.height;
     uv_size = ((m_FrameInfo.frameSize.width + 1)>>1)* ((m_FrameInfo.frameSize.height + 1)>>1);
@@ -223,11 +223,11 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
       out->Alloc(yuv_size);
     }
 
-    Ipp8u* ptr = (Ipp8u*)out->GetDataPointer();
+    uint8_t* ptr = (uint8_t*)out->GetDataPointer();
 
-    Ipp8u* ptr_y = ptr;
-    Ipp8u* ptr_u = ptr   + y_size;
-    Ipp8u* ptr_v = ptr_u + uv_size;//(size>>2); //???
+    uint8_t* ptr_y = ptr;
+    uint8_t* ptr_u = ptr   + y_size;
+    uint8_t* ptr_v = ptr_u + uv_size;//(size>>2); //???
 
     for(i = 0; i < m_FrameInfo.frameSize.height; i++)
     {
@@ -266,7 +266,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, MediaData* out)
 Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
 {
   Status status         = UMC_OK;
-  Ipp32s part_number = 0;
+  int32_t part_number = 0;
 
   if(m_IsInitialized)
   {
@@ -277,7 +277,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
   else
     return UMC_ERR_INIT;
 
-  for(Ipp8u i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+  for(uint8_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
   {
     if( i != m_RefFrameIndx[VP8_LAST_FRAME]   && 
         i != m_RefFrameIndx[VP8_GOLDEN_FRAME] && 
@@ -291,7 +291,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
 
   DecodeFirstPartition();
 
-  for(Ipp32u mb_row = 0; mb_row < m_FrameInfo.mbPerCol; mb_row++)
+  for(uint32_t mb_row = 0; mb_row < m_FrameInfo.mbPerCol; mb_row++)
   {
     if(m_FrameInfo.numTokenPartitions >= 1)
     {
@@ -352,7 +352,7 @@ Status VP8VideoDecoder::GetFrame(MediaData* in, FrameData **out)
 // temp frame saving
 /*  if(m_FrameInfo.showFrame)
   {
-    Ipp32s i;
+    int32_t i;
 
     FILE *pFile = fopen("c:\\_mediasdk\\dump.yuv", "ab+");
 
@@ -389,7 +389,7 @@ Status VP8VideoDecoder::GetInfo(BaseCodecParams* info)
 
 Status VP8VideoDecoder::Close(void)
 {
-  for(Ipp32s i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+  for(int32_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
   {
     if(m_FrameData[i].base_y != 0)
       vp8dec_Free(m_FrameData[i].base_y);
@@ -418,7 +418,7 @@ Status VP8VideoDecoder::SetParams(BaseCodecParams* params)
 } // VP8VideoDecoder::SetParams()
 
 
-Status VP8VideoDecoder::GetPerformance(Ipp64f *perf)
+Status VP8VideoDecoder::GetPerformance(double *perf)
 {
   perf;
   return UMC_OK;
@@ -431,13 +431,13 @@ Status VP8VideoDecoder::ResetSkipCount(void)
 } // VP8VideoDecoder::ResetSkipCount()
 
 
-Ipp32u VP8VideoDecoder::GetNumOfSkippedFrames(void)
+uint32_t VP8VideoDecoder::GetNumOfSkippedFrames(void)
 {
   return 0;
 } // VP8VideoDecoder::GetNumOfSkippedFrames()
 
 
-Status VP8VideoDecoder::SkipVideoFrame(Ipp32s count)
+Status VP8VideoDecoder::SkipVideoFrame(int32_t count)
 {
   count;
   return UMC_OK;
@@ -450,15 +450,15 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
 {
   Status status = UMC_OK;
 
-  Ipp8u* data_in     = 0;
-  Ipp8u* data_in_end = 0;
-  Ipp8u  version;
-  Ipp32u i           = 0;
-  Ipp32u j           = 0;
-  Ipp16s width       = 0;
-  Ipp16s height      = 0;
+  uint8_t* data_in     = 0;
+  uint8_t* data_in_end = 0;
+  uint8_t  version;
+  uint32_t i           = 0;
+  uint32_t j           = 0;
+  int16_t width       = 0;
+  int16_t height      = 0;
 
-  data_in = (Ipp8u*)in->GetDataPointer();
+  data_in = (uint8_t*)in->GetDataPointer();
   if(!data_in)
     return UMC_ERR_NULL_PTR;
 
@@ -487,7 +487,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
     break;
   }
 
-  Ipp32u first_partition_size = (data_in[0] >> 5) |           // 19 bit
+  uint32_t first_partition_size = (data_in[0] >> 5) |           // 19 bit
                                 (data_in[1] << 3) |
                                 (data_in[2] << 11);
 
@@ -524,7 +524,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
       if(UMC_OK != status)
         return UMC_ERR_ALLOC;
 
-      for(Ipp8u i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+      for(uint8_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
       {
         m_RefFrameIndx[i] = i;
       }
@@ -535,8 +535,8 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
     data_in   += 7;
 //    data_size -= 7;
 
-    MFX_INTERNAL_CPY((Ipp8u*)(m_FrameProbs.coeff_probs),
-           (Ipp8u*)vp8_default_coeff_probs,
+    MFX_INTERNAL_CPY((uint8_t*)(m_FrameProbs.coeff_probs),
+           (uint8_t*)vp8_default_coeff_probs,
            sizeof(vp8_default_coeff_probs)); //???
 
     UMC_SET_ZERO(m_FrameInfo.segmentFeatureData);
@@ -564,20 +564,20 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
   else if (first_partition_size > in->GetDataSize() - 3)
     return UMC_ERR_NOT_ENOUGH_DATA; //???
 
-  status = InitBooleanDecoder(data_in, Ipp32s(data_in_end - data_in), 0); //???
+  status = InitBooleanDecoder(data_in, int32_t(data_in_end - data_in), 0); //???
   if(UMC_OK != status)
     return UMC_ERR_INIT;
 
   vp8BooleanDecoder *pBoolDec = &m_BoolDecoder[0];
 
-  Ipp8u bits;
+  uint8_t bits;
 
   if (m_FrameInfo.frameType == I_PICTURE)  // if VP8_KEY_FRAME
   {
     bits = DecodeValue_Prob128(pBoolDec, 2);
 
-    m_FrameInfo.color_space_type = (Ipp8u)bits >> 1;
-    m_FrameInfo.clamping_type    = (Ipp8u)bits & 1;
+    m_FrameInfo.color_space_type = (uint8_t)bits >> 1;
+    m_FrameInfo.clamping_type    = (uint8_t)bits & 1;
 
     // supported only color_space_type == 0
     // see "VP8 Data Format and Decoding Guide" ch.9.2
@@ -599,13 +599,13 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
 
     bits = DecodeValue_Prob128(pBoolDec, 7);
 
-  m_FrameInfo.loopFilterType  = (Ipp8u)(bits >> 6);
-  m_FrameInfo.loopFilterLevel = (Ipp8u)(bits & 0x3F);
+  m_FrameInfo.loopFilterType  = (uint8_t)(bits >> 6);
+  m_FrameInfo.loopFilterLevel = (uint8_t)(bits & 0x3F);
 
   bits = DecodeValue_Prob128(pBoolDec, 4);
 
-  m_FrameInfo.sharpnessLevel     = (Ipp8u)(bits >> 1);
-  m_FrameInfo.mbLoopFilterAdjust = (Ipp8u)(bits & 1);
+  m_FrameInfo.sharpnessLevel     = (uint8_t)(bits >> 1);
+  m_FrameInfo.mbLoopFilterAdjust = (uint8_t)(bits & 1);
 
   if (m_FrameInfo.mbLoopFilterAdjust)
   {
@@ -615,7 +615,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
       UpdateLoopFilterDeltas(pBoolDec);
   }
 
-  Ipp32u partitions;
+  uint32_t partitions;
 
   bits = DecodeValue_Prob128(pBoolDec, 2);
 
@@ -624,17 +624,17 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
 
   m_FrameInfo.numPartitions = m_FrameInfo.numTokenPartitions + 1; // ??? do we need 1at partition here?
 
-  Ipp8u *pTokenPartition = data_in + first_partition_size;
+  uint8_t *pTokenPartition = data_in + first_partition_size;
 
   if (partitions > 1)
   {
-    Ipp32u i;
+    uint32_t i;
 
     m_FrameInfo.partitionStart[0] = pTokenPartition + (partitions - 1) * 3;
 
     for (i = 0; i < partitions - 1; i++)
     {
-      m_FrameInfo.partitionSize[i] = (Ipp32s)(pTokenPartition[0])      |
+      m_FrameInfo.partitionSize[i] = (int32_t)(pTokenPartition[0])      |
                                              (pTokenPartition[1] << 8) |
                                              (pTokenPartition[2] << 16);
       pTokenPartition += 3;
@@ -652,7 +652,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
     m_FrameInfo.partitionStart[0] = pTokenPartition;
   }
 
-  m_FrameInfo.partitionSize[partitions - 1] = Ipp32s(data_in_end - m_FrameInfo.partitionStart[partitions - 1]);
+  m_FrameInfo.partitionSize[partitions - 1] = int32_t(data_in_end - m_FrameInfo.partitionStart[partitions - 1]);
 
   status = InitBooleanDecoder(m_FrameInfo.partitionStart[partitions - 1], m_FrameInfo.partitionSize[partitions - 1], partitions);
   if(UMC_OK != status)
@@ -670,7 +670,7 @@ Status VP8VideoDecoder::DecodeFrameHeader(MediaData *in)
     if (!(m_RefreshInfo.refreshRefFrame & 1))
       m_RefreshInfo.copy2Altref = DecodeValue_Prob128(pBoolDec, 2);
 
-    Ipp8u bias = DecodeValue_Prob128(pBoolDec, 2);
+    uint8_t bias = DecodeValue_Prob128(pBoolDec, 2);
 
     m_RefreshInfo.refFrameBiasTable[1] = (bias & 1)^(bias >> 1); // ALTREF and GOLD (3^2 = 1)
     m_RefreshInfo.refFrameBiasTable[2] = (bias & 1);             // ALTREF and LAST
@@ -733,8 +733,8 @@ Status VP8VideoDecoder::DecodeFirstPartition(void)
 
 Status VP8VideoDecoder::AllocFrames(void)
 {
-  Ipp32s i = 0;
-  Ipp32u size;
+  int32_t i = 0;
+  uint32_t size;
 
   for(i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
   {
@@ -755,7 +755,7 @@ Status VP8VideoDecoder::AllocFrames(void)
 
     size = m_FrameData[i].step_y * (m_FrameInfo.frameHeight + 2*VP8_FRAME_BORDER_SIZE);
 
-    m_FrameData[i].base_y = (Ipp8u*)vp8dec_Malloc(size);
+    m_FrameData[i].base_y = (uint8_t*)vp8dec_Malloc(size);
     if(0 == m_FrameData[i].base_y)
       return UMC_ERR_ALLOC;
 
@@ -768,11 +768,11 @@ Status VP8VideoDecoder::AllocFrames(void)
 
     size = m_FrameData[i].step_uv * ((m_FrameInfo.frameHeight >> 1) + 2*VP8_FRAME_BORDER_SIZE);
 
-    m_FrameData[i].base_u = (Ipp8u*)vp8dec_Malloc(size);
+    m_FrameData[i].base_u = (uint8_t*)vp8dec_Malloc(size);
     if(0 == m_FrameData[i].base_u)
       return UMC_ERR_ALLOC;
 
-    m_FrameData[i].base_v = (Ipp8u*)vp8dec_Malloc(size);
+    m_FrameData[i].base_v = (uint8_t*)vp8dec_Malloc(size);
     if(0 == m_FrameData[i].base_v)
       return UMC_ERR_ALLOC;
 
@@ -801,8 +801,8 @@ void VP8VideoDecoder::RefreshFrames(void)
   }
   else
   {
-    Ipp8u gold_indx = m_RefFrameIndx[VP8_GOLDEN_FRAME];
-    Ipp8u alt_indx  = m_RefFrameIndx[VP8_ALTREF_FRAME];
+    uint8_t gold_indx = m_RefFrameIndx[VP8_GOLDEN_FRAME];
+    uint8_t alt_indx  = m_RefFrameIndx[VP8_ALTREF_FRAME];
 
     if(!(m_RefreshInfo.refreshRefFrame & 2)) // refresh golden
     {
@@ -854,10 +854,10 @@ void VP8VideoDecoder::RefreshFrames(void)
 
 void VP8VideoDecoder::ExtendFrameBorders(vp8_FrameData* currFrame)
 {
-  Ipp32s i;
+  int32_t i;
 
-  Ipp8u* ptr1;
-  Ipp8u* ptr2;
+  uint8_t* ptr1;
+  uint8_t* ptr2;
 
   //extend Y LEFT/RIGHT border
   ptr1 = currFrame->data_y;

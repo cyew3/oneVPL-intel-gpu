@@ -181,28 +181,28 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     picParams->prob_last = m_frameInfo.lastProb;
     picParams->prob_golden = m_frameInfo.goldProb;
 
-    for (Ipp32u i = 0; i < VP8_NUM_MB_MODES_Y - 1; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_MB_MODES_Y - 1; i += 1)
     {
         // memcpy?
         picParams->y_mode_probs[i] = m_frameProbs.mbModeProbY[i];
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_MB_MODES_UV - 1; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_MB_MODES_UV - 1; i += 1)
     {
         picParams->uv_mode_probs[i] = m_frameProbs.mbModeProbUV[i];
     }
 
-    for (Ipp32u i = 0; i < VP8_NUM_MV_PROBS; i += 1)
+    for (uint32_t i = 0; i < VP8_NUM_MV_PROBS; i += 1)
     {
         picParams->mv_update_prob[0][i] = m_frameProbs.mvContexts[0][i];
         picParams->mv_update_prob[1][i] = m_frameProbs.mvContexts[1][i];
     }
 
-    memset(picParams->PartitionSize, 0, sizeof(Ipp32u) * 9);
+    memset(picParams->PartitionSize, 0, sizeof(uint32_t) * 9);
 
     picParams->PartitionSize[0] = m_frameInfo.partitionSize[0];
 
-    for (Ipp32s i = 1; i < m_frameInfo.numPartitions; i += 1)
+    for (int32_t i = 1; i < m_frameInfo.numPartitions; i += 1)
     {
         picParams->PartitionSize[i] = m_frameInfo.partitionSize[i];
     }
@@ -231,7 +231,7 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     }
     else
     {
-        for (Ipp32u i = 0; i < 4; i += 1)
+        for (uint32_t i = 0; i < 4; i += 1)
         {
             qmTable->Qvalue[i][0] = USHORT(m_quantInfo.ydcQ[i]);
             qmTable->Qvalue[i][1] = USHORT(m_quantInfo.yacQ[i]);
@@ -247,18 +247,18 @@ Status VP8VideoDecoderHardware::PackHeaders(MediaData* src)
     ////////////////////////////////////////////////////////////////
 
     UMCVACompBuffer* compBufBs;
-    Ipp8u *bistreamData = (Ipp8u *)m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
+    uint8_t *bistreamData = (uint8_t *)m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_BITSTREAM_DATA, &compBufBs);
 
     MFX_INTERNAL_CPY(bistreamData, src->GetDataPointer(), int(src->GetDataSize()));
-    compBufBs->SetDataSize((Ipp32s)src->GetDataSize());
+    compBufBs->SetDataSize((int32_t)src->GetDataSize());
 
     UMCVACompBuffer* compBufCp;
-    Ipp8u (*coeffProbs)[8][3][11] = (Ipp8u (*)[8][3][11])m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
+    uint8_t (*coeffProbs)[8][3][11] = (uint8_t (*)[8][3][11])m_pVideoAccelerator->GetCompBuffer(D3D9_VIDEO_DECODER_BUFFER_VP8_COEFFICIENT_PROBABILITIES, &compBufCp);
 
     //[4][8][3][11]
-    MFX_INTERNAL_CPY(coeffProbs, m_frameProbs.coeff_probs, sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+    MFX_INTERNAL_CPY(coeffProbs, m_frameProbs.coeff_probs, sizeof(uint8_t) * 4 * 8 * 3 * 11);
 
-    compBufCp->SetDataSize(sizeof(Ipp8u) * 4 * 8 * 3 * 11);
+    compBufCp->SetDataSize(sizeof(uint8_t) * 4 * 8 * 3 * 11);
 
     return UMC_OK;
 

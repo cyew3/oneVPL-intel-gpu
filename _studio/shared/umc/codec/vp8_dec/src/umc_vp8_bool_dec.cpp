@@ -30,7 +30,7 @@ using namespace UMC;
 namespace UMC
 {
 
-const Ipp8u vp8_range_normalization_shift[64] = 
+const uint8_t vp8_range_normalization_shift[64] = 
 {
   7, 6, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3,
   2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
@@ -40,10 +40,10 @@ const Ipp8u vp8_range_normalization_shift[64] =
 
 void VP8VideoDecoderSoftware::UpdateCoeffProbabilitites(void)
 {
-  Ipp32s i;
-  Ipp32s j;
-  Ipp32s k;
-  Ipp32s l;
+  int32_t i;
+  int32_t j;
+  int32_t k;
+  int32_t l;
 
   vp8BooleanDecoder *pBoolDec = &m_boolDecoder[0];
 
@@ -55,13 +55,13 @@ void VP8VideoDecoderSoftware::UpdateCoeffProbabilitites(void)
       {
         for (l = 0; l < VP8_NUM_COEFF_NODES; l++)
         {
-          Ipp8u flag;
-          Ipp8u prob = vp8_coeff_update_probs[i][j][k][l];
+          uint8_t flag;
+          uint8_t prob = vp8_coeff_update_probs[i][j][k][l];
 
           VP8_DECODE_BOOL(pBoolDec, prob, flag);
 
           if (flag)
-            m_frameProbs.coeff_probs[i][j][k][l] = (Ipp8u)DecodeValue(pBoolDec,128, 8);
+            m_frameProbs.coeff_probs[i][j][k][l] = (uint8_t)DecodeValue(pBoolDec,128, 8);
         }
       }
     }
@@ -69,7 +69,7 @@ void VP8VideoDecoderSoftware::UpdateCoeffProbabilitites(void)
 } // VP8VideoDecoderSoftware::UpdateCoeffProbabilitites()
 
 
-Status VP8VideoDecoderSoftware::InitBooleanDecoder(Ipp8u *pBitStream, Ipp32s dataSize, Ipp32s dec_number)
+Status VP8VideoDecoderSoftware::InitBooleanDecoder(uint8_t *pBitStream, int32_t dataSize, int32_t dec_number)
 {
   if(0 == pBitStream)
     return UMC_ERR_NULL_PTR; 
@@ -81,7 +81,7 @@ Status VP8VideoDecoderSoftware::InitBooleanDecoder(Ipp8u *pBitStream, Ipp32s dat
     return UMC_ERR_INVALID_PARAMS;
 
 
-  dataSize = IPP_MIN(dataSize, 2);
+  dataSize = MFX_MIN(dataSize, 2);
 
   vp8BooleanDecoder *pBooldec = &m_boolDecoder[dec_number];
 
@@ -91,7 +91,7 @@ Status VP8VideoDecoderSoftware::InitBooleanDecoder(Ipp8u *pBitStream, Ipp32s dat
   pBooldec->bitcount  = 0;
   pBooldec->value     = 0;
 
-  for(Ipp8u i = 0; i < dataSize; i++)
+  for(uint8_t i = 0; i < dataSize; i++)
     pBooldec->value = (pBooldec->value <<  (8*i)) | (pBooldec->pData[i]);
 
   pBooldec->pData    += dataSize;
@@ -101,16 +101,16 @@ Status VP8VideoDecoderSoftware::InitBooleanDecoder(Ipp8u *pBitStream, Ipp32s dat
 
 Status VP8VideoDecoderSoftware::UpdateSegmentation(vp8BooleanDecoder *pBooldec)
 {
-  Ipp32u bits;
+  uint32_t bits;
 
-  Ipp32s i;
-  Ipp32s j;
-  Ipp32s res;
+  int32_t i;
+  int32_t j;
+  int32_t res;
 
   bits = DecodeValue_Prob128(pBooldec, 2);
 
-  m_frameInfo.updateSegmentMap  = (Ipp8u)bits >> 1;
-  m_frameInfo.updateSegmentData = (Ipp8u)bits & 1;
+  m_frameInfo.updateSegmentMap  = (uint8_t)bits >> 1;
+  m_frameInfo.updateSegmentData = (uint8_t)bits & 1;
 
   if (m_frameInfo.updateSegmentData)
   {
@@ -131,7 +131,7 @@ Status VP8VideoDecoderSoftware::UpdateSegmentation(vp8BooleanDecoder *pBooldec)
           if (bits & 1)
             res = -res;
 
-          m_frameInfo.segmentFeatureData[i][j] = (Ipp8s)res;
+          m_frameInfo.segmentFeatureData[i][j] = (int8_t)res;
         }
       }
     }
@@ -148,7 +148,7 @@ Status VP8VideoDecoderSoftware::UpdateSegmentation(vp8BooleanDecoder *pBooldec)
       else
         bits = 255;
 
-      m_frameInfo.segmentTreeProbabilities[i] = (Ipp8u)bits;
+      m_frameInfo.segmentTreeProbabilities[i] = (uint8_t)bits;
     }
   }
 
@@ -157,9 +157,9 @@ Status VP8VideoDecoderSoftware::UpdateSegmentation(vp8BooleanDecoder *pBooldec)
 
 Status VP8VideoDecoderSoftware::UpdateLoopFilterDeltas(vp8BooleanDecoder *pBooldec)
 {
-  Ipp8u  bits;
-  Ipp32s i;
-  Ipp32s res;
+  uint8_t  bits;
+  int32_t i;
+  int32_t res;
 
   for (i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
   {
@@ -172,7 +172,7 @@ Status VP8VideoDecoderSoftware::UpdateLoopFilterDeltas(vp8BooleanDecoder *pBoold
       if (bits & 1)
         res = -res;
 
-      m_frameInfo.refLoopFilterDeltas[i] = (Ipp8s)res;
+      m_frameInfo.refLoopFilterDeltas[i] = (int8_t)res;
     }
   }
 
@@ -187,17 +187,17 @@ Status VP8VideoDecoderSoftware::UpdateLoopFilterDeltas(vp8BooleanDecoder *pBoold
       if (bits & 1)
         res = -res;
 
-      m_frameInfo.modeLoopFilterDeltas[i] = (Ipp8s)res;
+      m_frameInfo.modeLoopFilterDeltas[i] = (int8_t)res;
     }
   }
 
   return UMC_OK;
 } // VP8VideoDecoderSoftware::UpdateLoopFilterDeltas()
 
-/*Ipp32s vp8_ReadTree(vp8BooleanDecoder *pBooldec, const Ipp8s *pTree, const Ipp8u *pProb)
+/*int32_t vp8_ReadTree(vp8BooleanDecoder *pBooldec, const int8_t *pTree, const uint8_t *pProb)
 {
-  Ipp32s i;
-  Ipp8u bit;
+  int32_t i;
+  uint8_t bit;
   for (i = 0;;)
   {
     VP8_DECODE_BOOL(pBooldec, pProb[i >> 1], bit);
@@ -212,12 +212,12 @@ Status VP8VideoDecoderSoftware::UpdateLoopFilterDeltas(vp8BooleanDecoder *pBoold
 */
 
 
-Ipp8u VP8VideoDecoderSoftware::DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, Ipp32u numbits)
+uint8_t VP8VideoDecoderSoftware::DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, uint32_t numbits)
 {
-  Ipp32s n;
+  int32_t n;
 
-  Ipp8u val = 0;
-  Ipp8u bit = 0;
+  uint8_t val = 0;
+  uint8_t bit = 0;
 
   for(n = numbits - 1; n >= 0; n--)
   {
@@ -228,12 +228,12 @@ Ipp8u VP8VideoDecoderSoftware::DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, 
   return val;
 }
 
-Ipp8u VP8VideoDecoderSoftware::DecodeValue(vp8BooleanDecoder *pBooldec, Ipp8u prob, Ipp32u numbits)
+uint8_t VP8VideoDecoderSoftware::DecodeValue(vp8BooleanDecoder *pBooldec, uint8_t prob, uint32_t numbits)
 {
-  Ipp32s n;
+  int32_t n;
 
-  Ipp8u val = 0;
-  Ipp8u bit = 0;
+  uint8_t val = 0;
+  uint8_t bit = 0;
 
   for(n = numbits - 1; n >= 0; n--)
   {

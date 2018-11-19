@@ -28,7 +28,7 @@ using namespace UMC;
 namespace UMC
 {
 
-const Ipp8u vp8_mvmode_contexts[6][4] =
+const uint8_t vp8_mvmode_contexts[6][4] =
 {
   {  7,    1,   1, 143},
   { 14,   18,  14, 107},
@@ -38,7 +38,7 @@ const Ipp8u vp8_mvmode_contexts[6][4] =
   { 234, 188, 128,  28}
 };
 
-const Ipp8s vp8_mvmode_tree[8] =
+const int8_t vp8_mvmode_tree[8] =
 {
   -VP8_MV_ZERO,    2,
   -VP8_MV_NEAREST, 4,
@@ -47,7 +47,7 @@ const Ipp8s vp8_mvmode_tree[8] =
 };
 
 
-const Ipp8s vp8_short_mv_tree[2*(VP8_MV_LONG - VP8_MV_SHORT)] =
+const int8_t vp8_short_mv_tree[2*(VP8_MV_LONG - VP8_MV_SHORT)] =
 { // *2 to save a shift
     2,    8,  /* "0" subtree, "1" subtree */
     4,    6,  /* "00" subtree", "01" subtree */
@@ -59,13 +59,13 @@ const Ipp8s vp8_short_mv_tree[2*(VP8_MV_LONG - VP8_MV_SHORT)] =
 };
 
 
-const Ipp8u vp8_mv_partitions_probs[3] = 
+const uint8_t vp8_mv_partitions_probs[3] = 
 {
   110, 111, 150
 };
 
 
-const Ipp8s vp8_mv_partitions_tree[2*(VP8_MV_NUM_PARTITIONS - 1)] = 
+const int8_t vp8_mv_partitions_tree[2*(VP8_MV_NUM_PARTITIONS - 1)] = 
 {
   -VP8_MV_16,          2,                /* MV_16 = "0" */
   -VP8_MV_QUARTERS,    4,                /* mv_quarters = "10" */
@@ -73,7 +73,7 @@ const Ipp8s vp8_mv_partitions_tree[2*(VP8_MV_NUM_PARTITIONS - 1)] =
 };
 
 
-const Ipp8u vp8_block_mv_probs[5][VP8_NUM_B_MV_MODES - 1] =
+const uint8_t vp8_block_mv_probs[5][VP8_NUM_B_MV_MODES - 1] =
 {
   {147, 136, 18},
   {106, 145,  1},
@@ -82,7 +82,7 @@ const Ipp8u vp8_block_mv_probs[5][VP8_NUM_B_MV_MODES - 1] =
   {208,   1,  1}
 };
 
-const Ipp8s vp8_block_mv_tree[2 * (VP8_NUM_B_MV_MODES - 1)] =
+const int8_t vp8_block_mv_tree[2 * (VP8_NUM_B_MV_MODES - 1)] =
 {
   -VP8_B_MV_LEFT, 2,            /* LEFT = "0" */
   -VP8_B_MV_ABOVE, 4,           /* ABOVE = "10" */
@@ -91,8 +91,8 @@ const Ipp8s vp8_block_mv_tree[2 * (VP8_NUM_B_MV_MODES - 1)] =
 
 typedef struct _vp8_MbPartitionInfo
 {
-  Ipp8u numParts;
-  Ipp8u offset;
+  uint8_t numParts;
+  uint8_t offset;
 
 } vp8_MbPartitionInfo;
 
@@ -108,7 +108,7 @@ vp8_MbPartitionInfo vp8_mb_partition[VP8_MV_NUM_PARTITIONS] =
 
 #define DECODE_SEGMENT_ID \
 { \
-  Ipp8u bit, prob; \
+  uint8_t bit, prob; \
   prob = m_FrameInfo.segmentTreeProbabilities[0]; \
   VP8_DECODE_BOOL(pBoolDec, prob, bit); \
   if (bit) \
@@ -126,11 +126,11 @@ vp8_MbPartitionInfo vp8_mb_partition[VP8_MV_NUM_PARTITIONS] =
 }
 
 
-static Ipp32s vp8_decode_mv_component(vp8BooleanDecoder *pBoolDec, Ipp8u *pContexts)
+static int32_t vp8_decode_mv_component(vp8BooleanDecoder *pBoolDec, uint8_t *pContexts)
 {
-  Ipp8u bit;
-  Ipp32s i;
-  Ipp32s mv = 0;
+  uint8_t bit;
+  int32_t i;
+  int32_t mv = 0;
 
   VP8_DECODE_BOOL(pBoolDec, pContexts[VP8_MV_IS_SHORT], bit);
   if (bit)
@@ -174,9 +174,9 @@ static Ipp32s vp8_decode_mv_component(vp8BooleanDecoder *pBoolDec, Ipp8u *pConte
 
 Status VP8VideoDecoder::DecodeMbModes_Intra(vp8BooleanDecoder *pBoolDec)
 {
-  Ipp32u mb_row;
-  Ipp32u mb_col;
-  Ipp32s i;
+  uint32_t mb_row;
+  uint32_t mb_col;
+  int32_t i;
 
   vp8BooleanDecoder *pBooldec = &m_BoolDecoder[0];
 
@@ -201,11 +201,11 @@ Status VP8VideoDecoder::DecodeMbModes_Intra(vp8BooleanDecoder *pBoolDec)
       else
         pMb->skipCoeff = 0; //???
 
-      pMb->mode = (Ipp8u)vp8_ReadTree(pBooldec, vp8_kf_mb_mode_y_tree, vp8_kf_mb_mode_y_probs);
+      pMb->mode = (uint8_t)vp8_ReadTree(pBooldec, vp8_kf_mb_mode_y_tree, vp8_kf_mb_mode_y_probs);
       if (VP8_MB_B_PRED == pMb->mode)
       {
-        Ipp32s modeUp;
-        Ipp32s modeL;
+        int32_t modeUp;
+        int32_t modeL;
 
         pMbUp = mb_row ? pMb - m_FrameInfo.mbStep : &m_MbExternal;
 
@@ -214,7 +214,7 @@ Status VP8VideoDecoder::DecodeMbModes_Intra(vp8BooleanDecoder *pBoolDec)
           modeUp = pMbUp->blockMode[12+i];
           modeL  = i ? pMb->blockMode[i-1] : pPrevMb->blockMode[3];
 
-          pMb->blockMode[i] = (Ipp8u)vp8_ReadTree(pBooldec, vp8_block_mode_tree, vp8_kf_block_mode_probs[modeUp][modeL]);
+          pMb->blockMode[i] = (uint8_t)vp8_ReadTree(pBooldec, vp8_block_mode_tree, vp8_kf_block_mode_probs[modeUp][modeL]);
         }
 
         for (i = 4; i < 16; i++)
@@ -222,18 +222,18 @@ Status VP8VideoDecoder::DecodeMbModes_Intra(vp8BooleanDecoder *pBoolDec)
           modeUp = pMb->blockMode[i-4];
           modeL  = (i & 3) ? pMb->blockMode[i-1] : pPrevMb->blockMode[i+3];
 
-          pMb->blockMode[i] = (Ipp8u)vp8_ReadTree(pBooldec, vp8_block_mode_tree, vp8_kf_block_mode_probs[modeUp][modeL]);
+          pMb->blockMode[i] = (uint8_t)vp8_ReadTree(pBooldec, vp8_block_mode_tree, vp8_kf_block_mode_probs[modeUp][modeL]);
         }
       }
       else
       {
         if(pMb->mode < sizeof(vp8_mbmode_2_blockmode_u32) / sizeof(vp8_mbmode_2_blockmode_u32[0]))
             for (i = 0; i < 4; i++)
-                *(Ipp32u*)(pMb->blockMode + 4*i) = vp8_mbmode_2_blockmode_u32[pMb->mode];
+                *(uint32_t*)(pMb->blockMode + 4*i) = vp8_mbmode_2_blockmode_u32[pMb->mode];
         // else what ? 
       }
 
-      pMb->modeUV = (Ipp8u)vp8_ReadTree(pBooldec, vp8_mb_mode_uv_tree, vp8_kf_mb_mode_uv_probs);
+      pMb->modeUV = (uint8_t)vp8_ReadTree(pBooldec, vp8_mb_mode_uv_tree, vp8_kf_mb_mode_uv_probs);
 
       pPrevMb = pMb;
       pMb++;
@@ -257,29 +257,29 @@ Status VP8VideoDecoder::DecodeMbModes_Intra(vp8BooleanDecoder *pBoolDec)
 
 #define VP8_LIMIT_MV(mv) \
   if ((mv).mvx < limitL) \
-    (mv).mvx = (Ipp16s)limitL; \
+    (mv).mvx = (int16_t)limitL; \
   else if ((mv).mvx > limitR) \
-    (mv).mvx = (Ipp16s)limitR; \
+    (mv).mvx = (int16_t)limitR; \
   \
   if ((mv).mvy < limitT) \
-    (mv).mvy = (Ipp16s)limitT; \
+    (mv).mvy = (int16_t)limitT; \
   else if ((mv).mvy > limitB) \
-    (mv).mvy = (Ipp16s)limitB;
+    (mv).mvy = (int16_t)limitB;
 
 
 Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
 {
   Status sts = UMC_OK;
 
-  Ipp32s mb_row;
-  Ipp32s mb_col;
-  Ipp32s i;
-  Ipp32s j;
+  int32_t mb_row;
+  int32_t mb_col;
+  int32_t i;
+  int32_t j;
 
-  Ipp8u bit;
-  Ipp8u probIntra;
-  Ipp8u probLast;
-  Ipp8u probGF;
+  uint8_t bit;
+  uint8_t probIntra;
+  uint8_t probLast;
+  uint8_t probGF;
 
   vp8BooleanDecoder *pBooldec = &m_BoolDecoder[0];
 
@@ -288,46 +288,46 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
   vp8_MbInfo *pMbUp;
   vp8_MbInfo *pMbUpLeft;
 
-  Ipp32s  limitL;
-  Ipp32s  limitR;
-  Ipp32s  limitT;
-  Ipp32s  limitB;
+  int32_t  limitL;
+  int32_t  limitR;
+  int32_t  limitT;
+  int32_t  limitB;
 
   enum { CNT_ZERO, CNT_NEAREST, CNT_NEAR, CNT_SPLITMV };
 
-  probIntra = (Ipp8u)DecodeValue_Prob128(pBoolDec, 8);
-  probLast  = (Ipp8u)DecodeValue_Prob128(pBoolDec, 8);
-  probGF    = (Ipp8u)DecodeValue_Prob128(pBoolDec, 8);
+  probIntra = (uint8_t)DecodeValue_Prob128(pBoolDec, 8);
+  probLast  = (uint8_t)DecodeValue_Prob128(pBoolDec, 8);
+  probGF    = (uint8_t)DecodeValue_Prob128(pBoolDec, 8);
 
   VP8_DECODE_BOOL_PROB128(pBoolDec, bit);
   if (bit)
   {
     for (i = 0; i < VP8_NUM_MB_MODES_Y - 1; i++)
-      m_FrameProbs.mbModeProbY[i] = (Ipp8u)DecodeValue_Prob128(pBoolDec, 8);
+      m_FrameProbs.mbModeProbY[i] = (uint8_t)DecodeValue_Prob128(pBoolDec, 8);
   }
 
   VP8_DECODE_BOOL_PROB128(pBoolDec, bit);
   if (bit)
   {
     for (i = 0; i < VP8_NUM_MB_MODES_UV - 1; i++)
-      m_FrameProbs.mbModeProbUV[i] = (Ipp8u)DecodeValue_Prob128(pBoolDec, 8);
+      m_FrameProbs.mbModeProbUV[i] = (uint8_t)DecodeValue_Prob128(pBoolDec, 8);
   }
 
   // update MV contexts
   for (i = 0; i < 2; i++)
   {
-    const Ipp8u *pProb = vp8_mv_update_probs[i];
-    Ipp8u       *pCtxt = m_FrameProbs.mvContexts[i];
+    const uint8_t *pProb = vp8_mv_update_probs[i];
+    uint8_t       *pCtxt = m_FrameProbs.mvContexts[i];
 
     for (j = 0; j < VP8_NUM_MV_PROBS; j++)
     {
-      Ipp8u bit;
-      Ipp8u contxt;
+      uint8_t bit;
+      uint8_t contxt;
 
       VP8_DECODE_BOOL(pBoolDec, pProb[j], bit);
       if (bit)
       {
-        contxt   = (Ipp8u)DecodeValue_Prob128(pBoolDec, 7) << 1;
+        contxt   = (uint8_t)DecodeValue_Prob128(pBoolDec, 7) << 1;
         pCtxt[j] = contxt ? contxt : 1;
       }
     }
@@ -361,11 +361,11 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
         if (bit)
         {
           VP8_DECODE_BOOL(pBooldec, probGF, bit);
-          pMb->refFrame = (Ipp8u)(VP8_GOLDEN_FRAME + bit); // gold or altref
+          pMb->refFrame = (uint8_t)(VP8_GOLDEN_FRAME + bit); // gold or altref
         }
 
-        Ipp8u            mvModeProbs[4];
-        Ipp32s           mvCnt[4];
+        uint8_t            mvModeProbs[4];
+        int32_t           mvCnt[4];
         vp8_MotionVector nearMVs[4];
         vp8_MotionVector mv;
 
@@ -403,7 +403,7 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
         }
         else
         {
-          Ipp32s           indx = 0;
+          int32_t           indx = 0;
           vp8_MotionVector curMV;
           vp8_MbInfo      *pNeighbMb;
 
@@ -480,7 +480,7 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
 
           if(mvCnt[CNT_NEAR] > mvCnt[CNT_NEAREST])
           {//swap MV[1] & MV[2]
-            Ipp32s tmp;
+            int32_t tmp;
 
             tmp = nearMVs[CNT_NEAR].s32;
             nearMVs[CNT_NEAR].s32    = nearMVs[CNT_NEAREST].s32;
@@ -512,7 +512,7 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
         for (i = 0; i < 4; i++)
           mvModeProbs[i] = vp8_mvmode_contexts[mvCnt[i]][i];
 
-        pMb->mode = (Ipp8u)vp8_ReadTree(pBooldec, vp8_mvmode_tree, mvModeProbs);
+        pMb->mode = (uint8_t)vp8_ReadTree(pBooldec, vp8_mvmode_tree, mvModeProbs);
 
         switch (pMb->mode)
         {
@@ -522,8 +522,8 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
           break;
 
         case VP8_MV_NEW:
-          mv.mvy = (Ipp16s)vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[0]);
-          mv.mvx = (Ipp16s)vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[1]);
+          mv.mvy = (int16_t)vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[0]);
+          mv.mvx = (int16_t)vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[1]);
 
           mv.mvx += nearMVs[CNT_ZERO].mvx;
           mv.mvy += nearMVs[CNT_ZERO].mvy;
@@ -531,19 +531,19 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
 
         case VP8_MV_SPLIT:
         {
-          Ipp32s partition, i;
+          int32_t partition, i;
 
           partition       = vp8_ReadTree(pBooldec, vp8_mv_partitions_tree, vp8_mv_partitions_probs);
-          pMb->partitions = (Ipp8u)partition;
+          pMb->partitions = (uint8_t)partition;
 
           vp8_MbPartitionInfo *pInfo  = &vp8_mb_partition[partition];
-          Ipp8u                offset = pInfo->offset;
-          Ipp32s               bl     = 0;
+          uint8_t                offset = pInfo->offset;
+          int32_t               bl     = 0;
 
           for (i = 0; i < pInfo->numParts; i++)
           {
-            Ipp32s           mvl;
-            Ipp32s           mvu;
+            int32_t           mvl;
+            int32_t           mvu;
             vp8_MotionVector bmv;
 
             if (bl < 4)
@@ -558,8 +558,8 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
             else
               j = (mvl ? 0 : 1) + (mvu ? 0 : 2);
 
-            const Ipp8u *pProbs = vp8_block_mv_probs[j];
-            Ipp8u        blMode = (Ipp8u)vp8_ReadTree(pBooldec, vp8_block_mv_tree, pProbs);
+            const uint8_t *pProbs = vp8_block_mv_probs[j];
+            uint8_t        blMode = (uint8_t)vp8_ReadTree(pBooldec, vp8_block_mv_tree, pProbs);
 
             switch (blMode)
             {
@@ -572,8 +572,8 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
               break;
 
             case VP8_B_MV_NEW:
-              bmv.mvy = (Ipp16s)(nearMVs[CNT_ZERO].mvy + vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[0]));
-              bmv.mvx = (Ipp16s)(nearMVs[CNT_ZERO].mvx + vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[1]));
+              bmv.mvy = (int16_t)(nearMVs[CNT_ZERO].mvy + vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[0]));
+              bmv.mvx = (int16_t)(nearMVs[CNT_ZERO].mvx + vp8_decode_mv_component(pBooldec, m_FrameProbs.mvContexts[1]));
               break;
 
             case VP8_B_MV_ZERO:
@@ -648,15 +648,15 @@ Status VP8VideoDecoder::DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec)
         memset(pMb->blockMV, 0, 16*sizeof(vp8_MotionVector));
 
         pMb->mv.s32 = 0;
-        pMb->mode   = (Ipp8u)vp8_ReadTree(pBooldec, vp8_mb_mode_y_tree, m_FrameProbs.mbModeProbY);
+        pMb->mode   = (uint8_t)vp8_ReadTree(pBooldec, vp8_mb_mode_y_tree, m_FrameProbs.mbModeProbY);
 
         if (pMb->mode == VP8_MB_B_PRED)
         {
           for (j = 0; j < 16; j++) // "vp8_block_mode_probs" is fixed table
-            pMb->blockMode[j] = (Ipp8u)vp8_ReadTree(pBooldec, vp8_block_mode_tree, vp8_block_mode_probs);
+            pMb->blockMode[j] = (uint8_t)vp8_ReadTree(pBooldec, vp8_block_mode_tree, vp8_block_mode_probs);
         }
 
-        pMb->modeUV = (Ipp8u)vp8_ReadTree(pBooldec, vp8_mb_mode_uv_tree, m_FrameProbs.mbModeProbUV);
+        pMb->modeUV = (uint8_t)vp8_ReadTree(pBooldec, vp8_mb_mode_uv_tree, m_FrameProbs.mbModeProbUV);
       }
 
       pMbLeft   = pMb;

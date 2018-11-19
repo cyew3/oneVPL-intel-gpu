@@ -24,7 +24,7 @@
 
 #define CHECK_N_REALLOC_BUFFERS \
 { \
-  Ipp32u mbPerCol, mbPerRow; \
+  uint32_t mbPerCol, mbPerRow; \
   mbPerCol = m_frameInfo.frameHeight >> 4; \
   mbPerRow = m_frameInfo.frameWidth  >> 4; \
   if (m_frameInfo.mbPerCol * m_frameInfo.mbPerRow  < mbPerRow * mbPerCol) \
@@ -39,7 +39,7 @@
     if (m_frameInfo.blContextUp) \
       vp8dec_Free(m_frameInfo.blContextUp); \
       \
-    m_frameInfo.blContextUp = (Ipp8u*)vp8dec_Malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
+    m_frameInfo.blContextUp = (uint8_t*)vp8dec_Malloc(mbPerRow * mbPerCol * sizeof(vp8_MbInfo)); \
   } \
   m_frameInfo.mbPerCol = mbPerCol; \
   m_frameInfo.mbPerRow = mbPerRow; \
@@ -132,7 +132,7 @@ Status VP8VideoDecoderSoftware::Init(BaseCodecParams *pInit)
 
     m_pMbInfo       = 0;
 
-    for (Ipp8u i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+    for (uint8_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
     {
         UMC_SET_ZERO(m_FrameData[i]);
         m_RefFrameIndx[i] = i;
@@ -154,15 +154,15 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
 {
     Status status = UMC_OK;
 
-    Ipp8u* data_in     = 0;
-    Ipp8u* data_in_end = 0;
-    Ipp8u  version;
-    Ipp32u i           = 0;
-    Ipp32u j           = 0;
-    Ipp16s width       = 0;
-    Ipp16s height      = 0;
+    uint8_t* data_in     = 0;
+    uint8_t* data_in_end = 0;
+    uint8_t  version;
+    uint32_t i           = 0;
+    uint32_t j           = 0;
+    int16_t width       = 0;
+    int16_t height      = 0;
 
-    data_in = (Ipp8u*)in->GetDataPointer();
+    data_in = (uint8_t*)in->GetDataPointer();
     
     if(!data_in)
         return UMC_ERR_NULL_PTR;
@@ -192,7 +192,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
             break;
     }
 
-    Ipp32u first_partition_size = (data_in[0] >> 5) |           // 19 bit
+    uint32_t first_partition_size = (data_in[0] >> 5) |           // 19 bit
                                   (data_in[1] << 3) |
                                   (data_in[2] << 11);
 
@@ -228,7 +228,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
             status = AllocateFrame();
             UMC_CHECK_STATUS(status);
 
-            for(Ipp8u i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
+            for(uint8_t i = 0; i < VP8_NUM_OF_REF_FRAMES; i++)
             {
                 m_RefFrameIndx[i] = i;
             }
@@ -239,8 +239,8 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
         data_in   += 7;
 
 
-        MFX_INTERNAL_CPY((Ipp8u*)(m_frameProbs.coeff_probs),
-               (Ipp8u*)vp8_default_coeff_probs,
+        MFX_INTERNAL_CPY((uint8_t*)(m_frameProbs.coeff_probs),
+               (uint8_t*)vp8_default_coeff_probs,
                sizeof(vp8_default_coeff_probs)); //???
 
         UMC_SET_ZERO(m_frameInfo.segmentFeatureData);
@@ -273,14 +273,14 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
 
     vp8BooleanDecoder *pBoolDec = &m_boolDecoder[0];
 
-    Ipp8u bits;
+    uint8_t bits;
 
     if (m_frameInfo.frameType == I_PICTURE)  // if VP8_KEY_FRAME
     {
         bits = DecodeValue_Prob128(pBoolDec, 2);
 
-        m_frameInfo.color_space_type = (Ipp8u)bits >> 1;
-        m_frameInfo.clamping_type    = (Ipp8u)bits & 1;
+        m_frameInfo.color_space_type = (uint8_t)bits >> 1;
+        m_frameInfo.clamping_type    = (uint8_t)bits & 1;
 
         // supported only color_space_type == 0
         // see "VP8 Data Format and Decoding Guide" ch.9.2
@@ -302,13 +302,13 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
 
     bits = DecodeValue_Prob128(pBoolDec, 7);
 
-    m_frameInfo.loopFilterType  = (Ipp8u)(bits >> 6);
-    m_frameInfo.loopFilterLevel = (Ipp8u)(bits & 0x3F);
+    m_frameInfo.loopFilterType  = (uint8_t)(bits >> 6);
+    m_frameInfo.loopFilterLevel = (uint8_t)(bits & 0x3F);
 
     bits = DecodeValue_Prob128(pBoolDec, 4);
 
-    m_frameInfo.sharpnessLevel     = (Ipp8u)(bits >> 1);
-    m_frameInfo.mbLoopFilterAdjust = (Ipp8u)(bits & 1);
+    m_frameInfo.sharpnessLevel     = (uint8_t)(bits >> 1);
+    m_frameInfo.mbLoopFilterAdjust = (uint8_t)(bits & 1);
 
     if (m_frameInfo.mbLoopFilterAdjust)
     {
@@ -318,7 +318,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
             UpdateLoopFilterDeltas(pBoolDec);
     }
 
-    Ipp32u partitions;
+    uint32_t partitions;
 
     bits = DecodeValue_Prob128(pBoolDec, 2);
 
@@ -327,17 +327,17 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
 
     m_frameInfo.numPartitions = m_frameInfo.numTokenPartitions;// + 1; // ??? do we need 1st partition here?
     partitions =  m_frameInfo.numPartitions;
-    Ipp8u *pTokenPartition = data_in + first_partition_size;
+    uint8_t *pTokenPartition = data_in + first_partition_size;
     
     if (partitions > 1)
     {
-        Ipp32u i;
+        uint32_t i;
 
         m_frameInfo.partitionStart[0] = pTokenPartition + (partitions - 1) * 3;
 
         for (i = 0; i < partitions - 1; i++)
         {
-            m_frameInfo.partitionSize[i] = (Ipp32s)(pTokenPartition[0])      |
+            m_frameInfo.partitionSize[i] = (int32_t)(pTokenPartition[0])      |
                                              (pTokenPartition[1] << 8) |
                                              (pTokenPartition[2] << 16);
             pTokenPartition += 3;
@@ -373,7 +373,7 @@ Status VP8VideoDecoderSoftware::DecodeFrameHeader(MediaData *in)
         if (!(m_refreshInfo.refreshRefFrame & 1))
             m_refreshInfo.copy2Altref = DecodeValue_Prob128(pBoolDec, 2);
 
-        Ipp8u bias = DecodeValue_Prob128(pBoolDec, 2);
+        uint8_t bias = DecodeValue_Prob128(pBoolDec, 2);
 
         m_refreshInfo.refFrameBiasTable[1] = (bias & 1)^(bias >> 1); // ALTREF and GOLD (3^2 = 1)
         m_refreshInfo.refFrameBiasTable[2] = (bias & 1);             // ALTREF and LAST
@@ -450,7 +450,7 @@ Status VP8VideoDecoderSoftware::FillVideoParam(mfxVideoParam *par, bool /*full*/
 
     par->mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 
-    //IppiSize size = m_frameDims;
+    //mfxSize size = m_frameDims;
     //AdjustFrameSize(size);
 
     par->mfx.FrameInfo.Width = 0;//mfxU16(size.width);
@@ -484,7 +484,7 @@ Status VP8VideoDecoderSoftware::FillVideoParam(mfxVideoParam *par, bool /*full*/
 
 Status VP8VideoDecoderSoftware::AllocateFrame()
 {
-    IppiSize size = m_frameInfo.frameSize;
+    mfxSize size = m_frameInfo.frameSize;
 
     VideoDataInfo info;
     info.Init(size.width, size.height, NV12, 8);

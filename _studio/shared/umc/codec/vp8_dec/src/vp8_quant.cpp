@@ -30,7 +30,7 @@ using namespace UMC;
 namespace UMC
 {
 
-const Ipp32s vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
+const int32_t vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 
@@ -47,7 +47,7 @@ const Ipp32s vp8_quant_dc[VP8_MAX_QP + 1 + 32] =
 };
 
 
-const Ipp32s vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
+const int32_t vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 
@@ -64,7 +64,7 @@ const Ipp32s vp8_quant_ac[VP8_MAX_QP + 1 + 32] =
 };
 
 
-const Ipp32s vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
+const int32_t vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
 {
   4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2, 4*2,
 
@@ -80,7 +80,7 @@ const Ipp32s vp8_quant_dc2[VP8_MAX_QP + 1 + 32] =
   157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2, 157*2
 };
 
-const Ipp32s vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
+const int32_t vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
 {
   8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 
@@ -97,7 +97,7 @@ const Ipp32s vp8_quant_ac2[VP8_MAX_QP + 1 + 32] =
 };
 
 
-const Ipp32s vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
+const int32_t vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
 {
   4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 
@@ -117,12 +117,12 @@ const Ipp32s vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
 
 #define DECODE_DELTA_QP(res, shift) \
 { \
-  Ipp32u mask = (1 << (shift - 1)); \
-  Ipp32s val; \
+  uint32_t mask = (1 << (shift - 1)); \
+  int32_t val; \
   if (bits & mask) \
   { \
     bits = (bits << 5) | DecodeValue_Prob128(pBooldec, 5); \
-    val  = (Ipp32s)((bits >> shift) & 0xF); \
+    val  = (int32_t)((bits >> shift) & 0xF); \
     res  = (bits & mask) ? -val : val; \
   } \
 }
@@ -131,9 +131,9 @@ const Ipp32s vp8_quant_dc_uv[VP8_MAX_QP + 1 + 32] =
 Status VP8VideoDecoder::DecodeInitDequantization(void)
 {
   vp8BooleanDecoder *pBooldec = &m_BoolDecoder[0];
-  Ipp8u bits;
+  uint8_t bits;
 
-  m_QuantInfo.yacQP = (Ipp32s)DecodeValue_Prob128(pBooldec, 7);
+  m_QuantInfo.yacQP = (int32_t)DecodeValue_Prob128(pBooldec, 7);
 
   //m_QuantInfo.pYacQP = vp8_quant_ac + 16; set in Init
 
@@ -154,9 +154,9 @@ Status VP8VideoDecoder::DecodeInitDequantization(void)
     DECODE_DELTA_QP(m_QuantInfo.uvacDeltaQP, 1)
   }
 
-  Ipp32s qp;
+  int32_t qp;
 
-  for(Ipp32s segment_id = 0; segment_id < VP8_MAX_NUM_OF_SEGMENTS; segment_id++)
+  for(int32_t segment_id = 0; segment_id < VP8_MAX_NUM_OF_SEGMENTS; segment_id++)
   {
     if (m_FrameInfo.segmentationEnabled)
     {
@@ -191,21 +191,21 @@ void VP8VideoDecoder::DequantMbCoeffs(vp8_MbInfo* pMb)
   vp8_MbInfo      *currMb = pMb;
   vp8_QuantInfo   *qi     = &m_QuantInfo;
 
-  Ipp16s* pCoefs     = 0;
-  Ipp32s  b          = 0;
-  Ipp32s  firstCoeff = 0;
-  Ipp32s  c          = 0;
+  int16_t* pCoefs     = 0;
+  int32_t  b          = 0;
+  int32_t  firstCoeff = 0;
+  int32_t  c          = 0;
 
   if(VP8_MV_SPLIT != currMb->mode && VP8_MB_B_PRED != currMb->mode)
   {
     pCoefs = currMb->coeffs;
 
     // DC for Y2
-    pCoefs[0] = (Ipp16s)(pCoefs[0] * qi->y2dcQ[currMb->segmentID]);
+    pCoefs[0] = (int16_t)(pCoefs[0] * qi->y2dcQ[currMb->segmentID]);
 
     // AC for Y2
     for(c = 1; c < 16; c++)
-      pCoefs[c] =  (Ipp16s)(pCoefs[c] * qi->y2acQ[currMb->segmentID]);
+      pCoefs[c] =  (int16_t)(pCoefs[c] * qi->y2acQ[currMb->segmentID]);
 
     firstCoeff = 1;
   }
@@ -217,11 +217,11 @@ void VP8VideoDecoder::DequantMbCoeffs(vp8_MbInfo* pMb)
   {
     // DC for Y
     if(!firstCoeff) 
-      pCoefs[0] = (Ipp16s)(pCoefs[0] * qi->ydcQ[currMb->segmentID]);
+      pCoefs[0] = (int16_t)(pCoefs[0] * qi->ydcQ[currMb->segmentID]);
 
     // AC for Y
     for(c = 1; c < 16; c++)
-      pCoefs[c] =  (Ipp16s)(pCoefs[c] * qi->yacQ[currMb->segmentID]);
+      pCoefs[c] =  (int16_t)(pCoefs[c] * qi->yacQ[currMb->segmentID]);
 
     pCoefs += 16;
   }
@@ -230,11 +230,11 @@ void VP8VideoDecoder::DequantMbCoeffs(vp8_MbInfo* pMb)
   for(b = 16; b < 24; b++)
   {
     // DC for UV
-    pCoefs[0] = (Ipp16s)(pCoefs[0] * qi->uvdcQ[currMb->segmentID]);
+    pCoefs[0] = (int16_t)(pCoefs[0] * qi->uvdcQ[currMb->segmentID]);
 
      // AC for UV
     for(c = 1; c < 16; c++)
-      pCoefs[c] = (Ipp16s)(pCoefs[c] * qi->uvacQ[currMb->segmentID]);
+      pCoefs[c] = (int16_t)(pCoefs[c] * qi->uvacQ[currMb->segmentID]);
 
     pCoefs += 16;
   }

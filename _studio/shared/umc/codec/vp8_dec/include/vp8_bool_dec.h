@@ -32,21 +32,21 @@ namespace UMC
 
 typedef struct _vp8BooleanDecoder
 {
-  Ipp32u range;
-  Ipp32u value;
-  Ipp32s bitcount;
-  Ipp8u *pData;
-  Ipp32s data_size;
+  uint32_t range;
+  uint32_t value;
+  int32_t bitcount;
+  uint8_t *pData;
+  int32_t data_size;
 
-  Ipp8u blContextLeft[9];
+  uint8_t blContextLeft[9];
 } vp8BooleanDecoder;
 
 
 #define VP8_DECODE_BOOL(booldec, prob, ret) \
 { \
-  Ipp32u split, split256; \
-  Ipp32u range = (booldec)->range; \
-  Ipp32u value = (booldec)->value; \
+  uint32_t split, split256; \
+  uint32_t range = (booldec)->range; \
+  uint32_t value = (booldec)->value; \
   split    = 1 + (((range - 1) * (prob)) >> 8); \
   split256 = (split << 8); \
   if (value < split256) \
@@ -62,8 +62,8 @@ typedef struct _vp8BooleanDecoder
   } \
   if (range < 128) \
   { \
-    Ipp32u shift = vp8_range_normalization_shift[range >> 1]; \
-    Ipp32s bitcount = (booldec)->bitcount; \
+    uint32_t shift = vp8_range_normalization_shift[range >> 1]; \
+    int32_t bitcount = (booldec)->bitcount; \
     range <<= shift; \
     value <<= shift; \
     bitcount += shift; \
@@ -83,9 +83,9 @@ typedef struct _vp8BooleanDecoder
 
 //#define VP8_DECODE_BOOL_PROB128_1st(booldec, ret) \
 //{ \
-//  Ipp32u split, split256; \
-//  Ipp32u range = (booldec)->range; \
-//  Ipp32u value = (booldec)->value; \
+//  uint32_t split, split256; \
+//  uint32_t range = (booldec)->range; \
+//  uint32_t value = (booldec)->value; \
 //  split    = (range + 1) >> 1; \
 //  split256 = (split << 8); \
 //  if (value < split256) \
@@ -100,7 +100,7 @@ typedef struct _vp8BooleanDecoder
 //    ret    = 1; \
 //  } \
 //  { \
-//    Ipp32s bitcount = (booldec)->bitcount + 1; \
+//    int32_t bitcount = (booldec)->bitcount + 1; \
 //    range <<= 1; \
 //    value <<= 1; \
 //    if (bitcount == 8) \
@@ -121,8 +121,8 @@ typedef struct _vp8BooleanDecoder
 // if the partition starts with 1, range = 254, split = 127, and everything is not so simple
 #define VP8_DECODE_BOOL_PROB128(booldec, ret) \
 { \
-  Ipp32u split256; \
-  Ipp32u value = (booldec)->value; \
+  uint32_t split256; \
+  uint32_t value = (booldec)->value; \
   split256 = ((booldec)->range << 7); \
   if (value < split256) \
   { \
@@ -133,12 +133,12 @@ typedef struct _vp8BooleanDecoder
     value -= split256; \
     ret = 1; \
   } \
-  Ipp32s bitcount = (booldec)->bitcount + 1; \
+  int32_t bitcount = (booldec)->bitcount + 1; \
   value <<= 1; \
   if (bitcount == 8) \
   { \
     bitcount = 0; \
-    value |= static_cast<Ipp32u>(*((booldec)->pData)); \
+    value |= static_cast<uint32_t>(*((booldec)->pData)); \
     (booldec)->pData++; \
   } \
   (booldec)->bitcount = bitcount; \
@@ -146,12 +146,12 @@ typedef struct _vp8BooleanDecoder
 }
 
 
-Ipp32s vp8_ReadTree(vp8BooleanDecoder *pBooldec, const Ipp8s *pTree, const Ipp8u *pProb);
+int32_t vp8_ReadTree(vp8BooleanDecoder *pBooldec, const int8_t *pTree, const uint8_t *pProb);
 
 
 #define VP8_DECODE_BOOL_LOCAL(prob, ret) \
 { \
-  Ipp32u split, split256; \
+  uint32_t split, split256; \
   split = 1 + (((range - 1) * (prob)) >> 8); \
   split256 = (split << 8); \
   if (value < split256) \
@@ -167,7 +167,7 @@ Ipp32s vp8_ReadTree(vp8BooleanDecoder *pBooldec, const Ipp8s *pTree, const Ipp8u
   } \
   if (range < 128) \
   { \
-    Ipp32u shift = vp8_range_normalization_shift[range >> 1]; \
+    uint32_t shift = vp8_range_normalization_shift[range >> 1]; \
     range <<= shift; \
     value <<= shift; \
     bitcount += shift; \

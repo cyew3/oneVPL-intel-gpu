@@ -34,13 +34,13 @@ namespace UMC
 
 
 //????
-static const Ipp8s vp8_mode_lf_deltas_lut[VP8_NUM_MV_MODES + VP8_NUM_MB_MODES_Y] = 
+static const int8_t vp8_mode_lf_deltas_lut[VP8_NUM_MV_MODES + VP8_NUM_MB_MODES_Y] = 
 {
   -1, -1, -1, -1, 0, 2, 2, 1, 2, 3
 };
 
 
-static const Ipp8u vp8_hev_thresh_lut[2][64] = 
+static const uint8_t vp8_hev_thresh_lut[2][64] = 
 {
   {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -57,10 +57,10 @@ static const Ipp8u vp8_hev_thresh_lut[2][64] =
 
 
 
-static int hev(Ipp8u threshold, Ipp8u* ptr, Ipp32s step) // if(HorEdge) step = 1; 
+static int hev(uint8_t threshold, uint8_t* ptr, int32_t step) // if(HorEdge) step = 1; 
 {                                                        // else step = dataStep
-  Ipp32s p0, p1;
-  Ipp32s q0, q1;
+  int32_t p0, p1;
+  int32_t q0, q1;
 
   p0 = ptr[-1*step]; p1 = ptr[-2*step];
   q0 = ptr[0*step];  q1 = ptr[1*step];
@@ -69,10 +69,10 @@ static int hev(Ipp8u threshold, Ipp8u* ptr, Ipp32s step) // if(HorEdge) step = 1
 } // hev()
 
 
-static int do_filter_simple(Ipp8u E, Ipp8u* ptr, Ipp32s step)
+static int do_filter_simple(uint8_t E, uint8_t* ptr, int32_t step)
 {
-  Ipp32s p0, p1;
-  Ipp32s q0, q1;
+  int32_t p0, p1;
+  int32_t q0, q1;
 
   p0 = ptr[-1*step]; p1 = ptr[-2*step];
   q0 = ptr[0*step];  q1 = ptr[1*step];
@@ -81,10 +81,10 @@ static int do_filter_simple(Ipp8u E, Ipp8u* ptr, Ipp32s step)
 } // do_filter_simple()
 
 
-static int do_filter_normal(Ipp8u I, Ipp8u E, Ipp8u* ptr, Ipp32s step)
+static int do_filter_normal(uint8_t I, uint8_t E, uint8_t* ptr, int32_t step)
 {
-  Ipp32s p0, p1, p2, p3;
-  Ipp32s q0, q1, q2 ,q3;
+  int32_t p0, p1, p2, p3;
+  int32_t q0, q1, q2 ,q3;
 
   p0 = ptr[-1*step]; p1 = ptr[-2*step]; p2 = ptr[-3*step]; p3 = ptr[-4*step];
   q0 = ptr[0*step];  q1 = ptr[1*step];  q2 = ptr[2*step];  q3 = ptr[3*step];
@@ -109,16 +109,16 @@ static int do_filter_normal(Ipp8u I, Ipp8u E, Ipp8u* ptr, Ipp32s step)
 
 
 //may be rename to simple_filter()????
-static void common_adjust(Ipp8u use_outer_taps, Ipp8u* ptr, Ipp32s step)
+static void common_adjust(uint8_t use_outer_taps, uint8_t* ptr, int32_t step)
 {
-  Ipp32s a = 0;
-  Ipp32s t = 0;
+  int32_t a = 0;
+  int32_t t = 0;
 
-  Ipp32s F0 = 0;
-  Ipp32s F1 = 0;
+  int32_t F0 = 0;
+  int32_t F1 = 0;
 
-  Ipp32s p0, p1;
-  Ipp32s q0, q1;
+  int32_t p0, p1;
+  int32_t q0, q1;
 
   p0 = ptr[-1*step]; p1 = ptr[-2*step];
   q0 = ptr[0*step];  q1 = ptr[1*step];
@@ -154,16 +154,16 @@ static void common_adjust(Ipp8u use_outer_taps, Ipp8u* ptr, Ipp32s step)
 
 
 
-static void vp8_lf_mb_edges(Ipp8u* ptr, Ipp32s step)
+static void vp8_lf_mb_edges(uint8_t* ptr, int32_t step)
 {
-  Ipp32s w = 0;
+  int32_t w = 0;
 
-  Ipp32s F0 = 0;
-  Ipp32s F1 = 0;
-  Ipp32s F2 = 0;
+  int32_t F0 = 0;
+  int32_t F1 = 0;
+  int32_t F2 = 0;
 
-  Ipp32s p0, p1, p2, p3;
-  Ipp32s q0, q1, q2 ,q3;
+  int32_t p0, p1, p2, p3;
+  int32_t q0, q1, q2 ,q3;
 
   p0 = ptr[-1*step]; p1 = ptr[-2*step]; p2 = ptr[-3*step]; p3 = ptr[-4*step];
   q0 = ptr[0*step];  q1 = ptr[1*step];  q2 = ptr[2*step];  q3 = ptr[3*step];
@@ -193,13 +193,13 @@ static void vp8_lf_mb_edges(Ipp8u* ptr, Ipp32s step)
 //
 // Normal filters
 //
-static void vp8_lf_normal_mb_ve(Ipp8u* dst, Ipp32s step,
-                                Ipp8u hev_threshold,
-                                Ipp8u interior_limit,
-                                Ipp8u edge_limit,
-                                Ipp8u loop_size) // 16 for Y, 8 for U/V
+static void vp8_lf_normal_mb_ve(uint8_t* dst, int32_t step,
+                                uint8_t hev_threshold,
+                                uint8_t interior_limit,
+                                uint8_t edge_limit,
+                                uint8_t loop_size) // 16 for Y, 8 for U/V
 {
-  Ipp32s i = 0;
+  int32_t i = 0;
 
   for(i = 0; i < loop_size; i++)
   {
@@ -220,13 +220,13 @@ static void vp8_lf_normal_mb_ve(Ipp8u* dst, Ipp32s step,
 } // vp8_lf_normal_mb_ve()
 
 
-static void vp8_lf_normal_mb_he(Ipp8u* dst, Ipp32s step,
-                                Ipp8u hev_threshold,
-                                Ipp8u interior_limit,
-                                Ipp8u edge_limit,
-                                Ipp8u loop_size) // 16 for Y, 8 for U/V
+static void vp8_lf_normal_mb_he(uint8_t* dst, int32_t step,
+                                uint8_t hev_threshold,
+                                uint8_t interior_limit,
+                                uint8_t edge_limit,
+                                uint8_t loop_size) // 16 for Y, 8 for U/V
 {
-  Ipp32s i = 0;
+  int32_t i = 0;
 
   for(i = 0; i < loop_size; i++)
   {
@@ -248,14 +248,14 @@ static void vp8_lf_normal_mb_he(Ipp8u* dst, Ipp32s step,
 
 
 
-static void vp8_lf_normal_sb_ve(Ipp8u* dst, Ipp32s step,
-                                Ipp8u hev_threshold,
-                                Ipp8u interior_limit,
-                                Ipp8u edge_limit,
-                                Ipp8u loop_size) // 16 for Y, 8 for U/V
+static void vp8_lf_normal_sb_ve(uint8_t* dst, int32_t step,
+                                uint8_t hev_threshold,
+                                uint8_t interior_limit,
+                                uint8_t edge_limit,
+                                uint8_t loop_size) // 16 for Y, 8 for U/V
 {
-  Ipp32s i = 0;
-  Ipp32s hv = 0;
+  int32_t i = 0;
+  int32_t hv = 0;
 
   for(i = 0; i < loop_size; i++)
   {
@@ -274,14 +274,14 @@ static void vp8_lf_normal_sb_ve(Ipp8u* dst, Ipp32s step,
 
 
 
-static void vp8_lf_normal_sb_he(Ipp8u* dst, Ipp32s step,
-                                Ipp8u hev_threshold,
-                                Ipp8u interior_limit,
-                                Ipp8u edge_limit,
-                                Ipp8u loop_size) // 16 for Y, 8 for U/V
+static void vp8_lf_normal_sb_he(uint8_t* dst, int32_t step,
+                                uint8_t hev_threshold,
+                                uint8_t interior_limit,
+                                uint8_t edge_limit,
+                                uint8_t loop_size) // 16 for Y, 8 for U/V
 {
-  Ipp32s i = 0;
-  Ipp32s hv = 0;
+  int32_t i = 0;
+  int32_t hv = 0;
 
   for(i = 0; i < loop_size; i++)
   {
@@ -299,14 +299,14 @@ static void vp8_lf_normal_sb_he(Ipp8u* dst, Ipp32s step,
 } // vp8_lf_normal_sb_he()
 
 
-static void vp8_loop_filter_normal_mb_ve(Ipp8u* dst_y, Ipp32s step_y,
-                                         Ipp8u* dst_u, Ipp8u* dst_v,
-                                         Ipp32s step_uv,
-                                         Ipp8u filter_level,
-                                         Ipp8u interior_limit,
-                                         Ipp8u hev_threshold)
+static void vp8_loop_filter_normal_mb_ve(uint8_t* dst_y, int32_t step_y,
+                                         uint8_t* dst_u, uint8_t* dst_v,
+                                         int32_t step_uv,
+                                         uint8_t filter_level,
+                                         uint8_t interior_limit,
+                                         uint8_t hev_threshold)
 {
-  Ipp8u mb_edge_limit;
+  uint8_t mb_edge_limit;
 
   mb_edge_limit = ((filter_level + 2) << 1) + interior_limit;
 
@@ -319,14 +319,14 @@ static void vp8_loop_filter_normal_mb_ve(Ipp8u* dst_y, Ipp32s step_y,
 } // vp8_loop_filter_normal_mb_ve()
 
 
-static void vp8_loop_filter_normal_mb_he(Ipp8u* dst_y, Ipp32s step_y,
-                                         Ipp8u* dst_u, Ipp8u* dst_v,
-                                         Ipp32s step_uv,
-                                         Ipp8u  filter_level,
-                                         Ipp8u  interior_limit,
-                                         Ipp8u  hev_threshold)
+static void vp8_loop_filter_normal_mb_he(uint8_t* dst_y, int32_t step_y,
+                                         uint8_t* dst_u, uint8_t* dst_v,
+                                         int32_t step_uv,
+                                         uint8_t  filter_level,
+                                         uint8_t  interior_limit,
+                                         uint8_t  hev_threshold)
 {
-  Ipp8u mb_edge_limit;
+  uint8_t mb_edge_limit;
 
   mb_edge_limit = ((filter_level + 2) << 1) + interior_limit;
 
@@ -340,14 +340,14 @@ static void vp8_loop_filter_normal_mb_he(Ipp8u* dst_y, Ipp32s step_y,
 
 
 
-static void vp8_loop_filter_normal_sb_ve(Ipp8u* dst_y, Ipp32s step_y,
-                                         Ipp8u* dst_u, Ipp8u* dst_v,
-                                         Ipp32s step_uv,
-                                         Ipp8u  filter_level,
-                                         Ipp8u  interior_limit,
-                                         Ipp8u  hev_threshold)
+static void vp8_loop_filter_normal_sb_ve(uint8_t* dst_y, int32_t step_y,
+                                         uint8_t* dst_u, uint8_t* dst_v,
+                                         int32_t step_uv,
+                                         uint8_t  filter_level,
+                                         uint8_t  interior_limit,
+                                         uint8_t  hev_threshold)
 {
-  Ipp8u sb_edge_limit;
+  uint8_t sb_edge_limit;
 
   sb_edge_limit = (filter_level << 1) + interior_limit;
 
@@ -363,14 +363,14 @@ static void vp8_loop_filter_normal_sb_ve(Ipp8u* dst_y, Ipp32s step_y,
 
 
 
-static void vp8_loop_filter_normal_sb_he(Ipp8u* dst_y, Ipp32s step_y,
-                                         Ipp8u* dst_u, Ipp8u* dst_v,
-                                         Ipp32s step_uv,
-                                         Ipp8u  filter_level,
-                                         Ipp8u  interior_limit,
-                                         Ipp8u  hev_threshold)
+static void vp8_loop_filter_normal_sb_he(uint8_t* dst_y, int32_t step_y,
+                                         uint8_t* dst_u, uint8_t* dst_v,
+                                         int32_t step_uv,
+                                         uint8_t  filter_level,
+                                         uint8_t  interior_limit,
+                                         uint8_t  hev_threshold)
 {
-  Ipp8u sb_edge_limit;
+  uint8_t sb_edge_limit;
 
   sb_edge_limit = (filter_level << 1) + interior_limit;
 
@@ -388,9 +388,9 @@ static void vp8_loop_filter_normal_sb_he(Ipp8u* dst_y, Ipp32s step_y,
 //
 // simple filters
 //
-static void vp8_loop_filter_simple_ve(Ipp8u* dst_y, Ipp32s step_y, Ipp8u edge_limit)
+static void vp8_loop_filter_simple_ve(uint8_t* dst_y, int32_t step_y, uint8_t edge_limit)
 {
-  Ipp32s i = 0;
+  int32_t i = 0;
 
   for(i = 0; i < 16; i++)
   {
@@ -402,9 +402,9 @@ static void vp8_loop_filter_simple_ve(Ipp8u* dst_y, Ipp32s step_y, Ipp8u edge_li
 } // vp8_loop_filter_simple_ve()
 
 
-static void vp8_loop_filter_simple_he(Ipp8u* dst_y, Ipp32s step_y, Ipp8u edge_limit)
+static void vp8_loop_filter_simple_he(uint8_t* dst_y, int32_t step_y, uint8_t edge_limit)
 {
-  Ipp32s i = 0;
+  int32_t i = 0;
 
   for(i = 0; i < 16; i++)
   {
@@ -418,11 +418,11 @@ static void vp8_loop_filter_simple_he(Ipp8u* dst_y, Ipp32s step_y, Ipp8u edge_li
 
 void VP8VideoDecoder::LoopFilterInit(void)
 {
-  Ipp32u mb_row = 0;
-  Ipp32u mb_col = 0;
+  uint32_t mb_row = 0;
+  uint32_t mb_col = 0;
 
-  Ipp32s filter_level   = 0;
-  Ipp8u  interior_limit = 0;
+  int32_t filter_level   = 0;
+  uint8_t  interior_limit = 0;
 
   vp8_MbInfo* currMb  = 0;
 
@@ -452,14 +452,14 @@ void VP8VideoDecoder::LoopFilterInit(void)
       }
 
       vp8_CLIP(filter_level, 0, VP8_MAX_LF_LEVEL);
-      currMb->lfInfo.filterLevel = (Ipp8u)filter_level;
+      currMb->lfInfo.filterLevel = (uint8_t)filter_level;
 
-      interior_limit = (Ipp8u)filter_level;
+      interior_limit = (uint8_t)filter_level;
 
       if(m_FrameInfo.sharpnessLevel)
       {
-        interior_limit = (Ipp8u)(filter_level >> ((m_FrameInfo.sharpnessLevel > 4) ? 2 : 1));
-        interior_limit = IPP_MIN(interior_limit, 9 - m_FrameInfo.sharpnessLevel);
+        interior_limit = (uint8_t)(filter_level >> ((m_FrameInfo.sharpnessLevel > 4) ? 2 : 1));
+        interior_limit = MFX_MIN(interior_limit, 9 - m_FrameInfo.sharpnessLevel);
       }
 
       if(!interior_limit)
@@ -479,19 +479,19 @@ void VP8VideoDecoder::LoopFilterInit(void)
 
 void VP8VideoDecoder::LoopFilterNormal(void)
 {
-  Ipp32u mb_row = 0;
-  Ipp32u mb_col = 0;
+  uint32_t mb_row = 0;
+  uint32_t mb_col = 0;
 
   // Calculate all filters params limits
   LoopFilterInit();
 
 
-  Ipp8u* ptr_y = 0;
-  Ipp8u* ptr_u = 0;
-  Ipp8u* ptr_v = 0;
+  uint8_t* ptr_y = 0;
+  uint8_t* ptr_u = 0;
+  uint8_t* ptr_v = 0;
 
-  Ipp32s step_y  = m_CurrFrame->step_y;
-  Ipp32s step_uv = m_CurrFrame->step_uv;
+  int32_t step_y  = m_CurrFrame->step_y;
+  int32_t step_uv = m_CurrFrame->step_uv;
 
   vp8_MbInfo* currMb  = 0;
 
@@ -566,21 +566,21 @@ void VP8VideoDecoder::LoopFilterNormal(void)
 
 void VP8VideoDecoder::LoopFilterSimple(void)
 {
-  Ipp32u mb_row = 0;
-  Ipp32u mb_col = 0;
+  uint32_t mb_row = 0;
+  uint32_t mb_col = 0;
 
   // Calculate all filters params limits
   LoopFilterInit();
 
-  Ipp8u* ptr_y = 0;
+  uint8_t* ptr_y = 0;
 
-  Ipp32s step_y  = m_CurrFrame->step_y;
+  int32_t step_y  = m_CurrFrame->step_y;
 
   vp8_MbInfo* currMb  = 0;
 
 
-  Ipp8u  mb_edge_limit;
-  Ipp8u  sb_edge_limit;
+  uint8_t  mb_edge_limit;
+  uint8_t  sb_edge_limit;
 
   for(mb_row = 0; mb_row < m_FrameInfo.mbPerCol; mb_row++)
   {

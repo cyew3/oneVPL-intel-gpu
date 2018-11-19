@@ -65,22 +65,22 @@ public:
 
   virtual Status SetParams(BaseCodecParams* params);
   
-  virtual Status GetPerformance(Ipp64f *perf);
+  virtual Status GetPerformance(double *perf);
 
   //reset skip frame counter
   virtual Status ResetSkipCount(void);
 
   // increment skip frame counter
-  virtual Status SkipVideoFrame(Ipp32s);
+  virtual Status SkipVideoFrame(int32_t);
 
   // get skip frame counter statistic
-  virtual Ipp32u GetNumOfSkippedFrames();
+  virtual uint32_t GetNumOfSkippedFrames();
   
   virtual void SetFrameAllocator(FrameAllocator * frameAllocator);
 
 private:
 
-  Status InitBooleanDecoder(Ipp8u *pBitStream, Ipp32s dataSize, Ipp32s dec_number);
+  Status InitBooleanDecoder(uint8_t *pBitStream, int32_t dataSize, int32_t dec_number);
 
   Status UpdateSegmentation(vp8BooleanDecoder *pBooldec);
   Status UpdateLoopFilterDeltas(vp8BooleanDecoder *pBooldec);
@@ -96,26 +96,26 @@ private:
   Status DecodeMbModesMVs_Inter(vp8BooleanDecoder *pBoolDec);
 
   Status DecodeFirstPartition(void);
-  Ipp32s DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row, Ipp32s mb_col);
+  int32_t DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, int32_t mb_row, int32_t mb_col);
 
-  void DecodeMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s row);
-  void ReconstructMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s row);
+  void DecodeMbRow(vp8BooleanDecoder *pBoolDec, int32_t row);
+  void ReconstructMbRow(vp8BooleanDecoder *pBoolDec, int32_t row);
 
   void DequantMbCoeffs(vp8_MbInfo* pMb);
 
-  void InverseDCT_Mb(vp8_MbInfo* pMb, Ipp16s* pOut, Ipp32u outStep); 
+  void InverseDCT_Mb(vp8_MbInfo* pMb, int16_t* pOut, uint32_t outStep); 
 
-  void PredictMbIntra(Ipp16s*      pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbIntra4x4(Ipp16s*   pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbIntraUV(Ipp16s*    pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbIntra16x16(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
+  void PredictMbIntra(int16_t*      pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbIntra4x4(int16_t*   pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbIntraUV(int16_t*    pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbIntra16x16(int16_t* pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
 
-  void PredictMbInter(Ipp16s*      pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbInter16x16(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbInter8x16(Ipp16s*  pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbInter16x8(Ipp16s*  pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbInter8x8(Ipp16s*   pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
-  void PredictMbInter4x4(Ipp16s*   pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col);
+  void PredictMbInter(int16_t*      pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbInter16x16(int16_t* pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbInter8x16(int16_t*  pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbInter16x8(int16_t*  pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbInter8x8(int16_t*   pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
+  void PredictMbInter4x4(int16_t*   pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col);
 
   void LoopFilterNormal(void);
   void LoopFilterSimple(void);
@@ -126,12 +126,12 @@ private:
 
   void ExtendFrameBorders(vp8_FrameData* currFrame);
 
-  Ipp8u DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, Ipp32u numbits);
-  Ipp8u DecodeValue(vp8BooleanDecoder *pBooldec, Ipp8u prob, Ipp32u numbits);
+  uint8_t DecodeValue_Prob128(vp8BooleanDecoder *pBooldec, uint32_t numbits);
+  uint8_t DecodeValue(vp8BooleanDecoder *pBooldec, uint8_t prob, uint32_t numbits);
 
 private:
 
-  Ipp8u                  m_IsInitialized;
+  uint8_t                  m_IsInitialized;
   vp8_MbInfo            *m_pMbInfo;
   vp8_MbInfo             m_MbExternal;
   vp8_FrameInfo          m_FrameInfo;
@@ -145,7 +145,7 @@ private:
 
   vp8_FrameData         m_FrameData[VP8_NUM_OF_REF_FRAMES];
   vp8_FrameData*        m_CurrFrame;
-  Ipp8u                 m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
+  uint8_t                 m_RefFrameIndx[VP8_NUM_OF_REF_FRAMES];
 
   FrameAllocator *      m_frameAllocator;
 };

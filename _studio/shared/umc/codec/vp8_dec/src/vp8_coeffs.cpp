@@ -32,10 +32,10 @@ namespace UMC
 
 void VP8VideoDecoder::UpdateCoeffProbabilitites(void)
 {
-  Ipp32s i;
-  Ipp32s j;
-  Ipp32s k;
-  Ipp32s l;
+  int32_t i;
+  int32_t j;
+  int32_t k;
+  int32_t l;
 
   vp8BooleanDecoder *pBoolDec = &m_BoolDecoder[0];
 
@@ -47,13 +47,13 @@ void VP8VideoDecoder::UpdateCoeffProbabilitites(void)
       {
         for (l = 0; l < VP8_NUM_COEFF_NODES; l++)
         {
-          Ipp8u flag;
-          Ipp8u prob = vp8_coeff_update_probs[i][j][k][l];
+          uint8_t flag;
+          uint8_t prob = vp8_coeff_update_probs[i][j][k][l];
 
           VP8_DECODE_BOOL(pBoolDec, prob, flag);
 
           if (flag)
-            m_FrameProbs.coeff_probs[i][j][k][l] = (Ipp8u)DecodeValue(pBoolDec,128, 8);
+            m_FrameProbs.coeff_probs[i][j][k][l] = (uint8_t)DecodeValue(pBoolDec,128, 8);
         }
       }
     }
@@ -62,10 +62,10 @@ void VP8VideoDecoder::UpdateCoeffProbabilitites(void)
 
 
 
-void VP8VideoDecoder::DecodeMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row)
+void VP8VideoDecoder::DecodeMbRow(vp8BooleanDecoder *pBoolDec, int32_t mb_row)
 {
-  Ipp32u mb_col        = 0;
-  Ipp32u nonzeroMb;
+  uint32_t mb_col        = 0;
+  uint32_t nonzeroMb;
   vp8_MbInfo* currMb   = 0;
 
   vp8BooleanDecoder* bool_dec = pBoolDec;
@@ -106,7 +106,7 @@ void VP8VideoDecoder::DecodeMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row)
 
 
 // bits 0-3 - up; bits 4-7 - left
-static const Ipp8u vp8_blockContexts[25] = 
+static const uint8_t vp8_blockContexts[25] = 
 {
   (8 << 4) | 8,
   (0 << 4) | 0, (0 << 4) | 1, (0 << 4) | 2, (0 << 4) | 3,
@@ -121,7 +121,7 @@ static const Ipp8u vp8_blockContexts[25] =
   (7 << 4) | 6, (7 << 4) | 7
 };
 
-static const Ipp32s vp8_coefBands[16] =
+static const int32_t vp8_coefBands[16] =
 {
   0, 1, 2, 3,
   6, 4, 5, 6,
@@ -129,7 +129,7 @@ static const Ipp32s vp8_coefBands[16] =
   6, 6, 6, 7
 };
 
-static const Ipp32s vp8_zigzag_scan[16] =
+static const int32_t vp8_zigzag_scan[16] =
 {
   0, 1,  4,  8,
   5, 2,  3,  6,
@@ -140,7 +140,7 @@ static const Ipp32s vp8_zigzag_scan[16] =
 
 #define VP8_GET_SIGNED_COEFF(ret, absval) \
 { \
-  Ipp32u split, split256; \
+  uint32_t split, split256; \
   split    = (range + 1) >> 1; \
   split256 = (split << 8); \
   if (value < split256) \
@@ -170,7 +170,7 @@ static const Ipp32s vp8_zigzag_scan[16] =
 
 #define VP8_DECODE_COEFF_EXTRA(prob, res, extra) \
 { \
-  Ipp32u split, split256; \
+  uint32_t split, split256; \
   split    = 1 + (((range - 1) * (prob)) >> 8); \
   split256 = (split << 8); \
   if (value < split256) \
@@ -185,7 +185,7 @@ static const Ipp32s vp8_zigzag_scan[16] =
   } \
   if (range < 128) \
   { \
-    Ipp32u shift = vp8_range_normalization_shift[range >> 1]; \
+    uint32_t shift = vp8_range_normalization_shift[range >> 1]; \
     range   <<= shift; \
     value   <<= shift; \
     bitcount += shift; \
@@ -218,39 +218,39 @@ static const Ipp32s vp8_zigzag_scan[16] =
 #define VP8_COEFF_CAT5_PROB2 134
 #define VP8_COEFF_CAT5_PROB1 130
 
-const Ipp8u vp8_coeff_cat5_probs[5] = 
+const uint8_t vp8_coeff_cat5_probs[5] = 
 {
   180, 157, 141, 134, 130
 };
 
-const Ipp8u vp8_coeff_cat6_probs[11] = 
+const uint8_t vp8_coeff_cat6_probs[11] = 
 {
   254, 254, 243, 230, 196, 177, 153, 140, 133, 130, 129
 };
 
 
 // check if coeffs are initially zeroed !!! ???
-Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row, Ipp32s mb_col)
+int32_t VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, int32_t mb_row, int32_t mb_col)
 {
-  Ipp8u      *pCtxtUp    = m_FrameInfo.blContextUp + mb_col*9;
-  Ipp8u      *pCtxtLeft  = m_FrameInfo.blContextLeft;
+  uint8_t      *pCtxtUp    = m_FrameInfo.blContextUp + mb_col*9;
+  uint8_t      *pCtxtLeft  = m_FrameInfo.blContextLeft;
   vp8_MbInfo *pMb        = &m_pMbInfo[mb_row*m_FrameInfo.mbStep + mb_col];
-  Ipp16s     *pCoeffs;
-  Ipp8u       (*pppProb)[VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
-  Ipp8u      *pProb;
-  Ipp32s      bl;
-  Ipp32u      i;
-  Ipp32u      firstCoeff = 0;
-  Ipp32s      firstBl;
-  Ipp32u      j;
-  Ipp32s      nonzeroMb  = 0;
+  int16_t     *pCoeffs;
+  uint8_t       (*pppProb)[VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
+  uint8_t      *pProb;
+  int32_t      bl;
+  uint32_t      i;
+  uint32_t      firstCoeff = 0;
+  int32_t      firstBl;
+  uint32_t      j;
+  int32_t      nonzeroMb  = 0;
 
   // for local bool_decoder
-  Ipp32u  range    = pBoolDec->range;
-  Ipp32u  value    = pBoolDec->value;
-  Ipp32s  bitcount = pBoolDec->bitcount;
-  Ipp8u  *pData    = pBoolDec->pData;
-  Ipp8u   bit;
+  uint32_t  range    = pBoolDec->range;
+  uint32_t  value    = pBoolDec->value;
+  int32_t  bitcount = pBoolDec->bitcount;
+  uint8_t  *pData    = pBoolDec->pData;
+  uint8_t   bit;
 
   UMC_SET_ZERO(pMb->numNNZ);
 
@@ -271,11 +271,11 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
 
   for (bl = firstBl; bl < 25; bl++)
   {
-    Ipp8u  ctxtInd     = vp8_blockContexts[bl];
-    Ipp8u *pcUp        = pCtxtUp   + (ctxtInd & 0xF);
-    Ipp8u *pcLeft      = pCtxtLeft + (ctxtInd >> 4);
-    Ipp32s prevNotZero = 1;
-    Ipp32s coef;
+    uint8_t  ctxtInd     = vp8_blockContexts[bl];
+    uint8_t *pcUp        = pCtxtUp   + (ctxtInd & 0xF);
+    uint8_t *pcLeft      = pCtxtLeft + (ctxtInd >> 4);
+    int32_t prevNotZero = 1;
+    int32_t coef;
 
     ctxtInd = (*pcUp ? 1 : 0) + (*pcLeft ? 1 : 0);
 
@@ -303,7 +303,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
       if (bit == 0)
       {
         VP8_GET_SIGNED_COEFF(coef, 1);
-        pCoeffs[vp8_zigzag_scan[i]] = (Ipp16s)coef;
+        pCoeffs[vp8_zigzag_scan[i]] = (int16_t)coef;
 
         ctxtInd     = 1;
         prevNotZero = 1;
@@ -325,7 +325,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
           VP8_GET_SIGNED_COEFF(coef, (3 + bit));
         }
 
-        pCoeffs[vp8_zigzag_scan[i]] = (Ipp16s)coef;
+        pCoeffs[vp8_zigzag_scan[i]] = (int16_t)coef;
 
         ctxtInd     = 2;
         prevNotZero = 1;
@@ -350,7 +350,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
         }
 
         VP8_GET_SIGNED_COEFF(coef, coef);
-        pCoeffs[vp8_zigzag_scan[i]] = (Ipp16s)coef;
+        pCoeffs[vp8_zigzag_scan[i]] = (int16_t)coef;
 
         ctxtInd     = 2;
         prevNotZero = 1;
@@ -379,7 +379,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
         }
 
         VP8_GET_SIGNED_COEFF(coef, coef);
-        pCoeffs[vp8_zigzag_scan[i]] = (Ipp16s)coef;
+        pCoeffs[vp8_zigzag_scan[i]] = (int16_t)coef;
 
         ctxtInd     = 2;
         prevNotZero = 1;
@@ -407,7 +407,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
       }
 
       VP8_GET_SIGNED_COEFF(coef, coef);
-      pCoeffs[vp8_zigzag_scan[i]] = (Ipp16s)coef;
+      pCoeffs[vp8_zigzag_scan[i]] = (int16_t)coef;
 
       ctxtInd     = 2;
       prevNotZero = 1;
@@ -418,7 +418,7 @@ Ipp32s VP8VideoDecoder::DecodeMbCoeffs(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
     *pcUp      = *pcLeft = bit;
     nonzeroMb |= bit;
 
-    pMb->numNNZ[bl] = Ipp8u((bit != 0) ? i : 0);
+    pMb->numNNZ[bl] = uint8_t((bit != 0) ? i : 0);
 
     if (bl == 0)
     {

@@ -44,10 +44,10 @@ namespace UMC
 #else
 #if defined(_WIN64) || defined(WIN64)
 #define __ALIGN16(type, name, size) \
-  Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp64s)(_a16_##name) + 15) & ~15)
+  uint8_t _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((long long)(_a16_##name) + 15) & ~15)
 #else
 #define __ALIGN16(type, name, size) \
-  Ipp8u _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((Ipp32s)(_a16_##name) + 15) & ~15)
+  uint8_t _a16_##name[(size)*sizeof(type)+15]; type *name = (type*)(((int32_t)(_a16_##name) + 15) & ~15)
 #endif
 #endif
 #endif
@@ -150,38 +150,38 @@ enum
 };
 
 
-extern const Ipp8u  vp8_range_normalization_shift[64];
+extern const uint8_t  vp8_range_normalization_shift[64];
 
-extern const Ipp32s vp8_quant_dc[VP8_MAX_QP + 1 + 32];
-extern const Ipp32s vp8_quant_ac[VP8_MAX_QP + 1 + 32];
-extern const Ipp32s vp8_quant_dc2[VP8_MAX_QP + 1 + 32];
+extern const int32_t vp8_quant_dc[VP8_MAX_QP + 1 + 32];
+extern const int32_t vp8_quant_ac[VP8_MAX_QP + 1 + 32];
+extern const int32_t vp8_quant_dc2[VP8_MAX_QP + 1 + 32];
 
-extern const Ipp8u  vp8_kf_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1];
-extern const Ipp8u  vp8_kf_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1];
-extern const Ipp8u  vp8_kf_block_mode_probs[VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES-1];
+extern const uint8_t  vp8_kf_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1];
+extern const uint8_t  vp8_kf_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1];
+extern const uint8_t  vp8_kf_block_mode_probs[VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES][VP8_NUM_INTRA_BLOCK_MODES-1];
 
-extern const Ipp8u  vp8_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1];
-extern const Ipp8u  vp8_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1];
-extern const Ipp8u  vp8_block_mode_probs [VP8_NUM_INTRA_BLOCK_MODES - 1];
+extern const uint8_t  vp8_mb_mode_y_probs[VP8_NUM_MB_MODES_Y - 1];
+extern const uint8_t  vp8_mb_mode_uv_probs[VP8_NUM_MB_MODES_UV - 1];
+extern const uint8_t  vp8_block_mode_probs [VP8_NUM_INTRA_BLOCK_MODES - 1];
 
-extern const Ipp8u  vp8_default_coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
-extern const Ipp8u  vp8_coeff_update_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
+extern const uint8_t  vp8_default_coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
+extern const uint8_t  vp8_coeff_update_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
 
-extern const Ipp8s  vp8_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)];
-extern const Ipp8s  vp8_kf_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)];
-extern const Ipp8s  vp8_mb_mode_uv_tree[2*(VP8_NUM_MB_MODES_UV - 1)];
-extern const Ipp8s  vp8_block_mode_tree[2*(VP8_NUM_INTRA_BLOCK_MODES - 1)];
+extern const int8_t  vp8_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)];
+extern const int8_t  vp8_kf_mb_mode_y_tree[2*(VP8_NUM_MB_MODES_Y - 1)];
+extern const int8_t  vp8_mb_mode_uv_tree[2*(VP8_NUM_MB_MODES_UV - 1)];
+extern const int8_t  vp8_block_mode_tree[2*(VP8_NUM_INTRA_BLOCK_MODES - 1)];
 
-extern const Ipp32u  vp8_mbmode_2_blockmode_u32[VP8_NUM_MB_MODES_Y];
+extern const uint32_t  vp8_mbmode_2_blockmode_u32[VP8_NUM_MB_MODES_Y];
 
-extern const Ipp8u  vp8_mv_update_probs[2][VP8_NUM_MV_PROBS];
-extern const Ipp8u  vp8_default_mv_contexts[2][VP8_NUM_MV_PROBS];
+extern const uint8_t  vp8_mv_update_probs[2][VP8_NUM_MV_PROBS];
+extern const uint8_t  vp8_default_mv_contexts[2][VP8_NUM_MV_PROBS];
 
 
 // get this from h264 sources - need test?????
-extern const Ipp8u vp8_ClampTbl[768];
+extern const uint8_t vp8_ClampTbl[768];
 
-#define clip(x) IPP_MIN(256, IPP_MAX(x, -256))
+#define clip(x) MFX_MIN(256, MFX_MAX(x, -256))
 #define vp8_GetClampTblValue(x) vp8_ClampTbl[256 + (x)]
 #define vp8_ClampTblLookup(x, y) vp8_GetClampTblValue((x) + clip(y))
 
@@ -240,100 +240,100 @@ enum
 
 typedef struct _vp8_FrameInfo
 {
-  //Ipp8u frameType;
+  //uint8_t frameType;
   FrameType frameType;// ???
 
-  Ipp8u showFrame;
+  uint8_t showFrame;
 
-  Ipp8u interpolationFlags; // bit0: bilinear interpolation (1 - on, 0 - off);
+  uint8_t interpolationFlags; // bit0: bilinear interpolation (1 - on, 0 - off);
                             // bit1: chroma full pel (1 - on, 0 - off)
 
-  Ipp8u segmentationEnabled;
-  Ipp8u updateSegmentMap;
-  Ipp8u updateSegmentData;
-  Ipp8u segmentAbsMode;
+  uint8_t segmentationEnabled;
+  uint8_t updateSegmentMap;
+  uint8_t updateSegmentData;
+  uint8_t segmentAbsMode;
 
-  Ipp8s segmentFeatureData[VP8_NUM_OF_MB_FEATURES][VP8_MAX_NUM_OF_SEGMENTS];
-  Ipp8u segmentTreeProbabilities[VP8_NUM_OF_SEGMENT_TREE_PROBS];
+  int8_t segmentFeatureData[VP8_NUM_OF_MB_FEATURES][VP8_MAX_NUM_OF_SEGMENTS];
+  uint8_t segmentTreeProbabilities[VP8_NUM_OF_SEGMENT_TREE_PROBS];
 
-  Ipp8u loopFilterType;
-  Ipp8u loopFilterLevel;
-  Ipp8u sharpnessLevel;
+  uint8_t loopFilterType;
+  uint8_t loopFilterLevel;
+  uint8_t sharpnessLevel;
 
-  Ipp8u mbLoopFilterAdjust;
-  Ipp8u modeRefLoopFilterDeltaUpdate;
+  uint8_t mbLoopFilterAdjust;
+  uint8_t modeRefLoopFilterDeltaUpdate;
 
-  Ipp8s refLoopFilterDeltas[VP8_NUM_OF_REF_FRAMES];
-  Ipp8s modeLoopFilterDeltas[VP8_NUM_OF_MODE_LF_DELTAS];
+  int8_t refLoopFilterDeltas[VP8_NUM_OF_REF_FRAMES];
+  int8_t modeLoopFilterDeltas[VP8_NUM_OF_MODE_LF_DELTAS];
 
-  Ipp8u numTokenPartitions;
+  uint8_t numTokenPartitions;
 
-  Ipp32u mbPerCol;
-  Ipp32u mbPerRow;
-  Ipp32u mbStep;
+  uint32_t mbPerCol;
+  uint32_t mbPerRow;
+  uint32_t mbStep;
 
-  Ipp8u mbSkipEnabled;
-  Ipp8u skipFalseProb;
-  Ipp8u intraProb;
-  Ipp8u goldProb;
-  Ipp8u lastProb;
+  uint8_t mbSkipEnabled;
+  uint8_t skipFalseProb;
+  uint8_t intraProb;
+  uint8_t goldProb;
+  uint8_t lastProb;
 
-  Ipp8u *blContextUp;
-  Ipp8u  blContextLeft[9];
+  uint8_t *blContextUp;
+  uint8_t  blContextLeft[9];
 
-  Ipp32s numPartitions;
-  Ipp32s partitionSize[VP8_MAX_NUM_OF_TOKEN_PARTITIONS];
-  Ipp8u *partitionStart[VP8_MAX_NUM_OF_TOKEN_PARTITIONS];
+  int32_t numPartitions;
+  int32_t partitionSize[VP8_MAX_NUM_OF_TOKEN_PARTITIONS];
+  uint8_t *partitionStart[VP8_MAX_NUM_OF_TOKEN_PARTITIONS];
 
-  Ipp32s m_DPBSize; //???? to ask T.K. what is whis
+  int32_t m_DPBSize; //???? to ask T.K. what is whis
 
-  //Ipp8u version;
-  Ipp8u color_space_type;
-  Ipp8u clamping_type;
+  //uint8_t version;
+  uint8_t color_space_type;
+  uint8_t clamping_type;
 
-  Ipp8u h_scale;  // not used by the decoder
-  Ipp8u v_scale;  // not used by the decoder
+  uint8_t h_scale;  // not used by the decoder
+  uint8_t v_scale;  // not used by the decoder
 
-  Ipp16s frameWidth;  // width  + cols_padd
-  Ipp16s frameHeight; // height + rows_padd
+  int16_t frameWidth;  // width  + cols_padd
+  int16_t frameHeight; // height + rows_padd
 
-  IppiSize frameSize; // actual width/height without padding cols/rows
+  mfxSize frameSize; // actual width/height without padding cols/rows
 
-  Ipp32u firstPartitionSize;
-  Ipp16u version;
+  uint32_t firstPartitionSize;
+  uint16_t version;
 
-  Ipp32u entropyDecSize;
-  Ipp32u entropyDecOffset;
+  uint32_t entropyDecSize;
+  uint32_t entropyDecOffset;
 
 } vp8_FrameInfo;
 
 
 typedef struct _vp8_QuantInfo
 {
-  Ipp32s yacQP; // abs value, always specified
+  int32_t yacQP; // abs value, always specified
 
-  Ipp32s y2acQ[VP8_MAX_NUM_OF_SEGMENTS];
-  Ipp32s y2dcQ[VP8_MAX_NUM_OF_SEGMENTS];
-  Ipp32s yacQ[VP8_MAX_NUM_OF_SEGMENTS];
-  Ipp32s ydcQ[VP8_MAX_NUM_OF_SEGMENTS];
-  Ipp32s uvacQ[VP8_MAX_NUM_OF_SEGMENTS];
-  Ipp32s uvdcQ[VP8_MAX_NUM_OF_SEGMENTS];
+  int32_t y2acQ[VP8_MAX_NUM_OF_SEGMENTS];
+  int32_t y2dcQ[VP8_MAX_NUM_OF_SEGMENTS];
+  int32_t yacQ[VP8_MAX_NUM_OF_SEGMENTS];
+  int32_t ydcQ[VP8_MAX_NUM_OF_SEGMENTS];
+  int32_t uvacQ[VP8_MAX_NUM_OF_SEGMENTS];
+  int32_t uvdcQ[VP8_MAX_NUM_OF_SEGMENTS];
 
   // q deltas
-  Ipp32s ydcDeltaQP;
-  Ipp32s y2acDeltaQP;
-  Ipp32s y2dcDeltaQP;
-  Ipp32s uvacDeltaQP;
-  Ipp32s uvdcDeltaQP;
+  int32_t ydcDeltaQP;
+  int32_t y2acDeltaQP;
+  int32_t y2dcDeltaQP;
+  int32_t uvacDeltaQP;
+  int32_t uvdcDeltaQP;
 
-  Ipp32s lastGoldenKeyQP;
+  int32_t lastGoldenKeyQP;
 
-  const Ipp32s *pYacQ;
-  const Ipp32s *pY2acQ;
-  const Ipp32s *pUVacQ;
-  const Ipp32s *pYdcQ;
-  const Ipp32s *pY2dcQ;
-  const Ipp32s *pUVdcQ;
+  const int32_t *pYacQ;
+  const int32_t *pY2acQ;
+  const int32_t *pUVacQ;
+  const int32_t *pYdcQ;
+  const int32_t *pY2dcQ;
+  const int32_t *pUVdcQ;
 
 } vp8_QuantInfo;
 
@@ -341,17 +341,17 @@ typedef struct _vp8_QuantInfo
 union vp8_MotionVector
 {
   struct {
-    Ipp16s  mvx;
-    Ipp16s  mvy;
+    int16_t  mvx;
+    int16_t  mvy;
   };
-  Ipp32s s32;
+  int32_t s32;
 };
 
 
 /*
 typedef struct _vp8_BlockInfo
 {
-  Ipp8u            mode;
+  uint8_t            mode;
   vp8_MotionVector mv;
 
 } vp8_BlockInfo;
@@ -360,9 +360,9 @@ typedef struct _vp8_BlockInfo
 
 typedef struct _vp8_LoopFilterInfo
 {
-  Ipp8u  filterLevel;
-  Ipp8u  interiorLimit;
-  Ipp8u  skipBlockFilter;
+  uint8_t  filterLevel;
+  uint8_t  interiorLimit;
+  uint8_t  skipBlockFilter;
 
 } vp8_LoopFilterInfo;
 
@@ -370,22 +370,22 @@ typedef struct _vp8_LoopFilterInfo
 #pragma warning (disable: 4324)
 typedef struct _vp8_MbInfo
 {
-  __ALIGN16(Ipp16s, coeffs, 25*16);
+  __ALIGN16(int16_t, coeffs, 25*16);
 
-  Ipp8u            blockMode[16]; // should be 4-byte aligned
+  uint8_t            blockMode[16]; // should be 4-byte aligned
   vp8_MotionVector blockMV[16];
   vp8_MotionVector mv;
-  Ipp8u            partitions;
+  uint8_t            partitions;
 
-  Ipp8u segmentID;
-  Ipp8u skipCoeff;
+  uint8_t segmentID;
+  uint8_t skipCoeff;
 
-  Ipp8u numNNZ[25];
+  uint8_t numNNZ[25];
 
-  Ipp8u mode;
-  Ipp8u modeUV;
+  uint8_t mode;
+  uint8_t modeUV;
 
-  Ipp8u refFrame;    
+  uint8_t refFrame;    
 
   vp8_LoopFilterInfo lfInfo;
 //  vp8_BlockInfo blockInfo[16];
@@ -394,25 +394,25 @@ typedef struct _vp8_MbInfo
 
 typedef struct _vp8_RefreshInfo
 {
-  Ipp8u refreshRefFrame; // (refreshRefFrame & 2) - refresh golden frame, (refreshRefFrame & 1) - altref frame
-  Ipp8u copy2Golden;
-  Ipp8u copy2Altref;
-  Ipp8u refFrameBiasTable[4];
+  uint8_t refreshRefFrame; // (refreshRefFrame & 2) - refresh golden frame, (refreshRefFrame & 1) - altref frame
+  uint8_t copy2Golden;
+  uint8_t copy2Altref;
+  uint8_t refFrameBiasTable[4];
 
-  Ipp8u refreshProbabilities;
-  Ipp8u refreshLastFrame;
+  uint8_t refreshProbabilities;
+  uint8_t refreshLastFrame;
 
 } vp8_RefreshInfo;
 
 
 typedef struct _vp8_FrameProbabilities
 {
-  Ipp8u mbModeProbY[VP8_NUM_MB_MODES_Y - 1];   // vp8_mb_mode_y_probs
-  Ipp8u mbModeProbUV[VP8_NUM_MB_MODES_UV - 1]; // vp8_mb_mode_uv_probs
-  Ipp8u mvContexts[2][VP8_NUM_MV_PROBS];       // vp8_default_mv_contexts
+  uint8_t mbModeProbY[VP8_NUM_MB_MODES_Y - 1];   // vp8_mb_mode_y_probs
+  uint8_t mbModeProbUV[VP8_NUM_MB_MODES_UV - 1]; // vp8_mb_mode_uv_probs
+  uint8_t mvContexts[2][VP8_NUM_MV_PROBS];       // vp8_default_mv_contexts
 
 
-  Ipp8u coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
+  uint8_t coeff_probs[VP8_NUM_COEFF_PLANES][VP8_NUM_COEFF_BANDS][VP8_NUM_LOCAL_COMPLEXITIES][VP8_NUM_COEFF_NODES];
 } vp8_FrameProbabilities;
 
 
@@ -433,20 +433,20 @@ enum {
 
 typedef struct _vp8_FrameData
 {
-  Ipp8u* data_y;
-  Ipp8u* data_u;
-  Ipp8u* data_v;
+  uint8_t* data_y;
+  uint8_t* data_u;
+  uint8_t* data_v;
 
-  Ipp8u* base_y;
-  Ipp8u* base_u;
-  Ipp8u* base_v;
+  uint8_t* base_y;
+  uint8_t* base_u;
+  uint8_t* base_v;
 
-  IppiSize size;
+  mfxSize size;
 
-  Ipp32s step_y;
-  Ipp32s step_uv;
+  int32_t step_y;
+  int32_t step_uv;
 
-  Ipp32s border_size;
+  int32_t border_size;
 
 } vp8_FrameData;
 

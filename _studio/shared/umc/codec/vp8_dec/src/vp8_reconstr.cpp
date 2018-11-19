@@ -29,7 +29,7 @@ using namespace UMC;
 namespace UMC
 {
 
-static const Ipp16s vp8_6tap_filters[8][6] =
+static const int16_t vp8_6tap_filters[8][6] =
 {
   { 0,  0,  128,    0,   0,  0 },
   { 0, -6,  123,   12,  -1,  0 },
@@ -42,7 +42,7 @@ static const Ipp16s vp8_6tap_filters[8][6] =
 };
 
 
-static const Ipp8u vp8_bilinear_filters[8][2] =
+static const uint8_t vp8_bilinear_filters[8][2] =
 {
   { 128,   0 },
   { 112,  16 },
@@ -58,19 +58,19 @@ static const Ipp8u vp8_bilinear_filters[8][2] =
 #define IDCT_20091 20091
 #define IDCT_35468 35468
 
-static void vp8_idct_4x4(Ipp16s* coefs, Ipp16s* data, Ipp32u step)
+static void vp8_idct_4x4(int16_t* coefs, int16_t* data, uint32_t step)
 {
-  Ipp32s  i   = 0;
-  Ipp16s* src = coefs;
-  Ipp16s* dst = data;
-  //Ipp8u*    dst = data;
+  int32_t  i   = 0;
+  int16_t* src = coefs;
+  int16_t* dst = data;
+  //uint8_t*    dst = data;
 
-  Ipp16s temp[16];
+  int16_t temp[16];
 
-  Ipp32s  a1;
-  Ipp32s  a2;
-  Ipp32s  a3;
-  Ipp32s  a4;
+  int32_t  a1;
+  int32_t  a2;
+  int32_t  a3;
+  int32_t  a4;
 
   for(i = 0 ; i < 4; i++)
   {
@@ -84,10 +84,10 @@ static void vp8_idct_4x4(Ipp16s* coefs, Ipp16s* data, Ipp32u step)
     //dst[i + /*4*/1*step]   = a2 + a3;
     //dst[i + /*8*/ 2*step]  = a2 - a3;
     //dst[i + /*12*/3*step]  = a1 - a4;
-    temp[i + 0]  = (Ipp16s)(a1 + a4);
-    temp[i + 4]  = (Ipp16s)(a2 + a3);
-    temp[i + 8]  = (Ipp16s)(a2 - a3);
-    temp[i + 12] = (Ipp16s)(a1 - a4);
+    temp[i + 0]  = (int16_t)(a1 + a4);
+    temp[i + 4]  = (int16_t)(a2 + a3);
+    temp[i + 8]  = (int16_t)(a2 - a3);
+    temp[i + 12] = (int16_t)(a1 - a4);
   }
 
   for(i = 0; i < 4; i++)
@@ -98,10 +98,10 @@ static void vp8_idct_4x4(Ipp16s* coefs, Ipp16s* data, Ipp32u step)
     a3 = ((temp[i*4+1]*IDCT_35468)>>16)                 - (temp[i*4+3] + ((temp[i*4+3]*IDCT_20091)>>16));
     a4 = (temp[i*4+1] + ((temp[i*4+1]*IDCT_20091)>>16)) + ((temp[i*4+3]*IDCT_35468)>>16);
 
-    dst[0 + i*step] = (Ipp16s)((a1 + a4 + 4) >>3);
-    dst[1 + i*step] = (Ipp16s)((a2 + a3 + 4) >>3);
-    dst[2 + i*step] = (Ipp16s)((a2 - a3 + 4) >>3);
-    dst[3 + i*step] = (Ipp16s)((a1 - a4 + 4) >>3);
+    dst[0 + i*step] = (int16_t)((a1 + a4 + 4) >>3);
+    dst[1 + i*step] = (int16_t)((a2 + a3 + 4) >>3);
+    dst[2 + i*step] = (int16_t)((a2 - a3 + 4) >>3);
+    dst[3 + i*step] = (int16_t)((a1 - a4 + 4) >>3);
   }
 
   return;
@@ -109,10 +109,10 @@ static void vp8_idct_4x4(Ipp16s* coefs, Ipp16s* data, Ipp32u step)
 
 
 // then only dc coefs is not equal to zero
-static void vp8_idct_1x1(Ipp16s* coefs, Ipp16s* data/*Ipp8u* data*/, Ipp32u step)
+static void vp8_idct_1x1(int16_t* coefs, int16_t* data/*uint8_t* data*/, uint32_t step)
 {
-  Ipp32s i;
-  Ipp16s a1;
+  int32_t i;
+  int16_t a1;
 
   a1 = (coefs[0] + 4) >> 3;
 
@@ -128,12 +128,12 @@ static void vp8_idct_1x1(Ipp16s* coefs, Ipp16s* data/*Ipp8u* data*/, Ipp32u step
 } // vp8_idct_1x1()
 
 
-static void vp8_iwht_4x4(Ipp16s* dcCoefs, Ipp16s* coefs)
+static void vp8_iwht_4x4(int16_t* dcCoefs, int16_t* coefs)
 {
-  Ipp32s i = 0;
-  Ipp32s a1, b1, c1, d1;
+  int32_t i = 0;
+  int32_t a1, b1, c1, d1;
 
-  Ipp16s* ptr = dcCoefs;
+  int16_t* ptr = dcCoefs;
 
   for(i = 0; i < 4; i++)
   {
@@ -143,10 +143,10 @@ static void vp8_iwht_4x4(Ipp16s* dcCoefs, Ipp16s* coefs)
     c1 = ptr[i+4] - ptr[i+8];
     d1 = ptr[i+0] - ptr[i+12];
 
-    ptr[i+0]  = (Ipp16s)(a1 + b1);
-    ptr[i+4]  = (Ipp16s)(c1 + d1);
-    ptr[i+8]  = (Ipp16s)(a1 - b1);
-    ptr[i+12] = (Ipp16s)(d1 - c1);
+    ptr[i+0]  = (int16_t)(a1 + b1);
+    ptr[i+4]  = (int16_t)(c1 + d1);
+    ptr[i+8]  = (int16_t)(a1 - b1);
+    ptr[i+12] = (int16_t)(d1 - c1);
   }
 
   for(i = 0; i < 4; i++)
@@ -158,10 +158,10 @@ static void vp8_iwht_4x4(Ipp16s* dcCoefs, Ipp16s* coefs)
     d1 = ptr[i*4+0] - ptr[i*4+3];
 
 
-    coefs[i*4*16 + 0]    = (Ipp16s)((a1 + b1 + 3) >> 3);
-    coefs[i*4*16 + 1*16] = (Ipp16s)((c1 + d1 + 3) >> 3);
-    coefs[i*4*16 + 2*16] = (Ipp16s)((a1 - b1 + 3) >> 3);
-    coefs[i*4*16 + 3*16] = (Ipp16s)((d1 - c1 + 3) >> 3);
+    coefs[i*4*16 + 0]    = (int16_t)((a1 + b1 + 3) >> 3);
+    coefs[i*4*16 + 1*16] = (int16_t)((c1 + d1 + 3) >> 3);
+    coefs[i*4*16 + 2*16] = (int16_t)((a1 - b1 + 3) >> 3);
+    coefs[i*4*16 + 3*16] = (int16_t)((d1 - c1 + 3) >> 3);
   }
 
   return;
@@ -169,10 +169,10 @@ static void vp8_iwht_4x4(Ipp16s* dcCoefs, Ipp16s* coefs)
 
 
 // than only dc coefs is not equal to zero
-static void vp8_iwht_1x1(Ipp16s* dcCoefs, Ipp16s* coefs/*, Ipp32u dataStep*/)
+static void vp8_iwht_1x1(int16_t* dcCoefs, int16_t* coefs/*, uint32_t dataStep*/)
 {
-  Ipp32s i;
-  Ipp16s a1;
+  int32_t i;
+  int16_t a1;
 
   a1 = (dcCoefs[0] + 3) >> 3;
 
@@ -188,23 +188,23 @@ static void vp8_iwht_1x1(Ipp16s* dcCoefs, Ipp16s* coefs/*, Ipp32u dataStep*/)
 } // vp8_iwht_1x1()
 
 
-static void vp8_intra_predict4x4_add(Ipp16s* src,  Ipp32s srcStep, Ipp8u*  dst,
-                                      Ipp32u dstStep, Ipp8u bMode, Ipp8u* above,
-                                      Ipp8u*  left, Ipp8u ltp)
+static void vp8_intra_predict4x4_add(int16_t* src,  int32_t srcStep, uint8_t*  dst,
+                                      uint32_t dstStep, uint8_t bMode, uint8_t* above,
+                                      uint8_t*  left, uint8_t ltp)
 {
-  Ipp32s i = 0;
-  Ipp32s j = 0;
+  int32_t i = 0;
+  int32_t j = 0;
 
-  Ipp8u* a = above;
-  Ipp8u* l = left;
+  uint8_t* a = above;
+  uint8_t* l = left;
 
-  Ipp16s v1, v2, v3, v4, v5, v6 ,v7, v8, v9, v10;
+  int16_t v1, v2, v3, v4, v5, v6 ,v7, v8, v9, v10;
 
   switch(bMode)
   {
   case VP8_B_DC_PRED:
     {
-      Ipp32s v = 4;
+      int32_t v = 4;
 
       for(i = 0; i < 4; i++)
         v += l[i] + a[i];
@@ -524,21 +524,21 @@ static void vp8_intra_predict4x4_add(Ipp16s* src,  Ipp32s srcStep, Ipp8u*  dst,
 } // vp8_intra_predict4x4_add
 
 
-static void vp8_intra_predict8x8_add_uv(Ipp16s* src, Ipp32u srcStep, Ipp8u bMode,
-                                        Ipp8u* dst, Ipp32u dstStep,
-                                        Ipp8u* above, Ipp8u* left, Ipp8u ltp,
-                                        Ipp8u haveUp, Ipp8u haveLeft)
+static void vp8_intra_predict8x8_add_uv(int16_t* src, uint32_t srcStep, uint8_t bMode,
+                                        uint8_t* dst, uint32_t dstStep,
+                                        uint8_t* above, uint8_t* left, uint8_t ltp,
+                                        uint8_t haveUp, uint8_t haveLeft)
 {
-  Ipp32s i  = 0;
-  Ipp32s j  = 0;
-  Ipp32s sh = 2;
+  int32_t i  = 0;
+  int32_t j  = 0;
+  int32_t sh = 2;
 
   switch(bMode)
   {
   case VP8_MB_DC_PRED:
     {
-      Ipp32s average = 0;
-      Ipp32s dcVal;
+      int32_t average = 0;
+      int32_t dcVal;
 
       if(haveUp)
       {
@@ -620,28 +620,28 @@ static void vp8_intra_predict8x8_add_uv(Ipp16s* src, Ipp32u srcStep, Ipp8u bMode
 
 ////////////////////////////////////////////////////////////////
 
-Ipp8u vp8_filter_hv[8] = {0, 1, 1, 1, 1, 1, 1, 1};
+uint8_t vp8_filter_hv[8] = {0, 1, 1, 1, 1, 1, 1, 1};
 
 
-static void vp8_inter_predict_6tap_h(Ipp16s* data,    Ipp32u dataStep,
-                                     Ipp8u*  refSrc,  Ipp32u refStep,
-                                     Ipp8u*  dst,     Ipp32u dstStep,
-                                     Ipp8u   size_h,  Ipp8u  size_v,
-                                     Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_predict_6tap_h(int16_t* data,    uint32_t dataStep,
+                                     uint8_t*  refSrc,  uint32_t refStep,
+                                     uint8_t*  dst,     uint32_t dstStep,
+                                     uint8_t   size_h,  uint8_t  size_v,
+                                     uint8_t   hf_indx, uint8_t  vf_indx)
 {
-  Ipp32u i;
-  Ipp32u j;
-  Ipp16s val;
+  uint32_t i;
+  uint32_t j;
+  int16_t val;
 
   vf_indx;hf_indx;
 
-  const Ipp16s* filter = vp8_6tap_filters[hf_indx];
+  const int16_t* filter = vp8_6tap_filters[hf_indx];
 
   for(i = 0; i < size_v; i++)
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((refSrc[j-2] * filter[0] +
+      val = (int16_t)((refSrc[j-2] * filter[0] +
                      refSrc[j-1] * filter[1] +
                      refSrc[j+0] * filter[2] +
                      refSrc[j+1] * filter[3] +
@@ -660,26 +660,26 @@ static void vp8_inter_predict_6tap_h(Ipp16s* data,    Ipp32u dataStep,
 } // vp8_inter_predict_6tap_h()
 
 
-static void vp8_inter_predict_6tap_v(Ipp16s* data,    Ipp32u dataStep,
-                                     Ipp8u*  refSrc,  Ipp32u refStep,
-                                     Ipp8u*  dst,     Ipp32u dstStep,
-                                     Ipp8u   size_h,  Ipp8u  size_v,
-                                     Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_predict_6tap_v(int16_t* data,    uint32_t dataStep,
+                                     uint8_t*  refSrc,  uint32_t refStep,
+                                     uint8_t*  dst,     uint32_t dstStep,
+                                     uint8_t   size_h,  uint8_t  size_v,
+                                     uint8_t   hf_indx, uint8_t  vf_indx)
 {
   
   hf_indx; vf_indx;
 
-  Ipp32u i;
-  Ipp32u j;
-  Ipp16s val;
+  uint32_t i;
+  uint32_t j;
+  int16_t val;
 
-  const Ipp16s* filter = vp8_6tap_filters[vf_indx];
+  const int16_t* filter = vp8_6tap_filters[vf_indx];
 
   for(i = 0; i < size_v; i++)
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((refSrc[j-2*refStep] * filter[0] +
+      val = (int16_t)((refSrc[j-2*refStep] * filter[0] +
                      refSrc[j-1*refStep] * filter[1] +
                      refSrc[j+0*refStep] * filter[2] +
                      refSrc[j+1*refStep] * filter[3] +
@@ -698,30 +698,30 @@ static void vp8_inter_predict_6tap_v(Ipp16s* data,    Ipp32u dataStep,
 } // vp8_inter_predict_6tap_v()
 
 
-static void vp8_inter_predict_6tap_hv(Ipp16s* data,    Ipp32u dataStep,
-                                      Ipp8u*  refSrc,  Ipp32u refStep,
-                                      Ipp8u*  dst,     Ipp32u dstStep,
-                                      Ipp8u   size_h,  Ipp8u  size_v,
-                                      Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_predict_6tap_hv(int16_t* data,    uint32_t dataStep,
+                                      uint8_t*  refSrc,  uint32_t refStep,
+                                      uint8_t*  dst,     uint32_t dstStep,
+                                      uint8_t   size_h,  uint8_t  size_v,
+                                      uint8_t   hf_indx, uint8_t  vf_indx)
 {
-  Ipp32u  i;
-  Ipp32u  j;
-  Ipp16s  val; // must be more than 8-bit
+  uint32_t  i;
+  uint32_t  j;
+  int16_t  val; // must be more than 8-bit
 
-  Ipp8u tmp[21*24];
+  uint8_t tmp[21*24];
 
-  Ipp8u* tmp_ptr = tmp;
+  uint8_t* tmp_ptr = tmp;
 
   refSrc -= 2*refStep;
 
-  const Ipp16s* filter_h = vp8_6tap_filters[hf_indx];
-  const Ipp16s* filter_v = vp8_6tap_filters[vf_indx];
+  const int16_t* filter_h = vp8_6tap_filters[hf_indx];
+  const int16_t* filter_v = vp8_6tap_filters[vf_indx];
 
   for(i = 0; i < size_v+5u; i++)
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((refSrc[j-2] * filter_h[0] +
+      val = (int16_t)((refSrc[j-2] * filter_h[0] +
                      refSrc[j-1] * filter_h[1] +
                      refSrc[j+0] * filter_h[2] +
                      refSrc[j+1] * filter_h[3] +
@@ -741,7 +741,7 @@ static void vp8_inter_predict_6tap_hv(Ipp16s* data,    Ipp32u dataStep,
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((tmp_ptr[j-2*size_h] * filter_v[0] +
+      val = (int16_t)((tmp_ptr[j-2*size_h] * filter_v[0] +
                      tmp_ptr[j-1*size_h] * filter_v[1] +
                      tmp_ptr[j+0*size_h] * filter_v[2] +
                      tmp_ptr[j+1*size_h] * filter_v[3] +
@@ -763,26 +763,26 @@ static void vp8_inter_predict_6tap_hv(Ipp16s* data,    Ipp32u dataStep,
 //
 // bilinear filters
 //
-static void vp8_inter_predict_bilinear_h(Ipp16s* data,    Ipp32u dataStep,
-                                         Ipp8u*  refSrc,  Ipp32u refStep,
-                                         Ipp8u*  dst,     Ipp32u dstStep,
-                                         Ipp8u   size_h,  Ipp8u  size_v,
-                                         Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_predict_bilinear_h(int16_t* data,    uint32_t dataStep,
+                                         uint8_t*  refSrc,  uint32_t refStep,
+                                         uint8_t*  dst,     uint32_t dstStep,
+                                         uint8_t   size_h,  uint8_t  size_v,
+                                         uint8_t   hf_indx, uint8_t  vf_indx)
 {
   
   vf_indx; hf_indx;
 
-  Ipp32u i;
-  Ipp32u j;
-  Ipp16s val;
+  uint32_t i;
+  uint32_t j;
+  int16_t val;
 
-  const Ipp8u* filter = vp8_bilinear_filters[hf_indx];
+  const uint8_t* filter = vp8_bilinear_filters[hf_indx];
 
   for(i = 0; i < size_v; i++)
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((refSrc[j+0] * filter[0] +
+      val = (int16_t)((refSrc[j+0] * filter[0] +
                       refSrc[j+1] * filter[1] + 64) >> 7);
 
       dst[j] = vp8_ClampTblLookup(data[j], vp8_clamp8u(val));
@@ -797,26 +797,26 @@ static void vp8_inter_predict_bilinear_h(Ipp16s* data,    Ipp32u dataStep,
 } // vp8_inter_predict_bilinear_h()
 
 
-static void vp8_inter_predict_bilinear_v(Ipp16s* data,    Ipp32u dataStep,
-                                         Ipp8u*  refSrc,  Ipp32u refStep,
-                                         Ipp8u*  dst,     Ipp32u dstStep,
-                                         Ipp8u   size_h,  Ipp8u  size_v,
-                                         Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_predict_bilinear_v(int16_t* data,    uint32_t dataStep,
+                                         uint8_t*  refSrc,  uint32_t refStep,
+                                         uint8_t*  dst,     uint32_t dstStep,
+                                         uint8_t   size_h,  uint8_t  size_v,
+                                         uint8_t   hf_indx, uint8_t  vf_indx)
 {
 
   hf_indx; vf_indx;
 
-  Ipp32u i;
-  Ipp32u j;
-  Ipp16s val;
+  uint32_t i;
+  uint32_t j;
+  int16_t val;
 
-  const Ipp8u* filter = vp8_bilinear_filters[vf_indx];
+  const uint8_t* filter = vp8_bilinear_filters[vf_indx];
 
   for(i = 0; i < size_v; i++)
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((refSrc[j+0*refStep] * filter[0] +
+      val = (int16_t)((refSrc[j+0*refStep] * filter[0] +
                       refSrc[j+1*refStep] * filter[1] + 64) >> 7);
 
       dst[j] = vp8_ClampTblLookup(data[j], vp8_clamp8u(val));
@@ -831,28 +831,28 @@ static void vp8_inter_predict_bilinear_v(Ipp16s* data,    Ipp32u dataStep,
 } // vp8_inter_predict_bilinear_v()
 
 
-static void vp8_inter_predict_bilinear_hv(Ipp16s* data,    Ipp32u dataStep,
-                                          Ipp8u*  refSrc,  Ipp32u refStep,
-                                          Ipp8u*  dst,     Ipp32u dstStep,
-                                          Ipp8u   size_h,  Ipp8u  size_v,
-                                          Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_predict_bilinear_hv(int16_t* data,    uint32_t dataStep,
+                                          uint8_t*  refSrc,  uint32_t refStep,
+                                          uint8_t*  dst,     uint32_t dstStep,
+                                          uint8_t   size_h,  uint8_t  size_v,
+                                          uint8_t   hf_indx, uint8_t  vf_indx)
 {
-  Ipp32u i;
-  Ipp32u j;
-  Ipp16s val;
+  uint32_t i;
+  uint32_t j;
+  int16_t val;
 
-  Ipp8u tmp[17*16];
+  uint8_t tmp[17*16];
 
-  Ipp8u* tmp_ptr = tmp;
+  uint8_t* tmp_ptr = tmp;
 
-  const Ipp8u* filter_h = vp8_bilinear_filters[hf_indx];
-  const Ipp8u* filter_v = vp8_bilinear_filters[vf_indx];
+  const uint8_t* filter_h = vp8_bilinear_filters[hf_indx];
+  const uint8_t* filter_v = vp8_bilinear_filters[vf_indx];
 
   for(i = 0; i < size_v+1u; i++)
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((refSrc[j+0] * filter_h[0] +
+      val = (int16_t)((refSrc[j+0] * filter_h[0] +
                       refSrc[j+1] * filter_h[1] + 64) >> 7);
 
       tmp_ptr[j] = vp8_clamp8u(val);
@@ -868,7 +868,7 @@ static void vp8_inter_predict_bilinear_hv(Ipp16s* data,    Ipp32u dataStep,
   {
     for(j = 0; j < size_h; j++)
     {
-      val = (Ipp16s)((tmp_ptr[j+0*size_h] * filter_v[0] +
+      val = (int16_t)((tmp_ptr[j+0*size_h] * filter_v[0] +
                       tmp_ptr[j+1*size_h] * filter_v[1] + 64) >> 7);
 
       dst[j] = vp8_ClampTblLookup(data[j], vp8_clamp8u(val));
@@ -884,20 +884,20 @@ static void vp8_inter_predict_bilinear_hv(Ipp16s* data,    Ipp32u dataStep,
 
 
 
-static void vp8_inter_copy_add(Ipp16s* data,    Ipp32u dataStep,
-                               Ipp8u*  refSrc,  Ipp32u refStep,
-                               Ipp8u*  dst,     Ipp32u dstStep,
-                               Ipp8u   size_h,  Ipp8u  size_v,
-                               Ipp8u   hf_indx, Ipp8u  vf_indx)
+static void vp8_inter_copy_add(int16_t* data,    uint32_t dataStep,
+                               uint8_t*  refSrc,  uint32_t refStep,
+                               uint8_t*  dst,     uint32_t dstStep,
+                               uint8_t   size_h,  uint8_t  size_v,
+                               uint8_t   hf_indx, uint8_t  vf_indx)
 {
 
   hf_indx; vf_indx;
 
-  Ipp32u i;
-  Ipp32u j;
+  uint32_t i;
+  uint32_t j;
 
-  Ipp8u* dstPtr = dst;
-  Ipp8u* refPtr = refSrc;
+  uint8_t* dstPtr = dst;
+  uint8_t* refPtr = refSrc;
 
   for(i = 0; i < size_v; i++)
   {
@@ -918,11 +918,11 @@ static void vp8_inter_copy_add(Ipp16s* data,    Ipp32u dataStep,
 } // vp8_inter_copy_add()
 
 
-typedef void (*vp8_inter_predict_fptr)(Ipp16s* data,    Ipp32u dataStep,
-                                       Ipp8u*  refSrc,  Ipp32u refStep,
-                                       Ipp8u*  dst,     Ipp32u dstStep,
-                                       Ipp8u   size_v,  Ipp8u  size_h,
-                                       Ipp8u   vf_indx, Ipp8u  hf_indx);
+typedef void (*vp8_inter_predict_fptr)(int16_t* data,    uint32_t dataStep,
+                                       uint8_t*  refSrc,  uint32_t refStep,
+                                       uint8_t*  dst,     uint32_t dstStep,
+                                       uint8_t   size_v,  uint8_t  size_h,
+                                       uint8_t   vf_indx, uint8_t  hf_indx);
 
 
 //                                         6T/B|h |v
@@ -954,8 +954,8 @@ vp8_inter_predict_fptr vp8_inter_predict_fun[2][2][2] =
                              hf_indx, vf_indx,\
                              filter_type)\
 {\
-  Ipp8u v_filter = vp8_filter_hv[vf_indx];\
-  Ipp8u h_filter = vp8_filter_hv[hf_indx];\
+  uint8_t v_filter = vp8_filter_hv[vf_indx];\
+  uint8_t h_filter = vp8_filter_hv[hf_indx];\
   \
   vp8_inter_predict_fun[filter_type][h_filter][v_filter](MbData,  dataStep,\
                                                          refSrc,  refStep,\
@@ -993,21 +993,21 @@ vp8_inter_predict_fptr vp8_inter_predict_fun[2][2][2] =
 }
 
 
-void vp8_intra_predict16x16_add(Ipp16s* src, Ipp32u srcStep, Ipp8u bMode,
-                                Ipp8u* dst, Ipp32u dstStep,
-                                Ipp8u* above, Ipp8u* left, Ipp8u ltp,
-                                Ipp8u haveUp, Ipp8u haveLeft)
+void vp8_intra_predict16x16_add(int16_t* src, uint32_t srcStep, uint8_t bMode,
+                                uint8_t* dst, uint32_t dstStep,
+                                uint8_t* above, uint8_t* left, uint8_t ltp,
+                                uint8_t haveUp, uint8_t haveLeft)
 {
-  Ipp32s i  = 0;
-  Ipp32s j  = 0;
-  Ipp32s sh = 3;
+  int32_t i  = 0;
+  int32_t j  = 0;
+  int32_t sh = 3;
 
   switch(bMode)
   {
   case VP8_MB_DC_PRED:
     {
-      Ipp32s average = 0;
-      Ipp32s dcVal;
+      int32_t average = 0;
+      int32_t dcVal;
 
       if(haveUp)
       {
@@ -1088,15 +1088,15 @@ void vp8_intra_predict16x16_add(Ipp16s* src, Ipp32u srcStep, Ipp8u bMode,
 
 
 
-void VP8VideoDecoder::ReconstructMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_row)
+void VP8VideoDecoder::ReconstructMbRow(vp8BooleanDecoder *pBoolDec, int32_t mb_row)
 {
 
   pBoolDec;
     
-  Ipp16s      idctMb[24*4*4];
-  Ipp32u      idctMbStep = /*24*4*/ 16 + 2*4;
+  int16_t      idctMb[24*4*4];
+  uint32_t      idctMbStep = /*24*4*/ 16 + 2*4;
 
-  Ipp32u      mb_col   = 0;
+  uint32_t      mb_col   = 0;
   vp8_MbInfo* currMb   = 0;
 
   for(mb_col = 0; mb_col < m_FrameInfo.mbPerRow; mb_col++)
@@ -1116,7 +1116,7 @@ void VP8VideoDecoder::ReconstructMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
         else
           vp8_iwht_4x4(currMb->coeffs, currMb->coeffs + 16);
 
-        memset(currMb->coeffs, 0, 16*sizeof(Ipp16s));
+        memset(currMb->coeffs, 0, 16*sizeof(int16_t));
       }
 
       InverseDCT_Mb(currMb, idctMb, idctMbStep);
@@ -1137,18 +1137,18 @@ void VP8VideoDecoder::ReconstructMbRow(vp8BooleanDecoder *pBoolDec, Ipp32s mb_ro
 } // ReconstructMbRow()
 
 
-void VP8VideoDecoder::InverseDCT_Mb(vp8_MbInfo* pMb, Ipp16s* pOut, Ipp32u outStep)
-//void VP8VideoDecoder::InverseDCT_Mb(vp8_MbInfo* pMb, Ipp8u* pOut, Ipp32s outStep)
+void VP8VideoDecoder::InverseDCT_Mb(vp8_MbInfo* pMb, int16_t* pOut, uint32_t outStep)
+//void VP8VideoDecoder::InverseDCT_Mb(vp8_MbInfo* pMb, uint8_t* pOut, int32_t outStep)
 {
-  Ipp32u      i     = 0;
-  Ipp32u      j     = 0;
+  uint32_t      i     = 0;
+  uint32_t      j     = 0;
   vp8_MbInfo* currMb = pMb;
-  Ipp16s*     coeffs = currMb->coeffs;
-  Ipp16s*     dst;
-//  Ipp8u*     dst;
-  Ipp32u      dstStep = outStep;
-  Ipp8u*      nnz;
-  Ipp8u       nnz_y2;
+  int16_t*     coeffs = currMb->coeffs;
+  int16_t*     dst;
+//  uint8_t*     dst;
+  uint32_t      dstStep = outStep;
+  uint8_t*      nnz;
+  uint8_t       nnz_y2;
 
   nnz_y2 = (currMb->numNNZ[0] > 0) ? 1 : 0;
 
@@ -1197,7 +1197,7 @@ void VP8VideoDecoder::InverseDCT_Mb(vp8_MbInfo* pMb, Ipp16s* pOut, Ipp32u outSte
 } // InverseDCT_Mb()
 
 
-void VP8VideoDecoder::PredictMbIntra(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbIntra(int16_t* pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col)
 {
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
@@ -1220,21 +1220,21 @@ void VP8VideoDecoder::PredictMbIntra(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb
 ///
 //TODO: may be need to redesign all Intra prediction to support full frame height/lenght Left/Above borders????
 //
-void VP8VideoDecoder::PredictMbIntra4x4(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbIntra4x4(int16_t* pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col)
 {
-  Ipp32u i = 0;
-  Ipp32u j = 0;
+  uint32_t i = 0;
+  uint32_t j = 0;
 
-  Ipp8u   left[4];
-  Ipp8u   above[8];
-  Ipp8u   ltp;
-  Ipp8u*  above_ptr;
+  uint8_t   left[4];
+  uint8_t   above[8];
+  uint8_t   ltp;
+  uint8_t*  above_ptr;
 
-  Ipp8u*  dst_y  = m_CurrFrame->data_y + m_CurrFrame->step_y*16*mb_row + 16*mb_col;
-  Ipp32u  step_y = m_CurrFrame->step_y;
+  uint8_t*  dst_y  = m_CurrFrame->data_y + m_CurrFrame->step_y*16*mb_row + 16*mb_col;
+  uint32_t  step_y = m_CurrFrame->step_y;
 
-  Ipp16s* src     = pMbData;
-  Ipp32u  srcStep = dataStep;
+  int16_t* src     = pMbData;
+  uint32_t  srcStep = dataStep;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
@@ -1331,39 +1331,39 @@ void VP8VideoDecoder::PredictMbIntra4x4(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s
 } //  VP8VideoDecoder::PredictMbIntra4x4()
 
 
-void VP8VideoDecoder::PredictMbIntraUV(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbIntraUV(int16_t* pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col)
 {
-  Ipp8u i;
+  uint8_t i;
 
-  Ipp8u   left_u[8];
-  Ipp8u   left_v[8];
+  uint8_t   left_u[8];
+  uint8_t   left_v[8];
 
-  Ipp8u   above_u[8] = {127, 127, 127, 127, 127, 127, 127, 127};
-  Ipp8u   above_v[8] = {127, 127, 127, 127, 127, 127, 127, 127};
+  uint8_t   above_u[8] = {127, 127, 127, 127, 127, 127, 127, 127};
+  uint8_t   above_v[8] = {127, 127, 127, 127, 127, 127, 127, 127};
 
-  Ipp8u*   aptr_u;
-  Ipp8u*   aptr_v;
+  uint8_t*   aptr_u;
+  uint8_t*   aptr_v;
 
-  Ipp8u   ltp_u;
-  Ipp8u   ltp_v;
+  uint8_t   ltp_u;
+  uint8_t   ltp_v;
 
-  Ipp8u haveLeft = (mb_col == 0) ? 0 : 1;
-  Ipp8u haveUp   = (mb_row == 0) ? 0 : 1;
+  uint8_t haveLeft = (mb_col == 0) ? 0 : 1;
+  uint8_t haveUp   = (mb_row == 0) ? 0 : 1;
 
-  Ipp8u*  dst_u  = m_CurrFrame->data_u + m_CurrFrame->step_uv*8*mb_row + 8*mb_col;
-  Ipp8u*  dst_v  = m_CurrFrame->data_v + m_CurrFrame->step_uv*8*mb_row + 8*mb_col;
+  uint8_t*  dst_u  = m_CurrFrame->data_u + m_CurrFrame->step_uv*8*mb_row + 8*mb_col;
+  uint8_t*  dst_v  = m_CurrFrame->data_v + m_CurrFrame->step_uv*8*mb_row + 8*mb_col;
 
-  Ipp32u  step_uv = m_CurrFrame->step_uv;
+  uint32_t  step_uv = m_CurrFrame->step_uv;
 
-  Ipp16s* src     = pMbData;
-  Ipp32u  srcStep = dataStep;
+  int16_t* src     = pMbData;
+  uint32_t  srcStep = dataStep;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   if(!mb_col)
   {
-    memset(left_u, 129, 8*sizeof(Ipp8u));
-    memset(left_v, 129, 8*sizeof(Ipp8u));
+    memset(left_u, 129, 8*sizeof(uint8_t));
+    memset(left_v, 129, 8*sizeof(uint8_t));
   }
   else
   {
@@ -1404,34 +1404,34 @@ void VP8VideoDecoder::PredictMbIntraUV(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s 
 } // VP8VideoDecoder::PredictMbIntraUV()
 
 
-void VP8VideoDecoder::PredictMbIntra16x16(Ipp16s* pMbData, Ipp32u dataStep, 
-                                          Ipp32s mb_row,   Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbIntra16x16(int16_t* pMbData, uint32_t dataStep, 
+                                          int32_t mb_row,   int32_t mb_col)
 {
-  Ipp8u i;
+  uint8_t i;
 
-  Ipp8u   left[16];
+  uint8_t   left[16];
 
-  Ipp8u   above[16] = {127, 127, 127, 127, 127, 127, 127, 127,
+  uint8_t   above[16] = {127, 127, 127, 127, 127, 127, 127, 127,
                        127, 127, 127, 127, 127, 127, 127, 127};
 
-  Ipp8u*  aptr;
-  Ipp8u   ltp;
+  uint8_t*  aptr;
+  uint8_t   ltp;
 
-  Ipp8u haveLeft = (mb_col == 0) ? 0 : 1;
-  Ipp8u haveUp   = (mb_row == 0) ? 0 : 1;
+  uint8_t haveLeft = (mb_col == 0) ? 0 : 1;
+  uint8_t haveUp   = (mb_row == 0) ? 0 : 1;
 
-  Ipp8u*  dst_y  = m_CurrFrame->data_y + m_CurrFrame->step_y*16*mb_row + 16*mb_col;
+  uint8_t*  dst_y  = m_CurrFrame->data_y + m_CurrFrame->step_y*16*mb_row + 16*mb_col;
 
-  Ipp32u  step_y = m_CurrFrame->step_y;
+  uint32_t  step_y = m_CurrFrame->step_y;
 
-  Ipp16s* src     = pMbData;
-  Ipp32u  srcStep = dataStep;
+  int16_t* src     = pMbData;
+  uint32_t  srcStep = dataStep;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   if(!mb_col)
   {
-    memset(left, 129, 16*sizeof(Ipp8u));
+    memset(left, 129, 16*sizeof(uint8_t));
   }
   else
   {
@@ -1462,7 +1462,7 @@ void VP8VideoDecoder::PredictMbIntra16x16(Ipp16s* pMbData, Ipp32u dataStep,
 
 
 
-void VP8VideoDecoder::PredictMbInter(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb_row, Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbInter(int16_t* pMbData, uint32_t dataStep, int32_t mb_row, int32_t mb_col)
 {
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
@@ -1509,26 +1509,26 @@ void VP8VideoDecoder::PredictMbInter(Ipp16s* pMbData, Ipp32u dataStep, Ipp32s mb
 } // VP8VideoDecoder::PredictMbInter()
 
 
-void VP8VideoDecoder::PredictMbInter16x16(Ipp16s* pMbData, Ipp32u dataStep,
-                                          Ipp32s  mb_row,  Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbInter16x16(int16_t* pMbData, uint32_t dataStep,
+                                          int32_t  mb_row,  int32_t mb_col)
 {
-  Ipp8u ref_indx;
+  uint8_t ref_indx;
 
-  Ipp8u filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
+  uint8_t filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
 
-  Ipp32s mv_x;
-  Ipp32s mv_y;
+  int32_t mv_x;
+  int32_t mv_y;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   ref_indx = m_RefFrameIndx[currMb->refFrame];
 
   // predict Y
-  Ipp32u refStep = m_FrameData[ref_indx].step_y;
-  Ipp8u* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
+  uint32_t refStep = m_FrameData[ref_indx].step_y;
+  uint8_t* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
 
-  Ipp32u dstStep = m_CurrFrame->step_y;
-  Ipp8u* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
+  uint32_t dstStep = m_CurrFrame->step_y;
+  uint8_t* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
 
 
   mv_x = currMb->mv.mvx;
@@ -1543,11 +1543,11 @@ void VP8VideoDecoder::PredictMbInter16x16(Ipp16s* pMbData, Ipp32u dataStep,
   refStep = m_FrameData[ref_indx].step_uv;
   dstStep = m_CurrFrame->step_uv;
 
-  Ipp8u* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;
-  Ipp8u* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
 
-  Ipp8u* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
-  Ipp8u* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
 
 
   GET_UV_MV(currMb->mv)
@@ -1572,27 +1572,27 @@ void VP8VideoDecoder::PredictMbInter16x16(Ipp16s* pMbData, Ipp32u dataStep,
 
 
 //VP8_MV_LEFT_RIGHT
-void VP8VideoDecoder::PredictMbInter8x16(Ipp16s* pMbData, Ipp32u dataStep,
-                                         Ipp32s  mb_row,  Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbInter8x16(int16_t* pMbData, uint32_t dataStep,
+                                         int32_t  mb_row,  int32_t mb_col)
 {
-  Ipp8u ref_indx;
+  uint8_t ref_indx;
 
-  Ipp8u filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
+  uint8_t filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
 
-  Ipp32s mv_x;
-  Ipp32s mv_y;
-  Ipp32s offset;
+  int32_t mv_x;
+  int32_t mv_y;
+  int32_t offset;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   ref_indx = m_RefFrameIndx[currMb->refFrame];
 
   // predict Y
-  Ipp32u refStep = m_FrameData[ref_indx].step_y;
-  Ipp8u* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
+  uint32_t refStep = m_FrameData[ref_indx].step_y;
+  uint8_t* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
 
-  Ipp32u dstStep = m_CurrFrame->step_y;
-  Ipp8u* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
+  uint32_t dstStep = m_CurrFrame->step_y;
+  uint8_t* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
 
 
   mv_x = currMb->blockMV[0].mvx;
@@ -1624,11 +1624,11 @@ void VP8VideoDecoder::PredictMbInter8x16(Ipp16s* pMbData, Ipp32u dataStep,
   dstStep = m_CurrFrame->step_uv;
   refStep = m_FrameData[ref_indx].step_uv;
 
-  Ipp8u* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;;
-  Ipp8u* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;;
+  uint8_t* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;;
+  uint8_t* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;;
 
-  Ipp8u* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
-  Ipp8u* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
 
 
   GET_UV_MV_SPLIT(currMb->blockMV, 0)
@@ -1684,28 +1684,28 @@ void VP8VideoDecoder::PredictMbInter8x16(Ipp16s* pMbData, Ipp32u dataStep,
 
 
 //VP8_MV_TOP_BOTTOM
-void VP8VideoDecoder::PredictMbInter16x8(Ipp16s* pMbData, Ipp32u dataStep,
-                                         Ipp32s  mb_row,  Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbInter16x8(int16_t* pMbData, uint32_t dataStep,
+                                         int32_t  mb_row,  int32_t mb_col)
 {
-  Ipp8u ref_indx;
+  uint8_t ref_indx;
 
-  Ipp8u filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
+  uint8_t filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
 
-  Ipp32s mv_x;
-  Ipp32s mv_y;
-  Ipp32s offset;
+  int32_t mv_x;
+  int32_t mv_y;
+  int32_t offset;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   ref_indx = m_RefFrameIndx[currMb->refFrame];
 
   // predict Y
-  Ipp32u refStep = m_FrameData[ref_indx].step_y;
-  Ipp8u* ref_y   = m_FrameData[ref_indx].data_y +refStep*16*mb_row + 16*mb_col;
+  uint32_t refStep = m_FrameData[ref_indx].step_y;
+  uint8_t* ref_y   = m_FrameData[ref_indx].data_y +refStep*16*mb_row + 16*mb_col;
 
 
-  Ipp32u dstStep = m_CurrFrame->step_y;
-  Ipp8u* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
+  uint32_t dstStep = m_CurrFrame->step_y;
+  uint8_t* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
 
   mv_x = currMb->blockMV[0].mvx;
   mv_y = currMb->blockMV[0].mvy;
@@ -1735,11 +1735,11 @@ void VP8VideoDecoder::PredictMbInter16x8(Ipp16s* pMbData, Ipp32u dataStep,
   dstStep = m_CurrFrame->step_uv;
   refStep = m_FrameData[ref_indx].step_uv;
 
-  Ipp8u* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;
-  Ipp8u* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
 
-  Ipp8u* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
-  Ipp8u* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
 
   GET_UV_MV_SPLIT(currMb->blockMV, 0)
 
@@ -1794,27 +1794,27 @@ void VP8VideoDecoder::PredictMbInter16x8(Ipp16s* pMbData, Ipp32u dataStep,
 
 
 //VP8_MV_QUARTERS
-void VP8VideoDecoder::PredictMbInter8x8(Ipp16s* pMbData, Ipp32u dataStep,
-                                        Ipp32s  mb_row,  Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbInter8x8(int16_t* pMbData, uint32_t dataStep,
+                                        int32_t  mb_row,  int32_t mb_col)
 {
-  Ipp8u ref_indx;
+  uint8_t ref_indx;
 
-  Ipp8u filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
+  uint8_t filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
 
-  Ipp32s mv_x;
-  Ipp32s mv_y;
-  Ipp32s offset;
+  int32_t mv_x;
+  int32_t mv_y;
+  int32_t offset;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   ref_indx = m_RefFrameIndx[currMb->refFrame];
 
   // predict Y
-  Ipp32u refStep = m_FrameData[ref_indx].step_y;
-  Ipp8u* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
+  uint32_t refStep = m_FrameData[ref_indx].step_y;
+  uint8_t* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
 
-  Ipp32u dstStep = m_CurrFrame->step_y;
-  Ipp8u* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
+  uint32_t dstStep = m_CurrFrame->step_y;
+  uint8_t* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
 
 
   mv_x = currMb->blockMV[0].mvx;
@@ -1869,11 +1869,11 @@ void VP8VideoDecoder::PredictMbInter8x8(Ipp16s* pMbData, Ipp32u dataStep,
   dstStep = m_CurrFrame->step_uv;
   refStep = m_FrameData[ref_indx].step_uv;
 
-  Ipp8u* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;
-  Ipp8u* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_u = m_FrameData[ref_indx].data_u + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
 
-  Ipp8u* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
-  Ipp8u* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
 
 //  GET_UV_MV(currMb->blockMV[0])
   GET_UV_MV_SPLIT(currMb->blockMV, 0)
@@ -1976,30 +1976,30 @@ void VP8VideoDecoder::PredictMbInter8x8(Ipp16s* pMbData, Ipp32u dataStep,
 } // VP8VideoDecoder::PredictMbInter8x8()
 
 
-void VP8VideoDecoder::PredictMbInter4x4(Ipp16s* pMbData, Ipp32u dataStep,
-                                        Ipp32s  mb_row,  Ipp32s mb_col)
+void VP8VideoDecoder::PredictMbInter4x4(int16_t* pMbData, uint32_t dataStep,
+                                        int32_t  mb_row,  int32_t mb_col)
 {
-  Ipp32u i;
-  Ipp32u j;
-  Ipp32s offset;
+  uint32_t i;
+  uint32_t j;
+  int32_t offset;
 
-  Ipp8u ref_indx;
+  uint8_t ref_indx;
 
-  Ipp8u filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
+  uint8_t filter_type = m_FrameInfo.interpolationFlags & 1; //0 - 6TAP, 1 - bilinear
 
-  Ipp32s mv_x;
-  Ipp32s mv_y;
+  int32_t mv_x;
+  int32_t mv_y;
 
   vp8_MbInfo* currMb = &m_pMbInfo[mb_row * m_FrameInfo.mbStep + mb_col];
 
   ref_indx = m_RefFrameIndx[currMb->refFrame];
 
   // predict Y
-  Ipp32u refStep = m_FrameData[ref_indx].step_y;
-  Ipp8u* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
+  uint32_t refStep = m_FrameData[ref_indx].step_y;
+  uint8_t* ref_y   = m_FrameData[ref_indx].data_y + refStep*16*mb_row + 16*mb_col;
 
-  Ipp32u dstStep = m_CurrFrame->step_y;
-  Ipp8u* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
+  uint32_t dstStep = m_CurrFrame->step_y;
+  uint8_t* dst_y   = m_CurrFrame->data_y + dstStep*16*mb_row + 16*mb_col;
 
   for(i = 0; i < 4; i++)
   {
@@ -2024,11 +2024,11 @@ void VP8VideoDecoder::PredictMbInter4x4(Ipp16s* pMbData, Ipp32u dataStep,
   dstStep = m_CurrFrame->step_uv;
   refStep = m_FrameData[ref_indx].step_uv;
 
-  Ipp8u* ref_u = m_FrameData[ref_indx].data_u +refStep*8*mb_row + 8*mb_col;
-  Ipp8u* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_u = m_FrameData[ref_indx].data_u +refStep*8*mb_row + 8*mb_col;
+  uint8_t* ref_v = m_FrameData[ref_indx].data_v + refStep*8*mb_row + 8*mb_col;
 
-  Ipp8u* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
-  Ipp8u* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_u   = m_CurrFrame->data_u + dstStep*8*mb_row + 8*mb_col;
+  uint8_t* dst_v   = m_CurrFrame->data_v + dstStep*8*mb_row + 8*mb_col;
 
   for(i = 0; i < 2; i++)
   {
