@@ -168,7 +168,7 @@ public:
 protected:
     CJpegTask *pLastTask;
     // Free tasks queue (if SW is used)
-    std::queue<CJpegTask *> m_freeTasks;
+    std::queue<std::unique_ptr<CJpegTask>> m_freeTasks;
     // Count of created tasks (if SW is used)
     mfxU16  m_tasksCount;
 };
