@@ -157,7 +157,7 @@ void H265DecYUVBufferPadded::allocate(const UMC::FrameData * frameData, const UM
         }
         else
         {
-            assert(m_frameData.GetInfo()->GetNumPlanes == 3);
+            assert(m_frameData.GetInfo()->GetNumPlanes() == 3);
             m_pUPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(1)->m_planePtr;
             m_pVPlane = (PlanePtrUV)m_frameData.GetPlaneMemoryInfo(2)->m_planePtr;
             m_pUVPlane = 0;
