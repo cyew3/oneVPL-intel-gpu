@@ -274,6 +274,7 @@ mfxStatus MFXVideoENCODEVP9_HW::Init(mfxVideoParam *par)
 #if (MFX_VERSION >= 1027)
     SetReconInfo(m_video, request.Info, platform);
 #else
+    (void)platform;
     request.Info.FourCC = MFX_FOURCC_NV12;
 #endif
 
