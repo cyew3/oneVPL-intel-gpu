@@ -24,6 +24,9 @@
 
 #include "mfx_vpp_utils.h"
 #include "mfx_shift_vpp.h"
+
+#include "umc_defs.h"
+
 #include "ipps.h"
 #include "ippi.h"
 #include "ippcc.h"
@@ -251,8 +254,8 @@ bool MFXVideoVPPShift::IsReadyOutput( mfxRequestType )
 IppStatus shift_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, bool right)
 {
     IppStatus sts = ippStsNoErr;
-    IppiSize  roiSize = {0, 0};
-    Ipp32u    shift;
+    mfxSize  roiSize = {0, 0};
+    uint32_t    shift;
     mfxFrameInfo *inInfo  = &in->Info;
     mfxFrameData *inData  = &in->Data;
     mfxFrameData *outData = &out->Data;
@@ -265,11 +268,11 @@ IppStatus shift_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, bool right)
         shift = inInfo->BitDepthLuma ? 16 - inInfo->BitDepthLuma : 6;
         if ( right )
         {
-            sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, shift, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+            sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, shift, (uint16_t *)outData->Y, outData->Pitch, roiSize);
         }
         else
         {
-            sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, shift, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+            sts = ippiLShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, shift, (uint16_t *)outData->Y, outData->Pitch, roiSize);
         }
         IPP_CHECK_STS( sts );
 
@@ -277,11 +280,11 @@ IppStatus shift_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, bool right)
         roiSize.height >>= 1;
         if ( right )
         {
-            sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, shift, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+            sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch, shift, (uint16_t *)outData->UV, outData->Pitch, roiSize);
         }
         else
         {
-            sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, shift, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+            sts = ippiLShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch, shift, (uint16_t *)outData->UV, outData->Pitch, roiSize);
         }
         IPP_CHECK_STS( sts );
     }
@@ -297,8 +300,8 @@ IppStatus shift_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, bool right)
 IppStatus shift_P210( mfxFrameSurface1* in, mfxFrameSurface1* out, bool right)
 {
     IppStatus sts = ippStsNoErr;
-    IppiSize  roiSize = {0, 0};
-    Ipp32u    shift;
+    mfxSize  roiSize = {0, 0};
+    uint32_t    shift;
     mfxFrameInfo *inInfo  = &in->Info;
     mfxFrameData *inData  = &in->Data;
     mfxFrameData *outData = &out->Data;
@@ -311,22 +314,22 @@ IppStatus shift_P210( mfxFrameSurface1* in, mfxFrameSurface1* out, bool right)
         shift = inInfo->BitDepthLuma ? 16 - inInfo->BitDepthLuma : 6;
         if ( right )
         {
-            sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, shift, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+            sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, shift, (uint16_t *)outData->Y, outData->Pitch, roiSize);
         }
         else
         {
-            sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, shift, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+            sts = ippiLShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, shift, (uint16_t *)outData->Y, outData->Pitch, roiSize);
         }
         IPP_CHECK_STS( sts );
 
         shift = inInfo->BitDepthChroma ? 16 - inInfo->BitDepthChroma : 6;
         if ( right )
         {
-            sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, shift, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+            sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch, shift, (uint16_t *)outData->UV, outData->Pitch, roiSize);
         }
         else
         {
-            sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, shift, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+            sts = ippiLShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch, shift, (uint16_t *)outData->UV, outData->Pitch, roiSize);
         }
         IPP_CHECK_STS( sts );
     }

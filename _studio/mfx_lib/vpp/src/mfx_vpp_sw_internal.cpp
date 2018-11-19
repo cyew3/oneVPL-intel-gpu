@@ -34,6 +34,8 @@
 #include "mfx_vpp_sw.h"
 #include "mfx_vpp_utils.h"
 
+#include "umc_defs.h"
+
 // internal filters
 #include "mfx_denoise_vpp.h"
 #include "mfx_color_space_conversion_vpp.h"
@@ -959,14 +961,14 @@ mfxStatus GetExternalFramesCount(VideoCORE* core,
                 mfxF64 outFrameRate = CalculateUMCFramerate(info.FrameRateExtN, info.FrameRateExtD);
 
                 outputFramesCount[ filterIndex ] = (mfxU16)(ceil(outFrameRate / inFrameRate));
-                outputFramesCount[ filterIndex ] = IPP_MAX(outputFramesCount[ filterIndex ], 1);//robustness
+                outputFramesCount[ filterIndex ] = MFX_MAX(outputFramesCount[ filterIndex ], 1);//robustness
 
                 // numInFrames = inFrameRate / inFrameRate = 1;
                 inputFramesCount[ filterIndex ] = 1;
 
                 // after analysis for correct FRC processing we require following equations
-                inputFramesCount[ filterIndex ]  = IPP_MAX( inputFramesCount[ filterIndex ],  MFXVideoVPPFrameRateConversion::GetInFramesCountExt() );
-                outputFramesCount[ filterIndex ] = IPP_MAX( outputFramesCount[ filterIndex ], MFXVideoVPPFrameRateConversion::GetOutFramesCountExt() );
+                inputFramesCount[ filterIndex ]  = MFX_MAX( inputFramesCount[ filterIndex ],  MFXVideoVPPFrameRateConversion::GetInFramesCountExt() );
+                outputFramesCount[ filterIndex ] = MFX_MAX( outputFramesCount[ filterIndex ], MFXVideoVPPFrameRateConversion::GetOutFramesCountExt() );
 
                 break;
             }

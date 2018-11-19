@@ -34,6 +34,7 @@
 #include "mfx_vpp_utils.h"
 #include "mfx_vpp_sw.h"
 
+#include "umc_defs.h"
 #include "ipps.h"
 
 
@@ -430,12 +431,12 @@ mfxStatus VideoVPPBase::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFram
         if( !bSWLib )
         {
             // suggested
-            request[VPP_IN].NumFrameSuggested = IPP_MAX(request[VPP_IN].NumFrameSuggested, hwRequest[VPP_IN].NumFrameSuggested);
-            request[VPP_OUT].NumFrameSuggested = IPP_MAX(request[VPP_OUT].NumFrameSuggested, hwRequest[VPP_OUT].NumFrameSuggested);
+            request[VPP_IN].NumFrameSuggested = MFX_MAX(request[VPP_IN].NumFrameSuggested, hwRequest[VPP_IN].NumFrameSuggested);
+            request[VPP_OUT].NumFrameSuggested = MFX_MAX(request[VPP_OUT].NumFrameSuggested, hwRequest[VPP_OUT].NumFrameSuggested);
 
             // min
-            request[VPP_IN].NumFrameMin  = IPP_MAX(request[VPP_IN].NumFrameMin, hwRequest[VPP_IN].NumFrameMin);
-            request[VPP_OUT].NumFrameMin = IPP_MAX(request[VPP_OUT].NumFrameMin, hwRequest[VPP_OUT].NumFrameMin);
+            request[VPP_IN].NumFrameMin  = MFX_MAX(request[VPP_IN].NumFrameMin, hwRequest[VPP_IN].NumFrameMin);
+            request[VPP_OUT].NumFrameMin = MFX_MAX(request[VPP_OUT].NumFrameMin, hwRequest[VPP_OUT].NumFrameMin);
         }
 
         mfxU16 vppAsyncDepth = (0 == par->AsyncDepth) ? MFX_AUTO_ASYNC_DEPTH_VALUE : par->AsyncDepth;
@@ -462,7 +463,7 @@ mfxStatus VideoVPPBase::QueryIOSurf(VideoCORE* core, mfxVideoParam *par, mfxFram
     {
         // since MSDK_3.0 asyncDepth is mandatory
         mfxU16 vppAsyncDepth = (0 == par->AsyncDepth) ? MFX_AUTO_ASYNC_DEPTH_VALUE : par->AsyncDepth;
-        //vppAsyncDepth = IPP_MIN( MFX_MAX_ASYNC_DEPTH_VALUE, vppAsyncDepth);
+        //vppAsyncDepth = MFX_MIN( MFX_MAX_ASYNC_DEPTH_VALUE, vppAsyncDepth);
         {
             // suggested
             request[VPP_IN].NumFrameSuggested  += (vppAsyncDepth - 1);

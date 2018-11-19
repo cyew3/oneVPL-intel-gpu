@@ -23,6 +23,7 @@
 #if defined (MFX_ENABLE_VPP)
 
 #include "ippi.h"
+#include "umc_defs.h"
 
 #include "mfx_vpp_utils.h"
 #include "mfx_detail_enhancement_vpp.h"
@@ -31,7 +32,7 @@
 #define ALIGN16(SZ) (((SZ + 15) >> 4) << 4) // round up to a multiple of 16
 #endif
 
-#define VPP_RANGE_CLIP(val, min_val, max_val)  IPP_MAX( IPP_MIN(max_val, val), min_val )
+#define VPP_RANGE_CLIP(val, min_val, max_val)  MFX_MAX( MFX_MIN(max_val, val), min_val )
 
 #define VPP_DETAIL_GAIN_MIN      (0)
 #define VPP_DETAIL_GAIN_MAX      (63)
@@ -90,27 +91,27 @@ mfxStatus MFXVideoVPPDetailEnhancement::Query( mfxExtBuffer* pHint )
 /*                       Algorithm Prototypes                           */
 /* ******************************************************************** */
 
-mfxStatus CalcSobel_8u_C1R (Ipp8u* curRowStart, int srcPitch,
-                            Ipp8u* SobelRowStart, int sobelPitch,
-                            IppiSize size);
+mfxStatus CalcSobel_8u_C1R (uint8_t* curRowStart, int srcPitch,
+                            uint8_t* SobelRowStart, int sobelPitch,
+                            mfxSize size);
 
-mfxStatus CalcDiff_8u_C1R (Ipp8u* curRowStart, int srcPitch,
-                           Ipp8u* DiffRowStart, int diffPitch,
-                           IppiSize size);
+mfxStatus CalcDiff_8u_C1R (uint8_t* curRowStart, int srcPitch,
+                           uint8_t* DiffRowStart, int diffPitch,
+                           mfxSize size);
 
 int Calc5x5Laplacian(int    x,
                      int    org_pix,
-                     Ipp8u* rowMinus2,
-                     Ipp8u* rowMinus1,
-                     Ipp8u* curRow,
-                     Ipp8u* rowPlus1,
-                     Ipp8u* rowPlus2);
+                     uint8_t* rowMinus2,
+                     uint8_t* rowMinus1,
+                     uint8_t* curRow,
+                     uint8_t* rowPlus1,
+                     uint8_t* rowPlus2);
 
 int Calc3x3Laplacian(int    x,
                      int    org_pix,
-                     Ipp8u* rowMinus1,
-                     Ipp8u* curRow,
-                     Ipp8u* rowPlus1);
+                     uint8_t* rowMinus1,
+                     uint8_t* curRow,
+                     uint8_t* rowPlus1);
 
 MFXVideoVPPDetailEnhancement::MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxStatus* sts) : FilterVPP()
 {
@@ -132,7 +133,7 @@ MFXVideoVPPDetailEnhancement::MFXVideoVPPDetailEnhancement(VideoCORE *core, mfxS
 
     for(int counter = 2; counter < 256; counter++)
     {
-        m_divTable[counter] = (Ipp8u)(0.5 + (1.00/counter) * (1<<8));
+        m_divTable[counter] = (uint8_t)(0.5 + (1.00/counter) * (1<<8));
     }
 
     m_pSobelBuffer = m_pDiffBuffer = m_pExtBuffer = NULL;
@@ -239,14 +240,14 @@ mfxStatus MFXVideoVPPDetailEnhancement::RunFrameVPP(mfxFrameSurface1 *in,
 
     // core processing
 
-    Ipp8u* pSrcY;
-    Ipp8u* pDstY;
-    Ipp8u* pExtBufferROI;
-    Ipp8u* pSobelBufferROI;
-    Ipp8u* pDiffBufferROI;
+    uint8_t* pSrcY;
+    uint8_t* pDstY;
+    uint8_t* pExtBufferROI;
+    uint8_t* pSobelBufferROI;
+    uint8_t* pDiffBufferROI;
 
     int stepSrcY, stepDstY;
-    IppiSize roiSize;
+    mfxSize roiSize;
     IppiRect roi;
 
     // ROI
@@ -285,8 +286,8 @@ mfxStatus MFXVideoVPPDetailEnhancement::RunFrameVPP(mfxFrameSurface1 *in,
     int pitchSrcUV, pitchDstUV;
     if( MFX_FOURCC_NV12 == in->Info.FourCC )
     {
-        Ipp8u *pSrcUV;
-        Ipp8u *pDstUV;
+        uint8_t *pSrcUV;
+        uint8_t *pDstUV;
 
         pitchSrcUV = in->Data.Pitch;
         pitchDstUV = out->Data.Pitch;
@@ -301,8 +302,8 @@ mfxStatus MFXVideoVPPDetailEnhancement::RunFrameVPP(mfxFrameSurface1 *in,
     }
     else
     {
-        Ipp8u *pSrcU, *pSrcV;
-        Ipp8u *pDstU, *pDstV;
+        uint8_t *pSrcU, *pSrcV;
+        uint8_t *pDstU, *pDstV;
 
         pitchSrcUV = in->Data.Pitch / 2;
         pitchDstUV = out->Data.Pitch / 2;
@@ -382,7 +383,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::GetBufferSize( mfxU32* pBufferSize )
 
     MFX_CHECK_NULL_PTR1(pBufferSize);
 
-    IppiSize size = {m_errPrtctState.In.Width, m_errPrtctState.In.Height};
+    mfxSize size = {m_errPrtctState.In.Width, m_errPrtctState.In.Height};
 
     int alignExtWidth  = ALIGN16(size.width + 2*VPP_DETAIL_EXT_ROI_X);
     int alignExtHeight = ALIGN16(size.height + 2*VPP_DETAIL_EXT_ROI_Y);
@@ -409,7 +410,7 @@ mfxStatus MFXVideoVPPDetailEnhancement::SetBuffer( mfxU8* pBuffer )
     {
         MFX_CHECK_NULL_PTR1(pBuffer);
 
-        IppiSize size = {m_errPrtctState.In.Width, m_errPrtctState.In.Height};
+        mfxSize size = {m_errPrtctState.In.Width, m_errPrtctState.In.Height};
         int alignExtWidth = ALIGN16(size.width + 2*VPP_DETAIL_EXT_ROI_X);
         int offset = 0;
 
@@ -459,11 +460,11 @@ bool MFXVideoVPPDetailEnhancement::IsReadyOutput( mfxRequestType requestType )
 
 } // bool MFXVideoVPPDetailEnhancement::IsReadyOutput( mfxRequestType requestType )
 
-mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( Ipp8u* pSrc, int srcPitch,
-                                                          Ipp8u* pDst, int dstPitch,
-                                                          Ipp8u* pSobel, int sobelPitch,
-                                                          Ipp8u* pDiff,  int diffPitch,
-                                                          IppiSize size)
+mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( uint8_t* pSrc, int srcPitch,
+                                                          uint8_t* pDst, int dstPitch,
+                                                          uint8_t* pSobel, int sobelPitch,
+                                                          uint8_t* pDiff,  int diffPitch,
+                                                          mfxSize size)
 {
     const int srcPrecision = 8;//16;
     const int minClip  = (-(1<< (5 + srcPrecision - 8)));
@@ -476,15 +477,15 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( Ipp8u* pSrc, int srcPi
 
     for(int row = 0; row < size.height; row++)
     {
-        Ipp8u *pCurRow    = pSrc + row*srcPitch;  //row
-        Ipp8u *pRowMinus2 = pCurRow - 2 * srcPitch;//row-2
-        Ipp8u *pRowMinus1 = pCurRow - 1 * srcPitch;//row-1
-        Ipp8u *pRowPlus1  = pCurRow + 1 * srcPitch;//row+1
-        Ipp8u *pRowPlus2  = pCurRow + 2 * srcPitch;//row+2
+        uint8_t *pCurRow    = pSrc + row*srcPitch;  //row
+        uint8_t *pRowMinus2 = pCurRow - 2 * srcPitch;//row-2
+        uint8_t *pRowMinus1 = pCurRow - 1 * srcPitch;//row-1
+        uint8_t *pRowPlus1  = pCurRow + 1 * srcPitch;//row+1
+        uint8_t *pRowPlus2  = pCurRow + 2 * srcPitch;//row+2
 
-        Ipp8u *pDstRow   = pDst   + row*dstPitch;
-        Ipp8u *pSobelRow = pSobel + row*sobelPitch;
-        Ipp8u *pDiffRow  = pDiff  + row*diffPitch;
+        uint8_t *pDstRow   = pDst   + row*dstPitch;
+        uint8_t *pSobelRow = pSobel + row*sobelPitch;
+        uint8_t *pDiffRow  = pDiff  + row*diffPitch;
 
         for(int col = 0; col < size.width; col++)
         {
@@ -511,14 +512,14 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( Ipp8u* pSrc, int srcPi
                 localAdjust = m_strongWeight;
             }
 
-            diff = IPP_MIN((8 + pDiffRow[col]), 255); //8 bits
+            diff = MFX_MIN((8 + pDiffRow[col]), 255); //8 bits
 
             sharp   = (localAdjust * sharp * m_internalGainFactor + 64) >> 7;
             sharp   = (sharp * (int)m_divTable[diff] + (1 << 7)) >> 8;
             sharp   = VPP_RANGE_CLIP(sharp, minClip, maxClip);
 
             dstVal = VPP_RANGE_CLIP(sharp + pCurRow[col], 0, maxVal);
-            pDstRow[col] = (Ipp8u)dstVal;
+            pDstRow[col] = (uint8_t)dstVal;
         }
     }
 
@@ -530,13 +531,13 @@ mfxStatus MFXVideoVPPDetailEnhancement::DetailFilterCore( Ipp8u* pSrc, int srcPi
 /*                 implementation of algorithms [Detail Enhancement]    */
 /* ******************************************************************** */
 
-mfxStatus CalcSobel_8u_C1R (Ipp8u* curRowStart, int srcPitch,
-                            Ipp8u* SobelRowStart, int sobelPitch,
-                            IppiSize size)
+mfxStatus CalcSobel_8u_C1R (uint8_t* curRowStart, int srcPitch,
+                            uint8_t* SobelRowStart, int sobelPitch,
+                            mfxSize size)
 {
     int row, col;
-    Ipp8u *curRow, *aboveRow, *belowRow;
-    Ipp8u *SobelRow;
+    uint8_t *curRow, *aboveRow, *belowRow;
+    uint8_t *SobelRow;
     int   sobel;
 
     for(row = 0; row < size.height; row++)
@@ -582,7 +583,7 @@ mfxStatus CalcSobel_8u_C1R (Ipp8u* curRowStart, int srcPitch,
 
             sobel = VPP_RANGE_CLIP(((dx+dy+2048)>>(4+8)), 0, 15);
             // +8 in >> to reduce precision by 8 bits
-            SobelRow[col] = (Ipp8u)sobel;
+            SobelRow[col] = (uint8_t)sobel;
         }
     }
 
@@ -590,13 +591,13 @@ mfxStatus CalcSobel_8u_C1R (Ipp8u* curRowStart, int srcPitch,
 
 } // VppStatus CalcSobel_8u_C1R (...)
 
-mfxStatus CalcDiff_8u_C1R (Ipp8u* curRowStart, int srcPitch,
-                           Ipp8u* DiffRowStart, int diffPitch,
-                           IppiSize size)
+mfxStatus CalcDiff_8u_C1R (uint8_t* curRowStart, int srcPitch,
+                           uint8_t* DiffRowStart, int diffPitch,
+                           mfxSize size)
 {
     int row, col, counter;
-    Ipp8u* curRow, *aboveRow, *belowRow;
-    Ipp8u* DiffRow;
+    uint8_t* curRow, *aboveRow, *belowRow;
+    uint8_t* DiffRow;
     int diff;
 
     for(row = 0; row < size.height; row++)
@@ -608,7 +609,7 @@ mfxStatus CalcDiff_8u_C1R (Ipp8u* curRowStart, int srcPitch,
 
         for(col = 0; col < size.width; col++)
         {
-            Ipp8u max, min, p[9];
+            uint8_t max, min, p[9];
 
             /*
             col
@@ -646,7 +647,7 @@ mfxStatus CalcDiff_8u_C1R (Ipp8u* curRowStart, int srcPitch,
             }
 
             diff = max - min;
-            DiffRow[col] = (Ipp8u)(diff >> 8);
+            DiffRow[col] = (uint8_t)(diff >> 8);
         }
     }
 
@@ -656,11 +657,11 @@ mfxStatus CalcDiff_8u_C1R (Ipp8u* curRowStart, int srcPitch,
 
 int Calc5x5Laplacian(int    x,
                      int    org_pix,
-                     Ipp8u* rowMinus2,
-                     Ipp8u* rowMinus1,
-                     Ipp8u* curRow,
-                     Ipp8u* rowPlus1,
-                     Ipp8u* rowPlus2)
+                     uint8_t* rowMinus2,
+                     uint8_t* rowMinus1,
+                     uint8_t* curRow,
+                     uint8_t* rowPlus1,
+                     uint8_t* rowPlus2)
 {
     int sm5_pix, p[16];
 
@@ -708,9 +709,9 @@ int Calc5x5Laplacian(int    x,
 
 int Calc3x3Laplacian(int    x,
                      int    org_pix,
-                     Ipp8u* rowMinus1,
-                     Ipp8u* curRow,
-                     Ipp8u* rowPlus1)
+                     uint8_t* rowMinus1,
+                     uint8_t* curRow,
+                     uint8_t* rowPlus1)
 {
     int sm3_pix;
     int p[8];

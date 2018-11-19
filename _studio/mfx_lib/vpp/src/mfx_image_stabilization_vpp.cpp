@@ -32,6 +32,8 @@
 #include "mfx_image_stabilization_vpp.h"
 #include "mfx_vpp_utils.h"
 
+#include "umc_defs.h"
+
 /* ******************************************************************** */
 /*                 implementation of Interface functions [Img Stab]     */
 /* ******************************************************************** */
@@ -92,8 +94,8 @@ const mfxU32 PAR_NUM_FRAME_DELAY  = 0;
 /*                 prototype of Image Stabilization algorithm           */
 /* ******************************************************************** */
 
-Ipp8u Interpolation(
-    Ipp8u *p_buf, 
+uint8_t Interpolation(
+    uint8_t *p_buf, 
     int pitch, 
     int width,
     int height,
@@ -292,8 +294,8 @@ mfxStatus MFXVideoVPPImgStab::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
     m_destWidth  = m_width - (m_nCrpX << 1);
     m_destHeight = m_height - (m_nCrpY << 1);
 
-    m_scale_h = IPP_MAX(1, (m_width)/m_downWidth);
-    m_scale_v = IPP_MAX(1, (m_height)/m_downHeight);
+    m_scale_h = MFX_MAX(1, (m_width)/m_downWidth);
+    m_scale_v = MFX_MAX(1, (m_height)/m_downHeight);
 
     m_widthScale = m_width/m_scale_h;
     m_heightScale = m_height/m_scale_v;
@@ -308,22 +310,22 @@ mfxStatus MFXVideoVPPImgStab::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
     mBlock.clear();
     mMV.clear();
 
-    ippsZero_8u( (Ipp8u*)m_FrameBuf, 6*sizeof(mfxFrameSurface1*));
+    ippsZero_8u( (uint8_t*)m_FrameBuf, 6*sizeof(mfxFrameSurface1*));
     //-----------------------------------------------------
 
-    ippsZero_8u( (Ipp8u*)&m_ref, sizeof(mfxFrameSurface1));
+    ippsZero_8u( (uint8_t*)&m_ref, sizeof(mfxFrameSurface1));
     m_ref.Info = *In;
     m_ref.Info.Width  = (mfxU16)m_widthScale;
     m_ref.Info.Height = (mfxU16)m_heightScale;
     m_ref.Data.Pitch  = (mfxU16)m_widthScale;// it is right!!!
 
-    ippsZero_8u( (Ipp8u*)&m_cur, sizeof(mfxFrameSurface1));
+    ippsZero_8u( (uint8_t*)&m_cur, sizeof(mfxFrameSurface1));
     m_cur.Info = *In;
     m_cur.Info.Width  = (mfxU16)m_widthScale;
     m_cur.Info.Height = (mfxU16)m_heightScale;
     m_cur.Data.Pitch  = (mfxU16)m_widthScale;// it is right!!!
 
-    ippsZero_8u( (Ipp8u*)&m_preOut, sizeof(mfxFrameSurface1));
+    ippsZero_8u( (uint8_t*)&m_preOut, sizeof(mfxFrameSurface1));
     m_preOut.Info       = *Out;
     m_preOut.Data.Pitch = m_preOut.Info.Width;
 
@@ -594,15 +596,15 @@ mfxStatus MFXVideoVPPImgStab::FrameDownSampling(
 {
     IppStatus ippSts = ippStsNoErr;
 
-    IppiSize srcSize = {in->Info.Width, in->Info.Height};
+    mfxSize srcSize = {in->Info.Width, in->Info.Height};
     IppiRect srcRect = {0, 0, srcSize.width, srcSize.height};
-    IppiSize dstSize = {out->Info.Width, out->Info.Height};
+    mfxSize dstSize = {out->Info.Width, out->Info.Height};
     IppiRect dstRect = {0, 0, dstSize.width, dstSize.height};
 
-    Ipp64f xFactor = (Ipp64f)dstSize.width  / (Ipp64f)srcSize.width;
-    Ipp64f yFactor = (Ipp64f)dstSize.height / (Ipp64f)srcSize.height;
+    double xFactor = (double)dstSize.width  / (double)srcSize.width;
+    double yFactor = (double)dstSize.height / (double)srcSize.height;
 
-    Ipp64f    xShift = 0.0, yShift = 0.0;   
+    double    xShift = 0.0, yShift = 0.0;   
 
     ippSts = ippiResizeSqrPixel_8u_C1R(
         in->Data.Y, 
@@ -651,8 +653,8 @@ mfxStatus MFXVideoVPPImgStab::ResizeNV12(
     mfxFrameSurface1* out)
 {
     IppStatus sts     = ippStsNotSupportedModeErr;
-    IppiSize  srcSize = {0,  0};
-    IppiSize  dstSize = {0, 0};
+    mfxSize  srcSize = {0,  0};
+    mfxSize  dstSize = {0, 0};
 
     mfxU16 cropX = 0, cropY = 0;
 
@@ -782,8 +784,8 @@ MFXVideoVPPImgStab::Global_MV MFXVideoVPPImgStab::GetFilteredMP(int fn, int frm_
 
         if(m_nCrpX != 0) 
         {
-            filteredGMV.c = IPP_MIN(m_nCrpX, IPP_MAX(-(int)m_nCrpX, filteredGMV.c));
-            filteredGMV.d = IPP_MIN(m_nCrpY, IPP_MAX(-(int)m_nCrpY, filteredGMV.d));
+            filteredGMV.c = MFX_MIN(m_nCrpX, MFX_MAX(-(int)m_nCrpX, filteredGMV.c));
+            filteredGMV.d = MFX_MIN(m_nCrpY, MFX_MAX(-(int)m_nCrpY, filteredGMV.d));
         }
 
     }
@@ -874,8 +876,8 @@ void MFXVideoVPPImgStab::WarpFrame(
 } // void MFXVideoVPPImgStab::WarpFrame(...)
 
 
-Ipp8u Interpolation(
-    Ipp8u *p_buf, 
+uint8_t Interpolation(
+    uint8_t *p_buf, 
     int pitch, 
     int width,
     int height,
@@ -990,7 +992,7 @@ Ipp8u Interpolation(
         f12=(f1+(x-i1)*(f2-f1));
         f34=(f3+(x-i1)*(f4-f3));
         val = (int)(f12+(y-j1)*(f34-f12)+0.5);
-        val = IPP_MIN(255, IPP_MAX(0, val));
+        val = MFX_MIN(255, MFX_MAX(0, val));
     }
     else
     {
@@ -1005,11 +1007,11 @@ Ipp8u Interpolation(
     }
 
 
-    Ipp8u ret8u = (Ipp8u)IPP_MIN(val, 255);
+    uint8_t ret8u = (uint8_t)MFX_MIN(val, 255);
 
     return ret8u;
 
-} // Ipp8u Interpolation(...)
+} // uint8_t Interpolation(...)
 
 
 mfxStatus MFXVideoVPPImgStab::GetBufferSizeEx( SizeInfo & sizeInf )
@@ -1046,8 +1048,8 @@ mfxStatus MFXVideoVPPImgStab::GetBufferSizeEx( SizeInfo & sizeInf )
         sizeInf.m_preOutSizeY  = m_preOut.Data.Pitch * m_preOut.Info.Height;
         sizeInf.m_preOutSizeUV = (m_preOut.Data.Pitch * m_preOut.Info.Height) >> 1;
 
-        IppiSize dstSize = {static_cast<int>(m_width), static_cast<int>(m_height)};
-        IppiSize srcSize = {static_cast<int>(m_destWidth), static_cast<int>(m_destHeight)};
+        mfxSize dstSize = {static_cast<int>(m_width), static_cast<int>(m_height)};
+        mfxSize srcSize = {static_cast<int>(m_destWidth), static_cast<int>(m_destHeight)};
 
         ippSts = ippiResizeYUV420GetBufSize(
             srcSize, 
@@ -1056,7 +1058,7 @@ mfxStatus MFXVideoVPPImgStab::GetBufferSizeEx( SizeInfo & sizeInf )
             &bufSizeLanczos);
         VPP_CHECK_IPP_STS( ippSts );
 
-        sizeInf.m_workBufSize = IPP_MAX(sizeInf.m_workBufSize, (mfxU32)bufSizeLanczos);
+        sizeInf.m_workBufSize = MFX_MAX(sizeInf.m_workBufSize, (mfxU32)bufSizeLanczos);
     }
 
     return MFX_ERR_NONE;

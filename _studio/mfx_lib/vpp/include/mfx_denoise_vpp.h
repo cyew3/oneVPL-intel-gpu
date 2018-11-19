@@ -100,18 +100,18 @@ private:
 
 
   /* noise estimation */
-  mfxStatus ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size,
+  mfxStatus ownGaussNoiseEstimation_8u_C1R_v2(mfxSize size,
                                               mfxI32* pThres,
                                               owniDenoiseCASTState* pState);
 
   /* noise removal */
-  mfxStatus owniFilterDenoiseCASTGetSize(IppiSize roiSize, mfxU32* pHistBufSize);
+  mfxStatus owniFilterDenoiseCASTGetSize(mfxSize roiSize, mfxU32* pHistBufSize);
 
-  mfxStatus owniFilterDenoiseCASTInit(owniDenoiseCASTState* ppState, IppiSize roiSize);
+  mfxStatus owniFilterDenoiseCASTInit(owniDenoiseCASTState* ppState, mfxSize roiSize);
 
   mfxStatus owniFilterDenoiseCAST_8u_C1R(const mfxU8* pSrcPrev,
                                          mfxI32 srcStepPrev,
-                                         IppiSize srcRoiSize,
+                                         mfxSize srcRoiSize,
                                          mfxU8* pDst,
                                          mfxI32 dstStep,
                                          owniDenoiseCASTState* pState);

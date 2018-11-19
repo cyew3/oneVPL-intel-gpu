@@ -29,8 +29,11 @@
 #endif
 #endif
 
+#include "umc_defs.h"
+
 #include "mfx_vpp_utils.h"
 #include "mfx_resize_vpp.h"
+
 #include "ipps.h"
 #include "ippi.h"
 #include "ippcc.h"
@@ -45,7 +48,7 @@ IppStatus rs_NV12_v2( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkB
 
 IppStatus rs_P010( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
 
-mfxStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize );
+mfxStatus owniResizeGetBufSize_UpEstimation( mfxSize srcSize, mfxSize dstSize, int *pBufferSize );
 
 IppStatus rs_RGB32( mfxFrameSurface1 *in, mfxFrameSurface1 *out, mfxU8* pWorkBuf, mfxU16 picStruct );
 /* ******************************************************************** */
@@ -304,8 +307,8 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
   dstRect.width = m_errPrtctState.Out.Width;
   dstRect.height= m_errPrtctState.Out.Height;
 
-  IppiSize srcSize = {srcRect.width, srcRect.height};
-  IppiSize dstSize = {dstRect.width, dstRect.height};
+  mfxSize srcSize = {srcRect.width, srcRect.height};
+  mfxSize dstSize = {dstRect.width, dstRect.height};
 
   mfxI32 bufSizeLanczos = 0, bufSizeSuper = 0, bufSize = 0;
 
@@ -333,14 +336,14 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
         bufSizeLanczos <<= 1;
 
         // Additional space for resize operation
-        mfxU32 add = IPP_MAX(srcRect.width, dstRect.width) * IPP_MAX(srcRect.height, dstRect.height) * 4;
+        mfxU32 add = MFX_MAX(srcRect.width, dstRect.width) * MFX_MAX(srcRect.height, dstRect.height) * 4;
         bufSizeSuper   += add;
         bufSizeLanczos += add;
   }
 
   VPP_CHECK_IPP_STS( ippSts );
 
-  bufSize = IPP_MAX(bufSizeSuper, bufSizeLanczos);
+  bufSize = MFX_MAX(bufSizeSuper, bufSizeLanczos);
 
   // correction: super_sampling method can require more work buffer memory in case of cropping
   mfxI32 bufSize_UpEstimation = 0;
@@ -348,7 +351,7 @@ mfxStatus MFXVideoVPPResize::GetBufferSize( mfxU32* pBufferSize )
   mfxSts = owniResizeGetBufSize_UpEstimation( srcSize, dstSize, &bufSize_UpEstimation );
   MFX_CHECK_STS( mfxSts );
 
-  bufSize = IPP_MAX(bufSize, bufSize_UpEstimation);
+  bufSize = MFX_MAX(bufSize, bufSize_UpEstimation);
 
 
   *pBufferSize = bufSize;
@@ -412,8 +415,8 @@ bool MFXVideoVPPResize::IsReadyOutput( mfxRequestType requestType )
 IppStatus rs_YV12( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 {
   IppStatus sts     = ippStsNotSupportedModeErr;
-  IppiSize  srcSize = {0,  0};
-  IppiSize  dstSize = {0, 0};
+  mfxSize  srcSize = {0,  0};
+  mfxSize  dstSize = {0, 0};
   mfxF64    xFactor = 0.0, yFactor = 0.0;
   mfxF64    xShift = 0.0, yShift = 0.0;
   IppiRect  srcRect, dstRect;
@@ -531,8 +534,8 @@ IppStatus rs_YV12( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
   }
   else //interlaced video
   {
-    IppiSize  srcSizeIntr = {0, 0};
-    IppiSize  dstSizeIntr = {0, 0};
+    mfxSize  srcSizeIntr = {0, 0};
+    mfxSize  dstSizeIntr = {0, 0};
     mfxI32    srcStepIntr = 0;
     mfxI32    dstStepIntr = 0;
 
@@ -637,8 +640,8 @@ IppStatus rs_YV12( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
 IppStatus rs_NV12_v2( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 {
     IppStatus sts     = ippStsNotSupportedModeErr;
-    IppiSize  srcSize = {0,  0};
-    IppiSize  dstSize = {0, 0};
+    mfxSize  srcSize = {0,  0};
+    mfxSize  dstSize = {0, 0};
 
     mfxU16 cropX = 0, cropY = 0;
 
@@ -713,8 +716,8 @@ IppStatus rs_NV12_v2( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkB
     }
     else //interlaced video
     {
-        IppiSize  srcSizeIntr = {0, 0};
-        IppiSize  dstSizeIntr = {0, 0};
+        mfxSize  srcSizeIntr = {0, 0};
+        mfxSize  dstSizeIntr = {0, 0};
         mfxI32    srcStepIntr[2] = {pSrcStep[0]<<1, pSrcStep[1]<<1};
         mfxI32    dstStepIntr[2] = {pDstStep[0]<<1, pDstStep[1]<<1};
 
@@ -763,12 +766,12 @@ IppStatus rs_NV12_v2( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkB
 IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 {
     IppStatus sts     = ippStsNotSupportedModeErr;
-    IppiSize  srcSize = {0, 0};
-    IppiSize  dstSize = {0, 0};
+    mfxSize  srcSize = {0, 0};
+    mfxSize  dstSize = {0, 0};
 
     IppiRect  srcRect = {0,0,0,0};
     IppiRect  dstRect = {0,0,0,0};
-    IppiSize  roi     = {0, 0};
+    mfxSize  roi     = {0, 0};
 
     mfxU16 cropX = 0, cropY = 0;
 
@@ -820,13 +823,13 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
     if( MFX_PICSTRUCT_PROGRESSIVE & picStruct)
     {
         /* Resize Y */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) inData->Y, srcSize,  inData->Pitch, srcRect,
-                                               (Ipp16u *)outData->Y, outData->Pitch, dstRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const uint16_t *) inData->Y, srcSize,  inData->Pitch, srcRect,
+                                               (uint16_t *)outData->Y, outData->Pitch, dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
         /* Clip Y */
-        sts = ippiThreshold_16u_C1IR((Ipp16u*)outData->Y, outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
+        sts = ippiThreshold_16u_C1IR((uint16_t*)outData->Y, outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
         if( ippStsNoErr != sts ) return sts;
 
         /* Temporary NV12->YV12 conversion. At the moment IPP has no
@@ -862,23 +865,23 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
         dstRect.width = dstSize.width >>= 1;
 
         /* Resize U */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *) interPtr, srcSize, inData->Pitch, srcRect,
-                                               (Ipp16u *) outData->UV, outData->Pitch , dstRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const uint16_t *) interPtr, srcSize, inData->Pitch, srcRect,
+                                               (uint16_t *) outData->UV, outData->Pitch , dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
         /* Clip U */
-        sts = ippiThreshold_16u_C1IR((Ipp16u*)outData->UV, outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
+        sts = ippiThreshold_16u_C1IR((uint16_t*)outData->UV, outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
         if( ippStsNoErr != sts ) return sts;
 
         /* Resize V */
-        sts = ippiResizeSqrPixel_16u_C1R((const Ipp16u *)(&interPtr[srcSize.width*2]), srcSize, inData->Pitch, srcRect,
-                                         (Ipp16u *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstRect,
+        sts = ippiResizeSqrPixel_16u_C1R((const uint16_t *)(&interPtr[srcSize.width*2]), srcSize, inData->Pitch, srcRect,
+                                         (uint16_t *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstRect,
                                               xFactor, yFactor, 0.0, 0.0, interpolation, pWorkBuf);
         if( ippStsNoErr != sts ) return sts;
 
         /* Clip V */
-        sts = ippiThreshold_16u_C1IR((Ipp16u *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
+        sts = ippiThreshold_16u_C1IR((uint16_t *)(&outData->UV[dstSize.width*2]), outData->Pitch, dstSize, 0x03ff, ippCmpGreater);
         if( ippStsNoErr != sts ) return sts;
 
         /* Convert back to NV12 layout
@@ -923,8 +926,8 @@ IppStatus rs_P010( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf,
 IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 /*picStruct*/ )
 {
   IppStatus sts     = ippStsNotSupportedModeErr;
-  IppiSize  srcSize = {0,  0};
-  IppiSize  dstSize = {0, 0};
+  mfxSize  srcSize = {0,  0};
+  mfxSize  dstSize = {0, 0};
   mfxF64    xFactor = 0.0, yFactor = 0.0;
   mfxF64    xShift = 0.0, yShift = 0.0;
   IppiRect  srcRect, dstRect;
@@ -947,7 +950,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   VPP_GET_CROPY(inInfo, cropY);
   inOffset0  = cropX*4  + cropY*inData->Pitch;
 
-  mfxU8* ptrStart = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+  mfxU8* ptrStart = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
   const mfxU8* pSrc[1] = {ptrStart + inOffset0};
   mfxI32 pSrcStep[1] = {inData->Pitch};
 
@@ -959,7 +962,7 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   VPP_GET_CROPY(outInfo, cropY);
   outOffset0  = cropX*4  + cropY*outData->Pitch;
 
-  ptrStart = IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+  ptrStart = MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
 
   mfxU8* pDst[1]   = {ptrStart + outOffset0};
 
@@ -1009,8 +1012,8 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
   }
   //else //interlaced video
   //{
-  //  IppiSize  srcSizeIntr = {0, 0};
-  //  IppiSize  dstSizeIntr = {0, 0};
+  //  mfxSize  srcSizeIntr = {0, 0};
+  //  mfxSize  dstSizeIntr = {0, 0};
   //  mfxI32    srcStepIntr = 0;
   //  mfxI32    dstStepIntr = 0;
 
@@ -1052,12 +1055,12 @@ IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf
 } // IppStatus rs_RGB32( mfxFrameSurface1* in, mfxFrameSurface1* out, mfxU8* pWorkBuf, mfxU16 picStruct )
 
 /*  */
-mfxStatus owniResizeGetBufSize_UpEstimation( IppiSize srcSize, IppiSize dstSize, int *pBufferSize )
+mfxStatus owniResizeGetBufSize_UpEstimation( mfxSize srcSize, mfxSize dstSize, int *pBufferSize )
 {
-    Ipp64u maxWidth, maxHeight, bufSize;
+    unsigned long long maxWidth, maxHeight, bufSize;
 
-    maxWidth = (Ipp64u)IPP_MAX( srcSize.width, dstSize.width );
-    maxHeight= (Ipp64u)IPP_MAX( srcSize.height, dstSize.height );
+    maxWidth = (unsigned long long)MFX_MAX( srcSize.width, dstSize.width );
+    maxHeight= (unsigned long long)MFX_MAX( srcSize.height, dstSize.height );
 
     bufSize = 2 * maxWidth  * (maxWidth+2)  * sizeof(int) +
               3 * maxHeight * (maxHeight+2) * sizeof(int) +

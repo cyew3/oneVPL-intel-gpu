@@ -78,10 +78,10 @@ public:
     Status Close(void);
 
     virtual
-    void AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,UMC_SCENE_INFO *pMbInfo);
+    void AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep,UMC_SCENE_INFO *pMbInfo);
 
     virtual // optimized motion estimation alhorithm (logarithmic search)
-    void AnalyzeInterMBMotionOpt(const Ipp8u *pRef, Ipp32s refStep,IppiSize refMbDim,const Ipp8u *pSrc, Ipp32s srcStep,Ipp32u mbX, Ipp32u mbY,IppiPoint *prevMV,UMC_SCENE_INFO *pMbInfo);
+    void AnalyzeInterMBMotionOpt(const uint8_t *pRef, int32_t refStep,mfxSize refMbDim,const uint8_t *pSrc, int32_t srcStep,uint32_t mbX, uint32_t mbY,IppiPoint *prevMV,UMC_SCENE_INFO *pMbInfo);
 
     virtual // optimized function, special threshold built in to make calls ME rare
     Status AnalyzePicture(SceneAnalyzerPicture *pRef, SceneAnalyzerPicture *pSrc);

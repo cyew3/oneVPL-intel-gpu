@@ -29,8 +29,11 @@
 #endif
 #endif
 
+#include "umc_defs.h"
+
 #include "mfx_vpp_utils.h"
 #include "mfx_denoise_vpp.h"
+
 
 /* ******************************************************************** */
 /*                 implementation of VPP filter [Denoise]               */
@@ -84,8 +87,8 @@ mfxStatus MFXVideoVPPDenoise::Query( mfxExtBuffer* pHint )
 /*
 #define printMatr(ptr, pitchA, height, width, name) {   \
 printf("Matrix %s\n", name);                        \
-for(Ipp32s i = 0; i < height; i++) {                \
-for(Ipp32s j = 0; j < width; j++)               \
+for(int32_t i = 0; i < height; i++) {                \
+for(int32_t j = 0; j < width; j++)               \
 printf(" %4d,", ptr[i*(pitchA) + j]);       \
 printf("\n");                                   \
 }                                                   \
@@ -276,7 +279,7 @@ mfxStatus MFXVideoVPPDenoise::SetParam( mfxExtBuffer* pHint )
 mfxStatus MFXVideoVPPDenoise::Reset(mfxVideoParam *par)
 {
   mfxStatus mfxSts = MFX_ERR_NONE;
-  IppiSize  roiSize;
+  mfxSize  roiSize;
   mfxU32 memSize = 0;
 
   MFX_CHECK_NULL_PTR1( par );
@@ -372,7 +375,7 @@ mfxStatus MFXVideoVPPDenoise::RunFrameVPP(mfxFrameSurface1 *in,
   mfxU16 dstPitch = 0;
   mfxU16 refPitch = 0;
 
-  IppiSize roiSize;
+  mfxSize roiSize;
   // code error
   IppStatus ippSts = ippStsNoErr;
   mfxStatus mfxSts = MFX_ERR_NONE;
@@ -550,7 +553,7 @@ mfxStatus MFXVideoVPPDenoise::RunFrameVPP(mfxFrameSurface1 *in,
   pDstU = (mfxU8*)outData->U + outOffset1;
   MFX_CHECK_NULL_PTR2(pDstY, pDstU);
 
-  IppiSize bufSize = {roiSize.width + 4, roiSize.height + 4};
+  mfxSize bufSize = {roiSize.width + 4, roiSize.height + 4};
   mfxI32 bufStep = roiSize.width + 4;
   mfxU8 *pBuf = m_stateY.memPool.pBordFrame;
 
@@ -647,7 +650,7 @@ mfxStatus MFXVideoVPPDenoise::RunFrameVPP(mfxFrameSurface1 *in,
 
 mfxStatus MFXVideoVPPDenoise::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
 {
-  IppiSize  roiSize;
+  mfxSize  roiSize;
   mfxStatus mfxSts = MFX_ERR_NONE;
   mfxU16    srcW   = 0, srcH = 0;
   mfxU16    dstW   = 0, dstH = 0;
@@ -729,7 +732,7 @@ mfxStatus MFXVideoVPPDenoise::Close(void)
 
 mfxStatus MFXVideoVPPDenoise::GetBufferSize( mfxU32* pBufferSize )
 {
-  IppiSize  roiSize;
+  mfxSize  roiSize;
   mfxStatus mfxSts;
   mfxU32    memSize = 0;
 
@@ -757,7 +760,7 @@ mfxStatus MFXVideoVPPDenoise::GetBufferSize( mfxU32* pBufferSize )
 
 mfxStatus MFXVideoVPPDenoise::SetBuffer( mfxU8* pBuffer )
 {
-  IppiSize  roiSize;
+  mfxSize  roiSize;
   mfxU32 memSize = 0;
   mfxStatus sts;
 
@@ -819,9 +822,9 @@ bool MFXVideoVPPDenoise::IsReadyOutput( mfxRequestType requestType )
 }
 
 #ifdef VPP_SSE
-Ipp32u ownSigma_8u_w7(Ipp8u* pSrc, Ipp32u step, Ipp8u threshold, Ipp8u *res)
+uint32_t ownSigma_8u_w7(uint8_t* pSrc, uint32_t step, uint8_t threshold, uint8_t *res)
 {
-    static const Ipp32u q_table[9] = {2048, 1024, 682, 512, 409, 341, 292, 256, 227};
+    static const uint32_t q_table[9] = {2048, 1024, 682, 512, 409, 341, 292, 256, 227};
 
     __m128i xmmA, xmmB, xmmC, xmmD, xmmMask, xmmAcc, xmmCnt, xmmMskL;
 
@@ -947,24 +950,24 @@ Ipp32u ownSigma_8u_w7(Ipp8u* pSrc, Ipp32u step, Ipp8u threshold, Ipp8u *res)
     xmmAcc  = _mm_adds_epi16(xmmAcc, _mm_srli_epi16(xmmCnt,1));
     xmmCnt  = _mm_subs_epi8(xmmCnt, _mm_set1_epi16(1));
 
-    Ipp16u   *acc, *cnt;
+    uint16_t   *acc, *cnt;
 
-    acc = (Ipp16u *)(&xmmAcc); cnt = (Ipp16u *)(&xmmCnt);
+    acc = (uint16_t *)(&xmmAcc); cnt = (uint16_t *)(&xmmCnt);
     for(int i = 0; i < 8; i++)
     {
-        Ipp32u sum;
+        uint32_t sum;
 
         sum = (acc[i]*q_table[cnt[i]])>>11;
-        res[i] = (Ipp8u)sum;
+        res[i] = (uint8_t)sum;
     }
 
     return 0;
 }
 
-Ipp32s local_sad_diff_w7(Ipp8u *src, int srcStep)
+int32_t local_sad_diff_w7(uint8_t *src, int srcStep)
 {
     __m128i xmmA, xmmB, xmmC, xmmD, xmmE, xmmF;
-    Ipp32u  *result;
+    uint32_t  *result;
 
     xmmA = _mm_set_epi32(*(int*)(src+srcStep+srcStep+srcStep), *(int*)(src+srcStep+srcStep), *(int*)(src+srcStep), *(int*)(src));
     xmmE = _mm_cmpeq_epi32(xmmA, xmmA);
@@ -981,12 +984,12 @@ Ipp32s local_sad_diff_w7(Ipp8u *src, int srcStep)
 
     xmmC = _mm_add_epi32(xmmD, xmmA);
 
-    result = (Ipp32u*)&xmmC;
+    result = (uint32_t*)&xmmC;
 
     return result[0] + result[2];
 }
 
-Ipp32u ownLocalDiff_8u_w7(Ipp8u* pSrc, Ipp32u step, Ipp8u* pMed, Ipp8u* pDstSigma, Ipp8u* pDstMaxMin, Ipp32s len)
+uint32_t ownLocalDiff_8u_w7(uint8_t* pSrc, uint32_t step, uint8_t* pMed, uint8_t* pDstSigma, uint8_t* pDstMaxMin, int32_t len)
 {
     const static __m128i zero = _mm_set1_epi32(0);
 
@@ -1180,7 +1183,7 @@ Ipp32u ownLocalDiff_8u_w7(Ipp8u* pSrc, Ipp32u step, Ipp8u* pMed, Ipp8u* pDstSigm
         xmmMax = _mm_packus_epi16(xmmMax, xmmMax);
         xmmSgm = _mm_packus_epi16(xmmSgm, xmmSgm);
 
-        Ipp8u *mm = (Ipp8u*)&xmmMax, *s = (Ipp8u*)&xmmSgm;
+        uint8_t *mm = (uint8_t*)&xmmMax, *s = (uint8_t*)&xmmSgm;
         for(i=mlen; i<len; i++) { *pDstMaxMin++ = *mm++; *pDstSigma++ = *s++; }
     }
     return 0;
@@ -1188,10 +1191,10 @@ Ipp32u ownLocalDiff_8u_w7(Ipp8u* pSrc, Ipp32u step, Ipp8u* pMed, Ipp8u* pDstSigm
 
 #else
 
-Ipp32u ownSigma_8u(Ipp8u* pSrc, Ipp32u step, Ipp8u threshold, Ipp8u *res)
+uint32_t ownSigma_8u(uint8_t* pSrc, uint32_t step, uint8_t threshold, uint8_t *res)
 {
-    Ipp32u sum = 0, weight = 0, diff;
-    static const Ipp32u q_table[9] = {2048, 1024, 682, 512, 409, 341, 292, 256, 227};
+    uint32_t sum = 0, weight = 0, diff;
+    static const uint32_t q_table[9] = {2048, 1024, 682, 512, 409, 341, 292, 256, 227};
 
     for (int k = 0; k < 8; k++)
     {
@@ -1211,13 +1214,13 @@ Ipp32u ownSigma_8u(Ipp8u* pSrc, Ipp32u step, Ipp8u threshold, Ipp8u *res)
         }
 
         sum += (weight >> 1);
-        res[k] = (Ipp8u)((sum * q_table[weight-1]) >> 11);
+        res[k] = (uint8_t)((sum * q_table[weight-1]) >> 11);
     }
 
     return 0;
 }
 
-Ipp32u ownLocalDiff_8u(Ipp8u* pSrc, Ipp32u step, Ipp8u* pMed, Ipp8u* pDstSigma, Ipp8u* pDstMaxMin, Ipp32s len)
+uint32_t ownLocalDiff_8u(uint8_t* pSrc, uint32_t step, uint8_t* pMed, uint8_t* pDstSigma, uint8_t* pDstMaxMin, int32_t len)
 {
     int i = 0, j = 0, x = 0;
     int sigma, block_max, block_min, med_diff;
@@ -1240,8 +1243,8 @@ Ipp32u ownLocalDiff_8u(Ipp8u* pSrc, Ipp32u step, Ipp8u* pMed, Ipp8u* pDstSigma, 
                 sigma += med_diff;
             }
         }
-        pDstSigma[x] = (sigma > 255) ? 255 : (Ipp8u)sigma;
-        pDstMaxMin[x] = (Ipp8u)(block_max - block_min);
+        pDstSigma[x] = (sigma > 255) ? 255 : (uint8_t)sigma;
+        pDstMaxMin[x] = (uint8_t)(block_max - block_min);
     }
 
     return 0;
@@ -1255,7 +1258,7 @@ Ipp32u ownLocalDiff_8u(Ipp8u* pSrc, Ipp32u step, Ipp8u* pMed, Ipp8u* pDstSigma, 
 
 mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
                                                            mfxI32 refStep,
-                                                           IppiSize roiSize,
+                                                           mfxSize roiSize,
                                                            mfxU8* pDst,
                                                            mfxI32 dstStep,
                                                            owniDenoiseCASTState* pState)
@@ -1282,7 +1285,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
     */
 #endif
     mfxI32 bufStep = roiSize.width + 4;
-    IppiSize mask={3,3};
+    mfxSize mask={3,3};
     IppiPoint anchor = {1,1};
     mfxI32 i = 0, j = 0;
 
@@ -1309,7 +1312,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
     }
     else
     {   /* interlaced */
-        IppiSize isize;
+        mfxSize isize;
         isize.width = roiSize.width;
         isize.height = roiSize.height >> 1;
 
@@ -1407,7 +1410,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
     {
         history_weight   = 128;
         //(Eric): division is once per frame, keep as integer division in HW
-        gaussian_th      = (mfxU8)IPP_MIN((noise_level/100), 12);
+        gaussian_th      = (mfxU8)MFX_MIN((noise_level/100), 12);
 
         if(MFX_PICSTRUCT_PROGRESSIVE & pState->picStruct)
         {
@@ -1455,7 +1458,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
 
 #ifndef VPP_SSE
         /*
-        IppiSize newRoi;
+        mfxSize newRoi;
         newRoi.width = roiSize.width - 1;
         newRoi.height = roiSize.height;
         ippiAbsDiff_8u_C1R(pBuf, bufStep, pBuf+1, bufStep, pHDiff, roiSize.width, newRoi);
@@ -1588,7 +1591,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
                                 }
                                 else if(history_weight < (m_historyMax - m_historyDelta))
                                 {
-                                    history_weight = (Ipp8u)(history_weight + m_historyDelta); /* u8 is enough */
+                                    history_weight = (uint8_t)(history_weight + m_historyDelta); /* u8 is enough */
                                     mv_history[m_historyStep * v + h] = history_weight;
                                 }
                             }
@@ -1645,7 +1648,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCAST_8u_C1R(const mfxU8* pRef,
 
 /* ************************************************************************ */
 
-mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTGetSize(IppiSize roiSize, mfxU32* pMemSize)
+mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTGetSize(mfxSize roiSize, mfxU32* pMemSize)
 {
   MFX_CHECK_NULL_PTR1(pMemSize);
 
@@ -1667,7 +1670,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTGetSize(IppiSize roiSize, mfx
 
 /* ************************************************************************ */
 
-mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTInit(owniDenoiseCASTState* pState, IppiSize /*roiSize*/)
+mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTInit(owniDenoiseCASTState* pState, mfxSize /*roiSize*/)
 {
   IppStatus ippSts = ippStsNoErr;
 
@@ -1700,7 +1703,7 @@ mfxStatus MFXVideoVPPDenoise::owniFilterDenoiseCASTInit(owniDenoiseCASTState* pS
 
 /* ************************************************************************ */
 
-mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size, mfxI32* pThres,
+mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(mfxSize size, mfxI32* pThres,
                                                                 owniDenoiseCASTState* pState)
 {
     int num_sigma_mb,sigma_mb_min_all;
@@ -1711,8 +1714,8 @@ mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size, m
     mfxU8 *blkMaxMin;
     mfxU8 *medianDif;
     IppiPoint medianAnchor = {1,1};
-    IppiSize medianMask = {3,3};
-    IppiSize blk_size;
+    mfxSize medianMask = {3,3};
+    mfxSize blk_size;
     mfxU8 blkSigmaMin = 0;
     blk_size.width = m_blockWidthNE;
     blk_size.height = m_blockHeightNE;
@@ -1754,8 +1757,8 @@ mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size, m
 #endif
         }
 
-        ippiCompareC_16s_C1R (tmpOut1_16, size.width * sizeof(mfxI16), (Ipp16s)m_sobelEdgeThreshold, tmpOut0, size.width, size, ippCmpLess);
-        ippiCompareC_8u_C1R (blkMaxMin, size.width, (Ipp8u)m_localDiffThreshold, tmpOut1, size.width, size, ippCmpLess);
+        ippiCompareC_16s_C1R (tmpOut1_16, size.width * sizeof(mfxI16), (int16_t)m_sobelEdgeThreshold, tmpOut0, size.width, size, ippCmpLess);
+        ippiCompareC_8u_C1R (blkMaxMin, size.width, (uint8_t)m_localDiffThreshold, tmpOut1, size.width, size, ippCmpLess);
         ippiAnd_8u_C1IR(tmpOut0, size.width, tmpOut1, size.width, size);
         ippiNot_8u_C1IR(tmpOut1, size.width, size); /* invert mask to set unused values to 0xFF */
         ippiOr_8u_C1IR(tmpOut1, size.width, blkSigma, size.width, size);
@@ -1779,7 +1782,7 @@ mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size, m
     }
     else
     {   /* interlaced */
-        IppiSize isize;
+        mfxSize isize;
         isize.width = size.width;
         isize.height = size.height >> 1;
 
@@ -1816,14 +1819,14 @@ mfxStatus MFXVideoVPPDenoise::ownGaussNoiseEstimation_8u_C1R_v2(IppiSize size, m
 #endif
         }
 
-        ippiCompareC_16s_C1R (tmpOut1_16, size.width * sizeof(mfxI16), (Ipp16s)m_sobelEdgeThreshold, tmpOut0, size.width, size, ippCmpLess);
-        ippiCompareC_8u_C1R (blkMaxMin, size.width, (Ipp8u)m_localDiffThreshold, tmpOut1, size.width, size, ippCmpLess);
+        ippiCompareC_16s_C1R (tmpOut1_16, size.width * sizeof(mfxI16), (int16_t)m_sobelEdgeThreshold, tmpOut0, size.width, size, ippCmpLess);
+        ippiCompareC_8u_C1R (blkMaxMin, size.width, (uint8_t)m_localDiffThreshold, tmpOut1, size.width, size, ippCmpLess);
         ippiAnd_8u_C1IR(tmpOut0, size.width, tmpOut1, size.width, size);
         ippiNot_8u_C1IR(tmpOut1, size.width, size); /* invert mask to set unused values to 0xFF */
         ippiOr_8u_C1IR(tmpOut1, size.width, blkSigma, size.width, size);
 
         /* collect all mins for each block */
-        IppiSize iblk_size;
+        mfxSize iblk_size;
         iblk_size.width = blk_size.width;
         iblk_size.height = blk_size.height >> 1;
 

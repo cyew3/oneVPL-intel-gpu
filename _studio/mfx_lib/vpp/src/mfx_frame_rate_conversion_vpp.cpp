@@ -25,6 +25,8 @@
 #include "mfx_vpp_utils.h"
 #include "mfx_frame_rate_conversion_vpp.h"
 
+#include "umc_defs.h"
+
 /* ******************************************************************** */
 /*                 implementation of VPP filter [FrameRateConversion]   */
 /* ******************************************************************** */
@@ -122,7 +124,7 @@ mfxStatus MFXVideoVPPFrameRateConversion::SetParam( mfxExtBuffer* pHint )
     if( m_bAdvancedMode )
     {
 
-        m_minDeltaTime = IPP_MIN((mfxU64) (m_errPrtctState.In.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.In.FrameRateExtN), 
+        m_minDeltaTime = MFX_MIN((mfxU64) (m_errPrtctState.In.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.In.FrameRateExtN), 
                                (mfxU64) (m_errPrtctState.Out.FrameRateExtD * MFX_TIME_STAMP_FREQUENCY) / (2 * m_errPrtctState.Out.FrameRateExtN));
     }
 

@@ -196,7 +196,7 @@ mfxStatus VideoVPP_SW::RunVPPTask(mfxFrameSurface1* in, mfxFrameSurface1* out, F
 {
     mfxStatus sts = MFX_ERR_NONE;
 
-    mfxI32 preWorkIsStarted_cur = vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>( &(m_threadModeVPP.preWorkIsStarted) ), 1, 0);
+    mfxI32 preWorkIsStarted_cur = vm_interlocked_cas32(reinterpret_cast<volatile uint32_t *>( &(m_threadModeVPP.preWorkIsStarted) ), 1, 0);
 
     if (!preWorkIsStarted_cur)
     {   // PreWork works only once
@@ -269,7 +269,7 @@ mfxStatus VideoVPP_SW::RunVPPTask(mfxFrameSurface1* in, mfxFrameSurface1* out, F
         }
     }
 
-    mfxI32 postWorkIsStarted_cur = vm_interlocked_cas32(reinterpret_cast<volatile Ipp32u *>( &(m_threadModeVPP.postWorkIsStarted) ), 1, 0);
+    mfxI32 postWorkIsStarted_cur = vm_interlocked_cas32(reinterpret_cast<volatile uint32_t *>( &(m_threadModeVPP.postWorkIsStarted) ), 1, 0);
     if (!postWorkIsStarted_cur)
     {   // PostWork works only once
         sts = PostWork(in, out, m_threadModeVPP.pInSurf, m_threadModeVPP.pOutSurf, processingSts);

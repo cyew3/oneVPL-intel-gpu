@@ -72,7 +72,7 @@ protected:
     //mfxStatus PassThrough(mfxFrameSurface1 *in, mfxFrameSurface1 *out);
 
 private:
-    Ipp8u     m_divTable[256];
+    uint8_t     m_divTable[256];
 
     int       m_gainFactor;                     //strength of sharpening
     int       m_internalGainFactor;             //real strength of sharpening
@@ -85,23 +85,23 @@ private:
     int       m_weakWeight;                     //strength of sharpening for weak edge
 
     // internal buffers
-    Ipp8u*    m_pSobelBuffer;
+    uint8_t*    m_pSobelBuffer;
     int       m_sobelPitch;
 
-    Ipp8u*    m_pDiffBuffer;
+    uint8_t*    m_pDiffBuffer;
     int       m_diffPitch;
 
-    Ipp8u*    m_pExtBuffer;
+    uint8_t*    m_pExtBuffer;
     int       m_extPitch;
 
     // iin case of default params filter can be excluded from pipeline to high performance
     bool      m_isFilterActive;
 
-    mfxStatus DetailFilterCore( Ipp8u* pSrc, int srcPitch,
-                                Ipp8u* pDst, int dstPitch,
-                                Ipp8u* pSobel, int sobelPitch,
-                                Ipp8u* pDiff,  int diffPitch,
-                                IppiSize size);
+    mfxStatus DetailFilterCore( uint8_t* pSrc, int srcPitch,
+                                uint8_t* pDst, int dstPitch,
+                                uint8_t* pSobel, int sobelPitch,
+                                uint8_t* pDiff,  int diffPitch,
+                                mfxSize size);
 #endif
 };
 

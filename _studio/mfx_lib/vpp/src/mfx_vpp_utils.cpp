@@ -35,6 +35,8 @@
 #include "ippi.h"
 #include "ippcc.h"
 
+#include "umc_defs.h"
+
 const mfxU32 g_TABLE_DO_NOT_USE [] =
 {
     MFX_EXTBUFF_VPP_DENOISE,
@@ -1330,7 +1332,7 @@ mfxStatus GetPipelineList(
 
     /* [Deinterlace] FILTER */
 #if 0
-    mfxU32 extParamCount        = IPP_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
+    mfxU32 extParamCount        = MFX_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
     std::vector<mfxU32> extParamList(extParamCount);
 
     GetConfigurableFilterList( videoParam, &extParamList[0], &extParamCount );
@@ -1488,7 +1490,7 @@ mfxStatus GetPipelineList(
     /* *************************************************************************** */
     /* 4. optional filters, disabled by default, enabled by EXT_BUFFER             */
     /* *************************************************************************** */
-    mfxU32 configCount = IPP_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
+    mfxU32 configCount = MFX_MAX(sizeof(g_TABLE_CONFIG) / sizeof(*g_TABLE_CONFIG), videoParam->NumExtParam);
     std::vector<mfxU32> configList(configCount);
 
     GetConfigurableFilterList( videoParam, &configList[0], &configCount );
@@ -2454,7 +2456,7 @@ void SignalPlatformCapabilities(
         GetDoUseFilterList( (mfxVideoParam*)&param, &pDO_USE_List, &douseCount );
         if(douseCount > 0)
         {
-            size_t fCount = IPP_MIN(supportedList.size(), douseCount);
+            size_t fCount = MFX_MIN(supportedList.size(), douseCount);
             size_t fIdx = 0;
             for(fIdx = 0; fIdx < fCount; fIdx++)
             {
@@ -2783,7 +2785,7 @@ bool IsROIConstant(mfxFrameSurface1* pSrc1, mfxFrameSurface1* pSrc2, mfxFrameSur
 /* all protection must been done before call */
 mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROIControl)
 {
-    IppiSize roiSize;
+    mfxSize roiSize;
     IppStatus sts;
     mfxFrameData* inData  = &(in->Data);
     mfxFrameData* outData = &(out->Data);
@@ -2803,13 +2805,13 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
         MFX_CHECK_NULL_PTR1(inData->G);
         MFX_CHECK_NULL_PTR1(inData->B);
 
-        mfxU8* ptrInput = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+        mfxU8* ptrInput = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
 
         MFX_CHECK_NULL_PTR1(outData->R);
         MFX_CHECK_NULL_PTR1(outData->G);
         MFX_CHECK_NULL_PTR1(outData->B);
 
-        mfxU8* ptrOutput = IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+        mfxU8* ptrOutput = MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
 
         VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
         VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -2914,13 +2916,13 @@ mfxStatus SurfaceCopy_ROI(mfxFrameSurface1* out, mfxFrameSurface1* in, bool bROI
 
 mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
 {
-    const  Ipp8u BLACK_CLR_Y  = 16;
-    const  Ipp8u BLACK_CLR_UV = 128;
+    const  uint8_t BLACK_CLR_Y  = 16;
+    const  uint8_t BLACK_CLR_UV = 128;
 
     const mfxI32 BLACK_CLR_YUY2 = MFX_MAKEFOURCC(BLACK_CLR_Y, BLACK_CLR_UV, BLACK_CLR_Y, BLACK_CLR_UV);
     const mfxI32 BLACK_CLR_RGB4 = 0;//{0, 0, 0, 0}
 
-    IppiSize roiSize;
+    mfxSize roiSize;
     IppStatus sts;
 
     MFX_CHECK_NULL_PTR1(ptr);
@@ -2946,7 +2948,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
         /*roiSize.height = ptr->Info.Height;
         roiSize.width  = ptr->Info.Width >> 1;
 
-        sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);*/
+        sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (int32_t*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);*/
         //------------------------------------
         //       ROI #1 of frame (UP)
         //------------------------------------
@@ -2956,7 +2958,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
             roiSize.height = ptr->Info.CropY;
             roiSize.width  = ptr->Info.Width >> 1;
 
-            sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);
+            sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (int32_t*)(ptr->Data.Y), ptr->Data.Pitch, roiSize);
             VPP_CHECK_IPP_STS( sts );
         }
 
@@ -2970,7 +2972,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
              roiSize.width  = ptr->Info.Width >> 1;
 
              int offset = (ptr->Info.CropY + ptr->Info.CropH) * ptr->Data.Pitch;
-             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
+             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (int32_t*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
              VPP_CHECK_IPP_STS( sts );
         }
 
@@ -2984,7 +2986,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
              roiSize.width  = ptr->Info.CropX >> 1;
 
              int offset = (ptr->Info.CropY) * ptr->Data.Pitch;
-             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
+             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (int32_t*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
              VPP_CHECK_IPP_STS( sts );
         }
 
@@ -2999,7 +3001,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
              roiSize.width >>= 1;
 
              int offset = (ptr->Info.CropY) * ptr->Data.Pitch + (ptr->Info.CropX + ptr->Info.CropW)*2;
-             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (Ipp32s*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
+             sts = ippiSet_32s_C1R(BLACK_CLR_YUY2, (int32_t*)(ptr->Data.Y + offset), ptr->Data.Pitch, roiSize);
              VPP_CHECK_IPP_STS( sts );
         }
     }
@@ -3092,7 +3094,7 @@ mfxStatus SetBackGroundColor(mfxFrameSurface1 *ptr)
         //------------------------------------
         //       ROI #1 of frame (UP)
         //------------------------------------
-        mfxU8* ptrBGRA = IPP_MIN( IPP_MIN(ptr->Data.B, ptr->Data.G), ptr->Data.R );
+        mfxU8* ptrBGRA = MFX_MIN( MFX_MIN(ptr->Data.B, ptr->Data.G), ptr->Data.R );
         MFX_CHECK_NULL_PTR1(ptrBGRA);
 
         if( ptr->Info.CropY > 0 )

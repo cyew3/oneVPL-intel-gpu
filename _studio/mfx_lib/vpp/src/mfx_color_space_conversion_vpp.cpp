@@ -34,6 +34,7 @@
 #include "ippi.h"
 #include "ippcc.h"
 
+#include "umc_defs.h"
 
 #define AVX_DISP(func, ...)   func(__VA_ARGS__);
 
@@ -458,10 +459,10 @@ mfxStatus MFXVideoVPPColorSpaceConversion::Init(mfxFrameInfo* In, mfxFrameInfo* 
 
 #if defined(_WIN32) || defined(_WIN64)
   // [1] GetPlatformType()
-  Ipp32u cpuIdInfoRegs[4];
-  Ipp64u featuresMask;
+  uint32_t cpuIdInfoRegs[4];
+  unsigned long long featuresMask;
   IppStatus sts = ippGetCpuFeatures( &featuresMask, cpuIdInfoRegs);
-  if(ippStsNoErr == sts && featuresMask & (Ipp64u)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
+  if(ippStsNoErr == sts && featuresMask & (unsigned long long)(ippCPUID_AVX2) ) // means AVX2 + BMI_I + BMI_II to prevent issues with BMI
   {
     m_bAVX2 = true;
   }
@@ -630,7 +631,7 @@ IppStatus cc_YV12_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo)
 {
   IppStatus sts     = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
   mfxU16  cropX = 0, cropY = 0;
 
   mfxU32  inOffset0 = 0, inOffset1  = 0;
@@ -677,7 +678,7 @@ IppStatus cc_NV16_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -739,7 +740,7 @@ IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo*)
 {
     IppStatus sts = ippStsNoErr;
-    IppiSize  roiSize = {0, 0};
+    mfxSize  roiSize = {0, 0};
 
     VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
     VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -747,7 +748,7 @@ IppStatus cc_NV12_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
     if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
     {
         // Copy Y plane as is
-        sts = ippiCopy_8u_C1R((const Ipp8u *)inData->Y, inData->Pitch, (Ipp8u *)outData->Y, outData->Pitch, roiSize);
+        sts = ippiCopy_8u_C1R((const uint8_t *)inData->Y, inData->Pitch, (uint8_t *)outData->Y, outData->Pitch, roiSize);
         IPP_CHECK_STS( sts );
 
         // Chroma is interpolated using nearest points that gives closer match with ffmpeg
@@ -810,7 +811,7 @@ IppStatus cc_YUY2_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   // cropping was removed
 
@@ -857,7 +858,7 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                             mfxFrameData* yv12Data)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   // cropping was removed
 
@@ -869,15 +870,15 @@ IppStatus cc_P010_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
       /* Initial implementation w/o rounding 
        * TODO: add rounding to match reference algorithm 
        */
-      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, 2, (Ipp16u *)yv12Data->Y, yv12Data->Pitch, roiSize);
+      sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, 2, (uint16_t *)yv12Data->Y, yv12Data->Pitch, roiSize);
       IPP_CHECK_STS( sts );
-      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize); 
+      sts = ippiConvert_16u8u_C1R((const uint16_t *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize); 
       IPP_CHECK_STS( sts );
 
       roiSize.height >>= 1;
-      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, 2, (Ipp16u *)yv12Data->UV, yv12Data->Pitch, roiSize);
+      sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch, 2, (uint16_t *)yv12Data->UV, yv12Data->Pitch, roiSize);
       IPP_CHECK_STS( sts );
-      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize); 
+      sts = ippiConvert_16u8u_C1R((const uint16_t *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize); 
       IPP_CHECK_STS( sts );
   }
   else
@@ -895,7 +896,7 @@ IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                             mfxFrameData* yv12Data)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   // cropping was removed
 
@@ -904,14 +905,14 @@ IppStatus cc_P210_to_NV16( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
   if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
   {
-      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, 2, (Ipp16u *)yv12Data->Y, yv12Data->Pitch, roiSize);
+      sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, 2, (uint16_t *)yv12Data->Y, yv12Data->Pitch, roiSize);
       IPP_CHECK_STS( sts );
-      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize);
+      sts = ippiConvert_16u8u_C1R((const uint16_t *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch, 2, (Ipp16u *)yv12Data->UV, yv12Data->Pitch, roiSize);
+      sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch, 2, (uint16_t *)yv12Data->UV, yv12Data->Pitch, roiSize);
       IPP_CHECK_STS( sts );
-      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize);
+      sts = ippiConvert_16u8u_C1R((const uint16_t *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
   }
   else
@@ -928,7 +929,7 @@ IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                             mfxFrameData* yv12Data)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   // cropping was removed
 
@@ -940,15 +941,15 @@ IppStatus cc_P210_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
       /* Initial implementation w/o rounding
        * TODO: add rounding to match reference algorithm
        */
-      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, 2, (Ipp16u *)yv12Data->Y, yv12Data->Pitch, roiSize);
+      sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, 2, (uint16_t *)yv12Data->Y, yv12Data->Pitch, roiSize);
       IPP_CHECK_STS( sts );
-      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize);
+      sts = ippiConvert_16u8u_C1R((const uint16_t *)yv12Data->Y,  yv12Data->Pitch, outData->Y, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
       roiSize.height >>= 1;
-      sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch * 2, 2, (Ipp16u *)yv12Data->UV, yv12Data->Pitch, roiSize);
+      sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch * 2, 2, (uint16_t *)yv12Data->UV, yv12Data->Pitch, roiSize);
       IPP_CHECK_STS( sts );
-      sts = ippiConvert_16u8u_C1R((const Ipp16u *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize);
+      sts = ippiConvert_16u8u_C1R((const uint16_t *)yv12Data->UV,  yv12Data->Pitch, outData->UV, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
   }
   else
@@ -964,7 +965,7 @@ IppStatus cc_P010_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo*)
 {
     IppStatus sts = ippStsNoErr;
-    IppiSize  roiSize = {0, 0};
+    mfxSize  roiSize = {0, 0};
 
     VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
     VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -972,7 +973,7 @@ IppStatus cc_P010_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
     if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
     {
         // Copy Y plane as is
-        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+        sts = ippiCopy_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, (uint16_t *)outData->Y, outData->Pitch, roiSize);
         IPP_CHECK_STS( sts );
 
         // Chroma is interpolated using nearest points that gives closer match with ffmpeg
@@ -1035,7 +1036,7 @@ IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   VPP_GET_REAL_WIDTH(inInfo, roiSize.width);
   VPP_GET_REAL_HEIGHT(inInfo, roiSize.height);
@@ -1043,7 +1044,7 @@ IppStatus cc_P210_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
     if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
     {
         // Copy Y plane as is
-        sts = ippiCopy_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+        sts = ippiCopy_16u_C1R((const uint16_t *)inData->Y, inData->Pitch, (uint16_t *)outData->Y, outData->Pitch, roiSize);
         IPP_CHECK_STS( sts );
 
         mfxU16 *Out;
@@ -1098,7 +1099,7 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                               mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
   mfxU32 inPitch, outPitch;
   mfxU16 *ptr_y, *ptr_uv;
   mfxU32 *out;
@@ -1120,7 +1121,7 @@ IppStatus cc_P010_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   {
         ptr_y  = (mfxU16*)inData->Y;
         ptr_uv = (mfxU16*)inData->UV;
-        out = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+        out = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
 
         uv_offset    = 0;
         out_offset   = 0;
@@ -1163,7 +1164,7 @@ IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
   mfxU32 inPitch, outPitch;
   mfxU16 *ptr_y, *ptr_uv;
   mfxU32 *out;
@@ -1185,7 +1186,7 @@ IppStatus cc_P210_to_A2RGB10( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   {
         ptr_y  = (mfxU16*)inData->Y;
         ptr_uv = (mfxU16*)inData->UV;
-        out = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+        out = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
 
         uv_offset    = 0;
         out_offset   = 0;
@@ -1262,7 +1263,7 @@ IppStatus cc_P010_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
 
     ptr_y  = (mfxU16*)inData->Y;
     ptr_uv = (mfxU16*)inData->UV;
-    out    = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+    out    = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
 
     ymmMin  = _mm256_set1_epi32(0);
     ymmMax  = _mm256_set1_epi32(1023);
@@ -1365,7 +1366,7 @@ IppStatus cc_P210_to_A2RGB10_avx2( mfxFrameData* inData,  mfxFrameInfo* inInfo, 
 
     ptr_y  = (mfxU16*)inData->Y;
     ptr_uv = (mfxU16*)inData->UV;
-    out    = (mfxU32*)IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
+    out    = (mfxU32*)MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
 
     ymmMin  = _mm256_set1_epi32(0);
     ymmMax  = _mm256_set1_epi32(1023);
@@ -1447,8 +1448,8 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
-  Ipp32u    shift;
+  mfxSize  roiSize = {0, 0};
+  uint32_t    shift;
   mfxU8     right_shift;
   // cropping was removed
 
@@ -1472,22 +1473,22 @@ IppStatus cc_P010_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
       if ( right_shift )
       {
-          sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch /* * 2*/, shift, (Ipp16u *)outData->Y, outData->Pitch /** 2*/, roiSize);
+          sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch /* * 2*/, shift, (uint16_t *)outData->Y, outData->Pitch /** 2*/, roiSize);
       }
       else
       {
-          sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->Y, inData->Pitch /** 2*/, shift, (Ipp16u *)outData->Y, outData->Pitch /** 2*/, roiSize);
+          sts = ippiLShiftC_16u_C1R((const uint16_t *)inData->Y, inData->Pitch /** 2*/, shift, (uint16_t *)outData->Y, outData->Pitch /** 2*/, roiSize);
       }
       IPP_CHECK_STS( sts );
 
       roiSize.height >>= 1;
       if ( right_shift )
       {
-          sts = ippiRShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch /** 2*/, shift, (Ipp16u *)outData->UV, outData->Pitch * 2, roiSize);
+          sts = ippiRShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch /** 2*/, shift, (uint16_t *)outData->UV, outData->Pitch * 2, roiSize);
       }
       else
       {
-          sts = ippiLShiftC_16u_C1R((const Ipp16u *)inData->UV, inData->Pitch/** 2*/, shift, (Ipp16u *)outData->UV, outData->Pitch/** 2*/, roiSize);
+          sts = ippiLShiftC_16u_C1R((const uint16_t *)inData->UV, inData->Pitch/** 2*/, shift, (uint16_t *)outData->UV, outData->Pitch/** 2*/, roiSize);
       }
       IPP_CHECK_STS( sts );
   }
@@ -1505,7 +1506,7 @@ IppStatus cc_NV12_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   // cropping was removed
 
@@ -1514,17 +1515,17 @@ IppStatus cc_NV12_to_P010( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
   if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
   {
-      sts = ippiConvert_8u16u_C1R(inData->Y,  inData->Pitch, (Ipp16u *)outData->Y,  outData->Pitch, roiSize);
+      sts = ippiConvert_8u16u_C1R(inData->Y,  inData->Pitch, (uint16_t *)outData->Y,  outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      sts = ippiLShiftC_16u_C1IR(2, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+      sts = ippiLShiftC_16u_C1IR(2, (uint16_t *)outData->Y, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
       roiSize.height >>= 1;
-      sts = ippiConvert_8u16u_C1R(inData->UV, inData->Pitch, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+      sts = ippiConvert_8u16u_C1R(inData->UV, inData->Pitch, (uint16_t *)outData->UV, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      sts = ippiLShiftC_16u_C1IR(2, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+      sts = ippiLShiftC_16u_C1IR(2, (uint16_t *)outData->UV, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
   }
   else
@@ -1541,7 +1542,7 @@ IppStatus cc_NV16_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* /*outInfo*/)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
 
   // cropping was removed
 
@@ -1550,16 +1551,16 @@ IppStatus cc_NV16_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
   if(MFX_PICSTRUCT_PROGRESSIVE & inInfo->PicStruct)
   {
-      sts = ippiConvert_8u16u_C1R(inData->Y,  inData->Pitch, (Ipp16u *)outData->Y,  outData->Pitch, roiSize);
+      sts = ippiConvert_8u16u_C1R(inData->Y,  inData->Pitch, (uint16_t *)outData->Y,  outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      sts = ippiLShiftC_16u_C1IR(2, (Ipp16u *)outData->Y, outData->Pitch, roiSize);
+      sts = ippiLShiftC_16u_C1IR(2, (uint16_t *)outData->Y, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      sts = ippiConvert_8u16u_C1R(inData->UV, inData->Pitch, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+      sts = ippiConvert_8u16u_C1R(inData->UV, inData->Pitch, (uint16_t *)outData->UV, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
 
-      sts = ippiLShiftC_16u_C1IR(2, (Ipp16u *)outData->UV, outData->Pitch, roiSize);
+      sts = ippiLShiftC_16u_C1IR(2, (uint16_t *)outData->UV, outData->Pitch, roiSize);
       IPP_CHECK_STS( sts );
   }
   else
@@ -1584,7 +1585,7 @@ IppStatus cc_NV16_to_P210( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 #define kry7  0x0000122d
 
 static
-IppStatus  ownBGRToYCbCr420_8u_C3P2R( const mfxU8* pSrc, mfxI32 srcStep, mfxU8* pDst[2],mfxI32 dstStep[2], IppiSize roiSize )
+IppStatus  ownBGRToYCbCr420_8u_C3P2R( const mfxU8* pSrc, mfxI32 srcStep, mfxU8* pDst[2],mfxI32 dstStep[2], mfxSize roiSize )
 {
   mfxI32 h,w;
   mfxI32 dstStepY = dstStep[0];
@@ -1625,8 +1626,8 @@ IppStatus  ownBGRToYCbCr420_8u_C3P2R( const mfxU8* pSrc, mfxI32 srcStep, mfxU8* 
       b += b1;b += b2;b += b3;
       g += g1;g += g2;g += g3;
 
-      *dstu = ( Ipp8u )((-kry3 * r - kry4 * g + kry5 * b + 0x2008000)>> 18 ); /* Cb */
-      *dstv = ( Ipp8u )(( kry5 * r - kry6 * g - kry7 * b + 0x2008000)>> 18 ); /* Cr */
+      *dstu = ( uint8_t )((-kry3 * r - kry4 * g + kry5 * b + 0x2008000)>> 18 ); /* Cb */
+      *dstv = ( uint8_t )(( kry5 * r - kry6 * g - kry7 * b + 0x2008000)>> 18 ); /* Cr */
 
       dstu += 2;
       dstv += 2;
@@ -1641,7 +1642,7 @@ IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct )
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
   mfxU16  cropX = 0, cropY = 0;
 
   mfxU32  inOffset0 = 0;
@@ -1663,7 +1664,7 @@ IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   IPP_CHECK_NULL_PTR1(inData->G);
   IPP_CHECK_NULL_PTR1(inData->B);
 
-  mfxU8* ptrStart = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+  mfxU8* ptrStart = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
 
   const mfxU8* pSrc[1] = {ptrStart + inOffset0};
 
@@ -1681,7 +1682,7 @@ IppStatus cc_RGB3_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   else
   {
     mfxI32 pDstFieldStep[2] = {pDstStep[0]<<1, pDstStep[1]<<1};
-    IppiSize  roiFieldSize = {roiSize.width, roiSize.height >> 1};
+    mfxSize  roiFieldSize = {roiSize.width, roiSize.height >> 1};
     mfxU8* pDstSecondField[2] = {pDst[0]+pDstStep[0], pDst[1]+pDstStep[1]};
 
     /* first field */
@@ -1701,7 +1702,7 @@ IppStatus cc_NV12_to_YV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                            mfxFrameData* outData, mfxFrameInfo* outInfo )
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
   mfxU16  cropX = 0, cropY = 0;
 
   mfxU32  inOffset0 = 0, inOffset1  = 0;
@@ -1747,18 +1748,18 @@ IppStatus cc_NV12_to_YV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 //-------------------------------------------------------------------------
 
 static
-IppStatus  ownBGRToYCbCr420_8u_AC4P3R( const Ipp8u* pSrc, int srcStep, Ipp8u* pDst[2],int dstStep[2], IppiSize roiSize )
+IppStatus  ownBGRToYCbCr420_8u_AC4P3R( const uint8_t* pSrc, int srcStep, uint8_t* pDst[2],int dstStep[2], mfxSize roiSize )
 {
   IppStatus sts = ippStsNoErr;
   int h,w;
   int dstStepY = dstStep[0];
   int width2  = roiSize.width  & ~1;
   int height2 = roiSize.height >> 1;
-  Ipp8u* pDstUV = pDst[1];
+  uint8_t* pDstUV = pDst[1];
 
   for( h = 0; h < height2; h++ ){
-    const Ipp8u* src;
-    Ipp8u* dsty,*dstu,*dstv;
+    const uint8_t* src;
+    uint8_t* dsty,*dstu,*dstv;
     src  = pSrc   + h * 2 * srcStep;
     dsty = pDst[0]+ h * 2 * dstStepY;
 
@@ -1774,17 +1775,17 @@ IppStatus  ownBGRToYCbCr420_8u_AC4P3R( const Ipp8u* pSrc, int srcStep, Ipp8u* pD
       b2= src[0+srcStep];g2= src[1+srcStep];r2= src[2+srcStep];
       b3= src[4+srcStep];g3= src[5+srcStep];r3= src[6+srcStep];
       src += 8;
-      dsty[0] = ( Ipp8u )(( kry0 * r  + kry1 *  g + kry2 *  b + 0x108000) >> 16 );
-      dsty[1] = ( Ipp8u )(( kry0 * r1 + kry1 * g1 + kry2 * b1 + 0x108000) >> 16 );
-      dsty[0+dstStepY] = ( Ipp8u )(( kry0 * r2 + kry1 * g2 + kry2 * b2 + 0x108000) >> 16 );
-      dsty[1+dstStepY] = ( Ipp8u )(( kry0 * r3 + kry1 * g3 + kry2 * b3 + 0x108000) >> 16 );
+      dsty[0] = ( uint8_t )(( kry0 * r  + kry1 *  g + kry2 *  b + 0x108000) >> 16 );
+      dsty[1] = ( uint8_t )(( kry0 * r1 + kry1 * g1 + kry2 * b1 + 0x108000) >> 16 );
+      dsty[0+dstStepY] = ( uint8_t )(( kry0 * r2 + kry1 * g2 + kry2 * b2 + 0x108000) >> 16 );
+      dsty[1+dstStepY] = ( uint8_t )(( kry0 * r3 + kry1 * g3 + kry2 * b3 + 0x108000) >> 16 );
       dsty += 2;
       r += r1;r += r2;r += r3;
       b += b1;b += b2;b += b3;
       g += g1;g += g2;g += g3;
 
-      *dstu = ( Ipp8u )((-kry3 * r - kry4 * g + kry5 * b + 0x2008000)>> 18 ); /* Cb */
-      *dstv = ( Ipp8u )(( kry5 * r - kry6 * g - kry7 * b + 0x2008000)>> 18 ); /* Cr */
+      *dstu = ( uint8_t )((-kry3 * r - kry4 * g + kry5 * b + 0x2008000)>> 18 ); /* Cb */
+      *dstv = ( uint8_t )(( kry5 * r - kry6 * g - kry7 * b + 0x2008000)>> 18 ); /* Cr */
 
       dstu += 2;
       dstv += 2;
@@ -1799,7 +1800,7 @@ IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                           mfxFrameData* outData, mfxFrameInfo* outInfo, mfxU16 picStruct)
 {
   IppStatus sts = ippStsNoErr;
-  IppiSize  roiSize = {0, 0};
+  mfxSize  roiSize = {0, 0};
   mfxU16  cropX = 0, cropY = 0;
 
   mfxU32  inOffset0 = 0;
@@ -1822,7 +1823,7 @@ IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   IPP_CHECK_NULL_PTR1(inData->B);
   // alpha channel is ignore due to d3d issue
 
-  mfxU8* ptrStart = IPP_MIN( IPP_MIN(inData->R, inData->G), inData->B );
+  mfxU8* ptrStart = MFX_MIN( MFX_MIN(inData->R, inData->G), inData->B );
 
   const mfxU8* pSrc[1] = {ptrStart + inOffset0};
 
@@ -1839,7 +1840,7 @@ IppStatus cc_RGB4_to_NV12( mfxFrameData* inData,  mfxFrameInfo* inInfo,
   else
   {
     mfxI32 pDstFieldStep[2] = {pDstStep[0]<<1, pDstStep[1]<<1};
-    IppiSize  roiFieldSize = {roiSize.width, roiSize.height >> 1};
+    mfxSize  roiFieldSize = {roiSize.width, roiSize.height >> 1};
     mfxU8* pDstSecondField[2] = {pDst[0]+pDstStep[0], pDst[1]+pDstStep[1]};
 
     /* first field */
@@ -1861,7 +1862,7 @@ IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
                           mfxFrameData* outData, mfxFrameInfo* /*outInfo*/ )
 {
     IppStatus sts = ippStsNoErr;
-    IppiSize  roiSize = {0, 0};
+    mfxSize  roiSize = {0, 0};
     /*mfxU16    cropX = 0, cropY = 0;
     mfxU32    inOffset0, inOffset1;
     mfxU32    outOffset0;
@@ -1915,18 +1916,18 @@ IppStatus cc_NV12_to_YUY2( mfxFrameData* inData,  mfxFrameInfo* inInfo,
 
 
 //static void tst_ycbcr420_rgb_p2c4(
-//    Ipp8u* src,
+//    uint8_t* src,
 //    int sStep,
-//    Ipp8u* ref,
+//    uint8_t* ref,
 //    int rStep,
-//    IppiSize size,
-//    Ipp8u aValue,
+//    mfxSize size,
+//    uint8_t aValue,
 //    int typeRGB,
 //    int typeCBCR)
 //{
-//    Ipp8u *redL1, *greenL1, *blueL1, *alphaL1, *redH1, *greenH1, *blueH1, *alphaH1;
-//    Ipp8u *redL2, *greenL2, *blueL2, *alphaL2, *redH2, *greenH2, *blueH2, *alphaH2;
-//    Ipp8u *srcYL1, *srcYH1, *srcYL2, *srcYH2, *srcCb, *srcCr, *srcCbCr;
+//    uint8_t *redL1, *greenL1, *blueL1, *alphaL1, *redH1, *greenH1, *blueH1, *alphaH1;
+//    uint8_t *redL2, *greenL2, *blueL2, *alphaL2, *redH2, *greenH2, *blueH2, *alphaH2;
+//    uint8_t *srcYL1, *srcYH1, *srcYL2, *srcYH2, *srcCb, *srcCr, *srcCbCr;
 //    double rL1, gL1, bL1, rH1, gH1, bH1, rL2, gL2, bL2, rH2, gH2, bH2;
 //    double yL1, yH1, yL2, yH2, cb, cr;
 //    int i, j, s_y, s_cbcr, d, width, height;
@@ -2049,8 +2050,8 @@ IppStatus cc_NV12_to_RGB4(
     IPP_CHECK_NULL_PTR1(outData->B);
     // alpha channel is ignore due to d3d issue
 
-    mfxU8*   ptrStart = IPP_MIN( IPP_MIN(outData->R, outData->G), outData->B );
-    IppiSize roiSize = {outInfo->Width, outInfo->Height};
+    mfxU8*   ptrStart = MFX_MIN( MFX_MIN(outData->R, outData->G), outData->B );
+    mfxSize roiSize = {outInfo->Width, outInfo->Height};
     const mfxU8  AVAL = 0;
 
     //ippSts = ippiYCrCb420ToRGB_8u_P3C4R(pSrc, srcStep, ptrStart, outData->Pitch, roiSize, AVAL);

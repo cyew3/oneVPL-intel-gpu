@@ -38,6 +38,8 @@
 #include "mfx_vpp_utils.h"
 #include "mfx_deinterlace_vpp.h"
 
+#include "umc_defs.h"
+
 /* ******************************************************************** */
 /*                 MACROS for DI/ITC algorithms                         */
 /* ******************************************************************** */
@@ -111,7 +113,7 @@ MFXVideoVPPDeinterlace::MFXVideoVPPDeinterlace(VideoCORE *core, mfxStatus* sts )
   m_core = core;
 
   /* ITC algorithm */
-  ippsZero_8u( (Ipp8u*)&m_itcState, sizeof(sITCState) );
+  ippsZero_8u( (uint8_t*)&m_itcState, sizeof(sITCState) );
   m_itcState.outBuf.mids   = NULL;
   m_itcState.outBuf.Surface1.Data.Locked = 0;
   m_itcState.isInited = 0;
@@ -199,7 +201,7 @@ mfxStatus MFXVideoVPPDeinterlace::Close(void)
 
     m_itcState.outBuf.mids     = NULL;
     m_itcState.outBuf.Surface1.Data.Locked = 0;
-    ippsZero_8u( (Ipp8u*)&m_itcState, sizeof(sITCState) );
+    ippsZero_8u( (uint8_t*)&m_itcState, sizeof(sITCState) );
 
     m_itcState.isInited = 0;//double check
   }
@@ -469,7 +471,7 @@ mfxStatus MFXVideoVPPDeinterlace::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
       m_mode = VPP_SIMPLE_DEINTERLACE;
   }
 
-  ippsZero_8u( (Ipp8u*)&m_itcState, sizeof(sITCState) );
+  ippsZero_8u( (uint8_t*)&m_itcState, sizeof(sITCState) );
 
   /* temporary solution for ref frame of ITC */
   {
@@ -492,7 +494,7 @@ mfxStatus MFXVideoVPPDeinterlace::Init(mfxFrameInfo* In, mfxFrameInfo* Out)
 
   /* DI */
   {
-    IppiSize planeSize = {m_errPrtctState.In.Width, m_errPrtctState.In.Height};
+    mfxSize planeSize = {m_errPrtctState.In.Width, m_errPrtctState.In.Height};
     int blendThresh[2] = {5, 9};
     double blendConstants[2] = {0.3, 0.7};
 
@@ -1282,7 +1284,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_LQ_NV12( mfxFrameSurface1* in, mfxFrameSurf
   else
   {
       IppStatus sts     = ippStsNotSupportedModeErr;
-      IppiSize  roiSize;
+      mfxSize  roiSize;
 
       mfxU32  inOffset0 = 0, inOffset1  = 0;
       mfxU32  outOffset0= 0, outOffset1 = 0;
@@ -1379,7 +1381,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_HQ_NV12(mfxFrameSurface1* ref1,
                                              mfxFrameSurface1* out,
                                              mfxU16 picStruct)
 {
-    IppiSize  roiSize;
+    mfxSize  roiSize;
 
     mfxU32  inOffset0 = 0, inOffset1  = 0;
     mfxU32  outOffset0= 0, outOffset1 = 0;
@@ -1506,8 +1508,8 @@ mfxStatus MFXVideoVPPDeinterlace::di_HQ_NV12(mfxFrameSurface1* ref1,
 
         /* Y */
         {
-            const Ipp8u* pSrcPlane[3] = {pRef1[0], pRef0[0], pSrc[0]};
-            IppiSize planeSize        = { roiSize.width, roiSize.height };
+            const uint8_t* pSrcPlane[3] = {pRef1[0], pRef0[0], pSrc[0]};
+            mfxSize planeSize        = { roiSize.width, roiSize.height };
             IppStatus ippSts = ippStsNoErr;
 
             // priority(PROGRESSIVE) > priority(TFF/BFF)
@@ -1527,7 +1529,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_HQ_NV12(mfxFrameSurface1* ref1,
         roiSize.height >>= 1;
         roiSize.width  >>= 1;
         {
-            IppiSize planeSize        = { roiSize.width, roiSize.height };
+            mfxSize planeSize        = { roiSize.width, roiSize.height };
             IppStatus ippSts = ippStsNoErr;
 
             IppvcFrameFieldFlag fieldFirst   = (0 == topFirst) ? IPPVC_BOTTOM_FIELD : IPPVC_TOP_FIELD;
@@ -1537,7 +1539,7 @@ mfxStatus MFXVideoVPPDeinterlace::di_HQ_NV12(mfxFrameSurface1* ref1,
             // priority(PROGRESSIVE) > priority(TFF/BFF)
             if( MFX_PICSTRUCT_PROGRESSIVE & picStruct )
             {
-                IppiSize roiSizeUV = {roiSize.width << 1, roiSize.height}; // width(UV) == width(Y)
+                mfxSize roiSizeUV = {roiSize.width << 1, roiSize.height}; // width(UV) == width(Y)
                 ippSts = ippiCopy_8u_C1R(pRef0[1], pRef0Step[1], pDst[1],  pDstStep[1], roiSizeUV);
             }
             else
@@ -1695,10 +1697,10 @@ void itc_getStatistic(mfxU8 *pCT, mfxU8 *pCB, mfxI32 stepCur,
 
 mfxStatus itc_CompareFourFields(mfxU8 *pCT, mfxU8 *pCB, mfxI32 stepCur,
                                 mfxU8 *pPT, mfxU8 *pPB, mfxI32 stepPrev,
-                                IppiSize roiSize, mfxI32 *var)
+                                mfxSize roiSize, mfxI32 *var)
 {
-  Ipp32s i, j;
-  Ipp32s width = roiSize.width, height = roiSize.height;
+  int32_t i, j;
+  int32_t width = roiSize.width, height = roiSize.height;
 
   for (i = 0; i < height - 8; i += 8)
   {
@@ -1726,12 +1728,12 @@ mfxStatus itc_CompareFourFields(mfxU8 *pCT, mfxU8 *pCB, mfxI32 stepCur,
 
 mfxStatus itc_Frame_NV12(const mfxU8 *pCFrame[2], mfxI32 stepC[2],
                          mfxU8 *pPFrame[2], mfxI32 stepP[2],
-                         IppiSize roiSize, mfxI32 *var)
+                         mfxSize roiSize, mfxI32 *var)
 {
   mfxU8 *pYc, *pUVc;
   mfxU8 *pYp, *pUVp;
   mfxI32 i;
-  IppiSize fieldSize;
+  mfxSize fieldSize;
 
   fieldSize.width = roiSize.width;
   fieldSize.height = roiSize.height >> 1;
@@ -1955,7 +1957,7 @@ mfxStatus MFXVideoVPPDeinterlace::itc_NV12( mfxFrameSurface1* in, mfxFrameSurfac
     mfxStatus mfxSts  = MFX_ERR_NOT_INITIALIZED;
 
     mfxU16  cropX = 0, cropY = 0;
-    IppiSize roiSize = {0, 0};
+    mfxSize roiSize = {0, 0};
     mfxFrameSurface1 localRefSurface;
 
     /* [OUT] */
@@ -2089,7 +2091,7 @@ mfxStatus MFXVideoVPPDeinterlace::itc_NV12( mfxFrameSurface1* in, mfxFrameSurfac
     }
     else if (pState->cadence_locked && (pState->expected_frp & 1))
     {
-        Ipp32f av = (tb + tt + bb + t2b) * 0.25f;
+        float av = (tb + tt + bb + t2b) * 0.25f;
         if (t2t < av * FiR_THR_FAC_AV)
         {
             pState->frp |= 1;
@@ -2101,7 +2103,7 @@ mfxStatus MFXVideoVPPDeinterlace::itc_NV12( mfxFrameSurface1* in, mfxFrameSurfac
     }
     else if (pState->cadence_locked && (pState->expected_frp & 2))
     {
-        Ipp32f av = (tb + tt + bb + b2t) * 0.25f;
+        float av = (tb + tt + bb + b2t) * 0.25f;
         if (b2b < av * FiR_THR_FAC_AV)
         {
             pState->frp |= 2;
@@ -2127,13 +2129,13 @@ mfxStatus MFXVideoVPPDeinterlace::itc_NV12( mfxFrameSurface1* in, mfxFrameSurfac
         pState->histLength++;
         if (pState->histLength >= IVTC_CHECK_PATTERN_LEN)
         {
-            Ipp32s l;
+            int32_t l;
             for (l = 0; l < IVTC_NUM_PATTERNS; l++)
             {
                 pState->patPhase = itc_CheckPattern(pState->cur_frpattern, IVTC_CHECK_PATTERN_LEN, l);
                 if (pState->patPhase >= 0)
                 {
-                    Ipp32s tmpPatPhase;
+                    int32_t tmpPatPhase;
                     pState->pat_ind = l;
                     pState->cadence_locked = 1;
                     pState->patPhase = (cadence_frp_table[pState->pat_ind].period - 1) * 2 - pState->patPhase;

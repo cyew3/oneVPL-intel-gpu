@@ -27,6 +27,8 @@
 #include "mfx_vpp_utils.h"
 #include "mfx_gamut_compression_vpp.h"
 
+#include "umc_defs.h"
+
 // tuning params for gamut
 #define GAMUT_COMPRESSION_FACTOR_PARAM (3)
 #define GAMUT_D_IN_PARAM               (820)
@@ -202,8 +204,8 @@ mfxStatus MFXVideoVPPGamutCompression::RunFrameVPP(mfxFrameSurface1 *in,
 
     // core processing
 
-    Ipp8u *pSrcY, *pSrcUV;
-    Ipp8u *pDstY, *pDstUV;
+    uint8_t *pSrcY, *pSrcUV;
+    uint8_t *pDstY, *pDstUV;
 
     int stepSrcY, stepSrcUV, stepDstY, stepDstUV;
     int width, height;
@@ -325,7 +327,7 @@ mfxStatus MFXVideoVPPGamutCompression::GetBufferSize( mfxU32* pBufferSize )
     mfxU16 height = m_frameYUV.Height;
     mfxU16 pitch  = m_frameYUV.Pitch;
 
-    *pBufferSize = ((3 * pitch * height * sizeof(Ipp32f)) >> 1 ) << 2;
+    *pBufferSize = ((3 * pitch * height * sizeof(float)) >> 1 ) << 2;
 
     return MFX_ERR_NONE;
 
@@ -432,9 +434,9 @@ mfxStatus DecodeXVYCC_NV12_8u32f(mfxFrameSurface1* pSrc, Surface1_32f* pDst )
         pDstY = pDst->pY     + y*dstPitch;
         for( x = 0; x < width; x++ )
         {
-            //pDstY[x] = (Ipp32f)(((Ipp32f)pSrcY[x] - 16.f) / 219.f);
-            pDstY[x] = (Ipp32f)((((pSrcY[x] <<(INTERNAL_PRECISION - srcPrecision)) -256) *4788)>> INTERNAL_PRECISION);
-            //pDstY[x] = (Ipp32f)pSrcY[x];
+            //pDstY[x] = (float)(((float)pSrcY[x] - 16.f) / 219.f);
+            pDstY[x] = (float)((((pSrcY[x] <<(INTERNAL_PRECISION - srcPrecision)) -256) *4788)>> INTERNAL_PRECISION);
+            //pDstY[x] = (float)pSrcY[x];
         }
     }
 
@@ -508,7 +510,7 @@ mfxStatus ConvertYUV2LCH_NV12_32f( Surface1_32f* pSrc,   Surface1_32f* pDst )
 
             dstC = sqrt(srcU*srcU + srcV*srcV);
 
-            dstH = static_cast <Ipp32f> (atan2(srcV, srcU) * 180/GAMUT_PI);
+            dstH = static_cast <float> (atan2(srcV, srcU) * 180/GAMUT_PI);
             if( dstH < 0 )
             {
                 dstH+=180;
@@ -545,8 +547,8 @@ mfxStatus EncodeXVYCC_NV12_32f8u( Surface1_32f* pSrc, mfxFrameSurface1* pDst )
     const int maxPixVal = (1 << m_OutPrecision) - 1; // Ya-Ti
 
     // [Y]
-    Ipp32f*  pSrcY;
-    Ipp8u* pDstY;
+    float*  pSrcY;
+    uint8_t* pDstY;
     for( y = 0; y < height; y++ )
     {
         pSrcY = pSrc->pY     + y*srcPitch;
@@ -554,7 +556,7 @@ mfxStatus EncodeXVYCC_NV12_32f8u( Surface1_32f* pSrc, mfxFrameSurface1* pDst )
         for( x = 0; x < width; x++ )
         {
             int dstY = (((int)(pSrcY[x] * (219)))>>INTERNAL_PRECISION) + (16); // resulting in 12-bits representation
-            pDstY[x] = (Ipp8u)VPP_RANGE_CLIP(dstY, 0, maxPixVal);
+            pDstY[x] = (uint8_t)VPP_RANGE_CLIP(dstY, 0, maxPixVal);
         }
     }
 
@@ -564,8 +566,8 @@ mfxStatus EncodeXVYCC_NV12_32f8u( Surface1_32f* pSrc, mfxFrameSurface1* pDst )
     //srcPitch >>= 1;
     //dstPitch >>= 1;
 
-    Ipp32f*  pSrcUV;
-    Ipp8u*   pDstUV;
+    float*  pSrcUV;
+    uint8_t*   pDstUV;
 
     for( y = 0; y < height; y++ )
     {
@@ -575,10 +577,10 @@ mfxStatus EncodeXVYCC_NV12_32f8u( Surface1_32f* pSrc, mfxFrameSurface1* pDst )
         for( x = 0; x < width; x++ )
         {
             int dstU = (((int)(pSrcUV[2*x] * (224)))>>INTERNAL_PRECISION) + 128;
-            pDstUV[2*x] = (Ipp8u)VPP_RANGE_CLIP( dstU, 0,  maxPixVal);
+            pDstUV[2*x] = (uint8_t)VPP_RANGE_CLIP( dstU, 0,  maxPixVal);
 
             int dstV = (((int)(pSrcUV[2*x+1] * (224)))>>INTERNAL_PRECISION) + 128;    // resulting in 12-bits representation
-            pDstUV[2*x+1] = (Ipp8u)VPP_RANGE_CLIP( dstV, 0,  maxPixVal);
+            pDstUV[2*x+1] = (uint8_t)VPP_RANGE_CLIP( dstV, 0,  maxPixVal);
         }
     }
 
@@ -790,7 +792,7 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
 
 
             // YT: 01/12/2010 -- The following part originally appears in the advanced compression mode; now is moved to here so that one can output the OORD for basic mode too
-            Luma_Reference = ((srcL >= Luma_Vertex) ? IPP_MAX(Luma_Intercept_L, Luma_Vertex) : IPP_MIN(Luma_Intercept_L, Luma_Vertex)); //reference point    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to match the "ev = (srcL>=Luma_Vertex)?denorm:0;    "
+            Luma_Reference = ((srcL >= Luma_Vertex) ? MFX_MAX(Luma_Intercept_L, Luma_Vertex) : MFX_MIN(Luma_Intercept_L, Luma_Vertex)); //reference point    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to match the "ev = (srcL>=Luma_Vertex)?denorm:0;    "
             Sat_Reference = (abs(Luma_Reference - Luma_Intercept_L)*abs(BoundarySlope)) >> (precision + m_CompressionFactor);
 
             //if(m_RTL_model)        // YT: RTL_model from Niraj
@@ -880,8 +882,8 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
                 //    Dout_Change = CLIP_VAL(Dout_Change, -(1<<13), ((1<<13) - 1));
                 //}
 
-                Din = (srcL >= Luma_Vertex) ? Din_Default : IPP_MAX(Din_Default, Din_Change);    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
-                Dout = (srcL >= Luma_Vertex) ? Dout_Default : IPP_MAX(Dout_Default, Dout_Change); // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
+                Din = (srcL >= Luma_Vertex) ? Din_Default : MFX_MAX(Din_Default, Din_Change);    // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
+                Dout = (srcL >= Luma_Vertex) ? Dout_Default : MFX_MAX(Dout_Default, Dout_Change); // YT: 12/16/2009 -- change from "srcL > Luma_Vertex" to "srcL >= Luma_Vertex" to be consistent with other places for classifying upper/lower region
 
                 //if(m_RTL_model)        // YT: RTL_model from Niraj
                 //{
@@ -889,7 +891,7 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
                 //    Dout = CLIP_VAL(Dout, 0, ((1<<13) - 1));
                 //}
 
-                D_inner = IPP_MAX(D_Ref_Bound-Din , 0);
+                D_inner = MFX_MAX(D_Ref_Bound-Din , 0);
                 D_outer = D_Ref_Bound + Dout;
 
                 //if(m_RTL_model)        // YT: RTL_model from Niraj
@@ -989,21 +991,21 @@ mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32
 } // mfxStatus MFXVideoVPPGamutCompression::FixedHueCompression_NV12_32f( Surface1_32f* pDst )
 
 
-int FindMsbIndex(Ipp32u x)
+int FindMsbIndex(uint32_t x)
 {
     if(x == 0)
     {
         return 0;
     }
 
-    Ipp32u idx;
-    Ipp32u minIdx = 0;
-    Ipp32u maxIdx = 32;
+    uint32_t idx;
+    uint32_t minIdx = 0;
+    uint32_t maxIdx = 32;
     idx = (maxIdx + minIdx) >> 1;
 
     while(maxIdx > minIdx)
     {
-        Ipp32u t = x >> idx;
+        uint32_t t = x >> idx;
 
         //idx is too small
         if(t > 1)
@@ -1026,7 +1028,7 @@ int FindMsbIndex(Ipp32u x)
 
     return idx + 1;
 
-} // int FindMsbIndex(Ipp32u x)
+} // int FindMsbIndex(uint32_t x)
 
 
 int MFXVideoVPPGamutCompression::HWDivision(int nom, int denom, int outBitPrec)

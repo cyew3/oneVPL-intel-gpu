@@ -2600,8 +2600,8 @@ NEXT2:
 
 void GetFourSAD4x4_viaIPP(U8* pMB, int SrcStep, U8* pSrc, U32* dif)
 {
-    Ipp32s mcType = 0;
-    Ipp32s sad;
+    int32_t mcType = 0;
+    int32_t sad;
 
     for(int i = 0; i < 4; i++)
     {

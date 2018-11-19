@@ -57,7 +57,7 @@ public:
 
     virtual mfxStatus RunFrameVPPTask(mfxFrameSurface1 *in, mfxFrameSurface1 *out, InternalParam* pParam)
     {
-        mfxU32 numStarted_cur = vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(&m_numStarted));
+        mfxU32 numStarted_cur = vm_interlocked_inc32(reinterpret_cast<volatile uint32_t *>(&m_numStarted));
         if (numStarted_cur > m_maxNumRegions)
             return MFX_TASK_BUSY;
 
@@ -71,7 +71,7 @@ public:
             return MFX_ERR_UNDEFINED_BEHAVIOR;
         }
 
-        mfxU32 numFinished_cur = vm_interlocked_inc32(reinterpret_cast<volatile Ipp32u *>(&m_numFinished));
+        mfxU32 numFinished_cur = vm_interlocked_inc32(reinterpret_cast<volatile uint32_t *>(&m_numFinished));
         if (numFinished_cur != m_maxNumRegions)
         {   // a region was successfully performed
             // mfxRes must be always ERR_NONE here

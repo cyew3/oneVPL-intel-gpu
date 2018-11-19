@@ -135,7 +135,7 @@ Status VPPSceneAnalyzer::GetFrameP(MediaData *pSource)
     }
   }
 
-  scale = IPP_MAX(1,m_pCur->m_scaledPic.m_info.numItems[SA_INTRA]);
+  scale = MFX_MAX(1,m_pCur->m_scaledPic.m_info.numItems[SA_INTRA]);
   m_spatialComplexity  /= scale;
   m_temporalComplexity /= scale;
 
@@ -281,7 +281,7 @@ Status VPPSceneAnalyzer::GetFrame(MediaData *pSource, MediaData *pDestination)
         bool bShortChange;
         InterlaceType longFrameStructure, shortFrameStructure;
         InterlaceType longFrameEstimation, shortFrameEstimation;
-        Ipp32u longDev, shortDev;
+        uint32_t longDev, shortDev;
 
         // perform the analysis
         umcRes = AnalyzeFrame(m_pRef, m_pCur);
@@ -744,7 +744,7 @@ mfxStatus MFXVideoVPPVideoAnalysis::SceneAnalysis(mfxFrameData* inData,
 {
   mfxStatus mfxSts = MFX_ERR_NONE;
   VideoData umcInData;
-  IppiSize  roiSize;
+  mfxSize  roiSize;
   Status    umcSts;
 
   mfxFrameSurface1 inSurface;
@@ -757,7 +757,7 @@ mfxStatus MFXVideoVPPVideoAnalysis::SceneAnalysis(mfxFrameData* inData,
   umcSts = umcInData.Init(roiSize.width, roiSize.height, GRAY);
   MFX_CHECK_UMC_STS( umcSts );
 
-  umcSts = umcInData.SetPlanePointer( (Ipp8u*)inData->Y, 0);
+  umcSts = umcInData.SetPlanePointer( (uint8_t*)inData->Y, 0);
   MFX_CHECK_UMC_STS( umcSts );
 
   umcSts = umcInData.SetPlanePitch( inData->Pitch, 0);
@@ -804,11 +804,11 @@ mfxStatus MFXVideoVPPVideoAnalysis::SceneAnalysis(mfxFrameData* inData,
 Status VPPSceneAnalyzer::AnalyzePicture(SceneAnalyzerPicture *pRef, SceneAnalyzerPicture *pSrc)
 {
     UMC_SCENE_INFO *pSliceInfo;
-    const Ipp8u *pbSrc;
-    Ipp32s srcStep;
-    const Ipp8u *pbRef;
-    Ipp32s refStep;
-    Ipp32u mbY;
+    const uint8_t *pbSrc;
+    int32_t srcStep;
+    const uint8_t *pbRef;
+    int32_t refStep;
+    uint32_t mbY;
 
     IppiPoint prevMV[1] = {{0,0}};
     memset(m_pSliceMV,0,sizeof(IppiPoint)*pSrc->m_mbDim.width);
@@ -818,22 +818,22 @@ Status VPPSceneAnalyzer::AnalyzePicture(SceneAnalyzerPicture *pRef, SceneAnalyze
     memset(&(pSrc->m_info), 0, sizeof(pSrc->m_info));
 
     // get the source pointer
-    pbSrc = (const Ipp8u *) pSrc->m_pPic[0];
-    srcStep = (Ipp32s) pSrc->m_picStep;
-    pbRef = (const Ipp8u *) pRef->m_pPic[0];
-    refStep = (Ipp32s) pRef->m_picStep;
+    pbSrc = (const uint8_t *) pSrc->m_pPic[0];
+    srcStep = (int32_t) pSrc->m_picStep;
+    pbRef = (const uint8_t *) pRef->m_pPic[0];
+    refStep = (int32_t) pRef->m_picStep;
 
     // cycle over rows
-    for (mbY = 0; mbY < (Ipp32u) pSrc->m_mbDim.height; mbY += 1)
+    for (mbY = 0; mbY < (uint32_t) pSrc->m_mbDim.height; mbY += 1)
     {
         UMC_SCENE_INFO sliceInfo;
-        Ipp32u mbX;
+        uint32_t mbX;
 
         // reset the variables
         memset(&sliceInfo, 0, sizeof(sliceInfo));
 
         // cycle in the row
-        for (mbX = 0; mbX < (Ipp32u) pSrc->m_mbDim.width; mbX += 1)
+        for (mbX = 0; mbX < (uint32_t) pSrc->m_mbDim.width; mbX += 1)
         {
             UMC_SCENE_INFO mbInfo;
 
@@ -902,10 +902,10 @@ Status VPPSceneAnalyzer::AnalyzePicture(SceneAnalyzerPicture *pRef, SceneAnalyze
 
 } // VPPSceneAnalyzer::AnalyzePicture
 
-void VPPSceneAnalyzer::AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,
+void VPPSceneAnalyzer::AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep,
                                     UMC_SCENE_INFO *pMbInfo)
 {
-  Ipp32u blockDev;
+  uint32_t blockDev;
 
   // get block deviations
   blockDev = ippiGetIntraBlockDeviation_4x4_8u(pSrc, srcStep);
@@ -918,18 +918,18 @@ void VPPSceneAnalyzer::AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,
   pMbInfo->sumDev[SA_COLOR] = ippiGetAverage4x4_8u(pSrc, srcStep);
 } // void VPPSceneAnalyzer::AnalyzeIntraMB
 
-void VPPSceneAnalyzer::AnalyzeInterMBMotionOpt(const Ipp8u *pRef, Ipp32s refStep,
-                                               IppiSize refMbDim,
-                                               const Ipp8u *pSrc, Ipp32s srcStep,
-                                               Ipp32u mbX, Ipp32u mbY,
+void VPPSceneAnalyzer::AnalyzeInterMBMotionOpt(const uint8_t *pRef, int32_t refStep,
+                                               mfxSize refMbDim,
+                                               const uint8_t *pSrc, int32_t srcStep,
+                                               uint32_t mbX, uint32_t mbY,
                                                IppiPoint *prevMV,
                                                UMC_SCENE_INFO *pMbInfo)
 {
-  Ipp32s k,min_trig,num_steps;
-  Ipp32s top,left,right,bottom,searchHeight,searchWidth,frameWidth,frameHeight; //borders
-  Ipp32s x,y,x_cur=mbX*4,y_cur=mbY*4,x_mid,y_mid,x_min = 0,y_min = 0; //coordinates
-  Ipp32s searchStep; //search step
-  Ipp32s sad_min=INT_MAX,sad;// like MAD
+  int32_t k,min_trig,num_steps;
+  int32_t top,left,right,bottom,searchHeight,searchWidth,frameWidth,frameHeight; //borders
+  int32_t x,y,x_cur=mbX*4,y_cur=mbY*4,x_mid,y_mid,x_min = 0,y_min = 0; //coordinates
+  int32_t searchStep; //search step
+  int32_t sad_min=INT_MAX,sad;// like MAD
 
   //init borders
   frameWidth=refMbDim.width*4;
@@ -955,7 +955,7 @@ void VPPSceneAnalyzer::AnalyzeInterMBMotionOpt(const Ipp8u *pRef, Ipp32s refStep
   bottom-=y_cur;
 
   //init search step
-  searchStep=IPP_MAX(SA_ESTIMATION_HEIGHT>>3,SA_ESTIMATION_WIDTH>>3);
+  searchStep=MFX_MAX(SA_ESTIMATION_HEIGHT>>3,SA_ESTIMATION_WIDTH>>3);
   if(searchStep<1)
     searchStep=1;
 
@@ -974,12 +974,12 @@ void VPPSceneAnalyzer::AnalyzeInterMBMotionOpt(const Ipp8u *pRef, Ipp32s refStep
   }
   GET_SAD(0,0);
 
-  if(sad_min > (Ipp32s)pMbInfo->sumDev[SA_INTRA])
+  if(sad_min > (int32_t)pMbInfo->sumDev[SA_INTRA])
   {
     x_mid=x_min;
     y_mid=y_min;
 
-    num_steps=IPP_MAX(SA_ESTIMATION_HEIGHT,SA_ESTIMATION_WIDTH);
+    num_steps=MFX_MAX(SA_ESTIMATION_HEIGHT,SA_ESTIMATION_WIDTH);
 
     while(searchStep > 0)
     {

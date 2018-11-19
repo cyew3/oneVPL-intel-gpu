@@ -23,6 +23,8 @@
 #if defined (MFX_ENABLE_VPP) && !defined (MFX_ENABLE_HW_ONLY_VPP)
 
 #include "mfx_range_map_vc1_vpp.h"
+#include "umc_defs.h"
+
 #include "ipps.h"
 #include "ippi.h"
 #include "ippcc.h"
@@ -78,7 +80,7 @@ mfxStatus MFXVideoVPPRangeMapVC1::RunFrameVPP(mfxFrameSurface1 *in,
   mfxU32  srcFourCC = MFX_FOURCC_YV12; //default
   mfxU32  dstFourCC = MFX_FOURCC_YV12; //default
 
-  IppiSize roiSize = {0, 0};
+  mfxSize roiSize = {0, 0};
 
   mfxU16   srcW = 0, srcH = 0, dstW = 0, dstH = 0;
 

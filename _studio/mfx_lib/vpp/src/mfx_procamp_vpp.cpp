@@ -27,6 +27,8 @@
 #include "mfx_vpp_utils.h"
 #include "mfx_procamp_vpp.h"
 
+#include "umc_defs.h"
+
 /* Procamp Filter Parameter Settings
 NAME          MIN         MAX         Step        Default
 Brightness     -100.0      100.0       0.1         0.0
@@ -117,10 +119,10 @@ mfxStatus MFXVideoVPPProcAmp::Query( mfxExtBuffer* pHint )
 /* ******************************************************************** */
 
 mfxStatus ProcampFiltering_NV12_8u(
-                               Ipp8u *pSrcY,
-                               Ipp8u *pSrcUV,
-                               Ipp8u *pDstY,
-                               Ipp8u *pDstUV,
+                               uint8_t *pSrcY,
+                               uint8_t *pSrcUV,
+                               uint8_t *pDstY,
+                               uint8_t *pDstUV,
 
                                int width,
                                int height,
@@ -141,13 +143,13 @@ mfxStatus ProcampFiltering_NV12_8u(
                                int  par_sincos_precision);
 
 mfxStatus ProcampFiltering_YV12_8u(
-                               Ipp8u *pSrcY,
-                               Ipp8u *pSrcV,
-                               Ipp8u *pSrcU,
+                               uint8_t *pSrcY,
+                               uint8_t *pSrcV,
+                               uint8_t *pSrcU,
 
-                               Ipp8u *pDstY,
-                               Ipp8u *pDstV,
-                               Ipp8u *pDstU,
+                               uint8_t *pDstY,
+                               uint8_t *pDstV,
+                               uint8_t *pDstU,
 
                                int width,
                                int height,
@@ -295,8 +297,8 @@ mfxStatus MFXVideoVPPProcAmp::RunFrameVPP(mfxFrameSurface1 *in,
 
     // core processing
 
-    Ipp8u *pSrcY, *pSrcUV, *pSrcU, *pSrcV;
-    Ipp8u *pDstY, *pDstUV, *pDstU, *pDstV;
+    uint8_t *pSrcY, *pSrcUV, *pSrcU, *pSrcV;
+    uint8_t *pDstY, *pDstUV, *pDstU, *pDstV;
 
     int stepSrcY, stepSrcUV, stepDstY, stepDstUV;
     int width, height;
@@ -519,10 +521,10 @@ void MFXVideoVPPProcAmp::CalculateInternalParams( void )
 } // void MFXVideoVPPProcAmp::CalculateInternalParams( void )
 
 mfxStatus ProcampFiltering_NV12_8u(
-                               Ipp8u *pSrcY,
-                               Ipp8u *pSrcUV,
-                               Ipp8u *pDstY,
-                               Ipp8u *pDstUV,
+                               uint8_t *pSrcY,
+                               uint8_t *pSrcUV,
+                               uint8_t *pDstY,
+                               uint8_t *pDstUV,
 
                                int width,
                                int height,
@@ -568,7 +570,7 @@ mfxStatus ProcampFiltering_NV12_8u(
 
             outY = VPP_RANGE_CLIP(outY, 0, 255);
 
-            pDstY[column] = (Ipp8u) outY;
+            pDstY[column] = (uint8_t) outY;
         }
         pSrcY  = pSrcY +  stepSrcY;
         pDstY  = pDstY +  stepDstY;
@@ -607,8 +609,8 @@ mfxStatus ProcampFiltering_NV12_8u(
             outU = VPP_RANGE_CLIP(outU, 0, 255);
             outV = VPP_RANGE_CLIP(outV, 0, 255);
 
-            pDstUV[column  ] = (Ipp8u) outU;
-            pDstUV[column+1] = (Ipp8u) outV;
+            pDstUV[column  ] = (uint8_t) outU;
+            pDstUV[column+1] = (uint8_t) outV;
         }
         pSrcUV = pSrcUV + stepSrcUV;
         pDstUV = pDstUV + stepDstUV;
@@ -619,13 +621,13 @@ mfxStatus ProcampFiltering_NV12_8u(
 } // mfxStatus ProcampFiltering_NV12_8u(...)
 
 mfxStatus ProcampFiltering_YV12_8u(
-                               Ipp8u *pSrcY,
-                               Ipp8u *pSrcV,
-                               Ipp8u *pSrcU,
+                               uint8_t *pSrcY,
+                               uint8_t *pSrcV,
+                               uint8_t *pSrcU,
 
-                               Ipp8u *pDstY,
-                               Ipp8u *pDstV,
-                               Ipp8u *pDstU,
+                               uint8_t *pDstY,
+                               uint8_t *pDstV,
+                               uint8_t *pDstU,
 
                                int width,
                                int height,
@@ -672,7 +674,7 @@ mfxStatus ProcampFiltering_YV12_8u(
 
             outY = VPP_RANGE_CLIP(outY, 0, 255);
 
-            pDstY[column] = (Ipp8u) outY;
+            pDstY[column] = (uint8_t) outY;
         }
         pSrcY  = pSrcY +  stepSrcY;
         pDstY  = pDstY +  stepDstY;
@@ -712,8 +714,8 @@ mfxStatus ProcampFiltering_YV12_8u(
             outU = VPP_RANGE_CLIP(outU, 0, 255);
             outV = VPP_RANGE_CLIP(outV, 0, 255);
 
-            pDstU[column] = (Ipp8u) outU;
-            pDstV[column] = (Ipp8u) outV;
+            pDstU[column] = (uint8_t) outU;
+            pDstV[column] = (uint8_t) outV;
         }
         pSrcU = pSrcU + stepSrcUV;
         pDstU = pDstU + stepDstUV;
