@@ -22,22 +22,22 @@
 //temporary here: the code is added from H264 encoder
 #ifdef UMC_ENABLE_ME
 #include "umc_me_sadt4x4.h"
-Ipp32u SATD_8u_C1R(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp32s src2Step, Ipp32s width, Ipp32s height)
+uint32_t SATD_8u_C1R(const uint8_t *pSrc1, int32_t src1Step, const uint8_t *pSrc2, int32_t src2Step, int32_t width, int32_t height)
 {
 #ifndef H264_SATD_OPT
-    __ALIGN16 Ipp16s tmpBuff[4][4];
-    __ALIGN16 Ipp16s diffBuff[4][4];
+    __ALIGN16 int16_t tmpBuff[4][4];
+    __ALIGN16 int16_t diffBuff[4][4];
 #endif
-    Ipp32s x, y;
-    Ipp32u satd = 0;
+    int32_t x, y;
+    uint32_t satd = 0;
 
     for( y = 0; y < height; y += 4 ) {
         for( x = 0; x < width; x += 4 )  {
 #ifndef H264_SATD_OPT
-            Ipp32s b;
+            int32_t b;
             ippiSub4x4_8u16s_C1R(pSrc1 + x, src1Step, pSrc2 + x, src2Step, &diffBuff[0][0], 8);
             for (b = 0; b < 4; b ++) {
-                Ipp16s a01, a23, b01, b23;
+                int16_t a01, a23, b01, b23;
 
                 a01 = diffBuff[b][0] + diffBuff[b][1];
                 a23 = diffBuff[b][2] + diffBuff[b][3];
@@ -49,7 +49,7 @@ Ipp32u SATD_8u_C1R(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp3
                 tmpBuff[b][3] = b01 + b23;
             }
             for (b = 0; b < 4; b ++) {
-                Ipp32s a01, a23, b01, b23;
+                int32_t a01, a23, b01, b23;
 
                 a01 = tmpBuff[0][b] + tmpBuff[1][b];
                 a23 = tmpBuff[2][b] + tmpBuff[3][b];
@@ -59,8 +59,8 @@ Ipp32u SATD_8u_C1R(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp3
             }
 #else
             __ALIGN16 __m128i  _p_0, _p_1, _p_2, _p_3, _p_4, _p_5, _p_7, _p_zero;
-            const Ipp8u *pS1, *pS2;
-            Ipp32s  s;
+            const uint8_t *pS1, *pS2;
+            int32_t  s;
 
             pS1 = pSrc1 + x;
             pS2 = pSrc2 + x;
@@ -125,7 +125,7 @@ Ipp32u SATD_8u_C1R(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp3
             _p_2 = _mm_srli_si128(_p_0, 4);
             _p_0 = _mm_add_epi16(_p_0, _p_2);
             s = _mm_cvtsi128_si32(_p_0);
-            satd += (s >> 16) + (Ipp16s)s;
+            satd += (s >> 16) + (int16_t)s;
 #endif
         }
         pSrc1 += 4 * src1Step;
@@ -134,21 +134,21 @@ Ipp32u SATD_8u_C1R(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp3
     return satd >> 1;
 }
 
-Ipp32u SATD_16u_C1R(const Ipp16u *pSrc1, Ipp32s src1Step, const Ipp16u *pSrc2, Ipp32s src2Step, Ipp32s width, Ipp32s height)
+uint32_t SATD_16u_C1R(const uint16_t *pSrc1, int32_t src1Step, const uint16_t *pSrc2, int32_t src2Step, int32_t width, int32_t height)
 {
-    __ALIGN16 Ipp32s tmpBuff[4][4];
-    __ALIGN16 Ipp16s diffBuff[4][4];
-    Ipp32s x, y;
-    Ipp32u satd = 0;
+    __ALIGN16 int32_t tmpBuff[4][4];
+    __ALIGN16 int16_t diffBuff[4][4];
+    int32_t x, y;
+    uint32_t satd = 0;
 
     src1Step >>= 1;
     src2Step >>= 1;
     for( y = 0; y < height; y += 4 ) {
         for( x = 0; x < width; x += 4 )  {
-            Ipp32s b;
+            int32_t b;
             ippiSub4x4_16u16s_C1R(pSrc1 + x, src1Step, pSrc2 + x, src2Step, &diffBuff[0][0], 16);
             for (b = 0; b < 4; b ++) {
-                Ipp32s a01, a23, b01, b23;
+                int32_t a01, a23, b01, b23;
 
                 a01 = diffBuff[b][0] + diffBuff[b][1];
                 a23 = diffBuff[b][2] + diffBuff[b][3];
@@ -160,7 +160,7 @@ Ipp32u SATD_16u_C1R(const Ipp16u *pSrc1, Ipp32s src1Step, const Ipp16u *pSrc2, I
                 tmpBuff[b][3] = b01 + b23;
             }
             for (b = 0; b < 4; b ++) {
-                Ipp32s a01, a23, b01, b23;
+                int32_t a01, a23, b01, b23;
 
                 a01 = tmpBuff[0][b] + tmpBuff[1][b];
                 a23 = tmpBuff[2][b] + tmpBuff[3][b];

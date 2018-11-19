@@ -73,7 +73,7 @@ namespace UMC
 
 */
 
-inline void VarMeanIntra(const Ipp8u* pblock, Ipp32s step, Ipp32s *vardiff, Ipp32s *meandiff, Ipp32s &cost)
+inline void VarMeanIntra(const uint8_t* pblock, int32_t step, int32_t *vardiff, int32_t *meandiff, int32_t &cost)
 {
     ippiVarSum8x8_8u32s_C1R(pblock             , step, &vardiff[0], &meandiff[0]);
     ippiVarSum8x8_8u32s_C1R(pblock + 8         , step, &vardiff[1], &meandiff[1]);
@@ -83,7 +83,7 @@ inline void VarMeanIntra(const Ipp8u* pblock, Ipp32s step, Ipp32s *vardiff, Ipp3
         (abs(meandiff[0]) + abs(meandiff[1]) + abs(meandiff[2]) + abs(meandiff[3]))/8;
 }
 
-inline void VarMeanInter(Ipp16s *pDiff, Ipp32s step, Ipp32s* vardiff, Ipp32s* meandiff, Ipp32s &cost)
+inline void VarMeanInter(int16_t *pDiff, int32_t step, int32_t* vardiff, int32_t* meandiff, int32_t &cost)
 {
     ippiVarSum8x8_16s32s_C1R(pDiff         , step, &vardiff[0], &meandiff[0]);
     ippiVarSum8x8_16s32s_C1R(pDiff+8       , step, &vardiff[1], &meandiff[1]);
@@ -93,34 +93,34 @@ inline void VarMeanInter(Ipp16s *pDiff, Ipp32s step, Ipp32s* vardiff, Ipp32s* me
         (abs(meandiff[0]) + abs(meandiff[1]) + abs(meandiff[2]) + abs(meandiff[3]))/8;
 }
 
-inline void VarMeanIntraBlock(const Ipp8u* pblock, Ipp32s step, Ipp32s &vardiff, Ipp32s &meandiff, Ipp32s &cost)
+inline void VarMeanIntraBlock(const uint8_t* pblock, int32_t step, int32_t &vardiff, int32_t &meandiff, int32_t &cost)
 {
     ippiVarSum8x8_8u32s_C1R(pblock             , step, &vardiff, &meandiff);
     cost = vardiff + abs(meandiff)/8;
 }
 
-inline void VarMeanInterBlock(Ipp16s *pDiff, Ipp32s step, Ipp32s &vardiff, Ipp32s &meandiff, Ipp32s &cost)
+inline void VarMeanInterBlock(int16_t *pDiff, int32_t step, int32_t &vardiff, int32_t &meandiff, int32_t &cost)
 {
     ippiVarSum8x8_16s32s_C1R(pDiff         , step, &vardiff, &meandiff);
     cost = vardiff + abs(meandiff)/8;
 }
 
-inline void VarMean16x16(Ipp16s *pDiff, Ipp32s step, Ipp32s *vardiff, Ipp32s *meandiff)
+inline void VarMean16x16(int16_t *pDiff, int32_t step, int32_t *vardiff, int32_t *meandiff)
 {
     ippiVarSum8x8_16s32s_C1R(pDiff         , step, &vardiff[0], &meandiff[0]);
     ippiVarSum8x8_16s32s_C1R(pDiff+8       , step, &vardiff[1], &meandiff[1]);
     ippiVarSum8x8_16s32s_C1R(pDiff+4*step  , step, &vardiff[2], &meandiff[2]);
     ippiVarSum8x8_16s32s_C1R(pDiff+4*step+8, step, &vardiff[3], &meandiff[3]);
 }
-inline void VarMean8x8(Ipp16s *pDiff, Ipp32s step, Ipp32s &vardiff, Ipp32s &meandiff)
+inline void VarMean8x8(int16_t *pDiff, int32_t step, int32_t &vardiff, int32_t &meandiff)
 {
     ippiVarSum8x8_16s32s_C1R(pDiff         , step, &vardiff, &meandiff);
 }
 
 
-void SAD8x8(const Ipp8u*  pSrc, Ipp32s  srcStep, const Ipp8u*  pRef, Ipp32s  refStep, Ipp32s* pSAD, Ipp32s  mcType)
+void SAD8x8(const uint8_t*  pSrc, int32_t  srcStep, const uint8_t*  pRef, int32_t  refStep, int32_t* pSAD, int32_t  mcType)
 {
-    Ipp32s sum;
+    int32_t sum;
     *pSAD = 0;
     for(int i=0; i<8; i+=4)
         for(int j=0; j<8; j+=4)
@@ -131,7 +131,7 @@ void SAD8x8(const Ipp8u*  pSrc, Ipp32s  srcStep, const Ipp8u*  pRef, Ipp32s  ref
         return;
 }
 
-void SAD4x4Blocks2x2(const   Ipp8u*  pSrc, Ipp32s  srcStep, const   Ipp8u*  pRef, Ipp32s  refStep, Ipp16u*  pDstSAD)
+void SAD4x4Blocks2x2(const   uint8_t*  pSrc, int32_t  srcStep, const   uint8_t*  pRef, int32_t  refStep, uint16_t*  pDstSAD)
 {
     int i,j;
     for(i=0; i<4; i++) pDstSAD[i]=0;
@@ -140,7 +140,7 @@ void SAD4x4Blocks2x2(const   Ipp8u*  pSrc, Ipp32s  srcStep, const   Ipp8u*  pRef
         for(j=0; j<4; j++)
         {
             int index = (2&i)+(2&j)/2;
-            pDstSAD[index] = pDstSAD[index] + (Ipp16u)(abs( (int)*(pSrc+i*srcStep+j) - (int)*(pRef+i*refStep+j)));
+            pDstSAD[index] = pDstSAD[index] + (uint16_t)(abs( (int)*(pSrc+i*srcStep+j) - (int)*(pRef+i*refStep+j)));
         }
 
     return;
@@ -149,10 +149,10 @@ void SAD4x4Blocks2x2(const   Ipp8u*  pSrc, Ipp32s  srcStep, const   Ipp8u*  pRef
 //ipp functions:
 
 //perform fast hadamard transformation of block
-template<typename T, Ipp32s size> void HadamardFwdFast(const T* pSrc, Ipp32s srcStep, Ipp16s* pDst)
+template<typename T, int32_t size> void HadamardFwdFast(const T* pSrc, int32_t srcStep, int16_t* pDst)
 {
-    Ipp32s a[size], b[size], temp[size*size], *pTemp;
-    Ipp32s j;
+    int32_t a[size], b[size], temp[size*size], *pTemp;
+    int32_t j;
 
     switch(size)
     {
@@ -179,10 +179,10 @@ template<typename T, Ipp32s size> void HadamardFwdFast(const T* pSrc, Ipp32s src
             a[3] = pTemp[2*4] - pTemp[3*4];
             pTemp = pTemp++;
 
-            pDst[0*4] = (Ipp16s)(a[0] + a[2]);
-            pDst[1*4] = (Ipp16s)(a[1] + a[3]);
-            pDst[2*4] = (Ipp16s)(a[0] - a[2]);
-            pDst[3*4] = (Ipp16s)(a[1] - a[3]);
+            pDst[0*4] = (int16_t)(a[0] + a[2]);
+            pDst[1*4] = (int16_t)(a[1] + a[3]);
+            pDst[2*4] = (int16_t)(a[0] - a[2]);
+            pDst[3*4] = (int16_t)(a[1] - a[3]);
             pDst = pDst++;
         }
         break;
@@ -239,14 +239,14 @@ template<typename T, Ipp32s size> void HadamardFwdFast(const T* pSrc, Ipp32s src
             b[6] = a[4] - a[5];
             b[7] = a[6] - a[7];
 
-            pDst[0*8] = (Ipp16s)(b[0] + b[1]);
-            pDst[1*8] = (Ipp16s)(b[2] + b[3]);
-            pDst[2*8] = (Ipp16s)(b[4] + b[5]);
-            pDst[3*8] = (Ipp16s)(b[6] + b[7]);
-            pDst[4*8] = (Ipp16s)(b[0] - b[1]);
-            pDst[5*8] = (Ipp16s)(b[2] - b[3]);
-            pDst[6*8] = (Ipp16s)(b[4] - b[5]);
-            pDst[7*8] = (Ipp16s)(b[6] - b[7]);
+            pDst[0*8] = (int16_t)(b[0] + b[1]);
+            pDst[1*8] = (int16_t)(b[2] + b[3]);
+            pDst[2*8] = (int16_t)(b[4] + b[5]);
+            pDst[3*8] = (int16_t)(b[6] + b[7]);
+            pDst[4*8] = (int16_t)(b[0] - b[1]);
+            pDst[5*8] = (int16_t)(b[2] - b[3]);
+            pDst[6*8] = (int16_t)(b[4] - b[5]);
+            pDst[7*8] = (int16_t)(b[6] - b[7]);
             pDst = pDst++;
         }
     break;
@@ -259,16 +259,16 @@ template<typename T, Ipp32s size> void HadamardFwdFast(const T* pSrc, Ipp32s src
 
 //find SATD of two 8x8 blocks
 #ifdef USE_OPTIMIZED_SATD
-Ipp32u SAT8x8D(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp32s src2Step)
+uint32_t SAT8x8D(const uint8_t *pSrc1, int32_t src1Step, const uint8_t *pSrc2, int32_t src2Step)
 {
-    __declspec(align(32)) Ipp16s diff[8][8];
-    Ipp32u satd = 0;
+    __declspec(align(32)) int16_t diff[8][8];
+    uint32_t satd = 0;
     ippiSub8x8_8u16s_C1R(pSrc1, src1Step, pSrc2, src2Step, &diff[0][0], 16);
 
 
     __declspec(align(32)) __m128i  _p_0, _p_1, _p_2, _p_3, _p_4, _p_5, _p_6, _p_7, _b_2, _b_3, _b_6, _b_7, _p_t, _p_s;
-    Ipp32s  s;
-    __declspec(align(32)) Ipp16s tmp[8][8];
+    int32_t  s;
+    __declspec(align(32)) int16_t tmp[8][8];
 
     _p_0 = _mm_load_si128((__m128i*)(diff[0]));
     _p_4 = _mm_sub_epi16(_p_0, *(__m128i*)(diff[4]));
@@ -439,7 +439,7 @@ Ipp32u SAT8x8D(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp32s s
     _p_t = _mm_srli_si128(_p_0, 4);
     _p_0 = _mm_add_epi16(_p_0, _p_t);
     s = _mm_cvtsi128_si32(_p_0);
-    satd += (s >> 16) + (Ipp16s)s;
+    satd += (s >> 16) + (int16_t)s;
 
     return satd;
 }

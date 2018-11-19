@@ -51,7 +51,7 @@ namespace UMC
     protected:
         IntelVideoVME    *vme;
         VMEOutput    vout;
-        void EstimateMB(Ipp16s x, Ipp16s y, Ipp32s SKIP_TYPE);
+        void EstimateMB(int16_t x, int16_t y, int32_t SKIP_TYPE);
     };
 
 }//namespase UMC

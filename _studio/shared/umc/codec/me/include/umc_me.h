@@ -86,25 +86,25 @@ typedef enum
 }MeRegrFunSet;
 
 //table for presets for regression functions
-extern const Ipp32s MeVc1FastRegrTableSize;
-extern Ipp32s MeVc1FastRegrTable[];
-extern const Ipp32s MeVc1PreciseRegrTableSize;
-extern Ipp32s MeVc1PreciseRegrTable[];
-extern const Ipp32s MeAVSFastRegrTableSize;
-extern Ipp32s MeAVSFastRegrTable[];
+extern const int32_t MeVc1FastRegrTableSize;
+extern int32_t MeVc1FastRegrTable[];
+extern const int32_t MeVc1PreciseRegrTableSize;
+extern int32_t MeVc1PreciseRegrTable[];
+extern const int32_t MeAVSFastRegrTableSize;
+extern int32_t MeAVSFastRegrTable[];
 
 class RegrFun{ //Piecewise-Linear Fitting, x from 0
     public:
-        RegrFun(Ipp32s dx, Ipp32s N);
+        RegrFun(int32_t dx, int32_t N);
         ~RegrFun(){};
 
-        static void SetQP(Ipp32s qp){m_QP = qp;}; // TODO: Check qp in all functions
+        static void SetQP(int32_t qp){m_QP = qp;}; // TODO: Check qp in all functions
         void LoadPresets(MeRegrFunSet set, MeRegrFun id);
-        void ProcessFeedback(Ipp32s *x, Ipp32s *y, Ipp32s N);
-        virtual Ipp32s Weight(Ipp32s x);
+        void ProcessFeedback(int32_t *x, int32_t *y, int32_t N);
+        virtual int32_t Weight(int32_t x);
 
     //protected:  debug!!!!
-        virtual void ComputeRegression(Ipp32s I, Ipp32s *x, Ipp32s *y, Ipp32s N)=0;
+        virtual void ComputeRegression(int32_t I, int32_t *x, int32_t *y, int32_t N)=0;
         virtual void AfterComputation(){};
 
         static const int NumOfRegInterval = 128;
@@ -112,34 +112,34 @@ class RegrFun{ //Piecewise-Linear Fitting, x from 0
         // TODO: set TargetHistorySize & FrameSize from without
         static const int FrameSize=1350; //number of MB in frame
 #ifdef ME_GENERATE_PRESETS
-        static const int m_TargetHistorySize = IPP_MAX_32S; //number of MB in history
+        static const int m_TargetHistorySize = MFX_MAX_32S; //number of MB in history
 #else
         static const int m_TargetHistorySize = 10*FrameSize; //number of MB in history
 #endif
 
-        Ipp32s m_dx[MaxQpValue];
-        Ipp32s m_num; //number of fitting pieces
-        Ipp32s m_FirstData; //first and last bin with data, all other are empty
-        Ipp32s m_LastData;
-        Ipp64f m_ax[MaxQpValue][NumOfRegInterval];
-        Ipp64f m_ay[MaxQpValue][NumOfRegInterval];
-        Ipp64f m_an[MaxQpValue][NumOfRegInterval];
-        Ipp64f m_a[MaxQpValue][NumOfRegInterval];
-        Ipp64f m_b[MaxQpValue][NumOfRegInterval];
+        int32_t m_dx[MaxQpValue];
+        int32_t m_num; //number of fitting pieces
+        int32_t m_FirstData; //first and last bin with data, all other are empty
+        int32_t m_LastData;
+        double m_ax[MaxQpValue][NumOfRegInterval];
+        double m_ay[MaxQpValue][NumOfRegInterval];
+        double m_an[MaxQpValue][NumOfRegInterval];
+        double m_a[MaxQpValue][NumOfRegInterval];
+        double m_b[MaxQpValue][NumOfRegInterval];
 
-        static Ipp32s m_QP; //current QP
+        static int32_t m_QP; //current QP
 };
 
 class LowessRegrFun : public RegrFun
 {
     public:
-        LowessRegrFun(Ipp32s dx=32, Ipp32s N=128):RegrFun(dx, N){};
+        LowessRegrFun(int32_t dx=32, int32_t N=128):RegrFun(dx, N){};
 
     protected:
         static const int Bandwidth = 30; //percent
-        Ipp64f WeightPoint(Ipp64f x); //used during regression calculation
+        double WeightPoint(double x); //used during regression calculation
 
-        virtual void ComputeRegression(Ipp32s I, Ipp32s *x, Ipp32s *y, Ipp32s N);
+        virtual void ComputeRegression(int32_t I, int32_t *x, int32_t *y, int32_t N);
         virtual void AfterComputation();
 };
 
@@ -147,7 +147,7 @@ class MvRegrFun : public LowessRegrFun
 {
     public:
         MvRegrFun():LowessRegrFun(4,128){};
-        virtual Ipp32s Weight(MeMV mv, MeMV pred);
+        virtual int32_t Weight(MeMV mv, MeMV pred);
 };
 
 
@@ -162,7 +162,7 @@ class MeBase
 
         //virtual bool Init(MeInitParams *par); //allocates memory
         virtual bool Init(MeInitParams *par);
-        virtual bool Init(MeInitParams *par, Ipp8u* ptr, Ipp32s &size);
+        virtual bool Init(MeInitParams *par, uint8_t* ptr, int32_t &size);
         virtual bool EstimateFrame(MeParams *par); //par and res should be allocated by caller, except MeFrame::MBs
         virtual void Close(); //frees memory, also called from destructor
         static void SetError(vm_char *msg, bool condition=true); //save error message
@@ -190,11 +190,11 @@ class MeBase
         virtual MeCostRD MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB);
-        virtual Ipp32s MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
+                                           int32_t IdxF, int32_t IdxB);
+        virtual int32_t MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB);
+                                           int32_t IdxF, int32_t IdxB);
         void MakeMBModeDecision16x16(); //chooses 16x16 mode, saves results to m_ResMB
         void MakeMBModeDecision16x16Org();
         void MakeMBModeDecision16x16ByFB();
@@ -215,35 +215,35 @@ class MeBase
 
         //low level function
         void EstimatePointInter(MeMbPart mt, MePixelType pix, MeMV mv);
-        Ipp32s EstimatePointAverage(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, Ipp32s RefDirection0, Ipp32s RefIndex0, MeMV mv0, Ipp32s RefDirection1, Ipp32s RefIndex1, MeMV mv1);
-        Ipp32s EstimatePoint(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, MeMV mv);
-        Ipp32s GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr *src, MeAdr* ref);
-        void GetCost(MeMbPart mt, MeAdr* src, MeAdr* ref, Ipp32s numX, Ipp16u *sadArr);
-        Ipp32s GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, MeAdr* ref);
+        int32_t EstimatePointAverage(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, int32_t RefDirection0, int32_t RefIndex0, MeMV mv0, int32_t RefDirection1, int32_t RefIndex1, MeMV mv1);
+        int32_t EstimatePoint(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, MeMV mv);
+        int32_t GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr *src, MeAdr* ref);
+        void GetCost(MeMbPart mt, MeAdr* src, MeAdr* ref, int32_t numX, uint16_t *sadArr);
+        int32_t GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, MeAdr* ref);
         virtual MeCostRD GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransformType transf, MeAdr* src, MeAdr* ref);
-        virtual void AddHeaderCost(MeCostRD &/*cost*/, MeTransformType * /*tansf*/, MeMbType /*MbType*/, Ipp32s /*RefIdxF*/,Ipp32s /*RefIdxB*/){};
-        void DownsampleOne(Ipp32s level, Ipp32s x0, Ipp32s y0, Ipp32s w, Ipp32s h, MeAdr *adr);
+        virtual void AddHeaderCost(MeCostRD &/*cost*/, MeTransformType * /*tansf*/, MeMbType /*MbType*/, int32_t /*RefIdxF*/,int32_t /*RefIdxB*/){};
+        void DownsampleOne(int32_t level, int32_t x0, int32_t y0, int32_t w, int32_t h, MeAdr *adr);
         void DownsampleFrames();
 
         //small  auxiliary functions
-        void SetReferenceFrame(Ipp32s RefDirection, Ipp32s RefIndex);
-        Ipp32s GetPlaneLevel(MePixelType pix);
+        void SetReferenceFrame(int32_t RefDirection, int32_t RefIndex);
+        int32_t GetPlaneLevel(MePixelType pix);
         void MakeSrcAdr(MeMbPart mt, MePixelType pix, MeAdr* adr);
         void MakeRefAdrFromMV(MeMbPart mt, MePixelType pix, MeMV mv, MeAdr* adr);
-        void MakeBlockAdr(Ipp32s level, MeMbPart mt, Ipp32s BlkIdx, MeAdr* adr);
-        virtual void SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost);
+        void MakeBlockAdr(int32_t level, MeMbPart mt, int32_t BlkIdx, MeAdr* adr);
+        virtual void SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, int32_t cost);
         //MeBlockType ConvertType(MeMbType t);
-        void SetMB8x8(MeMbType mbt, MeMV mv[2][4], Ipp32s cost[4]);
+        void SetMB8x8(MeMbType mbt, MeMV mv[2][4], int32_t cost[4]);
         virtual MeMV GetChromaMV (MeMV mv){return mv;};
-        virtual Ipp32s GetMvSize(Ipp32s /*dx*/,Ipp32s /*dy*/, bool /*bNonDominant*/, bool /*hybrid*/){return 0;};
-        virtual bool GetHybrid(Ipp32s RefIdx){return m_cur.HybridPredictor[RefIdx];};
+        virtual int32_t GetMvSize(int32_t /*dx*/,int32_t /*dy*/, bool /*bNonDominant*/, bool /*hybrid*/){return 0;};
+        virtual bool GetHybrid(int32_t RefIdx){return m_cur.HybridPredictor[RefIdx];};
 
         //algorithms
         void EstimateMbInterFullSearch();
         void EstimateMbInterFullSearchDwn();
-        void EstimateMbInterOneLevel(bool UpperLevel, Ipp32s level, MeMbPart mt, Ipp32s x0, Ipp32s x1, Ipp32s y0, Ipp32s y1);
+        void EstimateMbInterOneLevel(bool UpperLevel, int32_t level, MeMbPart mt, int32_t x0, int32_t x1, int32_t y0, int32_t y1);
         void EstimateMbInterFast();
-        void FullSearch(MeMbPart mt, MePixelType pix, MeMV org, Ipp32s RangeX, Ipp32s RangeY);
+        void FullSearch(MeMbPart mt, MePixelType pix, MeMV org, int32_t RangeX, int32_t RangeY);
         void DiamondSearch(MeMbPart mt, MePixelType pix, MeDiamondType dm);
         bool RefineSearch(MeMbPart mt, MePixelType pix);
 
@@ -252,26 +252,26 @@ class MeBase
         bool m_DirectOutOfBound;
 
         bool CheckParams();
-        inline Ipp32s WeightMV(MeMV mv, MeMV predictor);
+        inline int32_t WeightMV(MeMV mv, MeMV predictor);
 
 
         //parameters
         MeParams*         m_par; //ptr to current frame parameters
         MeInitParams      m_InitPar; //initialization parameters
         MeChromaFormat    m_CRFormat;
-        Ipp32s            m_SkippedThreshold;//pixel abs. diff. threshhold for the skipped macroblocks (unifirm metric)
-        Ipp32s m_AllocatedSize; //number of allocated byte, valid after first call of Init
+        int32_t            m_SkippedThreshold;//pixel abs. diff. threshhold for the skipped macroblocks (unifirm metric)
+        int32_t m_AllocatedSize; //number of allocated byte, valid after first call of Init
         void *m_OwnMem;
-        Ipp32s  CostOnInterpolation[4];
+        int32_t  CostOnInterpolation[4];
 
         //1 feedback from encoder
         public:
             void ProcessFeedback(MeParams *pPar);
         protected:
-            Ipp32s QpToIndex(Ipp32s QP, bool UniformQuant);
+            int32_t QpToIndex(int32_t QP, bool UniformQuant);
             void LoadRegressionPreset();
 
-            Ipp64f m_lambda;
+            double m_lambda;
             MeRegrFunSet  m_CurRegSet;
             LowessRegrFun m_InterRegFunD;
             LowessRegrFun m_InterRegFunR;
@@ -330,21 +330,21 @@ protected:
     virtual MeCostRD MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB);
-    virtual Ipp32s MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
+                                           int32_t IdxF, int32_t IdxB);
+    virtual int32_t MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB);
+                                           int32_t IdxF, int32_t IdxB);
 
-    Ipp8u GetCoeffMode( Ipp32s &run, Ipp32s &level, const Ipp8u *pTableDR, const Ipp8u *pTableDL);
-    Ipp32s GetAcCoeffSize(Ipp16s *ptr, Ipp32s DC, MeTransformType transf, Ipp32s QP, bool luma, bool intra);
-    Ipp32s GetOneAcCoeffSize(Ipp32s level, Ipp32s run, Ipp32s QP, bool dc, bool luma, bool intra, bool last);
-    void QuantTrellis(Ipp16s *ptr, Ipp8s* prc,Ipp32s DC, MeTransformType transf, Ipp32s QP, bool luma, bool intra);
-    virtual void AddHeaderCost(MeCostRD &cost, MeTransformType *tansf, MeMbType MbType,Ipp32s RefIdxF,Ipp32s RefIdxB);
-    virtual Ipp32s GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant,bool hybrid);
+    uint8_t GetCoeffMode( int32_t &run, int32_t &level, const uint8_t *pTableDR, const uint8_t *pTableDL);
+    int32_t GetAcCoeffSize(int16_t *ptr, int32_t DC, MeTransformType transf, int32_t QP, bool luma, bool intra);
+    int32_t GetOneAcCoeffSize(int32_t level, int32_t run, int32_t QP, bool dc, bool luma, bool intra, bool last);
+    void QuantTrellis(int16_t *ptr, int8_t* prc,int32_t DC, MeTransformType transf, int32_t QP, bool luma, bool intra);
+    virtual void AddHeaderCost(MeCostRD &cost, MeTransformType *tansf, MeMbType MbType,int32_t RefIdxF,int32_t RefIdxB);
+    virtual int32_t GetMvSize(int32_t dx, int32_t dy, bool bNonDominant,bool hybrid);
     virtual MeCostRD GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransformType transf, MeAdr* src, MeAdr* ref);
 
-    Ipp32s GetDcPredictor(Ipp32s BlkIdx);
+    int32_t GetDcPredictor(int32_t BlkIdx);
     virtual MeMV GetChromaMV (MeMV mv);
     void GetChromaMV (MeMV LumaMV, MeMV* pChroma);
     void GetChromaMVFast(MeMV LumaMV, MeMV * pChroma);
@@ -375,15 +375,15 @@ public:
     void ProcessFeedback(MeParams *pPar);
     void SetInterpPixelType(MeParams *par){};
     //function for copy m_blockDist[][] and m_distIdx[][]
-    void SetBlockDist(void* pSrc, Ipp32u numOfByte) {MFX_INTERNAL_CPY(m_blockDist,pSrc,numOfByte);};
-    void SetBlockIdx(void* pSrc, Ipp32u numOfByte) {MFX_INTERNAL_CPY(m_distIdx,pSrc,numOfByte);};
-    Ipp32s m_blockDist[2][4];                      // (Ipp32s [][]) block distances, depending on ref index
-    Ipp32s m_distIdx[2][4];                        // (Ipp32s [][]) distance indecies of reference pictures
+    void SetBlockDist(void* pSrc, uint32_t numOfByte) {MFX_INTERNAL_CPY(m_blockDist,pSrc,numOfByte);};
+    void SetBlockIdx(void* pSrc, uint32_t numOfByte) {MFX_INTERNAL_CPY(m_distIdx,pSrc,numOfByte);};
+    int32_t m_blockDist[2][4];                      // (int32_t [][]) block distances, depending on ref index
+    int32_t m_distIdx[2][4];                        // (int32_t [][]) distance indecies of reference pictures
 
 protected:
     // some variables need for AVS prediction
-    //Ipp32s m_blockDist[2][4];                      // (Ipp32s [][]) block distances, depending on ref index
-    //Ipp32s m_distIdx[2][4];                        // (Ipp32s [][]) distance indecies of reference pictures
+    //int32_t m_blockDist[2][4];                      // (int32_t [][]) block distances, depending on ref index
+    //int32_t m_distIdx[2][4];                        // (int32_t [][]) distance indecies of reference pictures
 
     MePredictCalculatorAVS m_PredCalcAVS;
     void ModeDecision16x16ByFBFullFrw();
@@ -394,8 +394,8 @@ protected:
     bool Estimate16x16Direct(); ////return true if early exit allowed
 
     // mv functions 
-    virtual void SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost);
-    virtual Ipp32s GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant = false, bool hybrid = false);
+    virtual void SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, int32_t cost);
+    virtual int32_t GetMvSize(int32_t dx, int32_t dy, bool bNonDominant = false, bool hybrid = false);
     virtual MeMV GetChromaMV (MeMV mv);
     void GetChromaMV (MeMV LumaMV, MeMV* pChroma);
     void GetChromaMVFast(MeMV LumaMV, MeMV * pChroma);

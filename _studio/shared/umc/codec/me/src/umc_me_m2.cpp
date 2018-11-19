@@ -56,7 +56,7 @@ bool MeMPEG2::Init(MeInitParams *par)
   _vardiff = vardiff[0] + vardiff[1] + vardiff[2] + vardiff[3]
 
 #define TRY_MV(_bestmv, _bestcost, mvx, mvy) { \
-  Ipp32s bcost; \
+  int32_t bcost; \
   ippiSAD16x16_8u32s(src, sstep, ref+((mvx)>>1)+((mvy)>>1)*rstep, rstep, \
     &bcost, (((mvx) & 1) << 3) | (((mvy) & 1) << 2)); \
   if(bcost < _bestcost) { \
@@ -70,17 +70,17 @@ bool MeMPEG2::Init(MeInitParams *par)
   (bx*bw*2+((mvx)>>0)>=ll && (bx+1)*bw*2+((mvx+0)>>0) <= lr && \
    by*bh*2+((mvy)>>0)>=lt && (by+1)*bh*2+((mvy+0)>>0) <= lb )
 
-void MeMPEG2::me_block(const Ipp8u* src, Ipp32s sstep, const Ipp8u* ref, Ipp32s rstep,
-                       Ipp32s bh, Ipp32s bx, Ipp32s by,
-                       Ipp32s ll, Ipp32s lt, Ipp32s lr, Ipp32s lb,
-                       MeMV* mv, Ipp32s* cost, MeMV* mvleft, MeMV* mvtop)
+void MeMPEG2::me_block(const uint8_t* src, int32_t sstep, const uint8_t* ref, int32_t rstep,
+                       int32_t bh, int32_t bx, int32_t by,
+                       int32_t ll, int32_t lt, int32_t lr, int32_t lb,
+                       MeMV* mv, int32_t* cost, MeMV* mvleft, MeMV* mvtop)
 {
-  const Ipp32s bw = 16; // can be a param
+  const int32_t bw = 16; // can be a param
   MeMV bestmv;
-  Ipp32s bestcost = IPP_MAX_32S;
-  Ipp32s changed = 0;
-  Ipp32s step = (((bx - by) & 7) != 1) ? 2 :
-    (IPP_MAX(m_par->SearchRange.x, m_par->SearchRange.y)>>3<<1);
+  int32_t bestcost = MFX_MAX_32S;
+  int32_t changed = 0;
+  int32_t step = (((bx - by) & 7) != 1) ? 2 :
+    (MFX_MAX(m_par->SearchRange.x, m_par->SearchRange.y)>>3<<1);
 
   TRY_MV(bestmv, bestcost, 0, 0);
   mv->x &= ~1; // to full pixel
@@ -131,10 +131,10 @@ void MeMPEG2::me_block(const Ipp8u* src, Ipp32s sstep, const Ipp8u* ref, Ipp32s 
 bool MeMPEG2::EstimateFrame(MeParams *par)
 {
     MeFrame *res = par->pSrc;
-    Ipp32s x, y;
-    Ipp8u *src, *ref[2];
-    Ipp16s bufDiff[3][256];
-    Ipp32s varintra, varinter, var[4], mean[4];
+    int32_t x, y;
+    uint8_t *src, *ref[2];
+    int16_t bufDiff[3][256];
+    int32_t varintra, varinter, var[4], mean[4];
 
     //check and save input
     m_par = par;
@@ -146,7 +146,7 @@ bool MeMPEG2::EstimateFrame(MeParams *par)
 
     for( y=0; y<m_HeightMB; y++){
         for( x=0; x<m_WidthMB; x++){
-            Ipp32s bestcost;
+            int32_t bestcost;
             src = res->ptr[0] + res->step[0] * y * 16 + x*16;
             ref[0] = par->pRefF[0]->ptr[0] + par->pRefF[0]->step[0] * y * 16 + x*16;
             if(par->SearchDirection == ME_BidirSearch)
@@ -224,10 +224,10 @@ bool MeMPEG2::EstimateFrame(MeParams *par)
             m_BestMV[0].x = m_BestMV[0].y = 0;
             me_block(src, res->step[0], ref[0], par->pRefF[0]->step[0],
               16, x, y,
-              IPP_MAX(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
-              IPP_MAX(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
-              IPP_MIN(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
-              IPP_MIN(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
+              MFX_MAX(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
+              MFX_MAX(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
+              MFX_MIN(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
+              MFX_MIN(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
               &(m_BestMV[0]), &(m_BestCost[0]),
               x>0 ? &(m_ResMB[m_adr-1].MV[0][0]) : 0,
               y>0 ? &(m_ResMB[m_adr-m_HeightMB].MV[0][0]) : 0);
@@ -266,10 +266,10 @@ bool MeMPEG2::EstimateFrame(MeParams *par)
 
             me_block(src, res->step[0], ref[1], par->pRefF[0]->step[0],
               16, x, y,
-              IPP_MAX(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
-              IPP_MAX(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
-              IPP_MIN(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
-              IPP_MIN(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
+              MFX_MAX(par->PicRange.top_left.x*2, x*16*2 - par->SearchRange.x*2),
+              MFX_MAX(par->PicRange.top_left.y*2, y*16*2 - par->SearchRange.y*2),
+              MFX_MIN(par->PicRange.bottom_right.x*2, (x+1)*16*2 + par->SearchRange.x*2 -1),
+              MFX_MIN(par->PicRange.bottom_right.y*2, (y+1)*16*2 + par->SearchRange.y*2 -1),
               &(m_BestMV[1]), &(m_BestCost[1]),
               x>0 ? &(m_ResMB[m_adr-1].MV[1][0]) : 0,
               y>0 ? &(m_ResMB[m_adr-m_HeightMB].MV[1][0]) : 0);

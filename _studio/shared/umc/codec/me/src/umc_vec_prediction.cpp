@@ -24,9 +24,9 @@
 #include "umc_vec_prediction.h"
 #include "umc_me.h"
 
-Ipp16s VC1ABS(Ipp16s value)
+int16_t VC1ABS(int16_t value)
 {
-  Ipp16u s = value>>15;
+  uint16_t s = value>>15;
   s = (value + s)^s;
   return s;
 }
@@ -63,7 +63,7 @@ bool MePredictCalculator::IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv)
         mv.y<-4*m_pMeParams->SearchRange.y || mv.y>=4*m_pMeParams->SearchRange.y)
         return true;
 
-    Ipp32s w=4*16, h=4*16;
+    int32_t w=4*16, h=4*16;
     switch(mt)
     {
 //    case ME_Mb16x16:
@@ -107,8 +107,8 @@ bool MePredictCalculator::IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv)
 
     if(isField)
     {
-        Ipp32s y_shift = 0;
-        Ipp32s level=0;
+        int32_t y_shift = 0;
+        int32_t level=0;
         if(pix == ME_DoublePixel) level = 1;
         if(pix == ME_QuadPixel) level = 2;
         if(pix == ME_OctalPixel) level = 3;
@@ -136,12 +136,12 @@ bool MePredictCalculator::IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv)
     return false;
 }
 
-void MePredictCalculator::TrimSearchRange(MeMbPart mt, MePixelType /*pix*/, Ipp32s &x0, Ipp32s &x1, Ipp32s &y0, Ipp32s &y1 )
+void MePredictCalculator::TrimSearchRange(MeMbPart mt, MePixelType /*pix*/, int32_t &x0, int32_t &x1, int32_t &y0, int32_t &y1 )
 {
-    Ipp32s x=4*16*m_pCur->x;
-    Ipp32s y=4*16*m_pCur->y;
+    int32_t x=4*16*m_pCur->x;
+    int32_t y=4*16*m_pCur->y;
 
-    Ipp32s w=4*16, h=4*16;
+    int32_t w=4*16, h=4*16;
     switch(mt)
     {
 //    case ME_Mb16x16:
@@ -170,27 +170,27 @@ void MePredictCalculator::TrimSearchRange(MeMbPart mt, MePixelType /*pix*/, Ipp3
         break;
     }
 
-    x0 = IPP_MAX(x0,IPP_MAX(4*m_pMeParams->PicRange.top_left.x-x, -4*m_pMeParams->SearchRange.x));
-    x1 = IPP_MIN(x1,IPP_MIN((4*m_pMeParams->PicRange.bottom_right.x-w)+1-x, 4*m_pMeParams->SearchRange.x));
-    y0= IPP_MAX(y0,IPP_MAX(4*m_pMeParams->PicRange.top_left.y-y, -4*m_pMeParams->SearchRange.y));
-    y1= IPP_MIN(y1,IPP_MIN((4*m_pMeParams->PicRange.bottom_right.y-h)+1-y, 4*m_pMeParams->SearchRange.y));
+    x0 = MFX_MAX(x0,MFX_MAX(4*m_pMeParams->PicRange.top_left.x-x, -4*m_pMeParams->SearchRange.x));
+    x1 = MFX_MIN(x1,MFX_MIN((4*m_pMeParams->PicRange.bottom_right.x-w)+1-x, 4*m_pMeParams->SearchRange.x));
+    y0= MFX_MAX(y0,MFX_MAX(4*m_pMeParams->PicRange.top_left.y-y, -4*m_pMeParams->SearchRange.y));
+    y1= MFX_MIN(y1,MFX_MIN((4*m_pMeParams->PicRange.bottom_right.y-h)+1-y, 4*m_pMeParams->SearchRange.y));
 }
 
-MeMV MePredictCalculator::GetCurrentBlockMV(int isBkw, Ipp32s idx)
+MeMV MePredictCalculator::GetCurrentBlockMV(int isBkw, int32_t idx)
 {
     if(m_pCur->InterType[idx] == ME_MbIntra) return MeMV(0);
     return m_pCur->BestMV[isBkw][m_pCur->BestIdx[isBkw][idx]][idx];
 }
-bool MePredictCalculator::GetCurrentBlockSecondRef(int isBkw, Ipp32s idx)
+bool MePredictCalculator::GetCurrentBlockSecondRef(int isBkw, int32_t idx)
 {
     return (m_pCur->BestIdx[isBkw][idx] == 1);
 }
-MeMbType MePredictCalculator::GetCurrentBlockType(Ipp32s idx)
+MeMbType MePredictCalculator::GetCurrentBlockType(int32_t idx)
 {
     return m_pCur->InterType[idx];
 }
 
-Ipp32s MePredictCalculator::GetT2()
+int32_t MePredictCalculator::GetT2()
 {
     switch(m_pCur->MbPart){
         case ME_Mb16x16:
@@ -203,11 +203,11 @@ Ipp32s MePredictCalculator::GetT2()
     return 0; //forse full search
 }
 
-Ipp32s MePredictCalculator::GetT2_16x16()
+int32_t MePredictCalculator::GetT2_16x16()
 {
-    Ipp32s T2, SadA=ME_BIG_COST, SadB=ME_BIG_COST, SadC=ME_BIG_COST;
-    Ipp32s adr=m_pCur->adr;
-    Ipp32s w=m_pMeParams->pSrc->WidthMB;
+    int32_t T2, SadA=ME_BIG_COST, SadB=ME_BIG_COST, SadC=ME_BIG_COST;
+    int32_t adr=m_pCur->adr;
+    int32_t w=m_pMeParams->pSrc->WidthMB;
 
     if(MbTopEnable && m_pRes[adr -w].MbType != ME_MbIntra)
         SadA = m_pRes[adr-w].MbCosts[0];
@@ -222,18 +222,18 @@ Ipp32s MePredictCalculator::GetT2_16x16()
     }
     else
     {
-        T2 = 6*IPP_MIN(IPP_MIN(SadA,SadB), SadC)/5 + 128;
+        T2 = 6*MFX_MIN(MFX_MIN(SadA,SadB), SadC)/5 + 128;
     }
-    //T2 = IPP_MIN(IPP_MIN(SadA,SadB), IPP_MIN(SadC,SadCol));
+    //T2 = MFX_MIN(MFX_MIN(SadA,SadB), MFX_MIN(SadC,SadCol));
 
     return T2;
 }
 
-Ipp32s MePredictCalculator::GetT2_8x8()
+int32_t MePredictCalculator::GetT2_8x8()
 {
-    Ipp32s T2, SadA=ME_BIG_COST, SadB=ME_BIG_COST, SadC=ME_BIG_COST;
-    Ipp32s adr=m_pCur->adr;
-    Ipp32s w=m_pMeParams->pSrc->WidthMB;
+    int32_t T2, SadA=ME_BIG_COST, SadB=ME_BIG_COST, SadC=ME_BIG_COST;
+    int32_t adr=m_pCur->adr;
+    int32_t w=m_pMeParams->pSrc->WidthMB;
 
     switch(m_pCur->BlkIdx)
     {
@@ -294,7 +294,7 @@ Ipp32s MePredictCalculator::GetT2_8x8()
     }
     else
     {
-        T2 = (6*IPP_MIN(IPP_MIN(SadA,SadB), SadC)/5 + 32);///2;
+        T2 = (6*MFX_MIN(MFX_MIN(SadA,SadB), SadC)/5 + 32);///2;
     }
     return T2;
 }
@@ -326,7 +326,7 @@ MeMV MePredictCalculatorH264::GetPrediction16x16()
 {
     SetMbEdges();
     MeMV mv;
-    ComputePredictors16x16((Ipp8s)m_pCur->RefDir,m_pCur->RefIdx,&mv);
+    ComputePredictors16x16((int8_t)m_pCur->RefDir,m_pCur->RefIdx,&mv);
     return mv;
 }
 
@@ -347,10 +347,10 @@ void MePredictCalculatorH264::SetPredictionPSkip()
     {
         // above neighbour
         AMV = MeMV(0);
-        Ipp32s RefIndxA = -1;
+        int32_t RefIndxA = -1;
         // left neighbour
         CMV = MeMV(0);
-        Ipp32s RefIndxC = -1;
+        int32_t RefIndxC = -1;
 
         //CMV = m_pRes[m_pCur->adr-1].MV[0][3];
         //AMV = m_pRes[m_pCur->adr-m_pMeParams->pSrc->WidthMB].MV[0][12];
@@ -361,13 +361,13 @@ void MePredictCalculatorH264::SetPredictionPSkip()
         SetMVNeighbBlkParamDepPart(Left, 0, &CMV, &RefIndxC);
         SetMVNeighbBlkParamDepPart(Top, 0, &AMV, &RefIndxA);
 
-        Ipp32s CurRefIndx = m_pRes[m_pCur->adr].Refindex[0][0];
+        int32_t CurRefIndx = m_pRes[m_pCur->adr].Refindex[0][0];
 
         if ((AMV.x | AMV.y | RefIndxA)&&
             (CMV.x | CMV.y | RefIndxC))
         {
-            Ipp32s RefIndxB = -1;
-            Ipp8u Equal = 0;
+            int32_t RefIndxB = -1;
+            uint8_t Equal = 0;
             // right neighbour
             BMV = MeMV(0);
             if (MbTopRightEnable)
@@ -420,13 +420,13 @@ void MePredictCalculatorH264::SetPredictionPSkip()
 void MePredictCalculatorH264::SetPredictionSpatialDirectSkip16x16()
 {
 
-    Ipp32s  RefIndexL0, RefIndexL1;
-    Ipp32s refIdxL0, refIdxL1;
+    int32_t  RefIndexL0, RefIndexL1;
+    int32_t refIdxL0, refIdxL1;
     //set reference index
     SetSpatialDirectRefIdx(&refIdxL0,&refIdxL1);
-    RefIndexL0 = (Ipp8s)refIdxL0;
-    RefIndexL1 = (Ipp8s)refIdxL1;
-    Ipp32u uPredDir;
+    RefIndexL0 = (int8_t)refIdxL0;
+    RefIndexL1 = (int8_t)refIdxL1;
+    uint32_t uPredDir;
 
     // set ref index array
     {
@@ -470,9 +470,9 @@ void MePredictCalculatorH264::SetPredictionSpatialDirectSkip16x16()
 
     MeMV* pMVCurRef;
 
-    Ipp8s colRefIndexL0 = (Ipp8s)m_pMeParams->pRefF[0]->RefIndx[m_pCur->adr];
-    Ipp8s colRefIndexL1 = (Ipp8s)m_pMeParams->pRefB[0]->RefIndx[m_pCur->adr];
-    Ipp8s CurColRefIndex = colRefIndexL0;
+    int8_t colRefIndexL0 = (int8_t)m_pMeParams->pRefF[0]->RefIndx[m_pCur->adr];
+    int8_t colRefIndexL1 = (int8_t)m_pMeParams->pRefB[0]->RefIndx[m_pCur->adr];
+    int8_t CurColRefIndex = colRefIndexL0;
 
     if (colRefIndexL0 >= 0)
         pMVCurRef = &pMVRefL0;
@@ -510,14 +510,14 @@ void MePredictCalculatorH264::SetPredictionSpatialDirectSkip16x16()
     }
 
 }
-void MePredictCalculatorH264::ComputePredictors16x16(Ipp8s ListNum, Ipp32s RefIndex, MeMV* res)
+void MePredictCalculatorH264::ComputePredictors16x16(int8_t ListNum, int32_t RefIndex, MeMV* res)
 {
     if ((MbLeftEnable)||
         (MbTopEnable))
     {
-        Ipp32s RefIdxl = -1;
-        Ipp32s RefIdxa = -1;
-        Ipp32s RefIdxr = -1;
+        int32_t RefIdxl = -1;
+        int32_t RefIdxa = -1;
+        int32_t RefIdxr = -1;
         // above
         AMV = MeMV(0);
         // above right(left)
@@ -525,7 +525,7 @@ void MePredictCalculatorH264::ComputePredictors16x16(Ipp8s ListNum, Ipp32s RefIn
         // left
         CMV = MeMV(0);
 
-        Ipp32u RefPicCounter = 3;
+        uint32_t RefPicCounter = 3;
 
         MeMV* pTmpMV = NULL;
 
@@ -610,15 +610,15 @@ void MePredictCalculatorH264::ComputePredictors16x16(Ipp8s ListNum, Ipp32s RefIn
     //printf("res->y = %d\n",res->y);
 }
 void MePredictCalculatorH264::SetMVNeighbBlkParamDepPart(MeH264Neighbour direction,
-                                                              Ipp8s ListNum,
+                                                              int8_t ListNum,
                                                               MeMV* pMV,
-                                                              Ipp32s* RefIdx)
+                                                              int32_t* RefIdx)
 {
     MeMB* neib_mv;
     // posible partitions: 16x16, 16x8, 8x16, 8x8, 4x4
-    static Ipp32u LeftTbl[5] = {0, 0, 0, 0, 3};
-    static Ipp32u TopTbl[5] = {0, 1, 1, 3, 12}; //use for top and topleft
-    static Ipp32u TopRigthTbl[5] = {0, 1, 1, 3, 15};
+    static uint32_t LeftTbl[5] = {0, 0, 0, 0, 3};
+    static uint32_t TopTbl[5] = {0, 1, 1, 3, 12}; //use for top and topleft
+    static uint32_t TopRigthTbl[5] = {0, 1, 1, 3, 15};
 
     switch (direction)
     {
@@ -648,11 +648,11 @@ void MePredictCalculatorH264::SetMVNeighbBlkParamDepPart(MeH264Neighbour directi
 }
 
 
-void MePredictCalculatorH264::SetSpatialDirectRefIdx(Ipp32s* RefIdxL0, Ipp32s* RefIdxL1)
+void MePredictCalculatorH264::SetSpatialDirectRefIdx(int32_t* RefIdxL0, int32_t* RefIdxL1)
 {
-    Ipp32s refIdxL0 = -1;
-    Ipp32s refIdxL1 = -1;
-    Ipp32s tmp;
+    int32_t refIdxL0 = -1;
+    int32_t refIdxL1 = -1;
+    int32_t tmp;
     // without MBAFF
     // first check Left block
     if (MbLeftEnable)
@@ -711,7 +711,7 @@ bool MePredictCalculatorVC1::IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv)
         mv.y<-4*m_pMeParams->SearchRange.y || mv.y>=4*m_pMeParams->SearchRange.y)
         return true;
 
-    Ipp32s w=4*16, h=4*16;
+    int32_t w=4*16, h=4*16;
 
     //mt = ME_Mb16x16 only; to suppose BlkIdx = 0
 
@@ -727,8 +727,8 @@ bool MePredictCalculatorVC1::IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv)
 
     if(isField)
     {
-        Ipp32s y_shift = 0;
-        Ipp32s level=0;
+        int32_t y_shift = 0;
+        int32_t level=0;
         if(pix == ME_DoublePixel) level = 1;
         if(pix == ME_QuadPixel) level = 2;
         if(pix == ME_OctalPixel) level = 3;
@@ -758,7 +758,7 @@ bool MePredictCalculatorVC1::IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv)
 
 void MePredictCalculatorVC1::ScalePredict(MeMV* MV)
 {
-    Ipp32s x,y;
+    int32_t x,y;
 
     x = m_pCur->x*Mult;
     y = m_pCur->y*Mult;
@@ -768,20 +768,20 @@ void MePredictCalculatorVC1::ScalePredict(MeMV* MV)
 
     if (x < MVPredMin.x)
     {
-        MV->x = MV->x - (Ipp16s)(x- MVPredMin.x);
+        MV->x = MV->x - (int16_t)(x- MVPredMin.x);
     }
     else if (x > MVPredMax.x)
     {
-        MV-> x = MV-> x - (Ipp16s)(x-MVPredMax.x);
+        MV-> x = MV-> x - (int16_t)(x-MVPredMax.x);
     }
 
     if (y < MVPredMin.y)
     {
-        MV->y = MV->y - (Ipp16s)(y - MVPredMin.y);
+        MV->y = MV->y - (int16_t)(y - MVPredMin.y);
     }
     else if (y > MVPredMax.y)
     {
-        MV->y = MV->y - (Ipp16s)(y - MVPredMax.y);
+        MV->y = MV->y - (int16_t)(y - MVPredMax.y);
     }
 }
 MeMV MePredictCalculatorVC1::GetPrediction(MeMV mv)
@@ -819,7 +819,7 @@ void MePredictCalculatorVC1::SetDefFrwBkw(MeMV &mvF, MeMV &mvB)
     prefField1MV[bkw] = m_pCur->BestIdx[bkw][0];
 }
 
-void MePredictCalculatorVC1::SetDefMV(MeMV &mv, Ipp32s dir)
+void MePredictCalculatorVC1::SetDefMV(MeMV &mv, int32_t dir)
 {
     mv = mv1MVField[dir];
     m_pCur->BestIdx[dir][0] = prefField1MV[dir];
@@ -1386,7 +1386,7 @@ void MePredictCalculatorVC1::GetMacroBlockVectorsABCField(int isBkw)
     }
 }
 
-Ipp32s MePredictCalculatorVC1::GetPredictorVC1(int index, int isBkw, MeMV* res)
+int32_t MePredictCalculatorVC1::GetPredictorVC1(int index, int isBkw, MeMV* res)
 {
     switch(index)
     {
@@ -1410,7 +1410,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1(int index, int isBkw, MeMV* res)
         break;
     }
 
-    Ipp32s pIdx = index == ME_Macroblock ? 0:index;
+    int32_t pIdx = index == ME_Macroblock ? 0:index;
 
     m_AMV[isBkw][pIdx][0] = AMV;
     m_BMV[isBkw][pIdx][0] = BMV;
@@ -1448,9 +1448,9 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1(int index, int isBkw, MeMV* res)
     return 0;
 }
 
-Ipp32s MePredictCalculatorVC1::GetPredictorVC1_hybrid(int index,int isBkw, MeMV* res)
+int32_t MePredictCalculatorVC1::GetPredictorVC1_hybrid(int index,int isBkw, MeMV* res)
 {
-    Ipp32s sumA = 0, sumC = 0;
+    int32_t sumA = 0, sumC = 0;
     //forward direction only
 
     switch(index)
@@ -1475,7 +1475,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1_hybrid(int index,int isBkw, MeMV*
         break;
     }
 
-    Ipp32s pIdx = index == ME_Macroblock ? 0:index;
+    int32_t pIdx = index == ME_Macroblock ? 0:index;
 
     m_AMV[isBkw][pIdx][0] = AMV;
     m_BMV[isBkw][pIdx][0] = BMV;
@@ -1526,7 +1526,7 @@ void MePredictCalculatorVC1::GetPredictorVC1_hybrid(MeMV cur, MeMV* res)
 {
     //should be called only after GetPredictorVC1_hybrid
 
-    Ipp32s sumA = 0, sumC = 0;
+    int32_t sumA = 0, sumC = 0;
     //forward direction only
 
     if(!isAOutOfBound)
@@ -1587,49 +1587,49 @@ void MePredictCalculatorVC1::GetPredictorVC1_hybrid(MeMV cur, MeMV* res)
 }
 
 
-static Ipp16s scale_sameX(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameX(int16_t n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1ABS(n = (n >> bHalf));
-    Ipp32s s;
+    int16_t abs_n = VC1ABS(n = (n >> bHalf));
+    int32_t s;
     if (abs_n>255)
     {
         return n << bHalf;
     }
     else if (abs_n<pInfo->ME_ScaleZoneX)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame2))>>8);
         s = (n<0)? s - pInfo->ME_ZoneOffsetX:s + pInfo->ME_ZoneOffsetX;
     }
     s = (s>pInfo->ME_RangeX-1)? pInfo->ME_RangeX-1:s;
     s = (s<-pInfo->ME_RangeX) ? -pInfo->ME_RangeX :s;
 
-    return (Ipp16s) (s << bHalf);
+    return (int16_t) (s << bHalf);
 }
-static Ipp16s scale_oppX(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
+static int16_t scale_oppX(int16_t n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
 {
-    Ipp32s s = (((Ipp32s)((n >> bHalf)*pInfo->ME_ScaleOpp))>>8);
-    return (Ipp16s) (s << bHalf);
+    int32_t s = (((int32_t)((n >> bHalf)*pInfo->ME_ScaleOpp))>>8);
+    return (int16_t) (s << bHalf);
 }
 /*
-static Ipp16s scale_sameY(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameY(int16_t n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1ABS(n = (n >> bHalf));
-    Ipp32s s     = 0;
+    int16_t abs_n = VC1ABS(n = (n >> bHalf));
+    int32_t s     = 0;
     if (abs_n>63)
     {
         return n << bHalf;
     }
     else if (abs_n<pInfo->ME_ScaleZoneY)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame2))>>8);
         s = (n<0)? s - pInfo->ME_ZoneOffsetY:s + pInfo->ME_ZoneOffsetY;
     }
     if (pInfo->ME_Bottom)
@@ -1642,50 +1642,50 @@ static Ipp16s scale_sameY(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
         s = (s>pInfo->ME_RangeY/2-1)? pInfo->ME_RangeY/2-1:s;
         s = (s<-pInfo->ME_RangeY/2) ? -pInfo->ME_RangeY/2 :s;
     }
-    return (Ipp16s) (s << bHalf);
+    return (int16_t) (s << bHalf);
 }
 */
 
-static Ipp16s scale_sameY(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameY(int16_t n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1ABS(n = (n>>((Ipp16u)bHalf)));
-    Ipp32s s     = 0;
+    int16_t abs_n = VC1ABS(n = (n>>((uint16_t)bHalf)));
+    int32_t s     = 0;
     if (abs_n>63)
     {
-        return n<<((Ipp16u)bHalf);
+        return n<<((uint16_t)bHalf);
     }
 
     else if (abs_n<pInfo->ME_ScaleZoneY)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame2))>>8);
         s = (n<0)? s - pInfo->ME_ZoneOffsetY:s + pInfo->ME_ZoneOffsetY;
     }
 
     s = (s>pInfo->ME_RangeY/2-1)? pInfo->ME_RangeY/2-1:s;
     s = (s<-pInfo->ME_RangeY/2) ? -pInfo->ME_RangeY/2 :s;
 
-    return (Ipp16s) (s<<((Ipp16u)bHalf));
+    return (int16_t) (s<<((uint16_t)bHalf));
 }
 
-static Ipp16s scale_sameY_B(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
+static int16_t scale_sameY_B(int16_t n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
 {
-    Ipp16s abs_n = VC1ABS(n = (n>>bHalf));
-    Ipp32s s     = 0;
+    int16_t abs_n = VC1ABS(n = (n>>bHalf));
+    int32_t s     = 0;
     if (abs_n>63)
     {
         return n<<bHalf;
     }
     else if (abs_n<pInfo->ME_ScaleZoneY)
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame1))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame1))>>8);
     }
     else
     {
-        s = (Ipp16s)(((Ipp32s)(n*pInfo->ME_ScaleSame2))>>8);
+        s = (int16_t)(((int32_t)(n*pInfo->ME_ScaleSame2))>>8);
         s = (n<0)? s - pInfo->ME_ZoneOffsetY:s + pInfo->ME_ZoneOffsetY;
     }
     if (pInfo->ME_Bottom)
@@ -1698,26 +1698,26 @@ static Ipp16s scale_sameY_B(Ipp16s n,MeVC1fieldScaleInfo* pInfo, bool bHalf)
         s = (s>pInfo->ME_RangeY/2-1)? pInfo->ME_RangeY/2-1:s;
         s = (s<-pInfo->ME_RangeY/2) ? -pInfo->ME_RangeY/2 :s;
     }
-    return (Ipp16s) (s<<bHalf);
+    return (int16_t) (s<<bHalf);
 }
 
-static Ipp16s scale_oppY(Ipp16s n,MeVC1fieldScaleInfo* pInfo,  bool bHalf)
+static int16_t scale_oppY(int16_t n,MeVC1fieldScaleInfo* pInfo,  bool bHalf)
 {
-    Ipp32s s = (((Ipp32s)((n >> bHalf)*pInfo->ME_ScaleOpp))>>8);
-    return (Ipp16s) (s << bHalf);
+    int32_t s = (((int32_t)((n >> bHalf)*pInfo->ME_ScaleOpp))>>8);
+    return (int16_t) (s << bHalf);
 
 }
-typedef Ipp16s (*fScaleX)(Ipp16s n, MeVC1fieldScaleInfo* pInfo, bool bHalf);
-typedef Ipp16s (*fScaleY)(Ipp16s n, MeVC1fieldScaleInfo* pInfo, bool bHalf);
+typedef int16_t (*fScaleX)(int16_t n, MeVC1fieldScaleInfo* pInfo, bool bHalf);
+typedef int16_t (*fScaleY)(int16_t n, MeVC1fieldScaleInfo* pInfo, bool bHalf);
 
 static fScaleX pScaleX[2][2] = {{scale_oppX, scale_sameX},
                                 {scale_sameX,scale_oppX}};
 static fScaleY pScaleY[2][2] = {{scale_oppY, scale_sameY},
                                 {scale_sameY_B, scale_oppY}};
 
-Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2Hybrid(int index, int isBkw, MeMV* res)
+int32_t MePredictCalculatorVC1::GetPredictorVC1Field2Hybrid(int index, int isBkw, MeMV* res)
 {
-    Ipp32s rs;
+    int32_t rs;
     MeMV A[2];
     MeMV B[2];
     MeMV C[2];
@@ -1744,7 +1744,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2Hybrid(int index, int isBkw,
         break;
     }
 
-    Ipp32s pIdx = index == ME_Macroblock ? 0:index;
+    int32_t pIdx = index == ME_Macroblock ? 0:index;
 
     m_AMV[isBkw][pIdx][0] = MeMV(0);
     m_BMV[isBkw][pIdx][0] = MeMV(0);
@@ -1756,7 +1756,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2Hybrid(int index, int isBkw,
 
     bool bBackwardFirst = (isBkw && !m_pMeParams->bSecondField);
     bool bHalf = (m_pMeParams->PixelType == ME_HalfPixel);
-    Ipp8u n = ((isAOutOfBound)<<2) + ((isBOutOfBound)<<1) + (isCOutOfBound);
+    uint8_t n = ((isAOutOfBound)<<2) + ((isBOutOfBound)<<1) + (isCOutOfBound);
 
     switch (n)
     {
@@ -1927,14 +1927,14 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2Hybrid(int index, int isBkw,
 
     if (!isAOutOfBound && !isCOutOfBound)
     {
-       // Ipp32u th = m_par->PixelType ==  ME_HalfPixel ? 16:32;
-        Ipp32u th = 32;
+       // uint32_t th = m_par->PixelType ==  ME_HalfPixel ? 16:32;
+        uint32_t th = 32;
         //0 field
         MeMV  mvCPred = C[0];
         MeMV  mvAPred = A[0];
 
-        Ipp32u sumA = VC1ABS(mvAPred.x - res[0].x) + VC1ABS(mvAPred.y - res[0].y);
-        Ipp32u sumC = VC1ABS(mvCPred.x - res[0].x) + VC1ABS(mvCPred.y - res[0].y);
+        uint32_t sumA = VC1ABS(mvAPred.x - res[0].x) + VC1ABS(mvAPred.y - res[0].y);
+        uint32_t sumC = VC1ABS(mvCPred.x - res[0].x) + VC1ABS(mvCPred.y - res[0].y);
         if (sumA > th)
         {
             res[0].x = mvAPred.x;
@@ -1970,9 +1970,9 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2Hybrid(int index, int isBkw,
     return rs;
 }
 
-Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2(int index, int isBkw, MeMV* res)
+int32_t MePredictCalculatorVC1::GetPredictorVC1Field2(int index, int isBkw, MeMV* res)
 {
-    Ipp32s rs;
+    int32_t rs;
     switch(index)
     {
     case ME_Block0:
@@ -1995,7 +1995,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2(int index, int isBkw, MeMV*
         break;
     }
 
-    Ipp32s pIdx = index == ME_Macroblock ? 0:index;
+    int32_t pIdx = index == ME_Macroblock ? 0:index;
 
     m_AMV[isBkw][pIdx][0] = MeMV(0);
     m_BMV[isBkw][pIdx][0] = MeMV(0);
@@ -2007,7 +2007,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2(int index, int isBkw, MeMV*
 
     bool bBackwardFirst = (isBkw && !m_pMeParams->bSecondField);
     bool bHalf = (m_pMeParams->PixelType == ME_HalfPixel);
-    Ipp8u n = ((isAOutOfBound)<<2) + ((isBOutOfBound)<<1) + (isCOutOfBound);
+    uint8_t n = ((isAOutOfBound)<<2) + ((isBOutOfBound)<<1) + (isCOutOfBound);
 
     m_pCur->HybridPredictor[0]=false;
     m_pCur->HybridPredictor[1]=false;
@@ -2191,7 +2191,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field2(int index, int isBkw, MeMV*
     return rs;
 }
 
-Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field1(int index, int isBkw, MeMV* res)
+int32_t MePredictCalculatorVC1::GetPredictorVC1Field1(int index, int isBkw, MeMV* res)
 {
     switch(index)
     {
@@ -2218,7 +2218,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field1(int index, int isBkw, MeMV*
     m_pCur->HybridPredictor[0]=false;
     m_pCur->HybridPredictor[1]=false;
 
-    Ipp8u n = ((isAOutOfBound)<<2) + ((isBOutOfBound)<<1) + (isCOutOfBound);
+    uint8_t n = ((isAOutOfBound)<<2) + ((isBOutOfBound)<<1) + (isCOutOfBound);
     switch (n)
     {
     case 7: //111
@@ -2274,7 +2274,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field1(int index, int isBkw, MeMV*
             VM_ASSERT(0);
         }
     }
-    Ipp32s pIdx = index == ME_Macroblock ? 0:index;
+    int32_t pIdx = index == ME_Macroblock ? 0:index;
 
     m_AMV[isBkw][pIdx][0] = AMV;
     m_BMV[isBkw][pIdx][0] = BMV;
@@ -2282,12 +2282,12 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field1(int index, int isBkw, MeMV*
 
     if (!isAOutOfBound && !isCOutOfBound)
     {
-        Ipp32u th = 32;
+        uint32_t th = 32;
         if(m_pMeParams->SearchDirection == ME_BidirSearch)
             th = (m_pMeParams->PixelType ==  ME_HalfPixel) ? 16:32;
         //0 field
-        Ipp32u sumA = VC1ABS(m_AMV[isBkw][pIdx][0].x - res[0].x) + VC1ABS(m_AMV[isBkw][pIdx][0].y - res[0].y);
-        Ipp32u sumC = VC1ABS(m_CMV[isBkw][pIdx][0].x - res[0].x) + VC1ABS(m_CMV[isBkw][pIdx][0].y - res[0].y);
+        uint32_t sumA = VC1ABS(m_AMV[isBkw][pIdx][0].x - res[0].x) + VC1ABS(m_AMV[isBkw][pIdx][0].y - res[0].y);
+        uint32_t sumC = VC1ABS(m_CMV[isBkw][pIdx][0].x - res[0].x) + VC1ABS(m_CMV[isBkw][pIdx][0].y - res[0].y);
         if (sumA > th)
         {
             res[0].x = m_AMV[isBkw][pIdx][0].x;
@@ -2305,7 +2305,7 @@ Ipp32s MePredictCalculatorVC1::GetPredictorVC1Field1(int index, int isBkw, MeMV*
 }
 
 
-Ipp32s MePredictCalculatorVC1::GetPredictorMPEG2(int index,int isBkw, MeMV* res)
+int32_t MePredictCalculatorVC1::GetPredictorMPEG2(int index,int isBkw, MeMV* res)
 {
     if (MbLeftEnable)
     {

@@ -27,9 +27,9 @@
 namespace UMC
 {
 inline
-Ipp32s ScaleValue(Ipp32s value, Ipp32s blockDist, Ipp32s otherBlockDist)
+int32_t ScaleValue(int32_t value, int32_t blockDist, int32_t otherBlockDist)
 {
-    Ipp32s signExtended = value >> 31;
+    int32_t signExtended = value >> 31;
 
     // get the absolute value
     value = (value ^ signExtended) - signExtended;
@@ -42,22 +42,22 @@ Ipp32s ScaleValue(Ipp32s value, Ipp32s blockDist, Ipp32s otherBlockDist)
 
     return value;
 
-} // Ipp32s ScaleValue(Ipp32s value, Ipp32s blockDist, Ipp32s otherBlockDist)
+} // int32_t ScaleValue(int32_t value, int32_t blockDist, int32_t otherBlockDist)
 
 #define AvsAbs(value) \
     ((0 < (value)) ? (value) : (-(value)))
 
 inline
-Ipp32s VectorDistance(MeMV mvOne, MeMV mvTwo)
+int32_t VectorDistance(MeMV mvOne, MeMV mvTwo)
 {
-    Ipp32s dist;
+    int32_t dist;
 
     dist = AvsAbs(mvOne.x - mvTwo.x) +
            AvsAbs(mvOne.y - mvTwo.y);
 
     return dist;
 
-} // Ipp32s VectorDistance(AVSMVector mvOne, AVSMVector mvTwo)
+} // int32_t VectorDistance(AVSMVector mvOne, AVSMVector mvTwo)
 
 // Some MeAVS methods
 
@@ -87,7 +87,7 @@ bool MeAVS::EstimateFrame(MeParams *par)
     MFX_INTERNAL_CPY(m_PredCalc->m_distIdx,m_distIdx,sizeof(m_distIdx));
 
     //estiamte all MB
-    for(Ipp32s MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
+    for(int32_t MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
     {
         //reset costs
         m_cur.Reset();
@@ -139,8 +139,8 @@ bool MeAVS::EstimateSkip()
 
 bool MeAVS::EstimateSkip16x16()
 {
-    Ipp32s i, j;
-    Ipp32s tmpCost;
+    int32_t i, j;
+    int32_t tmpCost;
     bool OutBoundF = false;
     bool OutBoundB = false;
     // P_Skip  & B_Skip
@@ -209,12 +209,12 @@ bool MeAVS::EstimateSkip16x16()
 
 bool MeAVS::EstimateSkip8x8()
 {
-    Ipp32s i;
-    Ipp32s tmpCostF[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpCostB[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpIdxF[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpIdxB[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpCost;
+    int32_t i;
+    int32_t tmpCostF[ME_NUM_OF_BLOCKS];
+    int32_t tmpCostB[ME_NUM_OF_BLOCKS];
+    int32_t tmpIdxF[ME_NUM_OF_BLOCKS];
+    int32_t tmpIdxB[ME_NUM_OF_BLOCKS];
+    int32_t tmpCost;
 
     for(i = 0; i < ME_NUM_OF_BLOCKS; i++)
     {
@@ -278,8 +278,8 @@ bool MeAVS::EstimateSkip8x8()
 
     if(tmpCostF[0] != ME_BIG_COST && tmpCostB[0] != ME_BIG_COST)
     {
-        Ipp32s sumF = tmpCostF[0] + tmpCostF[1] + tmpCostF[2] + tmpCostF[3];
-        Ipp32s sumB = tmpCostB[0] + tmpCostB[1] + tmpCostB[2] + tmpCostB[3];
+        int32_t sumF = tmpCostF[0] + tmpCostF[1] + tmpCostF[2] + tmpCostF[3];
+        int32_t sumB = tmpCostB[0] + tmpCostB[1] + tmpCostB[2] + tmpCostB[3];
 
         if(sumF < sumB)
         {
@@ -337,15 +337,15 @@ void MeAVS::Estimate16x16Bidir()
     MeMV tmpSymVec(0);
 
     //find best bidir
-    for(Ipp32s i=0; i< m_par->FRefFramesNum; i++){
-        for(Ipp32s j=0; j<m_par->BRefFramesNum; j++){
+    for(int32_t i=0; i< m_par->FRefFramesNum; i++){
+        for(int32_t j=0; j<m_par->BRefFramesNum; j++){
             //check bidir
             tmpSymVec = m_PredCalcAVS.CreateSymmetricalMotionVector(0, m_cur.BestMV[frw][i][0]);
             if (m_PredCalcAVS.IsOutOfBound(ME_Mb16x16, ME_IntegerPixel, tmpSymVec) )
                 continue;
             //tmpSymVec = CreateSymmetricalMotionVector(0, m_cur.PredMV[frw][i][0]);
-            //Ipp32s tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric, frw, i, m_cur.BestMV[frw][i][0], bkw, j, m_cur.BestMV[bkw][j][0]);
-            Ipp32s tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType,
+            //int32_t tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric, frw, i, m_cur.BestMV[frw][i][0], bkw, j, m_cur.BestMV[bkw][j][0]);
+            int32_t tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType,
                                                  m_par->CostMetric, frw, i,
                                                  m_cur.BestMV[frw][i][0], bkw, j,
                                                  tmpSymVec);
@@ -373,7 +373,7 @@ bool MeAVS::Estimate16x16Direct()
         return false;
 
     MeMV MVDirectFW, MVDirectBW;
-    Ipp32s IdxF = 0, IdxB = 0;
+    int32_t IdxF = 0, IdxB = 0;
 
     m_PredCalcAVS.ReconstructMotionVectorsBSliceDirect(&MVDirectFW, &MVDirectBW);
     //for(IdxF = 0; IdxF < m_par->FRefFramesNum; IdxF++)
@@ -398,7 +398,7 @@ bool MeAVS::Estimate16x16Direct()
     //    SetError("Wrong MVDirect in MeBase::Estimate16x16Direct");
 
     //check direct
-    Ipp32s tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric,
+    int32_t tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric,
                                         frw, IdxF, MVDirectFW,
                                         bkw, IdxB, MVDirectBW);
     m_cur.DirectCost     = tmpCost;
@@ -449,7 +449,7 @@ MeMV MeAVS::GetChromaMV (MeMV mv)
 
 void MeAVS::GetChromaMV(MeMV LumaMV, MeMV* pChroma)
 {
-    static Ipp16s round[4]= {0,0,0,1};
+    static int16_t round[4]= {0,0,0,1};
 
     pChroma->x = (LumaMV.x + round[LumaMV.x&0x03])>>1;
     pChroma->y = (LumaMV.y + round[LumaMV.y&0x03])>>1;
@@ -457,8 +457,8 @@ void MeAVS::GetChromaMV(MeMV LumaMV, MeMV* pChroma)
 
 void MeAVS::GetChromaMVFast(MeMV LumaMV, MeMV* pChroma)
 {
-    static Ipp16s round [4]= {0,0,0,1};
-    static Ipp16s round1[2][2] = {
+    static int16_t round [4]= {0,0,0,1};
+    static int16_t round1[2][2] = {
         {0, -1}, //sign = 0;
         {0,  1}  //sign = 1
     };
@@ -472,10 +472,10 @@ void MeAVS::GetChromaMVFast(MeMV LumaMV, MeMV* pChroma)
 // functions GetExpGolombCodeSize and GetSESize
 // need for calculation size of mv difference 
 inline
-Ipp32u GetExpGolombCodeSize(Ipp32u code)
+uint32_t GetExpGolombCodeSize(uint32_t code)
 {
-    Ipp32s leadingZeroBits = 0;
-    Ipp32s zeroMask = (-1 << 1);
+    int32_t leadingZeroBits = 0;
+    int32_t zeroMask = (-1 << 1);
 
     // update code
     code += 1;
@@ -490,15 +490,15 @@ Ipp32u GetExpGolombCodeSize(Ipp32u code)
 
     return leadingZeroBits * 2 + 1;
 
-} // Ipp32u GetExpGolombCodeSize(Ipp32u code)
+} // uint32_t GetExpGolombCodeSize(uint32_t code)
 
 inline
-Ipp32u GetSESize(Ipp32s element)
+uint32_t GetSESize(int32_t element)
 {
     if (element)
     {
-        Ipp32u code;
-        Ipp32s signExtended;
+        uint32_t code;
+        int32_t signExtended;
 
         // get element's sign
         signExtended = element >> 31;
@@ -517,9 +517,9 @@ Ipp32u GetSESize(Ipp32s element)
         return 1;
     }
 
-} // Ipp32u GetSESize(Ipp32s element)
+} // uint32_t GetSESize(int32_t element)
 
-Ipp32s MeAVS::GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant, bool hybrid)
+int32_t MeAVS::GetMvSize(int32_t dx, int32_t dy, bool bNonDominant, bool hybrid)
 {
     return (GetSESize(dx) + GetSESize(dy) );
 }
@@ -530,35 +530,35 @@ void MeAVS::ModeDecision16x16ByFBFastFrw()
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
 
     // SKIP
-    Ipp32s SkipCost = ME_BIG_COST;
+    int32_t SkipCost = ME_BIG_COST;
     MeMV skipMv = m_PredCalcAVS.GetSkipPrediction();
     if(m_par->ProcessSkipped)
-        SkipCost= (Ipp32s) EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SSD, skipMv);
+        SkipCost= (int32_t) EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SSD, skipMv);
 
     MeMV mv;
-    Ipp32s InterCost, IntraCost;
+    int32_t InterCost, IntraCost;
 
         // INTER
         mv = m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][0];
         MeMV pred = m_cur.PredMV[frw][m_cur.BestIdx[frw][0]][0];
         mb->PureSAD = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sad, mv);
         mb->InterCostRD.D = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sadt, mv);
-        InterCost = (Ipp32s)( m_InterRegFunD.Weight(mb->InterCostRD.D)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
-        //InterCost =(Ipp32s) ( 0.7*(double)InterCost);
+        InterCost = (int32_t)( m_InterRegFunD.Weight(mb->InterCostRD.D)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
+        //InterCost =(int32_t) ( 0.7*(double)InterCost);
         // INTRA
         mb->IntraCostRD.D=EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SadtSrcNoDC, 0);
-        IntraCost = (Ipp32s)(m_IntraRegFunD.Weight(mb->IntraCostRD.D));
-        //IntraCost =(Ipp32s) ( 0.7*(double)IntraCost);
+        IntraCost = (int32_t)(m_IntraRegFunD.Weight(mb->IntraCostRD.D));
+        //IntraCost =(int32_t) ( 0.7*(double)IntraCost);
 
         //for preset calculation
         #ifdef ME_GENERATE_PRESETS
-            SkipCost=IPP_MAX_32S;
+            SkipCost=MFX_MAX_32S;
             InterCost  = rand()/2;
             IntraCost  = rand()/2;
         #endif
 
         //make decision
-        Ipp32s bestCost=IPP_MIN(IPP_MIN(SkipCost,InterCost),IntraCost);
+        int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
         if(bestCost==SkipCost){
             //skip
             SetMB16x16B(ME_MbFrwSkipped, skipMv, 0, m_cur.SkipCost[0]);
@@ -577,14 +577,14 @@ void MeAVS::ModeDecision16x16ByFBFullFrw()
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
 
     // SKIP
-    Ipp32s SkipCost = ME_BIG_COST;
+    int32_t SkipCost = ME_BIG_COST;
     MeMV skipMv = m_PredCalcAVS.GetSkipPrediction();
     if(m_par->ProcessSkipped)
         SkipCost=EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SSD, skipMv);
         
 
         MeMV mv;
-        Ipp32s InterCost, IntraCost;
+        int32_t InterCost, IntraCost;
 
         // INTER
         // TODO: rewrite this, currently we use previous MB value for MV weighting, should we use another?
@@ -602,7 +602,7 @@ void MeAVS::ModeDecision16x16ByFBFullFrw()
             AddHeaderCost(mb->InterCostRD, NULL, ME_MbFrw, 0, 0);
         }
         m_par->pSrc->MBs[m_cur.adr].NumOfNZ=mb->InterCostRD.NumOfCoeff;
-        InterCost = (Ipp32s)( m_InterRegFunD.Weight(mb->InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(mb->InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y)));
+        InterCost = (int32_t)( m_InterRegFunD.Weight(mb->InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(mb->InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y)));
         if(InterCost<0) InterCost= ME_BIG_COST;
 
         // INTRA
@@ -610,18 +610,18 @@ void MeAVS::ModeDecision16x16ByFBFullFrw()
         MakeSrcAdr(m_cur.MbPart, ME_IntegerPixel, &src);
         mb->IntraCostRD = GetCostRD(ME_IntraRD,ME_Mb16x16,ME_Tranform8x8,&src,NULL);
         AddHeaderCost(mb->IntraCostRD, NULL, ME_MbIntra, 0, 0);
-        IntraCost = (Ipp32s)(m_IntraRegFunD.Weight(mb->IntraCostRD.D) + m_lambda*m_IntraRegFunR.Weight(mb->IntraCostRD.R));
+        IntraCost = (int32_t)(m_IntraRegFunD.Weight(mb->IntraCostRD.D) + m_lambda*m_IntraRegFunR.Weight(mb->IntraCostRD.R));
         if(IntraCost<0) IntraCost= ME_BIG_COST;
 
         //for preset calculation
         #ifdef ME_GENERATE_PRESETS
-            SkipCost=IPP_MAX_32S;
+            SkipCost=MFX_MAX_32S;
             InterCost  = rand()/2;
             IntraCost  = rand()/2;
         #endif
 
         //make decision
-        Ipp32s bestCost=IPP_MIN(IPP_MIN(SkipCost,InterCost),IntraCost);
+        int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
         if(bestCost==SkipCost){
             //skip
             SetMB16x16B(ME_MbFrwSkipped, m_cur.PredMV[frw][0][0], 0, bestCost);
@@ -635,13 +635,13 @@ void MeAVS::ModeDecision16x16ByFBFullFrw()
         }
 } // void MeAVS::ModeDecision16x16ByFBFullFrw()
 
-void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
+void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, int32_t cost)
 {
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
     int i = 0;
     mb->MbPart = ME_Mb16x16;
     mb->McType = ME_FrameMc;
-    mb->MbType = (Ipp8u)mbt;
+    mb->MbType = (uint8_t)mbt;
     mb->MbCosts[0] = cost;
 
     if(m_cur.BestIdx[frw][0] >= 0)
@@ -666,7 +666,7 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
             mb->predType[i] = 3;
     }
 
-    Ipp32s cost_4 = cost/4+1;
+    int32_t cost_4 = cost/4+1;
     for(i=1; i<5; i++)
         mb->MbCosts[i] = cost_4;
 
@@ -681,20 +681,20 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
         if(mbt == ME_MbIntra){
                 MFX_INTERNAL_CPY(mb->Coeff,m_cur.TrellisCoefficients[4],(6*64)*sizeof(mb->Coeff[0][0]));
         }else{
-            for(Ipp32s blk=0; blk<6; blk++){
+            for(int32_t blk=0; blk<6; blk++){
                 MeTransformType tr=m_cur.InterTransf[mb->MbType][blk];
                 switch(tr){
                     case ME_Tranform4x4:
-                        for(Ipp32s subblk=0; subblk<4; subblk++)
-                            for(Ipp32s y=0; y<4; y++)
-                                for(Ipp32s x=0; x<4; x++)
+                        for(int32_t subblk=0; subblk<4; subblk++)
+                            for(int32_t y=0; y<4; y++)
+                                for(int32_t x=0; x<4; x++)
                                     //MeQuantTable[m_cur.adr][intra?0:1][m_cur.BlkIdx][(32*(subblk/2))+(4*(subblk&1))+8*y+x]=buf2[16*subblk+4*y+x];
                                     mb->Coeff[blk][(32*(subblk/2))+(4*(subblk&1))+8*y+x]=m_cur.TrellisCoefficients[tr][blk][16*subblk+4*y+x];
                         break;
                     case ME_Tranform4x8:
-                        for(Ipp32s subblk=0; subblk<2; subblk++)
-                            for(Ipp32s y=0; y<8; y++)
-                                for(Ipp32s x=0; x<4; x++)
+                        for(int32_t subblk=0; subblk<2; subblk++)
+                            for(int32_t y=0; y<8; y++)
+                                for(int32_t x=0; x<4; x++)
                                     mb->Coeff[blk][4*subblk+8*y+x]=m_cur.TrellisCoefficients[tr][blk][32*subblk+4*y+x];
                                     //MeQuantTable[m_cur.adr][intra?0:1][m_cur.BlkIdx][4*subblk+8*y+x]=buf2[32*subblk+4*y+x];
                         break;
@@ -707,7 +707,7 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
         }
     }
 
-} // void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
+} // void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, int32_t cost)
 
 // AVS realization
 
@@ -748,7 +748,7 @@ void MeAVS::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
 void MePredictCalculatorAVS::SetMbEdges()
 {
     // Edge MBs definitions.
-    Ipp32s widthMB = m_pMeParams->pSrc->WidthMB;
+    int32_t widthMB = m_pMeParams->pSrc->WidthMB;
     if(0 == m_pCur->x) 
         m_pMbInfoLeft = NULL;
     else 
@@ -774,7 +774,7 @@ void MePredictCalculatorAVS::SetMbEdges()
     m_pMbInfo = m_pRes + (m_pCur->x) + (m_pCur->y)*widthMB;
     if (-1 == (m_pMbInfo->Refindex[1][0]) )
     {
-        memset(m_pMbInfo->Refindex[1], 0, 4*sizeof(Ipp32s));
+        memset(m_pMbInfo->Refindex[1], 0, 4*sizeof(int32_t));
         //__asm int 3;
     }
 }
@@ -784,7 +784,7 @@ MeMV MePredictCalculatorAVS::GetSkipPrediction()
     // Edge MBs definitions.
     SetMbEdges();
     // additional condition for Skip Macro Blocks
-    Ipp32s PredForward = m_pCur->RefDir + 1; // AVS style
+    int32_t PredForward = m_pCur->RefDir + 1; // AVS style
     MeMV zeroMv(0);
     if ((NULL == m_pMbInfoTop) ||
         ((0 == m_pMbInfoTop->Refindex[0/*AVS_FORWARD*/][2]) &&
@@ -831,7 +831,7 @@ MeMV MePredictCalculatorAVS::GetPrediction16x16(/*bool isSkipMBlock*/)
     // additional condition for Skip MBlocks
     //if (isSkipMBlock)
     //{
-    //    Ipp32s PredForward = m_pCur->RefDir + 1; // AVS style
+    //    int32_t PredForward = m_pCur->RefDir + 1; // AVS style
     //    MeMV zeroMv(0);
     //    if ((NULL == m_pMbInfoTop) ||
     //        ((0 == m_pMbInfoTop->Refindex[0/*AVS_FORWARD*/][2]) &&
@@ -919,21 +919,21 @@ MeMV MePredictCalculatorAVS::GetPrediction8x8(/*bool isSkipMBlock*/)
 void MePredictCalculatorAVS::GetMotionVectorPredictor( MeMV mvA,
                                                        MeMV mvB,
                                                        MeMV mvC,
-                                                       Ipp32s blockDist,
-                                                       Ipp32s blockDistA,
-                                                       Ipp32s blockDistB,
-                                                       Ipp32s blockDistC)
+                                                       int32_t blockDist,
+                                                       int32_t blockDistA,
+                                                       int32_t blockDistB,
+                                                       int32_t blockDistC)
 {
-    Ipp32s distAB, distBC, distCA;
-    Ipp32s median;
+    int32_t distAB, distBC, distCA;
+    int32_t median;
 
     // scale motion vectors
-    mvA.x = (Ipp16s) ScaleValue(mvA.x, blockDist, blockDistA);
-    mvA.y = (Ipp16s) ScaleValue(mvA.y, blockDist, blockDistA);
-    mvB.x = (Ipp16s) ScaleValue(mvB.x, blockDist, blockDistB);
-    mvB.y = (Ipp16s) ScaleValue(mvB.y, blockDist, blockDistB);
-    mvC.x = (Ipp16s) ScaleValue(mvC.x, blockDist, blockDistC);
-    mvC.y = (Ipp16s) ScaleValue(mvC.y, blockDist, blockDistC);
+    mvA.x = (int16_t) ScaleValue(mvA.x, blockDist, blockDistA);
+    mvA.y = (int16_t) ScaleValue(mvA.y, blockDist, blockDistA);
+    mvB.x = (int16_t) ScaleValue(mvB.x, blockDist, blockDistB);
+    mvB.y = (int16_t) ScaleValue(mvB.y, blockDist, blockDistB);
+    mvC.x = (int16_t) ScaleValue(mvC.x, blockDist, blockDistC);
+    mvC.y = (int16_t) ScaleValue(mvC.y, blockDist, blockDistC);
 
     // get distance between vectors
     distAB = VectorDistance(mvA, mvB);
@@ -942,8 +942,8 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor( MeMV mvA,
 
     // get the Median()
     median = distAB + distBC + distCA -
-             IPP_MIN(distAB, IPP_MIN(distBC, distCA)) -
-             IPP_MAX(distAB, IPP_MAX(distBC, distCA));
+             MFX_MIN(distAB, MFX_MIN(distBC, distCA)) -
+             MFX_MAX(distAB, MFX_MAX(distBC, distCA));
 
     if (distAB == median)
     {
@@ -963,7 +963,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor( MeMV mvA,
 MeMbPart MePredictCalculatorAVS::GetCollocatedBlockDivision(void)
 {
     MeFrame *pRefBw;
-    Ipp32s MbIndex = m_pCur->adr;
+    int32_t MbIndex = m_pCur->adr;
 
     // get backward reference
     pRefBw = m_pMeParams->pRefB[0];
@@ -993,7 +993,7 @@ MeMbPart MePredictCalculatorAVS::GetCollocatedBlockDivision(void)
     //else
     //{
     //    AVS_MB_INFO *pMbInfo;
-    //    Ipp32s corrIndex;
+    //    int32_t corrIndex;
 
     //    corrIndex = (((MbIndex / m_decCtx.MbWidth) / 2) * m_decCtx.MbWidth) +
     //                (MbIndex % m_decCtx.MbWidth);
@@ -1022,7 +1022,7 @@ MeMbPart MePredictCalculatorAVS::GetCollocatedBlockDivision(void)
     if (((neighbour_info)->predType[block_num]) & predType) \
     { \
         /* get the block reference index */ \
-        Ipp32s ind = (neighbour_info)->Refindex[predType - 1][block_num]; \
+        int32_t ind = (neighbour_info)->Refindex[predType - 1][block_num]; \
         /* copy the vector */ \
         vector = (neighbour_info)->MV[predType - 1][block_num]; \
         lastVector = vector; \
@@ -1032,12 +1032,12 @@ MeMbPart MePredictCalculatorAVS::GetCollocatedBlockDivision(void)
     }
 
 //inline
-//void GET_NEIGHBOUR_MV(MeMV &vector, Ipp32s &dist, MeMB *neighbour_info, Ipp32s &block_num)
+//void GET_NEIGHBOUR_MV(MeMV &vector, int32_t &dist, MeMB *neighbour_info, int32_t &block_num)
 //{
 //    if ((neighbour_info->predType[block_num]) & predType) 
 //    { 
 //        /* get the block reference index */ 
-//        Ipp32s ind = (neighbour_info)->Refindex[predType - 1][block_num]; 
+//        int32_t ind = (neighbour_info)->Refindex[predType - 1][block_num]; 
 //        /* copy the vector */ 
 //        vector = (neighbour_info)->MV[predType - 1][block_num]; 
 //        lastVector = vector; 
@@ -1048,15 +1048,15 @@ MeMbPart MePredictCalculatorAVS::GetCollocatedBlockDivision(void)
 //}
 
 
-void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blockNum)
+void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, int32_t blockNum)
 {
     MeMV lastVector(0,0);
-    Ipp32u availVectors = 0;
+    uint32_t availVectors = 0;
     MeMV mvA(0,0), mvB(0,0), mvC(0,0);
-    Ipp32s blockDistA, blockDistB, blockDistC;
-    //Ipp32s predType = m_pMeParams->SearchDirection + 1;// so, fwd 1, bidir 2
-    Ipp32s predType = isBkw + 1;// so, fwd 1, bwd 2, ; it is AVS style
-    Ipp32s block_num;
+    int32_t blockDistA, blockDistB, blockDistC;
+    //int32_t predType = m_pMeParams->SearchDirection + 1;// so, fwd 1, bidir 2
+    int32_t predType = isBkw + 1;// so, fwd 1, bwd 2, ; it is AVS style
+    int32_t block_num;
     MeMB *neighbour_info;
     //m_pMbInfo->SubMbType[0] = m_pMbInfo->SubMbType[1] = 
     //    m_pMbInfo->SubMbType[2] = m_pMbInfo->SubMbType[3] = predType;
@@ -1080,7 +1080,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blo
         //block_num = 1;
         //if ((neighbour_info->predType[block_num]) & predType) 
         //{ 
-        //    Ipp32s ind = neighbour_info->Refindex[predType - 1][block_num]; 
+        //    int32_t ind = neighbour_info->Refindex[predType - 1][block_num]; 
         //    lastVector = neighbour_info->MV[predType - 1][block_num]; 
         //    blockDistA = m_blockDist[predType - 1][ind]; 
         //    availVectors += 1; 
@@ -1101,7 +1101,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blo
         //block_num = 2;
         //if ((neighbour_info->predType[block_num]) & predType) 
         //{ 
-        //    Ipp32s ind = neighbour_info->Refindex[predType - 1][block_num]; 
+        //    int32_t ind = neighbour_info->Refindex[predType - 1][block_num]; 
         //    lastVector = neighbour_info->MV[predType - 1][block_num]; 
         //    blockDistA = m_blockDist[predType - 1][ind]; 
         //    availVectors += 1; 
@@ -1116,7 +1116,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blo
             //block_num = 2;
             //if ((neighbour_info->predType[block_num]) & predType) 
             //{ 
-            //    Ipp32s ind = neighbour_info->Refindex[predType - 1][block_num]; 
+            //    int32_t ind = neighbour_info->Refindex[predType - 1][block_num]; 
             //    lastVector = neighbour_info->MV[predType - 1][block_num]; 
             //    blockDistA = m_blockDist[predType - 1][ind]; 
             //    availVectors += 1; 
@@ -1131,7 +1131,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blo
             //block_num = 3;
             //if ((neighbour_info->predType[block_num]) & predType) 
             //{ 
-            //    Ipp32s ind = neighbour_info->Refindex[predType - 1][block_num]; 
+            //    int32_t ind = neighbour_info->Refindex[predType - 1][block_num]; 
             //    lastVector = neighbour_info->MV[predType - 1][block_num]; 
             //    blockDistA = m_blockDist[predType - 1][ind]; 
             //    availVectors += 1; 
@@ -1152,7 +1152,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blo
     // step 3: perform full calculation
     else
     {
-        Ipp32s blockDist;
+        int32_t blockDist;
 
         //blockDist = m_blockDist[predType - 1][m_pMbInfo->Refindex[predType - 1][blockNum]];
         blockDist = m_blockDist[predType - 1][m_pMbInfo->Refindex[predType - 1][blockNum]];
@@ -1167,16 +1167,16 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blo
     m_BMV[isBkw][0][m_pCur->RefIdx] = BMV = mvB;
     m_CMV[isBkw][0][m_pCur->RefIdx] = CMV = mvC;
 
-} // void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, Ipp32s blockNum)
+} // void MePredictCalculatorAVS::GetMotionVectorPredictor16x16(int isBkw, int32_t blockNum)
 
-void MePredictCalculatorAVS::GetMotionVectorPredictor8x8(int isBkw, Ipp32s blockNum)
+void MePredictCalculatorAVS::GetMotionVectorPredictor8x8(int isBkw, int32_t blockNum)
 {
     MeMV lastVector(0,0);
-    Ipp32u availVectors = 0;
+    uint32_t availVectors = 0;
     MeMV mvA(0,0), mvB(0,0), mvC(0,0);
-    Ipp32s blockDistA, blockDistB, blockDistC;
-    //Ipp32s predType = m_pMeParams->SearchDirection + 1;// so, fwd 1, bidir 2
-    Ipp32s predType = isBkw + 1;// so, fwd 1, bidir 2; it is AVS style
+    int32_t blockDistA, blockDistB, blockDistC;
+    //int32_t predType = m_pMeParams->SearchDirection + 1;// so, fwd 1, bidir 2
+    int32_t predType = isBkw + 1;// so, fwd 1, bidir 2; it is AVS style
 
     //WRITE_TRACE_LOG(_vec_tst, "start prediction for width", 8);
     //WRITE_TRACE_LOG(_vec_tst, "start prediction for height", 8);
@@ -1229,7 +1229,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor8x8(int isBkw, Ipp32s block
     }
     else
     {
-        Ipp32s blockDist;
+        int32_t blockDist;
 
         //blockDist = m_blockDist[predType - 1][m_pMbInfo->refIdx[predType - 1][blockNum]];
         blockDist = m_blockDist[predType - 1][m_pMbInfo->Refindex[predType - 1][blockNum]];
@@ -1245,7 +1245,7 @@ void MePredictCalculatorAVS::GetMotionVectorPredictor8x8(int isBkw, Ipp32s block
     m_BMV[isBkw][blockNum][m_pCur->RefIdx] = BMV;
     m_CMV[isBkw][blockNum][m_pCur->RefIdx] = CMV;
 
-} // void MePredictCalculatorAVS::GetMotionVectorPredictor8x8(int isBkw, Ipp32s blockNum)
+} // void MePredictCalculatorAVS::GetMotionVectorPredictor8x8(int isBkw, int32_t blockNum)
 
 // methods for direct motion vector calculation
 void MePredictCalculatorAVS::ReconstructMotionVectorsBSliceDirect(MeMV *mvFw, MeMV *mvBw)
@@ -1278,12 +1278,12 @@ void MePredictCalculatorAVS::ReconstructMotionVectorsBSliceDirect(MeMV *mvFw, Me
 } // void MePredictCalculatorAVS::ReconstructMotionVectorsBSliceDirect(void)
 
 
-void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
+void MePredictCalculatorAVS::ReconstructDirectMotionVector(int32_t blockNum)
 {
-    Ipp32u AVS_FORWARD = 0, AVS_BACKWARD = 1;
-    Ipp32s corrBlock, corrIndex;
-    Ipp32s MbIndex = m_pCur->adr;
-    Ipp32u MbWidth = m_pMeParams->pSrc->WidthMB;
+    uint32_t AVS_FORWARD = 0, AVS_BACKWARD = 1;
+    int32_t corrBlock, corrIndex;
+    int32_t MbIndex = m_pCur->adr;
+    uint32_t MbWidth = m_pMeParams->pSrc->WidthMB;
     //AVS_MB_INFO *pMbInfo;
     //AVSPicture *pRefBw;
     MeMB *pMbInfo = m_pMeParams->pSrc->MBs + m_pCur->adr;
@@ -1333,11 +1333,11 @@ void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
     }
     else
     {
-        Ipp32s BlockDistanceFw, BlockDistanceBw;
-        Ipp32s DistanceIndexFw, DistanceIndexBw;
-        Ipp32s BlockDistanceRef;
-        Ipp32s DistanceIndexRef;
-        Ipp32s DistanceIndexCur;
+        int32_t BlockDistanceFw, BlockDistanceBw;
+        int32_t DistanceIndexFw, DistanceIndexBw;
+        int32_t BlockDistanceRef;
+        int32_t DistanceIndexRef;
+        int32_t DistanceIndexCur;
         MeMV mvRef;
 
         //
@@ -1345,7 +1345,7 @@ void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
         //
 
         {
-            Ipp32s refIdx;
+            int32_t refIdx;
 
             // get reference motion vector and distance index
             mvRef = pMbInfo->MV[AVS_FORWARD][corrBlock];
@@ -1366,7 +1366,7 @@ void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
         //
         // SECOND STEP
         //
-        BlockDistanceRef = IPP_MAX(1, (DistanceIndexBw - DistanceIndexRef + 512) % 512);
+        BlockDistanceRef = MFX_MAX(1, (DistanceIndexBw - DistanceIndexRef + 512) % 512);
 
         BlockDistanceFw = (DistanceIndexCur - DistanceIndexFw + 512) % 512;
         BlockDistanceBw = (DistanceIndexBw - DistanceIndexCur + 512) % 512;
@@ -1386,31 +1386,31 @@ void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
 
             if (0 > mvRef.x)
             {
-                mvFw.x = (Ipp16s) -(((16384 / BlockDistanceRef) *
+                mvFw.x = (int16_t) -(((16384 / BlockDistanceRef) *
                                             (1 - mvRef.x * BlockDistanceFw) - 1) >> 14);
-                mvBw.x = (Ipp16s) (((16384 / BlockDistanceRef) *
+                mvBw.x = (int16_t) (((16384 / BlockDistanceRef) *
                                            (1 - mvRef.x * BlockDistanceBw) - 1) >> 14);
             }
             else
             {
-                mvFw.x = (Ipp16s) (((16384 / BlockDistanceRef) *
+                mvFw.x = (int16_t) (((16384 / BlockDistanceRef) *
                                            (1 + mvRef.x * BlockDistanceFw) - 1) >> 14);
-                mvBw.x = (Ipp16s) -(((16384 / BlockDistanceRef) *
+                mvBw.x = (int16_t) -(((16384 / BlockDistanceRef) *
                                             (1 + mvRef.x * BlockDistanceBw) - 1) >> 14);
             }
 
             if (0 > mvRef.y)
             {
-                mvFw.y = (Ipp16s) -(((16384 / BlockDistanceRef) *
+                mvFw.y = (int16_t) -(((16384 / BlockDistanceRef) *
                                             (1 - mvRef.y * BlockDistanceFw) - 1) >> 14);
-                mvBw.y = (Ipp16s) (((16384 / BlockDistanceRef) *
+                mvBw.y = (int16_t) (((16384 / BlockDistanceRef) *
                                            (1 - mvRef.y * BlockDistanceBw) - 1) >> 14);
             }
             else
             {
-                mvFw.y = (Ipp16s) (((16384 / BlockDistanceRef) *
+                mvFw.y = (int16_t) (((16384 / BlockDistanceRef) *
                                            (1 + mvRef.y * BlockDistanceFw) - 1) >> 14);
-                mvBw.y = (Ipp16s) -(((16384 / BlockDistanceRef) *
+                mvBw.y = (int16_t) -(((16384 / BlockDistanceRef) *
                                             (1 + mvRef.y * BlockDistanceBw) - 1) >> 14);
             }
 
@@ -1429,24 +1429,24 @@ void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
     //WRITE_TRACE_LOG(_vec_dir_tst, "BW motion vector X", m_pMbInfo->mv[AVS_BACKWARD][blockNum].vector.x);
     //WRITE_TRACE_LOG(_vec_dir_tst, "BW motion vector Y", m_pMbInfo->mv[AVS_BACKWARD][blockNum].vector.y);
 
-} // void MePredictCalculatorAVS::ReconstructDirectMotionVector(Ipp32s blockNum)
+} // void MePredictCalculatorAVS::ReconstructDirectMotionVector(int32_t blockNum)
 
-//MeMV MePredictCalculatorAVS::CreateSymmetricalMotionVector(Ipp32s blockNum, MeMV mvFw)
-MeMV MePredictCalculatorAVS::CreateSymmetricalMotionVector(Ipp32s /*blockNum*/, MeMV mvFw)
+//MeMV MePredictCalculatorAVS::CreateSymmetricalMotionVector(int32_t blockNum, MeMV mvFw)
+MeMV MePredictCalculatorAVS::CreateSymmetricalMotionVector(int32_t /*blockNum*/, MeMV mvFw)
 {
     MeMV /*mvFw,*/ m_mvPred;
-    Ipp32s DistanceMul;
+    int32_t DistanceMul;
 
     // calculate vector distance
     DistanceMul = m_blockDist[1/*AVS_BACKWARD*/][0] * (512 / m_blockDist[0/*AVS_FORWARD*/][0]);
 
     // compute the vector
     //mvFw =  m_cur.BestMV[frw][0/*AVS_FORWARD*/][blockNum];
-    m_mvPred.x = (Ipp16s) -((mvFw.x * DistanceMul + 256) >> 9);
-    m_mvPred.y = (Ipp16s) -((mvFw.y * DistanceMul + 256) >> 9);
+    m_mvPred.x = (int16_t) -((mvFw.x * DistanceMul + 256) >> 9);
+    m_mvPred.y = (int16_t) -((mvFw.y * DistanceMul + 256) >> 9);
     
     return m_mvPred;
-} // void MePredictCalculatorAVS::CreateSymmetricalMotionVector(Ipp32s blockNum)
+} // void MePredictCalculatorAVS::CreateSymmetricalMotionVector(int32_t blockNum)
 
 
 // Two functions below don't use

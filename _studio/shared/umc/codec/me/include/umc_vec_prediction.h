@@ -47,37 +47,37 @@ namespace UMC
         virtual MeMV GetMvC(){return CMV;}
         virtual void ResetPredictors(void){return;}
         virtual MeMV GetDef_FieldMV(int /*RefDir*/, int /*BlkIdx*/){return MeMV(0);}
-        virtual Ipp32s GetDef_Field(int /*RefDir*/, int /*BlkIdx*/){return false;}
+        virtual int32_t GetDef_Field(int /*RefDir*/, int /*BlkIdx*/){return false;}
         virtual void SetDefFrwBkw(MeMV &mvF, MeMV &mvB)
         {
             mvF = mvB = MeMV(0);
         };
-        virtual bool GetNonDominant(Ipp32s RefDir, Ipp32s CurrIdx,Ipp32s BlkIdx)
+        virtual bool GetNonDominant(int32_t RefDir, int32_t CurrIdx,int32_t BlkIdx)
         {
             return false;
         }
-        virtual void SetDefMV(MeMV &mv, Ipp32s dir)
+        virtual void SetDefMV(MeMV &mv, int32_t dir)
         {
             mv = MeMV(0);
         };
 
         virtual bool IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv);
-        void TrimSearchRange(MeMbPart mt, MePixelType pix, Ipp32s &x0, Ipp32s &x1, Ipp32s &y0, Ipp32s &y1 );
-        Ipp32s GetT2();
+        void TrimSearchRange(MeMbPart mt, MePixelType pix, int32_t &x0, int32_t &x1, int32_t &y0, int32_t &y1 );
+        int32_t GetT2();
         // only for AVS
-        Ipp32s m_blockDist[2][4];                      // (Ipp32s [][]) block distances, depending on ref index
-        Ipp32s m_distIdx[2][4];                        // (Ipp32s [][]) distance indecies of reference pictures
+        int32_t m_blockDist[2][4];                      // (int32_t [][]) block distances, depending on ref index
+        int32_t m_distIdx[2][4];                        // (int32_t [][]) distance indecies of reference pictures
 
     protected:
-        inline Ipp16s median3( Ipp16s a, Ipp16s b, Ipp16s c ){return IPP_MIN(a,b)^IPP_MIN(b,c)^IPP_MIN(c,a);};
+        inline int16_t median3( int16_t a, int16_t b, int16_t c ){return MFX_MIN(a,b)^MFX_MIN(b,c)^MFX_MIN(c,a);};
 
         void SetMbEdges();
 
-        MeMV GetCurrentBlockMV(int isBkw, Ipp32s idx);
-        bool GetCurrentBlockSecondRef(int isBkw, Ipp32s idx);
-        MeMbType GetCurrentBlockType(Ipp32s idx);
-        Ipp32s GetT2_16x16();
-        Ipp32s GetT2_8x8();
+        MeMV GetCurrentBlockMV(int isBkw, int32_t idx);
+        bool GetCurrentBlockSecondRef(int isBkw, int32_t idx);
+        MeMbType GetCurrentBlockType(int32_t idx);
+        int32_t GetT2_16x16();
+        int32_t GetT2_8x8();
 
         //pointers to external data
         MeParams*    m_pMeParams;
@@ -104,7 +104,7 @@ namespace UMC
         MeMV  CMV; //C predictor
         
         MeMV   mv1MVField[2];
-        Ipp32s prefField1MV[2];
+        int32_t prefField1MV[2];
 
     };
 
@@ -124,25 +124,25 @@ namespace UMC
         virtual MeMV GetPrediction16x16();
         virtual MeMV GetPrediction8x8();
 
-        Ipp32s GetRestictedDirection() {return RestrictDirection;}
+        int32_t GetRestictedDirection() {return RestrictDirection;}
         void SetPredictionPSkip();
         void SetPredictionSpatialDirectSkip16x16();
 
     protected:
         void GetPredictor16x16(int index,int isBkw, MeMV* res);
-        void SetSpatialDirectRefIdx(Ipp32s* RefIdxL0, Ipp32s* RefIdxL1);
-        void ComputePredictors16x16(Ipp8s ListNum, Ipp32s RefIndex, MeMV* res);
+        void SetSpatialDirectRefIdx(int32_t* RefIdxL0, int32_t* RefIdxL1);
+        void ComputePredictors16x16(int8_t ListNum, int32_t RefIndex, MeMV* res);
 
         // direction -in,
         // ListNum -in
         // pMV - out
         // RefIdx - out
         void SetMVNeighbBlkParamDepPart(MeH264Neighbour direction,
-                                             Ipp8s ListNum,
+                                             int8_t ListNum,
                                              MeMV* pMV,
-                                             Ipp32s* RefIdx);
+                                             int32_t* RefIdx);
 
-        Ipp32s RestrictDirection; //which od direction is restricted for prediction, 0 - frw, 1 - bckw, 2-bidir
+        int32_t RestrictDirection; //which od direction is restricted for prediction, 0 - frw, 1 - bckw, 2-bidir
     };
 
     class MePredictCalculatorVC1 : public MePredictCalculator
@@ -156,8 +156,8 @@ namespace UMC
 
         virtual void ResetPredictors(void)
         {
-            for(Ipp32s i = 0; i < MAX_REF; i++)
-                for(Ipp32s j = 0; j < 4; j++)
+            for(int32_t i = 0; i < MAX_REF; i++)
+                for(int32_t j = 0; j < 4; j++)
                 {
                     m_CurPrediction[0][j][i].SetInvalid();
                     m_CurPrediction[1][j][i].SetInvalid();
@@ -169,23 +169,23 @@ namespace UMC
         virtual MeMV GetMvC(){return m_CMV[m_pCur->RefDir][m_pCur->BlkIdx][m_pCur->RefIdx];}
         virtual MeMV GetDef_FieldMV(int RefDir, int BlkIdx)
             {return m_CurPrediction[RefDir][BlkIdx][m_FieldPredictPrefer[RefDir][BlkIdx]];}
-        virtual Ipp32s GetDef_Field(int RefDir, int BlkIdx)
+        virtual int32_t GetDef_Field(int RefDir, int BlkIdx)
             {return m_FieldPredictPrefer[RefDir][BlkIdx];}
         virtual void SetDefFrwBkw(MeMV &mvF, MeMV &mvB);
-        virtual void SetDefMV(MeMV &mv, Ipp32s dir);
+        virtual void SetDefMV(MeMV &mv, int32_t dir);
         virtual bool IsOutOfBound(MeMbPart mt, MePixelType pix, MeMV mv);
 
     protected:
-        typedef Ipp32s (MePredictCalculatorVC1::*GetPredictorFunc)(int index,int isBkw, MeMV* res);
+        typedef int32_t (MePredictCalculatorVC1::*GetPredictorFunc)(int index,int isBkw, MeMV* res);
         GetPredictorFunc GetPredictor;
 
-        Ipp32s GetPredictorMPEG2(int index,int isBkw, MeMV* res);
-        Ipp32s GetPredictorVC1(int index,int isBkw, MeMV* res);
-        Ipp32s GetPredictorVC1_hybrid(int index,int isBkw, MeMV* res);
+        int32_t GetPredictorMPEG2(int index,int isBkw, MeMV* res);
+        int32_t GetPredictorVC1(int index,int isBkw, MeMV* res);
+        int32_t GetPredictorVC1_hybrid(int index,int isBkw, MeMV* res);
         void   GetPredictorVC1_hybrid(MeMV cur, MeMV* res);
-        Ipp32s GetPredictorVC1Field1(int index, int isBkw, MeMV* res);
-        Ipp32s GetPredictorVC1Field2(int index, int isBkw, MeMV* res);
-        Ipp32s GetPredictorVC1Field2Hybrid(int index, int isBkw, MeMV* res);
+        int32_t GetPredictorVC1Field1(int index, int isBkw, MeMV* res);
+        int32_t GetPredictorVC1Field2(int index, int isBkw, MeMV* res);
+        int32_t GetPredictorVC1Field2Hybrid(int index, int isBkw, MeMV* res);
 
         void GetBlockVectorsABC_0(int isBkw);
         void GetBlockVectorsABC_1(int isBkw);
@@ -206,11 +206,11 @@ namespace UMC
         //MVs for prediction
         MeMV  m_CurPrediction[2][4][MAX_REF]; //prediction for current MB,the first index = frw, bkw,
                                               //the second index - block number
-        Ipp32s  m_FieldPredictPrefer[2][4];//for field picture vectors prediction; 0 - for the forward, 1 - for the backward
+        int32_t  m_FieldPredictPrefer[2][4];//for field picture vectors prediction; 0 - for the forward, 1 - for the backward
                                          //the second index - block number
         MeMV MVPredMin;
         MeMV MVPredMax;
-        Ipp32s Mult;
+        int32_t Mult;
     };
 // For AVS
 //#if defined(UMC_ENABLE_AVS_VIDEO_ENCODER)
@@ -231,8 +231,8 @@ namespace UMC
 
         virtual void ResetPredictors(void)
         {
-            for(Ipp32s i = 0; i < MAX_REF; i++)
-                for(Ipp32s j = 0; j < 4; j++)
+            for(int32_t i = 0; i < MAX_REF; i++)
+                for(int32_t j = 0; j < 4; j++)
                 {
                     m_CurPrediction[0][j][i].SetInvalid();
                     m_CurPrediction[1][j][i].SetInvalid();
@@ -248,7 +248,7 @@ namespace UMC
         //    {return m_FieldPredictPrefer[RefDir][BlkIdx];}
         
         // Method for calculation backward motion vector according AVS standard
-        MeMV CreateSymmetricalMotionVector(Ipp32s blockNum, MeMV mvFw);
+        MeMV CreateSymmetricalMotionVector(int32_t blockNum, MeMV mvFw);
         void ReconstructMotionVectorsBSliceDirect(MeMV *mvFw, MeMV *mvBw);
 
     protected:
@@ -258,13 +258,13 @@ namespace UMC
 
         //bool GetPredictorAVS(int index,int isBkw, MeMV* res);
 
-        void GetMotionVectorPredictor16x16(int isBkw, Ipp32s blockNum);
-        void GetMotionVectorPredictor8x8(int isBkw, Ipp32s blockNum);
-        void ReconstructDirectMotionVector(Ipp32s blockNum);
+        void GetMotionVectorPredictor16x16(int isBkw, int32_t blockNum);
+        void GetMotionVectorPredictor8x8(int isBkw, int32_t blockNum);
+        void ReconstructDirectMotionVector(int32_t blockNum);
         MeMbPart GetCollocatedBlockDivision(void);
         void GetMotionVectorPredictor( MeMV mvA, MeMV mvB, MeMV mvC,
-                               Ipp32s blockDist,  Ipp32s blockDistA,
-                               Ipp32s blockDistB, Ipp32s blockDistC);
+                               int32_t blockDist,  int32_t blockDistA,
+                               int32_t blockDistB, int32_t blockDistC);
         
         MeMV  m_AMV[2][4][MAX_REF]; //current A, the first index = frw, bkw, the second index - block number
         MeMV  m_BMV[2][4][MAX_REF]; //current B, the first index = frw, bkw, the second index - block number
@@ -275,7 +275,7 @@ namespace UMC
         //MVs for prediction
         MeMV  m_CurPrediction[2][4][MAX_REF]; //prediction for current MB,the first index = frw, bkw,
                                               //the second index - block number
-        Ipp32s  m_FieldPredictPrefer[2][4];//for field picture vectors prediction; 0 - for the forward, 1 - for the backward
+        int32_t  m_FieldPredictPrefer[2][4];//for field picture vectors prediction; 0 - for the forward, 1 - for the backward
                                          //the second index - block number
         struct AVS_NEIGHBOURS
         {

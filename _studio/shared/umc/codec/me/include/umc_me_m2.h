@@ -57,10 +57,10 @@ class MeMPEG2 : public MeBase
         bool EstimateFrame(MeParams *par); //par and res should be allocated by caller, except ME_Frame::MBs
         void Close(); //frees memory, also called from destructor
     protected:
-        void me_block(const Ipp8u* src, Ipp32s sstep, const Ipp8u* ref, Ipp32s rstep,
-            Ipp32s bh, Ipp32s bx, Ipp32s by,
-            Ipp32s ll, Ipp32s lt, Ipp32s lr, Ipp32s lb,
-            MeMV* mv, Ipp32s* cost, MeMV* mvleft, MeMV* mvtop);
+        void me_block(const uint8_t* src, int32_t sstep, const uint8_t* ref, int32_t rstep,
+            int32_t bh, int32_t bx, int32_t by,
+            int32_t ll, int32_t lt, int32_t lr, int32_t lb,
+            MeMV* mv, int32_t* cost, MeMV* mvleft, MeMV* mvtop);
 };
 
 }//namespace

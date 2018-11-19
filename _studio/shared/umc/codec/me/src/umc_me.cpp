@@ -30,33 +30,33 @@
 //int frame_count = 0;
 #ifndef DEBUG_ONLY_AVS_ENCODER
 namespace UMC_VC1_ENCODER{
-    extern const Ipp16u* VLCTableCBPCY_PB[4];
-    extern const Ipp32u* CBPCYFieldTable_VLC[8];
-    extern const  Ipp16s TTMBVLC_HighRate[2][4][3*2];
-    extern const  Ipp16s TTMBVLC_MediumRate[2][4][3*2];
-    extern const  Ipp16s TTMBVLC_LowRate[2][4][3*2];
+    extern const uint16_t* VLCTableCBPCY_PB[4];
+    extern const uint32_t* CBPCYFieldTable_VLC[8];
+    extern const  int16_t TTMBVLC_HighRate[2][4][3*2];
+    extern const  int16_t TTMBVLC_MediumRate[2][4][3*2];
+    extern const  int16_t TTMBVLC_LowRate[2][4][3*2];
 
-    extern const Ipp8u  TTBLKVLC_HighRate[4][3*2];
-    extern const Ipp8u  TTBLKVLC_MediumRate[4][3*2];
-    extern const Ipp8u  TTBLKVLC_LowRate[4][3*2];
+    extern const uint8_t  TTBLKVLC_HighRate[4][3*2];
+    extern const uint8_t  TTBLKVLC_MediumRate[4][3*2];
+    extern const uint8_t  TTBLKVLC_LowRate[4][3*2];
 
-    extern const Ipp8u  SubPattern4x4VLC_HighRate[16*2];
-    extern const Ipp8u  SubPattern4x4VLC_MediumRate[16*2] ;
-    extern const Ipp8u  SubPattern4x4VLC_LowRate[16*2] ;
-    extern const Ipp8u SubPattern8x4_4x8VLC[3*2];
+    extern const uint8_t  SubPattern4x4VLC_HighRate[16*2];
+    extern const uint8_t  SubPattern4x4VLC_MediumRate[16*2] ;
+    extern const uint8_t  SubPattern4x4VLC_LowRate[16*2] ;
+    extern const uint8_t SubPattern8x4_4x8VLC[3*2];
 
     //VLC table selection
-    extern const Ipp16u*  MVDiffTablesVLC[4];
+    extern const uint16_t*  MVDiffTablesVLC[4];
 
     typedef struct
     {
-       const Ipp8u * pTableDL;
-       const Ipp8u * pTableDR;
-       const Ipp8u * pTableInd;
-       const Ipp8u * pTableDLLast;
-       const Ipp8u * pTableDRLast;
-       const Ipp8u * pTableIndLast;
-       const Ipp32u* pEncTable;
+       const uint8_t * pTableDL;
+       const uint8_t * pTableDR;
+       const uint8_t * pTableInd;
+       const uint8_t * pTableDLLast;
+       const uint8_t * pTableDRLast;
+       const uint8_t * pTableIndLast;
+       const uint32_t* pEncTable;
     } sACTablesSet;
     extern const sACTablesSet ACTablesSet[8];    
 
@@ -78,32 +78,32 @@ namespace UMC_VC1_ENCODER{
 
 #else // #ifdef DEBUG_ONLY_AVS_ENCODER
 namespace UMC_VC1_ENCODER{
-    extern const Ipp16u* VLCTableCBPCY_PB[4]={0};
-    extern const  Ipp16s TTMBVLC_HighRate[2][4][3*2]={0};
-    extern const  Ipp16s TTMBVLC_MediumRate[2][4][3*2]={0};
-    extern const  Ipp16s TTMBVLC_LowRate[2][4][3*2]={0};
+    extern const uint16_t* VLCTableCBPCY_PB[4]={0};
+    extern const  int16_t TTMBVLC_HighRate[2][4][3*2]={0};
+    extern const  int16_t TTMBVLC_MediumRate[2][4][3*2]={0};
+    extern const  int16_t TTMBVLC_LowRate[2][4][3*2]={0};
 
-    extern const Ipp8u  TTBLKVLC_HighRate[4][3*2]={0};
-    extern const Ipp8u  TTBLKVLC_MediumRate[4][3*2]={0};
-    extern const Ipp8u  TTBLKVLC_LowRate[4][3*2]={0};
+    extern const uint8_t  TTBLKVLC_HighRate[4][3*2]={0};
+    extern const uint8_t  TTBLKVLC_MediumRate[4][3*2]={0};
+    extern const uint8_t  TTBLKVLC_LowRate[4][3*2]={0};
 
-    extern const Ipp8u  SubPattern4x4VLC_HighRate[16*2]={0};
-    extern const Ipp8u  SubPattern4x4VLC_MediumRate[16*2]={0} ;
-    extern const Ipp8u  SubPattern4x4VLC_LowRate[16*2]={0} ;
-    extern const Ipp8u SubPattern8x4_4x8VLC[3*2]={0};
+    extern const uint8_t  SubPattern4x4VLC_HighRate[16*2]={0};
+    extern const uint8_t  SubPattern4x4VLC_MediumRate[16*2]={0} ;
+    extern const uint8_t  SubPattern4x4VLC_LowRate[16*2]={0} ;
+    extern const uint8_t SubPattern8x4_4x8VLC[3*2]={0};
 
     //VLC table selection
-    extern const Ipp16u*  MVDiffTablesVLC[4]={0};
+    extern const uint16_t*  MVDiffTablesVLC[4]={0};
 
     typedef struct
     {
-       const Ipp8u * pTableDL;
-       const Ipp8u * pTableDR;
-       const Ipp8u * pTableInd;
-       const Ipp8u * pTableDLLast;
-       const Ipp8u * pTableDRLast;
-       const Ipp8u * pTableIndLast;
-       const Ipp32u* pEncTable;
+       const uint8_t * pTableDL;
+       const uint8_t * pTableDR;
+       const uint8_t * pTableInd;
+       const uint8_t * pTableDLLast;
+       const uint8_t * pTableDRLast;
+       const uint8_t * pTableIndLast;
+       const uint32_t* pEncTable;
     } sACTablesSet;
     const sACTablesSet ACTablesSet[8];
 
@@ -154,32 +154,32 @@ namespace UMC
 using namespace UMC_VC1_ENCODER;
 
 //$$$$$$$$$$$$$$
-static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R_NV12   (const Ipp8u* pSrc, Ipp32s srcStep,
-                                                                      Ipp8u *pDst,       Ipp32s dstStep,
-                                                                      Ipp32s dx,         Ipp32s dy,
-                                                                      Ipp32s roundControl)
+static IppStatus _own_ippiInterpolate8x8QPBilinear_VC1_8u_C1R_NV12   (const uint8_t* pSrc, int32_t srcStep,
+                                                                      uint8_t *pDst,       int32_t dstStep,
+                                                                      int32_t dx,         int32_t dy,
+                                                                      int32_t roundControl)
 {
     IppStatus ret = ippStsNoErr;
-    Ipp32s i, j;
-    const Ipp32s F[4] = {4, 3, 2, 1};
-    const Ipp32s G[4] = {0, 1, 2, 3};
+    int32_t i, j;
+    const int32_t F[4] = {4, 3, 2, 1};
+    const int32_t G[4] = {0, 1, 2, 3};
 
-    Ipp32s Mult1 = F[dx]*F[dy];
-    Ipp32s Mult2 = F[dx]*G[dy];
-    Ipp32s Mult3 = F[dy]*G[dx];
-    Ipp32s Mult4 = G[dx]*G[dy];
+    int32_t Mult1 = F[dx]*F[dy];
+    int32_t Mult2 = F[dx]*G[dy];
+    int32_t Mult3 = F[dy]*G[dx];
+    int32_t Mult4 = G[dx]*G[dy];
 
     for(j = 0; j < 8; j++)
     {
         for(i = 0; i < 16; i += 2)
         {
-            pDst[i] = (Ipp8u)((pSrc[i]               * Mult1 +
+            pDst[i] = (uint8_t)((pSrc[i]               * Mult1 +
                                pSrc[i + srcStep]     * Mult2 +
                                pSrc[i + 2]           * Mult3 +
                                pSrc[i + srcStep + 2] * Mult4 +
                                8 - roundControl) >> 4);
 
-            pDst[i + 1] = (Ipp8u)((pSrc[i + 1]               * Mult1 +
+            pDst[i + 1] = (uint8_t)((pSrc[i + 1]               * Mult1 +
                                    pSrc[i + 1 + srcStep]     * Mult2 +
                                    pSrc[i + 1 + 2]           * Mult3 +
                                    pSrc[i + 1 +srcStep + 2] * Mult4 +
@@ -205,52 +205,52 @@ IppStatus _own_ippiInterpolateQPBilinear_VC1_8u_C1R_NV12  (const IppVCInterpolat
                                                inter_struct->roundControl);
     return ret;
 }
-inline UMC::Status  copyChromaBlockNV12 (Ipp8u*  pUVRow,  Ipp8u* /*pVRow*/,  Ipp32u UVRowStep, 
-                                        Ipp16s* pUBlock, Ipp16s* pVBlock,    Ipp32u UVBlockStep,
-                                        Ipp32u  nPos)
+inline UMC::Status  copyChromaBlockNV12 (uint8_t*  pUVRow,  uint8_t* /*pVRow*/,  uint32_t UVRowStep, 
+                                        int16_t* pUBlock, int16_t* pVBlock,    uint32_t UVBlockStep,
+                                        uint32_t  nPos)
 {
     pUVRow += (nPos << 4);
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane = pUVRow;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane = pUVRow;
 
         for (int j = 0; j <8; j++)
         {
             *(pU ++) = *(pPlane ++);
             *(pV ++) = *(pPlane ++);
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRow +=  UVRowStep;
 
     }
     return UMC::UMC_OK;
 }
 
-inline UMC::Status  copyDiffChromaBlockNV12 (Ipp8u*   pUVRowS,   Ipp8u* /*pVRowS*/,    Ipp32u UVRowStepS, 
-                                             Ipp8u*   pUVRowR,   Ipp8u* /*pVRowR*/,    Ipp32u UVRowStepR, 
-                                             Ipp16s*  pUBlock,   Ipp16s* pVBlock,      Ipp32u UVBlockStep,
-                                             Ipp32u  nPosS, Ipp32u nPosR)
+inline UMC::Status  copyDiffChromaBlockNV12 (uint8_t*   pUVRowS,   uint8_t* /*pVRowS*/,    uint32_t UVRowStepS, 
+                                             uint8_t*   pUVRowR,   uint8_t* /*pVRowR*/,    uint32_t UVRowStepR, 
+                                             int16_t*  pUBlock,   int16_t* pVBlock,      uint32_t UVBlockStep,
+                                             uint32_t  nPosS, uint32_t nPosR)
 {
     pUVRowS += (nPosS << 4);
     pUVRowR += (nPosR << 4);
 
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU     = pUBlock;
-        Ipp16s* pV     = pVBlock;
-        Ipp8u* pPlaneS = pUVRowS;
-        Ipp8u* pPlaneR = pUVRowR;
+        int16_t* pU     = pUBlock;
+        int16_t* pV     = pVBlock;
+        uint8_t* pPlaneS = pUVRowS;
+        uint8_t* pPlaneR = pUVRowR;
 
         for (int j = 0; j <8; j++)
         {
             *(pU ++) = *(pPlaneS ++) - *(pPlaneR ++);
             *(pV ++) = *(pPlaneS ++) - *(pPlaneR ++);
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRowS +=  UVRowStepS;
         pUVRowR +=  UVRowStepR;
 
@@ -258,69 +258,69 @@ inline UMC::Status  copyDiffChromaBlockNV12 (Ipp8u*   pUVRowS,   Ipp8u* /*pVRowS
     return UMC::UMC_OK;
 }
 
-inline UMC::Status  pasteSumChromaBlockNV12 (Ipp8u*  pUVRowRef,  Ipp8u* /*pVRowRef*/,   Ipp32u UVRowStepRef, 
-                                             Ipp8u*  pUVRowDst,  Ipp8u* /*pVRowDst*/,   Ipp32u UVRowStepDst,
-                                             Ipp16s* pUBlock,   Ipp16s* pVBlock,   Ipp32u UVBlockStep,
-                                             Ipp32u  nPosRef,   Ipp32u  nPosDst)
+inline UMC::Status  pasteSumChromaBlockNV12 (uint8_t*  pUVRowRef,  uint8_t* /*pVRowRef*/,   uint32_t UVRowStepRef, 
+                                             uint8_t*  pUVRowDst,  uint8_t* /*pVRowDst*/,   uint32_t UVRowStepDst,
+                                             int16_t* pUBlock,   int16_t* pVBlock,   uint32_t UVBlockStep,
+                                             uint32_t  nPosRef,   uint32_t  nPosDst)
 {
     pUVRowDst += (nPosDst << 4);
     pUVRowRef += (nPosRef << 4);
 
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane    = pUVRowDst;
-        Ipp8u* pPlaneRef = pUVRowRef;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane    = pUVRowDst;
+        uint8_t* pPlaneRef = pUVRowRef;
 
 
         for (int j = 0; j <8; j++)
         {
-            Ipp16s U = *(pU ++) + *(pPlaneRef++);
-            Ipp16s V = *(pV ++) + *(pPlaneRef++);
+            int16_t U = *(pU ++) + *(pPlaneRef++);
+            int16_t V = *(pV ++) + *(pPlaneRef++);
 
             U = (U < 0)  ? 0   : U;
             U = (U > 255)? 255 : U;
             V = (V < 0)  ? 0   : V;
             V = (V >255) ? 255 : V;
 
-            *(pPlane ++) = (Ipp8u)U;
-            *(pPlane ++) = (Ipp8u)V;
+            *(pPlane ++) = (uint8_t)U;
+            *(pPlane ++) = (uint8_t)V;
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRowDst +=  UVRowStepDst;
         pUVRowRef +=  UVRowStepRef;
     }
     return UMC::UMC_OK;
 }
 
-inline UMC::Status  pasteChromaBlockNV12 (Ipp8u*  pUVRow,  Ipp8u* /*pVRow*/,   Ipp32u UVRowStep, 
-                                          Ipp16s* pUBlock, Ipp16s* pVBlock,    Ipp32u UVBlockStep,
-                                          Ipp32u  nPos)
+inline UMC::Status  pasteChromaBlockNV12 (uint8_t*  pUVRow,  uint8_t* /*pVRow*/,   uint32_t UVRowStep, 
+                                          int16_t* pUBlock, int16_t* pVBlock,    uint32_t UVBlockStep,
+                                          uint32_t  nPos)
 {
     pUVRow += (nPos << 4);
     for (int i=0; i<8; i++)
     {
-        Ipp16s* pU = pUBlock;
-        Ipp16s* pV = pVBlock;
-        Ipp8u* pPlane = pUVRow;
+        int16_t* pU = pUBlock;
+        int16_t* pV = pVBlock;
+        uint8_t* pPlane = pUVRow;
 
         for (int j = 0; j <8; j++)
         {
-            Ipp16s U = *(pU ++);
-            Ipp16s V = *(pV ++);
+            int16_t U = *(pU ++);
+            int16_t V = *(pV ++);
 
             U = (U < 0)  ? 0   : U;
             U = (U > 255)? 255 : U;
             V = (V < 0)  ? 0   : V;
             V = (V >255) ? 255 : V;
 
-            *(pPlane ++) = (Ipp8u)U;
-            *(pPlane ++) = (Ipp8u)V;
+            *(pPlane ++) = (uint8_t)U;
+            *(pPlane ++) = (uint8_t)V;
         }
-        pUBlock = (Ipp16s*)((Ipp8u*)pUBlock + UVBlockStep);
-        pVBlock = (Ipp16s*)((Ipp8u*)pVBlock + UVBlockStep);
+        pUBlock = (int16_t*)((uint8_t*)pUBlock + UVBlockStep);
+        pVBlock = (int16_t*)((uint8_t*)pVBlock + UVBlockStep);
         pUVRow +=  UVRowStep;
 
     }
@@ -351,7 +351,7 @@ MeParams::MeParams()
     FirstMB = -1;  //for multy threading slice processing
     LastMB  = -1;
 
-    for(Ipp32u i = 0; i < MAX_REF; i++)
+    for(uint32_t i = 0; i < MAX_REF; i++)
     {
         pRefF[i] = NULL;
         pRefB[i] = NULL;
@@ -409,7 +409,7 @@ MeParams::MeParams()
 ///   - 0-24  Full search. Really slow.
 ///
 ///\param Speed search speed
-void MeParams::SetSearchSpeed(Ipp32s Speed)
+void MeParams::SetSearchSpeed(int32_t Speed)
 {
     SearchSpeed=Speed;
         //parse Speed parameter
@@ -458,8 +458,8 @@ void MeParams::SetSearchSpeed(Ipp32s Speed)
 void MeCurrentMB::Reset()
 {
     //set costs
-    for(Ipp32s i=0; i<ME_NUM_OF_BLOCKS; i++){
-        for(Ipp32s j=0; j<ME_NUM_OF_REF_FRAMES; j++){
+    for(int32_t i=0; i<ME_NUM_OF_BLOCKS; i++){
+        for(int32_t j=0; j<ME_NUM_OF_REF_FRAMES; j++){
         }
         InterCost[i]=ME_BIG_COST;
         IntraCost[i]=ME_BIG_COST;
@@ -467,11 +467,11 @@ void MeCurrentMB::Reset()
     }
     DirectCost=ME_BIG_COST;
     VlcTableSearchInProgress=false;
-    for(Ipp32s i=0; i<10; i++)
-        for(Ipp32s j=0; j<6; j++)
+    for(int32_t i=0; i<10; i++)
+        for(int32_t j=0; j<6; j++)
             InterTransf[i][j] = ME_Tranform8x8;
-    for(Ipp32s i = 0; i < 5; i++)
-        for(Ipp32s j = 0; j < 6; j++)
+    for(int32_t i = 0; i < 5; i++)
+        for(int32_t j = 0; j < 6; j++)
         {
             memset(RoundControl[i][j],0,64*sizeof(RoundControl[0][0][0]));
         }
@@ -481,7 +481,7 @@ void MeCurrentMB::ClearMvScoreBoardArr(){
         //ippsZero_8u(&mvEstimateDoneArr[0][0],128*64);
         memset(mvScoreBoardArr,0,128*64);
 }
-Ipp32s MeCurrentMB::CheckScoreBoardMv(MePixelType pix,MeMV mv) {
+int32_t MeCurrentMB::CheckScoreBoardMv(MePixelType pix,MeMV mv) {
     if(mvScoreBoardFlag) {
         if(pix==ME_IntegerPixel) {
             if(mvScoreBoardArr[(mv.x>>2)+64][(mv.y>>2)+32] == 0){
@@ -503,24 +503,24 @@ void MeCurrentMB::ClearScoreBoardFlag(){
 void MeMB::Reset()
 {
     NumOfNZ=0;
-    for(Ipp32s j = 0; j <= 5; j++)
+    for(int32_t j = 0; j <= 5; j++)
     {
         memset(RoundControl[j],0,64*sizeof(RoundControl[0][0]));
     }
 }
 
-void MeMB::Reset(Ipp32s numOfMVs)
+void MeMB::Reset(int32_t numOfMVs)
 {
     NumOfNZ=0;
 
-    for (Ipp32s i = 0; i < 2; i++)
-        for (Ipp32s j = 0; j < numOfMVs; j++)
+    for (int32_t i = 0; i < 2; i++)
+        for (int32_t j = 0; j < numOfMVs; j++)
         {
             MV[i][j].SetInvalid();
             MVPred[i][j].SetInvalid();
             Refindex[i][j] = 0;
         }
-    for (Ipp32s j = 0; j < numOfMVs + 1; j++)
+    for (int32_t j = 0; j < numOfMVs + 1; j++)
         MbCosts[j] = ME_BIG_COST;
     
     MbPart = 0;
@@ -530,7 +530,7 @@ void MeMB::Reset(Ipp32s numOfMVs)
     BlockTrans = 0;
     memset(BlockType, 0, sizeof(BlockType));
     memset(predType, 0, sizeof(predType));
-    for(Ipp32s j = 0; j <= 5; j++)
+    for(int32_t j = 0; j <= 5; j++)
     {
         memset(RoundControl[j],0,64*sizeof(RoundControl[0][0]));
     }
@@ -541,10 +541,10 @@ void MeMB::Reset(Ipp32s numOfMVs)
 //trellis - block of trellis quantized coefficients
 //rc - block of round control values
 //to quantize with round control value use (transf[i] + rc[i])/QP
-void MeMB::CnvertCoeffToRoundControl(Ipp16s *transf, Ipp16s *trellis, Ipp16s *rc, Ipp32s QP)
+void MeMB::CnvertCoeffToRoundControl(int16_t *transf, int16_t *trellis, int16_t *rc, int32_t QP)
 {
-    for(Ipp32s i=0; i<64; i++){
-        rc[i]=(Ipp16s)(QP*trellis[i]-transf[i]);    
+    for(int32_t i=0; i<64; i++){
+        rc[i]=(int16_t)(QP*trellis[i]-transf[i]);    
     }
 }
 
@@ -568,7 +568,7 @@ MeBase::MeBase()
     m_CRFormat = ME_NV12;//ME_YUV420;
 
     #ifdef ME_USE_BACK_DOOR_LAMBDA
-        Ipp32s array[8];
+        int32_t array[8];
         FILE * InPar = fopen("MeParams.bin","rb");
         if(InPar == NULL){
             array[0] = 1;
@@ -604,16 +604,16 @@ MeBase::~MeBase()
 bool MeBase::Init(MeInitParams *par)
 {
     m_OwnMem=NULL;
-    Ipp32s size=0;
+    int32_t size=0;
     if(par->bNV12)
         m_CRFormat = ME_NV12;
     else
         m_CRFormat = ME_YUV420;
 
-    if(!Init(par, (Ipp8u*)m_OwnMem, size))return false;
+    if(!Init(par, (uint8_t*)m_OwnMem, size))return false;
     m_OwnMem = malloc(size);
     if(m_OwnMem==NULL)return false;
-    return Init(par, (Ipp8u*)m_OwnMem, size);
+    return Init(par, (uint8_t*)m_OwnMem, size);
 }
 
 ///Second version of init. Intended for memory allocation from external buffer. Two subsequent calls are needed
@@ -622,7 +622,7 @@ bool MeBase::Init(MeInitParams *par)
 ///\param par initialization parameter
 ///\param ptr pointer to external buffer or NULL to calculate memory necessary  size
 ///\param size size of external buffer or necessary amount of memory
-bool MeBase::Init(MeInitParams *par, Ipp8u* ptr, Ipp32s &size)
+bool MeBase::Init(MeInitParams *par, uint8_t* ptr, int32_t &size)
 {
 
     //1 workaround
@@ -641,33 +641,33 @@ bool MeBase::Init(MeInitParams *par, Ipp8u* ptr, Ipp32s &size)
         SetError((vm_char*)"Wrong buffer size in MeBase::Init");
         return false;
     }
-    //Ipp32s NumOfMVs = par->MbPart == ME_Mb16x16?1:4;
-    Ipp32s NumOfMVs = 4;
-    Ipp32s NumOfMBs = par->HeightMB*par->WidthMB;
+    //int32_t NumOfMVs = par->MbPart == ME_Mb16x16?1:4;
+    int32_t NumOfMVs = 4;
+    int32_t NumOfMBs = par->HeightMB*par->WidthMB;
 
     m_InitPar = *par;
 
     par->pFrames = (MeFrame*)ptr;
     ptr+=par->MaxNumOfFrame*sizeof(MeFrame);
 
-    for(Ipp32s fr = 0; fr < par->MaxNumOfFrame; fr++){
+    for(int32_t fr = 0; fr < par->MaxNumOfFrame; fr++){
         if(aloc)par->pFrames[fr].NumOfMVs=NumOfMVs;
         if(par->SearchDirection == ME_BidirSearch){
             if(aloc) par->pFrames[fr].MVDirect = (MeMV*)ptr; ptr+=NumOfMBs*sizeof(MeMV);
-            if(aloc) par->pFrames[fr].RefIndx = (Ipp32s*)ptr; ptr+=NumOfMBs*sizeof(Ipp32s);
+            if(aloc) par->pFrames[fr].RefIndx = (int32_t*)ptr; ptr+=NumOfMBs*sizeof(int32_t);
         }else{
-            if(aloc) par->pFrames[fr].MVDirect = (MeMV*)(par->pFrames[fr].RefIndx = (Ipp32s*)NULL);
+            if(aloc) par->pFrames[fr].MVDirect = (MeMV*)(par->pFrames[fr].RefIndx = (int32_t*)NULL);
         }
 
         //MB
         if(aloc) par->pFrames[fr].MBs = (MeMB*)ptr; ptr += NumOfMBs*sizeof(MeMB);
-        for(Ipp32s m=0; m<NumOfMBs; m++)
+        for(int32_t m=0; m<NumOfMBs; m++)
         {
             if(aloc) par->pFrames[fr].MBs[m].MV[frw] = (MeMV*)ptr; ptr+=NumOfMVs*sizeof(MeMV);
             if(aloc) par->pFrames[fr].MBs[m].MV[bkw] = (MeMV*)ptr; ptr+=NumOfMVs*sizeof(MeMV);
-            if(aloc) par->pFrames[fr].MBs[m].Refindex[frw] = (Ipp32s*)ptr; ptr+=NumOfMVs*sizeof(Ipp32s);
-            if(aloc) par->pFrames[fr].MBs[m].Refindex[bkw] = (Ipp32s*)ptr; ptr+=NumOfMVs*sizeof(Ipp32s);
-            if(aloc) par->pFrames[fr].MBs[m].MbCosts = (Ipp32s*)ptr; ptr+=(NumOfMVs+1)*sizeof(Ipp32s);
+            if(aloc) par->pFrames[fr].MBs[m].Refindex[frw] = (int32_t*)ptr; ptr+=NumOfMVs*sizeof(int32_t);
+            if(aloc) par->pFrames[fr].MBs[m].Refindex[bkw] = (int32_t*)ptr; ptr+=NumOfMVs*sizeof(int32_t);
+            if(aloc) par->pFrames[fr].MBs[m].MbCosts = (int32_t*)ptr; ptr+=(NumOfMVs+1)*sizeof(int32_t);
             if(aloc) par->pFrames[fr].MBs[m].MVPred[frw] = (MeMV*)ptr; ptr+=NumOfMVs*sizeof(MeMV);
             if(aloc) par->pFrames[fr].MBs[m].MVPred[bkw] = (MeMV*)ptr; ptr+=NumOfMVs*sizeof(MeMV);
         }
@@ -675,10 +675,10 @@ bool MeBase::Init(MeInitParams *par, Ipp8u* ptr, Ipp32s &size)
         //stat
         if(par->UseStatistics){
             if(aloc) par->pFrames[fr].stat = (MeMbStat*)ptr; ptr += NumOfMBs*sizeof(MeMbStat);
-            for(Ipp32s m=0; m<NumOfMBs; m++){
-                if(aloc) par->pFrames[fr].stat[m].MVF = (Ipp16u*)ptr; ptr+=NumOfMVs*sizeof(Ipp16u);
-                if(aloc) par->pFrames[fr].stat[m].MVB = (Ipp16u*)ptr; ptr+=NumOfMVs*sizeof(Ipp16u);
-                if(aloc) par->pFrames[fr].stat[m].coeff = (Ipp16u*)ptr; ptr+=6*sizeof(Ipp16u);
+            for(int32_t m=0; m<NumOfMBs; m++){
+                if(aloc) par->pFrames[fr].stat[m].MVF = (uint16_t*)ptr; ptr+=NumOfMVs*sizeof(uint16_t);
+                if(aloc) par->pFrames[fr].stat[m].MVB = (uint16_t*)ptr; ptr+=NumOfMVs*sizeof(uint16_t);
+                if(aloc) par->pFrames[fr].stat[m].coeff = (uint16_t*)ptr; ptr+=6*sizeof(uint16_t);
             }
         }else{
             if(aloc) par->pFrames[fr].stat = NULL;
@@ -687,12 +687,12 @@ bool MeBase::Init(MeInitParams *par, Ipp8u* ptr, Ipp32s &size)
         //plane allocation including downsampling
         if(aloc) par->pFrames[fr].plane[0].clear();
 
-        for(Ipp32s lev=1; lev<4; lev++){
+        for(int32_t lev=1; lev<4; lev++){
             if(aloc) par->pFrames[fr].plane[lev].clear();
             if(par->UseDownSampling){
-                Ipp32s scale=1<<lev;
-                Ipp32s height = (16*par->HeightMB+2*par->refPadding+scale-1)/scale;
-                Ipp32s width = (16*par->WidthMB+2*par->refPadding+scale-1)/scale;
+                int32_t scale=1<<lev;
+                int32_t height = (16*par->HeightMB+2*par->refPadding+scale-1)/scale;
+                int32_t width = (16*par->WidthMB+2*par->refPadding+scale-1)/scale;
                 if(aloc) par->pFrames[fr].plane[lev].set(Y, ptr+(width+1)*(par->refPadding/scale), width);
                 ptr += width*height;
             }
@@ -700,18 +700,18 @@ bool MeBase::Init(MeInitParams *par, Ipp8u* ptr, Ipp32s &size)
     }
     //allocate different intermediate buffers
     //interpolation
-    Ipp32s dim;
-    for(Ipp32s dir=0; dir<3; dir++){
+    int32_t dim;
+    for(int32_t dir=0; dir<3; dir++){
         dim=16;
-        for(Ipp32s ch=0; ch<3; ch++){
-            if(aloc) m_cur.buf[dir].set(ch,(Ipp8u*)ptr,dim); ptr+=dim*dim;
+        for(int32_t ch=0; ch<3; ch++){
+            if(aloc) m_cur.buf[dir].set(ch,(uint8_t*)ptr,dim); ptr+=dim*dim;
             //if(ch==0)dim/=2; !!!!! for m_CRFormat = ME_NV12 
         }
     }
     
 
     //get size
-    if(!aloc)m_AllocatedSize=size=(Ipp32s)(ptr-(Ipp8u*)(NULL));        
+    if(!aloc)m_AllocatedSize=size=(int32_t)(ptr-(uint8_t*)(NULL));        
 
 
 #ifdef ME_DEBUG
@@ -750,12 +750,12 @@ x4
 }
 
 #ifdef VC1_ENC_DEBUG_ON
-static void PrintField(Ipp8u* pY, Ipp32s Ystep, Ipp8u* pU, Ipp32s Ustep, Ipp8u* pV, Ipp32s Vstep, FILE* out, Ipp32u Width, Ipp32u Height)
+static void PrintField(uint8_t* pY, int32_t Ystep, uint8_t* pU, int32_t Ustep, uint8_t* pV, int32_t Vstep, FILE* out, uint32_t Width, uint32_t Height)
 {
-    static Ipp32u framenum = 0;
+    static uint32_t framenum = 0;
 
-   Ipp32s i = 0;
-   Ipp8u* ptr = NULL;
+   int32_t i = 0;
+   uint8_t* ptr = NULL;
 
    for (i=0; i < Height; i++)
     {
@@ -804,8 +804,8 @@ if(!f4)
 if(!f5)
     f5 = fopen("ref b2.yuv", "wb");
 
-static Ipp32u h = 480;
-static Ipp32u w = 720;
+static uint32_t h = 480;
+static uint32_t w = 720;
 if(par->pSrc)
     PrintField(par->pSrc[0].plane[0].ptr[0], par->pSrc[0].plane[0].step[0],
     par->pSrc[0].plane[0].ptr[1], par->pSrc[0].plane[0].step[1],
@@ -854,7 +854,7 @@ if(par->pRefB[1])
         CurPar.UseFastInterSearch = true;
         CurPar.UseFeedback = false;
         memset(CostOnInterpolation,0,sizeof(CostOnInterpolation));
-        Ipp32s max_j = 2;
+        int32_t max_j = 2;
         for(int j = 0; j < max_j; j++)
         {
             switch(j)
@@ -887,7 +887,7 @@ if(par->pRefB[1])
         else
             otl = fopen("otlad_NV12.txt","wt");
         assert(otl);
-        for(Ipp32s MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
+        for(int32_t MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
         {
             MeMB *mb=&m_par->pSrc->MBs[MbAdr];
             fprintf(otl,"mb_num = %d, mb_type = %d, MVF.x = %d, MVF.y = %d,MVB.x = %d, MVB.y = %d\n",
@@ -921,7 +921,7 @@ bool MeBase::EstimateFrameInner(MeParams *par)
     //temporary!!!
     if(m_par->SearchDirection == ME_IntraSearch)
     {
-        for(Ipp32s MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
+        for(int32_t MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
         {
             //reset costs
             m_cur.Reset();
@@ -947,14 +947,14 @@ bool MeBase::EstimateFrameInner(MeParams *par)
     m_PredCalc->Init(par, &m_cur);
 
     //VLC selection
-    for(Ipp32s i=0; i<4; i++){
+    for(int32_t i=0; i<4; i++){
         m_cur.CbpcyRate[i]=0;
         m_cur.MvRate[i]=0;
         m_cur.AcRate[i]=0;
     }
 
         //estimate all MB
-    for(Ipp32s MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
+    for(int32_t MbAdr = m_par->FirstMB; MbAdr <= m_par->LastMB; MbAdr++)
     {
         //reset costs
         m_cur.Reset();
@@ -1004,9 +1004,9 @@ void MeBase::EstimateMB16x16()
         if(EstimateSkip()) break;
         if(Estimate16x16Direct()) break;
 
-        Ipp32s j = 0;
+        int32_t j = 0;
 
-        for(Ipp32s i=0; i<m_par->FRefFramesNum+m_par->BRefFramesNum; i++){
+        for(int32_t i=0; i<m_par->FRefFramesNum+m_par->BRefFramesNum; i++){
             if(i<m_par->FRefFramesNum){
                 j = i;
                 SetReferenceFrame(frw,i);
@@ -1042,9 +1042,9 @@ void MeBase::EstimateMB8x8()
     for(m_cur.BlkIdx=0; m_cur.BlkIdx<4; m_cur.BlkIdx++){
         for(;;){
             if(EstimateSkip()) break;
-            Ipp32s j = 0;
+            int32_t j = 0;
 
-            for(Ipp32s i=0; i<m_par->FRefFramesNum+m_par->BRefFramesNum; i++){
+            for(int32_t i=0; i<m_par->FRefFramesNum+m_par->BRefFramesNum; i++){
                 if(i<m_par->FRefFramesNum){
                     j = i;
                     SetReferenceFrame(frw,i);
@@ -1068,7 +1068,7 @@ void MeBase::EstimateMB8x8()
 
 bool MeBase::EarlyExitForSkip()
 {
-    Ipp32s thr=m_SkippedThreshold;
+    int32_t thr=m_SkippedThreshold;
     if(m_cur.MbPart == ME_Mb8x8)
         thr/=4;
 
@@ -1121,10 +1121,10 @@ void MeBase::Estimate16x16Bidir()
         return;
 
     //find best bidir
-    for(Ipp32s i=0; i< m_par->FRefFramesNum; i++){
-        for(Ipp32s j=0; j<m_par->BRefFramesNum; j++){
+    for(int32_t i=0; i< m_par->FRefFramesNum; i++){
+        for(int32_t j=0; j<m_par->BRefFramesNum; j++){
             //check bidir
-            Ipp32s tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric, frw, i, m_cur.BestMV[frw][i][0], bkw, j, m_cur.BestMV[bkw][j][0]);
+            int32_t tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric, frw, i, m_cur.BestMV[frw][i][0], bkw, j, m_cur.BestMV[bkw][j][0]);
             tmpCost +=WeightMV(m_cur.BestMV[frw][i][0], m_cur.PredMV[frw][i][0]);
             tmpCost +=WeightMV(m_cur.BestMV[bkw][j][0], m_cur.PredMV[bkw][j][0]);
             tmpCost +=32; //some additional penalty for bidir type of MB
@@ -1147,7 +1147,7 @@ bool MeBase::Estimate16x16Direct()
         return false;
 
     MeMV MVDirectFW, MVDirectBW;
-    Ipp32s IdxF, IdxB;
+    int32_t IdxF, IdxB;
 
     m_DirectOutOfBound = false;
     for(IdxF = 0; IdxF < m_par->FRefFramesNum; IdxF++)
@@ -1190,7 +1190,7 @@ bool MeBase::Estimate16x16Direct()
         return false;
 
     //check direct
-    Ipp32s tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric,
+    int32_t tmpCost=EstimatePointAverage(ME_Mb16x16, m_par->PixelType, m_par->CostMetric,
                                         frw, IdxF, MVDirectFW,
                                         bkw, IdxB, MVDirectBW);
     m_cur.DirectCost     = tmpCost;
@@ -1214,15 +1214,15 @@ void MeBase::EstimateIntra()
     // TODO: move intra cost calculation from MakeMBModeDecision16x16ByFB here
     if(m_par->UseFeedback) return;
 
-    Ipp32s i = m_cur.BlkIdx;
+    int32_t i = m_cur.BlkIdx;
     if(m_cur.InterCost[i]>=ME_BIG_COST)
         return; //inter estimation was skiped, skip intra as well
     
     //usually Inter and Intra costs calculated by incompatible metrics, so recalculate inter cost
-    Ipp32s InterCost;
+    int32_t InterCost;
     if(m_cur.InterType[i] != ME_MbBidir){
         //frw or bkw
-        Ipp32s dir = (m_cur.InterType[i] == ME_MbFrw)?frw:bkw;
+        int32_t dir = (m_cur.InterType[i] == ME_MbFrw)?frw:bkw;
         SetReferenceFrame(dir, m_cur.BestIdx[dir][i]);
         InterCost=EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sadt, m_cur.BestMV[dir][m_cur.BestIdx[dir][i]][i]);
     }else{
@@ -1234,7 +1234,7 @@ void MeBase::EstimateIntra()
 
     // TODO: check if there is adjusted intra block, for both 16x16 and 8x8
     MeDecisionMetrics met=ME_SadtSrc;
-    Ipp32s IntraCost = EstimatePoint(m_cur.MbPart, m_par->PixelType, met, 0);
+    int32_t IntraCost = EstimatePoint(m_cur.MbPart, m_par->PixelType, met, 0);
 
     //calculate fake Intra cost
     if(IntraCost<InterCost)
@@ -1249,10 +1249,10 @@ void MeBase::MakeVlcTableDecision()
         return;
 
     //choose tables
-    Ipp32s BestPat= IPP_MIN(IPP_MIN(m_cur.CbpcyRate[0],m_cur.CbpcyRate[1]),IPP_MIN(m_cur.CbpcyRate[2],m_cur.CbpcyRate[3]));
-    Ipp32s BestMV= IPP_MIN(IPP_MIN(m_cur.MvRate[0],m_cur.MvRate[1]),IPP_MIN(m_cur.MvRate[2],m_cur.MvRate[3]));
-    Ipp32s BestAC= IPP_MIN(IPP_MIN(m_cur.AcRate[0],m_cur.AcRate[1]),IPP_MIN(m_cur.AcRate[2],m_cur.AcRate[2]));
-    for(Ipp32s idx=0; idx<4; idx++){
+    int32_t BestPat= MFX_MIN(MFX_MIN(m_cur.CbpcyRate[0],m_cur.CbpcyRate[1]),MFX_MIN(m_cur.CbpcyRate[2],m_cur.CbpcyRate[3]));
+    int32_t BestMV= MFX_MIN(MFX_MIN(m_cur.MvRate[0],m_cur.MvRate[1]),MFX_MIN(m_cur.MvRate[2],m_cur.MvRate[3]));
+    int32_t BestAC= MFX_MIN(MFX_MIN(m_cur.AcRate[0],m_cur.AcRate[1]),MFX_MIN(m_cur.AcRate[2],m_cur.AcRate[2]));
+    for(int32_t idx=0; idx<4; idx++){
         if(m_cur.CbpcyRate[idx]==BestPat)m_par->OutCbpcyTableIndex=idx;
         if(m_cur.MvRate[idx]==BestMV)m_par->OutMvTableIndex=idx;
         if(idx!=3&&m_cur.AcRate[idx]==BestAC)m_par->OutAcTableIndex=idx;
@@ -1270,12 +1270,12 @@ void MeBase::UpdateVlcTableStatistic()
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
     bool intra = ((MeMbType)(mb->MbType) == ME_MbIntra);
 
-    if(mb->MbType != (Ipp8u)ME_MbIntra && mb->MbType != (Ipp8u)ME_MbFrw)
+    if(mb->MbType != (uint8_t)ME_MbIntra && mb->MbType != (uint8_t)ME_MbFrw)
         return;
 
     if(m_par->UseTrellisQuantization)m_cur.VlcTableSearchInProgress = true;
     //for all table set
-    for(Ipp32s idx=0; idx<4; idx++){
+    for(int32_t idx=0; idx<4; idx++){
         //select tables
         m_cur.CbpcyTableIndex=m_cur.MvTableIndex=m_cur.AcTableIndex=idx;
         if(idx==3)m_cur.AcTableIndex=2;
@@ -1292,14 +1292,14 @@ void MeBase::UpdateVlcTableStatistic()
 
 
         MeCostRD tmp=0;
-        for(Ipp32s blk=0; blk<6;blk++){
+        for(int32_t blk=0; blk<6;blk++){
             src.channel = (blk<4?Y:(blk==4?U:V));
             m_cur.BlkIdx = blk; //it is for DC prediction calculation
             if(intra)
                 tmp+=GetCostRD(ME_IntraRD, ME_Mb8x8, ME_Tranform8x8, &src, NULL);  //can be called as 16x16
             else
                 tmp+=GetCostRD(ME_InterRD, ME_Mb8x8, m_cur.InterTransf[mb->MbType][blk], &src, &ref);
-            Ipp32s dx=8, dy=0;
+            int32_t dx=8, dy=0;
             if(blk==1){dx=-dx; dy=8;}
             src.move(Y,dx,dy);
             if(!intra)ref.move(Y,dx,dy);
@@ -1309,7 +1309,7 @@ void MeBase::UpdateVlcTableStatistic()
         m_cur.AcRate[idx] += tmp.R;
         
         //3 CBPCY tables
-        const Ipp16u*  pCBPCYTable=VLCTableCBPCY_PB[m_cur.CbpcyTableIndex];
+        const uint16_t*  pCBPCYTable=VLCTableCBPCY_PB[m_cur.CbpcyTableIndex];
         if(tmp.BlkPat!=0){
             m_cur.CbpcyRate[idx]+=pCBPCYTable[2*tmp.BlkPat+1];
         }
@@ -1324,8 +1324,8 @@ void MeBase::UpdateVlcTableStatistic()
             bool hybrid = GetHybrid(m_cur.RefIdx);
             m_cur.MvRate[idx]+=GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid);
         }else{
-            Ipp32s         NotSkip =   (tmp.BlkPat != 0)?1:0;
-            const Ipp16u*   MVDiffTables=MVDiffTablesVLC[m_cur.MvTableIndex];
+            int32_t         NotSkip =   (tmp.BlkPat != 0)?1:0;
+            const uint16_t*   MVDiffTables=MVDiffTablesVLC[m_cur.MvTableIndex];
             m_cur.MvRate[idx]+=MVDiffTables[2*(37*NotSkip + 36 - 1)+1];
         }
     }       
@@ -1339,10 +1339,10 @@ void MeBase::UpdateVlcTableStatistic()
 
 ///Function select best transform mode for Inter MB and return its cost.
 ///It is standard dependend functionaliry, so see derived class for implementation.
-Ipp32s MeBase::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
+int32_t MeBase::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB)
+                                           int32_t IdxF, int32_t IdxB)
 {
     return 0;
 }
@@ -1350,7 +1350,7 @@ Ipp32s MeBase::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
 MeCostRD MeBase::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB)
+                                           int32_t IdxF, int32_t IdxB)
 {
     MeCostRD cost;
     cost.R=ME_BIG_COST;
@@ -1370,7 +1370,7 @@ void MeBase::MakeMBModeDecision16x16()
 void MeBase::MakeMBModeDecision16x16Org()
 {
     if(m_par->SearchDirection == ME_ForwardSearch){
-        Ipp32s bestCost = ME_BIG_COST;
+        int32_t bestCost = ME_BIG_COST;
         if(m_cur.SkipCost[0] < m_SkippedThreshold){
             //skip
             m_cur.BestIdx[frw][0] = m_cur.SkipIdx[frw][0];
@@ -1396,7 +1396,7 @@ void MeBase::MakeMBModeDecision16x16Org()
         }
         if(ChangeInterpPixelType)
         {
-            Ipp32s index = m_par->Interpolation + (m_par->PixelType >> 1);
+            int32_t index = m_par->Interpolation + (m_par->PixelType >> 1);
             CostOnInterpolation[index] += bestCost;
         }
     }else{
@@ -1494,7 +1494,7 @@ void  MeBase::MakeSkipModeDecision16x16BidirByFB()
         return;
 
     MeCostRD InterCostRD = 0;
-    Ipp32s SkipCost,IdxF,IdxB;
+    int32_t SkipCost,IdxF,IdxB;
     bool FOutOfBound = false, BOutOfBound = false;
     //m_cur.SkipCost[0] = ME_BIG_COST;
 
@@ -1509,7 +1509,7 @@ void  MeBase::MakeSkipModeDecision16x16BidirByFB()
         if(!FOutOfBound)
         {
             AddHeaderCost(InterCostRD, NULL, ME_MbFrwSkipped,IdxF, 0);
-            SkipCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
+            SkipCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
         }
         else
         {
@@ -1533,7 +1533,7 @@ void  MeBase::MakeSkipModeDecision16x16BidirByFB()
             if(!BOutOfBound)
             {
                 AddHeaderCost(InterCostRD, NULL, ME_MbBkwSkipped,IdxF,IdxB);
-                SkipCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
+                SkipCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
             }
             else
             {
@@ -1554,7 +1554,7 @@ void  MeBase::MakeSkipModeDecision16x16BidirByFB()
                                         frw, IdxF, m_cur.PredMV[frw][IdxF][m_cur.BlkIdx],
                                         bkw, IdxB, m_cur.PredMV[bkw][IdxB][m_cur.BlkIdx]);
                 AddHeaderCost(InterCostRD, NULL, ME_MbBidirSkipped,IdxF,IdxB);
-                SkipCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
+                SkipCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
                 if(m_cur.SkipCost[0] > SkipCost)
                 {
                     m_cur.SkipCost[0] = SkipCost;
@@ -1583,14 +1583,14 @@ void  MeBase::MakeSkipModeDecision16x16BidirByFB()
                             frw, IdxF, MVDirectFW,
                             bkw, IdxB, MVDirectBW);
     AddHeaderCost(InterCostRD, NULL, ME_MbDirectSkipped,IdxF,IdxB);
-    m_cur.DirectCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
+    m_cur.DirectCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
     m_cur.DirectType = ME_MbDirectSkipped;
     mb->DirectSkippedCostRD = InterCostRD;
 }
 
 void MeBase::SetModeDecision16x16BidirByFB(MeMV &mvF, MeMV &mvB)
 {
-    Ipp32s bestCost = IPP_MIN(IPP_MIN(m_cur.IntraCost[0],m_cur.InterCost[0]),IPP_MIN(m_cur.DirectCost,m_cur.SkipCost[0]));
+    int32_t bestCost = MFX_MIN(MFX_MIN(m_cur.IntraCost[0],m_cur.InterCost[0]),MFX_MIN(m_cur.DirectCost,m_cur.SkipCost[0]));
 
     if(bestCost == m_cur.SkipCost[0]){
         //skip
@@ -1655,32 +1655,32 @@ void MeBase::ModeDecision16x16ByFBFastFrw()
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
 
     // SKIP
-    Ipp32s SkipCost = ME_BIG_COST;
+    int32_t SkipCost = ME_BIG_COST;
     if(m_par->ProcessSkipped)
         SkipCost=EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SSD, m_cur.PredMV[frw][0][m_cur.BlkIdx]);
 
     MeMV mv;
-    Ipp32s InterCost, IntraCost;
+    int32_t InterCost, IntraCost;
 
     // INTER
     mv = m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][0];
     MeMV pred = m_cur.PredMV[frw][m_cur.BestIdx[frw][0]][0];
     mb->PureSAD = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sad, mv);
     mb->InterCostRD.D = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sadt, mv);
-    InterCost = (Ipp32s)( m_InterRegFunD.Weight(mb->InterCostRD.D)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
+    InterCost = (int32_t)( m_InterRegFunD.Weight(mb->InterCostRD.D)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
     // INTRA
     mb->IntraCostRD.D=EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SadtSrcNoDC, 0);
-    IntraCost = (Ipp32s)(m_IntraRegFunD.Weight(mb->IntraCostRD.D));
+    IntraCost = (int32_t)(m_IntraRegFunD.Weight(mb->IntraCostRD.D));
 
     //for preset calculation
     #ifdef ME_GENERATE_PRESETS
-        SkipCost=IPP_MAX_32S;
+        SkipCost=MFX_MAX_32S;
         InterCost  = rand()/2;
         IntraCost  = rand()/2;
     #endif
 
     //make decision
-    Ipp32s bestCost=IPP_MIN(IPP_MIN(SkipCost,InterCost),IntraCost);
+    int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
     if(bestCost==SkipCost){
         //skip
         SetMB16x16B(ME_MbFrwSkipped, m_cur.PredMV[frw][0][0], 0, m_cur.SkipCost[0]);
@@ -1697,7 +1697,7 @@ void MeBase::ModeDecision16x16ByFBFastFrw()
 void MeBase::ModeDecision16x16ByFBFastBidir()
 {
     MeMV mvF, mvB;
-    Ipp32s IdxF, IdxB;
+    int32_t IdxF, IdxB;
 
     SetError((vm_char*)"Wrong MbPart in MakeMBModeDecision16x16ByFB", m_par->MbPart != ME_Mb16x16);
 
@@ -1707,11 +1707,11 @@ void MeBase::ModeDecision16x16ByFBFastBidir()
 
     MakeSkipModeDecision16x16BidirByFB();
 
-    Ipp32s InterCost, PureSAD, InterCostD;
+    int32_t InterCost, PureSAD, InterCostD;
 
     //Direct
     MeMV MVDirectFW, MVDirectBW;
-    Ipp32s DirectCost;
+    int32_t DirectCost;
 
     IdxF = m_cur.DirectIdx[frw];
     IdxB = m_cur.DirectIdx[bkw];
@@ -1726,7 +1726,7 @@ void MeBase::ModeDecision16x16ByFBFastBidir()
                         ME_Sad, frw, IdxF, MVDirectFW, bkw, IdxB, MVDirectBW);
         DirectCost = EstimatePointAverage(m_cur.MbPart, m_par->PixelType,
                         ME_Sadt, frw, IdxF, MVDirectFW, bkw, IdxB, MVDirectBW);
-        DirectCost = (Ipp32s)m_InterRegFunD.Weight(DirectCost);
+        DirectCost = (int32_t)m_InterRegFunD.Weight(DirectCost);
 
         if(DirectCost < m_cur.DirectCost)
         {
@@ -1736,13 +1736,13 @@ void MeBase::ModeDecision16x16ByFBFastBidir()
     }
     //Inter
     //m_cur.InterCost[0] = ME_BIG_COST;
-    for(Ipp32s i=0; i< m_par->FRefFramesNum; i++)
+    for(int32_t i=0; i< m_par->FRefFramesNum; i++)
     {
         MeMV mv = m_cur.BestMV[frw][i][0];
         MeMV pred = m_cur.PredMV[frw][i][0];
         PureSAD = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sad, mv);
         InterCostD = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sadt, mv);
-        InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostD)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
+        InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostD)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
 
         if(InterCost<m_cur.InterCost[0]){
             m_cur.InterCost[0] = InterCost;
@@ -1752,13 +1752,13 @@ void MeBase::ModeDecision16x16ByFBFastBidir()
             mb->PureSAD = PureSAD;
             mb->InterCostRD.D = InterCostD;
         }
-        for(Ipp32s j=0; j< m_par->BRefFramesNum; j++)
+        for(int32_t j=0; j< m_par->BRefFramesNum; j++)
         {
             MeMV mv = m_cur.BestMV[bkw][j][0];
             MeMV pred = m_cur.PredMV[bkw][j][0];
             PureSAD = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sad, mv);
             InterCostD = EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_Sadt, mv);
-            InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostD)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
+            InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostD)+m_lambda*m_MvRegrFunR.Weight(mv,pred));
 
             if(InterCost<m_cur.InterCost[0]){
                 m_cur.InterCost[0] = InterCost;
@@ -1777,7 +1777,7 @@ void MeBase::ModeDecision16x16ByFBFastBidir()
                         ME_Sad, frw, i, mv0, bkw, j, mv1);
             InterCostD = EstimatePointAverage(m_cur.MbPart, m_par->PixelType,
                         ME_Sadt, frw, i, mv0, bkw, j, mv1);
-            InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostD)
+            InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostD)
                                     +m_lambda*(m_MvRegrFunR.Weight(mv0,pred0)+m_MvRegrFunR.Weight(mv1,pred1)));
 
             if(InterCost<m_cur.InterCost[0]){
@@ -1793,7 +1793,7 @@ void MeBase::ModeDecision16x16ByFBFastBidir()
 
     //INTRA
     mb->IntraCostRD.D=EstimatePoint(m_cur.MbPart, m_par->PixelType, ME_SadtSrcNoDC, 0);
-    m_cur.IntraCost[0] = (Ipp32s)(m_IntraRegFunD.Weight(mb->IntraCostRD.D));
+    m_cur.IntraCost[0] = (int32_t)(m_IntraRegFunD.Weight(mb->IntraCostRD.D));
 
     SetModeDecision16x16BidirByFB(mvF, mvB);
 }
@@ -1802,14 +1802,14 @@ void MeBase::ModeDecision16x16ByFBFullFrw()
 {
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
 
-    Ipp32s FbestCost = ME_BIG_COST;
-    Ipp32s bestIdx = 0;
-    Ipp32s bestType = ME_MbFrw;
+    int32_t FbestCost = ME_BIG_COST;
+    int32_t bestIdx = 0;
+    int32_t bestType = ME_MbFrw;
     MeCostRD InterCostRD;
-    Ipp32s PureSAD;
+    int32_t PureSAD;
 
     MeMV mv;
-    Ipp32s InterCost, IntraCost, SkipCost;
+    int32_t InterCost, IntraCost, SkipCost;
 
 
     // INTRA
@@ -1817,10 +1817,10 @@ void MeBase::ModeDecision16x16ByFBFullFrw()
     MakeSrcAdr(m_cur.MbPart, ME_IntegerPixel, &src);
     mb->IntraCostRD = GetCostRD(ME_IntraRD,ME_Mb16x16,ME_Tranform8x8,&src,NULL);
     AddHeaderCost(mb->IntraCostRD, NULL, ME_MbIntra,0,0);
-    IntraCost = (Ipp32s)(m_IntraRegFunD.Weight(mb->IntraCostRD.D) + m_lambda*m_IntraRegFunR.Weight(mb->IntraCostRD.R));
+    IntraCost = (int32_t)(m_IntraRegFunD.Weight(mb->IntraCostRD.D) + m_lambda*m_IntraRegFunR.Weight(mb->IntraCostRD.R));
     if(IntraCost<0) IntraCost= ME_BIG_COST;
 
-    for(Ipp32s i=0; i< m_par->FRefFramesNum; i++)
+    for(int32_t i=0; i< m_par->FRefFramesNum; i++)
     {
         m_cur.RefDir = frw;
         m_cur.RefIdx = i;
@@ -1852,18 +1852,18 @@ void MeBase::ModeDecision16x16ByFBFullFrw()
         m_par->pSrc->MBs[m_cur.adr].NumOfNZ=InterCostRD.NumOfCoeff;
         bool bNonDominant = m_PredCalc->GetNonDominant(frw,i,0);
         bool hybrid = GetHybrid(i);
-        InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
+        InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
         if(InterCost<0) InterCost= ME_BIG_COST;
 
 //for preset calculation
 #ifdef ME_GENERATE_PRESETS
-    SkipCost=IPP_MAX_32S;
+    SkipCost=MFX_MAX_32S;
     InterCost  = rand()/2;
     IntraCost  = rand()/2;
 #endif
 
     //make decision
-    Ipp32s bestCost=IPP_MIN(IPP_MIN(SkipCost,InterCost),IntraCost);
+    int32_t bestCost=MFX_MIN(MFX_MIN(SkipCost,InterCost),IntraCost);
     /*
         if(FbestCost > bestCost)
         {
@@ -1920,7 +1920,7 @@ void MeBase::ModeDecision16x16ByFBFullFrw()
 void MeBase::ModeDecision16x16ByFBFullBidir()
 {
     MeMV mvF, mvB;
-    Ipp32s IdxF, IdxB;
+    int32_t IdxF, IdxB;
 
     SetError((vm_char*)"Wrong MbPart in MakeMBModeDecision16x16ByFB", m_par->MbPart != ME_Mb16x16);
 
@@ -1929,12 +1929,12 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
 
     MakeSkipModeDecision16x16BidirByFB();
 
-    Ipp32s InterCost, PureSAD;
+    int32_t InterCost, PureSAD;
     MeCostRD InterCostRD;
 
     //Direct
     MeMV MVDirectFW, MVDirectBW;
-    Ipp32s DirectCost;
+    int32_t DirectCost;
 
     IdxF = m_cur.DirectIdx[frw];
     IdxB = m_cur.DirectIdx[bkw];
@@ -1953,7 +1953,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
         {
             InterCostRD = MakeTransformDecisionInter(m_cur.MbPart, m_par->PixelType, 
                         ME_MbDirect, MVDirectFW, MVDirectBW,IdxF,IdxB);
-            DirectCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
+            DirectCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
             if(DirectCost<0) DirectCost= ME_BIG_COST;
             mb->DirectCostRD = InterCostRD;
         }
@@ -1988,7 +1988,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
             InterCostRD = GetCostRD(ME_InterRD,ME_Mb16x16,ME_Tranform8x8,&src,&ref);
             AddHeaderCost(InterCostRD, NULL, ME_MbDirect,IdxF,IdxB);
 
-            DirectCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
+            DirectCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*m_InterRegFunR.Weight(InterCostRD.R));
             if(DirectCost<0) DirectCost= ME_BIG_COST;
             mb->DirectCostRD = InterCostRD;
         }
@@ -1999,7 +1999,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
         }
     }
     //Inter
-    for(Ipp32s i=0; i< m_par->FRefFramesNum; i++)
+    for(int32_t i=0; i< m_par->FRefFramesNum; i++)
     {
         m_cur.RefDir = frw;
         m_cur.RefIdx = i;
@@ -2015,7 +2015,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
 
             bool bNonDominant = m_PredCalc->GetNonDominant(frw,i,0);
             bool hybrid = GetHybrid(i);
-            InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
+            InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
             if(InterCost<0) InterCost= ME_BIG_COST;
         }
         else
@@ -2028,7 +2028,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
             AddHeaderCost(InterCostRD, NULL, ME_MbFrw,i,0);
             bool bNonDominant = m_PredCalc->GetNonDominant(frw,i,0);
             bool hybrid = GetHybrid(i);
-            InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
+            InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
             if(InterCost<0) InterCost= ME_BIG_COST;
         }
 
@@ -2041,7 +2041,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
             m_par->pSrc->MBs[m_cur.adr].NumOfNZ=InterCostRD.NumOfCoeff;
             mb->InterCostRD = InterCostRD;
         }
-        for(Ipp32s j=0; j< m_par->BRefFramesNum; j++)
+        for(int32_t j=0; j< m_par->BRefFramesNum; j++)
         {
             m_cur.RefDir = bkw;
             m_cur.RefIdx = j;
@@ -2056,7 +2056,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
                             ME_MbBkw, MeMV(0),mv,0,j);
                 bool bNonDominant = m_PredCalc->GetNonDominant(bkw,j,0);
                 bool hybrid = GetHybrid(j);
-                InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));                
+                InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));                
                 if(InterCost<0) InterCost= ME_BIG_COST;
             }
             else
@@ -2069,7 +2069,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
                 AddHeaderCost(InterCostRD, NULL, ME_MbBkw,i,j);
                 bool bNonDominant = m_PredCalc->GetNonDominant(bkw,j,0);
                 bool hybrid = GetHybrid(j);
-                InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
+                InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid)));
                 if(InterCost<0) InterCost= ME_BIG_COST;
             }
 
@@ -2103,7 +2103,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
                 bool hybrid0 = GetHybrid(i);
                 bool hybrid1 = GetHybrid(j);
 
-                InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv0.x-pred0.x,mv0.y-pred0.y,bNonDominant0,hybrid0)+GetMvSize(mv1.x-pred1.x,mv1.y-pred1.y,bNonDominant1,hybrid1)));                
+                InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv0.x-pred0.x,mv0.y-pred0.y,bNonDominant0,hybrid0)+GetMvSize(mv1.x-pred1.x,mv1.y-pred1.y,bNonDominant1,hybrid1)));                
                 if(InterCost<0) InterCost= ME_BIG_COST;
             }
             else
@@ -2142,7 +2142,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
                 bool hybrid0 = GetHybrid(i);
                 bool hybrid1 = GetHybrid(j);
 
-                InterCost = (Ipp32s)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv0.x-pred0.x,mv0.y-pred0.y,bNonDominant0,hybrid0)+GetMvSize(mv1.x-pred1.x,mv1.y-pred1.y,bNonDominant1,hybrid1)));
+                InterCost = (int32_t)( m_InterRegFunD.Weight(InterCostRD.D)+m_lambda*(m_InterRegFunR.Weight(InterCostRD.R)+GetMvSize(mv0.x-pred0.x,mv0.y-pred0.y,bNonDominant0,hybrid0)+GetMvSize(mv1.x-pred1.x,mv1.y-pred1.y,bNonDominant1,hybrid1)));
                 if(InterCost<0) InterCost= ME_BIG_COST;
             }
 
@@ -2163,7 +2163,7 @@ void MeBase::ModeDecision16x16ByFBFullBidir()
     MakeSrcAdr(m_cur.MbPart, ME_IntegerPixel, &src);
     mb->IntraCostRD = GetCostRD(ME_IntraRD,ME_Mb16x16,ME_Tranform8x8,&src,NULL);
     AddHeaderCost(mb->IntraCostRD, NULL, ME_MbIntra,0,0);
-    m_cur.IntraCost[0] = (Ipp32s)(m_IntraRegFunD.Weight(mb->IntraCostRD.D) + m_lambda*m_IntraRegFunR.Weight(mb->IntraCostRD.R));
+    m_cur.IntraCost[0] = (int32_t)(m_IntraRegFunD.Weight(mb->IntraCostRD.D) + m_lambda*m_IntraRegFunR.Weight(mb->IntraCostRD.R));
     if(m_cur.IntraCost[0]<0) m_cur.IntraCost[0]= ME_BIG_COST;
 
     SetModeDecision16x16BidirByFB(mvF, mvB);
@@ -2178,9 +2178,9 @@ void MeBase::MakeBlockModeDecision()
 
     if(m_cur.SkipCost[m_cur.BlkIdx]<m_SkippedThreshold/4){
         //skip
-        Ipp32s dir = (m_cur.SkipType[m_cur.BlkIdx] == ME_MbFrwSkipped) ? frw : bkw;
-        Ipp32s opp_dir = (dir == frw)? bkw : frw;
-        Ipp32s idx = m_cur.SkipIdx[dir][m_cur.BlkIdx];
+        int32_t dir = (m_cur.SkipType[m_cur.BlkIdx] == ME_MbFrwSkipped) ? frw : bkw;
+        int32_t opp_dir = (dir == frw)? bkw : frw;
+        int32_t idx = m_cur.SkipIdx[dir][m_cur.BlkIdx];
         m_cur.InterCost[m_cur.BlkIdx] = m_cur.SkipCost[m_cur.BlkIdx];
         m_cur.InterType[m_cur.BlkIdx] = m_cur.SkipType[m_cur.BlkIdx]; //MB type is used here!
         m_cur.BestIdx[dir][m_cur.BlkIdx] = idx;
@@ -2258,14 +2258,14 @@ void MeBase::MakeMBModeDecision8x8Org()
         }
     }
     //choose 16x16 or 8x8
-    Ipp32s InterCost=0;
+    int32_t InterCost=0;
     if(m_cur.SkipCost[0] != ME_BIG_COST)
     {
-        for(Ipp32s i=0; i<4; i++){
+        for(int32_t i=0; i<4; i++){
             InterCost+=m_cur.SkipCost[i];
-            Ipp32s dir = (m_cur.SkipType[i] == ME_MbFrwSkipped) ? frw : bkw;
-            Ipp32s opp_dir = (dir == frw)? bkw : frw;
-            Ipp32s idx = m_cur.SkipIdx[dir][i];
+            int32_t dir = (m_cur.SkipType[i] == ME_MbFrwSkipped) ? frw : bkw;
+            int32_t opp_dir = (dir == frw)? bkw : frw;
+            int32_t idx = m_cur.SkipIdx[dir][i];
             m_cur.InterCost[i] = m_cur.SkipCost[i];
             m_cur.InterType[i] = m_cur.SkipType[i]; //MB type is used here!
             m_cur.BestIdx[dir][i] = idx;
@@ -2273,18 +2273,18 @@ void MeBase::MakeMBModeDecision8x8Org()
             m_cur.BestMV[dir][idx][i] = m_cur.PredMV[dir][idx][i];
         }
     }
-    for(Ipp32s i=0; i<4; i++){
+    for(int32_t i=0; i<4; i++){
         InterCost+=m_cur.InterCost[i];
     }
-    InterCost = (Ipp32s)1.2*InterCost;
+    InterCost = (int32_t)1.2*InterCost;
 
     if(mb->MbCosts[0] > InterCost){
         //8x8 is better, save results
-        Ipp32s dir = (Type == ME_MbFrw ||
+        int32_t dir = (Type == ME_MbFrw ||
                         Type == ME_MbFrwSkipped || Type == ME_MbMixed) ? frw : bkw;
         if(m_par->UseVarSizeTransform)
         {
-            for(Ipp32s i=0; i<4; i++)
+            for(int32_t i=0; i<4; i++)
             {
                 m_cur.BlkIdx = i;
                 if(m_cur.InterType[i] == ME_MbFrw)
@@ -2307,10 +2307,10 @@ void MeBase::MakeMBModeDecision8x8Org()
     }
 }
 
-Ipp16s median4(Ipp16s a, Ipp16s b, Ipp16s c, Ipp16s d)
+int16_t median4(int16_t a, int16_t b, int16_t c, int16_t d)
 {
-    Ipp16s amin=IPP_MIN(IPP_MIN(a,b),IPP_MIN(c,d));
-    Ipp16s amax=IPP_MAX(IPP_MAX(a,b),IPP_MAX(c,d));
+    int16_t amin=MFX_MIN(MFX_MIN(a,b),MFX_MIN(c,d));
+    int16_t amax=MFX_MAX(MFX_MAX(a,b),MFX_MAX(c,d));
     return (a+b+c+d-amin-amax)/2;
 }
 
@@ -2320,11 +2320,11 @@ void MeBase::MakeMBModeDecision8x8ByFB()
 
     MeMV mv, pred;
     MeCostRD res=0, tmp;
-    Ipp32s pattern=0;
+    int32_t pattern=0;
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
 
     m_PredCalc->ResetPredictors(); // TODO: change pred calculator to avoid this
-    for(Ipp32s blk=0; blk<4;blk++){
+    for(int32_t blk=0; blk<4;blk++){
         m_cur.BlkIdx = blk;
         mv = m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][m_cur.BlkIdx];
         m_PredCalc->GetPrediction(); //get predictor, this call initializes some inner variables
@@ -2337,9 +2337,9 @@ void MeBase::MakeMBModeDecision8x8ByFB()
         if(m_par->UseVarSizeTransform)
         {
             MeTransformType tr[4]={ME_Tranform8x8, ME_Tranform8x4, ME_Tranform4x8,ME_Tranform4x4};
-            Ipp32s BestCost = ME_BIG_COST;
+            int32_t BestCost = ME_BIG_COST;
             MeCostRD CurCost;
-            for(Ipp32s t = 0; t < 4; t++)
+            for(int32_t t = 0; t < 4; t++)
             {
                 CurCost = GetCostRD(ME_InterRD,ME_Mb8x8,tr[t],&src,&ref);
                 if(CurCost.J < BestCost)
@@ -2397,10 +2397,10 @@ void MeBase::MakeMBModeDecision8x8ByFB()
     // TODO: move this to AddHeaderCost
     res.R+=2; //this is to account for skip and 1/4 MV
 
-    Ipp32s InterCost8x8 = (Ipp32s)( res.D+m_lambda*res.R);
+    int32_t InterCost8x8 = (int32_t)( res.D+m_lambda*res.R);
     if(InterCost8x8<mb->MbCosts[0]){ //this is comparision to best 16x16 RD cost
         //printf("[%d], %d,%d,\n", m_cur.adr, res.D, res.R);
-        for(Ipp32s i=0; i<4; i++) m_cur.InterType[i] = ME_MbFrw; //only inter type is estimated right now
+        for(int32_t i=0; i<4; i++) m_cur.InterType[i] = ME_MbFrw; //only inter type is estimated right now
         SetMB8x8(ME_MbFrw, m_cur.BestMV[m_cur.RefDir], m_cur.InterCost); // it is not RD costs here!
     }
 
@@ -2424,7 +2424,7 @@ bool MeBase::IsSkipEnabled()
 //Src address wil be replaced at the end of the function by destination one.
 void MeBase::Interpolate(MeMbPart mt, MeInterpolation interp, MeMV mv, MeAdr* src, MeAdr *dst)
 {
-    Ipp32s ch=src->channel;
+    int32_t ch=src->channel;
     
     IppVCInterpolate_8u par;
     IppVCInterpolateBlock_8u m_lumaMCParams;
@@ -2488,7 +2488,7 @@ void MeBase::Interpolate(MeMbPart mt, MeInterpolation interp, MeMV mv, MeAdr* sr
         break;
 
         case ME_H264_Luma:{
-            IppiSize roiSize;
+            mfxSize roiSize;
             roiSize.height = 16;
             roiSize.width = 16;
             //ippiInterpolateLuma_H264_8u_C1R(src,srcStep,dst,dstStep,(3&mv.x),(3&mv.y),roiSize);
@@ -2515,7 +2515,7 @@ void MeBase::Interpolate(MeMbPart mt, MeInterpolation interp, MeMV mv, MeAdr* sr
 
 void MeBase::EstimatePointInter(MeMbPart mt, MePixelType pix, MeMV mv)
 {
-    Ipp32s cost = EstimatePoint(mt, pix, m_par->CostMetric, mv);
+    int32_t cost = EstimatePoint(mt, pix, m_par->CostMetric, mv);
     if(cost == ME_BIG_COST)
         return;
 
@@ -2529,12 +2529,12 @@ void MeBase::EstimatePointInter(MeMbPart mt, MePixelType pix, MeMV mv)
     }else{
         if(m_par->UseFastFeedback){
             MeMV pred = m_cur.PredMV[m_cur.RefDir][m_cur.RefIdx][0];
-            cost = (Ipp32s)(m_InterRegFunJ.Weight(cost) + m_lambda*m_MvRegrFunR.Weight(mv,pred));;
+            cost = (int32_t)(m_InterRegFunJ.Weight(cost) + m_lambda*m_MvRegrFunR.Weight(mv,pred));;
         }else{
             MeMV pred = m_PredCalc->GetPrediction(mv);
             bool bNonDominant = m_PredCalc->GetNonDominant(m_cur.RefDir,m_cur.RefIdx,0);
             bool hybrid = GetHybrid(m_cur.RefIdx);
-            cost = (Ipp32s)(m_InterRegFunJ.Weight(cost) + m_lambda * GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid));
+            cost = (int32_t)(m_InterRegFunJ.Weight(cost) + m_lambda * GetMvSize(mv.x-pred.x,mv.y-pred.y,bNonDominant,hybrid));
         }
         SetError((vm_char*)"overflow was detected in EstimatePointInter", cost<0);
     }
@@ -2547,7 +2547,7 @@ void MeBase::EstimatePointInter(MeMbPart mt, MePixelType pix, MeMV mv)
 
 
 //MV should be valid, there is no check inside!
-Ipp32s MeBase::EstimatePointAverage(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, Ipp32s RefDirection0, Ipp32s RefIndex0, MeMV mv0, Ipp32s RefDirection1, Ipp32s RefIndex1, MeMV mv1)
+int32_t MeBase::EstimatePointAverage(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, int32_t RefDirection0, int32_t RefIndex0, MeMV mv0, int32_t RefDirection1, int32_t RefIndex1, MeMV mv1)
 {
     SetError((vm_char*)"Wrong partitioning in MeBase::EstimatePointAverage",mt!=ME_Mb16x16);
 
@@ -2610,7 +2610,7 @@ Ipp32s MeBase::EstimatePointAverage(MeMbPart mt, MePixelType pix, MeDecisionMetr
 
 //Estimate point and return its cost.
 //MV should be valid, there is no check inside!
-Ipp32s MeBase::EstimatePoint(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, MeMV mv)
+int32_t MeBase::EstimatePoint(MeMbPart mt, MePixelType pix, MeDecisionMetrics CostMetric, MeMV mv)
 {
     //check range
     // TODO: temporal solution, move check one or two levles up. To EstimateSkip, FullSearch and so on.
@@ -2628,11 +2628,11 @@ Ipp32s MeBase::EstimatePoint(MeMbPart mt, MePixelType pix, MeDecisionMetrics Cos
 }
 
 
-Ipp32s MeBase::GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, MeAdr* ref)
+int32_t MeBase::GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, MeAdr* ref)
 {
     //this is shortcut due to performace reason
-    Ipp32s cost=ME_BIG_COST;
-    Ipp32s channel = src->channel;
+    int32_t cost=ME_BIG_COST;
+    int32_t channel = src->channel;
     if(CostMetric == ME_Sad){
         if(mt==ME_Mb4x4)ippiSAD4x4_8u32s(src->ptr[channel], src->step[channel], ref->ptr[channel], ref->step[channel], &cost, 0);
         else if(mt==ME_Mb8x8)ippiSAD8x8_8u32s_C1R(src->ptr[channel], src->step[channel], ref->ptr[channel], ref->step[channel], &cost, 0);
@@ -2645,12 +2645,12 @@ Ipp32s MeBase::GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, Me
         case ME_Sad: // TODO: it looks like a bug
             switch(mt){
                 case ME_Mb2x2:{
-                    Ipp8u *s = src->ptr[channel];
-                    Ipp32s ss = src->step[channel];
-                    Ipp8u *r = ref->ptr[channel];
-                    Ipp32s rs = ref->step[channel];
-                    cost= abs((Ipp32s)*(s+0*ss +0)-(Ipp32s)*(r+0*rs +0)) +  abs((Ipp32s)*(s+0*ss +1)-(Ipp32s)*(r+0*rs +1))+
-                                         abs((Ipp32s)*(s+1*ss +0)-(Ipp32s)*(r+1*rs +0)) +  abs((Ipp32s)*(s+1*ss +1)-(Ipp32s)*(r+1*rs +1));
+                    uint8_t *s = src->ptr[channel];
+                    int32_t ss = src->step[channel];
+                    uint8_t *r = ref->ptr[channel];
+                    int32_t rs = ref->step[channel];
+                    cost= abs((int32_t)*(s+0*ss +0)-(int32_t)*(r+0*rs +0)) +  abs((int32_t)*(s+0*ss +1)-(int32_t)*(r+0*rs +1))+
+                                         abs((int32_t)*(s+1*ss +0)-(int32_t)*(r+1*rs +0)) +  abs((int32_t)*(s+1*ss +1)-(int32_t)*(r+1*rs +1));
                     }
                     break;
                 default:
@@ -2663,7 +2663,7 @@ Ipp32s MeBase::GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, Me
                 case ME_Mb16x16:
                         ippiSqrDiff16x16_8u32s(src->ptr[Y], src->step[Y], ref->ptr[Y], ref->step[Y], IPPVC_MC_APX_FF, &cost);
                         if(src->chroma){
-                            Ipp32s CostU,CostV;
+                            int32_t CostU,CostV;
                             if(m_CRFormat == ME_YUV420)
                             {
                                 ippiSSD8x8_8u32s_C1R(src->ptr[U], src->step[U], ref->ptr[U], ref->step[U],&CostU,0);
@@ -2704,30 +2704,30 @@ Ipp32s MeBase::GetCost(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, Me
     return cost;
 }
 
-void MeBase::GetCost(MeMbPart mt, MeAdr* src, MeAdr* ref, Ipp32s numX, Ipp16u *sadArr)
+void MeBase::GetCost(MeMbPart mt, MeAdr* src, MeAdr* ref, int32_t numX, uint16_t *sadArr)
 {
     if(mt==ME_Mb4x4) ippiSAD4x4xN_8u16u_C1R( src->ptr[Y], src->step[Y], ref->ptr[Y], ref->step[Y],sadArr,numX);
     else if (mt==ME_Mb2x2) {
-        for(Ipp32s i=0;i<numX;i++) {
-            Ipp8u *s = src->ptr[Y];
-            Ipp32s ss = src->step[Y];
-            Ipp8u *r = ref->ptr[Y];
-            Ipp32s rs = ref->step[Y];
-            Ipp32s cost = abs((Ipp32s)*(s+0*ss +0)-(Ipp32s)*(r+0*rs +0)) +  abs((Ipp32s)*(s+0*ss +1)-(Ipp32s)*(r+0*rs +1))+
-                          abs((Ipp32s)*(s+1*ss +0)-(Ipp32s)*(r+1*rs +0)) +  abs((Ipp32s)*(s+1*ss +1)-(Ipp32s)*(r+1*rs +1));
-            sadArr[i] = (Ipp16u)cost;
+        for(int32_t i=0;i<numX;i++) {
+            uint8_t *s = src->ptr[Y];
+            int32_t ss = src->step[Y];
+            uint8_t *r = ref->ptr[Y];
+            int32_t rs = ref->step[Y];
+            int32_t cost = abs((int32_t)*(s+0*ss +0)-(int32_t)*(r+0*rs +0)) +  abs((int32_t)*(s+0*ss +1)-(int32_t)*(r+0*rs +1))+
+                          abs((int32_t)*(s+1*ss +0)-(int32_t)*(r+1*rs +0)) +  abs((int32_t)*(s+1*ss +1)-(int32_t)*(r+1*rs +1));
+            sadArr[i] = (uint16_t)cost;
         }
     }
 }
 
 //separated from GetCost due to performace reason
-Ipp32s MeBase::GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, MeAdr* ref)
+int32_t MeBase::GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src, MeAdr* ref)
 {
-    Ipp16s bufDiff[64];
-    Ipp16s bufHDMR[64];
+    int16_t bufDiff[64];
+    int16_t bufHDMR[64];
 
-    Ipp32s cost=ME_BIG_COST;
-    Ipp32s channel = src->channel;
+    int32_t cost=ME_BIG_COST;
+    int32_t channel = src->channel;
 
     switch(CostMetric){
 
@@ -2736,7 +2736,7 @@ Ipp32s MeBase::GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src
                 case ME_Mb16x16:
                     {
                         cost=0;
-                        for(Ipp32u i=0; i<4; i++) {
+                        for(uint32_t i=0; i<4; i++) {
                             MeAdr s=*src;
                             MeAdr r=*ref;
                             MakeBlockAdr(0,ME_Mb8x8, i, &s);
@@ -2746,9 +2746,9 @@ Ipp32s MeBase::GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src
                              cost+=SAT8x8D(s.ptr[Y],s.step[Y], r.ptr[Y], r.step[Y]);
 #else
                              ippiSub8x8_8u16s_C1R(s.ptr[channel],s.step[channel], r.ptr[channel], r.step[channel],bufDiff,16);
-                             HadamardFwdFast<Ipp16s,8>(bufDiff, 16, bufHDMR);
-                             for(Ipp32u j=0; j<64; j++)
-                                cost+=abs((Ipp32s)bufHDMR[j]);
+                             HadamardFwdFast<int16_t,8>(bufDiff, 16, bufHDMR);
+                             for(uint32_t j=0; j<64; j++)
+                                cost+=abs((int32_t)bufHDMR[j]);
 #endif
                         }
                 }
@@ -2761,9 +2761,9 @@ Ipp32s MeBase::GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src
                     {
                         cost=0;
                         ippiSub8x8_8u16s_C1R(src->ptr[channel], src->step[channel], ref->ptr[channel], ref->step[channel], bufDiff, 16);
-                        HadamardFwdFast<Ipp16s,8>(bufDiff, 16, bufHDMR);
-                        for(Ipp32u j=0; j<64; j++)
-                                cost+=abs((Ipp32s)bufHDMR[j]);
+                        HadamardFwdFast<int16_t,8>(bufDiff, 16, bufHDMR);
+                        for(uint32_t j=0; j<64; j++)
+                                cost+=abs((int32_t)bufHDMR[j]);
                     }
 #endif
                 break;
@@ -2779,20 +2779,20 @@ Ipp32s MeBase::GetCostHDMR(MeDecisionMetrics CostMetric, MeMbPart mt, MeAdr* src
                 cost = 0;
                 switch(mt){
                     case ME_Mb16x16:
-                        for(Ipp32s i=0; i<4; i++){
+                        for(int32_t i=0; i<4; i++){
                             MeAdr s=*src;
                             MakeBlockAdr(0,ME_Mb8x8, i, &s);
-                            HadamardFwdFast<Ipp8u,8>(s.ptr[channel],s.step[channel],bufHDMR);
+                            HadamardFwdFast<uint8_t,8>(s.ptr[channel],s.step[channel],bufHDMR);
 
-                            for(Ipp32s j=(i==0 && CostMetric!=ME_SadtSrcNoDC?0:1); j<64; j++)
-                                cost+=abs((Ipp32s)bufHDMR[j]);
+                            for(int32_t j=(i==0 && CostMetric!=ME_SadtSrcNoDC?0:1); j<64; j++)
+                                cost+=abs((int32_t)bufHDMR[j]);
                         }
                     break;
 
                     case ME_Mb8x8:
-                            HadamardFwdFast<Ipp8u,8>(src->ptr[channel], src->step[channel], bufHDMR);
-                        for(Ipp32s j=0; j<64; j++)
-                            cost+=abs((Ipp32s)bufHDMR[j]);
+                            HadamardFwdFast<uint8_t,8>(src->ptr[channel], src->step[channel], bufHDMR);
+                        for(int32_t j=0; j<64; j++)
+                            cost+=abs((int32_t)bufHDMR[j]);
                     break;
 
                     default:
@@ -2815,17 +2815,17 @@ MeCostRD MeBase::GetCostRD(MeDecisionMetrics /*CostMetric*/, MeMbPart /*mt*/, Me
     return cost;
 }
 
-void MeBase::DownsampleOne(Ipp32s level, Ipp32s x0, Ipp32s y0, Ipp32s w, Ipp32s h, MeAdr *adr)
+void MeBase::DownsampleOne(int32_t level, int32_t x0, int32_t y0, int32_t w, int32_t h, MeAdr *adr)
 {
-    Ipp32s scale = 1<<level;
-    IppiSize size = {w,h};
+    int32_t scale = 1<<level;
+    mfxSize size = {w,h};
     IppiRect roi = {0,0,size.width,size.height};
-    IppiSize DwnSize = {(size.width+scale-1)>>level,(size.height+scale-1)>>level};
+    mfxSize DwnSize = {(size.width+scale-1)>>level,(size.height+scale-1)>>level};
 
-    Ipp8u* pSrc=adr[0].ptr[Y];
-    Ipp32s SrcStep = adr[0].step[Y];
-    Ipp8u* pDst=adr[level].ptr[Y];
-    Ipp32s DstStep = adr[level].step[Y];
+    uint8_t* pSrc=adr[0].ptr[Y];
+    int32_t SrcStep = adr[0].step[Y];
+    uint8_t* pDst=adr[level].ptr[Y];
+    int32_t DstStep = adr[level].step[Y];
 
     pSrc += y0*SrcStep + x0;
     pDst += (y0>>level)*DstStep + (x0>>level);
@@ -2840,8 +2840,8 @@ void MeBase::DownsampleFrames()
     // TODO: remove after allocation in init
     SetError((vm_char*) "Wrong size of m_cur.DwnPoints", sizeof(m_cur.DwnPoints)/sizeof(MeSearchPoint)/5<m_par->pSrc->WidthMB*m_par->pSrc->HeightMB);
 
-    for(Ipp32s lev=1; lev<4; lev++){
-        Ipp32s x0, y0, w, h;
+    for(int32_t lev=1; lev<4; lev++){
+        int32_t x0, y0, w, h;
 
         //src
         x0=y0=0;
@@ -2851,14 +2851,14 @@ void MeBase::DownsampleFrames()
         DownsampleOne(lev, x0, y0, w, h, m_par->pSrc->plane);
 
         //ref
-        for(Ipp32s i=0; i<m_par->FRefFramesNum+m_par->BRefFramesNum; i++){
+        for(int32_t i=0; i<m_par->FRefFramesNum+m_par->BRefFramesNum; i++){
             MeFrame *ref;
             if(i<m_par->FRefFramesNum)
                 ref=m_par->pRefF[i];
             else
                 ref=m_par->pRefB[i-m_par->FRefFramesNum];
 
-            Ipp32s PadX,PadY;
+            int32_t PadX,PadY;
             PadX=PadY=ref->padding;
             SetError((vm_char*)"Wrong padding in MeBase::DownsampleFrames", PadX>m_InitPar.refPadding || PadY>m_InitPar.refPadding || (PadX&0xf)!=0 || (PadY&0xf)!=0);
             
@@ -2873,13 +2873,13 @@ void MeBase::DownsampleFrames()
 }
 
 
-void MeBase::SetReferenceFrame(Ipp32s RefDirection, Ipp32s RefIndex)
+void MeBase::SetReferenceFrame(int32_t RefDirection, int32_t RefIndex)
 {
     m_cur.RefIdx=RefIndex;
     m_cur.RefDir=RefDirection;
 }
 
-Ipp32s MeBase::GetPlaneLevel(MePixelType pix)
+int32_t MeBase::GetPlaneLevel(MePixelType pix)
 {
     if(pix == ME_DoublePixel) return 1;
     if(pix == ME_QuadPixel) return 2;
@@ -2889,7 +2889,7 @@ Ipp32s MeBase::GetPlaneLevel(MePixelType pix)
 
 void MeBase::MakeSrcAdr(MeMbPart mt, MePixelType pix, MeAdr* adr)
 {
-    Ipp32s level=GetPlaneLevel(pix);
+    int32_t level=GetPlaneLevel(pix);
     *adr = m_par->pSrc->plane[level];
     adr->move(m_CRFormat,(16*m_cur.x)>>level,(16*m_cur.y)>>level);
     MakeBlockAdr(level, mt, m_cur.BlkIdx, adr);
@@ -2900,7 +2900,7 @@ void MeBase::MakeSrcAdr(MeMbPart mt, MePixelType pix, MeAdr* adr)
 void MeBase::MakeRefAdrFromMV(MeMbPart mt, MePixelType pix, MeMV mv, MeAdr* adr)
 {
     MeMV cmv;
-    Ipp32s level=GetPlaneLevel(pix);
+    int32_t level=GetPlaneLevel(pix);
     MeFrame **fr;
     if(m_cur.RefDir==frw)fr=m_par->pRefF;
     else fr=m_par->pRefB;
@@ -2908,7 +2908,7 @@ void MeBase::MakeRefAdrFromMV(MeMbPart mt, MePixelType pix, MeMV mv, MeAdr* adr)
     bool isField = (m_par->PredictionType == ME_VC1Field1 || m_par->PredictionType == ME_VC1Field2
         || m_par->PredictionType == ME_VC1Field2Hybrid);
 
-    Ipp32s y_shift = 0;
+    int32_t y_shift = 0;
 
     if(isField)
     {
@@ -2926,8 +2926,8 @@ void MeBase::MakeRefAdrFromMV(MeMbPart mt, MePixelType pix, MeMV mv, MeAdr* adr)
 
     if(adr->chroma){
         cmv = GetChromaMV(mv);
-        Ipp32s x=(8*m_cur.x+(cmv.x>>2))>>level;
-        Ipp32s y=(8*m_cur.y+((cmv.y+y_shift)>>2))>>level;
+        int32_t x=(8*m_cur.x+(cmv.x>>2))>>level;
+        int32_t y=(8*m_cur.y+((cmv.y+y_shift)>>2))>>level;
         if(m_CRFormat == ME_YUV420)
         {
             adr->move(U,x,y);
@@ -2960,12 +2960,12 @@ void MeBase::MakeRefAdrFromMV(MeMbPart mt, MePixelType pix, MeMV mv, MeAdr* adr)
     }
 }
 
-void MeBase::MakeBlockAdr(Ipp32s level, MeMbPart mt, Ipp32s BlkIdx, MeAdr* adr)
+void MeBase::MakeBlockAdr(int32_t level, MeMbPart mt, int32_t BlkIdx, MeAdr* adr)
 {
     if(BlkIdx==0)return; //speed up a bit
 
     static const int offset=4;
-    Ipp32s shiftX=0, maskX=0, shiftY=0, maskY=0;
+    int32_t shiftX=0, maskX=0, shiftY=0, maskY=0;
     BlkIdx<<=offset;
     switch(mt){
 //        case ME_Mb16x16:
@@ -2991,13 +2991,13 @@ void MeBase::MakeBlockAdr(Ipp32s level, MeMbPart mt, Ipp32s BlkIdx, MeAdr* adr)
 }
 
 
-void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
+void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, int32_t cost)
 {
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
     int i = 0;
     mb->MbPart = ME_Mb16x16;
     mb->McType = ME_FrameMc;
-    mb->MbType = (Ipp8u)mbt;
+    mb->MbType = (uint8_t)mbt;
     mb->MbCosts[0] = cost;
 
     if(m_cur.BestIdx[frw][0] >= 0)
@@ -3013,7 +3013,7 @@ void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
         mb->BlockType[i] = mb->MbType;
     }
 
-    Ipp32s cost_4 = cost/4+1;
+    int32_t cost_4 = cost/4+1;
     for(i=1; i<5; i++)
         mb->MbCosts[i] = cost_4;
 
@@ -3029,13 +3029,13 @@ void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
                 MFX_INTERNAL_CPY(mb->Coeff,m_cur.TrellisCoefficients[4],(6*64)*sizeof(mb->Coeff[0][0]));
                 MFX_INTERNAL_CPY(mb->RoundControl,m_cur.RoundControl[4],(6*64)*sizeof(mb->RoundControl[0][0]));
         }else{
-            for(Ipp32s blk=0; blk<6; blk++){
+            for(int32_t blk=0; blk<6; blk++){
                 MeTransformType tr=m_cur.InterTransf[mb->MbType][blk];
                 switch(tr){
                     case ME_Tranform4x4:
-                        for(Ipp32s subblk=0; subblk<4; subblk++)
-                            for(Ipp32s y=0; y<4; y++)
-                                for(Ipp32s x=0; x<4; x++)
+                        for(int32_t subblk=0; subblk<4; subblk++)
+                            for(int32_t y=0; y<4; y++)
+                                for(int32_t x=0; x<4; x++)
                                 {
                                     //MeQuantTable[m_cur.adr][intra?0:1][m_cur.BlkIdx][(32*(subblk/2))+(4*(subblk&1))+8*y+x]=buf2[16*subblk+4*y+x]; 
                                     mb->Coeff[blk][(32*(subblk/2))+(4*(subblk&1))+8*y+x]=m_cur.TrellisCoefficients[tr][blk][16*subblk+4*y+x];
@@ -3043,9 +3043,9 @@ void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
                                 }
                         break;
                     case ME_Tranform4x8:
-                        for(Ipp32s subblk=0; subblk<2; subblk++)
-                            for(Ipp32s y=0; y<8; y++)
-                                for(Ipp32s x=0; x<4; x++)
+                        for(int32_t subblk=0; subblk<2; subblk++)
+                            for(int32_t y=0; y<8; y++)
+                                for(int32_t x=0; x<4; x++)
                                 {
                                     mb->Coeff[blk][4*subblk+8*y+x]=m_cur.TrellisCoefficients[tr][blk][32*subblk+4*y+x];
                                     mb->RoundControl[blk][4*subblk+8*y+x]=m_cur.RoundControl[tr][blk][32*subblk+4*y+x];
@@ -3063,19 +3063,19 @@ void MeBase::SetMB16x16B(MeMbType mbt, MeMV mvF, MeMV mvB, Ipp32s cost)
     }
 }
 
-void MeBase::SetMB8x8(MeMbType mbt, MeMV mv[2][4], Ipp32s cost[4])
+void MeBase::SetMB8x8(MeMbType mbt, MeMV mv[2][4], int32_t cost[4])
 {
     MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
     mb->MbPart = ME_Mb8x8;
     mb->McType = ME_FrameMc;
-    mb->MbType = (Ipp8u)mbt;
-    Ipp32s dir = (mb->MbType == ME_MbFrw || mb->MbType == ME_MbFrwSkipped
+    mb->MbType = (uint8_t)mbt;
+    int32_t dir = (mb->MbType == ME_MbFrw || mb->MbType == ME_MbFrwSkipped
         || mb->MbType == ME_MbMixed) ? frw : bkw;
 
     for(int i=0; i<4; i++){
         mb->Refindex[dir][i]= m_cur.BestIdx[dir][i];
         mb->MV[dir][i] = mv[m_cur.BestIdx[dir][i]][i];
-        mb->BlockType[i] = (Ipp8u)m_cur.InterType[i];  // TODO: rename this
+        mb->BlockType[i] = (uint8_t)m_cur.InterType[i];  // TODO: rename this
         mb->MbCosts[i+1] = cost[i]; //0 is for 16x16
         mb->MVPred[dir][i] = m_cur.PredMV[dir][mb->Refindex[dir][i]][i];
     }
@@ -3141,27 +3141,27 @@ void MeBase::EstimateMbInterFullSearchDwn()
 
  
     // TODO: choose right upper level!
-    Ipp32s UpLevel=2; //for 16x16
+    int32_t UpLevel=2; //for 16x16
 
-    for(Ipp32s l=0; l<=UpLevel; l++){
+    for(int32_t l=0; l<=UpLevel; l++){
         m_cur.DwnCost[l] = ME_BIG_COST;
         m_cur.DwnNumOfPoints[l] = 0;
     }
 
-    Ipp32s x0, x1, y0, y1=ME_BIG_COST; //any big number will sute
+    int32_t x0, x1, y0, y1=ME_BIG_COST; //any big number will sute
     x0=y0=-y1; 
     x1=y1; 
     m_PredCalc->TrimSearchRange(m_cur.MbPart,(MePixelType)0, x0, x1, y0, y1);
 
     //allign to 16 for 16x16 upper level search
     // TODO: add padding check here
-    Ipp32s xu0=-((-x0)&(~0xf));
-    Ipp32s xu1=x1&(~0xf);
-    Ipp32s yu0=-((-y0)&(~0xf));
-    Ipp32s yu1=y1&(~0xf);
+    int32_t xu0=-((-x0)&(~0xf));
+    int32_t xu1=x1&(~0xf);
+    int32_t yu0=-((-y0)&(~0xf));
+    int32_t yu1=y1&(~0xf);
 //    if(x0!=xu0 || y0!=yu0 || x1!=xu1 || y1!=yu1) printf("x vs xu (%d:%d) (%d:%d) (%d:%d) (%d:%d) \n",x0, xu0, y0, yu0, x1, xu1, y1, yu1);
 
-    for(Ipp32s l=UpLevel; l>=0; l--){
+    for(int32_t l=UpLevel; l>=0; l--){
         EstimateMbInterOneLevel(l==UpLevel,l, m_cur.MbPart, xu0, xu1, yu0, yu1);
     }
 
@@ -3173,9 +3173,9 @@ void MeBase::EstimateMbInterFullSearchDwn()
 }
 
 
-void MeBase::EstimateMbInterOneLevel(bool UpperLevel, Ipp32s level, MeMbPart mt, Ipp32s x0, Ipp32s x1, Ipp32s y0, Ipp32s y1)
+void MeBase::EstimateMbInterOneLevel(bool UpperLevel, int32_t level, MeMbPart mt, int32_t x0, int32_t x1, int32_t y0, int32_t y1)
 {
-    Ipp16u sadArr[8192];
+    uint16_t sadArr[8192];
     //x0, x1, y0, y1 here are limits for MV, not the pixel coordinates
     MePixelType pix=ME_IntegerPixel;
     switch(level){
@@ -3190,53 +3190,53 @@ void MeBase::EstimateMbInterOneLevel(bool UpperLevel, Ipp32s level, MeMbPart mt,
     MakeRefAdrFromMV(mt, pix, MeMV(x0,y0), &ref);
     MakeSrcAdr(mt,pix,&src);
 
-    Ipp32s step = 4<<level;
+    int32_t step = 4<<level;
     SetError((vm_char*)"Wrong range in EstimateMbInterOneLevel", x0>=x1 || y0>=y1 || (x0&(step-1))!=0 || (x1&(step-1))!=0 || (y0&(step-1))!=0 || (y1&(step-1))!=0);
 
-    Ipp32s NumOfPoints=0;
+    int32_t NumOfPoints=0;
 
     //upper level
     if(UpperLevel){
 
-        for(Ipp32s y=y0; y<y1; y+=step,ref.move(m_CRFormat,(x0-x1)>>(level+2),1)){
+        for(int32_t y=y0; y<y1; y+=step,ref.move(m_CRFormat,(x0-x1)>>(level+2),1)){
 
-            Ipp32s numX = (((abs(x1-x0))/step)>>3)<<3;
+            int32_t numX = (((abs(x1-x0))/step)>>3)<<3;
             GetCost((MeMbPart)(mt>>level), &src, &ref, numX, sadArr);
-            Ipp32s x2 = x0;
+            int32_t x2 = x0;
 
-            for(Ipp32s i=0; i<numX; i++,x2+=step,ref.ptr[Y]+=1){
-                Ipp32s cost=(Ipp32s)sadArr[i];
+            for(int32_t i=0; i<numX; i++,x2+=step,ref.ptr[Y]+=1){
+                int32_t cost=(int32_t)sadArr[i];
                 if(cost<m_cur.DwnCost[level])m_cur.DwnCost[level] = cost;
                 m_cur.DwnPoints[level][NumOfPoints].cost = cost;
-                m_cur.DwnPoints[level][NumOfPoints].x = (Ipp16s)x2;
-                m_cur.DwnPoints[level][NumOfPoints].y = (Ipp16s)y;
+                m_cur.DwnPoints[level][NumOfPoints].x = (int16_t)x2;
+                m_cur.DwnPoints[level][NumOfPoints].y = (int16_t)y;
                 NumOfPoints++;
             }
 
-            for(Ipp32s x=x2; x<x1; x+=step,ref.ptr[Y]+=1){
-                Ipp32s cost = GetCost(ME_Sad, (MeMbPart)(mt>>level), &src, &ref);
+            for(int32_t x=x2; x<x1; x+=step,ref.ptr[Y]+=1){
+                int32_t cost = GetCost(ME_Sad, (MeMbPart)(mt>>level), &src, &ref);
                 if(cost<m_cur.DwnCost[level])m_cur.DwnCost[level] = cost;
                 m_cur.DwnPoints[level][NumOfPoints].cost = cost;
-                m_cur.DwnPoints[level][NumOfPoints].x = (Ipp16s)x;
-                m_cur.DwnPoints[level][NumOfPoints].y = (Ipp16s)y;
+                m_cur.DwnPoints[level][NumOfPoints].x = (int16_t)x;
+                m_cur.DwnPoints[level][NumOfPoints].y = (int16_t)y;
                 NumOfPoints++;
             }
         }
         m_cur.DwnNumOfPoints[level] =NumOfPoints;
     }else{
         //not upper level
-        Ipp32s UpPoints=m_cur.DwnNumOfPoints[level+1];
+        int32_t UpPoints=m_cur.DwnNumOfPoints[level+1];
         SetError((vm_char*)"NumOfPoints==0 in EstimateMbInterOneLevel1", UpPoints ==0);
 
         //calculate threshold
-        Ipp32s MinCost = m_cur.DwnCost[level+1];
-        Ipp32s thr = 4*MinCost;
-        Ipp32s ActivePoints=0;
-        Ipp32s MaxActivePoints=UpPoints/32+16;  //keep at least 16 points
+        int32_t MinCost = m_cur.DwnCost[level+1];
+        int32_t thr = 4*MinCost;
+        int32_t ActivePoints=0;
+        int32_t MaxActivePoints=UpPoints/32+16;  //keep at least 16 points
         // TODO: speed up is needed here
         for(;;){
             ActivePoints=0;
-            for(Ipp32s p=0; p<UpPoints; p++)
+            for(int32_t p=0; p<UpPoints; p++)
                 if(m_cur.DwnPoints[level+1][p].cost<=thr)ActivePoints++;
 
             if(ActivePoints<=MaxActivePoints)break;
@@ -3248,11 +3248,11 @@ void MeBase::EstimateMbInterOneLevel(bool UpperLevel, Ipp32s level, MeMbPart mt,
         // TODO: improved algorithm is needed
         if(ActivePoints>MaxActivePoints){
             //leave only one point, closest to zero MV
-            Ipp32s MinMV=ME_BIG_COST;
-            Ipp32s num=0;
-            for(Ipp32s p=0; p<UpPoints; p++){
+            int32_t MinMV=ME_BIG_COST;
+            int32_t num=0;
+            for(int32_t p=0; p<UpPoints; p++){
                 if(m_cur.DwnPoints[level+1][p].cost==thr){
-                    Ipp32s a=abs(m_cur.DwnPoints[level+1][p].x)+abs(m_cur.DwnPoints[level+1][p].y);
+                    int32_t a=abs(m_cur.DwnPoints[level+1][p].x)+abs(m_cur.DwnPoints[level+1][p].y);
                     if(a<MinMV){
                         num=p;
                         MinMV=a;
@@ -3265,13 +3265,13 @@ void MeBase::EstimateMbInterOneLevel(bool UpperLevel, Ipp32s level, MeMbPart mt,
 
         //estimate points on current level        
         m_cur.ClearMvScoreBoardArr();
-        for(Ipp32s p=0; p<UpPoints; p++){
+        for(int32_t p=0; p<UpPoints; p++){
             if(m_cur.DwnPoints[level+1][p].cost>thr)continue;
-            Ipp32s xt0, xt1, yt0, yt1;
-            xt0=IPP_MAX(m_cur.DwnPoints[level+1][p].x-step,x0);
-            xt1=IPP_MIN(xt0+3*step,x1);
-            yt0=IPP_MAX(m_cur.DwnPoints[level+1][p].y-step,y0);
-            yt1=IPP_MIN(yt0+3*step,y1);
+            int32_t xt0, xt1, yt0, yt1;
+            xt0=MFX_MAX(m_cur.DwnPoints[level+1][p].x-step,x0);
+            xt1=MFX_MIN(xt0+3*step,x1);
+            yt0=MFX_MAX(m_cur.DwnPoints[level+1][p].y-step,y0);
+            yt1=MFX_MIN(yt0+3*step,y1);
 //            xt0=m_cur.DwnPoints[level+1][p].x;
 //            xt1=xt0+2*step;
 //            yt0=m_cur.DwnPoints[level+1][p].y;
@@ -3282,14 +3282,14 @@ void MeBase::EstimateMbInterOneLevel(bool UpperLevel, Ipp32s level, MeMbPart mt,
             MakeSrcAdr(mt,pix,&src);
             
             m_cur.SetScoreBoardFlag();
-            for(Ipp32s y=yt0; y<yt1; y+=step,ref.move(m_CRFormat,(xt0-xt1)>>(level+2),1)){
-                for(Ipp32s x=xt0; x<xt1; x+=step,ref.ptr[Y]+=1){
+            for(int32_t y=yt0; y<yt1; y+=step,ref.move(m_CRFormat,(xt0-xt1)>>(level+2),1)){
+                for(int32_t x=xt0; x<xt1; x+=step,ref.ptr[Y]+=1){
                     if(level!=0){
-                        Ipp32s cost = GetCost(ME_Sad, (MeMbPart)(mt>>level), &src, &ref);
+                        int32_t cost = GetCost(ME_Sad, (MeMbPart)(mt>>level), &src, &ref);
                         if(cost<m_cur.DwnCost[level])m_cur.DwnCost[level] = cost;
                         m_cur.DwnPoints[level][NumOfPoints].cost = cost;
-                        m_cur.DwnPoints[level][NumOfPoints].x = (Ipp16s)x;
-                        m_cur.DwnPoints[level][NumOfPoints].y = (Ipp16s)y;
+                        m_cur.DwnPoints[level][NumOfPoints].x = (int16_t)x;
+                        m_cur.DwnPoints[level][NumOfPoints].y = (int16_t)y;
                         NumOfPoints++;
                     }else{
                         if(!m_cur.CheckScoreBoardMv(pix,MeMV(x,y)))
@@ -3341,7 +3341,7 @@ void MeBase::EstimateMbInterFast()
     EstimatePointInter(m_cur.MbPart, m_par->PixelType, m_PredCalc->GetMvC());
 
     MeMV BestMV = m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][m_cur.BlkIdx];
-    Ipp32s BestCost = m_cur.BestCost;
+    int32_t BestCost = m_cur.BestCost;
 
     m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][m_cur.BlkIdx].x =
         (m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][m_cur.BlkIdx].x >> 2) << 2;
@@ -3388,9 +3388,9 @@ void MeBase::EstimateMbInterFast()
 
 
 
-void MeBase::FullSearch(MeMbPart mt, MePixelType pix, MeMV org, Ipp32s RangeX, Ipp32s RangeY)
+void MeBase::FullSearch(MeMbPart mt, MePixelType pix, MeMV org, int32_t RangeX, int32_t RangeY)
 {
-    Ipp32s Step=1, rangeX, rangeY;
+    int32_t Step=1, rangeX, rangeY;
     rangeX = RangeX;
     rangeY = RangeY;
     if(pix == ME_QuadPixel) {Step = 16; rangeX = (RangeX/16)*16; rangeY = (RangeY/16)*16;}
@@ -3409,45 +3409,45 @@ void MeBase::FullSearch(MeMbPart mt, MePixelType pix, MeMV org, Ipp32s RangeX, I
 
 void MeBase::DiamondSearch(MeMbPart mt, MePixelType pix, MeDiamondType dm)
 {
-    static const Ipp32s BigDiamondTable[][2] = { {-3,0}, {-2,2}, {0,3}, {2,2}, {3,0}, {2,-2}, {0,-3}, {-2,-2} };
-    static const Ipp32s MediumDiamondTable[][2] = { {-2,0}, {-1,1}, {0,2}, {1,1}, {2,0}, {1,-1}, {0,-2}, {-1,-1} };
-    static const Ipp32s SmallDiamondTable[][2] = {{-1,0}, {0,1}, {1,0}, {0,-1}};
-    static const Ipp32s MediumHexagonTable[][2] = {
+    static const int32_t BigDiamondTable[][2] = { {-3,0}, {-2,2}, {0,3}, {2,2}, {3,0}, {2,-2}, {0,-3}, {-2,-2} };
+    static const int32_t MediumDiamondTable[][2] = { {-2,0}, {-1,1}, {0,2}, {1,1}, {2,0}, {1,-1}, {0,-2}, {-1,-1} };
+    static const int32_t SmallDiamondTable[][2] = {{-1,0}, {0,1}, {1,0}, {0,-1}};
+    static const int32_t MediumHexagonTable[][2] = {
                                                 {0,4}, {2,3}, {4,2}, {4,1}, {4,0}, {4,-1}, {4,-2}, {2,-3}, {0,-4}, {-2,-3}, {-4,-2}, {-4,-1}, {-4,0}, {-4,1}, {-4,2}, {-2,3},
                                                 {0,8}, {4,6}, {8,4}, {8,2}, {8,0}, {8,-2}, {8,-4}, {4,-6}, {0,-8}, {-4,-6}, {-8,-4}, {-8,-2}, {-8,0}, {-8,2}, {-8,4}, {-4,6},
                                                 {0,12}, {6,9}, {12,6}, {12,3}, {12,0}, {12,-3}, {12,-6}, {6,-9}, {0,-12}, {-6,-9}, {-12,-6}, {-12,-3}, {-12,0}, {-12,3}, {-12,6}, {-6,9},
                                                 {0,16}, {8,12}, {16,8}, {16,4}, {16,0}, {16,-4}, {16,-8}, {8,-12}, {0,-16}, {-8,-12}, {-16,-8}, {-16,-4}, {-16,0}, {-16,4}, {-16,8}, {-8,12}};
-    static const Ipp32s SmallHexagonTable[][2] = {
+    static const int32_t SmallHexagonTable[][2] = {
                                                 {0,4}, {2,3}, {4,2}, {4,1}, {4,0}, {4,-1}, {4,-2}, {2,-3}, {0,-4}, {-2,-3}, {-4,-2}, {-4,-1}, {-4,0}, {-4,1}, {-4,2}, {-2,3},
                                                 {0,8}, {4,6}, {8,4}, {8,2}, {8,0}, {8,-2}, {8,-4}, {4,-6}, {0,-8}, {-4,-6}, {-8,-4}, {-8,-2}, {-8,0}, {-8,2}, {-8,4}, {-4,6}};
 
-    const Ipp32s* Table=NULL;
-    Ipp32s TableSize = 0;
-    Ipp32s Step = 0;
+    const int32_t* Table=NULL;
+    int32_t TableSize = 0;
+    int32_t Step = 0;
     if(dm == ME_SmallDiamond)
     {
-        Table = (const Ipp32s*)SmallDiamondTable;
-        TableSize = sizeof(SmallDiamondTable)/(2*sizeof(Ipp32s));
+        Table = (const int32_t*)SmallDiamondTable;
+        TableSize = sizeof(SmallDiamondTable)/(2*sizeof(int32_t));
     }
     if(dm == ME_MediumDiamond)
     {
-        Table = (const Ipp32s*)MediumDiamondTable;
-        TableSize = sizeof(MediumDiamondTable)/(2*sizeof(Ipp32s));
+        Table = (const int32_t*)MediumDiamondTable;
+        TableSize = sizeof(MediumDiamondTable)/(2*sizeof(int32_t));
     }
     if(dm == ME_BigDiamond)
     {
-        Table = (const Ipp32s*)BigDiamondTable;
-        TableSize = sizeof(BigDiamondTable)/(2*sizeof(Ipp32s));
+        Table = (const int32_t*)BigDiamondTable;
+        TableSize = sizeof(BigDiamondTable)/(2*sizeof(int32_t));
     }
     if(dm == ME_SmallHexagon)
     {
-        Table = (const Ipp32s*)SmallHexagonTable;
-        TableSize = sizeof(SmallHexagonTable)/(2*sizeof(Ipp32s));
+        Table = (const int32_t*)SmallHexagonTable;
+        TableSize = sizeof(SmallHexagonTable)/(2*sizeof(int32_t));
     }
     if(dm == ME_MediumHexagon)
     {
-        Table = (const Ipp32s*)MediumHexagonTable;
-        TableSize = sizeof(MediumHexagonTable)/(2*sizeof(Ipp32s));
+        Table = (const int32_t*)MediumHexagonTable;
+        TableSize = sizeof(MediumHexagonTable)/(2*sizeof(int32_t));
     }
 
 
@@ -3459,7 +3459,7 @@ void MeBase::DiamondSearch(MeMbPart mt, MePixelType pix, MeDiamondType dm)
         Step = 1;
 
     MeMV   CenterMV = m_cur.BestMV[m_cur.RefDir][m_cur.RefIdx][m_cur.BlkIdx];
-    for(Ipp32s i=0; i<TableSize; i++)
+    for(int32_t i=0; i<TableSize; i++)
         EstimatePointInter(mt, pix, CenterMV + MeMV(Step*Table[2*i+0], Step*Table[2*i+1]));
 }
 
@@ -3507,13 +3507,13 @@ void MeBase::Close()
 {
     //save presets
     #ifdef ME_GENERATE_PRESETS    
-    Ipp32s idx = QpToIndex(MeQP, MeQPUNF);
-    pStat->SaveRegression((Ipp8u*)"ME_RG_DInter", 0, NULL, NULL, 0, idx, &m_InterRegFunD);
-    pStat->SaveRegression((Ipp8u*)"ME_RG_RInter", 0, NULL, NULL, 0, idx, &m_InterRegFunR);
-    pStat->SaveRegression((Ipp8u*)"ME_RG_JInter", 0, NULL, NULL, 0, idx, &m_InterRegFunJ);
-    pStat->SaveRegression((Ipp8u*)"ME_RG_RMV",    0, NULL, NULL, 0, idx, &m_MvRegrFunR);
-    pStat->SaveRegression((Ipp8u*)"ME_RG_DIntra", 0, NULL, NULL, 0, idx, &m_IntraRegFunD);
-    pStat->SaveRegression((Ipp8u*)"ME_RG_RIntra", 0, NULL, NULL, 0, idx, &m_IntraRegFunR);
+    int32_t idx = QpToIndex(MeQP, MeQPUNF);
+    pStat->SaveRegression((uint8_t*)"ME_RG_DInter", 0, NULL, NULL, 0, idx, &m_InterRegFunD);
+    pStat->SaveRegression((uint8_t*)"ME_RG_RInter", 0, NULL, NULL, 0, idx, &m_InterRegFunR);
+    pStat->SaveRegression((uint8_t*)"ME_RG_JInter", 0, NULL, NULL, 0, idx, &m_InterRegFunJ);
+    pStat->SaveRegression((uint8_t*)"ME_RG_RMV",    0, NULL, NULL, 0, idx, &m_MvRegrFunR);
+    pStat->SaveRegression((uint8_t*)"ME_RG_DIntra", 0, NULL, NULL, 0, idx, &m_IntraRegFunD);
+    pStat->SaveRegression((uint8_t*)"ME_RG_RIntra", 0, NULL, NULL, 0, idx, &m_IntraRegFunR);
     #endif
 
     free(m_OwnMem);
@@ -3595,7 +3595,7 @@ bool MeBase::CheckParams()
 //    if( m_par->SearchDirection == ME_BidirSearch && (m_par->pRefB==NULL || m_par->pRefB[0]->ptr[0]==NULL))
 //        return false;
 
-    Ipp32s NMB =  m_par->pSrc->WidthMB*m_par->pSrc->HeightMB;
+    int32_t NMB =  m_par->pSrc->WidthMB*m_par->pSrc->HeightMB;
     if(m_par->FirstMB ==-1 && m_par->LastMB==-1){
         m_par->FirstMB =0;
         m_par->LastMB = NMB-1;
@@ -3620,9 +3620,9 @@ bool MeBase::CheckParams()
     return true;
  }
 
-inline Ipp32s MeBase::WeightMV(MeMV mv, MeMV predictor)
+inline int32_t MeBase::WeightMV(MeMV mv, MeMV predictor)
 {
-    static const Ipp32s cost_table[128] =
+    static const int32_t cost_table[128] =
                     { 2, 4, 8, 8,12,12,12,12,
                      16,16,16,16,16,16,16,16,
                      20,20,20,20,20,20,20,20,
@@ -3641,19 +3641,19 @@ inline Ipp32s MeBase::WeightMV(MeMV mv, MeMV predictor)
                      28,28,28,28,28,28,28,28
                      };
 
-    Ipp32s d = abs(mv.x-predictor.x) + abs(mv.y-predictor.y);
+    int32_t d = abs(mv.x-predictor.x) + abs(mv.y-predictor.y);
     if(d > 127) return 32;
     return cost_table[d & 0x0000007f];
 }
 
-Ipp32s MeBase::QpToIndex(Ipp32s QP, bool UniformQuant)
+int32_t MeBase::QpToIndex(int32_t QP, bool UniformQuant)
 {
     // 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,54,58,62
     // 1,2,...,36
 
     //convert all QP to 1-72 range, 0 means unsupported combination
     //from 1 to 36 are uniform quants, from 37 to 72 non uniform
-    Ipp32s idx=0;
+    int32_t idx=0;
     if(QP>=2 && QP <=17)idx=QP-1; //1-16
     else if(QP>=18 && QP <=50 && (QP&1)==0) idx=(QP-18)/2+17; //17-33
     else if(QP==54 ||  QP==58 || QP==62) idx=(QP-54)/4+34; //34-36
@@ -3723,13 +3723,13 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     
     //calculate distortion
     // TODO: add check here that pFrame->SrcPlane != pFrame->RecPlane
-    for(Ipp32s y=0; y<pFrame->HeightMB; y++){
-        for(Ipp32s x=0; x<pFrame->WidthMB; x++){
-            Ipp32s adr = pFrame->WidthMB*y + x;
-            Ipp8u* pS=pFrame->SrcPlane.at(Y,16*x,16*y);//source MB
-            Ipp8u* pR=pFrame->RecPlane.at(Y,16*x,16*y);; //reconstructed MB
+    for(int32_t y=0; y<pFrame->HeightMB; y++){
+        for(int32_t x=0; x<pFrame->WidthMB; x++){
+            int32_t adr = pFrame->WidthMB*y + x;
+            uint8_t* pS=pFrame->SrcPlane.at(Y,16*x,16*y);//source MB
+            uint8_t* pR=pFrame->RecPlane.at(Y,16*x,16*y);; //reconstructed MB
 
-            Ipp32s sum=0;
+            int32_t sum=0;
             ippiSqrDiff16x16_8u32s(pS, pFrame->SrcPlane.step[Y], pR, pFrame->RecPlane.step[Y], IPPVC_MC_APX_FF, &sum);
             pFrame->stat[adr].dist = sum;
         }
@@ -3742,10 +3742,10 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     if(!pPar->UpdateFeedback)
         return;
 
-    Ipp32s x[16384];
-    Ipp32s y[16384];
-    Ipp32s NumOfMB=pFrame->WidthMB*pFrame->HeightMB, N;
-    Ipp32s QpIdx=QpToIndex(pPar->Quant, pPar->UniformQuant);
+    int32_t x[16384];
+    int32_t y[16384];
+    int32_t NumOfMB=pFrame->WidthMB*pFrame->HeightMB, N;
+    int32_t QpIdx=QpToIndex(pPar->Quant, pPar->UniformQuant);
 
 
     static int counter=0;   
@@ -3766,9 +3766,9 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     int nInter=0,nIntra=0;
 
     N=0; 
-    for(Ipp32s i=0; i<NumOfMB; i++){
+    for(int32_t i=0; i<NumOfMB; i++){
         //whole frame statistics
-        Ipp32s coeffS=pFrame->stat[i].coeff[0]+pFrame->stat[i].coeff[1]+pFrame->stat[i].coeff[2]+pFrame->stat[i].coeff[3]+pFrame->stat[i].coeff[4]+pFrame->stat[i].coeff[5];
+        int32_t coeffS=pFrame->stat[i].coeff[0]+pFrame->stat[i].coeff[1]+pFrame->stat[i].coeff[2]+pFrame->stat[i].coeff[3]+pFrame->stat[i].coeff[4]+pFrame->stat[i].coeff[5];
         if(pFrame->MBs[i].MbType == ME_MbIntra){
             nIntra++;
             AcSize+=coeffS;
@@ -3789,7 +3789,7 @@ void MeBase::ProcessFeedback(MeParams *pPar)
             x[N] = pFrame->MBs[i].InterCostRD.D;
             //x[N] = pFrame->MBs[i].MbCosts[0]; //SAD
             if(m_par->UseFastFeedback)
-                y[N] = (Ipp32s)(pFrame->stat[i].dist+m_lambda*(pFrame->stat[i].whole-pFrame->stat[i].MVF[0]));
+                y[N] = (int32_t)(pFrame->stat[i].dist+m_lambda*(pFrame->stat[i].whole-pFrame->stat[i].MVF[0]));
             else
                 y[N] = pFrame->stat[i].dist;
                 
@@ -3799,12 +3799,12 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     }
     m_InterRegFunD.ProcessFeedback(x, y, N);
 #ifdef ME_DEBUG
-    if(SaveRegr)pStat->SaveRegression((Ipp8u*)"ME_RG_DInter", counter, x, y, N, QpIdx, &m_InterRegFunD);
+    if(SaveRegr)pStat->SaveRegression((uint8_t*)"ME_RG_DInter", counter, x, y, N, QpIdx, &m_InterRegFunD);
     //printf("Inter Mv=%5d Ac=%5d Whole=%5d CbpSizeInter=%5d MvCbpSizeIntra=%5d  Mv+Cbp=%5d\n",  MvSize, AcSize, WholeSize, CbpSizeInter, MvCbpSizeIntra, MvSize+CbpSizeInter+MvCbpSizeIntra);
 #endif
 
     N=0;
-    for(Ipp32s i=0; i<NumOfMB && !m_par->UseFastFeedback; i++){
+    for(int32_t i=0; i<NumOfMB && !m_par->UseFastFeedback; i++){
         if(pFrame->MBs[i].MbType == ME_MbFrw){
             //x[N] = pFrame->MBs[i].MbCosts[0];
             x[N] = pFrame->MBs[i].InterCostRD.R;
@@ -3818,26 +3818,26 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     }
     m_InterRegFunR.ProcessFeedback(x, y, N);
 #ifdef ME_DEBUG
-    if(SaveRegr)pStat->SaveRegression((Ipp8u*)"ME_RG_RInter", counter, x, y, N, QpIdx, &m_InterRegFunR);
+    if(SaveRegr)pStat->SaveRegression((uint8_t*)"ME_RG_RInter", counter, x, y, N, QpIdx, &m_InterRegFunR);
 #endif
 
 
     N=0;
-    for(Ipp32s i=0; i<NumOfMB; i++){
+    for(int32_t i=0; i<NumOfMB; i++){
         if(pFrame->MBs[i].MbType == ME_MbFrw){
             x[N] = pFrame->MBs[i].PureSAD;
-            //y[N] = (Ipp32s)( m_InterRegFunD.Weight(pFrame->MBs[i].InterCostD)+m_lambda*(m_InterRegFunR.Weight(pFrame->MBs[i].InterCostR)));
-            y[N] = (Ipp32s)(pFrame->stat[i].dist+m_lambda*(pFrame->stat[i].whole-pFrame->stat[i].MVF[0]));
+            //y[N] = (int32_t)( m_InterRegFunD.Weight(pFrame->MBs[i].InterCostD)+m_lambda*(m_InterRegFunR.Weight(pFrame->MBs[i].InterCostR)));
+            y[N] = (int32_t)(pFrame->stat[i].dist+m_lambda*(pFrame->stat[i].whole-pFrame->stat[i].MVF[0]));
             N++;
         }
     }
     m_InterRegFunJ.ProcessFeedback(x, y, N);
 #ifdef ME_DEBUG
-    if(SaveRegr)pStat->SaveRegression((Ipp8u*)"ME_RG_JInter", counter, x, y, N, QpIdx, &m_InterRegFunJ);
+    if(SaveRegr)pStat->SaveRegression((uint8_t*)"ME_RG_JInter", counter, x, y, N, QpIdx, &m_InterRegFunJ);
 #endif
 
     N=0;
-    for(Ipp32s i=0; i<NumOfMB && m_par->UseFastFeedback; i++){
+    for(int32_t i=0; i<NumOfMB && m_par->UseFastFeedback; i++){
         if(pFrame->MBs[i].MbType == ME_MbFrw){
            x[N] = abs(pFrame->MBs[i].MV[frw][0].x - pFrame->MBs[i].MVPred[frw][0].x)+abs(pFrame->MBs[i].MV[frw][0].y - pFrame->MBs[i].MVPred[frw][0].y);
 //            x[N] = GetMvSize(pFrame->MBs[i].MV[frw][0].x - pFrame->MBs[i].MVPred[frw][0].x,pFrame->MBs[i].MV[frw][0].y - pFrame->MBs[i].MVPred[frw][0].y,i);
@@ -3850,17 +3850,17 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     }
     m_MvRegrFunR.ProcessFeedback(x, y, N);
 #ifdef ME_DEBUG
-    if(SaveRegr)pStat->SaveRegression((Ipp8u*)"ME_RG_RMV", counter, x, y, N, QpIdx, &m_MvRegrFunR);
+    if(SaveRegr)pStat->SaveRegression((uint8_t*)"ME_RG_RMV", counter, x, y, N, QpIdx, &m_MvRegrFunR);
 #endif
 
     //1 INTRA
     N=0;
-    for(Ipp32s i=0; i<NumOfMB; i++){
+    for(int32_t i=0; i<NumOfMB; i++){
         if(pFrame->MBs[i].MbType == ME_MbIntra){
             x[N] = pFrame->MBs[i].IntraCostRD.D;
             //x[N] = pFrame->MBs[i].MbCosts[0];
             if(m_par->UseFastFeedback)
-                y[N] = (Ipp32s)(pFrame->stat[i].dist+m_lambda*pFrame->stat[i].whole);
+                y[N] = (int32_t)(pFrame->stat[i].dist+m_lambda*pFrame->stat[i].whole);
             else
                 y[N] = pFrame->stat[i].dist;
             //printf("%5d, %5d\n",x[N], y[N] );
@@ -3869,11 +3869,11 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     }
     m_IntraRegFunD.ProcessFeedback(x, y, N);
 #ifdef ME_DEBUG
-    if(SaveRegr)pStat->SaveRegression((Ipp8u*)"ME_RG_DIntra", counter, x, y, N, QpIdx, &m_IntraRegFunD);
+    if(SaveRegr)pStat->SaveRegression((uint8_t*)"ME_RG_DIntra", counter, x, y, N, QpIdx, &m_IntraRegFunD);
 #endif
 
     N=0;
-    for(Ipp32s i=0; i<NumOfMB && !m_par->UseFastFeedback; i++){
+    for(int32_t i=0; i<NumOfMB && !m_par->UseFastFeedback; i++){
         if(pFrame->MBs[i].MbType == ME_MbIntra){
             //x[N] = pFrame->MBs[i].MbCosts[0];
             x[N] = pFrame->MBs[i].IntraCostRD.R;
@@ -3885,7 +3885,7 @@ void MeBase::ProcessFeedback(MeParams *pPar)
     }
     m_IntraRegFunR.ProcessFeedback(x, y, N);
 #ifdef ME_DEBUG
-    if(SaveRegr)pStat->SaveRegression((Ipp8u*)"ME_RG_RIntra", counter, x, y, N, QpIdx, &m_IntraRegFunR);
+    if(SaveRegr)pStat->SaveRegression((uint8_t*)"ME_RG_RIntra", counter, x, y, N, QpIdx, &m_IntraRegFunR);
 #endif
 
 }
@@ -3926,7 +3926,7 @@ void MeVC1::SetInterpPixelType(MeParams *par)
         return;
     }
 
-    Ipp32s cost = IPP_MIN(CostOnInterpolation[1], CostOnInterpolation[3]);
+    int32_t cost = MFX_MIN(CostOnInterpolation[1], CostOnInterpolation[3]);
     if(cost == CostOnInterpolation[1])
     {
         par->OutInterpolation = ME_VC1_Bilinear;
@@ -3962,8 +3962,8 @@ bool MeVC1::EstimateSkip()
 
 bool MeVC1::EstimateSkip16x16()
 {
-    Ipp32s i, j;
-    Ipp32s tmpCost, tmpCostU, tmpCostV;
+    int32_t i, j;
+    int32_t tmpCost, tmpCostU, tmpCostV;
     bool OutBoundF = false;
     bool OutBoundB = false;
         //P & B
@@ -4014,11 +4014,11 @@ bool MeVC1::EstimateSkip16x16()
        
         MeAdr src, ref; src.chroma=ref.chroma=true; //true means load also chroma plane addresses
         MeAdr ref0, ref1; ref0.chroma=ref1.chroma=true; //true means load also chroma plane addresses
-        Ipp32s mvSize = 0;
+        int32_t mvSize = 0;
 
         //for NV12:
-        Ipp8u buf1[64];
-        Ipp8u buf2[64];
+        uint8_t buf1[64];
+        uint8_t buf2[64];
 
         if(m_cur.SkipType[0] == ME_MbFrwSkipped)
         {
@@ -4082,12 +4082,12 @@ bool MeVC1::EstimateSkip16x16()
             src.move(U,8,0);
             tmpCostV = GetCost(m_par->CostMetric, ME_Mb8x8, &src, &ref);
         }
-       // Ipp32s th = m_SkippedThreshold/4;
+       // int32_t th = m_SkippedThreshold/4;
        //  if(tmpCostU < th && tmpCostV < th)
        // {
        //     return true;
        // }
-        Ipp32s th = m_SkippedThreshold/2;
+        int32_t th = m_SkippedThreshold/2;
         if(tmpCostU + tmpCostV < th)
         {
             return true;
@@ -4101,13 +4101,13 @@ bool MeVC1::EstimateSkip16x16()
 
 bool MeVC1::EstimateSkip8x8()
 {
-    Ipp32s i;
-    Ipp32s tmpCostF[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpCostB[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpIdxF[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpIdxB[ME_NUM_OF_BLOCKS];
-    Ipp32s tmpCost;
-    Ipp32s OutOfBoundCount = 0;
+    int32_t i;
+    int32_t tmpCostF[ME_NUM_OF_BLOCKS];
+    int32_t tmpCostB[ME_NUM_OF_BLOCKS];
+    int32_t tmpIdxF[ME_NUM_OF_BLOCKS];
+    int32_t tmpIdxB[ME_NUM_OF_BLOCKS];
+    int32_t tmpCost;
+    int32_t OutOfBoundCount = 0;
 
     for(i = 0; i < ME_NUM_OF_BLOCKS; i++)
     {
@@ -4189,8 +4189,8 @@ bool MeVC1::EstimateSkip8x8()
 
     if(tmpCostF[0] != ME_BIG_COST && tmpCostB[0] != ME_BIG_COST)
     {
-        Ipp32s sumF = tmpCostF[0] + tmpCostF[1] + tmpCostF[2] + tmpCostF[3];
-        Ipp32s sumB = tmpCostB[0] + tmpCostB[1] + tmpCostB[2] + tmpCostB[3];
+        int32_t sumF = tmpCostF[0] + tmpCostF[1] + tmpCostF[2] + tmpCostF[3];
+        int32_t sumB = tmpCostB[0] + tmpCostB[1] + tmpCostB[2] + tmpCostB[3];
 
         if(sumF < sumB)
         {
@@ -4240,7 +4240,7 @@ bool MeVC1::EstimateSkip8x8()
     }
 
     MeMV mv;
-    Ipp32s dir = m_cur.SkipType[0] == ME_MbFrwSkipped? frw: bkw;
+    int32_t dir = m_cur.SkipType[0] == ME_MbFrwSkipped? frw: bkw;
     MeMV mvx[4];
     mvx[0]= m_cur.PredMV[dir][m_cur.SkipIdx[dir][0]][0];
     mvx[1]= m_cur.PredMV[dir][m_cur.SkipIdx[dir][1]][1];
@@ -4250,7 +4250,7 @@ bool MeVC1::EstimateSkip8x8()
     mv.y=median4(mvx[0].y, mvx[1].y,mvx[2].y,mvx[3].y);
 
     m_cur.RefDir = dir;
-    Ipp32s c_idx = m_cur.SkipIdx[dir][0]+m_cur.SkipIdx[dir][1]+m_cur.SkipIdx[dir][2]+m_cur.SkipIdx[dir][3]; 
+    int32_t c_idx = m_cur.SkipIdx[dir][0]+m_cur.SkipIdx[dir][1]+m_cur.SkipIdx[dir][2]+m_cur.SkipIdx[dir][3]; 
     m_cur.RefIdx = c_idx < 3? 0 : 1;
 
     if(m_PredCalc->IsOutOfBound(ME_Mb16x16, m_par->PixelType, mv))
@@ -4267,7 +4267,7 @@ bool MeVC1::EstimateSkip8x8()
     MakeRefAdrFromMV(ME_Mb16x16, m_par->PixelType, mv, &ref);
     MakeSrcAdr(ME_Mb16x16, m_par->PixelType, &src);
 
-    Ipp32s tmpCostU,tmpCostV;
+    int32_t tmpCostU,tmpCostV;
 
     if(m_CRFormat == ME_YUV420)
     {
@@ -4284,12 +4284,12 @@ bool MeVC1::EstimateSkip8x8()
         src.move(U,8,0);
         tmpCostV = GetCost(m_par->CostMetric, ME_Mb8x8, &src, &ref);
     }
-   // Ipp32s th = m_SkippedThreshold/4;
+   // int32_t th = m_SkippedThreshold/4;
    //  if(tmpCostU < th && tmpCostV < th)
    // {
    //     return true;
    // }
-    Ipp32s th = m_SkippedThreshold/2;
+    int32_t th = m_SkippedThreshold/2;
     if(tmpCostU + tmpCostV < th)
     {
         return true;
@@ -4322,7 +4322,7 @@ void MeVC1::EstimateMB8x8()
         return;
     }
 
-    Ipp32s i;
+    int32_t i;
     for(m_cur.BlkIdx=0; m_cur.BlkIdx<4; m_cur.BlkIdx++)
     {
         for(i=0; i<m_par->FRefFramesNum; i++)
@@ -4339,7 +4339,7 @@ void MeVC1::EstimateMB8x8()
     }
     if(m_par->SearchDirection == ME_BidirSearch)
     {
-        Ipp32s InterCost[4];
+        int32_t InterCost[4];
         for(i=0; i<4; i++)
         {
             InterCost[i] = m_cur.InterCost[i];
@@ -4358,8 +4358,8 @@ void MeVC1::EstimateMB8x8()
                 MakeBlockModeDecision();
             }
         }
-        Ipp32s SumF = InterCost[0]+ InterCost[1]+InterCost[2]+InterCost[3];
-        Ipp32s SumB = m_cur.InterCost[0]+ m_cur.InterCost[1]+m_cur.InterCost[2]+m_cur.InterCost[3];
+        int32_t SumF = InterCost[0]+ InterCost[1]+InterCost[2]+InterCost[3];
+        int32_t SumB = m_cur.InterCost[0]+ m_cur.InterCost[1]+m_cur.InterCost[2]+m_cur.InterCost[3];
         if(SumF < SumB)
         {
             for(i=0; i<4; i++)
@@ -4373,14 +4373,14 @@ void MeVC1::EstimateMB8x8()
 }
 ///Function select best transforming type for inter block.
 
-Ipp32s MeVC1::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
+int32_t MeVC1::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB)
+                                           int32_t IdxF, int32_t IdxB)
 {
     MeAdr src, ref; src.chroma=ref.chroma=false; //true means load also chroma plane addresses
     MeAdr ref0, ref1; ref0.chroma=ref1.chroma=false; //true means load also chroma plane addresses
-    Ipp32s mvSize = 0;
+    int32_t mvSize = 0;
 
     if(type == ME_MbFrw)
     {
@@ -4421,19 +4421,19 @@ Ipp32s MeVC1::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
     if(mt == ME_Mb16x16)
     {
         //calculate transforming costs
-        Ipp32s c[4][4];
-        for(Ipp32s blk=0; blk<4; blk++){
+        int32_t c[4][4];
+        for(int32_t blk=0; blk<4; blk++){
             m_cur.BlkIdx = blk; //it is for DC prediction calculation
             //luma
             src.channel=Y;
             MeAdr src1 = src;
             MeAdr ref1 = ref;
-            for(Ipp32s t=0; t<4; t++)
+            for(int32_t t=0; t<4; t++)
             {
                 ippiSAD4x4_8u32s(src1.ptr[Y], src1.step[Y], ref1.ptr[Y], ref1.step[Y], 
                     &c[blk][t], 0);
                 c[blk][t] /= 64;
-                Ipp32s dx=4, dy=0;
+                int32_t dx=4, dy=0;
                 if(t==1){dx=-dx; dy=4;}
                 src1.move(Y,dx,dy);
                 ref1.move(Y,dx,dy);
@@ -4458,7 +4458,7 @@ Ipp32s MeVC1::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
             {
                 m_cur.InterTransf[type][blk] = ME_Tranform4x4;
             }
-            Ipp32s dx=8, dy=0;
+            int32_t dx=8, dy=0;
             if(blk==1){dx=-dx; dy=8;}
             src.move(Y,dx,dy);
             ref.move(Y,dx,dy);
@@ -4471,9 +4471,9 @@ Ipp32s MeVC1::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
     else if(mt == ME_Mb8x8)
     {
         //calculate transforming costs
-        Ipp32s c[4];
+        int32_t c[4];
 
-        for(Ipp32s t=0; t<4; t++)
+        for(int32_t t=0; t<4; t++)
         {
             ippiSAD4x4_8u32s(src.ptr[Y], src.step[Y], ref.ptr[Y], ref.step[Y], 
                 &c[t], 0);
@@ -4510,7 +4510,7 @@ Ipp32s MeVC1::MakeTransformDecisionInterFast(MeMbPart mt, MePixelType pix,
 MeCostRD MeVC1::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
                                            MeMbType type,
                                            MeMV mvF, MeMV mvB,
-                                           Ipp32s IdxF, Ipp32s IdxB)
+                                           int32_t IdxF, int32_t IdxB)
 {
    // SetError((vm_char*)"Wrong SearchDirection in MakeTransformDecisionInter", m_par->SearchDirection != ME_ForwardSearch);
     SetError((vm_char*)"Wrong MbPart in MakeTransformDecisionInter", mt != ME_Mb16x16);
@@ -4520,9 +4520,9 @@ MeCostRD MeVC1::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
     MeCostRD res=0;
     MeAdr src, ref; src.chroma=ref.chroma=true; //true means load also chroma plane addresses
     MeAdr ref0, ref1; ref0.chroma=ref1.chroma=true; //true means load also chroma plane addresses
-    Ipp32s mvSize = 0;
-    Ipp32s BestCost = ME_BIG_COST;
-    Ipp32s CurCost  = ME_BIG_COST;
+    int32_t mvSize = 0;
+    int32_t BestCost = ME_BIG_COST;
+    int32_t CurCost  = ME_BIG_COST;
 
     if(type == ME_MbFrw)
     {
@@ -4571,16 +4571,16 @@ MeCostRD MeVC1::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
     //calculate transforming costs
     MeTransformType tr[4]={ME_Tranform8x8, ME_Tranform8x4, ME_Tranform4x8,ME_Tranform4x4};
     MeCostRD c[6][4]; 
-    Ipp32s num_blk = (m_CRFormat == ME_YUV420) ? 6 : 5;
-    for(Ipp32s blk=0; blk<num_blk; blk++){
+    int32_t num_blk = (m_CRFormat == ME_YUV420) ? 6 : 5;
+    for(int32_t blk=0; blk<num_blk; blk++){
         m_cur.BlkIdx = blk; //it is for DC prediction calculation
         if(blk<4){
             //luma
             src.channel=Y;
-            for(Ipp32s t=0; t<4; t++){
+            for(int32_t t=0; t<4; t++){
                 c[blk][t] = GetCostRD(ME_InterRD,ME_Mb8x8,tr[t],&src,&ref);
             }
-            Ipp32s dx=8, dy=0;
+            int32_t dx=8, dy=0;
             if(blk==1){dx=-dx; dy=8;}
             src.move(Y,dx,dy);
             ref.move(Y,dx,dy);
@@ -4595,13 +4595,13 @@ MeCostRD MeVC1::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
 
     m_cur.InterTransf[type][4] = ME_Tranform8x8;
     m_cur.InterTransf[type][5] = ME_Tranform8x8;
-    //Ipp32s BestCost=ME_BIG_COST;//!!!!!!!!!!!!!!!!!
-    Ipp32s ContCounter=0;
-    Ipp32s b0, b1, b2, b3;
-    for(Ipp32s i0=0; i0<4; i0++){ //cycle for all transform types
-        for(Ipp32s i1=0; i1<4; i1++){
-            for(Ipp32s i2=0; i2<4; i2++){
-                for(Ipp32s i3=0; i3<4; i3++){
+    //int32_t BestCost=ME_BIG_COST;//!!!!!!!!!!!!!!!!!
+    int32_t ContCounter=0;
+    int32_t b0, b1, b2, b3;
+    for(int32_t i0=0; i0<4; i0++){ //cycle for all transform types
+        for(int32_t i1=0; i1<4; i1++){
+            for(int32_t i2=0; i2<4; i2++){
+                for(int32_t i3=0; i3<4; i3++){
                     CurCost=c[0][i0].J+c[1][i1].J+c[2][i2].J+c[3][i3].J;
                     if(CurCost>=BestCost)continue;
                     m_cur.InterTransf[type][0] = tr[i0];
@@ -4616,7 +4616,7 @@ MeCostRD MeVC1::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
                     res+=c[4][0];
                     res+=c[5][0];
                     AddHeaderCost(res, m_cur.InterTransf[type], type,0,0);
-                    CurCost=(Ipp32s)(res.D+m_lambda*res.R);
+                    CurCost=(int32_t)(res.D+m_lambda*res.R);
                     if(CurCost<BestCost){
                         BestCost=CurCost;
                         b0=i0; b1=i1;b2=i2;b3=i3;
@@ -4663,13 +4663,13 @@ MeCostRD MeVC1::MakeTransformDecisionInter(MeMbPart mt, MePixelType pix,
     return res;
 }
 
-Ipp8u MeVC1::GetCoeffMode( Ipp32s &run, Ipp32s &level, const Ipp8u *pTableDR, const Ipp8u *pTableDL)
+uint8_t MeVC1::GetCoeffMode( int32_t &run, int32_t &level, const uint8_t *pTableDR, const uint8_t *pTableDL)
 {
     bool sign  = level < 0;
     level = (sign)? -level : level;
     if (run <= pTableDR[1])
     {
-        Ipp8u maxLevel = pTableDL[run];
+        uint8_t maxLevel = pTableDL[run];
         if (level <= maxLevel)
         {
             return 0;
@@ -4682,10 +4682,10 @@ Ipp8u MeVC1::GetCoeffMode( Ipp32s &run, Ipp32s &level, const Ipp8u *pTableDR, co
     }
     if (level <= pTableDL[0])
     {
-        Ipp8u maxRun = pTableDR[level];
-        if (run <= (Ipp8u)(2*maxRun + 1))
+        uint8_t maxRun = pTableDR[level];
+        if (run <= (uint8_t)(2*maxRun + 1))
         {
-            run = run - (Ipp8u)maxRun - 1;
+            run = run - (uint8_t)maxRun - 1;
             return 2;
         }
     }
@@ -4693,10 +4693,10 @@ Ipp8u MeVC1::GetCoeffMode( Ipp32s &run, Ipp32s &level, const Ipp8u *pTableDR, co
 }
 
 //DC here is predicted value, only for Intra
-Ipp32s MeVC1::GetAcCoeffSize(Ipp16s *ptr, Ipp32s DC, MeTransformType transf, Ipp32s QP, bool luma, bool intra)
+int32_t MeVC1::GetAcCoeffSize(int16_t *ptr, int32_t DC, MeTransformType transf, int32_t QP, bool luma, bool intra)
 {
     static const int DCEscIdx=119;
-    const Ipp32u*  pDC;
+    const uint32_t*  pDC;
     if(luma)pDC=m_par->DcTableLuma;
     else pDC=m_par->DcTableChroma;
 
@@ -4709,9 +4709,9 @@ Ipp32s MeVC1::GetAcCoeffSize(Ipp16s *ptr, Ipp32s DC, MeTransformType transf, Ipp
         else tblSet = (MeACTablesSet*)&ACTablesSet[ChromaCodingSetsIntra[m_cur.qp8][m_cur.AcTableIndex]];
     }
 
-    const Ipp8u *scan = m_par->ScanTable[0];
-    Ipp32s NumOfSubBlocks=1;
-    Ipp32s SubBlockSize=64;
+    const uint8_t *scan = m_par->ScanTable[0];
+    int32_t NumOfSubBlocks=1;
+    int32_t SubBlockSize=64;
     switch(transf){
         case ME_Tranform4x4:
             NumOfSubBlocks=4;
@@ -4735,22 +4735,22 @@ Ipp32s MeVC1::GetAcCoeffSize(Ipp16s *ptr, Ipp32s DC, MeTransformType transf, Ipp
             break;
     }
 
-    Ipp32s length=0;
-    for(Ipp32s sb=0; sb<NumOfSubBlocks; sb++,ptr+=SubBlockSize){
-        Ipp32s run=0, level;
-        Ipp32s first=(intra?1:0); //don't take intra DC into account
-        Ipp32s last=-1;
-        Ipp32s i;
+    int32_t length=0;
+    for(int32_t sb=0; sb<NumOfSubBlocks; sb++,ptr+=SubBlockSize){
+        int32_t run=0, level;
+        int32_t first=(intra?1:0); //don't take intra DC into account
+        int32_t last=-1;
+        int32_t i;
         int mode;
-        const Ipp32u    *pEnc   = tblSet->pEncTable;
-        const Ipp8u     *pDR    = tblSet->pTableDR;
-        const Ipp8u     *pDL    = tblSet->pTableDL;
-        const Ipp8u     *pIdx   = tblSet->pTableInd;
+        const uint32_t    *pEnc   = tblSet->pEncTable;
+        const uint8_t     *pDR    = tblSet->pTableDR;
+        const uint8_t     *pDL    = tblSet->pTableDL;
+        const uint8_t     *pIdx   = tblSet->pTableInd;
          
         //process Intra DC
         if(intra){
             DC=abs(DC);
-            Ipp32s AddOn=1, EscAddOn=9; 
+            int32_t AddOn=1, EscAddOn=9; 
             if(QP/2==1){DC=(DC+3)>>2;AddOn=3;EscAddOn=11;}
             else if(QP/2==2){DC=(DC+1)>>1;AddOn=2;EscAddOn=10;}
 
@@ -4800,7 +4800,7 @@ Ipp32s MeVC1::GetAcCoeffSize(Ipp16s *ptr, Ipp32s DC, MeTransformType transf, Ipp
                 case 1:
                     length += pEnc[1]+mode; //escape
                 case 0:
-                    Ipp32s index = pIdx[run] + level;
+                    int32_t index = pIdx[run] + level;
                     length += pEnc[2*index + 1]+1;
                     break;
             }
@@ -4810,10 +4810,10 @@ Ipp32s MeVC1::GetAcCoeffSize(Ipp16s *ptr, Ipp32s DC, MeTransformType transf, Ipp
     return length;
 }
 
-Ipp32s MeVC1::GetOneAcCoeffSize(Ipp32s level, Ipp32s run, Ipp32s QP, bool dc, bool luma, bool intra, bool last)
+int32_t MeVC1::GetOneAcCoeffSize(int32_t level, int32_t run, int32_t QP, bool dc, bool luma, bool intra, bool last)
 {
     static const int DCEscIdx=119;
-    const Ipp32u*  pDC;
+    const uint32_t*  pDC;
     if(luma)pDC=m_par->DcTableLuma;
     else pDC=m_par->DcTableChroma;
 
@@ -4826,13 +4826,13 @@ Ipp32s MeVC1::GetOneAcCoeffSize(Ipp32s level, Ipp32s run, Ipp32s QP, bool dc, bo
         else tblSet = (MeACTablesSet*)&ACTablesSet[ChromaCodingSetsIntra[m_cur.qp8][m_cur.AcTableIndex]];
     }
 
-    Ipp32s length=0;
+    int32_t length=0;
     int mode;
 
-    const Ipp32u    *pEnc   = tblSet->pEncTable;
-    const Ipp8u     *pDR    = tblSet->pTableDR;
-    const Ipp8u     *pDL    = tblSet->pTableDL;
-    const Ipp8u     *pIdx   = tblSet->pTableInd;
+    const uint32_t    *pEnc   = tblSet->pEncTable;
+    const uint8_t     *pDR    = tblSet->pTableDR;
+    const uint8_t     *pDL    = tblSet->pTableDL;
+    const uint8_t     *pIdx   = tblSet->pTableInd;
 
     if(last){
         pDR    = tblSet->pTableDRLast;
@@ -4845,7 +4845,7 @@ Ipp32s MeVC1::GetOneAcCoeffSize(Ipp32s level, Ipp32s run, Ipp32s QP, bool dc, bo
         //1 don't take DC rate into account for now due to predicition
         level = 1;
         level=abs(level);
-        Ipp32s AddOn=1, EscAddOn=9; 
+        int32_t AddOn=1, EscAddOn=9; 
         if(QP/2==1){level=(level+3)>>2;AddOn=3;EscAddOn=11;}
         else if(QP/2==2){level=(level+1)>>1;AddOn=2;EscAddOn=10;}
 
@@ -4876,7 +4876,7 @@ Ipp32s MeVC1::GetOneAcCoeffSize(Ipp32s level, Ipp32s run, Ipp32s QP, bool dc, bo
             case 1:
                 length += pEnc[1]+mode; //escape
             case 0:
-                Ipp32s index = pIdx[run] + level;
+                int32_t index = pIdx[run] + level;
                 length += pEnc[2*index + 1]+1;
                 break;
         }
@@ -4896,16 +4896,16 @@ Ipp32s MeVC1::GetOneAcCoeffSize(Ipp32s level, Ipp32s run, Ipp32s QP, bool dc, bo
                         cur->cost+=NormDif;\
                         cur->prev=(x);
 
-void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType transf, Ipp32s QP, bool luma, bool intra)
+void MeVC1::QuantTrellis(int16_t *ptr, int8_t* prc, int32_t /*DC*/, MeTransformType transf, int32_t QP, bool luma, bool intra)
 {
-    const Ipp32s scaling=16;
-    const Ipp32s norm = (Ipp32s)(1.0*scaling); //it is to cast frequency domain distortion to spatial and to account for IntLambda scaling, 1.0 is good enough
-    const Ipp32s IntLambda = (Ipp32s)(scaling*m_lambda);
-    Ipp16s coeff[64];
-    Ipp16s quant[64];
-    Ipp8s rc[64];
-    Ipp32s SubBlockSize=64;
-    const Ipp8u *scan = m_par->ScanTable[0];
+    const int32_t scaling=16;
+    const int32_t norm = (int32_t)(1.0*scaling); //it is to cast frequency domain distortion to spatial and to account for IntLambda scaling, 1.0 is good enough
+    const int32_t IntLambda = (int32_t)(scaling*m_lambda);
+    int16_t coeff[64];
+    int16_t quant[64];
+    int8_t rc[64];
+    int32_t SubBlockSize=64;
+    const uint8_t *scan = m_par->ScanTable[0];
     switch(transf){
         case ME_Tranform4x4:
             scan = m_par->ScanTable[3];
@@ -4926,7 +4926,7 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
     }
 
     //rearrange coefficient according to scan matrix
-    for(Ipp32s i=0; i<SubBlockSize; i++)
+    for(int32_t i=0; i<SubBlockSize; i++)
         coeff[i] = ptr[scan[i]];
     
     //init trellis
@@ -4935,31 +4935,31 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
     m_cur.trellis[0][1].Reset();
     m_cur.trellis[0][1].last=true;
     
-    for(Ipp32s c=1; c<SubBlockSize+1; c++){ //for all coeff
+    for(int32_t c=1; c<SubBlockSize+1; c++){ //for all coeff
         MeTrellisNode BestLast;
         BestLast.Reset();
         BestLast.last=true;
-        Ipp32s BestLastCost=IPP_MAX_32S;
-        Ipp32s CurNodeIdx=0;
+        int32_t BestLastCost=MFX_MAX_32S;
+        int32_t CurNodeIdx=0;
         MeTrellisNode *cur;
         MeTrellisNode *prev;
         
         //3 for all levels of current coeff
-        Ipp32s level=DivAndRound(coeff[c-1],QP);
-        Ipp32s OrgLevel=level;
-        Ipp32s RC = 0;
-        Ipp32s cq = coeff[c-1]/QP;
-        Ipp32s RCinit = 0;
+        int32_t level=DivAndRound(coeff[c-1],QP);
+        int32_t OrgLevel=level;
+        int32_t RC = 0;
+        int32_t cq = coeff[c-1]/QP;
+        int32_t RCinit = 0;
         //bool sign = cq < 0 ? true: false;
         if(cq != OrgLevel)
         {
             RC = -1;
             RCinit = -1;
         }
-        for(Ipp32s n=0; n<NumOfLevelInTrellis; n++){
+        for(int32_t n=0; n<NumOfLevelInTrellis; n++){
         //while(RC < 2){
-            Ipp32s dif=coeff[c-1] - QP*level;
-            Ipp32s NormDif=norm*dif*dif;
+            int32_t dif=coeff[c-1] - QP*level;
+            int32_t NormDif=norm*dif*dif;
            
             if(level == 0){
                 if(OrgLevel!=0){
@@ -4967,7 +4967,7 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
                         //copy all previous nodes excluding last, and nodes whose neighbour is better
                         //neighbour is better if its cost is less or eqaul and run is less or equal
                         MeTrellisNode*a=NULL, *b=NULL;
-                        for(Ipp32s p=0; m_cur.trellis[c-1][p].active && !m_cur.trellis[c-1][p].last; p++){
+                        for(int32_t p=0; m_cur.trellis[c-1][p].active && !m_cur.trellis[c-1][p].last; p++){
                             if(a==NULL){
                                 a=&m_cur.trellis[c-1][p];
                                 continue;
@@ -4992,7 +4992,7 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
                             SaveNode(a);
                     }else{
                     //copy all previous nodes excluding last and increase their run and cost
-                    for(Ipp32s p=0; m_cur.trellis[c-1][p].active && !m_cur.trellis[c-1][p].last; p++){
+                    for(int32_t p=0; m_cur.trellis[c-1][p].active && !m_cur.trellis[c-1][p].last; p++){
                         cur=&m_cur.trellis[c][CurNodeIdx++];
                         *cur=m_cur.trellis[c-1][p];
                         cur->level=level;
@@ -5006,23 +5006,23 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
             }else{
                 //3 coeff is not zero
                 //find best path
-                Ipp32s BestCost=IPP_MAX_32S;
+                int32_t BestCost=MFX_MAX_32S;
                 //for all previous points
                 cur=&m_cur.trellis[c][CurNodeIdx++];
                 cur->Reset();
                 cur->level=level;
                 cur->rc = RC;
-                for(Ipp32s p=0; m_cur.trellis[c-1][p].active && !m_cur.trellis[c-1][p].last; p++){
+                for(int32_t p=0; m_cur.trellis[c-1][p].active && !m_cur.trellis[c-1][p].last; p++){
                     //"not last" path
                     prev = &m_cur.trellis[c-1][p];
-                    Ipp32s cost=NormDif+IntLambda*GetOneAcCoeffSize(level, prev->run, QP, c==1, luma, intra, false) + prev->cost;
+                    int32_t cost=NormDif+IntLambda*GetOneAcCoeffSize(level, prev->run, QP, c==1, luma, intra, false) + prev->cost;
                     if(cost<BestCost){
                         BestCost=cost; 
                         cur->cost=cost;
                         cur->prev=prev;
                     }
                     //"last" path
-                    Ipp32s LastCost=NormDif+IntLambda*GetOneAcCoeffSize(level, prev->run, QP, c==1, luma, intra, true) + prev->cost;
+                    int32_t LastCost=NormDif+IntLambda*GetOneAcCoeffSize(level, prev->run, QP, c==1, luma, intra, true) + prev->cost;
                     if(LastCost<BestLastCost){
                         BestLastCost=LastCost; 
                         BestLast.level=level;
@@ -5038,14 +5038,14 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
 
         //compare previous last with current last, leave the best
         cur=&m_cur.trellis[c][CurNodeIdx++];
-        Ipp32s p;
+        int32_t p;
         for(p=0; !m_cur.trellis[c-1][p].last; p++);
         if(m_cur.trellis[c-1][p].cost+norm*coeff[c-1]*coeff[c-1] < BestLastCost){
             //prev is better
             cur->active = true;
             cur->last = true;
             cur->level = 0;
-            Ipp32s shift = OrgLevel < 0 ? -OrgLevel : OrgLevel;
+            int32_t shift = OrgLevel < 0 ? -OrgLevel : OrgLevel;
             cur->rc = RCinit + shift;
             cur->cost =m_cur.trellis[c-1][p].cost+norm*coeff[c-1]*coeff[c-1];
             cur->prev = &m_cur.trellis[c-1][p];
@@ -5056,18 +5056,18 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
     }
 
     //find best "last" in last collumn, it is optimal solution 
-    Ipp32s p;
+    int32_t p;
     for(p=0; !m_cur.trellis[SubBlockSize][p].last; p++);
     MeTrellisNode *prev = &m_cur.trellis[SubBlockSize][p];
 
     for(int x=SubBlockSize-1; x>=0; x--){
-        quant[x] = (Ipp16s)prev->level;
-        rc[x] = (Ipp8s)prev->rc;
+        quant[x] = (int16_t)prev->level;
+        rc[x] = (int8_t)prev->rc;
         prev=prev->prev;
     }
 
     //perform inverse scan
-    for(Ipp32s i=0; i<SubBlockSize; i++)
+    for(int32_t i=0; i<SubBlockSize; i++)
     {
         ptr[scan[i]]=quant[i];
         prc[scan[i]]=rc[i];
@@ -5077,12 +5077,12 @@ void MeVC1::QuantTrellis(Ipp16s *ptr, Ipp8s* prc, Ipp32s /*DC*/, MeTransformType
 #if 0
 void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbType)
 {
-    const Ipp16u*  pCBPCYTable=VLCTableCBPCY_PB[m_cur.CbpcyTableIndex];
+    const uint16_t*  pCBPCYTable=VLCTableCBPCY_PB[m_cur.CbpcyTableIndex];
 
     //Intra
     if(MbType==ME_MbIntra){
-        Ipp32s         NotSkip =   (cost.BlkPat != 0)?1:0;
-        const Ipp16u*   MVDiffTables=MVDiffTablesVLC[m_cur.MvTableIndex];
+        int32_t         NotSkip =   (cost.BlkPat != 0)?1:0;
+        const uint16_t*   MVDiffTables=MVDiffTablesVLC[m_cur.MvTableIndex];
         cost.R+=MVDiffTables[2*(37*NotSkip + 36 - 1)+1];
         if(cost.BlkPat!=0){
             cost.R+=pCBPCYTable[2*cost.BlkPat+1];
@@ -5102,7 +5102,7 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
     if(m_par->SearchDirection == ME_BidirSearch)
     {
         //temporary: Bfraction shold be transmitted!!!:
-        Ipp32f Bfraction = 0.5;
+        float Bfraction = 0.5;
         switch(MbType)
         {
         case ME_MbFrw:
@@ -5143,9 +5143,9 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
 
 
         //3 VSTSMB
-        const Ipp16s (*pTTMBVLC)[4][6]   = NULL;
-        const Ipp8u  (* pTTBlkVLC)[6]    = NULL;
-        const Ipp8u   *pSubPattern4x4VLC = NULL;
+        const int16_t (*pTTMBVLC)[4][6]   = NULL;
+        const uint8_t  (* pTTBlkVLC)[6]    = NULL;
+        const uint8_t   *pSubPattern4x4VLC = NULL;
 
         if (m_par->Quant/2<5)
         {
@@ -5167,15 +5167,15 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
             pSubPattern4x4VLC   =  SubPattern4x4VLC_LowRate;
         }
 
-        Ipp32s MbLevelTransf=(transf[0]==transf[1]&&transf[0]==transf[2]&&transf[0]==transf[3]&&transf[0]==transf[4]&& transf[0]==transf[5])?1:0;
+        int32_t MbLevelTransf=(transf[0]==transf[1]&&transf[0]==transf[2]&&transf[0]==transf[3]&&transf[0]==transf[4]&& transf[0]==transf[5])?1:0;
 
-        Ipp32s blk;
+        int32_t blk;
         for(blk=0; blk<6; blk++)
             if( cost.BlkPat & (1<<(5-blk)) ) break;
-        Ipp32s FirstCodedBlk = blk;
+        int32_t FirstCodedBlk = blk;
         MeTransformType tr=transf[blk];    
     
-        Ipp32s  subPat  = 0x3&(cost.SbPat>>(4*(5-blk))); //for 8x8 and 4x4 pattern doesn't matter so do it only for 8x4 4x8
+        int32_t  subPat  = 0x3&(cost.SbPat>>(4*(5-blk))); //for 8x8 and 4x4 pattern doesn't matter so do it only for 8x4 4x8
         if(--subPat<0)subPat=0;
 
         cost.R+=pTTMBVLC[MbLevelTransf][tr][2*subPat+1];
@@ -5207,9 +5207,9 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
 
 }
 #else
-void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbType,Ipp32s RefIdxF,Ipp32s RefIdxB)
+void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbType,int32_t RefIdxF,int32_t RefIdxB)
 {
-    const Ipp8u MBTypeFieldTable0_VLC[6*2] =
+    const uint8_t MBTypeFieldTable0_VLC[6*2] =
     {
         0,  5,
         1,  5,
@@ -5218,9 +5218,9 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
         1,  2,
         1,  4
     };
-    const Ipp16u*  pCBPCYTable=VLCTableCBPCY_PB[0];
-    const Ipp32u*  pCBPCYTableF=CBPCYFieldTable_VLC[0];
-    const Ipp8u*   pMBTypeFieldTable_VLC = MBTypeFieldTable0_VLC;
+    const uint16_t*  pCBPCYTable=VLCTableCBPCY_PB[0];
+    const uint32_t*  pCBPCYTableF=CBPCYFieldTable_VLC[0];
+    const uint8_t*   pMBTypeFieldTable_VLC = MBTypeFieldTable0_VLC;
     bool IsFieldPic = (m_par->PredictionType == ME_VC1Field1 ||
                        m_par->PredictionType == ME_VC1Field2 || 
                        m_par->PredictionType == ME_VC1Field2Hybrid);
@@ -5231,9 +5231,9 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
         if(MbType==ME_MbIntra)
         {
             //if(m_BitplanesRaw) cost.R+=1;//777
-            Ipp32s         NotSkip =   (cost.BlkPat != 0)?1:0;
+            int32_t         NotSkip =   (cost.BlkPat != 0)?1:0;
             //cost.R+=m_par->MVDiffTablesVLC[2*(37*NotSkip + 36 - 1)+1];
-            const Ipp16u*   MVDiffTables=MVDiffTablesVLC[m_cur.MvTableIndex];
+            const uint16_t*   MVDiffTables=MVDiffTablesVLC[m_cur.MvTableIndex];
             cost.R+=MVDiffTables[2*(37*NotSkip + 36 - 1)+1];
             //cost.R+=1;//AC prediction;//777
             if(cost.BlkPat!=0){
@@ -5303,8 +5303,8 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
         }
         if(m_par->SearchDirection != ME_BidirSearch)
         {
-            Ipp32s         NotSkip =   (cost.BlkPat != 0)?1:0;
-            Ipp32s nMBType =   (((Ipp8u)NotSkip)<<1) + 3;
+            int32_t         NotSkip =   (cost.BlkPat != 0)?1:0;
+            int32_t nMBType =   (((uint8_t)NotSkip)<<1) + 3;
             cost.R += pMBTypeFieldTable_VLC[(nMBType<<1)+1];
            // if(m_cur.HybridPredictor[RefIdxF]) 
             //    cost.R+=1;//???
@@ -5319,8 +5319,8 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
                     cost.R+=pCBPCYTableF[2*(cost.BlkPat&0x3F)+1];
             }
             if(m_BitplanesRaw) cost.R+=1;//777
-            Ipp32s         NotSkip =   (cost.BlkPat != 0)?1:0;
-            Ipp32s nMBType =   (((Ipp8u)NotSkip)<<1)+2;
+            int32_t         NotSkip =   (cost.BlkPat != 0)?1:0;
+            int32_t nMBType =   (((uint8_t)NotSkip)<<1)+2;
             if(MbType==ME_MbFrw || MbType==ME_MbBkw || MbType==ME_MbBidir)
                 nMBType += 1; 
 
@@ -5363,9 +5363,9 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
     //Inter
     if(cost.BlkPat!=0){
         //3 VSTSMB
-        const Ipp16s (*pTTMBVLC)[4][6]   = NULL;
-        const Ipp8u  (* pTTBlkVLC)[6]    = NULL;
-        const Ipp8u   *pSubPattern4x4VLC = NULL;
+        const int16_t (*pTTMBVLC)[4][6]   = NULL;
+        const uint8_t  (* pTTBlkVLC)[6]    = NULL;
+        const uint8_t   *pSubPattern4x4VLC = NULL;
 
         if (m_par->Quant/2<5)
         {
@@ -5387,15 +5387,15 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
             pSubPattern4x4VLC   =  SubPattern4x4VLC_LowRate;
         }
 
-        Ipp32s MbLevelTransf=(transf[0]==transf[1]&&transf[0]==transf[2]&&transf[0]==transf[3]&&transf[0]==transf[4]&& transf[0]==transf[5])?1:0;
+        int32_t MbLevelTransf=(transf[0]==transf[1]&&transf[0]==transf[2]&&transf[0]==transf[3]&&transf[0]==transf[4]&& transf[0]==transf[5])?1:0;
 
-        Ipp32s blk;
+        int32_t blk;
         for(blk=0; blk<6; blk++)
             if( cost.BlkPat & (1<<(5-blk)) ) break;
-        Ipp32s FirstCodedBlk = blk;
+        int32_t FirstCodedBlk = blk;
         MeTransformType tr=transf[blk];
 
-        Ipp32s  subPat  = 0x3&(cost.SbPat>>(4*(5-blk))); //for 8x8 and 4x4 pattern doesn't matter so do it only for 8x4 4x8
+        int32_t  subPat  = 0x3&(cost.SbPat>>(4*(5-blk))); //for 8x8 and 4x4 pattern doesn't matter so do it only for 8x4 4x8
         if(--subPat<0)subPat=0;
 
         cost.R+=pTTMBVLC[MbLevelTransf][tr][2*subPat+1];
@@ -5429,13 +5429,13 @@ void MeVC1::AddHeaderCost(MeCostRD &cost, MeTransformType *transf, MeMbType MbTy
 #endif
 
 
-Ipp32s MeVC1::GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant, bool hybrid)
+int32_t MeVC1::GetMvSize(int32_t dx, int32_t dy, bool bNonDominant, bool hybrid)
 {
-    Ipp32s rangeIndex=m_par->MVRangeIndex;
-    Ipp32s m_bMVHalf = m_par->PixelType == ME_HalfPixel ? true : false;
+    int32_t rangeIndex=m_par->MVRangeIndex;
+    int32_t m_bMVHalf = m_par->PixelType == ME_HalfPixel ? true : false;
     static const int VC1_ENC_HALF_MV_LIMIT=95;
     static const int VC1_ENC_MV_LIMIT=159;
-    Ipp32s NotSkip=(m_par->pSrc->MBs[m_cur.adr].NumOfNZ==0?0:1);
+    int32_t NotSkip=(m_par->pSrc->MBs[m_cur.adr].NumOfNZ==0?0:1);
 
     bool IsField1 = m_par->PredictionType == ME_VC1Field1;
 
@@ -5446,18 +5446,18 @@ Ipp32s MeVC1::GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant, bool hybrid)
     if(dx==0 && dy==0 && NotSkip==0)
         return 0; //special case, residual equal to 0, mv equal to 0 - pure skip
 
-    const Ipp16u* table = MVDiffTablesVLC[m_cur.MvTableIndex];;
-    const Ipp8u* MVSizeOffset = m_par->MVSizeOffset;
-    const Ipp8u* longMVLength=m_par->MVLengthLong;
+    const uint16_t* table = MVDiffTablesVLC[m_cur.MvTableIndex];;
+    const uint8_t* MVSizeOffset = m_par->MVSizeOffset;
+    const uint8_t* longMVLength=m_par->MVLengthLong;
 
-    Ipp32s length=0;
+    int32_t length=0;
 
-    Ipp16s          index   =   0;
+    int16_t          index   =   0;
     bool            signX   =   (dx<0);
     bool            signY   =   (dy<0);
-    Ipp8u           limit   =   (m_bMVHalf)? VC1_ENC_HALF_MV_LIMIT : VC1_ENC_MV_LIMIT;
-    Ipp16s          indexX  =   0;
-    Ipp16s          indexY  =   0;
+    uint8_t           limit   =   (m_bMVHalf)? VC1_ENC_HALF_MV_LIMIT : VC1_ENC_MV_LIMIT;
+    int16_t          indexX  =   0;
+    int16_t          indexY  =   0;
 
     if(!IsField1 && !IsField2)
     {
@@ -5474,24 +5474,24 @@ Ipp32s MeVC1::GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant, bool hybrid)
 
     if (index < 34)
     {
-            Ipp8u sizeX = MVSizeOffset[3*dx+2];
-            Ipp8u sizeY = MVSizeOffset[3*dy+2];
+            uint8_t sizeX = MVSizeOffset[3*dx+2];
+            uint8_t sizeY = MVSizeOffset[3*dy+2];
 
             if (m_bMVHalf)
             {
                 sizeX -= sizeX>>3;
                 sizeY -= sizeY>>3;
             }
-            index = (Ipp16s)(index+37*NotSkip);
+            index = (int16_t)(index+37*NotSkip);
             length += table[2*index+1] +sizeX+sizeY;
         }
         else
         {
              // escape mode
-            Ipp8u sizeX = longMVLength[2*rangeIndex];
-            Ipp8u sizeY = longMVLength[2*rangeIndex+1];
+            uint8_t sizeX = longMVLength[2*rangeIndex];
+            uint8_t sizeY = longMVLength[2*rangeIndex+1];
 
-            index= (Ipp16s)(35 + 37*NotSkip - 1);
+            index= (int16_t)(35 + 37*NotSkip - 1);
 
             if (m_bMVHalf)
             {
@@ -5567,7 +5567,7 @@ Ipp32s MeVC1::GetMvSize(Ipp32s dx, Ipp32s dy, bool bNonDominant, bool hybrid)
     {
         // escape mode
 
-        Ipp32s     y = ((((signY)? -dy:dy) - bNonDominant)<<1) + bNonDominant;
+        int32_t     y = ((((signY)? -dy:dy) - bNonDominant)<<1) + bNonDominant;
 
         index       = 125;
 
@@ -5589,7 +5589,7 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
     SetError((vm_char*)"Wrong metric in MeVC1::GetCostRD", CostMetric!=ME_InterRD && CostMetric!=ME_IntraRD);
     SetError((vm_char*)"Wrong partitioning in MeVC1::GetCostRD", CostMetric==ME_InterRD && mt!=ME_Mb8x8&&mt!=ME_Mb16x16 || CostMetric==ME_IntraRD&& mt!=ME_Mb8x8&&mt!=ME_Mb16x16);
 
-    static const Ipp8u DCQuantValues[32] =
+    static const uint8_t DCQuantValues[32] =
     {
         0,  2,  4,  8,  8,  8,  9,  9,
         10, 10, 11, 11, 12, 12, 13, 13,
@@ -5597,23 +5597,23 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
         18, 18, 19, 19, 20, 20, 21, 21
     };
 
-    Ipp32s qp=m_par->Quant;
+    int32_t qp=m_par->Quant;
     bool UnQp=m_par->UniformQuant;
     bool intra = (CostMetric==ME_IntraRD);
     bool luma=m_cur.BlkIdx<4;
-    Ipp32s ch=src->channel;
-    Ipp32s num_block_proc = 1;
+    int32_t ch=src->channel;
+    int32_t num_block_proc = 1;
 
-    Ipp32s num_blocks = (m_CRFormat == ME_YUV420)? 6 : 5;
+    int32_t num_blocks = (m_CRFormat == ME_YUV420)? 6 : 5;
 
     //1 Inter/Intra 16x16
     if(mt ==ME_Mb16x16){
         MeCostRD res=0;
-        for(Ipp32s blk=0; blk<num_blocks;blk++){
+        for(int32_t blk=0; blk<num_blocks;blk++){
             src->channel = (blk<4?Y:(blk==4?U:V));
             m_cur.BlkIdx = blk; //it is for DC prediction calculation
             res+=GetCostRD(CostMetric, ME_Mb8x8, transf, src, ref);
-            Ipp32s dx=8, dy=0;
+            int32_t dx=8, dy=0;
             if(blk==1){dx=-dx; dy=8;}
             src->move(Y,dx,dy);
             if(!intra)ref->move(Y,dx,dy);
@@ -5633,12 +5633,12 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
         num_block_proc = 1;
     }
 
-    Ipp16s buf1[2][64]; // TODO: move it to m_cur and allign
-    Ipp16s buf2[64];
-    Ipp8s buf3[64];
-    Ipp8u rec[128]; //reconstructed block 64 - for YUV420, 128 - for NV12
+    int16_t buf1[2][64]; // TODO: move it to m_cur and allign
+    int16_t buf2[64];
+    int8_t buf3[64];
+    uint8_t rec[128]; //reconstructed block 64 - for YUV420, 128 - for NV12
     MeCostRD cost=0;
-    IppiSize roi={8,8};
+    mfxSize roi={8,8};
     MeCostRD cost_p = 0;
 
     if(num_block_proc == 1)
@@ -5662,9 +5662,9 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
     }
 
     
-    for(Ipp32s k = 0; k < num_block_proc; k++)
+    for(int32_t k = 0; k < num_block_proc; k++)
     {
-        Ipp16s dc;
+        int16_t dc;
         cost=0;
         m_cur.BlkIdx += k;
 
@@ -5725,7 +5725,7 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
                 if(intra)
                 {
                     buf2[0] = DivAndRound(dc,DCQuantValues[qp/2]);
-                    Ipp32s cq = dc/DCQuantValues[qp/2];
+                    int32_t cq = dc/DCQuantValues[qp/2];
                     if(buf2[0] != cq)
                     {
                         buf3[0] = -1;
@@ -5750,7 +5750,7 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
 
         
         //3 predict DC for Intra
-        Ipp32s DcPrediction=0;
+        int32_t DcPrediction=0;
         MeMB *mb=&m_par->pSrc->MBs[m_cur.adr];
         if(intra){
             mb->DcCoeff[m_cur.BlkIdx]=buf2[0];
@@ -5759,14 +5759,14 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
         
         //3 pattern
         //set block and subblock patterns. They are used for rate calculation including MV rate calculation.
-        Ipp32s flag[4]={0};
-        Ipp16s tmp=buf2[0];
+        int32_t flag[4]={0};
+        int16_t tmp=buf2[0];
         if(intra)buf2[0]=0;//don't take DC into account for intra
-        for(Ipp32s i=0; i<4; i++)
-            for(Ipp32s j=0; j<16; j++)
+        for(int32_t i=0; i<4; i++)
+            for(int32_t j=0; j<16; j++)
                 flag[i]|=buf2[16*i+j];
         buf2[0]=tmp;
-        for(Ipp32s i=0; i<4; i++)
+        for(int32_t i=0; i<4; i++)
             flag[i]=flag[i]==0?0:1;
         switch(transf){
             case ME_Tranform4x4:cost.SbPat=(flag[0]<<3)|(flag[1]<<2)|(flag[2]<<1)|(flag[3]<<0);break;
@@ -5787,7 +5787,7 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
         //skip distortion calculation for chroma
         if(luma || m_par->UseChromaForMD){
             //3 inverse quantize
-            IppiSize DstSizeNZ;
+            mfxSize DstSizeNZ;
             dc=buf2[0];
             if(UnQp)ippiQuantInvInterUniform_VC1_16s_C1IR(buf2, 16, qp, roi, &DstSizeNZ);
             else ippiQuantInvInterNonuniform_VC1_16s_C1IR(buf2, 16, qp, roi, &DstSizeNZ);
@@ -5843,7 +5843,7 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
                                              rec,  NULL,   16,
                                              buf1[0],   buf1[1],   16,
                                              0,   0);
-            Ipp32s dist;
+            int32_t dist;
             ippiSSD8x8_8u32s_C1R(rec,16,src->ptr[ch],src->step[ch],&dist,0);
             cost.D = dist;
             ippiSSD8x8_8u32s_C1R(rec+8,16,src->ptr[ch]+8,src->step[ch],&dist,0);
@@ -5851,7 +5851,7 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
             cost += cost_p;
         }
 
-        cost.J=(Ipp32s)(cost.D+m_lambda*cost.R); //This is not exact RD cost calculation because there is no feedback here
+        cost.J=(int32_t)(cost.D+m_lambda*cost.R); //This is not exact RD cost calculation because there is no feedback here
 
         //check overflow
         if(cost.J<0)cost.J=ME_BIG_COST;
@@ -5860,13 +5860,13 @@ MeCostRD MeVC1::GetCostRD(MeDecisionMetrics CostMetric, MeMbPart mt, MeTransform
     return cost;
 }
 
-Ipp32s MeVC1::GetDcPredictor(Ipp32s BlkIdx)
+int32_t MeVC1::GetDcPredictor(int32_t BlkIdx)
 {
     // TODO: add chroma here
     //B A
     //C . 
     MeMB *mbs=m_par->pSrc->MBs;
-    Ipp32s w=m_par->pSrc->WidthMB;
+    int32_t w=m_par->pSrc->WidthMB;
 
 
     MeMB *MbA=&mbs[m_cur.adr-w];
@@ -5877,9 +5877,9 @@ Ipp32s MeVC1::GetDcPredictor(Ipp32s BlkIdx)
     bool B=(m_cur.y>0 && m_cur.x>0 && MbB->MbType==ME_MbIntra);
     bool C=(m_cur.x>0 && MbC->MbType==ME_MbIntra);
 
-    const Ipp32s unav = ME_BIG_COST; //available
+    const int32_t unav = ME_BIG_COST; //available
 
-    Ipp32s PredA = unav, PredB=unav, PredC=unav;
+    int32_t PredA = unav, PredB=unav, PredC=unav;
 
 
     switch(BlkIdx)
@@ -5912,7 +5912,7 @@ Ipp32s MeVC1::GetDcPredictor(Ipp32s BlkIdx)
         break;
     }
 
-    Ipp32s pred;
+    int32_t pred;
     if(PredB==unav)PredB=0;
     if ((PredA!=unav) && (PredC!=unav)){
         if(abs(PredB-PredA)<=abs(PredB-PredC)) {
@@ -5942,7 +5942,7 @@ MeMV MeVC1::GetChromaMV (MeMV mv)
 
 void MeVC1::GetChromaMV(MeMV LumaMV, MeMV* pChroma)
 {
-    static Ipp16s round[4]= {0,0,0,1};
+    static int16_t round[4]= {0,0,0,1};
 
     pChroma->x = (LumaMV.x + round[LumaMV.x&0x03])>>1;
     pChroma->y = (LumaMV.y + round[LumaMV.y&0x03])>>1;
@@ -5950,8 +5950,8 @@ void MeVC1::GetChromaMV(MeMV LumaMV, MeMV* pChroma)
 
 void MeVC1::GetChromaMVFast(MeMV LumaMV, MeMV * pChroma)
 {
-    static Ipp16s round [4]= {0,0,0,1};
-    static Ipp16s round1[2][2] = {
+    static int16_t round [4]= {0,0,0,1};
+    static int16_t round1[2][2] = {
         {0, -1}, //sign = 0;
         {0,  1}  //sign = 1
     };
@@ -6003,9 +6003,9 @@ bool MeH264::EstimateSkip()
 
 //*******************************************************************************************************
 //1 feedback implementation
-Ipp32s RegrFun::m_QP;
+int32_t RegrFun::m_QP;
 
-RegrFun::RegrFun(Ipp32s /*dx*/, Ipp32s N)
+RegrFun::RegrFun(int32_t /*dx*/, int32_t N)
 {
 
     if(N>NumOfRegInterval){
@@ -6018,13 +6018,13 @@ RegrFun::RegrFun(Ipp32s /*dx*/, Ipp32s N)
     m_num=N;
     m_QP=0;
 
-    for(Ipp32u i=0; i<MaxQpValue; i++){
+    for(uint32_t i=0; i<MaxQpValue; i++){
         m_a[i][0] = -1; //it means that function is not initialized
     }
 }
 
 
-void RegrFun::ProcessFeedback(Ipp32s *x, Ipp32s *y, Ipp32s N)
+void RegrFun::ProcessFeedback(int32_t *x, int32_t *y, int32_t N)
 {
     if(N==0)return;
     
@@ -6034,45 +6034,45 @@ void RegrFun::ProcessFeedback(Ipp32s *x, Ipp32s *y, Ipp32s N)
         printf("Regr was not initialised!!!\n");
 
         //find out step
-        Ipp32s xMax=0;
-        for(Ipp32s i=0; i<N; i++) xMax = IPP_MAX(xMax,x[i]);
+        int32_t xMax=0;
+        for(int32_t i=0; i<N; i++) xMax = MFX_MAX(xMax,x[i]);
         m_dx[m_QP] = 1+xMax/m_num;
 
         //reset history
-        for(Ipp32s i=0; i<m_num; i++){ //initialize
+        for(int32_t i=0; i<m_num; i++){ //initialize
             m_ax[m_QP][i]=0;
             m_ay[m_QP][i]=0;
             m_an[m_QP][i]=0;
         }
     }else {
         //reduce history size
-        Ipp64f size=0;
+        double size=0;
         for(int i=0; i<m_num; i++)
             size+= m_an[m_QP][i];
 
         // TODO: set TargetHistorySize from without
-        Ipp64f reduce=0;
-        //Ipp32s FrameSize=1350; //number of MB in frame
-        //Ipp32s TargetHistorySize = 10*FrameSize; //number of MB in history
+        double reduce=0;
+        //int32_t FrameSize=1350; //number of MB in frame
+        //int32_t TargetHistorySize = 10*FrameSize; //number of MB in history
         reduce = (m_TargetHistorySize-N)/(size+0.01);
         //printf("reduce=%f",reduce);
         //printf("size=%8.1f reduce=%11.2f\n", size, reduce);
         if(reduce<1.0){
             //reduce
-            for(Ipp32s i=0; i<m_num; i++){
+            for(int32_t i=0; i<m_num; i++){
                 m_an[m_QP][i]*=reduce;
             }
         }
         //unaverage :-)
-        for(Ipp32s i=0; i<m_num; i++){
+        for(int32_t i=0; i<m_num; i++){
             m_ax[m_QP][i]*=m_an[m_QP][i];
             m_ay[m_QP][i]*=m_an[m_QP][i];
         }
     }
 
 
-    for(Ipp32s i=0; i<N; i++){ //sum
-        Ipp32s k=x[i]/m_dx[m_QP];
+    for(int32_t i=0; i<N; i++){ //sum
+        int32_t k=x[i]/m_dx[m_QP];
         if(k<0)k=0;
         if(k>=m_num) k= m_num-1;
         m_ax[m_QP][k]+=x[i];
@@ -6083,7 +6083,7 @@ void RegrFun::ProcessFeedback(Ipp32s *x, Ipp32s *y, Ipp32s N)
 
     m_FirstData=m_num;
     m_LastData=0;
-    for(Ipp32s i=0; i<m_num; i++){ //avrg
+    for(int32_t i=0; i<m_num; i++){ //avrg
         if(m_an[m_QP][i]!=0){
             m_ax[m_QP][i]/=m_an[m_QP][i];
             m_ay[m_QP][i]/=m_an[m_QP][i];
@@ -6095,24 +6095,24 @@ void RegrFun::ProcessFeedback(Ipp32s *x, Ipp32s *y, Ipp32s N)
     }
 
     //process for all pieces
-    for(Ipp32s i=0; i<m_num; i++)
+    for(int32_t i=0; i<m_num; i++)
         ComputeRegression(i, x, y, N);
     AfterComputation();
 }
 
 
-Ipp32s RegrFun::Weight(Ipp32s x)
+int32_t RegrFun::Weight(int32_t x)
 {
     if(m_a[m_QP][0]<0){
         //printf("Error function is not initialized");
         return x; //function is not initialized
     }
 
-    Ipp32s i=x/m_dx[m_QP];
+    int32_t i=x/m_dx[m_QP];
     if(i<0)i=0;
     if(i>=m_num) i= m_num-1;
 
-    Ipp32s y=(Ipp32s)(m_a[m_QP][i]*x + m_b[m_QP][i]);
+    int32_t y=(int32_t)(m_a[m_QP][i]*x + m_b[m_QP][i]);
 
     //printf("QP in RegrFun::Weight=%d dx=%d x=%d i=%d y=%d\n", m_QP,m_dx[m_QP],x, i, y);
 
@@ -6124,9 +6124,9 @@ Ipp32s RegrFun::Weight(Ipp32s x)
 
 void RegrFun::LoadPresets(MeRegrFunSet set, MeRegrFun id)
 {
-    Ipp32s adr;
-    Ipp32s *p = MeVc1PreciseRegrTable;
-    Ipp32s size=MeVc1PreciseRegrTableSize;
+    int32_t adr;
+    int32_t *p = MeVc1PreciseRegrTable;
+    int32_t size=MeVc1PreciseRegrTableSize;
 
     if(set == ME_RG_VC1_FAST_SET){
         p=MeVc1FastRegrTable;
@@ -6137,15 +6137,15 @@ void RegrFun::LoadPresets(MeRegrFunSet set, MeRegrFun id)
         size=MeAVSFastRegrTableSize;
     }
 
-    Ipp32s StepForId = 5+m_num+1;
-    for(Ipp32s qp=0; qp<MaxQpValue; qp++){
+    int32_t StepForId = 5+m_num+1;
+    for(int32_t qp=0; qp<MaxQpValue; qp++){
         //find preset
         for(adr=0;  (p[adr]!=id ||p[adr+1]!=qp) && adr<size; adr += StepForId);
         if(adr>=size) continue;
 
         //check preset
-        Ipp32s sum = 0;
-        for(Ipp32s i=1; i<StepForId-1; i++)
+        int32_t sum = 0;
+        for(int32_t i=1; i<StepForId-1; i++)
             sum+=p[adr+i];
         if(p[adr+4]!=m_num || p[adr+StepForId-1]!=sum){
             printf("wrong preset data! id=%d qp=%d\n", id, qp);
@@ -6154,14 +6154,14 @@ void RegrFun::LoadPresets(MeRegrFunSet set, MeRegrFun id)
 
         //load preset
         m_dx[qp]=p[adr+2];
-        Ipp32s dy=p[adr+3];
-        Ipp32s yPrev = p[adr+5];
-        for(Ipp32s i=0; i<m_num-1; i++){
-            Ipp64f x0=i*m_dx[qp];
-            Ipp64f x1=(i+1)*m_dx[qp];
-            Ipp64f y0=yPrev;
+        int32_t dy=p[adr+3];
+        int32_t yPrev = p[adr+5];
+        for(int32_t i=0; i<m_num-1; i++){
+            double x0=i*m_dx[qp];
+            double x1=(i+1)*m_dx[qp];
+            double y0=yPrev;
             yPrev=yPrev+p[adr+5+i+1]+dy;
-            Ipp64f y1=yPrev;
+            double y1=yPrev;
             m_a[qp][i] = (y0-y1)/(x0-x1);
             m_b[qp][i] = y0 - m_a[qp][i] * x0;
             m_ax[qp][i] = (x0+x1)/2;
@@ -6178,10 +6178,10 @@ void RegrFun::LoadPresets(MeRegrFunSet set, MeRegrFun id)
 }
 
 
-Ipp64f LowessRegrFun::WeightPoint(Ipp64f x)
+double LowessRegrFun::WeightPoint(double x)
 {
     //tricube function
-    Ipp64f t=x<0?-x:x;
+    double t=x<0?-x:x;
     if(t>=1.) return 0.;
     t = 1 - t*t*t;
     return t*t*t;
@@ -6189,12 +6189,12 @@ Ipp64f LowessRegrFun::WeightPoint(Ipp64f x)
 
 
 // regression based on averaged subset of input samples
-void LowessRegrFun::ComputeRegression(Ipp32s I, Ipp32s* /*x*/, Ipp32s* /*y*/, Ipp32s /*N*/)
+void LowessRegrFun::ComputeRegression(int32_t I, int32_t* /*x*/, int32_t* /*y*/, int32_t /*N*/)
 {
-    Ipp64f SSxx=0., SSyy=0., SSxy=0;
-    Ipp64f avx =0., avy=0., r2=0., a=0., b=0.;
-    Ipp64f sw=0; //weight and sum of all weights
-    Ipp64f x0= I*m_dx[m_QP];
+    double SSxx=0., SSyy=0., SSxy=0;
+    double avx =0., avy=0., r2=0., a=0., b=0.;
+    double sw=0; //weight and sum of all weights
+    double x0= I*m_dx[m_QP];
 
 
     //check if this bin is inside data range
@@ -6210,7 +6210,7 @@ void LowessRegrFun::ComputeRegression(Ipp32s I, Ipp32s* /*x*/, Ipp32s* /*y*/, Ip
 
 
     //find current history size
-    Ipp64f size=0;
+    double size=0;
     for(int i=0; i<m_num; i++)
         size+= m_an[m_QP][i];
     if(size<10){ // TODO: is 10 ok?
@@ -6219,10 +6219,10 @@ void LowessRegrFun::ComputeRegression(Ipp32s I, Ipp32s* /*x*/, Ipp32s* /*y*/, Ip
     }
 
     //find adaptive bandwidth, that include at least "Bandwidth" percents of samples.
-    Ipp64f bw = 0, sn=0;
-    for(Ipp32s i=0; i<m_num; i++)
-        for(Ipp32s pass=0; pass<2; pass++){
-            Ipp32s j;
+    double bw = 0, sn=0;
+    for(int32_t i=0; i<m_num; i++)
+        for(int32_t pass=0; pass<2; pass++){
+            int32_t j;
             if(pass==0)
                 j= I+i;
             else
@@ -6246,9 +6246,9 @@ void LowessRegrFun::ComputeRegression(Ipp32s I, Ipp32s* /*x*/, Ipp32s* /*y*/, Ip
 
     //find lowess for one point
     //find average and weight
-    Ipp64f snL=0, snR=0, skewness;
-    for(Ipp32s i=0; i<m_num; i++){
-        Ipp64f w = m_an[m_QP][i]*WeightPoint((m_ax[m_QP][i]-x0)/bw);
+    double snL=0, snR=0, skewness;
+    for(int32_t i=0; i<m_num; i++){
+        double w = m_an[m_QP][i]*WeightPoint((m_ax[m_QP][i]-x0)/bw);
         sw += w;
         if(i<I)snL+=w;
         if(i>I)snR+=w;
@@ -6257,15 +6257,15 @@ void LowessRegrFun::ComputeRegression(Ipp32s I, Ipp32s* /*x*/, Ipp32s* /*y*/, Ip
         avy += w*m_ay[m_QP][i];
     }
     skewness = (snL+0.00001)/(snR+0.00001);
-    skewness = IPP_MAX(skewness,1/skewness);
+    skewness = MFX_MAX(skewness,1/skewness);
 
     if(sw>5.){ //sw<5 is extrimly rare case
         //enough points to compute regression
         avx /= sw;
         avy /= sw;
 
-        for(Ipp32s i=0; i<m_num; i++){
-            Ipp64f w = m_an[m_QP][i]*WeightPoint((m_ax[m_QP][i]-x0)/bw);
+        for(int32_t i=0; i<m_num; i++){
+            double w = m_an[m_QP][i]*WeightPoint((m_ax[m_QP][i]-x0)/bw);
 
             SSxx += w*(m_ax[m_QP][i] - avx)*(m_ax[m_QP][i] - avx);
             SSyy += w*(m_ay[m_QP][i] - avy)*(m_ay[m_QP][i] - avy);
@@ -6312,21 +6312,21 @@ void LowessRegrFun::AfterComputation()
     int FirstData=0; //it is not nessesary equal to m_FirstData!
     for(; FirstData<m_num && m_a[m_QP][FirstData]==0; FirstData++);
 
-    for(Ipp32s i=0; i<FirstData; i++){
+    for(int32_t i=0; i<FirstData; i++){
         m_a[m_QP][i] = m_a[m_QP][FirstData];
         m_b[m_QP][i] = m_b[m_QP][FirstData];
     }
 
     //save org coefficients
-    Ipp64f a[NumOfRegInterval], b[NumOfRegInterval];
-    for(Ipp32s i=0; i<m_num; i++){
+    double a[NumOfRegInterval], b[NumOfRegInterval];
+    for(int32_t i=0; i<m_num; i++){
         a[i]=m_a[m_QP][i];
         b[i]=m_b[m_QP][i];
     }
 
     //remove spikes on bins borders
-    for(Ipp32s i=0; i<m_num; i++){
-        Ipp64f x0, x1, y0, y1;
+    for(int32_t i=0; i<m_num; i++){
+        double x0, x1, y0, y1;
         x0 = i*m_dx[m_QP];
         x1 = (i+1)*m_dx[m_QP];
 
@@ -6365,10 +6365,10 @@ void LowessRegrFun::AfterComputation()
 
 }
 
-Ipp32s MvRegrFun::Weight(MeMV mv, MeMV pred)
+int32_t MvRegrFun::Weight(MeMV mv, MeMV pred)
 {
 
-    Ipp32s x = abs(mv.x-pred.x) + abs(mv.y-pred.y);
+    int32_t x = abs(mv.x-pred.x) + abs(mv.y-pred.y);
     return RegrFun::Weight(x);
 
 }

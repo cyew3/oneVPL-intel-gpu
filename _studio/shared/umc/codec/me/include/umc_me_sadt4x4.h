@@ -50,90 +50,90 @@
 #define BS_2x4     3
 #define BS_2x2     2
 
-Ipp32u SATD_8u_C1R(const Ipp8u *pSrc1, Ipp32s src1Step, const Ipp8u *pSrc2, Ipp32s src2Step, Ipp32s width, Ipp32s height);
-Ipp32u SATD_16u_C1R(const Ipp16u *pSrc1, Ipp32s src1Step, const Ipp16u *pSrc2, Ipp32s src2Step, Ipp32s width, Ipp32s height);
+uint32_t SATD_8u_C1R(const uint8_t *pSrc1, int32_t src1Step, const uint8_t *pSrc2, int32_t src2Step, int32_t width, int32_t height);
+uint32_t SATD_16u_C1R(const uint16_t *pSrc1, int32_t src1Step, const uint16_t *pSrc2, int32_t src2Step, int32_t width, int32_t height);
 
-inline Ipp32s SATD16x16(const Ipp8u *pSource0, Ipp32s pitchBytes0, const Ipp8u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD16x16(const uint8_t *pSource0, int32_t pitchBytes0, const uint8_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_8u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 16, 16);
 }
 
-inline Ipp32s SATD16x8(const Ipp8u *pSource0, Ipp32s pitchBytes0, const Ipp8u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD16x8(const uint8_t *pSource0, int32_t pitchBytes0, const uint8_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_8u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 16, 8);
 }
 
 #if defined BITDEPTH_9_12
-inline Ipp32s SATD16x8(const Ipp16u *pSource0, Ipp32s pitchBytes0, const Ipp16u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD16x8(const uint16_t *pSource0, int32_t pitchBytes0, const uint16_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_16u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 16, 8);
 }
 #endif // BITDEPTH_9_12
 
-inline Ipp32s SATD8x16(const Ipp8u *pSource0, Ipp32s pitchBytes0, const Ipp8u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD8x16(const uint8_t *pSource0, int32_t pitchBytes0, const uint8_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_8u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 8, 16);
 }
 
 #if defined BITDEPTH_9_12
-inline Ipp32s SATD8x16(const Ipp16u *pSource0, Ipp32s pitchBytes0, const Ipp16u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD8x16(const uint16_t *pSource0, int32_t pitchBytes0, const uint16_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_16u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 8, 16);
 }
 #endif // BITDEPTH_9_12
 
-inline Ipp32s SATD8x8(const Ipp8u* pSrc0, Ipp32s srcStepBytes0, const Ipp8u* pSrc1, Ipp32s  srcStepBytes1)
+inline int32_t SATD8x8(const uint8_t* pSrc0, int32_t srcStepBytes0, const uint8_t* pSrc1, int32_t  srcStepBytes1)
 {
     return SATD_8u_C1R(pSrc0, srcStepBytes0, pSrc1, srcStepBytes1, 8, 8);
 }
 
 #if defined BITDEPTH_9_12
-inline Ipp32s SATD8x8(const Ipp16u* pSrc0, Ipp32s srcStepBytes0, const Ipp16u* pSrc1, Ipp32s srcStepBytes1)
+inline int32_t SATD8x8(const uint16_t* pSrc0, int32_t srcStepBytes0, const uint16_t* pSrc1, int32_t srcStepBytes1)
 {
     return SATD_16u_C1R(pSrc0, srcStepBytes0, pSrc1, srcStepBytes1, 8, 8);
 }
 #endif // BITDEPTH_9_12
 
-inline Ipp32s SATD8x4(const Ipp8u* pSrc0, Ipp32s srcStepBytes0, const Ipp8u* pSrc1, Ipp32s  srcStepBytes1)
+inline int32_t SATD8x4(const uint8_t* pSrc0, int32_t srcStepBytes0, const uint8_t* pSrc1, int32_t  srcStepBytes1)
 {
     return SATD_8u_C1R(pSrc0, srcStepBytes0, pSrc1, srcStepBytes1, 8, 4);
 }
 
 #if defined BITDEPTH_9_12
-inline Ipp32s SATD8x4(const Ipp16u* pSrc0, Ipp32s srcStepBytes0, const Ipp16u* pSrc1, Ipp32s srcStepBytes1)
+inline int32_t SATD8x4(const uint16_t* pSrc0, int32_t srcStepBytes0, const uint16_t* pSrc1, int32_t srcStepBytes1)
 {
     return SATD_16u_C1R(pSrc0, srcStepBytes0, pSrc1, srcStepBytes1, 8, 4);
 }
 #endif // BITDEPTH_9_12
 
-inline Ipp32s SATD4x8(const Ipp8u* pSrc0, Ipp32s srcStepBytes0, const Ipp8u* pSrc1, Ipp32s  srcStepBytes1)
+inline int32_t SATD4x8(const uint8_t* pSrc0, int32_t srcStepBytes0, const uint8_t* pSrc1, int32_t  srcStepBytes1)
 {
     return SATD_8u_C1R(pSrc0, srcStepBytes0, pSrc1, srcStepBytes1, 4, 8);
 }
 
 #if defined BITDEPTH_9_12
-inline Ipp32s SATD4x8(const Ipp16u* pSrc0, Ipp32s srcStepBytes0, const Ipp16u* pSrc1, Ipp32s srcStepBytes1)
+inline int32_t SATD4x8(const uint16_t* pSrc0, int32_t srcStepBytes0, const uint16_t* pSrc1, int32_t srcStepBytes1)
 {
     return SATD_16u_C1R(pSrc0, srcStepBytes0, pSrc1, srcStepBytes1, 4, 8);
 }
 #endif // BITDEPTH_9_12
 
-inline Ipp32s SATD4x4(const Ipp8u *pSource0, Ipp32s pitchBytes0, const Ipp8u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD4x4(const uint8_t *pSource0, int32_t pitchBytes0, const uint8_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_8u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 4, 4);
 }
 
 #if defined BITDEPTH_9_12
-inline Ipp32s SATD4x4(const Ipp16u *pSource0, Ipp32s pitchBytes0, const Ipp16u *pSource1, Ipp32s pitchBytes1)
+inline int32_t SATD4x4(const uint16_t *pSource0, int32_t pitchBytes0, const uint16_t *pSource1, int32_t pitchBytes1)
 {
     return SATD_16u_C1R(pSource0, pitchBytes0, pSource1, pitchBytes1, 4, 4);
 }
 #endif // BITDEPTH_9_12
 
-template <class PixType> Ipp32s SATD(PixType *pCur, Ipp32s pitchPixelsCur, PixType *pRef, Ipp32s pitchPixelsRef, Ipp32s blockSize);
-template <class PixType> Ipp32s SATD(PixType *pCur, Ipp32s pitchPixelsCur, PixType *pRef, Ipp32s pitchPixelsRef, Ipp32s blockSize)
+template <class PixType> int32_t SATD(PixType *pCur, int32_t pitchPixelsCur, PixType *pRef, int32_t pitchPixelsRef, int32_t blockSize);
+template <class PixType> int32_t SATD(PixType *pCur, int32_t pitchPixelsCur, PixType *pRef, int32_t pitchPixelsRef, int32_t blockSize)
 {
-    Ipp32s sad;
+    int32_t sad;
     switch (blockSize) {
         case BS_16x16:
             sad = SATD16x16(pCur, pitchPixelsCur*sizeof(PixType), pRef, pitchPixelsRef*sizeof(PixType));
@@ -158,14 +158,14 @@ template <class PixType> Ipp32s SATD(PixType *pCur, Ipp32s pitchPixelsCur, PixTy
             break;
         case BS_4x2:
             {
-            Ipp32s d0 = pCur[0] - pRef[0];
-            Ipp32s d1 = pCur[1] - pRef[1];
-            Ipp32s d2 = pCur[pitchPixelsCur+0] - pRef[pitchPixelsRef+0];
-            Ipp32s d3 = pCur[pitchPixelsCur+1] - pRef[pitchPixelsRef+1];
-            Ipp32s a0 = d0 + d2;
-            Ipp32s a1 = d1 + d3;
-            Ipp32s a2 = d0 - d2;
-            Ipp32s a3 = d1 - d3;
+            int32_t d0 = pCur[0] - pRef[0];
+            int32_t d1 = pCur[1] - pRef[1];
+            int32_t d2 = pCur[pitchPixelsCur+0] - pRef[pitchPixelsRef+0];
+            int32_t d3 = pCur[pitchPixelsCur+1] - pRef[pitchPixelsRef+1];
+            int32_t a0 = d0 + d2;
+            int32_t a1 = d1 + d3;
+            int32_t a2 = d0 - d2;
+            int32_t a3 = d1 - d3;
             sad = ABS(a0 + a1) + ABS(a0 - a1) + ABS(a2 + a3) + ABS(a2 - a3);
             d0 = pCur[2] - pRef[2];
             d1 = pCur[3] - pRef[3];
@@ -180,14 +180,14 @@ template <class PixType> Ipp32s SATD(PixType *pCur, Ipp32s pitchPixelsCur, PixTy
             }
         case BS_2x4:
             {
-            Ipp32s d0 = pCur[0] - pRef[0];
-            Ipp32s d1 = pCur[1] - pRef[1];
-            Ipp32s d2 = pCur[pitchPixelsCur+0] - pRef[pitchPixelsRef+0];
-            Ipp32s d3 = pCur[pitchPixelsCur+1] - pRef[pitchPixelsRef+1];
-            Ipp32s a0 = d0 + d2;
-            Ipp32s a1 = d1 + d3;
-            Ipp32s a2 = d0 - d2;
-            Ipp32s a3 = d1 - d3;
+            int32_t d0 = pCur[0] - pRef[0];
+            int32_t d1 = pCur[1] - pRef[1];
+            int32_t d2 = pCur[pitchPixelsCur+0] - pRef[pitchPixelsRef+0];
+            int32_t d3 = pCur[pitchPixelsCur+1] - pRef[pitchPixelsRef+1];
+            int32_t a0 = d0 + d2;
+            int32_t a1 = d1 + d3;
+            int32_t a2 = d0 - d2;
+            int32_t a3 = d1 - d3;
             sad = ABS(a0 + a1) + ABS(a0 - a1) + ABS(a2 + a3) + ABS(a2 - a3);
             pCur += pitchPixelsCur * 2;
             pRef += pitchPixelsRef * 2;
@@ -204,14 +204,14 @@ template <class PixType> Ipp32s SATD(PixType *pCur, Ipp32s pitchPixelsCur, PixTy
             }
         case BS_2x2:
             {
-            Ipp32s d0 = pCur[0] - pRef[0];
-            Ipp32s d1 = pCur[1] - pRef[1];
-            Ipp32s d2 = pCur[pitchPixelsCur+0] - pRef[pitchPixelsRef+0];
-            Ipp32s d3 = pCur[pitchPixelsCur+1] - pRef[pitchPixelsRef+1];
-            Ipp32s a0 = d0 + d2;
-            Ipp32s a1 = d1 + d3;
-            Ipp32s a2 = d0 - d2;
-            Ipp32s a3 = d1 - d3;
+            int32_t d0 = pCur[0] - pRef[0];
+            int32_t d1 = pCur[1] - pRef[1];
+            int32_t d2 = pCur[pitchPixelsCur+0] - pRef[pitchPixelsRef+0];
+            int32_t d3 = pCur[pitchPixelsCur+1] - pRef[pitchPixelsRef+1];
+            int32_t a0 = d0 + d2;
+            int32_t a1 = d1 + d3;
+            int32_t a2 = d0 - d2;
+            int32_t a3 = d1 - d3;
             sad = ABS(a0 + a1) + ABS(a0 - a1) + ABS(a2 + a3) + ABS(a2 - a3);
             break;
             }

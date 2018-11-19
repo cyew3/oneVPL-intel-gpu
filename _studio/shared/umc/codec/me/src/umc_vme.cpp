@@ -71,7 +71,7 @@ void MeVme::Close()
 bool MeVme::EstimateFrame(MeParams *par)
 {
     m_par = par;
-    Ipp32s SKIP_TYPE = SKIP_NULL;
+    int32_t SKIP_TYPE = SKIP_NULL;
     bool no_skip;
 
     if(!CheckParams())
@@ -99,12 +99,12 @@ bool MeVme::EstimateFrame(MeParams *par)
     }
 
     //estimate
-    Ipp16s x, y, x16, y16;
+    int16_t x, y, x16, y16;
 
     for(m_adr = m_par->FirstMB; m_adr <= m_par->LastMB; m_adr++)
     {
-        y = (Ipp16s)(m_adr/m_WidthMB);
-        x = (Ipp16s)(m_adr%m_WidthMB);
+        y = (int16_t)(m_adr/m_WidthMB);
+        x = (int16_t)(m_adr%m_WidthMB);
         x16 = x*16;
         y16 = y*16;
         // m_adr = m_WidthMB*y + x;
@@ -161,16 +161,16 @@ bool MeVme::EstimateFrame(MeParams *par)
     return true;
 }
 
-void MeVme::EstimateMB(Ipp16s x, Ipp16s y, Ipp32s SKIP_TYPE)
+void MeVme::EstimateMB(int16_t x, int16_t y, int32_t SKIP_TYPE)
 {
    // Macroblock mb;
     I16PAIR srcxy, refxy, cctr1, cctr2;
-    Ipp8u *pSrc  = m_pSrcFrameY;
-    Ipp8u *pRef1;
-    Ipp8u *pRef2;
-    Ipp32s num_search_centers = 1;
-    Ipp32s bidir_mask, motion_mask, weight;
-    Ipp32s ph = 16*m_HeightMB;
+    uint8_t *pSrc  = m_pSrcFrameY;
+    uint8_t *pRef1;
+    uint8_t *pRef2;
+    int32_t num_search_centers = 1;
+    int32_t bidir_mask, motion_mask, weight;
+    int32_t ph = 16*m_HeightMB;
 
     pRef1 = m_par->pRefF[0]->ptr[0];
     if(m_par->SearchDirection == ME_ForwardSearch)
