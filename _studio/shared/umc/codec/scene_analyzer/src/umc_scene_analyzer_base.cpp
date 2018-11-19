@@ -107,8 +107,8 @@ Status SceneAnalyzerBase::GetFrame(MediaData *pSource, MediaData *pDestination)
     // initialize destination image
     {
         ColorFormat colorFormat = pSrc->GetColorFormat();
-        IppiSize picSize;
-        Ipp32u numPlanes, plane;
+        mfxSize picSize;
+        uint32_t numPlanes, plane;
         Status umcRes;
 
         picSize.width = pSrc->GetWidth();

@@ -55,10 +55,10 @@ public:
 
     // Set the pointer to array of data
     inline
-    void SetAnalysisData(const UMC_SCENE_INFO *pData, Ipp32u dataType);
+    void SetAnalysisData(const UMC_SCENE_INFO *pData, uint32_t dataType);
     // Get the pointer to array of data
     inline
-    const UMC_SCENE_INFO *GetAnalysisData(Ipp32u dataType);
+    const UMC_SCENE_INFO *GetAnalysisData(uint32_t dataType);
 
 protected:
 
@@ -66,7 +66,7 @@ protected:
 };
 
 inline
-void VideoDataSceneInfo::SetAnalysisData(const UMC_SCENE_INFO *pData, Ipp32u dataType)
+void VideoDataSceneInfo::SetAnalysisData(const UMC_SCENE_INFO *pData, uint32_t dataType)
 {
     // check error(s)
     if (SA_TYPES_OF_DATA <= dataType)
@@ -74,10 +74,10 @@ void VideoDataSceneInfo::SetAnalysisData(const UMC_SCENE_INFO *pData, Ipp32u dat
 
     m_pData[dataType] = pData;
 
-} // void VideoDataSceneInfo::SetAnalysisData(const UMC_SCENE_INFO *pData, Ipp32u dataType)
+} // void VideoDataSceneInfo::SetAnalysisData(const UMC_SCENE_INFO *pData, uint32_t dataType)
 
 inline
-const UMC_SCENE_INFO *VideoDataSceneInfo::GetAnalysisData(Ipp32u dataType)
+const UMC_SCENE_INFO *VideoDataSceneInfo::GetAnalysisData(uint32_t dataType)
 {
     // check error(s)
     if (SA_TYPES_OF_DATA <= dataType)
@@ -86,7 +86,7 @@ const UMC_SCENE_INFO *VideoDataSceneInfo::GetAnalysisData(Ipp32u dataType)
     // return the pointer
     return m_pData[dataType];
 
-} // const UMC_SCENE_INFO *VideoDataSceneInfo::GetAnalysisData(Ipp32u dataType)
+} // const UMC_SCENE_INFO *VideoDataSceneInfo::GetAnalysisData(uint32_t dataType)
 
 } // namespace UMC
 

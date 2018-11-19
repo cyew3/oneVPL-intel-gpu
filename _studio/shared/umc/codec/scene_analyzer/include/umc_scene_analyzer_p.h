@@ -83,17 +83,17 @@ protected:
     Status AnalyzeFrame(SceneAnalyzerFrame *pRef, SceneAnalyzerFrame *pSrc);
 
     virtual
-    void AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,
+    void AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep,
                         UMC_SCENE_INFO *pMbInfo);
     virtual
-    void AnalyzeInterMB(const Ipp8u *pRef, Ipp32s refStep,
-                        const Ipp8u *pSrc, Ipp32s srcStep,
+    void AnalyzeInterMB(const uint8_t *pRef, int32_t refStep,
+                        const uint8_t *pSrc, int32_t srcStep,
                         UMC_SCENE_INFO *pMbInfo);
     virtual
-    void AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
-                              IppiSize refMbDim,
-                              const Ipp8u *pSrc, Ipp32s srcStep,
-                              Ipp32u mbX, Ipp32u mbY, Ipp16u *pSADs,
+    void AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
+                              mfxSize refMbDim,
+                              const uint8_t *pSrc, int32_t srcStep,
+                              uint32_t mbX, uint32_t mbY, uint16_t *pSADs,
                               UMC_SCENE_INFO *pMbInfo);
 
     // Make decision over the source frame coding type
@@ -110,7 +110,7 @@ protected:
         bool m_bChangeDetected;
 
     } m_history[8];
-    Ipp32s m_framesInHistory;
+    int32_t m_framesInHistory;
 
 };
 

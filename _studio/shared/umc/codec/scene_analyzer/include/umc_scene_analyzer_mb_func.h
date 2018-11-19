@@ -29,12 +29,12 @@ namespace UMC
 {
 
 // Declaration of block layer functions
-Ipp32u ippiGetIntraBlockDeviation_4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep);
-Ipp32u ippiGetAverage4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep);
-IppStatus ippiGetResidual4x4_8u16s(const Ipp8u *pRef, Ipp32s refStep,
-                                   const Ipp8u *pSrc, Ipp32s srcStep,
-                                   Ipp16s *pDst, Ipp32s dstStep);
-Ipp32u ippiGetInterBlockDeviation_4x4_16s(const Ipp16s *pSrc, Ipp32s srcStep);
+uint32_t ippiGetIntraBlockDeviation_4x4_8u(const uint8_t *pSrc, int32_t srcStep);
+uint32_t ippiGetAverage4x4_8u(const uint8_t *pSrc, int32_t srcStep);
+IppStatus ippiGetResidual4x4_8u16s(const uint8_t *pRef, int32_t refStep,
+                                   const uint8_t *pSrc, int32_t srcStep,
+                                   int16_t *pDst, int32_t dstStep);
+uint32_t ippiGetInterBlockDeviation_4x4_16s(const int16_t *pSrc, int32_t srcStep);
 
 } // namespace UMC
 #endif

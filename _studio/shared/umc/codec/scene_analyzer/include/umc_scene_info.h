@@ -51,10 +51,10 @@ enum
 // declare data structure
 struct UMC_SCENE_INFO
 {
-    Ipp32u sumDev[SA_PRED_TYPE];                                // (Ipp32u []) sum of deviations of blocks
-    Ipp32u averageDev[SA_PRED_TYPE];                            // (Ipp32u []) average deviation of blocks
-    Ipp32u numItems[SA_PRED_TYPE];                              // (Ipp32u) number of valid units
-    Ipp32u bestMatches;                                         // (Ipp32u) number of excellent motion matches
+    uint32_t sumDev[SA_PRED_TYPE];                                // (uint32_t []) sum of deviations of blocks
+    uint32_t averageDev[SA_PRED_TYPE];                            // (uint32_t []) average deviation of blocks
+    uint32_t numItems[SA_PRED_TYPE];                              // (uint32_t) number of valid units
+    uint32_t bestMatches;                                         // (uint32_t) number of excellent motion matches
 };
 
 inline
@@ -73,14 +73,14 @@ void AddIntraDeviation(UMC_SCENE_INFO *pDst, const UMC_SCENE_INFO *pSrc)
 inline
 void GetAverageIntraDeviation(UMC_SCENE_INFO *pSrc)
 {
-    Ipp32u numItems;
+    uint32_t numItems;
 
     // get average intra deviation
-    numItems = IPP_MAX(1, pSrc->numItems[SA_INTRA]);
+    numItems = MFX_MAX(1, pSrc->numItems[SA_INTRA]);
     pSrc->averageDev[SA_INTRA] = (pSrc->sumDev[SA_INTRA] + numItems / 2) /
                                  numItems;
     // get average color
-    numItems = IPP_MAX(1, pSrc->numItems[SA_COLOR]);
+    numItems = MFX_MAX(1, pSrc->numItems[SA_COLOR]);
     pSrc->averageDev[SA_COLOR] = (pSrc->sumDev[SA_COLOR] + numItems / 2) /
                                  numItems;
 
@@ -100,29 +100,29 @@ void AddInterDeviation(UMC_SCENE_INFO *pDst, const UMC_SCENE_INFO *pSrc)
 inline
 void GetAverageInterDeviation(UMC_SCENE_INFO *pSrc)
 {
-    Ipp32u numItems;
+    uint32_t numItems;
 
     // get average intra deviation
-    numItems = IPP_MAX(1, pSrc->numItems[SA_INTER]);
+    numItems = MFX_MAX(1, pSrc->numItems[SA_INTER]);
     pSrc->averageDev[SA_INTER] = (pSrc->sumDev[SA_INTER] + numItems / 2) /
                                  numItems;
     // get average color
-    numItems = IPP_MAX(1, pSrc->numItems[SA_INTER_ESTIMATED]);
+    numItems = MFX_MAX(1, pSrc->numItems[SA_INTER_ESTIMATED]);
     pSrc->averageDev[SA_INTER_ESTIMATED] = (pSrc->sumDev[SA_INTER_ESTIMATED] + numItems / 2) /
                                            numItems;
 
 } // void GetAverageIntraDeviation(UMC_SCENE_INFO *pSrc)
 
 inline
-Ipp32s GetAbs(Ipp32s value)
+int32_t GetAbs(int32_t value)
 {
-    Ipp32s signExtended = value >> 31;
+    int32_t signExtended = value >> 31;
 
     value = (value ^ signExtended) - signExtended;
 
     return value;
 
-} // Ipp32s GetAbs(Ipp32s value)
+} // int32_t GetAbs(int32_t value)
 
 } // namespace UMC
 

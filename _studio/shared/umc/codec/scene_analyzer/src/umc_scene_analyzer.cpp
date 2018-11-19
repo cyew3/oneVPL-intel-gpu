@@ -207,7 +207,7 @@ Status SceneAnalyzer::GetFrame(MediaData *pSource, MediaData *pDestination)
                 bool bShortChange;
                 InterlaceType longFrameStructure, shortFrameStructure;
                 InterlaceType longFrameEstimation, shortFrameEstimation;
-                Ipp32u longDev, shortDev;
+                uint32_t longDev, shortDev;
 
                 // perform the analysis
                 umcRes = AnalyzeFrame(m_pRef, m_pCur);

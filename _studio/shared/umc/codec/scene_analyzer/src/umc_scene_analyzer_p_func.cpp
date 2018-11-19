@@ -30,9 +30,9 @@ namespace UMC
 Status SceneAnalyzerP::AnalyzePicture(SceneAnalyzerPicture *pSrc)
 {
     UMC_SCENE_INFO *pSliceInfo;
-    const Ipp8u *pbSrc;
-    Ipp32s srcStep;
-    Ipp32u mbY;
+    const uint8_t *pbSrc;
+    int32_t srcStep;
+    uint32_t mbY;
 
     // reset the variables
     pSliceInfo = pSrc->m_pSliceInfo;
@@ -40,19 +40,19 @@ Status SceneAnalyzerP::AnalyzePicture(SceneAnalyzerPicture *pSrc)
 
     // get the source pointer
     pbSrc = pSrc->m_pPic[0];
-    srcStep = (Ipp32s) pSrc->m_picStep;
+    srcStep = (int32_t) pSrc->m_picStep;
 
     // cycle over rows
-    for (mbY = 0; mbY < (Ipp32u) pSrc->m_mbDim.height; mbY += 1)
+    for (mbY = 0; mbY < (uint32_t) pSrc->m_mbDim.height; mbY += 1)
     {
         UMC_SCENE_INFO sliceInfo;
-        Ipp32u mbX;
+        uint32_t mbX;
 
         // reset the variables
         memset(&sliceInfo, 0, sizeof(sliceInfo));
 
         // cycle in the row
-        for (mbX = 0; mbX < (Ipp32u) pSrc->m_mbDim.width; mbX += 1)
+        for (mbX = 0; mbX < (uint32_t) pSrc->m_mbDim.width; mbX += 1)
         {
             UMC_SCENE_INFO mbInfo;
 
@@ -112,33 +112,33 @@ Status SceneAnalyzerP::AnalyzePicture(SceneAnalyzerPicture *pSrc)
 Status SceneAnalyzerP::AnalyzePicture(SceneAnalyzerPicture *pRef, SceneAnalyzerPicture *pSrc)
 {
     UMC_SCENE_INFO *pSliceInfo;
-    const Ipp8u *pbSrc;
-    Ipp32s srcStep;
-    const Ipp8u *pbRef;
-    Ipp32s refStep;
-    Ipp32u mbY;
+    const uint8_t *pbSrc;
+    int32_t srcStep;
+    const uint8_t *pbRef;
+    int32_t refStep;
+    uint32_t mbY;
 
     // reset the variables
     pSliceInfo = pSrc->m_pSliceInfo;
     memset(&(pSrc->m_info), 0, sizeof(pSrc->m_info));
 
     // get the source pointer
-    pbSrc = (const Ipp8u *) pSrc->m_pPic[0];
-    srcStep = (Ipp32s) pSrc->m_picStep;
-    pbRef = (const Ipp8u *) pRef->m_pPic[0];
-    refStep = (Ipp32s) pRef->m_picStep;
+    pbSrc = (const uint8_t *) pSrc->m_pPic[0];
+    srcStep = (int32_t) pSrc->m_picStep;
+    pbRef = (const uint8_t *) pRef->m_pPic[0];
+    refStep = (int32_t) pRef->m_picStep;
 
     // cycle over rows
-    for (mbY = 0; mbY < (Ipp32u) pSrc->m_mbDim.height; mbY += 1)
+    for (mbY = 0; mbY < (uint32_t) pSrc->m_mbDim.height; mbY += 1)
     {
         UMC_SCENE_INFO sliceInfo;
-        Ipp32u mbX;
+        uint32_t mbX;
 
         // reset the variables
         memset(&sliceInfo, 0, sizeof(sliceInfo));
 
         // cycle in the row
-        for (mbX = 0; mbX < (Ipp32u) pSrc->m_mbDim.width; mbX += 1)
+        for (mbX = 0; mbX < (uint32_t) pSrc->m_mbDim.width; mbX += 1)
         {
             UMC_SCENE_INFO mbInfo;
 
@@ -212,7 +212,7 @@ Status SceneAnalyzerP::AnalyzeFrame(SceneAnalyzerFrame *pSrc)
 
     if (PROGRESSIVE != m_params.m_interlaceType)
     {
-        Ipp32s frameDev, fieldDev;
+        int32_t frameDev, fieldDev;
 
         // analyze frame as PROGRESSIVE
         AnalyzePicture(pSrc);
@@ -254,7 +254,7 @@ Status SceneAnalyzerP::AnalyzeFrame(SceneAnalyzerFrame *pRef, SceneAnalyzerFrame
 
     if (PROGRESSIVE != m_params.m_interlaceType)
     {
-        Ipp32s frameDev, fieldDev;
+        int32_t frameDev, fieldDev;
 
         // analyze frame as PROGRESSIVE
         AnalyzePicture(pSrc);

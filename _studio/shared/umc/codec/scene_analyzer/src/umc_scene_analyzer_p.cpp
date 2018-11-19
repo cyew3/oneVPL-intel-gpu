@@ -234,9 +234,9 @@ Status SceneAnalyzerP::GetFrame(MediaData *pSource, MediaData *pDestination)
 Status SceneAnalyzerP::InitializeVideoData(VideoData *pDst, const SceneAnalyzerFrame *pFrame)
 {
     ColorFormat colorFormat = pFrame->m_colorFormat;
-    Ipp32s srcHeight = pFrame->m_picDim.height;
-    Ipp32s srcWidth = pFrame->m_picDim.width;
-    Ipp32u planeNum, maxPlaneNum;
+    int32_t srcHeight = pFrame->m_picDim.height;
+    int32_t srcWidth = pFrame->m_picDim.width;
+    uint32_t planeNum, maxPlaneNum;
     Status umcRes;
 
     umcRes = pDst->Init(srcWidth, srcHeight, colorFormat);
@@ -263,7 +263,7 @@ Status SceneAnalyzerP::InitializeVideoData(VideoData *pDst, const SceneAnalyzerF
 
 void SceneAnalyzerP::UpdateHistory(const SceneAnalyzerFrame *pFrame, FrameType analysisType)
 {
-    Ipp32u i;
+    uint32_t i;
 
     for (i = sizeof(m_history) / sizeof(m_history[0]) - 1; 0 < i; i -= 1)
     {
@@ -274,7 +274,7 @@ void SceneAnalyzerP::UpdateHistory(const SceneAnalyzerFrame *pFrame, FrameType a
     m_history[0].analyzedFrameType = analysisType;
     m_history[0].m_bChangeDetected = pFrame->m_bChangeDetected;
 
-    m_framesInHistory = IPP_MIN(8, m_framesInHistory + 1);
+    m_framesInHistory = MFX_MIN(8, m_framesInHistory + 1);
 
 } // void SceneAnalyzerP::UpdateHistory(const SceneAnalyzerFrame *pFrame, FrameType analysisType)
 
@@ -285,14 +285,14 @@ void SceneAnalyzerP::MakePPictureCodingDecision(SceneAnalyzerPicture *pRef,
 
     if (false == m_history[0].m_bChangeDetected)
     {
-        Ipp32s availableFrames = m_framesInHistory;
-        Ipp32u color, minColor, maxColor;
-        Ipp32u intraDev, minIntraDev, maxIntraDev;
-        Ipp32u interDev, minInterDev, maxInterDev;
-        Ipp32u interDevEst, minInterDevEst, maxInterDevEst;
-        Ipp32u bestMatches, minBestMatches;
-        Ipp32s i;
-        Ipp32u conditions = 0;
+        int32_t availableFrames = m_framesInHistory;
+        uint32_t color, minColor, maxColor;
+        uint32_t intraDev, minIntraDev, maxIntraDev;
+        uint32_t interDev, minInterDev, maxInterDev;
+        uint32_t interDevEst, minInterDevEst, maxInterDevEst;
+        uint32_t bestMatches, minBestMatches;
+        int32_t i;
+        uint32_t conditions = 0;
 
         // set initial values
         color = pSrc->m_info.averageDev[SA_COLOR];
@@ -310,18 +310,18 @@ void SceneAnalyzerP::MakePPictureCodingDecision(SceneAnalyzerPicture *pRef,
         // select boundaries
         for (i = 1; i < availableFrames; i += 1)
         {
-            minColor = IPP_MIN(minColor, m_history[i].info.averageDev[SA_COLOR]);
-            maxColor = IPP_MAX(maxColor, m_history[i].info.averageDev[SA_COLOR]);
-            minIntraDev = IPP_MIN(minIntraDev, m_history[i].info.averageDev[SA_INTRA]);
-            maxIntraDev = IPP_MAX(maxIntraDev, m_history[i].info.averageDev[SA_INTRA]);
+            minColor = MFX_MIN(minColor, m_history[i].info.averageDev[SA_COLOR]);
+            maxColor = MFX_MAX(maxColor, m_history[i].info.averageDev[SA_COLOR]);
+            minIntraDev = MFX_MIN(minIntraDev, m_history[i].info.averageDev[SA_INTRA]);
+            maxIntraDev = MFX_MAX(maxIntraDev, m_history[i].info.averageDev[SA_INTRA]);
             // there is not INTER data in I frames,
             // and we skip still pictures
             if (false == m_history[i].m_bChangeDetected)
             {
-                minInterDev = IPP_MIN(minInterDev, m_history[i].info.averageDev[SA_INTER]);
-                maxInterDev = IPP_MAX(maxInterDev, m_history[i].info.averageDev[SA_INTER]);
-                minInterDevEst = IPP_MIN(minInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
-                maxInterDevEst = IPP_MAX(maxInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
+                minInterDev = MFX_MIN(minInterDev, m_history[i].info.averageDev[SA_INTER]);
+                maxInterDev = MFX_MAX(maxInterDev, m_history[i].info.averageDev[SA_INTER]);
+                minInterDevEst = MFX_MIN(minInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
+                maxInterDevEst = MFX_MAX(maxInterDevEst, m_history[i].info.averageDev[SA_INTER_ESTIMATED]);
             }
         }
 
@@ -356,8 +356,8 @@ void SceneAnalyzerP::MakePPictureCodingDecision(SceneAnalyzerPicture *pRef,
         // probably it is a frame change
         else if (0 != conditions)
         {
-            if ((4 <= (Ipp32s) (minIntraDev - intraDev)) &&
-                (7 <= (Ipp32s) (interDev - maxInterDev)))
+            if ((4 <= (int32_t) (minIntraDev - intraDev)) &&
+                (7 <= (int32_t) (interDev - maxInterDev)))
             {
                 bChangeDetected = true;
             }
@@ -365,10 +365,10 @@ void SceneAnalyzerP::MakePPictureCodingDecision(SceneAnalyzerPicture *pRef,
                      (interDevEst * 2 > intraDev))
             {
                 if ((interDev > maxInterDev + 5) ||
-                    (6 < (Ipp32s) (color - maxColor)) ||
-                    (6 < (Ipp32s) (minColor - color)) ||
-                    (5 < (Ipp32s) (intraDev - maxIntraDev)) ||
-                    (5 < (Ipp32s) (minIntraDev - intraDev)))
+                    (6 < (int32_t) (color - maxColor)) ||
+                    (6 < (int32_t) (minColor - color)) ||
+                    (5 < (int32_t) (intraDev - maxIntraDev)) ||
+                    (5 < (int32_t) (minIntraDev - intraDev)))
                 {
                     bChangeDetected = true;
                 }
@@ -389,10 +389,10 @@ void SceneAnalyzerP::MakePPictureCodingDecision(SceneAnalyzerPicture *pRef,
     }
     else
     {
-        Ipp32s colorResidual;
-        Ipp32s intraDev, intraDevResidual;
-        Ipp32s interDev;
-        Ipp32s interDevEst;
+        int32_t colorResidual;
+        int32_t intraDev, intraDevResidual;
+        int32_t interDev;
+        int32_t interDevEst;
 
         // get changes
         colorResidual = pSrc->m_info.averageDev[SA_COLOR] -

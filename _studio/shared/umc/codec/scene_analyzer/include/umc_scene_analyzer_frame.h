@@ -42,22 +42,22 @@ public:
     ~SceneAnalyzerPicture(void);
 
     // Initialize the picture
-    Status Init(Ipp32s srcWidth, Ipp32s srcHeight,
+    Status Init(int32_t srcWidth, int32_t srcHeight,
                 ColorFormat colorFormat);
     // Initialize the picture with given pointer.
     // This method is supposed to use only with GRAY pictures.
-    Status SetPointer(const Ipp8u *pPic, size_t picStep,
-                      Ipp32s srcWidth, Ipp32s srcHeight);
+    Status SetPointer(const uint8_t *pPic, size_t picStep,
+                      int32_t srcWidth, int32_t srcHeight);
 
-    const Ipp8u *(m_pPic[3]);                                   // (const Ipp8u *([])) pointer to the picture's buffer
+    const uint8_t *(m_pPic[3]);                                   // (const uint8_t *([])) pointer to the picture's buffer
     size_t m_picSize;                                           // (size_t) size of allocated picture
-    size_t m_picStep;                                           // (Ipp32s) picture's buffer's step
-    IppiSize m_picDim;                                          // (IppiSize) picture's dimensions
-    IppiSize m_mbDim;                                           // (IppiSize) picture's dimensions in units of MB
+    size_t m_picStep;                                           // (int32_t) picture's buffer's step
+    mfxSize m_picDim;                                          // (mfxSize) picture's dimensions
+    mfxSize m_mbDim;                                           // (mfxSize) picture's dimensions in units of MB
     ColorFormat m_colorFormat;
     bool m_bChangeDetected;                                     // (bool) a scene change was detected
 
-    Ipp16u m_sadBuffer[SA_ESTIMATION_WIDTH];                    // (Ipp16u []) temporal buffer for SADs
+    uint16_t m_sadBuffer[SA_ESTIMATION_WIDTH];                    // (uint16_t []) temporal buffer for SADs
 
     UMC_SCENE_INFO m_info;                                      // (UMC_SCENE_INFO) entire frame statistics
     UMC_SCENE_INFO *m_pSliceInfo;                               // (UMC_SCENE_INFO *) pointer to array of average slice statistics
@@ -106,9 +106,9 @@ public:
     InterlaceType m_frameEstimation;                            // (InterlaceType) frame estimation type
 
 private:
-    IppiSize m_srcSize;
-    IppiSize m_dstSize;
-    std::auto_ptr<Ipp8u> m_workBuff;
+    mfxSize m_srcSize;
+    mfxSize m_dstSize;
+    std::auto_ptr<uint8_t> m_workBuff;
 };
 
 inline

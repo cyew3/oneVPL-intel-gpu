@@ -29,10 +29,10 @@
 namespace UMC
 {
 
-void SceneAnalyzerP::AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,
+void SceneAnalyzerP::AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep,
                                     UMC_SCENE_INFO *pMbInfo)
 {
-    Ipp32u blockDev;
+    uint32_t blockDev;
 
     // get block deviations
     blockDev = ippiGetIntraBlockDeviation_4x4_8u(pSrc, srcStep);
@@ -41,14 +41,14 @@ void SceneAnalyzerP::AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,
     // get average color
     pMbInfo->sumDev[SA_COLOR] = ippiGetAverage4x4_8u(pSrc, srcStep);
 
-} // void SceneAnalyzerP::AnalyzeIntraMB(const Ipp8u *pSrc, Ipp32s srcStep,
+} // void SceneAnalyzerP::AnalyzeIntraMB(const uint8_t *pSrc, int32_t srcStep,
 
-void SceneAnalyzerP::AnalyzeInterMB(const Ipp8u *pRef, Ipp32s refStep,
-                                    const Ipp8u *pSrc, Ipp32s srcStep,
+void SceneAnalyzerP::AnalyzeInterMB(const uint8_t *pRef, int32_t refStep,
+                                    const uint8_t *pSrc, int32_t srcStep,
                                     UMC_SCENE_INFO *pMbInfo)
 {
-    Ipp16s residual[4 * 4];
-    Ipp32u blockDev;
+    int16_t residual[4 * 4];
+    uint32_t blockDev;
 
     // do intra analysis
     AnalyzeIntraMB(pSrc, srcStep, pMbInfo);
@@ -70,13 +70,13 @@ void SceneAnalyzerP::AnalyzeInterMB(const Ipp8u *pRef, Ipp32s refStep,
         pMbInfo->bestMatches += 1;
     }
 
-} // void SceneAnalyzerP::AnalyzeInterMB(const Ipp8u *pRef, Ipp32s refStep,
+} // void SceneAnalyzerP::AnalyzeInterMB(const uint8_t *pRef, int32_t refStep,
 
 static
-Ipp32u GetMinValue(Ipp16u *pValues, Ipp32u numValues)
+uint32_t GetMinValue(uint16_t *pValues, uint32_t numValues)
 {
-    Ipp32u value = (Ipp32u) -1;
-    Ipp32u x;
+    uint32_t value = (uint32_t) -1;
+    uint32_t x;
 
     // run over the array and find the lowest
     for (x = 0; x < numValues; x += 1)
@@ -86,35 +86,35 @@ Ipp32u GetMinValue(Ipp16u *pValues, Ipp32u numValues)
 
     return value;
 
-} // Ipp32u GetMinValue(Ipp16u *pValues, Ipp32u numValues)
+} // uint32_t GetMinValue(uint16_t *pValues, uint32_t numValues)
 
-void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
-                                          IppiSize refMbDim,
-                                          const Ipp8u *pSrc, Ipp32s srcStep,
-                                          Ipp32u mbX, Ipp32u mbY, Ipp16u *pSADs,
+void SceneAnalyzerP::AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
+                                          mfxSize refMbDim,
+                                          const uint8_t *pSrc, int32_t srcStep,
+                                          uint32_t mbX, uint32_t mbY, uint16_t *pSADs,
                                           UMC_SCENE_INFO *pMbInfo)
 {
-    Ipp32u numberOfSADs = SA_ESTIMATION_WIDTH;
-    Ipp32u y;
-    Ipp32u pixels, topRows, bottomRows;
+    uint32_t numberOfSADs = SA_ESTIMATION_WIDTH;
+    uint32_t y;
+    uint32_t pixels, topRows, bottomRows;
 
     //
     // analyze working boundaries
     //
 
     // horizontal direction
-    pixels = IPP_MIN(mbX * 4, SA_ESTIMATION_WIDTH / 2);
+    pixels = MFX_MIN(mbX * 4, SA_ESTIMATION_WIDTH / 2);
     pRef -= pixels;
     numberOfSADs -= (SA_ESTIMATION_WIDTH / 2 - pixels);
 
-    pixels = IPP_MIN((refMbDim.width - mbX - 1) * 4, SA_ESTIMATION_WIDTH / 2);
+    pixels = MFX_MIN((refMbDim.width - mbX - 1) * 4, SA_ESTIMATION_WIDTH / 2);
     numberOfSADs -= (SA_ESTIMATION_WIDTH / 2 - pixels);
     numberOfSADs = (numberOfSADs + 7) & -8;
 
     // vertical direction
-    topRows = IPP_MIN(mbY * 4, SA_ESTIMATION_HEIGHT / 2);
+    topRows = MFX_MIN(mbY * 4, SA_ESTIMATION_HEIGHT / 2);
 
-    bottomRows = IPP_MIN((refMbDim.height - mbY) * 4 - 3, SA_ESTIMATION_HEIGHT / 2);
+    bottomRows = MFX_MIN((refMbDim.height - mbY) * 4 - 3, SA_ESTIMATION_HEIGHT / 2);
 
     // main working cycle
     for (y = 0; y < SA_ESTIMATION_HEIGHT / 2; y += 1)
@@ -124,7 +124,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
         // try to find upper
         if (y < topRows)
         {
-            Ipp32u minSAD;
+            uint32_t minSAD;
 
             ippiSAD4x4xN_8u16u_C1R(pSrc, srcStep,
                                    pRef - refStep * (y + 1), refStep,
@@ -133,7 +133,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
 
             // get the lowest SAD
             minSAD = (GetMinValue(pSADs, numberOfSADs) + 8) / 16;
-            pMbInfo->sumDev[SA_INTER_ESTIMATED] = IPP_MIN(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
+            pMbInfo->sumDev[SA_INTER_ESTIMATED] = MFX_MIN(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
             if (1 >= pMbInfo->sumDev[SA_INTER_ESTIMATED])
                 break;
         }
@@ -141,7 +141,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
         // try to find lower
         if (y < bottomRows)
         {
-            Ipp32u minSAD;
+            uint32_t minSAD;
 
             ippiSAD4x4xN_8u16u_C1R(pSrc, srcStep,
                                    pRef + refStep * y, refStep,
@@ -150,7 +150,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
 
             // get the lowest SAD
             minSAD = (GetMinValue(pSADs, numberOfSADs) + 8) / 16;
-            pMbInfo->sumDev[SA_INTER_ESTIMATED] = IPP_MIN(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
+            pMbInfo->sumDev[SA_INTER_ESTIMATED] = MFX_MIN(minSAD, pMbInfo->sumDev[SA_INTER_ESTIMATED]);
             if (1 >= pMbInfo->sumDev[SA_INTER_ESTIMATED])
                 break;
         }
@@ -163,7 +163,7 @@ void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
         }
     }
 
-} // void SceneAnalyzerP::AnalyzeInterMBMotion(const Ipp8u *pRef, Ipp32s refStep,
+} // void SceneAnalyzerP::AnalyzeInterMBMotion(const uint8_t *pRef, int32_t refStep,
 
 } // namespace UMC
 #endif

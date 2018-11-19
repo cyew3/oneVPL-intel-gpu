@@ -43,18 +43,18 @@ public:
 
     // you may specify valid positive value or set it to any
     // non-positive value to let the encoder make the decision
-    Ipp32s m_maxGOPLength;                                      // (Ipp32s) maximum distance between intra frames
+    int32_t m_maxGOPLength;                                      // (int32_t) maximum distance between intra frames
 
     // you may specify valid non-negative value or set it to any
     // negative value to let the encoder make the decision
-    Ipp32s m_maxBLength;                                        // (Ipp32s) maximum length of B frame queue
+    int32_t m_maxBLength;                                        // (int32_t) maximum length of B frame queue
 
-    Ipp32u m_maxDelayTime;                                      // (Ipp32u) maximum delay time to get first encoded frame
+    uint32_t m_maxDelayTime;                                      // (uint32_t) maximum delay time to get first encoded frame
     InterlaceType m_interlaceType;                              // (InterlaceType) type of constructred frames
 
 /*
-    Ipp32u m_frameWidth;                                        // (Ipp32u) frame width
-    Ipp32u m_frameHeight;                                       // (Ipp32u) frame height*/
+    uint32_t m_frameWidth;                                        // (uint32_t) frame width
+    uint32_t m_frameHeight;                                       // (uint32_t) frame height*/
 };
 
 // declare base class
@@ -95,9 +95,9 @@ protected:
     virtual
     FrameType GetPlannedFrameType(void);
 
-    Ipp32s m_frameNum;                                          // (Ipp32s) number of a frame in the scene
-    Ipp32s m_bFrameNum;                                         // (Ipp32s) number of a B frame in a row
-    Ipp32s m_frameCount;                                        // (Ipp32s) total number of processed frames
+    int32_t m_frameNum;                                          // (int32_t) number of a frame in the scene
+    int32_t m_bFrameNum;                                         // (int32_t) number of a B frame in a row
+    int32_t m_frameCount;                                        // (int32_t) total number of processed frames
 
     SceneAnalyzerParams m_params;                               // (SceneAnalyzerParams) working parameters
 };

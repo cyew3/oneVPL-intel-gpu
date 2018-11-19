@@ -32,7 +32,7 @@ namespace UMC
 #define src_step edx
 #define src esi
 
-Ipp32u ippiGetIntraBlockDeviation_4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
+uint32_t ippiGetIntraBlockDeviation_4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 {
 #if defined(WIN32) && !defined(WIN64)
 #if defined (__ICL)
@@ -84,10 +84,10 @@ Ipp32u ippiGetIntraBlockDeviation_4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
         emms
     }
 #else
-    const Ipp8u *pCur;
-    Ipp32u average;
-    Ipp32u deviation;
-    Ipp32u x, y;
+    const uint8_t *pCur;
+    uint32_t average;
+    uint32_t deviation;
+    uint32_t x, y;
 
     // check error(s)
     if (0 == pSrc)
@@ -130,8 +130,8 @@ Ipp32u ippiGetIntraBlockDeviation_4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
         // cycle in the row
         for (x = 0; x < 4; x += 1)
         {
-            Ipp32s temp;
-            Ipp32s signExtended;
+            int32_t temp;
+            int32_t signExtended;
 
             // getting sum of components
             temp = pCur[x] - average;
@@ -148,9 +148,9 @@ Ipp32u ippiGetIntraBlockDeviation_4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
 
     return deviation;
 #endif
-} // Ipp32u ippiGetIntraBlockDeviation_4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
+} // uint32_t ippiGetIntraBlockDeviation_4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 
-Ipp32u ippiGetAverage4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
+uint32_t ippiGetAverage4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 {
 #if defined(WIN32) && !defined(WIN64)
     __asm
@@ -178,15 +178,15 @@ Ipp32u ippiGetAverage4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
         emms
     }
 #else
-    Ipp32u y;
-    Ipp32u sum;
+    uint32_t y;
+    uint32_t sum;
 
     sum = 0;
 
     // cycle over rows
     for (y = 0; y < 4; y += 1)
     {
-        Ipp32u x;
+        uint32_t x;
 
         // cycle in the row
         for (x = 0; x < 4; x += 1)
@@ -200,7 +200,7 @@ Ipp32u ippiGetAverage4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
 
     return (sum + 8) / 16;
 #endif
-} // Ipp32u ippiGetAverage4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
+} // uint32_t ippiGetAverage4x4_8u(const uint8_t *pSrc, int32_t srcStep)
 
 #undef temp
 #undef counter
@@ -213,9 +213,9 @@ Ipp32u ippiGetAverage4x4_8u(const Ipp8u *pSrc, Ipp32s srcStep)
 #define src esi
 #define dst edi
 
-IppStatus ippiGetResidual4x4_8u16s(const Ipp8u *pRef, Ipp32s refStep,
-                                   const Ipp8u *pSrc, Ipp32s srcStep,
-                                   Ipp16s *pDst, Ipp32s dstStep)
+IppStatus ippiGetResidual4x4_8u16s(const uint8_t *pRef, int32_t refStep,
+                                   const uint8_t *pSrc, int32_t srcStep,
+                                   int16_t *pDst, int32_t dstStep)
 {
 #if defined(WIN32) && !defined(WIN64)
     __asm
@@ -245,17 +245,17 @@ RESTART:
         emms
     }
 #else
-    Ipp32u y;
+    uint32_t y;
 
     // cycle over the rows
     for (y = 0; y < 4; y += 1)
     {
-        Ipp32u x;
+        uint32_t x;
 
         // cycle in the row
         for (x = 0; x < 4; x += 1)
         {
-            pDst[x] = (Ipp16s) (pSrc[x] - pRef[x]);
+            pDst[x] = (int16_t) (pSrc[x] - pRef[x]);
         }
 
         // set the next line
@@ -266,7 +266,7 @@ RESTART:
 
     return ippStsOk;
 #endif
-} // IppStatus ippiGetResidual4x4_8u16s(const Ipp8u *pRef, Ipp32s refStep,
+} // IppStatus ippiGetResidual4x4_8u16s(const uint8_t *pRef, int32_t refStep,
 
 #undef ref
 #undef counter
@@ -274,11 +274,11 @@ RESTART:
 #undef src
 #undef dst
 
-Ipp32u ippiGetInterBlockDeviation_4x4_16s(const Ipp16s *pSrc, Ipp32s srcStep)
+uint32_t ippiGetInterBlockDeviation_4x4_16s(const int16_t *pSrc, int32_t srcStep)
 {
-    const Ipp16s *pCur;
-    Ipp32u deviation;
-    Ipp32u x, y;
+    const int16_t *pCur;
+    uint32_t deviation;
+    uint32_t x, y;
 
     // check error(s)
     if (0 == pSrc)
@@ -298,8 +298,8 @@ Ipp32u ippiGetInterBlockDeviation_4x4_16s(const Ipp16s *pSrc, Ipp32s srcStep)
         // cycle in the row
         for (x = 0; x < 4; x += 1)
         {
-            Ipp32s temp;
-            Ipp32s signExtended;
+            int32_t temp;
+            int32_t signExtended;
 
             // getting sum of components
             temp = pCur[x];
@@ -316,7 +316,7 @@ Ipp32u ippiGetInterBlockDeviation_4x4_16s(const Ipp16s *pSrc, Ipp32s srcStep)
 
     return deviation;
 
-} // Ipp32u ippiGetInterBlockDeviation_4x4_16s(const Ipp16s *pSrc, Ipp32s srcStep)
+} // uint32_t ippiGetInterBlockDeviation_4x4_16s(const int16_t *pSrc, int32_t srcStep)
 
 } // namespace UMC
 #endif

@@ -77,11 +77,11 @@ void SceneAnalyzerPicture::Close(void)
 
 } // void SceneAnalyzerPicture::Close(void)
 
-Status SceneAnalyzerPicture::Init(Ipp32s srcWidth, Ipp32s srcHeight,
+Status SceneAnalyzerPicture::Init(int32_t srcWidth, int32_t srcHeight,
                                   ColorFormat colorFormat)
 {
     size_t picStep, picSize;
-    IppiSize picDim = {srcWidth, srcHeight};
+    mfxSize picDim = {srcWidth, srcHeight};
     Status umcRes;
 
     // check error
@@ -160,12 +160,12 @@ Status SceneAnalyzerPicture::Init(Ipp32s srcWidth, Ipp32s srcHeight,
 
     return UMC_OK;
 
-} // Status SceneAnalyzerPicture::Init(Ipp32s srcWidth, Ipp32s srcHeight,
+} // Status SceneAnalyzerPicture::Init(int32_t srcWidth, int32_t srcHeight,
 
-Status SceneAnalyzerPicture::SetPointer(const Ipp8u *pPic, size_t picStep,
-                                        Ipp32s srcWidth, Ipp32s srcHeight)
+Status SceneAnalyzerPicture::SetPointer(const uint8_t *pPic, size_t picStep,
+                                        int32_t srcWidth, int32_t srcHeight)
 {
-    IppiSize picDim = {srcWidth, srcHeight};
+    mfxSize picDim = {srcWidth, srcHeight};
 
     // close the object before the initialization
     Close();
@@ -183,7 +183,7 @@ Status SceneAnalyzerPicture::SetPointer(const Ipp8u *pPic, size_t picStep,
 
     return UMC_OK;
 
-} // Status SceneAnalyzerPicture::SetPointer(const Ipp8u *pPic, size_t picStep,
+} // Status SceneAnalyzerPicture::SetPointer(const uint8_t *pPic, size_t picStep,
 
 Status SceneAnalyzerPicture::AllocateBuffer(size_t bufSize)
 {
@@ -282,9 +282,9 @@ SceneAnalyzerFrame::~SceneAnalyzerFrame(void)
 } // SceneAnalyzerFrame::~SceneAnalyzerFrame(void)
 
 static
-IppiSize GetScaledImageSize(IppiSize srcDim)
+mfxSize GetScaledImageSize(mfxSize srcDim)
 {
-    IppiSize dstDim;
+    mfxSize dstDim;
 
     // try to scale to something ~300 X ~200
     switch (srcDim.width)
@@ -337,13 +337,13 @@ IppiSize GetScaledImageSize(IppiSize srcDim)
 
     return dstDim;
 
-} // IppiSize GetScaledImageSize(IppiSize srcDim)
+} // mfxSize GetScaledImageSize(mfxSize srcDim)
 
 Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceType)
 {
     VideoData::PlaneInfo planeInfo;
     Status umcRes;
-    Ipp32s i;
+    int32_t i;
 
     // check error(s)
     if (NULL == pSrc)
@@ -398,16 +398,16 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
         // copy data
         ippiCopy_8u_C1R(tmpPlaneInfo.m_pPlane,
                         (int) tmpPlaneInfo.m_nPitch,
-                        (Ipp8u *) m_pPic[i],
+                        (uint8_t *) m_pPic[i],
                         (int) m_picStep,
                         tmpPlaneInfo.m_ippSize);
     }
 
     // initialize the scaled picture
     {
-        IppiSize srcDim = {m_picDim.width, m_picDim.height / 2};
+        mfxSize srcDim = {m_picDim.width, m_picDim.height / 2};
         IppiRect srcRoi = {0, 0, srcDim.width, srcDim.width};
-        IppiSize dstDim = GetScaledImageSize(m_picDim);
+        mfxSize dstDim = GetScaledImageSize(m_picDim);
 
         // initialize the scaled image
         umcRes = m_scaledPic.Init(dstDim.width, dstDim.height, GRAY);
@@ -452,7 +452,7 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
                 return UMC_ERR_ALLOC;
             }
 
-            m_workBuff.reset(new Ipp8u[bufSize]);
+            m_workBuff.reset(new uint8_t[bufSize]);
         }
 
         // AYA: should be implemented to support MSDK_SW_VPP_SA
@@ -462,7 +462,7 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
         //    srcDim, 
         //    (int) m_picStep * 2,
         //    srcRoi,
-        //    (Ipp8u *) m_scaledPic.m_pPic[0],
+        //    (uint8_t *) m_scaledPic.m_pPic[0],
         //    (int) m_scaledPic.m_picStep, 
         //     dstDim,
         //    ((double) dstDim.width) / ((double) srcDim.width),
@@ -470,11 +470,11 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
         //    IPPI_INTER_CUBIC/*IPPI_INTER_LINEAR*/);
 
         int interpolation = IPPI_INTER_CUBIC;
-        Ipp64f    xFactor = 0.0, yFactor = 0.0;
-        Ipp64f    xShift = 0.0, yShift = 0.0;
+        double    xFactor = 0.0, yFactor = 0.0;
+        double    xShift = 0.0, yShift = 0.0;
 
-        xFactor = (Ipp64f)m_dstSize.width  / (Ipp64f)m_srcSize.width;
-        yFactor = (Ipp64f)m_dstSize.height / (Ipp64f)m_srcSize.height;
+        xFactor = (double)m_dstSize.width  / (double)m_srcSize.width;
+        yFactor = (double)m_dstSize.height / (double)m_srcSize.height;
 
         IppiRect  dstRect;
         dstRect.x = 0;
@@ -488,7 +488,7 @@ Status SceneAnalyzerFrame::SetSource(VideoData *pSrc, InterlaceType interlaceTyp
             (int) m_picStep * 2, 
             srcRoi,
 
-            (Ipp8u *) m_scaledPic.m_pPic[0], 
+            (uint8_t *) m_scaledPic.m_pPic[0], 
             (int) m_scaledPic.m_picStep, 
             dstRect,
 
